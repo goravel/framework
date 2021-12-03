@@ -17,7 +17,7 @@ func (app *Application) Init() *Application {
 	app.vip.AddConfigPath(".")
 	err := app.vip.ReadInConfig()
 	if err != nil {
-		log.Fatalln("Please init .env file.")
+		log.Fatalln("Please init .env file.", err.Error())
 		return app
 	}
 	app.vip.SetEnvPrefix("goravel")

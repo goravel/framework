@@ -19,24 +19,7 @@ type Application struct {
 //Init Listen to artisan, Run the registered commands.
 func (app *Application) Init() {
 	args := os.Args
-
-	if len(args) > 2 {
-		if args[1] == "artisan" {
-			cliApp := app.Instance()
-			var cliArgs []string
-			cliArgs = append(cliArgs, args[0])
-
-			for i := 2; i < len(args); i++ {
-				cliArgs = append(cliArgs, args[i])
-			}
-
-			if err := cliApp.Run(cliArgs); err != nil {
-				log.Fatalln(err.Error())
-			}
-
-			os.Exit(0)
-		}
-	}
+	app.run(args)
 }
 
 //Instance Get CLI instance.
@@ -65,5 +48,26 @@ func (app *Application) Register(commands []support.Command) {
 		}
 
 		cliInstance.Commands = append(cliInstance.Commands, &cliCommand)
+	}
+}
+
+//run Run the command. args include: ["./main", "artisan", "command"]
+func (app *Application) run(args []string) {
+	if len(args) > 2 {
+		if args[1] == "artisan" {
+			cliApp := app.Instance()
+			var cliArgs []string
+			cliArgs = append(cliArgs, args[0])
+
+			for i := 2; i < len(args); i++ {
+				cliArgs = append(cliArgs, args[i])
+			}
+
+			if err := cliApp.Run(cliArgs); err != nil {
+				log.Fatalln(err.Error())
+			}
+
+			os.Exit(0)
+		}
 	}
 }
