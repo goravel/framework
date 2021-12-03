@@ -16,6 +16,7 @@ func init() {
 type Application struct {
 }
 
+//Init Listen to artisan, Run the registered commands.
 func (app *Application) Init() {
 	args := os.Args
 
@@ -38,10 +39,12 @@ func (app *Application) Init() {
 	}
 }
 
+//Instance Get CLI instance.
 func (app *Application) Instance() *cli.App {
 	return cliInstance
 }
 
+//Register Register all of the commands.
 func (app *Application) Register(commands []support.Command) {
 	for _, command := range commands {
 		command := command

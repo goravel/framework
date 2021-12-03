@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/goravel/framework/database/helpers"
 	"github.com/goravel/framework/support/facades"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -13,7 +14,7 @@ type Application struct {
 
 func (app *Application) Init() *gorm.DB {
 	var db *gorm.DB
-	config := app.Config()
+	config := helpers.GetDatabaseConfig()
 	if config["host"] == "" || config["username"] == "" {
 		return db
 	}
@@ -38,15 +39,4 @@ func (app *Application) Init() *gorm.DB {
 	})
 
 	return db
-}
-
-func (app *Application) Config() map[string]string {
-	return map[string]string{
-		"host":     facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".host"),
-		"port":     facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".port"),
-		"database": facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".database"),
-		"username": facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".username"),
-		"password": facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".password"),
-		"charset":  facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".charset"),
-	}
 }

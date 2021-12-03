@@ -9,18 +9,21 @@ import (
 type ServiceProvider struct {
 }
 
+//Boot Bootstrap any application services after register.
 func (database *ServiceProvider) Boot() {
 
 }
 
+//Register Register any application services.
 func (database *ServiceProvider) Register() {
 	app := Application{}
 	facades.DB = app.Init()
 
-	database.registerCommand()
+	database.registerCommands()
 }
 
-func (database *ServiceProvider) registerCommand() {
+//registerCommands Register the given commands.
+func (database *ServiceProvider) registerCommands() {
 	facades.Artisan.Register([]support.Command{
 		migrations.MigrateMakeCommand{},
 		migrations.MigrateCommand{},

@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/goravel/framework/database/helpers"
 	"github.com/goravel/framework/support/facades"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -16,36 +17,33 @@ import (
 type MigrateCommand struct {
 }
 
+//Signature The name and signature of the console command.
 func (receiver MigrateCommand) Signature() string {
 	return "migrate"
 }
 
+//Description The console command description.
 func (receiver MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
+//Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
 func (receiver MigrateCommand) Flags() []cli.Flag {
 	var flags []cli.Flag
 
 	return flags
 }
 
+//Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
 func (receiver MigrateCommand) Subcommands() []*cli.Command {
 	var subcommands []*cli.Command
 
 	return subcommands
 }
 
+//Handle Execute the console command.
 func (receiver MigrateCommand) Handle(c *cli.Context) error {
-	config := map[string]string{
-		"host":     facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".host"),
-		"port":     facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".port"),
-		"database": facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".database"),
-		"username": facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".username"),
-		"password": facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".password"),
-		"charset":  facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".charset"),
-	}
-
+	config := helpers.GetDatabaseConfig()
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%t&loc=%s",
 		config["username"], config["password"], config["host"], config["port"], config["database"], config["charset"], true, "Local")
 
@@ -63,13 +61,15 @@ func (receiver MigrateCommand) Handle(c *cli.Context) error {
 	}
 
 	// Run migrations
-	driver, err := mysql.WithInstance(db, &mysql.Config{})
+	driver, err := mysql.WithInstance(db, &mysql.Config{
+		MigrationsTable: facades.Config.GetString("database.migrations"),
+	})
 	if err != nil {
 		log.Fatalf("Could not start sql migration: %v", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", *migrationDir), // file://path/to/directory
+		fmt.Sprintf("file://%s", *migrationDir),
 		"mysql", driver)
 
 	if err != nil {
