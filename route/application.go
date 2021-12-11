@@ -9,7 +9,9 @@ type Application struct {
 }
 
 func (app *Application) Init() *gin.Engine {
-	if facades.Config.GetString("app.env") == "production" {
+	if facades.Config.GetBool("app.debug") {
+		gin.SetMode(gin.DebugMode)
+	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
 

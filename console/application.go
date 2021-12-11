@@ -7,10 +7,10 @@ import (
 	"os"
 )
 
-var cliInstance *cli.App
+var consoleInstance *cli.App
 
 func init() {
-	cliInstance = cli.NewApp()
+	consoleInstance = cli.NewApp()
 }
 
 type Application struct {
@@ -22,9 +22,9 @@ func (app *Application) Init() {
 	app.run(args)
 }
 
-//Instance Get CLI instance.
-func (app *Application) Instance() *cli.App {
-	return cliInstance
+//GetInstance Get CLI instance.
+func (app *Application) GetInstance() *cli.App {
+	return consoleInstance
 }
 
 //Register Register all of the commands.
@@ -47,7 +47,7 @@ func (app *Application) Register(commands []support.Command) {
 			cliCommand.Subcommands = command.Subcommands()
 		}
 
-		cliInstance.Commands = append(cliInstance.Commands, &cliCommand)
+		consoleInstance.Commands = append(consoleInstance.Commands, &cliCommand)
 	}
 }
 
@@ -55,7 +55,7 @@ func (app *Application) Register(commands []support.Command) {
 func (app *Application) run(args []string) {
 	if len(args) > 2 {
 		if args[1] == "artisan" {
-			cliApp := app.Instance()
+			cliApp := app.GetInstance()
 			var cliArgs []string
 			cliArgs = append(cliArgs, args[0])
 

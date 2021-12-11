@@ -41,7 +41,7 @@ func TestRegister(t *testing.T) {
 		TestCommand{},
 	})
 
-	assert.Equal(t, len(app.Instance().Commands), 1)
+	assert.Equal(t, len(app.GetInstance().Commands), 1)
 }
 
 func TestRun(t *testing.T) {
