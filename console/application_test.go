@@ -37,15 +37,17 @@ func (receiver TestCommand) Handle(c *cli.Context) error {
 
 func TestRegister(t *testing.T) {
 	app := Application{}
+	app.Init()
 	app.Register([]support.Command{
 		TestCommand{},
 	})
 
-	assert.Equal(t, len(app.GetInstance().Commands), 1)
+	assert.Equal(t, len(app.cli.Commands), 1)
 }
 
 func TestRun(t *testing.T) {
 	app := Application{}
+	app.Init()
 	app.Register([]support.Command{
 		TestCommand{},
 	})

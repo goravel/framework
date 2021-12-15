@@ -7,27 +7,20 @@ import (
 	"os"
 )
 
-var consoleInstance *cli.App
-
-func init() {
-	consoleInstance = cli.NewApp()
-}
-
 type Application struct {
+	cli *cli.App
 }
 
 //Init Listen to artisan, Run the registered commands.
-func (app *Application) Init() {
+func (app *Application) Init() *Application {
+	app.cli = cli.NewApp()
 	args := os.Args
 	app.run(args)
+
+	return app
 }
 
-//GetInstance Get CLI instance.
-func (app *Application) GetInstance() *cli.App {
-	return consoleInstance
-}
-
-//Register Register all of the commands.
+//Register Register commands.
 func (app *Application) Register(commands []support.Command) {
 	for _, command := range commands {
 		command := command
@@ -47,15 +40,19 @@ func (app *Application) Register(commands []support.Command) {
 			cliCommand.Subcommands = command.Subcommands()
 		}
 
-		consoleInstance.Commands = append(consoleInstance.Commands, &cliCommand)
+		app.cli.Commands = append(app.cli.Commands, &cliCommand)
 	}
 }
 
-//run Run the command. args include: ["./main", "artisan", "command"]
+//Call Run an Artisan console command by name.
+func (app *Application) Call(command string)  {
+
+}
+
+//run Run a command. args include: ["./main", "artisan", "command"]
 func (app *Application) run(args []string) {
 	if len(args) > 2 {
 		if args[1] == "artisan" {
-			cliApp := app.GetInstance()
 			var cliArgs []string
 			cliArgs = append(cliArgs, args[0])
 
@@ -63,7 +60,7 @@ func (app *Application) run(args []string) {
 				cliArgs = append(cliArgs, args[i])
 			}
 
-			if err := cliApp.Run(cliArgs); err != nil {
+			if err := app.cli.Run(cliArgs); err != nil {
 				log.Fatalln(err.Error())
 			}
 

@@ -1,11 +1,15 @@
 package config
 
 import (
+	"github.com/goravel/framework/support"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
 func TestInit(t *testing.T) {
+	support.CreateEnv()
+
 	app := Application{}
 	app.Init()
 	assert.Nil(t, nil)
@@ -45,12 +49,14 @@ func TestGetInt(t *testing.T) {
 	app := Application{}
 	app.Init()
 
-	assert.Equal(t, app.GetInt("APP_INT"), 1)
+	assert.Equal(t, app.GetInt("DB_PORT"), 3306)
 }
 
 func TestGetBool(t *testing.T) {
 	app := Application{}
 	app.Init()
 
-	assert.Equal(t, app.GetBool("APP_BOOL"), true)
+	assert.Equal(t, app.GetBool("APP_DEBUG"), true)
+
+	os.Remove(".env")
 }

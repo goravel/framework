@@ -11,12 +11,12 @@ type ArtisanServiceProvider struct {
 
 //Boot Bootstrap any application services after register.
 func (artisan *ArtisanServiceProvider) Boot() {
-
+	artisan.registerCommands()
 }
 
 //Register Register any application services.
 func (artisan *ArtisanServiceProvider) Register() {
-	artisan.registerCommands()
+
 }
 
 func (artisan *ArtisanServiceProvider) registerCommands() {

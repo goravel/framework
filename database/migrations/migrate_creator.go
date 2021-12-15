@@ -59,6 +59,13 @@ func (receiver MigrateCreator) getPath(name string, category string) string {
 //createFile Create a file at the given path.
 func (receiver MigrateCreator) createFile(path string, content string) {
 	file, err := os.Create(path)
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			log.Fatalln("Close file fail:", err.Error())
+		}
+	}()
+
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
