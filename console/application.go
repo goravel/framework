@@ -2,9 +2,10 @@ package console
 
 import (
 	"github.com/goravel/framework/console/support"
+	support2 "github.com/goravel/framework/support"
 	"github.com/urfave/cli/v2"
-	"log"
 	"os"
+	"strings"
 )
 
 type Application struct {
@@ -14,8 +15,6 @@ type Application struct {
 //Init Listen to artisan, Run the registered commands.
 func (app *Application) Init() *Application {
 	app.cli = cli.NewApp()
-	args := os.Args
-	app.run(args)
 
 	return app
 }
@@ -45,26 +44,22 @@ func (app *Application) Register(commands []support.Command) {
 }
 
 //Call Run an Artisan console command by name.
-func (app *Application) Call(command string)  {
-
+func (app *Application) Call(command string) {
+	app.Run(append([]string{os.Args[0], "artisan"}, strings.Split(command, " ")...))
 }
 
-//run Run a command. args include: ["./main", "artisan", "command"]
-func (app *Application) run(args []string) {
+//Run Run a command. Args come from os.Args.
+func (app *Application) Run(args []string) {
 	if len(args) > 2 {
 		if args[1] == "artisan" {
-			var cliArgs []string
-			cliArgs = append(cliArgs, args[0])
-
-			for i := 2; i < len(args); i++ {
-				cliArgs = append(cliArgs, args[i])
-			}
-
+			cliArgs := append([]string{args[0]}, args[2:]...)
 			if err := app.cli.Run(cliArgs); err != nil {
-				log.Fatalln(err.Error())
+				panic(err.Error())
 			}
 
-			os.Exit(0)
+			if !support2.RunInTest() {
+				os.Exit(0)
+			}
 		}
 	}
 }

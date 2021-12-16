@@ -1,11 +1,11 @@
 package log
 
 import (
+	"errors"
 	"github.com/goravel/framework/log/logger"
-	"github.com/goravel/framework/support"
+	support2 "github.com/goravel/framework/log/support"
 	"github.com/goravel/framework/support/facades"
 	"github.com/sirupsen/logrus"
-	"log"
 )
 
 type Application struct {
@@ -15,13 +15,16 @@ type Application struct {
 func (app *Application) Init() *logrus.Logger {
 	app.log = logrus.New()
 	app.log.SetLevel(logrus.TraceLevel)
-	app.registerHook(facades.Config.GetString("logging.default"))
+	if err := app.registerHook(facades.Config.GetString("logging.default")); err != nil {
+		panic("Log Init error: " + err.Error())
+	}
 
 	return app.log
 }
 
 //registerHook Register hook
-func (app *Application) registerHook(channel string) {
+func (app *Application) registerHook(channel string) error {
+	var hook support2.Logger
 	driver := facades.Config.GetString("logging.channels." + channel + ".driver")
 	configPath := "logging.channels." + channel
 
@@ -29,19 +32,31 @@ func (app *Application) registerHook(channel string) {
 	case "stack":
 		for _, stackChannel := range facades.Config.Get("logging.channels." + channel + ".channels").([]string) {
 			if stackChannel == channel {
-				log.Fatalln("Stack drive can't include self channel.")
+				return errors.New("stack drive can't include self channel")
 			}
 
-			app.registerHook(stackChannel)
+			if err := app.registerHook(stackChannel); err != nil {
+				return err
+			}
 		}
+
+		return nil
 	case "single":
-		app.log.AddHook(logger.Single{}.Handle(configPath))
+		hook = logger.Single{}
 	case "daily":
-		app.log.AddHook(logger.Daily{}.Handle(configPath))
+		hook = logger.Daily{}
 	case "custom":
-		customLogger := facades.Config.Get("logging.channels." + channel + ".via").(support.Logger)
-		app.log.AddHook(customLogger.Handle(configPath))
+		hook = facades.Config.Get("logging.channels." + channel + ".via").(support2.Logger)
 	default:
-		log.Fatalln("Error logging channel: " + channel)
+		return errors.New("Error logging channel: " + channel)
 	}
+
+	logHook, err := hook.Handle(configPath)
+	if err != nil {
+		return err
+	}
+
+	app.log.AddHook(logHook)
+
+	return nil
 }

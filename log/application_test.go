@@ -1,7 +1,6 @@
 package log
 
 import (
-	"bufio"
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support"
@@ -9,14 +8,15 @@ import (
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"log"
 	"os"
 	"testing"
 	"time"
 )
 
 func TestLog(t *testing.T) {
+	err := support.CreateEnv()
+	assert.Nil(t, err)
+
 	addDefaultConfig()
 
 	app := Application{}
@@ -40,62 +40,33 @@ func TestLog(t *testing.T) {
 	assert.FileExists(t, singleErrorFile)
 	assert.FileExists(t, customFile)
 
-	assert.Equal(t, 2, getLineNum(dailyFile))
-	assert.Equal(t, 2, getLineNum(singleFile))
-	assert.Equal(t, 1, getLineNum(singleErrorFile))
-	assert.Equal(t, 2, getLineNum(customFile))
+	assert.Equal(t, 2, support.GetLineNum(dailyFile))
+	assert.Equal(t, 2, support.GetLineNum(singleFile))
+	assert.Equal(t, 1, support.GetLineNum(singleErrorFile))
+	assert.Equal(t, 2, support.GetLineNum(customFile))
 
-	os.Remove(".env")
-	os.RemoveAll("storage")
+	err = os.Remove(".env")
+	assert.Nil(t, err)
+
+	err = os.RemoveAll("storage")
+	assert.Nil(t, err)
 }
 
 type CustomTest struct {
 }
 
-func (single CustomTest) Handle(configPath string) logrus.Hook {
+func (custom CustomTest) Handle(configPath string) (logrus.Hook, error) {
 	logPath := facades.Config.GetString(configPath + ".path")
 
 	return lfshook.NewHook(
 		logPath,
 		&formatters.General{},
-	)
-}
-
-//getLineNum Get file line num.
-func getLineNum(fileName string) int {
-	total := 0
-	file, err := os.OpenFile(fileName, os.O_RDONLY, 0444)
-	if err != nil {
-		log.Fatalln("Open file fail:", err.Error())
-	}
-
-	buf := bufio.NewReader(file)
-
-	for {
-		_, err := buf.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				log.Fatalln("Read file fail:", err.Error())
-			}
-		}
-
-		total++
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			log.Fatalln("Close file fail:", err.Error())
-		}
-	}()
-
-	return total
+	), nil
 }
 
 //addDefaultConfig Add default config for test.
 func addDefaultConfig() {
-	support.CreateEnv()
+
 	configApp := config.ServiceProvider{}
 	configApp.Register()
 

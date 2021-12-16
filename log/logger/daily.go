@@ -1,12 +1,12 @@
 package logger
 
 import (
+	"errors"
 	rotatelogs "github.com/goravel/file-rotatelogs/v2"
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
-	"log"
 	"path"
 	"strings"
 	"time"
@@ -15,11 +15,12 @@ import (
 type Daily struct {
 }
 
-func (daily Daily) Handle(configPath string) logrus.Hook {
+func (daily Daily) Handle(configPath string) (logrus.Hook, error) {
+	var hook logrus.Hook
 	logPath := facades.Config.GetString(configPath + ".path")
 
 	if logPath == "" {
-		log.Fatalln("Error log path.")
+		return hook, errors.New("error log path")
 	}
 
 	ext := path.Ext(logPath)
@@ -28,15 +29,15 @@ func (daily Daily) Handle(configPath string) logrus.Hook {
 	writer, err := rotatelogs.New(
 		logPath+"-%Y-%m-%d"+ext,
 		rotatelogs.WithRotationTime(time.Duration(24)*time.Hour),
-		rotatelogs.WithRotationCount(uint(facades.Config.GetInt(configPath + ".days"))),
+		rotatelogs.WithRotationCount(uint(facades.Config.GetInt(configPath+".days"))),
 	)
 
 	if err != nil {
-		log.Fatalln("Config local file system for logger error: ", err.Error())
+		return hook, errors.New("Config local file system for logger error: " + err.Error())
 	}
 
 	return lfshook.NewHook(
 		setLevel(facades.Config.GetString(configPath+".level"), writer),
 		&formatters.General{},
-	)
+	), nil
 }

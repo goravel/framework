@@ -8,11 +8,12 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	support.CreateEnv()
-
-	app := Application{}
-	app.Init()
-	assert.Nil(t, nil)
+	err := support.CreateEnv()
+	assert.Nil(t, err)
+	assert.NotPanics(t, func() {
+		app := Application{}
+		app.Init()
+	})
 }
 
 func TestEnv(t *testing.T) {

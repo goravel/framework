@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"github.com/goravel/framework/database/helpers"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -14,7 +14,7 @@ type Application struct {
 
 func (app *Application) Init() *gorm.DB {
 	var db *gorm.DB
-	config := helpers.GetDatabaseConfig()
+	config := support.GetDatabaseConfig()
 	if config["host"] == "" || config["username"] == "" {
 		return db
 	}

@@ -1,10 +1,10 @@
 package console
 
 import (
-	"errors"
+	"fmt"
 	"github.com/goravel/framework/foundation"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/support/str"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"log"
@@ -43,17 +43,17 @@ func (receiver KeyGenerateCommand) Handle(c *cli.Context) error {
 	key := receiver.generateRandomKey()
 
 	if err := receiver.setKeyInEnvironmentFile(key); err != nil {
-		log.Fatalln(err.Error())
+		return err
 	}
 
-	log.Println("Application key set successfully.")
+	fmt.Println("Application key set successfully.")
 
 	return nil
 }
 
 //generateRandomKey Generate a random key for the application.
 func (receiver KeyGenerateCommand) generateRandomKey() string {
-	return support.Str{}.Random(32)
+	return str.Random(32)
 }
 
 //setKeyInEnvironmentFile Set the application key in the environment file.
@@ -61,7 +61,7 @@ func (receiver KeyGenerateCommand) setKeyInEnvironmentFile(key string) error {
 	currentKey := facades.Config.GetString("app.key")
 
 	if currentKey != "" {
-		return errors.New("Exist application key.")
+		log.Fatalln("Exist application key.")
 	}
 
 	err := receiver.writeNewEnvironmentFileWith(key)

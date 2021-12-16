@@ -2,16 +2,16 @@ package migrations
 
 import (
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/goravel/framework/database/helpers"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
 	"github.com/urfave/cli/v2"
-	"log"
 )
 
 type MigrateCommand struct {
@@ -43,7 +43,7 @@ func (receiver MigrateCommand) Subcommands() []*cli.Command {
 
 //Handle Execute the console command.
 func (receiver MigrateCommand) Handle(c *cli.Context) error {
-	config := helpers.GetDatabaseConfig()
+	config := support.GetDatabaseConfig()
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%t&loc=%s",
 		config["username"], config["password"], config["host"], config["port"], config["database"], config["charset"], true, "Local")
 
@@ -53,11 +53,11 @@ func (receiver MigrateCommand) Handle(c *cli.Context) error {
 
 	db, err := sql.Open("mysql", *mysqlDSN)
 	if err != nil {
-		log.Fatalf("Could not connect to database: %v", err)
+		return errors.New("Could not connect to database: " + err.Error())
 	}
 
 	if err := db.Ping(); err != nil {
-		log.Fatalf("Could not ping to database: %v", err)
+		return errors.New("Could not ping to database: " + err.Error())
 	}
 
 	// Run migrations
@@ -65,7 +65,7 @@ func (receiver MigrateCommand) Handle(c *cli.Context) error {
 		MigrationsTable: facades.Config.GetString("database.migrations"),
 	})
 	if err != nil {
-		log.Fatalf("Could not start sql migration: %v", err)
+		return errors.New("Could not start sql migration: " + err.Error())
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
@@ -73,14 +73,14 @@ func (receiver MigrateCommand) Handle(c *cli.Context) error {
 		"mysql", driver)
 
 	if err != nil {
-		log.Fatalf("Migration init failed: %v", err)
+		return errors.New("Migration init failed: " + err.Error())
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Migration failed: %v", err)
+		return errors.New("Migration failed: " + err.Error())
 	}
 
-	log.Println("Migration success")
+	fmt.Println("Migration success")
 
 	return nil
 }

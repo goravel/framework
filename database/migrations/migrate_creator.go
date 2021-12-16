@@ -2,8 +2,8 @@ package migrations
 
 import (
 	"github.com/goravel/framework/support/facades"
-	"log"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -57,21 +57,20 @@ func (receiver MigrateCreator) getPath(name string, category string) string {
 }
 
 //createFile Create a file at the given path.
-func (receiver MigrateCreator) createFile(path string, content string) {
-	file, err := os.Create(path)
+func (receiver MigrateCreator) createFile(file string, content string) {
+	err := os.MkdirAll(path.Dir(file), os.ModePerm)
+
+	f, err := os.Create(file)
 	defer func() {
-		err = file.Close()
-		if err != nil {
-			log.Fatalln("Close file fail:", err.Error())
-		}
+		f.Close()
 	}()
 
 	if err != nil {
-		log.Fatalln(err.Error())
+		panic(err.Error())
 	}
 
-	_, err = file.WriteString(content)
+	_, err = f.WriteString(content)
 	if err != nil {
-		log.Fatalln(err.Error())
+		panic(err.Error())
 	}
 }

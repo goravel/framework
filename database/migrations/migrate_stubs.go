@@ -18,15 +18,18 @@ func (receiver MigrateStubs) CreateUp() string {
 
 //CreateDown Create down migration content.
 func (receiver MigrateStubs) CreateDown() string {
-	return `DROP TABLE IF EXISTS DummyTable;`
+	return `DROP TABLE IF EXISTS DummyTable;
+`
 }
 
 //UpdateUp Update up migration content.
 func (receiver MigrateStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column varchar(255) COMMENT '';`
+	return `ALTER TABLE DummyTable ADD column varchar(255) COMMENT '';
+`
 }
 
 //UpdateDown Update down migration content.
 func (receiver MigrateStubs) UpdateDown() string {
-	return `ALTER TABLE DummyTable DROP COLUMN column;`
+	return `ALTER TABLE DummyTable DROP COLUMN column;
+`
 }

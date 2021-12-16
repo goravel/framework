@@ -15,47 +15,53 @@ func init() {
 	app.bootBaseServiceProviders()
 }
 
-const Version string = "0.0.1"
+const Version string = "0.1.2"
 const EnvironmentFile string = ".env"
 
 type Application struct {
 }
 
-//Boot Register and bootstrap all of the configured service providers.
+//Boot Register and bootstrap configured service providers.
 func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
+
+	app.bootArtisan()
 }
 
-//getBaseServiceProviders Get all of the base service providers.
+//bootArtisan Boot artisan command.
+func (app *Application) bootArtisan() {
+	facades.Artisan.Run(os.Args)
+}
+
+//getBaseServiceProviders Get base service providers.
 func (app *Application) getBaseServiceProviders() []support.ServiceProvider {
 	return []support.ServiceProvider{
 		&config.ServiceProvider{},
 	}
 }
 
-//getConfiguredServiceProviders Get all of the configured service providers.
+//getConfiguredServiceProviders Get configured service providers.
 func (app *Application) getConfiguredServiceProviders() []support.ServiceProvider {
-
 	return facades.Config.Get("app.providers").([]support.ServiceProvider)
 }
 
-//registerBaseServiceProviders Register all of the base service providers.
+//registerBaseServiceProviders Register base service providers.
 func (app *Application) registerBaseServiceProviders() {
 	app.registerServiceProviders(app.getBaseServiceProviders())
 }
 
-//bootBaseServiceProviders Bootstrap all of the base service providers.
+//bootBaseServiceProviders Bootstrap base service providers.
 func (app *Application) bootBaseServiceProviders() {
 	app.bootServiceProviders(app.getBaseServiceProviders())
 }
 
-//registerConfiguredServiceProviders Register all of the configured service providers.
+//registerConfiguredServiceProviders Register configured service providers.
 func (app *Application) registerConfiguredServiceProviders() {
 	app.registerServiceProviders(app.getConfiguredServiceProviders())
 }
 
-//bootConfiguredServiceProviders Bootstrap all of the configured service providers.
+//bootConfiguredServiceProviders Bootstrap configured service providers.
 func (app *Application) bootConfiguredServiceProviders() {
 	app.bootServiceProviders(app.getConfiguredServiceProviders())
 }

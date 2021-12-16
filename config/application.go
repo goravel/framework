@@ -1,9 +1,9 @@
 package config
 
 import (
+	"github.com/goravel/framework/support"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-	"log"
 )
 
 type Application struct {
@@ -17,7 +17,9 @@ func (app *Application) Init() *Application {
 	app.vip.AddConfigPath(".")
 	err := app.vip.ReadInConfig()
 	if err != nil {
-		log.Fatalln(err.Error())
+		if !support.RunInTest() {
+			panic(err.Error())
+		}
 	}
 	app.vip.SetEnvPrefix("goravel")
 	app.vip.AutomaticEnv()

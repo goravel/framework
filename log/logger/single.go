@@ -1,12 +1,12 @@
 package logger
 
 import (
+	"errors"
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"os"
 	"path"
 )
@@ -14,24 +14,25 @@ import (
 type Single struct {
 }
 
-func (single Single) Handle(configPath string) logrus.Hook {
+func (single Single) Handle(configPath string) (logrus.Hook, error) {
+	var hook logrus.Hook
 	logPath := facades.Config.GetString(configPath + ".path")
 
 	err := os.MkdirAll(path.Dir(logPath), os.ModePerm)
 
 	if err != nil {
-		log.Fatalln("Create dir fail:", err.Error())
+		return hook, errors.New("Create dir fail:" + err.Error())
 	}
 
 	writer, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
 	if err != nil {
-		log.Fatalln("Failed to log to file:", err.Error())
+		return hook, errors.New("Failed to log to file:" + err.Error())
 	}
 
 	return lfshook.NewHook(
 		setLevel(facades.Config.GetString(configPath+".level"), writer),
 		&formatters.General{},
-	)
+	), nil
 }
 
 func setLevel(level string, writer io.Writer) lfshook.WriterMap {

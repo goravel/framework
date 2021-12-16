@@ -31,8 +31,14 @@ func (receiver TestCommand) Subcommands() []*cli.Command {
 }
 
 func (receiver TestCommand) Handle(c *cli.Context) error {
-
 	return nil
+}
+
+func TestInit(t *testing.T) {
+	assert.NotPanics(t, func() {
+		app := Application{}
+		app.Init()
+	})
 }
 
 func TestRegister(t *testing.T) {
@@ -52,11 +58,7 @@ func TestRun(t *testing.T) {
 		TestCommand{},
 	})
 
-	assert.Panics(t, func() {
-		app.run([]string{
-			"./main",
-			"artisan",
-			"test",
-		})
+	assert.NotPanics(t, func() {
+		app.Call("test")
 	})
 }

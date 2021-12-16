@@ -1,9 +1,10 @@
 package migrations
 
 import (
+	"errors"
+	"fmt"
 	"github.com/goravel/framework/database/migrations"
 	"github.com/urfave/cli/v2"
-	"log"
 )
 
 type MigrateMakeCommand struct {
@@ -37,10 +38,10 @@ func (receiver MigrateMakeCommand) Subcommands() []*cli.Command {
 func (receiver MigrateMakeCommand) Handle(c *cli.Context) error {
 	// It's possible for the developer to specify the tables to modify in this
 	// schema operation. The developer may also specify if this table needs
-	// to be freshly created so we can create the appropriate migrations.
+	// to be freshly created, so we can create the appropriate migrations.
 	name := c.Args().First()
 	if name == "" {
-		log.Fatalln(`Not enough arguments (missing: "name").`)
+		return errors.New("Not enough arguments (missing: name) ")
 	}
 
 	// We will attempt to guess the table name if this the migration has
@@ -51,7 +52,7 @@ func (receiver MigrateMakeCommand) Handle(c *cli.Context) error {
 	//Write the migration file to disk.
 	migrations.MigrateCreator{}.Create(name, table, create)
 
-	log.Printf("Created Migration: %s", name)
+	fmt.Printf("Created Migration: %s", name)
 
 	return nil
 }
