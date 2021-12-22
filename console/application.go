@@ -2,7 +2,7 @@ package console
 
 import (
 	"github.com/goravel/framework/console/support"
-	support2 "github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/testing"
 	"github.com/urfave/cli/v2"
 	"os"
 	"strings"
@@ -57,7 +57,7 @@ func (app *Application) Run(args []string) {
 				panic(err.Error())
 			}
 
-			if !support2.RunInTest() {
+			if !testing.RunInTest() {
 				os.Exit(0)
 			}
 		}

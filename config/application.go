@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/testing"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )
@@ -17,7 +17,7 @@ func (app *Application) Init() *Application {
 	app.vip.AddConfigPath(".")
 	err := app.vip.ReadInConfig()
 	if err != nil {
-		if !support.RunInTest() {
+		if !testing.RunInTest() {
 			panic(err.Error())
 		}
 	}

@@ -6,13 +6,14 @@ import (
 	support2 "github.com/goravel/framework/console/support"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
+	testing2 "github.com/goravel/framework/support/testing"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
 
 func TestKeyGenerateCommand(t *testing.T) {
-	err := support.CreateEnv()
+	err := testing2.CreateEnv()
 	assert.Nil(t, err)
 
 	configApp := config.ServiceProvider{}

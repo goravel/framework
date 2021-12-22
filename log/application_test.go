@@ -5,6 +5,7 @@ import (
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
+	testing2 "github.com/goravel/framework/support/testing"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	err := support.CreateEnv()
+	err := testing2.CreateEnv()
 	assert.Nil(t, err)
 
 	addDefaultConfig()

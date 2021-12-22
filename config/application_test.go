@@ -1,14 +1,14 @@
 package config
 
 import (
-	"github.com/goravel/framework/support"
+	testing2 "github.com/goravel/framework/support/testing"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
 
 func TestInit(t *testing.T) {
-	err := support.CreateEnv()
+	err := testing2.CreateEnv()
 	assert.Nil(t, err)
 	assert.NotPanics(t, func() {
 		app := Application{}
@@ -59,5 +59,6 @@ func TestGetBool(t *testing.T) {
 
 	assert.Equal(t, app.GetBool("APP_DEBUG"), true)
 
-	os.Remove(".env")
+	err := os.Remove(".env")
+	assert.Nil(t, err)
 }
