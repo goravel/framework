@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
+	"github.com/goravel/framework/cache/support"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/support/facades"
 	"runtime/debug"
@@ -15,8 +16,12 @@ func (app *Application) Init() cache.Store {
 	var store cache.Store
 
 	defaultStore := facades.Config.GetString("cache.default")
-	if facades.Config.GetString("cache.stores."+defaultStore+".driver") == "redis" {
+	driver := facades.Config.GetString("cache.stores." + defaultStore + ".driver")
+	if driver == "redis" {
 		return app.createRedisDriver()
+	}
+	if driver == "custom" {
+		return facades.Config.Get("cache.stores." + defaultStore + ".via").(support.Store).Handle()
 	}
 
 	facades.Log.Warnf("Not supported cache store:" + defaultStore)
@@ -41,7 +46,8 @@ func (app *Application) createRedisDriver() *Redis {
 		facades.Log.Warnf("Failed to link redis:%s, %s\n%+v", pong, err, string(debug.Stack()))
 	}
 
-	return &Redis{Redis: client,
+	return &Redis{
+		Redis:  client,
 		Prefix: facades.Config.GetString("cache.prefix" + ":"),
 	}
 }
