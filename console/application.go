@@ -3,12 +3,14 @@ package console
 import (
 	"fmt"
 	"github.com/goravel/framework/console/support"
-	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/support/testing"
 	"github.com/urfave/cli/v2"
 	"os"
 	"strings"
 )
+
+const Version string = "0.1.3"
+const EnvironmentFile string = ".env"
 
 type Application struct {
 	cli *cli.App
@@ -18,7 +20,7 @@ type Application struct {
 func (app *Application) Init() *Application {
 	app.cli = cli.NewApp()
 	app.cli.Name = "Goravel Framework"
-	app.cli.Usage = foundation.Version
+	app.cli.Usage = Version
 	app.cli.UsageText = "artisan [global options] command [command options] [arguments...]"
 
 	return app
@@ -62,7 +64,7 @@ func (app *Application) Run(args []string) {
 			}
 
 			if args[2] == "-V" || args[2] == "--version" {
-				fmt.Println("Goravel Framework " + foundation.Version)
+				fmt.Println("Goravel Framework " + Version)
 			} else {
 				cliArgs := append([]string{args[0]}, args[2:]...)
 				if err := app.cli.Run(cliArgs); err != nil {

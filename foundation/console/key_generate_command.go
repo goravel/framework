@@ -2,7 +2,7 @@ package console
 
 import (
 	"fmt"
-	"github.com/goravel/framework/foundation"
+	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/support/facades"
 	"github.com/goravel/framework/support/str"
 	"github.com/urfave/cli/v2"
@@ -75,15 +75,14 @@ func (receiver KeyGenerateCommand) setKeyInEnvironmentFile(key string) error {
 
 //writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (receiver KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
-	rootApp := foundation.Application{}
-	content, err := ioutil.ReadFile(rootApp.EnvironmentFile())
+	content, err := ioutil.ReadFile(console.EnvironmentFile)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "APP_KEY="+facades.Config.GetString("app.key"), "APP_KEY="+key, 1)
 
-	err = ioutil.WriteFile(rootApp.EnvironmentFile(), []byte(newContent), 0644)
+	err = ioutil.WriteFile(console.EnvironmentFile, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}

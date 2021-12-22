@@ -15,9 +15,6 @@ func init() {
 	app.bootBaseServiceProviders()
 }
 
-const Version string = "0.1.3"
-const EnvironmentFile string = ".env"
-
 type Application struct {
 }
 
@@ -78,11 +75,6 @@ func (app *Application) bootServiceProviders(serviceProviders []support.ServiceP
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Boot()
 	}
-}
-
-//EnvironmentFile Get the environment file the application is using.
-func (app *Application) EnvironmentFile() string {
-	return EnvironmentFile
 }
 
 //RunningInConsole Determine if the application is running in the console.
