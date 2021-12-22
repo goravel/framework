@@ -15,7 +15,7 @@ func init() {
 	app.bootBaseServiceProviders()
 }
 
-const Version string = "0.1.2"
+const Version string = "0.1.3"
 const EnvironmentFile string = ".env"
 
 type Application struct {
@@ -89,5 +89,5 @@ func (app *Application) EnvironmentFile() string {
 func (app *Application) RunningInConsole() bool {
 	args := os.Args
 
-	return len(args) > 2 && args[1] == "artisan"
+	return len(args) >= 2 && args[1] == "artisan"
 }

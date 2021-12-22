@@ -1,7 +1,9 @@
 package console
 
 import (
+	"fmt"
 	"github.com/goravel/framework/console/support"
+	"github.com/goravel/framework/foundation"
 	"github.com/goravel/framework/support/testing"
 	"github.com/urfave/cli/v2"
 	"os"
@@ -15,6 +17,9 @@ type Application struct {
 //Init Listen to artisan, Run the registered commands.
 func (app *Application) Init() *Application {
 	app.cli = cli.NewApp()
+	app.cli.Name = "Goravel Framework"
+	app.cli.Usage = foundation.Version
+	app.cli.UsageText = "artisan [global options] command [command options] [arguments...]"
 
 	return app
 }
@@ -50,11 +55,19 @@ func (app *Application) Call(command string) {
 
 //Run Run a command. Args come from os.Args.
 func (app *Application) Run(args []string) {
-	if len(args) > 2 {
+	if len(args) >= 2 {
 		if args[1] == "artisan" {
-			cliArgs := append([]string{args[0]}, args[2:]...)
-			if err := app.cli.Run(cliArgs); err != nil {
-				panic(err.Error())
+			if len(args) == 2 {
+				args = append(args, "--help")
+			}
+
+			if args[2] == "-V" || args[2] == "--version" {
+				fmt.Println("Goravel Framework " + foundation.Version)
+			} else {
+				cliArgs := append([]string{args[0]}, args[2:]...)
+				if err := app.cli.Run(cliArgs); err != nil {
+					panic(err.Error())
+				}
 			}
 
 			if !testing.RunInTest() {
