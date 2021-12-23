@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const Version string = "0.1.3"
+const Version string = "0.2.2"
 const EnvironmentFile string = ".env"
 
 type Application struct {
