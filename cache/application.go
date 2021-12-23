@@ -35,8 +35,14 @@ func (app *Application) createRedisDriver() *Redis {
 		connection = "default"
 	}
 
+	host := facades.Config.GetString("database.redis." + connection + ".host")
+
+	if host == "" {
+		return &Redis{}
+	}
+
 	client := redis.NewClient(&redis.Options{
-		Addr:     facades.Config.GetString("database.redis."+connection+".host") + ":" + facades.Config.GetString("database.redis."+connection+".port"),
+		Addr:     host + ":" + facades.Config.GetString("database.redis."+connection+".port"),
 		Password: facades.Config.GetString("database.redis." + connection + ".password"),
 		DB:       facades.Config.GetInt("database.redis." + connection + ".database"),
 	})
