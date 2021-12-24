@@ -16,7 +16,12 @@ func (r *Redis) Get(key string, defaults interface{}) interface{} {
 	ctx := context.Background()
 	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
 	if err != nil {
-		return defaults
+		switch s := defaults.(type) {
+		case func() interface{}:
+			return s()
+		default:
+			return defaults
+		}
 	}
 
 	return val

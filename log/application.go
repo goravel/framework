@@ -2,8 +2,8 @@ package log
 
 import (
 	"errors"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/log/logger"
-	support2 "github.com/goravel/framework/log/support"
 	"github.com/goravel/framework/support/facades"
 	"github.com/sirupsen/logrus"
 )
@@ -24,7 +24,7 @@ func (app *Application) Init() *logrus.Logger {
 
 //registerHook Register hook
 func (app *Application) registerHook(channel string) error {
-	var hook support2.Logger
+	var hook log.Logger
 	driver := facades.Config.GetString("logging.channels." + channel + ".driver")
 	configPath := "logging.channels." + channel
 
@@ -46,7 +46,7 @@ func (app *Application) registerHook(channel string) error {
 	case "daily":
 		hook = logger.Daily{}
 	case "custom":
-		hook = facades.Config.Get("logging.channels." + channel + ".via").(support2.Logger)
+		hook = facades.Config.Get("logging.channels." + channel + ".via").(log.Logger)
 	default:
 		return errors.New("Error logging channel: " + channel)
 	}

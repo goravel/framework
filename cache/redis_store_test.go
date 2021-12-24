@@ -21,6 +21,9 @@ func TestGet(t *testing.T) {
 	r := getInstance()
 
 	assert.Equal(t, "default", r.Get("test-get", "default").(string))
+	assert.Equal(t, "default", r.Get("test-get", func() interface{} {
+		return "default"
+	}).(string))
 }
 
 func TestHas(t *testing.T) {
