@@ -12,7 +12,7 @@ func (receiver MigrateStubs) CreateUp() string {
   PRIMARY KEY (id),
   KEY idx_DummyTable_created_at (created_at),
   KEY idx_DummyTable_updated_at (updated_at)
-) ENGINE = InnoDB AUTO_INCREMENT = 1 DEFAULT CHARSET = DummyDatabaseCharset;
+) ENGINE = InnoDB DEFAULT CHARSET = DummyDatabaseCharset;
 `
 }
 
