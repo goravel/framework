@@ -1,22 +1,26 @@
 package grpc
 
 import (
-	g "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"net"
 )
 
 type Application struct {
-	server *g.Server
+	server *grpc.Server
 }
 
 func (app *Application) Init() *Application {
-	app.server = g.NewServer()
+	app.server = grpc.NewServer()
 
 	return app
 }
 
-func (app *Application) Server() *g.Server {
+func (app *Application) Server() *grpc.Server {
 	return app.server
+}
+
+func (app *Application) SetServer(server *grpc.Server) {
+	app.server = server
 }
 
 func (app *Application) Run(host string) error {

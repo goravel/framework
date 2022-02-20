@@ -15,6 +15,7 @@ Golang developers quickly build their own applications.
 - [x] Migrate
 - [x] Logger
 - [x] Cache
+- [x] gRPC
 - [ ] Queue
 - [ ] Schedule
 - [ ] Event
