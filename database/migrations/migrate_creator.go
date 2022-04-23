@@ -1,9 +1,9 @@
 package migrations
 
 import (
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
 	"os"
-	"path"
 	"strings"
 	"time"
 )
@@ -19,10 +19,10 @@ func (receiver MigrateCreator) Create(name string, table string, create bool) {
 	upStub, downStub := receiver.getStub(table, create)
 
 	//Create the up.sql file.
-	receiver.createFile(receiver.getPath(name, "up"), receiver.populateStub(upStub, table))
+	support.Helpers{}.CreateFile(receiver.getPath(name, "up"), receiver.populateStub(upStub, table))
 
 	//Create the down.sql file.
-	receiver.createFile(receiver.getPath(name, "down"), receiver.populateStub(downStub, table))
+	support.Helpers{}.CreateFile(receiver.getPath(name, "down"), receiver.populateStub(downStub, table))
 }
 
 //getStub Get the migration stub file.
@@ -54,23 +54,4 @@ func (receiver MigrateCreator) getPath(name string, category string) string {
 	pwd, _ := os.Getwd()
 
 	return pwd + "/database/migrations/" + time.Now().Format("20060102150405") + "_" + name + "." + category + ".sql"
-}
-
-//createFile Create a file at the given path.
-func (receiver MigrateCreator) createFile(file string, content string) {
-	err := os.MkdirAll(path.Dir(file), os.ModePerm)
-
-	f, err := os.Create(file)
-	defer func() {
-		f.Close()
-	}()
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	_, err = f.WriteString(content)
-	if err != nil {
-		panic(err.Error())
-	}
 }

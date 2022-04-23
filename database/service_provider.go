@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/goravel/framework/console/support"
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/database/console/migrations"
 	"github.com/goravel/framework/support/facades"
 )
@@ -14,7 +14,7 @@ func (database *ServiceProvider) Boot() {
 	database.registerCommands()
 }
 
-//Register Register any application services.
+//Register any application services.
 func (database *ServiceProvider) Register() {
 	app := Application{}
 	facades.DB = app.Init()
@@ -22,8 +22,8 @@ func (database *ServiceProvider) Register() {
 
 //registerCommands Register the given commands.
 func (database *ServiceProvider) registerCommands() {
-	facades.Artisan.Register([]support.Command{
-		migrations.MigrateMakeCommand{},
-		migrations.MigrateCommand{},
+	facades.Artisan.Register([]console.Command{
+		&migrations.MigrateMakeCommand{},
+		&migrations.MigrateCommand{},
 	})
 }

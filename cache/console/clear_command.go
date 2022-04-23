@@ -10,31 +10,31 @@ type ClearCommand struct {
 }
 
 //Signature The name and signature of the console command.
-func (receiver ClearCommand) Signature() string {
+func (receiver *ClearCommand) Signature() string {
 	return "cache:clear"
 }
 
 //Description The console command description.
-func (receiver ClearCommand) Description() string {
+func (receiver *ClearCommand) Description() string {
 	return "Flush the application cache"
 }
 
 //Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver ClearCommand) Flags() []cli.Flag {
+func (receiver *ClearCommand) Flags() []cli.Flag {
 	var flags []cli.Flag
 
 	return flags
 }
 
 //Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver ClearCommand) Subcommands() []*cli.Command {
+func (receiver *ClearCommand) Subcommands() []*cli.Command {
 	var subcommands []*cli.Command
 
 	return subcommands
 }
 
 //Handle Execute the console command.
-func (receiver ClearCommand) Handle(c *cli.Context) error {
+func (receiver *ClearCommand) Handle(c *cli.Context) error {
 	res := facades.Cache.Flush()
 
 	if res {

@@ -2,7 +2,7 @@
 
 English | [中文](README_cn.md)
 
-# Abuout Goravel
+# About Goravel
 
 Goravel is a web application framework with complete functions and good scalability. As a starting scaffolding to help
 Golang developers quickly build their own applications.
@@ -16,8 +16,9 @@ Golang developers quickly build their own applications.
 - [x] Logger
 - [x] Cache
 - [x] gRPC
+- [x] Command
+- [x] Schedule
 - [ ] Queue
-- [ ] Schedule
 - [ ] Event
 - [ ] Mail
 
@@ -37,6 +38,7 @@ The core functions use well-known Golang components, including but not limited t
 [go-redis/redis](https://github.com/go-redis/redis) ,
 [urfave/cli](https://github.com/urfave/cli) ,
 [sirupsen/logrus](https://github.com/sirupsen/logrus) ,
+[robfig/cron](https://github.com/robfig/cron) ,
 [go-gorm/gorm](https://github.com/go-gorm/gorm) ;
 
 The documentation refers to the content of [Laravel](https://laravel.com/docs/8.x);

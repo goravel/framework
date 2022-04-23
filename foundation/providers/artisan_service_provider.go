@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"github.com/goravel/framework/console/support"
+	console2 "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support/facades"
 )
@@ -14,13 +14,14 @@ func (artisan *ArtisanServiceProvider) Boot() {
 	artisan.registerCommands()
 }
 
-//Register Register any application services.
+//Register any application services.
 func (artisan *ArtisanServiceProvider) Register() {
 
 }
 
 func (artisan *ArtisanServiceProvider) registerCommands() {
-	facades.Artisan.Register([]support.Command{
-		console.KeyGenerateCommand{},
+	facades.Artisan.Register([]console2.Command{
+		&console.KeyGenerateCommand{},
+		&console.ConsoleMakeCommand{},
 	})
 }

@@ -1,4 +1,4 @@
-package support
+package contracts
 
 type ServiceProvider interface {
 	//Boot Bootstrap any application services after register.

@@ -2,7 +2,7 @@ package foundation
 
 import (
 	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/support/facades"
 	"os"
 )
@@ -28,19 +28,19 @@ func (app *Application) Boot() {
 
 //bootArtisan Boot artisan command.
 func (app *Application) bootArtisan() {
-	facades.Artisan.Run(os.Args)
+	facades.Artisan.Run(os.Args, true)
 }
 
 //getBaseServiceProviders Get base service providers.
-func (app *Application) getBaseServiceProviders() []support.ServiceProvider {
-	return []support.ServiceProvider{
+func (app *Application) getBaseServiceProviders() []contracts.ServiceProvider {
+	return []contracts.ServiceProvider{
 		&config.ServiceProvider{},
 	}
 }
 
 //getConfiguredServiceProviders Get configured service providers.
-func (app *Application) getConfiguredServiceProviders() []support.ServiceProvider {
-	return facades.Config.Get("app.providers").([]support.ServiceProvider)
+func (app *Application) getConfiguredServiceProviders() []contracts.ServiceProvider {
+	return facades.Config.Get("app.providers").([]contracts.ServiceProvider)
 }
 
 //registerBaseServiceProviders Register base service providers.
@@ -64,14 +64,14 @@ func (app *Application) bootConfiguredServiceProviders() {
 }
 
 //registerServiceProviders Register service providers.
-func (app *Application) registerServiceProviders(serviceProviders []support.ServiceProvider) {
+func (app *Application) registerServiceProviders(serviceProviders []contracts.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Register()
 	}
 }
 
 //bootServiceProviders Bootstrap service providers.
-func (app *Application) bootServiceProviders(serviceProviders []support.ServiceProvider) {
+func (app *Application) bootServiceProviders(serviceProviders []contracts.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Boot()
 	}

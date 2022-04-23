@@ -3,6 +3,6 @@ package http
 import "github.com/gin-gonic/gin"
 
 type Response interface {
-	Success(c *gin.Context, data interface{})
-	Custom(c *gin.Context, data interface{}, code int)
+	Success(ctx *gin.Context, data interface{})
+	Custom(ctx *gin.Context, data interface{}, code int)
 }

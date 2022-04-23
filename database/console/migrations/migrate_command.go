@@ -18,32 +18,32 @@ type MigrateCommand struct {
 }
 
 //Signature The name and signature of the console command.
-func (receiver MigrateCommand) Signature() string {
+func (receiver *MigrateCommand) Signature() string {
 	return "migrate"
 }
 
 //Description The console command description.
-func (receiver MigrateCommand) Description() string {
+func (receiver *MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
 //Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver MigrateCommand) Flags() []cli.Flag {
+func (receiver *MigrateCommand) Flags() []cli.Flag {
 	var flags []cli.Flag
 
 	return flags
 }
 
 //Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver MigrateCommand) Subcommands() []*cli.Command {
+func (receiver *MigrateCommand) Subcommands() []*cli.Command {
 	var subcommands []*cli.Command
 
 	return subcommands
 }
 
 //Handle Execute the console command.
-func (receiver MigrateCommand) Handle(c *cli.Context) error {
-	config := support.GetDatabaseConfig()
+func (receiver *MigrateCommand) Handle(c *cli.Context) error {
+	config := support.Helpers{}.GetDatabaseConfig()
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%t&loc=%s",
 		config["username"], config["password"], config["host"], config["port"], config["database"], config["charset"], true, "Local")
 

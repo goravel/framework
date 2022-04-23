@@ -2,7 +2,7 @@ package cache
 
 import (
 	"github.com/goravel/framework/cache/console"
-	"github.com/goravel/framework/console/support"
+	console2 "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support/facades"
 )
 
@@ -14,7 +14,7 @@ func (database *ServiceProvider) Boot() {
 	database.registerCommands()
 }
 
-//Register Register any application services.
+//Register any application services.
 func (database *ServiceProvider) Register() {
 	app := Application{}
 	facades.Cache = app.Init()
@@ -22,7 +22,7 @@ func (database *ServiceProvider) Register() {
 
 //registerCommands Register the given commands.
 func (database *ServiceProvider) registerCommands() {
-	facades.Artisan.Register([]support.Command{
-		console.ClearCommand{},
+	facades.Artisan.Register([]console2.Command{
+		&console.ClearCommand{},
 	})
 }

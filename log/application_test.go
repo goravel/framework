@@ -41,10 +41,10 @@ func TestLog(t *testing.T) {
 	assert.FileExists(t, singleErrorFile)
 	assert.FileExists(t, customFile)
 
-	assert.Equal(t, 2, support.GetLineNum(dailyFile))
-	assert.Equal(t, 2, support.GetLineNum(singleFile))
-	assert.Equal(t, 1, support.GetLineNum(singleErrorFile))
-	assert.Equal(t, 2, support.GetLineNum(customFile))
+	assert.Equal(t, 3, support.Helpers{}.GetLineNum(dailyFile))
+	assert.Equal(t, 3, support.Helpers{}.GetLineNum(singleFile))
+	assert.Equal(t, 2, support.Helpers{}.GetLineNum(singleErrorFile))
+	assert.Equal(t, 3, support.Helpers{}.GetLineNum(customFile))
 
 	err = os.Remove(".env")
 	assert.Nil(t, err)

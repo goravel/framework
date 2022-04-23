@@ -13,16 +13,16 @@ const (
 )
 
 func Opentracing(tracer opentracing.Tracer) gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		var parentSpan opentracing.Span
 
-		spCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(c.Request.Header))
+		spCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(ctx.Request.Header))
 		if err != nil {
-			parentSpan = tracer.StartSpan(c.Request.URL.Path)
+			parentSpan = tracer.StartSpan(ctx.Request.URL.Path)
 			defer parentSpan.Finish()
 		} else {
 			parentSpan = opentracing.StartSpan(
-				c.Request.URL.Path,
+				ctx.Request.URL.Path,
 				opentracing.ChildOf(spCtx),
 				opentracing.Tag{Key: string(ext.Component), Value: "HTTP"},
 				ext.SpanKindRPCServer,
@@ -30,8 +30,8 @@ func Opentracing(tracer opentracing.Tracer) gin.HandlerFunc {
 			defer parentSpan.Finish()
 		}
 
-		c.Set(OpentracingTracer, tracer)
-		c.Set(OpentracingCtx, opentracing.ContextWithSpan(context.Background(), parentSpan))
-		c.Next()
+		ctx.Set(OpentracingTracer, tracer)
+		ctx.Set(OpentracingCtx, opentracing.ContextWithSpan(context.Background(), parentSpan))
+		ctx.Next()
 	}
 }

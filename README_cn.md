@@ -15,8 +15,9 @@ Goravel 是一个功能完备、具有良好扩展能力的 Web 应用程序框�
 - [x] 日志
 - [x] 缓存
 - [x] gRPC
+- [x] 命令
+- [x] 任务调度
 - [ ] 队列
-- [ ] 任务调度
 - [ ] 事件系统
 - [ ] 邮件
 
@@ -36,6 +37,7 @@ Goravel 是一个功能完备、具有良好扩展能力的 Web 应用程序框�
 [go-redis/redis](https://github.com/go-redis/redis) 、
 [urfave/cli](https://github.com/urfave/cli) 、
 [sirupsen/logrus](https://github.com/sirupsen/logrus) 、
+[robfig/cron](https://github.com/robfig/cron) 、
 [go-gorm/gorm](https://github.com/go-gorm/gorm) ；
 
 文档参考了 [LearnKu 社区](https://learnku.com/) 的 [Laravel 中文文档](https://learnku.com/docs/laravel/8.x/structure/9356) ；

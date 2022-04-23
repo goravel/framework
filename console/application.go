@@ -2,14 +2,13 @@ package console
 
 import (
 	"fmt"
-	"github.com/goravel/framework/console/support"
-	"github.com/goravel/framework/support/testing"
+	"github.com/goravel/framework/contracts/console"
 	"github.com/urfave/cli/v2"
 	"os"
 	"strings"
 )
 
-const Version string = "0.2.3"
+const Version string = "0.4.0"
 const EnvironmentFile string = ".env"
 
 type Application struct {
@@ -27,7 +26,7 @@ func (app *Application) Init() *Application {
 }
 
 //Register Register commands.
-func (app *Application) Register(commands []support.Command) {
+func (app *Application) Register(commands []console.Command) {
 	for _, command := range commands {
 		command := command
 		cliCommand := cli.Command{
@@ -52,11 +51,16 @@ func (app *Application) Register(commands []support.Command) {
 
 //Call Run an Artisan console command by name.
 func (app *Application) Call(command string) {
-	app.Run(append([]string{os.Args[0], "artisan"}, strings.Split(command, " ")...))
+	app.Run(append([]string{os.Args[0], "artisan"}, strings.Split(command, " ")...), true)
 }
 
-//Run Run a command. Args come from os.Args.
-func (app *Application) Run(args []string) {
+//CallDontExit Run an Artisan console command by name and don't exit.
+func (app *Application) CallDontExit(command string) {
+	app.Run(append([]string{os.Args[0], "artisan"}, strings.Split(command, " ")...), false)
+}
+
+//Run a command. Args come from os.Args.
+func (app *Application) Run(args []string, exitIfArtisan bool) {
 	if len(args) >= 2 {
 		if args[1] == "artisan" {
 			if len(args) == 2 {
@@ -72,7 +76,7 @@ func (app *Application) Run(args []string) {
 				}
 			}
 
-			if !testing.RunInTest() {
+			if exitIfArtisan {
 				os.Exit(0)
 			}
 		}

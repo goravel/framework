@@ -14,7 +14,7 @@ type Application struct {
 
 func (app *Application) Init() *gorm.DB {
 	var db *gorm.DB
-	config := support.GetDatabaseConfig()
+	config := support.Helpers{}.GetDatabaseConfig()
 	if config["host"] == "" || config["username"] == "" {
 		return db
 	}

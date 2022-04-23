@@ -70,7 +70,6 @@ func OpentracingServer(tracer opentracing.Tracer) grpc.UnaryServerInterceptor {
 		var parentCtx context.Context
 
 		md, ok := metadata.FromIncomingContext(ctx)
-
 		if !ok {
 			md = metadata.New(nil)
 		}

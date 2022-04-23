@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	"github.com/goravel/framework/cache/support"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/support/facades"
 	"runtime/debug"
@@ -21,10 +20,15 @@ func (app *Application) Init() cache.Store {
 		return app.createRedisDriver()
 	}
 	if driver == "custom" {
-		return facades.Config.Get("cache.stores." + defaultStore + ".via").(support.Store).Handle()
+		if custom, ok := facades.Config.Get("cache.stores." + defaultStore + ".via").(cache.Store); ok {
+			return custom
+		}
+		facades.Log.Warnf("%s doesn't impletement contracts/cache/store", defaultStore)
+
+		return store
 	}
 
-	facades.Log.Warnf("Not supported cache store:" + defaultStore)
+	facades.Log.Warnf("Not supported cache store: %s", defaultStore)
 
 	return store
 }

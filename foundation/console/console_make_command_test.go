@@ -5,6 +5,7 @@ import (
 	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts"
 	console2 "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
 	testing2 "github.com/goravel/framework/support/testing"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestKeyGenerateCommand(t *testing.T) {
+func TestConsoleMakeCommand(t *testing.T) {
 	err := testing2.CreateEnv()
 	assert.Nil(t, err)
 
@@ -26,13 +27,15 @@ func TestKeyGenerateCommand(t *testing.T) {
 
 	consoleApp := console.Application{}
 	consoleApp.Init().Register([]console2.Command{
-		&KeyGenerateCommand{},
+		&ConsoleMakeCommand{},
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.CallDontExit("key:generate")
+		consoleApp.CallDontExit("make:command GoravelCommand")
 	})
 
+	assert.True(t, support.Helpers{}.ExistFile("app/console/commands/goravel_command.go"))
+	assert.True(t, support.Helpers{}.RemoveFile("app"))
 	err = os.Remove(".env")
 	assert.Nil(t, err)
 }

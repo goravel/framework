@@ -15,31 +15,31 @@ type KeyGenerateCommand struct {
 }
 
 //Signature The name and signature of the console command.
-func (receiver KeyGenerateCommand) Signature() string {
+func (receiver *KeyGenerateCommand) Signature() string {
 	return "key:generate"
 }
 
 //Description The console command description.
-func (receiver KeyGenerateCommand) Description() string {
+func (receiver *KeyGenerateCommand) Description() string {
 	return "Set the application key"
 }
 
 //Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver KeyGenerateCommand) Flags() []cli.Flag {
+func (receiver *KeyGenerateCommand) Flags() []cli.Flag {
 	var flags []cli.Flag
 
 	return flags
 }
 
 //Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver KeyGenerateCommand) Subcommands() []*cli.Command {
+func (receiver *KeyGenerateCommand) Subcommands() []*cli.Command {
 	var subcommands []*cli.Command
 
 	return subcommands
 }
 
 //Handle Execute the console command.
-func (receiver KeyGenerateCommand) Handle(c *cli.Context) error {
+func (receiver *KeyGenerateCommand) Handle(c *cli.Context) error {
 	key := receiver.generateRandomKey()
 
 	if err := receiver.setKeyInEnvironmentFile(key); err != nil {
@@ -52,12 +52,12 @@ func (receiver KeyGenerateCommand) Handle(c *cli.Context) error {
 }
 
 //generateRandomKey Generate a random key for the application.
-func (receiver KeyGenerateCommand) generateRandomKey() string {
+func (receiver *KeyGenerateCommand) generateRandomKey() string {
 	return str.Random(32)
 }
 
 //setKeyInEnvironmentFile Set the application key in the environment file.
-func (receiver KeyGenerateCommand) setKeyInEnvironmentFile(key string) error {
+func (receiver *KeyGenerateCommand) setKeyInEnvironmentFile(key string) error {
 	currentKey := facades.Config.GetString("app.key")
 
 	if currentKey != "" {
@@ -74,7 +74,7 @@ func (receiver KeyGenerateCommand) setKeyInEnvironmentFile(key string) error {
 }
 
 //writeNewEnvironmentFileWith Write a new environment file with the given key.
-func (receiver KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
+func (receiver *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
 	content, err := ioutil.ReadFile(console.EnvironmentFile)
 	if err != nil {
 		return err
