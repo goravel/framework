@@ -18,6 +18,6 @@ func TestMigrateCommand(t *testing.T) {
 	})
 
 	assert.Panics(t, func() {
-		consoleApp.CallDontExit("migrate")
+		consoleApp.Call("migrate")
 	})
 }

@@ -35,7 +35,7 @@ func TestClearCommand(t *testing.T) {
 	assert.True(t, facades.Cache.Has("test-clear-command"))
 
 	assert.NotPanics(t, func() {
-		facades.Artisan.CallDontExit("cache:clear")
+		facades.Artisan.Call("cache:clear")
 	})
 
 	assert.False(t, facades.Cache.Has("test-clear-command"))

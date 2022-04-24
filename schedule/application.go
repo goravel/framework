@@ -49,7 +49,7 @@ func (app *Application) addEvents(events []*support.Event) {
 func (app *Application) getJob(event *support.Event) cron.Job {
 	return cron.FuncJob(func() {
 		if event.Command != "" {
-			facades.Artisan.CallDontExit(event.Command)
+			facades.Artisan.Call(event.Command)
 		} else {
 			event.Callback()
 		}

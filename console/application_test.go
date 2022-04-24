@@ -18,16 +18,8 @@ func (receiver *TestCommand) Description() string {
 	return "Test command"
 }
 
-func (receiver *TestCommand) Flags() []cli.Flag {
-	var flags []cli.Flag
-
-	return flags
-}
-
-func (receiver *TestCommand) Subcommands() []*cli.Command {
-	var subcommands []*cli.Command
-
-	return subcommands
+func (receiver *TestCommand) Extend() console.CommandExtend {
+	return console.CommandExtend{}
 }
 
 func (receiver *TestCommand) Handle(c *cli.Context) error {
@@ -59,6 +51,6 @@ func TestRun(t *testing.T) {
 	})
 
 	assert.NotPanics(t, func() {
-		app.CallDontExit("test")
+		app.Call("test")
 	})
 }

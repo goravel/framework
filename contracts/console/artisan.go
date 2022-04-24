@@ -7,8 +7,8 @@ type Artisan interface {
 	//Call Run an Artisan console command by name.
 	Call(command string)
 
-	//CallDontExit Run an Artisan console command by name and don't exit.
-	CallDontExit(command string)
+	//CallAndExit Run an Artisan console command by name and exit.
+	CallAndExit(command string)
 
 	//Run a command. args include: ["./main", "artisan", "command"]
 	Run(args []string, exitIfArtisan bool)

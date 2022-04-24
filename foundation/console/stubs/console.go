@@ -8,6 +8,7 @@ func (receiver ConsoleStubs) Command() string {
 	return `package commands
 
 import (
+	"github.com/goravel/framework/contracts/console"
 	"github.com/urfave/cli/v2"
 )
 
@@ -24,18 +25,9 @@ func (receiver *DummyCommand) Description() string {
 	return "Command description"
 }
 
-//Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver *DummyCommand) Flags() []cli.Flag {
-	var flags []cli.Flag
-
-	return flags
-}
-
-//Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver *DummyCommand) Subcommands() []*cli.Command {
-	var subcommands []*cli.Command
-
-	return subcommands
+//Extend The console command extend.
+func (receiver *DummyCommand) Extend() console.CommandExtend {
+	return console.CommandExtend{}
 }
 
 //Handle Execute the console command.

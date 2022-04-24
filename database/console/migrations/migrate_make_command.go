@@ -2,7 +2,8 @@ package migrations
 
 import (
 	"errors"
-	"fmt"
+	"github.com/gookit/color"
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/database/migrations"
 	"github.com/urfave/cli/v2"
 )
@@ -20,18 +21,11 @@ func (receiver *MigrateMakeCommand) Description() string {
 	return "Create a new migration file"
 }
 
-//Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver *MigrateMakeCommand) Flags() []cli.Flag {
-	var flags []cli.Flag
-
-	return flags
-}
-
-//Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver *MigrateMakeCommand) Subcommands() []*cli.Command {
-	var subcommands []*cli.Command
-
-	return subcommands
+//Extend The console command extend.
+func (receiver *MigrateMakeCommand) Extend() console.CommandExtend {
+	return console.CommandExtend{
+		Category: "make",
+	}
 }
 
 //Handle Execute the console command.
@@ -52,7 +46,7 @@ func (receiver *MigrateMakeCommand) Handle(c *cli.Context) error {
 	//Write the migration file to disk.
 	migrations.MigrateCreator{}.Create(name, table, create)
 
-	fmt.Printf("Created Migration: %s", name)
+	color.Green.Printf("Created Migration: %s", name)
 
 	return nil
 }

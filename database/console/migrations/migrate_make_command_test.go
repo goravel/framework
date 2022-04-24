@@ -21,10 +21,10 @@ func TestMigrateMakeCommand(t *testing.T) {
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.CallDontExit("make:migration create_users_table")
+		consoleApp.Call("make:migration create_users_table")
 	})
 	assert.NotPanics(t, func() {
-		consoleApp.CallDontExit("make:migration add_avatar_to_users_table")
+		consoleApp.Call("make:migration add_avatar_to_users_table")
 	})
 
 	now := time.Now().Format("20060102150405")

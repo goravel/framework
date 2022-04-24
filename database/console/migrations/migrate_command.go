@@ -9,6 +9,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/gookit/color"
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/facades"
 	"github.com/urfave/cli/v2"
@@ -27,18 +29,11 @@ func (receiver *MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
-//Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver *MigrateCommand) Flags() []cli.Flag {
-	var flags []cli.Flag
-
-	return flags
-}
-
-//Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver *MigrateCommand) Subcommands() []*cli.Command {
-	var subcommands []*cli.Command
-
-	return subcommands
+//Extend The console command extend.
+func (receiver *MigrateCommand) Extend() console.CommandExtend {
+	return console.CommandExtend{
+		Category: "migrate",
+	}
 }
 
 //Handle Execute the console command.
@@ -80,7 +75,7 @@ func (receiver *MigrateCommand) Handle(c *cli.Context) error {
 		return errors.New("Migration failed: " + err.Error())
 	}
 
-	fmt.Println("Migration success")
+	color.Greenln("Migration success")
 
 	return nil
 }

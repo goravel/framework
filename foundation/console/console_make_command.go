@@ -2,6 +2,7 @@ package console
 
 import (
 	"errors"
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/foundation/console/stubs"
 	"github.com/goravel/framework/support"
 	"github.com/urfave/cli/v2"
@@ -22,18 +23,11 @@ func (receiver *ConsoleMakeCommand) Description() string {
 	return "Create a new Artisan command"
 }
 
-//Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver *ConsoleMakeCommand) Flags() []cli.Flag {
-	var flags []cli.Flag
-
-	return flags
-}
-
-//Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver *ConsoleMakeCommand) Subcommands() []*cli.Command {
-	var subcommands []*cli.Command
-
-	return subcommands
+//Extend The console command extend.
+func (receiver *ConsoleMakeCommand) Extend() console.CommandExtend {
+	return console.CommandExtend{
+		Category: "make",
+	}
 }
 
 //Handle Execute the console command.

@@ -30,7 +30,7 @@ func TestKeyGenerateCommand(t *testing.T) {
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.CallDontExit("key:generate")
+		consoleApp.Call("key:generate")
 	})
 
 	err = os.Remove(".env")

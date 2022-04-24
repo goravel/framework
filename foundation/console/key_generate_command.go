@@ -1,8 +1,9 @@
 package console
 
 import (
-	"fmt"
+	"github.com/gookit/color"
 	"github.com/goravel/framework/console"
+	console2 "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support/facades"
 	"github.com/goravel/framework/support/str"
 	"github.com/urfave/cli/v2"
@@ -24,18 +25,11 @@ func (receiver *KeyGenerateCommand) Description() string {
 	return "Set the application key"
 }
 
-//Flags Set flags, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#flags
-func (receiver *KeyGenerateCommand) Flags() []cli.Flag {
-	var flags []cli.Flag
-
-	return flags
-}
-
-//Subcommands Set Subcommands, document: https://github.com/urfave/cli/blob/master/docs/v2/manual.md#subcommands
-func (receiver *KeyGenerateCommand) Subcommands() []*cli.Command {
-	var subcommands []*cli.Command
-
-	return subcommands
+//Extend The console command extend.
+func (receiver *KeyGenerateCommand) Extend() console2.CommandExtend {
+	return console2.CommandExtend{
+		Category: "key",
+	}
 }
 
 //Handle Execute the console command.
@@ -46,7 +40,7 @@ func (receiver *KeyGenerateCommand) Handle(c *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("Application key set successfully.")
+	color.Greenln("Application key set successfully")
 
 	return nil
 }
