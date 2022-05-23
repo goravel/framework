@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/goravel/framework/support/facades"
 	testing2 "github.com/goravel/framework/support/testing"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -43,21 +42,21 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetString(t *testing.T) {
-	configServiceProvider := ServiceProvider{}
-	configServiceProvider.Register()
-	facadesConfig := facades.Config
-	facadesConfig.Add("database", map[string]interface{}{
-		"default": facadesConfig.Env("DB_CONNECTION", "mysql"),
+	app := Application{}
+	app.Init()
+
+	app.Add("database", map[string]interface{}{
+		"default": app.Env("DB_CONNECTION", "mysql"),
 		"connections": map[string]interface{}{
 			"mysql": map[string]interface{}{
-				"host": facadesConfig.Env("DB_HOST", "127.0.0.1"),
+				"host": app.Env("DB_HOST", "127.0.0.1"),
 			},
 		},
 	})
 
-	assert.Equal(t, "goravel", facadesConfig.GetString("APP_NAME"))
-	assert.Equal(t, "", facadesConfig.GetString("database.connections.mysql.host"))
-	assert.Equal(t, "mysql", facadesConfig.GetString("database.default"))
+	assert.Equal(t, "goravel", app.GetString("APP_NAME"))
+	assert.Equal(t, "", app.GetString("database.connections.mysql.host"))
+	assert.Equal(t, "mysql", app.GetString("database.default"))
 }
 
 func TestGetInt(t *testing.T) {

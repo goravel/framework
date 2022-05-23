@@ -22,7 +22,6 @@ func (artisan *ArtisanServiceProvider) Register() {
 func (artisan *ArtisanServiceProvider) registerCommands() {
 	facades.Artisan.Register([]console2.Command{
 		&console.KeyGenerateCommand{},
-		&console.ConsoleMakeCommand{},
 		&console.ListCommand{},
 	})
 }

@@ -1,8 +1,8 @@
-package console
+package queue
 
 import (
-	"github.com/goravel/framework/console/console"
-	console2 "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console"
+	queueConsole "github.com/goravel/framework/queue/console"
 	"github.com/goravel/framework/support/facades"
 )
 
@@ -16,12 +16,12 @@ func (receiver *ServiceProvider) Boot() {
 
 //Register any application services.
 func (receiver *ServiceProvider) Register() {
-	app := Application{}
-	facades.Artisan = app.Init()
+	facades.Queue = &Application{}
 }
 
+//registerCommands Register the given commands.
 func (receiver *ServiceProvider) registerCommands() {
-	facades.Artisan.Register([]console2.Command{
-		&console.ConsoleMakeCommand{},
+	facades.Artisan.Register([]console.Command{
+		&queueConsole.JobMakeCommand{},
 	})
 }

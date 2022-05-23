@@ -27,14 +27,14 @@ func TestConsoleMakeCommand(t *testing.T) {
 
 	consoleApp := console.Application{}
 	consoleApp.Init().Register([]console2.Command{
-		&ConsoleMakeCommand{},
+		&JobMakeCommand{},
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.Call("make:command GoravelCommand")
+		consoleApp.Call("make:job GoravelJob")
 	})
 
-	assert.True(t, support.Helpers{}.ExistFile("app/console/commands/goravel_command.go"))
+	assert.True(t, support.Helpers{}.ExistFile("app/jobs/goravel_job.go"))
 	assert.True(t, support.Helpers{}.RemoveFile("app"))
 	err = os.Remove(".env")
 	assert.Nil(t, err)

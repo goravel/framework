@@ -1,6 +1,8 @@
 package schedule
 
 import (
+	"github.com/gookit/color"
+	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/schedule/support"
 	"github.com/goravel/framework/support/facades"
 	"github.com/robfig/cron/v3"
@@ -10,15 +12,15 @@ type Application struct {
 	cron *cron.Cron
 }
 
-func (app *Application) Call(callback func()) *support.Event {
+func (app *Application) Call(callback func()) schedule.Event {
 	return &support.Event{Callback: callback}
 }
 
-func (app *Application) Command(command string) *support.Event {
+func (app *Application) Command(command string) schedule.Event {
 	return &support.Event{Command: command}
 }
 
-func (app *Application) Register(events []*support.Event) {
+func (app *Application) Register(events []schedule.Event) {
 	if app.cron == nil {
 		app.cron = cron.New(cron.WithLogger(&Logger{}))
 	}
@@ -30,7 +32,7 @@ func (app *Application) Run() {
 	app.cron.Start()
 }
 
-func (app *Application) addEvents(events []*support.Event) {
+func (app *Application) addEvents(events []schedule.Event) {
 	for _, event := range events {
 		chain := cron.NewChain()
 		if event.GetDelayIfStillRunning() {
@@ -46,12 +48,12 @@ func (app *Application) addEvents(events []*support.Event) {
 	}
 }
 
-func (app *Application) getJob(event *support.Event) cron.Job {
+func (app *Application) getJob(event schedule.Event) cron.Job {
 	return cron.FuncJob(func() {
-		if event.Command != "" {
-			facades.Artisan.Call(event.Command)
+		if event.GetCommand() != "" {
+			facades.Artisan.Call(event.GetCommand())
 		} else {
-			event.Callback()
+			event.GetCallback()()
 		}
 	})
 }
@@ -59,7 +61,7 @@ func (app *Application) getJob(event *support.Event) cron.Job {
 type Logger struct{}
 
 func (log *Logger) Info(msg string, keysAndValues ...interface{}) {
-	facades.Log.Info(msg, keysAndValues)
+	color.Green.Printf("%s %v\n", msg, keysAndValues)
 }
 
 func (log *Logger) Error(err error, msg string, keysAndValues ...interface{}) {

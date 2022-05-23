@@ -1,18 +1,14 @@
 package schedule
 
-import (
-	"github.com/goravel/framework/schedule/support"
-)
-
 type Schedule interface {
 	//Call Add a new callback event to the schedule.
-	Call(callback func()) *support.Event
+	Call(callback func()) Event
 
 	//Command Add a new Artisan command event to the schedule.
-	Command(command string) *support.Event
+	Command(command string) Event
 
 	//Register schedules.
-	Register(events []*support.Event)
+	Register(events []Event)
 
 	//Run schedules.
 	Run()
