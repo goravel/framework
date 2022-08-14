@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const Version string = "0.6.0"
+const Version string = "0.6.1"
 const EnvironmentFile string = ".env"
 
 type Application struct {
