@@ -1,6 +1,10 @@
 package log
 
 import (
+	"os"
+	"testing"
+	"time"
+
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support"
@@ -9,9 +13,6 @@ import (
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestLog(t *testing.T) {

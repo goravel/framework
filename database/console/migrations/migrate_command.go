@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"

@@ -1,10 +1,11 @@
 package cache
 
 import (
-	"github.com/go-redis/redis/v8"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/stretchr/testify/assert"
 )
 
 func getInstance() *Redis {

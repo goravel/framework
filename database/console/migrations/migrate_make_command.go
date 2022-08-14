@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"errors"
+
 	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/database/migrations"

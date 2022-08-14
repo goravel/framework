@@ -4,7 +4,6 @@ import (
 	"github.com/RichardKnop/machinery/v2"
 	"github.com/RichardKnop/machinery/v2/tasks"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/facades"
 )
 
 type Task struct {
@@ -18,16 +17,12 @@ type Task struct {
 }
 
 func (receiver *Task) Dispatch() error {
-	if receiver.connection == "" {
-		receiver.connection = facades.Config.GetString("queue.default")
-	}
-
 	driver := getDriver(receiver.connection)
-	if driver == DriverSync {
+	if driver == DriverSync || driver == "" {
 		return receiver.DispatchSync()
 	}
 
-	server, err := getServer(receiver.connection, receiver.queue)
+	server, err := GetServer(receiver.connection, receiver.queue)
 	if err != nil {
 		return err
 	}

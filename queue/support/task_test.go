@@ -1,10 +1,11 @@
 package support
 
 import (
+	"testing"
+
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type Test struct {

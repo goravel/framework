@@ -1,9 +1,10 @@
 package database
 
 import (
+	"testing"
+
 	"github.com/goravel/framework/config"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInit(t *testing.T) {

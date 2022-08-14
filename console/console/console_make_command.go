@@ -2,12 +2,13 @@ package console
 
 import (
 	"errors"
+	"os"
+	"strings"
+
 	"github.com/goravel/framework/console/console/stubs"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support"
 	"github.com/urfave/cli/v2"
-	"os"
-	"strings"
 )
 
 type ConsoleMakeCommand struct {

@@ -2,13 +2,14 @@ package logger
 
 import (
 	"errors"
+	"io"
+	"os"
+	"path"
+
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
-	"path"
 )
 
 type Single struct {

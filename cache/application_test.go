@@ -1,14 +1,15 @@
 package cache
 
 import (
+	"os"
+	"testing"
+	"time"
+
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/support/facades"
 	testing2 "github.com/goravel/framework/support/testing"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestInit(t *testing.T) {

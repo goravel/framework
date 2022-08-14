@@ -1,14 +1,15 @@
 package migrations
 
 import (
+	"os"
+	"testing"
+	"time"
+
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
 	console2 "github.com/goravel/framework/contracts/console"
 	support2 "github.com/goravel/framework/support"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {

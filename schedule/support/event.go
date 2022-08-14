@@ -1,8 +1,9 @@
 package support
 
 import (
-	"github.com/goravel/framework/contracts/schedule"
 	"strings"
+
+	"github.com/goravel/framework/contracts/schedule"
 )
 
 type Event struct {

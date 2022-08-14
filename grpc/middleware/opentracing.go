@@ -3,6 +3,8 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/goravel/framework/support/facades"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -10,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"strings"
 )
 
 type MDReaderWriter struct {

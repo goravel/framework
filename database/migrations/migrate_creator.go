@@ -1,11 +1,12 @@
 package migrations
 
 import (
-	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/facades"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/facades"
 )
 
 type MigrateCreator struct {

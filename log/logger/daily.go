@@ -2,14 +2,15 @@ package logger
 
 import (
 	"errors"
+	"path"
+	"strings"
+	"time"
+
 	rotatelogs "github.com/goravel/file-rotatelogs/v2"
 	"github.com/goravel/framework/log/formatters"
 	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
-	"path"
-	"strings"
-	"time"
 )
 
 type Daily struct {

@@ -1,8 +1,9 @@
 package grpc
 
 import (
-	"google.golang.org/grpc"
 	"net"
+
+	"google.golang.org/grpc"
 )
 
 type Application struct {

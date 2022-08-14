@@ -1,14 +1,15 @@
 package console
 
 import (
+	"os"
+	"strings"
+
 	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/urfave/cli/v2"
-	"os"
-	"strings"
 )
 
-const Version string = "0.4.1"
+const Version string = "0.6.0"
 const EnvironmentFile string = ".env"
 
 type Application struct {

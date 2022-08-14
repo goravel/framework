@@ -17,11 +17,7 @@ type Worker struct {
 }
 
 func (receiver *Worker) Run() error {
-	if receiver.Connection == "" {
-		receiver.Connection = facades.Config.GetString("queue.default")
-	}
-
-	server, err := getServer(receiver.Connection, receiver.Queue)
+	server, err := GetServer(receiver.Connection, receiver.Queue)
 	if err != nil {
 		return err
 	}
@@ -30,7 +26,21 @@ func (receiver *Worker) Run() error {
 		return nil
 	}
 
-	if err := server.RegisterTasks(jobs2Tasks(facades.Queue.GetJobs())); err != nil {
+	jobTasks, err := jobs2Tasks(facades.Queue.GetJobs())
+	if err != nil {
+		return err
+	}
+
+	eventTasks, err := events2Tasks(facades.Event.GetEvents())
+	if err != nil {
+		return err
+	}
+
+	if err := server.RegisterTasks(jobTasks); err != nil {
+		return err
+	}
+
+	if err := server.RegisterTasks(eventTasks); err != nil {
 		return err
 	}
 

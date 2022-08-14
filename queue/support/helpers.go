@@ -1,18 +1,25 @@
 package support
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/RichardKnop/machinery/v2"
 	redisBackend "github.com/RichardKnop/machinery/v2/backends/redis"
 	redisBroker "github.com/RichardKnop/machinery/v2/brokers/redis"
 	"github.com/RichardKnop/machinery/v2/config"
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/gookit/color"
+	"github.com/goravel/framework/contracts/events"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/facades"
 )
 
-func getServer(connection string, queue string) (*machinery.Server, error) {
+func GetServer(connection string, queue string) (*machinery.Server, error) {
+	if connection == "" {
+		connection = facades.Config.GetString("queue.default")
+	}
+
 	driver := getDriver(connection)
 
 	switch driver {
@@ -28,6 +35,10 @@ func getServer(connection string, queue string) (*machinery.Server, error) {
 }
 
 func getDriver(connection string) string {
+	if connection == "" {
+		connection = facades.Config.GetString("queue.default")
+	}
+
 	return facades.Config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
@@ -66,12 +77,40 @@ func getRedisConfig(queueConnection string) (config string, database int, queue 
 	return
 }
 
-func jobs2Tasks(jobs []queue.Job) map[string]interface{} {
-	tasks := make(map[string]interface{}, len(jobs))
+func jobs2Tasks(jobs []queue.Job) (map[string]interface{}, error) {
+	tasks := make(map[string]interface{})
 
 	for _, job := range jobs {
+		if job.Signature() == "" {
+			return nil, errors.New("the Signature of job can't be empty")
+		}
+
+		if tasks[job.Signature()] != nil {
+			return nil, fmt.Errorf("job signature duplicate: %s, the names of Job and Listener cannot be duplicated", job.Signature())
+		}
+
 		tasks[job.Signature()] = job.Handle
 	}
 
-	return tasks
+	return tasks, nil
+}
+
+func events2Tasks(events map[events.Event][]events.Listener) (map[string]interface{}, error) {
+	tasks := make(map[string]interface{})
+
+	for _, listeners := range events {
+		for _, listener := range listeners {
+			if listener.Signature() == "" {
+				return nil, errors.New("the Signature of listener can't be empty")
+			}
+
+			if tasks[listener.Signature()] != nil {
+				return nil, fmt.Errorf("listener signature duplicate: %s, the names of Job and Listen cannot be duplicated", listener.Signature())
+			}
+
+			tasks[listener.Signature()] = listener.Handle
+		}
+	}
+
+	return tasks, nil
 }

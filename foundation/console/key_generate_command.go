@@ -1,15 +1,16 @@
 package console
 
 import (
+	"io/ioutil"
+	"log"
+	"strings"
+
 	"github.com/gookit/color"
 	"github.com/goravel/framework/console"
 	console2 "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/support/facades"
 	"github.com/goravel/framework/support/str"
 	"github.com/urfave/cli/v2"
-	"io/ioutil"
-	"log"
-	"strings"
 )
 
 type KeyGenerateCommand struct {
