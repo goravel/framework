@@ -1,5 +1,6 @@
 package schedule
 
+//go:generate mockery --name=Event --output=../mocks/schedule/
 type Event interface {
 	GetCron() string
 	GetCommand() string
