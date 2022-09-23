@@ -17,8 +17,8 @@ func (database *ServiceProvider) Boot() {
 //Register any application services.
 func (database *ServiceProvider) Register() {
 	app := Application{}
-	facades.DB = app.Init()
-	facades.Gorm = facades.DB
+	facades.DB = app.InitDB()
+	facades.Gorm = app.InitGorm()
 }
 
 //registerCommands Register the given commands.

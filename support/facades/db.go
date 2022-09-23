@@ -1,6 +1,8 @@
 package facades
 
-import "gorm.io/gorm"
+import (
+	"github.com/goravel/framework/contracts/database"
+)
 
-var DB *gorm.DB
-var Gorm *gorm.DB
+var DB database.DB
+var Gorm database.Gorm

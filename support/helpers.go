@@ -16,7 +16,6 @@ import (
 
 type Helpers struct{}
 
-//GetDatabaseConfig Get database config from ENV.
 func (receiver Helpers) GetDatabaseConfig() map[string]string {
 	return map[string]string{
 		"host":     facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".host"),
@@ -28,7 +27,6 @@ func (receiver Helpers) GetDatabaseConfig() map[string]string {
 	}
 }
 
-//GetLineNum Get file line num.
 func (receiver Helpers) GetLineNum(file string) int {
 	total := 0
 	f, _ := os.OpenFile(file, os.O_RDONLY, 0444)
@@ -54,7 +52,6 @@ func (receiver Helpers) GetLineNum(file string) int {
 	return total
 }
 
-//CreateFile Create a file at the given path.
 func (receiver Helpers) CreateFile(file string, content string) {
 	err := os.MkdirAll(path.Dir(file), os.ModePerm)
 

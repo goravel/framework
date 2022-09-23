@@ -20,6 +20,7 @@ Golang developers quickly build their own applications.
 - [x] Task Scheduling
 - [x] Queue
 - [x] Event
+- [ ] Testing
 - [ ] Mail
 
 ## Documentation
