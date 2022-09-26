@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/goravel/framework/console/console/stubs"
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 	"github.com/urfave/cli/v2"
 )
 
@@ -38,23 +38,23 @@ func (receiver *ConsoleMakeCommand) Handle(c *cli.Context) error {
 		return errors.New("Not enough arguments (missing: name) ")
 	}
 
-	support.Helpers{}.CreateFile(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
 
 	return nil
 }
 
 func (receiver *ConsoleMakeCommand) getStub() string {
-	return stubs.ConsoleStubs{}.Command()
+	return ConsoleStubs{}.Command()
 }
 
 //populateStub Populate the place-holders in the command stub.
 func (receiver *ConsoleMakeCommand) populateStub(stub string, name string) string {
-	return strings.ReplaceAll(stub, "DummyCommand", support.Helpers{}.Case2Camel(name))
+	return strings.ReplaceAll(stub, "DummyCommand", str.Case2Camel(name))
 }
 
 //getPath Get the full path to the command.
 func (receiver *ConsoleMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/console/commands/" + support.Helpers{}.Camel2Case(name) + ".go"
+	return pwd + "/app/console/commands/" + str.Camel2Case(name) + ".go"
 }

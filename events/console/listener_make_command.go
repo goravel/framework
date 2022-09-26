@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/gookit/color"
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/events/console/stubs"
-	"github.com/goravel/framework/support"
 	"github.com/urfave/cli/v2"
+
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/str"
 )
 
 type ListenerMakeCommand struct {
@@ -39,20 +40,20 @@ func (receiver *ListenerMakeCommand) Handle(c *cli.Context) error {
 		return errors.New("Not enough arguments (missing: name) ")
 	}
 
-	support.Helpers{}.CreateFile(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
 	color.Greenln("Listener created successfully")
 
 	return nil
 }
 
 func (receiver *ListenerMakeCommand) getStub() string {
-	return stubs.ListenerStubs{}.Listener()
+	return ListenerStubs{}.Listener()
 }
 
 //populateStub Populate the place-holders in the command stub.
 func (receiver *ListenerMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyListener", support.Helpers{}.Case2Camel(name))
-	stub = strings.ReplaceAll(stub, "DummyName", support.Helpers{}.Camel2Case(name))
+	stub = strings.ReplaceAll(stub, "DummyListener", str.Case2Camel(name))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(name))
 
 	return stub
 }
@@ -61,5 +62,5 @@ func (receiver *ListenerMakeCommand) populateStub(stub string, name string) stri
 func (receiver *ListenerMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/listeners/" + support.Helpers{}.Camel2Case(name) + ".go"
+	return pwd + "/app/listeners/" + str.Camel2Case(name) + ".go"
 }

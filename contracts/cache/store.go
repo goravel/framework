@@ -2,6 +2,7 @@ package cache
 
 import "time"
 
+//go:generate mockery --name=Store
 type Store interface {
 	//Get Retrieve an item from the cache by key.
 	Get(key string, defaults interface{}) interface{}

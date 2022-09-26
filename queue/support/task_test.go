@@ -3,9 +3,11 @@ package support
 import (
 	"testing"
 
-	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/file"
+	goraveltesting "github.com/goravel/framework/testing"
 )
 
 type Test struct {
@@ -18,7 +20,7 @@ func (receiver *Test) Signature() string {
 
 //Handle Execute the job.
 func (receiver *Test) Handle(args ...interface{}) error {
-	support.Helpers{}.CreateFile("test.txt", args[0].(string))
+	file.Create("test.txt", args[0].(string))
 
 	return nil
 }
@@ -33,8 +35,8 @@ func TestDispatchSync(t *testing.T) {
 
 	err := task.DispatchSync()
 	assert.Nil(t, err)
-	assert.True(t, support.Helpers{}.ExistFile("test.txt"))
-	assert.True(t, support.Helpers{}.GetLineNum("test.txt") == 1)
-	res := support.Helpers{}.RemoveFile("test.txt")
+	assert.True(t, file.Exist("test.txt"))
+	assert.True(t, goraveltesting.GetLineNum("test.txt") == 1)
+	res := file.Remove("test.txt")
 	assert.True(t, res)
 }

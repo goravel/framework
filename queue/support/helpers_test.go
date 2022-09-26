@@ -4,12 +4,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts/events"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/facades"
-	testing2 "github.com/goravel/framework/support/testing"
-	"github.com/stretchr/testify/assert"
+	"github.com/goravel/framework/facades"
+	goraveltesting "github.com/goravel/framework/testing"
 )
 
 func TestGetServer(t *testing.T) {
@@ -196,7 +197,7 @@ func TestEvents2Tasks(t *testing.T) {
 }
 
 func initConfig() {
-	testing2.CreateEnv()
+	goraveltesting.CreateEnv()
 	configServiceProvider := config.ServiceProvider{}
 	configServiceProvider.Register()
 

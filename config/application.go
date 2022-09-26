@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/goravel/framework/support/testing"
+	"github.com/goravel/framework/testing"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )

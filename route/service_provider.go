@@ -1,19 +1,17 @@
 package route
 
 import (
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 type ServiceProvider struct {
 }
 
-//Boot Bootstrap any application services after register.
-func (route *ServiceProvider) Boot() {
-
-}
-
-//Register Register any application services.
 func (route *ServiceProvider) Register() {
 	app := Application{}
 	facades.Route = app.Init()
+}
+
+func (route *ServiceProvider) Boot() {
+
 }

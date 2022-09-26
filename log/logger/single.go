@@ -6,10 +6,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/goravel/framework/log/formatters"
-	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/log/formatter"
 )
 
 type Single struct {
@@ -32,7 +33,7 @@ func (single Single) Handle(configPath string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		setLevel(facades.Config.GetString(configPath+".level"), writer),
-		&formatters.General{},
+		&formatter.General{},
 	), nil
 }
 

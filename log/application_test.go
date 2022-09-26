@@ -6,17 +6,16 @@ import (
 	"time"
 
 	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/log/formatters"
-	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/facades"
-	testing2 "github.com/goravel/framework/support/testing"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/log/formatter"
+	goraveltesting "github.com/goravel/framework/testing"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLog(t *testing.T) {
-	err := testing2.CreateEnv()
+	err := goraveltesting.CreateEnv()
 	assert.Nil(t, err)
 
 	addDefaultConfig()
@@ -24,13 +23,8 @@ func TestLog(t *testing.T) {
 	app := Application{}
 	instance := app.Init()
 
-	instance.WithFields(logrus.Fields{
-		"goravel": "test",
-	}).Debug("debug")
-
-	instance.WithFields(logrus.Fields{
-		"goravel": "test",
-	}).Error("error")
+	instance.Debug("debug")
+	instance.Error("error")
 
 	dailyFile := "storage/logs/goravel-" + time.Now().Format("2006-01-02") + ".log"
 	singleFile := "storage/logs/goravel.log"
@@ -42,10 +36,10 @@ func TestLog(t *testing.T) {
 	assert.FileExists(t, singleErrorFile)
 	assert.FileExists(t, customFile)
 
-	assert.Equal(t, 3, support.Helpers{}.GetLineNum(dailyFile))
-	assert.Equal(t, 3, support.Helpers{}.GetLineNum(singleFile))
-	assert.Equal(t, 2, support.Helpers{}.GetLineNum(singleErrorFile))
-	assert.Equal(t, 3, support.Helpers{}.GetLineNum(customFile))
+	assert.Equal(t, 3, goraveltesting.GetLineNum(dailyFile))
+	assert.Equal(t, 3, goraveltesting.GetLineNum(singleFile))
+	assert.Equal(t, 2, goraveltesting.GetLineNum(singleErrorFile))
+	assert.Equal(t, 3, goraveltesting.GetLineNum(customFile))
 
 	err = os.Remove(".env")
 	assert.Nil(t, err)
@@ -62,7 +56,7 @@ func (custom CustomTest) Handle(configPath string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		logPath,
-		&formatters.General{},
+		&formatter.General{},
 	), nil
 }
 

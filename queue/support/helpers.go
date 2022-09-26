@@ -10,9 +10,10 @@ import (
 	"github.com/RichardKnop/machinery/v2/config"
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/events"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 func GetServer(connection string, queue string) (*machinery.Server, error) {

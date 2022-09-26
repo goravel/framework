@@ -1,7 +1,7 @@
 package support
 
 import (
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 const DriverSync string = "sync"

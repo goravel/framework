@@ -7,7 +7,7 @@ import (
 	"github.com/RichardKnop/machinery/v2/tasks"
 	"github.com/goravel/framework/contracts/events"
 	"github.com/goravel/framework/queue/support"
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 type Task struct {

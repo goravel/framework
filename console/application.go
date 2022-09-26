@@ -10,7 +10,6 @@ import (
 )
 
 const Version string = "0.6.1"
-const EnvironmentFile string = ".env"
 
 type Application struct {
 	cli *cli.App

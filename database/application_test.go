@@ -13,7 +13,7 @@ func TestInit(t *testing.T) {
 
 	assert.NotPanics(t, func() {
 		app := Application{}
-		app.InitDB()
+		app.Init()
 		app.InitGorm()
 	})
 }

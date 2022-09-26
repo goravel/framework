@@ -7,10 +7,11 @@ import (
 	"time"
 
 	rotatelogs "github.com/goravel/file-rotatelogs/v2"
-	"github.com/goravel/framework/log/formatters"
-	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/log/formatter"
 )
 
 type Daily struct {
@@ -39,6 +40,6 @@ func (daily Daily) Handle(configPath string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		setLevel(facades.Config.GetString(configPath+".level"), writer),
-		&formatters.General{},
+		&formatter.General{},
 	), nil
 }

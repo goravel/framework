@@ -3,7 +3,7 @@ package route
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/goravel/framework/foundation"
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 type Application struct {

@@ -1,30 +1,28 @@
 package database
 
 import (
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/database/console/migrations"
-	"github.com/goravel/framework/support/facades"
+	consolecontract "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/database/console"
+	"github.com/goravel/framework/facades"
 )
 
 type ServiceProvider struct {
 }
 
-//Boot Bootstrap any application services after register.
+func (database *ServiceProvider) Register() {
+	app := Application{}
+	facades.Orm = app.Init()
+	//facades.Gorm = app.InitGorm()
+}
+
 func (database *ServiceProvider) Boot() {
 	database.registerCommands()
 }
 
-//Register any application services.
-func (database *ServiceProvider) Register() {
-	app := Application{}
-	facades.DB = app.InitDB()
-	facades.Gorm = app.InitGorm()
-}
-
-//registerCommands Register the given commands.
 func (database *ServiceProvider) registerCommands() {
-	facades.Artisan.Register([]console.Command{
-		&migrations.MigrateMakeCommand{},
-		&migrations.MigrateCommand{},
+	facades.Artisan.Register([]consolecontract.Command{
+		&console.MigrateMakeCommand{},
+		&console.MigrateCommand{},
+		&console.MigrateRollbackCommand{},
 	})
 }

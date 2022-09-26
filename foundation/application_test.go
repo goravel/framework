@@ -6,7 +6,7 @@ import (
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts"
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 	"github.com/stretchr/testify/assert"
 )
 

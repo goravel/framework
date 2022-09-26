@@ -3,7 +3,7 @@ package console
 import (
 	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 	"github.com/urfave/cli/v2"
 )
 

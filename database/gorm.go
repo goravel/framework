@@ -1,11 +1,9 @@
 package database
 
 import (
+	"context"
 	"errors"
 	"fmt"
-
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/support/facades"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -13,29 +11,36 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
+
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/support"
+	"github.com/goravel/framework/facades"
 )
 
 type Gorm struct {
-	connection      string
-	defaultInstance *gorm.DB
-	instances       map[string]*gorm.DB
+	instance *gorm.DB
 }
 
-func (r *Gorm) Connection(name string) contractsdatabase.Gorm {
-	defaultConnection := facades.Config.GetString("database.default")
-	if name == "" {
-		name = defaultConnection
-	}
+func NewGorm(ctx context.Context, connection string) (contractsorm.DB, error) {
+	db, err := NewGormInstance(connection)
 
-	r.connection = name
-
-	if _, exist := r.instances[name]; exist {
-		return r
-	}
-
-	gormConfig, err := getGormConfig(name)
 	if err != nil {
-		facades.Log.Errorf("init gorm config error: %v", err)
+		return nil, errors.New(fmt.Sprintf("gorm open ddatabase error: %v", err))
+	}
+
+	if ctx != nil {
+		db = db.WithContext(ctx)
+	}
+
+	return &Gorm{
+		instance: db,
+	}, nil
+}
+
+func NewGormInstance(connection string) (*gorm.DB, error) {
+	gormConfig, err := getGormConfig(connection)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("init gorm config error: %v", err))
 	}
 
 	var logLevel gormLogger.LogLevel
@@ -45,55 +50,185 @@ func (r *Gorm) Connection(name string) contractsdatabase.Gorm {
 		logLevel = gormLogger.Error
 	}
 
-	db, err := gorm.Open(gormConfig, &gorm.Config{
+	return gorm.Open(gormConfig, &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		Logger:                                   gormLogger.Default.LogMode(logLevel),
 	})
-	if err != nil {
-		facades.Log.Errorf("gorm open ddatabase error: %v", err)
+}
 
-		return r
-	}
+func (r *Gorm) Begin() (contractsorm.Transaction, error) {
+	r.instance = r.instance.Begin(nil)
 
-	r.instances[name] = db
+	return r, r.instance.Error
+}
 
-	if name == defaultConnection {
-		r.defaultInstance = db
-	}
+func (r *Gorm) Commit() error {
+	r.instance = r.instance.Commit()
+
+	return r.instance.Error
+}
+
+func (r *Gorm) Rollback() error {
+	r.instance = r.instance.Rollback()
+
+	return r.instance.Error
+}
+
+func (r *Gorm) Model(value interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Model(value)
 
 	return r
 }
 
-func (r *Gorm) Query() *gorm.DB {
-	if r.connection == "" {
-		if r.defaultInstance == nil {
-			r.Connection("")
-		}
+func (r *Gorm) Table(name string, args ...interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Table(name, args...)
 
-		return r.defaultInstance
+	return r
+}
+
+func (r *Gorm) Select(query interface{}, args ...interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Select(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Where(query interface{}, args ...interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Where(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Join(query string, args ...interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Joins(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Group(name string) contractsorm.Transaction {
+	r.instance = r.instance.Group(name)
+
+	return r
+}
+
+func (r *Gorm) Having(query interface{}, args ...interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Having(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Order(value interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Order(value)
+
+	return r
+}
+
+func (r *Gorm) Limit(limit int) contractsorm.Transaction {
+	r.instance = r.instance.Limit(limit)
+
+	return r
+}
+
+func (r *Gorm) Offset(offset int) contractsorm.Transaction {
+	r.instance = r.instance.Offset(offset)
+
+	return r
+}
+
+func (r *Gorm) Scopes(funcs ...func(contractsorm.Transaction) contractsorm.Transaction) contractsorm.Transaction {
+	var gormFuncs []func(*gorm.DB) *gorm.DB
+	for _, item := range funcs {
+		gormFuncs = append(gormFuncs, func(db *gorm.DB) *gorm.DB {
+			r.instance = db
+			item(r)
+
+			return r.instance
+		})
 	}
 
-	instance, exist := r.instances[r.connection]
-	if !exist {
-		return nil
-	}
+	r.instance = r.instance.Scopes(gormFuncs...)
 
-	r.connection = ""
+	return r
+}
 
-	return instance
+func (r *Gorm) Raw(sql string, values ...interface{}) contractsorm.Transaction {
+	r.instance = r.instance.Raw(sql, values)
+
+	return r
+}
+
+func (r *Gorm) WithTrashed() contractsorm.Transaction {
+	r.instance = r.instance.Unscoped()
+
+	return r
+}
+
+func (r *Gorm) Create(value interface{}) error {
+	return r.instance.Create(value).Error
+}
+
+func (r *Gorm) Save(value interface{}) error {
+	return r.instance.Save(value).Error
+}
+
+func (r *Gorm) First(dest interface{}, conds ...interface{}) error {
+	return r.instance.First(dest, conds).Error
+}
+
+func (r *Gorm) Last(dest interface{}, conds ...interface{}) error {
+	return r.instance.Last(dest, conds).Error
+}
+
+func (r *Gorm) Find(dest interface{}, conds ...interface{}) error {
+	return r.instance.Find(dest, conds...).Error
+}
+
+func (r *Gorm) FirstOrCreate(dest interface{}, conds ...interface{}) error {
+	return r.instance.FirstOrCreate(dest, conds...).Error
+}
+
+func (r *Gorm) Update(column string, value interface{}) error {
+	return r.instance.Update(column, value).Error
+}
+
+func (r *Gorm) Updates(values interface{}) error {
+	return r.instance.Updates(values).Error
+}
+
+func (r *Gorm) Delete(value interface{}, conds ...interface{}) error {
+	return r.instance.Delete(value, conds).Error
+}
+
+func (r *Gorm) ForceDelete(value interface{}, conds ...interface{}) error {
+	return r.instance.Unscoped().Delete(value, conds).Error
+}
+
+func (r *Gorm) Count(count *int64) error {
+	return r.instance.Count(count).Error
+}
+
+func (r *Gorm) Pluck(column string, dest interface{}) error {
+	return r.instance.Pluck(column, dest).Error
+}
+
+func (r *Gorm) Scan(dest interface{}) error {
+	return r.instance.Scan(dest).Error
+}
+
+func (r *Gorm) Exec(sql string, values ...interface{}) error {
+	return r.instance.Exec(sql, values).Error
 }
 
 func getGormConfig(connection string) (gorm.Dialector, error) {
 	defaultDatabase := facades.Config.GetString("database.default")
 	driver := facades.Config.GetString("database.connections." + defaultDatabase + ".driver")
 	switch driver {
-	case Mysql:
+	case support.Mysql:
 		return getMysqlGormConfig(connection), nil
-	case Postgresql:
+	case support.Postgresql:
 		return getPostgresqlGormConfig(connection), nil
-	case Sqlite:
+	case support.Sqlite:
 		return getSqliteGormConfig(connection), nil
-	case Sqlserver:
+	case support.Sqlserver:
 		return getSqlserverGormConfig(connection), nil
 	default:
 		return nil, errors.New("database driver only support mysql, postgresql, sqlite and sqlserver")
@@ -101,56 +236,23 @@ func getGormConfig(connection string) (gorm.Dialector, error) {
 }
 
 func getMysqlGormConfig(connection string) gorm.Dialector {
-	host := facades.Config.GetString("database.connections." + connection + ".host")
-	port := facades.Config.GetString("database.connections." + connection + ".port")
-	database := facades.Config.GetString("database.connections." + connection + ".database")
-	username := facades.Config.GetString("database.connections." + connection + ".username")
-	password := facades.Config.GetString("database.connections." + connection + ".password")
-	charset := facades.Config.GetString("database.connections." + connection + ".charset")
-	loc := facades.Config.GetString("database.connections." + connection + ".charset")
-
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%t&loc=%s",
-		username, password, host, port, database, charset, true, loc)
-
 	return mysql.New(mysql.Config{
-		DSN: dsn,
+		DSN: support.GetMysqlDsn(connection),
 	})
 }
 
 func getPostgresqlGormConfig(connection string) gorm.Dialector {
-	host := facades.Config.GetString("database.connections." + connection + ".host")
-	port := facades.Config.GetString("database.connections." + connection + ".port")
-	database := facades.Config.GetString("database.connections." + connection + ".database")
-	username := facades.Config.GetString("database.connections." + connection + ".username")
-	password := facades.Config.GetString("database.connections." + connection + ".password")
-	sslmode := facades.Config.GetString("database.connections." + connection + ".sslmode")
-	timezone := facades.Config.GetString("database.connections." + connection + ".timezone")
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s",
-		host, username, password, database, port, sslmode, timezone)
-
 	return postgres.New(postgres.Config{
-		DSN: dsn,
+		DSN: support.GetPostgresqlDsn(connection),
 	})
 }
 
 func getSqliteGormConfig(connection string) gorm.Dialector {
-	database := facades.Config.GetString("database.connections." + connection + ".database")
-
-	return sqlite.Open(database)
+	return sqlite.Open(support.GetSqliteDsn(connection))
 }
 
 func getSqlserverGormConfig(connection string) gorm.Dialector {
-	host := facades.Config.GetString("database.connections." + connection + ".host")
-	port := facades.Config.GetString("database.connections." + connection + ".port")
-	database := facades.Config.GetString("database.connections." + connection + ".database")
-	username := facades.Config.GetString("database.connections." + connection + ".username")
-	password := facades.Config.GetString("database.connections." + connection + ".password")
-
-	dsn := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
-		username, password, host, port, database)
-
 	return sqlserver.New(sqlserver.Config{
-		DSN: dsn,
+		DSN: support.GetSqlserverDsn(connection),
 	})
 }

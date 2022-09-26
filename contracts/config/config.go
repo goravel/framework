@@ -1,5 +1,6 @@
 package config
 
+//go:generate mockery --name=Config
 type Config interface {
 	//Env Get config from env.
 	Env(envName string, defaultValue ...interface{}) interface{}

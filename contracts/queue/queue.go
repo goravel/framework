@@ -1,6 +1,6 @@
 package queue
 
-//go:generate mockery --name=Queue --output=../mocks/queue/ --outpkg=queue --keeptree
+//go:generate mockery --name=Queue
 type Queue interface {
 	Worker(args Args) Worker
 	// Register Register jobs
@@ -13,7 +13,6 @@ type Queue interface {
 	Chain(jobs []Jobs) Task
 }
 
-//go:generate mockery --name=Worker --output=../mocks/queue/ --outpkg=queue --keeptree
 type Worker interface {
 	Run() error
 }

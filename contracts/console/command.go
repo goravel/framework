@@ -11,6 +11,7 @@ type CommandExtend struct {
 	Subcommands []*cli.Command
 }
 
+//go:generate mockery --name=Command
 type Command interface {
 	//Signature The name and signature of the console command.
 	Signature() string

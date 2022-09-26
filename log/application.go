@@ -3,29 +3,30 @@ package log
 import (
 	"errors"
 
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/log/logger"
-	"github.com/goravel/framework/support/facades"
 	"github.com/sirupsen/logrus"
+
+	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/log/logger"
 )
 
 type Application struct {
 	log *logrus.Logger
 }
 
-func (app *Application) Init() *logrus.Logger {
+func (app *Application) Init() log.Log {
 	app.log = logrus.New()
-	app.log.SetLevel(logrus.TraceLevel)
+	app.log.SetLevel(logrus.DebugLevel)
 	if err := app.registerHook(facades.Config.GetString("logging.default")); err != nil {
 		panic("Log Init error: " + err.Error())
 	}
 
-	return app.log
+	return &Log{app.log, false}
 }
 
 //registerHook Register hook
 func (app *Application) registerHook(channel string) error {
-	var hook log.Logger
+	var hook log.Hook
 	driver := facades.Config.GetString("logging.channels." + channel + ".driver")
 	configPath := "logging.channels." + channel
 
@@ -47,7 +48,7 @@ func (app *Application) registerHook(channel string) error {
 	case "daily":
 		hook = logger.Daily{}
 	case "custom":
-		hook = facades.Config.Get("logging.channels." + channel + ".via").(log.Logger)
+		hook = facades.Config.Get("logging.channels." + channel + ".via").(log.Hook)
 	default:
 		return errors.New("Error logging channel: " + channel)
 	}
