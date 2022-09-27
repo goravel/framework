@@ -3,7 +3,7 @@ package schedule
 import (
 	"github.com/gookit/color"
 	"github.com/robfig/cron/v3"
-	
+
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/schedule/support"
