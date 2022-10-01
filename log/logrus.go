@@ -3,13 +3,13 @@ package log
 import (
 	"errors"
 	"fmt"
-	"github.com/gookit/color"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/log/logger"
 
+	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/log/logger"
 )
 
 type Logrus struct {
@@ -156,12 +156,13 @@ func (r *Logrus) Panicf(format string, args ...interface{}) {
 }
 
 func registerHook(instance *logrus.Logger, channel string) error {
-	var hook log.Hook
 	driver := facades.Config.GetString("logging.channels." + channel + ".driver")
-	configPath := "logging.channels." + channel
+	channelPath := "logging.channels." + channel
+	var hook logrus.Hook
+	var err error
 
 	switch driver {
-	case "stack":
+	case log.StackDriver:
 		for _, stackChannel := range facades.Config.Get("logging.channels." + channel + ".channels").([]string) {
 			if stackChannel == channel {
 				return errors.New("stack drive can't include self channel")
@@ -173,22 +174,53 @@ func registerHook(instance *logrus.Logger, channel string) error {
 		}
 
 		return nil
-	case "single":
-		hook = logger.Single{}
-	case "daily":
-		hook = logger.Daily{}
-	case "custom":
-		hook = facades.Config.Get("logging.channels." + channel + ".via").(log.Hook)
+	case log.SingleDriver:
+		logLogger := &logger.Single{}
+		hook, err = logLogger.Handle(channelPath)
+		if err != nil {
+			return err
+		}
+	case log.DailyDriver:
+		logLogger := &logger.Daily{}
+		hook, err = logLogger.Handle(channelPath)
+		if err != nil {
+			return err
+		}
+	case log.CustomDriver:
+		logLogger := facades.Config.Get("logging.channels." + channel + ".via").(log.Logger)
+		logHook, err := logLogger.Handle(channelPath)
+		if err != nil {
+			return err
+		}
+
+		hook = &Hook{logHook}
 	default:
 		return errors.New("Error logging channel: " + channel)
 	}
 
-	logHook, err := hook.Handle(configPath)
-	if err != nil {
-		return err
-	}
-
-	instance.AddHook(logHook)
+	instance.AddHook(hook)
 
 	return nil
+}
+
+type Hook struct {
+	instance log.Hook
+}
+
+func (h *Hook) Levels() []logrus.Level {
+	levels := h.instance.Levels()
+	var logrusLevels []logrus.Level
+	for _, item := range levels {
+		logrusLevels = append(logrusLevels, logrus.Level(item))
+	}
+
+	return logrusLevels
+}
+
+func (h *Hook) Fire(entry *logrus.Entry) error {
+	return h.instance.Fire(&log.Entry{
+		Level:   log.Level(entry.Level),
+		Time:    entry.Time,
+		Message: entry.Message,
+	})
 }

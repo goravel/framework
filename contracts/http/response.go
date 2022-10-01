@@ -1,8 +1,20 @@
 package http
 
-import "github.com/gin-gonic/gin"
+import "net/http"
+
+type Json map[string]interface{}
 
 type Response interface {
-	Success(ctx *gin.Context, data interface{})
-	Custom(ctx *gin.Context, data interface{}, code int)
+	String(code int, format string, values ...interface{})
+	Json(code int, obj interface{})
+	File(filepath string)
+	FileFromFS(filepath string, fs http.FileSystem)
+	FileAttachment(filepath, filename string)
+	Success() ResponseSuccess
+	Header(key, value string) Response
+}
+
+type ResponseSuccess interface {
+	String(format string, values ...interface{})
+	Json(obj interface{})
 }

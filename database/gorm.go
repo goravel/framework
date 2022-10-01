@@ -68,73 +68,147 @@ func (r *Gorm) Commit() error {
 	return r.instance.Error
 }
 
+func (r *Gorm) Count(count *int64) error {
+	return r.instance.Count(count).Error
+}
+
+func (r *Gorm) Create(value interface{}) error {
+	return r.instance.Create(value).Error
+}
+
+func (r *Gorm) Delete(value interface{}, conds ...interface{}) error {
+	return r.instance.Delete(value, conds).Error
+}
+
+func (r *Gorm) Exec(sql string, values ...interface{}) error {
+	return r.instance.Exec(sql, values).Error
+}
+
+func (r *Gorm) Find(dest interface{}, conds ...interface{}) error {
+	return r.instance.Find(dest, conds...).Error
+}
+
+func (r *Gorm) First(dest interface{}) error {
+	return r.instance.First(dest).Error
+}
+
+func (r *Gorm) FirstOrCreate(dest interface{}, conds ...interface{}) error {
+	return r.instance.FirstOrCreate(dest, conds...).Error
+}
+
+func (r *Gorm) ForceDelete(value interface{}, conds ...interface{}) error {
+	return r.instance.Unscoped().Delete(value, conds).Error
+}
+
+func (r *Gorm) Get(dest interface{}) error {
+	return r.instance.Find(dest).Error
+}
+
+func (r *Gorm) Group(name string) contractsorm.Methods {
+	r.instance = r.instance.Group(name)
+
+	return r
+}
+
+func (r *Gorm) Having(query interface{}, args ...interface{}) contractsorm.Methods {
+	r.instance = r.instance.Having(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Join(query string, args ...interface{}) contractsorm.Methods {
+	r.instance = r.instance.Joins(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Limit(limit int) contractsorm.Methods {
+	r.instance = r.instance.Limit(limit)
+
+	return r
+}
+
+func (r *Gorm) Model(value interface{}) contractsorm.Methods {
+	r.instance = r.instance.Model(value)
+
+	return r
+}
+
+func (r *Gorm) Offset(offset int) contractsorm.Methods {
+	r.instance = r.instance.Offset(offset)
+
+	return r
+}
+
+func (r *Gorm) Order(value interface{}) contractsorm.Methods {
+	r.instance = r.instance.Order(value)
+
+	return r
+}
+
+func (r *Gorm) OrWhere(query interface{}, args ...interface{}) contractsorm.Methods {
+	r.instance = r.instance.Or(query, args...)
+
+	return r
+}
+
+func (r *Gorm) Pluck(column string, dest interface{}) error {
+	return r.instance.Pluck(column, dest).Error
+}
+
+func (r *Gorm) Raw(sql string, values ...interface{}) contractsorm.Methods {
+	r.instance = r.instance.Raw(sql, values)
+
+	return r
+}
+
 func (r *Gorm) Rollback() error {
 	r.instance = r.instance.Rollback()
 
 	return r.instance.Error
 }
 
-func (r *Gorm) Model(value interface{}) contractsorm.Transaction {
-	r.instance = r.instance.Model(value)
-
-	return r
+func (r *Gorm) Save(value interface{}) error {
+	return r.instance.Save(value).Error
 }
 
-func (r *Gorm) Table(name string, args ...interface{}) contractsorm.Transaction {
-	r.instance = r.instance.Table(name, args...)
-
-	return r
+func (r *Gorm) Scan(dest interface{}) error {
+	return r.instance.Scan(dest).Error
 }
 
-func (r *Gorm) Select(query interface{}, args ...interface{}) contractsorm.Transaction {
+func (r *Gorm) Select(query interface{}, args ...interface{}) contractsorm.Methods {
 	r.instance = r.instance.Select(query, args...)
 
 	return r
 }
 
-func (r *Gorm) Where(query interface{}, args ...interface{}) contractsorm.Transaction {
+func (r *Gorm) Table(name string, args ...interface{}) contractsorm.Methods {
+	r.instance = r.instance.Table(name, args...)
+
+	return r
+}
+
+func (r *Gorm) Update(column string, value interface{}) error {
+	return r.instance.Update(column, value).Error
+}
+
+func (r *Gorm) Updates(values interface{}) error {
+	return r.instance.Updates(values).Error
+}
+
+func (r *Gorm) Where(query interface{}, args ...interface{}) contractsorm.Methods {
 	r.instance = r.instance.Where(query, args...)
 
 	return r
 }
 
-func (r *Gorm) Join(query string, args ...interface{}) contractsorm.Transaction {
-	r.instance = r.instance.Joins(query, args...)
+func (r *Gorm) WithTrashed() contractsorm.Methods {
+	r.instance = r.instance.Unscoped()
 
 	return r
 }
 
-func (r *Gorm) Group(name string) contractsorm.Transaction {
-	r.instance = r.instance.Group(name)
-
-	return r
-}
-
-func (r *Gorm) Having(query interface{}, args ...interface{}) contractsorm.Transaction {
-	r.instance = r.instance.Having(query, args...)
-
-	return r
-}
-
-func (r *Gorm) Order(value interface{}) contractsorm.Transaction {
-	r.instance = r.instance.Order(value)
-
-	return r
-}
-
-func (r *Gorm) Limit(limit int) contractsorm.Transaction {
-	r.instance = r.instance.Limit(limit)
-
-	return r
-}
-
-func (r *Gorm) Offset(offset int) contractsorm.Transaction {
-	r.instance = r.instance.Offset(offset)
-
-	return r
-}
-
-func (r *Gorm) Scopes(funcs ...func(contractsorm.Transaction) contractsorm.Transaction) contractsorm.Transaction {
+func (r *Gorm) Scopes(funcs ...func(contractsorm.Methods) contractsorm.Methods) contractsorm.Methods {
 	var gormFuncs []func(*gorm.DB) *gorm.DB
 	for _, item := range funcs {
 		gormFuncs = append(gormFuncs, func(db *gorm.DB) *gorm.DB {
@@ -148,74 +222,6 @@ func (r *Gorm) Scopes(funcs ...func(contractsorm.Transaction) contractsorm.Trans
 	r.instance = r.instance.Scopes(gormFuncs...)
 
 	return r
-}
-
-func (r *Gorm) Raw(sql string, values ...interface{}) contractsorm.Transaction {
-	r.instance = r.instance.Raw(sql, values)
-
-	return r
-}
-
-func (r *Gorm) WithTrashed() contractsorm.Transaction {
-	r.instance = r.instance.Unscoped()
-
-	return r
-}
-
-func (r *Gorm) Create(value interface{}) error {
-	return r.instance.Create(value).Error
-}
-
-func (r *Gorm) Save(value interface{}) error {
-	return r.instance.Save(value).Error
-}
-
-func (r *Gorm) First(dest interface{}, conds ...interface{}) error {
-	return r.instance.First(dest, conds).Error
-}
-
-func (r *Gorm) Last(dest interface{}, conds ...interface{}) error {
-	return r.instance.Last(dest, conds).Error
-}
-
-func (r *Gorm) Find(dest interface{}, conds ...interface{}) error {
-	return r.instance.Find(dest, conds...).Error
-}
-
-func (r *Gorm) FirstOrCreate(dest interface{}, conds ...interface{}) error {
-	return r.instance.FirstOrCreate(dest, conds...).Error
-}
-
-func (r *Gorm) Update(column string, value interface{}) error {
-	return r.instance.Update(column, value).Error
-}
-
-func (r *Gorm) Updates(values interface{}) error {
-	return r.instance.Updates(values).Error
-}
-
-func (r *Gorm) Delete(value interface{}, conds ...interface{}) error {
-	return r.instance.Delete(value, conds).Error
-}
-
-func (r *Gorm) ForceDelete(value interface{}, conds ...interface{}) error {
-	return r.instance.Unscoped().Delete(value, conds).Error
-}
-
-func (r *Gorm) Count(count *int64) error {
-	return r.instance.Count(count).Error
-}
-
-func (r *Gorm) Pluck(column string, dest interface{}) error {
-	return r.instance.Pluck(column, dest).Error
-}
-
-func (r *Gorm) Scan(dest interface{}) error {
-	return r.instance.Scan(dest).Error
-}
-
-func (r *Gorm) Exec(sql string, values ...interface{}) error {
-	return r.instance.Exec(sql, values).Error
 }
 
 func getGormConfig(connection string) (gorm.Dialector, error) {

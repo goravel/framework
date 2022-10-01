@@ -1,6 +1,28 @@
 package log
 
-import "github.com/sirupsen/logrus"
+import (
+	"time"
+
+	"github.com/sirupsen/logrus"
+)
+
+type Level logrus.Level
+
+const (
+	StackDriver  = "stack"
+	SingleDriver = "single"
+	DailyDriver  = "daily"
+	CustomDriver = "custom"
+)
+
+const (
+	PanicLevel Level = iota
+	FatalLevel
+	ErrorLevel
+	WarningLevel
+	InfoLevel
+	DebugLevel
+)
 
 //go:generate mockery --name=Log
 type Log interface {
@@ -19,6 +41,32 @@ type Log interface {
 	Panicf(format string, args ...interface{})
 }
 
+type Logger interface {
+	// Handle pass channel config path here
+	Handle(channel string) (Hook, error)
+}
+
 type Hook interface {
-	Handle(configPath string) (logrus.Hook, error)
+	// Levels monitoring level
+	Levels() []Level
+	// Fire execute logic when trigger
+	Fire(*Entry) error
+}
+
+type Entry struct {
+	Level   Level
+	Time    time.Time
+	Message string
+}
+
+func (r *Entry) GetLevel() Level {
+	return r.Level
+}
+
+func (r *Entry) GetTime() time.Time {
+	return r.Time
+}
+
+func (r *Entry) GetMessage() string {
+	return r.Message
 }

@@ -1,5 +1,7 @@
 package facades
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/goravel/framework/contracts/route"
+)
 
-var Route *gin.Engine
+var Route route.Engine
