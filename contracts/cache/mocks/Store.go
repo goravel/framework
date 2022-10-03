@@ -13,13 +13,13 @@ type Store struct {
 	mock.Mock
 }
 
-// Add provides a mock function with given fields: key, value, seconds
-func (_m *Store) Add(key string, value interface{}, seconds time.Duration) bool {
-	ret := _m.Called(key, value, seconds)
+// Add provides a mock function with given fields: key, value, sec
+func (_m *Store) Add(key string, value interface{}, sec time.Duration) bool {
+	ret := _m.Called(key, value, sec)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(string, interface{}, time.Duration) bool); ok {
-		r0 = rf(key, value, seconds)
+		r0 = rf(key, value, sec)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -69,13 +69,13 @@ func (_m *Store) Forget(key string) bool {
 	return r0
 }
 
-// Get provides a mock function with given fields: key, defaults
-func (_m *Store) Get(key string, defaults interface{}) interface{} {
-	ret := _m.Called(key, defaults)
+// Get provides a mock function with given fields: key, def
+func (_m *Store) Get(key string, def interface{}) interface{} {
+	ret := _m.Called(key, def)
 
 	var r0 interface{}
 	if rf, ok := ret.Get(0).(func(string, interface{}) interface{}); ok {
-		r0 = rf(key, defaults)
+		r0 = rf(key, def)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -99,13 +99,13 @@ func (_m *Store) Has(key string) bool {
 	return r0
 }
 
-// Pull provides a mock function with given fields: key, defaults
-func (_m *Store) Pull(key string, defaults interface{}) interface{} {
-	ret := _m.Called(key, defaults)
+// Pull provides a mock function with given fields: key, def
+func (_m *Store) Pull(key string, def interface{}) interface{} {
+	ret := _m.Called(key, def)
 
 	var r0 interface{}
 	if rf, ok := ret.Get(0).(func(string, interface{}) interface{}); ok {
-		r0 = rf(key, defaults)
+		r0 = rf(key, def)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -115,13 +115,13 @@ func (_m *Store) Pull(key string, defaults interface{}) interface{} {
 	return r0
 }
 
-// Put provides a mock function with given fields: key, value, seconds
-func (_m *Store) Put(key string, value interface{}, seconds time.Duration) error {
-	ret := _m.Called(key, value, seconds)
+// Put provides a mock function with given fields: key, value, sec
+func (_m *Store) Put(key string, value interface{}, sec time.Duration) error {
+	ret := _m.Called(key, value, sec)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, interface{}, time.Duration) error); ok {
-		r0 = rf(key, value, seconds)
+		r0 = rf(key, value, sec)
 	} else {
 		r0 = ret.Error(0)
 	}

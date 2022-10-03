@@ -7,5 +7,5 @@ import (
 )
 
 func TestBracketToColon(t *testing.T) {
-	assert.Equal(t, "/:id/:name", BracketToColon("/{id}/{name}"))
+	assert.Equal(t, "/:id/:name", bracketToColon("/{id}/{name}"))
 }

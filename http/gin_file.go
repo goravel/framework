@@ -14,3 +14,7 @@ type GinFile struct {
 func (f *GinFile) Store(dst string) error {
 	return f.instance.SaveUploadedFile(f.file, dst)
 }
+
+func (f *GinFile) File() *multipart.FileHeader {
+	return f.file
+}

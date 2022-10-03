@@ -42,6 +42,21 @@ func (_m *Log) Errorf(format string, args ...interface{}) {
 	_m.Called(_ca...)
 }
 
+// Fatal provides a mock function with given fields: args
+func (_m *Log) Fatal(args ...interface{}) {
+	var _ca []interface{}
+	_ca = append(_ca, args...)
+	_m.Called(_ca...)
+}
+
+// Fatalf provides a mock function with given fields: format, args
+func (_m *Log) Fatalf(format string, args ...interface{}) {
+	var _ca []interface{}
+	_ca = append(_ca, format)
+	_ca = append(_ca, args...)
+	_m.Called(_ca...)
+}
+
 // Info provides a mock function with given fields: args
 func (_m *Log) Info(args ...interface{}) {
 	var _ca []interface{}

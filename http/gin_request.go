@@ -7,15 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 
 	httpcontract "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/facades"
 )
 
 type GinRequest struct {
-	instance *gin.Context
 	ctx      context.Context
+	instance *gin.Context
 }
 
-func NewGinRequest(instance *gin.Context) *GinRequest {
-	return &GinRequest{instance: instance}
+func NewGinRequest(instance *gin.Context) httpcontract.Request {
+	if facades.Request == nil {
+		facades.Request = &GinRequest{ctx: context.Background(), instance: instance}
+	} else {
+		facades.Request = &GinRequest{ctx: facades.Request.Context(), instance: instance}
+	}
+
+	return facades.Request
 }
 
 func (r *GinRequest) Input(key string) string {
@@ -66,9 +73,22 @@ func (r *GinRequest) Method() string {
 	return r.instance.Request.Method
 }
 
+func (r *GinRequest) Url() string {
+	return r.instance.Request.RequestURI
+}
+
+func (r *GinRequest) FullUrl() string {
+	http := "https://"
+	if r.instance.Request.TLS == nil {
+		http = "http://"
+	}
+
+	return http + r.instance.Request.Host + r.instance.Request.RequestURI
+}
+
 func (r *GinRequest) Context() context.Context {
 	if r.ctx == nil {
-		return context.Background()
+		r.ctx = context.Background()
 	}
 
 	return r.ctx

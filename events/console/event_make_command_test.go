@@ -12,11 +12,11 @@ import (
 	console2 "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
-	goraveltesting "github.com/goravel/framework/testing"
+	testingfile "github.com/goravel/framework/testing/file"
 )
 
 func TestEventMakeCommand(t *testing.T) {
-	err := goraveltesting.CreateEnv()
+	err := testingfile.CreateEnv()
 	assert.Nil(t, err)
 
 	configApp := config.ServiceProvider{}

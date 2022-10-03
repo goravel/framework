@@ -10,7 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/events"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/facades"
-	goraveltesting "github.com/goravel/framework/testing"
+	"github.com/goravel/framework/testing/file"
 )
 
 func TestGetServer(t *testing.T) {
@@ -197,7 +197,7 @@ func TestEvents2Tasks(t *testing.T) {
 }
 
 func initConfig() {
-	goraveltesting.CreateEnv()
+	file.CreateEnv()
 	configServiceProvider := config.ServiceProvider{}
 	configServiceProvider.Register()
 

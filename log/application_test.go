@@ -8,14 +8,15 @@ import (
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log/formatter"
-	goraveltesting "github.com/goravel/framework/testing"
+	"github.com/goravel/framework/testing/file"
+	testingfile "github.com/goravel/framework/testing/file"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLog(t *testing.T) {
-	err := goraveltesting.CreateEnv()
+	err := testingfile.CreateEnv()
 	assert.Nil(t, err)
 
 	addDefaultConfig()
@@ -36,10 +37,10 @@ func TestLog(t *testing.T) {
 	assert.FileExists(t, singleErrorFile)
 	assert.FileExists(t, customFile)
 
-	assert.Equal(t, 3, goraveltesting.GetLineNum(dailyFile))
-	assert.Equal(t, 3, goraveltesting.GetLineNum(singleFile))
-	assert.Equal(t, 2, goraveltesting.GetLineNum(singleErrorFile))
-	assert.Equal(t, 3, goraveltesting.GetLineNum(customFile))
+	assert.Equal(t, 3, file.GetLineNum(dailyFile))
+	assert.Equal(t, 3, file.GetLineNum(singleFile))
+	assert.Equal(t, 2, file.GetLineNum(singleErrorFile))
+	assert.Equal(t, 3, file.GetLineNum(customFile))
 
 	err = os.Remove(".env")
 	assert.Nil(t, err)

@@ -11,11 +11,14 @@ type GroupFunc func(routes Route)
 type Engine interface {
 	Route
 	Run(addr string) error
-	Group(GroupFunc)
-	Prefix(addr string) Engine
+	ServeHTTP(w http.ResponseWriter, req *http.Request)
 }
 
 type Route interface {
+	Group(GroupFunc)
+	Prefix(addr string) Route
+	Middleware(...httpcontract.Middleware) Route
+
 	Any(string, httpcontract.HandlerFunc)
 	Get(string, httpcontract.HandlerFunc)
 	Post(string, httpcontract.HandlerFunc)
@@ -27,6 +30,4 @@ type Route interface {
 	Static(string, string)
 	StaticFile(string, string)
 	StaticFS(string, http.FileSystem)
-
-	Middleware(...httpcontract.Middleware) Route
 }

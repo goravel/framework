@@ -9,8 +9,8 @@ import (
 
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
-	console2 "github.com/goravel/framework/contracts/console"
-	goraveltesting "github.com/goravel/framework/testing"
+	contractconsole "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/testing/file"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
@@ -18,7 +18,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	configServiceProvider.Register()
 
 	consoleApp := console.Application{}
-	consoleApp.Init().Register([]console2.Command{
+	consoleApp.Init().Register([]contractconsole.Command{
 		&MigrateMakeCommand{},
 	})
 
@@ -36,8 +36,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 	assert.FileExists(t, createUpFile)
 	assert.FileExists(t, createDownFile)
 
-	assert.Equal(t, 9, goraveltesting.GetLineNum(createUpFile))
-	assert.Equal(t, 2, goraveltesting.GetLineNum(createDownFile))
+	assert.Equal(t, 9, file.GetLineNum(createUpFile))
+	assert.Equal(t, 2, file.GetLineNum(createDownFile))
 
 	updateUpFile := "database/migrations/" + now + "_add_avatar_to_users_table.up.sql"
 	updateDownFile := "database/migrations/" + now + "_add_avatar_to_users_table.down.sql"
@@ -45,8 +45,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 	assert.FileExists(t, updateUpFile)
 	assert.FileExists(t, updateDownFile)
 
-	assert.Equal(t, 2, goraveltesting.GetLineNum(updateUpFile))
-	assert.Equal(t, 2, goraveltesting.GetLineNum(updateDownFile))
+	assert.Equal(t, 2, file.GetLineNum(updateUpFile))
+	assert.Equal(t, 2, file.GetLineNum(updateDownFile))
 
 	err := os.RemoveAll("database")
 	assert.Nil(t, err)

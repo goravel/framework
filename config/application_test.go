@@ -4,12 +4,12 @@ import (
 	"os"
 	"testing"
 
-	goraveltesting "github.com/goravel/framework/testing"
+	"github.com/goravel/framework/testing/file"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {
-	err := goraveltesting.CreateEnv()
+	err := file.CreateEnv()
 	assert.Nil(t, err)
 	assert.NotPanics(t, func() {
 		app := Application{}

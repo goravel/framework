@@ -7,7 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/file"
-	goraveltesting "github.com/goravel/framework/testing"
+	testingfile "github.com/goravel/framework/testing/file"
 )
 
 type Test struct {
@@ -36,7 +36,7 @@ func TestDispatchSync(t *testing.T) {
 	err := task.DispatchSync()
 	assert.Nil(t, err)
 	assert.True(t, file.Exist("test.txt"))
-	assert.True(t, goraveltesting.GetLineNum("test.txt") == 1)
+	assert.True(t, testingfile.GetLineNum("test.txt") == 1)
 	res := file.Remove("test.txt")
 	assert.True(t, res)
 }

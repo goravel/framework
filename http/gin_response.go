@@ -17,7 +17,7 @@ func NewGinResponse(instance *gin.Context) httpcontract.Response {
 }
 
 func (r *GinResponse) String(code int, format string, values ...interface{}) {
-	r.instance.String(code, format, values)
+	r.instance.String(code, format, values...)
 }
 
 func (r *GinResponse) Json(code int, obj interface{}) {
@@ -28,11 +28,7 @@ func (r *GinResponse) File(filepath string) {
 	r.instance.File(filepath)
 }
 
-func (r *GinResponse) FileFromFS(filepath string, fs http.FileSystem) {
-	r.instance.FileFromFS(filepath, fs)
-}
-
-func (r *GinResponse) FileAttachment(filepath, filename string) {
+func (r *GinResponse) Download(filepath, filename string) {
 	r.instance.FileAttachment(filepath, filename)
 }
 
@@ -55,7 +51,7 @@ func NewGinSuccess(instance *gin.Context) httpcontract.ResponseSuccess {
 }
 
 func (r *GinSuccess) String(format string, values ...interface{}) {
-	r.instance.String(http.StatusOK, format, values)
+	r.instance.String(http.StatusOK, format, values...)
 }
 
 func (r *GinSuccess) Json(obj interface{}) {

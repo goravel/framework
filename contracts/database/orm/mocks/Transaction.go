@@ -105,16 +105,13 @@ func (_m *Transaction) Find(dest interface{}, conds ...interface{}) error {
 	return r0
 }
 
-// First provides a mock function with given fields: dest, conds
-func (_m *Transaction) First(dest interface{}, conds ...interface{}) error {
-	var _ca []interface{}
-	_ca = append(_ca, dest)
-	_ca = append(_ca, conds...)
-	ret := _m.Called(_ca...)
+// First provides a mock function with given fields: dest
+func (_m *Transaction) First(dest interface{}) error {
+	ret := _m.Called(dest)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
-		r0 = rf(dest, conds...)
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(dest)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -156,70 +153,13 @@ func (_m *Transaction) ForceDelete(value interface{}, conds ...interface{}) erro
 	return r0
 }
 
-// Group provides a mock function with given fields: name
-func (_m *Transaction) Group(name string) orm.Transaction {
-	ret := _m.Called(name)
-
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(string) orm.Transaction); ok {
-		r0 = rf(name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
-		}
-	}
-
-	return r0
-}
-
-// Having provides a mock function with given fields: query, args
-func (_m *Transaction) Having(query interface{}, args ...interface{}) orm.Transaction {
-	var _ca []interface{}
-	_ca = append(_ca, query)
-	_ca = append(_ca, args...)
-	ret := _m.Called(_ca...)
-
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Transaction); ok {
-		r0 = rf(query, args...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
-		}
-	}
-
-	return r0
-}
-
-// Join provides a mock function with given fields: query, args
-func (_m *Transaction) Join(query string, args ...interface{}) orm.Transaction {
-	var _ca []interface{}
-	_ca = append(_ca, query)
-	_ca = append(_ca, args...)
-	ret := _m.Called(_ca...)
-
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Transaction); ok {
-		r0 = rf(query, args...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
-		}
-	}
-
-	return r0
-}
-
-// Last provides a mock function with given fields: dest, conds
-func (_m *Transaction) Last(dest interface{}, conds ...interface{}) error {
-	var _ca []interface{}
-	_ca = append(_ca, dest)
-	_ca = append(_ca, conds...)
-	ret := _m.Called(_ca...)
+// Get provides a mock function with given fields: dest
+func (_m *Transaction) Get(dest interface{}) error {
+	ret := _m.Called(dest)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
-		r0 = rf(dest, conds...)
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(dest)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -227,16 +167,70 @@ func (_m *Transaction) Last(dest interface{}, conds ...interface{}) error {
 	return r0
 }
 
+// Group provides a mock function with given fields: name
+func (_m *Transaction) Group(name string) orm.Query {
+	ret := _m.Called(name)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Having provides a mock function with given fields: query, args
+func (_m *Transaction) Having(query interface{}, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Join provides a mock function with given fields: query, args
+func (_m *Transaction) Join(query string, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Limit provides a mock function with given fields: limit
-func (_m *Transaction) Limit(limit int) orm.Transaction {
+func (_m *Transaction) Limit(limit int) orm.Query {
 	ret := _m.Called(limit)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(int) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(int) orm.Query); ok {
 		r0 = rf(limit)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -244,15 +238,15 @@ func (_m *Transaction) Limit(limit int) orm.Transaction {
 }
 
 // Model provides a mock function with given fields: value
-func (_m *Transaction) Model(value interface{}) orm.Transaction {
+func (_m *Transaction) Model(value interface{}) orm.Query {
 	ret := _m.Called(value)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(interface{}) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}) orm.Query); ok {
 		r0 = rf(value)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -260,15 +254,34 @@ func (_m *Transaction) Model(value interface{}) orm.Transaction {
 }
 
 // Offset provides a mock function with given fields: offset
-func (_m *Transaction) Offset(offset int) orm.Transaction {
+func (_m *Transaction) Offset(offset int) orm.Query {
 	ret := _m.Called(offset)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(int) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(int) orm.Query); ok {
 		r0 = rf(offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// OrWhere provides a mock function with given fields: query, args
+func (_m *Transaction) OrWhere(query interface{}, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -276,15 +289,15 @@ func (_m *Transaction) Offset(offset int) orm.Transaction {
 }
 
 // Order provides a mock function with given fields: value
-func (_m *Transaction) Order(value interface{}) orm.Transaction {
+func (_m *Transaction) Order(value interface{}) orm.Query {
 	ret := _m.Called(value)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(interface{}) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}) orm.Query); ok {
 		r0 = rf(value)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -306,18 +319,18 @@ func (_m *Transaction) Pluck(column string, dest interface{}) error {
 }
 
 // Raw provides a mock function with given fields: sql, values
-func (_m *Transaction) Raw(sql string, values ...interface{}) orm.Transaction {
+func (_m *Transaction) Raw(sql string, values ...interface{}) orm.Query {
 	var _ca []interface{}
 	_ca = append(_ca, sql)
 	_ca = append(_ca, values...)
 	ret := _m.Called(_ca...)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Query); ok {
 		r0 = rf(sql, values...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -367,7 +380,7 @@ func (_m *Transaction) Scan(dest interface{}) error {
 }
 
 // Scopes provides a mock function with given fields: funcs
-func (_m *Transaction) Scopes(funcs ...func(orm.Transaction) orm.Transaction) orm.Transaction {
+func (_m *Transaction) Scopes(funcs ...func(orm.Query) orm.Query) orm.Query {
 	_va := make([]interface{}, len(funcs))
 	for _i := range funcs {
 		_va[_i] = funcs[_i]
@@ -376,12 +389,12 @@ func (_m *Transaction) Scopes(funcs ...func(orm.Transaction) orm.Transaction) or
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(...func(orm.Transaction) orm.Transaction) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(...func(orm.Query) orm.Query) orm.Query); ok {
 		r0 = rf(funcs...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -389,18 +402,18 @@ func (_m *Transaction) Scopes(funcs ...func(orm.Transaction) orm.Transaction) or
 }
 
 // Select provides a mock function with given fields: query, args
-func (_m *Transaction) Select(query interface{}, args ...interface{}) orm.Transaction {
+func (_m *Transaction) Select(query interface{}, args ...interface{}) orm.Query {
 	var _ca []interface{}
 	_ca = append(_ca, query)
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
 		r0 = rf(query, args...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -408,18 +421,18 @@ func (_m *Transaction) Select(query interface{}, args ...interface{}) orm.Transa
 }
 
 // Table provides a mock function with given fields: name, args
-func (_m *Transaction) Table(name string, args ...interface{}) orm.Transaction {
+func (_m *Transaction) Table(name string, args ...interface{}) orm.Query {
 	var _ca []interface{}
 	_ca = append(_ca, name)
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Query); ok {
 		r0 = rf(name, args...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -455,18 +468,18 @@ func (_m *Transaction) Updates(values interface{}) error {
 }
 
 // Where provides a mock function with given fields: query, args
-func (_m *Transaction) Where(query interface{}, args ...interface{}) orm.Transaction {
+func (_m *Transaction) Where(query interface{}, args ...interface{}) orm.Query {
 	var _ca []interface{}
 	_ca = append(_ca, query)
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
 		r0 = rf(query, args...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -474,15 +487,15 @@ func (_m *Transaction) Where(query interface{}, args ...interface{}) orm.Transac
 }
 
 // WithTrashed provides a mock function with given fields:
-func (_m *Transaction) WithTrashed() orm.Transaction {
+func (_m *Transaction) WithTrashed() orm.Query {
 	ret := _m.Called()
 
-	var r0 orm.Transaction
-	if rf, ok := ret.Get(0).(func() orm.Transaction); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
