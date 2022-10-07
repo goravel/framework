@@ -5,9 +5,10 @@ import (
 
 	"github.com/RichardKnop/machinery/v2"
 	"github.com/RichardKnop/machinery/v2/tasks"
+
 	"github.com/goravel/framework/contracts/events"
-	"github.com/goravel/framework/queue/support"
 	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/queue/support"
 )
 
 type Task struct {
@@ -39,7 +40,7 @@ func (receiver *Task) Dispatch() error {
 
 	for _, listener := range listeners {
 		var err error
-		queue := listener.Queue(receiver.mapArgs)
+		queue := listener.Queue(receiver.mapArgs...)
 		if queue.Enable {
 			err = receiver.dispatchAsync(listener)
 		} else {
@@ -83,7 +84,7 @@ func (receiver *Task) dispatchAsync(listener events.Listener) error {
 }
 
 func (receiver *Task) dispatchSync(listen events.Listener) error {
-	return listen.Handle(receiver.mapArgs)
+	return listen.Handle(receiver.mapArgs...)
 }
 
 func (receiver *Task) getQueueServer(listener events.Listener) (*machinery.Server, error) {

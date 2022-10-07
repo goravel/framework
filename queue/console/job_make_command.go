@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/gookit/color"
-	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -27,15 +27,15 @@ func (receiver *JobMakeCommand) Description() string {
 }
 
 //Extend The console command extend.
-func (receiver *JobMakeCommand) Extend() console.CommandExtend {
-	return console.CommandExtend{
+func (receiver *JobMakeCommand) Extend() command.Extend {
+	return command.Extend{
 		Category: "make",
 	}
 }
 
 //Handle Execute the console command.
-func (receiver *JobMakeCommand) Handle(c *cli.Context) error {
-	name := c.Args().First()
+func (receiver *JobMakeCommand) Handle(ctx console.Context) error {
+	name := ctx.Argument(0)
 	if name == "" {
 		return errors.New("Not enough arguments (missing: name) ")
 	}

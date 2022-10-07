@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/goravel/framework/facades"
 	"github.com/sirupsen/logrus"
@@ -20,7 +21,12 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 		b = &bytes.Buffer{}
 	}
 
-	timestamp := entry.Time.Format("2006-01-02 15:04:05")
+	cstSh, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	if err != nil {
+		return nil, err
+	}
+
+	timestamp := entry.Time.In(cstSh).Format("2006-01-02 15:04:05")
 	var newLog string
 
 	if len(entry.Data) > 0 {

@@ -1,8 +1,11 @@
 package support
 
 import (
+	"errors"
+
 	"github.com/RichardKnop/machinery/v2"
 	"github.com/RichardKnop/machinery/v2/tasks"
+
 	"github.com/goravel/framework/contracts/queue"
 )
 
@@ -18,6 +21,10 @@ type Task struct {
 
 func (receiver *Task) Dispatch() error {
 	driver := getDriver(receiver.connection)
+
+	if driver == "" {
+		return errors.New("unknown queue driver")
+	}
 	if driver == DriverSync || driver == "" {
 		return receiver.DispatchSync()
 	}

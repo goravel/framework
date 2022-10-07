@@ -9,7 +9,11 @@ type Application struct {
 	jobs []queue.Job
 }
 
-func (app *Application) Worker(args queue.Args) queue.Worker {
+func (app *Application) Worker(args *queue.Args) queue.Worker {
+	if args == nil {
+		return &support.Worker{}
+	}
+
 	return &support.Worker{
 		Connection: args.Connection,
 		Queue:      args.Queue,
@@ -18,7 +22,7 @@ func (app *Application) Worker(args queue.Args) queue.Worker {
 }
 
 func (app *Application) Register(jobs []queue.Job) {
-	app.jobs = jobs
+	app.jobs = append(app.jobs, jobs...)
 }
 
 func (app *Application) GetJobs() []queue.Job {

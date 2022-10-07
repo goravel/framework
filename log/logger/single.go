@@ -2,9 +2,6 @@ package logger
 
 import (
 	"errors"
-	"io"
-	"os"
-	"path"
 
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
@@ -18,69 +15,69 @@ type Single struct {
 
 func (single *Single) Handle(channel string) (logrus.Hook, error) {
 	logPath := facades.Config.GetString(channel + ".path")
-	err := os.MkdirAll(path.Dir(logPath), os.ModePerm)
-	if err != nil {
-		return nil, errors.New("Create dir fail:" + err.Error())
+	if logPath == "" {
+		return nil, errors.New("error log path")
 	}
 
-	writer, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
-	if err != nil {
-		return nil, errors.New("Failed to log to file:" + err.Error())
+	levels := getLevels(facades.Config.GetString(channel + ".level"))
+	pathMap := lfshook.PathMap{}
+	for _, level := range levels {
+		pathMap[level] = logPath
 	}
 
 	return lfshook.NewHook(
-		setLevel(facades.Config.GetString(channel+".level"), writer),
+		pathMap,
 		&formatter.General{},
 	), nil
 }
 
-func setLevel(level string, writer io.Writer) lfshook.WriterMap {
+func getLevels(level string) []logrus.Level {
 	if level == "panic" {
-		return lfshook.WriterMap{
-			logrus.PanicLevel: writer,
+		return []logrus.Level{
+			logrus.PanicLevel,
 		}
 	}
 
 	if level == "fatal" {
-		return lfshook.WriterMap{
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+		return []logrus.Level{
+			logrus.FatalLevel,
+			logrus.PanicLevel,
 		}
 	}
 
 	if level == "error" {
-		return lfshook.WriterMap{
-			logrus.ErrorLevel: writer,
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+		return []logrus.Level{
+			logrus.ErrorLevel,
+			logrus.FatalLevel,
+			logrus.PanicLevel,
 		}
 	}
 
 	if level == "warning" {
-		return lfshook.WriterMap{
-			logrus.WarnLevel:  writer,
-			logrus.ErrorLevel: writer,
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+		return []logrus.Level{
+			logrus.WarnLevel,
+			logrus.ErrorLevel,
+			logrus.FatalLevel,
+			logrus.PanicLevel,
 		}
 	}
 
 	if level == "info" {
-		return lfshook.WriterMap{
-			logrus.InfoLevel:  writer,
-			logrus.WarnLevel:  writer,
-			logrus.ErrorLevel: writer,
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+		return []logrus.Level{
+			logrus.InfoLevel,
+			logrus.WarnLevel,
+			logrus.ErrorLevel,
+			logrus.FatalLevel,
+			logrus.PanicLevel,
 		}
 	}
 
-	return lfshook.WriterMap{
-		logrus.DebugLevel: writer,
-		logrus.InfoLevel:  writer,
-		logrus.WarnLevel:  writer,
-		logrus.ErrorLevel: writer,
-		logrus.FatalLevel: writer,
-		logrus.PanicLevel: writer,
+	return []logrus.Level{
+		logrus.DebugLevel,
+		logrus.InfoLevel,
+		logrus.WarnLevel,
+		logrus.ErrorLevel,
+		logrus.FatalLevel,
+		logrus.PanicLevel,
 	}
 }

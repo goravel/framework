@@ -2,9 +2,9 @@ package console
 
 import (
 	"github.com/gookit/color"
-	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 )
 
 type MigrateMakeCommand struct {
@@ -21,18 +21,18 @@ func (receiver *MigrateMakeCommand) Description() string {
 }
 
 //Extend The console command extend.
-func (receiver *MigrateMakeCommand) Extend() console.CommandExtend {
-	return console.CommandExtend{
+func (receiver *MigrateMakeCommand) Extend() command.Extend {
+	return command.Extend{
 		Category: "make",
 	}
 }
 
 //Handle Execute the console command.
-func (receiver *MigrateMakeCommand) Handle(c *cli.Context) error {
+func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// It's possible for the developer to specify the tables to modify in this
 	// schema operation. The developer may also specify if this table needs
 	// to be freshly created, so we can create the appropriate migrations.
-	name := c.Args().First()
+	name := ctx.Argument(0)
 	if name == "" {
 		color.Redln("Not enough arguments (missing: name)")
 

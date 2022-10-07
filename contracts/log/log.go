@@ -26,7 +26,7 @@ const (
 
 //go:generate mockery --name=Log
 type Log interface {
-	Testing() Log
+	Testing(is bool) Log
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
 	Info(args ...interface{})

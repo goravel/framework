@@ -2,9 +2,11 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/facades"
 )
@@ -24,12 +26,12 @@ func (app *Application) Init() cache.Store {
 		if custom, ok := facades.Config.Get("cache.stores." + defaultStore + ".via").(cache.Store); ok {
 			return custom
 		}
-		facades.Log.Warningf("%s doesn't impletement contracts/cache/store", defaultStore)
+		color.Redln("%s doesn't implement contracts/cache/store", defaultStore)
 
 		return store
 	}
 
-	facades.Log.Warningf("Not supported cache store: %s", defaultStore)
+	color.Redln("Not supported cache store: %s", defaultStore)
 
 	return store
 }
@@ -54,7 +56,9 @@ func (app *Application) createRedisDriver() *Redis {
 
 	pong, err := client.Ping(context.Background()).Result()
 	if err != nil {
-		facades.Log.Warningf("Failed to link redis:%s, %s\n%+v", pong, err, string(debug.Stack()))
+		color.Redln(fmt.Sprintf("Failed to link redis:%s, %s\n%+v", pong, err, string(debug.Stack())))
+
+		return nil
 	}
 
 	return &Redis{

@@ -2,6 +2,7 @@ package mail
 
 type Mail interface {
 	Content(content Content) Mail
+	From(address From) Mail
 	To(addresses []string) Mail
 	Cc(addresses []string) Mail
 	Bcc(addresses []string) Mail
@@ -18,4 +19,9 @@ type Content struct {
 type Queue struct {
 	Connection string
 	Queue      string
+}
+
+type From struct {
+	Address string
+	Name    string
 }

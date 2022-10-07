@@ -10,5 +10,5 @@ func (r *SendMailJob) Signature() string {
 
 //Handle Execute the job.
 func (r *SendMailJob) Handle(args ...interface{}) error {
-	return SendMail(args[0].(string), args[1].(string), args[2].([]string), args[3].([]string), args[4].([]string), args[5].([]string))
+	return SendMail(args[0].(string), args[1].(string), args[2].(string), args[3].(string), args[4].([]string), args[5].([]string), args[6].([]string), args[7].([]string))
 }

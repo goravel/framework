@@ -16,6 +16,10 @@ type Orm struct {
 	instances       map[string]contractsorm.DB
 }
 
+func NewOrm() contractsorm.Orm {
+	return &Orm{}
+}
+
 func (r *Orm) Connection(name string) contractsorm.Orm {
 	defaultConnection := facades.Config.GetString("database.default")
 	if name == "" {

@@ -2,7 +2,7 @@ package queue
 
 //go:generate mockery --name=Queue
 type Queue interface {
-	Worker(args Args) Worker
+	Worker(args *Args) Worker
 	// Register Register jobs
 	Register(jobs []Job)
 	// GetJobs Get all jobs

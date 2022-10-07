@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/gookit/color"
-	consolecontract "github.com/goravel/framework/contracts/console"
+
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
-	"github.com/urfave/cli/v2"
 )
 
 type KeyGenerateCommand struct {
@@ -26,14 +27,14 @@ func (receiver *KeyGenerateCommand) Description() string {
 }
 
 //Extend The console command extend.
-func (receiver *KeyGenerateCommand) Extend() consolecontract.CommandExtend {
-	return consolecontract.CommandExtend{
+func (receiver *KeyGenerateCommand) Extend() command.Extend {
+	return command.Extend{
 		Category: "key",
 	}
 }
 
 //Handle Execute the console command.
-func (receiver *KeyGenerateCommand) Handle(c *cli.Context) error {
+func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 	key := receiver.generateRandomKey()
 
 	if err := receiver.setKeyInEnvironmentFile(key); err != nil {

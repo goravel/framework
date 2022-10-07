@@ -22,6 +22,6 @@ func (receiver *ServiceProvider) registerCommands() {
 	facades.Artisan.Register([]console2.Command{
 		&console.ListCommand{},
 		&console.KeyGenerateCommand{},
-		&console.ConsoleMakeCommand{},
+		&console.MakeCommand{},
 	})
 }

@@ -2,8 +2,8 @@ package console
 
 import (
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/facades"
-	"github.com/urfave/cli/v2"
 )
 
 type ListCommand struct {
@@ -20,12 +20,12 @@ func (receiver *ListCommand) Description() string {
 }
 
 //Extend The console command extend.
-func (receiver *ListCommand) Extend() console.CommandExtend {
-	return console.CommandExtend{}
+func (receiver *ListCommand) Extend() command.Extend {
+	return command.Extend{}
 }
 
 //Handle Execute the console command.
-func (receiver *ListCommand) Handle(c *cli.Context) error {
+func (receiver *ListCommand) Handle(ctx console.Context) error {
 	facades.Artisan.Call("--help")
 
 	return nil

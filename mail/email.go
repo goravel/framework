@@ -13,6 +13,7 @@ import (
 
 type Email struct {
 	content  mail.Content
+	from     mail.From
 	to       []string
 	cc       []string
 	bcc      []string
@@ -25,6 +26,12 @@ func NewEmail() mail.Mail {
 
 func (r *Email) Content(content mail.Content) mail.Mail {
 	r.content = content
+
+	return r
+}
+
+func (r *Email) From(from mail.From) mail.Mail {
+	r.from = from
 
 	return r
 }
@@ -55,13 +62,15 @@ func (r *Email) Attach(files []string) mail.Mail {
 }
 
 func (r *Email) Send() error {
-	return SendMail(r.content.Subject, r.content.Html, r.to, r.cc, r.bcc, r.attaches)
+	return SendMail(r.content.Subject, r.content.Html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
 }
 
 func (r *Email) Queue(queue *mail.Queue) error {
 	job := facades.Queue.Job(&SendMailJob{}, []contractqueue.Arg{
 		{Value: r.content.Subject, Type: "string"},
 		{Value: r.content.Html, Type: "string"},
+		{Value: r.from.Address, Type: "string"},
+		{Value: r.from.Name, Type: "string"},
 		{Value: r.to, Type: "[]string"},
 		{Value: r.cc, Type: "[]string"},
 		{Value: r.bcc, Type: "[]string"},
@@ -79,15 +88,19 @@ func (r *Email) Queue(queue *mail.Queue) error {
 	return job.Dispatch()
 }
 
-func SendMail(subject, html string, to, cc, bcc, attaches []string) error {
-	e := &email.Email{
-		Subject: subject,
-		HTML:    []byte(html),
-		To:      to,
-		Cc:      cc,
-		Bcc:     bcc,
-		From:    fmt.Sprintf("%s <%s>", facades.Config.GetString("mail.from.name"), facades.Config.GetString("mail.from.address")),
+func SendMail(subject, html string, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
+	e := email.NewEmail()
+	if fromAddress == "" {
+		e.From = fmt.Sprintf("%s <%s>", facades.Config.GetString("mail.from.name"), facades.Config.GetString("mail.from.address"))
+	} else {
+		e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
 	}
+
+	e.To = to
+	e.Bcc = bcc
+	e.Cc = cc
+	e.Subject = subject
+	e.HTML = []byte(html)
 
 	for _, attach := range attaches {
 		if _, err := e.AttachFile(attach); err != nil {

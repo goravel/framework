@@ -1,15 +1,14 @@
 package console
 
-type ConsoleStubs struct {
+type Stubs struct {
 }
 
-//Command Create a command.
-func (receiver ConsoleStubs) Command() string {
+func (receiver Stubs) Command() string {
 	return `package commands
 
 import (
 	"github.com/goravel/framework/contracts/console"
-	"github.com/urfave/cli/v2"
+	"github.com/goravel/framework/contracts/console/command"
 )
 
 type DummyCommand struct {
@@ -26,12 +25,12 @@ func (receiver *DummyCommand) Description() string {
 }
 
 //Extend The console command extend.
-func (receiver *DummyCommand) Extend() console.CommandExtend {
-	return console.CommandExtend{}
+func (receiver *DummyCommand) Extend() command.Extend {
+	return command.Extend{}
 }
 
 //Handle Execute the console command.
-func (receiver *DummyCommand) Handle(c *cli.Context) error {
+func (receiver *DummyCommand) Handle(ctx console.Context) error {
 	
 	return nil
 }

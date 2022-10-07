@@ -7,9 +7,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gookit/color"
-	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/console/command"
 )
 
 type MigrateRollbackCommand struct {
@@ -26,11 +26,11 @@ func (receiver *MigrateRollbackCommand) Description() string {
 }
 
 //Extend The console command extend.
-func (receiver *MigrateRollbackCommand) Extend() console.CommandExtend {
-	return console.CommandExtend{
+func (receiver *MigrateRollbackCommand) Extend() command.Extend {
+	return command.Extend{
 		Category: "migrate",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
+		Flags: []command.Flag{
+			{
 				Name:  "step",
 				Value: "1",
 				Usage: "rollback steps",
@@ -40,16 +40,16 @@ func (receiver *MigrateRollbackCommand) Extend() console.CommandExtend {
 }
 
 //Handle Execute the console command.
-func (receiver *MigrateRollbackCommand) Handle(c *cli.Context) error {
+func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	m, err := getMigrate()
 	if err != nil {
 		return err
 	}
 
-	stepString := "-" + c.String("step")
+	stepString := "-" + ctx.Option("step")
 	step, err := strconv.Atoi(stepString)
 	if err != nil {
-		color.Redln("Migration failed: invalid step", c.String("step"))
+		color.Redln("Migration failed: invalid step", ctx.Option("step"))
 
 		return nil
 	}

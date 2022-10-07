@@ -78,12 +78,16 @@ func (r *GinRequest) Url() string {
 }
 
 func (r *GinRequest) FullUrl() string {
-	http := "https://"
+	prefix := "https://"
 	if r.instance.Request.TLS == nil {
-		http = "http://"
+		prefix = "http://"
 	}
 
-	return http + r.instance.Request.Host + r.instance.Request.RequestURI
+	if r.instance.Request.Host == "" {
+		return ""
+	}
+
+	return prefix + r.instance.Request.Host + r.instance.Request.RequestURI
 }
 
 func (r *GinRequest) Context() context.Context {

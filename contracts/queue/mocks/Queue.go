@@ -66,11 +66,11 @@ func (_m *Queue) Register(jobs []queue.Job) {
 }
 
 // Worker provides a mock function with given fields: args
-func (_m *Queue) Worker(args queue.Args) queue.Worker {
+func (_m *Queue) Worker(args *queue.Args) queue.Worker {
 	ret := _m.Called(args)
 
 	var r0 queue.Worker
-	if rf, ok := ret.Get(0).(func(queue.Args) queue.Worker); ok {
+	if rf, ok := ret.Get(0).(func(*queue.Args) queue.Worker); ok {
 		r0 = rf(args)
 	} else {
 		if ret.Get(0) != nil {

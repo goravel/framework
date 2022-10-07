@@ -32,7 +32,7 @@ func GetServer(connection string, queue string) (*machinery.Server, error) {
 		return getRedisServer(connection, queue), nil
 	}
 
-	return nil, fmt.Errorf("unknow queue driver: %s", driver)
+	return nil, fmt.Errorf("unknown queue driver: %s", driver)
 }
 
 func getDriver(connection string) string {
@@ -106,7 +106,7 @@ func events2Tasks(events map[events.Event][]events.Listener) (map[string]interfa
 			}
 
 			if tasks[listener.Signature()] != nil {
-				return nil, fmt.Errorf("listener signature duplicate: %s, the names of Job and Listen cannot be duplicated", listener.Signature())
+				continue
 			}
 
 			tasks[listener.Signature()] = listener.Handle

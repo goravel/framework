@@ -29,8 +29,8 @@ func NewLogrus() log.Log {
 	return &Logrus{instance, false}
 }
 
-func (r *Logrus) Testing() log.Log {
-	r.Test = true
+func (r *Logrus) Testing(is bool) log.Log {
+	r.Test = is
 
 	return r
 }
@@ -158,9 +158,9 @@ func (r *Logrus) Panicf(format string, args ...interface{}) {
 func registerHook(instance *logrus.Logger, channel string) error {
 	driver := facades.Config.GetString("logging.channels." + channel + ".driver")
 	channelPath := "logging.channels." + channel
+
 	var hook logrus.Hook
 	var err error
-
 	switch driver {
 	case log.StackDriver:
 		for _, stackChannel := range facades.Config.Get("logging.channels." + channel + ".channels").([]string) {
