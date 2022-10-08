@@ -11,7 +11,7 @@ import (
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/gookit/color"
 
-	"github.com/goravel/framework/contracts/events"
+	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/facades"
 )
@@ -96,7 +96,7 @@ func jobs2Tasks(jobs []queue.Job) (map[string]interface{}, error) {
 	return tasks, nil
 }
 
-func events2Tasks(events map[events.Event][]events.Listener) (map[string]interface{}, error) {
+func eventsToTasks(events map[event.Event][]event.Listener) (map[string]interface{}, error) {
 	tasks := make(map[string]interface{})
 
 	for _, listeners := range events {

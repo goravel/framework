@@ -6,16 +6,16 @@ import (
 	"github.com/RichardKnop/machinery/v2"
 	"github.com/RichardKnop/machinery/v2/tasks"
 
-	"github.com/goravel/framework/contracts/events"
+	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/queue/support"
 )
 
 type Task struct {
-	Events      map[events.Event][]events.Listener
-	Event       events.Event
-	Args        []events.Arg
-	handledArgs []events.Arg
+	Events      map[event.Event][]event.Listener
+	Event       event.Event
+	Args        []event.Arg
+	handledArgs []event.Arg
 	mapArgs     []interface{}
 }
 
@@ -55,7 +55,7 @@ func (receiver *Task) Dispatch() error {
 	return nil
 }
 
-func (receiver *Task) dispatchAsync(listener events.Listener) error {
+func (receiver *Task) dispatchAsync(listener event.Listener) error {
 	queueServer, err := receiver.getQueueServer(listener)
 	if err != nil {
 		return err
@@ -83,11 +83,11 @@ func (receiver *Task) dispatchAsync(listener events.Listener) error {
 	return nil
 }
 
-func (receiver *Task) dispatchSync(listen events.Listener) error {
+func (receiver *Task) dispatchSync(listen event.Listener) error {
 	return listen.Handle(receiver.mapArgs...)
 }
 
-func (receiver *Task) getQueueServer(listener events.Listener) (*machinery.Server, error) {
+func (receiver *Task) getQueueServer(listener event.Listener) (*machinery.Server, error) {
 	queue := listener.Queue(receiver.mapArgs)
 	connection := queue.Connection
 	if connection == "" {

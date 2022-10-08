@@ -31,7 +31,7 @@ func (receiver *Worker) Run() error {
 		return err
 	}
 
-	eventTasks, err := events2Tasks(facades.Event.GetEvents())
+	eventTasks, err := eventsToTasks(facades.Event.GetEvents())
 	if err != nil {
 		return err
 	}

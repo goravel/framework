@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/contracts/events"
+	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/testing/file"
@@ -108,7 +108,7 @@ func (receiver *TestEvent) Signature() string {
 	return "TestName"
 }
 
-func (receiver *TestEvent) Handle(args []events.Arg) ([]events.Arg, error) {
+func (receiver *TestEvent) Handle(args []event.Arg) ([]event.Arg, error) {
 	return args, nil
 }
 
@@ -119,8 +119,8 @@ func (receiver *TestListener) Signature() string {
 	return "TestName"
 }
 
-func (receiver *TestListener) Queue(args ...interface{}) events.Queue {
-	return events.Queue{
+func (receiver *TestListener) Queue(args ...interface{}) event.Queue {
+	return event.Queue{
 		Enable:     false,
 		Connection: "",
 		Queue:      "",
@@ -138,8 +138,8 @@ func (receiver *TestListenerDuplicate) Signature() string {
 	return "TestName"
 }
 
-func (receiver *TestListenerDuplicate) Queue(args ...interface{}) events.Queue {
-	return events.Queue{
+func (receiver *TestListenerDuplicate) Queue(args ...interface{}) event.Queue {
+	return event.Queue{
 		Enable:     false,
 		Connection: "",
 		Queue:      "",
@@ -157,8 +157,8 @@ func (receiver *TestListenerEmpty) Signature() string {
 	return ""
 }
 
-func (receiver *TestListenerEmpty) Queue(args ...interface{}) events.Queue {
-	return events.Queue{
+func (receiver *TestListenerEmpty) Queue(args ...interface{}) event.Queue {
+	return event.Queue{
 		Enable:     false,
 		Connection: "",
 		Queue:      "",
@@ -170,7 +170,7 @@ func (receiver *TestListenerEmpty) Handle(args ...interface{}) error {
 }
 
 func TestEvents2Tasks(t *testing.T) {
-	_, err := events2Tasks(map[events.Event][]events.Listener{
+	_, err := eventsToTasks(map[event.Event][]event.Listener{
 		&TestEvent{}: {
 			&TestListener{},
 		},
@@ -178,7 +178,7 @@ func TestEvents2Tasks(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	_, err = events2Tasks(map[events.Event][]events.Listener{
+	_, err = eventsToTasks(map[event.Event][]event.Listener{
 		&TestEvent{}: {
 			&TestListener{},
 			&TestListenerDuplicate{},
@@ -187,7 +187,7 @@ func TestEvents2Tasks(t *testing.T) {
 
 	assert.NotNil(t, err)
 
-	_, err = events2Tasks(map[events.Event][]events.Listener{
+	_, err = eventsToTasks(map[event.Event][]event.Listener{
 		&TestEvent{}: {
 			&TestListenerEmpty{},
 		},

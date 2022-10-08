@@ -1,8 +1,8 @@
-package events
+package event
 
 import (
 	"github.com/goravel/framework/contracts/console"
-	eventConsole "github.com/goravel/framework/events/console"
+	eventConsole "github.com/goravel/framework/event/console"
 	"github.com/goravel/framework/facades"
 )
 

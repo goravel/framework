@@ -1,4 +1,4 @@
-package events
+package event
 
 //go:generate mockery --name=Instance
 type Instance interface {

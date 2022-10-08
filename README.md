@@ -1,8 +1,8 @@
-<p align="center"><img src="https://goravel.s3.us-east-2.amazonaws.com/goravel-word.png" width="300"></p>
+<!-- <p align="center"><img src="https://goravel.s3.us-east-2.amazonaws.com/goravel-word.png" width="300"></p> -->
 
-English | [中文](README_cn.md)
+English | [中文](../zh/README.md)
 
-# About Goravel
+## About Goravel
 
 Goravel is a web application framework with complete functions and good scalability. As a starting scaffolding to help
 Golang developers quickly build their own applications.
@@ -15,26 +15,23 @@ Golang developers quickly build their own applications.
 - [x] Migrate
 - [x] Logger
 - [x] Cache
-- [x] gRPC
+- [x] Grpc
 - [x] Artisan Console
 - [x] Task Scheduling
 - [x] Queue
 - [x] Event
-- [ ] Mail
-- [ ] Testing
+- [x] Mail
+- [x] Mock
 
 ## Documentation
 
 Online documentation [https://www.goravel.dev/en](https://www.goravel.dev/en)
 
-> To optimize the documentation, please submit a PR to the documentation
-> repository [https://github.com/goravel/docs](https://github.com/goravel/docs)
+> To optimize the documentation, please submit a PR to the documentation repository [https://github.com/goravel/docs](https://github.com/goravel/docs)
 
-## Tribute
+## Tribute Laravel
 
-The framework refers to the design ideas of [Laravel](https://github.com/laravel/laravel);
-
-The documentation refers to the content of [Laravel](https://laravel.com/docs/8.x);
+Goravel and Laravel remain highly consistent, let PHPer play Golang happily without learning a new framework!
 
 ## License
 

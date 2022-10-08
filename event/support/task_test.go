@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/goravel/framework/contracts/events"
+	"github.com/goravel/framework/contracts/event"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func (receiver *TestEvent) Signature() string {
 	return "test_event"
 }
 
-func (receiver *TestEvent) Handle(args []events.Arg) ([]events.Arg, error) {
+func (receiver *TestEvent) Handle(args []event.Arg) ([]event.Arg, error) {
 	return args, nil
 }
 
@@ -26,7 +26,7 @@ func (receiver *TestEventNoRegister) Signature() string {
 	return "test_event1"
 }
 
-func (receiver *TestEventNoRegister) Handle(args []events.Arg) ([]events.Arg, error) {
+func (receiver *TestEventNoRegister) Handle(args []event.Arg) ([]event.Arg, error) {
 	return args, nil
 }
 
@@ -37,7 +37,7 @@ func (receiver *TestEventHandleError) Signature() string {
 	return "test_event1"
 }
 
-func (receiver *TestEventHandleError) Handle(args []events.Arg) ([]events.Arg, error) {
+func (receiver *TestEventHandleError) Handle(args []event.Arg) ([]event.Arg, error) {
 	return nil, errors.New("some errors")
 }
 
@@ -48,8 +48,8 @@ func (receiver *TestListener) Signature() string {
 	return "test_listener"
 }
 
-func (receiver *TestListener) Queue(args ...interface{}) events.Queue {
-	return events.Queue{
+func (receiver *TestListener) Queue(args ...interface{}) event.Queue {
+	return event.Queue{
 		Enable:     false,
 		Connection: "",
 		Queue:      "",
@@ -67,8 +67,8 @@ func (receiver *TestListenerHandleError) Signature() string {
 	return "test_listener"
 }
 
-func (receiver *TestListenerHandleError) Queue(args ...interface{}) events.Queue {
-	return events.Queue{
+func (receiver *TestListenerHandleError) Queue(args ...interface{}) event.Queue {
+	return event.Queue{
 		Enable:     false,
 		Connection: "",
 		Queue:      "",
@@ -85,20 +85,20 @@ func TestDispatch(t *testing.T) {
 	tests := []struct {
 		Name  string
 		Setup func()
-		Event events.Event
+		Event event.Event
 		err   bool
 	}{
 		{
 			Name: "dispatchSync success",
 			Setup: func() {
 				task = Task{
-					Events: map[events.Event][]events.Listener{
+					Events: map[event.Event][]event.Listener{
 						&TestEvent{}: {
 							&TestListener{},
 						},
 					},
 					Event: &TestEvent{},
-					Args: []events.Arg{
+					Args: []event.Arg{
 						{Type: "sting", Value: "test"},
 					},
 				}
@@ -109,13 +109,13 @@ func TestDispatch(t *testing.T) {
 			Name: "dispatchSync error",
 			Setup: func() {
 				task = Task{
-					Events: map[events.Event][]events.Listener{
+					Events: map[event.Event][]event.Listener{
 						&TestEvent{}: {
 							&TestListenerHandleError{},
 						},
 					},
 					Event: &TestEvent{},
-					Args: []events.Arg{
+					Args: []event.Arg{
 						{Type: "sting", Value: "test"},
 					},
 				}
@@ -127,13 +127,13 @@ func TestDispatch(t *testing.T) {
 			Name: "event not found",
 			Setup: func() {
 				task = Task{
-					Events: map[events.Event][]events.Listener{
+					Events: map[event.Event][]event.Listener{
 						&TestEvent{}: {
 							&TestListener{},
 						},
 					},
 					Event: &TestEventNoRegister{},
-					Args: []events.Arg{
+					Args: []event.Arg{
 						{Type: "sting", Value: "test"},
 					},
 				}
@@ -144,13 +144,13 @@ func TestDispatch(t *testing.T) {
 			Name: "event handle return error",
 			Setup: func() {
 				task = Task{
-					Events: map[events.Event][]events.Listener{
+					Events: map[event.Event][]event.Listener{
 						&TestEventHandleError{}: {
 							&TestListener{},
 						},
 					},
 					Event: &TestEventHandleError{},
-					Args: []events.Arg{
+					Args: []event.Arg{
 						{Type: "sting", Value: "test"},
 					},
 				}

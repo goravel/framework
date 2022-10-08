@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	events "github.com/goravel/framework/contracts/events"
+	events "github.com/goravel/framework/contracts/event"
 	mock "github.com/stretchr/testify/mock"
 )
 

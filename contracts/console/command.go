@@ -4,7 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 )
 
-//go:generate mockery --name=Command
 type Command interface {
 	//Signature The name and signature of the console command.
 	Signature() string
