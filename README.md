@@ -29,6 +29,12 @@ Online documentation [https://www.goravel.dev/en](https://www.goravel.dev/en)
 
 > To optimize the documentation, please submit a PR to the documentation repository [https://github.com/goravel/docs](https://github.com/goravel/docs)
 
+## Group
+
+Welcome more exchanges in Discord.
+
+[https://discord.gg/cFc5csczzS](https://discord.gg/cFc5csczzS)
+
 ## Tribute Laravel
 
 Goravel and Laravel remain highly consistent, let PHPer play Golang happily without learning a new framework!
