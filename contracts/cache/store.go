@@ -2,17 +2,18 @@ package cache
 
 import "time"
 
+//go:generate mockery --name=Store
 type Store interface {
 	//Get Retrieve an item from the cache by key.
-	Get(key string, defaults interface{}) interface{}
+	Get(key string, def interface{}) interface{}
 	//Has Determine if an item exists in the cache.
 	Has(key string) bool
 	//Put Store an item in the cache for a given number of seconds.
-	Put(key string, value interface{}, seconds time.Duration) error
+	Put(key string, value interface{}, sec time.Duration) error
 	//Pull Retrieve an item from the cache and delete it.
-	Pull(key string, defaults interface{}) interface{}
+	Pull(key string, def interface{}) interface{}
 	//Add Store an item in the cache if the key does not exist.
-	Add(key string, value interface{}, seconds time.Duration) bool
+	Add(key string, value interface{}, sec time.Duration) bool
 	//Remember Get an item from the cache, or execute the given Closure and store the result.
 	Remember(key string, ttl time.Duration, callback func() interface{}) (interface{}, error)
 	//RememberForever Get an item from the cache, or execute the given Closure and store the result forever.

@@ -4,18 +4,19 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts"
 	console2 "github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/facades"
-	testing2 "github.com/goravel/framework/support/testing"
-	"github.com/stretchr/testify/assert"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support/file"
+	testingfile "github.com/goravel/framework/testing/file"
 )
 
 func TestJobMakeCommand(t *testing.T) {
-	err := testing2.CreateEnv()
+	err := testingfile.CreateEnv()
 	assert.Nil(t, err)
 
 	configApp := config.ServiceProvider{}
@@ -35,8 +36,8 @@ func TestJobMakeCommand(t *testing.T) {
 		consoleApp.Call("make:job GoravelJob")
 	})
 
-	assert.True(t, support.Helpers{}.ExistFile("app/jobs/goravel_job.go"))
-	assert.True(t, support.Helpers{}.RemoveFile("app"))
+	assert.True(t, file.Exist("app/jobs/goravel_job.go"))
+	assert.True(t, file.Remove("app"))
 	err = os.Remove(".env")
 	assert.Nil(t, err)
 }

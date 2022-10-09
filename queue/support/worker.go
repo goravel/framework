@@ -1,7 +1,7 @@
 package support
 
 import (
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 const DriverSync string = "sync"
@@ -31,7 +31,7 @@ func (receiver *Worker) Run() error {
 		return err
 	}
 
-	eventTasks, err := events2Tasks(facades.Event.GetEvents())
+	eventTasks, err := eventsToTasks(facades.Event.GetEvents())
 	if err != nil {
 		return err
 	}

@@ -2,75 +2,82 @@ package logger
 
 import (
 	"errors"
-	"io"
-	"os"
-	"path"
 
-	"github.com/goravel/framework/log/formatters"
-	"github.com/goravel/framework/support/facades"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
+
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/log/formatter"
 )
 
 type Single struct {
 }
 
-func (single Single) Handle(configPath string) (logrus.Hook, error) {
-	var hook logrus.Hook
-	logPath := facades.Config.GetString(configPath + ".path")
-
-	err := os.MkdirAll(path.Dir(logPath), os.ModePerm)
-
-	if err != nil {
-		return hook, errors.New("Create dir fail:" + err.Error())
+func (single *Single) Handle(channel string) (logrus.Hook, error) {
+	logPath := facades.Config.GetString(channel + ".path")
+	if logPath == "" {
+		return nil, errors.New("error log path")
 	}
 
-	writer, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
-	if err != nil {
-		return hook, errors.New("Failed to log to file:" + err.Error())
+	levels := getLevels(facades.Config.GetString(channel + ".level"))
+	pathMap := lfshook.PathMap{}
+	for _, level := range levels {
+		pathMap[level] = logPath
 	}
 
 	return lfshook.NewHook(
-		setLevel(facades.Config.GetString(configPath+".level"), writer),
-		&formatters.General{},
+		pathMap,
+		&formatter.General{},
 	), nil
 }
 
-func setLevel(level string, writer io.Writer) lfshook.WriterMap {
-	if level == "error" {
-		return lfshook.WriterMap{
-			logrus.ErrorLevel: writer,
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+func getLevels(level string) []logrus.Level {
+	if level == "panic" {
+		return []logrus.Level{
+			logrus.PanicLevel,
 		}
 	}
 
-	if level == "warn" {
-		return lfshook.WriterMap{
-			logrus.WarnLevel:  writer,
-			logrus.ErrorLevel: writer,
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+	if level == "fatal" {
+		return []logrus.Level{
+			logrus.FatalLevel,
+			logrus.PanicLevel,
+		}
+	}
+
+	if level == "error" {
+		return []logrus.Level{
+			logrus.ErrorLevel,
+			logrus.FatalLevel,
+			logrus.PanicLevel,
+		}
+	}
+
+	if level == "warning" {
+		return []logrus.Level{
+			logrus.WarnLevel,
+			logrus.ErrorLevel,
+			logrus.FatalLevel,
+			logrus.PanicLevel,
 		}
 	}
 
 	if level == "info" {
-		return lfshook.WriterMap{
-			logrus.InfoLevel:  writer,
-			logrus.WarnLevel:  writer,
-			logrus.ErrorLevel: writer,
-			logrus.FatalLevel: writer,
-			logrus.PanicLevel: writer,
+		return []logrus.Level{
+			logrus.InfoLevel,
+			logrus.WarnLevel,
+			logrus.ErrorLevel,
+			logrus.FatalLevel,
+			logrus.PanicLevel,
 		}
 	}
 
-	return lfshook.WriterMap{
-		logrus.TraceLevel: writer,
-		logrus.DebugLevel: writer,
-		logrus.InfoLevel:  writer,
-		logrus.WarnLevel:  writer,
-		logrus.ErrorLevel: writer,
-		logrus.FatalLevel: writer,
-		logrus.PanicLevel: writer,
+	return []logrus.Level{
+		logrus.DebugLevel,
+		logrus.InfoLevel,
+		logrus.WarnLevel,
+		logrus.ErrorLevel,
+		logrus.FatalLevel,
+		logrus.PanicLevel,
 	}
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts"
-	"github.com/goravel/framework/support/facades"
+	"github.com/goravel/framework/facades"
 )
 
 func init() {

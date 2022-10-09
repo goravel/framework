@@ -7,8 +7,8 @@ import (
 
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
-	"github.com/goravel/framework/support/facades"
-	testing2 "github.com/goravel/framework/support/testing"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/testing/file"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +43,7 @@ func TestClearCommand(t *testing.T) {
 }
 
 func initConfig() {
-	testing2.CreateEnv()
+	file.CreateEnv()
 	configServiceProvider := config.ServiceProvider{}
 	configServiceProvider.Register()
 
