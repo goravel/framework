@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -52,10 +55,17 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 		logLevel = gormLogger.Error
 	}
 
+	logger := New(log.New(os.Stdout, "\r\n", log.LstdFlags), gormLogger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  gormLogger.Warn,
+		IgnoreRecordNotFoundError: false,
+		Colorful:                  true,
+	})
+
 	return gorm.Open(gormConfig, &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
-		Logger:                                   gormLogger.Default.LogMode(logLevel),
+		Logger:                                   logger.LogMode(logLevel),
 	})
 }
 
