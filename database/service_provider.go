@@ -12,7 +12,6 @@ type ServiceProvider struct {
 func (database *ServiceProvider) Register() {
 	app := Application{}
 	facades.Orm = app.Init()
-	//facades.Gorm = app.InitGorm()
 }
 
 func (database *ServiceProvider) Boot() {

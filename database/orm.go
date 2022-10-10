@@ -17,7 +17,9 @@ type Orm struct {
 }
 
 func NewOrm() contractsorm.Orm {
-	return &Orm{}
+	orm := &Orm{}
+
+	return orm.Connection("")
 }
 
 func (r *Orm) Connection(name string) contractsorm.Orm {
@@ -35,7 +37,7 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 		return r
 	}
 
-	gorm, err := NewGorm(r.ctx, name)
+	gorm, err := NewGormDB(r.ctx, name)
 	if err != nil {
 		facades.Log.Errorf("init connection error: %v", err)
 

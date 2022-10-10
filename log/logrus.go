@@ -218,9 +218,9 @@ func (h *Hook) Levels() []logrus.Level {
 }
 
 func (h *Hook) Fire(entry *logrus.Entry) error {
-	return h.instance.Fire(&log.Entry{
-		Level:   log.Level(entry.Level),
-		Time:    entry.Time,
-		Message: entry.Message,
+	return h.instance.Fire(&Entry{
+		level:   log.Level(entry.Level),
+		time:    entry.Time,
+		message: entry.Message,
 	})
 }
