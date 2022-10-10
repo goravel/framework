@@ -17,6 +17,7 @@ type Engine interface {
 type Route interface {
 	Group(GroupFunc)
 	Prefix(addr string) Route
+	GlobalMiddleware(...httpcontract.Middleware) Route
 	Middleware(...httpcontract.Middleware) Route
 
 	Any(string, httpcontract.HandlerFunc)

@@ -1,28 +1,19 @@
 package http
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	httpcontract "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
+	contracthttp "github.com/goravel/framework/contracts/http"
 )
 
 type GinRequest struct {
-	ctx      context.Context
 	instance *gin.Context
 }
 
-func NewGinRequest(instance *gin.Context) httpcontract.Request {
-	if facades.Request == nil {
-		facades.Request = &GinRequest{ctx: context.Background(), instance: instance}
-	} else {
-		facades.Request = &GinRequest{ctx: facades.Request.Context(), instance: instance}
-	}
-
-	return facades.Request
+func NewGinRequest(instance *gin.Context) contracthttp.Request {
+	return &GinRequest{instance}
 }
 
 func (r *GinRequest) Input(key string) string {
@@ -41,7 +32,7 @@ func (r *GinRequest) Bind(obj interface{}) error {
 	return r.instance.ShouldBind(obj)
 }
 
-func (r *GinRequest) File(name string) (httpcontract.File, error) {
+func (r *GinRequest) File(name string) (contracthttp.File, error) {
 	file, err := r.instance.FormFile(name)
 	if err != nil {
 		return nil, err
@@ -61,12 +52,6 @@ func (r *GinRequest) Header(key, defaultValue string) string {
 
 func (r *GinRequest) Headers() http.Header {
 	return r.instance.Request.Header
-}
-
-func (r *GinRequest) WithContext(ctx context.Context) httpcontract.Request {
-	r.ctx = ctx
-
-	return r
 }
 
 func (r *GinRequest) Method() string {
@@ -90,14 +75,6 @@ func (r *GinRequest) FullUrl() string {
 	return prefix + r.instance.Request.Host + r.instance.Request.RequestURI
 }
 
-func (r *GinRequest) Context() context.Context {
-	if r.ctx == nil {
-		r.ctx = context.Background()
-	}
-
-	return r.ctx
-}
-
 func (r *GinRequest) AbortWithStatus(code int) {
 	r.instance.AbortWithStatus(code)
 }
@@ -112,4 +89,12 @@ func (r *GinRequest) Path() string {
 
 func (r *GinRequest) Ip() string {
 	return r.instance.ClientIP()
+}
+
+func (r *GinRequest) Request() *http.Request {
+	return r.instance.Request
+}
+
+func (r *GinRequest) Response() contracthttp.Response {
+	return NewGinResponse(r.instance)
 }

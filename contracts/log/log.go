@@ -2,11 +2,7 @@ package log
 
 import (
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
-
-type Level logrus.Level
 
 const (
 	StackDriver  = "stack"
@@ -49,23 +45,11 @@ type Hook interface {
 	// Levels monitoring level
 	Levels() []Level
 	// Fire execute logic when trigger
-	Fire(*Entry) error
+	Fire(Entry) error
 }
 
-type Entry struct {
-	Level   Level
-	Time    time.Time
-	Message string
-}
-
-func (r *Entry) GetLevel() Level {
-	return r.Level
-}
-
-func (r *Entry) GetTime() time.Time {
-	return r.Time
-}
-
-func (r *Entry) GetMessage() string {
-	return r.Message
+type Entry interface {
+	GetLevel() Level
+	GetTime() time.Time
+	GetMessage() string
 }

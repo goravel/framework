@@ -20,13 +20,12 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-type Gorm struct {
-	instance    *gorm.DB
-	tx          *gorm.DB
-	transaction bool
+type GormDB struct {
+	contractsorm.Query
+	instance *gorm.DB
 }
 
-func NewGorm(ctx context.Context, connection string) (contractsorm.DB, error) {
+func NewGormDB(ctx context.Context, connection string) (contractsorm.DB, error) {
 	db, err := NewGormInstance(connection)
 
 	if err != nil {
@@ -37,7 +36,8 @@ func NewGorm(ctx context.Context, connection string) (contractsorm.DB, error) {
 		db = db.WithContext(ctx)
 	}
 
-	return &Gorm{
+	return &GormDB{
+		Query:    NewGormQuery(db),
 		instance: db,
 	}, nil
 }
@@ -69,243 +69,197 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 	})
 }
 
-func (r *Gorm) Begin() (contractsorm.Transaction, error) {
-	r.transaction = true
-	r.tx = r.getInstance().Begin()
+func (r *GormDB) Begin() (contractsorm.Transaction, error) {
+	tx := r.instance.Begin()
 
-	return r, r.tx.Error
+	return NewGormTransaction(tx), tx.Error
 }
 
-func (r *Gorm) Commit() error {
-	err := r.getInstance().Commit().Error
-	r.tx = nil
-	r.transaction = false
-
-	return err
+type GormTransaction struct {
+	contractsorm.Query
+	instance *gorm.DB
 }
 
-func (r *Gorm) Count(count *int64) error {
-	err := r.getInstance().Count(count).Error
-	r.close()
-
-	return err
+func NewGormTransaction(instance *gorm.DB) contractsorm.Transaction {
+	return &GormTransaction{Query: NewGormQuery(instance), instance: instance}
 }
 
-func (r *Gorm) Create(value interface{}) error {
-	err := r.getInstance().Create(value).Error
-	r.close()
-
-	return err
+func (r *GormTransaction) Commit() error {
+	return r.instance.Commit().Error
 }
 
-func (r *Gorm) Delete(value interface{}, conds ...interface{}) error {
-	err := r.getInstance().Delete(value, conds...).Error
-	r.close()
-
-	return err
+func (r *GormTransaction) Rollback() error {
+	return r.instance.Rollback().Error
 }
 
-func (r *Gorm) Exec(sql string, values ...interface{}) error {
-	err := r.getInstance().Exec(sql, values...).Error
-	r.close()
-
-	return err
+type GormQuery struct {
+	instance *gorm.DB
 }
 
-func (r *Gorm) Find(dest interface{}, conds ...interface{}) error {
-	err := r.getInstance().Find(dest, conds...).Error
-	r.close()
-
-	return err
+func NewGormQuery(instance *gorm.DB) contractsorm.Query {
+	return &GormQuery{instance}
 }
 
-func (r *Gorm) First(dest interface{}) error {
-	err := r.getInstance().First(dest).Error
-	r.close()
-
-	return err
+func (r *GormQuery) Count(count *int64) error {
+	return r.instance.Count(count).Error
 }
 
-func (r *Gorm) FirstOrCreate(dest interface{}, conds ...interface{}) error {
+func (r *GormQuery) Create(value interface{}) error {
+	return r.instance.Create(value).Error
+}
+
+func (r *GormQuery) Delete(value interface{}, conds ...interface{}) error {
+	return r.instance.Delete(value, conds...).Error
+}
+
+func (r *GormQuery) Exec(sql string, values ...interface{}) error {
+	return r.instance.Exec(sql, values...).Error
+}
+
+func (r *GormQuery) Find(dest interface{}, conds ...interface{}) error {
+	return r.instance.Find(dest, conds...).Error
+}
+
+func (r *GormQuery) First(dest interface{}) error {
+	return r.instance.First(dest).Error
+}
+
+func (r *GormQuery) FirstOrCreate(dest interface{}, conds ...interface{}) error {
 	var err error
 	if len(conds) > 1 {
-		err = r.getInstance().Attrs([]interface{}{conds[1]}...).FirstOrCreate(dest, []interface{}{conds[0]}...).Error
+		err = r.instance.Attrs([]interface{}{conds[1]}...).FirstOrCreate(dest, []interface{}{conds[0]}...).Error
 	} else {
-		err = r.getInstance().FirstOrCreate(dest, conds...).Error
+		err = r.instance.FirstOrCreate(dest, conds...).Error
 	}
-	r.close()
 
 	return err
 }
 
-func (r *Gorm) ForceDelete(value interface{}, conds ...interface{}) error {
-	err := r.getInstance().Unscoped().Delete(value, conds...).Error
-	r.close()
-
-	return err
+func (r *GormQuery) ForceDelete(value interface{}, conds ...interface{}) error {
+	return r.instance.Unscoped().Delete(value, conds...).Error
 }
 
-func (r *Gorm) Get(dest interface{}) error {
-	err := r.getInstance().Find(dest).Error
-	r.close()
-
-	return err
+func (r *GormQuery) Get(dest interface{}) error {
+	return r.instance.Find(dest).Error
 }
 
-func (r *Gorm) Group(name string) contractsorm.Query {
-	r.tx = r.getInstance().Group(name)
+func (r *GormQuery) Group(name string) contractsorm.Query {
+	tx := r.instance.Group(name)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Having(query interface{}, args ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Having(query, args...)
+func (r *GormQuery) Having(query interface{}, args ...interface{}) contractsorm.Query {
+	tx := r.instance.Having(query, args...)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Join(query string, args ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Joins(query, args...)
+func (r *GormQuery) Join(query string, args ...interface{}) contractsorm.Query {
+	tx := r.instance.Joins(query, args...)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Limit(limit int) contractsorm.Query {
-	r.tx = r.getInstance().Limit(limit)
+func (r *GormQuery) Limit(limit int) contractsorm.Query {
+	tx := r.instance.Limit(limit)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Model(value interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Model(value)
+func (r *GormQuery) Model(value interface{}) contractsorm.Query {
+	tx := r.instance.Model(value)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Offset(offset int) contractsorm.Query {
-	r.tx = r.getInstance().Offset(offset)
+func (r *GormQuery) Offset(offset int) contractsorm.Query {
+	tx := r.instance.Offset(offset)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Order(value interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Order(value)
+func (r *GormQuery) Order(value interface{}) contractsorm.Query {
+	tx := r.instance.Order(value)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) OrWhere(query interface{}, args ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Or(query, args...)
+func (r *GormQuery) OrWhere(query interface{}, args ...interface{}) contractsorm.Query {
+	tx := r.instance.Or(query, args...)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Pluck(column string, dest interface{}) error {
-	err := r.getInstance().Pluck(column, dest).Error
-	r.close()
-
-	return err
+func (r *GormQuery) Pluck(column string, dest interface{}) error {
+	return r.instance.Pluck(column, dest).Error
 }
 
-func (r *Gorm) Raw(sql string, values ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Raw(sql, values...)
+func (r *GormQuery) Raw(sql string, values ...interface{}) contractsorm.Query {
+	tx := r.instance.Raw(sql, values...)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Rollback() error {
-	err := r.getInstance().Rollback().Error
-	r.tx = nil
-	r.transaction = false
-
-	return err
+func (r *GormQuery) Save(value interface{}) error {
+	return r.instance.Save(value).Error
 }
 
-func (r *Gorm) Save(value interface{}) error {
-	err := r.getInstance().Save(value).Error
-	r.close()
-
-	return err
+func (r *GormQuery) Scan(dest interface{}) error {
+	return r.instance.Scan(dest).Error
 }
 
-func (r *Gorm) Scan(dest interface{}) error {
-	err := r.getInstance().Scan(dest).Error
-	r.close()
+func (r *GormQuery) Select(query interface{}, args ...interface{}) contractsorm.Query {
+	tx := r.instance.Select(query, args...)
 
-	return err
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Select(query interface{}, args ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Select(query, args...)
+func (r *GormQuery) Table(name string, args ...interface{}) contractsorm.Query {
+	tx := r.instance.Table(name, args...)
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Table(name string, args ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Table(name, args...)
-
-	return r
+func (r *GormQuery) Update(column string, value interface{}) error {
+	return r.instance.Update(column, value).Error
 }
 
-func (r *Gorm) Update(column string, value interface{}) error {
-	err := r.getInstance().Update(column, value).Error
-	r.close()
-
-	return err
+func (r *GormQuery) Updates(values interface{}) error {
+	return r.instance.Updates(values).Error
 }
 
-func (r *Gorm) Updates(values interface{}) error {
-	err := r.getInstance().Updates(values).Error
-	r.close()
+func (r *GormQuery) Where(query interface{}, args ...interface{}) contractsorm.Query {
+	tx := r.instance.Where(query, args...)
 
-	return err
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) Where(query interface{}, args ...interface{}) contractsorm.Query {
-	r.tx = r.getInstance().Where(query, args...)
+func (r *GormQuery) WithTrashed() contractsorm.Query {
+	tx := r.instance.Unscoped()
 
-	return r
+	return NewGormQuery(tx)
 }
 
-func (r *Gorm) WithTrashed() contractsorm.Query {
-	r.tx = r.getInstance().Unscoped()
-
-	return r
-}
-
-func (r *Gorm) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
+func (r *GormQuery) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
 	var gormFuncs []func(*gorm.DB) *gorm.DB
 	for _, item := range funcs {
 		gormFuncs = append(gormFuncs, func(db *gorm.DB) *gorm.DB {
-			r.tx = db
-			item(r)
+			item(&GormQuery{db})
 
-			return r.tx
+			return db
 		})
 	}
 
-	r.tx = r.getInstance().Scopes(gormFuncs...)
+	tx := r.instance.Scopes(gormFuncs...)
 
-	return r
-}
-
-func (r *Gorm) getInstance() *gorm.DB {
-	if r.tx != nil {
-		return r.tx
-	}
-
-	return r.instance
-}
-
-func (r *Gorm) close() {
-	if !r.transaction {
-		r.tx = nil
-	}
+	return NewGormQuery(tx)
 }
 
 func getGormConfig(connection string) (gorm.Dialector, error) {
 	defaultDatabase := facades.Config.GetString("database.default")
 	driver := facades.Config.GetString("database.connections." + defaultDatabase + ".driver")
+
 	switch driver {
 	case support.Mysql:
 		return getMysqlGormConfig(connection), nil
@@ -316,7 +270,7 @@ func getGormConfig(connection string) (gorm.Dialector, error) {
 	case support.Sqlserver:
 		return getSqlserverGormConfig(connection), nil
 	default:
-		return nil, errors.New("database driver only support mysql, postgresql, sqlite and sqlserver")
+		return nil, errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver))
 	}
 }
 

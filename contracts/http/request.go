@@ -1,19 +1,13 @@
 package http
 
 import (
-	"context"
 	"mime/multipart"
 	"net/http"
 )
 
-type Middleware func(Request)
-type HandlerFunc func(Request)
-
 type Request interface {
 	Header(key, defaultValue string) string
 	Headers() http.Header
-	WithContext(ctx context.Context) Request
-	Context() context.Context
 	Method() string
 	Path() string
 	Url() string
@@ -31,6 +25,8 @@ type Request interface {
 
 	AbortWithStatus(code int)
 	Next()
+	Request() *http.Request
+	Response() Response
 
 	//Validate(ctx *gin.Context, request FormRequest) []error
 }
