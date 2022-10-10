@@ -2,10 +2,10 @@ package route
 
 import (
 	"fmt"
-	"github.com/goravel/framework/route/middleware"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/color"
@@ -30,9 +30,8 @@ func NewGin() route.Engine {
 		engine.Group("/"),
 		"",
 		[]httpcontract.Middleware{},
-		[]httpcontract.Middleware{
-			middleware.Logger(),
-		})}
+		[]httpcontract.Middleware{},
+	)}
 }
 
 func (r *Gin) Run(addr string) error {
@@ -76,7 +75,7 @@ func (r *GinGroup) Group(handler route.GroupFunc) {
 	middlewares = append(middlewares, r.originMiddlewares...)
 	middlewares = append(middlewares, r.middlewares...)
 	r.middlewares = []httpcontract.Middleware{}
-	prefix := r.pathToGinPath(r.originPrefix + "/" + r.prefix)
+	prefix := pathToGinPath(r.originPrefix + "/" + r.prefix)
 	r.prefix = ""
 
 	handler(NewGinGroup(r.instance, prefix, middlewares, r.globalMiddlewares))
@@ -101,94 +100,124 @@ func (r *GinGroup) GlobalMiddleware(handlers ...httpcontract.Middleware) route.R
 }
 
 func (r *GinGroup) Any(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().Any(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().Any(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
 func (r *GinGroup) Get(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().GET(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().GET(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
 func (r *GinGroup) Post(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().POST(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().POST(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
 func (r *GinGroup) Delete(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().DELETE(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().DELETE(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
 func (r *GinGroup) Patch(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().PATCH(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().PATCH(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
 func (r *GinGroup) Put(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().PUT(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().PUT(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
+
 func (r *GinGroup) Options(relativePath string, handler httpcontract.HandlerFunc) {
-	r.getGinRoutesWithMiddlewares().OPTIONS(r.pathToGinPath(relativePath), []gin.HandlerFunc{r.handlerToGinHandler(handler)}...)
+	r.getGinRoutesWithMiddlewares().OPTIONS(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
 func (r *GinGroup) Static(relativePath, root string) {
-	r.getGinRoutesWithMiddlewares().Static(r.pathToGinPath(relativePath), root)
+	r.getGinRoutesWithMiddlewares().Static(pathToGinPath(relativePath), root)
 }
 
 func (r *GinGroup) StaticFile(relativePath, filepath string) {
-	r.getGinRoutesWithMiddlewares().StaticFile(r.pathToGinPath(relativePath), filepath)
+	r.getGinRoutesWithMiddlewares().StaticFile(pathToGinPath(relativePath), filepath)
 }
 
 func (r *GinGroup) StaticFS(relativePath string, fs http.FileSystem) {
-	r.getGinRoutesWithMiddlewares().StaticFS(r.pathToGinPath(relativePath), fs)
+	r.getGinRoutesWithMiddlewares().StaticFS(pathToGinPath(relativePath), fs)
 }
 
 func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
-	var middlewares []gin.HandlerFunc
-	prefix := r.pathToGinPath(r.originPrefix + "/" + r.prefix)
+	prefix := pathToGinPath(r.originPrefix + "/" + r.prefix)
 	r.prefix = ""
 	ginGroup := r.instance.Group(prefix)
-	ginOriginMiddlewares := r.middlewaresToGinHandlers(r.originMiddlewares)
-	ginMiddlewares := r.middlewaresToGinHandlers(r.middlewares)
-	ginGlobalMiddlewares := r.middlewaresToGinHandlers(r.globalMiddlewares)
+
+	var middlewares []gin.HandlerFunc
+	ginOriginMiddlewares := middlewaresToGinHandlers(r.originMiddlewares)
+	ginMiddlewares := middlewaresToGinHandlers(r.middlewares)
+	ginGlobalMiddlewares := middlewaresToGinHandlers(r.globalMiddlewares)
 	middlewares = append(middlewares, ginOriginMiddlewares...)
 	middlewares = append(middlewares, ginMiddlewares...)
 	middlewares = append(middlewares, ginGlobalMiddlewares...)
+	middlewares = addDebugLog(middlewares)
 	r.middlewares = []httpcontract.Middleware{}
 
-	return ginGroup.Use(middlewares...)
+	if len(middlewares) > 0 {
+		return ginGroup.Use(middlewares...)
+	} else {
+		return ginGroup
+	}
 }
 
-func (r *GinGroup) pathToGinPath(relativePath string) string {
-	ginPath := bracketToColon(mergeSlashForPath(relativePath))
-	r.prefix = ""
-
-	return ginPath
+func pathToGinPath(relativePath string) string {
+	return bracketToColon(mergeSlashForPath(relativePath))
 }
 
-func (r *GinGroup) middlewaresToGinHandlers(middlewares []httpcontract.Middleware) []gin.HandlerFunc {
+func middlewaresToGinHandlers(middlewares []httpcontract.Middleware) []gin.HandlerFunc {
 	var ginHandlers []gin.HandlerFunc
 	for _, item := range middlewares {
-		ginHandlers = append(ginHandlers, r.middlewareToGinHandler(item))
+		ginHandlers = append(ginHandlers, middlewareToGinHandler(item))
 	}
 
 	return ginHandlers
 }
 
-func (r *GinGroup) handlerToGinHandler(handler httpcontract.HandlerFunc) gin.HandlerFunc {
+func handlerToGinHandler(handler httpcontract.HandlerFunc) gin.HandlerFunc {
 	return func(ginCtx *gin.Context) {
-		handler(r.getGinContext(ginCtx))
+		handler(frameworkhttp.NewGinContext(ginCtx))
 	}
 }
 
-func (r *GinGroup) middlewareToGinHandler(handler httpcontract.Middleware) gin.HandlerFunc {
+func middlewareToGinHandler(handler httpcontract.Middleware) gin.HandlerFunc {
 	return func(ginCtx *gin.Context) {
-		handler(r.getGinContext(ginCtx))
+		handler(frameworkhttp.NewGinContext(ginCtx))
 	}
 }
 
-func (r *GinGroup) getGinContext(ginCtx *gin.Context) httpcontract.Context {
-	return frameworkhttp.NewGinContext(ginCtx)
+func addDebugLog(middlewares []gin.HandlerFunc) []gin.HandlerFunc {
+	logFormatter := func(param gin.LogFormatterParams) string {
+		var statusColor, methodColor, resetColor string
+		if param.IsOutputColor() {
+			statusColor = param.StatusCodeColor()
+			methodColor = param.MethodColor()
+			resetColor = param.ResetColor()
+		}
+
+		if param.Latency > time.Minute {
+			// Truncate in a golang < 1.8 safe way
+			param.Latency = param.Latency - param.Latency%time.Second
+		}
+		return fmt.Sprintf("[HTTP] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+			param.TimeStamp.Format("2006/01/02 - 15:04:05"),
+			statusColor, param.StatusCode, resetColor,
+			param.Latency,
+			param.ClientIP,
+			methodColor, param.Method, resetColor,
+			param.Path,
+			param.ErrorMessage,
+		)
+	}
+
+	if facades.Config.GetBool("app.debug") {
+		middlewares = append(middlewares, gin.LoggerWithFormatter(logFormatter))
+	}
+
+	return middlewares
 }
 
 func colonToBracket(relativePath string) string {
-
 	arr := strings.Split(relativePath, "/")
 	var newArr []string
 	for _, item := range arr {
