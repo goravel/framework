@@ -27,6 +27,7 @@ type Query interface {
 	Count(count *int64) error
 	Create(value interface{}) error
 	Delete(value interface{}, conds ...interface{}) error
+	Distinct(args ...interface{}) Query
 	Exec(sql string, values ...interface{}) error
 	Find(dest interface{}, conds ...interface{}) error
 	First(dest interface{}) error

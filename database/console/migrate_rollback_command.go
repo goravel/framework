@@ -45,6 +45,11 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	if err != nil {
 		return err
 	}
+	if m == nil {
+		color.Yellowln("Please fill database config first")
+
+		return nil
+	}
 
 	stepString := "-" + ctx.Option("step")
 	step, err := strconv.Atoi(stepString)

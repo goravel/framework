@@ -43,6 +43,9 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 
 		return r
 	}
+	if gorm == nil {
+		return nil
+	}
 
 	r.instances[name] = gorm
 

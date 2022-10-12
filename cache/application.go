@@ -15,8 +15,6 @@ type Application struct {
 }
 
 func (app *Application) Init() cache.Store {
-	var store cache.Store
-
 	defaultStore := facades.Config.GetString("cache.default")
 	driver := facades.Config.GetString("cache.stores." + defaultStore + ".driver")
 	if driver == "redis" {
@@ -28,12 +26,12 @@ func (app *Application) Init() cache.Store {
 		}
 		color.Redln("%s doesn't implement contracts/cache/store", defaultStore)
 
-		return store
+		return nil
 	}
 
 	color.Redln("Not supported cache store: %s", defaultStore)
 
-	return store
+	return nil
 }
 
 func (app *Application) createRedisDriver() *Redis {
@@ -43,9 +41,8 @@ func (app *Application) createRedisDriver() *Redis {
 	}
 
 	host := facades.Config.GetString("database.redis." + connection + ".host")
-
 	if host == "" {
-		return &Redis{}
+		return nil
 	}
 
 	client := redis.NewClient(&redis.Options{

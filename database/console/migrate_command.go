@@ -36,6 +36,11 @@ func (receiver *MigrateCommand) Handle(ctx console.Context) error {
 	if err != nil {
 		return err
 	}
+	if m == nil {
+		color.Yellowln("Please fill database config first")
+
+		return nil
+	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())

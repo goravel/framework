@@ -15,6 +15,10 @@ const (
 
 func GetMysqlDsn(connection string) string {
 	host := facades.Config.GetString("database.connections." + connection + ".host")
+	if host == "" {
+		return ""
+	}
+
 	port := facades.Config.GetString("database.connections." + connection + ".port")
 	database := facades.Config.GetString("database.connections." + connection + ".database")
 	username := facades.Config.GetString("database.connections." + connection + ".username")
@@ -28,6 +32,10 @@ func GetMysqlDsn(connection string) string {
 
 func GetPostgresqlDsn(connection string) string {
 	host := facades.Config.GetString("database.connections." + connection + ".host")
+	if host == "" {
+		return ""
+	}
+
 	port := facades.Config.GetString("database.connections." + connection + ".port")
 	database := facades.Config.GetString("database.connections." + connection + ".database")
 	username := facades.Config.GetString("database.connections." + connection + ".username")
@@ -45,6 +53,10 @@ func GetSqliteDsn(connection string) string {
 
 func GetSqlserverDsn(connection string) string {
 	host := facades.Config.GetString("database.connections." + connection + ".host")
+	if host == "" {
+		return ""
+	}
+
 	port := facades.Config.GetString("database.connections." + connection + ".port")
 	database := facades.Config.GetString("database.connections." + connection + ".database")
 	username := facades.Config.GetString("database.connections." + connection + ".username")

@@ -20,7 +20,12 @@ func getMigrate() (*migrate.Migrate, error) {
 	dir := "file://./database/migrations"
 	switch driver {
 	case support.Mysql:
-		db, err := sql.Open("mysql", support.GetMysqlDsn(connection))
+		dsn := support.GetMysqlDsn(connection)
+		if dsn == "" {
+			return nil, nil
+		}
+
+		db, err := sql.Open("mysql", dsn)
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +43,12 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "mysql", instance)
 	case support.Postgresql:
-		db, err := sql.Open("postgres", support.GetPostgresqlDsn(connection))
+		dsn := support.GetPostgresqlDsn(connection)
+		if dsn == "" {
+			return nil, nil
+		}
+
+		db, err := sql.Open("postgres", dsn)
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +62,12 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "postgres", instance)
 	case support.Sqlite:
-		db, err := sql.Open("sqlite3", support.GetSqliteDsn(connection))
+		dsn := support.GetSqliteDsn(connection)
+		if dsn == "" {
+			return nil, nil
+		}
+
+		db, err := sql.Open("sqlite3", dsn)
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +81,12 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlite3", instance)
 	case support.Sqlserver:
-		db, err := sql.Open("sqlserver", support.GetSqlserverDsn(connection))
+		dsn := support.GetSqlserverDsn(connection)
+		if dsn == "" {
+			return nil, nil
+		}
+
+		db, err := sql.Open("sqlserver", dsn)
 		if err != nil {
 			return nil, err
 		}

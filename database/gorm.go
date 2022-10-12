@@ -27,9 +27,11 @@ type GormDB struct {
 
 func NewGormDB(ctx context.Context, connection string) (contractsorm.DB, error) {
 	db, err := NewGormInstance(connection)
-
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("gorm open database error: %v", err))
+	}
+	if db == nil {
+		return nil, nil
 	}
 
 	if ctx != nil {
@@ -46,6 +48,9 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 	gormConfig, err := getGormConfig(connection)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("init gorm config error: %v", err))
+	}
+	if gormConfig == nil {
+		return nil, nil
 	}
 
 	var logLevel gormLogger.LogLevel
@@ -110,6 +115,12 @@ func (r *GormQuery) Create(value interface{}) error {
 
 func (r *GormQuery) Delete(value interface{}, conds ...interface{}) error {
 	return r.instance.Delete(value, conds...).Error
+}
+
+func (r *GormQuery) Distinct(args ...interface{}) contractsorm.Query {
+	tx := r.instance.Distinct(args...)
+
+	return NewGormQuery(tx)
 }
 
 func (r *GormQuery) Exec(sql string, values ...interface{}) error {
@@ -275,23 +286,43 @@ func getGormConfig(connection string) (gorm.Dialector, error) {
 }
 
 func getMysqlGormConfig(connection string) gorm.Dialector {
+	dsn := support.GetMysqlDsn(connection)
+	if dsn == "" {
+		return nil
+	}
+
 	return mysql.New(mysql.Config{
-		DSN: support.GetMysqlDsn(connection),
+		DSN: dsn,
 	})
 }
 
 func getPostgresqlGormConfig(connection string) gorm.Dialector {
+	dsn := support.GetPostgresqlDsn(connection)
+	if dsn == "" {
+		return nil
+	}
+
 	return postgres.New(postgres.Config{
-		DSN: support.GetPostgresqlDsn(connection),
+		DSN: dsn,
 	})
 }
 
 func getSqliteGormConfig(connection string) gorm.Dialector {
-	return sqlite.Open(support.GetSqliteDsn(connection))
+	dsn := support.GetSqlserverDsn(connection)
+	if dsn == "" {
+		return nil
+	}
+
+	return sqlite.Open(dsn)
 }
 
 func getSqlserverGormConfig(connection string) gorm.Dialector {
+	dsn := support.GetSqlserverDsn(connection)
+	if dsn == "" {
+		return nil
+	}
+
 	return sqlserver.New(sqlserver.Config{
-		DSN: support.GetSqlserverDsn(connection),
+		DSN: dsn,
 	})
 }
