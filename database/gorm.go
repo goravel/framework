@@ -308,7 +308,7 @@ func getPostgresqlGormConfig(connection string) gorm.Dialector {
 }
 
 func getSqliteGormConfig(connection string) gorm.Dialector {
-	dsn := support.GetSqlserverDsn(connection)
+	dsn := support.GetSqliteDsn(connection)
 	if dsn == "" {
 		return nil
 	}
