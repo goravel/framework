@@ -28,12 +28,13 @@ func TestListenerMakeCommand(t *testing.T) {
 	})
 
 	consoleApp := console.Application{}
-	consoleApp.Init().Register([]console2.Command{
+	instance := consoleApp.Init()
+	instance.Register([]console2.Command{
 		&ListenerMakeCommand{},
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.Call("make:listener GoravelListen")
+		instance.Call("make:listener GoravelListen")
 	})
 
 	assert.True(t, file.Exist("app/listeners/goravel_listen.go"))

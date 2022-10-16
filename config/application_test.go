@@ -22,7 +22,7 @@ func TestEnv(t *testing.T) {
 	app.Init()
 
 	assert.Equal(t, "goravel", app.Env("APP_NAME").(string))
-	assert.Equal(t, "", app.Env("DB_HOST", "127.0.0.1").(string))
+	assert.Equal(t, "127.0.0.1", app.Env("DB_HOST", "127.0.0.1").(string))
 }
 
 func TestAdd(t *testing.T) {
@@ -56,7 +56,7 @@ func TestGetString(t *testing.T) {
 	})
 
 	assert.Equal(t, "goravel", app.GetString("APP_NAME"))
-	assert.Equal(t, "", app.GetString("database.connections.mysql.host"))
+	assert.Equal(t, "127.0.0.1", app.GetString("database.connections.mysql.host"))
 	assert.Equal(t, "mysql", app.GetString("database.default"))
 }
 

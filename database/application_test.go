@@ -14,6 +14,5 @@ func TestInit(t *testing.T) {
 	assert.NotPanics(t, func() {
 		app := Application{}
 		app.Init()
-		app.InitGorm()
 	})
 }

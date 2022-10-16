@@ -25,7 +25,7 @@ type Request interface {
 
 	AbortWithStatus(code int)
 	Next()
-	Request() *http.Request
+	Origin() *http.Request
 	Response() Response
 
 	//Validate(ctx *gin.Context, request FormRequest) []error

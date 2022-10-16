@@ -91,7 +91,7 @@ func (r *GinRequest) Ip() string {
 	return r.instance.ClientIP()
 }
 
-func (r *GinRequest) Request() *http.Request {
+func (r *GinRequest) Origin() *http.Request {
 	return r.instance.Request
 }
 

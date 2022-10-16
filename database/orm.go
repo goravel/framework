@@ -2,11 +2,13 @@ package database
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"fmt"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
+
+	"github.com/gookit/color"
+	"github.com/pkg/errors"
 )
 
 type Orm struct {
@@ -39,9 +41,9 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 
 	gorm, err := NewGormDB(r.ctx, name)
 	if err != nil {
-		facades.Log.Errorf("init connection error: %v", err)
+		color.Redln(fmt.Sprintf("[Orm] Init connection error, %v", err))
 
-		return r
+		return nil
 	}
 	if gorm == nil {
 		return nil

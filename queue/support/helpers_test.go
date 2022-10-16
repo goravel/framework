@@ -175,7 +175,6 @@ func TestEvents2Tasks(t *testing.T) {
 			&TestListener{},
 		},
 	})
-
 	assert.Nil(t, err)
 
 	_, err = eventsToTasks(map[event.Event][]event.Listener{
@@ -184,8 +183,7 @@ func TestEvents2Tasks(t *testing.T) {
 			&TestListenerDuplicate{},
 		},
 	})
-
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 
 	_, err = eventsToTasks(map[event.Event][]event.Listener{
 		&TestEvent{}: {

@@ -28,12 +28,13 @@ func TestJobMakeCommand(t *testing.T) {
 	})
 
 	consoleApp := console.Application{}
-	consoleApp.Init().Register([]console2.Command{
+	instance := consoleApp.Init()
+	instance.Register([]console2.Command{
 		&JobMakeCommand{},
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.Call("make:job GoravelJob")
+		instance.Call("make:job GoravelJob")
 	})
 
 	assert.True(t, file.Exist("app/jobs/goravel_job.go"))

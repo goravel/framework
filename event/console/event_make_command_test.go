@@ -28,12 +28,13 @@ func TestEventMakeCommand(t *testing.T) {
 	})
 
 	consoleApp := console.Application{}
-	consoleApp.Init().Register([]console2.Command{
+	instance := consoleApp.Init()
+	instance.Register([]console2.Command{
 		&EventMakeCommand{},
 	})
 
 	assert.NotPanics(t, func() {
-		consoleApp.Call("make:event GoravelEvent")
+		instance.Call("make:event GoravelEvent")
 	})
 
 	assert.True(t, file.Exist("app/events/goravel_event.go"))

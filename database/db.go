@@ -41,7 +41,7 @@ func (r *DB) Connection(name string) database.DB {
 
 	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
-		facades.Log.Errorf("gorm open database error: %v", err)
+		facades.Log.Errorf("orm open database error: %v", err)
 
 		return r
 	}

@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/gookit/color"
@@ -51,9 +50,9 @@ func (app *Application) createRedisDriver() *Redis {
 		DB:       facades.Config.GetInt("database.redis." + connection + ".database"),
 	})
 
-	pong, err := client.Ping(context.Background()).Result()
+	_, err := client.Ping(context.Background()).Result()
 	if err != nil {
-		color.Redln(fmt.Sprintf("Failed to link redis:%s, %s\n%+v", pong, err, string(debug.Stack())))
+		color.Redln(fmt.Sprintf("[Cache] Init connection error, %s", err.Error()))
 
 		return nil
 	}

@@ -28,7 +28,7 @@ type GormDB struct {
 func NewGormDB(ctx context.Context, connection string) (contractsorm.DB, error) {
 	db, err := NewGormInstance(connection)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("gorm open database error: %v", err))
+		return nil, err
 	}
 	if db == nil {
 		return nil, nil
@@ -62,7 +62,7 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 
 	logger := New(log.New(os.Stdout, "\r\n", log.LstdFlags), gormLogger.Config{
 		SlowThreshold:             200 * time.Millisecond,
-		LogLevel:                  gormLogger.Warn,
+		LogLevel:                  gormLogger.Info,
 		IgnoreRecordNotFoundError: false,
 		Colorful:                  true,
 	})

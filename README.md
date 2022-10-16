@@ -27,7 +27,9 @@ Golang developers quickly build their own applications.
 
 - [ ] Optimize experience of microservice
 - [ ] Orm relationships
-- 
+- [ ] Request validator
+- [ ] Jwt
+
 ## Documentation
 
 Online documentation [https://www.goravel.dev](https://www.goravel.dev)

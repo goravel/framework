@@ -4,20 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gorm.io/gorm/logger"
+	"net"
 	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+
+	"gorm.io/gorm/logger"
 )
 
 // New initialize Logger
 func New(writer logger.Writer, config logger.Config) logger.Interface {
 	var (
-		infoStr      = "%s\n[info] "
-		warnStr      = "%s\n[warn] "
-		errStr       = "%s\n[error] "
+		infoStr      = "%s\n[Orm] "
+		warnStr      = "%s\n[Orm] "
+		errStr       = "%s\n[Orm] "
 		traceStr     = "%s\n[%.3fms] [rows:%v] %s"
 		traceWarnStr = "%s %s\n[%.3fms] [rows:%v] %s"
 		traceErrStr  = "%s %s\n[%.3fms] [rows:%v] %s"
@@ -74,6 +76,15 @@ func (l Logger) Warn(ctx context.Context, msg string, data ...interface{}) {
 
 // Error print error messages
 func (l Logger) Error(ctx context.Context, msg string, data ...interface{}) {
+	// Let upper layer function deals with connection refused error
+	for _, item := range data {
+		if tempItem, ok := item.(*net.OpError); ok {
+			if strings.Contains(tempItem.Error(), "connection refused") {
+				return
+			}
+		}
+	}
+
 	if l.LogLevel >= logger.Error {
 		l.Printf(l.errStr+msg, append([]interface{}{FileWithLineNum()}, data...)...)
 	}
