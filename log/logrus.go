@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gookit/color"
-	"github.com/sirupsen/logrus"
-
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log/logger"
+
+	"github.com/gookit/color"
+	"github.com/sirupsen/logrus"
 )
 
 type Logrus struct {
@@ -20,10 +20,16 @@ type Logrus struct {
 func NewLogrus() log.Log {
 	instance := logrus.New()
 	instance.SetLevel(logrus.DebugLevel)
-	if err := registerHook(instance, facades.Config.GetString("logging.default")); err != nil {
-		color.Redln("Init facades.Log error: " + err.Error())
 
-		return nil
+	if facades.Config != nil {
+		logging := facades.Config.GetString("logging.default")
+		if logging != "" {
+			if err := registerHook(instance, logging); err != nil {
+				color.Redln("Init facades.Log error: " + err.Error())
+
+				return nil
+			}
+		}
 	}
 
 	return &Logrus{instance, false}
