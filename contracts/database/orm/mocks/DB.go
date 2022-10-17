@@ -80,6 +80,24 @@ func (_m *DB) Delete(value interface{}, conds ...interface{}) error {
 	return r0
 }
 
+// Distinct provides a mock function with given fields: args
+func (_m *DB) Distinct(args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(...interface{}) orm.Query); ok {
+		r0 = rf(args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Exec provides a mock function with given fields: sql, values
 func (_m *DB) Exec(sql string, values ...interface{}) error {
 	var _ca []interface{}
