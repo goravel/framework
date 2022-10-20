@@ -13,15 +13,15 @@ type Redis struct {
 }
 
 //Get Retrieve an item from the cache by key.
-func (r *Redis) Get(key string, defaults interface{}) interface{} {
+func (r *Redis) Get(key string, def interface{}) interface{} {
 	ctx := context.Background()
 	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
 	if err != nil {
-		switch s := defaults.(type) {
+		switch s := def.(type) {
 		case func() interface{}:
 			return s()
 		default:
-			return defaults
+			return def
 		}
 	}
 
@@ -52,13 +52,13 @@ func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error 
 }
 
 //Pull Retrieve an item from the cache and delete it.
-func (r *Redis) Pull(key string, defaults interface{}) interface{} {
+func (r *Redis) Pull(key string, def interface{}) interface{} {
 	ctx := context.Background()
 	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
 	r.Redis.Del(ctx, r.Prefix+key)
 
 	if err != nil {
-		return defaults
+		return def
 	}
 
 	return val
