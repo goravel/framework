@@ -226,7 +226,7 @@ func (s *AuthTestSuite) TestUser_DBError() {
 
 	mockOrm, mockDB, _ := mock.Orm()
 	mockOrm.On("Query").Return(mockDB)
-	mockDB.On("Find", &user, float64(1)).Return(errors.New("error")).Once()
+	mockDB.On("Find", &user, "1").Return(errors.New("error")).Once()
 
 	err = app.User(&user)
 	assert.EqualError(s.T(), err, "error")
@@ -264,7 +264,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	mockOrm, mockDB, _ := mock.Orm()
 	mockOrm.On("Query").Return(mockDB)
-	mockDB.On("Find", &user, float64(1)).Return(nil).Once()
+	mockDB.On("Find", &user, "1").Return(nil).Once()
 
 	err = app.User(&user)
 	assert.Nil(s.T(), err)
@@ -323,7 +323,7 @@ func (s *AuthTestSuite) TestUser_Success() {
 	var user User
 	mockOrm, mockDB, _ := mock.Orm()
 	mockOrm.On("Query").Return(mockDB)
-	mockDB.On("Find", &user, float64(1)).Return(nil).Once()
+	mockDB.On("Find", &user, "1").Return(nil).Once()
 
 	err = app.User(&user)
 	assert.Nil(s.T(), err)

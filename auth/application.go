@@ -11,6 +11,7 @@ import (
 	supporttime "github.com/goravel/framework/support/time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/spf13/cast"
 )
 
 var (
@@ -24,7 +25,7 @@ var (
 )
 
 type Claims struct {
-	Key any `json:"key"`
+	Key string `json:"key"`
 	jwt.RegisteredClaims
 }
 
@@ -149,7 +150,7 @@ func (app *Application) LoginUsingID(id any) (token string, err error) {
 	ttl := facades.Config.GetInt("jwt.ttl")
 	expireTime := nowTime.Add(time.Duration(ttl) * unit)
 	claims := Claims{
-		id,
+		cast.ToString(id),
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime),
