@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	events "github.com/goravel/framework/contracts/event"
+	event "github.com/goravel/framework/contracts/event"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,31 +13,31 @@ type Instance struct {
 }
 
 // GetEvents provides a mock function with given fields:
-func (_m *Instance) GetEvents() map[events.Event][]events.Listener {
+func (_m *Instance) GetEvents() map[event.Event][]event.Listener {
 	ret := _m.Called()
 
-	var r0 map[events.Event][]events.Listener
-	if rf, ok := ret.Get(0).(func() map[events.Event][]events.Listener); ok {
+	var r0 map[event.Event][]event.Listener
+	if rf, ok := ret.Get(0).(func() map[event.Event][]event.Listener); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[events.Event][]events.Listener)
+			r0 = ret.Get(0).(map[event.Event][]event.Listener)
 		}
 	}
 
 	return r0
 }
 
-// Job provides a mock function with given fields: event, args
-func (_m *Instance) Job(event events.Event, args []events.Arg) events.Task {
-	ret := _m.Called(event, args)
+// Job provides a mock function with given fields: _a0, args
+func (_m *Instance) Job(_a0 event.Event, args []event.Arg) event.Task {
+	ret := _m.Called(_a0, args)
 
-	var r0 events.Task
-	if rf, ok := ret.Get(0).(func(events.Event, []events.Arg) events.Task); ok {
-		r0 = rf(event, args)
+	var r0 event.Task
+	if rf, ok := ret.Get(0).(func(event.Event, []event.Arg) event.Task); ok {
+		r0 = rf(_a0, args)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(events.Task)
+			r0 = ret.Get(0).(event.Task)
 		}
 	}
 
@@ -45,7 +45,7 @@ func (_m *Instance) Job(event events.Event, args []events.Arg) events.Task {
 }
 
 // Register provides a mock function with given fields: _a0
-func (_m *Instance) Register(_a0 map[events.Event][]events.Listener) {
+func (_m *Instance) Register(_a0 map[event.Event][]event.Listener) {
 	_m.Called(_a0)
 }
 
