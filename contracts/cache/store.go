@@ -6,7 +6,10 @@ import "time"
 type Store interface {
 	//Get Retrieve an item from the cache by key.
 	Get(key string, def interface{}) interface{}
-	//Has Determine if an item exists in the cache.
+	GetBool(key string, def bool) bool
+	GetInt(key string, def int) int
+	GetString(key string, def string) string
+	//Has Check an item exists in the cache.
 	Has(key string) bool
 	//Put Store an item in the cache for a given number of seconds.
 	Put(key string, value interface{}, sec time.Duration) error

@@ -85,24 +85,17 @@ func (_m *Auth) Logout() error {
 }
 
 // Parse provides a mock function with given fields: token
-func (_m *Auth) Parse(token string) (bool, error) {
+func (_m *Auth) Parse(token string) error {
 	ret := _m.Called(token)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
 		r0 = rf(token)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(token)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Refresh provides a mock function with given fields:

@@ -16,106 +16,108 @@ import (
 var (
 	unit = time.Minute
 
-	RefreshTimeExceeded = errors.New("refresh time exceeded")
-	TokenExpired        = errors.New("token expired")
+	ErrorRefreshTimeExceeded = errors.New("refresh time exceeded")
+	ErrorTokenExpired        = errors.New("token expired")
+	ErrorNoPrimaryKeyField   = errors.New("the primaryKey field was not found in the model, set primaryKey like orm.Model")
+	ErrorEmptySecret         = errors.New("secret is required")
+	ErrorTokenDisabled       = errors.New("token is disabled")
 )
 
-type Guard string
-
 type Claims struct {
-	Key interface{} `json:"key"`
+	Key any `json:"key"`
 	jwt.RegisteredClaims
 }
 
 type Application struct {
-	guard  Guard
-	guards map[Guard]interface{}
-	claims map[Guard]*Claims
-	tokens map[Guard]string
+	guards map[string]auth.Auth
+	guard  string
+	token  string
+	claims *Claims
 }
 
-func NewApplication() auth.Auth {
+func NewApplication(guard string) auth.Auth {
 	return &Application{
-		guard:  "",
-		guards: make(map[Guard]interface{}),
-		claims: make(map[Guard]*Claims),
-		tokens: make(map[Guard]string),
+		guards: make(map[string]auth.Auth),
+		guard:  guard,
 	}
 }
 
 func (app *Application) Guard(name string) auth.Auth {
-	app.guard = Guard(name)
+	if name == facades.Config.GetString("auth.defaults.guard") {
+		return app
+	}
 
-	return app
+	guard := app.guards[name]
+	if guard != nil {
+		return guard
+	}
+
+	newApplication := NewApplication(name)
+	app.guards[name] = newApplication
+
+	return newApplication
 }
 
 //User need parse token first.
-func (app *Application) User(user interface{}) error {
-	guard := app.getGuard()
-	if app.guards[guard] != nil {
-		user = app.guards[guard]
-
-		return nil
-	}
-
-	if app.claims[app.getGuard()] == nil {
+func (app *Application) User(user any) error {
+	if app.claims == nil {
 		return errors.New("parse token first")
 	}
-
-	if app.tokens[app.getGuard()] == "" {
-		return TokenExpired
+	if app.token == "" {
+		return ErrorTokenExpired
 	}
-
-	if err := facades.Orm.Query().Find(user, app.claims[app.getGuard()].Key); err != nil {
+	if err := facades.Orm.Query().Find(user, app.claims.Key); err != nil {
 		return err
 	}
-
-	app.guards[guard] = user
 
 	return nil
 }
 
-func (app *Application) Parse(token string) (expired bool, err error) {
+func (app *Application) Parse(token string) error {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if tokenIsDisabled(token) {
-		return false, errors.New("token is disabled")
+		return ErrorTokenDisabled
 	}
 
 	jwtSecret := []byte(facades.Config.GetString("jwt.secret"))
-	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return jwtSecret, nil
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
 			if !ok {
-				return false, errors.New("invalid claims")
+				return errors.New("invalid claims")
 			}
 
-			app.claims[app.getGuard()] = claims
-			app.tokens[app.getGuard()] = ""
+			app.claims = claims
+			app.token = ""
 
-			return true, nil
+			return ErrorTokenExpired
 		} else {
-			return false, err
+			return err
 		}
 	}
 	if tokenClaims == nil || !tokenClaims.Valid {
-		return false, errors.New("invalid token")
+		return errors.New("invalid token")
 	}
 
 	claims, ok := tokenClaims.Claims.(*Claims)
 	if !ok {
-		return false, errors.New("invalid claims")
+		return errors.New("invalid claims")
 	}
 
-	app.claims[app.getGuard()] = claims
-	app.tokens[app.getGuard()] = token
+	if app.claims != claims {
+		app.claims = claims
+	}
+	if app.token != token {
+		app.token = token
+	}
 
-	return false, nil
+	return nil
 }
 
-func (app *Application) Login(user interface{}) (token string, err error) {
+func (app *Application) Login(user any) (token string, err error) {
 	t := reflect.TypeOf(user).Elem()
 	v := reflect.ValueOf(user).Elem()
 	for i := 0; i < t.NumField(); i++ {
@@ -134,83 +136,75 @@ func (app *Application) Login(user interface{}) (token string, err error) {
 		}
 	}
 
-	return "", errors.New("the primaryKey field was not found in the model, set primaryKey like orm.Model")
+	return "", ErrorNoPrimaryKeyField
 }
 
-func (app *Application) LoginUsingID(id interface{}) (token string, err error) {
-	jwtSecret := []byte(facades.Config.GetString("jwt.secret"))
+func (app *Application) LoginUsingID(id any) (token string, err error) {
+	jwtSecret := facades.Config.GetString("jwt.secret")
+	if jwtSecret == "" {
+		return "", ErrorEmptySecret
+	}
+
 	nowTime := supporttime.Now()
 	ttl := facades.Config.GetInt("jwt.ttl")
 	expireTime := nowTime.Add(time.Duration(ttl) * unit)
-
 	claims := Claims{
 		id,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime),
-			Subject:   string(app.getGuard()),
+			Subject:   app.guard,
 		},
 	}
 
 	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err = tokenClaims.SignedString(jwtSecret)
+	token, err = tokenClaims.SignedString([]byte(jwtSecret))
 	if err != nil {
 		return "", err
 	}
 
-	app.claims[app.getGuard()] = &claims
-	app.tokens[app.getGuard()] = token
+	app.claims = &claims
+	app.token = token
 
 	return
 }
 
 //Refresh need parse token first.
 func (app *Application) Refresh() (token string, err error) {
-	if app.claims[app.getGuard()] == nil {
+	if app.claims == nil {
 		return "", errors.New("parse token first")
 	}
 
 	nowTime := supporttime.Now()
 	refreshTtl := facades.Config.GetInt("jwt.refresh_ttl")
-	expireTime := app.claims[app.getGuard()].ExpiresAt.Add(time.Duration(refreshTtl) * unit)
+	expireTime := app.claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
 	if nowTime.Unix() > expireTime.Unix() {
-		return "", RefreshTimeExceeded
+		return "", ErrorRefreshTimeExceeded
 	}
 
-	return app.LoginUsingID(app.claims[app.getGuard()].Key)
+	return app.LoginUsingID(app.claims.Key)
 }
 
 func (app *Application) Logout() error {
 	if facades.Cache == nil {
 		return errors.New("cache support is required")
 	}
-	if app.tokens[app.getGuard()] == "" {
+	if app.token == "" {
 		return nil
 	}
 
-	if err := facades.Cache.Put(getDisabledCacheKey(app.tokens[app.getGuard()]), true, time.Duration(facades.Config.GetInt("jwt.ttl"))*unit); err != nil {
+	if err := facades.Cache.Put(getDisabledCacheKey(app.token), true, time.Duration(facades.Config.GetInt("jwt.ttl"))*unit); err != nil {
 		return err
 	}
 
-	app.guard = ""
-	app.tokens[app.getGuard()] = ""
-	app.claims[app.getGuard()] = nil
-	app.guards[app.getGuard()] = nil
+	app.token = ""
+	app.claims = nil
 
 	return nil
 }
 
-func (app *Application) getGuard() Guard {
-	guard := app.guard
-	if app.guard == "" {
-		guard = Guard(facades.Config.GetString("auth.defaults.guard"))
-	}
-
-	return guard
-}
-
 func tokenIsDisabled(token string) bool {
-	return facades.Cache.Get(getDisabledCacheKey(token), false).(bool)
+	return facades.Cache.GetBool(getDisabledCacheKey(token), false)
 }
 
 func getDisabledCacheKey(token string) string {

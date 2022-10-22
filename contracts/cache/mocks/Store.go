@@ -85,6 +85,48 @@ func (_m *Store) Get(key string, def interface{}) interface{} {
 	return r0
 }
 
+// GetBool provides a mock function with given fields: key, def
+func (_m *Store) GetBool(key string, def bool) bool {
+	ret := _m.Called(key, def)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, bool) bool); ok {
+		r0 = rf(key, def)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// GetInt provides a mock function with given fields: key, def
+func (_m *Store) GetInt(key string, def int) int {
+	ret := _m.Called(key, def)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(string, int) int); ok {
+		r0 = rf(key, def)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// GetString provides a mock function with given fields: key, def
+func (_m *Store) GetString(key string, def string) string {
+	ret := _m.Called(key, def)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(key, def)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // Has provides a mock function with given fields: key
 func (_m *Store) Has(key string) bool {
 	ret := _m.Called(key)
