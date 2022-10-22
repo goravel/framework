@@ -63,7 +63,7 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 	logger := New(log.New(os.Stdout, "\r\n", log.LstdFlags), gormLogger.Config{
 		SlowThreshold:             200 * time.Millisecond,
 		LogLevel:                  gormLogger.Info,
-		IgnoreRecordNotFoundError: false,
+		IgnoreRecordNotFoundError: true,
 		Colorful:                  true,
 	})
 
@@ -132,7 +132,12 @@ func (r *GormQuery) Find(dest interface{}, conds ...interface{}) error {
 }
 
 func (r *GormQuery) First(dest interface{}) error {
-	return r.instance.First(dest).Error
+	err := r.instance.First(dest).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+
+	return err
 }
 
 func (r *GormQuery) FirstOrCreate(dest interface{}, conds ...interface{}) error {

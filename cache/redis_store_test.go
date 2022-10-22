@@ -27,6 +27,30 @@ func TestGet(t *testing.T) {
 	}).(string))
 }
 
+func TestGetBool(t *testing.T) {
+	r := getInstance()
+
+	assert.Equal(t, true, r.GetBool("test-get-bool", true))
+	assert.Nil(t, r.Put("test-get-bool", true, 2*time.Second))
+	assert.Equal(t, true, r.GetBool("test-get-bool", false))
+}
+
+func TestGetInt(t *testing.T) {
+	r := getInstance()
+
+	assert.Equal(t, 2, r.GetInt("test-get-int", 2))
+	assert.Nil(t, r.Put("test-get-int", 3, 2*time.Second))
+	assert.Equal(t, 3, r.GetInt("test-get-int", 2))
+}
+
+func TestGetString(t *testing.T) {
+	r := getInstance()
+
+	assert.Equal(t, "2", r.GetString("test-get-string", "2"))
+	assert.Nil(t, r.Put("test-get-string", "3", 2*time.Second))
+	assert.Equal(t, "3", r.GetString("test-get-string", "2"))
+}
+
 func TestHas(t *testing.T) {
 	r := getInstance()
 

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -13,22 +14,49 @@ type Redis struct {
 }
 
 //Get Retrieve an item from the cache by key.
-func (r *Redis) Get(key string, defaults interface{}) interface{} {
+func (r *Redis) Get(key string, def interface{}) interface{} {
 	ctx := context.Background()
 	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
 	if err != nil {
-		switch s := defaults.(type) {
+		switch s := def.(type) {
 		case func() interface{}:
 			return s()
 		default:
-			return defaults
+			return def
 		}
 	}
 
 	return val
 }
 
-//Has Determine if an item exists in the cache.
+func (r *Redis) GetBool(key string, def bool) bool {
+	res := r.Get(key, def)
+	if val, ok := res.(string); ok {
+		return val == "1"
+	}
+
+	return res.(bool)
+}
+
+func (r *Redis) GetInt(key string, def int) int {
+	res := r.Get(key, def)
+	if val, ok := res.(string); ok {
+		i, err := strconv.Atoi(val)
+		if err != nil {
+			return def
+		}
+
+		return i
+	}
+
+	return res.(int)
+}
+
+func (r *Redis) GetString(key string, def string) string {
+	return r.Get(key, def).(string)
+}
+
+//Has Check an item exists in the cache.
 func (r *Redis) Has(key string) bool {
 	ctx := context.Background()
 	value, err := r.Redis.Exists(ctx, r.Prefix+key).Result()
@@ -52,13 +80,13 @@ func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error 
 }
 
 //Pull Retrieve an item from the cache and delete it.
-func (r *Redis) Pull(key string, defaults interface{}) interface{} {
+func (r *Redis) Pull(key string, def interface{}) interface{} {
 	ctx := context.Background()
 	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
 	r.Redis.Del(ctx, r.Prefix+key)
 
 	if err != nil {
-		return defaults
+		return def
 	}
 
 	return val
