@@ -4,6 +4,8 @@ package mocks
 
 import (
 	auth "github.com/goravel/framework/contracts/auth"
+	http "github.com/goravel/framework/contracts/http"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -28,20 +30,20 @@ func (_m *Auth) Guard(name string) auth.Auth {
 	return r0
 }
 
-// Login provides a mock function with given fields: user
-func (_m *Auth) Login(user interface{}) (string, error) {
-	ret := _m.Called(user)
+// Login provides a mock function with given fields: ctx, user
+func (_m *Auth) Login(ctx http.Context, user interface{}) (string, error) {
+	ret := _m.Called(ctx, user)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
-		r0 = rf(user)
+	if rf, ok := ret.Get(0).(func(http.Context, interface{}) string); ok {
+		r0 = rf(ctx, user)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
-		r1 = rf(user)
+	if rf, ok := ret.Get(1).(func(http.Context, interface{}) error); ok {
+		r1 = rf(ctx, user)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -49,20 +51,20 @@ func (_m *Auth) Login(user interface{}) (string, error) {
 	return r0, r1
 }
 
-// LoginUsingID provides a mock function with given fields: id
-func (_m *Auth) LoginUsingID(id interface{}) (string, error) {
-	ret := _m.Called(id)
+// LoginUsingID provides a mock function with given fields: ctx, id
+func (_m *Auth) LoginUsingID(ctx http.Context, id interface{}) (string, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
-		r0 = rf(id)
+	if rf, ok := ret.Get(0).(func(http.Context, interface{}) string); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
-		r1 = rf(id)
+	if rf, ok := ret.Get(1).(func(http.Context, interface{}) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -70,13 +72,13 @@ func (_m *Auth) LoginUsingID(id interface{}) (string, error) {
 	return r0, r1
 }
 
-// Logout provides a mock function with given fields:
-func (_m *Auth) Logout() error {
-	ret := _m.Called()
+// Logout provides a mock function with given fields: ctx
+func (_m *Auth) Logout(ctx http.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(http.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -84,13 +86,13 @@ func (_m *Auth) Logout() error {
 	return r0
 }
 
-// Parse provides a mock function with given fields: token
-func (_m *Auth) Parse(token string) error {
-	ret := _m.Called(token)
+// Parse provides a mock function with given fields: ctx, token
+func (_m *Auth) Parse(ctx http.Context, token string) error {
+	ret := _m.Called(ctx, token)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(token)
+	if rf, ok := ret.Get(0).(func(http.Context, string) error); ok {
+		r0 = rf(ctx, token)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -98,20 +100,20 @@ func (_m *Auth) Parse(token string) error {
 	return r0
 }
 
-// Refresh provides a mock function with given fields:
-func (_m *Auth) Refresh() (string, error) {
-	ret := _m.Called()
+// Refresh provides a mock function with given fields: ctx
+func (_m *Auth) Refresh(ctx http.Context) (string, error) {
+	ret := _m.Called(ctx)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(http.Context) string); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(http.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -119,13 +121,13 @@ func (_m *Auth) Refresh() (string, error) {
 	return r0, r1
 }
 
-// User provides a mock function with given fields: user
-func (_m *Auth) User(user interface{}) error {
-	ret := _m.Called(user)
+// User provides a mock function with given fields: ctx, user
+func (_m *Auth) User(ctx http.Context, user interface{}) error {
+	ret := _m.Called(ctx, user)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
-		r0 = rf(user)
+	if rf, ok := ret.Get(0).(func(http.Context, interface{}) error); ok {
+		r0 = rf(ctx, user)
 	} else {
 		r0 = ret.Error(0)
 	}

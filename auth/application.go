@@ -6,13 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goravel/framework/contracts/auth"
+	contractauth "github.com/goravel/framework/contracts/auth"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 	supporttime "github.com/goravel/framework/support/time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/cast"
 )
+
+const ctxKey = "auth"
 
 var (
 	unit = time.Minute
@@ -22,6 +25,7 @@ var (
 	ErrorNoPrimaryKeyField   = errors.New("the primaryKey field was not found in the model, set primaryKey like orm.Model")
 	ErrorEmptySecret         = errors.New("secret is required")
 	ErrorTokenDisabled       = errors.New("token is disabled")
+	ErrorParseTokenFirst     = errors.New("parse token first")
 )
 
 type Claims struct {
@@ -29,52 +33,47 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+type Guard struct {
+	Claims *Claims
+	Token  string
+}
+
+type Auth map[string]*Guard
+
 type Application struct {
-	guards map[string]auth.Auth
-	guard  string
-	token  string
-	claims *Claims
+	guard string
 }
 
-func NewApplication(guard string) auth.Auth {
+func NewApplication(guard string) contractauth.Auth {
 	return &Application{
-		guards: make(map[string]auth.Auth),
-		guard:  guard,
+		guard: guard,
 	}
 }
 
-func (app *Application) Guard(name string) auth.Auth {
-	if name == facades.Config.GetString("auth.defaults.guard") {
-		return app
-	}
-
-	guard := app.guards[name]
-	if guard != nil {
-		return guard
-	}
-
-	newApplication := NewApplication(name)
-	app.guards[name] = newApplication
-
-	return newApplication
+func (app *Application) Guard(name string) contractauth.Auth {
+	return NewApplication(name)
 }
 
 //User need parse token first.
-func (app *Application) User(user any) error {
-	if app.claims == nil {
-		return errors.New("parse token first")
+func (app *Application) User(ctx http.Context, user any) error {
+	auth, ok := ctx.Value(ctxKey).(Auth)
+	if !ok || auth[app.guard] == nil {
+		return ErrorParseTokenFirst
 	}
-	if app.token == "" {
+	if auth[app.guard].Claims == nil {
+		return ErrorParseTokenFirst
+	}
+	if auth[app.guard].Token == "" {
 		return ErrorTokenExpired
 	}
-	if err := facades.Orm.Query().Find(user, app.claims.Key); err != nil {
+	if err := facades.Orm.Query().Find(user, auth[app.guard].Claims.Key); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (app *Application) Parse(token string) error {
+func (app *Application) Parse(ctx http.Context, token string) error {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if tokenIsDisabled(token) {
 		return ErrorTokenDisabled
@@ -91,8 +90,7 @@ func (app *Application) Parse(token string) error {
 				return errors.New("invalid claims")
 			}
 
-			app.claims = claims
-			app.token = ""
+			app.makeAuthContext(ctx, claims, "")
 
 			return ErrorTokenExpired
 		} else {
@@ -108,17 +106,12 @@ func (app *Application) Parse(token string) error {
 		return errors.New("invalid claims")
 	}
 
-	if app.claims != claims {
-		app.claims = claims
-	}
-	if app.token != token {
-		app.token = token
-	}
+	app.makeAuthContext(ctx, claims, token)
 
 	return nil
 }
 
-func (app *Application) Login(user any) (token string, err error) {
+func (app *Application) Login(ctx http.Context, user any) (token string, err error) {
 	t := reflect.TypeOf(user).Elem()
 	v := reflect.ValueOf(user).Elem()
 	for i := 0; i < t.NumField(); i++ {
@@ -127,20 +120,20 @@ func (app *Application) Login(user any) (token string, err error) {
 				structField := v.Field(i).Type()
 				for j := 0; j < structField.NumField(); j++ {
 					if structField.Field(j).Tag.Get("gorm") == "primaryKey" {
-						return app.LoginUsingID(v.Field(i).Field(j).Interface())
+						return app.LoginUsingID(ctx, v.Field(i).Field(j).Interface())
 					}
 				}
 			}
 		}
 		if t.Field(i).Tag.Get("gorm") == "primaryKey" {
-			return app.LoginUsingID(v.Field(i).Interface())
+			return app.LoginUsingID(ctx, v.Field(i).Interface())
 		}
 	}
 
 	return "", ErrorNoPrimaryKeyField
 }
 
-func (app *Application) LoginUsingID(id any) (token string, err error) {
+func (app *Application) LoginUsingID(ctx http.Context, id any) (token string, err error) {
 	jwtSecret := facades.Config.GetString("jwt.secret")
 	if jwtSecret == "" {
 		return "", ErrorEmptySecret
@@ -164,44 +157,55 @@ func (app *Application) LoginUsingID(id any) (token string, err error) {
 		return "", err
 	}
 
-	app.claims = &claims
-	app.token = token
+	app.makeAuthContext(ctx, &claims, token)
 
 	return
 }
 
 //Refresh need parse token first.
-func (app *Application) Refresh() (token string, err error) {
-	if app.claims == nil {
-		return "", errors.New("parse token first")
+func (app *Application) Refresh(ctx http.Context) (token string, err error) {
+	auth, ok := ctx.Value(ctxKey).(Auth)
+	if !ok || auth[app.guard] == nil {
+		return "", ErrorParseTokenFirst
+	}
+	if auth[app.guard].Claims == nil {
+		return "", ErrorParseTokenFirst
 	}
 
 	nowTime := supporttime.Now()
 	refreshTtl := facades.Config.GetInt("jwt.refresh_ttl")
-	expireTime := app.claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
+	expireTime := auth[app.guard].Claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
 	if nowTime.Unix() > expireTime.Unix() {
 		return "", ErrorRefreshTimeExceeded
 	}
 
-	return app.LoginUsingID(app.claims.Key)
+	return app.LoginUsingID(ctx, auth[app.guard].Claims.Key)
 }
 
-func (app *Application) Logout() error {
-	if facades.Cache == nil {
-		return errors.New("cache support is required")
-	}
-	if app.token == "" {
+func (app *Application) Logout(ctx http.Context) error {
+	auth, ok := ctx.Value(ctxKey).(Auth)
+	if !ok || auth[app.guard] == nil || auth[app.guard].Token == "" {
 		return nil
 	}
 
-	if err := facades.Cache.Put(getDisabledCacheKey(app.token), true, time.Duration(facades.Config.GetInt("jwt.ttl"))*unit); err != nil {
+	if facades.Cache == nil {
+		return errors.New("cache support is required")
+	}
+
+	if err := facades.Cache.Put(getDisabledCacheKey(auth[app.guard].Token), true, time.Duration(facades.Config.GetInt("jwt.ttl"))*unit); err != nil {
 		return err
 	}
 
-	app.token = ""
-	app.claims = nil
+	delete(auth, app.guard)
+	ctx.WithValue(ctxKey, auth)
 
 	return nil
+}
+
+func (app *Application) makeAuthContext(ctx http.Context, claims *Claims, token string) {
+	ctx.WithValue(ctxKey, Auth{
+		app.guard: {claims, token},
+	})
 }
 
 func tokenIsDisabled(token string) bool {
