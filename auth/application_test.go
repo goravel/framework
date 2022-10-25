@@ -29,13 +29,14 @@ type AuthTestSuite struct {
 var app contractauth.Auth
 
 func TestAuthTestSuite(t *testing.T) {
+	unit = time.Second
 	app = NewApplication(guard)
 
 	suite.Run(t, new(AuthTestSuite))
 }
 
 func (s *AuthTestSuite) SetupTest() {
-	unit = time.Second
+
 }
 
 func (s *AuthTestSuite) TestLoginUsingID_EmptySecret() {

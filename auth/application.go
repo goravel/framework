@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cast"
 )
 
-const ctxKey = "auth"
+const ctxKey = "GoravelAuth"
 
 var (
 	unit = time.Minute
@@ -26,6 +26,8 @@ var (
 	ErrorEmptySecret         = errors.New("secret is required")
 	ErrorTokenDisabled       = errors.New("token is disabled")
 	ErrorParseTokenFirst     = errors.New("parse token first")
+	ErrorInvalidClaims       = errors.New("invalid claims")
+	ErrorInvalidToken        = errors.New("invalid token")
 )
 
 type Claims struct {
@@ -79,15 +81,15 @@ func (app *Application) Parse(ctx http.Context, token string) error {
 		return ErrorTokenDisabled
 	}
 
-	jwtSecret := []byte(facades.Config.GetString("jwt.secret"))
+	jwtSecret := facades.Config.GetString("jwt.secret")
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
-		return jwtSecret, nil
+		return []byte(jwtSecret), nil
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
 			if !ok {
-				return errors.New("invalid claims")
+				return ErrorInvalidClaims
 			}
 
 			app.makeAuthContext(ctx, claims, "")
@@ -98,12 +100,12 @@ func (app *Application) Parse(ctx http.Context, token string) error {
 		}
 	}
 	if tokenClaims == nil || !tokenClaims.Valid {
-		return errors.New("invalid token")
+		return ErrorInvalidToken
 	}
 
 	claims, ok := tokenClaims.Claims.(*Claims)
 	if !ok {
-		return errors.New("invalid claims")
+		return ErrorInvalidClaims
 	}
 
 	app.makeAuthContext(ctx, claims, token)
@@ -192,7 +194,10 @@ func (app *Application) Logout(ctx http.Context) error {
 		return errors.New("cache support is required")
 	}
 
-	if err := facades.Cache.Put(getDisabledCacheKey(auth[app.guard].Token), true, time.Duration(facades.Config.GetInt("jwt.ttl"))*unit); err != nil {
+	if err := facades.Cache.Put(getDisabledCacheKey(auth[app.guard].Token),
+		true,
+		time.Duration(facades.Config.GetInt("jwt.ttl"))*unit,
+	); err != nil {
 		return err
 	}
 
