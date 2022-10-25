@@ -13,6 +13,7 @@ import (
 )
 
 type Email struct {
+	clone    int
 	content  mail.Content
 	from     mail.From
 	to       []string
@@ -26,38 +27,37 @@ func NewEmail() mail.Mail {
 }
 
 func (r *Email) Content(content mail.Content) mail.Mail {
-	r.content = content
+	r.instance().content = content
 
 	return r
 }
 
 func (r *Email) From(from mail.From) mail.Mail {
-	r.from = from
+	r.instance().from = from
 
 	return r
 }
 
 func (r *Email) To(addresses []string) mail.Mail {
-	r.to = addresses
+	r.instance().to = addresses
 
 	return r
 }
 
 func (r *Email) Cc(addresses []string) mail.Mail {
-	r.cc = addresses
+	r.instance().cc = addresses
 
 	return r
 }
 
 func (r *Email) Bcc(addresses []string) mail.Mail {
-	r.bcc = addresses
+	r.instance().bcc = addresses
 
 	return r
 }
 
 func (r *Email) Attach(files []string) mail.Mail {
-	//todo Test multi file
-	r.attaches = files
+	r.instance().attaches = files
 
 	return r
 }
@@ -87,6 +87,14 @@ func (r *Email) Queue(queue *mail.Queue) error {
 	}
 
 	return job.Dispatch()
+}
+
+func (r *Email) instance() *Email {
+	if r.clone == 0 {
+		return &Email{clone: 1}
+	}
+
+	return r
 }
 
 func SendMail(subject, html string, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
