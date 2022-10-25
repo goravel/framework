@@ -27,39 +27,45 @@ func NewEmail() mail.Mail {
 }
 
 func (r *Email) Content(content mail.Content) mail.Mail {
-	r.instance().content = content
+	instance := r.instance()
+	instance.content = content
 
-	return r
+	return instance
 }
 
 func (r *Email) From(from mail.From) mail.Mail {
-	r.instance().from = from
+	instance := r.instance()
+	instance.from = from
 
-	return r
+	return instance
 }
 
-func (r *Email) To(addresses []string) mail.Mail {
-	r.instance().to = addresses
+func (r *Email) To(to []string) mail.Mail {
+	instance := r.instance()
+	instance.to = to
 
-	return r
+	return instance
 }
 
-func (r *Email) Cc(addresses []string) mail.Mail {
-	r.instance().cc = addresses
+func (r *Email) Cc(cc []string) mail.Mail {
+	instance := r.instance()
+	instance.cc = cc
 
-	return r
+	return instance
 }
 
-func (r *Email) Bcc(addresses []string) mail.Mail {
-	r.instance().bcc = addresses
+func (r *Email) Bcc(bcc []string) mail.Mail {
+	instance := r.instance()
+	instance.bcc = bcc
 
-	return r
+	return instance
 }
 
 func (r *Email) Attach(files []string) mail.Mail {
-	r.instance().attaches = files
+	instance := r.instance()
+	instance.attaches = files
 
-	return r
+	return instance
 }
 
 func (r *Email) Send() error {
