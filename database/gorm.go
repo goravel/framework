@@ -273,8 +273,7 @@ func (r *GormQuery) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query)
 }
 
 func getGormConfig(connection string) (gorm.Dialector, error) {
-	defaultDatabase := facades.Config.GetString("database.default")
-	driver := facades.Config.GetString("database.connections." + defaultDatabase + ".driver")
+	driver := facades.Config.GetString("database.connections." + connection + ".driver")
 
 	switch driver {
 	case support.Mysql:
