@@ -48,9 +48,7 @@ func Event() (*eventmocks.Instance, *eventmocks.Task) {
 }
 
 func Log() {
-	app := log.Application{}
-	facades.Log = app.Init()
-	facades.Log.Testing(true)
+	facades.Log = log.NewLogrus(nil, log.NewTestWriter())
 }
 
 func Mail() *mailmocks.Mail {

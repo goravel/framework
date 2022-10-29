@@ -18,8 +18,8 @@ type Orm struct {
 	instances       map[string]contractsorm.DB
 }
 
-func NewOrm() contractsorm.Orm {
-	orm := &Orm{}
+func NewOrm(ctx context.Context) contractsorm.Orm {
+	orm := &Orm{ctx: ctx}
 
 	return orm.Connection("")
 }
@@ -95,7 +95,5 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error 
 }
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
-	r.ctx = ctx
-
-	return r
+	return NewOrm(ctx)
 }

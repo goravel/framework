@@ -24,6 +24,7 @@ type Transaction interface {
 }
 
 type Query interface {
+	Driver() Driver
 	Count(count *int64) error
 	Create(value interface{}) error
 	Delete(value interface{}, conds ...interface{}) error

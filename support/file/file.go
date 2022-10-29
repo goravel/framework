@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
 func Create(file string, content string) {
@@ -62,4 +63,16 @@ func Remove(file string) bool {
 	}
 
 	return true
+}
+
+func Contain(file string, search string) bool {
+	if Exist(file) {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return false
+		}
+		return strings.Contains(string(data), search)
+	}
+
+	return false
 }

@@ -1,9 +1,8 @@
 package log
 
 import (
+	"context"
 	"errors"
-	"fmt"
-
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log/logger"
@@ -13,11 +12,18 @@ import (
 )
 
 type Logrus struct {
-	Instance *logrus.Logger
-	Test     bool
+	instance *logrus.Logger
+	log.Writer
 }
 
-func NewLogrus() log.Log {
+func NewLogrus(logger *logrus.Logger, writer log.Writer) log.Log {
+	return &Logrus{
+		instance: logger,
+		Writer:   writer,
+	}
+}
+
+func logrusInstance() *logrus.Logger {
 	instance := logrus.New()
 	instance.SetLevel(logrus.DebugLevel)
 
@@ -32,144 +38,83 @@ func NewLogrus() log.Log {
 		}
 	}
 
-	return &Logrus{instance, false}
+	return instance
 }
 
-func (r *Logrus) Testing(is bool) log.Log {
-	r.Test = is
-
-	return r
-}
-
-func (r *Logrus) Debug(args ...interface{}) {
-	if r.Test {
-		fmt.Print("Debug: ")
-		fmt.Println(args...)
-		return
+func (r *Logrus) WithContext(ctx context.Context) log.Writer {
+	switch r.Writer.(type) {
+	case *Writer:
+		return NewWriter(r.instance.WithContext(ctx))
+	default:
+		return r.Writer
 	}
-
-	r.Instance.Debug(args...)
 }
 
-func (r *Logrus) Debugf(format string, args ...interface{}) {
-	if r.Test {
-		fmt.Print("Debugf: ")
-		fmt.Printf(format+"\n", args...)
-		return
-	}
-
-	r.Instance.Debugf(format, args...)
+type Writer struct {
+	instance *logrus.Entry
 }
 
-func (r *Logrus) Info(args ...interface{}) {
-	if r.Test {
-		fmt.Print("Info: ")
-		fmt.Println(args...)
-		return
-	}
-
-	r.Instance.Info(args...)
+func NewWriter(instance *logrus.Entry) log.Writer {
+	return &Writer{instance: instance}
 }
 
-func (r *Logrus) Infof(format string, args ...interface{}) {
-	if r.Test {
-		fmt.Print("Infof: ")
-		fmt.Printf(format+"\n", args...)
-		return
-	}
-
-	r.Instance.Infof(format, args...)
+func (r *Writer) Debug(args ...interface{}) {
+	r.instance.Debug(args...)
 }
 
-func (r *Logrus) Warning(args ...interface{}) {
-	if r.Test {
-		fmt.Print("Warningf: ")
-		fmt.Println(args...)
-		return
-	}
-
-	r.Instance.Warning(args...)
+func (r *Writer) Debugf(format string, args ...interface{}) {
+	r.instance.Debugf(format, args...)
 }
 
-func (r *Logrus) Warningf(format string, args ...interface{}) {
-	if r.Test {
-		fmt.Print("Warningf: ")
-		fmt.Printf(format+"\n", args...)
-		return
-	}
-
-	r.Instance.Warningf(format, args...)
+func (r *Writer) Info(args ...interface{}) {
+	r.instance.Info(args...)
 }
 
-func (r *Logrus) Error(args ...interface{}) {
-	if r.Test {
-		fmt.Print("Error: ")
-		fmt.Println(args...)
-		return
-	}
-
-	r.Instance.Error(args...)
+func (r *Writer) Infof(format string, args ...interface{}) {
+	r.instance.Infof(format, args...)
 }
 
-func (r *Logrus) Errorf(format string, args ...interface{}) {
-	if r.Test {
-		fmt.Print("Errorf: ")
-		fmt.Printf(format+"\n", args...)
-		return
-	}
-
-	r.Instance.Errorf(format, args...)
+func (r *Writer) Warning(args ...interface{}) {
+	r.instance.Warning(args...)
 }
 
-func (r *Logrus) Fatal(args ...interface{}) {
-	if r.Test {
-		fmt.Print("Error: ")
-		fmt.Println(args...)
-		return
-	}
-
-	r.Instance.Fatal(args...)
+func (r *Writer) Warningf(format string, args ...interface{}) {
+	r.instance.Warningf(format, args...)
 }
 
-func (r *Logrus) Fatalf(format string, args ...interface{}) {
-	if r.Test {
-		fmt.Print("Errorf: ")
-		fmt.Printf(format+"\n", args...)
-		return
-	}
-
-	r.Instance.Fatalf(format, args...)
+func (r *Writer) Error(args ...interface{}) {
+	r.instance.Error(args...)
 }
 
-func (r *Logrus) Panic(args ...interface{}) {
-	if r.Test {
-		fmt.Print("Panic: ")
-		fmt.Println(args...)
-		return
-	}
-
-	r.Instance.Panic(args...)
+func (r *Writer) Errorf(format string, args ...interface{}) {
+	r.instance.Errorf(format, args...)
 }
 
-func (r *Logrus) Panicf(format string, args ...interface{}) {
-	if r.Test {
-		fmt.Print("Panicf: ")
-		fmt.Printf(format+"\n", args...)
-		return
-	}
+func (r *Writer) Fatal(args ...interface{}) {
+	r.instance.Fatal(args...)
+}
 
-	r.Instance.Panicf(format, args...)
+func (r *Writer) Fatalf(format string, args ...interface{}) {
+	r.instance.Fatalf(format, args...)
+}
+
+func (r *Writer) Panic(args ...interface{}) {
+	r.instance.Panic(args...)
+}
+
+func (r *Writer) Panicf(format string, args ...interface{}) {
+	r.instance.Panicf(format, args...)
 }
 
 func registerHook(instance *logrus.Logger, channel string) error {
-	driver := facades.Config.GetString("logging.channels." + channel + ".driver")
 	channelPath := "logging.channels." + channel
+	driver := facades.Config.GetString(channelPath + ".driver")
 
 	var hook logrus.Hook
 	var err error
 	switch driver {
 	case log.StackDriver:
-		for _, stackChannel := range facades.Config.Get("logging.channels." + channel + ".channels").([]string) {
+		for _, stackChannel := range facades.Config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
 				return errors.New("stack drive can't include self channel")
 			}
@@ -193,7 +138,7 @@ func registerHook(instance *logrus.Logger, channel string) error {
 			return err
 		}
 	case log.CustomDriver:
-		logLogger := facades.Config.Get("logging.channels." + channel + ".via").(log.Logger)
+		logLogger := facades.Config.Get(channelPath + ".via").(log.Logger)
 		logHook, err := logLogger.Handle(channelPath)
 		if err != nil {
 			return err
@@ -225,6 +170,7 @@ func (h *Hook) Levels() []logrus.Level {
 
 func (h *Hook) Fire(entry *logrus.Entry) error {
 	return h.instance.Fire(&Entry{
+		ctx:     entry.Context,
 		level:   log.Level(entry.Level),
 		time:    entry.Time,
 		message: entry.Message,

@@ -89,6 +89,20 @@ func (_m *Transaction) Distinct(args ...interface{}) orm.Query {
 	return r0
 }
 
+// Driver provides a mock function with given fields:
+func (_m *Transaction) Driver() orm.Driver {
+	ret := _m.Called()
+
+	var r0 orm.Driver
+	if rf, ok := ret.Get(0).(func() orm.Driver); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(orm.Driver)
+	}
+
+	return r0
+}
+
 // Exec provides a mock function with given fields: sql, values
 func (_m *Transaction) Exec(sql string, values ...interface{}) error {
 	var _ca []interface{}
