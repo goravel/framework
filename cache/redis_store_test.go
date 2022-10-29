@@ -1,25 +1,29 @@
 package cache
 
 import (
+	"context"
 	"testing"
 	"time"
+
+	"github.com/goravel/framework/contracts/cache"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
 )
 
-func getInstance() *Redis {
-	return &Redis{Redis: redis.NewClient(&redis.Options{
+func instance() cache.Store {
+	return &Redis{redis: redis.NewClient(&redis.Options{
 		Addr:     "127.0.0.1:6379",
 		Password: "",
 		DB:       0,
 	}),
-		Prefix: "goravel_cache:",
+		prefix: "goravel_cache:",
+		ctx:    context.Background(),
 	}
 }
 
 func TestGet(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.Equal(t, "default", r.Get("test-get", "default").(string))
 	assert.Equal(t, "default", r.Get("test-get", func() interface{} {
@@ -28,7 +32,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetBool(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.Equal(t, true, r.GetBool("test-get-bool", true))
 	assert.Nil(t, r.Put("test-get-bool", true, 2*time.Second))
@@ -36,7 +40,7 @@ func TestGetBool(t *testing.T) {
 }
 
 func TestGetInt(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.Equal(t, 2, r.GetInt("test-get-int", 2))
 	assert.Nil(t, r.Put("test-get-int", 3, 2*time.Second))
@@ -44,7 +48,7 @@ func TestGetInt(t *testing.T) {
 }
 
 func TestGetString(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.Equal(t, "2", r.GetString("test-get-string", "2"))
 	assert.Nil(t, r.Put("test-get-string", "3", 2*time.Second))
@@ -52,7 +56,7 @@ func TestGetString(t *testing.T) {
 }
 
 func TestHas(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.False(t, r.Has("test-has"))
 	err := r.Put("test-has", "goravel", 5*time.Second)
@@ -61,7 +65,7 @@ func TestHas(t *testing.T) {
 }
 
 func TestPut(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.Nil(t, r.Put("test-put", "goravel", 5*time.Second))
 	assert.True(t, r.Has("test-put"))
@@ -69,7 +73,7 @@ func TestPut(t *testing.T) {
 }
 
 func TestPull(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.Nil(t, r.Put("test-put", "goravel", 5*time.Second))
 	assert.True(t, r.Has("test-put"))
@@ -77,7 +81,7 @@ func TestPull(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	assert.True(t, r.Add("test-add", "goravel", 5*time.Second))
 	assert.True(t, r.Has("test-put"))
@@ -85,7 +89,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestRemember(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	val, err := r.Remember("test-remember", 5*time.Second, func() interface{} {
 		return "goravel"
@@ -96,7 +100,7 @@ func TestRemember(t *testing.T) {
 }
 
 func TestRememberForever(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	val, err := r.RememberForever("test-remember-forever", func() interface{} {
 		return "goravel"
@@ -107,7 +111,7 @@ func TestRememberForever(t *testing.T) {
 }
 
 func TestForever(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	val := r.Forever("test-forever", "goravel")
 
@@ -116,7 +120,7 @@ func TestForever(t *testing.T) {
 }
 
 func TestForget(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	val := r.Forget("test-forget")
 	assert.True(t, val)
@@ -127,7 +131,7 @@ func TestForget(t *testing.T) {
 }
 
 func TestFlush(t *testing.T) {
-	r := getInstance()
+	r := instance()
 
 	err := r.Put("test-flush", "goravel", 5*time.Second)
 	assert.Nil(t, err)

@@ -46,7 +46,6 @@ func TestLog(t *testing.T) {
 
 //addDefaultConfig Add default config for test.
 func addDefaultConfig() {
-
 	configApp := config.ServiceProvider{}
 	configApp.Register()
 

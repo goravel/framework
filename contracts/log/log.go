@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"time"
 )
 
@@ -21,7 +22,11 @@ const (
 )
 
 type Log interface {
-	Testing(is bool) Log
+	WithContext(ctx context.Context) Writer
+	Writer
+}
+
+type Writer interface {
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
 	Info(args ...interface{})
@@ -49,7 +54,14 @@ type Hook interface {
 }
 
 type Entry interface {
+	Context() context.Context
+	Level() Level
+	Time() time.Time
+	Message() string
+	// DEPRECATED: use Level()
 	GetLevel() Level
+	// DEPRECATED: use Time()
 	GetTime() time.Time
+	// DEPRECATED: use Message()
 	GetMessage() string
 }

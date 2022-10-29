@@ -2,21 +2,61 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/facades"
+
 	"github.com/go-redis/redis/v8"
+	"github.com/gookit/color"
 )
 
 type Redis struct {
-	Prefix string
-	Redis  *redis.Client
+	ctx    context.Context
+	prefix string
+	redis  *redis.Client
+}
+
+func NewRedis(ctx context.Context) cache.Store {
+	connection := facades.Config.GetString("cache.stores." + facades.Config.GetString("cache.default") + ".connection")
+	if connection == "" {
+		connection = "default"
+	}
+
+	host := facades.Config.GetString("database.redis." + connection + ".host")
+	if host == "" {
+		return nil
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     host + ":" + facades.Config.GetString("database.redis."+connection+".port"),
+		Password: facades.Config.GetString("database.redis." + connection + ".password"),
+		DB:       facades.Config.GetInt("database.redis." + connection + ".database"),
+	})
+
+	_, err := client.Ping(context.Background()).Result()
+	if err != nil {
+		color.Redln(fmt.Sprintf("[Cache] Init connection error, %s", err.Error()))
+
+		return nil
+	}
+
+	return &Redis{
+		ctx:    ctx,
+		prefix: facades.Config.GetString("cache.prefix" + ":"),
+		redis:  client,
+	}
+}
+
+func (r *Redis) WithContext(ctx context.Context) cache.Store {
+	return NewRedis(ctx)
 }
 
 //Get Retrieve an item from the cache by key.
 func (r *Redis) Get(key string, def interface{}) interface{} {
-	ctx := context.Background()
-	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
+	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
 	if err != nil {
 		switch s := def.(type) {
 		case func() interface{}:
@@ -58,8 +98,7 @@ func (r *Redis) GetString(key string, def string) string {
 
 //Has Check an item exists in the cache.
 func (r *Redis) Has(key string) bool {
-	ctx := context.Background()
-	value, err := r.Redis.Exists(ctx, r.Prefix+key).Result()
+	value, err := r.redis.Exists(r.ctx, r.prefix+key).Result()
 
 	if err != nil || value == 0 {
 		return false
@@ -70,8 +109,7 @@ func (r *Redis) Has(key string) bool {
 
 //Put Store an item in the cache for a given number of seconds.
 func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error {
-	ctx := context.Background()
-	err := r.Redis.Set(ctx, r.Prefix+key, value, seconds).Err()
+	err := r.redis.Set(r.ctx, r.prefix+key, value, seconds).Err()
 	if err != nil {
 		return err
 	}
@@ -81,9 +119,8 @@ func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error 
 
 //Pull Retrieve an item from the cache and delete it.
 func (r *Redis) Pull(key string, def interface{}) interface{} {
-	ctx := context.Background()
-	val, err := r.Redis.Get(ctx, r.Prefix+key).Result()
-	r.Redis.Del(ctx, r.Prefix+key)
+	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
+	r.redis.Del(r.ctx, r.prefix+key)
 
 	if err != nil {
 		return def
@@ -94,8 +131,7 @@ func (r *Redis) Pull(key string, def interface{}) interface{} {
 
 //Add Store an item in the cache if the key does not exist.
 func (r *Redis) Add(key string, value interface{}, seconds time.Duration) bool {
-	ctx := context.Background()
-	val, err := r.Redis.SetNX(ctx, r.Prefix+key, value, seconds).Result()
+	val, err := r.redis.SetNX(r.ctx, r.prefix+key, value, seconds).Result()
 	if err != nil {
 		return false
 	}
@@ -148,8 +184,7 @@ func (r *Redis) Forever(key string, value interface{}) bool {
 
 //Forget Remove an item from the cache.
 func (r *Redis) Forget(key string) bool {
-	ctx := context.Background()
-	_, err := r.Redis.Del(ctx, r.Prefix+key).Result()
+	_, err := r.redis.Del(r.ctx, r.prefix+key).Result()
 
 	if err != nil {
 		return false
@@ -160,8 +195,7 @@ func (r *Redis) Forget(key string) bool {
 
 //Flush Remove all items from the cache.
 func (r *Redis) Flush() bool {
-	ctx := context.Background()
-	res, err := r.Redis.FlushAll(ctx).Result()
+	res, err := r.redis.FlushAll(r.ctx).Result()
 
 	if err != nil || res != "OK" {
 		return false

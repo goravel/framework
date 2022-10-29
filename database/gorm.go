@@ -105,6 +105,10 @@ func NewGormQuery(instance *gorm.DB) contractsorm.Query {
 	return &GormQuery{instance}
 }
 
+func (r *GormQuery) Driver() contractsorm.Driver {
+	return contractsorm.Driver(r.instance.Dialector.Name())
+}
+
 func (r *GormQuery) Count(count *int64) error {
 	return r.instance.Count(count).Error
 }
