@@ -12,12 +12,12 @@ type Engine interface {
 	Route
 	Run(addr string) error
 	ServeHTTP(w http.ResponseWriter, req *http.Request)
+	GlobalMiddleware(...httpcontract.Middleware)
 }
 
 type Route interface {
 	Group(GroupFunc)
 	Prefix(addr string) Route
-	GlobalMiddleware(...httpcontract.Middleware) Route
 	Middleware(...httpcontract.Middleware) Route
 
 	Any(string, httpcontract.HandlerFunc)

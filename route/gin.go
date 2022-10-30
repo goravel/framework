@@ -30,7 +30,6 @@ func NewGin() route.Engine {
 		engine.Group("/"),
 		"",
 		[]httpcontract.Middleware{},
-		[]httpcontract.Middleware{},
 	)}
 }
 
@@ -52,21 +51,28 @@ func (r *Gin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.instance.ServeHTTP(w, req)
 }
 
+func (r *Gin) GlobalMiddleware(handlers ...httpcontract.Middleware) {
+	r.instance.Use(middlewaresToGinHandlers(handlers)...)
+	r.Route = NewGinGroup(
+		r.instance.Group("/"),
+		"",
+		[]httpcontract.Middleware{},
+	)
+}
+
 type GinGroup struct {
 	instance          gin.IRouter
 	originPrefix      string
 	originMiddlewares []httpcontract.Middleware
 	prefix            string
 	middlewares       []httpcontract.Middleware
-	globalMiddlewares []httpcontract.Middleware
 }
 
-func NewGinGroup(instance gin.IRouter, prefix string, originMiddlewares []httpcontract.Middleware, globalMiddlewares []httpcontract.Middleware) route.Route {
+func NewGinGroup(instance gin.IRouter, prefix string, originMiddlewares []httpcontract.Middleware) route.Route {
 	return &GinGroup{
 		instance:          instance,
 		originPrefix:      prefix,
 		originMiddlewares: originMiddlewares,
-		globalMiddlewares: globalMiddlewares,
 	}
 }
 
@@ -78,7 +84,7 @@ func (r *GinGroup) Group(handler route.GroupFunc) {
 	prefix := pathToGinPath(r.originPrefix + "/" + r.prefix)
 	r.prefix = ""
 
-	handler(NewGinGroup(r.instance, prefix, middlewares, r.globalMiddlewares))
+	handler(NewGinGroup(r.instance, prefix, middlewares))
 }
 
 func (r *GinGroup) Prefix(addr string) route.Route {
@@ -89,12 +95,6 @@ func (r *GinGroup) Prefix(addr string) route.Route {
 
 func (r *GinGroup) Middleware(handlers ...httpcontract.Middleware) route.Route {
 	r.middlewares = append(r.middlewares, handlers...)
-
-	return r
-}
-
-func (r *GinGroup) GlobalMiddleware(handlers ...httpcontract.Middleware) route.Route {
-	r.globalMiddlewares = append(r.globalMiddlewares, handlers...)
 
 	return r
 }
@@ -147,13 +147,10 @@ func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
 	var middlewares []gin.HandlerFunc
 	ginOriginMiddlewares := middlewaresToGinHandlers(r.originMiddlewares)
 	ginMiddlewares := middlewaresToGinHandlers(r.middlewares)
-	ginGlobalMiddlewares := middlewaresToGinHandlers(r.globalMiddlewares)
 	middlewares = append(middlewares, ginOriginMiddlewares...)
 	middlewares = append(middlewares, ginMiddlewares...)
-	middlewares = append(middlewares, ginGlobalMiddlewares...)
 	middlewares = addDebugLog(middlewares)
 	r.middlewares = []httpcontract.Middleware{}
-
 	if len(middlewares) > 0 {
 		return ginGroup.Use(middlewares...)
 	} else {

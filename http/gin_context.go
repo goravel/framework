@@ -42,3 +42,7 @@ func (c *GinContext) Err() error {
 func (c *GinContext) Value(key interface{}) interface{} {
 	return c.instance.Value(key)
 }
+
+func (c *GinContext) Instance() *gin.Context {
+	return c.instance
+}
