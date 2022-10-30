@@ -25,6 +25,9 @@ type Gin struct {
 func NewGin() route.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
+	if debugLog := getDebugLog(); debugLog != nil {
+		engine.Use(debugLog)
+	}
 
 	return &Gin{instance: engine, Route: NewGinGroup(
 		engine.Group("/"),
@@ -149,7 +152,6 @@ func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
 	ginMiddlewares := middlewaresToGinHandlers(r.middlewares)
 	middlewares = append(middlewares, ginOriginMiddlewares...)
 	middlewares = append(middlewares, ginMiddlewares...)
-	middlewares = addDebugLog(middlewares)
 	r.middlewares = []httpcontract.Middleware{}
 	if len(middlewares) > 0 {
 		return ginGroup.Use(middlewares...)
@@ -183,7 +185,7 @@ func middlewareToGinHandler(handler httpcontract.Middleware) gin.HandlerFunc {
 	}
 }
 
-func addDebugLog(middlewares []gin.HandlerFunc) []gin.HandlerFunc {
+func getDebugLog() gin.HandlerFunc {
 	logFormatter := func(param gin.LogFormatterParams) string {
 		var statusColor, methodColor, resetColor string
 		if param.IsOutputColor() {
@@ -208,10 +210,10 @@ func addDebugLog(middlewares []gin.HandlerFunc) []gin.HandlerFunc {
 	}
 
 	if facades.Config.GetBool("app.debug") {
-		middlewares = append(middlewares, gin.LoggerWithFormatter(logFormatter))
+		return gin.LoggerWithFormatter(logFormatter)
 	}
 
-	return middlewares
+	return nil
 }
 
 func colonToBracket(relativePath string) string {

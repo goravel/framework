@@ -28,7 +28,6 @@ func Cors() contractshttp.Middleware {
 				MaxAge:              facades.Config.GetInt("cors.max_age"),
 				AllowCredentials:    facades.Config.GetBool("cors.supports_credentials"),
 				AllowPrivateNetwork: true,
-				Debug:               true,
 			})(ctx.(*http.GinContext).Instance())
 		}
 
