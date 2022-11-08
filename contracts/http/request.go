@@ -24,6 +24,8 @@ type Request interface {
 	File(name string) (File, error)
 
 	AbortWithStatus(code int)
+	AbortWithStatusJSON(code int, jsonObj interface{})
+
 	Next()
 	Origin() *http.Request
 	Response() Response
