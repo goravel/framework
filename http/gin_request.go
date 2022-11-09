@@ -79,7 +79,7 @@ func (r *GinRequest) AbortWithStatus(code int) {
 	r.instance.AbortWithStatus(code)
 }
 
-func (r *GinRequest) AbortWithStatusJSON(code int, jsonObj interface{}) {
+func (r *GinRequest) AbortWithStatusJson(code int, jsonObj interface{}) {
 	r.instance.AbortWithStatusJSON(code, jsonObj)
 }
 
