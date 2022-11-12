@@ -9,6 +9,7 @@ type HandlerFunc func(Context)
 
 type Context interface {
 	context.Context
+	Context() context.Context
 	WithValue(key string, value interface{})
 	Request() Request
 	Response() Response

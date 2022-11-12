@@ -1,11 +1,16 @@
 package http
 
 import (
+	"context"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goravel/framework/contracts/http"
 )
+
+func Background() http.Context {
+	return NewGinContext(&gin.Context{})
+}
 
 type GinContext struct {
 	instance *gin.Context
@@ -25,6 +30,15 @@ func (c *GinContext) Response() http.Response {
 
 func (c *GinContext) WithValue(key string, value interface{}) {
 	c.instance.Set(key, value)
+}
+
+func (c *GinContext) Context() context.Context {
+	ctx := context.Background()
+	for key, value := range c.instance.Keys {
+		ctx = context.WithValue(ctx, key, value)
+	}
+
+	return ctx
 }
 
 func (c *GinContext) Deadline() (deadline time.Time, ok bool) {
