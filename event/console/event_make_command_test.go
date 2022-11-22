@@ -37,7 +37,7 @@ func TestEventMakeCommand(t *testing.T) {
 		instance.Call("make:event GoravelEvent")
 	})
 
-	assert.True(t, file.Exist("app/events/goravel_event.go"))
+	assert.True(t, file.Exists("app/events/goravel_event.go"))
 	assert.True(t, file.Remove("app"))
 	err = os.Remove(".env")
 	assert.Nil(t, err)

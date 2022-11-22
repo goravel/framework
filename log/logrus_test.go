@@ -94,8 +94,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Debug("Goravel")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.debug: Goravel"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.debug: Goravel"))
 			},
@@ -110,8 +110,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Debug("Goravel")
 			},
 			assert: func(name string) {
-				assert.False(s.T(), file.Exist(dailyLog))
-				assert.False(s.T(), file.Exist(singleLog))
+				assert.False(s.T(), file.Exists(dailyLog))
+				assert.False(s.T(), file.Exists(singleLog))
 			},
 		},
 		{
@@ -123,8 +123,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Debugf("Goravel: %s", "World")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.debug: Goravel: World"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.debug: Goravel: World"))
 			},
@@ -138,8 +138,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Info("Goravel")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel"))
 			},
@@ -153,8 +153,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Infof("Goravel: %s", "World")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel: World"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel: World"))
 			},
@@ -168,8 +168,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Warning("Goravel")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.warning: Goravel"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.warning: Goravel"))
 			},
@@ -183,8 +183,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Warningf("Goravel: %s", "World")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.warning: Goravel: World"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.warning: Goravel: World"))
 			},
@@ -198,8 +198,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Error("Goravel")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.error: Goravel"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.error: Goravel"))
 			},
@@ -213,8 +213,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				facades.Log.Errorf("Goravel: %s", "World")
 			},
 			assert: func(name string) {
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.error: Goravel: World"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.error: Goravel: World"))
 			},
@@ -230,8 +230,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				assert.Panics(s.T(), func() {
 					facades.Log.Panic("Goravel")
 				})
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.panic: Goravel"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.panic: Goravel"))
 			},
@@ -247,8 +247,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				assert.Panics(s.T(), func() {
 					facades.Log.Panicf("Goravel: %s", "World")
 				})
-				assert.True(s.T(), file.Exist(dailyLog))
-				assert.True(s.T(), file.Exist(singleLog))
+				assert.True(s.T(), file.Exists(dailyLog))
+				assert.True(s.T(), file.Exists(singleLog))
 				assert.True(s.T(), file.Contain(singleLog, "test.panic: Goravel: World"))
 				assert.True(s.T(), file.Contain(dailyLog, "test.panic: Goravel: World"))
 			},
@@ -297,8 +297,8 @@ func TestLogrus_Fatal(t *testing.T) {
 	err := cmd.Run()
 
 	assert.EqualError(t, err, "exit status 1")
-	assert.True(t, file.Exist(dailyLog))
-	assert.True(t, file.Exist(singleLog))
+	assert.True(t, file.Exists(dailyLog))
+	assert.True(t, file.Exists(singleLog))
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 	file.Remove("storage")
@@ -318,8 +318,8 @@ func TestLogrus_Fatalf(t *testing.T) {
 	err := cmd.Run()
 
 	assert.EqualError(t, err, "exit status 1")
-	assert.True(t, file.Exist(dailyLog))
-	assert.True(t, file.Exist(singleLog))
+	assert.True(t, file.Exists(dailyLog))
+	assert.True(t, file.Exists(singleLog))
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 	file.Remove("storage")

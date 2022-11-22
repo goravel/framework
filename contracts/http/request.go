@@ -1,10 +1,12 @@
 package http
 
 import (
-	"mime/multipart"
 	"net/http"
+
+	"github.com/goravel/framework/contracts/filesystem"
 )
 
+//go:generate mockery --name=Request
 type Request interface {
 	Header(key, defaultValue string) string
 	Headers() http.Header
@@ -21,7 +23,7 @@ type Request interface {
 	// Form Retrieve a form string item form the post: /users POST:id=1
 	Form(key, defaultValue string) string
 	Bind(obj interface{}) error
-	File(name string) (File, error)
+	File(name string) (filesystem.File, error)
 
 	AbortWithStatus(code int)
 	AbortWithStatusJson(code int, jsonObj interface{})
@@ -33,7 +35,7 @@ type Request interface {
 	//Validate(ctx *gin.Context, request FormRequest) []error
 }
 
-type File interface {
-	Store(dst string) error
-	File() *multipart.FileHeader
+type FormRequest interface {
+	Messages() map[string]string
+	Authorize() bool
 }

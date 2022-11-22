@@ -21,12 +21,12 @@ Golang developers quickly build their own applications.
 - [x] Task Scheduling
 - [x] Queue
 - [x] Event
+- [x] FileStorage
 - [x] Mail
 - [x] Mock
 
 ## Roadmap
 
-- [ ] FileStorage
 - [ ] Authorization
 - [ ] Request validator
 - [ ] Optimize migration

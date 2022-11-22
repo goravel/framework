@@ -6,6 +6,7 @@ import (
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
 	ormmocks "github.com/goravel/framework/contracts/database/orm/mocks"
 	eventmocks "github.com/goravel/framework/contracts/event/mocks"
+	filesystemmocks "github.com/goravel/framework/contracts/filesystem/mocks"
 	mailmocks "github.com/goravel/framework/contracts/mail/mocks"
 	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
 	"github.com/goravel/framework/facades"
@@ -63,4 +64,13 @@ func Queue() (*queuemocks.Queue, *queuemocks.Task) {
 	facades.Queue = mockQueue
 
 	return mockQueue, &queuemocks.Task{}
+}
+
+func Storage() (*filesystemmocks.Storage, *filesystemmocks.Driver, *filesystemmocks.File) {
+	mockStorage := &filesystemmocks.Storage{}
+	mockDriver := &filesystemmocks.Driver{}
+	mockFile := &filesystemmocks.File{}
+	facades.Storage = mockStorage
+
+	return mockStorage, mockDriver, mockFile
 }

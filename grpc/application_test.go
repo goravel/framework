@@ -23,6 +23,8 @@ func TestClient(t *testing.T) {
 	beforeEach := func() {
 		mockConfig = mock.Config()
 		app = NewApplication()
+		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{})
+		go app.Run(host)
 	}
 
 	tests := []struct {
@@ -70,9 +72,9 @@ func TestClient(t *testing.T) {
 		test.setup()
 		client, err := app.Client(context.Background(), name)
 		if !test.expectErr {
-			assert.NotNil(t, client)
+			assert.NotNil(t, client, test.name)
 		}
-		assert.Equal(t, test.expectErr, err != nil)
+		assert.Equal(t, test.expectErr, err != nil, test.name)
 		mockConfig.AssertExpectations(t)
 	}
 }
