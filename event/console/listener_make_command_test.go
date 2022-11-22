@@ -37,7 +37,7 @@ func TestListenerMakeCommand(t *testing.T) {
 		instance.Call("make:listener GoravelListen")
 	})
 
-	assert.True(t, file.Exist("app/listeners/goravel_listen.go"))
+	assert.True(t, file.Exists("app/listeners/goravel_listen.go"))
 	assert.True(t, file.Remove("app"))
 	err = os.Remove(".env")
 	assert.Nil(t, err)

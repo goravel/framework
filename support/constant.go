@@ -1,3 +1,3 @@
 package support
 
-const Version string = "1.4.0"
+const Version string = "1.5.0"

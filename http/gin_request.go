@@ -3,16 +3,18 @@ package http
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
+	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/filesystem"
 
-	contracthttp "github.com/goravel/framework/contracts/http"
+	"github.com/gin-gonic/gin"
 )
 
 type GinRequest struct {
 	instance *gin.Context
 }
 
-func NewGinRequest(instance *gin.Context) contracthttp.Request {
+func NewGinRequest(instance *gin.Context) contractshttp.Request {
 	return &GinRequest{instance}
 }
 
@@ -32,13 +34,13 @@ func (r *GinRequest) Bind(obj interface{}) error {
 	return r.instance.ShouldBind(obj)
 }
 
-func (r *GinRequest) File(name string) (contracthttp.File, error) {
+func (r *GinRequest) File(name string) (contractsfilesystem.File, error) {
 	file, err := r.instance.FormFile(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return &GinFile{instance: r.instance, file: file}, nil
+	return filesystem.NewFileFromRequest(file)
 }
 
 func (r *GinRequest) Header(key, defaultValue string) string {
@@ -99,6 +101,6 @@ func (r *GinRequest) Origin() *http.Request {
 	return r.instance.Request
 }
 
-func (r *GinRequest) Response() contracthttp.Response {
+func (r *GinRequest) Response() contractshttp.Response {
 	return NewGinResponse(r.instance)
 }

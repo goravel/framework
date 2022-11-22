@@ -8,6 +8,7 @@ import (
 
 type GroupFunc func(routes Route)
 
+//go:generate mockery --name=Engine
 type Engine interface {
 	Route
 	Run(addr string) error
@@ -15,6 +16,7 @@ type Engine interface {
 	GlobalMiddleware(...httpcontract.Middleware)
 }
 
+//go:generate mockery --name=Route
 type Route interface {
 	Group(GroupFunc)
 	Prefix(addr string) Route

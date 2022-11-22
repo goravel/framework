@@ -1,10 +1,13 @@
 package file
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/h2non/filetype"
 )
 
 func Create(file string, content string) {
@@ -25,7 +28,7 @@ func Create(file string, content string) {
 	}
 }
 
-func Exist(file string) bool {
+func Exists(file string) bool {
 	_, err := os.Stat(file)
 	if err != nil {
 		if os.IsExist(err) {
@@ -66,7 +69,7 @@ func Remove(file string) bool {
 }
 
 func Contain(file string, search string) bool {
-	if Exist(file) {
+	if Exists(file) {
 		data, err := ioutil.ReadFile(file)
 		if err != nil {
 			return false
@@ -75,4 +78,39 @@ func Contain(file string, search string) bool {
 	}
 
 	return false
+}
+
+//Extension Supported types: https://github.com/h2non/filetype#supported-types
+func Extension(file string, originalWhenUnknown ...bool) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return "", err
+	}
+
+	head := make([]byte, 261)
+	_, err = f.Read(head)
+	if err != nil {
+		return "", err
+	}
+
+	kind, err := filetype.Match(head)
+	if err != nil {
+		return "", err
+	}
+
+	if kind == filetype.Unknown {
+		if len(originalWhenUnknown) > 0 {
+			if originalWhenUnknown[0] {
+				return ClientOriginalExtension(file), nil
+			}
+		}
+
+		return "", errors.New("unknown file extension")
+	}
+
+	return kind.Extension, nil
+}
+
+func ClientOriginalExtension(file string) string {
+	return strings.ReplaceAll(path.Ext(file), ".", "")
 }

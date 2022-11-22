@@ -37,7 +37,7 @@ func TestJobMakeCommand(t *testing.T) {
 		instance.Call("make:job GoravelJob")
 	})
 
-	assert.True(t, file.Exist("app/jobs/goravel_job.go"))
+	assert.True(t, file.Exists("app/jobs/goravel_job.go"))
 	assert.True(t, file.Remove("app"))
 	err = os.Remove(".env")
 	assert.Nil(t, err)

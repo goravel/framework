@@ -39,7 +39,6 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 	}
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
-
 	if _, set := ctx.Deadline(); !set {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
