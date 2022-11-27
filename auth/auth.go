@@ -40,25 +40,25 @@ type Guard struct {
 	Token  string
 }
 
-type Auth map[string]*Guard
+type Guards map[string]*Guard
 
-type Application struct {
+type Auth struct {
 	guard string
 }
 
-func NewApplication(guard string) contractauth.Auth {
-	return &Application{
+func NewAuth(guard string) contractauth.Auth {
+	return &Auth{
 		guard: guard,
 	}
 }
 
-func (app *Application) Guard(name string) contractauth.Auth {
-	return NewApplication(name)
+func (app *Auth) Guard(name string) contractauth.Auth {
+	return NewAuth(name)
 }
 
 //User need parse token first.
-func (app *Application) User(ctx http.Context, user any) error {
-	auth, ok := ctx.Value(ctxKey).(Auth)
+func (app *Auth) User(ctx http.Context, user any) error {
+	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[app.guard] == nil {
 		return ErrorParseTokenFirst
 	}
@@ -75,7 +75,7 @@ func (app *Application) User(ctx http.Context, user any) error {
 	return nil
 }
 
-func (app *Application) Parse(ctx http.Context, token string) error {
+func (app *Auth) Parse(ctx http.Context, token string) error {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if tokenIsDisabled(token) {
 		return ErrorTokenDisabled
@@ -113,7 +113,7 @@ func (app *Application) Parse(ctx http.Context, token string) error {
 	return nil
 }
 
-func (app *Application) Login(ctx http.Context, user any) (token string, err error) {
+func (app *Auth) Login(ctx http.Context, user any) (token string, err error) {
 	t := reflect.TypeOf(user).Elem()
 	v := reflect.ValueOf(user).Elem()
 	for i := 0; i < t.NumField(); i++ {
@@ -135,7 +135,7 @@ func (app *Application) Login(ctx http.Context, user any) (token string, err err
 	return "", ErrorNoPrimaryKeyField
 }
 
-func (app *Application) LoginUsingID(ctx http.Context, id any) (token string, err error) {
+func (app *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) {
 	jwtSecret := facades.Config.GetString("jwt.secret")
 	if jwtSecret == "" {
 		return "", ErrorEmptySecret
@@ -165,8 +165,8 @@ func (app *Application) LoginUsingID(ctx http.Context, id any) (token string, er
 }
 
 //Refresh need parse token first.
-func (app *Application) Refresh(ctx http.Context) (token string, err error) {
-	auth, ok := ctx.Value(ctxKey).(Auth)
+func (app *Auth) Refresh(ctx http.Context) (token string, err error) {
+	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[app.guard] == nil {
 		return "", ErrorParseTokenFirst
 	}
@@ -184,8 +184,8 @@ func (app *Application) Refresh(ctx http.Context) (token string, err error) {
 	return app.LoginUsingID(ctx, auth[app.guard].Claims.Key)
 }
 
-func (app *Application) Logout(ctx http.Context) error {
-	auth, ok := ctx.Value(ctxKey).(Auth)
+func (app *Auth) Logout(ctx http.Context) error {
+	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[app.guard] == nil || auth[app.guard].Token == "" {
 		return nil
 	}
@@ -207,8 +207,8 @@ func (app *Application) Logout(ctx http.Context) error {
 	return nil
 }
 
-func (app *Application) makeAuthContext(ctx http.Context, claims *Claims, token string) {
-	ctx.WithValue(ctxKey, Auth{
+func (app *Auth) makeAuthContext(ctx http.Context, claims *Claims, token string) {
+	ctx.WithValue(ctxKey, Guards{
 		app.guard: {claims, token},
 	})
 }

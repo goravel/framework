@@ -30,7 +30,7 @@ var app contractauth.Auth
 
 func TestAuthTestSuite(t *testing.T) {
 	unit = time.Second
-	app = NewApplication(guard)
+	app = NewAuth(guard)
 
 	suite.Run(t, new(AuthTestSuite))
 }

@@ -15,6 +15,5 @@ func (r *CliContext) Arguments() []string {
 }
 
 func (r *CliContext) Option(key string) string {
-
 	return r.instance.String(key)
 }
