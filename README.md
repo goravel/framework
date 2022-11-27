@@ -12,6 +12,7 @@ Golang developers quickly build their own applications.
 - [x] Config
 - [x] Http
 - [x] Authentication
+- [x] Authorization
 - [x] Orm
 - [x] Migrate
 - [x] Logger
@@ -27,7 +28,6 @@ Golang developers quickly build their own applications.
 
 ## Roadmap
 
-- [ ] Authorization
 - [ ] Request validator
 - [ ] Optimize migration
 - [ ] Orm relationships

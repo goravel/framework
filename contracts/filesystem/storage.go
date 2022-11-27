@@ -48,9 +48,7 @@ type File interface {
 	Extension() (string, error)
 }
 
-type (
-	Option func(options *Options)
-)
+type Option func(options *Options)
 
 type Options struct {
 	Name string
