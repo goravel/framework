@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -245,6 +246,124 @@ func (r *Cos) DeleteDirectory(directory string) error {
 	}
 
 	return nil
+}
+
+func (r *Cos) Files(path string) ([]string, error) {
+	var files []string
+	var marker string
+	validPath := validPath(path)
+	opt := &cos.BucketGetOptions{
+		Prefix:    validPath,
+		Delimiter: "/",
+		MaxKeys:   1000,
+	}
+	isTruncated := true
+	for isTruncated {
+		opt.Marker = marker
+		v, _, err := r.instance.Bucket.Get(r.ctx, opt)
+		if err != nil {
+			return nil, err
+		}
+		for _, content := range v.Contents {
+			files = append(files, strings.ReplaceAll(content.Key, validPath, ""))
+		}
+		isTruncated = v.IsTruncated
+		marker = v.NextMarker
+	}
+
+	return files, nil
+}
+
+func (r *Cos) AllFiles(path string) ([]string, error) {
+	var files []string
+	var marker string
+	validPath := validPath(path)
+	opt := &cos.BucketGetOptions{
+		Prefix:  validPath,
+		MaxKeys: 1000,
+	}
+	isTruncated := true
+	for isTruncated {
+		opt.Marker = marker
+		v, _, err := r.instance.Bucket.Get(r.ctx, opt)
+		if err != nil {
+			return nil, err
+		}
+		for _, content := range v.Contents {
+			if !strings.HasSuffix(content.Key, "/") {
+				files = append(files, strings.ReplaceAll(content.Key, validPath, ""))
+			}
+		}
+		isTruncated = v.IsTruncated
+		marker = v.NextMarker
+	}
+
+	return files, nil
+}
+
+func (r *Cos) Directories(path string) ([]string, error) {
+	var directories []string
+	var marker string
+	validPath := validPath(path)
+	opt := &cos.BucketGetOptions{
+		Prefix:    validPath,
+		Delimiter: "/",
+		MaxKeys:   1000,
+	}
+	isTruncated := true
+	for isTruncated {
+		opt.Marker = marker
+		v, _, err := r.instance.Bucket.Get(context.Background(), opt)
+		if err != nil {
+			return nil, err
+		}
+		for _, commonPrefix := range v.CommonPrefixes {
+			directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
+		}
+		isTruncated = v.IsTruncated
+		marker = v.NextMarker
+	}
+
+	return directories, nil
+}
+
+func (r *Cos) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	var marker string
+	validPath := validPath(path)
+	opt := &cos.BucketGetOptions{
+		Prefix:    validPath,
+		Delimiter: "/",
+		MaxKeys:   1000,
+	}
+	isTruncated := true
+	for isTruncated {
+		opt.Marker = marker
+		v, _, err := r.instance.Bucket.Get(context.Background(), opt)
+		if err != nil {
+			return nil, err
+		}
+		wg := sync.WaitGroup{}
+		for _, commonPrefix := range v.CommonPrefixes {
+			directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
+			wg.Add(1)
+			subDirectories, err := r.AllDirectories(commonPrefix)
+			if err != nil {
+				return nil, err
+			}
+			for _, subDirectory := range subDirectories {
+				if strings.HasSuffix(subDirectory, "/") {
+					directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
+				}
+			}
+			wg.Done()
+		}
+		wg.Wait()
+		isTruncated = v.IsTruncated
+		marker = v.NextMarker
+	}
+
+	return directories, nil
 }
 
 func (r *Cos) tempFile(content string) (*os.File, error) {

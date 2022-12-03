@@ -11,6 +11,8 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
+const MaxFileNum = 1000
+
 func fileHeaderToString(fileHeader *multipart.FileHeader) (string, error) {
 	src, err := fileHeader.Open()
 	if err != nil {
@@ -41,4 +43,15 @@ func fullPathOfFile(filePath string, source filesystem.File, name string) (strin
 
 		return strings.TrimSuffix(filePath, "/") + "/" + strings.TrimPrefix(path.Base(name), "/"), nil
 	}
+}
+
+func validPath(path string) string {
+	realPath := strings.TrimPrefix(path, "./")
+	realPath = strings.TrimPrefix(realPath, "/")
+	realPath = strings.TrimPrefix(realPath, ".")
+	if realPath != "" && !strings.HasSuffix(realPath, "/") {
+		realPath += "/"
+	}
+
+	return realPath
 }

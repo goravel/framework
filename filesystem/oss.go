@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -225,6 +226,80 @@ func (r *Oss) DeleteDirectory(directory string) error {
 	}
 
 	return nil
+}
+
+func (r *Oss) Files(path string) ([]string, error) {
+	var files []string
+	validPath := validPath(path)
+	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath), oss.Delimiter("/"))
+	if err != nil {
+		return nil, err
+	}
+	for _, object := range lsRes.Objects {
+		files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
+	}
+
+	return files, nil
+}
+
+func (r *Oss) AllFiles(path string) ([]string, error) {
+	var files []string
+	validPath := validPath(path)
+	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath))
+	if err != nil {
+		return nil, err
+	}
+	for _, object := range lsRes.Objects {
+		if !strings.HasSuffix(object.Key, "/") {
+			files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
+		}
+	}
+
+	return files, nil
+}
+
+func (r *Oss) Directories(path string) ([]string, error) {
+	var directories []string
+	validPath := validPath(path)
+	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath), oss.Delimiter("/"))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, directory := range lsRes.CommonPrefixes {
+		directories = append(directories, strings.ReplaceAll(directory, validPath, ""))
+	}
+
+	return directories, nil
+}
+
+func (r *Oss) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	validPath := validPath(path)
+	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath), oss.Delimiter("/"))
+	if err != nil {
+		return nil, err
+	}
+
+	wg := sync.WaitGroup{}
+	for _, commonPrefix := range lsRes.CommonPrefixes {
+		directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
+
+		wg.Add(1)
+		subDirectories, err := r.AllDirectories(commonPrefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, subDirectory := range subDirectories {
+			if strings.HasSuffix(subDirectory, "/") {
+				directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
+			}
+		}
+		wg.Done()
+	}
+	wg.Wait()
+
+	return directories, nil
 }
 
 func (r *Oss) tempFile(content string) (*os.File, error) {

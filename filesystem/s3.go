@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -249,6 +250,96 @@ func (r *S3) DeleteDirectory(directory string) error {
 	}
 
 	return nil
+}
+
+func (r *S3) Files(path string) ([]string, error) {
+	var files []string
+	validPath := validPath(path)
+	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
+		Bucket:    aws.String(r.bucket),
+		Delimiter: aws.String("/"),
+		Prefix:    aws.String(validPath),
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, object := range listObjsResponse.Contents {
+		files = append(files, strings.ReplaceAll(*object.Key, validPath, ""))
+	}
+
+	return files, nil
+}
+
+func (r *S3) AllFiles(path string) ([]string, error) {
+	var files []string
+	validPath := validPath(path)
+	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
+		Bucket: aws.String(r.bucket),
+		Prefix: aws.String(validPath),
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, object := range listObjsResponse.Contents {
+		file := *object.Key
+		if !strings.HasSuffix(file, "/") {
+			files = append(files, strings.ReplaceAll(file, validPath, ""))
+		}
+	}
+
+	return files, nil
+}
+
+func (r *S3) Directories(path string) ([]string, error) {
+	var directories []string
+	validPath := validPath(path)
+	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
+		Bucket:    aws.String(r.bucket),
+		Delimiter: aws.String("/"),
+		Prefix:    aws.String(validPath),
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, commonPrefix := range listObjsResponse.CommonPrefixes {
+		directories = append(directories, strings.ReplaceAll(*commonPrefix.Prefix, validPath, ""))
+	}
+
+	return directories, nil
+}
+
+func (r *S3) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	validPath := validPath(path)
+	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
+		Bucket:    aws.String(r.bucket),
+		Delimiter: aws.String("/"),
+		Prefix:    aws.String(validPath),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	wg := sync.WaitGroup{}
+	for _, commonPrefix := range listObjsResponse.CommonPrefixes {
+		prefix := *commonPrefix.Prefix
+		directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
+
+		wg.Add(1)
+		subDirectories, err := r.AllDirectories(*commonPrefix.Prefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, subDirectory := range subDirectories {
+			if strings.HasSuffix(subDirectory, "/") {
+				directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
+			}
+		}
+		wg.Done()
+	}
+	wg.Wait()
+
+	return directories, nil
 }
 
 func (r *S3) tempFile(content string) (*os.File, error) {
