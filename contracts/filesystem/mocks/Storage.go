@@ -16,6 +16,52 @@ type Storage struct {
 	mock.Mock
 }
 
+// AllDirectories provides a mock function with given fields: path
+func (_m *Storage) AllDirectories(path string) ([]string, error) {
+	ret := _m.Called(path)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AllFiles provides a mock function with given fields: path
+func (_m *Storage) AllFiles(path string) ([]string, error) {
+	ret := _m.Called(path)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Copy provides a mock function with given fields: oldFile, newFile
 func (_m *Storage) Copy(oldFile string, newFile string) error {
 	ret := _m.Called(oldFile, newFile)
@@ -64,6 +110,29 @@ func (_m *Storage) DeleteDirectory(directory string) error {
 	return r0
 }
 
+// Directories provides a mock function with given fields: path
+func (_m *Storage) Directories(path string) ([]string, error) {
+	ret := _m.Called(path)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Disk provides a mock function with given fields: disk
 func (_m *Storage) Disk(disk string) filesystem.Driver {
 	ret := _m.Called(disk)
@@ -92,6 +161,29 @@ func (_m *Storage) Exists(file string) bool {
 	}
 
 	return r0
+}
+
+// Files provides a mock function with given fields: path
+func (_m *Storage) Files(path string) ([]string, error) {
+	ret := _m.Called(path)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Get provides a mock function with given fields: file
