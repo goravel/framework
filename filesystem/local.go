@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -177,6 +178,82 @@ func (r *Local) DeleteDirectory(directory string) error {
 	return os.RemoveAll(r.fullPath(directory))
 }
 
+func (r *Local) Files(path string) ([]string, error) {
+	var files []string
+	fileInfo, err := ioutil.ReadDir(r.fullPath(path))
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range fileInfo {
+		if !f.IsDir() {
+			files = append(files, f.Name())
+		}
+	}
+
+	return files, nil
+}
+
+func (r *Local) AllFiles(path string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(r.fullPath(path), func(fullPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			files = append(files, strings.ReplaceAll(fullPath, r.fullPath(path)+"/", ""))
+		}
+
+		return nil
+	})
+
+	return files, err
+}
+
+func (r *Local) Directories(path string) ([]string, error) {
+	var directories []string
+	fileInfo, _ := ioutil.ReadDir(r.fullPath(path))
+	for _, f := range fileInfo {
+		if f.IsDir() {
+			directories = append(directories, f.Name()+"/")
+		}
+	}
+
+	return directories, nil
+}
+
+func (r *Local) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	err := filepath.Walk(r.fullPath(path), func(fullPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			realPath := strings.ReplaceAll(fullPath, r.fullPath(path), "")
+			realPath = strings.TrimPrefix(realPath, "/")
+			if realPath != "" {
+				directories = append(directories, realPath+"/")
+			}
+		}
+
+		return nil
+	})
+
+	return directories, err
+}
+
 func (r *Local) fullPath(path string) string {
-	return strings.TrimSuffix(r.root, "/") + "/" + strings.TrimPrefix(path, "/")
+	if path == "." {
+		path = ""
+	}
+	realPath := strings.TrimPrefix(path, "./")
+	realPath = strings.TrimSuffix(strings.TrimPrefix(realPath, "/"), "/")
+	if realPath == "" {
+		return r.rootPath()
+	} else {
+		return r.rootPath() + realPath
+	}
+}
+
+func (r *Local) rootPath() string {
+	return strings.TrimSuffix(r.root, "/") + "/"
 }

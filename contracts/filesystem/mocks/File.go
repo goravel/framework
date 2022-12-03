@@ -12,34 +12,6 @@ type File struct {
 	mock.Mock
 }
 
-// ClientOriginalExtension provides a mock function with given fields:
-func (_m *File) ClientOriginalExtension() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// ClientOriginalName provides a mock function with given fields:
-func (_m *File) ClientOriginalName() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
 // Disk provides a mock function with given fields: disk
 func (_m *File) Disk(disk string) filesystem.File {
 	ret := _m.Called(disk)
@@ -79,6 +51,34 @@ func (_m *File) Extension() (string, error) {
 
 // File provides a mock function with given fields:
 func (_m *File) File() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetClientOriginalExtension provides a mock function with given fields:
+func (_m *File) GetClientOriginalExtension() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetClientOriginalName provides a mock function with given fields:
+func (_m *File) GetClientOriginalName() string {
 	ret := _m.Called()
 
 	var r0 string

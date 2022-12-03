@@ -28,10 +28,10 @@ type Driver interface {
 	Copy(oldFile, newFile string) error
 	Move(oldFile, newFile string) error
 	Delete(file ...string) error
-	// Files(path string)
-	// AllFiles(path string)
-	// Directories(path string)
-	// AllDirectories(path string)
+	Files(path string) ([]string, error)
+	AllFiles(path string) ([]string, error)
+	Directories(path string) ([]string, error)
+	AllDirectories(path string) ([]string, error)
 	MakeDirectory(directory string) error
 	DeleteDirectory(directory string) error
 }
