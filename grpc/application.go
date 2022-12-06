@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
-	"time"
-
 	"github.com/goravel/framework/facades"
+	"net"
 
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
@@ -39,18 +37,12 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 	}
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
-	if _, set := ctx.Deadline(); !set {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-	}
 
 	return grpc.DialContext(
 		ctx,
 		host,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
-		grpc.WithBlock(),
 	)
 }
 
