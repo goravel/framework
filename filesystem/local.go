@@ -8,12 +8,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -98,13 +98,7 @@ func (r *Local) Size(file string) (int64, error) {
 }
 
 func (r *Local) Path(file string) string {
-	var abPath string
-	_, filename, _, ok := runtime.Caller(1)
-	if ok {
-		abPath = path.Dir(filename)
-	}
-
-	return abPath + "/" + strings.TrimPrefix(strings.TrimPrefix(r.fullPath(file), "/"), "./")
+	return support.RootPath + "/" + strings.TrimPrefix(strings.TrimPrefix(r.fullPath(file), "/"), "./")
 }
 
 func (r *Local) Exists(file string) bool {

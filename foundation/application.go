@@ -6,6 +6,7 @@ import (
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support"
 )
 
 func init() {
@@ -25,6 +26,11 @@ func (app *Application) Boot() {
 	app.bootConfiguredServiceProviders()
 
 	app.bootArtisan()
+	app.setRootPath()
+}
+
+func (app *Application) setRootPath() {
+	support.RootPath = getCurrentAbPath()
 }
 
 //bootArtisan Boot artisan command.
