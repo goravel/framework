@@ -1,21 +1,27 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
-	contractshttp "github.com/goravel/framework/contracts/http"
+	httpcontract "github.com/goravel/framework/contracts/http"
+	validatecontract "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/filesystem"
+	"github.com/goravel/framework/validation"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gookit/validate"
 )
 
 type GinRequest struct {
+	ctx      *GinContext
 	instance *gin.Context
 }
 
-func NewGinRequest(instance *gin.Context) contractshttp.Request {
-	return &GinRequest{instance}
+func NewGinRequest(ctx *GinContext) httpcontract.Request {
+	return &GinRequest{ctx, ctx.instance}
 }
 
 func (r *GinRequest) Input(key string) string {
@@ -30,7 +36,7 @@ func (r *GinRequest) Form(key, defaultValue string) string {
 	return r.instance.DefaultPostForm(key, defaultValue)
 }
 
-func (r *GinRequest) Bind(obj interface{}) error {
+func (r *GinRequest) Bind(obj any) error {
 	return r.instance.ShouldBind(obj)
 }
 
@@ -81,7 +87,7 @@ func (r *GinRequest) AbortWithStatus(code int) {
 	r.instance.AbortWithStatus(code)
 }
 
-func (r *GinRequest) AbortWithStatusJson(code int, jsonObj interface{}) {
+func (r *GinRequest) AbortWithStatusJson(code int, jsonObj any) {
 	r.instance.AbortWithStatusJSON(code, jsonObj)
 }
 
@@ -101,6 +107,51 @@ func (r *GinRequest) Origin() *http.Request {
 	return r.instance.Request
 }
 
-func (r *GinRequest) Response() contractshttp.Response {
+func (r *GinRequest) Response() httpcontract.Response {
 	return NewGinResponse(r.instance)
+}
+
+func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
+	if rules == nil || len(rules) == 0 {
+		return nil, errors.New("rules can't be empty")
+	}
+
+	options = append(options, validation.Rules(rules), validation.CustomRules(facades.Validation.Rules()))
+	generateOptions := validation.GenerateOptions(options)
+
+	var v *validate.Validation
+	dataFace, err := validate.FromRequest(r.Origin())
+	if err != nil {
+		return nil, err
+	}
+	if dataFace == nil {
+		v = validate.NewValidation(dataFace)
+	} else {
+		if generateOptions["prepareForValidation"] != nil {
+			generateOptions["prepareForValidation"].(func(data validatecontract.Data))(validation.NewData(dataFace))
+		}
+
+		v = dataFace.Create()
+	}
+
+	validation.AppendOptions(v, generateOptions)
+
+	return validation.NewValidator(v, dataFace), nil
+}
+
+func (r *GinRequest) ValidateRequest(request httpcontract.FormRequest) (validatecontract.Errors, error) {
+	if err := request.Authorize(r.ctx); err != nil {
+		return nil, err
+	}
+
+	validator, err := r.Validate(request.Rules(), validation.Messages(request.Messages()), validation.Attributes(request.Attributes()), validation.PrepareForValidation(request.PrepareForValidation))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validator.Bind(request); err != nil {
+		return nil, err
+	}
+
+	return validator.Errors(), nil
 }

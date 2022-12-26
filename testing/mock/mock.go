@@ -1,14 +1,18 @@
 package mock
 
 import (
+	accessmocks "github.com/goravel/framework/contracts/auth/access/mocks"
+	authmocks "github.com/goravel/framework/contracts/auth/mocks"
 	cachemocks "github.com/goravel/framework/contracts/cache/mocks"
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
 	ormmocks "github.com/goravel/framework/contracts/database/orm/mocks"
 	eventmocks "github.com/goravel/framework/contracts/event/mocks"
 	filesystemmocks "github.com/goravel/framework/contracts/filesystem/mocks"
+	grpcmocks "github.com/goravel/framework/contracts/grpc/mocks"
 	mailmocks "github.com/goravel/framework/contracts/mail/mocks"
 	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
+	validatemocks "github.com/goravel/framework/contracts/validation/mocks"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log"
 )
@@ -73,4 +77,34 @@ func Storage() (*filesystemmocks.Storage, *filesystemmocks.Driver, *filesystemmo
 	facades.Storage = mockStorage
 
 	return mockStorage, mockDriver, mockFile
+}
+
+func Validator() (*validatemocks.Validation, *validatemocks.Validator, *validatemocks.Errors) {
+	mockValidation := &validatemocks.Validation{}
+	mockValidator := &validatemocks.Validator{}
+	mockErrors := &validatemocks.Errors{}
+	facades.Validation = mockValidation
+
+	return mockValidation, mockValidator, mockErrors
+}
+
+func Auth() *authmocks.Auth {
+	mockAuth := &authmocks.Auth{}
+	facades.Auth = mockAuth
+
+	return mockAuth
+}
+
+func Gate() *accessmocks.Gate {
+	mockGate := &accessmocks.Gate{}
+	facades.Gate = mockGate
+
+	return mockGate
+}
+
+func Grpc() *grpcmocks.Grpc {
+	mockGrpc := &grpcmocks.Grpc{}
+	facades.Grpc = mockGrpc
+
+	return mockGrpc
 }

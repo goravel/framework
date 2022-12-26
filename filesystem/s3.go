@@ -156,7 +156,7 @@ func (r *S3) TemporaryUrl(file string, time time.Time) (string, error) {
 	presignDuration := func(po *s3.PresignOptions) {
 		po.Expires = time.Sub(supporttime.Now())
 	}
-	presignResult, err := presignClient.PresignGetObject(context.TODO(), presignParams, presignDuration)
+	presignResult, err := presignClient.PresignGetObject(r.ctx, presignParams, presignDuration)
 	if err != nil {
 		return "", err
 	}
