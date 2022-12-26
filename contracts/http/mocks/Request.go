@@ -5,6 +5,7 @@ package mocks
 import (
 	filesystem "github.com/goravel/framework/contracts/filesystem"
 	http "github.com/goravel/framework/contracts/http"
+	validate "github.com/goravel/framework/contracts/validation"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -240,6 +241,59 @@ func (_m *Request) Url() string {
 	}
 
 	return r0
+}
+
+// Validate provides a mock function with given fields: rules, options
+func (_m *Request) Validate(rules map[string]string, options ...validate.Option) (validate.Validator, error) {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, rules)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 validate.Validator
+	if rf, ok := ret.Get(0).(func(map[string]string, ...validate.Option) validate.Validator); ok {
+		r0 = rf(rules, options...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(validate.Validator)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(map[string]string, ...validate.Option) error); ok {
+		r1 = rf(rules, options...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ValidateRequest provides a mock function with given fields: request
+func (_m *Request) ValidateRequest(request http.FormRequest) (validate.Errors, error) {
+	ret := _m.Called(request)
+
+	var r0 validate.Errors
+	if rf, ok := ret.Get(0).(func(http.FormRequest) validate.Errors); ok {
+		r0 = rf(request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(validate.Errors)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(http.FormRequest) error); ok {
+		r1 = rf(request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 type NewRequestT interface {
