@@ -24,11 +24,11 @@ Golang developers quickly build their own applications.
 - [x] Event
 - [x] FileStorage
 - [x] Mail
+- [x] Validation
 - [x] Mock
 
 ## Roadmap
 
-- [ ] Request validator
 - [ ] Optimize migration
 - [ ] Orm relationships
 - [ ] Custom .env path
