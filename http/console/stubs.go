@@ -8,7 +8,7 @@ func (r Stubs) Request() string {
 
 import (
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/http/validate"
+	"github.com/goravel/framework/contracts/validation"
 )
 
 type DummyRequest struct {
@@ -31,7 +31,7 @@ func (r *DummyRequest) Attributes() map[string]string {
 	return map[string]string{}
 }
 
-func (r *DummyRequest) PrepareForValidation(data validate.Data) {
+func (r *DummyRequest) PrepareForValidation(data validation.Data) {
 
 }
 `
