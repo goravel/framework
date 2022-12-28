@@ -51,6 +51,18 @@ func (s *AuthTestSuite) TestLoginUsingID_EmptySecret() {
 	mockConfig.AssertExpectations(s.T())
 }
 
+func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
+
+	token, err := app.LoginUsingID(http.Background(), "")
+	assert.Empty(s.T(), token)
+	assert.ErrorIs(s.T(), err, ErrorInvalidKey)
+
+	mockConfig.AssertExpectations(s.T())
+}
+
 func (s *AuthTestSuite) TestLoginUsingID() {
 	mockConfig := mock.Config()
 	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
