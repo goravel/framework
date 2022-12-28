@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -132,6 +133,23 @@ func (r *GormQuery) Exec(sql string, values ...interface{}) error {
 }
 
 func (r *GormQuery) Find(dest interface{}, conds ...interface{}) error {
+	if len(conds) == 1 {
+		switch conds[0].(type) {
+		case string:
+			if conds[0].(string) == "" {
+				return ErrorMissingWhereClause
+			}
+		default:
+			reflectValue := reflect.Indirect(reflect.ValueOf(conds[0]))
+			switch reflectValue.Kind() {
+			case reflect.Slice, reflect.Array:
+				if reflectValue.Len() == 0 {
+					return ErrorMissingWhereClause
+				}
+			}
+		}
+	}
+
 	return r.instance.Find(dest, conds...).Error
 }
 

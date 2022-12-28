@@ -28,6 +28,7 @@ var (
 	ErrorParseTokenFirst     = errors.New("parse token first")
 	ErrorInvalidClaims       = errors.New("invalid claims")
 	ErrorInvalidToken        = errors.New("invalid token")
+	ErrorInvalidKey          = errors.New("invalid key")
 )
 
 type Claims struct {
@@ -64,6 +65,9 @@ func (app *Auth) User(ctx http.Context, user any) error {
 	}
 	if auth[app.guard].Claims == nil {
 		return ErrorParseTokenFirst
+	}
+	if auth[app.guard].Claims.Key == "" {
+		return ErrorInvalidKey
 	}
 	if auth[app.guard].Token == "" {
 		return ErrorTokenExpired
@@ -144,6 +148,10 @@ func (app *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error
 	nowTime := supporttime.Now()
 	ttl := facades.Config.GetInt("jwt.ttl")
 	expireTime := nowTime.Add(time.Duration(ttl) * unit)
+	key := cast.ToString(id)
+	if key == "" {
+		return "", ErrorInvalidKey
+	}
 	claims := Claims{
 		cast.ToString(id),
 		jwt.RegisteredClaims{
