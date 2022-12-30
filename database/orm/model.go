@@ -22,17 +22,17 @@ type Timestamps struct {
 	UpdatedAt time.Time
 }
 
-type Relationship struct {
+type BaseModel struct {
 }
 
-func (r *Relationship) HasOne(dest, id interface{}, foreignKey string) error {
+func (r *BaseModel) HasOne(dest, id interface{}, foreignKey string) error {
 	return facades.Orm.Query().Where(foreignKey+" = ?", id).Find(dest)
 }
 
-func (r *Relationship) HasMany(dest, id interface{}, foreignKey string) error {
+func (r *BaseModel) HasMany(dest, id interface{}, foreignKey string) error {
 	return facades.Orm.Query().Where(foreignKey+" in ?", id).Find(dest)
 }
 
-func (r *Relationship) belongsTo(dest, id interface{}) error {
+func (r *BaseModel) BelongsTo(dest, id interface{}) error {
 	return facades.Orm.Query().Find(dest, id)
 }
