@@ -28,6 +28,10 @@ func TestGetServer(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestGetQueueName(t *testing.T) {
+	//todo
+}
+
 func TestGetDriver(t *testing.T) {
 	initConfig()
 	assert.Equal(t, "sync", getDriver("sync"))
@@ -40,6 +44,7 @@ func TestGetRedisServer(t *testing.T) {
 }
 
 func TestGetRedisConfig(t *testing.T) {
+	//todo
 	initConfig()
 	redisConfig, database, queue := getRedisConfig("redis")
 	assert.Equal(t, "127.0.0.1:6379", redisConfig)

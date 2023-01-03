@@ -35,6 +35,21 @@ func GetServer(connection string, queue string) (*machinery.Server, error) {
 	return nil, fmt.Errorf("unknown queue driver: %s", driver)
 }
 
+func GetQueueName(connection, queue string) string {
+	appName := facades.Config.GetString("app.name")
+	if appName == "" {
+		appName = "goravel"
+	}
+	if connection == "" {
+		connection = facades.Config.GetString("queue.default")
+	}
+	if queue == "" {
+		queue = facades.Config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
+	}
+
+	return fmt.Sprintf("%s_%s:%s", appName, "queues", queue)
+}
+
 func getDriver(connection string) string {
 	if connection == "" {
 		connection = facades.Config.GetString("queue.default")
@@ -63,7 +78,7 @@ func getRedisServer(connection string, queue string) *machinery.Server {
 
 func getRedisConfig(queueConnection string) (config string, database int, queue string) {
 	connection := facades.Config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	queue = facades.Config.GetString(fmt.Sprintf("queue.connections.%s.queue", queueConnection), "default")
+	queue = GetQueueName(queueConnection, "")
 	host := facades.Config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
 	password := facades.Config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
 	port := facades.Config.GetString(fmt.Sprintf("database.redis.%s.port", connection))

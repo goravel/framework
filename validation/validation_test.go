@@ -2506,7 +2506,7 @@ func TestAddRule(t *testing.T) {
 
 func TestCustomRule(t *testing.T) {
 	validation := NewValidation()
-	err := validation.AddRules([]httpvalidate.Rule{&Uppercase{}})
+	err := validation.AddRules([]httpvalidate.Rule{&Uppercase{}, &Lowercase{}})
 	assert.Nil(t, err)
 
 	tests := []Case{
@@ -2514,9 +2514,11 @@ func TestCustomRule(t *testing.T) {
 			description: "success",
 			setup: func(c Case) {
 				validator, err := validation.Make(map[string]any{
-					"name": "ABC",
+					"name":    "ABC",
+					"address": "de",
 				}, map[string]string{
-					"name": "required|uppercase:3",
+					"name":    "required|uppercase:3",
+					"address": "required|lowercase:2",
 				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
@@ -2527,13 +2529,16 @@ func TestCustomRule(t *testing.T) {
 			description: "error",
 			setup: func(c Case) {
 				validator, err := validation.Make(map[string]any{
-					"name": "abc",
+					"name":    "abc",
+					"address": "DE",
 				}, map[string]string{
-					"name": "required|uppercase:3",
+					"name":    "required|uppercase:3",
+					"address": "required|lowercase:2",
 				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"uppercase": "name must be upper"}, validator.Errors().Get("name"))
+				assert.Equal(t, map[string]string{"lowercase": "address must be lower"}, validator.Errors().Get("address"))
 			},
 		},
 	}
@@ -2561,6 +2566,26 @@ func (receiver *Uppercase) Passes(data httpvalidate.Data, val any, options ...an
 //Message Get the validation error message.
 func (receiver *Uppercase) Message() string {
 	return ":attribute must be upper"
+}
+
+type Lowercase struct {
+}
+
+//Signature The name of the rule.
+func (receiver *Lowercase) Signature() string {
+	return "lowercase"
+}
+
+//Passes Determine if the validation rule passes.
+func (receiver *Lowercase) Passes(data httpvalidate.Data, val any, options ...any) bool {
+	address, exist := data.Get("address")
+
+	return strings.ToLower(val.(string)) == val.(string) && len(val.(string)) == cast.ToInt(options[0]) && address == val && exist
+}
+
+//Message Get the validation error message.
+func (receiver *Lowercase) Message() string {
+	return ":attribute must be lower"
 }
 
 type Duplicate struct {
