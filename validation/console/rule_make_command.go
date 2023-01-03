@@ -53,6 +53,7 @@ func (receiver *RuleMakeCommand) getStub() string {
 //populateStub Populate the place-holders in the command stub.
 func (receiver *RuleMakeCommand) populateStub(stub string, name string) string {
 	stub = strings.ReplaceAll(stub, "DummyRule", str.Case2Camel(name))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(name))
 
 	return stub
 }

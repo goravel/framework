@@ -1,8 +1,9 @@
 package validation
 
 import (
-	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"strings"
+
+	httpvalidate "github.com/goravel/framework/contracts/validation"
 
 	"github.com/gookit/validate"
 )
@@ -77,6 +78,7 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 	if options["customRules"] != nil {
 		customRules := options["customRules"].([]httpvalidate.Rule)
 		for _, customRule := range customRules {
+			customRule := customRule
 			validator.AddMessages(map[string]string{
 				customRule.Signature(): strings.ReplaceAll(customRule.Message(), ":attribute", "{field}"),
 			})
