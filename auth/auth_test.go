@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm/clause"
 )
 
 var guard = "user"
@@ -220,7 +221,7 @@ func (s *AuthTestSuite) TestUser_DBError() {
 
 	mockOrm, mockDB, _ := mock.Orm()
 	mockOrm.On("Query").Return(mockDB)
-	mockDB.On("Find", &user, "1").Return(errors.New("error")).Once()
+	mockDB.On("Find", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(errors.New("error")).Once()
 
 	err = app.User(ctx, &user)
 	assert.EqualError(s.T(), err, "error")
@@ -258,7 +259,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	mockOrm, mockDB, _ := mock.Orm()
 	mockOrm.On("Query").Return(mockDB)
-	mockDB.On("Find", &user, "1").Return(nil).Once()
+	mockDB.On("Find", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
 
 	err = app.User(ctx, &user)
 	assert.Nil(s.T(), err)
@@ -317,7 +318,7 @@ func (s *AuthTestSuite) TestUser_Success() {
 	var user User
 	mockOrm, mockDB, _ := mock.Orm()
 	mockOrm.On("Query").Return(mockDB)
-	mockDB.On("Find", &user, "1").Return(nil).Once()
+	mockDB.On("Find", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
 
 	err = app.User(ctx, &user)
 	assert.Nil(s.T(), err)

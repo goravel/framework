@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/cast"
+	"gorm.io/gorm/clause"
 )
 
 const ctxKey = "GoravelAuth"
@@ -68,7 +69,8 @@ func (app *Auth) User(ctx http.Context, user any) error {
 	if auth[app.guard].Token == "" {
 		return ErrorTokenExpired
 	}
-	if err := facades.Orm.Query().Find(user, auth[app.guard].Claims.Key); err != nil {
+	//todo Unit test
+	if err := facades.Orm.Query().Find(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[app.guard].Claims.Key}); err != nil {
 		return err
 	}
 
