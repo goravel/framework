@@ -21,6 +21,8 @@ type Request interface {
 	Input(key string) string
 	// Query Retrieve a query string item form the request: /users?id=1
 	Query(key, defaultValue string) string
+	QueryArray(key string) []string
+	QueryMap(key string) map[string]string
 	// Form Retrieve a form string item form the post: /users POST:id=1
 	Form(key, defaultValue string) string
 	Bind(obj any) error

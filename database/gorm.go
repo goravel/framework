@@ -9,24 +9,21 @@ import (
 	"reflect"
 	"time"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
-	"gorm.io/driver/sqlserver"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support/database"
+
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
-
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/support"
-	"github.com/goravel/framework/facades"
 )
 
 type GormDB struct {
-	contractsorm.Query
+	ormcontract.Query
 	instance *gorm.DB
 }
 
-func NewGormDB(ctx context.Context, connection string) (contractsorm.DB, error) {
+func NewGormDB(ctx context.Context, connection string) (ormcontract.DB, error) {
 	db, err := NewGormInstance(connection)
 	if err != nil {
 		return nil, err
@@ -75,18 +72,18 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 	})
 }
 
-func (r *GormDB) Begin() (contractsorm.Transaction, error) {
+func (r *GormDB) Begin() (ormcontract.Transaction, error) {
 	tx := r.instance.Begin()
 
 	return NewGormTransaction(tx), tx.Error
 }
 
 type GormTransaction struct {
-	contractsorm.Query
+	ormcontract.Query
 	instance *gorm.DB
 }
 
-func NewGormTransaction(instance *gorm.DB) contractsorm.Transaction {
+func NewGormTransaction(instance *gorm.DB) ormcontract.Transaction {
 	return &GormTransaction{Query: NewGormQuery(instance), instance: instance}
 }
 
@@ -102,37 +99,61 @@ type GormQuery struct {
 	instance *gorm.DB
 }
 
-func NewGormQuery(instance *gorm.DB) contractsorm.Query {
+func NewGormQuery(instance *gorm.DB) ormcontract.Query {
 	return &GormQuery{instance}
 }
 
-func (r *GormQuery) Driver() contractsorm.Driver {
-	return contractsorm.Driver(r.instance.Dialector.Name())
+func (r *GormQuery) Driver() ormcontract.Driver {
+	return ormcontract.Driver(r.instance.Dialector.Name())
 }
 
 func (r *GormQuery) Count(count *int64) error {
 	return r.instance.Count(count).Error
 }
 
-func (r *GormQuery) Create(value interface{}) error {
-	return r.instance.Create(value).Error
+func (r *GormQuery) Create(value any) error {
+	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+		return errors.New("cannot set Select and Omits at the same time")
+	}
+
+	if len(r.instance.Statement.Selects) > 0 {
+		for _, val := range r.instance.Statement.Selects {
+			if val == orm.Relationships {
+				return r.instance.Create(value).Error
+			}
+		}
+
+		return r.instance.Create(value).Error
+	}
+
+	if len(r.instance.Statement.Omits) > 0 {
+		for _, val := range r.instance.Statement.Omits {
+			if val == orm.Relationships {
+				return r.instance.Omit(orm.Relationships).Create(value).Error
+			}
+		}
+
+		return r.instance.Create(value).Error
+	}
+
+	return r.instance.Omit(orm.Relationships).Create(value).Error
 }
 
-func (r *GormQuery) Delete(value interface{}, conds ...interface{}) error {
+func (r *GormQuery) Delete(value any, conds ...any) error {
 	return r.instance.Delete(value, conds...).Error
 }
 
-func (r *GormQuery) Distinct(args ...interface{}) contractsorm.Query {
+func (r *GormQuery) Distinct(args ...any) ormcontract.Query {
 	tx := r.instance.Distinct(args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Exec(sql string, values ...interface{}) error {
+func (r *GormQuery) Exec(sql string, values ...any) error {
 	return r.instance.Exec(sql, values...).Error
 }
 
-func (r *GormQuery) Find(dest interface{}, conds ...interface{}) error {
+func (r *GormQuery) Find(dest any, conds ...any) error {
 	if len(conds) == 1 {
 		switch conds[0].(type) {
 		case string:
@@ -153,7 +174,7 @@ func (r *GormQuery) Find(dest interface{}, conds ...interface{}) error {
 	return r.instance.Find(dest, conds...).Error
 }
 
-func (r *GormQuery) First(dest interface{}) error {
+func (r *GormQuery) First(dest any) error {
 	err := r.instance.First(dest).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil
@@ -162,10 +183,10 @@ func (r *GormQuery) First(dest interface{}) error {
 	return err
 }
 
-func (r *GormQuery) FirstOrCreate(dest interface{}, conds ...interface{}) error {
+func (r *GormQuery) FirstOrCreate(dest any, conds ...any) error {
 	var err error
 	if len(conds) > 1 {
-		err = r.instance.Attrs([]interface{}{conds[1]}...).FirstOrCreate(dest, []interface{}{conds[0]}...).Error
+		err = r.instance.Attrs([]any{conds[1]}...).FirstOrCreate(dest, []any{conds[0]}...).Error
 	} else {
 		err = r.instance.FirstOrCreate(dest, conds...).Error
 	}
@@ -173,113 +194,212 @@ func (r *GormQuery) FirstOrCreate(dest interface{}, conds ...interface{}) error 
 	return err
 }
 
-func (r *GormQuery) ForceDelete(value interface{}, conds ...interface{}) error {
+func (r *GormQuery) ForceDelete(value any, conds ...any) error {
 	return r.instance.Unscoped().Delete(value, conds...).Error
 }
 
-func (r *GormQuery) Get(dest interface{}) error {
+func (r *GormQuery) Get(dest any) error {
 	return r.instance.Find(dest).Error
 }
 
-func (r *GormQuery) Group(name string) contractsorm.Query {
+func (r *GormQuery) Group(name string) ormcontract.Query {
 	tx := r.instance.Group(name)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Having(query interface{}, args ...interface{}) contractsorm.Query {
+func (r *GormQuery) Having(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Having(query, args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Join(query string, args ...interface{}) contractsorm.Query {
+func (r *GormQuery) Join(query string, args ...any) ormcontract.Query {
 	tx := r.instance.Joins(query, args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Limit(limit int) contractsorm.Query {
+func (r *GormQuery) Limit(limit int) ormcontract.Query {
 	tx := r.instance.Limit(limit)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Model(value interface{}) contractsorm.Query {
+func (r *GormQuery) Model(value any) ormcontract.Query {
 	tx := r.instance.Model(value)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Offset(offset int) contractsorm.Query {
+func (r *GormQuery) Offset(offset int) ormcontract.Query {
 	tx := r.instance.Offset(offset)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Order(value interface{}) contractsorm.Query {
+func (r *GormQuery) Omit(columns ...string) ormcontract.Query {
+	tx := r.instance.Omit(columns...)
+
+	return NewGormQuery(tx)
+}
+
+func (r *GormQuery) Order(value any) ormcontract.Query {
 	tx := r.instance.Order(value)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) OrWhere(query interface{}, args ...interface{}) contractsorm.Query {
+func (r *GormQuery) OrWhere(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Or(query, args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Pluck(column string, dest interface{}) error {
+func (r *GormQuery) Pluck(column string, dest any) error {
 	return r.instance.Pluck(column, dest).Error
 }
 
-func (r *GormQuery) Raw(sql string, values ...interface{}) contractsorm.Query {
+func (r *GormQuery) Raw(sql string, values ...any) ormcontract.Query {
 	tx := r.instance.Raw(sql, values...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Save(value interface{}) error {
-	return r.instance.Save(value).Error
+func (r *GormQuery) Save(value any) error {
+	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+		return errors.New("cannot set Select and Omits at the same time")
+	}
+
+	if len(r.instance.Statement.Selects) > 0 {
+		for _, val := range r.instance.Statement.Selects {
+			if val == orm.Relationships {
+				return r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Save(value).Error
+			}
+		}
+
+		return r.instance.Save(value).Error
+	}
+
+	if len(r.instance.Statement.Omits) > 0 {
+		for _, val := range r.instance.Statement.Omits {
+			if val == orm.Relationships {
+				return r.instance.Omit(orm.Relationships).Save(value).Error
+			}
+		}
+
+		return r.instance.Save(value).Error
+	}
+
+	return r.instance.Omit(orm.Relationships).Save(value).Error
 }
 
-func (r *GormQuery) Scan(dest interface{}) error {
+func (r *GormQuery) Scan(dest any) error {
 	return r.instance.Scan(dest).Error
 }
 
-func (r *GormQuery) Select(query interface{}, args ...interface{}) contractsorm.Query {
+func (r *GormQuery) Select(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Select(query, args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Table(name string, args ...interface{}) contractsorm.Query {
+func (r *GormQuery) Table(name string, args ...any) ormcontract.Query {
 	tx := r.instance.Table(name, args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Update(column string, value interface{}) error {
+func (r *GormQuery) Update(column string, value any) error {
 	return r.instance.Update(column, value).Error
 }
 
-func (r *GormQuery) Updates(values interface{}) error {
-	return r.instance.Updates(values).Error
+func (r *GormQuery) Updates(values any) error {
+	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+		return errors.New("cannot set Select and Omits at the same time")
+	}
+
+	if len(r.instance.Statement.Selects) > 0 {
+		for _, val := range r.instance.Statement.Selects {
+			if val == orm.Relationships {
+				return r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Updates(values).Error
+			}
+		}
+
+		return r.instance.Updates(values).Error
+	}
+
+	if len(r.instance.Statement.Omits) > 0 {
+		for _, val := range r.instance.Statement.Omits {
+			if val == orm.Relationships {
+				return r.instance.Omit(orm.Relationships).Updates(values).Error
+			}
+		}
+
+		return r.instance.Updates(values).Error
+	}
+
+	return r.instance.Omit(orm.Relationships).Updates(values).Error
 }
 
-func (r *GormQuery) Where(query interface{}, args ...interface{}) contractsorm.Query {
+func (r *GormQuery) Where(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Where(query, args...)
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) WithTrashed() contractsorm.Query {
+func (r *GormQuery) WithTrashed() ormcontract.Query {
 	tx := r.instance.Unscoped()
 
 	return NewGormQuery(tx)
 }
 
-func (r *GormQuery) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
+func (r *GormQuery) With(query string, args ...any) ormcontract.Query {
+	tx := r.instance.Preload(query, args...)
+
+	return NewGormQuery(tx)
+}
+
+func (r *GormQuery) Load(dest any, relation string, relations ...string) error {
+	if relation == "" {
+		return errors.New("relation cannot be empty")
+	}
+
+	id := database.GetID(dest)
+	if id == nil {
+		return errors.New("id cannot be empty")
+	}
+
+	copyDest := copyStruct(dest)
+	query := r.With(relation)
+	if len(relations) > 0 {
+		for _, rel := range relations {
+			query = query.With(rel)
+		}
+	}
+	err := query.Find(dest, id)
+
+	relations = append(relations, relation)
+	t := reflect.TypeOf(dest).Elem()
+	v := reflect.ValueOf(dest).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		var isRelation bool
+		for _, rel := range relations {
+			if t.Field(i).Name == rel {
+				isRelation = true
+				break
+			}
+		}
+
+		if !isRelation {
+			v.Field(i).Set(copyDest.Field(i))
+		}
+	}
+
+	return err
+}
+
+func (r *GormQuery) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
 	var gormFuncs []func(*gorm.DB) *gorm.DB
 	for _, item := range funcs {
 		gormFuncs = append(gormFuncs, func(db *gorm.DB) *gorm.DB {
@@ -294,61 +414,14 @@ func (r *GormQuery) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query)
 	return NewGormQuery(tx)
 }
 
-func getGormConfig(connection string) (gorm.Dialector, error) {
-	driver := facades.Config.GetString("database.connections." + connection + ".driver")
-
-	switch driver {
-	case support.Mysql:
-		return getMysqlGormConfig(connection), nil
-	case support.Postgresql:
-		return getPostgresqlGormConfig(connection), nil
-	case support.Sqlite:
-		return getSqliteGormConfig(connection), nil
-	case support.Sqlserver:
-		return getSqlserverGormConfig(connection), nil
-	default:
-		return nil, errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver))
+func copyStruct(dest any) reflect.Value {
+	t := reflect.TypeOf(dest).Elem()
+	v := reflect.ValueOf(dest).Elem()
+	destFields := make([]reflect.StructField, 0)
+	for i := 0; i < t.NumField(); i++ {
+		destFields = append(destFields, t.Field(i))
 	}
-}
+	copyDestStruct := reflect.StructOf(destFields)
 
-func getMysqlGormConfig(connection string) gorm.Dialector {
-	dsn := support.GetMysqlDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return mysql.New(mysql.Config{
-		DSN: dsn,
-	})
-}
-
-func getPostgresqlGormConfig(connection string) gorm.Dialector {
-	dsn := support.GetPostgresqlDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return postgres.New(postgres.Config{
-		DSN: dsn,
-	})
-}
-
-func getSqliteGormConfig(connection string) gorm.Dialector {
-	dsn := support.GetSqliteDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return sqlite.Open(dsn)
-}
-
-func getSqlserverGormConfig(connection string) gorm.Dialector {
-	dsn := support.GetSqlserverDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return sqlserver.New(sqlserver.Config{
-		DSN: dsn,
-	})
+	return v.Convert(copyDestStruct)
 }

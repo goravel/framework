@@ -32,6 +32,14 @@ func (r *GinRequest) Query(key, defaultValue string) string {
 	return r.instance.DefaultQuery(key, defaultValue)
 }
 
+func (r *GinRequest) QueryArray(key string) []string {
+	return r.instance.QueryArray(key)
+}
+
+func (r *GinRequest) QueryMap(key string) map[string]string {
+	return r.instance.QueryMap(key)
+}
+
 func (r *GinRequest) Form(key, defaultValue string) string {
 	return r.instance.DefaultPostForm(key, defaultValue)
 }

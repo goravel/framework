@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
 
 	"github.com/gookit/color"
@@ -14,17 +14,17 @@ import (
 type Orm struct {
 	ctx             context.Context
 	connection      string
-	defaultInstance contractsorm.DB
-	instances       map[string]contractsorm.DB
+	defaultInstance ormcontract.DB
+	instances       map[string]ormcontract.DB
 }
 
-func NewOrm(ctx context.Context) contractsorm.Orm {
+func NewOrm(ctx context.Context) ormcontract.Orm {
 	orm := &Orm{ctx: ctx}
 
 	return orm.Connection("")
 }
 
-func (r *Orm) Connection(name string) contractsorm.Orm {
+func (r *Orm) Connection(name string) ormcontract.Orm {
 	defaultConnection := facades.Config.GetString("database.default")
 	if name == "" {
 		name = defaultConnection
@@ -32,7 +32,7 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 
 	r.connection = name
 	if r.instances == nil {
-		r.instances = make(map[string]contractsorm.DB)
+		r.instances = make(map[string]ormcontract.DB)
 	}
 
 	if _, exist := r.instances[name]; exist {
@@ -58,7 +58,7 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 	return r
 }
 
-func (r *Orm) Query() contractsorm.DB {
+func (r *Orm) Query() ormcontract.DB {
 	if r.connection == "" {
 		if r.defaultInstance == nil {
 			r.Connection("")
@@ -77,7 +77,7 @@ func (r *Orm) Query() contractsorm.DB {
 	return instance
 }
 
-func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error {
+func (r *Orm) Transaction(txFunc func(tx ormcontract.Transaction) error) error {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
@@ -94,6 +94,6 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error 
 	}
 }
 
-func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
+func (r *Orm) WithContext(ctx context.Context) ormcontract.Orm {
 	return NewOrm(ctx)
 }

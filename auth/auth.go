@@ -2,7 +2,7 @@ package auth
 
 import (
 	"errors"
-	"reflect"
+	"github.com/goravel/framework/support/database"
 	"strings"
 	"time"
 
@@ -120,25 +120,12 @@ func (app *Auth) Parse(ctx http.Context, token string) error {
 }
 
 func (app *Auth) Login(ctx http.Context, user any) (token string, err error) {
-	t := reflect.TypeOf(user).Elem()
-	v := reflect.ValueOf(user).Elem()
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Name == "Model" {
-			if v.Field(i).Type().Kind() == reflect.Struct {
-				structField := v.Field(i).Type()
-				for j := 0; j < structField.NumField(); j++ {
-					if structField.Field(j).Tag.Get("gorm") == "primaryKey" {
-						return app.LoginUsingID(ctx, v.Field(i).Field(j).Interface())
-					}
-				}
-			}
-		}
-		if t.Field(i).Tag.Get("gorm") == "primaryKey" {
-			return app.LoginUsingID(ctx, v.Field(i).Interface())
-		}
+	id := database.GetID(user)
+	if id == nil {
+		return "", ErrorNoPrimaryKeyField
 	}
 
-	return "", ErrorNoPrimaryKeyField
+	return app.LoginUsingID(ctx, id)
 }
 
 func (app *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) {
