@@ -1,4 +1,4 @@
-package database
+package support
 
 import "github.com/pkg/errors"
 

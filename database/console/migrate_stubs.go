@@ -72,8 +72,8 @@ type SqliteStubs struct {
 func (receiver SqliteStubs) CreateUp() string {
 	return `CREATE TABLE DummyTable (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
 );
 `
 }
@@ -86,7 +86,7 @@ func (receiver SqliteStubs) CreateDown() string {
 
 //UpdateUp Update up migration content.
 func (receiver SqliteStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column varchar(255);
+	return `ALTER TABLE DummyTable ADD column text;
 `
 }
 

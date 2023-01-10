@@ -73,7 +73,6 @@ func (app *Auth) User(ctx http.Context, user any) error {
 	if auth[app.guard].Token == "" {
 		return ErrorTokenExpired
 	}
-	//todo Unit test
 	if err := facades.Orm.Query().Find(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[app.guard].Claims.Key}); err != nil {
 		return err
 	}

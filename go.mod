@@ -21,6 +21,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/opentracing/opentracing-go v1.2.0
+	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pkg/errors v0.9.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
@@ -131,7 +132,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.4 // indirect
-	github.com/ory/dockertest/v3 v3.9.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

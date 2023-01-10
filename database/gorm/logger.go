@@ -1,4 +1,4 @@
-package database
+package gorm
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// New initialize Logger
-func New(writer logger.Writer, config logger.Config) logger.Interface {
+// NewLogger initialize Logger
+func NewLogger(writer logger.Writer, config logger.Config) logger.Interface {
 	var (
 		infoStr      = "%s\n[Orm] "
 		warnStr      = "%s\n[Orm] "

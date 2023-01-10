@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/facades"
 
 	"github.com/gookit/color"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 type Orm struct {
@@ -22,6 +24,11 @@ func NewOrm(ctx context.Context) ormcontract.Orm {
 	orm := &Orm{ctx: ctx}
 
 	return orm.Connection("")
+}
+
+// DEPRECATED: use gorm.()
+func NewGormInstance(connection string) (*gorm.DB, error) {
+	return databasegorm.New(connection)
 }
 
 func (r *Orm) Connection(name string) ormcontract.Orm {
@@ -39,20 +46,20 @@ func (r *Orm) Connection(name string) ormcontract.Orm {
 		return r
 	}
 
-	gorm, err := NewGormDB(r.ctx, name)
+	gormDB, err := databasegorm.NewDB(r.ctx, name)
 	if err != nil {
 		color.Redln(fmt.Sprintf("[Orm] Init connection error, %v", err))
 
 		return nil
 	}
-	if gorm == nil {
+	if gormDB == nil {
 		return nil
 	}
 
-	r.instances[name] = gorm
+	r.instances[name] = gormDB
 
 	if name == defaultConnection {
-		r.defaultInstance = gorm
+		r.defaultInstance = gormDB
 	}
 
 	return r

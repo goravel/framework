@@ -39,6 +39,7 @@ type Query interface {
 	Having(query any, args ...any) Query
 	Join(query string, args ...any) Query
 	Limit(limit int) Query
+	Load(dest any, relation string, args ...any) error
 	Model(value any) Query
 	Offset(offset int) Query
 	Omit(columns ...string) Query
@@ -56,5 +57,4 @@ type Query interface {
 	Where(query any, args ...any) Query
 	WithTrashed() Query
 	With(query string, args ...any) Query
-	Load(dest any, relation string, relations ...string) error
 }

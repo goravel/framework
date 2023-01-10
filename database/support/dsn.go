@@ -6,6 +6,7 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
+//todo Deprecated
 const (
 	Mysql      = "mysql"
 	Postgresql = "postgresql"
