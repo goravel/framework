@@ -26,7 +26,7 @@ func NewOrm(ctx context.Context) ormcontract.Orm {
 	return orm.Connection("")
 }
 
-// DEPRECATED: use gorm.()
+// DEPRECATED: use gorm.New()
 func NewGormInstance(connection string) (*gorm.DB, error) {
 	return databasegorm.New(connection)
 }

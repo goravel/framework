@@ -10,10 +10,11 @@ import (
 
 type GinResponse struct {
 	instance *gin.Context
+	origin   httpcontract.ResponseOrigin
 }
 
-func NewGinResponse(instance *gin.Context) httpcontract.Response {
-	return &GinResponse{instance: instance}
+func NewGinResponse(instance *gin.Context, origin httpcontract.ResponseOrigin) *GinResponse {
+	return &GinResponse{instance, origin}
 }
 
 func (r *GinResponse) String(code int, format string, values ...interface{}) {
@@ -40,6 +41,10 @@ func (r *GinResponse) Header(key, value string) httpcontract.Response {
 	r.instance.Header(key, value)
 
 	return r
+}
+
+func (r *GinResponse) Origin() httpcontract.ResponseOrigin {
+	return r.origin
 }
 
 type GinSuccess struct {

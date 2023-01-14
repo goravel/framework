@@ -33,7 +33,6 @@ type Request interface {
 
 	Next()
 	Origin() *http.Request
-	Response() Response
 
 	Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error)
 	ValidateRequest(request FormRequest) (validation.Errors, error)

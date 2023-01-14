@@ -2,18 +2,17 @@ package gorm
 
 import (
 	"context"
-	"github.com/goravel/framework/support/file"
 	"log"
 	"strconv"
 	"testing"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/database/support"
+	"github.com/goravel/framework/support/file"
+	testingdocker "github.com/goravel/framework/testing/docker"
 	"github.com/goravel/framework/testing/mock"
 
 	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 )
@@ -48,7 +47,7 @@ type UserBook struct {
 
 type GormQueryTestSuite struct {
 	suite.Suite
-	dbs map[string]ormcontract.DB
+	dbs []ormcontract.DB
 }
 
 func TestGormQueryTestSuite(t *testing.T) {
@@ -73,11 +72,11 @@ func TestGormQueryTestSuite(t *testing.T) {
 	}
 
 	suite.Run(t, &GormQueryTestSuite{
-		dbs: map[string]ormcontract.DB{
-			support.Mysql:      mysqlDB,
-			support.Postgresql: postgresqlDB,
-			support.Sqlite:     sqliteDB,
-			support.Sqlserver:  sqlserverDB,
+		dbs: []ormcontract.DB{
+			mysqlDB,
+			postgresqlDB,
+			sqliteDB,
+			sqlserverDB,
 		},
 	})
 
@@ -726,8 +725,11 @@ func (s *GormQueryTestSuite) TestLoad() {
 }
 
 func getMysqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, error) {
-	pool := getDockerPool()
-	resource, err := getDockerResource(pool, &dockertest.RunOptions{
+	pool, err := testingdocker.Pool()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "mysql",
 		Tag:        "5.7",
 		Env: []string{
@@ -741,17 +743,17 @@ func getMysqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, e
 	_ = resource.Expire(60)
 
 	if err := pool.Retry(func() error {
-		return initDatabase(support.Mysql, resource.GetPort("3306/tcp"))
+		return initDatabase(ormcontract.DriverMysql, resource.GetPort("3306/tcp"))
 	}); err != nil {
 		return nil, nil, nil, err
 	}
 
-	db, err := getDB(support.Mysql, dbDatabase, resource.GetPort("3306/tcp"))
+	db, err := getDB(ormcontract.DriverMysql, dbDatabase, resource.GetPort("3306/tcp"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	if err := initTables(support.Mysql, db); err != nil {
+	if err := initTables(ormcontract.DriverMysql, db); err != nil {
 		return nil, nil, nil, err
 	}
 
@@ -759,8 +761,11 @@ func getMysqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, e
 }
 
 func getPostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, error) {
-	pool := getDockerPool()
-	resource, err := getDockerResource(pool, &dockertest.RunOptions{
+	pool, err := testingdocker.Pool()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "postgres",
 		Tag:        "11",
 		Env: []string{
@@ -776,17 +781,17 @@ func getPostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.
 	_ = resource.Expire(60)
 
 	if err := pool.Retry(func() error {
-		return initDatabase(support.Postgresql, resource.GetPort("5432/tcp"))
+		return initDatabase(ormcontract.DriverPostgresql, resource.GetPort("5432/tcp"))
 	}); err != nil {
 		return nil, nil, nil, err
 	}
 
-	db, err := getDB(support.Postgresql, dbDatabase, resource.GetPort("5432/tcp"))
+	db, err := getDB(ormcontract.DriverPostgresql, dbDatabase, resource.GetPort("5432/tcp"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	if err := initTables(support.Postgresql, db); err != nil {
+	if err := initTables(ormcontract.DriverPostgresql, db); err != nil {
 		return nil, nil, nil, err
 	}
 
@@ -794,8 +799,11 @@ func getPostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.
 }
 
 func getSqliteDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, error) {
-	pool := getDockerPool()
-	resource, err := getDockerResource(pool, &dockertest.RunOptions{
+	pool, err := testingdocker.Pool()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "nouchka/sqlite3",
 		Tag:        "latest",
 		Env:        []string{},
@@ -809,14 +817,14 @@ func getSqliteDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, 
 	var db ormcontract.DB
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = getDB(support.Sqlite, dbDatabase, "")
+		db, err = getDB(ormcontract.DriverSqlite, dbDatabase, "")
 
 		return err
 	}); err != nil {
 		return nil, nil, nil, err
 	}
 
-	if err := initTables(support.Sqlite, db); err != nil {
+	if err := initTables(ormcontract.DriverSqlite, db); err != nil {
 		return nil, nil, nil, err
 	}
 
@@ -824,8 +832,11 @@ func getSqliteDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, 
 }
 
 func getSqlserverDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, error) {
-	pool := getDockerPool()
-	resource, err := getDockerResource(pool, &dockertest.RunOptions{
+	pool, err := testingdocker.Pool()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "mcr.microsoft.com/mssql/server",
 		Tag:        "2022-latest",
 		Env: []string{
@@ -840,61 +851,37 @@ func getSqlserverDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.D
 	_ = resource.Expire(60)
 
 	if err := pool.Retry(func() error {
-		return initDatabase(support.Sqlserver, resource.GetPort("1433/tcp"))
+		return initDatabase(ormcontract.DriverSqlserver, resource.GetPort("1433/tcp"))
 	}); err != nil {
 		return nil, nil, nil, err
 	}
 
-	db, err := getDB(support.Sqlserver, dbDatabase, resource.GetPort("1433/tcp"))
+	db, err := getDB(ormcontract.DriverSqlserver, dbDatabase, resource.GetPort("1433/tcp"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	if err := initTables(support.Sqlserver, db); err != nil {
+	if err := initTables(ormcontract.DriverSqlserver, db); err != nil {
 		return nil, nil, nil, err
 	}
 
 	return pool, resource, db, nil
 }
 
-func getDockerPool() *dockertest.Pool {
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		log.Fatalf("Could not construct pool: %s", err)
-	}
-
-	// uses pool to try to connect to Docker
-	if err := pool.Client.Ping(); err != nil {
-		log.Fatalf("Could not connect to Docker: %s", err)
-	}
-
-	return pool
-}
-
-func getDockerResource(pool *dockertest.Pool, opts *dockertest.RunOptions) (*dockertest.Resource, error) {
-	return pool.RunWithOptions(opts, func(config *docker.HostConfig) {
-		// set AutoRemove to true so that stopped container goes away by itself
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
-		}
-	})
-}
-
-func initDatabase(connection, port string) error {
+func initDatabase(connection ormcontract.Driver, port string) error {
 	var (
 		database  = ""
 		createSql = ""
 	)
 
 	switch connection {
-	case support.Mysql:
+	case ormcontract.DriverMysql:
 		database = "mysql"
 		createSql = "CREATE DATABASE `goravel` DEFAULT CHARACTER SET = `utf8mb4` DEFAULT COLLATE = `utf8mb4_general_ci`;"
-	case support.Postgresql:
+	case ormcontract.DriverPostgresql:
 		database = "postgres"
 		createSql = "CREATE DATABASE goravel;"
-	case support.Sqlserver:
+	case ormcontract.DriverSqlserver:
 		database = "msdb"
 		createSql = "CREATE DATABASE goravel;"
 	}
@@ -911,12 +898,12 @@ func initDatabase(connection, port string) error {
 	return nil
 }
 
-func getDB(connection, database, port string) (ormcontract.DB, error) {
+func getDB(driver ormcontract.Driver, database, port string) (ormcontract.DB, error) {
 	mockConfig := mock.Config()
-	switch connection {
-	case support.Mysql:
+	switch driver {
+	case ormcontract.DriverMysql:
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
-		mockConfig.On("GetString", "database.connections.mysql.driver").Return(support.Mysql).Once()
+		mockConfig.On("GetString", "database.connections.mysql.driver").Return(ormcontract.DriverMysql).Once()
 		mockConfig.On("GetString", "database.connections.mysql.host").Return("localhost").Once()
 		mockConfig.On("GetString", "database.connections.mysql.port").Return(port).Once()
 		mockConfig.On("GetString", "database.connections.mysql.database").Return(database).Once()
@@ -924,9 +911,9 @@ func getDB(connection, database, port string) (ormcontract.DB, error) {
 		mockConfig.On("GetString", "database.connections.mysql.password").Return(dbPassword).Once()
 		mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Once()
 		mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local").Once()
-	case support.Postgresql:
+	case ormcontract.DriverPostgresql:
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
-		mockConfig.On("GetString", "database.connections.postgresql.driver").Return(support.Postgresql).Once()
+		mockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql).Once()
 		mockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost").Once()
 		mockConfig.On("GetString", "database.connections.postgresql.port").Return(port).Once()
 		mockConfig.On("GetString", "database.connections.postgresql.database").Return(database).Once()
@@ -934,13 +921,13 @@ func getDB(connection, database, port string) (ormcontract.DB, error) {
 		mockConfig.On("GetString", "database.connections.postgresql.password").Return(dbPassword).Once()
 		mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable").Once()
 		mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC").Once()
-	case support.Sqlite:
+	case ormcontract.DriverSqlite:
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
-		mockConfig.On("GetString", "database.connections.sqlite.driver").Return(support.Sqlite).Once()
+		mockConfig.On("GetString", "database.connections.sqlite.driver").Return(ormcontract.DriverSqlite).Once()
 		mockConfig.On("GetString", "database.connections.sqlite.database").Return(database).Once()
-	case support.Sqlserver:
+	case ormcontract.DriverSqlserver:
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
-		mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(support.Sqlserver).Once()
+		mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(ormcontract.DriverSqlserver).Once()
 		mockConfig.On("GetString", "database.connections.sqlserver.host").Return("localhost").Once()
 		mockConfig.On("GetString", "database.connections.sqlserver.port").Return(port).Once()
 		mockConfig.On("GetString", "database.connections.sqlserver.database").Return(database).Once()
@@ -948,26 +935,26 @@ func getDB(connection, database, port string) (ormcontract.DB, error) {
 		mockConfig.On("GetString", "database.connections.sqlserver.password").Return(dbPassword).Once()
 	}
 
-	return NewDB(context.Background(), connection)
+	return NewDB(context.Background(), driver.String())
 }
 
-func initTables(connection string, db ormcontract.DB) error {
-	if err := db.Exec(createUserTable(connection)); err != nil {
+func initTables(driver ormcontract.Driver, db ormcontract.DB) error {
+	if err := db.Exec(createUserTable(driver)); err != nil {
 		return err
 	}
-	if err := db.Exec(createUserAddressTable(connection)); err != nil {
+	if err := db.Exec(createUserAddressTable(driver)); err != nil {
 		return err
 	}
-	if err := db.Exec(createUserBookTable(connection)); err != nil {
+	if err := db.Exec(createUserBookTable(driver)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func createUserTable(driver string) string {
+func createUserTable(driver ormcontract.Driver) string {
 	switch driver {
-	case support.Mysql:
+	case ormcontract.DriverMysql:
 		return `
 CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -981,7 +968,7 @@ CREATE TABLE users (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case support.Postgresql:
+	case ormcontract.DriverPostgresql:
 		return `
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -992,7 +979,7 @@ CREATE TABLE users (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case support.Sqlite:
+	case ormcontract.DriverSqlite:
 		return `
 CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1003,7 +990,7 @@ CREATE TABLE users (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case support.Sqlserver:
+	case ormcontract.DriverSqlserver:
 		return `
 CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
@@ -1020,9 +1007,9 @@ CREATE TABLE users (
 	}
 }
 
-func createUserAddressTable(driver string) string {
+func createUserAddressTable(driver ormcontract.Driver) string {
 	switch driver {
-	case support.Mysql:
+	case ormcontract.DriverMysql:
 		return `
 CREATE TABLE user_addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -1036,7 +1023,7 @@ CREATE TABLE user_addresses (
   KEY idx_user_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case support.Postgresql:
+	case ormcontract.DriverPostgresql:
 		return `
 CREATE TABLE user_addresses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1047,7 +1034,7 @@ CREATE TABLE user_addresses (
   updated_at timestamp NOT NULL
 );
 `
-	case support.Sqlite:
+	case ormcontract.DriverSqlite:
 		return `
 CREATE TABLE user_addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1058,7 +1045,7 @@ CREATE TABLE user_addresses (
   updated_at datetime(3) NOT NULL
 );
 `
-	case support.Sqlserver:
+	case ormcontract.DriverSqlserver:
 		return `
 CREATE TABLE user_addresses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -1075,9 +1062,9 @@ CREATE TABLE user_addresses (
 	}
 }
 
-func createUserBookTable(driver string) string {
+func createUserBookTable(driver ormcontract.Driver) string {
 	switch driver {
-	case support.Mysql:
+	case ormcontract.DriverMysql:
 		return `
 CREATE TABLE user_books (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -1090,7 +1077,7 @@ CREATE TABLE user_books (
   KEY idx_user_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case support.Postgresql:
+	case ormcontract.DriverPostgresql:
 		return `
 CREATE TABLE user_books (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1100,7 +1087,7 @@ CREATE TABLE user_books (
   updated_at timestamp NOT NULL
 );
 `
-	case support.Sqlite:
+	case ormcontract.DriverSqlite:
 		return `
 CREATE TABLE user_books (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1110,7 +1097,7 @@ CREATE TABLE user_books (
   updated_at datetime(3) NOT NULL
 );
 `
-	case support.Sqlserver:
+	case ormcontract.DriverSqlserver:
 		return `
 CREATE TABLE user_books (
   id bigint NOT NULL IDENTITY(1,1),

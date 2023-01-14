@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/support"
 	"github.com/goravel/framework/facades"
 
@@ -17,14 +18,14 @@ import (
 func getGormConfig(connection string) (gorm.Dialector, error) {
 	driver := facades.Config.GetString("database.connections." + connection + ".driver")
 
-	switch driver {
-	case support.Mysql:
+	switch orm.Driver(driver) {
+	case orm.DriverMysql:
 		return getMysqlGormConfig(connection), nil
-	case support.Postgresql:
+	case orm.DriverPostgresql:
 		return getPostgresqlGormConfig(connection), nil
-	case support.Sqlite:
+	case orm.DriverSqlite:
 		return getSqliteGormConfig(connection), nil
-	case support.Sqlserver:
+	case orm.DriverSqlserver:
 		return getSqlserverGormConfig(connection), nil
 	default:
 		return nil, errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver))

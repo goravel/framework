@@ -2,13 +2,13 @@ package auth
 
 import (
 	"errors"
-	"github.com/goravel/framework/support/database"
 	"strings"
 	"time"
 
 	contractauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support/database"
 	supporttime "github.com/goravel/framework/support/time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -141,7 +141,7 @@ func (app *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error
 		return "", ErrorInvalidKey
 	}
 	claims := Claims{
-		cast.ToString(id),
+		key,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime),

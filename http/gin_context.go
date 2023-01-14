@@ -1,11 +1,13 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/goravel/framework/contracts/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Background() http.Context {
@@ -25,7 +27,12 @@ func (c *GinContext) Request() http.Request {
 }
 
 func (c *GinContext) Response() http.Response {
-	return NewGinResponse(c.instance)
+	responseOrigin := c.Value("responseOrigin")
+	if responseOrigin != nil {
+		return NewGinResponse(c.instance, responseOrigin.(http.ResponseOrigin))
+	}
+
+	return NewGinResponse(c.instance, &ginWriter{c.instance.Writer})
 }
 
 func (c *GinContext) WithValue(key string, value interface{}) {
@@ -59,4 +66,12 @@ func (c *GinContext) Value(key interface{}) interface{} {
 
 func (c *GinContext) Instance() *gin.Context {
 	return c.instance
+}
+
+type ginWriter struct {
+	gin.ResponseWriter
+}
+
+func (r *ginWriter) Body() *bytes.Buffer {
+	return nil
 }

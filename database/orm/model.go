@@ -19,6 +19,6 @@ type SoftDeletes struct {
 }
 
 type Timestamps struct {
-	CreatedAt time.Time `gorm:"type:datetime"`
-	UpdatedAt time.Time `gorm:"type:datetime"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

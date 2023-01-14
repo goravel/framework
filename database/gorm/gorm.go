@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	database2 "github.com/goravel/framework/database/support"
 	"log"
 	"os"
 	"reflect"
@@ -12,6 +11,7 @@ import (
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
+	databasesupport "github.com/goravel/framework/database/support"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
 
@@ -169,14 +169,14 @@ func (r *Query) Find(dest any, conds ...any) error {
 		switch conds[0].(type) {
 		case string:
 			if conds[0].(string) == "" {
-				return database2.ErrorMissingWhereClause
+				return databasesupport.ErrorMissingWhereClause
 			}
 		default:
 			reflectValue := reflect.Indirect(reflect.ValueOf(conds[0]))
 			switch reflectValue.Kind() {
 			case reflect.Slice, reflect.Array:
 				if reflectValue.Len() == 0 {
-					return database2.ErrorMissingWhereClause
+					return databasesupport.ErrorMissingWhereClause
 				}
 			}
 		}

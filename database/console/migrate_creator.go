@@ -1,11 +1,11 @@
 package console
 
 import (
-	"github.com/goravel/framework/contracts/database/orm"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
 )
