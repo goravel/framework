@@ -2,6 +2,7 @@ package route
 
 import (
 	"fmt"
+	"github.com/goravel/framework/http/middleware"
 	"net/http"
 	"regexp"
 	"strings"
@@ -22,7 +23,7 @@ type Gin struct {
 	instance *gin.Engine
 }
 
-func NewGin() route.Engine {
+func NewGin() *Gin {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 	if debugLog := getDebugLog(); debugLog != nil {
@@ -33,6 +34,7 @@ func NewGin() route.Engine {
 		engine.Group("/"),
 		"",
 		[]httpcontract.Middleware{},
+		[]httpcontract.Middleware{middleware.GinResponse()},
 	)}
 }
 
@@ -55,27 +57,32 @@ func (r *Gin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Gin) GlobalMiddleware(handlers ...httpcontract.Middleware) {
-	r.instance.Use(middlewaresToGinHandlers(handlers)...)
+	if len(handlers) > 0 {
+		r.instance.Use(middlewaresToGinHandlers(handlers)...)
+	}
 	r.Route = NewGinGroup(
 		r.instance.Group("/"),
 		"",
 		[]httpcontract.Middleware{},
+		[]httpcontract.Middleware{middleware.GinResponse()},
 	)
 }
 
 type GinGroup struct {
 	instance          gin.IRouter
 	originPrefix      string
-	originMiddlewares []httpcontract.Middleware
 	prefix            string
+	originMiddlewares []httpcontract.Middleware
 	middlewares       []httpcontract.Middleware
+	lastMiddlewares   []httpcontract.Middleware
 }
 
-func NewGinGroup(instance gin.IRouter, prefix string, originMiddlewares []httpcontract.Middleware) route.Route {
+func NewGinGroup(instance gin.IRouter, prefix string, originMiddlewares []httpcontract.Middleware, lastMiddlewares []httpcontract.Middleware) route.Route {
 	return &GinGroup{
 		instance:          instance,
 		originPrefix:      prefix,
 		originMiddlewares: originMiddlewares,
+		lastMiddlewares:   lastMiddlewares,
 	}
 }
 
@@ -87,7 +94,7 @@ func (r *GinGroup) Group(handler route.GroupFunc) {
 	prefix := pathToGinPath(r.originPrefix + "/" + r.prefix)
 	r.prefix = ""
 
-	handler(NewGinGroup(r.instance, prefix, middlewares))
+	handler(NewGinGroup(r.instance, prefix, middlewares, r.lastMiddlewares))
 }
 
 func (r *GinGroup) Prefix(addr string) route.Route {
@@ -150,8 +157,10 @@ func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
 	var middlewares []gin.HandlerFunc
 	ginOriginMiddlewares := middlewaresToGinHandlers(r.originMiddlewares)
 	ginMiddlewares := middlewaresToGinHandlers(r.middlewares)
+	ginLastMiddlewares := middlewaresToGinHandlers(r.lastMiddlewares)
 	middlewares = append(middlewares, ginOriginMiddlewares...)
 	middlewares = append(middlewares, ginMiddlewares...)
+	middlewares = append(middlewares, ginLastMiddlewares...)
 	r.middlewares = []httpcontract.Middleware{}
 	if len(middlewares) > 0 {
 		return ginGroup.Use(middlewares...)

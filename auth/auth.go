@@ -2,17 +2,18 @@ package auth
 
 import (
 	"errors"
-	"reflect"
 	"strings"
 	"time"
 
 	contractauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support/database"
 	supporttime "github.com/goravel/framework/support/time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/cast"
+	"gorm.io/gorm/clause"
 )
 
 const ctxKey = "GoravelAuth"
@@ -72,7 +73,7 @@ func (app *Auth) User(ctx http.Context, user any) error {
 	if auth[app.guard].Token == "" {
 		return ErrorTokenExpired
 	}
-	if err := facades.Orm.Query().Find(user, auth[app.guard].Claims.Key); err != nil {
+	if err := facades.Orm.Query().Find(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[app.guard].Claims.Key}); err != nil {
 		return err
 	}
 
@@ -118,25 +119,12 @@ func (app *Auth) Parse(ctx http.Context, token string) error {
 }
 
 func (app *Auth) Login(ctx http.Context, user any) (token string, err error) {
-	t := reflect.TypeOf(user).Elem()
-	v := reflect.ValueOf(user).Elem()
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Name == "Model" {
-			if v.Field(i).Type().Kind() == reflect.Struct {
-				structField := v.Field(i).Type()
-				for j := 0; j < structField.NumField(); j++ {
-					if structField.Field(j).Tag.Get("gorm") == "primaryKey" {
-						return app.LoginUsingID(ctx, v.Field(i).Field(j).Interface())
-					}
-				}
-			}
-		}
-		if t.Field(i).Tag.Get("gorm") == "primaryKey" {
-			return app.LoginUsingID(ctx, v.Field(i).Interface())
-		}
+	id := database.GetID(user)
+	if id == nil {
+		return "", ErrorNoPrimaryKeyField
 	}
 
-	return "", ErrorNoPrimaryKeyField
+	return app.LoginUsingID(ctx, id)
 }
 
 func (app *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) {
@@ -153,7 +141,7 @@ func (app *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error
 		return "", ErrorInvalidKey
 	}
 	claims := Claims{
-		cast.ToString(id),
+		key,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 			IssuedAt:  jwt.NewNumericDate(nowTime),

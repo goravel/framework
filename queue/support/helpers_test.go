@@ -7,10 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/config"
+	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/contracts/queue"
+	queuecontract "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/testing/file"
+	"github.com/goravel/framework/testing/mock"
 )
 
 func TestGetServer(t *testing.T) {
@@ -26,6 +28,51 @@ func TestGetServer(t *testing.T) {
 	server, err = GetServer("custom", "")
 	assert.Nil(t, server)
 	assert.NotNil(t, err)
+}
+
+func TestGetQueueName(t *testing.T) {
+	var (
+		mockConfig *configmocks.Config
+	)
+
+	beforeEach := func() {
+		mockConfig = mock.Config()
+	}
+
+	tests := []struct {
+		description     string
+		setup           func()
+		connection      string
+		queue           string
+		expectQueueName string
+	}{
+		{
+			description: "success when connection and queue are empty",
+			setup: func() {
+				mockConfig.On("GetString", "app.name").Return("").Once()
+				mockConfig.On("GetString", "queue.default").Return("redis").Once()
+				mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("queue").Once()
+			},
+			expectQueueName: "goravel_queues:queue",
+		},
+		{
+			description: "success when connection and queue aren't empty",
+			setup: func() {
+				mockConfig.On("GetString", "app.name").Return("app").Once()
+
+			},
+			connection:      "redis",
+			queue:           "queue",
+			expectQueueName: "app_queues:queue",
+		},
+	}
+
+	for _, test := range tests {
+		beforeEach()
+		test.setup()
+		queueName := GetQueueName(test.connection, test.queue)
+		assert.Equal(t, test.expectQueueName, queueName, test.description)
+	}
 }
 
 func TestGetDriver(t *testing.T) {
@@ -44,7 +91,7 @@ func TestGetRedisConfig(t *testing.T) {
 	redisConfig, database, queue := getRedisConfig("redis")
 	assert.Equal(t, "127.0.0.1:6379", redisConfig)
 	assert.Equal(t, 0, database)
-	assert.Equal(t, "default", queue)
+	assert.Equal(t, "goravel_queues:default", queue)
 }
 
 type TestJob struct {
@@ -81,20 +128,20 @@ func (receiver *TestJobEmpty) Handle(args ...interface{}) error {
 }
 
 func TestJobs2Tasks(t *testing.T) {
-	_, err := jobs2Tasks([]queue.Job{
+	_, err := jobs2Tasks([]queuecontract.Job{
 		&TestJob{},
 	})
 
 	assert.Nil(t, err, "success")
 
-	_, err = jobs2Tasks([]queue.Job{
+	_, err = jobs2Tasks([]queuecontract.Job{
 		&TestJob{},
 		&TestJobDuplicate{},
 	})
 
 	assert.NotNil(t, err, "Signature duplicate")
 
-	_, err = jobs2Tasks([]queue.Job{
+	_, err = jobs2Tasks([]queuecontract.Job{
 		&TestJobEmpty{},
 	})
 
@@ -195,7 +242,7 @@ func TestEvents2Tasks(t *testing.T) {
 }
 
 func initConfig() {
-	file.CreateEnv()
+	_ = file.CreateEnv()
 	configServiceProvider := config.ServiceProvider{}
 	configServiceProvider.Register()
 
@@ -226,5 +273,5 @@ func initConfig() {
 		},
 	})
 
-	os.Remove(".env")
+	_ = os.Remove(".env")
 }

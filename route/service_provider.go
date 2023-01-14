@@ -8,8 +8,7 @@ type ServiceProvider struct {
 }
 
 func (route *ServiceProvider) Register() {
-	app := Application{}
-	facades.Route = app.Init()
+	facades.Route = NewGin()
 }
 
 func (route *ServiceProvider) Boot() {

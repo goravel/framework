@@ -6,13 +6,6 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-const (
-	Mysql      = "mysql"
-	Postgresql = "postgresql"
-	Sqlite     = "sqlite"
-	Sqlserver  = "sqlserver"
-)
-
 func GetMysqlDsn(connection string) string {
 	host := facades.Config.GetString("database.connections." + connection + ".host")
 	if host == "" {

@@ -10,7 +10,7 @@ type ServiceProvider struct {
 }
 
 func (receiver *ServiceProvider) Register() {
-	facades.Queue = &Application{}
+	facades.Queue = NewApplication()
 }
 
 func (receiver *ServiceProvider) Boot() {

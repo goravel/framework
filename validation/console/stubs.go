@@ -15,7 +15,7 @@ type DummyRule struct {
 
 //Signature The name of the rule.
 func (receiver *DummyRule) Signature() string {
-	return "name"
+	return "DummyName"
 }
 
 //Passes Determine if the validation rule passes.

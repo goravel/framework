@@ -3,10 +3,10 @@ package support
 import (
 	"errors"
 
+	"github.com/goravel/framework/contracts/queue"
+
 	"github.com/RichardKnop/machinery/v2"
 	"github.com/RichardKnop/machinery/v2/tasks"
-
-	"github.com/goravel/framework/contracts/queue"
 )
 
 type Task struct {
@@ -98,7 +98,7 @@ func (receiver *Task) OnConnection(connection string) queue.Task {
 }
 
 func (receiver *Task) OnQueue(queue string) queue.Task {
-	receiver.queue = queue
+	receiver.queue = GetQueueName(receiver.connection, queue)
 
 	return receiver
 }
