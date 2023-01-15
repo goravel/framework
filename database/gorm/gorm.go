@@ -249,7 +249,7 @@ func (r *Query) Load(dest any, relation string, args ...any) error {
 
 	copyDest := copyStruct(dest)
 	query := r.With(relation, args...)
-	err := query.Find(dest, id)
+	err := query.Find(dest)
 
 	t := reflect.TypeOf(dest).Elem()
 	v := reflect.ValueOf(dest).Elem()

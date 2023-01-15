@@ -43,6 +43,22 @@ func (_m *Response) Json(code int, obj interface{}) {
 	_m.Called(code, obj)
 }
 
+// Origin provides a mock function with given fields:
+func (_m *Response) Origin() http.ResponseOrigin {
+	ret := _m.Called()
+
+	var r0 http.ResponseOrigin
+	if rf, ok := ret.Get(0).(func() http.ResponseOrigin); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.ResponseOrigin)
+		}
+	}
+
+	return r0
+}
+
 // String provides a mock function with given fields: code, format, values
 func (_m *Response) String(code int, format string, values ...interface{}) {
 	var _ca []interface{}

@@ -16,7 +16,7 @@ import (
 )
 
 func getGormConfig(connection string) (gorm.Dialector, error) {
-	driver := facades.Config.GetString("database.connections." + connection + ".driver")
+	driver := facades.Config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
 
 	switch orm.Driver(driver) {
 	case orm.DriverMysql:

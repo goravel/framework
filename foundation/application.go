@@ -83,10 +83,3 @@ func (app *Application) bootServiceProviders(serviceProviders []contracts.Servic
 		serviceProvider.Boot()
 	}
 }
-
-//RunningInConsole Determine if the application is running in the console.
-func (app *Application) RunningInConsole() bool {
-	args := os.Args
-
-	return len(args) >= 2 && args[1] == "artisan"
-}

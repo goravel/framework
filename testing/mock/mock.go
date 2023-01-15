@@ -79,7 +79,7 @@ func Storage() (*filesystemmocks.Storage, *filesystemmocks.Driver, *filesystemmo
 	return mockStorage, mockDriver, mockFile
 }
 
-func Validator() (*validatemocks.Validation, *validatemocks.Validator, *validatemocks.Errors) {
+func Validation() (*validatemocks.Validation, *validatemocks.Validator, *validatemocks.Errors) {
 	mockValidation := &validatemocks.Validation{}
 	mockValidator := &validatemocks.Validator{}
 	mockErrors := &validatemocks.Errors{}

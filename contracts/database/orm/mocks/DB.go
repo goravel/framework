@@ -278,6 +278,23 @@ func (_m *DB) Limit(limit int) orm.Query {
 	return r0
 }
 
+// Load provides a mock function with given fields: dest, relation, args
+func (_m *DB) Load(dest interface{}, relation string, args ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, dest, relation)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, string, ...interface{}) error); ok {
+		r0 = rf(dest, relation, args...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Model provides a mock function with given fields: value
 func (_m *DB) Model(value interface{}) orm.Query {
 	ret := _m.Called(value)
@@ -301,6 +318,28 @@ func (_m *DB) Offset(offset int) orm.Query {
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(int) orm.Query); ok {
 		r0 = rf(offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Omit provides a mock function with given fields: columns
+func (_m *DB) Omit(columns ...string) orm.Query {
+	_va := make([]interface{}, len(columns))
+	for _i := range columns {
+		_va[_i] = columns[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(...string) orm.Query); ok {
+		r0 = rf(columns...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
@@ -503,6 +542,25 @@ func (_m *DB) Where(query interface{}, args ...interface{}) orm.Query {
 
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// With provides a mock function with given fields: query, args
+func (_m *DB) With(query string, args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) orm.Query); ok {
 		r0 = rf(query, args...)
 	} else {
 		if ret.Get(0) != nil {
