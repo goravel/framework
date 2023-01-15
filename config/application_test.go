@@ -4,8 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goravel/framework/testing/file"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/testing/file"
 )
 
 func TestInit(t *testing.T) {

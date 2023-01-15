@@ -2,9 +2,10 @@ package validation
 
 import (
 	"errors"
-	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"strings"
 	"testing"
+
+	httpvalidate "github.com/goravel/framework/contracts/validation"
 
 	"github.com/spf13/cast"
 
