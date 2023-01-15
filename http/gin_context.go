@@ -1,7 +1,6 @@
 package http
 
 import (
-	"bytes"
 	"context"
 	"time"
 
@@ -32,7 +31,7 @@ func (c *GinContext) Response() http.Response {
 		return NewGinResponse(c.instance, responseOrigin.(http.ResponseOrigin))
 	}
 
-	return NewGinResponse(c.instance, &ginWriter{c.instance.Writer})
+	return NewGinResponse(c.instance, &BodyWriter{ResponseWriter: c.instance.Writer})
 }
 
 func (c *GinContext) WithValue(key string, value interface{}) {
@@ -66,12 +65,4 @@ func (c *GinContext) Value(key interface{}) interface{} {
 
 func (c *GinContext) Instance() *gin.Context {
 	return c.instance
-}
-
-type ginWriter struct {
-	gin.ResponseWriter
-}
-
-func (r *ginWriter) Body() *bytes.Buffer {
-	return nil
 }

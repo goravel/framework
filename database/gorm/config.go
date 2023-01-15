@@ -15,24 +15,24 @@ import (
 	"gorm.io/gorm"
 )
 
-func getGormConfig(connection string) (gorm.Dialector, error) {
+func config(connection string) (gorm.Dialector, error) {
 	driver := facades.Config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
 
 	switch orm.Driver(driver) {
 	case orm.DriverMysql:
-		return getMysqlGormConfig(connection), nil
+		return mysqlConfig(connection), nil
 	case orm.DriverPostgresql:
-		return getPostgresqlGormConfig(connection), nil
+		return postgresqlConfig(connection), nil
 	case orm.DriverSqlite:
-		return getSqliteGormConfig(connection), nil
+		return sqliteConfig(connection), nil
 	case orm.DriverSqlserver:
-		return getSqlserverGormConfig(connection), nil
+		return sqlserverConfig(connection), nil
 	default:
 		return nil, errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver))
 	}
 }
 
-func getMysqlGormConfig(connection string) gorm.Dialector {
+func mysqlConfig(connection string) gorm.Dialector {
 	dsn := support.GetMysqlDsn(connection)
 	if dsn == "" {
 		return nil
@@ -43,7 +43,7 @@ func getMysqlGormConfig(connection string) gorm.Dialector {
 	})
 }
 
-func getPostgresqlGormConfig(connection string) gorm.Dialector {
+func postgresqlConfig(connection string) gorm.Dialector {
 	dsn := support.GetPostgresqlDsn(connection)
 	if dsn == "" {
 		return nil
@@ -54,7 +54,7 @@ func getPostgresqlGormConfig(connection string) gorm.Dialector {
 	})
 }
 
-func getSqliteGormConfig(connection string) gorm.Dialector {
+func sqliteConfig(connection string) gorm.Dialector {
 	dsn := support.GetSqliteDsn(connection)
 	if dsn == "" {
 		return nil
@@ -63,7 +63,7 @@ func getSqliteGormConfig(connection string) gorm.Dialector {
 	return sqlite.Open(dsn)
 }
 
-func getSqlserverGormConfig(connection string) gorm.Dialector {
+func sqlserverConfig(connection string) gorm.Dialector {
 	dsn := support.GetSqlserverDsn(connection)
 	if dsn == "" {
 		return nil

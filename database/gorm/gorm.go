@@ -20,7 +20,7 @@ import (
 )
 
 func New(connection string) (*gorm.DB, error) {
-	gormConfig, err := getGormConfig(connection)
+	gormConfig, err := config(connection)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("init gorm config error: %v", err))
 	}

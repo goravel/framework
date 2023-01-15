@@ -11,7 +11,7 @@ import (
 
 func GinResponse() contractshttp.Middleware {
 	return func(ctx contractshttp.Context) {
-		blw := &bodyLogWriter{body: bytes.NewBufferString("")}
+		blw := &BodyWriter{body: bytes.NewBufferString("")}
 		switch ctx.(type) {
 		case *http.GinContext:
 			blw.ResponseWriter = ctx.(*http.GinContext).Instance().Writer
@@ -23,23 +23,23 @@ func GinResponse() contractshttp.Middleware {
 	}
 }
 
-type bodyLogWriter struct {
+type BodyWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
 }
 
-func (w bodyLogWriter) Write(b []byte) (int, error) {
+func (w *BodyWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
 
 	return w.ResponseWriter.Write(b)
 }
 
-func (w bodyLogWriter) WriteString(s string) (int, error) {
+func (w *BodyWriter) WriteString(s string) (int, error) {
 	w.body.WriteString(s)
 
 	return w.ResponseWriter.WriteString(s)
 }
 
-func (w *bodyLogWriter) Body() *bytes.Buffer {
+func (w *BodyWriter) Body() *bytes.Buffer {
 	return w.body
 }

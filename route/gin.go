@@ -7,7 +7,7 @@ import (
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/http/middleware"
+	goravelhttp "github.com/goravel/framework/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/color"
@@ -29,7 +29,7 @@ func NewGin() *Gin {
 		engine.Group("/"),
 		"",
 		[]httpcontract.Middleware{},
-		[]httpcontract.Middleware{middleware.GinResponse()},
+		[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
 	)}
 }
 
@@ -58,6 +58,6 @@ func (r *Gin) GlobalMiddleware(handlers ...httpcontract.Middleware) {
 		r.instance.Group("/"),
 		"",
 		[]httpcontract.Middleware{},
-		[]httpcontract.Middleware{middleware.GinResponse()},
+		[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
 	)
 }

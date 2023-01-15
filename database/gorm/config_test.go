@@ -126,7 +126,7 @@ func TestGetGormConfig(t *testing.T) {
 	for _, test := range tests {
 		mockConfig = mock.Config()
 		test.setup()
-		dialector, err := getGormConfig(test.connection.String())
+		dialector, err := config(test.connection.String())
 		assert.Equal(t, test.expectDialector, dialector)
 		assert.Equal(t, test.expectErr, err)
 	}
