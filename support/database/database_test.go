@@ -14,7 +14,7 @@ func TestGetID(t *testing.T) {
 		setup       func(description string)
 	}{
 		{
-			description: "success",
+			description: "return value",
 			setup: func(description string) {
 				type User struct {
 					ID     uint `gorm:"primaryKey"`
@@ -27,7 +27,7 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "success with orm.Model",
+			description: "return value with orm.Model",
 			setup: func(description string) {
 				type User struct {
 					orm.Model
@@ -40,7 +40,7 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "error",
+			description: "return nil",
 			setup: func(description string) {
 				type User struct {
 					Name   string
@@ -48,6 +48,54 @@ func TestGetID(t *testing.T) {
 				}
 				user := User{}
 				assert.Nil(t, GetID(&user), description)
+			},
+		},
+		{
+			description: "return value(struct)",
+			setup: func(description string) {
+				type User struct {
+					ID     uint `gorm:"primaryKey"`
+					Name   string
+					Avatar string
+				}
+				user := User{}
+				user.ID = 1
+				assert.Equal(t, uint(1), GetID(user), description)
+			},
+		},
+		{
+			description: "return value with orm.Model",
+			setup: func(description string) {
+				type User struct {
+					orm.Model
+					Name   string
+					Avatar string
+				}
+				user := User{}
+				user.ID = 1
+				assert.Equal(t, uint(1), GetID(user), description)
+			},
+		},
+		{
+			description: "return nil",
+			setup: func(description string) {
+				type User struct {
+					Name   string
+					Avatar string
+				}
+				user := User{}
+				assert.Nil(t, GetID(user), description)
+			},
+		},
+		{
+			description: "return nil when model is nil",
+			setup: func(description string) {
+				type User struct {
+					Name   string
+					Avatar string
+				}
+				assert.Nil(t, GetID(&User{}), description)
+				assert.Nil(t, GetID(nil), description)
 			},
 		},
 	}

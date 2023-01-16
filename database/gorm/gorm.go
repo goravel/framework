@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/spf13/cast"
+
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
 	databasesupport "github.com/goravel/framework/database/support"
@@ -237,22 +239,26 @@ func (r *Query) Limit(limit int) ormcontract.Query {
 	return NewQuery(tx)
 }
 
-func (r *Query) Load(dest any, relation string, args ...any) error {
+func (r *Query) Load(model any, relation string, args ...any) error {
 	if relation == "" {
 		return errors.New("relation cannot be empty")
 	}
 
-	id := database.GetID(dest)
-	if id == nil {
+	destType := reflect.TypeOf(model)
+	if destType.Kind() != reflect.Pointer {
+		return errors.New("model must be pointer")
+	}
+
+	if id := database.GetID(model); id == nil {
 		return errors.New("id cannot be empty")
 	}
 
-	copyDest := copyStruct(dest)
+	copyDest := copyStruct(model)
 	query := r.With(relation, args...)
-	err := query.Find(dest)
+	err := query.Find(model)
 
-	t := reflect.TypeOf(dest).Elem()
-	v := reflect.ValueOf(dest).Elem()
+	t := destType.Elem()
+	v := reflect.ValueOf(model).Elem()
 	for i := 0; i < t.NumField(); i++ {
 		if t.Field(i).Name != relation {
 			v.Field(i).Set(copyDest.Field(i))
@@ -260,6 +266,37 @@ func (r *Query) Load(dest any, relation string, args ...any) error {
 	}
 
 	return err
+}
+
+func (r *Query) LoadMissing(model any, relation string, args ...any) error {
+	destType := reflect.TypeOf(model)
+	if destType.Kind() != reflect.Pointer {
+		return errors.New("model must be pointer")
+	}
+
+	t := reflect.TypeOf(model).Elem()
+	v := reflect.ValueOf(model).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		if t.Field(i).Name == relation {
+			var id any
+			if v.Field(i).Kind() == reflect.Pointer {
+				if !v.Field(i).IsNil() {
+					id = database.GetIDByReflect(v.Field(i).Type().Elem(), v.Field(i).Elem())
+				}
+			} else if v.Field(i).Kind() == reflect.Slice {
+				if v.Field(i).Len() > 0 {
+					return nil
+				}
+			} else {
+				id = database.GetIDByReflect(v.Field(i).Type(), v.Field(i))
+			}
+			if cast.ToString(id) != "" {
+				return nil
+			}
+		}
+	}
+
+	return r.Load(model, relation, args...)
 }
 
 func (r *Query) Model(value any) ormcontract.Query {

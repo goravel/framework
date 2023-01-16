@@ -40,6 +40,7 @@ type Query interface {
 	Join(query string, args ...any) Query
 	Limit(limit int) Query
 	Load(dest any, relation string, args ...any) error
+	LoadMissing(dest any, relation string, args ...any) error
 	Model(value any) Query
 	Offset(offset int) Query
 	Omit(columns ...string) Query

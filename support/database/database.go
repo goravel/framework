@@ -3,8 +3,21 @@ package database
 import "reflect"
 
 func GetID(dest any) any {
-	t := reflect.TypeOf(dest).Elem()
-	v := reflect.ValueOf(dest).Elem()
+	if dest == nil {
+		return nil
+	}
+
+	t := reflect.TypeOf(dest)
+	v := reflect.ValueOf(dest)
+
+	if t.Kind() == reflect.Pointer {
+		return GetIDByReflect(t.Elem(), v.Elem())
+	}
+
+	return GetIDByReflect(t, v)
+}
+
+func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 	for i := 0; i < t.NumField(); i++ {
 		if t.Field(i).Name == "Model" && v.Field(i).Type().Kind() == reflect.Struct {
 			structField := v.Field(i).Type()
