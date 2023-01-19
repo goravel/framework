@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -20,10 +21,8 @@ type Orm struct {
 	instances       map[string]ormcontract.DB
 }
 
-func NewOrm(ctx context.Context) ormcontract.Orm {
-	orm := &Orm{ctx: ctx}
-
-	return orm.Connection("")
+func NewOrm(ctx context.Context) *Orm {
+	return &Orm{ctx: ctx}
 }
 
 // DEPRECATED: use gorm.New()
@@ -42,7 +41,11 @@ func (r *Orm) Connection(name string) ormcontract.Orm {
 		r.instances = make(map[string]ormcontract.DB)
 	}
 
-	if _, exist := r.instances[name]; exist {
+	if instance, exist := r.instances[name]; exist {
+		if name == defaultConnection && r.defaultInstance == nil {
+			r.defaultInstance = instance
+		}
+
 		return r
 	}
 
@@ -63,6 +66,12 @@ func (r *Orm) Connection(name string) ormcontract.Orm {
 	}
 
 	return r
+}
+
+func (r *Orm) DB() (*sql.DB, error) {
+	db := r.Query().(*databasegorm.DB)
+
+	return db.Instance().DB()
 }
 
 func (r *Orm) Query() ormcontract.DB {

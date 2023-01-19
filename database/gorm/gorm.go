@@ -10,15 +10,14 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
+	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
 	databasesupport "github.com/goravel/framework/database/support"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
-
-	"gorm.io/gorm"
-	gormLogger "gorm.io/gorm/logger"
 )
 
 func New(connection string) (*gorm.DB, error) {
@@ -56,7 +55,7 @@ type DB struct {
 	instance *gorm.DB
 }
 
-func NewDB(ctx context.Context, connection string) (ormcontract.DB, error) {
+func NewDB(ctx context.Context, connection string) (*DB, error) {
 	db, err := New(connection)
 	if err != nil {
 		return nil, err
@@ -81,12 +80,16 @@ func (r *DB) Begin() (ormcontract.Transaction, error) {
 	return NewTransaction(tx), tx.Error
 }
 
+func (r *DB) Instance() *gorm.DB {
+	return r.instance
+}
+
 type Transaction struct {
 	ormcontract.Query
 	instance *gorm.DB
 }
 
-func NewTransaction(instance *gorm.DB) ormcontract.Transaction {
+func NewTransaction(instance *gorm.DB) *Transaction {
 	return &Transaction{Query: NewQuery(instance), instance: instance}
 }
 
@@ -102,8 +105,12 @@ type Query struct {
 	instance *gorm.DB
 }
 
-func NewQuery(instance *gorm.DB) ormcontract.Query {
+func NewQuery(instance *gorm.DB) *Query {
 	return &Query{instance}
+}
+
+func (r *Query) Association(association string) ormcontract.Association {
+	return r.instance.Association(association)
 }
 
 func (r *Query) Driver() ormcontract.Driver {
@@ -120,14 +127,14 @@ func (r *Query) Create(value any) error {
 	}
 
 	if len(r.instance.Statement.Selects) > 0 {
-		if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Relationships {
+		if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Associations {
 			r.instance.Statement.Selects = []string{}
 			return r.instance.Create(value).Error
 		}
 
 		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Relationships {
-				return errors.New("cannot set orm.Relationships and other fields at the same time")
+			if val == orm.Associations {
+				return errors.New("cannot set orm.Associations and other fields at the same time")
 			}
 		}
 
@@ -135,21 +142,21 @@ func (r *Query) Create(value any) error {
 	}
 
 	if len(r.instance.Statement.Omits) > 0 {
-		if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == orm.Relationships {
+		if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == orm.Associations {
 			r.instance.Statement.Selects = []string{}
-			return r.instance.Omit(orm.Relationships).Create(value).Error
+			return r.instance.Omit(orm.Associations).Create(value).Error
 		}
 
 		for _, val := range r.instance.Statement.Omits {
-			if val == orm.Relationships {
-				return errors.New("cannot set orm.Relationships and other fields at the same time")
+			if val == orm.Associations {
+				return errors.New("cannot set orm.Associations and other fields at the same time")
 			}
 		}
 
 		return r.instance.Create(value).Error
 	}
 
-	return r.instance.Omit(orm.Relationships).Create(value).Error
+	return r.instance.Omit(orm.Associations).Create(value).Error
 }
 
 func (r *Query) Delete(value any, conds ...any) error {
@@ -346,7 +353,7 @@ func (r *Query) Save(value any) error {
 
 	if len(r.instance.Statement.Selects) > 0 {
 		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Relationships {
+			if val == orm.Associations {
 				return r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Save(value).Error
 			}
 		}
@@ -356,15 +363,15 @@ func (r *Query) Save(value any) error {
 
 	if len(r.instance.Statement.Omits) > 0 {
 		for _, val := range r.instance.Statement.Omits {
-			if val == orm.Relationships {
-				return r.instance.Omit(orm.Relationships).Save(value).Error
+			if val == orm.Associations {
+				return r.instance.Omit(orm.Associations).Save(value).Error
 			}
 		}
 
 		return r.instance.Save(value).Error
 	}
 
-	return r.instance.Omit(orm.Relationships).Save(value).Error
+	return r.instance.Omit(orm.Associations).Save(value).Error
 }
 
 func (r *Query) Scan(dest any) error {
@@ -394,7 +401,7 @@ func (r *Query) Updates(values any) error {
 
 	if len(r.instance.Statement.Selects) > 0 {
 		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Relationships {
+			if val == orm.Associations {
 				return r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Updates(values).Error
 			}
 		}
@@ -404,15 +411,15 @@ func (r *Query) Updates(values any) error {
 
 	if len(r.instance.Statement.Omits) > 0 {
 		for _, val := range r.instance.Statement.Omits {
-			if val == orm.Relationships {
-				return r.instance.Omit(orm.Relationships).Updates(values).Error
+			if val == orm.Associations {
+				return r.instance.Omit(orm.Associations).Updates(values).Error
 			}
 		}
 
 		return r.instance.Updates(values).Error
 	}
 
-	return r.instance.Omit(orm.Relationships).Updates(values).Error
+	return r.instance.Omit(orm.Associations).Updates(values).Error
 }
 
 func (r *Query) Where(query any, args ...any) ormcontract.Query {

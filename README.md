@@ -33,6 +33,7 @@ Golang developers quickly build their own applications.
 - [ ] Orm relationships
 - [ ] Custom .env path
 - [ ] Database read-write separation
+- [ ] Database extend configuration
 - [ ] Extend Redis driver
 
 ## Documentation

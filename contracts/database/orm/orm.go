@@ -1,10 +1,14 @@
 package orm
 
-import "context"
+import (
+	"context"
+	"database/sql"
+)
 
 //go:generate mockery --name=Orm
 type Orm interface {
 	Connection(name string) Orm
+	DB() (*sql.DB, error)
 	Query() DB
 	Transaction(txFunc func(tx Transaction) error) error
 	WithContext(ctx context.Context) Orm
@@ -24,6 +28,7 @@ type Transaction interface {
 }
 
 type Query interface {
+	Association(association string) Association
 	Driver() Driver
 	Count(count *int64) error
 	Create(value any) error
@@ -58,4 +63,14 @@ type Query interface {
 	Where(query any, args ...any) Query
 	WithTrashed() Query
 	With(query string, args ...any) Query
+}
+
+//go:generate mockery --name=Association
+type Association interface {
+	Find(out any, conds ...any) error
+	Append(values ...any) error
+	Replace(values ...any) error
+	Delete(values ...any) error
+	Clear() error
+	Count() int64
 }

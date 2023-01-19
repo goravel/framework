@@ -30,40 +30,41 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm ormcontract.Orm
 }
+
+var (
+	testMysqlDB      ormcontract.DB
+	testPostgresqlDB ormcontract.DB
+	testSqliteDB     ormcontract.DB
+	testSqlserverDB  ormcontract.DB
+)
 
 func TestOrmSuite(t *testing.T) {
 	mysqlPool, mysqlDocker, mysqlDB, err := gorm.MysqlDocker()
+	testMysqlDB = mysqlDB
 	if err != nil {
 		log.Fatalf("Get gorm mysql error: %s", err)
 	}
 
 	postgresqlPool, postgresqlDocker, postgresqlDB, err := gorm.PostgresqlDocker()
+	testPostgresqlDB = postgresqlDB
 	if err != nil {
 		log.Fatalf("Get gorm postgresql error: %s", err)
 	}
 
 	_, _, sqliteDB, err := gorm.SqliteDocker()
+	testSqliteDB = sqliteDB
 	if err != nil {
 		log.Fatalf("Get gorm sqlite error: %s", err)
 	}
 
 	sqlserverPool, sqlserverDocker, sqlserverDB, err := gorm.SqlserverDocker()
+	testSqlserverDB = sqlserverDB
 	if err != nil {
 		log.Fatalf("Get gorm postgresql error: %s", err)
 	}
 
-	suite.Run(t, &OrmSuite{
-		orm: &Orm{
-			instances: map[string]ormcontract.DB{
-				ormcontract.DriverMysql.String():      mysqlDB,
-				ormcontract.DriverPostgresql.String(): postgresqlDB,
-				ormcontract.DriverSqlite.String():     sqliteDB,
-				ormcontract.DriverSqlserver.String():  sqlserverDB,
-			},
-		},
-	})
+	suite.Run(t, new(OrmSuite))
 
 	file.Remove("goravel")
 
@@ -82,13 +83,57 @@ func (s *OrmSuite) SetupTest() {
 
 }
 
-func (s *OrmSuite) TestTransactionSuccess() {
+func (s *OrmSuite) TestConnection() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(4)
+	testOrm := newTestOrm()
 	for _, connection := range connections {
-		mockConfig := mock.Config()
-		mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(3)
+		s.NotNil(testOrm.Connection(connection.String()))
+	}
+
+	mockConfig.AssertExpectations(s.T())
+}
+
+func (s *OrmSuite) TestDB() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(5)
+
+	testOrm := newTestOrm()
+	db, err := testOrm.DB()
+	s.NotNil(db)
+	s.Nil(err)
+
+	for _, connection := range connections {
+		db, err := testOrm.Connection(connection.String()).DB()
+		s.NotNil(db)
+		s.Nil(err)
+	}
+
+	mockConfig.AssertExpectations(s.T())
+}
+
+func (s *OrmSuite) TestQuery() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(5)
+	testOrm := newTestOrm()
+	s.NotNil(testOrm.Query())
+
+	for _, connection := range connections {
+		s.NotNil(testOrm.Connection(connection.String()).Query())
+	}
+
+	mockConfig.AssertExpectations(s.T())
+}
+
+func (s *OrmSuite) TestTransactionSuccess() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(12)
+
+	testOrm := newTestOrm()
+	for _, connection := range connections {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 		user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-		s.Nil(s.orm.Connection(connection.String()).Transaction(func(tx ormcontract.Transaction) error {
+		s.Nil(testOrm.Connection(connection.String()).Transaction(func(tx ormcontract.Transaction) error {
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 
@@ -96,17 +141,21 @@ func (s *OrmSuite) TestTransactionSuccess() {
 		}))
 
 		var user2, user3 User
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user2, user.ID))
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user3, user1.ID))
-		mockConfig.AssertExpectations(s.T())
+		s.Nil(testOrm.Connection(connection.String()).Query().Find(&user2, user.ID))
+		s.Nil(testOrm.Connection(connection.String()).Query().Find(&user3, user1.ID))
+
 	}
+
+	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *OrmSuite) TestTransactionError() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(8)
+
+	testOrm := newTestOrm()
 	for _, connection := range connections {
-		mockConfig := mock.Config()
-		mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Twice()
-		s.NotNil(s.orm.Connection(connection.String()).Transaction(func(tx ormcontract.Transaction) error {
+		s.NotNil(testOrm.Connection(connection.String()).Transaction(func(tx ormcontract.Transaction) error {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			s.Nil(tx.Create(&user))
 
@@ -117,8 +166,20 @@ func (s *OrmSuite) TestTransactionError() {
 		}))
 
 		var users []User
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&users))
+		s.Nil(testOrm.Connection(connection.String()).Query().Find(&users))
 		s.Equal(0, len(users))
-		mockConfig.AssertExpectations(s.T())
+	}
+
+	mockConfig.AssertExpectations(s.T())
+}
+
+func newTestOrm() *Orm {
+	return &Orm{
+		instances: map[string]ormcontract.DB{
+			ormcontract.DriverMysql.String():      testMysqlDB,
+			ormcontract.DriverPostgresql.String(): testPostgresqlDB,
+			ormcontract.DriverSqlite.String():     testSqliteDB,
+			ormcontract.DriverSqlserver.String():  testSqlserverDB,
+		},
 	}
 }

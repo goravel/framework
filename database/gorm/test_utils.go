@@ -235,10 +235,25 @@ func initTables(driver ormcontract.Driver, db ormcontract.DB) error {
 	if err := db.Exec(createUserTable(driver)); err != nil {
 		return err
 	}
-	if err := db.Exec(createUserAddressTable(driver)); err != nil {
+	if err := db.Exec(createAddressTable(driver)); err != nil {
 		return err
 	}
-	if err := db.Exec(createUserBookTable(driver)); err != nil {
+	if err := db.Exec(createBookTable(driver)); err != nil {
+		return err
+	}
+	if err := db.Exec(createRoleTable(driver)); err != nil {
+		return err
+	}
+	if err := db.Exec(createHouseTable(driver)); err != nil {
+		return err
+	}
+	if err := db.Exec(createPhoneTable(driver)); err != nil {
+		return err
+	}
+	if err := db.Exec(createRoleUserTable(driver)); err != nil {
+		return err
+	}
+	if err := db.Exec(createAuthorTable(driver)); err != nil {
 		return err
 	}
 
@@ -300,27 +315,27 @@ CREATE TABLE users (
 	}
 }
 
-func createUserAddressTable(driver ormcontract.Driver) string {
+func createAddressTable(driver ormcontract.Driver) string {
 	switch driver {
 	case ormcontract.DriverMysql:
 		return `
-CREATE TABLE user_addresses (
+CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  user_id bigint(20) unsigned NOT NULL,
+  user_id bigint(20) unsigned DEFAULT NULL,
   name varchar(255) NOT NULL,
   province varchar(255) NOT NULL,
-  created_at datetime(3) DEFAULT NULL,
-  updated_at datetime(3) DEFAULT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
   PRIMARY KEY (id),
-  KEY idx_user_addresses_created_at (created_at),
-  KEY idx_user_addresses_updated_at (updated_at)
+  KEY idx_addresses_created_at (created_at),
+  KEY idx_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
 	case ormcontract.DriverPostgresql:
 		return `
-CREATE TABLE user_addresses (
+CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
-  user_id int NOT NULL,
+  user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
   province varchar(255) NOT NULL,
   created_at timestamp NOT NULL,
@@ -329,9 +344,9 @@ CREATE TABLE user_addresses (
 `
 	case ormcontract.DriverSqlite:
 		return `
-CREATE TABLE user_addresses (
+CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  user_id int NOT NULL,
+  user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
   province varchar(255) NOT NULL,
   created_at datetime NOT NULL,
@@ -340,9 +355,9 @@ CREATE TABLE user_addresses (
 `
 	case ormcontract.DriverSqlserver:
 		return `
-CREATE TABLE user_addresses (
+CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
-  user_id bigint NOT NULL,
+  user_id bigint DEFAULT NULL,
   name varchar(255) NOT NULL,
   province varchar(255) NOT NULL,
   created_at datetime NOT NULL,
@@ -355,26 +370,26 @@ CREATE TABLE user_addresses (
 	}
 }
 
-func createUserBookTable(driver ormcontract.Driver) string {
+func createBookTable(driver ormcontract.Driver) string {
 	switch driver {
 	case ormcontract.DriverMysql:
 		return `
-CREATE TABLE user_books (
+CREATE TABLE books (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  user_id bigint(20) unsigned NOT NULL,
+  user_id bigint(20) unsigned DEFAULT NULL,
   name varchar(255) NOT NULL,
-  created_at datetime(3) DEFAULT NULL,
-  updated_at datetime(3) DEFAULT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
   PRIMARY KEY (id),
-  KEY idx_user_addresses_created_at (created_at),
-  KEY idx_user_addresses_updated_at (updated_at)
+  KEY idx_books_created_at (created_at),
+  KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
 	case ormcontract.DriverPostgresql:
 		return `
-CREATE TABLE user_books (
+CREATE TABLE books (
   id SERIAL PRIMARY KEY NOT NULL,
-  user_id int NOT NULL,
+  user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL
@@ -382,9 +397,9 @@ CREATE TABLE user_books (
 `
 	case ormcontract.DriverSqlite:
 		return `
-CREATE TABLE user_books (
+CREATE TABLE books (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  user_id int NOT NULL,
+  user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL
@@ -392,12 +407,261 @@ CREATE TABLE user_books (
 `
 	case ormcontract.DriverSqlserver:
 		return `
-CREATE TABLE user_books (
+CREATE TABLE books (
   id bigint NOT NULL IDENTITY(1,1),
-  user_id bigint NOT NULL,
+  user_id bigint DEFAULT NULL,
   name varchar(255) NOT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func createAuthorTable(driver ormcontract.Driver) string {
+	switch driver {
+	case ormcontract.DriverMysql:
+		return `
+CREATE TABLE authors (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  book_id bigint(20) unsigned DEFAULT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_books_created_at (created_at),
+  KEY idx_books_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case ormcontract.DriverPostgresql:
+		return `
+CREATE TABLE authors (
+  id SERIAL PRIMARY KEY NOT NULL,
+  book_id int DEFAULT NULL,
+  name varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL
+);
+`
+	case ormcontract.DriverSqlite:
+		return `
+CREATE TABLE authors (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  book_id int DEFAULT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
+);
+`
+	case ormcontract.DriverSqlserver:
+		return `
+CREATE TABLE authors (
+  id bigint NOT NULL IDENTITY(1,1),
+  book_id bigint DEFAULT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func createRoleTable(driver ormcontract.Driver) string {
+	switch driver {
+	case ormcontract.DriverMysql:
+		return `
+CREATE TABLE roles (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_roles_created_at (created_at),
+  KEY idx_roles_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case ormcontract.DriverPostgresql:
+		return `
+CREATE TABLE roles (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL
+);
+`
+	case ormcontract.DriverSqlite:
+		return `
+CREATE TABLE roles (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
+);
+`
+	case ormcontract.DriverSqlserver:
+		return `
+CREATE TABLE roles (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func createHouseTable(driver ormcontract.Driver) string {
+	switch driver {
+	case ormcontract.DriverMysql:
+		return `
+CREATE TABLE houses (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  houseable_id bigint(20) unsigned NOT NULL,
+  houseable_type varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_houses_created_at (created_at),
+  KEY idx_houses_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case ormcontract.DriverPostgresql:
+		return `
+CREATE TABLE houses (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  houseable_id int NOT NULL,
+  houseable_type varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL
+);
+`
+	case ormcontract.DriverSqlite:
+		return `
+CREATE TABLE houses (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  houseable_id int NOT NULL,
+  houseable_type varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
+);
+`
+	case ormcontract.DriverSqlserver:
+		return `
+CREATE TABLE houses (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  houseable_id bigint NOT NULL,
+  houseable_type varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func createPhoneTable(driver ormcontract.Driver) string {
+	switch driver {
+	case ormcontract.DriverMysql:
+		return `
+CREATE TABLE phones (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  phoneable_id bigint(20) unsigned NOT NULL,
+  phoneable_type varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_phones_created_at (created_at),
+  KEY idx_phones_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case ormcontract.DriverPostgresql:
+		return `
+CREATE TABLE phones (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  phoneable_id int NOT NULL,
+  phoneable_type varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL
+);
+`
+	case ormcontract.DriverSqlite:
+		return `
+CREATE TABLE phones (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  phoneable_id int NOT NULL,
+  phoneable_type varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
+);
+`
+	case ormcontract.DriverSqlserver:
+		return `
+CREATE TABLE phones (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  phoneable_id bigint NOT NULL,
+  phoneable_type varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func createRoleUserTable(driver ormcontract.Driver) string {
+	switch driver {
+	case ormcontract.DriverMysql:
+		return `
+CREATE TABLE role_user (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  role_id bigint(20) unsigned NOT NULL,
+  user_id bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case ormcontract.DriverPostgresql:
+		return `
+CREATE TABLE role_user (
+  id SERIAL PRIMARY KEY NOT NULL,
+  role_id int NOT NULL,
+  user_id int NOT NULL
+);
+`
+	case ormcontract.DriverSqlite:
+		return `
+CREATE TABLE role_user (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  role_id int NOT NULL,
+  user_id int NOT NULL
+);
+`
+	case ormcontract.DriverSqlserver:
+		return `
+CREATE TABLE role_user (
+  id bigint NOT NULL IDENTITY(1,1),
+  role_id bigint NOT NULL,
+  user_id bigint NOT NULL,
   PRIMARY KEY (id)
 );
 `
