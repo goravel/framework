@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/testing/mock"
-
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/testing/mock"
 )
 
 func TestGetGormConfig(t *testing.T) {

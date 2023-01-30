@@ -5,13 +5,13 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/testing/mock"
-
-	"github.com/stretchr/testify/suite"
 )
 
 var connections = []ormcontract.Driver{

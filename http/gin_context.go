@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/goravel/framework/contracts/http"
-
 	"github.com/gin-gonic/gin"
+
+	"github.com/goravel/framework/contracts/http"
 )
 
 func Background() http.Context {

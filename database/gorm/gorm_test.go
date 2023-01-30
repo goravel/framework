@@ -4,12 +4,12 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+	_ "gorm.io/driver/postgres"
+
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
-
-	"github.com/stretchr/testify/suite"
-	_ "gorm.io/driver/postgres"
 )
 
 type User struct {

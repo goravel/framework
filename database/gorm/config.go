@@ -4,15 +4,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/support"
-	"github.com/goravel/framework/facades"
-
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/support"
+	"github.com/goravel/framework/facades"
 )
 
 func config(connection string) (gorm.Dialector, error) {

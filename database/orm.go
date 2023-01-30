@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
-	databasegorm "github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/facades"
-
 	"github.com/gookit/color"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	databasegorm "github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/facades"
 )
 
 type Orm struct {

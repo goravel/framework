@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	"github.com/gookit/color"
+
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/facades"
 	goravelhttp "github.com/goravel/framework/http"
-
-	"github.com/gin-gonic/gin"
-	"github.com/gookit/color"
 )
 
 type Gin struct {

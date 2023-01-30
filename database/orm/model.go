@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const Associations string = clause.Associations
+const Associations = clause.Associations
 
 type Model struct {
 	ID uint `gorm:"primaryKey"`

@@ -5,13 +5,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	mockconfig "github.com/goravel/framework/contracts/config/mocks"
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/http/middleware"
 	"github.com/goravel/framework/testing/mock"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGinGroup(t *testing.T) {

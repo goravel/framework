@@ -3,10 +3,10 @@ package route
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
-
-	"github.com/gin-gonic/gin"
 )
 
 type GinGroup struct {

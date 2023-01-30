@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"net/http"
 
-	httpcontract "github.com/goravel/framework/contracts/http"
-
 	"github.com/gin-gonic/gin"
+
+	httpcontract "github.com/goravel/framework/contracts/http"
 )
 
 type GinResponse struct {
