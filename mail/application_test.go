@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gookit/color"
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/config"
@@ -23,9 +22,6 @@ import (
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	mail          *Application
-	queue         *queue.Application
-	redisResource *dockertest.Resource
 }
 
 func TestApplicationTestSuite(t *testing.T) {
@@ -40,11 +36,8 @@ func TestApplicationTestSuite(t *testing.T) {
 	}
 
 	initConfig(redisResource.GetPort("6379/tcp"))
-	suite.Run(t, &ApplicationTestSuite{
-		mail:          NewApplication(),
-		queue:         queue.NewApplication(),
-		redisResource: redisResource,
-	})
+	facades.Mail = NewApplication()
+	suite.Run(t, new(ApplicationTestSuite))
 
 	if err := redisPool.Purge(redisResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
@@ -56,7 +49,7 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestSendMail() {
-	s.Nil(s.mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
+	s.Nil(facades.Mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
 		Cc([]string{facades.Config.Env("MAIL_CC").(string)}).
 		Bcc([]string{facades.Config.Env("MAIL_BCC").(string)}).
 		Attach([]string{"../logo.png"}).
@@ -65,7 +58,7 @@ func (s *ApplicationTestSuite) TestSendMail() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
-	s.Nil(s.mail.From(mail.From{Address: facades.Config.GetString("mail.from.address"), Name: facades.Config.GetString("mail.from.name")}).
+	s.Nil(facades.Mail.From(mail.From{Address: facades.Config.GetString("mail.from.address"), Name: facades.Config.GetString("mail.from.name")}).
 		To([]string{facades.Config.Env("MAIL_TO").(string)}).
 		Cc([]string{facades.Config.Env("MAIL_CC").(string)}).
 		Bcc([]string{facades.Config.Env("MAIL_BCC").(string)}).
@@ -86,7 +79,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.queue.Worker(nil).Run())
+		s.Nil(facades.Queue.Worker(nil).Run())
 
 		for {
 			select {
@@ -96,7 +89,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		}
 	}(ctx)
 	time.Sleep(3 * time.Second)
-	s.Nil(s.mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
+	s.Nil(facades.Mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
 		Cc([]string{facades.Config.Env("MAIL_CC").(string)}).
 		Bcc([]string{facades.Config.Env("MAIL_BCC").(string)}).
 		Attach([]string{"../logo.png"}).
