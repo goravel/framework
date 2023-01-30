@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/support"
 	"github.com/goravel/framework/facades"
 )
@@ -93,14 +94,14 @@ func (r *DB) Transaction(ctx context.Context, txFunc func(tx *sqlx.Tx) error) er
 
 func GetDsn(connection string) (string, error) {
 	driver := facades.Config.GetString("database.connections." + connection + ".driver")
-	switch driver {
-	case support.Mysql:
+	switch orm.Driver(driver) {
+	case orm.DriverMysql:
 		return support.GetMysqlDsn(connection), nil
-	case support.Postgresql:
+	case orm.DriverPostgresql:
 		return support.GetPostgresqlDsn(connection), nil
-	case support.Sqlite:
+	case orm.DriverSqlite:
 		return support.GetSqliteDsn(connection), nil
-	case support.Sqlserver:
+	case orm.DriverSqlserver:
 		return support.GetSqlserverDsn(connection), nil
 	default:
 		return "", errors.New("database driver only support mysql, postgresql, sqlite and sqlserver")

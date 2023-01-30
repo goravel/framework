@@ -8,7 +8,7 @@ type ServiceProvider struct {
 }
 
 func (receiver *ServiceProvider) Register() {
-	facades.Schedule = &Application{}
+	facades.Schedule = NewApplication()
 }
 
 func (receiver *ServiceProvider) Boot() {

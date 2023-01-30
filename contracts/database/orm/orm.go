@@ -1,10 +1,14 @@
 package orm
 
-import "context"
+import (
+	"context"
+	"database/sql"
+)
 
 //go:generate mockery --name=Orm
 type Orm interface {
 	Connection(name string) Orm
+	DB() (*sql.DB, error)
 	Query() DB
 	Transaction(txFunc func(tx Transaction) error) error
 	WithContext(ctx context.Context) Orm
@@ -24,34 +28,49 @@ type Transaction interface {
 }
 
 type Query interface {
+	Association(association string) Association
 	Driver() Driver
 	Count(count *int64) error
-	Create(value interface{}) error
-	Delete(value interface{}, conds ...interface{}) error
-	Distinct(args ...interface{}) Query
-	Exec(sql string, values ...interface{}) error
-	Find(dest interface{}, conds ...interface{}) error
-	First(dest interface{}) error
-	FirstOrCreate(dest interface{}, conds ...interface{}) error
-	ForceDelete(value interface{}, conds ...interface{}) error
-	Get(dest interface{}) error
+	Create(value any) error
+	Delete(value any, conds ...any) error
+	Distinct(args ...any) Query
+	Exec(sql string, values ...any) error
+	Find(dest any, conds ...any) error
+	First(dest any) error
+	FirstOrCreate(dest any, conds ...any) error
+	ForceDelete(value any, conds ...any) error
+	Get(dest any) error
 	Group(name string) Query
-	Having(query interface{}, args ...interface{}) Query
-	Join(query string, args ...interface{}) Query
+	Having(query any, args ...any) Query
+	Join(query string, args ...any) Query
 	Limit(limit int) Query
-	Model(value interface{}) Query
+	Load(dest any, relation string, args ...any) error
+	LoadMissing(dest any, relation string, args ...any) error
+	Model(value any) Query
 	Offset(offset int) Query
-	Order(value interface{}) Query
-	OrWhere(query interface{}, args ...interface{}) Query
-	Pluck(column string, dest interface{}) error
-	Raw(sql string, values ...interface{}) Query
-	Save(value interface{}) error
-	Scan(dest interface{}) error
+	Omit(columns ...string) Query
+	Order(value any) Query
+	OrWhere(query any, args ...any) Query
+	Pluck(column string, dest any) error
+	Raw(sql string, values ...any) Query
+	Save(value any) error
+	Scan(dest any) error
 	Scopes(funcs ...func(Query) Query) Query
-	Select(query interface{}, args ...interface{}) Query
-	Table(name string, args ...interface{}) Query
-	Update(column string, value interface{}) error
-	Updates(values interface{}) error
-	Where(query interface{}, args ...interface{}) Query
+	Select(query any, args ...any) Query
+	Table(name string, args ...any) Query
+	Update(column string, value any) error
+	Updates(values any) error
+	Where(query any, args ...any) Query
 	WithTrashed() Query
+	With(query string, args ...any) Query
+}
+
+//go:generate mockery --name=Association
+type Association interface {
+	Find(out any, conds ...any) error
+	Append(values ...any) error
+	Replace(values ...any) error
+	Delete(values ...any) error
+	Clear() error
+	Count() int64
 }

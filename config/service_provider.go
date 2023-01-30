@@ -8,8 +8,7 @@ type ServiceProvider struct {
 }
 
 func (config *ServiceProvider) Register() {
-	app := Application{}
-	facades.Config = app.Init()
+	facades.Config = NewApplication(".env")
 }
 
 func (config *ServiceProvider) Boot() {

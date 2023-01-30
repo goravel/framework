@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"errors"
+
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log/logger"

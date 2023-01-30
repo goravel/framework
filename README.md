@@ -1,4 +1,4 @@
-<p align="center"><img src="https://goravel.s3.us-east-2.amazonaws.com/goravel-word.png" width="300"></p>
+<p align="center"><img src="logo.png" width="300"></p>
 
 English | [中文](./README_zh.md)
 
@@ -29,10 +29,9 @@ Golang developers quickly build their own applications.
 
 ## Roadmap
 
-- [ ] Optimize migration
-- [ ] Orm relationships
 - [ ] Custom .env path
 - [ ] Database read-write separation
+- [ ] Extend Redis driver
 
 ## Documentation
 

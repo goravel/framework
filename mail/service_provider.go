@@ -9,8 +9,7 @@ type ServiceProvider struct {
 }
 
 func (route *ServiceProvider) Register() {
-	app := Application{}
-	facades.Mail = app.Init()
+	facades.Mail = NewApplication()
 }
 
 func (route *ServiceProvider) Boot() {

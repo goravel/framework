@@ -1,10 +1,11 @@
 package validation
 
 import (
-	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"net/url"
 
 	"github.com/gookit/validate"
+
+	httpvalidate "github.com/goravel/framework/contracts/validation"
 )
 
 func init() {

@@ -1,78 +1,70 @@
 package config
 
 import (
-	"os"
 	"testing"
 
-	"github.com/goravel/framework/testing/file"
-	"github.com/stretchr/testify/assert"
+	"github.com/gookit/color"
+	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/support/file"
 )
 
-func TestInit(t *testing.T) {
-	err := file.CreateEnv()
-	assert.Nil(t, err)
-	assert.NotPanics(t, func() {
-		app := Application{}
-		app.Init()
+type ApplicationTestSuite struct {
+	suite.Suite
+	config *Application
+}
+
+func TestApplicationTestSuite(t *testing.T) {
+	if !file.Exists("../.env") {
+		color.Redln("No config tests run, need create .env based on .env.example, then initialize it")
+		return
+	}
+
+	suite.Run(t, &ApplicationTestSuite{
+		config: NewApplication("../.env"),
 	})
 }
 
-func TestEnv(t *testing.T) {
-	app := Application{}
-	app.Init()
+func (s *ApplicationTestSuite) SetupTest() {
 
-	assert.Equal(t, "goravel", app.Env("APP_NAME").(string))
-	assert.Equal(t, "127.0.0.1", app.Env("DB_HOST", "127.0.0.1").(string))
 }
 
-func TestAdd(t *testing.T) {
-	app := Application{}
-	app.Init()
-	app.Add("app", map[string]interface{}{
+func (s *ApplicationTestSuite) TestEnv() {
+	s.Equal("goravel", s.config.Env("APP_NAME", "goravel").(string))
+	s.Equal("127.0.0.1", s.config.Env("DB_HOST", "127.0.0.1").(string))
+}
+
+func (s *ApplicationTestSuite) TestAdd() {
+	s.config.Add("app", map[string]any{
 		"env": "local",
 	})
 
-	assert.Equal(t, "local", app.GetString("app.env"))
+	s.Equal("local", s.config.GetString("app.env"))
 }
 
-func TestGet(t *testing.T) {
-	app := Application{}
-	app.Init()
-
-	assert.Equal(t, "goravel", app.Get("APP_NAME").(string))
+func (s *ApplicationTestSuite) TestGet() {
+	s.Equal("goravel", s.config.Get("APP_NAME", "goravel").(string))
 }
 
-func TestGetString(t *testing.T) {
-	app := Application{}
-	app.Init()
-
-	app.Add("database", map[string]interface{}{
-		"default": app.Env("DB_CONNECTION", "mysql"),
-		"connections": map[string]interface{}{
-			"mysql": map[string]interface{}{
-				"host": app.Env("DB_HOST", "127.0.0.1"),
+func (s *ApplicationTestSuite) TestGetString() {
+	s.config.Add("database", map[string]any{
+		"default": s.config.Env("DB_CONNECTION", "mysql"),
+		"connections": map[string]any{
+			"mysql": map[string]any{
+				"host": s.config.Env("DB_HOST", "127.0.0.1"),
 			},
 		},
 	})
 
-	assert.Equal(t, "goravel", app.GetString("APP_NAME"))
-	assert.Equal(t, "127.0.0.1", app.GetString("database.connections.mysql.host"))
-	assert.Equal(t, "mysql", app.GetString("database.default"))
+	s.Equal("goravel", s.config.GetString("APP_NAME", "goravel"))
+	s.Equal("127.0.0.1", s.config.GetString("database.connections.mysql.host"))
+	s.Equal("mysql", s.config.GetString("database.default"))
 }
 
-func TestGetInt(t *testing.T) {
-	app := Application{}
-	app.Init()
-
-	assert.Equal(t, app.GetInt("DB_PORT"), 3306)
+func (s *ApplicationTestSuite) TestGetInt() {
+	s.Equal(s.config.GetInt("DB_PORT", 3306), 3306)
 }
 
-func TestGetBool(t *testing.T) {
-	app := Application{}
-	app.Init()
-
-	assert.Equal(t, true, app.GetBool("APP_DEBUG"))
-
-	err := os.Remove(".env")
-	assert.Nil(t, err)
+func (s *ApplicationTestSuite) TestGetBool() {
+	s.Equal(true, s.config.GetBool("APP_DEBUG", true))
 }

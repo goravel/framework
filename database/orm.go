@@ -2,29 +2,35 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/facades"
 
 	"github.com/gookit/color"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
+
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	databasegorm "github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/facades"
 )
 
 type Orm struct {
 	ctx             context.Context
 	connection      string
-	defaultInstance contractsorm.DB
-	instances       map[string]contractsorm.DB
+	defaultInstance ormcontract.DB
+	instances       map[string]ormcontract.DB
 }
 
-func NewOrm(ctx context.Context) contractsorm.Orm {
-	orm := &Orm{ctx: ctx}
-
-	return orm.Connection("")
+func NewOrm(ctx context.Context) *Orm {
+	return &Orm{ctx: ctx}
 }
 
-func (r *Orm) Connection(name string) contractsorm.Orm {
+// DEPRECATED: use gorm.New()
+func NewGormInstance(connection string) (*gorm.DB, error) {
+	return databasegorm.New(connection)
+}
+
+func (r *Orm) Connection(name string) ormcontract.Orm {
 	defaultConnection := facades.Config.GetString("database.default")
 	if name == "" {
 		name = defaultConnection
@@ -32,33 +38,43 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 
 	r.connection = name
 	if r.instances == nil {
-		r.instances = make(map[string]contractsorm.DB)
+		r.instances = make(map[string]ormcontract.DB)
 	}
 
-	if _, exist := r.instances[name]; exist {
+	if instance, exist := r.instances[name]; exist {
+		if name == defaultConnection && r.defaultInstance == nil {
+			r.defaultInstance = instance
+		}
+
 		return r
 	}
 
-	gorm, err := NewGormDB(r.ctx, name)
+	gormDB, err := databasegorm.NewDB(r.ctx, name)
 	if err != nil {
 		color.Redln(fmt.Sprintf("[Orm] Init connection error, %v", err))
 
 		return nil
 	}
-	if gorm == nil {
+	if gormDB == nil {
 		return nil
 	}
 
-	r.instances[name] = gorm
+	r.instances[name] = gormDB
 
 	if name == defaultConnection {
-		r.defaultInstance = gorm
+		r.defaultInstance = gormDB
 	}
 
 	return r
 }
 
-func (r *Orm) Query() contractsorm.DB {
+func (r *Orm) DB() (*sql.DB, error) {
+	db := r.Query().(*databasegorm.DB)
+
+	return db.Instance().DB()
+}
+
+func (r *Orm) Query() ormcontract.DB {
 	if r.connection == "" {
 		if r.defaultInstance == nil {
 			r.Connection("")
@@ -77,7 +93,7 @@ func (r *Orm) Query() contractsorm.DB {
 	return instance
 }
 
-func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error {
+func (r *Orm) Transaction(txFunc func(tx ormcontract.Transaction) error) error {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
@@ -94,6 +110,6 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error 
 	}
 }
 
-func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
+func (r *Orm) WithContext(ctx context.Context) ormcontract.Orm {
 	return NewOrm(ctx)
 }

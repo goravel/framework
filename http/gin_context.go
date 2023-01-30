@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/goravel/framework/contracts/http"
 )
 
@@ -25,7 +26,12 @@ func (c *GinContext) Request() http.Request {
 }
 
 func (c *GinContext) Response() http.Response {
-	return NewGinResponse(c.instance)
+	responseOrigin := c.Value("responseOrigin")
+	if responseOrigin != nil {
+		return NewGinResponse(c.instance, responseOrigin.(http.ResponseOrigin))
+	}
+
+	return NewGinResponse(c.instance, &BodyWriter{ResponseWriter: c.instance.Writer})
 }
 
 func (c *GinContext) WithValue(key string, value interface{}) {

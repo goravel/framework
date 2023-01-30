@@ -4,15 +4,15 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	"github.com/gookit/validate"
+
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
 	httpcontract "github.com/goravel/framework/contracts/http"
 	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/validation"
-
-	"github.com/gin-gonic/gin"
-	"github.com/gookit/validate"
 )
 
 type GinRequest struct {
@@ -30,6 +30,14 @@ func (r *GinRequest) Input(key string) string {
 
 func (r *GinRequest) Query(key, defaultValue string) string {
 	return r.instance.DefaultQuery(key, defaultValue)
+}
+
+func (r *GinRequest) QueryArray(key string) []string {
+	return r.instance.QueryArray(key)
+}
+
+func (r *GinRequest) QueryMap(key string) map[string]string {
+	return r.instance.QueryMap(key)
 }
 
 func (r *GinRequest) Form(key, defaultValue string) string {
@@ -105,10 +113,6 @@ func (r *GinRequest) Ip() string {
 
 func (r *GinRequest) Origin() *http.Request {
 	return r.instance.Request
-}
-
-func (r *GinRequest) Response() httpcontract.Response {
-	return NewGinResponse(r.instance)
 }
 
 func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {

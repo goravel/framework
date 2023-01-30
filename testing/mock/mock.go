@@ -38,11 +38,11 @@ func Artisan() *consolemocks.Artisan {
 	return mockArtisan
 }
 
-func Orm() (*ormmocks.Orm, *ormmocks.DB, *ormmocks.Transaction) {
+func Orm() (*ormmocks.Orm, *ormmocks.DB, *ormmocks.Transaction, *ormmocks.Association) {
 	mockOrm := &ormmocks.Orm{}
 	facades.Orm = mockOrm
 
-	return mockOrm, &ormmocks.DB{}, &ormmocks.Transaction{}
+	return mockOrm, &ormmocks.DB{}, &ormmocks.Transaction{}, &ormmocks.Association{}
 }
 
 func Event() (*eventmocks.Instance, *eventmocks.Task) {
@@ -79,7 +79,7 @@ func Storage() (*filesystemmocks.Storage, *filesystemmocks.Driver, *filesystemmo
 	return mockStorage, mockDriver, mockFile
 }
 
-func Validator() (*validatemocks.Validation, *validatemocks.Validator, *validatemocks.Errors) {
+func Validation() (*validatemocks.Validation, *validatemocks.Validator, *validatemocks.Errors) {
 	mockValidation := &validatemocks.Validation{}
 	mockValidator := &validatemocks.Validator{}
 	mockErrors := &validatemocks.Errors{}

@@ -10,7 +10,7 @@ import (
 	"github.com/goravel/framework/facades"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/gookit/color"
+	"github.com/pkg/errors"
 )
 
 type Redis struct {
@@ -19,15 +19,15 @@ type Redis struct {
 	redis  *redis.Client
 }
 
-func NewRedis(ctx context.Context) cache.Store {
-	connection := facades.Config.GetString("cache.stores." + facades.Config.GetString("cache.default") + ".connection")
+func NewRedis(ctx context.Context) (*Redis, error) {
+	connection := facades.Config.GetString(fmt.Sprintf("cache.stores.%s.connection", facades.Config.GetString("cache.default")))
 	if connection == "" {
 		connection = "default"
 	}
 
 	host := facades.Config.GetString("database.redis." + connection + ".host")
 	if host == "" {
-		return nil
+		return nil, nil
 	}
 
 	client := redis.NewClient(&redis.Options{
@@ -36,22 +36,62 @@ func NewRedis(ctx context.Context) cache.Store {
 		DB:       facades.Config.GetInt("database.redis." + connection + ".database"),
 	})
 
-	_, err := client.Ping(context.Background()).Result()
-	if err != nil {
-		color.Redln(fmt.Sprintf("[Cache] Init connection error, %s", err.Error()))
-
-		return nil
+	if _, err := client.Ping(context.Background()).Result(); err != nil {
+		return nil, errors.WithMessage(err, "init connection error")
 	}
 
 	return &Redis{
 		ctx:    ctx,
-		prefix: facades.Config.GetString("cache.prefix" + ":"),
+		prefix: facades.Config.GetString("cache.prefix") + ":",
 		redis:  client,
-	}
+	}, nil
 }
 
 func (r *Redis) WithContext(ctx context.Context) cache.Store {
-	return NewRedis(ctx)
+	store, _ := NewRedis(ctx)
+
+	return store
+}
+
+//Add Store an item in the cache if the key does not exist.
+func (r *Redis) Add(key string, value interface{}, seconds time.Duration) bool {
+	val, err := r.redis.SetNX(r.ctx, r.prefix+key, value, seconds).Result()
+	if err != nil {
+		return false
+	}
+
+	return val
+}
+
+//Forever Store an item in the cache indefinitely.
+func (r *Redis) Forever(key string, value interface{}) bool {
+	if err := r.Put(key, value, 0); err != nil {
+		return false
+	}
+
+	return true
+}
+
+//Forget Remove an item from the cache.
+func (r *Redis) Forget(key string) bool {
+	_, err := r.redis.Del(r.ctx, r.prefix+key).Result()
+
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+//Flush Remove all items from the cache.
+func (r *Redis) Flush() bool {
+	res, err := r.redis.FlushAll(r.ctx).Result()
+
+	if err != nil || res != "OK" {
+		return false
+	}
+
+	return true
 }
 
 //Get Retrieve an item from the cache by key.
@@ -107,16 +147,6 @@ func (r *Redis) Has(key string) bool {
 	return true
 }
 
-//Put Store an item in the cache for a given number of seconds.
-func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error {
-	err := r.redis.Set(r.ctx, r.prefix+key, value, seconds).Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 //Pull Retrieve an item from the cache and delete it.
 func (r *Redis) Pull(key string, def interface{}) interface{} {
 	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
@@ -129,14 +159,14 @@ func (r *Redis) Pull(key string, def interface{}) interface{} {
 	return val
 }
 
-//Add Store an item in the cache if the key does not exist.
-func (r *Redis) Add(key string, value interface{}, seconds time.Duration) bool {
-	val, err := r.redis.SetNX(r.ctx, r.prefix+key, value, seconds).Result()
+//Put Store an item in the cache for a given number of seconds.
+func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error {
+	err := r.redis.Set(r.ctx, r.prefix+key, value, seconds).Err()
 	if err != nil {
-		return false
+		return err
 	}
 
-	return val
+	return nil
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
@@ -171,35 +201,4 @@ func (r *Redis) RememberForever(key string, callback func() interface{}) (interf
 	}
 
 	return val, nil
-}
-
-//Forever Store an item in the cache indefinitely.
-func (r *Redis) Forever(key string, value interface{}) bool {
-	if err := r.Put(key, value, 0); err != nil {
-		return false
-	}
-
-	return true
-}
-
-//Forget Remove an item from the cache.
-func (r *Redis) Forget(key string) bool {
-	_, err := r.redis.Del(r.ctx, r.prefix+key).Result()
-
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
-//Flush Remove all items from the cache.
-func (r *Redis) Flush() bool {
-	res, err := r.redis.FlushAll(r.ctx).Result()
-
-	if err != nil || res != "OK" {
-		return false
-	}
-
-	return true
 }

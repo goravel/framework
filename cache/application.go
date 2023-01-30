@@ -2,7 +2,9 @@ package cache
 
 import (
 	"context"
+
 	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/facades"
 )
@@ -14,18 +16,25 @@ func (app *Application) Init() cache.Store {
 	defaultStore := facades.Config.GetString("cache.default")
 	driver := facades.Config.GetString("cache.stores." + defaultStore + ".driver")
 	if driver == "redis" {
-		return NewRedis(context.Background())
+		redis, err := NewRedis(context.Background())
+		if err != nil {
+			color.Redf("[Cache] %v\n", err)
+			return nil
+		}
+
+		return redis
 	}
+
 	if driver == "custom" {
 		if custom, ok := facades.Config.Get("cache.stores." + defaultStore + ".via").(cache.Store); ok {
 			return custom
 		}
-		color.Redln("%s doesn't implement contracts/cache/store", defaultStore)
+		color.Redf("[Cache] %s doesn't implement contracts/cache/store\n", defaultStore)
 
 		return nil
 	}
 
-	color.Redln("Not supported cache store: %s", defaultStore)
+	color.Redf("[Cache] Not supported cache store: %s\n", defaultStore)
 
 	return nil
 }

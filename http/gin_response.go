@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,10 +11,11 @@ import (
 
 type GinResponse struct {
 	instance *gin.Context
+	origin   httpcontract.ResponseOrigin
 }
 
-func NewGinResponse(instance *gin.Context) httpcontract.Response {
-	return &GinResponse{instance: instance}
+func NewGinResponse(instance *gin.Context, origin httpcontract.ResponseOrigin) *GinResponse {
+	return &GinResponse{instance, origin}
 }
 
 func (r *GinResponse) String(code int, format string, values ...interface{}) {
@@ -42,6 +44,10 @@ func (r *GinResponse) Header(key, value string) httpcontract.Response {
 	return r
 }
 
+func (r *GinResponse) Origin() httpcontract.ResponseOrigin {
+	return r.origin
+}
+
 type GinSuccess struct {
 	instance *gin.Context
 }
@@ -56,4 +62,39 @@ func (r *GinSuccess) String(format string, values ...interface{}) {
 
 func (r *GinSuccess) Json(obj interface{}) {
 	r.instance.JSON(http.StatusOK, obj)
+}
+
+func GinResponseMiddleware() httpcontract.Middleware {
+	return func(ctx httpcontract.Context) {
+		blw := &BodyWriter{body: bytes.NewBufferString("")}
+		switch ctx.(type) {
+		case *GinContext:
+			blw.ResponseWriter = ctx.(*GinContext).Instance().Writer
+			ctx.(*GinContext).Instance().Writer = blw
+		}
+
+		ctx.WithValue("responseOrigin", blw)
+		ctx.Request().Next()
+	}
+}
+
+type BodyWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w *BodyWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+
+	return w.ResponseWriter.Write(b)
+}
+
+func (w *BodyWriter) WriteString(s string) (int, error) {
+	w.body.WriteString(s)
+
+	return w.ResponseWriter.WriteString(s)
+}
+
+func (w *BodyWriter) Body() *bytes.Buffer {
+	return w.body
 }

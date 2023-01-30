@@ -20,39 +20,11 @@ import (
 var singleLog = "storage/logs/goravel.log"
 var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", time.Now().Format("2006-01-02"))
 
-func initMockConfig() *configmocks.Config {
-	mockConfig := &configmocks.Config{}
-	facades.Config = mockConfig
-
-	mockConfig.On("GetString", "logging.default").Return("stack").Once()
-	mockConfig.On("GetString", "logging.channels.stack.driver").Return("stack").Once()
-	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
-	mockConfig.On("GetString", "logging.channels.daily.driver").Return("daily").Once()
-	mockConfig.On("GetString", "logging.channels.daily.path").Return(singleLog).Once()
-	mockConfig.On("GetInt", "logging.channels.daily.days").Return(7).Once()
-	mockConfig.On("GetString", "logging.channels.single.driver").Return("single").Once()
-	mockConfig.On("GetString", "logging.channels.single.path").Return(singleLog).Once()
-
-	return mockConfig
-}
-
-func mockDriverConfig(mockConfig *configmocks.Config) {
-	mockConfig.On("GetString", "logging.channels.daily.level").Return("debug").Once()
-	mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
-	mockConfig.On("GetString", "app.timezone").Return("UTC")
-	mockConfig.On("GetString", "app.env").Return("test")
-}
-
-func initFacadesLog() {
-	logrusInstance := logrusInstance()
-	facades.Log = NewLogrus(logrusInstance, NewWriter(logrusInstance.WithContext(context.Background())))
-}
-
 type LogrusTestSuite struct {
 	suite.Suite
 }
 
-func TestAuthTestSuite(t *testing.T) {
+func TestLogrusTestSuite(t *testing.T) {
 	suite.Run(t, new(LogrusTestSuite))
 }
 
@@ -323,4 +295,32 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 	file.Remove("storage")
+}
+
+func initMockConfig() *configmocks.Config {
+	mockConfig := &configmocks.Config{}
+	facades.Config = mockConfig
+
+	mockConfig.On("GetString", "logging.default").Return("stack").Once()
+	mockConfig.On("GetString", "logging.channels.stack.driver").Return("stack").Once()
+	mockConfig.On("Get", "logging.channels.stack.channels").Return([]string{"single", "daily"}).Once()
+	mockConfig.On("GetString", "logging.channels.daily.driver").Return("daily").Once()
+	mockConfig.On("GetString", "logging.channels.daily.path").Return(singleLog).Once()
+	mockConfig.On("GetInt", "logging.channels.daily.days").Return(7).Once()
+	mockConfig.On("GetString", "logging.channels.single.driver").Return("single").Once()
+	mockConfig.On("GetString", "logging.channels.single.path").Return(singleLog).Once()
+
+	return mockConfig
+}
+
+func mockDriverConfig(mockConfig *configmocks.Config) {
+	mockConfig.On("GetString", "logging.channels.daily.level").Return("debug").Once()
+	mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
+	mockConfig.On("GetString", "app.timezone").Return("UTC")
+	mockConfig.On("GetString", "app.env").Return("test")
+}
+
+func initFacadesLog() {
+	logrusInstance := logrusInstance()
+	facades.Log = NewLogrus(logrusInstance, NewWriter(logrusInstance.WithContext(context.Background())))
 }

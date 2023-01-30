@@ -1,4 +1,4 @@
-<p align="center"><img src="https://goravel.s3.us-east-2.amazonaws.com/goravel-word.png" width="300"></p>
+<p align="center"><img src="logo.png" width="300"></p>
 
 [English](./README.md) | 中文
 
@@ -28,10 +28,9 @@ Goravel 是一个功能完备、具有良好扩展能力的 Web 应用程序框�
 
 ## 路线图
 
-- [ ] 优化迁移
-- [ ] Orm 关联关系
 - [ ] 自定义 .env 路径
 - [ ] 数据库读写分离
+- [ ] 扩展 Redis 驱动
 
 ## 文档
 

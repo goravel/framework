@@ -1,13 +1,9 @@
-package database
+package gorm
 
 import (
 	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/database/support"
-	"github.com/goravel/framework/testing/mock"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
@@ -15,6 +11,10 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/testing/mock"
 )
 
 func TestGetGormConfig(t *testing.T) {
@@ -22,17 +22,17 @@ func TestGetGormConfig(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		connection      string
+		connection      orm.Driver
 		setup           func()
 		expectDialector gorm.Dialector
 		expectErr       error
 	}{
 		{
 			name:       "mysql",
-			connection: "mysql",
+			connection: orm.DriverMysql,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.mysql.driver").
-					Return(support.Mysql).Once()
+					Return(orm.DriverMysql.String()).Once()
 				mockConfig.On("GetString", "database.connections.mysql.host").
 					Return("127.0.0.1").Once()
 				mockConfig.On("GetString", "database.connections.mysql.port").
@@ -55,10 +55,10 @@ func TestGetGormConfig(t *testing.T) {
 		},
 		{
 			name:       "postgresql",
-			connection: support.Postgresql,
+			connection: orm.DriverPostgresql,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.postgresql.driver").
-					Return(support.Postgresql).Once()
+					Return(orm.DriverPostgresql.String()).Once()
 				mockConfig.On("GetString", "database.connections.postgresql.host").
 					Return("127.0.0.1").Once()
 				mockConfig.On("GetString", "database.connections.postgresql.port").
@@ -81,10 +81,10 @@ func TestGetGormConfig(t *testing.T) {
 		},
 		{
 			name:       "sqlite",
-			connection: support.Sqlite,
+			connection: orm.DriverSqlite,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.sqlite.driver").
-					Return(support.Sqlite).Once()
+					Return(orm.DriverSqlite.String()).Once()
 				mockConfig.On("GetString", "database.connections.sqlite.database").
 					Return("goravel").Once()
 			},
@@ -92,10 +92,10 @@ func TestGetGormConfig(t *testing.T) {
 		},
 		{
 			name:       "sqlserver",
-			connection: support.Sqlserver,
+			connection: orm.DriverSqlserver,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.sqlserver.driver").
-					Return(support.Sqlserver).Once()
+					Return(orm.DriverSqlserver.String()).Once()
 				mockConfig.On("GetString", "database.connections.sqlserver.host").
 					Return("127.0.0.1").Once()
 				mockConfig.On("GetString", "database.connections.sqlserver.port").
@@ -126,7 +126,7 @@ func TestGetGormConfig(t *testing.T) {
 	for _, test := range tests {
 		mockConfig = mock.Config()
 		test.setup()
-		dialector, err := getGormConfig(test.connection)
+		dialector, err := config(test.connection.String())
 		assert.Equal(t, test.expectDialector, dialector)
 		assert.Equal(t, test.expectErr, err)
 	}
