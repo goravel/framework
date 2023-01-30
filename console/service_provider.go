@@ -14,8 +14,7 @@ func (receiver *ServiceProvider) Boot() {
 }
 
 func (receiver *ServiceProvider) Register() {
-	app := Application{}
-	facades.Artisan = app.Init()
+	facades.Artisan = NewCli()
 }
 
 func (receiver *ServiceProvider) registerCommands() {

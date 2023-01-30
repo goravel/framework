@@ -9,6 +9,10 @@ type Application struct {
 	events map[event.Event][]event.Listener
 }
 
+func NewApplication() *Application {
+	return &Application{}
+}
+
 func (app *Application) Register(events map[event.Event][]event.Listener) {
 	app.events = events
 }

@@ -3,27 +3,27 @@ package config
 import (
 	"os"
 
-	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/testing"
-
 	"github.com/gookit/color"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
+
+	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/testing"
 )
 
 type Application struct {
 	vip *viper.Viper
 }
 
-func (app *Application) Init() config.Config {
-	if !file.Exists(".env") {
+func NewApplication(envPath string) *Application {
+	if !file.Exists(envPath) {
 		color.Redln("Please create .env and initialize it first\nRun command: \ncp .env.example .env && go run . artisan key:generate")
 		os.Exit(0)
 	}
 
+	app := &Application{}
 	app.vip = viper.New()
-	app.vip.SetConfigName(".env")
+	app.vip.SetConfigName(envPath)
 	app.vip.SetConfigType("env")
 	app.vip.AddConfigPath(".")
 	err := app.vip.ReadInConfig()

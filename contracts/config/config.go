@@ -3,15 +3,15 @@ package config
 //go:generate mockery --name=Config
 type Config interface {
 	//Env Get config from env.
-	Env(envName string, defaultValue ...interface{}) interface{}
+	Env(envName string, defaultValue ...any) any
 	//Add config to application.
-	Add(name string, configuration map[string]interface{})
+	Add(name string, configuration map[string]any)
 	//Get config from application.
-	Get(path string, defaultValue ...interface{}) interface{}
+	Get(path string, defaultValue ...any) any
 	//GetString Get string type config from application.
-	GetString(path string, defaultValue ...interface{}) string
+	GetString(path string, defaultValue ...any) string
 	//GetInt Get int type config from application.
-	GetInt(path string, defaultValue ...interface{}) int
+	GetInt(path string, defaultValue ...any) int
 	//GetBool Get bool type config from application.
-	GetBool(path string, defaultValue ...interface{}) bool
+	GetBool(path string, defaultValue ...any) bool
 }

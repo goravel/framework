@@ -10,7 +10,7 @@ type ServiceProvider struct {
 }
 
 func (receiver *ServiceProvider) Register() {
-	facades.Event = &Application{}
+	facades.Event = NewApplication()
 }
 
 func (receiver *ServiceProvider) Boot() {

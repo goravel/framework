@@ -35,12 +35,12 @@ func (r *Entry) GetLevel() log.Level {
 	return r.Level()
 }
 
-// DEPRECATED: use Level()
+// DEPRECATED: use Time()
 func (r *Entry) GetTime() time.Time {
 	return r.Time()
 }
 
-// DEPRECATED: use Level()
+// DEPRECATED: use Message()
 func (r *Entry) GetMessage() string {
 	return r.Message()
 }

@@ -12,7 +12,6 @@ func Pool() (*dockertest.Pool, error) {
 		return nil, errors.WithMessage(err, "Could not construct pool")
 	}
 
-	// uses pool to try to connect to Docker
 	if err := pool.Client.Ping(); err != nil {
 		return nil, errors.WithMessage(err, "Could not connect to Docker")
 	}
@@ -28,4 +27,21 @@ func Resource(pool *dockertest.Pool, opts *dockertest.RunOptions) (*dockertest.R
 			Name: "no",
 		}
 	})
+}
+
+func Redis() (*dockertest.Pool, *dockertest.Resource, error) {
+	pool, err := Pool()
+	if err != nil {
+		return nil, nil, err
+	}
+	resource, err := Resource(pool, &dockertest.RunOptions{
+		Repository: "redis",
+		Tag:        "latest",
+		Env:        []string{},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pool, resource, nil
 }

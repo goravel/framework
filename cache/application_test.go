@@ -245,15 +245,7 @@ func (s *ApplicationTestSuite) TestCustomDriver() {
 }
 
 func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Store, error) {
-	pool, err := testingdocker.Pool()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
-		Repository: "redis",
-		Tag:        "latest",
-		Env:        []string{},
-	})
+	pool, resource, err := testingdocker.Redis()
 	if err != nil {
 		return nil, nil, nil, err
 	}

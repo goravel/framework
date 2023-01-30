@@ -13,6 +13,10 @@ type Application struct {
 	cron *cron.Cron
 }
 
+func NewApplication() *Application {
+	return &Application{}
+}
+
 func (app *Application) Call(callback func()) schedule.Event {
 	return &support.Event{Callback: callback}
 }
