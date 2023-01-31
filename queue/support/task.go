@@ -63,7 +63,7 @@ func (receiver *Task) DispatchSync() error {
 }
 
 func (receiver *Task) handleSync(job queue.Job, args []queue.Arg) error {
-	var realArgs []interface{}
+	var realArgs []any
 	for _, arg := range args {
 		realArgs = append(realArgs, arg.Value)
 	}

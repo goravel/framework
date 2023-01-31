@@ -346,7 +346,7 @@ func (receiver *TestAsyncJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *TestAsyncJob) Handle(args ...interface{}) error {
+func (receiver *TestAsyncJob) Handle(args ...any) error {
 	testAsyncJob++
 
 	return nil
@@ -361,7 +361,7 @@ func (receiver *TestSyncJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *TestSyncJob) Handle(args ...interface{}) error {
+func (receiver *TestSyncJob) Handle(args ...any) error {
 	testSyncJob++
 
 	return nil
@@ -376,7 +376,7 @@ func (receiver *TestCustomAsyncJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *TestCustomAsyncJob) Handle(args ...interface{}) error {
+func (receiver *TestCustomAsyncJob) Handle(args ...any) error {
 	testCustomAsyncJob++
 
 	return nil
@@ -391,7 +391,7 @@ func (receiver *TestErrorAsyncJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *TestErrorAsyncJob) Handle(args ...interface{}) error {
+func (receiver *TestErrorAsyncJob) Handle(args ...any) error {
 	testErrorAsyncJob++
 
 	return nil
@@ -406,7 +406,7 @@ func (receiver *TestChainAsyncJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *TestChainAsyncJob) Handle(args ...interface{}) error {
+func (receiver *TestChainAsyncJob) Handle(args ...any) error {
 	testChainAsyncJob++
 
 	return nil
@@ -421,7 +421,7 @@ func (receiver *TestChainSyncJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *TestChainSyncJob) Handle(args ...interface{}) error {
+func (receiver *TestChainSyncJob) Handle(args ...any) error {
 	testChainSyncJob++
 
 	return nil

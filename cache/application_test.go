@@ -133,7 +133,7 @@ func (s *ApplicationTestSuite) TestGet() {
 		s.Nil(store.Put("name", "Goravel", 1*time.Second))
 		s.Equal("Goravel", store.Get("name", "").(string))
 		s.Equal("World", store.Get("name1", "World").(string))
-		s.Equal("World1", store.Get("name2", func() interface{} {
+		s.Equal("World1", store.Get("name2", func() any {
 			return "World1"
 		}).(string))
 		s.True(store.Forget("name"))
@@ -195,13 +195,13 @@ func (s *ApplicationTestSuite) TestPut() {
 func (s *ApplicationTestSuite) TestRemember() {
 	for _, store := range s.stores {
 		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		value, err := store.Remember("name", 1*time.Second, func() interface{} {
+		value, err := store.Remember("name", 1*time.Second, func() any {
 			return "World"
 		})
 		s.Nil(err)
 		s.Equal("Goravel", value)
 
-		value, err = store.Remember("name1", 1*time.Second, func() interface{} {
+		value, err = store.Remember("name1", 1*time.Second, func() any {
 			return "World1"
 		})
 		s.Nil(err)
@@ -215,13 +215,13 @@ func (s *ApplicationTestSuite) TestRemember() {
 func (s *ApplicationTestSuite) TestRememberForever() {
 	for _, store := range s.stores {
 		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		value, err := store.RememberForever("name", func() interface{} {
+		value, err := store.RememberForever("name", func() any {
 			return "World"
 		})
 		s.Nil(err)
 		s.Equal("Goravel", value)
 
-		value, err = store.RememberForever("name1", func() interface{} {
+		value, err = store.RememberForever("name1", func() any {
 			return "World1"
 		})
 		s.Nil(err)
@@ -249,8 +249,6 @@ func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Store, erro
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
-	_ = resource.Expire(60)
 
 	var store cache.Store
 	if err := pool.Retry(func() error {
@@ -281,7 +279,7 @@ func (r *Store) WithContext(ctx context.Context) cache.Store {
 }
 
 //Get Retrieve an item from the cache by key.
-func (r *Store) Get(key string, def interface{}) interface{} {
+func (r *Store) Get(key string, def any) any {
 	return def
 }
 
@@ -306,32 +304,32 @@ func (r *Store) Has(key string) bool {
 }
 
 //Put Store an item in the cache for a given number of seconds.
-func (r *Store) Put(key string, value interface{}, seconds time.Duration) error {
+func (r *Store) Put(key string, value any, seconds time.Duration) error {
 	return nil
 }
 
 //Pull Retrieve an item from the cache and delete it.
-func (r *Store) Pull(key string, def interface{}) interface{} {
+func (r *Store) Pull(key string, def any) any {
 	return def
 }
 
 //Add Store an item in the cache if the key does not exist.
-func (r *Store) Add(key string, value interface{}, seconds time.Duration) bool {
+func (r *Store) Add(key string, value any, seconds time.Duration) bool {
 	return true
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
-func (r *Store) Remember(key string, ttl time.Duration, callback func() interface{}) (interface{}, error) {
+func (r *Store) Remember(key string, ttl time.Duration, callback func() any) (any, error) {
 	return "", nil
 }
 
 //RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
-func (r *Store) RememberForever(key string, callback func() interface{}) (interface{}, error) {
+func (r *Store) RememberForever(key string, callback func() any) (any, error) {
 	return "", nil
 }
 
 //Forever Store an item in the cache indefinitely.
-func (r *Store) Forever(key string, value interface{}) bool {
+func (r *Store) Forever(key string, value any) bool {
 	return true
 }
 

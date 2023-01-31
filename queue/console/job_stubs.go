@@ -16,7 +16,7 @@ func (receiver *DummyJob) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *DummyJob) Handle(args ...interface{}) error {
+func (receiver *DummyJob) Handle(args ...any) error {
 	return nil
 }
 `

@@ -18,11 +18,11 @@ func NewGinResponse(instance *gin.Context, origin httpcontract.ResponseOrigin) *
 	return &GinResponse{instance, origin}
 }
 
-func (r *GinResponse) String(code int, format string, values ...interface{}) {
+func (r *GinResponse) String(code int, format string, values ...any) {
 	r.instance.String(code, format, values...)
 }
 
-func (r *GinResponse) Json(code int, obj interface{}) {
+func (r *GinResponse) Json(code int, obj any) {
 	r.instance.JSON(code, obj)
 }
 
@@ -56,11 +56,11 @@ func NewGinSuccess(instance *gin.Context) httpcontract.ResponseSuccess {
 	return &GinSuccess{instance}
 }
 
-func (r *GinSuccess) String(format string, values ...interface{}) {
+func (r *GinSuccess) String(format string, values ...any) {
 	r.instance.String(http.StatusOK, format, values...)
 }
 
-func (r *GinSuccess) Json(obj interface{}) {
+func (r *GinSuccess) Json(obj any) {
 	r.instance.JSON(http.StatusOK, obj)
 }
 

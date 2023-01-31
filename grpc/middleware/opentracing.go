@@ -36,7 +36,7 @@ func (c MDReaderWriter) Set(key, val string) {
 }
 
 func OpentracingClient(tracer opentracing.Tracer, parentCtx context.Context) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn,
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn,
 		invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		span, _ := opentracing.StartSpanFromContext(parentCtx,
 			"call gRPC",
@@ -67,8 +67,8 @@ func OpentracingClient(tracer opentracing.Tracer, parentCtx context.Context) grp
 }
 
 func OpentracingServer(tracer opentracing.Tracer) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (
-		resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (
+		resp any, err error) {
 		var parentCtx context.Context
 
 		md, ok := metadata.FromIncomingContext(ctx)

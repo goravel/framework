@@ -19,7 +19,7 @@ func (receiver *Test) Signature() string {
 }
 
 //Handle Execute the job.
-func (receiver *Test) Handle(args ...interface{}) error {
+func (receiver *Test) Handle(args ...any) error {
 	file.Create("test.txt", args[0].(string))
 
 	return nil

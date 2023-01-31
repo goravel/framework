@@ -18,7 +18,7 @@ func (app *Application) Init() cache.Store {
 	if driver == "redis" {
 		redis, err := NewRedis(context.Background())
 		if err != nil {
-			color.Redf("[Cache] %v\n", err)
+			color.Redf("[Cache] Init redis driver error: %v\n", err)
 			return nil
 		}
 

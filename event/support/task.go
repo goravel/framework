@@ -16,7 +16,7 @@ type Task struct {
 	Event       event.Event
 	Args        []event.Arg
 	handledArgs []event.Arg
-	mapArgs     []interface{}
+	mapArgs     []any
 }
 
 func (receiver *Task) Dispatch() error {
@@ -32,7 +32,7 @@ func (receiver *Task) Dispatch() error {
 
 	receiver.handledArgs = handledArgs
 
-	var mapArgs []interface{}
+	var mapArgs []any
 	for _, arg := range receiver.handledArgs {
 		mapArgs = append(mapArgs, arg.Value)
 	}

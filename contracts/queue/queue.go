@@ -28,5 +28,5 @@ type Args struct {
 
 type Arg struct {
 	Type  string
-	Value interface{}
+	Value any
 }

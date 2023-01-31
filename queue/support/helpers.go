@@ -93,8 +93,8 @@ func getRedisConfig(queueConnection string) (config string, database int, queue 
 	return
 }
 
-func jobs2Tasks(jobs []queue.Job) (map[string]interface{}, error) {
-	tasks := make(map[string]interface{})
+func jobs2Tasks(jobs []queue.Job) (map[string]any, error) {
+	tasks := make(map[string]any)
 
 	for _, job := range jobs {
 		if job.Signature() == "" {
@@ -111,8 +111,8 @@ func jobs2Tasks(jobs []queue.Job) (map[string]interface{}, error) {
 	return tasks, nil
 }
 
-func eventsToTasks(events map[event.Event][]event.Listener) (map[string]interface{}, error) {
-	tasks := make(map[string]interface{})
+func eventsToTasks(events map[event.Event][]event.Listener) (map[string]any, error) {
+	tasks := make(map[string]any)
 
 	for _, listeners := range events {
 		for _, listener := range listeners {

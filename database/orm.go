@@ -15,14 +15,27 @@ import (
 )
 
 type Orm struct {
-	ctx             context.Context
-	connection      string
-	defaultInstance ormcontract.DB
-	instances       map[string]ormcontract.DB
+	ctx       context.Context
+	instance  ormcontract.DB
+	instances map[string]ormcontract.DB
 }
 
 func NewOrm(ctx context.Context) *Orm {
-	return &Orm{ctx: ctx}
+	defaultConnection := facades.Config.GetString("database.default")
+	gormDB, err := databasegorm.NewDB(ctx, defaultConnection)
+	if err != nil || gormDB == nil {
+		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", defaultConnection, err))
+
+		return nil
+	}
+
+	return &Orm{
+		ctx:      ctx,
+		instance: gormDB,
+		instances: map[string]ormcontract.DB{
+			defaultConnection: gormDB,
+		},
+	}
 }
 
 // DEPRECATED: use gorm.New()
@@ -31,41 +44,31 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 }
 
 func (r *Orm) Connection(name string) ormcontract.Orm {
-	defaultConnection := facades.Config.GetString("database.default")
 	if name == "" {
-		name = defaultConnection
+		name = facades.Config.GetString("database.default")
 	}
-
-	r.connection = name
-	if r.instances == nil {
-		r.instances = make(map[string]ormcontract.DB)
-	}
-
 	if instance, exist := r.instances[name]; exist {
-		if name == defaultConnection && r.defaultInstance == nil {
-			r.defaultInstance = instance
+		return &Orm{
+			ctx:       r.ctx,
+			instance:  instance,
+			instances: r.instances,
 		}
-
-		return r
 	}
 
 	gormDB, err := databasegorm.NewDB(r.ctx, name)
-	if err != nil {
-		color.Redln(fmt.Sprintf("[Orm] Init connection error, %v", err))
+	if err != nil || gormDB == nil {
+		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
 
-		return nil
-	}
-	if gormDB == nil {
 		return nil
 	}
 
 	r.instances[name] = gormDB
 
-	if name == defaultConnection {
-		r.defaultInstance = gormDB
+	return &Orm{
+		ctx:       r.ctx,
+		instance:  gormDB,
+		instances: r.instances,
 	}
-
-	return r
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
@@ -75,22 +78,7 @@ func (r *Orm) DB() (*sql.DB, error) {
 }
 
 func (r *Orm) Query() ormcontract.DB {
-	if r.connection == "" {
-		if r.defaultInstance == nil {
-			r.Connection("")
-		}
-
-		return r.defaultInstance
-	}
-
-	instance, exist := r.instances[r.connection]
-	if !exist {
-		return nil
-	}
-
-	r.connection = ""
-
-	return instance
+	return r.instance
 }
 
 func (r *Orm) Transaction(txFunc func(tx ormcontract.Transaction) error) error {

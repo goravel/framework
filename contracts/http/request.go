@@ -29,7 +29,7 @@ type Request interface {
 	File(name string) (filesystem.File, error)
 
 	AbortWithStatus(code int)
-	AbortWithStatusJson(code int, jsonObj interface{})
+	AbortWithStatusJson(code int, jsonObj any)
 
 	Next()
 	Origin() *http.Request

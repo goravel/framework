@@ -61,21 +61,21 @@ func (l *Logger) LogMode(level logger.LogLevel) logger.Interface {
 }
 
 // Info print info
-func (l Logger) Info(ctx context.Context, msg string, data ...interface{}) {
+func (l Logger) Info(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Info {
-		l.Printf(l.infoStr+msg, append([]interface{}{FileWithLineNum()}, data...)...)
+		l.Printf(l.infoStr+msg, append([]any{FileWithLineNum()}, data...)...)
 	}
 }
 
 // Warn print warn messages
-func (l Logger) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (l Logger) Warn(ctx context.Context, msg string, data ...any) {
 	if l.LogLevel >= logger.Warn {
-		l.Printf(l.warnStr+msg, append([]interface{}{FileWithLineNum()}, data...)...)
+		l.Printf(l.warnStr+msg, append([]any{FileWithLineNum()}, data...)...)
 	}
 }
 
 // Error print error messages
-func (l Logger) Error(ctx context.Context, msg string, data ...interface{}) {
+func (l Logger) Error(ctx context.Context, msg string, data ...any) {
 	// Let upper layer function deals with connection refused error
 	for _, item := range data {
 		if tempItem, ok := item.(*net.OpError); ok {
@@ -86,7 +86,7 @@ func (l Logger) Error(ctx context.Context, msg string, data ...interface{}) {
 	}
 
 	if l.LogLevel >= logger.Error {
-		l.Printf(l.errStr+msg, append([]interface{}{FileWithLineNum()}, data...)...)
+		l.Printf(l.errStr+msg, append([]any{FileWithLineNum()}, data...)...)
 	}
 }
 

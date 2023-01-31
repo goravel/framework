@@ -6,8 +6,7 @@ type ServiceProvider struct {
 }
 
 func (log *ServiceProvider) Register() {
-	app := Application{}
-	facades.Log = app.Init()
+	facades.Log = NewLogrusApplication()
 }
 
 func (log *ServiceProvider) Boot() {

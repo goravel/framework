@@ -54,7 +54,7 @@ func (r *Redis) WithContext(ctx context.Context) cache.Store {
 }
 
 //Add Store an item in the cache if the key does not exist.
-func (r *Redis) Add(key string, value interface{}, seconds time.Duration) bool {
+func (r *Redis) Add(key string, value any, seconds time.Duration) bool {
 	val, err := r.redis.SetNX(r.ctx, r.prefix+key, value, seconds).Result()
 	if err != nil {
 		return false
@@ -64,7 +64,7 @@ func (r *Redis) Add(key string, value interface{}, seconds time.Duration) bool {
 }
 
 //Forever Store an item in the cache indefinitely.
-func (r *Redis) Forever(key string, value interface{}) bool {
+func (r *Redis) Forever(key string, value any) bool {
 	if err := r.Put(key, value, 0); err != nil {
 		return false
 	}
@@ -95,11 +95,11 @@ func (r *Redis) Flush() bool {
 }
 
 //Get Retrieve an item from the cache by key.
-func (r *Redis) Get(key string, def interface{}) interface{} {
+func (r *Redis) Get(key string, def any) any {
 	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
 	if err != nil {
 		switch s := def.(type) {
-		case func() interface{}:
+		case func() any:
 			return s()
 		default:
 			return def
@@ -148,7 +148,7 @@ func (r *Redis) Has(key string) bool {
 }
 
 //Pull Retrieve an item from the cache and delete it.
-func (r *Redis) Pull(key string, def interface{}) interface{} {
+func (r *Redis) Pull(key string, def any) any {
 	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
 	r.redis.Del(r.ctx, r.prefix+key)
 
@@ -160,7 +160,7 @@ func (r *Redis) Pull(key string, def interface{}) interface{} {
 }
 
 //Put Store an item in the cache for a given number of seconds.
-func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error {
+func (r *Redis) Put(key string, value any, seconds time.Duration) error {
 	err := r.redis.Set(r.ctx, r.prefix+key, value, seconds).Err()
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func (r *Redis) Put(key string, value interface{}, seconds time.Duration) error 
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
-func (r *Redis) Remember(key string, ttl time.Duration, callback func() interface{}) (interface{}, error) {
+func (r *Redis) Remember(key string, ttl time.Duration, callback func() any) (any, error) {
 	val := r.Get(key, nil)
 
 	if val != nil {
@@ -187,7 +187,7 @@ func (r *Redis) Remember(key string, ttl time.Duration, callback func() interfac
 }
 
 //RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
-func (r *Redis) RememberForever(key string, callback func() interface{}) (interface{}, error) {
+func (r *Redis) RememberForever(key string, callback func() any) (any, error) {
 	val := r.Get(key, nil)
 
 	if val != nil {

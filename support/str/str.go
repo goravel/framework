@@ -52,7 +52,7 @@ func NewBuffer() *Buffer {
 	return &Buffer{Buffer: new(bytes.Buffer)}
 }
 
-func (b *Buffer) Append(i interface{}) *Buffer {
+func (b *Buffer) Append(i any) *Buffer {
 	switch val := i.(type) {
 	case int:
 		b.append(strconv.Itoa(val))

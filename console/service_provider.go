@@ -9,12 +9,12 @@ import (
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Boot() {
-	receiver.registerCommands()
+func (receiver *ServiceProvider) Register() {
+	facades.Artisan = NewApplication()
 }
 
-func (receiver *ServiceProvider) Register() {
-	facades.Artisan = NewCli()
+func (receiver *ServiceProvider) Boot() {
+	receiver.registerCommands()
 }
 
 func (receiver *ServiceProvider) registerCommands() {
