@@ -23,9 +23,12 @@ type Orm struct {
 func NewOrm(ctx context.Context) *Orm {
 	defaultConnection := facades.Config.GetString("database.default")
 	gormDB, err := databasegorm.NewDB(ctx, defaultConnection)
-	if err != nil || gormDB == nil {
+	if err != nil {
 		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", defaultConnection, err))
 
+		return nil
+	}
+	if gormDB == nil {
 		return nil
 	}
 

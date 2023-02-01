@@ -48,7 +48,45 @@ func (s *ApplicationTestSuite) SetupTest() {
 
 }
 
-func (s *ApplicationTestSuite) TestSendMail() {
+func (s *ApplicationTestSuite) TestSendMailBy25Port() {
+	facades.Config.Add("mail", map[string]any{
+		"host": facades.Config.Env("MAIL_HOST", ""),
+		"port": 25,
+		"from": map[string]any{
+			"address": facades.Config.Env("MAIL_FROM_ADDRESS", "hello@example.com"),
+			"name":    facades.Config.Env("MAIL_FROM_NAME", "Example"),
+		},
+		"username": facades.Config.Env("MAIL_USERNAME"),
+		"password": facades.Config.Env("MAIL_PASSWORD"),
+	})
+	s.Nil(facades.Mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
+		Cc([]string{facades.Config.Env("MAIL_CC").(string)}).
+		Bcc([]string{facades.Config.Env("MAIL_BCC").(string)}).
+		Attach([]string{"../logo.png"}).
+		Content(mail.Content{Subject: "Goravel Test", Html: "<h1>Hello Goravel</h1>"}).
+		Send())
+}
+
+func (s *ApplicationTestSuite) TestSendMailBy465Port() {
+	facades.Config.Add("mail", map[string]any{
+		"host": facades.Config.Env("MAIL_HOST", ""),
+		"port": 465,
+		"from": map[string]any{
+			"address": facades.Config.Env("MAIL_FROM_ADDRESS", "hello@example.com"),
+			"name":    facades.Config.Env("MAIL_FROM_NAME", "Example"),
+		},
+		"username": facades.Config.Env("MAIL_USERNAME"),
+		"password": facades.Config.Env("MAIL_PASSWORD"),
+	})
+	s.Nil(facades.Mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
+		Cc([]string{facades.Config.Env("MAIL_CC").(string)}).
+		Bcc([]string{facades.Config.Env("MAIL_BCC").(string)}).
+		Attach([]string{"../logo.png"}).
+		Content(mail.Content{Subject: "Goravel Test", Html: "<h1>Hello Goravel</h1>"}).
+		Send())
+}
+
+func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 	s.Nil(facades.Mail.To([]string{facades.Config.Env("MAIL_TO").(string)}).
 		Cc([]string{facades.Config.Env("MAIL_CC").(string)}).
 		Bcc([]string{facades.Config.Env("MAIL_BCC").(string)}).
