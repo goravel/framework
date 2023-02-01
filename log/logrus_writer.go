@@ -3,11 +3,11 @@ package log
 import (
 	"errors"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log/logger"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Writer struct {

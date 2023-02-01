@@ -123,10 +123,20 @@ func SendMail(subject, html string, fromAddress, fromName string, to, cc, bcc, a
 		}
 	}
 
-	return e.SendWithStartTLS(fmt.Sprintf("%s:%s", facades.Config.GetString("mail.host"),
-		facades.Config.GetString("mail.port")),
-		LoginAuth(facades.Config.GetString("mail.username"),
-			facades.Config.GetString("mail.password")), &tls.Config{ServerName: facades.Config.GetString("mail.host")})
+	port := facades.Config.GetInt("mail.port")
+	switch port {
+	case 465:
+		return e.SendWithTLS(fmt.Sprintf("%s:%s", facades.Config.GetString("mail.host"), facades.Config.GetString("mail.port")),
+			LoginAuth(facades.Config.GetString("mail.username"), facades.Config.GetString("mail.password")),
+			&tls.Config{ServerName: facades.Config.GetString("mail.host")})
+	case 587:
+		return e.SendWithStartTLS(fmt.Sprintf("%s:%s", facades.Config.GetString("mail.host"), facades.Config.GetString("mail.port")),
+			LoginAuth(facades.Config.GetString("mail.username"), facades.Config.GetString("mail.password")),
+			&tls.Config{ServerName: facades.Config.GetString("mail.host")})
+	default:
+		return e.Send(fmt.Sprintf("%s:%d", facades.Config.GetString("mail.host"), port),
+			LoginAuth(facades.Config.GetString("mail.username"), facades.Config.GetString("mail.password")))
+	}
 }
 
 type loginAuth struct {
