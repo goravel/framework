@@ -5,11 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	httpvalidate "github.com/goravel/framework/contracts/validation"
-
 	"github.com/spf13/cast"
-
 	"github.com/stretchr/testify/assert"
+
+	httpvalidate "github.com/goravel/framework/contracts/validation"
 )
 
 func TestMake(t *testing.T) {

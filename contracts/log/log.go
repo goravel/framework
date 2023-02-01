@@ -29,18 +29,18 @@ type Log interface {
 
 //go:generate mockery --name=Writer
 type Writer interface {
-	Debug(args ...interface{})
-	Debugf(format string, args ...interface{})
-	Info(args ...interface{})
-	Infof(format string, args ...interface{})
-	Warning(args ...interface{})
-	Warningf(format string, args ...interface{})
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Panic(args ...interface{})
-	Panicf(format string, args ...interface{})
+	Debug(args ...any)
+	Debugf(format string, args ...any)
+	Info(args ...any)
+	Infof(format string, args ...any)
+	Warning(args ...any)
+	Warningf(format string, args ...any)
+	Error(args ...any)
+	Errorf(format string, args ...any)
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
+	Panic(args ...any)
+	Panicf(format string, args ...any)
 }
 
 //go:generate mockery --name=Logger

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"errors"
 	"log"
 	"testing"
@@ -11,7 +12,6 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/testing/mock"
 )
 
 var connections = []ormcontract.Driver{
@@ -84,20 +84,13 @@ func (s *OrmSuite) SetupTest() {
 }
 
 func (s *OrmSuite) TestConnection() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(4)
 	testOrm := newTestOrm()
 	for _, connection := range connections {
 		s.NotNil(testOrm.Connection(connection.String()))
 	}
-
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *OrmSuite) TestDB() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(5)
-
 	testOrm := newTestOrm()
 	db, err := testOrm.DB()
 	s.NotNil(db)
@@ -108,27 +101,27 @@ func (s *OrmSuite) TestDB() {
 		s.NotNil(db)
 		s.Nil(err)
 	}
-
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *OrmSuite) TestQuery() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(5)
 	testOrm := newTestOrm()
 	s.NotNil(testOrm.Query())
+
+	s.NotPanics(func() {
+		for i := 0; i < 5; i++ {
+			go func() {
+				var user User
+				_ = testOrm.Query().Find(&user, 1)
+			}()
+		}
+	})
 
 	for _, connection := range connections {
 		s.NotNil(testOrm.Connection(connection.String()).Query())
 	}
-
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *OrmSuite) TestTransactionSuccess() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(12)
-
 	testOrm := newTestOrm()
 	for _, connection := range connections {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
@@ -143,16 +136,10 @@ func (s *OrmSuite) TestTransactionSuccess() {
 		var user2, user3 User
 		s.Nil(testOrm.Connection(connection.String()).Query().Find(&user2, user.ID))
 		s.Nil(testOrm.Connection(connection.String()).Query().Find(&user3, user1.ID))
-
 	}
-
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *OrmSuite) TestTransactionError() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "database.default").Return(ormcontract.DriverMysql.String()).Times(8)
-
 	testOrm := newTestOrm()
 	for _, connection := range connections {
 		s.NotNil(testOrm.Connection(connection.String()).Transaction(func(tx ormcontract.Transaction) error {
@@ -169,12 +156,12 @@ func (s *OrmSuite) TestTransactionError() {
 		s.Nil(testOrm.Connection(connection.String()).Query().Find(&users))
 		s.Equal(0, len(users))
 	}
-
-	mockConfig.AssertExpectations(s.T())
 }
 
 func newTestOrm() *Orm {
 	return &Orm{
+		ctx:      context.Background(),
+		instance: testMysqlDB,
 		instances: map[string]ormcontract.DB{
 			ormcontract.DriverMysql.String():      testMysqlDB,
 			ormcontract.DriverPostgresql.String(): testPostgresqlDB,

@@ -42,6 +42,7 @@ func Redis() (*dockertest.Pool, *dockertest.Resource, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	_ = resource.Expire(60)
 
 	return pool, resource, nil
 }

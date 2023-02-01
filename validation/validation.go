@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"time"
 
-	validatecontract "github.com/goravel/framework/contracts/validation"
-
 	"github.com/gookit/validate"
+
+	validatecontract "github.com/goravel/framework/contracts/validation"
 )
 
 type Validation struct {

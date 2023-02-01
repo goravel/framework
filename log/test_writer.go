@@ -14,62 +14,62 @@ func NewTestWriter() log.Writer {
 	return &TestWriter{}
 }
 
-func (r *TestWriter) Debug(args ...interface{}) {
+func (r *TestWriter) Debug(args ...any) {
 	fmt.Print(prefix("debug"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Debugf(format string, args ...interface{}) {
+func (r *TestWriter) Debugf(format string, args ...any) {
 	fmt.Print(prefix("debug"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Info(args ...interface{}) {
+func (r *TestWriter) Info(args ...any) {
 	fmt.Print(prefix("info"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Infof(format string, args ...interface{}) {
+func (r *TestWriter) Infof(format string, args ...any) {
 	fmt.Print(prefix("info"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Warning(args ...interface{}) {
+func (r *TestWriter) Warning(args ...any) {
 	fmt.Print(prefix("warning"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Warningf(format string, args ...interface{}) {
+func (r *TestWriter) Warningf(format string, args ...any) {
 	fmt.Print(prefix("warning"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Error(args ...interface{}) {
+func (r *TestWriter) Error(args ...any) {
 	fmt.Print(prefix("error"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Errorf(format string, args ...interface{}) {
+func (r *TestWriter) Errorf(format string, args ...any) {
 	fmt.Print(prefix("error"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Fatal(args ...interface{}) {
+func (r *TestWriter) Fatal(args ...any) {
 	fmt.Print(prefix("fatal"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Fatalf(format string, args ...interface{}) {
+func (r *TestWriter) Fatalf(format string, args ...any) {
 	fmt.Print(prefix("fatal"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Panic(args ...interface{}) {
+func (r *TestWriter) Panic(args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Panicf(format string, args ...interface{}) {
+func (r *TestWriter) Panicf(format string, args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Printf(format+"\n", args...)
 }

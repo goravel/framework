@@ -39,7 +39,7 @@ func NewApplication(envPath string) *Application {
 }
 
 //Env Get config from env.
-func (app *Application) Env(envName string, defaultValue ...interface{}) interface{} {
+func (app *Application) Env(envName string, defaultValue ...any) any {
 	value := app.Get(envName, defaultValue...)
 	if cast.ToString(value) == "" {
 		if len(defaultValue) > 0 {
@@ -53,12 +53,12 @@ func (app *Application) Env(envName string, defaultValue ...interface{}) interfa
 }
 
 //Add config to application.
-func (app *Application) Add(name string, configuration map[string]interface{}) {
+func (app *Application) Add(name string, configuration map[string]any) {
 	app.vip.Set(name, configuration)
 }
 
 //Get config from application.
-func (app *Application) Get(path string, defaultValue ...interface{}) interface{} {
+func (app *Application) Get(path string, defaultValue ...any) any {
 	if !app.vip.IsSet(path) {
 		if len(defaultValue) > 0 {
 			return defaultValue[0]
@@ -70,7 +70,7 @@ func (app *Application) Get(path string, defaultValue ...interface{}) interface{
 }
 
 //GetString Get string type config from application.
-func (app *Application) GetString(path string, defaultValue ...interface{}) string {
+func (app *Application) GetString(path string, defaultValue ...any) string {
 	value := cast.ToString(app.Get(path, defaultValue...))
 	if value == "" {
 		if len(defaultValue) > 0 {
@@ -84,7 +84,7 @@ func (app *Application) GetString(path string, defaultValue ...interface{}) stri
 }
 
 //GetInt Get int type config from application.
-func (app *Application) GetInt(path string, defaultValue ...interface{}) int {
+func (app *Application) GetInt(path string, defaultValue ...any) int {
 	value := app.Get(path, defaultValue...)
 	if cast.ToString(value) == "" {
 		if len(defaultValue) > 0 {
@@ -98,7 +98,7 @@ func (app *Application) GetInt(path string, defaultValue ...interface{}) int {
 }
 
 //GetBool Get bool type config from application.
-func (app *Application) GetBool(path string, defaultValue ...interface{}) bool {
+func (app *Application) GetBool(path string, defaultValue ...any) bool {
 	value := app.Get(path, defaultValue...)
 	if cast.ToString(value) == "" {
 		if len(defaultValue) > 0 {

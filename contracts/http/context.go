@@ -11,7 +11,7 @@ type HandlerFunc func(Context)
 type Context interface {
 	context.Context
 	Context() context.Context
-	WithValue(key string, value interface{})
+	WithValue(key string, value any)
 	Request() Request
 	Response() Response
 }

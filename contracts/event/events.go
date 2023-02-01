@@ -13,8 +13,8 @@ type Event interface {
 
 type Listener interface {
 	Signature() string
-	Queue(args ...interface{}) Queue
-	Handle(args ...interface{}) error
+	Queue(args ...any) Queue
+	Handle(args ...any) error
 }
 
 //go:generate mockery --name=Task
@@ -24,7 +24,7 @@ type Task interface {
 
 type Arg struct {
 	Type  string
-	Value interface{}
+	Value any
 }
 
 type Queue struct {

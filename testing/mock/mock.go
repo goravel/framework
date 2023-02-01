@@ -53,7 +53,7 @@ func Event() (*eventmocks.Instance, *eventmocks.Task) {
 }
 
 func Log() {
-	facades.Log = log.NewLogrus(nil, log.NewTestWriter())
+	facades.Log = log.NewApplication(log.NewTestWriter())
 }
 
 func Mail() *mailmocks.Mail {

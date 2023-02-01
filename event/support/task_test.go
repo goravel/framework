@@ -49,7 +49,7 @@ func (receiver *TestListener) Signature() string {
 	return "test_listener"
 }
 
-func (receiver *TestListener) Queue(args ...interface{}) event.Queue {
+func (receiver *TestListener) Queue(args ...any) event.Queue {
 	return event.Queue{
 		Enable:     false,
 		Connection: "",
@@ -57,7 +57,7 @@ func (receiver *TestListener) Queue(args ...interface{}) event.Queue {
 	}
 }
 
-func (receiver *TestListener) Handle(args ...interface{}) error {
+func (receiver *TestListener) Handle(args ...any) error {
 	return nil
 }
 
@@ -68,7 +68,7 @@ func (receiver *TestListenerHandleError) Signature() string {
 	return "test_listener"
 }
 
-func (receiver *TestListenerHandleError) Queue(args ...interface{}) event.Queue {
+func (receiver *TestListenerHandleError) Queue(args ...any) event.Queue {
 	return event.Queue{
 		Enable:     false,
 		Connection: "",
@@ -76,7 +76,7 @@ func (receiver *TestListenerHandleError) Queue(args ...interface{}) event.Queue 
 	}
 }
 
-func (receiver *TestListenerHandleError) Handle(args ...interface{}) error {
+func (receiver *TestListenerHandleError) Handle(args ...any) error {
 	return errors.New("some errors")
 }
 

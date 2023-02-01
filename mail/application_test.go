@@ -102,35 +102,35 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 
 func initConfig(redisPort string) {
 	application := config.NewApplication("../.env")
-	application.Add("app", map[string]interface{}{
+	application.Add("app", map[string]any{
 		"name": "goravel",
 	})
 	application.Add("mail", map[string]any{
 		"host": application.Env("MAIL_HOST", ""),
 		"port": application.Env("MAIL_PORT", 587),
-		"from": map[string]interface{}{
+		"from": map[string]any{
 			"address": application.Env("MAIL_FROM_ADDRESS", "hello@example.com"),
 			"name":    application.Env("MAIL_FROM_NAME", "Example"),
 		},
 		"username": application.Env("MAIL_USERNAME"),
 		"password": application.Env("MAIL_PASSWORD"),
 	})
-	application.Add("queue", map[string]interface{}{
+	application.Add("queue", map[string]any{
 		"default": "redis",
-		"connections": map[string]interface{}{
-			"sync": map[string]interface{}{
+		"connections": map[string]any{
+			"sync": map[string]any{
 				"driver": "sync",
 			},
-			"redis": map[string]interface{}{
+			"redis": map[string]any{
 				"driver":     "redis",
 				"connection": "default",
 				"queue":      "default",
 			},
 		},
 	})
-	application.Add("database", map[string]interface{}{
-		"redis": map[string]interface{}{
-			"default": map[string]interface{}{
+	application.Add("database", map[string]any{
+		"redis": map[string]any{
+			"default": map[string]any{
 				"host":     "localhost",
 				"password": "",
 				"port":     redisPort,

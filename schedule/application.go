@@ -65,10 +65,10 @@ func (app *Application) getJob(event schedule.Event) cron.Job {
 
 type Logger struct{}
 
-func (log *Logger) Info(msg string, keysAndValues ...interface{}) {
+func (log *Logger) Info(msg string, keysAndValues ...any) {
 	color.Green.Printf("%s %v\n", msg, keysAndValues)
 }
 
-func (log *Logger) Error(err error, msg string, keysAndValues ...interface{}) {
+func (log *Logger) Error(err error, msg string, keysAndValues ...any) {
 	facades.Log.Error(msg, keysAndValues)
 }

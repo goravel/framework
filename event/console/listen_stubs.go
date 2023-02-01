@@ -17,7 +17,7 @@ func (receiver *DummyListener) Signature() string {
 	return "DummyName"
 }
 
-func (receiver *DummyListener) Queue(args ...interface{}) events.Queue {
+func (receiver *DummyListener) Queue(args ...any) events.Queue {
 	return events.Queue{
 		Enable:     false,
 		Connection: "",
@@ -25,7 +25,7 @@ func (receiver *DummyListener) Queue(args ...interface{}) events.Queue {
 	}
 }
 
-func (receiver *DummyListener) Handle(args ...interface{}) error {
+func (receiver *DummyListener) Handle(args ...any) error {
 	return nil
 }
 `

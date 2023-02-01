@@ -113,25 +113,25 @@ func (s *EventTestSuite) TestCancelEvent() {
 
 func initConfig(redisPort string) {
 	application := config.NewApplication("../.env")
-	application.Add("app", map[string]interface{}{
+	application.Add("app", map[string]any{
 		"name": "goravel",
 	})
-	application.Add("queue", map[string]interface{}{
+	application.Add("queue", map[string]any{
 		"default": "redis",
-		"connections": map[string]interface{}{
-			"sync": map[string]interface{}{
+		"connections": map[string]any{
+			"sync": map[string]any{
 				"driver": "sync",
 			},
-			"redis": map[string]interface{}{
+			"redis": map[string]any{
 				"driver":     "redis",
 				"connection": "default",
 				"queue":      "default",
 			},
 		},
 	})
-	application.Add("database", map[string]interface{}{
-		"redis": map[string]interface{}{
-			"default": map[string]interface{}{
+	application.Add("database", map[string]any{
+		"redis": map[string]any{
+			"default": map[string]any{
 				"host":     "localhost",
 				"password": "",
 				"port":     redisPort,
@@ -164,7 +164,7 @@ func (receiver *TestAsyncListener) Signature() string {
 	return "test_async_listener"
 }
 
-func (receiver *TestAsyncListener) Queue(args ...interface{}) event.Queue {
+func (receiver *TestAsyncListener) Queue(args ...any) event.Queue {
 	return event.Queue{
 		Enable:     true,
 		Connection: "",
@@ -172,7 +172,7 @@ func (receiver *TestAsyncListener) Queue(args ...interface{}) event.Queue {
 	}
 }
 
-func (receiver *TestAsyncListener) Handle(args ...interface{}) error {
+func (receiver *TestAsyncListener) Handle(args ...any) error {
 	testAsyncListener++
 
 	return nil
@@ -185,7 +185,7 @@ func (receiver *TestSyncListener) Signature() string {
 	return "test_sync_listener"
 }
 
-func (receiver *TestSyncListener) Queue(args ...interface{}) event.Queue {
+func (receiver *TestSyncListener) Queue(args ...any) event.Queue {
 	return event.Queue{
 		Enable:     false,
 		Connection: "",
@@ -193,7 +193,7 @@ func (receiver *TestSyncListener) Queue(args ...interface{}) event.Queue {
 	}
 }
 
-func (receiver *TestSyncListener) Handle(args ...interface{}) error {
+func (receiver *TestSyncListener) Handle(args ...any) error {
 	testSyncListener++
 
 	return nil
@@ -206,7 +206,7 @@ func (receiver *TestCancelListener) Signature() string {
 	return "test_cancel_listener"
 }
 
-func (receiver *TestCancelListener) Queue(args ...interface{}) event.Queue {
+func (receiver *TestCancelListener) Queue(args ...any) event.Queue {
 	return event.Queue{
 		Enable:     false,
 		Connection: "",
@@ -214,7 +214,7 @@ func (receiver *TestCancelListener) Queue(args ...interface{}) event.Queue {
 	}
 }
 
-func (receiver *TestCancelListener) Handle(args ...interface{}) error {
+func (receiver *TestCancelListener) Handle(args ...any) error {
 	testCancelListener++
 
 	return errors.New("cancel")
@@ -227,7 +227,7 @@ func (receiver *TestCancelAfterListener) Signature() string {
 	return "test_cancel_after_listener"
 }
 
-func (receiver *TestCancelAfterListener) Queue(args ...interface{}) event.Queue {
+func (receiver *TestCancelAfterListener) Queue(args ...any) event.Queue {
 	return event.Queue{
 		Enable:     false,
 		Connection: "",
@@ -235,7 +235,7 @@ func (receiver *TestCancelAfterListener) Queue(args ...interface{}) event.Queue 
 	}
 }
 
-func (receiver *TestCancelAfterListener) Handle(args ...interface{}) error {
+func (receiver *TestCancelAfterListener) Handle(args ...any) error {
 	testCancelAfterListener++
 
 	return nil
