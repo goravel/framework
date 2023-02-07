@@ -1,5 +1,5 @@
 package support
 
-const Version string = "1.8.1"
+const Version string = "1.8.3"
 
 var RootPath string

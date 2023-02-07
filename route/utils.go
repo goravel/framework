@@ -105,3 +105,11 @@ func runningInConsole() bool {
 
 	return len(args) >= 2 && args[1] == "artisan"
 }
+
+func outputRoutes(routes gin.RoutesInfo) {
+	if facades.Config.GetBool("app.debug") && !runningInConsole() {
+		for _, item := range routes {
+			fmt.Printf("%-10s %s\n", item.Method, colonToBracket(item.Path))
+		}
+	}
+}

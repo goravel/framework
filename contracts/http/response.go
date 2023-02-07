@@ -16,6 +16,7 @@ type Response interface {
 	Success() ResponseSuccess
 	Header(key, value string) Response
 	Origin() ResponseOrigin
+	Writer() http.ResponseWriter
 }
 
 //go:generate mockery --name=ResponseSuccess

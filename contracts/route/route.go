@@ -12,6 +12,7 @@ type GroupFunc func(routes Route)
 type Engine interface {
 	Route
 	Run(addr string) error
+	RunTLS(addr, certFile, keyFile string) error
 	ServeHTTP(w http.ResponseWriter, req *http.Request)
 	GlobalMiddleware(...httpcontract.Middleware)
 }

@@ -1,7 +1,6 @@
 package route
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +8,6 @@ import (
 
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
-	"github.com/goravel/framework/facades"
 	goravelhttp "github.com/goravel/framework/http"
 )
 
@@ -34,16 +32,17 @@ func NewGin() *Gin {
 }
 
 func (r *Gin) Run(addr string) error {
-	if facades.Config.GetBool("app.debug") && !runningInConsole() {
-		routes := r.instance.Routes()
-		for _, item := range routes {
-			fmt.Printf("%-10s %s\n", item.Method, colonToBracket(item.Path))
-		}
-	}
-
+	outputRoutes(r.instance.Routes())
 	color.Greenln("Listening and serving HTTP on " + addr)
 
 	return r.instance.Run([]string{addr}...)
+}
+
+func (r *Gin) RunTLS(addr, certFile, keyFile string) error {
+	outputRoutes(r.instance.Routes())
+	color.Greenln("Listening and serving HTTPS on " + addr)
+
+	return r.instance.RunTLS(addr, certFile, keyFile)
 }
 
 func (r *Gin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
