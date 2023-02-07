@@ -48,6 +48,10 @@ func (r *GinResponse) Origin() httpcontract.ResponseOrigin {
 	return r.origin
 }
 
+func (c *GinResponse) Writer() http.ResponseWriter {
+	return c.instance.Writer
+}
+
 type GinSuccess struct {
 	instance *gin.Context
 }

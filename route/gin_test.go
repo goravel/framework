@@ -2,10 +2,12 @@ package route
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -13,14 +15,71 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	mockconfig "github.com/goravel/framework/contracts/config/mocks"
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/http/middleware"
 	"github.com/goravel/framework/testing/mock"
 )
+
+func TestRun(t *testing.T) {
+	mockConfig := mock.Config()
+	mockConfig.On("GetBool", "app.debug").Return(true).Twice()
+
+	addr := "127.0.0.1:3000"
+	route := NewGin()
+	route.Get("/", func(ctx httpcontract.Context) {
+		ctx.Response().Json(200, httpcontract.Json{
+			"Hello": "Goravel",
+		})
+	})
+	go func() {
+		assert.Nil(t, route.Run(addr))
+	}()
+
+	time.Sleep(1 * time.Second)
+	resp, err := http.Get("http://" + addr)
+	defer resp.Body.Close()
+	assert.Nil(t, err)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+	assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
+	mockConfig.AssertExpectations(t)
+}
+
+func TestRunTLS(t *testing.T) {
+	mockConfig := mock.Config()
+	mockConfig.On("GetBool", "app.debug").Return(true).Twice()
+
+	addr := "127.0.0.1:3001"
+	route := NewGin()
+	route.GlobalMiddleware(middleware.Tls(addr))
+	route.Get("/", func(ctx httpcontract.Context) {
+		ctx.Response().Json(200, httpcontract.Json{
+			"Hello": "Goravel",
+		})
+	})
+	go func() {
+		assert.Nil(t, route.RunTLS(addr, "test_ca.crt", "test_ca.key"))
+	}()
+
+	time.Sleep(1 * time.Second)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get("https://" + addr)
+	defer resp.Body.Close()
+	assert.Nil(t, err)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.Nil(t, err)
+	assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
+	mockConfig.AssertExpectations(t)
+}
 
 func TestGinRequest(t *testing.T) {
 	var (
