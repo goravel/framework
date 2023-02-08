@@ -29,7 +29,6 @@ Golang developers quickly build their own applications.
 
 ## Roadmap
 
-- [ ] Custom .env path
 - [ ] Database read-write separation
 - [ ] Extend Redis driver
 
