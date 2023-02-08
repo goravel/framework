@@ -25,6 +25,16 @@ func (app *Application) Init() cache.Store {
 		return redis
 	}
 
+	if driver == "memory" {
+		memory, err := NewMemory()
+		if err != nil {
+			color.Redf("[Cache] Init memory driver error: %v\n", err)
+			return nil
+		}
+
+		return memory
+	}
+
 	if driver == "custom" {
 		if custom, ok := facades.Config.Get("cache.stores." + defaultStore + ".via").(cache.Store); ok {
 			return custom

@@ -16,19 +16,24 @@ import (
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	stores      []cache.Store
+	stores      map[string]cache.Store
 	redisDocker *dockertest.Resource
 }
 
 func TestApplicationTestSuite(t *testing.T) {
 	redisPool, redisDocker, redisStore, err := getRedisDocker()
 	if err != nil {
-		log.Fatalf("Get redis error: %s", err)
+		log.Fatalf("Get redis store error: %s", err)
+	}
+	memoryStore, err := getMemoryStore()
+	if err != nil {
+		log.Fatalf("Get memory store error: %s", err)
 	}
 
 	suite.Run(t, &ApplicationTestSuite{
-		stores: []cache.Store{
-			redisStore,
+		stores: map[string]cache.Store{
+			"redis":  redisStore,
+			"memory": memoryStore,
 		},
 		redisDocker: redisDocker,
 	})
@@ -88,145 +93,171 @@ func (s *ApplicationTestSuite) TestInitRedis() {
 }
 
 func (s *ApplicationTestSuite) TestAdd() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		s.False(store.Add("name", "World", 1*time.Second))
-		s.True(store.Add("name1", "World", 1*time.Second))
-		s.True(store.Has("name1"))
-		time.Sleep(2 * time.Second)
-		s.False(store.Has("name1"))
-		s.True(store.Flush())
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("name", "Goravel", 1*time.Second))
+			s.False(store.Add("name", "World", 1*time.Second))
+			s.True(store.Add("name1", "World", 1*time.Second))
+			s.True(store.Has("name1"))
+			time.Sleep(2 * time.Second)
+			s.False(store.Has("name1"))
+			s.True(store.Flush())
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestForever() {
-	for _, store := range s.stores {
-		s.True(store.Forever("name", "Goravel"))
-		s.Equal("Goravel", store.Get("name", "").(string))
-		s.True(store.Flush())
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.True(store.Forever("name", "Goravel"))
+			s.Equal("Goravel", store.Get("name", "").(string))
+			s.True(store.Flush())
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestForget() {
-	for _, store := range s.stores {
-		val := store.Forget("test-forget")
-		s.True(val)
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			val := store.Forget("test-forget")
+			s.True(val)
 
-		err := store.Put("test-forget", "goravel", 5*time.Second)
-		s.Nil(err)
-		s.True(store.Forget("test-forget"))
+			err := store.Put("test-forget", "goravel", 5*time.Second)
+			s.Nil(err)
+			s.True(store.Forget("test-forget"))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestFlush() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("test-flush", "goravel", 5*time.Second))
-		s.Equal("goravel", store.Get("test-flush", nil).(string))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("test-flush", "goravel", 5*time.Second))
+			s.Equal("goravel", store.Get("test-flush", nil).(string))
 
-		s.True(store.Flush())
-		s.False(store.Has("test-flush"))
+			s.True(store.Flush())
+			s.False(store.Has("test-flush"))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestGet() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		s.Equal("Goravel", store.Get("name", "").(string))
-		s.Equal("World", store.Get("name1", "World").(string))
-		s.Equal("World1", store.Get("name2", func() any {
-			return "World1"
-		}).(string))
-		s.True(store.Forget("name"))
-		s.True(store.Flush())
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("name", "Goravel", 1*time.Second))
+			s.Equal("Goravel", store.Get("name", "").(string))
+			s.Equal("World", store.Get("name1", "World").(string))
+			s.Equal("World1", store.Get("name2", func() any {
+				return "World1"
+			}).(string))
+			s.True(store.Forget("name"))
+			s.True(store.Flush())
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestGetBool() {
-	for _, store := range s.stores {
-		s.Equal(true, store.GetBool("test-get-bool", true))
-		s.Nil(store.Put("test-get-bool", true, 2*time.Second))
-		s.Equal(true, store.GetBool("test-get-bool", false))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Equal(true, store.GetBool("test-get-bool", true))
+			s.Nil(store.Put("test-get-bool", true, 2*time.Second))
+			s.Equal(true, store.GetBool("test-get-bool", false))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestGetInt() {
-	for _, store := range s.stores {
-		s.Equal(2, store.GetInt("test-get-int", 2))
-		s.Nil(store.Put("test-get-int", 3, 2*time.Second))
-		s.Equal(3, store.GetInt("test-get-int", 2))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Equal(2, store.GetInt("test-get-int", 2))
+			s.Nil(store.Put("test-get-int", 3, 2*time.Second))
+			s.Equal(3, store.GetInt("test-get-int", 2))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestGetString() {
-	for _, store := range s.stores {
-		s.Equal("2", store.GetString("test-get-string", "2"))
-		s.Nil(store.Put("test-get-string", "3", 2*time.Second))
-		s.Equal("3", store.GetString("test-get-string", "2"))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Equal("2", store.GetString("test-get-string", "2"))
+			s.Nil(store.Put("test-get-string", "3", 2*time.Second))
+			s.Equal("3", store.GetString("test-get-string", "2"))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestHas() {
-	for _, store := range s.stores {
-		s.False(store.Has("test-has"))
-		s.Nil(store.Put("test-has", "goravel", 5*time.Second))
-		s.True(store.Has("test-has"))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.False(store.Has("test-has"))
+			s.Nil(store.Put("test-has", "goravel", 5*time.Second))
+			s.True(store.Has("test-has"))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestPull() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		s.True(store.Has("name"))
-		s.Equal("Goravel", store.Pull("name", "").(string))
-		s.False(store.Has("name"))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("name", "Goravel", 1*time.Second))
+			s.True(store.Has("name"))
+			s.Equal("Goravel", store.Pull("name", "").(string))
+			s.False(store.Has("name"))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestPut() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		s.True(store.Has("name"))
-		s.Equal("Goravel", store.Get("name", "").(string))
-		time.Sleep(2 * time.Second)
-		s.False(store.Has("name"))
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("name", "Goravel", 1*time.Second))
+			s.True(store.Has("name"))
+			s.Equal("Goravel", store.Get("name", "").(string))
+			time.Sleep(2 * time.Second)
+			s.False(store.Has("name"))
+		})
 	}
 }
 
 func (s *ApplicationTestSuite) TestRemember() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		value, err := store.Remember("name", 1*time.Second, func() any {
-			return "World"
-		})
-		s.Nil(err)
-		s.Equal("Goravel", value)
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("name", "Goravel", 1*time.Second))
+			value, err := store.Remember("name", 1*time.Second, func() any {
+				return "World"
+			})
+			s.Nil(err)
+			s.Equal("Goravel", value)
 
-		value, err = store.Remember("name1", 1*time.Second, func() any {
-			return "World1"
+			value, err = store.Remember("name1", 1*time.Second, func() any {
+				return "World1"
+			})
+			s.Nil(err)
+			s.Equal("World1", value)
+			time.Sleep(2 * time.Second)
+			s.False(store.Has("name1"))
+			s.True(store.Flush())
 		})
-		s.Nil(err)
-		s.Equal("World1", value)
-		time.Sleep(2 * time.Second)
-		s.False(store.Has("name1"))
-		s.True(store.Flush())
 	}
 }
 
 func (s *ApplicationTestSuite) TestRememberForever() {
-	for _, store := range s.stores {
-		s.Nil(store.Put("name", "Goravel", 1*time.Second))
-		value, err := store.RememberForever("name", func() any {
-			return "World"
-		})
-		s.Nil(err)
-		s.Equal("Goravel", value)
+	for name, store := range s.stores {
+		s.Run(name, func() {
+			s.Nil(store.Put("name", "Goravel", 1*time.Second))
+			value, err := store.RememberForever("name", func() any {
+				return "World"
+			})
+			s.Nil(err)
+			s.Equal("Goravel", value)
 
-		value, err = store.RememberForever("name1", func() any {
-			return "World1"
+			value, err = store.RememberForever("name1", func() any {
+				return "World1"
+			})
+			s.Nil(err)
+			s.Equal("World1", value)
+			s.True(store.Flush())
 		})
-		s.Nil(err)
-		s.Equal("World1", value)
-		s.True(store.Flush())
 	}
 }
 
@@ -269,6 +300,18 @@ func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Store, erro
 	}
 
 	return pool, resource, store, nil
+}
+
+func getMemoryStore() (*Memory, error) {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
+
+	memory, err := NewMemory()
+	if err != nil {
+		return nil, err
+	}
+
+	return memory, nil
 }
 
 type Store struct {
