@@ -42,7 +42,7 @@ func NewRedis(ctx context.Context) (*Redis, error) {
 
 	return &Redis{
 		ctx:    ctx,
-		prefix: facades.Config.GetString("cache.prefix") + ":",
+		prefix: prefix(),
 		redis:  client,
 	}, nil
 }
@@ -149,14 +149,10 @@ func (r *Redis) Has(key string) bool {
 
 //Pull Retrieve an item from the cache and delete it.
 func (r *Redis) Pull(key string, def any) any {
-	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
-	r.redis.Del(r.ctx, r.prefix+key)
+	res := r.Get(key, def)
+	r.Forget(key)
 
-	if err != nil {
-		return def
-	}
-
-	return val
+	return res
 }
 
 //Put Store an item in the cache for a given number of seconds.
@@ -170,7 +166,7 @@ func (r *Redis) Put(key string, value any, seconds time.Duration) error {
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
-func (r *Redis) Remember(key string, ttl time.Duration, callback func() any) (any, error) {
+func (r *Redis) Remember(key string, seconds time.Duration, callback func() any) (any, error) {
 	val := r.Get(key, nil)
 
 	if val != nil {
@@ -179,7 +175,7 @@ func (r *Redis) Remember(key string, ttl time.Duration, callback func() any) (an
 
 	val = callback()
 
-	if err := r.Put(key, val, ttl); err != nil {
+	if err := r.Put(key, val, seconds); err != nil {
 		return nil, err
 	}
 

@@ -30,7 +30,6 @@ Golang developers quickly build their own applications.
 ## Roadmap
 
 - [ ] Database read-write separation
-- [ ] Extend Redis driver
 
 ## Documentation
 
