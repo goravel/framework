@@ -417,6 +417,20 @@ func (_m *DB) Order(value interface{}) orm.Query {
 	return r0
 }
 
+// Paginate provides a mock function with given fields: page, limit, dest, total
+func (_m *DB) Paginate(page int, limit int, dest interface{}, total *int64) error {
+	ret := _m.Called(page, limit, dest, total)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, int, interface{}, *int64) error); ok {
+		r0 = rf(page, limit, dest, total)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Pluck provides a mock function with given fields: column, dest
 func (_m *DB) Pluck(column string, dest interface{}) error {
 	ret := _m.Called(column, dest)

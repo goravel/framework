@@ -521,6 +521,26 @@ func (s *GormQueryTestSuite) TestDistinct() {
 	}
 }
 
+func (s *GormQueryTestSuite) TestFind() {
+	for _, db := range s.dbs {
+		user := User{Name: "find_user"}
+		s.Nil(db.Create(&user))
+		s.True(user.ID > 0)
+
+		var user2 User
+		s.Nil(db.Find(&user2, user.ID))
+		s.True(user2.ID > 0)
+
+		var user3 []User
+		s.Nil(db.Find(&user3, []uint{user.ID}))
+		s.Equal(1, len(user3))
+
+		var user4 []User
+		s.Nil(db.Where("id in ?", []uint{user.ID}).Find(&user4))
+		s.Equal(1, len(user4))
+	}
+}
+
 func (s *GormQueryTestSuite) TestFirst() {
 	for _, db := range s.dbs {
 		user := User{Name: "first_user"}
@@ -543,6 +563,18 @@ func (s *GormQueryTestSuite) TestFirstOrCreate() {
 		s.Nil(db.Where("avatar = ?", "first_or_create_avatar").FirstOrCreate(&user1, User{Name: "user"}, User{Avatar: "first_or_create_avatar1"}))
 		s.True(user1.ID > 0)
 		s.True(user1.Avatar == "first_or_create_avatar1")
+	}
+}
+
+func (s *GormQueryTestSuite) TestGet() {
+	for _, db := range s.dbs {
+		user := User{Name: "get_user"}
+		s.Nil(db.Create(&user))
+		s.True(user.ID > 0)
+
+		var user5 []User
+		s.Nil(db.Where("id in ?", []uint{user.ID}).Get(&user5))
+		s.Equal(1, len(user5))
 	}
 }
 
@@ -607,6 +639,43 @@ func (s *GormQueryTestSuite) TestOrder() {
 	}
 }
 
+func (s *GormQueryTestSuite) TestPaginate() {
+	for _, db := range s.dbs {
+		user := User{Name: "paginate_user", Avatar: "paginate_avatar"}
+		s.Nil(db.Create(&user))
+		s.True(user.ID > 0)
+
+		user1 := User{Name: "paginate_user", Avatar: "paginate_avatar1"}
+		s.Nil(db.Create(&user1))
+		s.True(user1.ID > 0)
+
+		user2 := User{Name: "paginate_user", Avatar: "paginate_avatar2"}
+		s.Nil(db.Create(&user2))
+		s.True(user2.ID > 0)
+
+		user3 := User{Name: "paginate_user", Avatar: "paginate_avatar3"}
+		s.Nil(db.Create(&user3))
+		s.True(user3.ID > 0)
+
+		var users []User
+		var total int64
+		s.Nil(db.Where("name = ?", "paginate_user").Paginate(1, 3, &users, nil))
+		s.Equal(3, len(users))
+
+		s.Nil(db.Where("name = ?", "paginate_user").Paginate(2, 3, &users, &total))
+		s.Equal(1, len(users))
+		s.Equal(int64(4), total)
+
+		s.Nil(db.Model(User{}).Where("name = ?", "paginate_user").Paginate(1, 3, &users, &total))
+		s.Equal(3, len(users))
+		s.Equal(int64(4), total)
+
+		s.Nil(db.Table("users").Where("name = ?", "paginate_user").Paginate(1, 3, &users, &total))
+		s.Equal(3, len(users))
+		s.Equal(int64(4), total)
+	}
+}
+
 func (s *GormQueryTestSuite) TestPluck() {
 	for _, db := range s.dbs {
 		user := User{Name: "pluck_user", Avatar: "pluck_avatar"}
@@ -619,8 +688,9 @@ func (s *GormQueryTestSuite) TestPluck() {
 
 		var avatars []string
 		s.Nil(db.Model(&User{}).Where("name = ?", "pluck_user").Pluck("avatar", &avatars))
-		s.True(len(avatars) > 0)
-		s.True(avatars[0] == "pluck_avatar")
+		s.Equal(2, len(avatars))
+		s.Equal("pluck_avatar", avatars[0])
+		s.Equal("pluck_avatar1", avatars[1])
 	}
 }
 
@@ -956,38 +1026,6 @@ func (s *GormQueryTestSuite) TestScope() {
 
 		s.Equal(1, len(users1))
 		s.True(users1[0].ID > 0)
-	}
-}
-
-func (s *GormQueryTestSuite) TestFind() {
-	for _, db := range s.dbs {
-		user := User{Name: "find_user"}
-		s.Nil(db.Create(&user))
-		s.True(user.ID > 0)
-
-		var user2 User
-		s.Nil(db.Find(&user2, user.ID))
-		s.True(user2.ID > 0)
-
-		var user3 []User
-		s.Nil(db.Find(&user3, []uint{user.ID}))
-		s.Equal(1, len(user3))
-
-		var user4 []User
-		s.Nil(db.Where("id in ?", []uint{user.ID}).Find(&user4))
-		s.Equal(1, len(user4))
-	}
-}
-
-func (s *GormQueryTestSuite) TestGet() {
-	for _, db := range s.dbs {
-		user := User{Name: "get_user"}
-		s.Nil(db.Create(&user))
-		s.True(user.ID > 0)
-
-		var user5 []User
-		s.Nil(db.Where("id in ?", []uint{user.ID}).Get(&user5))
-		s.Equal(1, len(user5))
 	}
 }
 
