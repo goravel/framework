@@ -24,5 +24,6 @@ func (database *ServiceProvider) registerCommands() {
 		&console.MigrateMakeCommand{},
 		&console.MigrateCommand{},
 		&console.MigrateRollbackCommand{},
+		&console.ModelMakeCommand{},
 	})
 }
