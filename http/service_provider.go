@@ -19,5 +19,7 @@ func (database *ServiceProvider) Boot() {
 func (database *ServiceProvider) registerCommands() {
 	facades.Artisan.Register([]consolecontract.Command{
 		&console.RequestMakeCommand{},
+		&console.ControllerMakeCommand{},
+		&console.MiddlewareMakeCommand{},
 	})
 }
