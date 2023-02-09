@@ -1,33 +1,54 @@
 package support
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/config"
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/event"
 	queuecontract "github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/testing/file"
 	"github.com/goravel/framework/testing/mock"
 )
 
-func TestGetServer(t *testing.T) {
-	initConfig()
+func TestGetServer_Sync(t *testing.T) {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Once()
+
 	server, err := GetServer("sync", "")
 	assert.Nil(t, server)
 	assert.Nil(t, err)
 
-	server, err = GetServer("redis", "")
+	mockConfig.AssertExpectations(t)
+}
+
+func TestGetServer_Redis(t *testing.T) {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Once()
+	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
+	mockConfig.On("GetString", "database.redis.default.host").Return("127.0.0.1").Once()
+	mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
+	mockConfig.On("GetString", "database.redis.default.port").Return("6379").Once()
+	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
+	mockConfig.On("GetString", "app.name").Return("goravel").Once()
+
+	server, err := GetServer("redis", "")
 	assert.Nil(t, err)
 	assert.NotNil(t, server)
 
-	server, err = GetServer("custom", "")
+	mockConfig.AssertExpectations(t)
+}
+
+func TestGetServer_Error(t *testing.T) {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "queue.connections.custom.driver").Return("custom").Once()
+
+	server, err := GetServer("custom", "")
 	assert.Nil(t, server)
-	assert.NotNil(t, err)
+	assert.EqualError(t, err, "unknown queue driver: custom")
+
+	mockConfig.AssertExpectations(t)
 }
 
 func TestGetQueueName(t *testing.T) {
@@ -75,19 +96,16 @@ func TestGetQueueName(t *testing.T) {
 	}
 }
 
-func TestGetDriver(t *testing.T) {
-	initConfig()
-	assert.Equal(t, "sync", getDriver("sync"))
-	assert.Equal(t, "redis", getDriver("redis"))
-}
-
-func TestGetRedisServer(t *testing.T) {
-	initConfig()
-	assert.NotNil(t, getRedisServer("default", ""))
-}
-
 func TestGetRedisConfig(t *testing.T) {
-	initConfig()
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
+	mockConfig.On("GetString", "database.redis.default.host").Return("127.0.0.1").Once()
+	mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
+	mockConfig.On("GetString", "database.redis.default.port").Return("6379").Once()
+	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
+	mockConfig.On("GetString", "app.name").Return("goravel").Once()
+
 	redisConfig, database, queue := getRedisConfig("redis")
 	assert.Equal(t, "127.0.0.1:6379", redisConfig)
 	assert.Equal(t, 0, database)
@@ -239,39 +257,4 @@ func TestEvents2Tasks(t *testing.T) {
 	})
 
 	assert.NotNil(t, err)
-}
-
-func initConfig() {
-	_ = file.CreateEnv()
-	configServiceProvider := config.ServiceProvider{}
-	configServiceProvider.Register()
-
-	facadesConfig := facades.Config
-	facadesConfig.Add("queue", map[string]any{
-		"default": facadesConfig.Env("QUEUE_CONNECTION", "redis"),
-		"connections": map[string]any{
-			"sync": map[string]any{
-				"driver": "sync",
-			},
-			"redis": map[string]any{
-				"driver":      "redis",
-				"connection":  "default",
-				"queue":       "default",
-				"retry_after": 90,
-			},
-		},
-	})
-
-	facadesConfig.Add("database", map[string]any{
-		"redis": map[string]any{
-			"default": map[string]any{
-				"host":     facadesConfig.Env("REDIS_HOST", "127.0.0.1"),
-				"password": facadesConfig.Env("REDIS_PASSWORD", ""),
-				"port":     facadesConfig.Env("REDIS_PORT", 6379),
-				"database": facadesConfig.Env("REDIS_DB", 0),
-			},
-		},
-	})
-
-	_ = os.Remove(".env")
 }

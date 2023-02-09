@@ -51,6 +51,7 @@ type Query interface {
 	Omit(columns ...string) Query
 	Order(value any) Query
 	OrWhere(query any, args ...any) Query
+	Paginate(page, limit int, dest any, total *int64) error
 	Pluck(column string, dest any) error
 	Raw(sql string, values ...any) Query
 	Save(value any) error

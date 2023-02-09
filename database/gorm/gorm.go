@@ -336,6 +336,23 @@ func (r *Query) OrWhere(query any, args ...any) ormcontract.Query {
 	return NewQuery(tx)
 }
 
+func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
+	offset := (page - 1) * limit
+	if total != nil {
+		if r.instance.Statement.Table == "" && r.instance.Statement.Model == nil {
+			if err := r.Model(dest).Count(total); err != nil {
+				return err
+			}
+		} else {
+			if err := r.Count(total); err != nil {
+				return err
+			}
+		}
+	}
+
+	return r.Offset(offset).Limit(limit).Find(dest)
+}
+
 func (r *Query) Pluck(column string, dest any) error {
 	return r.instance.Pluck(column, dest).Error
 }
