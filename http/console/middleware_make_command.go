@@ -5,12 +5,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
-
-	"github.com/gookit/color"
 )
 
 type MiddlewareMakeCommand struct {
@@ -61,5 +61,5 @@ func (receiver *MiddlewareMakeCommand) populateStub(stub string, name string) st
 func (receiver *MiddlewareMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/http/middlewares/" + str.Camel2Case(name) + ".go"
+	return pwd + "/app/http/middleware/" + str.Camel2Case(name) + ".go"
 }
