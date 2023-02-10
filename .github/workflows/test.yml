@@ -16,4 +16,4 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Tests
-        run: go mod tidy && go test -covermode=atomic -coverprofile="coverage.out" .
+        run: go mod tidy && go test -covermode=atomic -coverprofile="coverage.out" ./...
