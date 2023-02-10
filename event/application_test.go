@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts/event"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/queue"
 	testingdocker "github.com/goravel/framework/testing/docker"
+	"github.com/goravel/framework/testing/mock"
 )
 
 var (
@@ -26,6 +26,7 @@ var (
 
 type EventTestSuite struct {
 	suite.Suite
+	redisPort string
 }
 
 func TestEventTestSuite(t *testing.T) {
@@ -34,11 +35,12 @@ func TestEventTestSuite(t *testing.T) {
 		log.Fatalf("Get redis error: %s", err)
 	}
 
-	initConfig(redisResource.GetPort("6379/tcp"))
 	facades.Queue = queue.NewApplication()
 	facades.Event = NewApplication()
 
-	suite.Run(t, new(EventTestSuite))
+	suite.Run(t, &EventTestSuite{
+		redisPort: redisResource.GetPort("6379/tcp"),
+	})
 
 	if err := redisPool.Purge(redisResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
@@ -50,6 +52,17 @@ func (s *EventTestSuite) SetupTest() {
 }
 
 func (s *EventTestSuite) TestEvent() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
+	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
+	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisPort).Twice()
+	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+
 	facades.Event.Register(map[event.Event][]event.Listener{
 		&TestEvent{}: {
 			&TestSyncListener{},
@@ -78,9 +91,22 @@ func (s *EventTestSuite) TestEvent() {
 	time.Sleep(1 * time.Second)
 	s.Equal(1, testSyncListener)
 	s.Equal(1, testAsyncListener)
+
+	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *EventTestSuite) TestCancelEvent() {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "app.name").Return("goravel").Twice()
+	mockConfig.On("GetString", "queue.default").Return("redis").Once()
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Once()
+	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
+	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
+	mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
+	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisPort).Once()
+	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
+
 	facades.Event.Register(map[event.Event][]event.Listener{
 		&TestCancelEvent{}: {
 			&TestCancelListener{},
@@ -109,38 +135,8 @@ func (s *EventTestSuite) TestCancelEvent() {
 	time.Sleep(1 * time.Second)
 	s.Equal(1, testCancelListener)
 	s.Equal(0, testCancelAfterListener)
-}
 
-func initConfig(redisPort string) {
-	application := config.NewApplication("../.env")
-	application.Add("app", map[string]any{
-		"name": "goravel",
-	})
-	application.Add("queue", map[string]any{
-		"default": "redis",
-		"connections": map[string]any{
-			"sync": map[string]any{
-				"driver": "sync",
-			},
-			"redis": map[string]any{
-				"driver":     "redis",
-				"connection": "default",
-				"queue":      "default",
-			},
-		},
-	})
-	application.Add("database", map[string]any{
-		"redis": map[string]any{
-			"default": map[string]any{
-				"host":     "localhost",
-				"password": "",
-				"port":     redisPort,
-				"database": 0,
-			},
-		},
-	})
-
-	facades.Config = application
+	mockConfig.AssertExpectations(s.T())
 }
 
 type TestEvent struct {
