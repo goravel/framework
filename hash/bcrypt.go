@@ -12,7 +12,7 @@ type Bcrypt struct {
 // NewBcrypt returns a new Bcrypt hasher.
 func NewBcrypt() *Bcrypt {
 	return &Bcrypt{
-		cost: facades.Config.Get("hashing.bcrypt.cost", 10),
+		cost: facades.Config.GetInt("hashing.bcrypt.cost", 10),
 	}
 }
 
