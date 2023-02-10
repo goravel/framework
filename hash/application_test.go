@@ -23,6 +23,7 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestMakeHash() {
+	initConfig()
 	s.NotEmpty(facades.Hash.Make("password"))
 }
 
