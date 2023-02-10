@@ -10,7 +10,7 @@ const (
 	DriverBcrypt   string = "bcrypt"
 )
 
-func NewApplication() hash.Hasher {
+func NewApplication() hash.Hash {
 	driver := facades.Config.GetString("hashing.driver", "argon2id")
 
 	switch driver {
@@ -20,5 +20,6 @@ func NewApplication() hash.Hasher {
 		return NewArgon2id()
 	}
 
+	// Default to Argon2id
 	return NewArgon2id()
 }

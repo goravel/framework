@@ -22,9 +22,9 @@ type Argon2id struct {
 	memory uint32
 	// The threads cost parameter.
 	threads uint8
-	// The length of the key to generate, in bytes.
+	// The length of the key to generate.
 	keyLen uint32
-	// The length of the random salt to generate, in bytes.
+	// The length of the random salt to generate.
 	saltLen uint32
 }
 

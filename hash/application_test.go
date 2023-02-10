@@ -28,11 +28,13 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 }
 
 func (s *ApplicationTestSuite) TestCheckHash() {
+	initConfig()
 	hash := facades.Hash.Make("password")
 	s.True(facades.Hash.Check("password", hash))
 }
 
 func (s *ApplicationTestSuite) TestNeedsRehash() {
+	initConfig()
 	hash := facades.Hash.Make("password")
 	s.False(facades.Hash.NeedsRehash(hash))
 }

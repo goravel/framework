@@ -35,6 +35,7 @@ func (b *Bcrypt) Check(value, hash string) bool {
 // NeedsRehash checks if the given hash needs to be rehashed.
 func (b *Bcrypt) NeedsRehash(hash string) bool {
 	hashCost, err := bcrypt.Cost([]byte(hash))
+
 	if err != nil {
 		return false
 	}

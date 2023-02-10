@@ -4,4 +4,4 @@ import (
 	"github.com/goravel/framework/contracts/hash"
 )
 
-var Hash hash.Hasher
+var Hash hash.Hash
