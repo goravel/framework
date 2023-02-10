@@ -33,7 +33,7 @@ func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, erro
 		return nil, nil, nil, err
 	}
 
-	_ = resource.Expire(60)
+	_ = resource.Expire(600)
 
 	if err := pool.Retry(func() error {
 		return initDatabase(ormcontract.DriverMysql, resource.GetPort("3306/tcp"))
@@ -71,7 +71,7 @@ func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB,
 		return nil, nil, nil, err
 	}
 
-	_ = resource.Expire(60)
+	_ = resource.Expire(600)
 
 	if err := pool.Retry(func() error {
 		return initDatabase(ormcontract.DriverPostgresql, resource.GetPort("5432/tcp"))
@@ -105,7 +105,7 @@ func SqliteDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, err
 		return nil, nil, nil, err
 	}
 
-	_ = resource.Expire(60)
+	_ = resource.Expire(600)
 
 	var db ormcontract.DB
 	if err := pool.Retry(func() error {
@@ -141,7 +141,7 @@ func SqlserverDocker() (*dockertest.Pool, *dockertest.Resource, ormcontract.DB, 
 		return nil, nil, nil, err
 	}
 
-	_ = resource.Expire(60)
+	_ = resource.Expire(600)
 
 	if err := pool.Retry(func() error {
 		return initDatabase(ormcontract.DriverSqlserver, resource.GetPort("1433/tcp"))
