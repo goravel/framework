@@ -132,7 +132,9 @@ func (r *GinRequest) Validate(rules map[string]string, options ...validatecontra
 		v = validate.NewValidation(dataFace)
 	} else {
 		if generateOptions["prepareForValidation"] != nil {
-			generateOptions["prepareForValidation"].(func(data validatecontract.Data))(validation.NewData(dataFace))
+			if err := generateOptions["prepareForValidation"].(func(data validatecontract.Data) error)(validation.NewData(dataFace)); err != nil {
+				return nil, err
+			}
 		}
 
 		v = dataFace.Create()

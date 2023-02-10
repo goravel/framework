@@ -31,8 +31,8 @@ func (r *DummyRequest) Attributes() map[string]string {
 	return map[string]string{}
 }
 
-func (r *DummyRequest) PrepareForValidation(data validation.Data) {
-
+func (r *DummyRequest) PrepareForValidation(data validation.Data) error {
+	return nil
 }
 `
 }

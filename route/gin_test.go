@@ -30,7 +30,7 @@ func TestRun(t *testing.T) {
 	mockConfig := mock.Config()
 	mockConfig.On("GetBool", "app.debug").Return(true).Twice()
 
-	addr := "127.0.0.1:3000"
+	addr := "127.0.0.1:3001"
 	route := NewGin()
 	route.Get("/", func(ctx httpcontract.Context) {
 		ctx.Response().Json(200, httpcontract.Json{
@@ -55,7 +55,7 @@ func TestRunTLS(t *testing.T) {
 	mockConfig := mock.Config()
 	mockConfig.On("GetBool", "app.debug").Return(true).Twice()
 
-	addr := "127.0.0.1:3001"
+	addr := "127.0.0.1:3002"
 	route := NewGin()
 	route.GlobalMiddleware(middleware.Tls(addr))
 	route.Get("/", func(ctx httpcontract.Context) {
@@ -902,10 +902,12 @@ func (r *CreateUser) Attributes() map[string]string {
 	return map[string]string{}
 }
 
-func (r *CreateUser) PrepareForValidation(data validation.Data) {
+func (r *CreateUser) PrepareForValidation(data validation.Data) error {
 	if name, exist := data.Get("name"); exist {
-		_ = data.Set("name", name.(string)+"1")
+		return data.Set("name", name.(string)+"1")
 	}
+
+	return nil
 }
 
 type Unauthorize struct {
@@ -930,6 +932,6 @@ func (r *Unauthorize) Attributes() map[string]string {
 	return map[string]string{}
 }
 
-func (r *Unauthorize) PrepareForValidation(data validation.Data) {
-
+func (r *Unauthorize) PrepareForValidation(data validation.Data) error {
+	return nil
 }

@@ -40,7 +40,7 @@ func Attributes(attributes map[string]string) httpvalidate.Option {
 	}
 }
 
-func PrepareForValidation(prepare func(data httpvalidate.Data)) httpvalidate.Option {
+func PrepareForValidation(prepare func(data httpvalidate.Data) error) httpvalidate.Option {
 	return func(options map[string]any) {
 		options["prepareForValidation"] = prepare
 	}
