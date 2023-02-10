@@ -61,7 +61,9 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	options = append(options, Rules(rules), CustomRules(r.rules))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
-		generateOptions["prepareForValidation"].(func(data validatecontract.Data))(NewData(dataFace))
+		if err := generateOptions["prepareForValidation"].(func(data validatecontract.Data) error)(NewData(dataFace)); err != nil {
+			return nil, err
+		}
 	}
 
 	v := dataFace.Create()

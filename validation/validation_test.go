@@ -60,14 +60,27 @@ func TestMake(t *testing.T) {
 			expectErr:   errors.New("rules can't be empty"),
 		},
 		{
+			description: "error when PrepareForValidation returns error",
+			data:        map[string]any{"a": "b"},
+			rules:       map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				PrepareForValidation(func(data httpvalidate.Data) error {
+					return errors.New("error")
+				}),
+			},
+			expectErr: errors.New("error"),
+		},
+		{
 			description: "success when data is map[string]any and with PrepareForValidation",
 			data:        map[string]any{"a": "b"},
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
-				PrepareForValidation(func(data httpvalidate.Data) {
+				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
-						_ = data.Set("a", "c")
+						return data.Set("a", "c")
 					}
+
+					return nil
 				}),
 			},
 			expectValidator: true,
@@ -84,10 +97,12 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"b": "B",
 				}),
-				PrepareForValidation(func(data httpvalidate.Data) {
+				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
-						_ = data.Set("a", "c")
+						return data.Set("a", "c")
 					}
+
+					return nil
 				}),
 			},
 			expectValidator:    true,
@@ -100,11 +115,12 @@ func TestMake(t *testing.T) {
 			data:        &Data{A: "b"},
 			rules:       map[string]string{"A": "required"},
 			options: []httpvalidate.Option{
-				PrepareForValidation(func(data httpvalidate.Data) {
+				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
-						c := "c"
-						_ = data.Set("A", c)
+						return data.Set("A", "c")
 					}
+
+					return nil
 				}),
 			},
 			expectValidator: true,
@@ -121,10 +137,12 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"B": "b",
 				}),
-				PrepareForValidation(func(data httpvalidate.Data) {
+				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
-						_ = data.Set("a", "c")
+						return data.Set("a", "c")
 					}
+
+					return nil
 				}),
 			},
 			expectValidator:    true,
