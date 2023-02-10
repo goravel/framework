@@ -82,18 +82,8 @@ func Contain(file string, search string) bool {
 
 //Extension Supported types: https://github.com/h2non/filetype#supported-types
 func Extension(file string, originalWhenUnknown ...bool) (string, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return "", err
-	}
-
-	head := make([]byte, 261)
-	_, err = f.Read(head)
-	if err != nil {
-		return "", err
-	}
-
-	kind, err := filetype.Match(head)
+	buf, _ := ioutil.ReadFile(file)
+	kind, err := filetype.Match(buf)
 	if err != nil {
 		return "", err
 	}
