@@ -1,6 +1,9 @@
 package hash
 
 import (
+	"github.com/gookit/color"
+	"github.com/goravel/framework/support/file"
+	"github.com/spf13/cast"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -14,6 +17,11 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
+	if !file.Exists("../.env") {
+		color.Redln("No mail tests run, need create .env based on .env.example, then initialize it")
+		return
+	}
+	initConfig()
 	facades.Hash = NewApplication()
 	suite.Run(t, new(ApplicationTestSuite))
 }
@@ -47,12 +55,12 @@ func initConfig() {
 	application.Add("hashing", map[string]any{
 		"driver": "argon2id",
 		"bcrypt": map[string]any{
-			"cost": application.Env("HASH_BCRYPT_COST", "10"),
+			"cost": cast.ToInt(application.Env("HASH_BCRYPT_COST", 10)),
 		},
 		"argon2id": map[string]any{
-			"memory":  application.Env("HASH_ARGON2ID_MEMORY", "65536"),
-			"time":    application.Env("HASH_ARGON2ID_TIME", "4"),
-			"threads": application.Env("HASH_ARGON2ID_THREADS", "1"),
+			"memory":  cast.ToUint32(application.Env("HASH_ARGON2ID_MEMORY", 65536)),
+			"time":    cast.ToUint32(application.Env("HASH_ARGON2ID_TIME", 4)),
+			"threads": cast.ToUint8(application.Env("HASH_ARGON2ID_THREADS", 1)),
 		},
 	})
 

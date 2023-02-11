@@ -14,6 +14,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
+	initConfig()
 	facades.Crypt = NewApplication()
 	suite.Run(t, new(ApplicationTestSuite))
 }
