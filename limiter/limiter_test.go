@@ -33,16 +33,15 @@ func (s *LimiterTestSuite) TestLimiter() {
 		return
 	}
 	initConfig()
-	httpCtx := http.Background().(*http.GinContext).Instance()
-	key := "127.0.0.1"
-	rate, err := CheckRate(httpCtx, key, "1-M")
-	s.NoError(err)
+	ginCtx := http.Background().(*http.GinContext).Instance()
 
-	// rate.Reached is false
+	key := "test1"
+	rate, err := CheckRate(ginCtx, key, "1-M")
+	s.NoError(err)
 	s.False(rate.Reached)
 
-	// rate.Reached is true
-	rate, err = CheckRate(httpCtx, key, "0-M")
+	key = "test2"
+	rate, err = CheckRate(ginCtx, key, "0-M")
 	s.NoError(err)
 	s.True(rate.Reached)
 }
