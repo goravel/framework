@@ -31,17 +31,29 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestMakeHash() {
+	if !file.Exists("../.env") {
+		color.Redln("No hash tests run, need create .env based on .env.example, then initialize it")
+		return
+	}
 	initConfig()
 	s.NotEmpty(facades.Hash.Make("password"))
 }
 
 func (s *ApplicationTestSuite) TestCheckHash() {
+	if !file.Exists("../.env") {
+		color.Redln("No hash tests run, need create .env based on .env.example, then initialize it")
+		return
+	}
 	initConfig()
 	hash := facades.Hash.Make("password")
 	s.True(facades.Hash.Check("password", hash))
 }
 
 func (s *ApplicationTestSuite) TestNeedsRehash() {
+	if !file.Exists("../.env") {
+		color.Redln("No hash tests run, need create .env based on .env.example, then initialize it")
+		return
+	}
 	initConfig()
 	hash := facades.Hash.Make("password")
 	s.False(facades.Hash.NeedsRehash(hash))
