@@ -27,10 +27,11 @@ func CheckRate(c *gin.Context, key string, formatted string) (limiter.Context, e
 	storeDevice := facades.Config.GetString("limiter.store", "memory")
 
 	if storeDevice == "redis" {
+		redisConf := facades.Config.GetString("limiter.redis", "default")
 		client := redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("%s:%s", facades.Config.GetString("database.redis.default.host"), facades.Config.GetString("database.redis.default.port")),
-			Password: facades.Config.GetString("database.redis.default.password"),
-			DB:       facades.Config.GetInt("database.redis.default.database"),
+			Addr:     fmt.Sprintf("%s:%s", facades.Config.GetString("database.redis."+redisConf+".host"), facades.Config.GetString("database.redis."+redisConf+".port")),
+			Password: facades.Config.GetString("database.redis." + redisConf + ".password"),
+			DB:       facades.Config.GetInt("database.redis." + redisConf + ".database"),
 		})
 		store, err = sredis.NewStoreWithOptions(client, limiter.StoreOptions{
 			Prefix: facades.Config.GetString("app.name", "Goravel") + ":limiter",
