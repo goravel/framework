@@ -1,13 +1,12 @@
 package limiter
 
 import (
-	"github.com/gookit/color"
-	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/http"
-	"github.com/goravel/framework/support/file"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/http"
+	"github.com/goravel/framework/testing/mock"
 )
 
 type LimiterTestSuite struct {
@@ -28,11 +27,9 @@ func (s *LimiterTestSuite) TestLimiterRouteToKeyString() {
 }
 
 func (s *LimiterTestSuite) TestLimiter() {
-	if !file.Exists("../.env") {
-		color.Redln("No limiter tests run, need create .env based on .env.example, then initialize it")
-		return
-	}
-	initConfig()
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "limiter.store", "memory").Return("memory")
+
 	ginCtx := http.Background().(*http.GinContext).Instance()
 
 	key := "test1"
@@ -44,13 +41,4 @@ func (s *LimiterTestSuite) TestLimiter() {
 	rate, err = CheckRate(ginCtx, key, "0-M")
 	s.NoError(err)
 	s.True(rate.Reached)
-}
-
-func initConfig() {
-	application := config.NewApplication("../.env")
-	application.Add("limiter", map[string]any{
-		"store": "memory",
-	})
-
-	facades.Config = application
 }

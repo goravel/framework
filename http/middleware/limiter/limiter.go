@@ -1,16 +1,16 @@
-// Package limiter 处理限流逻辑
 package limiter
 
 import (
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	"github.com/goravel/framework/facades"
-	"github.com/ulule/limiter/v3/drivers/store/memory"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/ulule/limiter/v3"
+	"github.com/ulule/limiter/v3/drivers/store/memory"
 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
+
+	"github.com/goravel/framework/facades"
 )
 
 // CheckRate check rate limit

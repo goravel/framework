@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/goravel/framework/facades"
 	"golang.org/x/crypto/argon2"
+
+	"github.com/goravel/framework/facades"
 )
 
 type Argon2id struct {
@@ -36,8 +37,8 @@ func NewArgon2id() *Argon2id {
 		time:    uint32(facades.Config.GetInt("hashing.argon2id.time", 4)),
 		memory:  uint32(facades.Config.GetInt("hashing.argon2id.memory", 65536)),
 		threads: uint8(facades.Config.GetInt("hashing.argon2id.threads", 1)),
-		keyLen:  uint32(facades.Config.GetInt("hashing.argon2id.keylen", 32)),
-		saltLen: uint32(facades.Config.GetInt("hashing.argon2id.saltlen", 16)),
+		keyLen:  32,
+		saltLen: 16,
 	}
 }
 

@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	nethttp "net/http"
+
+	"github.com/spf13/cast"
+
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/http"
-	"github.com/goravel/framework/limiter"
-	"github.com/spf13/cast"
-	nethttp "net/http"
+	"github.com/goravel/framework/http/middleware/limiter"
 )
 
 // Limit is a middleware that limits the number of requests
