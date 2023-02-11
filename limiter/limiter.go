@@ -3,8 +3,8 @@ package limiter
 
 import (
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/goravel/framework/facades"
-	"github.com/redis/go-redis/v9"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 	"strings"
 
