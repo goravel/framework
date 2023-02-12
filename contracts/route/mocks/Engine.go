@@ -119,6 +119,20 @@ func (_m *Engine) Run(addr string) error {
 	return r0
 }
 
+// RunTLS provides a mock function with given fields: addr, certFile, keyFile
+func (_m *Engine) RunTLS(addr string, certFile string, keyFile string) error {
+	ret := _m.Called(addr, certFile, keyFile)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string, string) error); ok {
+		r0 = rf(addr, certFile, keyFile)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ServeHTTP provides a mock function with given fields: w, req
 func (_m *Engine) ServeHTTP(w nethttp.ResponseWriter, req *nethttp.Request) {
 	_m.Called(w, req)

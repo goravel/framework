@@ -7,7 +7,7 @@ func (receiver ListenerStubs) Listener() string {
 	return `package listeners
 
 import (
-	"github.com/goravel/framework/contracts/events"
+	"github.com/goravel/framework/contracts/event"
 )
 
 type DummyListener struct {
@@ -17,8 +17,8 @@ func (receiver *DummyListener) Signature() string {
 	return "DummyName"
 }
 
-func (receiver *DummyListener) Queue(args ...any) events.Queue {
-	return events.Queue{
+func (receiver *DummyListener) Queue(args ...any) event.Queue {
+	return event.Queue{
 		Enable:     false,
 		Connection: "",
 		Queue:      "",
