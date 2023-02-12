@@ -12,23 +12,42 @@ import (
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
+	"gorm.io/plugin/dbresolver"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
-	databasesupport "github.com/goravel/framework/database/support"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
 )
 
 func New(connection string) (*gorm.DB, error) {
-	gormConfig, err := config(connection)
+	readConfigs, writeConfigs, err := Configs(connection)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("init gorm config error: %v", err))
+		return nil, err
 	}
-	if gormConfig == nil {
+
+	dial, err := dialector(connection, writeConfigs[0])
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("init gorm dialector error: %v", err))
+	}
+	if dial == nil {
 		return nil, nil
 	}
 
+	instance, err := instance(dial)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := readWriteSeparate(connection, instance, readConfigs, writeConfigs); err != nil {
+		return nil, err
+	}
+
+	return instance, err
+}
+
+func instance(dialector gorm.Dialector) (*gorm.DB, error) {
 	var logLevel gormLogger.LogLevel
 	if facades.Config.GetBool("app.debug") {
 		logLevel = gormLogger.Info
@@ -43,15 +62,38 @@ func New(connection string) (*gorm.DB, error) {
 		Colorful:                  true,
 	})
 
-	return gorm.Open(gormConfig, &gorm.Config{
+	return gorm.Open(dialector, &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger.LogMode(logLevel),
 	})
 }
 
+func readWriteSeparate(connection string, instance *gorm.DB, readConfigs, writeConfigs []contractsdatabase.Config) error {
+	if len(readConfigs) == 0 || len(writeConfigs) == 0 {
+		return nil
+	}
+
+	readDialectors, err := dialectors(connection, readConfigs)
+	if err != nil {
+		return err
+	}
+
+	writeDialectors, err := dialectors(connection, writeConfigs)
+	if err != nil {
+		return err
+	}
+
+	return instance.Use(dbresolver.Register(dbresolver.Config{
+		Sources:           writeDialectors,
+		Replicas:          readDialectors,
+		Policy:            dbresolver.RandomPolicy{},
+		TraceResolverMode: true,
+	}))
+}
+
 type DB struct {
-	ormcontract.Query
+	contractsorm.Query
 	instance *gorm.DB
 }
 
@@ -74,7 +116,7 @@ func NewDB(ctx context.Context, connection string) (*DB, error) {
 	}, nil
 }
 
-func (r *DB) Begin() (ormcontract.Transaction, error) {
+func (r *DB) Begin() (contractsorm.Transaction, error) {
 	tx := r.instance.Begin()
 
 	return NewTransaction(tx), tx.Error
@@ -85,7 +127,7 @@ func (r *DB) Instance() *gorm.DB {
 }
 
 type Transaction struct {
-	ormcontract.Query
+	contractsorm.Query
 	instance *gorm.DB
 }
 
@@ -109,12 +151,12 @@ func NewQuery(instance *gorm.DB) *Query {
 	return &Query{instance}
 }
 
-func (r *Query) Association(association string) ormcontract.Association {
+func (r *Query) Association(association string) contractsorm.Association {
 	return r.instance.Association(association)
 }
 
-func (r *Query) Driver() ormcontract.Driver {
-	return ormcontract.Driver(r.instance.Dialector.Name())
+func (r *Query) Driver() contractsorm.Driver {
+	return contractsorm.Driver(r.instance.Dialector.Name())
 }
 
 func (r *Query) Count(count *int64) error {
@@ -163,7 +205,7 @@ func (r *Query) Delete(value any, conds ...any) error {
 	return r.instance.Delete(value, conds...).Error
 }
 
-func (r *Query) Distinct(args ...any) ormcontract.Query {
+func (r *Query) Distinct(args ...any) contractsorm.Query {
 	tx := r.instance.Distinct(args...)
 
 	return NewQuery(tx)
@@ -178,14 +220,14 @@ func (r *Query) Find(dest any, conds ...any) error {
 		switch conds[0].(type) {
 		case string:
 			if conds[0].(string) == "" {
-				return databasesupport.ErrorMissingWhereClause
+				return ErrorMissingWhereClause
 			}
 		default:
 			reflectValue := reflect.Indirect(reflect.ValueOf(conds[0]))
 			switch reflectValue.Kind() {
 			case reflect.Slice, reflect.Array:
 				if reflectValue.Len() == 0 {
-					return databasesupport.ErrorMissingWhereClause
+					return ErrorMissingWhereClause
 				}
 			}
 		}
@@ -222,25 +264,25 @@ func (r *Query) Get(dest any) error {
 	return r.instance.Find(dest).Error
 }
 
-func (r *Query) Group(name string) ormcontract.Query {
+func (r *Query) Group(name string) contractsorm.Query {
 	tx := r.instance.Group(name)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Having(query any, args ...any) ormcontract.Query {
+func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Having(query, args...)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Join(query string, args ...any) ormcontract.Query {
+func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	tx := r.instance.Joins(query, args...)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Limit(limit int) ormcontract.Query {
+func (r *Query) Limit(limit int) contractsorm.Query {
 	tx := r.instance.Limit(limit)
 
 	return NewQuery(tx)
@@ -306,31 +348,31 @@ func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 	return r.Load(model, relation, args...)
 }
 
-func (r *Query) Model(value any) ormcontract.Query {
+func (r *Query) Model(value any) contractsorm.Query {
 	tx := r.instance.Model(value)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Offset(offset int) ormcontract.Query {
+func (r *Query) Offset(offset int) contractsorm.Query {
 	tx := r.instance.Offset(offset)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Omit(columns ...string) ormcontract.Query {
+func (r *Query) Omit(columns ...string) contractsorm.Query {
 	tx := r.instance.Omit(columns...)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Order(value any) ormcontract.Query {
+func (r *Query) Order(value any) contractsorm.Query {
 	tx := r.instance.Order(value)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) OrWhere(query any, args ...any) ormcontract.Query {
+func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Or(query, args...)
 
 	return NewQuery(tx)
@@ -357,7 +399,7 @@ func (r *Query) Pluck(column string, dest any) error {
 	return r.instance.Pluck(column, dest).Error
 }
 
-func (r *Query) Raw(sql string, values ...any) ormcontract.Query {
+func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	tx := r.instance.Raw(sql, values...)
 
 	return NewQuery(tx)
@@ -395,13 +437,13 @@ func (r *Query) Scan(dest any) error {
 	return r.instance.Scan(dest).Error
 }
 
-func (r *Query) Select(query any, args ...any) ormcontract.Query {
+func (r *Query) Select(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Select(query, args...)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) Table(name string, args ...any) ormcontract.Query {
+func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	tx := r.instance.Table(name, args...)
 
 	return NewQuery(tx)
@@ -439,25 +481,25 @@ func (r *Query) Updates(values any) error {
 	return r.instance.Omit(orm.Associations).Updates(values).Error
 }
 
-func (r *Query) Where(query any, args ...any) ormcontract.Query {
+func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Where(query, args...)
 
 	return NewQuery(tx)
 }
 
-func (r *Query) WithTrashed() ormcontract.Query {
+func (r *Query) WithTrashed() contractsorm.Query {
 	tx := r.instance.Unscoped()
 
 	return NewQuery(tx)
 }
 
-func (r *Query) With(query string, args ...any) ormcontract.Query {
+func (r *Query) With(query string, args ...any) contractsorm.Query {
 	if len(args) == 1 {
 		switch args[0].(type) {
-		case func(ormcontract.Query) ormcontract.Query:
+		case func(contractsorm.Query) contractsorm.Query:
 			newArgs := []any{
 				func(db *gorm.DB) *gorm.DB {
-					query := args[0].(func(query ormcontract.Query) ormcontract.Query)(NewQuery(db))
+					query := args[0].(func(query contractsorm.Query) contractsorm.Query)(NewQuery(db))
 
 					return query.(*Query).instance
 				},
@@ -474,7 +516,7 @@ func (r *Query) With(query string, args ...any) ormcontract.Query {
 	return NewQuery(tx)
 }
 
-func (r *Query) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
+func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
 	var gormFuncs []func(*gorm.DB) *gorm.DB
 	for _, item := range funcs {
 		gormFuncs = append(gormFuncs, func(db *gorm.DB) *gorm.DB {

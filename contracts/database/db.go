@@ -23,3 +23,11 @@ type Transaction interface {
 	SelectContext(ctx context.Context, dest any, query string, args ...any) error
 	GetContext(ctx context.Context, dest any, query string, args ...any) error
 }
+
+type Config struct {
+	Host     string
+	Port     int
+	Database string
+	Username string
+	Password string
+}
