@@ -3,7 +3,6 @@ package config
 import (
 	"testing"
 
-	"github.com/gookit/color"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/support/file"
@@ -15,14 +14,13 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	if !file.Exists("../.env") {
-		color.Redln("No config tests run, need create .env based on .env.example, then initialize it")
-		return
-	}
+	file.Create(".env", "")
 
 	suite.Run(t, &ApplicationTestSuite{
-		config: NewApplication("../.env"),
+		config: NewApplication(".env"),
 	})
+
+	file.Remove(".env")
 }
 
 func (s *ApplicationTestSuite) SetupTest() {

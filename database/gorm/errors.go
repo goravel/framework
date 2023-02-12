@@ -1,4 +1,4 @@
-package support
+package gorm
 
 import "github.com/pkg/errors"
 

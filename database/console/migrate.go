@@ -11,7 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
 
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/support"
+	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/facades"
 )
 
@@ -19,9 +19,14 @@ func getMigrate() (*migrate.Migrate, error) {
 	connection := facades.Config.GetString("database.default")
 	driver := facades.Config.GetString("database.connections." + connection + ".driver")
 	dir := "file://./database/migrations"
+	_, writeConfigs, err := gorm.Configs(connection)
+	if err != nil {
+		return nil, err
+	}
+
 	switch orm.Driver(driver) {
 	case orm.DriverMysql:
-		dsn := support.GetMysqlDsn(connection)
+		dsn := gorm.MysqlDsn(connection, writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
 		}
@@ -30,10 +35,6 @@ func getMigrate() (*migrate.Migrate, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		//if err := db.Ping(); err != nil {
-		//	return nil, errors.New("Could not ping to database: " + err.Error())
-		//}
 
 		instance, err := mysql.WithInstance(db, &mysql.Config{
 			MigrationsTable: facades.Config.GetString("database.migrations"),
@@ -44,7 +45,7 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "mysql", instance)
 	case orm.DriverPostgresql:
-		dsn := support.GetPostgresqlDsn(connection)
+		dsn := gorm.PostgresqlDsn(connection, writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
 		}
@@ -63,7 +64,7 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "postgres", instance)
 	case orm.DriverSqlite:
-		dsn := support.GetSqliteDsn(connection)
+		dsn := gorm.SqliteDsn(writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
 		}
@@ -82,7 +83,7 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlite3", instance)
 	case orm.DriverSqlserver:
-		dsn := support.GetSqlserverDsn(connection)
+		dsn := gorm.SqlserverDsn(connection, writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
 		}

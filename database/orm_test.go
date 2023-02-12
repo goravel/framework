@@ -41,28 +41,28 @@ var (
 
 func TestOrmSuite(t *testing.T) {
 	mysqlPool, mysqlDocker, mysqlDB, err := gorm.MysqlDocker()
-	testMysqlDB = mysqlDB
 	if err != nil {
-		log.Fatalf("Get gorm mysql error: %s", err)
+		log.Fatalf("Get mysql error: %s", err)
 	}
+	testMysqlDB = mysqlDB
 
 	postgresqlPool, postgresqlDocker, postgresqlDB, err := gorm.PostgresqlDocker()
+	if err != nil {
+		log.Fatalf("Get postgresql error: %s", err)
+	}
 	testPostgresqlDB = postgresqlDB
-	if err != nil {
-		log.Fatalf("Get gorm postgresql error: %s", err)
-	}
 
-	_, _, sqliteDB, err := gorm.SqliteDocker()
-	testSqliteDB = sqliteDB
+	_, _, sqliteDB, err := gorm.SqliteDocker("goravel")
 	if err != nil {
-		log.Fatalf("Get gorm sqlite error: %s", err)
+		log.Fatalf("Get sqlite error: %s", err)
 	}
+	testSqliteDB = sqliteDB
 
 	sqlserverPool, sqlserverDocker, sqlserverDB, err := gorm.SqlserverDocker()
-	testSqlserverDB = sqlserverDB
 	if err != nil {
-		log.Fatalf("Get gorm postgresql error: %s", err)
+		log.Fatalf("Get sqlserver error: %s", err)
 	}
+	testSqlserverDB = sqlserverDB
 
 	suite.Run(t, new(OrmSuite))
 
