@@ -38,7 +38,7 @@ require (
 	gorm.io/driver/postgres v1.4.6
 	gorm.io/driver/sqlite v1.4.4
 	gorm.io/driver/sqlserver v1.4.2
-	gorm.io/gorm v1.24.3
+	gorm.io/gorm v1.24.5
 )
 
 require (
@@ -166,4 +166,5 @@ require (
 	gopkg.in/ini.v1 v1.64.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/plugin/dbresolver v1.4.1 // indirect
 )
