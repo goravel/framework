@@ -18,24 +18,16 @@ func NewGinResponse(instance *gin.Context, origin httpcontract.ResponseOrigin) *
 	return &GinResponse{instance, origin}
 }
 
-func (r *GinResponse) String(code int, format string, values ...any) {
-	r.instance.String(code, format, values...)
-}
-
-func (r *GinResponse) Json(code int, obj any) {
-	r.instance.JSON(code, obj)
-}
-
-func (r *GinResponse) File(filepath string) {
-	r.instance.File(filepath)
+func (r *GinResponse) Data(code int, contentType string, data []byte) {
+	r.instance.Data(code, contentType, data)
 }
 
 func (r *GinResponse) Download(filepath, filename string) {
 	r.instance.FileAttachment(filepath, filename)
 }
 
-func (r *GinResponse) Success() httpcontract.ResponseSuccess {
-	return NewGinSuccess(r.instance)
+func (r *GinResponse) File(filepath string) {
+	r.instance.File(filepath)
 }
 
 func (r *GinResponse) Header(key, value string) httpcontract.Response {
@@ -44,8 +36,24 @@ func (r *GinResponse) Header(key, value string) httpcontract.Response {
 	return r
 }
 
+func (r *GinResponse) Json(code int, obj any) {
+	r.instance.JSON(code, obj)
+}
+
 func (r *GinResponse) Origin() httpcontract.ResponseOrigin {
 	return r.origin
+}
+
+func (r *GinResponse) Redirect(code int, location string) {
+	r.instance.Redirect(code, location)
+}
+
+func (r *GinResponse) String(code int, format string, values ...any) {
+	r.instance.String(code, format, values...)
+}
+
+func (r *GinResponse) Success() httpcontract.ResponseSuccess {
+	return NewGinSuccess(r.instance)
 }
 
 func (r *GinResponse) Writer() http.ResponseWriter {
@@ -60,12 +68,16 @@ func NewGinSuccess(instance *gin.Context) httpcontract.ResponseSuccess {
 	return &GinSuccess{instance}
 }
 
-func (r *GinSuccess) String(format string, values ...any) {
-	r.instance.String(http.StatusOK, format, values...)
+func (r *GinSuccess) Data(contentType string, data []byte) {
+	r.instance.Data(http.StatusOK, contentType, data)
 }
 
 func (r *GinSuccess) Json(obj any) {
 	r.instance.JSON(http.StatusOK, obj)
+}
+
+func (r *GinSuccess) String(format string, values ...any) {
+	r.instance.String(http.StatusOK, format, values...)
 }
 
 func GinResponseMiddleware() httpcontract.Middleware {
