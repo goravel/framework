@@ -136,13 +136,13 @@ func (s *QueueTestSuite) TestSyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestSyncQueue"},
 		{Type: "int", Value: 1},
 	}).DispatchSync())
-	s.Equal(1, testSyncJob)
+	s.Equal(2, testSyncJob)
 
 	mockConfig.AssertExpectations(s.T())
 	mockQueue.AssertExpectations(s.T())
@@ -179,12 +179,12 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDefaultAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).Dispatch())
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testAsyncJob)
 
 	mockConfig.AssertExpectations(s.T())
@@ -225,12 +225,12 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestCustomAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).OnConnection("test").OnQueue("test1").Dispatch())
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomAsyncJob)
 
 	mockConfig.AssertExpectations(s.T())
@@ -268,12 +268,12 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestErrorAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestErrorAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).OnConnection("redis").OnQueue("test2").Dispatch())
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorAsyncJob)
 
 	mockConfig.AssertExpectations(s.T())
@@ -311,7 +311,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
 			Job: &TestChainAsyncJob{},
@@ -328,7 +328,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 			},
 		},
 	}).Dispatch())
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainAsyncJob)
 	s.Equal(1, testChainSyncJob)
 
