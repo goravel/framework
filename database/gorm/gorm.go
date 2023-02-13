@@ -40,11 +40,29 @@ func New(connection string) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	if err := configurePool(instance); err != nil {
+		return nil, err
+	}
+
 	if err := readWriteSeparate(connection, instance, readConfigs, writeConfigs); err != nil {
 		return nil, err
 	}
 
 	return instance, err
+}
+
+func configurePool(db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	sqlDB.SetMaxIdleConns(facades.Config.GetInt("database.pool.max_idle_conns", 10))
+	sqlDB.SetMaxOpenConns(facades.Config.GetInt("database.pool.max_open_conns", 100))
+	sqlDB.SetConnMaxIdleTime(time.Duration(facades.Config.GetInt("database.pool.conn_max_idletime", 3600)) * time.Second)
+	sqlDB.SetConnMaxLifetime(time.Duration(facades.Config.GetInt("database.pool.conn_max_lifetime", 3600)) * time.Second)
+
+	return nil
 }
 
 func instance(dialector gorm.Dialector) (*gorm.DB, error) {
