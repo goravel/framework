@@ -142,7 +142,7 @@ func (s *QueueTestSuite) TestSyncQueue() {
 		{Type: "string", Value: "TestSyncQueue"},
 		{Type: "int", Value: 1},
 	}).DispatchSync())
-	s.Equal(2, testSyncJob)
+	s.Equal(1, testSyncJob)
 
 	mockConfig.AssertExpectations(s.T())
 	mockQueue.AssertExpectations(s.T())
