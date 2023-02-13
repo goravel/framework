@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"os"
+	"strings"
 
 	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts"
@@ -30,7 +31,15 @@ func (app *Application) Boot() {
 }
 
 func (app *Application) setRootPath() {
-	support.RootPath = getCurrentAbPath()
+	rootPath := getCurrentAbPath()
+
+	// Hack air path
+	airPath := "/storage/temp"
+	if strings.HasSuffix(rootPath, airPath) {
+		rootPath = strings.ReplaceAll(rootPath, airPath, "")
+	}
+
+	support.RootPath = rootPath
 }
 
 //bootArtisan Boot artisan command.

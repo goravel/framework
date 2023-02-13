@@ -14,6 +14,11 @@ type Response struct {
 	mock.Mock
 }
 
+// Data provides a mock function with given fields: code, contentType, data
+func (_m *Response) Data(code int, contentType string, data []byte) {
+	_m.Called(code, contentType, data)
+}
+
 // Download provides a mock function with given fields: filepath, filename
 func (_m *Response) Download(filepath string, filename string) {
 	_m.Called(filepath, filename)
@@ -59,6 +64,11 @@ func (_m *Response) Origin() http.ResponseOrigin {
 	}
 
 	return r0
+}
+
+// Redirect provides a mock function with given fields: code, location
+func (_m *Response) Redirect(code int, location string) {
+	_m.Called(code, location)
 }
 
 // String provides a mock function with given fields: code, format, values

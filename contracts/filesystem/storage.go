@@ -13,27 +13,27 @@ type Storage interface {
 
 //go:generate mockery --name=Driver
 type Driver interface {
-	WithContext(ctx context.Context) Driver
+	AllDirectories(path string) ([]string, error)
+	AllFiles(path string) ([]string, error)
+	Copy(oldFile, newFile string) error
+	Delete(file ...string) error
+	DeleteDirectory(directory string) error
+	Directories(path string) ([]string, error)
+	// Download(path string)
+	Exists(file string) bool
+	Files(path string) ([]string, error)
+	Get(file string) (string, error)
+	MakeDirectory(directory string) error
+	Missing(file string) bool
+	Move(oldFile, newFile string) error
+	Path(file string) string
 	Put(file, content string) error
 	PutFile(path string, source File) (string, error)
 	PutFileAs(path string, source File, name string) (string, error)
-	Get(file string) (string, error)
 	Size(file string) (int64, error)
-	Path(file string) string
-	Exists(file string) bool
-	Missing(file string) bool
-	// Download(path string)
-	Url(file string) string
 	TemporaryUrl(file string, time time.Time) (string, error)
-	Copy(oldFile, newFile string) error
-	Move(oldFile, newFile string) error
-	Delete(file ...string) error
-	Files(path string) ([]string, error)
-	AllFiles(path string) ([]string, error)
-	Directories(path string) ([]string, error)
-	AllDirectories(path string) ([]string, error)
-	MakeDirectory(directory string) error
-	DeleteDirectory(directory string) error
+	WithContext(ctx context.Context) Driver
+	Url(file string) string
 }
 
 //go:generate mockery --name=File
