@@ -1,75 +1,64 @@
 package gorm
 
 import (
-	"errors"
 	"fmt"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
-	"gorm.io/driver/sqlserver"
-	"gorm.io/gorm"
-
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/support"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
 )
 
-func config(connection string) (gorm.Dialector, error) {
+func Configs(connection string) (readConfigs, writeConfigs []contractsdatabase.Config, err error) {
+	readConfigs = getReadConfigs(connection)
+	writeConfigs = getWriteConfigs(connection)
+	if len(readConfigs) == 0 && len(writeConfigs) == 0 {
+		return nil, nil, nil
+	}
+
+	return
+}
+
+func getReadConfigs(connection string) []contractsdatabase.Config {
+	configs := facades.Config.Get(fmt.Sprintf("database.connections.%s.read", connection))
+	if c, exist := configs.([]contractsdatabase.Config); exist {
+		return fillDefaultForConfigs(connection, c)
+	}
+
+	return []contractsdatabase.Config{}
+}
+
+func getWriteConfigs(connection string) []contractsdatabase.Config {
+	configs := facades.Config.Get(fmt.Sprintf("database.connections.%s.write", connection))
+	if c, exist := configs.([]contractsdatabase.Config); exist {
+		return fillDefaultForConfigs(connection, c)
+	}
+
+	return fillDefaultForConfigs(connection, []contractsdatabase.Config{{}})
+}
+
+func fillDefaultForConfigs(connection string, configs []contractsdatabase.Config) []contractsdatabase.Config {
+	var newConfigs []contractsdatabase.Config
 	driver := facades.Config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
-
-	switch orm.Driver(driver) {
-	case orm.DriverMysql:
-		return mysqlConfig(connection), nil
-	case orm.DriverPostgresql:
-		return postgresqlConfig(connection), nil
-	case orm.DriverSqlite:
-		return sqliteConfig(connection), nil
-	case orm.DriverSqlserver:
-		return sqlserverConfig(connection), nil
-	default:
-		return nil, errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver))
-	}
-}
-
-func mysqlConfig(connection string) gorm.Dialector {
-	dsn := support.GetMysqlDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return mysql.New(mysql.Config{
-		DSN: dsn,
-	})
-}
-
-func postgresqlConfig(connection string) gorm.Dialector {
-	dsn := support.GetPostgresqlDsn(connection)
-	if dsn == "" {
-		return nil
+	for _, config := range configs {
+		if driver != contractsorm.DriverSqlite.String() {
+			if config.Host == "" {
+				config.Host = facades.Config.GetString(fmt.Sprintf("database.connections.%s.host", connection))
+			}
+			if config.Port == 0 {
+				config.Port = facades.Config.GetInt(fmt.Sprintf("database.connections.%s.port", connection))
+			}
+			if config.Username == "" {
+				config.Username = facades.Config.GetString(fmt.Sprintf("database.connections.%s.username", connection))
+			}
+			if config.Password == "" {
+				config.Password = facades.Config.GetString(fmt.Sprintf("database.connections.%s.password", connection))
+			}
+		}
+		if config.Database == "" {
+			config.Database = facades.Config.GetString(fmt.Sprintf("database.connections.%s.database", connection))
+		}
+		newConfigs = append(newConfigs, config)
 	}
 
-	return postgres.New(postgres.Config{
-		DSN: dsn,
-	})
-}
-
-func sqliteConfig(connection string) gorm.Dialector {
-	dsn := support.GetSqliteDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return sqlite.Open(dsn)
-}
-
-func sqlserverConfig(connection string) gorm.Dialector {
-	dsn := support.GetSqlserverDsn(connection)
-	if dsn == "" {
-		return nil
-	}
-
-	return sqlserver.New(sqlserver.Config{
-		DSN: dsn,
-	})
+	return newConfigs
 }

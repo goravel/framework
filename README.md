@@ -29,7 +29,15 @@ Golang developers quickly build their own applications.
 
 ## Roadmap
 
-- [ ] Database read-write separation
+- [ ] Hash
+- [ ] Crypt
+- [ ] Configure DB Pool
+- [ ] Support Websocket
+- [ ] Broadcasting
+- [ ] Delay Queue
+- [ ] Queue supports DB driver
+- [ ] Notifications
+- [ ] Optimize unit tests
 
 ## Documentation
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -53,6 +54,7 @@ func TestRun(t *testing.T) {
 					assert.Nil(t, app.Run(host))
 				}()
 
+				time.Sleep(1 * time.Second)
 				client, err := app.Client(context.Background(), name)
 				assert.Nil(t, err)
 				testServiceClient := NewTestServiceClient(client)
@@ -74,6 +76,7 @@ func TestRun(t *testing.T) {
 					assert.Nil(t, app.Run(host))
 				}()
 
+				time.Sleep(1 * time.Second)
 				client, err := app.Client(context.Background(), "test")
 				assert.Nil(t, err)
 				testServiceClient := NewTestServiceClient(client)

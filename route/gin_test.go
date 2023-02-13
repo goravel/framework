@@ -689,6 +689,46 @@ func TestGinResponse(t *testing.T) {
 		expectHeader string
 	}{
 		{
+			name:   "Data",
+			method: "GET",
+			url:    "/data",
+			setup: func(method, url string) error {
+				gin.Get("/data", func(ctx httpcontract.Context) {
+					ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", []byte("<b>Goravel</b>"))
+				})
+
+				var err error
+				req, err = http.NewRequest(method, url, nil)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "<b>Goravel</b>",
+		},
+		{
+			name:   "Success Data",
+			method: "GET",
+			url:    "/success/data",
+			setup: func(method, url string) error {
+				gin.Get("/success/data", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Data("text/html; charset=utf-8", []byte("<b>Goravel</b>"))
+				})
+
+				var err error
+				req, err = http.NewRequest(method, url, nil)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "<b>Goravel</b>",
+		},
+		{
 			name:   "Json",
 			method: "GET",
 			url:    "/json",
@@ -859,6 +899,26 @@ func TestGinResponse(t *testing.T) {
 			},
 			expectCode: http.StatusOK,
 			expectBody: "Goravel",
+		},
+		{
+			name:   "Redirect",
+			method: "GET",
+			url:    "/redirect",
+			setup: func(method, url string) error {
+				gin.Get("/redirect", func(ctx httpcontract.Context) {
+					ctx.Response().Redirect(http.StatusMovedPermanently, "https://goravel.dev")
+				})
+
+				var err error
+				req, err = http.NewRequest(method, url, nil)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+			expectCode: http.StatusMovedPermanently,
+			expectBody: "<a href=\"https://goravel.dev\">Moved Permanently</a>.\n\n",
 		},
 	}
 
