@@ -63,101 +63,49 @@ func NewOss(ctx context.Context, disk string) (*Oss, error) {
 	}, nil
 }
 
-func (r *Oss) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewOss(ctx, r.disk)
+func (r *Oss) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	validPath := validPath(path)
+	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath), oss.Delimiter("/"))
 	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+		return nil, err
 	}
 
-	return driver
+	wg := sync.WaitGroup{}
+	for _, commonPrefix := range lsRes.CommonPrefixes {
+		directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
+
+		wg.Add(1)
+		subDirectories, err := r.AllDirectories(commonPrefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, subDirectory := range subDirectories {
+			if strings.HasSuffix(subDirectory, "/") {
+				directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
+			}
+		}
+		wg.Done()
+	}
+	wg.Wait()
+
+	return directories, nil
 }
 
-func (r *Oss) Put(file string, content string) error {
-	tempFile, err := r.tempFile(content)
-	defer os.Remove(tempFile.Name())
+func (r *Oss) AllFiles(path string) ([]string, error) {
+	var files []string
+	validPath := validPath(path)
+	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath))
 	if err != nil {
-		return err
+		return nil, err
+	}
+	for _, object := range lsRes.Objects {
+		if !strings.HasSuffix(object.Key, "/") {
+			files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
+		}
 	}
 
-	return r.bucketInstance.PutObjectFromFile(file, tempFile.Name())
-}
-
-func (r *Oss) PutFile(filePath string, source filesystem.File) (string, error) {
-	return r.PutFileAs(filePath, source, str.Random(40))
-}
-
-func (r *Oss) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
-	fullPath, err := fullPathOfFile(filePath, source, name)
-	if err != nil {
-		return "", err
-	}
-
-	if err := r.bucketInstance.PutObjectFromFile(fullPath, source.File()); err != nil {
-		return "", err
-	}
-
-	return fullPath, nil
-}
-
-func (r *Oss) Get(file string) (string, error) {
-	res, err := r.bucketInstance.GetObject(file)
-	if err != nil {
-		return "", err
-	}
-	defer res.Close()
-
-	data, err := ioutil.ReadAll(res)
-
-	return string(data), nil
-}
-
-func (r *Oss) Size(file string) (int64, error) {
-	props, err := r.bucketInstance.GetObjectDetailedMeta(file)
-	if err != nil {
-		return 0, err
-	}
-
-	lens := props["Content-Length"]
-	if len(lens) == 0 {
-		return 0, nil
-	}
-
-	contentLengthInt, err := strconv.ParseInt(lens[0], 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return contentLengthInt, nil
-}
-
-func (r *Oss) Path(file string) string {
-	return file
-}
-
-func (r *Oss) Exists(file string) bool {
-	exist, err := r.bucketInstance.IsObjectExist(file)
-	if err != nil {
-		return false
-	}
-
-	return exist
-}
-
-func (r *Oss) Missing(file string) bool {
-	return !r.Exists(file)
-}
-
-func (r *Oss) Url(file string) string {
-	return r.url + "/" + file
-}
-
-func (r *Oss) TemporaryUrl(file string, time time.Time) (string, error) {
-	signedURL, err := r.bucketInstance.SignURL(file, oss.HTTPGet, int64(time.Sub(supporttime.Now()).Seconds()))
-	if err != nil {
-		return "", err
-	}
-
-	return signedURL, nil
+	return files, nil
 }
 
 func (r *Oss) Copy(originFile, targetFile string) error {
@@ -168,14 +116,6 @@ func (r *Oss) Copy(originFile, targetFile string) error {
 	return nil
 }
 
-func (r *Oss) Move(oldFile, newFile string) error {
-	if err := r.Copy(oldFile, newFile); err != nil {
-		return err
-	}
-
-	return r.Delete(oldFile)
-}
-
 func (r *Oss) Delete(files ...string) error {
 	_, err := r.bucketInstance.DeleteObjects(files)
 	if err != nil {
@@ -183,14 +123,6 @@ func (r *Oss) Delete(files ...string) error {
 	}
 
 	return nil
-}
-
-func (r *Oss) MakeDirectory(directory string) error {
-	if !strings.HasSuffix(directory, "/") {
-		directory += "/"
-	}
-
-	return r.bucketInstance.PutObject(directory, bytes.NewReader([]byte("")))
 }
 
 func (r *Oss) DeleteDirectory(directory string) error {
@@ -228,36 +160,6 @@ func (r *Oss) DeleteDirectory(directory string) error {
 	return nil
 }
 
-func (r *Oss) Files(path string) ([]string, error) {
-	var files []string
-	validPath := validPath(path)
-	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath), oss.Delimiter("/"))
-	if err != nil {
-		return nil, err
-	}
-	for _, object := range lsRes.Objects {
-		files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
-	}
-
-	return files, nil
-}
-
-func (r *Oss) AllFiles(path string) ([]string, error) {
-	var files []string
-	validPath := validPath(path)
-	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath))
-	if err != nil {
-		return nil, err
-	}
-	for _, object := range lsRes.Objects {
-		if !strings.HasSuffix(object.Key, "/") {
-			files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
-		}
-	}
-
-	return files, nil
-}
-
 func (r *Oss) Directories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
@@ -273,33 +175,131 @@ func (r *Oss) Directories(path string) ([]string, error) {
 	return directories, nil
 }
 
-func (r *Oss) AllDirectories(path string) ([]string, error) {
-	var directories []string
+func (r *Oss) Exists(file string) bool {
+	exist, err := r.bucketInstance.IsObjectExist(file)
+	if err != nil {
+		return false
+	}
+
+	return exist
+}
+
+func (r *Oss) Files(path string) ([]string, error) {
+	var files []string
 	validPath := validPath(path)
 	lsRes, err := r.bucketInstance.ListObjectsV2(oss.MaxKeys(MaxFileNum), oss.Prefix(validPath), oss.Delimiter("/"))
 	if err != nil {
 		return nil, err
 	}
-
-	wg := sync.WaitGroup{}
-	for _, commonPrefix := range lsRes.CommonPrefixes {
-		directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
-
-		wg.Add(1)
-		subDirectories, err := r.AllDirectories(commonPrefix)
-		if err != nil {
-			return nil, err
-		}
-		for _, subDirectory := range subDirectories {
-			if strings.HasSuffix(subDirectory, "/") {
-				directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
-			}
-		}
-		wg.Done()
+	for _, object := range lsRes.Objects {
+		files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
 	}
-	wg.Wait()
 
-	return directories, nil
+	return files, nil
+}
+
+func (r *Oss) Get(file string) (string, error) {
+	res, err := r.bucketInstance.GetObject(file)
+	if err != nil {
+		return "", err
+	}
+	defer res.Close()
+
+	data, err := ioutil.ReadAll(res)
+
+	return string(data), nil
+}
+
+func (r *Oss) MakeDirectory(directory string) error {
+	if !strings.HasSuffix(directory, "/") {
+		directory += "/"
+	}
+
+	return r.bucketInstance.PutObject(directory, bytes.NewReader([]byte("")))
+}
+
+func (r *Oss) Missing(file string) bool {
+	return !r.Exists(file)
+}
+
+func (r *Oss) Move(oldFile, newFile string) error {
+	if err := r.Copy(oldFile, newFile); err != nil {
+		return err
+	}
+
+	return r.Delete(oldFile)
+}
+
+func (r *Oss) Path(file string) string {
+	return file
+}
+
+func (r *Oss) Put(file string, content string) error {
+	tempFile, err := r.tempFile(content)
+	defer os.Remove(tempFile.Name())
+	if err != nil {
+		return err
+	}
+
+	return r.bucketInstance.PutObjectFromFile(file, tempFile.Name())
+}
+
+func (r *Oss) PutFile(filePath string, source filesystem.File) (string, error) {
+	return r.PutFileAs(filePath, source, str.Random(40))
+}
+
+func (r *Oss) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
+	fullPath, err := fullPathOfFile(filePath, source, name)
+	if err != nil {
+		return "", err
+	}
+
+	if err := r.bucketInstance.PutObjectFromFile(fullPath, source.File()); err != nil {
+		return "", err
+	}
+
+	return fullPath, nil
+}
+
+func (r *Oss) Size(file string) (int64, error) {
+	props, err := r.bucketInstance.GetObjectDetailedMeta(file)
+	if err != nil {
+		return 0, err
+	}
+
+	lens := props["Content-Length"]
+	if len(lens) == 0 {
+		return 0, nil
+	}
+
+	contentLengthInt, err := strconv.ParseInt(lens[0], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return contentLengthInt, nil
+}
+
+func (r *Oss) TemporaryUrl(file string, time time.Time) (string, error) {
+	signedURL, err := r.bucketInstance.SignURL(file, oss.HTTPGet, int64(time.Sub(supporttime.Now()).Seconds()))
+	if err != nil {
+		return "", err
+	}
+
+	return signedURL, nil
+}
+
+func (r *Oss) WithContext(ctx context.Context) filesystem.Driver {
+	driver, err := NewOss(ctx, r.disk)
+	if err != nil {
+		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+	}
+
+	return driver
+}
+
+func (r *Oss) Url(file string) string {
+	return r.url + "/" + file
 }
 
 func (r *Oss) tempFile(content string) (*os.File, error) {

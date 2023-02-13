@@ -63,109 +63,70 @@ func NewCos(ctx context.Context, disk string) (*Cos, error) {
 	}, nil
 }
 
-func (r *Cos) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewCos(ctx, r.disk)
-	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+func (r *Cos) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	var marker string
+	validPath := validPath(path)
+	opt := &cos.BucketGetOptions{
+		Prefix:    validPath,
+		Delimiter: "/",
+		MaxKeys:   1000,
+	}
+	isTruncated := true
+	for isTruncated {
+		opt.Marker = marker
+		v, _, err := r.instance.Bucket.Get(context.Background(), opt)
+		if err != nil {
+			return nil, err
+		}
+		wg := sync.WaitGroup{}
+		for _, commonPrefix := range v.CommonPrefixes {
+			directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
+			wg.Add(1)
+			subDirectories, err := r.AllDirectories(commonPrefix)
+			if err != nil {
+				return nil, err
+			}
+			for _, subDirectory := range subDirectories {
+				if strings.HasSuffix(subDirectory, "/") {
+					directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
+				}
+			}
+			wg.Done()
+		}
+		wg.Wait()
+		isTruncated = v.IsTruncated
+		marker = v.NextMarker
 	}
 
-	return driver
+	return directories, nil
 }
 
-func (r *Cos) Put(file string, content string) error {
-	tempFile, err := r.tempFile(content)
-	defer os.Remove(tempFile.Name())
-	if err != nil {
-		return err
+func (r *Cos) AllFiles(path string) ([]string, error) {
+	var files []string
+	var marker string
+	validPath := validPath(path)
+	opt := &cos.BucketGetOptions{
+		Prefix:  validPath,
+		MaxKeys: 1000,
+	}
+	isTruncated := true
+	for isTruncated {
+		opt.Marker = marker
+		v, _, err := r.instance.Bucket.Get(r.ctx, opt)
+		if err != nil {
+			return nil, err
+		}
+		for _, content := range v.Contents {
+			if !strings.HasSuffix(content.Key, "/") {
+				files = append(files, strings.ReplaceAll(content.Key, validPath, ""))
+			}
+		}
+		isTruncated = v.IsTruncated
+		marker = v.NextMarker
 	}
 
-	_, _, err = r.instance.Object.Upload(
-		r.ctx, file, tempFile.Name(), nil,
-	)
-
-	return err
-}
-
-func (r *Cos) PutFile(filePath string, source filesystem.File) (string, error) {
-	return r.PutFileAs(filePath, source, str.Random(40))
-}
-
-func (r *Cos) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
-	fullPath, err := fullPathOfFile(filePath, source, name)
-	if err != nil {
-		return "", err
-	}
-
-	if _, _, err := r.instance.Object.Upload(
-		r.ctx, fullPath, source.File(), nil,
-	); err != nil {
-		return "", err
-	}
-
-	return fullPath, nil
-}
-
-func (r *Cos) Get(file string) (string, error) {
-	opt := &cos.ObjectGetOptions{
-		ResponseContentType: "text/html",
-	}
-	resp, err := r.instance.Object.Get(r.ctx, file, opt)
-	if err != nil {
-		return "", err
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-
-	return string(data), nil
-}
-
-func (r *Cos) Size(file string) (int64, error) {
-	resp, err := r.instance.Object.Head(r.ctx, file, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	contentLength := resp.Header.Get("Content-Length")
-	contentLengthInt, err := strconv.ParseInt(contentLength, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return contentLengthInt, nil
-}
-
-func (r *Cos) Path(file string) string {
-	return file
-}
-
-func (r *Cos) Exists(file string) bool {
-	ok, err := r.instance.Object.IsExist(r.ctx, file)
-	if err != nil {
-		return false
-	}
-
-	return ok
-}
-
-func (r *Cos) Missing(file string) bool {
-	return !r.Exists(file)
-}
-
-func (r *Cos) Url(file string) string {
-	objectUrl := r.instance.Object.GetObjectURL(file)
-
-	return objectUrl.String()
-}
-
-func (r *Cos) TemporaryUrl(file string, time time.Time) (string, error) {
-	// 获取预签名URL
-	presignedURL, err := r.instance.Object.GetPresignedURL(r.ctx, http.MethodGet, file, r.accessKeyId, r.accessKeySecret, time.Sub(supporttime.Now()), nil)
-	if err != nil {
-		return "", err
-	}
-
-	return presignedURL.String(), nil
+	return files, nil
 }
 
 func (r *Cos) Copy(originFile, targetFile string) error {
@@ -175,14 +136,6 @@ func (r *Cos) Copy(originFile, targetFile string) error {
 	}
 
 	return nil
-}
-
-func (r *Cos) Move(oldFile, newFile string) error {
-	if err := r.Copy(oldFile, newFile); err != nil {
-		return err
-	}
-
-	return r.Delete(oldFile)
 }
 
 func (r *Cos) Delete(files ...string) error {
@@ -196,18 +149,6 @@ func (r *Cos) Delete(files ...string) error {
 	}
 
 	if _, _, err := r.instance.Object.DeleteMulti(r.ctx, opt); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *Cos) MakeDirectory(directory string) error {
-	if !strings.HasSuffix(directory, "/") {
-		directory += "/"
-	}
-
-	if _, err := r.instance.Object.Put(r.ctx, directory, strings.NewReader(""), nil); err != nil {
 		return err
 	}
 
@@ -248,59 +189,6 @@ func (r *Cos) DeleteDirectory(directory string) error {
 	return nil
 }
 
-func (r *Cos) Files(path string) ([]string, error) {
-	var files []string
-	var marker string
-	validPath := validPath(path)
-	opt := &cos.BucketGetOptions{
-		Prefix:    validPath,
-		Delimiter: "/",
-		MaxKeys:   1000,
-	}
-	isTruncated := true
-	for isTruncated {
-		opt.Marker = marker
-		v, _, err := r.instance.Bucket.Get(r.ctx, opt)
-		if err != nil {
-			return nil, err
-		}
-		for _, content := range v.Contents {
-			files = append(files, strings.ReplaceAll(content.Key, validPath, ""))
-		}
-		isTruncated = v.IsTruncated
-		marker = v.NextMarker
-	}
-
-	return files, nil
-}
-
-func (r *Cos) AllFiles(path string) ([]string, error) {
-	var files []string
-	var marker string
-	validPath := validPath(path)
-	opt := &cos.BucketGetOptions{
-		Prefix:  validPath,
-		MaxKeys: 1000,
-	}
-	isTruncated := true
-	for isTruncated {
-		opt.Marker = marker
-		v, _, err := r.instance.Bucket.Get(r.ctx, opt)
-		if err != nil {
-			return nil, err
-		}
-		for _, content := range v.Contents {
-			if !strings.HasSuffix(content.Key, "/") {
-				files = append(files, strings.ReplaceAll(content.Key, validPath, ""))
-			}
-		}
-		isTruncated = v.IsTruncated
-		marker = v.NextMarker
-	}
-
-	return files, nil
-}
-
 func (r *Cos) Directories(path string) ([]string, error) {
 	var directories []string
 	var marker string
@@ -327,8 +215,17 @@ func (r *Cos) Directories(path string) ([]string, error) {
 	return directories, nil
 }
 
-func (r *Cos) AllDirectories(path string) ([]string, error) {
-	var directories []string
+func (r *Cos) Exists(file string) bool {
+	ok, err := r.instance.Object.IsExist(r.ctx, file)
+	if err != nil {
+		return false
+	}
+
+	return ok
+}
+
+func (r *Cos) Files(path string) ([]string, error) {
+	var files []string
 	var marker string
 	validPath := validPath(path)
 	opt := &cos.BucketGetOptions{
@@ -339,31 +236,134 @@ func (r *Cos) AllDirectories(path string) ([]string, error) {
 	isTruncated := true
 	for isTruncated {
 		opt.Marker = marker
-		v, _, err := r.instance.Bucket.Get(context.Background(), opt)
+		v, _, err := r.instance.Bucket.Get(r.ctx, opt)
 		if err != nil {
 			return nil, err
 		}
-		wg := sync.WaitGroup{}
-		for _, commonPrefix := range v.CommonPrefixes {
-			directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
-			wg.Add(1)
-			subDirectories, err := r.AllDirectories(commonPrefix)
-			if err != nil {
-				return nil, err
-			}
-			for _, subDirectory := range subDirectories {
-				if strings.HasSuffix(subDirectory, "/") {
-					directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
-				}
-			}
-			wg.Done()
+		for _, content := range v.Contents {
+			files = append(files, strings.ReplaceAll(content.Key, validPath, ""))
 		}
-		wg.Wait()
 		isTruncated = v.IsTruncated
 		marker = v.NextMarker
 	}
 
-	return directories, nil
+	return files, nil
+}
+
+func (r *Cos) Get(file string) (string, error) {
+	opt := &cos.ObjectGetOptions{
+		ResponseContentType: "text/html",
+	}
+	resp, err := r.instance.Object.Get(r.ctx, file, opt)
+	if err != nil {
+		return "", err
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	return string(data), nil
+}
+
+func (r *Cos) MakeDirectory(directory string) error {
+	if !strings.HasSuffix(directory, "/") {
+		directory += "/"
+	}
+
+	if _, err := r.instance.Object.Put(r.ctx, directory, strings.NewReader(""), nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Cos) Missing(file string) bool {
+	return !r.Exists(file)
+}
+
+func (r *Cos) Move(oldFile, newFile string) error {
+	if err := r.Copy(oldFile, newFile); err != nil {
+		return err
+	}
+
+	return r.Delete(oldFile)
+}
+
+func (r *Cos) Path(file string) string {
+	return file
+}
+
+func (r *Cos) Put(file string, content string) error {
+	tempFile, err := r.tempFile(content)
+	defer os.Remove(tempFile.Name())
+	if err != nil {
+		return err
+	}
+
+	_, _, err = r.instance.Object.Upload(
+		r.ctx, file, tempFile.Name(), nil,
+	)
+
+	return err
+}
+
+func (r *Cos) PutFile(filePath string, source filesystem.File) (string, error) {
+	return r.PutFileAs(filePath, source, str.Random(40))
+}
+
+func (r *Cos) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
+	fullPath, err := fullPathOfFile(filePath, source, name)
+	if err != nil {
+		return "", err
+	}
+
+	if _, _, err := r.instance.Object.Upload(
+		r.ctx, fullPath, source.File(), nil,
+	); err != nil {
+		return "", err
+	}
+
+	return fullPath, nil
+}
+
+func (r *Cos) Size(file string) (int64, error) {
+	resp, err := r.instance.Object.Head(r.ctx, file, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	contentLength := resp.Header.Get("Content-Length")
+	contentLengthInt, err := strconv.ParseInt(contentLength, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return contentLengthInt, nil
+}
+
+func (r *Cos) TemporaryUrl(file string, time time.Time) (string, error) {
+	// 获取预签名URL
+	presignedURL, err := r.instance.Object.GetPresignedURL(r.ctx, http.MethodGet, file, r.accessKeyId, r.accessKeySecret, time.Sub(supporttime.Now()), nil)
+	if err != nil {
+		return "", err
+	}
+
+	return presignedURL.String(), nil
+}
+
+func (r *Cos) WithContext(ctx context.Context) filesystem.Driver {
+	driver, err := NewCos(ctx, r.disk)
+	if err != nil {
+		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+	}
+
+	return driver
+}
+
+func (r *Cos) Url(file string) string {
+	objectUrl := r.instance.Object.GetObjectURL(file)
+
+	return objectUrl.String()
 }
 
 func (r *Cos) tempFile(content string) (*os.File, error) {

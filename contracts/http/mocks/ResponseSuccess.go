@@ -9,6 +9,11 @@ type ResponseSuccess struct {
 	mock.Mock
 }
 
+// Data provides a mock function with given fields: contentType, data
+func (_m *ResponseSuccess) Data(contentType string, data []byte) {
+	_m.Called(contentType, data)
+}
+
 // Json provides a mock function with given fields: obj
 func (_m *ResponseSuccess) Json(obj interface{}) {
 	_m.Called(obj)
