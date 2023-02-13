@@ -107,46 +107,11 @@ func (s *QueueTestSuite) TestWorker() {
 }
 
 func (s *QueueTestSuite) TestSyncQueue() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Once()
-	mockConfig.On("GetString", "app.name").Return("goravel").Twice()
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Once()
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Once()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-
-	mockQueue, _ := mock.Queue()
-	mockQueue.On("GetJobs").Return([]queue.Job{&TestSyncJob{}}).Once()
-
-	mockEvent, _ := mock.Event()
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(nil).Run())
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
-		}
-	}(ctx)
-	time.Sleep(3 * time.Second)
-
 	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestSyncQueue"},
 		{Type: "int", Value: 1},
 	}).DispatchSync())
 	s.Equal(1, testSyncJob)
-
-	mockConfig.AssertExpectations(s.T())
-	mockQueue.AssertExpectations(s.T())
-	mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestDefaultAsyncQueue() {
@@ -179,12 +144,12 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDefaultAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).Dispatch())
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testAsyncJob)
 
 	mockConfig.AssertExpectations(s.T())
@@ -195,9 +160,9 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	mockConfig := mock.Config()
 	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	mockConfig.On("GetString", "queue.connections.test.queue", "default").Return("default").Twice()
-	mockConfig.On("GetString", "queue.connections.test.driver").Return("redis").Times(3)
-	mockConfig.On("GetString", "queue.connections.test.connection").Return("default").Twice()
+	mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
+	mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
+	mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Twice()
@@ -213,8 +178,8 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	defer cancel()
 	go func(ctx context.Context) {
 		s.Nil(s.app.Worker(&queue.Args{
-			Connection: "test",
-			Queue:      "test1",
+			Connection: "custom",
+			Queue:      "custom1",
 			Concurrent: 2,
 		}).Run())
 
@@ -225,12 +190,12 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestCustomAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnConnection("test").OnQueue("test1").Dispatch())
-	time.Sleep(1 * time.Second)
+	}).OnConnection("custom").OnQueue("custom1").Dispatch())
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomAsyncJob)
 
 	mockConfig.AssertExpectations(s.T())
@@ -240,9 +205,9 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 
 func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Once()
+	mockConfig.On("GetString", "queue.default").Return("redis").Twice()
 	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
@@ -259,7 +224,9 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(nil).Run())
+		s.Nil(s.app.Worker(&queue.Args{
+			Queue: "error",
+		}).Run())
 
 		for {
 			select {
@@ -268,12 +235,12 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestErrorAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestErrorAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnConnection("redis").OnQueue("test2").Dispatch())
-	time.Sleep(1 * time.Second)
+	}).OnConnection("redis").OnQueue("error1").Dispatch())
+	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorAsyncJob)
 
 	mockConfig.AssertExpectations(s.T())
@@ -283,9 +250,9 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 
 func (s *QueueTestSuite) TestChainAsyncQueue() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	mockConfig.On("GetString", "queue.default").Return("redis").Times(5)
+	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
@@ -302,7 +269,9 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(nil).Run())
+		s.Nil(s.app.Worker(&queue.Args{
+			Queue: "chain",
+		}).Run())
 
 		for {
 			select {
@@ -311,7 +280,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 			}
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
 			Job: &TestChainAsyncJob{},
@@ -327,8 +296,8 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 				{Type: "int", Value: 1},
 			},
 		},
-	}).Dispatch())
-	time.Sleep(1 * time.Second)
+	}).OnQueue("chain").Dispatch())
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainAsyncJob)
 	s.Equal(1, testChainSyncJob)
 

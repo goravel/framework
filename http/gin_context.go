@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"net/http/httptest"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,8 @@ import (
 )
 
 func Background() http.Context {
-	return NewGinContext(&gin.Context{})
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	return NewGinContext(ctx)
 }
 
 type GinContext struct {
