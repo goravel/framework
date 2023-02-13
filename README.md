@@ -31,7 +31,6 @@ Golang developers quickly build their own applications.
 
 - [ ] Hash
 - [ ] Crypt
-- [ ] Configure DB Pool
 - [ ] Support Websocket
 - [ ] Broadcasting
 - [ ] Delay Queue
