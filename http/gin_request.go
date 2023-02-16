@@ -48,6 +48,10 @@ func (r *GinRequest) Bind(obj any) error {
 	return r.instance.ShouldBind(obj)
 }
 
+func (r *GinRequest) BindJson(obj any) error {
+	return r.instance.BindJSON(obj)
+}
+
 func (r *GinRequest) File(name string) (contractsfilesystem.File, error) {
 	file, err := r.instance.FormFile(name)
 	if err != nil {

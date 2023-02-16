@@ -26,6 +26,7 @@ type Request interface {
 	// Form Retrieve a form string item form the post: /users POST:id=1
 	Form(key, defaultValue string) string
 	Bind(obj any) error
+	BindJson(obj any) error
 	File(name string) (filesystem.File, error)
 
 	AbortWithStatus(code int)
