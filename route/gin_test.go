@@ -19,73 +19,257 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mockconfig "github.com/goravel/framework/contracts/config/mocks"
+	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/validation"
-	"github.com/goravel/framework/http/middleware"
 	"github.com/goravel/framework/testing/mock"
 )
 
 func TestRun(t *testing.T) {
-	mockConfig := mock.Config()
-	mockConfig.On("GetBool", "app.debug").Return(true).Twice()
+	var mockConfig *configmocks.Config
+	var route *Gin
 
-	addr := "127.0.0.1:3001"
-	route := NewGin()
-	route.Get("/", func(ctx httpcontract.Context) {
-		ctx.Response().Json(200, httpcontract.Json{
-			"Hello": "Goravel",
+	tests := []struct {
+		name        string
+		setup       func(host string) error
+		host        string
+		expectError error
+	}{
+		{
+			name: "error when default host is empty",
+			setup: func(host string) error {
+				mockConfig.On("GetString", "route.host").Return(host).Once()
+
+				go func() {
+					assert.EqualError(t, route.Run(), "host can't be empty")
+				}()
+				time.Sleep(1 * time.Second)
+
+				return errors.New("error")
+			},
+		},
+		{
+			name: "use default host",
+			setup: func(host string) error {
+				mockConfig.On("GetBool", "app.debug").Return(true).Once()
+				mockConfig.On("GetString", "route.host").Return(host).Once()
+
+				go func() {
+					assert.Nil(t, route.Run())
+				}()
+
+				return nil
+			},
+			host: "127.0.0.1:3001",
+		},
+		{
+			name: "use custom host",
+			setup: func(host string) error {
+				mockConfig.On("GetBool", "app.debug").Return(true).Once()
+
+				go func() {
+					assert.Nil(t, route.Run(host))
+				}()
+
+				return nil
+			},
+			host: "127.0.0.1:3002",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockConfig = mock.Config()
+			mockConfig.On("GetBool", "app.debug").Return(true).Once()
+			route = NewGin()
+			route.Get("/", func(ctx httpcontract.Context) {
+				ctx.Response().Json(200, httpcontract.Json{
+					"Hello": "Goravel",
+				})
+			})
+			if err := test.setup(test.host); err == nil {
+				time.Sleep(1 * time.Second)
+				resp, err := http.Get("http://" + test.host)
+				defer resp.Body.Close()
+
+				assert.Nil(t, err)
+				body, err := ioutil.ReadAll(resp.Body)
+				assert.Nil(t, err)
+				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
+			}
+			mockConfig.AssertExpectations(t)
 		})
-	})
-	go func() {
-		assert.Nil(t, route.Run(addr))
-	}()
-
-	time.Sleep(1 * time.Second)
-	resp, err := http.Get("http://" + addr)
-	defer resp.Body.Close()
-	assert.Nil(t, err)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(t, err)
-	assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
-	mockConfig.AssertExpectations(t)
+	}
 }
 
 func TestRunTLS(t *testing.T) {
-	mockConfig := mock.Config()
-	mockConfig.On("GetBool", "app.debug").Return(true).Twice()
+	var mockConfig *configmocks.Config
+	var route *Gin
 
-	addr := "127.0.0.1:3002"
-	route := NewGin()
-	route.GlobalMiddleware(middleware.Tls(addr))
-	route.Get("/", func(ctx httpcontract.Context) {
-		ctx.Response().Json(200, httpcontract.Json{
-			"Hello": "Goravel",
-		})
-	})
-	go func() {
-		assert.Nil(t, route.RunTLS(addr, "test_ca.crt", "test_ca.key"))
-	}()
+	tests := []struct {
+		name        string
+		setup       func(host string) error
+		host        string
+		expectError error
+	}{
+		{
+			name: "error when default host is empty",
+			setup: func(host string) error {
+				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
 
-	time.Sleep(1 * time.Second)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				go func() {
+					assert.EqualError(t, route.RunTLS(), "host can't be empty")
+				}()
+				time.Sleep(1 * time.Second)
+
+				return errors.New("error")
+			},
+		},
+		{
+			name: "use default host",
+			setup: func(host string) error {
+				mockConfig.On("GetBool", "app.debug").Return(true).Once()
+				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
+				mockConfig.On("GetString", "route.tls.ssl.cert").Return("test_ca.crt").Once()
+				mockConfig.On("GetString", "route.tls.ssl.key").Return("test_ca.key").Once()
+
+				go func() {
+					assert.Nil(t, route.RunTLS())
+				}()
+
+				return nil
+			},
+			host: "127.0.0.1:3003",
+		},
+		{
+			name: "use custom host",
+			setup: func(host string) error {
+				mockConfig.On("GetBool", "app.debug").Return(true).Once()
+				mockConfig.On("GetString", "route.tls.ssl.cert").Return("test_ca.crt").Once()
+				mockConfig.On("GetString", "route.tls.ssl.key").Return("test_ca.key").Once()
+
+				go func() {
+					assert.Nil(t, route.RunTLS(host))
+				}()
+
+				return nil
+			},
+			host: "127.0.0.1:3004",
+		},
 	}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Get("https://" + addr)
-	defer resp.Body.Close()
-	assert.Nil(t, err)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(t, err)
-	assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
-	mockConfig.AssertExpectations(t)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockConfig = mock.Config()
+			mockConfig.On("GetBool", "app.debug").Return(true).Once()
+			route = NewGin()
+			route.Get("/", func(ctx httpcontract.Context) {
+				ctx.Response().Json(200, httpcontract.Json{
+					"Hello": "Goravel",
+				})
+			})
+			if err := test.setup(test.host); err == nil {
+				time.Sleep(1 * time.Second)
+				tr := &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				}
+				client := &http.Client{Transport: tr}
+				resp, err := client.Get("https://" + test.host)
+				defer resp.Body.Close()
+
+				assert.Nil(t, err)
+				body, err := ioutil.ReadAll(resp.Body)
+				assert.Nil(t, err)
+				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
+			}
+			mockConfig.AssertExpectations(t)
+		})
+	}
+}
+
+func TestRunTLSWithCert(t *testing.T) {
+	var mockConfig *configmocks.Config
+	var route *Gin
+
+	tests := []struct {
+		name        string
+		setup       func(host string) error
+		host        string
+		expectError error
+	}{
+		{
+			name: "error when default host is empty",
+			setup: func(host string) error {
+				go func() {
+					assert.EqualError(t, route.RunTLSWithCert(host, "test_ca.crt", "test_ca.key"), "host can't be empty")
+				}()
+				time.Sleep(1 * time.Second)
+
+				return errors.New("error")
+			},
+		},
+		{
+			name: "use default host",
+			setup: func(host string) error {
+				mockConfig.On("GetBool", "app.debug").Return(true).Once()
+
+				go func() {
+					assert.Nil(t, route.RunTLSWithCert(host, "test_ca.crt", "test_ca.key"))
+				}()
+
+				return nil
+			},
+			host: "127.0.0.1:3005",
+		},
+		{
+			name: "use custom host",
+			setup: func(host string) error {
+				mockConfig.On("GetBool", "app.debug").Return(true).Once()
+
+				go func() {
+					assert.Nil(t, route.RunTLSWithCert(host, "test_ca.crt", "test_ca.key"))
+				}()
+
+				return nil
+			},
+			host: "127.0.0.1:3006",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockConfig = mock.Config()
+			mockConfig.On("GetBool", "app.debug").Return(true).Once()
+			route = NewGin()
+			route.Get("/", func(ctx httpcontract.Context) {
+				ctx.Response().Json(200, httpcontract.Json{
+					"Hello": "Goravel",
+				})
+			})
+			if err := test.setup(test.host); err == nil {
+				time.Sleep(1 * time.Second)
+				tr := &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				}
+				client := &http.Client{Transport: tr}
+				resp, err := client.Get("https://" + test.host)
+				defer resp.Body.Close()
+
+				assert.Nil(t, err)
+				body, err := ioutil.ReadAll(resp.Body)
+				assert.Nil(t, err)
+				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
+			}
+			mockConfig.AssertExpectations(t)
+		})
+	}
 }
 
 func TestGinRequest(t *testing.T) {
 	var (
 		gin        *Gin
 		req        *http.Request
-		mockConfig *mockconfig.Config
+		mockConfig *configmocks.Config
 	)
 	beforeEach := func() {
 		mockConfig = mock.Config()
@@ -671,7 +855,7 @@ func TestGinResponse(t *testing.T) {
 	var (
 		gin        *Gin
 		req        *http.Request
-		mockConfig *mockconfig.Config
+		mockConfig *configmocks.Config
 	)
 	beforeEach := func() {
 		mockConfig = mock.Config()
