@@ -139,7 +139,7 @@ func TestRunTLS(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3001",
+			host: "127.0.0.1:3003",
 		},
 		{
 			name: "use custom host",
@@ -154,7 +154,7 @@ func TestRunTLS(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3002",
+			host: "127.0.0.1:3004",
 		},
 	}
 
@@ -219,7 +219,7 @@ func TestRunTLSWithCert(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3001",
+			host: "127.0.0.1:3005",
 		},
 		{
 			name: "use custom host",
@@ -232,7 +232,7 @@ func TestRunTLSWithCert(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3002",
+			host: "127.0.0.1:3006",
 		},
 	}
 
