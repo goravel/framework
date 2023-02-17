@@ -55,113 +55,58 @@ func NewS3(ctx context.Context, disk string) (*S3, error) {
 	}, nil
 }
 
-func (r *S3) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewS3(ctx, r.disk)
-	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
-	}
-
-	return driver
-}
-
-func (r *S3) Put(file string, content string) error {
-	_, err := r.instance.PutObject(r.ctx, &s3.PutObjectInput{
-		Bucket: aws.String(r.bucket),
-		Key:    aws.String(file),
-		Body:   strings.NewReader(content),
-	})
-
-	return err
-}
-
-func (r *S3) PutFile(filePath string, source filesystem.File) (string, error) {
-	return r.PutFileAs(filePath, source, str.Random(40))
-}
-
-func (r *S3) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
-	fullPath, err := fullPathOfFile(filePath, source, name)
-	if err != nil {
-		return "", err
-	}
-
-	data, err := ioutil.ReadFile(source.File())
-	if err != nil {
-		return "", err
-	}
-
-	if err := r.Put(fullPath, string(data)); err != nil {
-		return "", err
-	}
-
-	return fullPath, nil
-}
-
-func (r *S3) Get(file string) (string, error) {
-	resp, err := r.instance.GetObject(r.ctx, &s3.GetObjectInput{
-		Bucket: aws.String(r.bucket),
-		Key:    aws.String(file),
+func (r *S3) AllDirectories(path string) ([]string, error) {
+	var directories []string
+	validPath := validPath(path)
+	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
+		Bucket:    aws.String(r.bucket),
+		Delimiter: aws.String("/"),
+		Prefix:    aws.String(validPath),
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	wg := sync.WaitGroup{}
+	for _, commonPrefix := range listObjsResponse.CommonPrefixes {
+		prefix := *commonPrefix.Prefix
+		directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
 
-	return string(data), nil
+		wg.Add(1)
+		subDirectories, err := r.AllDirectories(*commonPrefix.Prefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, subDirectory := range subDirectories {
+			if strings.HasSuffix(subDirectory, "/") {
+				directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
+			}
+		}
+		wg.Done()
+	}
+	wg.Wait()
+
+	return directories, nil
 }
 
-func (r *S3) Size(file string) (int64, error) {
-	resp, err := r.instance.HeadObject(r.ctx, &s3.HeadObjectInput{
+func (r *S3) AllFiles(path string) ([]string, error) {
+	var files []string
+	validPath := validPath(path)
+	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
 		Bucket: aws.String(r.bucket),
-		Key:    aws.String(file),
+		Prefix: aws.String(validPath),
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
+	}
+	for _, object := range listObjsResponse.Contents {
+		file := *object.Key
+		if !strings.HasSuffix(file, "/") {
+			files = append(files, strings.ReplaceAll(file, validPath, ""))
+		}
 	}
 
-	return resp.ContentLength, nil
-}
-
-func (r *S3) Path(file string) string {
-	return file
-}
-
-func (r *S3) Exists(file string) bool {
-	_, err := r.instance.HeadObject(r.ctx, &s3.HeadObjectInput{
-		Bucket: aws.String(r.bucket),
-		Key:    aws.String(file),
-	})
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
-func (r *S3) Missing(file string) bool {
-	return !r.Exists(file)
-}
-
-func (r *S3) Url(file string) string {
-	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
-}
-
-func (r *S3) TemporaryUrl(file string, time time.Time) (string, error) {
-	presignClient := s3.NewPresignClient(r.instance)
-	presignParams := &s3.GetObjectInput{
-		Bucket: aws.String(r.bucket),
-		Key:    aws.String(file),
-	}
-	presignDuration := func(po *s3.PresignOptions) {
-		po.Expires = time.Sub(supporttime.Now())
-	}
-	presignResult, err := presignClient.PresignGetObject(r.ctx, presignParams, presignDuration)
-	if err != nil {
-		return "", err
-	}
-
-	return presignResult.URL, nil
+	return files, nil
 }
 
 func (r *S3) Copy(originFile, targetFile string) error {
@@ -172,14 +117,6 @@ func (r *S3) Copy(originFile, targetFile string) error {
 	})
 
 	return err
-}
-
-func (r *S3) Move(oldFile, newFile string) error {
-	if err := r.Copy(oldFile, newFile); err != nil {
-		return err
-	}
-
-	return r.Delete(oldFile)
 }
 
 func (r *S3) Delete(files ...string) error {
@@ -199,14 +136,6 @@ func (r *S3) Delete(files ...string) error {
 	})
 
 	return err
-}
-
-func (r *S3) MakeDirectory(directory string) error {
-	if !strings.HasSuffix(directory, "/") {
-		directory += "/"
-	}
-
-	return r.Put(directory, "")
 }
 
 func (r *S3) DeleteDirectory(directory string) error {
@@ -252,44 +181,6 @@ func (r *S3) DeleteDirectory(directory string) error {
 	return nil
 }
 
-func (r *S3) Files(path string) ([]string, error) {
-	var files []string
-	validPath := validPath(path)
-	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
-		Bucket:    aws.String(r.bucket),
-		Delimiter: aws.String("/"),
-		Prefix:    aws.String(validPath),
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, object := range listObjsResponse.Contents {
-		files = append(files, strings.ReplaceAll(*object.Key, validPath, ""))
-	}
-
-	return files, nil
-}
-
-func (r *S3) AllFiles(path string) ([]string, error) {
-	var files []string
-	validPath := validPath(path)
-	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
-		Bucket: aws.String(r.bucket),
-		Prefix: aws.String(validPath),
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, object := range listObjsResponse.Contents {
-		file := *object.Key
-		if !strings.HasSuffix(file, "/") {
-			files = append(files, strings.ReplaceAll(file, validPath, ""))
-		}
-	}
-
-	return files, nil
-}
-
 func (r *S3) Directories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
@@ -308,8 +199,20 @@ func (r *S3) Directories(path string) ([]string, error) {
 	return directories, nil
 }
 
-func (r *S3) AllDirectories(path string) ([]string, error) {
-	var directories []string
+func (r *S3) Exists(file string) bool {
+	_, err := r.instance.HeadObject(r.ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+	})
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (r *S3) Files(path string) ([]string, error) {
+	var files []string
 	validPath := validPath(path)
 	listObjsResponse, err := r.instance.ListObjectsV2(r.ctx, &s3.ListObjectsV2Input{
 		Bucket:    aws.String(r.bucket),
@@ -319,27 +222,124 @@ func (r *S3) AllDirectories(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	wg := sync.WaitGroup{}
-	for _, commonPrefix := range listObjsResponse.CommonPrefixes {
-		prefix := *commonPrefix.Prefix
-		directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
-
-		wg.Add(1)
-		subDirectories, err := r.AllDirectories(*commonPrefix.Prefix)
-		if err != nil {
-			return nil, err
-		}
-		for _, subDirectory := range subDirectories {
-			if strings.HasSuffix(subDirectory, "/") {
-				directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
-			}
-		}
-		wg.Done()
+	for _, object := range listObjsResponse.Contents {
+		files = append(files, strings.ReplaceAll(*object.Key, validPath, ""))
 	}
-	wg.Wait()
 
-	return directories, nil
+	return files, nil
+}
+
+func (r *S3) Get(file string) (string, error) {
+	resp, err := r.instance.GetObject(r.ctx, &s3.GetObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	return string(data), nil
+}
+
+func (r *S3) MakeDirectory(directory string) error {
+	if !strings.HasSuffix(directory, "/") {
+		directory += "/"
+	}
+
+	return r.Put(directory, "")
+}
+
+func (r *S3) Missing(file string) bool {
+	return !r.Exists(file)
+}
+
+func (r *S3) Move(oldFile, newFile string) error {
+	if err := r.Copy(oldFile, newFile); err != nil {
+		return err
+	}
+
+	return r.Delete(oldFile)
+}
+
+func (r *S3) Path(file string) string {
+	return file
+}
+
+func (r *S3) Put(file string, content string) error {
+	_, err := r.instance.PutObject(r.ctx, &s3.PutObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+		Body:   strings.NewReader(content),
+	})
+
+	return err
+}
+
+func (r *S3) PutFile(filePath string, source filesystem.File) (string, error) {
+	return r.PutFileAs(filePath, source, str.Random(40))
+}
+
+func (r *S3) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
+	fullPath, err := fullPathOfFile(filePath, source, name)
+	if err != nil {
+		return "", err
+	}
+
+	data, err := ioutil.ReadFile(source.File())
+	if err != nil {
+		return "", err
+	}
+
+	if err := r.Put(fullPath, string(data)); err != nil {
+		return "", err
+	}
+
+	return fullPath, nil
+}
+
+func (r *S3) Size(file string) (int64, error) {
+	resp, err := r.instance.HeadObject(r.ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return resp.ContentLength, nil
+}
+
+func (r *S3) TemporaryUrl(file string, time time.Time) (string, error) {
+	presignClient := s3.NewPresignClient(r.instance)
+	presignParams := &s3.GetObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+	}
+	presignDuration := func(po *s3.PresignOptions) {
+		po.Expires = time.Sub(supporttime.Now())
+	}
+	presignResult, err := presignClient.PresignGetObject(r.ctx, presignParams, presignDuration)
+	if err != nil {
+		return "", err
+	}
+
+	return presignResult.URL, nil
+}
+
+func (r *S3) WithContext(ctx context.Context) filesystem.Driver {
+	driver, err := NewS3(ctx, r.disk)
+	if err != nil {
+		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+	}
+
+	return driver
+}
+
+func (r *S3) Url(file string) string {
+	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
 }
 
 func (r *S3) tempFile(content string) (*os.File, error) {
