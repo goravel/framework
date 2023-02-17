@@ -11,27 +11,28 @@ type GroupFunc func(routes Route)
 //go:generate mockery --name=Engine
 type Engine interface {
 	Route
-	Run(addr string) error
-	RunTLS(addr, certFile, keyFile string) error
-	ServeHTTP(w http.ResponseWriter, req *http.Request)
-	GlobalMiddleware(...httpcontract.Middleware)
+	Run(host ...string) error
+	RunTLS(host ...string) error
+	RunTLSWithCert(host, certFile, keyFile string) error
+	ServeHTTP(writer http.ResponseWriter, request *http.Request)
+	GlobalMiddleware(middlewares ...httpcontract.Middleware)
 }
 
 //go:generate mockery --name=Route
 type Route interface {
-	Group(GroupFunc)
+	Group(handler GroupFunc)
 	Prefix(addr string) Route
-	Middleware(...httpcontract.Middleware) Route
+	Middleware(middlewares ...httpcontract.Middleware) Route
 
-	Any(string, httpcontract.HandlerFunc)
-	Get(string, httpcontract.HandlerFunc)
-	Post(string, httpcontract.HandlerFunc)
-	Delete(string, httpcontract.HandlerFunc)
-	Patch(string, httpcontract.HandlerFunc)
-	Put(string, httpcontract.HandlerFunc)
-	Options(string, httpcontract.HandlerFunc)
+	Any(relativePath string, handler httpcontract.HandlerFunc)
+	Get(relativePath string, handler httpcontract.HandlerFunc)
+	Post(relativePath string, handler httpcontract.HandlerFunc)
+	Delete(relativePath string, handler httpcontract.HandlerFunc)
+	Patch(relativePath string, handler httpcontract.HandlerFunc)
+	Put(relativePath string, handler httpcontract.HandlerFunc)
+	Options(relativePath string, handler httpcontract.HandlerFunc)
 
-	Static(string, string)
-	StaticFile(string, string)
-	StaticFS(string, http.FileSystem)
+	Static(relativePath, root string)
+	StaticFile(relativePath, filepath string)
+	StaticFS(relativePath string, fs http.FileSystem)
 }

@@ -44,8 +44,8 @@ func (r *GinGroup) Prefix(addr string) route.Route {
 	return r
 }
 
-func (r *GinGroup) Middleware(handlers ...httpcontract.Middleware) route.Route {
-	r.middlewares = append(r.middlewares, handlers...)
+func (r *GinGroup) Middleware(middlewares ...httpcontract.Middleware) route.Route {
+	r.middlewares = append(r.middlewares, middlewares...)
 
 	return r
 }
