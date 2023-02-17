@@ -1,16 +1,16 @@
 package middleware
 
 import (
-	nethttp "net/http"
+	"net/http"
 
 	"github.com/unrolled/secure"
 
-	"github.com/goravel/framework/contracts/http"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 )
 
-func Tls(host ...string) http.Middleware {
-	return func(ctx http.Context) {
+func Tls(host ...string) contractshttp.Middleware {
+	return func(ctx contractshttp.Context) {
 		if len(host) == 0 {
 			defaultHost := facades.Config.GetString("route.tls.host")
 			if defaultHost == "" {
@@ -27,7 +27,7 @@ func Tls(host ...string) http.Middleware {
 		})
 
 		if err := secureMiddleware.Process(ctx.Response().Writer(), ctx.Request().Origin()); err != nil {
-			ctx.Request().AbortWithStatus(nethttp.StatusForbidden)
+			ctx.Request().AbortWithStatus(http.StatusForbidden)
 		}
 
 		ctx.Request().Next()
