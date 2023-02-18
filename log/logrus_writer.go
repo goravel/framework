@@ -2,6 +2,7 @@ package log
 
 import (
 	"errors"
+	"io/ioutil"
 
 	"github.com/sirupsen/logrus"
 
@@ -86,12 +87,20 @@ func registerHook(instance *logrus.Logger, channel string) error {
 
 		return nil
 	case log.SingleDriver:
+		if !facades.Config.GetBool(channelPath + ".print") {
+			instance.SetOutput(ioutil.Discard)
+		}
+
 		logLogger := &logger.Single{}
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
 		}
 	case log.DailyDriver:
+		if !facades.Config.GetBool(channelPath + ".print") {
+			instance.SetOutput(ioutil.Discard)
+		}
+
 		logLogger := &logger.Daily{}
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
