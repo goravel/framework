@@ -13,10 +13,10 @@ func NewDenyResponse(message string) *Response {
 	return &Response{message: message}
 }
 
-func (r Response) Allowed() bool {
+func (r *Response) Allowed() bool {
 	return r.allowed
 }
 
-func (r Response) Message() string {
+func (r *Response) Message() string {
 	return r.message
 }
