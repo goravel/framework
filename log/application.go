@@ -15,18 +15,18 @@ type Logrus struct {
 	log.Writer
 }
 
-func NewApplication(writer log.Writer) log.Log {
+func NewApplication(writer log.Writer) *Logrus {
 	return &Logrus{
 		Writer: writer,
 	}
 }
 
-func NewLogrusApplication() log.Log {
-	logrus := newLogrus()
+func NewLogrusApplication() *Logrus {
+	instance := newLogrus()
 
 	return &Logrus{
-		instance: logrus,
-		Writer:   NewWriter(logrus.WithContext(context.Background())),
+		instance: instance,
+		Writer:   NewWriter(instance.WithContext(context.Background())),
 	}
 }
 
@@ -44,8 +44,7 @@ func newLogrus() *logrus.Logger {
 	instance.SetLevel(logrus.DebugLevel)
 
 	if facades.Config != nil {
-		logging := facades.Config.GetString("logging.default")
-		if logging != "" {
+		if logging := facades.Config.GetString("logging.default"); logging != "" {
 			if err := registerHook(instance, logging); err != nil {
 				color.Redln("Init facades.Log error: " + err.Error())
 

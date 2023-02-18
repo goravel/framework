@@ -10,6 +10,7 @@ type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register() {
+	facades.RateLimiter = NewRateLimiter()
 }
 
 func (database *ServiceProvider) Boot() {

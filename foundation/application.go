@@ -11,9 +11,9 @@ import (
 )
 
 func init() {
-	//Create a new application instance.
-	app := Application{}
+	setEnv()
 
+	app := Application{}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
 }
@@ -27,19 +27,7 @@ func (app *Application) Boot() {
 	app.bootConfiguredServiceProviders()
 
 	app.bootArtisan()
-	app.setRootPath()
-}
-
-func (app *Application) setRootPath() {
-	rootPath := getCurrentAbPath()
-
-	// Hack air path
-	airPath := "/storage/temp"
-	if strings.HasSuffix(rootPath, airPath) {
-		rootPath = strings.ReplaceAll(rootPath, airPath, "")
-	}
-
-	support.RootPath = rootPath
+	setRootPath()
 }
 
 //bootArtisan Boot artisan command.
@@ -91,4 +79,25 @@ func (app *Application) bootServiceProviders(serviceProviders []contracts.Servic
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Boot()
 	}
+}
+
+func setEnv() {
+	args := os.Args
+	if len(args) >= 2 {
+		if args[1] == "artisan" {
+			support.Env = support.EnvArtisan
+		}
+	}
+}
+
+func setRootPath() {
+	rootPath := getCurrentAbPath()
+
+	// Hack air path
+	airPath := "/storage/temp"
+	if strings.HasSuffix(rootPath, airPath) {
+		rootPath = strings.ReplaceAll(rootPath, airPath, "")
+	}
+
+	support.RootPath = rootPath
 }
