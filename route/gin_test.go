@@ -288,9 +288,9 @@ func TestGinRequest(t *testing.T) {
 		{
 			name:   "Methods",
 			method: "GET",
-			url:    "/get/1?name=Goravel",
+			url:    "/methods/1?name=Goravel",
 			setup: func(method, url string) error {
-				gin.Get("/get/{id}", func(ctx httpcontract.Context) {
+				gin.Get("/methods/{id}", func(ctx httpcontract.Context) {
 					ctx.Response().Success().Json(httpcontract.Json{
 						"id":       ctx.Request().Input("id"),
 						"name":     ctx.Request().Query("name", "Hello"),
@@ -313,7 +313,7 @@ func TestGinRequest(t *testing.T) {
 				return nil
 			},
 			expectCode: http.StatusOK,
-			expectBody: "{\"full_url\":\"\",\"header\":\"goravel\",\"id\":\"1\",\"ip\":\"\",\"method\":\"GET\",\"name\":\"Goravel\",\"path\":\"/get/1\",\"url\":\"\"}",
+			expectBody: "{\"full_url\":\"\",\"header\":\"goravel\",\"id\":\"1\",\"ip\":\"\",\"method\":\"GET\",\"name\":\"Goravel\",\"path\":\"/methods/1\",\"url\":\"\"}",
 		},
 		{
 			name:   "Headers",
@@ -338,13 +338,226 @@ func TestGinRequest(t *testing.T) {
 			expectBody: "{\"Hello\":[\"Goravel\"]}",
 		},
 		{
+			name:   "Route",
+			method: "GET",
+			url:    "/route/1/2/3/a",
+			setup: func(method, url string) error {
+				gin.Get("/route/{string}/{int}/{int64}/{string1}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"string": ctx.Request().Route("string"),
+						"int":    ctx.Request().RouteInt("int"),
+						"int64":  ctx.Request().RouteInt64("int64"),
+						"error":  ctx.Request().RouteInt("string1"),
+					})
+				})
+
+				var err error
+				req, err = http.NewRequest(method, url, nil)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"error\":0,\"int\":2,\"int64\":3,\"string\":\"1\"}",
+		},
+		{
+			name:   "Input - from json",
+			method: "POST",
+			url:    "/input1/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input1/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id": ctx.Request().Input("id"),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"id": "3"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"3\"}",
+		},
+		{
+			name:   "Input - from form",
+			method: "POST",
+			url:    "/input2/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input2/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id": ctx.Request().Input("id"),
+					})
+				})
+
+				payload := &bytes.Buffer{}
+				writer := multipart.NewWriter(payload)
+				if err := writer.WriteField("id", "4"); err != nil {
+					return err
+				}
+				if err := writer.Close(); err != nil {
+					return err
+				}
+
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", writer.FormDataContentType())
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"4\"}",
+		},
+		{
+			name:   "Input - from query",
+			method: "POST",
+			url:    "/input3/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input3/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id": ctx.Request().Input("id"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"2\"}",
+		},
+		{
+			name:   "Input - from route",
+			method: "POST",
+			url:    "/input4/1",
+			setup: func(method, url string) error {
+				gin.Post("/input4/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id": ctx.Request().Input("id"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"1\"}",
+		},
+		{
+			name:   "Input - empty",
+			method: "POST",
+			url:    "/input5/1",
+			setup: func(method, url string) error {
+				gin.Post("/input5/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id1": ctx.Request().Input("id1"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id1\":\"\"}",
+		},
+		{
+			name:   "Input - default",
+			method: "POST",
+			url:    "/input6/1",
+			setup: func(method, url string) error {
+				gin.Post("/input6/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id1": ctx.Request().Input("id1", "2"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id1\":\"2\"}",
+		},
+		{
+			name:   "InputInt",
+			method: "POST",
+			url:    "/input-int/1",
+			setup: func(method, url string) error {
+				gin.Post("/input-int/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id": ctx.Request().InputInt("id"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":1}",
+		},
+		{
+			name:   "InputInt64",
+			method: "POST",
+			url:    "/input-int64/1",
+			setup: func(method, url string) error {
+				gin.Post("/input-int64/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id": ctx.Request().InputInt64("id"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":1}",
+		},
+		{
+			name:   "InputBool",
+			method: "POST",
+			url:    "/input-bool/1/true/on/yes/a",
+			setup: func(method, url string) error {
+				gin.Post("/input-bool/{id1}/{id2}/{id3}/{id4}/{id5}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id1": ctx.Request().InputBool("id1"),
+						"id2": ctx.Request().InputBool("id2"),
+						"id3": ctx.Request().InputBool("id3"),
+						"id4": ctx.Request().InputBool("id4"),
+						"id5": ctx.Request().InputBool("id5"),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id1\":true,\"id2\":true,\"id3\":true,\"id4\":true,\"id5\":false}",
+		},
+		{
 			name:   "Form",
 			method: "POST",
-			url:    "/post",
+			url:    "/form",
 			setup: func(method, url string) error {
-				gin.Post("/post", func(ctx httpcontract.Context) {
+				gin.Post("/form", func(ctx httpcontract.Context) {
 					ctx.Response().Success().Json(httpcontract.Json{
-						"name": ctx.Request().Form("name", "Hello"),
+						"name":  ctx.Request().Form("name", "Hello"),
+						"name1": ctx.Request().Form("name1", "Hello"),
 					})
 				})
 
@@ -363,7 +576,32 @@ func TestGinRequest(t *testing.T) {
 				return nil
 			},
 			expectCode: http.StatusOK,
-			expectBody: "{\"name\":\"Goravel\"}",
+			expectBody: "{\"name\":\"Goravel\",\"name1\":\"Hello\"}",
+		},
+		{
+			name:   "Json",
+			method: "POST",
+			url:    "/json",
+			setup: func(method, url string) error {
+				gin.Post("/json", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"name":   ctx.Request().Json("name"),
+						"info":   ctx.Request().Json("info"),
+						"avatar": ctx.Request().Json("avatar", "logo"),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"name": "Goravel",
+					"info": {"avatar": "logo"}
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"avatar\":\"logo\",\"info\":\"\",\"name\":\"Goravel\"}",
 		},
 		{
 			name:   "Bind",
@@ -393,6 +631,35 @@ func TestGinRequest(t *testing.T) {
 			expectBody: "{\"name\":\"Goravel\"}",
 		},
 		{
+			name:   "Query",
+			method: "GET",
+			url:    "/query?string=Goravel&int=1&int64=2&bool1=1&bool2=true&bool3=on&bool4=yes&bool5=0&error=a",
+			setup: func(method, url string) error {
+				gin.Get("/query", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"string":        ctx.Request().Query("string", ""),
+						"int":           ctx.Request().QueryInt("int", 11),
+						"int_default":   ctx.Request().QueryInt("int_default", 11),
+						"int64":         ctx.Request().QueryInt64("int64", 22),
+						"int64_default": ctx.Request().QueryInt64("int64_default", 22),
+						"bool1":         ctx.Request().QueryBool("bool1"),
+						"bool2":         ctx.Request().QueryBool("bool2"),
+						"bool3":         ctx.Request().QueryBool("bool3"),
+						"bool4":         ctx.Request().QueryBool("bool4"),
+						"bool5":         ctx.Request().QueryBool("bool5"),
+						"error":         ctx.Request().QueryInt("error", 33),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"bool1\":true,\"bool2\":true,\"bool3\":true,\"bool4\":true,\"bool5\":false,\"error\":0,\"int\":1,\"int64\":2,\"int64_default\":22,\"int_default\":11,\"string\":\"Goravel\"}",
+		},
+		{
 			name:   "QueryArray",
 			method: "GET",
 			url:    "/query-array?name=Goravel&name=Goravel1",
@@ -414,9 +681,9 @@ func TestGinRequest(t *testing.T) {
 		{
 			name:   "QueryMap",
 			method: "GET",
-			url:    "/query-array?name[a]=Goravel&name[b]=Goravel1",
+			url:    "/query-map?name[a]=Goravel&name[b]=Goravel1",
 			setup: func(method, url string) error {
-				gin.Get("/query-array", func(ctx httpcontract.Context) {
+				gin.Get("/query-map", func(ctx httpcontract.Context) {
 					ctx.Response().Success().Json(httpcontract.Json{
 						"name": ctx.Request().QueryMap("name"),
 					})
@@ -837,17 +1104,19 @@ func TestGinRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		beforeEach()
-		err := test.setup(test.method, test.url)
-		assert.Nil(t, err)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			err := test.setup(test.method, test.url)
+			assert.Nil(t, err)
 
-		w := httptest.NewRecorder()
-		gin.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			gin.ServeHTTP(w, req)
 
-		if test.expectBody != "" {
-			assert.Equal(t, test.expectBody, w.Body.String(), test.name)
-		}
-		assert.Equal(t, test.expectCode, w.Code, test.name)
+			if test.expectBody != "" {
+				assert.Equal(t, test.expectBody, w.Body.String(), test.name)
+			}
+			assert.Equal(t, test.expectCode, w.Code)
+		})
 	}
 }
 
