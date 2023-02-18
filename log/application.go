@@ -15,13 +15,13 @@ type Logrus struct {
 	log.Writer
 }
 
-func NewApplication(writer log.Writer) log.Log {
+func NewApplication(writer log.Writer) *Logrus {
 	return &Logrus{
 		Writer: writer,
 	}
 }
 
-func NewLogrusApplication() log.Log {
+func NewLogrusApplication() *Logrus {
 	instance := newLogrus()
 
 	return &Logrus{
