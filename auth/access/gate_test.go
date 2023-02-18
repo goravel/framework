@@ -27,16 +27,16 @@ func (s *GateTestSuite) TestWithContext() {
 	ctx := context.WithValue(context.Background(), "hello", "goravel")
 
 	gate := NewGate(ctx)
-	gate.Define("create", func(ctx context.Context, arguments map[string]any) *access.Response {
+	gate.Define("create", func(ctx context.Context, arguments map[string]any) access.Response {
 		user := arguments["user"].(string)
 		if user == "1" {
-			return access.NewAllowResponse()
+			return NewAllowResponse()
 		} else {
-			return access.NewDenyResponse(ctx.Value("hello").(string))
+			return NewDenyResponse(ctx.Value("hello").(string))
 		}
 	})
 
-	assert.Equal(s.T(), access.NewDenyResponse("goravel"), gate.Inspect("create", map[string]any{
+	assert.Equal(s.T(), NewDenyResponse("goravel"), gate.Inspect("create", map[string]any{
 		"user": "2",
 	}))
 }
@@ -69,19 +69,19 @@ func (s *GateTestSuite) TestDenies() {
 
 func (s *GateTestSuite) TestInspect() {
 	gate := initGate()
-	assert.Equal(s.T(), access.NewAllowResponse(), gate.Inspect("create", map[string]any{
+	assert.Equal(s.T(), NewAllowResponse(), gate.Inspect("create", map[string]any{
 		"user": "1",
 	}))
 	assert.True(s.T(), gate.Inspect("create", map[string]any{
 		"user": "1",
 	}).Allowed())
-	assert.Equal(s.T(), access.NewDenyResponse("create error"), gate.Inspect("create", map[string]any{
+	assert.Equal(s.T(), NewDenyResponse("create error"), gate.Inspect("create", map[string]any{
 		"user": "2",
 	}))
 	assert.Equal(s.T(), "create error", gate.Inspect("create", map[string]any{
 		"user": "2",
 	}).Message())
-	assert.Equal(s.T(), access.NewDenyResponse(fmt.Sprintf("ability doesn't exist: %s", "delete")), gate.Inspect("delete", map[string]any{
+	assert.Equal(s.T(), NewDenyResponse(fmt.Sprintf("ability doesn't exist: %s", "delete")), gate.Inspect("delete", map[string]any{
 		"user": "1",
 	}))
 }
@@ -114,10 +114,10 @@ func (s *GateTestSuite) TestNone() {
 
 func (s *GateTestSuite) TestBefore() {
 	gate := initGate()
-	gate.Before(func(ctx context.Context, ability string, arguments map[string]any) *access.Response {
+	gate.Before(func(ctx context.Context, ability string, arguments map[string]any) access.Response {
 		user := arguments["user"].(string)
 		if user == "3" {
-			return access.NewAllowResponse()
+			return NewAllowResponse()
 		}
 
 		return nil
@@ -132,18 +132,18 @@ func (s *GateTestSuite) TestBefore() {
 
 func (s *GateTestSuite) TestAfter() {
 	gate := initGate()
-	gate.Define("delete", func(ctx context.Context, arguments map[string]any) *access.Response {
+	gate.Define("delete", func(ctx context.Context, arguments map[string]any) access.Response {
 		user := arguments["user"].(string)
 		if user == "3" {
 			return nil
 		} else {
-			return access.NewAllowResponse()
+			return NewAllowResponse()
 		}
 	})
-	gate.After(func(ctx context.Context, ability string, arguments map[string]any, result *access.Response) *access.Response {
+	gate.After(func(ctx context.Context, ability string, arguments map[string]any, result access.Response) access.Response {
 		user := arguments["user"].(string)
 		if user == "3" {
-			return access.NewAllowResponse()
+			return NewAllowResponse()
 		}
 
 		return nil
@@ -158,20 +158,20 @@ func (s *GateTestSuite) TestAfter() {
 
 func initGate() *Gate {
 	gate := NewGate(context.Background())
-	gate.Define("create", func(ctx context.Context, arguments map[string]any) *access.Response {
+	gate.Define("create", func(ctx context.Context, arguments map[string]any) access.Response {
 		user := arguments["user"].(string)
 		if user == "1" {
-			return access.NewAllowResponse()
+			return NewAllowResponse()
 		} else {
-			return access.NewDenyResponse("create error")
+			return NewDenyResponse("create error")
 		}
 	})
-	gate.Define("update", func(ctx context.Context, arguments map[string]any) *access.Response {
+	gate.Define("update", func(ctx context.Context, arguments map[string]any) access.Response {
 		user := arguments["user"].(string)
 		if user == "2" {
-			return access.NewAllowResponse()
+			return NewAllowResponse()
 		} else {
-			return access.NewDenyResponse(" update error")
+			return NewDenyResponse(" update error")
 		}
 	})
 
