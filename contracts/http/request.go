@@ -28,8 +28,11 @@ type Request interface {
 	QueryBool(key string, defaultValue ...bool) bool
 	QueryArray(key string) []string
 	QueryMap(key string) map[string]string
-	// Form Retrieve a form string item form the post: /users POST:id=1
+	// Form Retrieve a form string item from the post: /users POST:id=1
 	Form(key string, defaultValue ...string) string
+	// Json Retrieve data from the post: /users JSON:{"id": 1}
+	Json(key string, defaultValue ...string) string
+	// Bind Retrieve JSON and bind to obj
 	Bind(obj any) error
 	// Input Retrieve data by order: json, form, query, route
 	Input(key string, defaultValue ...string) string

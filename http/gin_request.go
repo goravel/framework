@@ -105,15 +105,36 @@ func (r *GinRequest) Form(key string, defaultValue ...string) string {
 	return r.instance.DefaultPostForm(key, defaultValue[0])
 }
 
+func (r *GinRequest) Json(key string, defaultValue ...string) string {
+	var data map[string]any
+	if err := r.Bind(&data); err != nil {
+		if len(defaultValue) == 0 {
+			return ""
+		} else {
+			return defaultValue[0]
+		}
+	}
+
+	if value, exist := data[key]; exist {
+		return cast.ToString(value)
+	}
+
+	if len(defaultValue) == 0 {
+		return ""
+	}
+
+	return defaultValue[0]
+}
+
 func (r *GinRequest) Bind(obj any) error {
 	return r.instance.ShouldBind(obj)
 }
 
 func (r *GinRequest) Input(key string, defaultValue ...string) string {
-	data := make(map[string]string)
+	data := make(map[string]any)
 	if err := r.Bind(&data); err == nil {
 		if item, exist := data[key]; exist {
-			return item
+			return cast.ToString(item)
 		}
 	}
 

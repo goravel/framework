@@ -579,6 +579,31 @@ func TestGinRequest(t *testing.T) {
 			expectBody: "{\"name\":\"Goravel\",\"name1\":\"Hello\"}",
 		},
 		{
+			name:   "Json",
+			method: "POST",
+			url:    "/json",
+			setup: func(method, url string) error {
+				gin.Post("/json", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"name":   ctx.Request().Json("name"),
+						"info":   ctx.Request().Json("info"),
+						"avatar": ctx.Request().Json("avatar", "logo"),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"name": "Goravel",
+					"info": {"avatar": "logo"}
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"avatar\":\"logo\",\"info\":\"\",\"name\":\"Goravel\"}",
+		},
+		{
 			name:   "Bind",
 			method: "POST",
 			url:    "/bind",
