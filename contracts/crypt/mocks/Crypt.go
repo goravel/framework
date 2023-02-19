@@ -9,13 +9,13 @@ type Crypt struct {
 	mock.Mock
 }
 
-// DecryptString provides a mock function with given fields: iv, ciphertext
-func (_m *Crypt) DecryptString(iv string, ciphertext string) string {
-	ret := _m.Called(iv, ciphertext)
+// DecryptString provides a mock function with given fields: payload
+func (_m *Crypt) DecryptString(payload string) string {
+	ret := _m.Called(payload)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(iv, ciphertext)
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(payload)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -24,7 +24,7 @@ func (_m *Crypt) DecryptString(iv string, ciphertext string) string {
 }
 
 // EncryptString provides a mock function with given fields: value
-func (_m *Crypt) EncryptString(value string) (string, string) {
+func (_m *Crypt) EncryptString(value string) string {
 	ret := _m.Called(value)
 
 	var r0 string
@@ -34,14 +34,7 @@ func (_m *Crypt) EncryptString(value string) (string, string) {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 string
-	if rf, ok := ret.Get(1).(func(string) string); ok {
-		r1 = rf(value)
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	return r0, r1
+	return r0
 }
 
 type mockConstructorTestingTNewCrypt interface {
