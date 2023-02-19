@@ -26,9 +26,9 @@ func NewLogger(writer logger.Writer, config logger.Config) logger.Interface {
 	)
 
 	if config.Colorful {
-		infoStr = logger.Green + "%s\n" + logger.Reset + logger.Green + "[info] " + logger.Reset
-		warnStr = logger.BlueBold + "%s\n" + logger.Reset + logger.Magenta + "[warn] " + logger.Reset
-		errStr = logger.Magenta + "%s\n" + logger.Reset + logger.Red + "[error] " + logger.Reset
+		infoStr = logger.Green + "%s\n" + logger.Reset + logger.Green + "[Orm] " + logger.Reset
+		warnStr = logger.BlueBold + "%s\n" + logger.Reset + logger.Magenta + "[Orm] " + logger.Reset
+		errStr = logger.Magenta + "%s\n" + logger.Reset + logger.Red + "[Orm] " + logger.Reset
 		traceStr = logger.Green + "%s\n" + logger.Reset + logger.Yellow + "[%.3fms] " + logger.BlueBold + "[rows:%v]" + logger.Reset + " %s"
 		traceWarnStr = logger.Green + "%s " + logger.Yellow + "%s\n" + logger.Reset + logger.RedBold + "[%.3fms] " + logger.Yellow + "[rows:%v]" + logger.Magenta + " %s" + logger.Reset
 		traceErrStr = logger.RedBold + "%s " + logger.MagentaBold + "%s\n" + logger.Reset + logger.Yellow + "[%.3fms] " + logger.BlueBold + "[rows:%v]" + logger.Reset + " %s"
@@ -77,12 +77,24 @@ func (l Logger) Warn(ctx context.Context, msg string, data ...any) {
 // Error print error messages
 func (l Logger) Error(ctx context.Context, msg string, data ...any) {
 	// Let upper layer function deals with connection refused error
+	var cancel bool
 	for _, item := range data {
 		if tempItem, ok := item.(*net.OpError); ok {
 			if strings.Contains(tempItem.Error(), "connection refused") {
 				return
 			}
+
 		}
+		if tempItem, ok := item.(error); ok {
+			// Avoid duplicate output
+			if strings.Contains(tempItem.Error(), "Access denied") {
+				cancel = true
+			}
+		}
+	}
+
+	if cancel {
+		return
 	}
 
 	if l.LogLevel >= logger.Error {
