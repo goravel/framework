@@ -15,6 +15,7 @@ const (
 	DriverS3     Driver = "s3"
 	DriverOss    Driver = "oss"
 	DriverCos    Driver = "cos"
+	DriverMinio  Driver = "minio"
 	DriverCustom Driver = "custom"
 )
 
@@ -56,6 +57,8 @@ func NewDriver(disk string) (filesystem.Driver, error) {
 		return NewCos(ctx, disk)
 	case DriverS3:
 		return NewS3(ctx, disk)
+	case DriverMinio:
+		return NewMinio(ctx, disk)
 	case DriverCustom:
 		driver, ok := facades.Config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(filesystem.Driver)
 		if !ok {
