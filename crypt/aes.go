@@ -34,19 +34,22 @@ func NewAES() *AES {
 func (b *AES) EncryptString(value string) string {
 	block, err := aes.NewCipher(b.key)
 	if err != nil {
-		color.Redln("[Crypt] Encrypt init error: " + err.Error())
+		color.Redln("[Crypt] Encrypt init error: %s", err.Error())
+		return ""
 	}
 
 	plaintext := []byte(value)
 
 	iv := make([]byte, 12)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		color.Redln("[Crypt] Encrypt random iv error: " + err.Error())
+	if _, err = io.ReadFull(rand.Reader, iv); err != nil {
+		color.Redln("[Crypt] Encrypt random iv error: %s", err.Error())
+		return ""
 	}
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		color.Redln("[Crypt] Encrypt init error: " + err.Error())
+		color.Redln("[Crypt] Encrypt init error: %s", err.Error())
+		return ""
 	}
 
 	ciphertext := aesgcm.Seal(nil, iv, plaintext, nil)
@@ -56,7 +59,8 @@ func (b *AES) EncryptString(value string) string {
 		"value": ciphertext,
 	})
 	if err != nil {
-		color.Redln("[Crypt] Encrypt encode json error: " + err.Error())
+		color.Redln("[Crypt] Encrypt encode json error: %s", err.Error())
+		return ""
 	}
 
 	encodedJson := base64.StdEncoding.EncodeToString(jsonEncoded)
@@ -68,13 +72,15 @@ func (b *AES) EncryptString(value string) string {
 func (b *AES) DecryptString(payload string) string {
 	decodePayload, err := base64.StdEncoding.DecodeString(payload)
 	if err != nil {
-		color.Redln("[Crypt] Decrypt payload error: " + err.Error())
+		color.Redln("[Crypt] Decrypt payload error: %s", err.Error())
+		return ""
 	}
 
 	decodeJson := make(map[string][]byte)
 	err = json.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
-		color.Redln("[Crypt] Decrypt json payload error: " + err.Error())
+		color.Redln("[Crypt] Decrypt json payload error: %s", err.Error())
+		return ""
 	}
 
 	decodeIv := decodeJson["iv"]
@@ -82,17 +88,20 @@ func (b *AES) DecryptString(payload string) string {
 
 	block, err := aes.NewCipher(b.key)
 	if err != nil {
-		color.Redln("[Crypt] Decrypt init error: " + err.Error())
+		color.Redln("[Crypt] Decrypt init error: %s", err.Error())
+		return ""
 	}
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		color.Redln("[Crypt] Decrypt init error: " + err.Error())
+		color.Redln("[Crypt] Decrypt init error: %s", err.Error())
+		return ""
 	}
 
 	plaintext, err := aesgcm.Open(nil, decodeIv, decodeCiphertext, nil)
 	if err != nil {
-		color.Redln("[Crypt] Decrypt plaintext error: " + err.Error())
+		color.Redln("[Crypt] Decrypt plaintext error: %s", err.Error())
+		return ""
 	}
 
 	return string(plaintext)
