@@ -1,28 +1,31 @@
 package hash
 
 import (
-	"github.com/goravel/framework/facades"
+	"github.com/gookit/color"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/goravel/framework/facades"
 )
 
 type Bcrypt struct {
-	cost int
+	rounds int
 }
 
 // NewBcrypt returns a new Bcrypt hasher.
 func NewBcrypt() *Bcrypt {
 	return &Bcrypt{
-		cost: facades.Config.GetInt("hashing.bcrypt.cost", 10),
+		rounds: facades.Config.GetInt("hashing.bcrypt.rounds", 10),
 	}
 }
 
 // Make returns the hashed value of the given string.
 func (b *Bcrypt) Make(value string) string {
-	hash, err := bcrypt.GenerateFromPassword([]byte(value), b.cost)
-
+	hash, err := bcrypt.GenerateFromPassword([]byte(value), b.rounds)
 	if err != nil {
-		panic(err.Error())
+		color.Redln("[Hash] Bcrypt hashing Error : %s", err.Error())
+		return ""
 	}
+
 	return string(hash)
 }
 
@@ -39,5 +42,5 @@ func (b *Bcrypt) NeedsRehash(hash string) bool {
 	if err != nil {
 		return false
 	}
-	return hashCost != b.cost
+	return hashCost != b.rounds
 }
