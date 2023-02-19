@@ -182,6 +182,19 @@ func (r *Minio) DeleteDirectory(directory string) error {
 	return nil
 }
 
+// Download v1.0.0
+func (r *Minio) Download(path string) ([]byte, error) {
+	object, err := r.instance.GetObject(r.ctx, r.bucket, path, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	content, err := ioutil.ReadAll(object)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
 // Directories v1.0.0
 func (r *Minio) Directories(path string) ([]string, error) {
 	var directories []string
