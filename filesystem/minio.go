@@ -306,5 +306,5 @@ func (r *Minio) WithContext(ctx context.Context) filesystem.Driver {
 }
 
 func (r *Minio) Url(file string) string {
-	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
+	return strings.TrimSuffix(r.url, "/") + "/" + r.bucket + "/" + strings.TrimPrefix(file, "/")
 }
