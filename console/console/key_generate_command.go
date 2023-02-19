@@ -1,11 +1,11 @@
 package console
 
 import (
-	"errors"
 	"io/ioutil"
 	"strings"
 
 	"github.com/gookit/color"
+	"github.com/manifoldco/promptui"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -35,9 +35,28 @@ func (receiver *KeyGenerateCommand) Extend() command.Extend {
 
 //Handle Execute the console command.
 func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
-	key := receiver.generateRandomKey()
+	if facades.Config.GetString("app.env") == "production" {
+		color.Yellowln("**************************************")
+		color.Yellowln("*     Application In Production!     *")
+		color.Yellowln("**************************************")
+		prompt := promptui.Prompt{
+			Label: color.New(color.Green).Sprintf("Do you really wish to run this command?(yes/no)") + "[" + color.New(color.Yellow).Sprintf("no") + "]",
+		}
+		result, err := prompt.Run()
+		if err != nil {
+			color.Redln(err.Error())
 
-	if err := receiver.setKeyInEnvironmentFile(key); err != nil {
+			return nil
+		}
+		if result != "yes" {
+			color.Yellowln("Command Canceled")
+
+			return nil
+		}
+	}
+
+	key := receiver.generateRandomKey()
+	if err := receiver.writeNewEnvironmentFileWith(key); err != nil {
 		color.Redln(err.Error())
 
 		return nil
@@ -51,23 +70,6 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 //generateRandomKey Generate a random key for the application.
 func (receiver *KeyGenerateCommand) generateRandomKey() string {
 	return str.Random(32)
-}
-
-//setKeyInEnvironmentFile Set the application key in the environment file.
-func (receiver *KeyGenerateCommand) setKeyInEnvironmentFile(key string) error {
-	currentKey := facades.Config.GetString("app.key")
-
-	if currentKey != "" {
-		return errors.New("Exist application key")
-	}
-
-	err := receiver.writeNewEnvironmentFileWith(key)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 //writeNewEnvironmentFileWith Write a new environment file with the given key.

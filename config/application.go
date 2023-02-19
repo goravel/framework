@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/testing"
 )
@@ -17,7 +18,8 @@ type Application struct {
 
 func NewApplication(envPath string) *Application {
 	if !file.Exists(envPath) {
-		color.Redln("Please create .env and initialize it first\nRun command: \ncp .env.example .env && go run . artisan key:generate")
+		color.Redln("Please create .env and initialize it first.")
+		color.Warnln("Run command: \ncp .env.example .env && go run . artisan key:generate")
 		os.Exit(0)
 	}
 
@@ -34,6 +36,19 @@ func NewApplication(envPath string) *Application {
 	}
 	app.vip.SetEnvPrefix("goravel")
 	app.vip.AutomaticEnv()
+
+	appKey := app.Env("APP_KEY")
+	if appKey == nil && support.Env != support.EnvArtisan {
+		color.Redln("Please initialize APP_KEY first.")
+		color.Warnln("Run command: \ngo run . artisan key:generate")
+		os.Exit(0)
+	}
+
+	if len(appKey.(string)) != 32 {
+		color.Redln("Invalid APP_KEY, please reset it.")
+		color.Warnln("Run command: \ngo run . artisan key:generate")
+		os.Exit(0)
+	}
 
 	return app
 }
