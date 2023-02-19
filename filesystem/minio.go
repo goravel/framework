@@ -13,7 +13,9 @@ import (
 	"io/ioutil"
 	"log"
 	neturl "net/url"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -22,8 +24,11 @@ import (
  * Document: https://min.io/docs/minio/linux/developers/minio-drivers.html#go-sdk
  * More: https://min.io/docs/minio/linux/developers/go/minio-go.html
  * More: https://min.io/docs/minio/linux/developers/go/API.html
+ * Example: https://github.com/minio/minio-go/tree/master/examples
+ * Example: https://github.com/minio/minio-go/tree/master/examples/s3
  */
 
+// Minio v1.0.0
 type Minio struct {
 	ctx      context.Context
 	instance *minio.Client
@@ -32,6 +37,7 @@ type Minio struct {
 	url      string
 }
 
+// NewMinio v1.0.0
 func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 	key := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
 	secret := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
@@ -59,25 +65,41 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 	}, nil
 }
 
+// AllDirectories v1.0.0
 func (r *Minio) AllDirectories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
 	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
 		Prefix:    validPath,
-		Recursive: true,
+		Recursive: false, // 是否递归 | 忽略'/'分隔符
 	})
+
+	wg := sync.WaitGroup{}
 	for object := range objectCh {
 		if object.Err != nil {
-			return nil, object.Err
+			continue
 		}
+		prefix := object.Key
+		directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
+
+		wg.Add(1)
+		subDirectories, err := r.AllDirectories(prefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, subDirectory := range subDirectories {
+			if strings.HasSuffix(subDirectory, "/") {
+				directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
+			}
+		}
+		wg.Done()
 	}
-	for object := range objectCh {
-		directories = append(directories, strings.ReplaceAll(object.Key, validPath, ""))
-	}
+	wg.Wait()
 
 	return directories, nil
 }
 
+// AllFiles v1.0.0
 func (r *Minio) AllFiles(path string) ([]string, error) {
 	var files []string
 	validPath := validPath(path)
@@ -106,6 +128,7 @@ func (r *Minio) AllFiles(path string) ([]string, error) {
 	return files, nil
 }
 
+// Copy v1.0.0
 func (r *Minio) Copy(originFile, targetFile string) error {
 	srcOpts := minio.CopySrcOptions{
 		Bucket: r.bucket,
@@ -119,14 +142,18 @@ func (r *Minio) Copy(originFile, targetFile string) error {
 	return err
 }
 
+// Delete v1.0.0
 func (r *Minio) Delete(files ...string) error {
 	objectsCh := make(chan minio.ObjectInfo)
-	for _, f := range files {
-		object := minio.ObjectInfo{
-			Key: f,
+	go func() {
+		defer close(objectsCh)
+		for _, filename := range files {
+			object := minio.ObjectInfo{
+				Key: filename,
+			}
+			objectsCh <- object
 		}
-		objectsCh <- object
-	}
+	}()
 	opts := minio.RemoveObjectsOptions{
 		GovernanceBypass: true,
 	}
@@ -137,12 +164,14 @@ func (r *Minio) Delete(files ...string) error {
 	return nil
 }
 
+// DeleteDirectory v1.0.0
 func (r *Minio) DeleteDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
 	}
 	opts := minio.RemoveObjectOptions{
-		//GovernanceBypass: true,
+		ForceDelete:      true,
+		GovernanceBypass: true,
 		//VersionID:        "myversionid",
 	}
 	err := r.instance.RemoveObject(r.ctx, r.bucket, directory, opts)
@@ -153,25 +182,28 @@ func (r *Minio) DeleteDirectory(directory string) error {
 	return nil
 }
 
+// Directories v1.0.0
 func (r *Minio) Directories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
 	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
 		Prefix:    validPath,
-		Recursive: false,
+		Recursive: false, // 是否递归 | 忽略'/'分隔符
 	})
 	for object := range objectCh {
 		if object.Err != nil {
-			return nil, object.Err
+			continue
 		}
-	}
-	for object := range objectCh {
-		directories = append(directories, strings.ReplaceAll(object.Key, validPath, ""))
+		prefix := object.Key
+		if strings.HasSuffix(prefix, "/") {
+			directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
+		}
 	}
 
 	return directories, nil
 }
 
+// Exists v1.0.0
 func (r *Minio) Exists(file string) bool {
 	_, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
 	if err != nil {
@@ -181,6 +213,7 @@ func (r *Minio) Exists(file string) bool {
 	return true
 }
 
+// Files v1.0.0
 func (r *Minio) Files(path string) ([]string, error) {
 	var files []string
 	validPath := validPath(path)
@@ -209,6 +242,7 @@ func (r *Minio) Files(path string) ([]string, error) {
 	return files, nil
 }
 
+// Get v1.0.0
 func (r *Minio) Get(file string) (string, error) {
 	object, err := r.instance.GetObject(r.ctx, r.bucket, file, minio.GetObjectOptions{})
 	if err != nil {
@@ -222,6 +256,7 @@ func (r *Minio) Get(file string) (string, error) {
 	return string(data), nil
 }
 
+// MakeDirectory v1.0.0
 func (r *Minio) MakeDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
@@ -230,10 +265,12 @@ func (r *Minio) MakeDirectory(directory string) error {
 	return r.Put(directory, "")
 }
 
+// Missing v1.0.0
 func (r *Minio) Missing(file string) bool {
 	return !r.Exists(file)
 }
 
+// Move v1.0.0
 func (r *Minio) Move(oldFile, newFile string) error {
 	if err := r.Copy(oldFile, newFile); err != nil {
 		return err
@@ -242,24 +279,31 @@ func (r *Minio) Move(oldFile, newFile string) error {
 	return r.Delete(oldFile)
 }
 
+// Path v1.0.0
 func (r *Minio) Path(file string) string {
 	return file
 }
 
+// Put v1.0.0
 func (r *Minio) Put(file string, content string) error {
 	_, err := r.instance.PutObject(
 		r.ctx, r.bucket,
 		file, strings.NewReader(content),
 		strings.NewReader(content).Size(),
-		minio.PutObjectOptions{ContentType: "application/octet-stream"},
+		minio.PutObjectOptions{
+			//ContentType: "application/octet-stream"
+			ContentEncoding: "UTF-8",
+		},
 	)
 	return err
 }
 
+// PutFile v1.0.0
 func (r *Minio) PutFile(filePath string, source filesystem.File) (string, error) {
 	return r.PutFileAs(filePath, source, str.Random(40))
 }
 
+// PutFileAs v1.0.0
 func (r *Minio) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
 	fullPath, err := fullPathOfFile(filePath, source, name)
 	if err != nil {
@@ -278,6 +322,7 @@ func (r *Minio) PutFileAs(filePath string, source filesystem.File, name string) 
 	return fullPath, nil
 }
 
+// Size v1.0.0
 func (r *Minio) Size(file string) (int64, error) {
 	objInfo, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
 	if err != nil {
@@ -286,16 +331,20 @@ func (r *Minio) Size(file string) (int64, error) {
 	return objInfo.Size, nil
 }
 
+// TemporaryUrl v1.0.0
 func (r *Minio) TemporaryUrl(file string, time time.Time) (string, error) {
+	file = strings.TrimPrefix(file, "/")
 	reqParams := make(neturl.Values)
-	reqParams.Set("response-content-disposition", "attachment; filename=\"your-filename.txt\"")
+	fileBaseName := filepath.Base(file)
+	reqParams.Set("response-content-disposition", "attachment; filename=\""+fileBaseName+"\"")
 	presignedURL, err := r.instance.PresignedGetObject(r.ctx, r.bucket, file, time.Sub(supporttime.Now()), reqParams)
 	if err != nil {
 		return "", err
 	}
-	return r.Url(presignedURL.Path), nil
+	return strings.TrimSuffix(r.url, "/") + presignedURL.Path, nil
 }
 
+// WithContext v1.0.0
 func (r *Minio) WithContext(ctx context.Context) filesystem.Driver {
 	driver, err := NewMinio(ctx, r.disk)
 	if err != nil {
@@ -305,6 +354,7 @@ func (r *Minio) WithContext(ctx context.Context) filesystem.Driver {
 	return driver
 }
 
+// Url v1.0.0
 func (r *Minio) Url(file string) string {
 	return strings.TrimSuffix(r.url, "/") + "/" + r.bucket + "/" + strings.TrimPrefix(file, "/")
 }
