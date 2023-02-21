@@ -4,12 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/support/str"
-	supporttime "github.com/goravel/framework/support/time"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"io/ioutil"
 	"log"
 	neturl "net/url"
@@ -17,6 +11,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support/str"
+	supporttime "github.com/goravel/framework/support/time"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 /*
@@ -50,7 +52,7 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(key, secret, ""),
 		Secure: useSSL,
-		Region: region,
+		Region: region, // Distributed use
 	})
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("[filesystem] init %s driver error: %+v", disk, err))
@@ -71,7 +73,7 @@ func (r *Minio) AllDirectories(path string) ([]string, error) {
 	validPath := validPath(path)
 	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
 		Prefix:    validPath,
-		Recursive: false, // 是否递归 | 忽略'/'分隔符
+		Recursive: false, // Whether the recursive | ignore '/' delimiter
 	})
 
 	wg := sync.WaitGroup{}
@@ -172,7 +174,7 @@ func (r *Minio) DeleteDirectory(directory string) error {
 	opts := minio.RemoveObjectOptions{
 		ForceDelete:      true,
 		GovernanceBypass: true,
-		//VersionID:        "myversionid",
+		VersionID:        "",
 	}
 	err := r.instance.RemoveObject(r.ctx, r.bucket, directory, opts)
 	if err != nil {
@@ -182,26 +184,13 @@ func (r *Minio) DeleteDirectory(directory string) error {
 	return nil
 }
 
-// Download v1.0.0
-func (r *Minio) Download(path string) ([]byte, error) {
-	object, err := r.instance.GetObject(r.ctx, r.bucket, path, minio.GetObjectOptions{})
-	if err != nil {
-		return nil, err
-	}
-	content, err := ioutil.ReadAll(object)
-	if err != nil {
-		return nil, err
-	}
-	return content, nil
-}
-
 // Directories v1.0.0
 func (r *Minio) Directories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
 	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
 		Prefix:    validPath,
-		Recursive: false, // 是否递归 | 忽略'/'分隔符
+		Recursive: false, // Whether the recursive | ignore '/' delimiter
 	})
 	for object := range objectCh {
 		if object.Err != nil {
@@ -303,10 +292,7 @@ func (r *Minio) Put(file string, content string) error {
 		r.ctx, r.bucket,
 		file, strings.NewReader(content),
 		strings.NewReader(content).Size(),
-		minio.PutObjectOptions{
-			//ContentType: "application/octet-stream"
-			ContentEncoding: "UTF-8",
-		},
+		minio.PutObjectOptions{},
 	)
 	return err
 }
