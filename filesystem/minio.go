@@ -47,7 +47,8 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 	bucket := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
 	url := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
 	endpoint := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.endpoint", disk))
-	useSSL := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.use_ssl", disk))
+	useSSL := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.use_ssl", disk), false)
+	autoCreateBucket := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.auto_create_bucket", disk), false)
 
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(key, secret, ""),
@@ -56,6 +57,18 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 	})
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("[filesystem] init %s driver error: %+v", disk, err))
+	}
+
+	// Auto create bucket
+	if autoCreateBucket {
+		exists, errBucketExists := client.BucketExists(ctx, bucket)
+		if errBucketExists == nil && exists {
+		} else {
+			err = client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{Region: region})
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("[filesystem] %s driver auto create bucket error: %+v", disk, err))
+			}
+		}
 	}
 
 	return &Minio{
