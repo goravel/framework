@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.18
+go 1.20
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.11
@@ -26,7 +26,6 @@ require (
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/redis/go-redis/v9 v9.0.2
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.8.3-0.20221003140808-fcebdb403f4d
@@ -35,7 +34,6 @@ require (
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.40
-	github.com/ulule/limiter/v3 v3.11.0
 	github.com/unrolled/secure v1.13.0
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/crypto v0.6.0
