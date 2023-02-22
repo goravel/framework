@@ -63,9 +63,7 @@ func (b *AES) EncryptString(value string) string {
 		return ""
 	}
 
-	encodedJson := base64.StdEncoding.EncodeToString(jsonEncoded)
-
-	return encodedJson
+	return base64.StdEncoding.EncodeToString(jsonEncoded)
 }
 
 // DecryptString decrypts the given iv and ciphertext, and returns the plaintext.
