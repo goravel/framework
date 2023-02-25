@@ -40,7 +40,12 @@ func (r *Gin) Run(host ...string) error {
 			return errors.New("host can't be empty")
 		}
 
-		host = append(host, defaultHost)
+		defaultPort := facades.Config.GetString("route.port")
+		if defaultPort == "" {
+			return errors.New("port can't be empty")
+		}
+		completeHost := defaultHost + ":" + defaultPort
+		host = append(host, completeHost)
 	}
 
 	outputRoutes(r.instance.Routes())
