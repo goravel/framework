@@ -10,8 +10,6 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-type contextKey string
-
 func Background() http.Context {
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	return NewGinContext(ctx)
@@ -45,7 +43,8 @@ func (c *GinContext) WithValue(key string, value any) {
 func (c *GinContext) Context() context.Context {
 	ctx := context.Background()
 	for key, value := range c.instance.Keys {
-		ctx = context.WithValue(ctx, contextKey(key), value)
+		//nolint
+		ctx = context.WithValue(ctx, key, value)
 	}
 
 	return ctx
