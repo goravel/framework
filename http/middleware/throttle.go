@@ -3,6 +3,7 @@ package middleware
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"github.com/spf13/cast"
 	"net/http"
 	"time"
 
@@ -59,6 +60,14 @@ func Throttle(name string) contracthttp.Middleware {
 								color.Redln("[Throttle] Error: ", err.Error())
 								ctx.Request().Next()
 							}
+						}
+
+						// add the headers to the response
+						ctx.Response().Header("X-RateLimit-Limit", cast.ToString(instance.MaxAttempts))
+						ctx.Response().Header("X-RateLimit-Remaining", cast.ToString(instance.MaxAttempts-facades.Cache.GetInt(instance.Key, 0)))
+						if (instance.MaxAttempts > 0) && (facades.Cache.GetInt(instance.Key, 0) >= instance.MaxAttempts) {
+							ctx.Response().Header("X-RateLimit-Reset", cast.ToString(facades.Cache.GetInt(instance.Key+":timer", 0)+instance.DecayMinutes*60))
+							ctx.Response().Header("Retry-After", cast.ToString(facades.Cache.GetInt(instance.Key+":timer", 0)-int(time.Now().Unix())))
 						}
 					}
 				}
