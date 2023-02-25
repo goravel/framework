@@ -75,11 +75,8 @@ func (s *EventTestSuite) TestEvent() {
 	go func(ctx context.Context) {
 		s.Nil(facades.Queue.Worker(nil).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 
@@ -119,11 +116,8 @@ func (s *EventTestSuite) TestCancelEvent() {
 	go func(ctx context.Context) {
 		s.Nil(facades.Queue.Worker(nil).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 
