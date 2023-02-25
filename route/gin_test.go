@@ -31,14 +31,16 @@ func TestRun(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setup       func(host string) error
+		setup       func(host string, port string) error
 		host        string
+		port        string
 		expectError error
 	}{
 		{
 			name: "error when default host is empty",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetString", "route.host").Return(host).Once()
+				mockConfig.On("GetString", "route.port").Return(port).Once()
 
 				go func() {
 					assert.EqualError(t, route.Run(), "host can't be empty")
@@ -50,9 +52,10 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name: "use default host",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 				mockConfig.On("GetString", "route.host").Return(host).Once()
+				mockConfig.On("GetString", "route.port").Return(port).Once()
 
 				go func() {
 					assert.Nil(t, route.Run())
@@ -64,7 +67,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name: "use custom host",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
 				go func() {
