@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+type contextKey int
+
+const key contextKey = 0
+
 type GateTestSuite struct {
 	suite.Suite
 }
@@ -24,7 +28,7 @@ func (s *GateTestSuite) SetupTest() {
 }
 
 func (s *GateTestSuite) TestWithContext() {
-	ctx := context.WithValue(context.Background(), "hello", "goravel")
+	ctx := context.WithValue(context.Background(), key, "goravel")
 
 	gate := NewGate(ctx)
 	gate.Define("create", func(ctx context.Context, arguments map[string]any) access.Response {
@@ -32,7 +36,7 @@ func (s *GateTestSuite) TestWithContext() {
 		if user == "1" {
 			return NewAllowResponse()
 		} else {
-			return NewDenyResponse(ctx.Value("hello").(string))
+			return NewDenyResponse(ctx.Value(key).(string))
 		}
 	})
 

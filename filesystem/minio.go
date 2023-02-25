@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -56,7 +55,7 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 		Region: region, // Distributed use
 	})
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[filesystem] init %s driver error: %+v", disk, err))
+		return nil, fmt.Errorf("[filesystem] init %s driver error: %+v", disk, err)
 	}
 
 	// Auto create bucket
@@ -66,7 +65,7 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 		} else {
 			err = client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{Region: region})
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("[filesystem] %s driver auto create bucket error: %+v", disk, err))
+				return nil, fmt.Errorf("[filesystem] %s driver auto create bucket error: %+v", disk, err)
 			}
 		}
 	}
@@ -221,11 +220,8 @@ func (r *Minio) Directories(path string) ([]string, error) {
 // Exists v1.0.0
 func (r *Minio) Exists(file string) bool {
 	_, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 // Files v1.0.0

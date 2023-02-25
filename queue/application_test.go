@@ -137,11 +137,8 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	go func(ctx context.Context) {
 		s.Nil(s.app.Worker(nil).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
@@ -183,11 +180,8 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 			Concurrent: 2,
 		}).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
@@ -228,11 +222,8 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 			Queue: "error",
 		}).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
@@ -273,11 +264,8 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 			Queue: "chain",
 		}).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)

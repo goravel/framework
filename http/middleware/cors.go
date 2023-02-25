@@ -13,7 +13,7 @@ import (
 
 func Cors() contractshttp.Middleware {
 	return func(ctx contractshttp.Context) {
-		switch ctx.(type) {
+		switch ctx := ctx.(type) {
 		case *http.GinContext:
 			allowedMethods := facades.Config.Get("cors.allowed_methods").([]string)
 			if len(allowedMethods) == 1 && allowedMethods[0] == "*" {
@@ -28,7 +28,7 @@ func Cors() contractshttp.Middleware {
 				MaxAge:              facades.Config.GetInt("cors.max_age"),
 				AllowCredentials:    facades.Config.GetBool("cors.supports_credentials"),
 				AllowPrivateNetwork: true,
-			})(ctx.(*http.GinContext).Instance())
+			})(ctx.Instance())
 		}
 
 		ctx.Request().Next()

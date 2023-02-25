@@ -3,7 +3,6 @@ package filesystem
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -44,12 +43,12 @@ func NewOss(ctx context.Context, disk string) (*Oss, error) {
 
 	client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[filesystem] init oss driver error: %+v", err))
+		return nil, fmt.Errorf("[filesystem] init oss driver error: %+v", err)
 	}
 
 	bucketInstance, err := client.Bucket(bucket)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[filesystem] init oss bucket error: %+v", err))
+		return nil, fmt.Errorf("[filesystem] init oss bucket error: %+v", err)
 	}
 
 	return &Oss{
@@ -206,6 +205,9 @@ func (r *Oss) Get(file string) (string, error) {
 	defer res.Close()
 
 	data, err := ioutil.ReadAll(res)
+	if err != nil {
+		return "", err
+	}
 
 	return string(data), nil
 }

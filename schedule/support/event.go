@@ -10,7 +10,6 @@ type Event struct {
 	Command             string
 	Callback            func()
 	cron                string
-	withoutOverlapping  bool
 	skipIfStillRunning  bool
 	delayIfStillRunning bool
 }

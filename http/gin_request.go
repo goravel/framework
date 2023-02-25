@@ -75,11 +75,7 @@ func (r *GinRequest) QueryInt64(key string, defaultValue ...int64) int64 {
 
 func (r *GinRequest) QueryBool(key string, defaultValue ...bool) bool {
 	if value, ok := r.instance.GetQuery(key); ok {
-		if stringToBool(value) {
-			return true
-		}
-
-		return false
+		return stringToBool(value)
 	}
 
 	if len(defaultValue) > 0 {
@@ -294,7 +290,7 @@ func (r *GinRequest) Origin() *http.Request {
 }
 
 func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
-	if rules == nil || len(rules) == 0 {
+	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")
 	}
 

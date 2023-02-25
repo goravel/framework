@@ -43,6 +43,7 @@ func (c *GinContext) WithValue(key string, value any) {
 func (c *GinContext) Context() context.Context {
 	ctx := context.Background()
 	for key, value := range c.instance.Keys {
+		//nolint
 		ctx = context.WithValue(ctx, key, value)
 	}
 

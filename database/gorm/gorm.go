@@ -29,7 +29,7 @@ func New(connection string) (*gorm.DB, error) {
 
 	dial, err := dialector(connection, writeConfigs[0])
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("init gorm dialector error: %v", err))
+		return nil, fmt.Errorf("init gorm dialector error: %v", err)
 	}
 	if dial == nil {
 		return nil, nil
@@ -235,13 +235,13 @@ func (r *Query) Exec(sql string, values ...any) error {
 
 func (r *Query) Find(dest any, conds ...any) error {
 	if len(conds) == 1 {
-		switch conds[0].(type) {
+		switch cond := conds[0].(type) {
 		case string:
-			if conds[0].(string) == "" {
+			if cond == "" {
 				return ErrorMissingWhereClause
 			}
 		default:
-			reflectValue := reflect.Indirect(reflect.ValueOf(conds[0]))
+			reflectValue := reflect.Indirect(reflect.ValueOf(cond))
 			switch reflectValue.Kind() {
 			case reflect.Slice, reflect.Array:
 				if reflectValue.Len() == 0 {
@@ -513,11 +513,11 @@ func (r *Query) WithTrashed() contractsorm.Query {
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
 	if len(args) == 1 {
-		switch args[0].(type) {
+		switch arg := args[0].(type) {
 		case func(contractsorm.Query) contractsorm.Query:
 			newArgs := []any{
 				func(db *gorm.DB) *gorm.DB {
-					query := args[0].(func(query contractsorm.Query) contractsorm.Query)(NewQuery(db))
+					query := arg(NewQuery(db))
 
 					return query.(*Query).instance
 				},

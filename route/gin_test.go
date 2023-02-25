@@ -90,9 +90,9 @@ func TestRun(t *testing.T) {
 			if err := test.setup(test.host); err == nil {
 				time.Sleep(1 * time.Second)
 				resp, err := http.Get("http://" + test.host)
+				assert.Nil(t, err)
 				defer resp.Body.Close()
 
-				assert.Nil(t, err)
 				body, err := ioutil.ReadAll(resp.Body)
 				assert.Nil(t, err)
 				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
@@ -175,9 +175,9 @@ func TestRunTLS(t *testing.T) {
 				}
 				client := &http.Client{Transport: tr}
 				resp, err := client.Get("https://" + test.host)
+				assert.Nil(t, err)
 				defer resp.Body.Close()
 
-				assert.Nil(t, err)
 				body, err := ioutil.ReadAll(resp.Body)
 				assert.Nil(t, err)
 				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
@@ -253,9 +253,9 @@ func TestRunTLSWithCert(t *testing.T) {
 				}
 				client := &http.Client{Transport: tr}
 				resp, err := client.Get("https://" + test.host)
+				assert.Nil(t, err)
 				defer resp.Body.Close()
 
-				assert.Nil(t, err)
 				body, err := ioutil.ReadAll(resp.Body)
 				assert.Nil(t, err)
 				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
@@ -741,15 +741,21 @@ func TestGinRequest(t *testing.T) {
 
 				payload := &bytes.Buffer{}
 				writer := multipart.NewWriter(payload)
-				logo, errFile1 := os.Open("../logo.png")
-				defer logo.Close()
-				part1, errFile1 := writer.CreateFormFile("file", filepath.Base("../logo.png"))
-				_, errFile1 = io.Copy(part1, logo)
-				if errFile1 != nil {
-					return errFile1
-				}
-				err := writer.Close()
+				logo, err := os.Open("../logo.png")
 				if err != nil {
+					return err
+				}
+				defer logo.Close()
+				part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
+				if err != nil {
+					return err
+				}
+
+				if _, err = io.Copy(part1, logo); err != nil {
+					return err
+				}
+
+				if err := writer.Close(); err != nil {
 					return err
 				}
 

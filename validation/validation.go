@@ -24,14 +24,14 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	if data == nil {
 		return nil, errors.New("data can't be empty")
 	}
-	if rules == nil || len(rules) == 0 {
+	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")
 	}
 
 	var dataType reflect.Kind
-	switch data.(type) {
+	switch data := data.(type) {
 	case map[string]any:
-		if len(data.(map[string]any)) == 0 {
+		if len(data) == 0 {
 			return nil, errors.New("data can't be empty")
 		}
 		dataType = reflect.Map
