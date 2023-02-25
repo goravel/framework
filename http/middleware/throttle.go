@@ -35,6 +35,9 @@ func Throttle(name string) contracthttp.Middleware {
 							// if the timer exists, check if the number of attempts is greater than the max attempts
 							value := facades.Cache.GetInt(instance.Key, 0)
 							if value >= instance.MaxAttempts {
+								// add the retry headers to the response
+								ctx.Response().Header("X-RateLimit-Reset", cast.ToString(cast.ToInt(facades.Cache.Get(instance.Key+":timer", 0))+instance.DecayMinutes*60))
+								ctx.Response().Header("Retry-After", cast.ToString(cast.ToInt(facades.Cache.Get(instance.Key+":timer", 0))+instance.DecayMinutes*60-int(time.Now().Unix())))
 								if instance.ResponseCallback != nil {
 									instance.ResponseCallback(ctx)
 								} else {
@@ -62,13 +65,9 @@ func Throttle(name string) contracthttp.Middleware {
 							}
 						}
 
-						// add the headers to the response
+						// add the headers for the passed request
 						ctx.Response().Header("X-RateLimit-Limit", cast.ToString(instance.MaxAttempts))
 						ctx.Response().Header("X-RateLimit-Remaining", cast.ToString(instance.MaxAttempts-facades.Cache.GetInt(instance.Key, 0)))
-						if (instance.MaxAttempts > 0) && (facades.Cache.GetInt(instance.Key, 0) >= instance.MaxAttempts) {
-							ctx.Response().Header("X-RateLimit-Reset", cast.ToString(facades.Cache.GetInt(instance.Key+":timer", 0)+instance.DecayMinutes*60))
-							ctx.Response().Header("Retry-After", cast.ToString(facades.Cache.GetInt(instance.Key+":timer", 0)-int(time.Now().Unix())))
-						}
 					}
 				}
 			}
