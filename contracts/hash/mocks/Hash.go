@@ -9,13 +9,13 @@ type Hash struct {
 	mock.Mock
 }
 
-// Check provides a mock function with given fields: _a0, _a1
-func (_m *Hash) Check(_a0 string, _a1 string) bool {
-	ret := _m.Called(_a0, _a1)
+// Check provides a mock function with given fields: value, hashedValue
+func (_m *Hash) Check(value string, hashedValue string) bool {
+	ret := _m.Called(value, hashedValue)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
-		r0 = rf(_a0, _a1)
+		r0 = rf(value, hashedValue)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -23,13 +23,13 @@ func (_m *Hash) Check(_a0 string, _a1 string) bool {
 	return r0
 }
 
-// Make provides a mock function with given fields: _a0
-func (_m *Hash) Make(_a0 string) string {
-	ret := _m.Called(_a0)
+// Make provides a mock function with given fields: value
+func (_m *Hash) Make(value string) string {
+	ret := _m.Called(value)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(_a0)
+		r0 = rf(value)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -37,13 +37,13 @@ func (_m *Hash) Make(_a0 string) string {
 	return r0
 }
 
-// NeedsRehash provides a mock function with given fields: _a0
-func (_m *Hash) NeedsRehash(_a0 string) bool {
-	ret := _m.Called(_a0)
+// NeedsRehash provides a mock function with given fields: hashedValue
+func (_m *Hash) NeedsRehash(hashedValue string) bool {
+	ret := _m.Called(hashedValue)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(_a0)
+		r0 = rf(hashedValue)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
