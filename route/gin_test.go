@@ -31,16 +31,15 @@ func TestRun(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setup       func(host string, port string) error
+		setup       func(host string) error
 		host        string
-		port        string
 		expectError error
 	}{
 		{
 			name: "error when default host is empty",
-			setup: func(host string, port string) error {
+			setup: func(host string) error {
 				mockConfig.On("GetString", "route.host").Return(host).Once()
-				mockConfig.On("GetString", "route.port").Return(port).Once()
+				mockConfig.On("GetString", "route.port").Return("test_ca.port").Once()
 
 				go func() {
 					assert.EqualError(t, route.Run(), "host can't be empty")
@@ -52,10 +51,10 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name: "use default host",
-			setup: func(host string, port string) error {
+			setup: func(host string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 				mockConfig.On("GetString", "route.host").Return(host).Once()
-				mockConfig.On("GetString", "route.port").Return(port).Once()
+				mockConfig.On("GetString", "route.port").Return("test_ca.port").Once()
 
 				go func() {
 					assert.Nil(t, route.Run())
@@ -67,7 +66,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name: "use custom host",
-			setup: func(host string, port string) error {
+			setup: func(host string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
 				go func() {
@@ -119,6 +118,7 @@ func TestRunTLS(t *testing.T) {
 			name: "error when default host is empty",
 			setup: func(host string) error {
 				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
+				mockConfig.On("GetString", "route.tls.port").Return("test_ca.port").Once()
 
 				go func() {
 					assert.EqualError(t, route.RunTLS(), "host can't be empty")
@@ -133,6 +133,7 @@ func TestRunTLS(t *testing.T) {
 			setup: func(host string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
+				mockConfig.On("GetString", "route.tls.port").Return("test_ca.port").Once()
 				mockConfig.On("GetString", "route.tls.ssl.cert").Return("test_ca.crt").Once()
 				mockConfig.On("GetString", "route.tls.ssl.key").Return("test_ca.key").Once()
 

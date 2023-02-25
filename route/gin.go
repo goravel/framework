@@ -61,7 +61,12 @@ func (r *Gin) RunTLS(host ...string) error {
 			return errors.New("host can't be empty")
 		}
 
-		host = append(host, defaultHost)
+		defaultPort := facades.Config.GetString("route.tls.port")
+		if defaultPort == "" {
+			return errors.New("port can't be empty")
+		}
+		completeHost := defaultHost + ":" + defaultPort
+		host = append(host, completeHost)
 	}
 
 	certFile := facades.Config.GetString("route.tls.ssl.cert")
