@@ -17,7 +17,6 @@ import (
 	"github.com/goravel/framework/support/str"
 	supporttime "github.com/goravel/framework/support/time"
 
-	"github.com/pkg/errors"
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
 
@@ -42,7 +41,7 @@ func NewCos(ctx context.Context, disk string) (*Cos, error) {
 
 	u, err := url.Parse(cosUrl)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("[filesystem] init cos driver error: %+v", err))
+		return nil, fmt.Errorf("[filesystem] init cos driver error: %+v", err)
 	}
 
 	b := &cos.BaseURL{BucketURL: u}
