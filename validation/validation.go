@@ -24,7 +24,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	if data == nil {
 		return nil, errors.New("data can't be empty")
 	}
-	if rules == nil || len(rules) == 0 {
+	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")
 	}
 

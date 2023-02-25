@@ -21,8 +21,6 @@ func fullPathOfFile(filePath string, source filesystem.File, name string) (strin
 
 		return strings.TrimSuffix(filePath, "/") + "/" + strings.TrimSuffix(strings.TrimPrefix(path.Base(name), "/"), "/") + "." + extension, nil
 	} else {
-		extension = strings.TrimLeft(extension, ".")
-
 		return strings.TrimSuffix(filePath, "/") + "/" + strings.TrimPrefix(path.Base(name), "/"), nil
 	}
 }

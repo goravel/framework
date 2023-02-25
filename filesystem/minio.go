@@ -220,11 +220,8 @@ func (r *Minio) Directories(path string) ([]string, error) {
 // Exists v1.0.0
 func (r *Minio) Exists(file string) bool {
 	_, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 // Files v1.0.0

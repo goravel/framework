@@ -203,11 +203,8 @@ func (r *S3) Exists(file string) bool {
 		Bucket: aws.String(r.bucket),
 		Key:    aws.String(file),
 	})
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 func (r *S3) Files(path string) ([]string, error) {
@@ -238,6 +235,9 @@ func (r *S3) Get(file string) (string, error) {
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 	resp.Body.Close()
 
 	return string(data), nil

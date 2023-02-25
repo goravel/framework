@@ -370,7 +370,6 @@ func TestGinGroup(t *testing.T) {
 func abortMiddleware() httpcontract.Middleware {
 	return func(ctx httpcontract.Context) {
 		ctx.Request().AbortWithStatus(http.StatusNonAuthoritativeInfo)
-		return
 	}
 }
 

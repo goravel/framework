@@ -205,6 +205,9 @@ func (r *Oss) Get(file string) (string, error) {
 	defer res.Close()
 
 	data, err := ioutil.ReadAll(res)
+	if err != nil {
+		return "", err
+	}
 
 	return string(data), nil
 }

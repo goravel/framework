@@ -34,7 +34,7 @@ func Messages(messages map[string]string) httpvalidate.Option {
 
 func Attributes(attributes map[string]string) httpvalidate.Option {
 	return func(options map[string]any) {
-		if attributes != nil && len(attributes) > 0 {
+		if len(attributes) > 0 {
 			options["attributes"] = attributes
 		}
 	}

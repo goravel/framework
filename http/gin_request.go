@@ -75,11 +75,7 @@ func (r *GinRequest) QueryInt64(key string, defaultValue ...int64) int64 {
 
 func (r *GinRequest) QueryBool(key string, defaultValue ...bool) bool {
 	if value, ok := r.instance.GetQuery(key); ok {
-		if stringToBool(value) {
-			return true
-		}
-
-		return false
+		return stringToBool(value)
 	}
 
 	if len(defaultValue) > 0 {

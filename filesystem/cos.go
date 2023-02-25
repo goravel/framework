@@ -259,6 +259,9 @@ func (r *Cos) Get(file string) (string, error) {
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 	resp.Body.Close()
 
 	return string(data), nil

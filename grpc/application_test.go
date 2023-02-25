@@ -16,6 +16,11 @@ import (
 	"github.com/goravel/framework/testing/mock"
 )
 
+type contextKey int
+
+const server contextKey = 0
+const client contextKey = 1
+
 func TestRun(t *testing.T) {
 	var (
 		app        *Application
@@ -172,9 +177,9 @@ func serverInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo,
 		md = metadata.New(nil)
 	}
 
-	ctx = context.WithValue(ctx, "server", "goravel-server")
+	ctx = context.WithValue(ctx, server, "goravel-server")
 	if len(md["client"]) > 0 {
-		ctx = context.WithValue(ctx, "client", md["client"][0])
+		ctx = context.WithValue(ctx, client, md["client"][0])
 	}
 
 	return handler(ctx, req)
@@ -204,7 +209,7 @@ func (r *TestController) Get(ctx context.Context, req *TestRequest) (*TestRespon
 	if req.GetName() == "success" {
 		return &TestResponse{
 			Code:    http.StatusOK,
-			Message: fmt.Sprintf("Goravel: server: %s, client: %s", ctx.Value("server"), ctx.Value("client")),
+			Message: fmt.Sprintf("Goravel: server: %s, client: %s", ctx.Value(server), ctx.Value(client)),
 		}, nil
 	} else {
 		return nil, errors.New("error")
