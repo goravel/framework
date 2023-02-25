@@ -10,7 +10,7 @@ import (
 
 func Rules(rules map[string]string) httpvalidate.Option {
 	return func(options map[string]any) {
-		if rules != nil && len(rules) > 0 {
+		if len(rules) > 0 {
 			options["rules"] = rules
 		}
 	}
@@ -18,7 +18,7 @@ func Rules(rules map[string]string) httpvalidate.Option {
 
 func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
 	return func(options map[string]any) {
-		if rules != nil && len(rules) > 0 {
+		if len(rules) > 0 {
 			options["customRules"] = rules
 		}
 	}
@@ -26,7 +26,7 @@ func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
 
 func Messages(messages map[string]string) httpvalidate.Option {
 	return func(options map[string]any) {
-		if messages != nil && len(messages) > 0 {
+		if len(messages) > 0 {
 			options["messages"] = messages
 		}
 	}

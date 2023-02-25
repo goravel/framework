@@ -294,7 +294,7 @@ func (r *GinRequest) Origin() *http.Request {
 }
 
 func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
-	if rules == nil || len(rules) == 0 {
+	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")
 	}
 

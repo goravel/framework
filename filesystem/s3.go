@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -340,17 +339,4 @@ func (r *S3) WithContext(ctx context.Context) filesystem.Driver {
 
 func (r *S3) Url(file string) string {
 	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
-}
-
-func (r *S3) tempFile(content string) (*os.File, error) {
-	tempFile, err := ioutil.TempFile(os.TempDir(), "goravel-")
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := tempFile.WriteString(content); err != nil {
-		return nil, err
-	}
-
-	return tempFile, nil
 }

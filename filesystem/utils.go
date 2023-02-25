@@ -1,9 +1,6 @@
 package filesystem
 
 import (
-	"bytes"
-	"io"
-	"mime/multipart"
 	"path"
 	"strings"
 
@@ -12,21 +9,6 @@ import (
 )
 
 const MaxFileNum = 1000
-
-func fileHeaderToString(fileHeader *multipart.FileHeader) (string, error) {
-	src, err := fileHeader.Open()
-	if err != nil {
-		return "", err
-	}
-	defer src.Close()
-
-	buf := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buf, src); err != nil {
-		return "", err
-	}
-
-	return string(buf.Bytes()), nil
-}
 
 func fullPathOfFile(filePath string, source filesystem.File, name string) (string, error) {
 	extension := path.Ext(name)

@@ -76,11 +76,7 @@ func (r *Redis) Forever(key string, value any) bool {
 func (r *Redis) Forget(key string) bool {
 	_, err := r.redis.Del(r.ctx, r.prefix+key).Result()
 
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 //Flush Remove all items from the cache.
