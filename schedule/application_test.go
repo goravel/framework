@@ -42,11 +42,8 @@ func TestApplication(t *testing.T) {
 	go func(ctx context.Context) {
 		app.Run()
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 
