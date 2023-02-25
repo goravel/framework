@@ -5,7 +5,7 @@ on:
       - master
   pull_request:
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         go: [ '1.20', '1.19', '1.18' ]
