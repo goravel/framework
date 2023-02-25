@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/testing"
+	"github.com/goravel/framework/support"
 )
 
 type ServiceProvider struct {
@@ -12,7 +12,7 @@ type ServiceProvider struct {
 
 func (config *ServiceProvider) Register() {
 	var env *string
-	if testing.RunInTest() {
+	if support.Env == support.EnvTest {
 		testEnv := ".env"
 		env = &testEnv
 	} else {

@@ -83,6 +83,9 @@ func (app *Application) bootServiceProviders(serviceProviders []contracts.Servic
 
 func setEnv() {
 	args := os.Args
+	if strings.HasSuffix(os.Args[0], ".test") {
+		support.Env = support.EnvTest
+	}
 	if len(args) >= 2 {
 		if args[1] == "artisan" {
 			support.Env = support.EnvArtisan
