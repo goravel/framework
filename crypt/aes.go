@@ -23,6 +23,7 @@ func NewAES() *AES {
 	// check key length before using it
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		color.Redln("[Crypt] Empty or invalid APP_KEY, please reset it.\nRun command:\ngo run . artisan key:generate")
+		return nil
 	}
 	keyBytes := []byte(key)
 	return &AES{
@@ -78,6 +79,16 @@ func (b *AES) DecryptString(payload string) (string, error) {
 	err = json.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
 		color.Redln("[Crypt] Decrypt json payload error: %s", err.Error())
+		return "", err
+	}
+
+	// check if the json payload has the correct keys
+	if _, ok := decodeJson["iv"]; !ok {
+		color.Redln("[Crypt] Decrypt json payload error: missing iv key")
+		return "", err
+	}
+	if _, ok := decodeJson["value"]; !ok {
+		color.Redln("[Crypt] Decrypt json payload error: missing value key")
 		return "", err
 	}
 
