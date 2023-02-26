@@ -24,7 +24,7 @@ func (_m *Hash) Check(value string, hashedValue string) bool {
 }
 
 // Make provides a mock function with given fields: value
-func (_m *Hash) Make(value string) string {
+func (_m *Hash) Make(value string) (string, error) {
 	ret := _m.Called(value)
 
 	var r0 string
@@ -34,7 +34,14 @@ func (_m *Hash) Make(value string) string {
 		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(value)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NeedsRehash provides a mock function with given fields: hashedValue

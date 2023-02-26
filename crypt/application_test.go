@@ -15,10 +15,11 @@ type ApplicationTestSuite struct {
 
 func TestApplicationTestSuite(t *testing.T) {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Twice()
+	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
 
 	facades.Crypt = NewApplication()
 	suite.Run(t, new(ApplicationTestSuite))
+	mockConfig.AssertExpectations(t)
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -26,16 +27,16 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestEncryptString() {
-	mockConfig := mock.Config()
-	s.NotEmpty(facades.Crypt.EncryptString("Goravel"))
-
-	mockConfig.AssertExpectations(s.T())
+	encryptString, err := facades.Crypt.EncryptString("Goravel")
+	s.NoError(err)
+	s.NotEmpty(encryptString)
 }
 
 func (s *ApplicationTestSuite) TestDecryptString() {
-	mockConfig := mock.Config()
-	payload := facades.Crypt.EncryptString("Goravel")
-	s.Equal("Goravel", facades.Crypt.DecryptString(payload))
-
-	mockConfig.AssertExpectations(s.T())
+	payload, err := facades.Crypt.EncryptString("Goravel")
+	s.NoError(err)
+	s.NotEmpty(payload)
+	value, err := facades.Crypt.DecryptString(payload)
+	s.NoError(err)
+	s.Equal("Goravel", value)
 }

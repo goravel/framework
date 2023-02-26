@@ -19,14 +19,14 @@ func NewBcrypt() *Bcrypt {
 }
 
 // Make returns the hashed value of the given string.
-func (b *Bcrypt) Make(value string) string {
+func (b *Bcrypt) Make(value string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(value), b.rounds)
 	if err != nil {
 		color.Redln("[Hash] Bcrypt hashing Error : %s", err.Error())
-		return ""
+		return "", err
 	}
 
-	return string(hash)
+	return string(hash), nil
 }
 
 // Check checks if the given string matches the given hash.

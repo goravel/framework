@@ -43,18 +43,18 @@ func NewArgon2id() *Argon2id {
 	}
 }
 
-func (a *Argon2id) Make(value string) string {
+func (a *Argon2id) Make(value string) (string, error) {
 	salt := make([]byte, a.saltLen)
 	if _, err := rand.Read(salt); err != nil {
 		if err != nil {
 			color.Redln("[Hash] Argon2id hashing Error : %s", err.Error())
-			return ""
+			return "", err
 		}
 	}
 
 	hash := argon2.IDKey([]byte(value), salt, a.time, a.memory, a.threads, a.keyLen)
 
-	return fmt.Sprintf(a.format, a.version, a.memory, a.time, a.threads, base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash))
+	return fmt.Sprintf(a.format, a.version, a.memory, a.time, a.threads, base64.RawStdEncoding.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(hash)), nil
 }
 
 func (a *Argon2id) Check(value, hash string) bool {
