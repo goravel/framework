@@ -47,7 +47,7 @@ func (a *Argon2id) Make(value string) (string, error) {
 	salt := make([]byte, a.saltLen)
 	if _, err := rand.Read(salt); err != nil {
 		if err != nil {
-			color.Redln("[Hash] Argon2id hashing Error : %s", err.Error())
+			color.Redln("[Hash] Argon2id hashing Error:", err.Error())
 			return "", err
 		}
 	}

@@ -36,7 +36,11 @@ func (s *ApplicationTestSuite) TestDecryptString() {
 	payload, err := facades.Crypt.EncryptString("Goravel")
 	s.NoError(err)
 	s.NotEmpty(payload)
+
 	value, err := facades.Crypt.DecryptString(payload)
 	s.NoError(err)
 	s.Equal("Goravel", value)
+
+	_, err = facades.Crypt.DecryptString("Goravel")
+	s.Error(err)
 }
