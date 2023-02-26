@@ -119,11 +119,8 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	go func(ctx context.Context) {
 		s.Nil(facades.Queue.Worker(nil).Run())
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 	time.Sleep(3 * time.Second)

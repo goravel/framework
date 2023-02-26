@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func Random(length int) string {
@@ -23,7 +26,8 @@ func Random(length int) string {
 
 func Case2Camel(name string) string {
 	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
+	caser := cases.Title(language.English)
+	name = caser.String(name)
 
 	return strings.Replace(name, " ", "", -1)
 }

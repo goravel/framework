@@ -5,7 +5,7 @@ on:
       - master
   pull_request:
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         go: [ '1.20', '1.19', '1.18' ]
@@ -15,5 +15,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
-      - name: Tests
-        run: go mod tidy && go test -covermode=atomic -coverprofile="coverage.out" ./...
+      - name: Install dependencies
+        run: go mod tidy
+      - name: Run tests with coverage
+        run: go test ./...

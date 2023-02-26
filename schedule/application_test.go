@@ -38,15 +38,13 @@ func TestApplication(t *testing.T) {
 
 	second, _ := strconv.Atoi(time.Now().Format("05"))
 	// Make sure run 3 times
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(120+6+60-second)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(120+6+60-second)*time.Second)
+	defer cancel()
 	go func(ctx context.Context) {
 		app.Run()
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			}
+		for range ctx.Done() {
+			return
 		}
 	}(ctx)
 

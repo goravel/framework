@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -204,11 +203,8 @@ func (r *S3) Exists(file string) bool {
 		Bucket: aws.String(r.bucket),
 		Key:    aws.String(file),
 	})
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 func (r *S3) Files(path string) ([]string, error) {
@@ -239,6 +235,9 @@ func (r *S3) Get(file string) (string, error) {
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 	resp.Body.Close()
 
 	return string(data), nil
@@ -340,17 +339,4 @@ func (r *S3) WithContext(ctx context.Context) filesystem.Driver {
 
 func (r *S3) Url(file string) string {
 	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
-}
-
-func (r *S3) tempFile(content string) (*os.File, error) {
-	tempFile, err := ioutil.TempFile(os.TempDir(), "goravel-")
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := tempFile.WriteString(content); err != nil {
-		return nil, err
-	}
-
-	return tempFile, nil
 }
