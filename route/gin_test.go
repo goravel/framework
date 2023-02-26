@@ -252,6 +252,7 @@ func TestGinRequest(t *testing.T) {
 			url:    "/file",
 			setup: func(method, url string) error {
 				gin.Post("/file", func(ctx httpcontract.Context) {
+					mockConfig.On("GetString", "app.name").Return("goravel").Once()
 					mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 
 					fileInfo, err := ctx.Request().File("file")
@@ -653,17 +654,19 @@ func TestGinRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		beforeEach()
-		err := test.setup(test.method, test.url)
-		assert.Nil(t, err)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			err := test.setup(test.method, test.url)
+			assert.Nil(t, err)
 
-		w := httptest.NewRecorder()
-		gin.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			gin.ServeHTTP(w, req)
 
-		if test.expectBody != "" {
-			assert.Equal(t, test.expectBody, w.Body.String(), test.name)
-		}
-		assert.Equal(t, test.expectCode, w.Code, test.name)
+			if test.expectBody != "" {
+				assert.Equal(t, test.expectBody, w.Body.String(), test.name)
+			}
+			assert.Equal(t, test.expectCode, w.Code, test.name)
+		})
 	}
 }
 
@@ -923,20 +926,22 @@ func TestGinResponse(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		beforeEach()
-		err := test.setup(test.method, test.url)
-		assert.Nil(t, err)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			err := test.setup(test.method, test.url)
+			assert.Nil(t, err)
 
-		w := httptest.NewRecorder()
-		gin.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			gin.ServeHTTP(w, req)
 
-		if test.expectBody != "" {
-			assert.Equal(t, test.expectBody, w.Body.String(), test.name)
-		}
-		if test.expectHeader != "" {
-			assert.Equal(t, test.expectHeader, strings.Join(w.Header().Values("Hello"), ""), test.name)
-		}
-		assert.Equal(t, test.expectCode, w.Code, test.name)
+			if test.expectBody != "" {
+				assert.Equal(t, test.expectBody, w.Body.String(), test.name)
+			}
+			if test.expectHeader != "" {
+				assert.Equal(t, test.expectHeader, strings.Join(w.Header().Values("Hello"), ""), test.name)
+			}
+			assert.Equal(t, test.expectCode, w.Code, test.name)
+		})
 	}
 }
 
