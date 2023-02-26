@@ -9,13 +9,13 @@ import (
 
 	"github.com/gookit/color"
 
-	contracthttp "github.com/goravel/framework/contracts/http"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 	httplimit "github.com/goravel/framework/http/limit"
 )
 
-func Throttle(name string) contracthttp.Middleware {
-	return func(ctx contracthttp.Context) {
+func Throttle(name string) contractshttp.Middleware {
+	return func(ctx contractshttp.Context) {
 		if limiter := facades.RateLimiter.Limiter(name); limiter != nil {
 			if limits := limiter(ctx); len(limits) > 0 {
 				for _, limit := range limits {
@@ -24,10 +24,10 @@ func Throttle(name string) contracthttp.Middleware {
 						// if no key is set, use the path and ip address as the default key
 						if len(instance.Key) == 0 {
 							hash := md5.Sum([]byte(ctx.Request().Path()))
-							instance.Key = "throttle:" + hex.EncodeToString(hash[:]) + ":" + ctx.Request().Ip()
+							instance.Key = facades.Config.GetString("cache.prefix") + ":throttle:" + name + ":" + hex.EncodeToString(hash[:]) + ":" + ctx.Request().Ip()
 						} else {
 							hash := md5.Sum([]byte(instance.Key))
-							instance.Key = "throttle:" + hex.EncodeToString(hash[:])
+							instance.Key = facades.Config.GetString("cache.prefix") + ":throttle:" + name + ":" + hex.EncodeToString(hash[:])
 						}
 
 						// check if the timer exists in the cache
@@ -47,7 +47,7 @@ func Throttle(name string) contracthttp.Middleware {
 								err := facades.Cache.Put(instance.Key, value+1, time.Duration(instance.DecayMinutes)*time.Minute)
 								if err != nil {
 									color.Redln("[Throttle] Error: ", err.Error())
-									ctx.Request().Next()
+									panic(err)
 								}
 							}
 						} else {
@@ -56,12 +56,12 @@ func Throttle(name string) contracthttp.Middleware {
 							err := facades.Cache.Put(instance.Key+":timer", time.Now().Unix(), time.Duration(instance.DecayMinutes)*time.Minute)
 							if err != nil {
 								color.Redln("[Throttle] Error: ", err.Error())
-								ctx.Request().Next()
+								panic(err)
 							}
 							err = facades.Cache.Put(instance.Key, 1, time.Duration(instance.DecayMinutes)*time.Minute)
 							if err != nil {
 								color.Redln("[Throttle] Error: ", err.Error())
-								ctx.Request().Next()
+								panic(err)
 							}
 						}
 
