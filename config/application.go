@@ -9,7 +9,6 @@ import (
 
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/testing"
 )
 
 type Application struct {
@@ -28,26 +27,28 @@ func NewApplication(envPath string) *Application {
 	app.vip.SetConfigName(envPath)
 	app.vip.SetConfigType("env")
 	app.vip.AddConfigPath(".")
-	err := app.vip.ReadInConfig()
-	if err != nil {
-		if !testing.RunInTest() {
-			panic(err.Error())
-		}
+
+	if err := app.vip.ReadInConfig(); err != nil {
+		color.Redln("Invalid Config error: " + err.Error())
+		os.Exit(0)
 	}
+
 	app.vip.SetEnvPrefix("goravel")
 	app.vip.AutomaticEnv()
 
 	appKey := app.Env("APP_KEY")
-	if appKey == nil && support.Env != support.EnvArtisan {
-		color.Redln("Please initialize APP_KEY first.")
-		color.Warnln("Run command: \ngo run . artisan key:generate")
-		os.Exit(0)
-	}
+	if support.Env != support.EnvArtisan {
+		if appKey == nil {
+			color.Redln("Please initialize APP_KEY first.")
+			color.Warnln("Run command: \ngo run . artisan key:generate")
+			os.Exit(0)
+		}
 
-	if len(appKey.(string)) != 32 {
-		color.Redln("Invalid APP_KEY, please reset it.")
-		color.Warnln("Run command: \ngo run . artisan key:generate")
-		os.Exit(0)
+		if len(appKey.(string)) != 32 {
+			color.Redln("Invalid APP_KEY, please reset it.")
+			color.Warnln("Run command: \ngo run . artisan key:generate")
+			os.Exit(0)
+		}
 	}
 
 	return app

@@ -83,10 +83,10 @@ func (r *GinSuccess) String(format string, values ...any) {
 func GinResponseMiddleware() httpcontract.Middleware {
 	return func(ctx httpcontract.Context) {
 		blw := &BodyWriter{body: bytes.NewBufferString("")}
-		switch ctx.(type) {
+		switch ctx := ctx.(type) {
 		case *GinContext:
-			blw.ResponseWriter = ctx.(*GinContext).Instance().Writer
-			ctx.(*GinContext).Instance().Writer = blw
+			blw.ResponseWriter = ctx.Instance().Writer
+			ctx.Instance().Writer = blw
 		}
 
 		ctx.WithValue("responseOrigin", blw)

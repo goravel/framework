@@ -175,10 +175,10 @@ func (r *Local) Put(file, content string) error {
 	}
 
 	f, err := os.Create(file)
-	defer f.Close()
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	if _, err = f.WriteString(content); err != nil {
 		return err

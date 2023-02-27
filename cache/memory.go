@@ -25,6 +25,8 @@ func NewMemory() (*Memory, error) {
 }
 
 func (r *Memory) WithContext(ctx context.Context) cachecontract.Store {
+	r.ctx = ctx
+
 	return r
 }
 

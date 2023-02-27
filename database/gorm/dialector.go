@@ -1,7 +1,6 @@
 package gorm
 
 import (
-	"errors"
 	"fmt"
 
 	"gorm.io/driver/mysql"
@@ -41,7 +40,7 @@ func dialector(connection string, config contractsdatabase.Config) (gorm.Dialect
 	case orm.DriverSqlserver:
 		return sqlserverDialector(connection, config), nil
 	default:
-		return nil, errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver))
+		return nil, fmt.Errorf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver)
 	}
 }
 

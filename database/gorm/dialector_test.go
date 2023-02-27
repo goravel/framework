@@ -1,7 +1,6 @@
 package gorm
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -95,7 +94,7 @@ func TestDialector(t *testing.T) {
 				mockConfig.On("GetString", "database.connections.goravel.driver").
 					Return("goravel").Once()
 			},
-			expectErr: errors.New(fmt.Sprintf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", "goravel")),
+			expectErr: fmt.Errorf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", "goravel"),
 		},
 	}
 

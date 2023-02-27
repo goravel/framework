@@ -84,7 +84,7 @@ func colonToBracket(relativePath string) string {
 }
 
 func bracketToColon(relativePath string) string {
-	compileRegex := regexp.MustCompile("\\{(.*?)\\}")
+	compileRegex := regexp.MustCompile(`{(.*?)}`)
 	matchArr := compileRegex.FindAllStringSubmatch(relativePath, -1)
 
 	for _, item := range matchArr {

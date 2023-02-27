@@ -12,6 +12,9 @@ import (
 
 func Create(file string, content string) {
 	err := os.MkdirAll(path.Dir(file), os.ModePerm)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	f, err := os.Create(file)
 	defer func() {
@@ -31,10 +34,7 @@ func Create(file string, content string) {
 func Exists(file string) bool {
 	_, err := os.Stat(file)
 	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		return false
+		return os.IsExist(err)
 	}
 	return true
 }
@@ -61,11 +61,8 @@ func Remove(file string) bool {
 	}
 
 	err = os.Remove(file)
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 func Contain(file string, search string) bool {
