@@ -65,7 +65,6 @@ func (s *ApplicationTestSuite) TestNeedsRehash() {
 }
 
 func getArgon2idHasher(mockConfig *mocks.Config) *Argon2id {
-	mockConfig.On("GetString", "hashing.driver", "argon2id").Return("argon2id").Once()
 	mockConfig.On("GetInt", "hashing.argon2id.memory", 65536).Return(65536).Once()
 	mockConfig.On("GetInt", "hashing.argon2id.time", 4).Return(4).Once()
 	mockConfig.On("GetInt", "hashing.argon2id.threads", 1).Return(1).Once()
@@ -74,7 +73,6 @@ func getArgon2idHasher(mockConfig *mocks.Config) *Argon2id {
 }
 
 func getBcryptHasher(mockConfig *mocks.Config) *Bcrypt {
-	mockConfig.On("GetString", "hashing.driver", "argon2id").Return("bcrypt").Once()
 	mockConfig.On("GetInt", "hashing.bcrypt.rounds", 10).Return(10).Once()
 
 	return NewBcrypt()
