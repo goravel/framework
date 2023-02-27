@@ -179,6 +179,11 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	mockConfig.AssertExpectations(s.T())
 }
 
+func (s *AuthTestSuite) TestParse_InvalidCache() {
+	ctx := http.Background()
+	s.EqualError(s.auth.Parse(ctx, "1"), "cache support is required")
+}
+
 func (s *AuthTestSuite) TestParse_Success() {
 	mockConfig := mock.Config()
 	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
