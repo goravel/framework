@@ -1,9 +1,11 @@
 package hash
 
 import (
-	"github.com/stretchr/testify/suite"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/hash"
 	"github.com/goravel/framework/testing/mock"
 )
@@ -15,8 +17,8 @@ type ApplicationTestSuite struct {
 
 func TestApplicationTestSuite(t *testing.T) {
 	mockConfig := mock.Config()
-	argon2idHasher := getArgon2idHasher()
-	bcryptHasher := getBcryptHasher()
+	argon2idHasher := getArgon2idHasher(mockConfig)
+	bcryptHasher := getBcryptHasher(mockConfig)
 
 	suite.Run(t, &ApplicationTestSuite{
 		hashers: map[string]hash.Hash{
@@ -62,8 +64,7 @@ func (s *ApplicationTestSuite) TestNeedsRehash() {
 	}
 }
 
-func getArgon2idHasher() *Argon2id {
-	mockConfig := mock.Config()
+func getArgon2idHasher(mockConfig *mocks.Config) *Argon2id {
 	mockConfig.On("GetString", "hashing.driver", "argon2id").Return("argon2id").Once()
 	mockConfig.On("GetInt", "hashing.argon2id.memory", 65536).Return(65536).Once()
 	mockConfig.On("GetInt", "hashing.argon2id.time", 4).Return(4).Once()
@@ -72,8 +73,7 @@ func getArgon2idHasher() *Argon2id {
 	return NewArgon2id()
 }
 
-func getBcryptHasher() *Bcrypt {
-	mockConfig := mock.Config()
+func getBcryptHasher(mockConfig *mocks.Config) *Bcrypt {
 	mockConfig.On("GetString", "hashing.driver", "argon2id").Return("bcrypt").Once()
 	mockConfig.On("GetInt", "hashing.bcrypt.rounds", 10).Return(10).Once()
 

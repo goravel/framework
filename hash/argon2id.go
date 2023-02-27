@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gookit/color"
 	"golang.org/x/crypto/argon2"
 
 	"github.com/goravel/framework/facades"
@@ -46,10 +45,7 @@ func NewArgon2id() *Argon2id {
 func (a *Argon2id) Make(value string) (string, error) {
 	salt := make([]byte, a.saltLen)
 	if _, err := rand.Read(salt); err != nil {
-		if err != nil {
-			color.Redln("[Hash] Argon2id hashing Error:", err.Error())
-			return "", err
-		}
+		return "", err
 	}
 
 	hash := argon2.IDKey([]byte(value), salt, a.time, a.memory, a.threads, a.keyLen)

@@ -3,11 +3,10 @@ package middleware
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/spf13/cast"
 	"net/http"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/spf13/cast"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
@@ -44,9 +43,9 @@ func Throttle(name string) contractshttp.Middleware {
 									ctx.Request().AbortWithStatus(http.StatusTooManyRequests)
 								}
 							} else {
+								// TODO: change Put to Increment in the future
 								err := facades.Cache.Put(instance.Key, value+1, time.Duration(instance.DecayMinutes)*time.Minute)
 								if err != nil {
-									color.Redln("[Throttle] Error: ", err.Error())
 									panic(err)
 								}
 							}
@@ -55,12 +54,10 @@ func Throttle(name string) contractshttp.Middleware {
 							// if the timer does not exist, create it and set the number of attempts to 1
 							err := facades.Cache.Put(instance.Key+":timer", time.Now().Unix(), time.Duration(instance.DecayMinutes)*time.Minute)
 							if err != nil {
-								color.Redln("[Throttle] Error: ", err.Error())
 								panic(err)
 							}
 							err = facades.Cache.Put(instance.Key, 1, time.Duration(instance.DecayMinutes)*time.Minute)
 							if err != nil {
-								color.Redln("[Throttle] Error: ", err.Error())
 								panic(err)
 							}
 						}

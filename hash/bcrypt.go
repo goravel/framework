@@ -1,7 +1,6 @@
 package hash
 
 import (
-	"github.com/gookit/color"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/goravel/framework/facades"
@@ -22,7 +21,6 @@ func NewBcrypt() *Bcrypt {
 func (b *Bcrypt) Make(value string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(value), b.rounds)
 	if err != nil {
-		color.Redln("[Hash] Bcrypt hashing Error:", err.Error())
 		return "", err
 	}
 
