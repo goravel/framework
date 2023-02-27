@@ -107,7 +107,11 @@ func TestRun(t *testing.T) {
 			})
 			if err := test.setup(test.host, test.port); err == nil {
 				time.Sleep(1 * time.Second)
-				resp, err := http.Get("http://" + test.host)
+				hostUrl := "http://" + test.host
+				if test.port != "" {
+					hostUrl = hostUrl + ":" + test.port
+				}
+				resp, err := http.Get(hostUrl)
 				defer resp.Body.Close()
 
 				assert.Nil(t, err)
@@ -210,7 +214,11 @@ func TestRunTLS(t *testing.T) {
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}
 				client := &http.Client{Transport: tr}
-				resp, err := client.Get("https://" + test.host)
+				hostUrl := "http://" + test.host
+				if test.port != "" {
+					hostUrl = hostUrl + ":" + test.port
+				}
+				resp, err := client.Get(hostUrl)
 				defer resp.Body.Close()
 
 				assert.Nil(t, err)
