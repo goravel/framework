@@ -91,7 +91,7 @@ func TestRun(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3001",
+			host: "127.0.0.1:3002",
 		},
 	}
 
@@ -179,7 +179,7 @@ func TestRunTLS(t *testing.T) {
 				return nil
 			},
 			host: "127.0.0.1",
-			port: "3001",
+			port: "3003",
 		},
 		{
 			name: "use custom host",
@@ -214,7 +214,7 @@ func TestRunTLS(t *testing.T) {
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				}
 				client := &http.Client{Transport: tr}
-				hostUrl := "http://" + test.host
+				hostUrl := "https://" + test.host
 				if test.port != "" {
 					hostUrl = hostUrl + ":" + test.port
 				}
