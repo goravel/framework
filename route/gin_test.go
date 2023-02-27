@@ -31,15 +31,15 @@ func TestRun(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setup       func(host string) error
+		setup       func(host string, port string) error
 		host        string
+		port        string
 		expectError error
 	}{
 		{
 			name: "error when default host is empty",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetString", "route.host").Return(host).Once()
-				mockConfig.On("GetString", "route.port").Return("test_ca.port").Once()
 
 				go func() {
 					assert.EqualError(t, route.Run(), "host can't be empty")
@@ -50,11 +50,26 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
+			name: "error when default port is empty",
+			setup: func(host string, port string) error {
+				mockConfig.On("GetString", "route.host").Return(host).Once()
+				mockConfig.On("GetString", "route.port").Return(port).Once()
+
+				go func() {
+					assert.EqualError(t, route.Run(), "port can't be empty")
+				}()
+				time.Sleep(1 * time.Second)
+
+				return errors.New("error")
+			},
+			host: "127.0.0.1",
+		},
+		{
 			name: "use default host",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 				mockConfig.On("GetString", "route.host").Return(host).Once()
-				mockConfig.On("GetString", "route.port").Return("test_ca.port").Once()
+				mockConfig.On("GetString", "route.port").Return(port).Once()
 
 				go func() {
 					assert.Nil(t, route.Run())
@@ -62,11 +77,12 @@ func TestRun(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3001",
+			host: "127.0.0.1",
+			port: "3001",
 		},
 		{
 			name: "use custom host",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
 				go func() {
@@ -75,7 +91,7 @@ func TestRun(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3002",
+			host: "127.0.0.1:3001",
 		},
 	}
 
@@ -89,7 +105,7 @@ func TestRun(t *testing.T) {
 					"Hello": "Goravel",
 				})
 			})
-			if err := test.setup(test.host); err == nil {
+			if err := test.setup(test.host, test.port); err == nil {
 				time.Sleep(1 * time.Second)
 				resp, err := http.Get("http://" + test.host)
 				defer resp.Body.Close()
@@ -110,15 +126,15 @@ func TestRunTLS(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setup       func(host string) error
+		setup       func(host string, port string) error
 		host        string
+		port        string
 		expectError error
 	}{
 		{
 			name: "error when default host is empty",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
-				mockConfig.On("GetString", "route.tls.port").Return("test_ca.port").Once()
 
 				go func() {
 					assert.EqualError(t, route.RunTLS(), "host can't be empty")
@@ -129,11 +145,26 @@ func TestRunTLS(t *testing.T) {
 			},
 		},
 		{
+			name: "error when default port is empty",
+			setup: func(host string, port string) error {
+				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
+				mockConfig.On("GetString", "route.tls.port").Return(port).Once()
+
+				go func() {
+					assert.EqualError(t, route.RunTLS(), "port can't be empty")
+				}()
+				time.Sleep(1 * time.Second)
+
+				return errors.New("error")
+			},
+			host: "127.0.0.1",
+		},
+		{
 			name: "use default host",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 				mockConfig.On("GetString", "route.tls.host").Return(host).Once()
-				mockConfig.On("GetString", "route.tls.port").Return("test_ca.port").Once()
+				mockConfig.On("GetString", "route.tls.port").Return(port).Once()
 				mockConfig.On("GetString", "route.tls.ssl.cert").Return("test_ca.crt").Once()
 				mockConfig.On("GetString", "route.tls.ssl.key").Return("test_ca.key").Once()
 
@@ -143,11 +174,12 @@ func TestRunTLS(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3003",
+			host: "127.0.0.1",
+			port: "3001",
 		},
 		{
 			name: "use custom host",
-			setup: func(host string) error {
+			setup: func(host string, port string) error {
 				mockConfig.On("GetBool", "app.debug").Return(true).Once()
 				mockConfig.On("GetString", "route.tls.ssl.cert").Return("test_ca.crt").Once()
 				mockConfig.On("GetString", "route.tls.ssl.key").Return("test_ca.key").Once()
@@ -172,7 +204,7 @@ func TestRunTLS(t *testing.T) {
 					"Hello": "Goravel",
 				})
 			})
-			if err := test.setup(test.host); err == nil {
+			if err := test.setup(test.host, test.port); err == nil {
 				time.Sleep(1 * time.Second)
 				tr := &http.Transport{
 					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
