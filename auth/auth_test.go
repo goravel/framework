@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/http"
 	"github.com/goravel/framework/testing/mock"
 )
@@ -177,6 +178,12 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.ErrorIs(err, ErrorTokenExpired)
 
 	mockConfig.AssertExpectations(s.T())
+}
+
+func (s *AuthTestSuite) TestParse_InvalidCache() {
+	facades.Cache = nil
+	ctx := http.Background()
+	s.EqualError(s.auth.Parse(ctx, "1"), "cache support is required")
 }
 
 func (s *AuthTestSuite) TestParse_Success() {
