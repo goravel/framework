@@ -72,6 +72,9 @@ func (app *Auth) User(ctx http.Context, user any) error {
 
 func (app *Auth) Parse(ctx http.Context, token string) error {
 	token = strings.ReplaceAll(token, "Bearer ", "")
+	if facades.Cache == nil {
+		return errors.New("cache support is required")
+	}
 	if tokenIsDisabled(token) {
 		return ErrorTokenDisabled
 	}
@@ -90,11 +93,9 @@ func (app *Auth) Parse(ctx http.Context, token string) error {
 			app.makeAuthContext(ctx, claims, "")
 
 			return ErrorTokenExpired
-		} else {
-			return err
 		}
 	}
-	if tokenClaims == nil || !tokenClaims.Valid {
+	if err != nil || tokenClaims == nil || !tokenClaims.Valid {
 		return ErrorInvalidToken
 	}
 
