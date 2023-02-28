@@ -35,7 +35,6 @@ Laravel！
 
 - [ ] Hash
 - [ ] Crypt
-- [ ] Websocket 支持
 - [ ] 广播系统
 - [ ] 延迟队列
 - [ ] 队列支持 DB 驱动
@@ -48,7 +47,7 @@ Laravel！
 
 > 优化文档，请提交 PR 至文档仓库 [https://github.com/goravel/docs](https://github.com/goravel/docs)
 
-## Contributors
+## 贡献者
 
 这个项目的存在要归功于所有做出贡献的人。
 
@@ -56,6 +55,7 @@ Laravel！
 <a href="https://github.com/merouanekhalili" target="_blank"><img src="https://avatars.githubusercontent.com/u/1122628?v=4" width="48" height="48"></a>
 <a href="https://github.com/hongyukeji" target="_blank"><img src="https://avatars.githubusercontent.com/u/23145983?v=4" width="48" height="48"></a>
 <a href="https://github.com/DevHaoZi" target="_blank"><img src="https://avatars.githubusercontent.com/u/115467771?v=4" width="48" height="48"></a>
+<a href="https://github.com/sidshrivastav" target="_blank"><img src="https://avatars.githubusercontent.com/u/28773690?v=4" width="48" height="48"></a>
 
 ## 群组
 
@@ -64,10 +64,6 @@ Laravel！
 <p align="left"><img src="https://www.goravel.dev/wechat.jpg" width="200"></p>
 
 <!-- ![](https://user-images.githubusercontent.com/24771476/194740900-cee4aa43-7c22-42b6-ada9-42bc160cd797.JPG) -->
-
-## 赞赏
-
-<p align="left"><img src="https://www.goravel.dev/reward.jpg" width="200"></p>
 
 ## 开源许可
 
