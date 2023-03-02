@@ -2,6 +2,7 @@ package support
 
 import (
 	"errors"
+	"time"
 
 	"github.com/goravel/framework/contracts/queue"
 
@@ -17,6 +18,7 @@ type Task struct {
 	connection string
 	queue      string
 	server     *machinery.Server
+	delay      *time.Time
 }
 
 func (receiver *Task) Dispatch() error {
@@ -83,6 +85,7 @@ func (receiver *Task) handleAsync(job queue.Job, args []queue.Arg) error {
 	_, err := receiver.server.SendTask(&tasks.Signature{
 		Name: job.Signature(),
 		Args: realArgs,
+		ETA:  receiver.delay,
 	})
 	if err != nil {
 		return err
@@ -99,6 +102,12 @@ func (receiver *Task) OnConnection(connection string) queue.Task {
 
 func (receiver *Task) OnQueue(queue string) queue.Task {
 	receiver.queue = GetQueueName(receiver.connection, queue)
+
+	return receiver
+}
+
+func (receiver *Task) Delay(delay time.Time) queue.Task {
+	receiver.delay = &delay
 
 	return receiver
 }
