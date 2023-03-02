@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"bytes"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -81,8 +80,8 @@ func TestNewFileFromRequest(t *testing.T) {
 	c.Request, _ = http.NewRequest("POST", "/", buf)
 	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
 	f, err := c.FormFile("file")
+	assert.Nil(t, err)
 	file, err := NewFileFromRequest(f)
-	fmt.Println(file)
 	assert.Nil(t, err)
 	assert.Equal(t, ".txt", path.Ext(file.file))
 
