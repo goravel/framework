@@ -12,7 +12,7 @@ import (
 func Tls(host ...string) contractshttp.Middleware {
 	return func(ctx contractshttp.Context) {
 		if len(host) == 0 {
-			defaultHost := facades.Config.GetString("route.tls.host")
+			defaultHost := facades.Config.GetString("http.tls.host")
 			if defaultHost == "" {
 				ctx.Request().Next()
 
