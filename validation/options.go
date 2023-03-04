@@ -3,6 +3,7 @@ package validation
 import (
 	"strings"
 
+	"github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 
 	"github.com/gookit/validate"
@@ -40,7 +41,7 @@ func Attributes(attributes map[string]string) httpvalidate.Option {
 	}
 }
 
-func PrepareForValidation(prepare func(data httpvalidate.Data) error) httpvalidate.Option {
+func PrepareForValidation(prepare func(ctx http.Context, data httpvalidate.Data) error) httpvalidate.Option {
 	return func(options map[string]any) {
 		options["prepareForValidation"] = prepare
 	}
