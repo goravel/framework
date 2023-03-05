@@ -324,7 +324,9 @@ func (r *GinRequest) ValidateRequest(request contractshttp.FormRequest) (contrac
 		return nil, err
 	}
 
-	validator, err := r.Validate(request.Rules(r.ctx), validation.Messages(request.Messages(r.ctx)), validation.Attributes(request.Attributes(r.ctx)), validation.PrepareForValidation(request.PrepareForValidation))
+	validator, err := r.Validate(request.Rules(r.ctx), validation.Messages(request.Messages(r.ctx)), validation.Attributes(request.Attributes(r.ctx)), func(options map[string]any) {
+		options["prepareForValidation"] = request.PrepareForValidation
+	})
 	if err != nil {
 		return nil, err
 	}

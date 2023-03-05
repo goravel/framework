@@ -153,21 +153,23 @@ func TestMake(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		validation := NewValidation()
-		validator, err := validation.Make(test.data, test.rules, test.options...)
-		assert.Equal(t, test.expectValidator, validator != nil, test.description)
-		assert.Equal(t, test.expectErr, err, test.description)
+		t.Run(test.description, func(t *testing.T) {
+			validation := NewValidation()
+			validator, err := validation.Make(test.data, test.rules, test.options...)
+			assert.Equal(t, test.expectValidator, validator != nil, test.description)
+			assert.Equal(t, test.expectErr, err, test.description)
 
-		if validator != nil {
-			var data Data
-			err = validator.Bind(&data)
-			assert.Nil(t, err, test.description)
-			assert.Equal(t, test.expectData, data, test.description)
-			if validator.Fails() {
-				assert.Equal(t, test.expectErrorMessage, validator.Errors().One(), test.description)
+			if validator != nil {
+				var data Data
+				err = validator.Bind(&data)
+				assert.Nil(t, err, test.description)
+				assert.Equal(t, test.expectData, data, test.description)
+				if validator.Fails() {
+					assert.Equal(t, test.expectErrorMessage, validator.Errors().One(), test.description)
+				}
+				assert.Equal(t, test.expectErrors, validator.Fails(), test.description)
 			}
-			assert.Equal(t, test.expectErrors, validator.Fails(), test.description)
-		}
+		})
 	}
 }
 
@@ -258,7 +260,9 @@ func TestRule_Required(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -330,7 +334,9 @@ func TestRule_RequiredIf(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -402,7 +408,9 @@ func TestRule_RequiredUnless(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -477,7 +485,9 @@ func TestRule_RequiredWith(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -570,7 +580,9 @@ func TestRule_RequiredWithAll(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -643,7 +655,9 @@ func TestRule_RequiredWithout(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -711,7 +725,9 @@ func TestRule_RequiredWithoutAll(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -777,7 +793,9 @@ func TestRule_Int(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -815,7 +833,9 @@ func TestRule_Uint(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -875,7 +895,9 @@ func TestRule_Bool(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -941,7 +963,9 @@ func TestRule_String(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -979,7 +1003,9 @@ func TestRule_Float(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1025,7 +1051,9 @@ func TestRule_Slice(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1066,7 +1094,9 @@ func TestRule_In(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1107,7 +1137,9 @@ func TestRule_NotIn(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1143,7 +1175,9 @@ func TestRule_StartsWith(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1179,7 +1213,9 @@ func TestRule_EndsWith(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1215,7 +1251,9 @@ func TestRule_Between(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1251,7 +1289,9 @@ func TestRule_Max(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1287,7 +1327,9 @@ func TestRule_Min(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1323,7 +1365,9 @@ func TestRule_Eq(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1359,7 +1403,9 @@ func TestRule_Ne(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1395,7 +1441,9 @@ func TestRule_Lt(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1431,7 +1479,9 @@ func TestRule_Gt(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1490,7 +1540,9 @@ func TestRule_Len(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1549,7 +1601,9 @@ func TestRule_MinLen(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1608,7 +1662,9 @@ func TestRule_MaxLen(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1644,7 +1700,9 @@ func TestRule_Email(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1688,7 +1746,9 @@ func TestRule_Array(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1733,7 +1793,9 @@ func TestRule_Map(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1773,7 +1835,9 @@ func TestRule_EqField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1813,7 +1877,9 @@ func TestRule_NeField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1853,7 +1919,9 @@ func TestRule_GtField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1895,7 +1963,9 @@ func TestRule_GteField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1935,7 +2005,9 @@ func TestRule_LtField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -1977,7 +2049,9 @@ func TestRule_LteField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2018,7 +2092,9 @@ func TestRule_Date(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2054,7 +2130,9 @@ func TestRule_GtDate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2090,7 +2168,9 @@ func TestRule_LtDate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2128,7 +2208,9 @@ func TestRule_GteDate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2166,7 +2248,9 @@ func TestRule_lteDate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2205,7 +2289,9 @@ func TestRule_Alpha(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2241,7 +2327,9 @@ func TestRule_AlphaNum(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2277,7 +2365,9 @@ func TestRule_AlphaDash(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2313,7 +2403,9 @@ func TestRule_Json(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2349,7 +2441,9 @@ func TestRule_Number(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2387,7 +2481,9 @@ func TestRule_FullUrl(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2428,7 +2524,9 @@ func TestRule_Ip(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2470,7 +2568,9 @@ func TestRule_Ipv4(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2509,7 +2609,9 @@ func TestRule_Ipv6(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 
@@ -2562,7 +2664,9 @@ func TestCustomRule(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test.setup(test)
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gookit/validate"
 
+	"github.com/goravel/framework/contracts/http"
 	validatecontract "github.com/goravel/framework/contracts/validation"
 )
 
@@ -61,7 +62,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	options = append(options, Rules(rules), CustomRules(r.rules))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
-		if err := generateOptions["prepareForValidation"].(func(data validatecontract.Data) error)(NewData(dataFace)); err != nil {
+		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(nil, NewData(dataFace)); err != nil {
 			return nil, err
 		}
 	}
