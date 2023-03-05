@@ -87,17 +87,26 @@ func (_m *Auth) Logout(ctx http.Context) error {
 }
 
 // Parse provides a mock function with given fields: ctx, token
-func (_m *Auth) Parse(ctx http.Context, token string) error {
+func (_m *Auth) Parse(ctx http.Context, token string) (*auth.Payload, error) {
 	ret := _m.Called(ctx, token)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(http.Context, string) error); ok {
+	var r0 *auth.Payload
+	if rf, ok := ret.Get(0).(func(http.Context, string) *auth.Payload); ok {
 		r0 = rf(ctx, token)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*auth.Payload)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(http.Context, string) error); ok {
+		r1 = rf(ctx, token)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Refresh provides a mock function with given fields: ctx
