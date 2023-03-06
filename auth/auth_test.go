@@ -5,13 +5,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm/clause"
 
+	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/http"
+	supporttime "github.com/goravel/framework/support/time"
 	"github.com/goravel/framework/testing/mock"
 )
 
@@ -142,7 +145,8 @@ func (s *AuthTestSuite) TestParse_TokenDisabled() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(true).Once()
 
-	err := s.auth.Parse(http.Background(), token)
+	payload, err := s.auth.Parse(http.Background(), token)
+	s.Nil(payload)
 	s.EqualError(err, "token is disabled")
 }
 
@@ -154,7 +158,8 @@ func (s *AuthTestSuite) TestParse_TokenInvalid() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err := s.auth.Parse(http.Background(), token)
+	payload, err := s.auth.Parse(http.Background(), token)
+	s.Nil(payload)
 	s.NotNil(err)
 
 	mockConfig.AssertExpectations(s.T())
@@ -162,9 +167,10 @@ func (s *AuthTestSuite) TestParse_TokenInvalid() {
 
 func (s *AuthTestSuite) TestParse_TokenExpired() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
+	now := supporttime.Now()
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.Nil(err)
@@ -174,7 +180,13 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.Equal(&contractsauth.Payload{
+		Guard:    guard,
+		Key:      "1",
+		ExpireAt: jwt.NewNumericDate(now.Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(now).Local(),
+	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
 
 	mockConfig.AssertExpectations(s.T())
@@ -183,12 +195,14 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 func (s *AuthTestSuite) TestParse_InvalidCache() {
 	facades.Cache = nil
 	ctx := http.Background()
-	s.EqualError(s.auth.Parse(ctx, "1"), "cache support is required")
+	payload, err := s.auth.Parse(ctx, "1")
+	s.Nil(payload)
+	s.EqualError(err, "cache support is required")
 }
 
 func (s *AuthTestSuite) TestParse_Success() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
@@ -198,7 +212,13 @@ func (s *AuthTestSuite) TestParse_Success() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.Equal(&contractsauth.Payload{
+		Guard:    guard,
+		Key:      "1",
+		ExpireAt: jwt.NewNumericDate(supporttime.Now().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(supporttime.Now()).Local(),
+	}, payload)
 	s.Nil(err)
 
 	mockConfig.AssertExpectations(s.T())
@@ -206,7 +226,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 
 func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
@@ -216,7 +236,13 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, "Bearer "+token)
+	payload, err := s.auth.Parse(ctx, "Bearer "+token)
+	s.Equal(&contractsauth.Payload{
+		Guard:    guard,
+		Key:      "1",
+		ExpireAt: jwt.NewNumericDate(supporttime.Now().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(supporttime.Now()).Local(),
+	}, payload)
 	s.Nil(err)
 
 	mockConfig.AssertExpectations(s.T())
@@ -235,7 +261,7 @@ func (s *AuthTestSuite) TestUser_NoParse() {
 
 func (s *AuthTestSuite) TestUser_DBError() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
@@ -245,7 +271,8 @@ func (s *AuthTestSuite) TestUser_DBError() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.Nil(err)
 
 	var user User
@@ -262,8 +289,8 @@ func (s *AuthTestSuite) TestUser_DBError() {
 
 func (s *AuthTestSuite) TestUser_Expired() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
-	mockConfig.On("GetInt", "jwt.ttl").Return(2)
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Times(3)
+	mockConfig.On("GetInt", "jwt.ttl").Return(2).Twice()
 
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -275,7 +302,8 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	time.Sleep(2 * unit)
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.ErrorIs(err, ErrorTokenExpired)
 
 	var user User
@@ -300,7 +328,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 func (s *AuthTestSuite) TestUser_RefreshExpired() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
@@ -313,7 +341,8 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	time.Sleep(2 * unit)
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.ErrorIs(err, ErrorTokenExpired)
 
 	var user User
@@ -333,7 +362,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 func (s *AuthTestSuite) TestUser_Success() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
@@ -343,7 +372,8 @@ func (s *AuthTestSuite) TestUser_Success() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.Nil(err)
 
 	var user User
@@ -370,17 +400,19 @@ func (s *AuthTestSuite) TestRefresh_NotParse() {
 
 func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
-	token, err := s.auth.LoginUsingID(ctx, 1)
+	token, err := s.auth.LoginUsingID(ctx, 2)
+
 	s.Nil(err)
 
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.Nil(err)
 
 	mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
@@ -395,8 +427,8 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 
 func (s *AuthTestSuite) TestRefresh_Success() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
-	mockConfig.On("GetInt", "jwt.ttl").Return(2)
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Times(3)
+	mockConfig.On("GetInt", "jwt.ttl").Return(2).Twice()
 
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -405,7 +437,8 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.Nil(err)
 
 	mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
@@ -420,8 +453,8 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 
 func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
-	mockConfig.On("GetInt", "jwt.ttl").Return(2)
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+	mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -438,8 +471,8 @@ func (s *AuthTestSuite) TestLogout_NotParse() {
 
 func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
-	mockConfig.On("GetInt", "jwt.ttl").Return(2)
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
+	mockConfig.On("GetInt", "jwt.ttl").Return(2).Twice()
 
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -448,7 +481,8 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.Nil(err)
 
 	mockCache.On("Put", testifymock.Anything, true, 2*unit).Return(errors.New("error")).Once()
@@ -460,8 +494,8 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 
 func (s *AuthTestSuite) TestLogout_Success() {
 	mockConfig := mock.Config()
-	mockConfig.On("GetString", "jwt.secret").Return("Goravel")
-	mockConfig.On("GetInt", "jwt.ttl").Return(2)
+	mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
+	mockConfig.On("GetInt", "jwt.ttl").Return(2).Twice()
 
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -471,7 +505,8 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	mockCache := mock.Cache()
 	mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	err = s.auth.Parse(ctx, token)
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
 	s.Nil(err)
 
 	mockCache.On("Put", testifymock.Anything, true, 2*unit).Return(nil).Once()

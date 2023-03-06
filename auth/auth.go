@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	contractauth "github.com/goravel/framework/contracts/auth"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/spf13/cast"
+	"gorm.io/gorm/clause"
+
+	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
 	supporttime "github.com/goravel/framework/support/time"
-
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/spf13/cast"
-	"gorm.io/gorm/clause"
 )
 
 const ctxKey = "GoravelAuth"
@@ -39,12 +39,14 @@ type Auth struct {
 }
 
 func NewAuth(guard string) *Auth {
+	jwt.TimeFunc = supporttime.Now
+
 	return &Auth{
 		guard: guard,
 	}
 }
 
-func (app *Auth) Guard(name string) contractauth.Auth {
+func (app *Auth) Guard(name string) contractsauth.Auth {
 	return NewAuth(name)
 }
 
@@ -70,13 +72,13 @@ func (app *Auth) User(ctx http.Context, user any) error {
 	return nil
 }
 
-func (app *Auth) Parse(ctx http.Context, token string) error {
+func (app *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if facades.Cache == nil {
-		return errors.New("cache support is required")
+		return nil, errors.New("cache support is required")
 	}
 	if tokenIsDisabled(token) {
-		return ErrorTokenDisabled
+		return nil, ErrorTokenDisabled
 	}
 
 	jwtSecret := facades.Config.GetString("jwt.secret")
@@ -87,26 +89,38 @@ func (app *Auth) Parse(ctx http.Context, token string) error {
 		if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
 			if !ok {
-				return ErrorInvalidClaims
+				return nil, ErrorInvalidClaims
 			}
 
 			app.makeAuthContext(ctx, claims, "")
 
-			return ErrorTokenExpired
+			return &contractsauth.Payload{
+				Guard:    claims.Subject,
+				Key:      claims.Key,
+				ExpireAt: claims.ExpiresAt.Local(),
+				IssuedAt: claims.IssuedAt.Local(),
+			}, ErrorTokenExpired
 		}
+
+		return nil, ErrorInvalidToken
 	}
-	if err != nil || tokenClaims == nil || !tokenClaims.Valid {
-		return ErrorInvalidToken
+	if tokenClaims == nil || !tokenClaims.Valid {
+		return nil, ErrorInvalidToken
 	}
 
 	claims, ok := tokenClaims.Claims.(*Claims)
 	if !ok {
-		return ErrorInvalidClaims
+		return nil, ErrorInvalidClaims
 	}
 
 	app.makeAuthContext(ctx, claims, token)
 
-	return nil
+	return &contractsauth.Payload{
+		Guard:    claims.Subject,
+		Key:      claims.Key,
+		ExpireAt: claims.ExpiresAt.Time,
+		IssuedAt: claims.IssuedAt.Time,
+	}, nil
 }
 
 func (app *Auth) Login(ctx http.Context, user any) (token string, err error) {

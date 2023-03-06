@@ -2,10 +2,23 @@ package time
 
 import "time"
 
-var now *time.Time
+type virtualTime struct {
+	virtual time.Time
+	real    time.Time
+}
 
-func SetTestNow(t time.Time) {
-	now = &t
+var now *virtualTime
+
+func SetTestNow(t ...time.Time) {
+	if len(t) == 0 {
+		now = nil
+		return
+	}
+
+	now = &virtualTime{
+		virtual: t[0],
+		real:    time.Now(),
+	}
 }
 
 func Now() time.Time {
@@ -13,5 +26,7 @@ func Now() time.Time {
 		return time.Now()
 	}
 
-	return *now
+	diff := time.Since(now.real)
+
+	return now.virtual.Add(diff)
 }
