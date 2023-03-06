@@ -3,10 +3,10 @@ package validation
 import (
 	"strings"
 
+	"github.com/gookit/validate"
+
 	"github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
-
-	"github.com/gookit/validate"
 )
 
 func Rules(rules map[string]string) httpvalidate.Option {
