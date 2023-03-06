@@ -1454,21 +1454,21 @@ func (r *CreateUser) Authorize(ctx httpcontract.Context) error {
 	return nil
 }
 
-func (r *CreateUser) Rules() map[string]string {
+func (r *CreateUser) Rules(ctx httpcontract.Context) map[string]string {
 	return map[string]string{
 		"name": "required",
 	}
 }
 
-func (r *CreateUser) Messages() map[string]string {
+func (r *CreateUser) Messages(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *CreateUser) Attributes() map[string]string {
+func (r *CreateUser) Attributes(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *CreateUser) PrepareForValidation(data validation.Data) error {
+func (r *CreateUser) PrepareForValidation(ctx httpcontract.Context, data validation.Data) error {
 	if name, exist := data.Get("name"); exist {
 		return data.Set("name", name.(string)+"1")
 	}
@@ -1484,20 +1484,20 @@ func (r *Unauthorize) Authorize(ctx httpcontract.Context) error {
 	return errors.New("error")
 }
 
-func (r *Unauthorize) Rules() map[string]string {
+func (r *Unauthorize) Rules(ctx httpcontract.Context) map[string]string {
 	return map[string]string{
 		"name": "required",
 	}
 }
 
-func (r *Unauthorize) Messages() map[string]string {
+func (r *Unauthorize) Messages(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *Unauthorize) Attributes() map[string]string {
+func (r *Unauthorize) Attributes(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *Unauthorize) PrepareForValidation(data validation.Data) error {
+func (r *Unauthorize) PrepareForValidation(ctx httpcontract.Context, data validation.Data) error {
 	return nil
 }

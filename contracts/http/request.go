@@ -54,8 +54,8 @@ type Request interface {
 
 type FormRequest interface {
 	Authorize(ctx Context) error
-	Rules() map[string]string
-	Messages() map[string]string
-	Attributes() map[string]string
-	PrepareForValidation(data validation.Data) error
+	Rules(ctx Context) map[string]string
+	Messages(ctx Context) map[string]string
+	Attributes(ctx Context) map[string]string
+	PrepareForValidation(ctx Context, data validation.Data) error
 }

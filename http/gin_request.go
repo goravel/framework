@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cast"
 
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
-	httpcontract "github.com/goravel/framework/contracts/http"
-	validatecontract "github.com/goravel/framework/contracts/validation"
+	contractshttp "github.com/goravel/framework/contracts/http"
+	contractsvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/validation"
@@ -21,7 +21,7 @@ type GinRequest struct {
 	instance *gin.Context
 }
 
-func NewGinRequest(ctx *GinContext) httpcontract.Request {
+func NewGinRequest(ctx *GinContext) contractshttp.Request {
 	return &GinRequest{ctx, ctx.instance}
 }
 
@@ -289,7 +289,7 @@ func (r *GinRequest) Origin() *http.Request {
 	return r.instance.Request
 }
 
-func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
+func (r *GinRequest) Validate(rules map[string]string, options ...contractsvalidate.Option) (contractsvalidate.Validator, error) {
 	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")
 	}
@@ -306,7 +306,7 @@ func (r *GinRequest) Validate(rules map[string]string, options ...validatecontra
 		v = validate.NewValidation(dataFace)
 	} else {
 		if generateOptions["prepareForValidation"] != nil {
-			if err := generateOptions["prepareForValidation"].(func(data validatecontract.Data) error)(validation.NewData(dataFace)); err != nil {
+			if err := generateOptions["prepareForValidation"].(func(ctx contractshttp.Context, data contractsvalidate.Data) error)(r.ctx, validation.NewData(dataFace)); err != nil {
 				return nil, err
 			}
 		}
@@ -319,12 +319,14 @@ func (r *GinRequest) Validate(rules map[string]string, options ...validatecontra
 	return validation.NewValidator(v, dataFace), nil
 }
 
-func (r *GinRequest) ValidateRequest(request httpcontract.FormRequest) (validatecontract.Errors, error) {
+func (r *GinRequest) ValidateRequest(request contractshttp.FormRequest) (contractsvalidate.Errors, error) {
 	if err := request.Authorize(r.ctx); err != nil {
 		return nil, err
 	}
 
-	validator, err := r.Validate(request.Rules(), validation.Messages(request.Messages()), validation.Attributes(request.Attributes()), validation.PrepareForValidation(request.PrepareForValidation))
+	validator, err := r.Validate(request.Rules(r.ctx), validation.Messages(request.Messages(r.ctx)), validation.Attributes(request.Attributes(r.ctx)), func(options map[string]any) {
+		options["prepareForValidation"] = request.PrepareForValidation
+	})
 	if err != nil {
 		return nil, err
 	}
