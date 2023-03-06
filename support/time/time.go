@@ -26,7 +26,7 @@ func Now() time.Time {
 		return time.Now()
 	}
 
-	diff := time.Now().Sub(now.real)
+	diff := time.Since(now.real)
 
 	return now.virtual.Add(diff)
 }
