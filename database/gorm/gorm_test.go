@@ -1441,6 +1441,79 @@ func TestReadWriteSeparate(t *testing.T) {
 	}
 }
 
+func TestTablePrefixAndSingular(t *testing.T) {
+	mysqlPool, mysqlResource, err := initMysqlDocker()
+	if err != nil {
+		log.Fatalf("Init mysql docker error: %s", err)
+	}
+	mockMysqlWithPrefixAndSingular(cast.ToInt(mysqlResource.GetPort("3306/tcp")))
+	mysqlDB, err := mysqlDockerDBWithPrefixAndSingular(mysqlPool)
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	postgresqlPool, postgresqlResource, err := initPostgresqlDocker()
+	if err != nil {
+		log.Fatalf("Init postgresql docker error: %s", err)
+	}
+	mockPostgresqlWithPrefixAndSingular(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
+	postgresqlDB, err := postgresqlDockerDBWithPrefixAndSingular(postgresqlPool)
+	if err != nil {
+		log.Fatalf("Init postgresql error: %s", err)
+	}
+
+	sqlitePool, _, err := initSqliteDocker()
+	if err != nil {
+		log.Fatalf("Init sqlite docker error: %s", err)
+	}
+	mockSqliteWithPrefixAndSingular(dbDatabase)
+	sqliteDB, err := sqliteDockerDBWithPrefixAndSingular(sqlitePool)
+	if err != nil {
+		log.Fatalf("Init sqlite error: %s", err)
+	}
+
+	sqlserverPool, sqlserverResource, err := initSqlserverDocker()
+	if err != nil {
+		log.Fatalf("Init sqlserver docker error: %s", err)
+	}
+	mockSqlserverWithPrefixAndSingular(cast.ToInt(sqlserverResource.GetPort("1433/tcp")))
+	sqlserverDB, err := sqlserverDockerDBWithPrefixAndSingular(sqlserverPool)
+	if err != nil {
+		log.Fatalf("Init sqlserver error: %s", err)
+	}
+
+	dbs := map[contractsorm.Driver]contractsorm.DB{
+		contractsorm.DriverMysql:      mysqlDB,
+		contractsorm.DriverPostgresql: postgresqlDB,
+		contractsorm.DriverSqlite:     sqliteDB,
+		contractsorm.DriverSqlserver:  sqlserverDB,
+	}
+
+	for drive, db := range dbs {
+		t.Run(drive.String(), func(t *testing.T) {
+			user := User{Name: "user"}
+			assert.Nil(t, db.Create(&user))
+			assert.True(t, user.ID > 0)
+
+			var user1 User
+			assert.Nil(t, db.Find(&user1, user.ID))
+			assert.True(t, user1.ID > 0)
+		})
+	}
+
+	file.Remove(dbDatabase)
+
+	if err := mysqlPool.Purge(mysqlResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
+	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
+	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
+}
+
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
 	return func(query contractsorm.Query) contractsorm.Query {
 		page, _ := strconv.Atoi(page)

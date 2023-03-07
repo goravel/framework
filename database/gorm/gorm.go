@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	gormLogger "gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -19,6 +20,7 @@ import (
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
+	supporttime "github.com/goravel/framework/support/time"
 )
 
 func New(connection string) (*gorm.DB, error) {
@@ -35,7 +37,7 @@ func New(connection string) (*gorm.DB, error) {
 		return nil, nil
 	}
 
-	instance, err := instance(dial)
+	instance, err := instance(connection, dial)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +67,7 @@ func configurePool(db *gorm.DB) error {
 	return nil
 }
 
-func instance(dialector gorm.Dialector) (*gorm.DB, error) {
+func instance(connection string, dialector gorm.Dialector) (*gorm.DB, error) {
 	var logLevel gormLogger.LogLevel
 	if facades.Config.GetBool("app.debug") {
 		logLevel = gormLogger.Info
@@ -84,6 +86,13 @@ func instance(dialector gorm.Dialector) (*gorm.DB, error) {
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger.LogMode(logLevel),
+		NowFunc: func() time.Time {
+			return supporttime.Now()
+		},
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix:   facades.Config.GetString(fmt.Sprintf("database.connections.%s.prefix", connection)),
+			SingularTable: facades.Config.GetBool(fmt.Sprintf("database.connections.%s.singular", connection)),
+		},
 	})
 }
 
