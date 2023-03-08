@@ -56,15 +56,15 @@ func (_m *Orm) DB() (*sql.DB, error) {
 }
 
 // Query provides a mock function with given fields:
-func (_m *Orm) Query() orm.DB {
+func (_m *Orm) Query() orm.Query {
 	ret := _m.Called()
 
-	var r0 orm.DB
-	if rf, ok := ret.Get(0).(func() orm.DB); ok {
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.DB)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 

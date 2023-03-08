@@ -16,27 +16,27 @@ import (
 
 type Orm struct {
 	ctx       context.Context
-	instance  ormcontract.DB
-	instances map[string]ormcontract.DB
+	instance  ormcontract.Query
+	instances map[string]ormcontract.Query
 }
 
 func NewOrm(ctx context.Context) *Orm {
 	defaultConnection := facades.Config.GetString("database.default")
-	gormDB, err := databasegorm.NewDB(ctx, defaultConnection)
+	gormQuery, err := databasegorm.NewQuery(ctx, defaultConnection)
 	if err != nil {
 		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", defaultConnection, err))
 
 		return nil
 	}
-	if gormDB == nil {
+	if gormQuery == nil {
 		return nil
 	}
 
 	return &Orm{
 		ctx:      ctx,
-		instance: gormDB,
-		instances: map[string]ormcontract.DB{
-			defaultConnection: gormDB,
+		instance: gormQuery,
+		instances: map[string]ormcontract.Query{
+			defaultConnection: gormQuery,
 		},
 	}
 }
@@ -58,7 +58,7 @@ func (r *Orm) Connection(name string) ormcontract.Orm {
 		}
 	}
 
-	gormDB, err := databasegorm.NewDB(r.ctx, name)
+	gormDB, err := databasegorm.NewQuery(r.ctx, name)
 	if err != nil || gormDB == nil {
 		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
 
@@ -75,12 +75,12 @@ func (r *Orm) Connection(name string) ormcontract.Orm {
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
-	db := r.Query().(*databasegorm.DB)
+	db := r.Query().(*databasegorm.Query)
 
 	return db.Instance().DB()
 }
 
-func (r *Orm) Query() ormcontract.DB {
+func (r *Orm) Query() ormcontract.Query {
 	return r.instance
 }
 
