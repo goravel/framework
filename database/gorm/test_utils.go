@@ -22,7 +22,7 @@ const (
 	resourceExpire = 600
 )
 
-func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.DB, error) {
+func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
 	pool, resource, err := initMysqlDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -38,7 +38,7 @@ func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.DB, err
 	return pool, resource, db, nil
 }
 
-func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.DB, error) {
+func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
 	pool, resource, err := initPostgresqlDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -54,7 +54,7 @@ func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.DB
 	return pool, resource, db, nil
 }
 
-func SqliteDocker(dbName string) (*dockertest.Pool, *dockertest.Resource, contractsorm.DB, error) {
+func SqliteDocker(dbName string) (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
 	pool, resource, err := initSqliteDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -70,7 +70,7 @@ func SqliteDocker(dbName string) (*dockertest.Pool, *dockertest.Resource, contra
 	return pool, resource, db, nil
 }
 
-func SqlserverDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.DB, error) {
+func SqlserverDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
 	pool, resource, err := initSqlserverDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -277,7 +277,7 @@ func mockSqlserverOfCommon(mockConfig *configmocks.Config) {
 	mockPool(mockConfig)
 }
 
-func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB, error) {
+func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
 	db, err := initMysql(pool)
 	if err != nil {
 		return nil, err
@@ -292,7 +292,7 @@ func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB, er
 	return db, nil
 }
 
-func mysqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.DB, error) {
+func mysqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
 	db, err := initMysql(pool)
 	if err != nil {
 		return nil, err
@@ -326,11 +326,11 @@ func initMysqlDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initMysql(pool *dockertest.Pool) (contractsorm.DB, error) {
-	var db contractsorm.DB
+func initMysql(pool *dockertest.Pool) (contractsorm.Query, error) {
+	var db contractsorm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewDB(context.Background(), contractsorm.DriverMysql.String())
+		db, err = NewQuery(context.Background(), contractsorm.DriverMysql.String())
 		if err != nil {
 			return err
 		}
@@ -343,7 +343,7 @@ func initMysql(pool *dockertest.Pool) (contractsorm.DB, error) {
 	return db, nil
 }
 
-func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB, error) {
+func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
 	db, err := initPostgresql(pool)
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.D
 	return db, nil
 }
 
-func postgresqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.DB, error) {
+func postgresqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
 	db, err := initPostgresql(pool)
 	if err != nil {
 		return nil, err
@@ -394,11 +394,11 @@ func initPostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initPostgresql(pool *dockertest.Pool) (contractsorm.DB, error) {
-	var db contractsorm.DB
+func initPostgresql(pool *dockertest.Pool) (contractsorm.Query, error) {
+	var db contractsorm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewDB(context.Background(), contractsorm.DriverPostgresql.String())
+		db, err = NewQuery(context.Background(), contractsorm.DriverPostgresql.String())
 		if err != nil {
 			return err
 		}
@@ -411,7 +411,7 @@ func initPostgresql(pool *dockertest.Pool) (contractsorm.DB, error) {
 	return db, nil
 }
 
-func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB, error) {
+func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
 	db, err := initSqlite(pool)
 	if err != nil {
 		return nil, err
@@ -426,7 +426,7 @@ func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB, e
 	return db, nil
 }
 
-func sqliteDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.DB, error) {
+func sqliteDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
 	db, err := initSqlite(pool)
 	if err != nil {
 		return nil, err
@@ -458,11 +458,11 @@ func initSqliteDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initSqlite(pool *dockertest.Pool) (contractsorm.DB, error) {
-	var db contractsorm.DB
+func initSqlite(pool *dockertest.Pool) (contractsorm.Query, error) {
+	var db contractsorm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewDB(context.Background(), contractsorm.DriverSqlite.String())
+		db, err = NewQuery(context.Background(), contractsorm.DriverSqlite.String())
 
 		return err
 	}); err != nil {
@@ -472,7 +472,7 @@ func initSqlite(pool *dockertest.Pool) (contractsorm.DB, error) {
 	return db, nil
 }
 
-func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB, error) {
+func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
 	db, err := initSqlserver(pool)
 	if err != nil {
 		return nil, err
@@ -487,7 +487,7 @@ func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.DB
 	return db, nil
 }
 
-func sqlserverDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.DB, error) {
+func sqlserverDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
 	db, err := initSqlserver(pool)
 	if err != nil {
 		return nil, err
@@ -522,11 +522,11 @@ func initSqlserverDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initSqlserver(pool *dockertest.Pool) (contractsorm.DB, error) {
-	var db contractsorm.DB
+func initSqlserver(pool *dockertest.Pool) (contractsorm.Query, error) {
+	var db contractsorm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewDB(context.Background(), contractsorm.DriverSqlserver.String())
+		db, err = NewQuery(context.Background(), contractsorm.DriverSqlserver.String())
 		if err != nil {
 			return err
 		}
@@ -539,7 +539,7 @@ func initSqlserver(pool *dockertest.Pool) (contractsorm.DB, error) {
 	return db, nil
 }
 
-func initTables(driver contractsorm.Driver, db contractsorm.DB) error {
+func initTables(driver contractsorm.Driver, db contractsorm.Query) error {
 	if err := db.Exec(createUserTable(driver)); err != nil {
 		return err
 	}
@@ -568,7 +568,7 @@ func initTables(driver contractsorm.Driver, db contractsorm.DB) error {
 	return nil
 }
 
-func initTablesWithPrefixAndSingular(driver contractsorm.Driver, db contractsorm.DB) error {
+func initTablesWithPrefixAndSingular(driver contractsorm.Driver, db contractsorm.Query) error {
 	if err := db.Exec(createUserTableWithPrefixAndSingular(driver)); err != nil {
 		return err
 	}

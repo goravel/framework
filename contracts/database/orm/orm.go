@@ -9,15 +9,9 @@ import (
 type Orm interface {
 	Connection(name string) Orm
 	DB() (*sql.DB, error)
-	Query() DB
+	Query() Query
 	Transaction(txFunc func(tx Transaction) error) error
 	WithContext(ctx context.Context) Orm
-}
-
-//go:generate mockery --name=DB
-type DB interface {
-	Query
-	Begin() (Transaction, error)
 }
 
 //go:generate mockery --name=Transaction
@@ -27,8 +21,10 @@ type Transaction interface {
 	Rollback() error
 }
 
+//go:generate mockery --name=Query
 type Query interface {
 	Association(association string) Association
+	Begin() (Transaction, error)
 	Driver() Driver
 	Count(count *int64) error
 	Create(value any) error

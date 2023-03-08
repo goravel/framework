@@ -38,11 +38,11 @@ func Artisan() *consolemocks.Artisan {
 	return mockArtisan
 }
 
-func Orm() (*ormmocks.Orm, *ormmocks.DB, *ormmocks.Transaction, *ormmocks.Association) {
+func Orm() (*ormmocks.Orm, *ormmocks.Query, *ormmocks.Transaction, *ormmocks.Association) {
 	mockOrm := &ormmocks.Orm{}
 	facades.Orm = mockOrm
 
-	return mockOrm, &ormmocks.DB{}, &ormmocks.Transaction{}, &ormmocks.Association{}
+	return mockOrm, &ormmocks.Query{}, &ormmocks.Transaction{}, &ormmocks.Association{}
 }
 
 func Event() (*eventmocks.Instance, *eventmocks.Task) {

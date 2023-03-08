@@ -28,6 +28,29 @@ func (_m *Transaction) Association(association string) orm.Association {
 	return r0
 }
 
+// Begin provides a mock function with given fields:
+func (_m *Transaction) Begin() (orm.Transaction, error) {
+	ret := _m.Called()
+
+	var r0 orm.Transaction
+	if rf, ok := ret.Get(0).(func() orm.Transaction); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Commit provides a mock function with given fields:
 func (_m *Transaction) Commit() error {
 	ret := _m.Called()
