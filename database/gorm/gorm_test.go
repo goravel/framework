@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"goravel/app/models"
-
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -552,7 +550,7 @@ func (s *GormQueryTestSuite) TestExec() {
 			s.Equal(int64(1), res.RowsAffected)
 			s.Nil(err)
 
-			var user models.User
+			var user User
 			err = query.Where("name", "exec_user").First(&user)
 			s.Nil(err)
 			s.True(user.ID > 0)
