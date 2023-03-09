@@ -94,20 +94,29 @@ func (_m *Transaction) Create(value interface{}) error {
 }
 
 // Delete provides a mock function with given fields: value, conds
-func (_m *Transaction) Delete(value interface{}, conds ...interface{}) error {
+func (_m *Transaction) Delete(value interface{}, conds ...interface{}) (*database.Result, error) {
 	var _ca []interface{}
 	_ca = append(_ca, value)
 	_ca = append(_ca, conds...)
 	ret := _m.Called(_ca...)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
+	var r0 *database.Result
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) *database.Result); ok {
 		r0 = rf(value, conds...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*database.Result)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(interface{}, ...interface{}) error); ok {
+		r1 = rf(value, conds...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Distinct provides a mock function with given fields: args
@@ -143,20 +152,29 @@ func (_m *Transaction) Driver() database.Driver {
 }
 
 // Exec provides a mock function with given fields: sql, values
-func (_m *Transaction) Exec(sql string, values ...interface{}) error {
+func (_m *Transaction) Exec(sql string, values ...interface{}) (*database.Result, error) {
 	var _ca []interface{}
 	_ca = append(_ca, sql)
 	_ca = append(_ca, values...)
 	ret := _m.Called(_ca...)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) error); ok {
+	var r0 *database.Result
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) *database.Result); ok {
 		r0 = rf(sql, values...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*database.Result)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, ...interface{}) error); ok {
+		r1 = rf(sql, values...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Find provides a mock function with given fields: dest, conds
@@ -208,20 +226,29 @@ func (_m *Transaction) FirstOrCreate(dest interface{}, conds ...interface{}) err
 }
 
 // ForceDelete provides a mock function with given fields: value, conds
-func (_m *Transaction) ForceDelete(value interface{}, conds ...interface{}) error {
+func (_m *Transaction) ForceDelete(value interface{}, conds ...interface{}) (*database.Result, error) {
 	var _ca []interface{}
 	_ca = append(_ca, value)
 	_ca = append(_ca, conds...)
 	ret := _m.Called(_ca...)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
+	var r0 *database.Result
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) *database.Result); ok {
 		r0 = rf(value, conds...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*database.Result)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(interface{}, ...interface{}) error); ok {
+		r1 = rf(value, conds...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Get provides a mock function with given fields: dest
@@ -594,18 +621,44 @@ func (_m *Transaction) Update(column string, value interface{}) error {
 	return r0
 }
 
-// Updates provides a mock function with given fields: values
-func (_m *Transaction) Updates(values interface{}) error {
-	ret := _m.Called(values)
+// UpdateOrCreate provides a mock function with given fields: dest, attributes, values
+func (_m *Transaction) UpdateOrCreate(dest interface{}, attributes interface{}, values ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, dest, attributes)
+	_ca = append(_ca, values...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
-		r0 = rf(values)
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}, ...interface{}) error); ok {
+		r0 = rf(dest, attributes, values...)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// Updates provides a mock function with given fields: values
+func (_m *Transaction) Updates(values interface{}) (*database.Result, error) {
+	ret := _m.Called(values)
+
+	var r0 *database.Result
+	if rf, ok := ret.Get(0).(func(interface{}) *database.Result); ok {
+		r0 = rf(values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*database.Result)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+		r1 = rf(values)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Where provides a mock function with given fields: query, args
