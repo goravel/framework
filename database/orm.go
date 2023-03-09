@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	ormcontract "github.com/goravel/framework/contracts/database"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/facades"
 )

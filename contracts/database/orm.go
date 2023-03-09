@@ -1,4 +1,4 @@
-package orm
+package database
 
 import (
 	"context"
@@ -28,13 +28,13 @@ type Query interface {
 	Driver() Driver
 	Count(count *int64) error
 	Create(value any) error
-	Delete(value any, conds ...any) error
+	Delete(value any, conds ...any) (*Result, error)
 	Distinct(args ...any) Query
-	Exec(sql string, values ...any) error
+	Exec(sql string, values ...any) (*Result, error)
 	Find(dest any, conds ...any) error
 	First(dest any) error
 	FirstOrCreate(dest any, conds ...any) error
-	ForceDelete(value any, conds ...any) error
+	ForceDelete(value any, conds ...any) (*Result, error)
 	Get(dest any) error
 	Group(name string) Query
 	Having(query any, args ...any) Query
@@ -56,7 +56,8 @@ type Query interface {
 	Select(query any, args ...any) Query
 	Table(name string, args ...any) Query
 	Update(column string, value any) error
-	Updates(values any) error
+	Updates(values any) (*Result, error)
+	UpdateOrCreate(dest any, attributes any, values ...any) error
 	Where(query any, args ...any) Query
 	WithTrashed() Query
 	With(query string, args ...any) Query

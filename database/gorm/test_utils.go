@@ -8,7 +8,6 @@ import (
 
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/database"
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	testingdocker "github.com/goravel/framework/testing/docker"
 	"github.com/goravel/framework/testing/mock"
 )
@@ -22,7 +21,7 @@ const (
 	resourceExpire = 600
 )
 
-func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
+func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, database.Query, error) {
 	pool, resource, err := initMysqlDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -38,7 +37,7 @@ func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, 
 	return pool, resource, db, nil
 }
 
-func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
+func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, database.Query, error) {
 	pool, resource, err := initPostgresqlDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -54,7 +53,7 @@ func PostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Qu
 	return pool, resource, db, nil
 }
 
-func SqliteDocker(dbName string) (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
+func SqliteDocker(dbName string) (*dockertest.Pool, *dockertest.Resource, database.Query, error) {
 	pool, resource, err := initSqliteDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -70,7 +69,7 @@ func SqliteDocker(dbName string) (*dockertest.Pool, *dockertest.Resource, contra
 	return pool, resource, db, nil
 }
 
-func SqlserverDocker() (*dockertest.Pool, *dockertest.Resource, contractsorm.Query, error) {
+func SqlserverDocker() (*dockertest.Pool, *dockertest.Resource, database.Query, error) {
 	pool, resource, err := initSqlserverDocker()
 	if err != nil {
 		return nil, nil, nil, err
@@ -134,7 +133,7 @@ func mockSingleMysqlOfCommon(mockConfig *configmocks.Config, port int) {
 
 func mockMysqlOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.mysql.driver").Return(contractsorm.DriverMysql.String())
+	mockConfig.On("GetString", "database.connections.mysql.driver").Return(database.DriverMysql.String())
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4")
 	mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local")
 	mockConfig.On("GetString", "database.connections.mysql.database").Return("mysql")
@@ -182,7 +181,7 @@ func mockSinglePostgresqlOfCommon(mockConfig *configmocks.Config, port int) {
 
 func mockPostgresqlOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(contractsorm.DriverPostgresql.String())
+	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(database.DriverPostgresql.String())
 	mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
 	mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
 	mockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
@@ -227,7 +226,7 @@ func mockSingleSqliteOfCommon(mockConfig *configmocks.Config, dbName string) {
 
 func mockSqliteOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.sqlite.driver").Return(contractsorm.DriverSqlite.String())
+	mockConfig.On("GetString", "database.connections.sqlite.driver").Return(database.DriverSqlite.String())
 	mockPool(mockConfig)
 }
 
@@ -271,20 +270,20 @@ func mockSingleSqlserverOfCommon(mockConfig *configmocks.Config, port int) {
 
 func mockSqlserverOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(contractsorm.DriverSqlserver.String())
+	mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(database.DriverSqlserver.String())
 	mockConfig.On("GetString", "database.connections.sqlserver.database").Return("msdb")
 	mockConfig.On("GetString", "database.connections.sqlserver.charset").Return("utf8mb4")
 	mockPool(mockConfig)
 }
 
-func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
+func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (database.Query, error) {
 	db, err := initMysql(pool)
 	if err != nil {
 		return nil, err
 	}
 
 	if createTable {
-		if err := initTables(contractsorm.DriverMysql, db); err != nil {
+		if err := initTables(database.DriverMysql, db); err != nil {
 			return nil, err
 		}
 	}
@@ -292,13 +291,13 @@ func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query,
 	return db, nil
 }
 
-func mysqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
+func mysqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (database.Query, error) {
 	db, err := initMysql(pool)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(contractsorm.DriverMysql, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(database.DriverMysql, db); err != nil {
 		return nil, err
 	}
 
@@ -326,11 +325,11 @@ func initMysqlDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initMysql(pool *dockertest.Pool) (contractsorm.Query, error) {
-	var db contractsorm.Query
+func initMysql(pool *dockertest.Pool) (database.Query, error) {
+	var db database.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), contractsorm.DriverMysql.String())
+		db, err = NewQuery(context.Background(), database.DriverMysql.String())
 		if err != nil {
 			return err
 		}
@@ -343,14 +342,14 @@ func initMysql(pool *dockertest.Pool) (contractsorm.Query, error) {
 	return db, nil
 }
 
-func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
+func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (database.Query, error) {
 	db, err := initPostgresql(pool)
 	if err != nil {
 		return nil, err
 	}
 
 	if createTable {
-		if err := initTables(contractsorm.DriverPostgresql, db); err != nil {
+		if err := initTables(database.DriverPostgresql, db); err != nil {
 			return nil, err
 		}
 	}
@@ -358,13 +357,13 @@ func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Q
 	return db, nil
 }
 
-func postgresqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
+func postgresqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (database.Query, error) {
 	db, err := initPostgresql(pool)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(contractsorm.DriverPostgresql, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(database.DriverPostgresql, db); err != nil {
 		return nil, err
 	}
 
@@ -394,11 +393,11 @@ func initPostgresqlDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initPostgresql(pool *dockertest.Pool) (contractsorm.Query, error) {
-	var db contractsorm.Query
+func initPostgresql(pool *dockertest.Pool) (database.Query, error) {
+	var db database.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), contractsorm.DriverPostgresql.String())
+		db, err = NewQuery(context.Background(), database.DriverPostgresql.String())
 		if err != nil {
 			return err
 		}
@@ -411,14 +410,14 @@ func initPostgresql(pool *dockertest.Pool) (contractsorm.Query, error) {
 	return db, nil
 }
 
-func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
+func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (database.Query, error) {
 	db, err := initSqlite(pool)
 	if err != nil {
 		return nil, err
 	}
 
 	if createTable {
-		if err := initTables(contractsorm.DriverSqlite, db); err != nil {
+		if err := initTables(database.DriverSqlite, db); err != nil {
 			return nil, err
 		}
 	}
@@ -426,13 +425,13 @@ func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query
 	return db, nil
 }
 
-func sqliteDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
+func sqliteDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (database.Query, error) {
 	db, err := initSqlite(pool)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(contractsorm.DriverSqlite, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(database.DriverSqlite, db); err != nil {
 		return nil, err
 	}
 
@@ -458,11 +457,11 @@ func initSqliteDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initSqlite(pool *dockertest.Pool) (contractsorm.Query, error) {
-	var db contractsorm.Query
+func initSqlite(pool *dockertest.Pool) (database.Query, error) {
+	var db database.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), contractsorm.DriverSqlite.String())
+		db, err = NewQuery(context.Background(), database.DriverSqlite.String())
 
 		return err
 	}); err != nil {
@@ -472,14 +471,14 @@ func initSqlite(pool *dockertest.Pool) (contractsorm.Query, error) {
 	return db, nil
 }
 
-func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Query, error) {
+func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (database.Query, error) {
 	db, err := initSqlserver(pool)
 	if err != nil {
 		return nil, err
 	}
 
 	if createTable {
-		if err := initTables(contractsorm.DriverSqlserver, db); err != nil {
+		if err := initTables(database.DriverSqlserver, db); err != nil {
 			return nil, err
 		}
 	}
@@ -487,13 +486,13 @@ func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (contractsorm.Qu
 	return db, nil
 }
 
-func sqlserverDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (contractsorm.Query, error) {
+func sqlserverDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (database.Query, error) {
 	db, err := initSqlserver(pool)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(contractsorm.DriverSqlserver, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(database.DriverSqlserver, db); err != nil {
 		return nil, err
 	}
 
@@ -522,11 +521,11 @@ func initSqlserverDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	return pool, resource, nil
 }
 
-func initSqlserver(pool *dockertest.Pool) (contractsorm.Query, error) {
-	var db contractsorm.Query
+func initSqlserver(pool *dockertest.Pool) (database.Query, error) {
+	var db database.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), contractsorm.DriverSqlserver.String())
+		db, err = NewQuery(context.Background(), database.DriverSqlserver.String())
 		if err != nil {
 			return err
 		}
@@ -539,46 +538,55 @@ func initSqlserver(pool *dockertest.Pool) (contractsorm.Query, error) {
 	return db, nil
 }
 
-func initTables(driver contractsorm.Driver, db contractsorm.Query) error {
-	if err := db.Exec(createUserTable(driver)); err != nil {
+func initTables(driver database.Driver, db database.Query) error {
+	_, err := db.Exec(createUserTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createAddressTable(driver)); err != nil {
+	_, err = db.Exec(createAddressTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createBookTable(driver)); err != nil {
+	_, err = db.Exec(createBookTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createRoleTable(driver)); err != nil {
+	_, err = db.Exec(createRoleTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createHouseTable(driver)); err != nil {
+	_, err = db.Exec(createHouseTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createPhoneTable(driver)); err != nil {
+	_, err = db.Exec(createPhoneTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createRoleUserTable(driver)); err != nil {
+	_, err = db.Exec(createRoleUserTable(driver))
+	if err != nil {
 		return err
 	}
-	if err := db.Exec(createAuthorTable(driver)); err != nil {
+	_, err = db.Exec(createAuthorTable(driver))
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func initTablesWithPrefixAndSingular(driver contractsorm.Driver, db contractsorm.Query) error {
-	if err := db.Exec(createUserTableWithPrefixAndSingular(driver)); err != nil {
+func initTablesWithPrefixAndSingular(driver database.Driver, db database.Query) error {
+	_, err := db.Exec(createUserTableWithPrefixAndSingular(driver))
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func createUserTable(driver contractsorm.Driver) string {
+func createUserTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -592,7 +600,7 @@ CREATE TABLE users (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -603,7 +611,7 @@ CREATE TABLE users (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -614,7 +622,7 @@ CREATE TABLE users (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
@@ -631,9 +639,9 @@ CREATE TABLE users (
 	}
 }
 
-func createUserTableWithPrefixAndSingular(driver contractsorm.Driver) string {
+func createUserTableWithPrefixAndSingular(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE goravel_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -647,7 +655,7 @@ CREATE TABLE goravel_user (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -658,7 +666,7 @@ CREATE TABLE goravel_user (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE goravel_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -669,7 +677,7 @@ CREATE TABLE goravel_user (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE goravel_user (
   id bigint NOT NULL IDENTITY(1,1),
@@ -686,9 +694,9 @@ CREATE TABLE goravel_user (
 	}
 }
 
-func createAddressTable(driver contractsorm.Driver) string {
+func createAddressTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -702,7 +710,7 @@ CREATE TABLE addresses (
   KEY idx_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -713,7 +721,7 @@ CREATE TABLE addresses (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -724,7 +732,7 @@ CREATE TABLE addresses (
   updated_at datetime NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -741,9 +749,9 @@ CREATE TABLE addresses (
 	}
 }
 
-func createBookTable(driver contractsorm.Driver) string {
+func createBookTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE books (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -756,7 +764,7 @@ CREATE TABLE books (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE books (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -766,7 +774,7 @@ CREATE TABLE books (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE books (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -776,7 +784,7 @@ CREATE TABLE books (
   updated_at datetime NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE books (
   id bigint NOT NULL IDENTITY(1,1),
@@ -792,9 +800,9 @@ CREATE TABLE books (
 	}
 }
 
-func createAuthorTable(driver contractsorm.Driver) string {
+func createAuthorTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE authors (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -807,7 +815,7 @@ CREATE TABLE authors (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE authors (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -817,7 +825,7 @@ CREATE TABLE authors (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE authors (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -827,7 +835,7 @@ CREATE TABLE authors (
   updated_at datetime NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE authors (
   id bigint NOT NULL IDENTITY(1,1),
@@ -843,9 +851,9 @@ CREATE TABLE authors (
 	}
 }
 
-func createRoleTable(driver contractsorm.Driver) string {
+func createRoleTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE roles (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -857,7 +865,7 @@ CREATE TABLE roles (
   KEY idx_roles_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -866,7 +874,7 @@ CREATE TABLE roles (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE roles (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -875,7 +883,7 @@ CREATE TABLE roles (
   updated_at datetime NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE roles (
   id bigint NOT NULL IDENTITY(1,1),
@@ -890,9 +898,9 @@ CREATE TABLE roles (
 	}
 }
 
-func createHouseTable(driver contractsorm.Driver) string {
+func createHouseTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE houses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -906,7 +914,7 @@ CREATE TABLE houses (
   KEY idx_houses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE houses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -917,7 +925,7 @@ CREATE TABLE houses (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE houses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -928,7 +936,7 @@ CREATE TABLE houses (
   updated_at datetime NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE houses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -945,9 +953,9 @@ CREATE TABLE houses (
 	}
 }
 
-func createPhoneTable(driver contractsorm.Driver) string {
+func createPhoneTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE phones (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -961,7 +969,7 @@ CREATE TABLE phones (
   KEY idx_phones_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE phones (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -972,7 +980,7 @@ CREATE TABLE phones (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE phones (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -983,7 +991,7 @@ CREATE TABLE phones (
   updated_at datetime NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE phones (
   id bigint NOT NULL IDENTITY(1,1),
@@ -1000,9 +1008,9 @@ CREATE TABLE phones (
 	}
 }
 
-func createRoleUserTable(driver contractsorm.Driver) string {
+func createRoleUserTable(driver database.Driver) string {
 	switch driver {
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		return `
 CREATE TABLE role_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -1011,7 +1019,7 @@ CREATE TABLE role_user (
   PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsorm.DriverPostgresql:
+	case database.DriverPostgresql:
 		return `
 CREATE TABLE role_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1019,7 +1027,7 @@ CREATE TABLE role_user (
   user_id int NOT NULL
 );
 `
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		return `
 CREATE TABLE role_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1027,7 +1035,7 @@ CREATE TABLE role_user (
   user_id int NOT NULL
 );
 `
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		return `
 CREATE TABLE role_user (
   id bigint NOT NULL IDENTITY(1,1),
