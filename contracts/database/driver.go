@@ -1,4 +1,4 @@
-package orm
+package database
 
 type Driver string
 

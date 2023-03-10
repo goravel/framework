@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
 )
@@ -34,20 +34,20 @@ func (receiver MigrateCreator) getStub(table string, create bool) (string, strin
 	}
 
 	driver := facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".driver")
-	switch orm.Driver(driver) {
-	case orm.DriverPostgresql:
+	switch database.Driver(driver) {
+	case database.DriverPostgresql:
 		if create {
 			return PostgresqlStubs{}.CreateUp(), PostgresqlStubs{}.CreateDown()
 		}
 
 		return PostgresqlStubs{}.UpdateUp(), PostgresqlStubs{}.UpdateDown()
-	case orm.DriverSqlite:
+	case database.DriverSqlite:
 		if create {
 			return SqliteStubs{}.CreateUp(), SqliteStubs{}.CreateDown()
 		}
 
 		return SqliteStubs{}.UpdateUp(), SqliteStubs{}.UpdateDown()
-	case orm.DriverSqlserver:
+	case database.DriverSqlserver:
 		if create {
 			return SqlserverStubs{}.CreateUp(), SqlserverStubs{}.CreateDown()
 		}

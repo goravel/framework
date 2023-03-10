@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	orm "github.com/goravel/framework/contracts/database/orm"
+	database "github.com/goravel/framework/contracts/database"
 	mock "github.com/stretchr/testify/mock"
 
 	sql "database/sql"
@@ -17,15 +17,15 @@ type Orm struct {
 }
 
 // Connection provides a mock function with given fields: name
-func (_m *Orm) Connection(name string) orm.Orm {
+func (_m *Orm) Connection(name string) database.Orm {
 	ret := _m.Called(name)
 
-	var r0 orm.Orm
-	if rf, ok := ret.Get(0).(func(string) orm.Orm); ok {
+	var r0 database.Orm
+	if rf, ok := ret.Get(0).(func(string) database.Orm); ok {
 		r0 = rf(name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Orm)
+			r0 = ret.Get(0).(database.Orm)
 		}
 	}
 
@@ -56,15 +56,15 @@ func (_m *Orm) DB() (*sql.DB, error) {
 }
 
 // Query provides a mock function with given fields:
-func (_m *Orm) Query() orm.Query {
+func (_m *Orm) Query() database.Query {
 	ret := _m.Called()
 
-	var r0 orm.Query
-	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+	var r0 database.Query
+	if rf, ok := ret.Get(0).(func() database.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Query)
+			r0 = ret.Get(0).(database.Query)
 		}
 	}
 
@@ -72,11 +72,11 @@ func (_m *Orm) Query() orm.Query {
 }
 
 // Transaction provides a mock function with given fields: txFunc
-func (_m *Orm) Transaction(txFunc func(orm.Transaction) error) error {
+func (_m *Orm) Transaction(txFunc func(database.Transaction) error) error {
 	ret := _m.Called(txFunc)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(func(orm.Transaction) error) error); ok {
+	if rf, ok := ret.Get(0).(func(func(database.Transaction) error) error); ok {
 		r0 = rf(txFunc)
 	} else {
 		r0 = ret.Error(0)
@@ -86,15 +86,15 @@ func (_m *Orm) Transaction(txFunc func(orm.Transaction) error) error {
 }
 
 // WithContext provides a mock function with given fields: ctx
-func (_m *Orm) WithContext(ctx context.Context) orm.Orm {
+func (_m *Orm) WithContext(ctx context.Context) database.Orm {
 	ret := _m.Called(ctx)
 
-	var r0 orm.Orm
-	if rf, ok := ret.Get(0).(func(context.Context) orm.Orm); ok {
+	var r0 database.Orm
+	if rf, ok := ret.Get(0).(func(context.Context) database.Orm); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Orm)
+			r0 = ret.Get(0).(database.Orm)
 		}
 	}
 

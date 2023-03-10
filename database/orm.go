@@ -9,15 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	contractsorm "github.com/goravel/framework/contracts/database"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/facades"
 )
 
 type Orm struct {
 	ctx       context.Context
-	instance  ormcontract.Query
-	instances map[string]ormcontract.Query
+	instance  contractsorm.Query
+	instances map[string]contractsorm.Query
 }
 
 func NewOrm(ctx context.Context) *Orm {
@@ -35,7 +35,7 @@ func NewOrm(ctx context.Context) *Orm {
 	return &Orm{
 		ctx:      ctx,
 		instance: gormQuery,
-		instances: map[string]ormcontract.Query{
+		instances: map[string]contractsorm.Query{
 			defaultConnection: gormQuery,
 		},
 	}
@@ -46,7 +46,7 @@ func NewGormInstance(connection string) (*gorm.DB, error) {
 	return databasegorm.New(connection)
 }
 
-func (r *Orm) Connection(name string) ormcontract.Orm {
+func (r *Orm) Connection(name string) contractsorm.Orm {
 	if name == "" {
 		name = facades.Config.GetString("database.default")
 	}
@@ -80,11 +80,11 @@ func (r *Orm) DB() (*sql.DB, error) {
 	return db.Instance().DB()
 }
 
-func (r *Orm) Query() ormcontract.Query {
+func (r *Orm) Query() contractsorm.Query {
 	return r.instance
 }
 
-func (r *Orm) Transaction(txFunc func(tx ormcontract.Transaction) error) error {
+func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
@@ -101,6 +101,6 @@ func (r *Orm) Transaction(txFunc func(tx ormcontract.Transaction) error) error {
 	}
 }
 
-func (r *Orm) WithContext(ctx context.Context) ormcontract.Orm {
+func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
 	return NewOrm(ctx)
 }

@@ -6,7 +6,7 @@ import (
 	cachemocks "github.com/goravel/framework/contracts/cache/mocks"
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	ormmocks "github.com/goravel/framework/contracts/database/orm/mocks"
+	ormmocks "github.com/goravel/framework/contracts/database/mocks"
 	eventmocks "github.com/goravel/framework/contracts/event/mocks"
 	filesystemmocks "github.com/goravel/framework/contracts/filesystem/mocks"
 	grpcmocks "github.com/goravel/framework/contracts/grpc/mocks"

@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"testing"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
@@ -71,7 +72,7 @@ type Phone struct {
 
 type GormQueryTestSuite struct {
 	suite.Suite
-	queries map[contractsorm.Driver]contractsorm.Query
+	queries map[database.Driver]database.Query
 }
 
 func TestGormQueryTestSuite(t *testing.T) {
@@ -96,11 +97,11 @@ func TestGormQueryTestSuite(t *testing.T) {
 	}
 
 	suite.Run(t, &GormQueryTestSuite{
-		queries: map[contractsorm.Driver]contractsorm.Query{
-			contractsorm.DriverMysql:      mysqlDB,
-			contractsorm.DriverPostgresql: postgresqlDB,
-			contractsorm.DriverSqlite:     sqliteDB,
-			contractsorm.DriverSqlserver:  sqlserverDB,
+		queries: map[database.Driver]database.Query{
+			database.DriverMysql:      mysqlDB,
+			database.DriverPostgresql: postgresqlDB,
+			database.DriverSqlite:     sqliteDB,
+			database.DriverSqlserver:  sqlserverDB,
 		},
 	})
 
@@ -125,11 +126,11 @@ func (s *GormQueryTestSuite) TestAssociation() {
 		s.Run(driver.String(), func() {
 			tests := []struct {
 				description string
-				setup       func(description string)
+				setup       func()
 			}{
 				{
 					description: "Find",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_find_name",
 							Address: &Address{
@@ -137,23 +138,23 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Address.ID > 0)
 
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
 
 						var userAddress Address
-						s.Nil(query.Model(&user1).Association("Address").Find(&userAddress), description)
-						s.True(userAddress.ID > 0, description)
-						s.Equal("association_find_address", userAddress.Name, description)
+						s.Nil(query.Model(&user1).Association("Address").Find(&userAddress))
+						s.True(userAddress.ID > 0)
+						s.Equal("association_find_address", userAddress.Name)
 					},
 				},
 				{
 					description: "hasOne Append",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_has_one_append_name",
 							Address: &Address{
@@ -161,23 +162,23 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Address.ID > 0)
 
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Nil(query.Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Nil(query.Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}))
 
-						s.Nil(query.Load(&user1, "Address"), description)
-						s.True(user1.Address.ID > 0, description)
-						s.Equal("association_has_one_append_address1", user1.Address.Name, description)
+						s.Nil(query.Load(&user1, "Address"))
+						s.True(user1.Address.ID > 0)
+						s.Equal("association_has_one_append_address1", user1.Address.Name)
 					},
 				},
 				{
 					description: "hasMany Append",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_has_many_append_name",
 							Books: []*Book{
@@ -186,24 +187,24 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Books[0].ID > 0, description)
-						s.True(user.Books[1].ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Books[0].ID > 0)
+						s.True(user.Books[1].ID > 0)
 
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Nil(query.Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Nil(query.Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
 
-						s.Nil(query.Load(&user1, "Books"), description)
-						s.Equal(3, len(user1.Books), description)
-						s.Equal("association_has_many_append_address3", user1.Books[2].Name, description)
+						s.Nil(query.Load(&user1, "Books"))
+						s.Equal(3, len(user1.Books))
+						s.Equal("association_has_many_append_address3", user1.Books[2].Name)
 					},
 				},
 				{
 					description: "hasOne Replace",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_has_one_append_name",
 							Address: &Address{
@@ -211,23 +212,23 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Address.ID > 0)
 
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Nil(query.Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Nil(query.Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
 
-						s.Nil(query.Load(&user1, "Address"), description)
-						s.True(user1.Address.ID > 0, description)
-						s.Equal("association_has_one_append_address1", user1.Address.Name, description)
+						s.Nil(query.Load(&user1, "Address"))
+						s.True(user1.Address.ID > 0)
+						s.Equal("association_has_one_append_address1", user1.Address.Name)
 					},
 				},
 				{
 					description: "hasMany Replace",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_has_many_replace_name",
 							Books: []*Book{
@@ -236,24 +237,24 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Books[0].ID > 0, description)
-						s.True(user.Books[1].ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Books[0].ID > 0)
+						s.True(user.Books[1].ID > 0)
 
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Nil(query.Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Nil(query.Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
 
-						s.Nil(query.Load(&user1, "Books"), description)
-						s.Equal(1, len(user1.Books), description)
-						s.Equal("association_has_many_replace_address3", user1.Books[0].Name, description)
+						s.Nil(query.Load(&user1, "Books"))
+						s.Equal(1, len(user1.Books))
+						s.Equal("association_has_many_replace_address3", user1.Books[0].Name)
 					},
 				},
 				{
 					description: "Delete",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_delete_name",
 							Address: &Address{
@@ -261,35 +262,35 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Address.ID > 0)
 
 						// No ID when Delete
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Nil(query.Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Nil(query.Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
 
-						s.Nil(query.Load(&user1, "Address"), description)
-						s.True(user1.Address.ID > 0, description)
-						s.Equal("association_delete_address", user1.Address.Name, description)
+						s.Nil(query.Load(&user1, "Address"))
+						s.True(user1.Address.ID > 0)
+						s.Equal("association_delete_address", user1.Address.Name)
 
 						// Has ID when Delete
 						var user2 User
-						s.Nil(query.Find(&user2, user.ID), description)
-						s.True(user2.ID > 0, description)
+						s.Nil(query.Find(&user2, user.ID))
+						s.True(user2.ID > 0)
 						var userAddress Address
 						userAddress.ID = user1.Address.ID
-						s.Nil(query.Model(&user2).Association("Address").Delete(&userAddress), description)
+						s.Nil(query.Model(&user2).Association("Address").Delete(&userAddress))
 
-						s.Nil(query.Load(&user2, "Address"), description)
-						s.Nil(user2.Address, description)
+						s.Nil(query.Load(&user2, "Address"))
+						s.Nil(user2.Address)
 					},
 				},
 				{
 					description: "Clear",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_clear_name",
 							Address: &Address{
@@ -297,23 +298,23 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Address.ID > 0)
 
 						// No ID when Delete
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Nil(query.Model(&user1).Association("Address").Clear(), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Nil(query.Model(&user1).Association("Address").Clear())
 
-						s.Nil(query.Load(&user1, "Address"), description)
-						s.Nil(user1.Address, description)
+						s.Nil(query.Load(&user1, "Address"))
+						s.Nil(user1.Address)
 					},
 				},
 				{
 					description: "Count",
-					setup: func(description string) {
+					setup: func() {
 						user := &User{
 							Name: "association_count_name",
 							Books: []*Book{
@@ -322,21 +323,23 @@ func (s *GormQueryTestSuite) TestAssociation() {
 							},
 						}
 
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Books[0].ID > 0, description)
-						s.True(user.Books[1].ID > 0, description)
+						s.Nil(query.Select(orm.Associations).Create(&user))
+						s.True(user.ID > 0)
+						s.True(user.Books[0].ID > 0)
+						s.True(user.Books[1].ID > 0)
 
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID), description)
-						s.True(user1.ID > 0, description)
-						s.Equal(int64(2), query.Model(&user1).Association("Books").Count(), description)
+						s.Nil(query.Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						s.Equal(int64(2), query.Model(&user1).Association("Books").Count())
 					},
 				},
 			}
 
 			for _, test := range tests {
-				test.setup(test.description)
+				s.Run(test.description, func() {
+					test.setup()
+				})
 			}
 		})
 	}
@@ -486,7 +489,9 @@ func (s *GormQueryTestSuite) TestDelete() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 
-			s.Nil(query.Delete(&user))
+			res, err := query.Delete(&user)
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
 
 			var user1 User
 			s.Nil(query.Find(&user1, user.ID))
@@ -496,7 +501,9 @@ func (s *GormQueryTestSuite) TestDelete() {
 			s.Nil(query.Create(&user2))
 			s.True(user2.ID > 0)
 
-			s.Nil(query.Delete(&User{}, user2.ID))
+			res, err = query.Delete(&User{}, user2.ID)
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
 
 			var user3 User
 			s.Nil(query.Find(&user3, user2.ID))
@@ -507,7 +514,9 @@ func (s *GormQueryTestSuite) TestDelete() {
 			s.True(users[0].ID > 0)
 			s.True(users[1].ID > 0)
 
-			s.Nil(query.Delete(&User{}, []uint{users[0].ID, users[1].ID}))
+			res, err = query.Delete(&User{}, []uint{users[0].ID, users[1].ID})
+			s.Equal(int64(2), res.RowsAffected)
+			s.Nil(err)
 
 			var count int64
 			s.Nil(query.Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count(&count))
@@ -530,6 +539,29 @@ func (s *GormQueryTestSuite) TestDistinct() {
 			var users []User
 			s.Nil(query.Distinct("name").Find(&users, []uint{user.ID, user1.ID}))
 			s.Equal(1, len(users))
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestExec() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			res, err := query.Exec("INSERT INTO users (name, avatar, created_at, updated_at) VALUES ('exec_user', 'exec_avatar', '2023-03-09 18:56:33', '2023-03-09 18:56:35');")
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
+
+			var user User
+			err = query.Where("name", "exec_user").First(&user)
+			s.Nil(err)
+			s.True(user.ID > 0)
+
+			res, err = query.Exec(fmt.Sprintf("UPDATE users set name = 'exec_user1' where id = %d", user.ID))
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
+
+			res, err = query.Exec(fmt.Sprintf("DELETE FROM users where id = %d", user.ID))
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
 		})
 	}
 }
@@ -951,7 +983,7 @@ func (s *GormQueryTestSuite) TestLoad() {
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.Equal(0, len(user1.Books))
-						s.Nil(query.Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
+						s.Nil(query.Load(&user1, "Books", func(query database.Query) database.Query {
 							return query.Where("name = ?", "load_book0")
 						}))
 						s.True(user1.ID > 0)
@@ -1122,7 +1154,9 @@ func (s *GormQueryTestSuite) TestSoftDelete() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 
-			s.Nil(query.Where("name = ?", "soft_delete_user").Delete(&User{}))
+			res, err := query.Where("name = ?", "soft_delete_user").Delete(&User{})
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
 
 			var user1 User
 			s.Nil(query.Find(&user1, user.ID))
@@ -1132,7 +1166,9 @@ func (s *GormQueryTestSuite) TestSoftDelete() {
 			s.Nil(query.WithTrashed().Find(&user2, user.ID))
 			s.True(user2.ID > 0)
 
-			s.Nil(query.Where("name = ?", "soft_delete_user").ForceDelete(&User{}))
+			res, err = query.Where("name = ?", "soft_delete_user").ForceDelete(&User{})
+			s.Equal(int64(1), res.RowsAffected)
+			s.Nil(err)
 
 			var user3 User
 			s.Nil(query.WithTrashed().Find(&user3, user.ID))
@@ -1192,6 +1228,67 @@ func (s *GormQueryTestSuite) TestUpdate() {
 			s.Nil(query.Find(&user1, user.ID))
 			s.Equal("update_user1", user1.Name)
 			s.Equal("update_avatar1", user1.Avatar)
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestUpdates() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			users := []User{{Name: "updates_user", Avatar: "updates_avatar"}, {Name: "updates_user", Avatar: "updates_avatar1"}}
+			s.Nil(query.Create(&users))
+			s.True(users[0].ID > 0)
+			s.True(users[1].ID > 0)
+
+			res, err := query.Where("name", "updates_user").Updates(User{Avatar: "updates_avatar2"})
+			s.Equal(int64(2), res.RowsAffected)
+			s.Nil(err)
+
+			var count int64
+			err = query.Model(User{}).Where("avatar", "updates_avatar2").Count(&count)
+			s.Equal(int64(2), count)
+			s.Nil(err)
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestUpdateOrCreate() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			var user User
+			err := query.UpdateOrCreate(&user, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar"})
+			s.Nil(err)
+			s.True(user.ID > 0)
+
+			var user1 User
+			err = query.Where("name", "update_or_create_user").Find(&user1)
+			s.Nil(err)
+			s.True(user1.ID > 0)
+
+			var user2 User
+			err = query.Where("name", "update_or_create_user").UpdateOrCreate(&user2, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar1"})
+			s.Nil(err)
+			s.True(user2.ID > 0)
+			s.Equal("update_or_create_avatar1", user2.Avatar)
+
+			var user3 User
+			err = query.Where("avatar", "update_or_create_avatar1").Find(&user3)
+			s.Nil(err)
+			s.True(user3.ID > 0)
+
+			var count int64
+			err = query.Model(User{}).Where("name", "update_or_create_user").Count(&count)
+			s.Equal(int64(1), count)
+
+			var user4 User
+			err = query.UpdateOrCreate(&user4, User{Name: "update_or_create_user1", Avatar: "update_or_create_avatar"})
+			s.Nil(err)
+			s.True(user4.ID > 0)
+
+			var user5 User
+			err = query.Where("name", "update_or_create_user1").Where("avatar", "update_or_create_avatar").Find(&user5)
+			s.Nil(err)
+			s.True(user1.ID > 0)
 		})
 	}
 }
@@ -1268,7 +1365,7 @@ func (s *GormQueryTestSuite) TestWith() {
 					description: "with func conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", func(query contractsorm.Query) contractsorm.Query {
+						s.Nil(query.With("Books", func(query database.Query) database.Query {
 							return query.Where("name = ?", "with_book0")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
@@ -1375,23 +1472,23 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
 
-	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
-		contractsorm.DriverMysql: {
+	dbs := map[database.Driver]map[string]database.Query{
+		database.DriverMysql: {
 			"mix":   mysqlDB,
 			"read":  readMysqlDB,
 			"write": writeMysqlDB,
 		},
-		contractsorm.DriverPostgresql: {
+		database.DriverPostgresql: {
 			"mix":   postgresqlDB,
 			"read":  readPostgresqlDB,
 			"write": writePostgresqlDB,
 		},
-		contractsorm.DriverSqlite: {
+		database.DriverSqlite: {
 			"mix":   sqliteDB,
 			"read":  readSqliteDB,
 			"write": writeSqliteDB,
 		},
-		contractsorm.DriverSqlserver: {
+		database.DriverSqlserver: {
 			"mix":   sqlserverDB,
 			"read":  readSqlserverDB,
 			"write": writeSqlserverDB,
@@ -1482,11 +1579,11 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
-	dbs := map[contractsorm.Driver]contractsorm.Query{
-		contractsorm.DriverMysql:      mysqlDB,
-		contractsorm.DriverPostgresql: postgresqlDB,
-		contractsorm.DriverSqlite:     sqliteDB,
-		contractsorm.DriverSqlserver:  sqlserverDB,
+	dbs := map[database.Driver]database.Query{
+		database.DriverMysql:      mysqlDB,
+		database.DriverPostgresql: postgresqlDB,
+		database.DriverSqlite:     sqliteDB,
+		database.DriverSqlserver:  sqlserverDB,
 	}
 
 	for drive, db := range dbs {
@@ -1514,8 +1611,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 }
 
-func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
-	return func(query contractsorm.Query) contractsorm.Query {
+func paginator(page string, limit string) func(methods database.Query) database.Query {
+	return func(query database.Query) database.Query {
 		page, _ := strconv.Atoi(page)
 		limit, _ := strconv.Atoi(limit)
 		offset := (page - 1) * limit
