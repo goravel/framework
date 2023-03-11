@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -596,7 +597,7 @@ func (s *GormQueryTestSuite) TestFirst() {
 			s.True(user.ID > 0)
 
 			var user1 User
-			s.Nil(query.Where("name = ?", "first_user").First(&user1))
+			s.Nil(query.Where("name", "first_user").First(&user1))
 			s.True(user1.ID > 0)
 		})
 	}
@@ -606,13 +607,62 @@ func (s *GormQueryTestSuite) TestFirstOrCreate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			var user User
-			s.Nil(query.Where("avatar = ?", "first_or_create_avatar").FirstOrCreate(&user, User{Name: "first_or_create_user"}))
+			s.Nil(query.Where("avatar", "first_or_create_avatar").FirstOrCreate(&user, User{Name: "first_or_create_user"}))
 			s.True(user.ID > 0)
 
 			var user1 User
-			s.Nil(query.Where("avatar = ?", "first_or_create_avatar").FirstOrCreate(&user1, User{Name: "user"}, User{Avatar: "first_or_create_avatar1"}))
+			s.Nil(query.Where("avatar", "first_or_create_avatar").FirstOrCreate(&user1, User{Name: "user"}, User{Avatar: "first_or_create_avatar1"}))
 			s.True(user1.ID > 0)
 			s.True(user1.Avatar == "first_or_create_avatar1")
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestFirstOr() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			var user User
+			s.Nil(query.Where("name", "first_or_user").FirstOr(&user, func() error {
+				user.Name = "goravel"
+
+				return nil
+			}))
+			s.Equal(uint(0), user.ID)
+			s.Equal("goravel", user.Name)
+
+			var user1 User
+			s.EqualError(query.Where("name", "first_or_user").FirstOr(&user1, func() error {
+				return errors.New("error")
+			}), "error")
+			s.Equal(uint(0), user1.ID)
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestFirstOrFail() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			var user User
+			s.Equal(orm.ErrRecordNotFound, query.Where("name", "first_or_fail_user").FirstOrFail(&user))
+			s.Equal(uint(0), user.ID)
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestFirstOrNew() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			var user User
+			s.Nil(query.FirstOrNew(&user, User{Name: "first_or_new_name"}))
+			s.Equal(uint(0), user.ID)
+			s.Equal("first_or_new_name", user.Name)
+			s.Equal("", user.Avatar)
+
+			var user1 User
+			s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}, User{Avatar: "first_or_new_avatar"}))
+			s.Equal(uint(0), user1.ID)
+			s.Equal("first_or_new_name", user1.Name)
+			s.Equal("first_or_new_avatar", user1.Avatar)
 		})
 	}
 }
@@ -1279,16 +1329,6 @@ func (s *GormQueryTestSuite) TestUpdateOrCreate() {
 			var count int64
 			err = query.Model(User{}).Where("name", "update_or_create_user").Count(&count)
 			s.Equal(int64(1), count)
-
-			var user4 User
-			err = query.UpdateOrCreate(&user4, User{Name: "update_or_create_user1", Avatar: "update_or_create_avatar"})
-			s.Nil(err)
-			s.True(user4.ID > 0)
-
-			var user5 User
-			err = query.Where("name", "update_or_create_user1").Where("avatar", "update_or_create_avatar").Find(&user5)
-			s.Nil(err)
-			s.True(user1.ID > 0)
 		})
 	}
 }

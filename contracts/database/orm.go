@@ -34,6 +34,9 @@ type Query interface {
 	Find(dest any, conds ...any) error
 	First(dest any) error
 	FirstOrCreate(dest any, conds ...any) error
+	FirstOr(dest any, callback func() error) error
+	FirstOrFail(dest any) error
+	FirstOrNew(dest any, attributes any, values ...any) error
 	ForceDelete(value any, conds ...any) (*Result, error)
 	Get(dest any) error
 	Group(name string) Query
@@ -57,7 +60,7 @@ type Query interface {
 	Table(name string, args ...any) Query
 	Update(column string, value any) error
 	Updates(values any) (*Result, error)
-	UpdateOrCreate(dest any, attributes any, values ...any) error
+	UpdateOrCreate(dest any, attributes any, values any) error
 	Where(query any, args ...any) Query
 	WithTrashed() Query
 	With(query string, args ...any) Query

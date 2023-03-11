@@ -266,6 +266,32 @@ func (r *Query) First(dest any) error {
 	return err
 }
 
+func (r *Query) FirstOr(dest any, callback func() error) error {
+	err := r.instance.First(dest).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return callback()
+	}
+
+	return nil
+}
+
+func (r *Query) FirstOrFail(dest any) error {
+	err := r.instance.First(dest).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return orm.ErrRecordNotFound
+	}
+
+	return err
+}
+
+func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
+	if len(values) > 0 {
+		return r.instance.Attrs(values[0]).FirstOrInit(dest, attributes).Error
+	} else {
+		return r.instance.FirstOrInit(dest, attributes).Error
+	}
+}
+
 func (r *Query) FirstOrCreate(dest any, conds ...any) error {
 	var err error
 	if len(conds) > 1 {
@@ -527,12 +553,8 @@ func (r *Query) Updates(values any) (*contractsdatabase.Result, error) {
 	}, result.Error
 }
 
-func (r *Query) UpdateOrCreate(dest any, attributes any, values ...any) error {
-	if len(values) > 0 {
-		return r.instance.Assign(values[0]).FirstOrCreate(dest, attributes).Error
-	} else {
-		return r.instance.FirstOrCreate(dest, attributes).Error
-	}
+func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
+	return r.instance.Assign(values).FirstOrCreate(dest, attributes).Error
 }
 
 func (r *Query) Where(query any, args ...any) contractsdatabase.Query {
