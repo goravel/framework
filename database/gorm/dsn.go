@@ -16,7 +16,7 @@ func MysqlDsn(connection string, config contractsdatabase.Config) string {
 	charset := facades.Config.GetString("database.connections." + connection + ".charset")
 	loc := facades.Config.GetString("database.connections." + connection + ".loc")
 
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
 		config.Username, config.Password, host, config.Port, config.Database, charset, true, loc)
 }
 
@@ -34,7 +34,7 @@ func PostgresqlDsn(connection string, config contractsdatabase.Config) string {
 }
 
 func SqliteDsn(config contractsdatabase.Config) string {
-	return config.Database
+	return fmt.Sprintf("%s?multi_stmts=true", config.Database)
 }
 
 func SqlserverDsn(connection string, config contractsdatabase.Config) string {
@@ -45,6 +45,6 @@ func SqlserverDsn(connection string, config contractsdatabase.Config) string {
 
 	charset := facades.Config.GetString("database.connections." + connection + ".charset")
 
-	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s",
+	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
 		config.Username, config.Password, host, config.Port, config.Database, charset)
 }

@@ -11,6 +11,7 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/facades"
 	httplimit "github.com/goravel/framework/http/limit"
+	supporttime "github.com/goravel/framework/support/time"
 )
 
 func Throttle(name string) contractshttp.Middleware {
@@ -19,7 +20,6 @@ func Throttle(name string) contractshttp.Middleware {
 			if limits := limiter(ctx); len(limits) > 0 {
 				for _, limit := range limits {
 					if instance, ok := limit.(*httplimit.Limit); ok {
-
 						// if no key is set, use the path and ip address as the default key
 						if len(instance.Key) == 0 {
 							hash := md5.Sum([]byte(ctx.Request().Path()))
@@ -36,7 +36,7 @@ func Throttle(name string) contractshttp.Middleware {
 							if value >= instance.MaxAttempts {
 								// add the retry headers to the response
 								ctx.Response().Header("X-RateLimit-Reset", cast.ToString(cast.ToInt(facades.Cache.Get(instance.Key+":timer", 0))+instance.DecayMinutes*60))
-								ctx.Response().Header("Retry-After", cast.ToString(cast.ToInt(facades.Cache.Get(instance.Key+":timer", 0))+instance.DecayMinutes*60-int(time.Now().Unix())))
+								ctx.Response().Header("Retry-After", cast.ToString(cast.ToInt(facades.Cache.Get(instance.Key+":timer", 0))+instance.DecayMinutes*60-int(supporttime.Now().Unix())))
 								if instance.ResponseCallback != nil {
 									instance.ResponseCallback(ctx)
 								} else {
@@ -50,9 +50,8 @@ func Throttle(name string) contractshttp.Middleware {
 								}
 							}
 						} else {
-
 							// if the timer does not exist, create it and set the number of attempts to 1
-							err := facades.Cache.Put(instance.Key+":timer", time.Now().Unix(), time.Duration(instance.DecayMinutes)*time.Minute)
+							err := facades.Cache.Put(instance.Key+":timer", supporttime.Now().Unix(), time.Duration(instance.DecayMinutes)*time.Minute)
 							if err != nil {
 								panic(err)
 							}

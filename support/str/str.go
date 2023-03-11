@@ -5,15 +5,16 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
+
+	supporttime "github.com/goravel/framework/support/time"
 )
 
 func Random(length int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
 	var result []byte
-	rand.Seed(time.Now().UnixNano() + int64(rand.Intn(100)))
+	rand.Seed(supporttime.Now().UnixNano() + int64(rand.Intn(100)))
 	for i := 0; i < length; i++ {
 		result = append(result, bytes[rand.Intn(len(bytes))])
 	}

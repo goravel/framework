@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
+	supporttime "github.com/goravel/framework/support/time"
 )
 
 type TestDisk struct {
@@ -161,7 +162,7 @@ func TestStorage(t *testing.T) {
 			setup: func(name string, disk TestDisk) {
 				assert.Nil(t, driver.Put("TemporaryUrl/1.txt", "Goravel"), name)
 				assert.True(t, driver.Exists("TemporaryUrl/1.txt"), name)
-				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", time.Now().Add(5*time.Second))
+				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", supporttime.Now().Add(5*time.Second))
 				assert.Nil(t, err, name)
 				assert.NotEmpty(t, url, name)
 				if disk.disk != "local" && disk.disk != "custom" {

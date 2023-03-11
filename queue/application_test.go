@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/queue/support"
+	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
 	"github.com/goravel/framework/testing/mock"
 )
@@ -188,7 +189,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(time.Now().Add(3 * time.Second)).Dispatch())
+	}).OnQueue("delay").Delay(supporttime.Now().Add(3 * time.Second)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(3 * time.Second)
