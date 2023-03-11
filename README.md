@@ -31,13 +31,11 @@ Welcome to star, PR and issues！
 - [x] Mail
 - [x] Validation
 - [x] Mock
+- [x] Hash
+- [x] Crypt
 
 ## Roadmap
 
-- [ ] Hash
-- [ ] Crypt
-- [ ] Broadcasting
-- [ ] Delay Queue
 - [ ] Queue supports DB driver
 - [ ] Notifications
 - [ ] Optimize unit tests

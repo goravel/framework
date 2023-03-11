@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -8,6 +9,8 @@ import (
 )
 
 const Associations = clause.Associations
+
+var ErrRecordNotFound = errors.New("record not found")
 
 type Model struct {
 	ID uint `gorm:"primaryKey"`
