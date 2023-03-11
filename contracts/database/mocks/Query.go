@@ -194,6 +194,20 @@ func (_m *Query) First(dest interface{}) error {
 	return r0
 }
 
+// FirstOr provides a mock function with given fields: dest, callback
+func (_m *Query) FirstOr(dest interface{}, callback func() error) error {
+	ret := _m.Called(dest, callback)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, func() error) error); ok {
+		r0 = rf(dest, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // FirstOrCreate provides a mock function with given fields: dest, conds
 func (_m *Query) FirstOrCreate(dest interface{}, conds ...interface{}) error {
 	var _ca []interface{}
@@ -204,6 +218,37 @@ func (_m *Query) FirstOrCreate(dest interface{}, conds ...interface{}) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
 		r0 = rf(dest, conds...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// FirstOrFail provides a mock function with given fields: dest
+func (_m *Query) FirstOrFail(dest interface{}) error {
+	ret := _m.Called(dest)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// FirstOrNew provides a mock function with given fields: dest, attributes, values
+func (_m *Query) FirstOrNew(dest interface{}, attributes interface{}, values ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, dest, attributes)
+	_ca = append(_ca, values...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}, ...interface{}) error); ok {
+		r0 = rf(dest, attributes, values...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -594,15 +639,12 @@ func (_m *Query) Update(column string, value interface{}) error {
 }
 
 // UpdateOrCreate provides a mock function with given fields: dest, attributes, values
-func (_m *Query) UpdateOrCreate(dest interface{}, attributes interface{}, values ...interface{}) error {
-	var _ca []interface{}
-	_ca = append(_ca, dest, attributes)
-	_ca = append(_ca, values...)
-	ret := _m.Called(_ca...)
+func (_m *Query) UpdateOrCreate(dest interface{}, attributes interface{}, values interface{}) error {
+	ret := _m.Called(dest, attributes, values)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, interface{}, ...interface{}) error); ok {
-		r0 = rf(dest, attributes, values...)
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}, interface{}) error); ok {
+		r0 = rf(dest, attributes, values)
 	} else {
 		r0 = ret.Error(0)
 	}
