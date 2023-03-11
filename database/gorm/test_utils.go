@@ -94,6 +94,8 @@ func mockPool(mockConfig *configmocks.Config) {
 
 func mockMysql(port int) {
 	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return("mysql")
+	mockConfig.On("GetString", "database.migrations").Return("migrations")
 	mockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
 	mockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
 	mockSingleMysqlOfCommon(mockConfig, port)
@@ -143,6 +145,8 @@ func mockMysqlOfCommon(mockConfig *configmocks.Config) {
 
 func mockPostgresql(port int) {
 	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return("postgresql")
+	mockConfig.On("GetString", "database.migrations").Return("migrations")
 	mockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	mockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
 	mockSinglePostgresqlOfCommon(mockConfig, port)
@@ -191,6 +195,8 @@ func mockPostgresqlOfCommon(mockConfig *configmocks.Config) {
 
 func mockSqlite(dbName string) {
 	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return("sqlite")
+	mockConfig.On("GetString", "database.migrations").Return("migrations")
 	mockConfig.On("GetString", "database.connections.sqlite.prefix").Return("")
 	mockConfig.On("GetBool", "database.connections.sqlite.singular").Return(false)
 	mockSingleSqliteOfCommon(mockConfig, dbName)
@@ -232,6 +238,8 @@ func mockSqliteOfCommon(mockConfig *configmocks.Config) {
 
 func mockSqlserver(port int) {
 	mockConfig := mock.Config()
+	mockConfig.On("GetString", "database.default").Return("sqlserver")
+	mockConfig.On("GetString", "database.migrations").Return("migrations")
 	mockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
 	mockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
 	mockSingleSqlserverOfCommon(mockConfig, port)

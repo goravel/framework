@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/schedule"
+	supporttime "github.com/goravel/framework/support/time"
 	"github.com/goravel/framework/testing/mock"
 )
 
@@ -36,7 +37,7 @@ func TestApplication(t *testing.T) {
 		app.Command("test --name Goravel argument0 argument1").EveryMinute(),
 	})
 
-	second, _ := strconv.Atoi(time.Now().Format("05"))
+	second, _ := strconv.Atoi(supporttime.Now().Format("05"))
 	// Make sure run 3 times
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(120+6+60-second)*time.Second)
 	defer cancel()

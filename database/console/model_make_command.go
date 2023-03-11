@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"strings"
 
@@ -37,7 +36,9 @@ func (receiver *ModelMakeCommand) Extend() command.Extend {
 func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+		color.Redln("Not enough arguments (missing: name)")
+
+		return nil
 	}
 
 	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))

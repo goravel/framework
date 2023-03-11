@@ -43,7 +43,7 @@ func TestDialector(t *testing.T) {
 					Return("Local").Once()
 			},
 			expectDialector: mysql.New(mysql.Config{
-				DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
+				DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
 					username, password, host, port, database, "utf8mb4", true, "Local"),
 			}),
 		},
@@ -70,7 +70,7 @@ func TestDialector(t *testing.T) {
 				mockConfig.On("GetString", "database.connections.sqlite.driver").
 					Return(contractsdatabase.DriverSqlite.String()).Once()
 			},
-			expectDialector: sqlite.Open(database),
+			expectDialector: sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", database)),
 		},
 		{
 			description: "sqlserver",
@@ -82,7 +82,7 @@ func TestDialector(t *testing.T) {
 					Return("utf8mb4").Once()
 			},
 			expectDialector: sqlserver.New(sqlserver.Config{
-				DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s",
+				DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
 					username, password, host, port, database, "utf8mb4"),
 			}),
 		},

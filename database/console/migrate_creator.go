@@ -1,13 +1,14 @@
 package console
 
 import (
+	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
+	supporttime "github.com/goravel/framework/support/time"
 )
 
 type MigrateCreator struct {
@@ -77,5 +78,5 @@ func (receiver MigrateCreator) populateStub(stub string, table string) string {
 func (receiver MigrateCreator) getPath(name string, category string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/database/migrations/" + time.Now().Format("20060102150405") + "_" + name + "." + category + ".sql"
+	return fmt.Sprintf("%s/database/migrations/%s_%s.%s.sql", pwd, supporttime.Now().Format("20060102150405"), name, category)
 }

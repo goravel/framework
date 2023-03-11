@@ -13,12 +13,11 @@ func TestModelMakeCommand(t *testing.T) {
 	modelMakeCommand := &ModelMakeCommand{}
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
-	err := modelMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "Not enough arguments (missing: name) ")
+	assert.Nil(t, modelMakeCommand.Handle(mockContext))
+	assert.False(t, file.Exists("app/models/user.go"))
 
 	mockContext.On("Argument", 0).Return("User").Once()
-	err = modelMakeCommand.Handle(mockContext)
-	assert.Nil(t, err)
+	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/models/user.go"))
 	assert.True(t, file.Remove("app"))
 }
