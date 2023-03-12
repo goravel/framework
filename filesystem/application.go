@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
 )
@@ -27,13 +29,15 @@ type Storage struct {
 func NewStorage() *Storage {
 	defaultDisk := facades.Config.GetString("filesystems.default")
 	if defaultDisk == "" {
-		facades.Log.Errorf("[filesystem] please set default disk")
+		color.Redln("[filesystem] please set default disk")
+
 		return nil
 	}
 
 	driver, err := NewDriver(defaultDisk)
 	if err != nil {
-		facades.Log.Errorf("[filesystem] init %s disk error: %+v", defaultDisk, err)
+		color.Redf("[filesystem] %s\n", err)
+
 		return nil
 	}
 
@@ -62,13 +66,13 @@ func NewDriver(disk string) (filesystem.Driver, error) {
 	case DriverCustom:
 		driver, ok := facades.Config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(filesystem.Driver)
 		if !ok {
-			return nil, fmt.Errorf("[filesystem] init %s disk fail: via must be filesystem.Driver.", disk)
+			return nil, fmt.Errorf("init %s disk fail: via must be implement filesystem.Driver", disk)
 		}
 
 		return driver, nil
 	}
 
-	return nil, fmt.Errorf("[filesystem] invalid driver: %s, only support local, s3, oss, cos, custom.", driver)
+	return nil, fmt.Errorf("invalid driver: %s, only support local, s3, oss, cos, minio, custom", driver)
 }
 
 func (r *Storage) Disk(disk string) filesystem.Driver {
@@ -78,9 +82,7 @@ func (r *Storage) Disk(disk string) filesystem.Driver {
 
 	driver, err := NewDriver(disk)
 	if err != nil {
-		facades.Log.Error(err.Error())
-
-		return nil
+		panic(err)
 	}
 
 	r.drivers[disk] = driver
