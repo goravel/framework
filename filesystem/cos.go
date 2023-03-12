@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -41,7 +40,7 @@ func NewCos(ctx context.Context, disk string) (*Cos, error) {
 
 	u, err := url.Parse(cosUrl)
 	if err != nil {
-		return nil, fmt.Errorf("[filesystem] init cos driver error: %+v", err)
+		return nil, fmt.Errorf("init %s disk error: %+v", disk, err)
 	}
 
 	b := &cos.BaseURL{BucketURL: u}
@@ -78,10 +77,8 @@ func (r *Cos) AllDirectories(path string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		wg := sync.WaitGroup{}
 		for _, commonPrefix := range v.CommonPrefixes {
 			directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
-			wg.Add(1)
 			subDirectories, err := r.AllDirectories(commonPrefix)
 			if err != nil {
 				return nil, err
@@ -91,9 +88,7 @@ func (r *Cos) AllDirectories(path string) ([]string, error) {
 					directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
 				}
 			}
-			wg.Done()
 		}
-		wg.Wait()
 		isTruncated = v.IsTruncated
 		marker = v.NextMarker
 	}

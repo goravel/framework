@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -66,24 +65,18 @@ func (r *S3) AllDirectories(path string) ([]string, error) {
 		return nil, err
 	}
 
-	wg := sync.WaitGroup{}
 	for _, commonPrefix := range listObjsResponse.CommonPrefixes {
 		prefix := *commonPrefix.Prefix
 		directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
 
-		wg.Add(1)
 		subDirectories, err := r.AllDirectories(*commonPrefix.Prefix)
 		if err != nil {
 			return nil, err
 		}
 		for _, subDirectory := range subDirectories {
-			if strings.HasSuffix(subDirectory, "/") {
-				directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
-			}
+			directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
 		}
-		wg.Done()
 	}
-	wg.Wait()
 
 	return directories, nil
 }
