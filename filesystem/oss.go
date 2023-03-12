@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -43,12 +42,12 @@ func NewOss(ctx context.Context, disk string) (*Oss, error) {
 
 	client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
 	if err != nil {
-		return nil, fmt.Errorf("[filesystem] init oss driver error: %+v", err)
+		return nil, fmt.Errorf("init %s disk error: %s", disk, err)
 	}
 
 	bucketInstance, err := client.Bucket(bucket)
 	if err != nil {
-		return nil, fmt.Errorf("[filesystem] init oss bucket error: %+v", err)
+		return nil, fmt.Errorf("init %s bucket error: %s", bucket, err)
 	}
 
 	return &Oss{
@@ -70,11 +69,8 @@ func (r *Oss) AllDirectories(path string) ([]string, error) {
 		return nil, err
 	}
 
-	wg := sync.WaitGroup{}
 	for _, commonPrefix := range lsRes.CommonPrefixes {
 		directories = append(directories, strings.ReplaceAll(commonPrefix, validPath, ""))
-
-		wg.Add(1)
 		subDirectories, err := r.AllDirectories(commonPrefix)
 		if err != nil {
 			return nil, err
@@ -84,9 +80,7 @@ func (r *Oss) AllDirectories(path string) ([]string, error) {
 				directories = append(directories, strings.ReplaceAll(commonPrefix+subDirectory, validPath, ""))
 			}
 		}
-		wg.Done()
 	}
-	wg.Wait()
 
 	return directories, nil
 }
