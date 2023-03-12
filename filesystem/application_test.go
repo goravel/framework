@@ -444,8 +444,6 @@ func initConfig() *configmocks.Config {
 		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(os.Getenv("MINIO_ACCESS_KEY_ID"))
 		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(os.Getenv("MINIO_ACCESS_KEY_SECRET"))
 		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(os.Getenv("MINIO_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.minio.url").Return(os.Getenv("MINIO_URL"))
-		mockConfig.On("GetString", "filesystems.disks.minio.endpoint").Return(os.Getenv("MINIO_ENDPOINT"))
 	}
 
 	return mockConfig
