@@ -1328,6 +1328,7 @@ func (s *GormQueryTestSuite) TestUpdateOrCreate() {
 
 			var count int64
 			err = query.Model(User{}).Where("name", "update_or_create_user").Count(&count)
+			s.Nil(err)
 			s.Equal(int64(1), count)
 		})
 	}
