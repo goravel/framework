@@ -81,13 +81,13 @@ func getRedisConfig(queueConnection string) (config string, database int, queue 
 	queue = GetQueueName(queueConnection, "")
 	host := facades.Config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
 	password := facades.Config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
-	port := facades.Config.GetString(fmt.Sprintf("database.redis.%s.port", connection))
+	port := facades.Config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
 	database = facades.Config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
 
 	if password == "" {
-		config = host + ":" + port
+		config = fmt.Sprintf("%s:%d", host, port)
 	} else {
-		config = password + "@" + host + ":" + port
+		config = fmt.Sprintf("%s@%s:%d", password, host, port)
 	}
 
 	return
