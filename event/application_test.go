@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/event"
@@ -26,7 +27,7 @@ var (
 
 type EventTestSuite struct {
 	suite.Suite
-	redisPort string
+	redisPort int
 }
 
 func TestEventTestSuite(t *testing.T) {
@@ -39,7 +40,7 @@ func TestEventTestSuite(t *testing.T) {
 	facades.Event = NewApplication()
 
 	suite.Run(t, &EventTestSuite{
-		redisPort: redisResource.GetPort("6379/tcp"),
+		redisPort: cast.ToInt(redisResource.GetPort("6379/tcp")),
 	})
 
 	if err := redisPool.Purge(redisResource); err != nil {
@@ -60,7 +61,7 @@ func (s *EventTestSuite) TestEvent() {
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisPort).Twice()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(s.redisPort).Twice()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 
 	facades.Event.Register(map[event.Event][]event.Listener{
@@ -101,7 +102,7 @@ func (s *EventTestSuite) TestCancelEvent() {
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisPort).Once()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(s.redisPort).Once()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
 
 	facades.Event.Register(map[event.Event][]event.Listener{
