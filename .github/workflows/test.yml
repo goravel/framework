@@ -17,5 +17,5 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Install dependencies
         run: go mod tidy
-      - name: Run tests with coverage
+      - name: Run tests
         run: go test ./...

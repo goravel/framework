@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ory/dockertest/v3"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
@@ -125,7 +126,7 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Twice()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 
 	mockQueue, _ := mock.Queue()
@@ -165,7 +166,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Twice()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 
 	mockQueue, _ := mock.Queue()
@@ -208,7 +209,7 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Twice()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 
 	mockQueue, _ := mock.Queue()
@@ -252,7 +253,7 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Twice()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 
 	mockQueue, _ := mock.Queue()
@@ -294,7 +295,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisResource.GetPort("6379/tcp")).Twice()
+	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 
 	mockQueue, _ := mock.Queue()
