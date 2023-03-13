@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -15,11 +16,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/config"
+	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
 	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
+	"github.com/goravel/framework/testing/mock"
 )
 
 type TestDisk struct {
@@ -28,14 +31,14 @@ type TestDisk struct {
 }
 
 func TestStorage(t *testing.T) {
-	if !file.Exists("../.env") {
+	if !file.Exists("../.env") && os.Getenv("AWS_ACCESS_KEY_ID") == "" {
 		color.Redln("No filesystem tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
 
 	file.Create("test.txt", "Goravel")
-	initConfig()
-	minioPool, minioResource, err := initMinioDocker()
+	mockConfig := initConfig()
+	minioPool, minioResource, err := initMinioDocker(mockConfig)
 	assert.Nil(t, err)
 
 	var driver filesystem.Driver
@@ -77,6 +80,7 @@ func TestStorage(t *testing.T) {
 				assert.Nil(t, driver.Put("Put/1.txt", "Goravel"))
 				assert.True(t, driver.Exists("Put/1.txt"))
 				assert.True(t, driver.Missing("Put/2.txt"))
+				assert.Nil(t, driver.DeleteDirectory("Put"), disk.disk)
 			},
 		},
 		{
@@ -90,6 +94,7 @@ func TestStorage(t *testing.T) {
 				length, err := driver.Size("Get/1.txt")
 				assert.Nil(t, err)
 				assert.Equal(t, int64(7), length)
+				assert.Nil(t, driver.DeleteDirectory("Get"), disk.disk)
 			},
 		},
 		{
@@ -103,6 +108,7 @@ func TestStorage(t *testing.T) {
 				data, err := driver.Get(path)
 				assert.Nil(t, err)
 				assert.Equal(t, "Goravel", data)
+				assert.Nil(t, driver.DeleteDirectory("PutFile"), disk.disk)
 			},
 		},
 		{
@@ -110,9 +116,10 @@ func TestStorage(t *testing.T) {
 			setup: func(disk TestDisk) {
 				fileInfo, err := NewFile("../logo.png")
 				assert.Nil(t, err)
-				path, err := driver.PutFile("PutFile", fileInfo)
+				path, err := driver.PutFile("PutFile1", fileInfo)
 				assert.Nil(t, err)
 				assert.True(t, driver.Exists(path))
+				assert.Nil(t, driver.DeleteDirectory("PutFile1"), disk.disk)
 			},
 		},
 		{
@@ -135,6 +142,8 @@ func TestStorage(t *testing.T) {
 				data, err = driver.Get(path)
 				assert.Nil(t, err)
 				assert.Equal(t, "Goravel", data)
+
+				assert.Nil(t, driver.DeleteDirectory("PutFileAs"), disk.disk)
 			},
 		},
 		{
@@ -142,15 +151,17 @@ func TestStorage(t *testing.T) {
 			setup: func(disk TestDisk) {
 				fileInfo, err := NewFile("../logo.png")
 				assert.Nil(t, err)
-				path, err := driver.PutFileAs("PutFileAs", fileInfo, "image")
+				path, err := driver.PutFileAs("PutFileAs1", fileInfo, "image")
 				assert.Nil(t, err)
-				assert.Equal(t, "PutFileAs/image.png", path)
+				assert.Equal(t, "PutFileAs1/image.png", path)
 				assert.True(t, driver.Exists(path))
 
-				path, err = driver.PutFileAs("PutFileAs", fileInfo, "image1.png")
+				path, err = driver.PutFileAs("PutFileAs1", fileInfo, "image1.png")
 				assert.Nil(t, err)
-				assert.Equal(t, "PutFileAs/image1.png", path)
+				assert.Equal(t, "PutFileAs1/image1.png", path)
 				assert.True(t, driver.Exists(path))
+
+				assert.Nil(t, driver.DeleteDirectory("PutFileAs1"), disk.disk)
 			},
 		},
 		{
@@ -168,6 +179,7 @@ func TestStorage(t *testing.T) {
 					assert.Nil(t, err)
 					assert.Equal(t, "Goravel", string(content))
 				}
+				assert.Nil(t, driver.DeleteDirectory("Url"), disk.disk)
 			},
 		},
 		{
@@ -186,6 +198,7 @@ func TestStorage(t *testing.T) {
 					assert.Nil(t, err)
 					assert.Equal(t, "Goravel", string(content))
 				}
+				assert.Nil(t, driver.DeleteDirectory("TemporaryUrl"), disk.disk)
 			},
 		},
 		{
@@ -196,6 +209,8 @@ func TestStorage(t *testing.T) {
 				assert.Nil(t, driver.Copy("Copy/1.txt", "Copy1/1.txt"))
 				assert.True(t, driver.Exists("Copy/1.txt"))
 				assert.True(t, driver.Exists("Copy1/1.txt"))
+				assert.Nil(t, driver.DeleteDirectory("Copy"), disk.disk)
+				assert.Nil(t, driver.DeleteDirectory("Copy1"), disk.disk)
 			},
 		},
 		{
@@ -206,6 +221,8 @@ func TestStorage(t *testing.T) {
 				assert.Nil(t, driver.Move("Move/1.txt", "Move1/1.txt"))
 				assert.True(t, driver.Missing("Move/1.txt"))
 				assert.True(t, driver.Exists("Move1/1.txt"))
+				assert.Nil(t, driver.DeleteDirectory("Move"), disk.disk)
+				assert.Nil(t, driver.DeleteDirectory("Move1"), disk.disk)
 			},
 		},
 		{
@@ -215,6 +232,7 @@ func TestStorage(t *testing.T) {
 				assert.True(t, driver.Exists("Delete/1.txt"))
 				assert.Nil(t, driver.Delete("Delete/1.txt"))
 				assert.True(t, driver.Missing("Delete/1.txt"))
+				assert.Nil(t, driver.DeleteDirectory("Delete"), disk.disk)
 			},
 		},
 		{
@@ -223,6 +241,10 @@ func TestStorage(t *testing.T) {
 				assert.Nil(t, driver.MakeDirectory("MakeDirectory1/"))
 				assert.Nil(t, driver.MakeDirectory("MakeDirectory2"))
 				assert.Nil(t, driver.MakeDirectory("MakeDirectory3/MakeDirectory4"))
+				assert.Nil(t, driver.DeleteDirectory("MakeDirectory1"), disk.disk)
+				assert.Nil(t, driver.DeleteDirectory("MakeDirectory2"), disk.disk)
+				assert.Nil(t, driver.DeleteDirectory("MakeDirectory3"), disk.disk)
+				assert.Nil(t, driver.DeleteDirectory("MakeDirectory4"), disk.disk)
 			},
 		},
 		{
@@ -232,6 +254,7 @@ func TestStorage(t *testing.T) {
 				assert.True(t, driver.Exists("DeleteDirectory/1.txt"))
 				assert.Nil(t, driver.DeleteDirectory("DeleteDirectory"))
 				assert.True(t, driver.Missing("DeleteDirectory/1.txt"))
+				assert.Nil(t, driver.DeleteDirectory("DeleteDirectory"), disk.disk)
 			},
 		},
 		{
@@ -257,6 +280,7 @@ func TestStorage(t *testing.T) {
 				files, err = driver.Files("./Files/")
 				assert.Nil(t, err)
 				assert.Equal(t, []string{"1.txt", "2.txt"}, files)
+				assert.Nil(t, driver.DeleteDirectory("Files"), disk.disk)
 			},
 		},
 		{
@@ -282,6 +306,7 @@ func TestStorage(t *testing.T) {
 				files, err = driver.AllFiles("./AllFiles/")
 				assert.Nil(t, err)
 				assert.Equal(t, []string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+				assert.Nil(t, driver.DeleteDirectory("AllFiles"), disk.disk)
 			},
 		},
 		{
@@ -309,6 +334,7 @@ func TestStorage(t *testing.T) {
 				files, err = driver.Directories("./Directories/")
 				assert.Nil(t, err)
 				assert.Equal(t, []string{"3/"}, files)
+				assert.Nil(t, driver.DeleteDirectory("Directories"), disk.disk)
 			},
 		},
 		{
@@ -336,6 +362,7 @@ func TestStorage(t *testing.T) {
 				files, err = driver.AllDirectories("./AllDirectories/")
 				assert.Nil(t, err)
 				assert.Equal(t, []string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+				assert.Nil(t, driver.DeleteDirectory("AllDirectories"), disk.disk)
 			},
 		},
 	}
@@ -352,27 +379,6 @@ func TestStorage(t *testing.T) {
 			})
 		}
 
-		assert.Nil(t, driver.DeleteDirectory("Put"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Get"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("PutFile"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("PutFileAs"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Url"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("TemporaryUrl"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Copy"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Copy1"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Move"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Move1"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Delete"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("MakeDirectory1"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("MakeDirectory2"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("MakeDirectory3"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("MakeDirectory4"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("DeleteDirectory"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Files"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("AllFiles"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("Directories"), disk.disk)
-		assert.Nil(t, driver.DeleteDirectory("AllDirectories"), disk.disk)
-
 		if disk.disk == "local" || disk.disk == "custom" {
 			file.Remove("./storage")
 		}
@@ -382,63 +388,68 @@ func TestStorage(t *testing.T) {
 	assert.Nil(t, minioPool.Purge(minioResource))
 }
 
-func initConfig() {
-	application := config.NewApplication("../.env")
-	application.Add("filesystems", map[string]any{
-		"default": "local",
-		"disks": map[string]any{
-			"local": map[string]any{
-				"driver": "local",
-				"root":   "storage/app",
-				"url":    "http://localhost/storage",
-			},
-			"s3": map[string]any{
-				"driver": "s3",
-				"key":    application.Env("AWS_ACCESS_KEY_ID"),
-				"secret": application.Env("AWS_ACCESS_KEY_SECRET"),
-				"region": application.Env("AWS_DEFAULT_REGION"),
-				"bucket": application.Env("AWS_BUCKET"),
-				"url":    application.Env("AWS_URL"),
-			},
-			"oss": map[string]any{
-				"driver":   "oss",
-				"key":      application.Env("ALIYUN_ACCESS_KEY_ID"),
-				"secret":   application.Env("ALIYUN_ACCESS_KEY_SECRET"),
-				"bucket":   application.Env("ALIYUN_BUCKET"),
-				"url":      application.Env("ALIYUN_URL"),
-				"endpoint": application.Env("ALIYUN_ENDPOINT"),
-			},
-			"cos": map[string]any{
-				"driver": "cos",
-				"key":    application.Env("TENCENT_ACCESS_KEY_ID"),
-				"secret": application.Env("TENCENT_ACCESS_KEY_SECRET"),
-				"bucket": application.Env("TENCENT_BUCKET"),
-				"url":    application.Env("TENCENT_URL"),
-			},
-			"minio": map[string]any{
-				"driver":   "minio",
-				"key":      application.Env("MINIO_ACCESS_KEY_ID"),
-				"secret":   application.Env("MINIO_ACCESS_KEY_SECRET"),
-				"region":   application.Env("MINIO_REGION"),
-				"bucket":   application.Env("MINIO_BUCKET"),
-				"url":      application.Env("MINIO_URL"),
-				"endpoint": application.Env("MINIO_ENDPOINT"),
-				"ssl":      application.Env("MINIO_SSL", false),
-			},
-			"custom": map[string]any{
-				"driver": "custom",
-				"via": &Local{
-					root: "storage/app/public",
-					url:  "http://localhost/storage",
-				},
-			},
-		},
+func initConfig() *configmocks.Config {
+	mockConfig := mock.Config()
+	mockConfig.On("GetString", "filesystems.default").Return("local")
+	mockConfig.On("GetString", "filesystems.disks.local.driver").Return("local")
+	mockConfig.On("GetString", "filesystems.disks.local.root").Return("storage/app")
+	mockConfig.On("GetString", "filesystems.disks.local.url").Return("http://localhost/storage")
+	mockConfig.On("GetString", "filesystems.disks.custom.driver").Return("custom")
+	mockConfig.On("Get", "filesystems.disks.custom.via").Return(&Local{
+		root: "storage/app/public",
+		url:  "http://localhost/storage",
 	})
+	mockConfig.On("GetString", "filesystems.disks.s3.driver").Return("s3")
+	mockConfig.On("GetString", "filesystems.disks.oss.driver").Return("oss")
+	mockConfig.On("GetString", "filesystems.disks.cos.driver").Return("cos")
+	mockConfig.On("GetString", "filesystems.disks.minio.driver").Return("minio")
+	mockConfig.On("GetString", "filesystems.disks.minio.region").Return("")
+	mockConfig.On("GetBool", "filesystems.disks.minio.ssl", false).Return(false)
 
-	facades.Config = application
+	if file.Exists("../.env") {
+		application := config.NewApplication("../.env")
+		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(application.Env("AWS_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.s3.secret").Return(application.Env("AWS_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.s3.region").Return(application.Env("AWS_DEFAULT_REGION"))
+		mockConfig.On("GetString", "filesystems.disks.s3.bucket").Return(application.Env("AWS_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.s3.url").Return(application.Env("AWS_URL"))
+		mockConfig.On("GetString", "filesystems.disks.oss.key").Return(application.Env("ALIYUN_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.oss.secret").Return(application.Env("ALIYUN_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.oss.bucket").Return(application.Env("ALIYUN_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.oss.url").Return(application.Env("ALIYUN_URL"))
+		mockConfig.On("GetString", "filesystems.disks.oss.endpoint").Return(application.Env("ALIYUN_ENDPOINT"))
+		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(application.Env("TENCENT_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(application.Env("TENCENT_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(application.Env("TENCENT_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.cos.url").Return(application.Env("TENCENT_URL"))
+		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(application.Env("MINIO_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(application.Env("MINIO_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(application.Env("MINIO_BUCKET"))
+	}
+	if os.Getenv("AWS_ACCESS_KEY_ID") != "" {
+		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(os.Getenv("AWS_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.s3.secret").Return(os.Getenv("AWS_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.s3.region").Return(os.Getenv("AWS_DEFAULT_REGION"))
+		mockConfig.On("GetString", "filesystems.disks.s3.bucket").Return(os.Getenv("AWS_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.s3.url").Return(os.Getenv("AWS_URL"))
+		mockConfig.On("GetString", "filesystems.disks.oss.key").Return(os.Getenv("ALIYUN_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.oss.secret").Return(os.Getenv("ALIYUN_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.oss.bucket").Return(os.Getenv("ALIYUN_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.oss.url").Return(os.Getenv("ALIYUN_URL"))
+		mockConfig.On("GetString", "filesystems.disks.oss.endpoint").Return(os.Getenv("ALIYUN_ENDPOINT"))
+		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(os.Getenv("TENCENT_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(os.Getenv("TENCENT_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(os.Getenv("TENCENT_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.cos.url").Return(os.Getenv("TENCENT_URL"))
+		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(os.Getenv("MINIO_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(os.Getenv("MINIO_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(os.Getenv("MINIO_BUCKET"))
+	}
+
+	return mockConfig
 }
 
-func initMinioDocker() (*dockertest.Pool, *dockertest.Resource, error) {
+func initMinioDocker(mockConfig *configmocks.Config) (*dockertest.Pool, *dockertest.Resource, error) {
 	pool, err := testingdocker.Pool()
 	if err != nil {
 		return nil, nil, err
@@ -469,16 +480,8 @@ func initMinioDocker() (*dockertest.Pool, *dockertest.Resource, error) {
 	_ = resource.Expire(600)
 
 	endpoint := fmt.Sprintf("127.0.0.1:%s", resource.GetPort("9000/tcp"))
-	facades.Config.Add("filesystems.disks.minio", map[string]any{
-		"driver":   "minio",
-		"key":      facades.Config.Env("MINIO_ACCESS_KEY_ID"),
-		"secret":   facades.Config.Env("MINIO_ACCESS_KEY_SECRET"),
-		"region":   facades.Config.Env("MINIO_REGION"),
-		"bucket":   bucket,
-		"url":      fmt.Sprintf("http://%s/%s", endpoint, bucket),
-		"endpoint": endpoint,
-		"ssl":      facades.Config.Env("MINIO_SSL", false),
-	})
+	mockConfig.On("GetString", "filesystems.disks.minio.url").Return(fmt.Sprintf("http://%s/%s", endpoint, bucket))
+	mockConfig.On("GetString", "filesystems.disks.minio.endpoint").Return(endpoint)
 
 	if err := pool.Retry(func() error {
 		client, err := minio.New(endpoint, &minio.Options{
