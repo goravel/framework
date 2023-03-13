@@ -8,7 +8,6 @@ on:
       - 'mail/**'
 env:
   MAIL_HOST: ${{ secrets.MAIL_HOST }}
-  MAIL_PORT: ${{ secrets.MAIL_PORT }}
   MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
   MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
   MAIL_FROM_ADDRESS: ${{ secrets.MAIL_FROM_ADDRESS }}
