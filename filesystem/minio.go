@@ -4,32 +4,25 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
-	neturl "net/url"
-	"path/filepath"
+	"net/url"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
 	supporttime "github.com/goravel/framework/support/time"
-
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 /*
  * MinIO OSS
- * Document: https://min.io/docs/minio/linux/developers/minio-drivers.html#go-sdk
- * More: https://min.io/docs/minio/linux/developers/go/minio-go.html
- * More: https://min.io/docs/minio/linux/developers/go/API.html
- * Example: https://github.com/minio/minio-go/tree/master/examples
+ * Document: https://min.io/docs/minio/linux/developers/go/minio-go.html
  * Example: https://github.com/minio/minio-go/tree/master/examples/s3
  */
 
-// Minio v1.0.0
 type Minio struct {
 	ctx      context.Context
 	instance *minio.Client
@@ -38,36 +31,24 @@ type Minio struct {
 	url      string
 }
 
-// NewMinio v1.0.0
 func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 	key := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
 	secret := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
 	region := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.region", disk))
 	bucket := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
-	url := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
+	diskUrl := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
+	ssl := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.ssl", disk), false)
 	endpoint := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.endpoint", disk))
-	useSSL := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.use_ssl", disk), false)
-	autoCreateBucket := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.auto_create_bucket", disk), false)
+	endpoint = strings.TrimPrefix(endpoint, "http://")
+	endpoint = strings.TrimPrefix(endpoint, "https://")
 
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(key, secret, ""),
-		Secure: useSSL,
-		Region: region, // Distributed use
+		Secure: ssl,
+		Region: region,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("[filesystem] init %s driver error: %+v", disk, err)
-	}
-
-	// Auto create bucket
-	if autoCreateBucket {
-		exists, errBucketExists := client.BucketExists(ctx, bucket)
-		if errBucketExists == nil && exists {
-		} else {
-			err = client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{Region: region})
-			if err != nil {
-				return nil, fmt.Errorf("[filesystem] %s driver auto create bucket error: %+v", disk, err)
-			}
-		}
+		return nil, fmt.Errorf("init %s disk error: %s", disk, err)
 	}
 
 	return &Minio{
@@ -75,74 +56,63 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 		instance: client,
 		bucket:   bucket,
 		disk:     disk,
-		url:      url,
+		url:      diskUrl,
 	}, nil
 }
 
-// AllDirectories v1.0.0
 func (r *Minio) AllDirectories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
 	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
 		Prefix:    validPath,
-		Recursive: false, // Whether the recursive | ignore '/' delimiter
+		Recursive: false,
 	})
 
-	wg := sync.WaitGroup{}
 	for object := range objectCh {
 		if object.Err != nil {
-			continue
+			return nil, object.Err
 		}
-		prefix := object.Key
-		directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
 
-		wg.Add(1)
-		subDirectories, err := r.AllDirectories(prefix)
-		if err != nil {
-			return nil, err
-		}
-		for _, subDirectory := range subDirectories {
-			if strings.HasSuffix(subDirectory, "/") {
-				directories = append(directories, strings.ReplaceAll(prefix+subDirectory, validPath, ""))
+		if strings.HasSuffix(object.Key, "/") {
+			key := strings.TrimPrefix(object.Key, validPath)
+			if key != "" {
+				directories = append(directories, key)
+				subDirectories, err := r.AllDirectories(object.Key)
+				if err != nil {
+					return nil, err
+				}
+				for _, subDirectory := range subDirectories {
+					directories = append(directories, strings.TrimPrefix(object.Key+subDirectory, validPath))
+				}
 			}
 		}
-		wg.Done()
 	}
-	wg.Wait()
 
 	return directories, nil
 }
 
-// AllFiles v1.0.0
 func (r *Minio) AllFiles(path string) ([]string, error) {
 	var files []string
 	validPath := validPath(path)
-	objectsCh := make(chan minio.ObjectInfo)
-	go func() {
-		defer close(objectsCh)
-		for object := range r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
-			Prefix:    validPath,
-			Recursive: true,
-		}) {
-			if object.Err != nil {
-				log.Fatalln(object.Err)
-			}
-			objectsCh <- object
-		}
-	}()
-	for object := range objectsCh {
+
+	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
+		Prefix:    validPath,
+		Recursive: true,
+	})
+
+	for object := range objectCh {
 		if object.Err != nil {
 			return nil, object.Err
 		}
-		filename := object.Key
-		if !strings.HasSuffix(filename, "/") {
-			files = append(files, strings.ReplaceAll(filename, validPath, ""))
+
+		if !strings.HasSuffix(object.Key, "/") {
+			files = append(files, strings.TrimPrefix(object.Key, validPath))
 		}
 	}
+
 	return files, nil
 }
 
-// Copy v1.0.0
 func (r *Minio) Copy(originFile, targetFile string) error {
 	srcOpts := minio.CopySrcOptions{
 		Bucket: r.bucket,
@@ -156,37 +126,31 @@ func (r *Minio) Copy(originFile, targetFile string) error {
 	return err
 }
 
-// Delete v1.0.0
 func (r *Minio) Delete(files ...string) error {
-	objectsCh := make(chan minio.ObjectInfo)
+	objectsCh := make(chan minio.ObjectInfo, len(files))
 	go func() {
 		defer close(objectsCh)
-		for _, filename := range files {
+		for _, file := range files {
 			object := minio.ObjectInfo{
-				Key: filename,
+				Key: file,
 			}
 			objectsCh <- object
 		}
 	}()
-	opts := minio.RemoveObjectsOptions{
-		GovernanceBypass: true,
-	}
-	for rErr := range r.instance.RemoveObjects(r.ctx, r.bucket, objectsCh, opts) {
-		return rErr.Err
+
+	for err := range r.instance.RemoveObjects(r.ctx, r.bucket, objectsCh, minio.RemoveObjectsOptions{}) {
+		return err.Err
 	}
 
 	return nil
 }
 
-// DeleteDirectory v1.0.0
 func (r *Minio) DeleteDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
 	}
 	opts := minio.RemoveObjectOptions{
-		ForceDelete:      true,
-		GovernanceBypass: true,
-		VersionID:        "",
+		ForceDelete: true,
 	}
 	err := r.instance.RemoveObject(r.ctx, r.bucket, directory, opts)
 	if err != nil {
@@ -196,64 +160,50 @@ func (r *Minio) DeleteDirectory(directory string) error {
 	return nil
 }
 
-// Directories v1.0.0
 func (r *Minio) Directories(path string) ([]string, error) {
 	var directories []string
 	validPath := validPath(path)
 	objectCh := r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
 		Prefix:    validPath,
-		Recursive: false, // Whether the recursive | ignore '/' delimiter
+		Recursive: false,
 	})
 	for object := range objectCh {
 		if object.Err != nil {
-			continue
+			return nil, object.Err
 		}
-		prefix := object.Key
-		if strings.HasSuffix(prefix, "/") {
-			directories = append(directories, strings.ReplaceAll(prefix, validPath, ""))
+		if strings.HasSuffix(object.Key, "/") {
+			directories = append(directories, strings.ReplaceAll(object.Key, validPath, ""))
 		}
 	}
 
 	return directories, nil
 }
 
-// Exists v1.0.0
 func (r *Minio) Exists(file string) bool {
 	_, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
 
 	return err == nil
 }
 
-// Files v1.0.0
 func (r *Minio) Files(path string) ([]string, error) {
 	var files []string
 	validPath := validPath(path)
-	objectsCh := make(chan minio.ObjectInfo)
-	go func() {
-		defer close(objectsCh)
-		for object := range r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
-			Prefix:    validPath,
-			Recursive: false,
-		}) {
-			if object.Err != nil {
-				log.Fatalln(object.Err)
-			}
-			objectsCh <- object
-		}
-	}()
-	for object := range objectsCh {
+
+	for object := range r.instance.ListObjects(r.ctx, r.bucket, minio.ListObjectsOptions{
+		Prefix:    validPath,
+		Recursive: false,
+	}) {
 		if object.Err != nil {
 			return nil, object.Err
 		}
-		filename := object.Key
-		if !strings.HasSuffix(filename, "/") {
-			files = append(files, strings.ReplaceAll(filename, validPath, ""))
+		if !strings.HasSuffix(object.Key, "/") {
+			files = append(files, strings.ReplaceAll(object.Key, validPath, ""))
 		}
 	}
+
 	return files, nil
 }
 
-// Get v1.0.0
 func (r *Minio) Get(file string) (string, error) {
 	object, err := r.instance.GetObject(r.ctx, r.bucket, file, minio.GetObjectOptions{})
 	if err != nil {
@@ -267,7 +217,6 @@ func (r *Minio) Get(file string) (string, error) {
 	return string(data), nil
 }
 
-// MakeDirectory v1.0.0
 func (r *Minio) MakeDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
@@ -276,12 +225,10 @@ func (r *Minio) MakeDirectory(directory string) error {
 	return r.Put(directory, "")
 }
 
-// Missing v1.0.0
 func (r *Minio) Missing(file string) bool {
 	return !r.Exists(file)
 }
 
-// Move v1.0.0
 func (r *Minio) Move(oldFile, newFile string) error {
 	if err := r.Copy(oldFile, newFile); err != nil {
 		return err
@@ -290,28 +237,28 @@ func (r *Minio) Move(oldFile, newFile string) error {
 	return r.Delete(oldFile)
 }
 
-// Path v1.0.0
 func (r *Minio) Path(file string) string {
 	return file
 }
 
-// Put v1.0.0
 func (r *Minio) Put(file string, content string) error {
+	reader := strings.NewReader(content)
 	_, err := r.instance.PutObject(
-		r.ctx, r.bucket,
-		file, strings.NewReader(content),
-		strings.NewReader(content).Size(),
+		r.ctx,
+		r.bucket,
+		file,
+		reader,
+		reader.Size(),
 		minio.PutObjectOptions{},
 	)
+
 	return err
 }
 
-// PutFile v1.0.0
 func (r *Minio) PutFile(filePath string, source filesystem.File) (string, error) {
 	return r.PutFileAs(filePath, source, str.Random(40))
 }
 
-// PutFileAs v1.0.0
 func (r *Minio) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
 	fullPath, err := fullPathOfFile(filePath, source, name)
 	if err != nil {
@@ -330,29 +277,26 @@ func (r *Minio) PutFileAs(filePath string, source filesystem.File, name string) 
 	return fullPath, nil
 }
 
-// Size v1.0.0
 func (r *Minio) Size(file string) (int64, error) {
 	objInfo, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
 	if err != nil {
 		return 0, err
 	}
+
 	return objInfo.Size, nil
 }
 
-// TemporaryUrl v1.0.0
 func (r *Minio) TemporaryUrl(file string, time time.Time) (string, error) {
 	file = strings.TrimPrefix(file, "/")
-	reqParams := make(neturl.Values)
-	fileBaseName := filepath.Base(file)
-	reqParams.Set("response-content-disposition", "attachment; filename=\""+fileBaseName+"\"")
+	reqParams := make(url.Values)
 	presignedURL, err := r.instance.PresignedGetObject(r.ctx, r.bucket, file, time.Sub(supporttime.Now()), reqParams)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSuffix(r.url, "/") + presignedURL.Path, nil
+
+	return presignedURL.String(), nil
 }
 
-// WithContext v1.0.0
 func (r *Minio) WithContext(ctx context.Context) filesystem.Driver {
 	driver, err := NewMinio(ctx, r.disk)
 	if err != nil {
@@ -362,7 +306,11 @@ func (r *Minio) WithContext(ctx context.Context) filesystem.Driver {
 	return driver
 }
 
-// Url v1.0.0
 func (r *Minio) Url(file string) string {
-	return strings.TrimSuffix(r.url, "/") + "/" + r.bucket + "/" + strings.TrimPrefix(file, "/")
+	realUrl := strings.TrimSuffix(r.url, "/")
+	if !strings.HasSuffix(realUrl, r.bucket) {
+		realUrl += "/" + r.bucket
+	}
+
+	return realUrl + "/" + strings.TrimPrefix(file, "/")
 }
