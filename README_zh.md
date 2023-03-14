@@ -11,6 +11,14 @@ Laravel！
 
 欢迎 Star, PR, Issues！
 
+## 文档
+
+在线文档 [https://www.goravel.dev/zh](https://www.goravel.dev/zh)
+
+示例 [https://github.com/goravel/example](https://github.com/goravel/example)
+
+> 优化文档，请提交 PR 至文档仓库 [https://github.com/goravel/docs](https://github.com/goravel/docs)
+
 ## 主要功能
 
 - [x] 自定义配置
@@ -35,15 +43,7 @@ Laravel！
 
 ## 路线图
 
-- [ ] 队列支持 DB 驱动
-- [ ] 消息通知
-- [ ] 完善单元测试
-
-## 文档
-
-在线文档 [https://www.goravel.dev/zh](https://www.goravel.dev/zh)
-
-> 优化文档，请提交 PR 至文档仓库 [https://github.com/goravel/docs](https://github.com/goravel/docs)
+[查看详情](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 
 ## 贡献者
 

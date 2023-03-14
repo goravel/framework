@@ -12,6 +12,15 @@ new framework, but also happy to play around Golang! Tribute Laravel!
 
 Welcome to star, PR and issues！
 
+## Documentation
+
+Online documentation [https://www.goravel.dev](https://www.goravel.dev)
+
+Example [https://github.com/goravel/example](https://github.com/goravel/example)
+
+> To optimize the documentation, please submit a PR to the documentation
+> repository [https://github.com/goravel/docs](https://github.com/goravel/docs)
+
 ## Main Function
 
 - [x] Config
@@ -36,16 +45,7 @@ Welcome to star, PR and issues！
 
 ## Roadmap
 
-- [ ] Queue supports DB driver
-- [ ] Notifications
-- [ ] Optimize unit tests
-
-## Documentation
-
-Online documentation [https://www.goravel.dev](https://www.goravel.dev)
-
-> To optimize the documentation, please submit a PR to the documentation
-> repository [https://github.com/goravel/docs](https://github.com/goravel/docs)
+[For Detail](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 
 ## Contributors
 
