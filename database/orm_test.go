@@ -8,17 +8,18 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/constants"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
 
-var connections = []database.Driver{
-	database.DriverMysql,
-	database.DriverPostgresql,
-	database.DriverSqlite,
-	database.DriverSqlserver,
+var connections = []constants.Driver{
+	constants.DriverMysql,
+	constants.DriverPostgresql,
+	constants.DriverSqlite,
+	constants.DriverSqlserver,
 }
 
 type User struct {
@@ -33,10 +34,10 @@ type OrmSuite struct {
 }
 
 var (
-	testMysqlDB      database.Query
-	testPostgresqlDB database.Query
-	testSqliteDB     database.Query
-	testSqlserverDB  database.Query
+	testMysqlDB      contractsorm.Query
+	testPostgresqlDB contractsorm.Query
+	testSqliteDB     contractsorm.Query
+	testSqlserverDB  contractsorm.Query
 )
 
 func TestOrmSuite(t *testing.T) {
@@ -126,7 +127,7 @@ func (s *OrmSuite) TestTransactionSuccess() {
 	for _, connection := range connections {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 		user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-		s.Nil(testOrm.Connection(connection.String()).Transaction(func(tx database.Transaction) error {
+		s.Nil(testOrm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 
@@ -142,7 +143,7 @@ func (s *OrmSuite) TestTransactionSuccess() {
 func (s *OrmSuite) TestTransactionError() {
 	testOrm := newTestOrm()
 	for _, connection := range connections {
-		s.NotNil(testOrm.Connection(connection.String()).Transaction(func(tx database.Transaction) error {
+		s.NotNil(testOrm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			s.Nil(tx.Create(&user))
 
@@ -162,11 +163,11 @@ func newTestOrm() *Orm {
 	return &Orm{
 		ctx:      context.Background(),
 		instance: testMysqlDB,
-		instances: map[string]database.Query{
-			database.DriverMysql.String():      testMysqlDB,
-			database.DriverPostgresql.String(): testPostgresqlDB,
-			database.DriverSqlite.String():     testSqliteDB,
-			database.DriverSqlserver.String():  testSqlserverDB,
+		instances: map[string]contractsorm.Query{
+			constants.DriverMysql.String():      testMysqlDB,
+			constants.DriverPostgresql.String(): testPostgresqlDB,
+			constants.DriverSqlite.String():     testSqliteDB,
+			constants.DriverSqlserver.String():  testSqlserverDB,
 		},
 	}
 }

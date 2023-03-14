@@ -1,109 +1,109 @@
 package mock
 
 import (
-	accessmocks "github.com/goravel/framework/contracts/auth/access/mocks"
-	authmocks "github.com/goravel/framework/contracts/auth/mocks"
-	cachemocks "github.com/goravel/framework/contracts/cache/mocks"
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	ormmocks "github.com/goravel/framework/contracts/database/mocks"
-	eventmocks "github.com/goravel/framework/contracts/event/mocks"
-	filesystemmocks "github.com/goravel/framework/contracts/filesystem/mocks"
-	grpcmocks "github.com/goravel/framework/contracts/grpc/mocks"
-	mailmocks "github.com/goravel/framework/contracts/mail/mocks"
-	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
-	validatemocks "github.com/goravel/framework/contracts/validation/mocks"
+	mocksaccess "github.com/goravel/framework/contracts/auth/access/mocks"
+	mocksauth "github.com/goravel/framework/contracts/auth/mocks"
+	mockscache "github.com/goravel/framework/contracts/cache/mocks"
+	mocksconfig "github.com/goravel/framework/contracts/config/mocks"
+	mocksconsole "github.com/goravel/framework/contracts/console/mocks"
+	mocksorm "github.com/goravel/framework/contracts/database/orm/mocks"
+	mocksevent "github.com/goravel/framework/contracts/event/mocks"
+	mocksfilesystem "github.com/goravel/framework/contracts/filesystem/mocks"
+	mocksgrpc "github.com/goravel/framework/contracts/grpc/mocks"
+	mocksmail "github.com/goravel/framework/contracts/mail/mocks"
+	mocksqueue "github.com/goravel/framework/contracts/queue/mocks"
+	mocksvalidate "github.com/goravel/framework/contracts/validation/mocks"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log"
 )
 
-func Cache() *cachemocks.Store {
-	mockCache := &cachemocks.Store{}
+func Cache() *mockscache.Store {
+	mockCache := &mockscache.Store{}
 	facades.Cache = mockCache
 
 	return mockCache
 }
 
-func Config() *configmocks.Config {
-	mockConfig := &configmocks.Config{}
+func Config() *mocksconfig.Config {
+	mockConfig := &mocksconfig.Config{}
 	facades.Config = mockConfig
 
 	return mockConfig
 }
 
-func Artisan() *consolemocks.Artisan {
-	mockArtisan := &consolemocks.Artisan{}
+func Artisan() *mocksconsole.Artisan {
+	mockArtisan := &mocksconsole.Artisan{}
 	facades.Artisan = mockArtisan
 
 	return mockArtisan
 }
 
-func Orm() (*ormmocks.Orm, *ormmocks.Query, *ormmocks.Transaction, *ormmocks.Association) {
-	mockOrm := &ormmocks.Orm{}
+func Orm() (*mocksorm.Orm, *mocksorm.Query, *mocksorm.Transaction, *mocksorm.Association) {
+	mockOrm := &mocksorm.Orm{}
 	facades.Orm = mockOrm
 
-	return mockOrm, &ormmocks.Query{}, &ormmocks.Transaction{}, &ormmocks.Association{}
+	return mockOrm, &mocksorm.Query{}, &mocksorm.Transaction{}, &mocksorm.Association{}
 }
 
-func Event() (*eventmocks.Instance, *eventmocks.Task) {
-	mockEvent := &eventmocks.Instance{}
+func Event() (*mocksevent.Instance, *mocksevent.Task) {
+	mockEvent := &mocksevent.Instance{}
 	facades.Event = mockEvent
 
-	return mockEvent, &eventmocks.Task{}
+	return mockEvent, &mocksevent.Task{}
 }
 
 func Log() {
 	facades.Log = log.NewApplication(log.NewTestWriter())
 }
 
-func Mail() *mailmocks.Mail {
-	mockMail := &mailmocks.Mail{}
+func Mail() *mocksmail.Mail {
+	mockMail := &mocksmail.Mail{}
 	facades.Mail = mockMail
 
 	return mockMail
 }
 
-func Queue() (*queuemocks.Queue, *queuemocks.Task) {
-	mockQueue := &queuemocks.Queue{}
+func Queue() (*mocksqueue.Queue, *mocksqueue.Task) {
+	mockQueue := &mocksqueue.Queue{}
 	facades.Queue = mockQueue
 
-	return mockQueue, &queuemocks.Task{}
+	return mockQueue, &mocksqueue.Task{}
 }
 
-func Storage() (*filesystemmocks.Storage, *filesystemmocks.Driver, *filesystemmocks.File) {
-	mockStorage := &filesystemmocks.Storage{}
-	mockDriver := &filesystemmocks.Driver{}
-	mockFile := &filesystemmocks.File{}
+func Storage() (*mocksfilesystem.Storage, *mocksfilesystem.Driver, *mocksfilesystem.File) {
+	mockStorage := &mocksfilesystem.Storage{}
+	mockDriver := &mocksfilesystem.Driver{}
+	mockFile := &mocksfilesystem.File{}
 	facades.Storage = mockStorage
 
 	return mockStorage, mockDriver, mockFile
 }
 
-func Validation() (*validatemocks.Validation, *validatemocks.Validator, *validatemocks.Errors) {
-	mockValidation := &validatemocks.Validation{}
-	mockValidator := &validatemocks.Validator{}
-	mockErrors := &validatemocks.Errors{}
+func Validation() (*mocksvalidate.Validation, *mocksvalidate.Validator, *mocksvalidate.Errors) {
+	mockValidation := &mocksvalidate.Validation{}
+	mockValidator := &mocksvalidate.Validator{}
+	mockErrors := &mocksvalidate.Errors{}
 	facades.Validation = mockValidation
 
 	return mockValidation, mockValidator, mockErrors
 }
 
-func Auth() *authmocks.Auth {
-	mockAuth := &authmocks.Auth{}
+func Auth() *mocksauth.Auth {
+	mockAuth := &mocksauth.Auth{}
 	facades.Auth = mockAuth
 
 	return mockAuth
 }
 
-func Gate() *accessmocks.Gate {
-	mockGate := &accessmocks.Gate{}
+func Gate() *mocksaccess.Gate {
+	mockGate := &mocksaccess.Gate{}
 	facades.Gate = mockGate
 
 	return mockGate
 }
 
-func Grpc() *grpcmocks.Grpc {
-	mockGrpc := &grpcmocks.Grpc{}
+func Grpc() *mocksgrpc.Grpc {
+	mockGrpc := &mocksgrpc.Grpc{}
 	facades.Grpc = mockGrpc
 
 	return mockGrpc

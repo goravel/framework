@@ -19,7 +19,6 @@ type Driver interface {
 	Delete(file ...string) error
 	DeleteDirectory(directory string) error
 	Directories(path string) ([]string, error)
-	// Download(path string)
 	Exists(file string) bool
 	Files(path string) ([]string, error)
 	Get(file string) (string, error)
@@ -46,10 +45,4 @@ type File interface {
 	GetClientOriginalExtension() string
 	HashName(path ...string) string
 	Extension() (string, error)
-}
-
-type Option func(options *Options)
-
-type Options struct {
-	Name string
 }
