@@ -27,10 +27,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 				err = migrateCommand.Handle(mockContext)
 				assert.Nil(t, err)
 
-				// Roll back all the migrations in the test database using the reset command.
-				reset := &MigrateResetCommand{}
-				reset.Handle(mockContext)
-
 				refresh := &MigrateRefreshCommand{}
 				refresh.Handle(mockContext)
 
@@ -56,9 +52,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 				mockContext := &consolemocks.Context{}
 				err = migrateCommand.Handle(mockContext)
 				assert.Nil(t, err)
-
-				reset := &MigrateResetCommand{}
-				reset.Handle(mockContext)
 
 				refresh := &MigrateRefreshCommand{}
 				refresh.Handle(mockContext)
@@ -86,8 +79,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 				err = migrateCommand.Handle(mockContext)
 				assert.Nil(t, err)
 
-				reset := &MigrateResetCommand{}
-				reset.Handle(mockContext)
 
 				refresh := &MigrateRefreshCommand{}
 				refresh.Handle(mockContext)
@@ -113,9 +104,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 				mockContext := &consolemocks.Context{}
 				err = migrateCommand.Handle(mockContext)
 				assert.Nil(t, err)
-
-				reset := &MigrateResetCommand{}
-				reset.Handle(mockContext)
 
 				refresh := &MigrateRefreshCommand{}
 				refresh.Handle(mockContext)

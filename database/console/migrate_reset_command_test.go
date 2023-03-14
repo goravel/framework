@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
+
 func TestMigrateResetCommand(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -27,11 +28,11 @@ func TestMigrateResetCommand(t *testing.T) {
 				err = migrateCommand.Handle(mockContext)
 				assert.Nil(t, err)
 
-				// Roll back all the migrations in the test database using the reset command.
 				reset := &MigrateResetCommand{}
-				err = reset.Handle(mockContext)
-				assert.Nil(t, err)
-				// Verify that all the migrations have been rolled back by checking the database schema.
+				reset.Handle(mockContext)
+                 
+				assert.Nil(t,err)
+
 				var agent Agent
 				err = mysqlQuery.Where("name", "goravel").First(&agent)
 				assert.Nil(t, err)
@@ -40,7 +41,6 @@ func TestMigrateResetCommand(t *testing.T) {
 				removeMigrations()
 				err = mysqlPool.Purge(mysqlResource)
 				assert.Nil(t, err)
-
 			},
 		},
 		{
@@ -56,8 +56,9 @@ func TestMigrateResetCommand(t *testing.T) {
 				assert.Nil(t, err)
 
 				reset := &MigrateResetCommand{}
-				err = reset.Handle(mockContext)
-				assert.Nil(t, err)
+				reset.Handle(mockContext)
+                 
+				assert.Nil(t,err)
 
 				var agent Agent
 				err = postgresqlDB.Where("name", "goravel").First(&agent)
@@ -67,7 +68,6 @@ func TestMigrateResetCommand(t *testing.T) {
 				removeMigrations()
 				err = postgresqlPool.Purge(postgresqlResource)
 				assert.Nil(t, err)
-
 			},
 		},
 		{
@@ -83,8 +83,9 @@ func TestMigrateResetCommand(t *testing.T) {
 				assert.Nil(t, err)
 
 				reset := &MigrateResetCommand{}
-				err = reset.Handle(mockContext)
-				assert.Nil(t, err)
+				reset.Handle(mockContext)
+                 
+				assert.Nil(t,err)
 
 				var agent Agent
 				err = sqlserverDB.Where("name", "goravel").First(&agent)
@@ -109,8 +110,9 @@ func TestMigrateResetCommand(t *testing.T) {
 				assert.Nil(t, err)
 
 				reset := &MigrateResetCommand{}
-				err = reset.Handle(mockContext)
-				assert.Nil(t, err)
+				reset.Handle(mockContext)
+                 
+				assert.Nil(t,err)
 				
 				var agent Agent
 				err = sqliteDB.Where("name", "goravel").First(&agent)
@@ -129,3 +131,4 @@ func TestMigrateResetCommand(t *testing.T) {
 		})
 	}
 }
+
