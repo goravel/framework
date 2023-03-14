@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
-	"github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
@@ -73,7 +73,7 @@ type Phone struct {
 
 type GormQueryTestSuite struct {
 	suite.Suite
-	queries map[database.Driver]database.Query
+	queries map[contractsorm.Driver]contractsorm.Query
 }
 
 func TestGormQueryTestSuite(t *testing.T) {
@@ -98,11 +98,11 @@ func TestGormQueryTestSuite(t *testing.T) {
 	}
 
 	suite.Run(t, &GormQueryTestSuite{
-		queries: map[database.Driver]database.Query{
-			database.DriverMysql:      mysqlDB,
-			database.DriverPostgresql: postgresqlDB,
-			database.DriverSqlite:     sqliteDB,
-			database.DriverSqlserver:  sqlserverDB,
+		queries: map[contractsorm.Driver]contractsorm.Query{
+			contractsorm.DriverMysql:      mysqlDB,
+			contractsorm.DriverPostgresql: postgresqlDB,
+			contractsorm.DriverSqlite:     sqliteDB,
+			contractsorm.DriverSqlserver:  sqlserverDB,
 		},
 	})
 
@@ -1033,7 +1033,7 @@ func (s *GormQueryTestSuite) TestLoad() {
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.Equal(0, len(user1.Books))
-						s.Nil(query.Load(&user1, "Books", func(query database.Query) database.Query {
+						s.Nil(query.Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
 							return query.Where("name = ?", "load_book0")
 						}))
 						s.True(user1.ID > 0)
@@ -1406,7 +1406,7 @@ func (s *GormQueryTestSuite) TestWith() {
 					description: "with func conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", func(query database.Query) database.Query {
+						s.Nil(query.With("Books", func(query contractsorm.Query) contractsorm.Query {
 							return query.Where("name = ?", "with_book0")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
@@ -1513,23 +1513,23 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
 
-	dbs := map[database.Driver]map[string]database.Query{
-		database.DriverMysql: {
+	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
+		contractsorm.DriverMysql: {
 			"mix":   mysqlDB,
 			"read":  readMysqlDB,
 			"write": writeMysqlDB,
 		},
-		database.DriverPostgresql: {
+		contractsorm.DriverPostgresql: {
 			"mix":   postgresqlDB,
 			"read":  readPostgresqlDB,
 			"write": writePostgresqlDB,
 		},
-		database.DriverSqlite: {
+		contractsorm.DriverSqlite: {
 			"mix":   sqliteDB,
 			"read":  readSqliteDB,
 			"write": writeSqliteDB,
 		},
-		database.DriverSqlserver: {
+		contractsorm.DriverSqlserver: {
 			"mix":   sqlserverDB,
 			"read":  readSqlserverDB,
 			"write": writeSqlserverDB,
@@ -1620,11 +1620,11 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
-	dbs := map[database.Driver]database.Query{
-		database.DriverMysql:      mysqlDB,
-		database.DriverPostgresql: postgresqlDB,
-		database.DriverSqlite:     sqliteDB,
-		database.DriverSqlserver:  sqlserverDB,
+	dbs := map[contractsorm.Driver]contractsorm.Query{
+		contractsorm.DriverMysql:      mysqlDB,
+		contractsorm.DriverPostgresql: postgresqlDB,
+		contractsorm.DriverSqlite:     sqliteDB,
+		contractsorm.DriverSqlserver:  sqlserverDB,
 	}
 
 	for drive, db := range dbs {
@@ -1652,8 +1652,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 }
 
-func paginator(page string, limit string) func(methods database.Query) database.Query {
-	return func(query database.Query) database.Query {
+func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
+	return func(query contractsorm.Query) contractsorm.Query {
 		page, _ := strconv.Atoi(page)
 		limit, _ := strconv.Atoi(limit)
 		offset := (page - 1) * limit

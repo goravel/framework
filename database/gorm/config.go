@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
 )
 
@@ -39,7 +40,7 @@ func fillDefaultForConfigs(connection string, configs []contractsdatabase.Config
 	var newConfigs []contractsdatabase.Config
 	driver := facades.Config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
 	for _, config := range configs {
-		if driver != contractsdatabase.DriverSqlite.String() {
+		if driver != orm.DriverSqlite.String() {
 			if config.Host == "" {
 				config.Host = facades.Config.GetString(fmt.Sprintf("database.connections.%s.host", connection))
 			}

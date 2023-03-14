@@ -1,4 +1,4 @@
-package database
+package orm
 
 import (
 	"context"
@@ -74,4 +74,8 @@ type Association interface {
 	Delete(values ...any) error
 	Clear() error
 	Count() int64
+}
+
+type Result struct {
+	RowsAffected int64
 }

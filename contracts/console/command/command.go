@@ -5,12 +5,6 @@ type Extend struct {
 	Flags    []Flag
 }
 
-type Context interface {
-	Argument(index int) string
-	Arguments() []string
-	Option(key string) string
-}
-
 type Flag struct {
 	Name     string
 	Aliases  []string

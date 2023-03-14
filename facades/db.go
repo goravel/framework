@@ -1,7 +1,7 @@
 package facades
 
 import (
-	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/orm"
 )
 
-var Orm database.Orm
+var Orm orm.Orm

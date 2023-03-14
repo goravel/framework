@@ -7,7 +7,3 @@ type Config struct {
 	Username string
 	Password string
 }
-
-type Result struct {
-	RowsAffected int64
-}
