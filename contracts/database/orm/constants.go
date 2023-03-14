@@ -1,4 +1,4 @@
-package constants
+package orm
 
 const (
 	DriverMysql      Driver = "mysql"

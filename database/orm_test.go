@@ -9,17 +9,16 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/constants"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
 
-var connections = []constants.Driver{
-	constants.DriverMysql,
-	constants.DriverPostgresql,
-	constants.DriverSqlite,
-	constants.DriverSqlserver,
+var connections = []contractsorm.Driver{
+	contractsorm.DriverMysql,
+	contractsorm.DriverPostgresql,
+	contractsorm.DriverSqlite,
+	contractsorm.DriverSqlserver,
 }
 
 type User struct {
@@ -164,10 +163,10 @@ func newTestOrm() *Orm {
 		ctx:      context.Background(),
 		instance: testMysqlDB,
 		instances: map[string]contractsorm.Query{
-			constants.DriverMysql.String():      testMysqlDB,
-			constants.DriverPostgresql.String(): testPostgresqlDB,
-			constants.DriverSqlite.String():     testSqliteDB,
-			constants.DriverSqlserver.String():  testSqlserverDB,
+			contractsorm.DriverMysql.String():      testMysqlDB,
+			contractsorm.DriverPostgresql.String(): testPostgresqlDB,
+			contractsorm.DriverSqlite.String():     testSqliteDB,
+			contractsorm.DriverSqlserver.String():  testSqlserverDB,
 		},
 	}
 }

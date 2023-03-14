@@ -13,7 +13,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config/mocks"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/database/constants"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/testing/mock"
 )
 
@@ -27,17 +27,17 @@ func TestDialector(t *testing.T) {
 
 	tests := []struct {
 		description     string
-		connection      constants.Driver
+		connection      orm.Driver
 		setup           func()
 		expectDialector gorm.Dialector
 		expectErr       error
 	}{
 		{
 			description: "mysql",
-			connection:  constants.DriverMysql,
+			connection:  orm.DriverMysql,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.mysql.driver").
-					Return(constants.DriverMysql.String()).Once()
+					Return(orm.DriverMysql.String()).Once()
 				mockConfig.On("GetString", "database.connections.mysql.charset").
 					Return("utf8mb4").Once()
 				mockConfig.On("GetString", "database.connections.mysql.loc").
@@ -50,10 +50,10 @@ func TestDialector(t *testing.T) {
 		},
 		{
 			description: "postgresql",
-			connection:  constants.DriverPostgresql,
+			connection:  orm.DriverPostgresql,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.postgresql.driver").
-					Return(constants.DriverPostgresql.String()).Once()
+					Return(orm.DriverPostgresql.String()).Once()
 				mockConfig.On("GetString", "database.connections.postgresql.sslmode").
 					Return("disable").Once()
 				mockConfig.On("GetString", "database.connections.postgresql.timezone").
@@ -66,19 +66,19 @@ func TestDialector(t *testing.T) {
 		},
 		{
 			description: "sqlite",
-			connection:  constants.DriverSqlite,
+			connection:  orm.DriverSqlite,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.sqlite.driver").
-					Return(constants.DriverSqlite.String()).Once()
+					Return(orm.DriverSqlite.String()).Once()
 			},
 			expectDialector: sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", database)),
 		},
 		{
 			description: "sqlserver",
-			connection:  constants.DriverSqlserver,
+			connection:  orm.DriverSqlserver,
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.sqlserver.driver").
-					Return(constants.DriverSqlserver.String()).Once()
+					Return(orm.DriverSqlserver.String()).Once()
 				mockConfig.On("GetString", "database.connections.sqlserver.charset").
 					Return("utf8mb4").Once()
 			},

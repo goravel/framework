@@ -17,7 +17,6 @@ import (
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/constants"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
@@ -171,8 +170,8 @@ func (r *Query) Begin() (contractsorm.Transaction, error) {
 	return NewTransaction(tx), tx.Error
 }
 
-func (r *Query) Driver() constants.Driver {
-	return constants.Driver(r.instance.Dialector.Name())
+func (r *Query) Driver() contractsorm.Driver {
+	return contractsorm.Driver(r.instance.Dialector.Name())
 }
 
 func (r *Query) Count(count *int64) error {

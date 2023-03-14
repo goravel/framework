@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/database/constants"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
 )
 
@@ -30,14 +30,14 @@ func dialectors(connection string, configs []contractsdatabase.Config) ([]gorm.D
 func dialector(connection string, config contractsdatabase.Config) (gorm.Dialector, error) {
 	driver := facades.Config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
 
-	switch constants.Driver(driver) {
-	case constants.DriverMysql:
+	switch orm.Driver(driver) {
+	case orm.DriverMysql:
 		return mysqlDialector(connection, config), nil
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return postgresqlDialector(connection, config), nil
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return sqliteDialector(config), nil
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return sqlserverDialector(connection, config), nil
 	default:
 		return nil, fmt.Errorf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver)

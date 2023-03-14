@@ -9,7 +9,6 @@ import (
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/constants"
 	testingdocker "github.com/goravel/framework/testing/docker"
 	"github.com/goravel/framework/testing/mock"
 )
@@ -137,7 +136,7 @@ func mockSingleMysqlOfCommon(mockConfig *configmocks.Config, port int) {
 
 func mockMysqlOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.mysql.driver").Return(constants.DriverMysql.String())
+	mockConfig.On("GetString", "database.connections.mysql.driver").Return(orm.DriverMysql.String())
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4")
 	mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local")
 	mockConfig.On("GetString", "database.connections.mysql.database").Return("mysql")
@@ -187,7 +186,7 @@ func mockSinglePostgresqlOfCommon(mockConfig *configmocks.Config, port int) {
 
 func mockPostgresqlOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(constants.DriverPostgresql.String())
+	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(orm.DriverPostgresql.String())
 	mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
 	mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
 	mockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
@@ -234,7 +233,7 @@ func mockSingleSqliteOfCommon(mockConfig *configmocks.Config, dbName string) {
 
 func mockSqliteOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.sqlite.driver").Return(constants.DriverSqlite.String())
+	mockConfig.On("GetString", "database.connections.sqlite.driver").Return(orm.DriverSqlite.String())
 	mockPool(mockConfig)
 }
 
@@ -280,7 +279,7 @@ func mockSingleSqlserverOfCommon(mockConfig *configmocks.Config, port int) {
 
 func mockSqlserverOfCommon(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "app.debug").Return(true)
-	mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(constants.DriverSqlserver.String())
+	mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(orm.DriverSqlserver.String())
 	mockConfig.On("GetString", "database.connections.sqlserver.database").Return("msdb")
 	mockConfig.On("GetString", "database.connections.sqlserver.charset").Return("utf8mb4")
 	mockPool(mockConfig)
@@ -293,7 +292,7 @@ func mysqlDockerDB(pool *dockertest.Pool, createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
-		if err := initTables(constants.DriverMysql, db); err != nil {
+		if err := initTables(orm.DriverMysql, db); err != nil {
 			return nil, err
 		}
 	}
@@ -307,7 +306,7 @@ func mysqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (orm.Query, error
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(constants.DriverMysql, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(orm.DriverMysql, db); err != nil {
 		return nil, err
 	}
 
@@ -339,7 +338,7 @@ func initMysql(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), constants.DriverMysql.String())
+		db, err = NewQuery(context.Background(), orm.DriverMysql.String())
 		if err != nil {
 			return err
 		}
@@ -359,7 +358,7 @@ func postgresqlDockerDB(pool *dockertest.Pool, createTable bool) (orm.Query, err
 	}
 
 	if createTable {
-		if err := initTables(constants.DriverPostgresql, db); err != nil {
+		if err := initTables(orm.DriverPostgresql, db); err != nil {
 			return nil, err
 		}
 	}
@@ -373,7 +372,7 @@ func postgresqlDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (orm.Query, 
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(constants.DriverPostgresql, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(orm.DriverPostgresql, db); err != nil {
 		return nil, err
 	}
 
@@ -407,7 +406,7 @@ func initPostgresql(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), constants.DriverPostgresql.String())
+		db, err = NewQuery(context.Background(), orm.DriverPostgresql.String())
 		if err != nil {
 			return err
 		}
@@ -427,7 +426,7 @@ func sqliteDockerDB(pool *dockertest.Pool, createTable bool) (orm.Query, error) 
 	}
 
 	if createTable {
-		if err := initTables(constants.DriverSqlite, db); err != nil {
+		if err := initTables(orm.DriverSqlite, db); err != nil {
 			return nil, err
 		}
 	}
@@ -441,7 +440,7 @@ func sqliteDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (orm.Query, erro
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(constants.DriverSqlite, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(orm.DriverSqlite, db); err != nil {
 		return nil, err
 	}
 
@@ -471,7 +470,7 @@ func initSqlite(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), constants.DriverSqlite.String())
+		db, err = NewQuery(context.Background(), orm.DriverSqlite.String())
 
 		return err
 	}); err != nil {
@@ -488,7 +487,7 @@ func sqlserverDockerDB(pool *dockertest.Pool, createTable bool) (orm.Query, erro
 	}
 
 	if createTable {
-		if err := initTables(constants.DriverSqlserver, db); err != nil {
+		if err := initTables(orm.DriverSqlserver, db); err != nil {
 			return nil, err
 		}
 	}
@@ -502,7 +501,7 @@ func sqlserverDockerDBWithPrefixAndSingular(pool *dockertest.Pool) (orm.Query, e
 		return nil, err
 	}
 
-	if err := initTablesWithPrefixAndSingular(constants.DriverSqlserver, db); err != nil {
+	if err := initTablesWithPrefixAndSingular(orm.DriverSqlserver, db); err != nil {
 		return nil, err
 	}
 
@@ -535,7 +534,7 @@ func initSqlserver(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), constants.DriverSqlserver.String())
+		db, err = NewQuery(context.Background(), orm.DriverSqlserver.String())
 		if err != nil {
 			return err
 		}
@@ -548,7 +547,7 @@ func initSqlserver(pool *dockertest.Pool) (orm.Query, error) {
 	return db, nil
 }
 
-func initTables(driver constants.Driver, db orm.Query) error {
+func initTables(driver orm.Driver, db orm.Query) error {
 	_, err := db.Exec(createUserTable(driver))
 	if err != nil {
 		return err
@@ -585,7 +584,7 @@ func initTables(driver constants.Driver, db orm.Query) error {
 	return nil
 }
 
-func initTablesWithPrefixAndSingular(driver constants.Driver, db orm.Query) error {
+func initTablesWithPrefixAndSingular(driver orm.Driver, db orm.Query) error {
 	_, err := db.Exec(createUserTableWithPrefixAndSingular(driver))
 	if err != nil {
 		return err
@@ -594,9 +593,9 @@ func initTablesWithPrefixAndSingular(driver constants.Driver, db orm.Query) erro
 	return nil
 }
 
-func createUserTable(driver constants.Driver) string {
+func createUserTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -610,7 +609,7 @@ CREATE TABLE users (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -621,7 +620,7 @@ CREATE TABLE users (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -632,7 +631,7 @@ CREATE TABLE users (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
@@ -649,9 +648,9 @@ CREATE TABLE users (
 	}
 }
 
-func createUserTableWithPrefixAndSingular(driver constants.Driver) string {
+func createUserTableWithPrefixAndSingular(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE goravel_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -665,7 +664,7 @@ CREATE TABLE goravel_user (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -676,7 +675,7 @@ CREATE TABLE goravel_user (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE goravel_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -687,7 +686,7 @@ CREATE TABLE goravel_user (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE goravel_user (
   id bigint NOT NULL IDENTITY(1,1),
@@ -704,9 +703,9 @@ CREATE TABLE goravel_user (
 	}
 }
 
-func createAddressTable(driver constants.Driver) string {
+func createAddressTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -720,7 +719,7 @@ CREATE TABLE addresses (
   KEY idx_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -731,7 +730,7 @@ CREATE TABLE addresses (
   updated_at timestamp NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -742,7 +741,7 @@ CREATE TABLE addresses (
   updated_at datetime NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -759,9 +758,9 @@ CREATE TABLE addresses (
 	}
 }
 
-func createBookTable(driver constants.Driver) string {
+func createBookTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE books (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -774,7 +773,7 @@ CREATE TABLE books (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE books (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -784,7 +783,7 @@ CREATE TABLE books (
   updated_at timestamp NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE books (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -794,7 +793,7 @@ CREATE TABLE books (
   updated_at datetime NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE books (
   id bigint NOT NULL IDENTITY(1,1),
@@ -810,9 +809,9 @@ CREATE TABLE books (
 	}
 }
 
-func createAuthorTable(driver constants.Driver) string {
+func createAuthorTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE authors (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -825,7 +824,7 @@ CREATE TABLE authors (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE authors (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -835,7 +834,7 @@ CREATE TABLE authors (
   updated_at timestamp NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE authors (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -845,7 +844,7 @@ CREATE TABLE authors (
   updated_at datetime NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE authors (
   id bigint NOT NULL IDENTITY(1,1),
@@ -861,9 +860,9 @@ CREATE TABLE authors (
 	}
 }
 
-func createRoleTable(driver constants.Driver) string {
+func createRoleTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE roles (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -875,7 +874,7 @@ CREATE TABLE roles (
   KEY idx_roles_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -884,7 +883,7 @@ CREATE TABLE roles (
   updated_at timestamp NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE roles (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -893,7 +892,7 @@ CREATE TABLE roles (
   updated_at datetime NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE roles (
   id bigint NOT NULL IDENTITY(1,1),
@@ -908,9 +907,9 @@ CREATE TABLE roles (
 	}
 }
 
-func createHouseTable(driver constants.Driver) string {
+func createHouseTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE houses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -924,7 +923,7 @@ CREATE TABLE houses (
   KEY idx_houses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE houses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -935,7 +934,7 @@ CREATE TABLE houses (
   updated_at timestamp NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE houses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -946,7 +945,7 @@ CREATE TABLE houses (
   updated_at datetime NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE houses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -963,9 +962,9 @@ CREATE TABLE houses (
 	}
 }
 
-func createPhoneTable(driver constants.Driver) string {
+func createPhoneTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE phones (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -979,7 +978,7 @@ CREATE TABLE phones (
   KEY idx_phones_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE phones (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -990,7 +989,7 @@ CREATE TABLE phones (
   updated_at timestamp NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE phones (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1001,7 +1000,7 @@ CREATE TABLE phones (
   updated_at datetime NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE phones (
   id bigint NOT NULL IDENTITY(1,1),
@@ -1018,9 +1017,9 @@ CREATE TABLE phones (
 	}
 }
 
-func createRoleUserTable(driver constants.Driver) string {
+func createRoleUserTable(driver orm.Driver) string {
 	switch driver {
-	case constants.DriverMysql:
+	case orm.DriverMysql:
 		return `
 CREATE TABLE role_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -1029,7 +1028,7 @@ CREATE TABLE role_user (
   PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		return `
 CREATE TABLE role_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1037,7 +1036,7 @@ CREATE TABLE role_user (
   user_id int NOT NULL
 );
 `
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		return `
 CREATE TABLE role_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1045,7 +1044,7 @@ CREATE TABLE role_user (
   user_id int NOT NULL
 );
 `
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		return `
 CREATE TABLE role_user (
   id bigint NOT NULL IDENTITY(1,1),

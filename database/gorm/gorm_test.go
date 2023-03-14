@@ -13,7 +13,6 @@ import (
 	_ "gorm.io/driver/postgres"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/constants"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
@@ -74,7 +73,7 @@ type Phone struct {
 
 type GormQueryTestSuite struct {
 	suite.Suite
-	queries map[constants.Driver]contractsorm.Query
+	queries map[contractsorm.Driver]contractsorm.Query
 }
 
 func TestGormQueryTestSuite(t *testing.T) {
@@ -99,11 +98,11 @@ func TestGormQueryTestSuite(t *testing.T) {
 	}
 
 	suite.Run(t, &GormQueryTestSuite{
-		queries: map[constants.Driver]contractsorm.Query{
-			constants.DriverMysql:      mysqlDB,
-			constants.DriverPostgresql: postgresqlDB,
-			constants.DriverSqlite:     sqliteDB,
-			constants.DriverSqlserver:  sqlserverDB,
+		queries: map[contractsorm.Driver]contractsorm.Query{
+			contractsorm.DriverMysql:      mysqlDB,
+			contractsorm.DriverPostgresql: postgresqlDB,
+			contractsorm.DriverSqlite:     sqliteDB,
+			contractsorm.DriverSqlserver:  sqlserverDB,
 		},
 	})
 
@@ -1514,23 +1513,23 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
 
-	dbs := map[constants.Driver]map[string]contractsorm.Query{
-		constants.DriverMysql: {
+	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
+		contractsorm.DriverMysql: {
 			"mix":   mysqlDB,
 			"read":  readMysqlDB,
 			"write": writeMysqlDB,
 		},
-		constants.DriverPostgresql: {
+		contractsorm.DriverPostgresql: {
 			"mix":   postgresqlDB,
 			"read":  readPostgresqlDB,
 			"write": writePostgresqlDB,
 		},
-		constants.DriverSqlite: {
+		contractsorm.DriverSqlite: {
 			"mix":   sqliteDB,
 			"read":  readSqliteDB,
 			"write": writeSqliteDB,
 		},
-		constants.DriverSqlserver: {
+		contractsorm.DriverSqlserver: {
 			"mix":   sqlserverDB,
 			"read":  readSqlserverDB,
 			"write": writeSqlserverDB,
@@ -1621,11 +1620,11 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
-	dbs := map[constants.Driver]contractsorm.Query{
-		constants.DriverMysql:      mysqlDB,
-		constants.DriverPostgresql: postgresqlDB,
-		constants.DriverSqlite:     sqliteDB,
-		constants.DriverSqlserver:  sqlserverDB,
+	dbs := map[contractsorm.Driver]contractsorm.Query{
+		contractsorm.DriverMysql:      mysqlDB,
+		contractsorm.DriverPostgresql: postgresqlDB,
+		contractsorm.DriverSqlite:     sqliteDB,
+		contractsorm.DriverSqlserver:  sqlserverDB,
 	}
 
 	for drive, db := range dbs {

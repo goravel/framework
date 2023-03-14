@@ -10,7 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
 
-	"github.com/goravel/framework/database/constants"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/facades"
 )
@@ -24,8 +24,8 @@ func getMigrate() (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	switch constants.Driver(driver) {
-	case constants.DriverMysql:
+	switch orm.Driver(driver) {
+	case orm.DriverMysql:
 		dsn := gorm.MysqlDsn(connection, writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
@@ -44,7 +44,7 @@ func getMigrate() (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "mysql", instance)
-	case constants.DriverPostgresql:
+	case orm.DriverPostgresql:
 		dsn := gorm.PostgresqlDsn(connection, writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
@@ -63,7 +63,7 @@ func getMigrate() (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "postgres", instance)
-	case constants.DriverSqlite:
+	case orm.DriverSqlite:
 		dsn := gorm.SqliteDsn(writeConfigs[0])
 		if dsn == "" {
 			return nil, nil
@@ -82,7 +82,7 @@ func getMigrate() (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlite3", instance)
-	case constants.DriverSqlserver:
+	case orm.DriverSqlserver:
 		dsn := gorm.SqlserverDsn(connection, writeConfigs[0])
 		if dsn == "" {
 			return nil, nil

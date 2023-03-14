@@ -3,8 +3,6 @@ package orm
 import (
 	"context"
 	"database/sql"
-
-	"github.com/goravel/framework/database/constants"
 )
 
 //go:generate mockery --name=Orm
@@ -27,7 +25,7 @@ type Transaction interface {
 type Query interface {
 	Association(association string) Association
 	Begin() (Transaction, error)
-	Driver() constants.Driver
+	Driver() Driver
 	Count(count *int64) error
 	Create(value any) error
 	Delete(value any, conds ...any) (*Result, error)
