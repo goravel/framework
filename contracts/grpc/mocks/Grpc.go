@@ -39,12 +39,18 @@ func (_m *Grpc) Client(ctx context.Context, name string) (*grpc.ClientConn, erro
 }
 
 // Run provides a mock function with given fields: host
-func (_m *Grpc) Run(host string) error {
-	ret := _m.Called(host)
+func (_m *Grpc) Run(host ...string) error {
+	_va := make([]interface{}, len(host))
+	for _i := range host {
+		_va[_i] = host[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(host)
+	if rf, ok := ret.Get(0).(func(...string) error); ok {
+		r0 = rf(host...)
 	} else {
 		r0 = ret.Error(0)
 	}
