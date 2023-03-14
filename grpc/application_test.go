@@ -30,7 +30,6 @@ func TestRun(t *testing.T) {
 
 	beforeEach := func() {
 		mockConfig = mock.Config()
-		mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
 		app = NewApplication()
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{
@@ -54,6 +53,7 @@ func TestRun(t *testing.T) {
 			setup: func() {
 				host := "127.0.0.1:3001"
 				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -72,10 +72,36 @@ func TestRun(t *testing.T) {
 			},
 		},
 		{
-			name: "error",
+			name: "success when host with port",
 			setup: func() {
-				host := "127.0.0.1:3002"
+				mockConfig.On("GetString", "grpc.host").Return("127.0.0.1:3002").Once()
+				go func() {
+					assert.Nil(t, app.Run())
+				}()
+				time.Sleep(1 * time.Second)
+			},
+		},
+		{
+			name: "error when host is empty",
+			setup: func() {
+				mockConfig.On("GetString", "grpc.host").Return("").Once()
+				assert.EqualError(t, app.Run(), "host can't be empty")
+			},
+		},
+		{
+			name: "error when port is empty",
+			setup: func() {
+				mockConfig.On("GetString", "grpc.host").Return("127.0.0.1").Once()
+				mockConfig.On("GetString", "grpc.port").Return("").Once()
+				assert.EqualError(t, app.Run(), "port can't be empty")
+			},
+		},
+		{
+			name: "error when request name = error",
+			setup: func() {
+				host := "127.0.0.1:3003"
 				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
+				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
 				go func() {
 					assert.Nil(t, app.Run(host))
@@ -96,9 +122,11 @@ func TestRun(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		beforeEach()
-		test.setup()
-		mockConfig.AssertExpectations(t)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
+			mockConfig.AssertExpectations(t)
+		})
 	}
 }
 
@@ -146,6 +174,14 @@ func TestClient(t *testing.T) {
 			expectErr: true,
 		},
 		{
+			name: "error when host doesn't have port and port is empty",
+			setup: func() {
+				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return("127.0.0.1").Once()
+				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.port", name)).Return("").Once()
+			},
+			expectErr: true,
+		},
+		{
 			name: "error when interceptors isn't []string",
 			setup: func() {
 				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
@@ -156,14 +192,16 @@ func TestClient(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		beforeEach()
-		test.setup()
-		client, err := app.Client(context.Background(), name)
-		if !test.expectErr {
-			assert.NotNil(t, client, test.name)
-		}
-		assert.Equal(t, test.expectErr, err != nil, test.name)
-		mockConfig.AssertExpectations(t)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
+			client, err := app.Client(context.Background(), name)
+			if !test.expectErr {
+				assert.NotNil(t, client, test.name)
+			}
+			assert.Equal(t, test.expectErr, err != nil, test.name)
+			mockConfig.AssertExpectations(t)
+		})
 	}
 }
 
