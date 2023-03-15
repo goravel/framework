@@ -45,6 +45,8 @@ func (receiver *MigrateResetCommand) Handle(ctx console.Context) error {
 
 	// Rollback all migrations.
 	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+		color.Redln("Migration reset failed:", err.Error())
+
 		return err
 	}
 
