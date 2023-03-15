@@ -55,3 +55,4 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 
 	return nil
 }
+
