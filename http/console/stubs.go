@@ -63,11 +63,11 @@ func (r Stubs) Middleware() string {
 	return `package middleware
 
 import (
-	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/http"
 )
 
-func DummyMiddleware() contractshttp.Middleware {
-	return func(ctx contractshttp.Context) {
+func DummyMiddleware() http.Middleware {
+	return func(ctx http.Context) {
 		ctx.Request().Next()
 	}
 }

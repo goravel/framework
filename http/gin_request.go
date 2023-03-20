@@ -231,13 +231,13 @@ func (r *GinRequest) File(name string) (contractsfilesystem.File, error) {
 	return filesystem.NewFileFromRequest(file)
 }
 
-func (r *GinRequest) Header(key, defaultValue string) string {
+func (r *GinRequest) Header(key string, defaultValue ...string) string {
 	header := r.instance.GetHeader(key)
 	if header != "" {
 		return header
 	}
 
-	return defaultValue
+	return defaultValue[0]
 }
 
 func (r *GinRequest) Headers() http.Header {

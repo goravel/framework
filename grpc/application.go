@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/gookit/color"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -78,6 +79,7 @@ func (app *Application) Run(host ...string) error {
 	if err != nil {
 		return err
 	}
+	color.Greenln("[GRPC] Listening and serving gRPC on " + host[0])
 	if err := app.server.Serve(listen); err != nil {
 		return err
 	}

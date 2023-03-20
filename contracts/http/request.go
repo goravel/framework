@@ -9,7 +9,7 @@ import (
 
 //go:generate mockery --name=Request
 type Request interface {
-	Header(key, defaultValue string) string
+	Header(key string, defaultValue ...string) string
 	Headers() http.Header
 	Method() string
 	Path() string

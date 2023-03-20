@@ -66,12 +66,19 @@ func (_m *Request) File(name string) (filesystem.File, error) {
 }
 
 // Form provides a mock function with given fields: key, defaultValue
-func (_m *Request) Form(key string, defaultValue string) string {
-	ret := _m.Called(key, defaultValue)
+func (_m *Request) Form(key string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(key, defaultValue)
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(key, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -94,12 +101,19 @@ func (_m *Request) FullUrl() string {
 }
 
 // Header provides a mock function with given fields: key, defaultValue
-func (_m *Request) Header(key string, defaultValue string) string {
-	ret := _m.Called(key, defaultValue)
+func (_m *Request) Header(key string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(key, defaultValue)
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(key, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -123,15 +137,85 @@ func (_m *Request) Headers() nethttp.Header {
 	return r0
 }
 
-// Input provides a mock function with given fields: key
-func (_m *Request) Input(key string) string {
-	ret := _m.Called(key)
+// Input provides a mock function with given fields: key, defaultValue
+func (_m *Request) Input(key string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(key)
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(key, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// InputBool provides a mock function with given fields: key, defaultValue
+func (_m *Request) InputBool(key string, defaultValue ...bool) bool {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, ...bool) bool); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// InputInt provides a mock function with given fields: key, defaultValue
+func (_m *Request) InputInt(key string, defaultValue ...int) int {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(string, ...int) int); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// InputInt64 provides a mock function with given fields: key, defaultValue
+func (_m *Request) InputInt64(key string, defaultValue ...int64) int64 {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string, ...int64) int64); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(int64)
 	}
 
 	return r0
@@ -144,6 +228,27 @@ func (_m *Request) Ip() string {
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Json provides a mock function with given fields: key, defaultValue
+func (_m *Request) Json(key string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(key, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -201,12 +306,19 @@ func (_m *Request) Path() string {
 }
 
 // Query provides a mock function with given fields: key, defaultValue
-func (_m *Request) Query(key string, defaultValue string) string {
-	ret := _m.Called(key, defaultValue)
+func (_m *Request) Query(key string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(key, defaultValue)
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(key, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -230,6 +342,69 @@ func (_m *Request) QueryArray(key string) []string {
 	return r0
 }
 
+// QueryBool provides a mock function with given fields: key, defaultValue
+func (_m *Request) QueryBool(key string, defaultValue ...bool) bool {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, ...bool) bool); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// QueryInt provides a mock function with given fields: key, defaultValue
+func (_m *Request) QueryInt(key string, defaultValue ...int) int {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(string, ...int) int); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// QueryInt64 provides a mock function with given fields: key, defaultValue
+func (_m *Request) QueryInt64(key string, defaultValue ...int64) int64 {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string, ...int64) int64); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
 // QueryMap provides a mock function with given fields: key
 func (_m *Request) QueryMap(key string) map[string]string {
 	ret := _m.Called(key)
@@ -241,6 +416,48 @@ func (_m *Request) QueryMap(key string) map[string]string {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]string)
 		}
+	}
+
+	return r0
+}
+
+// Route provides a mock function with given fields: key
+func (_m *Request) Route(key string) string {
+	ret := _m.Called(key)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// RouteInt provides a mock function with given fields: key
+func (_m *Request) RouteInt(key string) int {
+	ret := _m.Called(key)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(string) int); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// RouteInt64 provides a mock function with given fields: key
+func (_m *Request) RouteInt64(key string) int64 {
+	ret := _m.Called(key)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(int64)
 	}
 
 	return r0
