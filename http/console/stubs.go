@@ -38,7 +38,7 @@ func (r *DummyRequest) PrepareForValidation(ctx http.Context, data validation.Da
 }
 
 func (r Stubs) Controller() string {
-	return `package controllers
+	return `package dummy_package
 
 import (
 	"github.com/goravel/framework/contracts/http"

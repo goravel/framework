@@ -13,6 +13,9 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
+// Default package name if a sub-folder is not provided
+const defaultPackageName string = "controllers"
+
 type ControllerMakeCommand struct {
 }
 
@@ -52,7 +55,10 @@ func (receiver *ControllerMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (receiver *ControllerMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyController", str.Case2Camel(name))
+	controllerName, packageName, _ := parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyController", str.Case2Camel(controllerName))
+	stub = strings.ReplaceAll(stub, "dummy_package", packageName)
 
 	return stub
 }
@@ -61,5 +67,26 @@ func (receiver *ControllerMakeCommand) populateStub(stub string, name string) st
 func (receiver *ControllerMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/http/controllers/" + str.Camel2Case(name) + ".go"
+	controllerName, _, folderPath := parseName(name)
+
+	if folderPath != "" {
+		folderPath = folderPath + "/"
+	}
+
+	return pwd + "/app/http/controllers/" + folderPath + str.Camel2Case(controllerName) + ".go"
+}
+
+func parseName(name string) (string, string, string) {
+
+	parts := strings.Split(name, "/")
+
+	controllerName := parts[len(parts)-1]
+	packageName := defaultPackageName
+	filePath := strings.ToLower(strings.Join(parts[:len(parts)-1], "/"))
+
+	if len(parts) > 1 {
+		packageName = strings.ToLower(parts[len(parts)-2])
+	}
+
+	return controllerName, packageName, filePath
 }
