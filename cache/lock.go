@@ -3,8 +3,6 @@ package cache
 import (
 	"time"
 
-	"github.com/patrickmn/go-cache"
-
 	contractscache "github.com/goravel/framework/contracts/cache"
 )
 
@@ -58,7 +56,7 @@ func (r *Lock) Block(t time.Duration, callback ...func()) bool {
 func (r *Lock) Get(callback ...func()) bool {
 	var res bool
 	if r.time == nil {
-		res = r.store.Add(r.key, 1, cache.NoExpiration)
+		res = r.store.Add(r.key, 1, NoExpiration)
 	} else {
 		res = r.store.Add(r.key, 1, *r.time)
 	}

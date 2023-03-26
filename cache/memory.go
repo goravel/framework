@@ -26,11 +26,13 @@ func NewMemory() (*Memory, error) {
 
 //Add Driver an item in the cache if the key does not exist.
 func (r *Memory) Add(key string, value any, t time.Duration) bool {
-	if err := r.instance.Add(r.key(key), value, t); err != nil {
-		return false
+	if t == NoExpiration {
+		t = cache.NoExpiration
 	}
 
-	return true
+	err := r.instance.Add(r.key(key), value, t)
+
+	return err == nil
 }
 
 func (r *Memory) Decrement(key string, value ...int) (int, error) {

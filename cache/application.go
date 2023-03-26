@@ -18,8 +18,6 @@ type Application struct {
 func NewApplication(store string) *Application {
 	driver := driver(store)
 	if driver == nil {
-		color.Redf("[Cache] Not supported cache store: %s\n", store)
-
 		return nil
 	}
 
@@ -36,14 +34,7 @@ func (app *Application) Store(name string) cache.Driver {
 		return driver
 	}
 
-	driver := driver(name)
-	if driver == nil {
-		facades.Log.Errorf("[Cache] Not supported cache store: %s", name)
-
-		return nil
-	}
-
-	return driver
+	return driver(name)
 }
 
 func driver(store string) cache.Driver {
@@ -56,6 +47,7 @@ func driver(store string) cache.Driver {
 	case "custom":
 		return initCustom(store)
 	default:
+		color.Redf("[Cache] Not supported cache store: %s\n", store)
 		return nil
 	}
 }
