@@ -2,29 +2,24 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/facades"
-
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
+
+	"github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/facades"
 )
 
 type Redis struct {
-	ctx    context.Context
-	prefix string
-	redis  *redis.Client
+	ctx        context.Context
+	connection string
+	prefix     string
+	instance   *redis.Client
 }
 
-func NewRedis(ctx context.Context) (*Redis, error) {
-	connection := facades.Config.GetString(fmt.Sprintf("cache.stores.%s.connection", facades.Config.GetString("cache.default")))
-	if connection == "" {
-		connection = "default"
-	}
-
+func NewRedis(ctx context.Context, connection string) (*Redis, error) {
 	host := facades.Config.GetString("database.redis." + connection + ".host")
 	if host == "" {
 		return nil, nil
@@ -41,21 +36,16 @@ func NewRedis(ctx context.Context) (*Redis, error) {
 	}
 
 	return &Redis{
-		ctx:    ctx,
-		prefix: prefix(),
-		redis:  client,
+		ctx:        ctx,
+		connection: connection,
+		prefix:     prefix(),
+		instance:   client,
 	}, nil
 }
 
-func (r *Redis) WithContext(ctx context.Context) cache.Store {
-	store, _ := NewRedis(ctx)
-
-	return store
-}
-
-//Add Store an item in the cache if the key does not exist.
-func (r *Redis) Add(key string, value any, seconds time.Duration) bool {
-	val, err := r.redis.SetNX(r.ctx, r.prefix+key, value, seconds).Result()
+//Add Driver an item in the cache if the key does not exist.
+func (r *Redis) Add(key string, value any, t time.Duration) bool {
+	val, err := r.instance.SetNX(r.ctx, r.key(key), value, t).Result()
 	if err != nil {
 		return false
 	}
@@ -63,7 +53,17 @@ func (r *Redis) Add(key string, value any, seconds time.Duration) bool {
 	return val
 }
 
-//Forever Store an item in the cache indefinitely.
+func (r *Redis) Decrement(key string, value ...int) (int, error) {
+	if len(value) == 0 {
+		value = append(value, 1)
+	}
+
+	res, err := r.instance.DecrBy(r.ctx, r.key(key), int64(value[0])).Result()
+
+	return int(res), err
+}
+
+//Forever Driver an item in the cache indefinitely.
 func (r *Redis) Forever(key string, value any) bool {
 	if err := r.Put(key, value, 0); err != nil {
 		return false
@@ -74,14 +74,14 @@ func (r *Redis) Forever(key string, value any) bool {
 
 //Forget Remove an item from the cache.
 func (r *Redis) Forget(key string) bool {
-	_, err := r.redis.Del(r.ctx, r.prefix+key).Result()
+	_, err := r.instance.Del(r.ctx, r.key(key)).Result()
 
 	return err == nil
 }
 
 //Flush Remove all items from the cache.
 func (r *Redis) Flush() bool {
-	res, err := r.redis.FlushAll(r.ctx).Result()
+	res, err := r.instance.FlushAll(r.ctx).Result()
 
 	if err != nil || res != "OK" {
 		return false
@@ -91,22 +91,29 @@ func (r *Redis) Flush() bool {
 }
 
 //Get Retrieve an item from the cache by key.
-func (r *Redis) Get(key string, def any) any {
-	val, err := r.redis.Get(r.ctx, r.prefix+key).Result()
+func (r *Redis) Get(key string, def ...any) any {
+	val, err := r.instance.Get(r.ctx, r.key(key)).Result()
 	if err != nil {
-		switch s := def.(type) {
+		if len(def) == 0 {
+			return nil
+		}
+
+		switch s := def[0].(type) {
 		case func() any:
 			return s()
 		default:
-			return def
+			return s
 		}
 	}
 
 	return val
 }
 
-func (r *Redis) GetBool(key string, def bool) bool {
-	res := r.Get(key, def)
+func (r *Redis) GetBool(key string, def ...bool) bool {
+	if len(def) == 0 {
+		def = append(def, false)
+	}
+	res := r.Get(key, def[0])
 	if val, ok := res.(string); ok {
 		return val == "1"
 	}
@@ -114,12 +121,15 @@ func (r *Redis) GetBool(key string, def bool) bool {
 	return res.(bool)
 }
 
-func (r *Redis) GetInt(key string, def int) int {
-	res := r.Get(key, def)
+func (r *Redis) GetInt(key string, def ...int) int {
+	if len(def) == 0 {
+		def = append(def, 1)
+	}
+	res := r.Get(key, def[0])
 	if val, ok := res.(string); ok {
 		i, err := strconv.Atoi(val)
 		if err != nil {
-			return def
+			return def[0]
 		}
 
 		return i
@@ -128,13 +138,33 @@ func (r *Redis) GetInt(key string, def int) int {
 	return res.(int)
 }
 
-func (r *Redis) GetString(key string, def string) string {
-	return r.Get(key, def).(string)
+func (r *Redis) GetInt64(key string, def ...int64) int64 {
+	if len(def) == 0 {
+		def = append(def, 1)
+	}
+	res := r.Get(key, def[0])
+	if val, ok := res.(string); ok {
+		i, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return def[0]
+		}
+
+		return i
+	}
+
+	return res.(int64)
+}
+
+func (r *Redis) GetString(key string, def ...string) string {
+	if len(def) == 0 {
+		def = append(def, "")
+	}
+	return r.Get(key, def[0]).(string)
 }
 
 //Has Check an item exists in the cache.
 func (r *Redis) Has(key string) bool {
-	value, err := r.redis.Exists(r.ctx, r.prefix+key).Result()
+	value, err := r.instance.Exists(r.ctx, r.key(key)).Result()
 
 	if err != nil || value == 0 {
 		return false
@@ -143,22 +173,41 @@ func (r *Redis) Has(key string) bool {
 	return true
 }
 
-//Pull Retrieve an item from the cache and delete it.
-func (r *Redis) Pull(key string, def any) any {
-	res := r.Get(key, def)
-	r.Forget(key)
+func (r *Redis) Increment(key string, value ...int) (int, error) {
+	if len(value) == 0 {
+		value = append(value, 1)
+	}
 
-	return res
+	res, err := r.instance.IncrBy(r.ctx, r.key(key), int64(value[0])).Result()
+
+	return int(res), err
 }
 
-//Put Store an item in the cache for a given number of seconds.
-func (r *Redis) Put(key string, value any, seconds time.Duration) error {
-	err := r.redis.Set(r.ctx, r.prefix+key, value, seconds).Err()
+func (r *Redis) Lock(key string, t ...time.Duration) cache.Lock {
+	return NewLock(r, key, t...)
+}
+
+//Put Driver an item in the cache for a given time.
+func (r *Redis) Put(key string, value any, t time.Duration) error {
+	err := r.instance.Set(r.ctx, r.key(key), value, t).Err()
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+//Pull Retrieve an item from the cache and delete it.
+func (r *Redis) Pull(key string, def ...any) any {
+	var res any
+	if len(def) == 0 {
+		res = r.Get(key)
+	} else {
+		res = r.Get(key, def[0])
+	}
+	r.Forget(key)
+
+	return res
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
@@ -193,4 +242,14 @@ func (r *Redis) RememberForever(key string, callback func() any) (any, error) {
 	}
 
 	return val, nil
+}
+
+func (r *Redis) WithContext(ctx context.Context) cache.Driver {
+	store, _ := NewRedis(ctx, r.connection)
+
+	return store
+}
+
+func (r *Redis) key(key string) string {
+	return r.prefix + key
 }

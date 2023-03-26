@@ -24,6 +24,7 @@ func NewGin() *Gin {
 	if debugLog := getDebugLog(); debugLog != nil {
 		engine.Use(debugLog)
 	}
+	engine.NoRoute()
 
 	return &Gin{instance: engine, Route: NewGinGroup(
 		engine.Group("/"),

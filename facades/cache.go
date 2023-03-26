@@ -2,4 +2,4 @@ package facades
 
 import "github.com/goravel/framework/contracts/cache"
 
-var Cache cache.Store
+var Cache cache.Cache
