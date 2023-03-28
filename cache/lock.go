@@ -29,6 +29,9 @@ func NewLock(instance contractscache.Driver, key string, t ...time.Duration) *Lo
 
 func (r *Lock) Block(t time.Duration, callback ...func()) bool {
 	timer := time.NewTimer(t)
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
 	res := make(chan bool, 1)
 	go func() {
 		for {
@@ -41,7 +44,7 @@ func (r *Lock) Block(t time.Duration, callback ...func()) bool {
 
 				res <- false
 				return
-			case <-time.Tick(1 * time.Second):
+			case <-ticker.C:
 				if r.Get(callback...) {
 					res <- true
 					return
