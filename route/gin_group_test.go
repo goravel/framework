@@ -357,12 +357,10 @@ func TestGinGroup(t *testing.T) {
 		{
 			name: "Throttle Middleware Passed",
 			setup: func(req *http.Request) {
-				mockConfig.On("GetString", "cache.default").Return("memory").Once()
 				mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
 				mockConfig.On("GetString", "cache.prefix").Return("throttle").Twice()
 
-				app := frameworkcache.Application{}
-				facades.Cache = app.Init()
+				facades.Cache = frameworkcache.NewApplication("memory")
 				facades.RateLimiter = frameworkhttp.NewRateLimiter()
 				facades.RateLimiter.For("test", func(ctx httpcontract.Context) httpcontract.Limit {
 					return limit.PerMinute(1)
@@ -401,18 +399,20 @@ func TestGinGroup(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		beforeEach()
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest(test.method, test.url, nil)
-		if test.setup != nil {
-			test.setup(req)
-		}
-		gin.ServeHTTP(w, req)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(test.method, test.url, nil)
+			if test.setup != nil {
+				test.setup(req)
+			}
+			gin.ServeHTTP(w, req)
 
-		if test.expectBody != "" {
-			assert.Equal(t, test.expectBody, w.Body.String(), test.name)
-		}
-		assert.Equal(t, test.expectCode, w.Code, test.name)
+			if test.expectBody != "" {
+				assert.Equal(t, test.expectBody, w.Body.String(), test.name)
+			}
+			assert.Equal(t, test.expectCode, w.Code, test.name)
+		})
 	}
 }
 

@@ -10,8 +10,9 @@ type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register() {
-	app := Application{}
-	facades.Cache = app.Init()
+	store := facades.Config.GetString("cache.default")
+
+	facades.Cache = NewApplication(store)
 }
 
 func (database *ServiceProvider) Boot() {
