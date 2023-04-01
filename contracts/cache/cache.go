@@ -48,4 +48,5 @@ type Lock interface {
 	Block(t time.Duration, callback ...func()) bool
 	Get(callback ...func()) bool
 	Release() bool
+	ForceRelease() bool
 }

@@ -10,6 +10,7 @@ type Lock struct {
 	store contractscache.Driver
 	key   string
 	time  *time.Duration
+	get   bool
 }
 
 func NewLock(instance contractscache.Driver, key string, t ...time.Duration) *Lock {
@@ -68,6 +69,8 @@ func (r *Lock) Get(callback ...func()) bool {
 		return false
 	}
 
+	r.get = true
+
 	if len(callback) == 0 {
 		return true
 	}
@@ -78,5 +81,13 @@ func (r *Lock) Get(callback ...func()) bool {
 }
 
 func (r *Lock) Release() bool {
+	if r.get {
+		return r.ForceRelease()
+	}
+
+	return false
+}
+
+func (r *Lock) ForceRelease() bool {
 	return r.store.Forget(r.key)
 }

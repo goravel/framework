@@ -320,146 +320,171 @@ func (s *ApplicationTestSuite) TestIncrement() {
 }
 
 func (s *ApplicationTestSuite) TestLock() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			tests := []struct {
-				name  string
-				setup func()
-			}{
-				{
-					name: "once got lock, lock can't be got again",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get())
+	for _, store := range s.stores {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "once got lock, lock can't be got again",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
 
-						lock1 := store.Lock("lock")
-						s.False(lock1.Get())
+					lock1 := store.Lock("lock")
+					s.False(lock1.Get())
 
-						lock.Release()
-					},
+					lock.Release()
 				},
-				{
-					name: "lock can be got again when had been released",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get())
+			},
+			{
+				name: "lock can be got again when had been released",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
 
-						s.True(lock.Release())
+					s.True(lock.Release())
 
+					lock1 := store.Lock("lock")
+					s.True(lock1.Get())
+
+					s.True(lock1.Release())
+				},
+			},
+			{
+				name: "lock cannot be released when had been got",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
+
+					lock1 := store.Lock("lock")
+					s.False(lock1.Get())
+					s.False(lock1.Release())
+
+					s.True(lock.Release())
+				},
+			},
+			{
+				name: "lock can be force released",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
+
+					lock1 := store.Lock("lock")
+					s.False(lock1.Get())
+					s.False(lock1.Release())
+					s.True(lock1.ForceRelease())
+
+					s.True(lock.Release())
+				},
+			},
+			{
+				name: "lock can be got again when timeout",
+				setup: func() {
+					lock := store.Lock("lock", 1*time.Second)
+					s.True(lock.Get())
+
+					time.Sleep(2 * time.Second)
+
+					lock1 := store.Lock("lock")
+					s.True(lock1.Get())
+					s.True(lock1.Release())
+				},
+			},
+			{
+				name: "lock can be got again when had been released by callback",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get(func() {
+						s.True(true)
+					}))
+
+					lock1 := store.Lock("lock")
+					s.True(lock1.Get())
+					s.True(lock1.Release())
+				},
+			},
+			{
+				name: "block wait out",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
+
+					go func() {
 						lock1 := store.Lock("lock")
-						s.True(lock1.Get())
+						s.NotNil(lock1.Block(1 * time.Second))
+					}()
 
+					time.Sleep(2 * time.Second)
+
+					lock.Release()
+				},
+			},
+			{
+				name: "get lock by block when just timeout",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
+
+					go func() {
+						lock1 := store.Lock("lock")
+						s.True(lock1.Block(2 * time.Second))
 						s.True(lock1.Release())
-					},
+					}()
+
+					time.Sleep(1 * time.Second)
+
+					lock.Release()
+
+					time.Sleep(2 * time.Second)
 				},
-				{
-					name: "lock can be got again when timeout",
-					setup: func() {
-						lock := store.Lock("lock", 1*time.Second)
-						s.True(lock.Get())
+			},
+			{
+				name: "get lock by block",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
 
-						time.Sleep(2 * time.Second)
-
+					go func() {
 						lock1 := store.Lock("lock")
-						s.True(lock1.Get())
+						s.True(lock1.Block(3 * time.Second))
 						s.True(lock1.Release())
-					},
+					}()
+
+					time.Sleep(1 * time.Second)
+
+					lock.Release()
+
+					time.Sleep(3 * time.Second)
 				},
-				{
-					name: "lock can be got again when had been released by callback",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get(func() {
+			},
+			{
+				name: "get lock by block with callback",
+				setup: func() {
+					lock := store.Lock("lock")
+					s.True(lock.Get())
+
+					go func() {
+						lock1 := store.Lock("lock")
+						s.True(lock1.Block(2*time.Second, func() {
 							s.True(true)
 						}))
+					}()
 
-						lock1 := store.Lock("lock")
-						s.True(lock1.Get())
-						s.True(lock1.Release())
-					},
+					time.Sleep(1 * time.Second)
+
+					lock.Release()
+
+					time.Sleep(2 * time.Second)
 				},
-				{
-					name: "block wait out",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get())
+			},
+		}
 
-						go func() {
-							lock1 := store.Lock("lock")
-							s.NotNil(lock1.Block(1 * time.Second))
-						}()
-
-						time.Sleep(2 * time.Second)
-
-						lock.Release()
-					},
-				},
-				{
-					name: "get lock by block when just timeout",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get())
-
-						go func() {
-							lock1 := store.Lock("lock")
-							s.True(lock1.Block(2 * time.Second))
-							s.True(lock1.Release())
-						}()
-
-						time.Sleep(1 * time.Second)
-
-						lock.Release()
-
-						time.Sleep(2 * time.Second)
-					},
-				},
-				{
-					name: "get lock by block",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get())
-
-						go func() {
-							lock1 := store.Lock("lock")
-							s.True(lock1.Block(3 * time.Second))
-							s.True(lock1.Release())
-						}()
-
-						time.Sleep(1 * time.Second)
-
-						lock.Release()
-
-						time.Sleep(3 * time.Second)
-					},
-				},
-				{
-					name: "get lock by block with callback",
-					setup: func() {
-						lock := store.Lock("lock")
-						s.True(lock.Get())
-
-						go func() {
-							lock1 := store.Lock("lock")
-							s.True(lock1.Block(2*time.Second, func() {
-								s.True(true)
-							}))
-						}()
-
-						time.Sleep(1 * time.Second)
-
-						lock.Release()
-
-						time.Sleep(2 * time.Second)
-					},
-				},
-			}
-
-			for _, test := range tests {
-				s.Run(test.name, func() {
-					test.setup()
-				})
-			}
-		})
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
