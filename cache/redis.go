@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/facades"
@@ -118,7 +119,7 @@ func (r *Redis) GetBool(key string, def ...bool) bool {
 		return val == "1"
 	}
 
-	return res.(bool)
+	return cast.ToBool(res)
 }
 
 func (r *Redis) GetInt(key string, def ...int) int {
@@ -135,7 +136,7 @@ func (r *Redis) GetInt(key string, def ...int) int {
 		return i
 	}
 
-	return res.(int)
+	return cast.ToInt(res)
 }
 
 func (r *Redis) GetInt64(key string, def ...int64) int64 {
@@ -152,14 +153,14 @@ func (r *Redis) GetInt64(key string, def ...int64) int64 {
 		return i
 	}
 
-	return res.(int64)
+	return cast.ToInt64(res)
 }
 
 func (r *Redis) GetString(key string, def ...string) string {
 	if len(def) == 0 {
 		def = append(def, "")
 	}
-	return r.Get(key, def[0]).(string)
+	return cast.ToString(r.Get(key, def[0]))
 }
 
 //Has Check an item exists in the cache.

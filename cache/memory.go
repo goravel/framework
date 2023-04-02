@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
+	"github.com/spf13/cast"
 
 	contractscache "github.com/goravel/framework/contracts/cache"
 )
@@ -91,7 +92,7 @@ func (r *Memory) GetBool(key string, def ...bool) bool {
 	}
 	res := r.Get(key, def[0])
 
-	return res.(bool)
+	return cast.ToBool(res)
 }
 
 func (r *Memory) GetInt(key string, def ...int) int {
@@ -99,7 +100,7 @@ func (r *Memory) GetInt(key string, def ...int) int {
 		def = append(def, 0)
 	}
 
-	return r.Get(key, def[0]).(int)
+	return cast.ToInt(r.Get(key, def[0]))
 }
 
 func (r *Memory) GetInt64(key string, def ...int64) int64 {
@@ -107,7 +108,7 @@ func (r *Memory) GetInt64(key string, def ...int64) int64 {
 		def = append(def, 0)
 	}
 
-	return r.Get(key, def[0]).(int64)
+	return cast.ToInt64(r.Get(key, def[0]))
 }
 
 func (r *Memory) GetString(key string, def ...string) string {
@@ -115,7 +116,7 @@ func (r *Memory) GetString(key string, def ...string) string {
 		def = append(def, "")
 	}
 
-	return r.Get(key, def[0]).(string)
+	return cast.ToString(r.Get(key, def[0]))
 }
 
 //Has Check an item exists in the cache.
