@@ -13,6 +13,7 @@ import (
 	_ "gorm.io/driver/postgres"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
@@ -21,6 +22,7 @@ type User struct {
 	orm.Model
 	orm.SoftDeletes
 	Name    string
+	Age     int
 	Avatar  string
 	Address *Address
 	Books   []*Book
@@ -1649,6 +1651,26 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
+	}
+}
+
+func (s *GormQueryTestSuite) TestDBRaw() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{
+				Name: "with_user",
+				Age:  18,
+			}
+
+			s.Nil(query.Model(&user).Update("Name", db.Raw("substring(Name, ?, ?)", 0, 8)))
+			s.True(user.Name == "with_use")
+
+			s.Nil(query.Model(&user).Update("Name", db.Raw("Name || ?", "r")))
+			s.True(user.Name == "with_user")
+
+			s.Nil(query.Model(&user).Update("Age", db.Raw("Age + ?", 1)))
+			s.True(user.Age == 19)
+		})
 	}
 }
 
