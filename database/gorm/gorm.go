@@ -119,6 +119,28 @@ func readWriteSeparate(connection string, instance *gorm.DB, readConfigs, writeC
 	}))
 }
 
+type Transaction struct {
+	contractsorm.Query
+	instance *gorm.DB
+}
+
+func NewTransaction(tx *gorm.DB) *Transaction {
+	return &Transaction{Query: NewQueryWithInstance(nil, tx), instance: tx}
+}
+
+func (r *Transaction) Commit() error {
+	return r.instance.Commit().Error
+}
+
+func (r *Transaction) Rollback() error {
+	return r.instance.Rollback().Error
+}
+
+type Query struct {
+	instance      *gorm.DB
+	withoutEvents bool
+}
+
 func NewQuery(ctx context.Context, connection string) (*Query, error) {
 	db, err := New(connection)
 	if err != nil {
@@ -132,32 +154,19 @@ func NewQuery(ctx context.Context, connection string) (*Query, error) {
 		db = db.WithContext(ctx)
 	}
 
-	return NewQueryInstance(db), nil
+	return NewQueryWithInstance(nil, db), nil
 }
 
-type Transaction struct {
-	contractsorm.Query
-	instance *gorm.DB
+func NewQueryWithInstance(query *Query, instance *gorm.DB) *Query {
+	if query == nil {
+		return &Query{instance: instance}
+	}
+
+	return &Query{instance: instance, withoutEvents: query.withoutEvents}
 }
 
-func NewTransaction(instance *gorm.DB) *Transaction {
-	return &Transaction{Query: NewQueryInstance(instance), instance: instance}
-}
-
-func (r *Transaction) Commit() error {
-	return r.instance.Commit().Error
-}
-
-func (r *Transaction) Rollback() error {
-	return r.instance.Rollback().Error
-}
-
-type Query struct {
-	instance *gorm.DB
-}
-
-func NewQueryInstance(instance *gorm.DB) *Query {
-	return &Query{instance}
+func NewQueryWithWithoutEvents(query *Query) *Query {
+	return &Query{instance: query.instance, withoutEvents: true}
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -195,10 +204,8 @@ func (r *Query) Create(value any) error {
 }
 
 func (r *Query) Delete(dest any, conds ...any) (*contractsorm.Result, error) {
-	if deletingModel, ok := dest.(contractsorm.Deleting); ok {
-		if err := deletingModel.Deleting(r); err != nil {
-			return nil, err
-		}
+	if err := deleting(r, dest); err != nil {
+		return nil, err
 	}
 
 	res := r.instance.Delete(dest, conds...)
@@ -206,10 +213,8 @@ func (r *Query) Delete(dest any, conds ...any) (*contractsorm.Result, error) {
 		return nil, res.Error
 	}
 
-	if deletedModel, ok := dest.(contractsorm.Deleted); ok {
-		if err := deletedModel.Deleted(r); err != nil {
-			return nil, err
-		}
+	if err := deleted(r, dest); err != nil {
+		return nil, err
 	}
 
 	return &contractsorm.Result{
@@ -220,7 +225,7 @@ func (r *Query) Delete(dest any, conds ...any) (*contractsorm.Result, error) {
 func (r *Query) Distinct(args ...any) contractsorm.Query {
 	tx := r.instance.Distinct(args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
@@ -232,25 +237,28 @@ func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
-	if len(conds) > 0 {
-		switch cond := conds[0].(type) {
-		case string:
-			if cond == "" {
-				return ErrorMissingWhereClause
-			}
-		default:
-			reflectValue := reflect.Indirect(reflect.ValueOf(cond))
-			switch reflectValue.Kind() {
-			case reflect.Slice, reflect.Array:
-				if reflectValue.Len() == 0 {
-					return ErrorMissingWhereClause
-				}
-			}
-		}
+	if err := filterFindConditions(conds...); err != nil {
+		return err
 	}
-
 	if err := r.instance.Find(dest, conds...).Error; err != nil {
 		return err
+	}
+
+	return retrieved(r, dest)
+}
+
+func (r *Query) FindOrFail(dest any, conds ...any) error {
+	if err := filterFindConditions(conds...); err != nil {
+		return err
+	}
+
+	res := r.instance.Find(dest, conds...)
+	if err := res.Error; err != nil {
+		return err
+	}
+
+	if res.RowsAffected == 0 {
+		return orm.ErrRecordNotFound
 	}
 
 	return retrieved(r, dest)
@@ -336,10 +344,8 @@ func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
 }
 
 func (r *Query) ForceDelete(value any, conds ...any) (*contractsorm.Result, error) {
-	if forceDeletingModel, ok := value.(contractsorm.ForceDeleting); ok {
-		if err := forceDeletingModel.ForceDeleting(r); err != nil {
-			return nil, err
-		}
+	if err := forceDeleting(r, value); err != nil {
+		return nil, err
 	}
 
 	res := r.instance.Unscoped().Delete(value, conds...)
@@ -348,10 +354,8 @@ func (r *Query) ForceDelete(value any, conds ...any) (*contractsorm.Result, erro
 	}
 
 	if res.RowsAffected > 0 {
-		if forceDeletedModel, ok := value.(contractsorm.ForceDeleted); ok {
-			if err := forceDeletedModel.ForceDeleted(r); err != nil {
-				return nil, err
-			}
+		if err := forceDeleted(r, value); err != nil {
+			return nil, err
 		}
 	}
 
@@ -367,13 +371,13 @@ func (r *Query) Get(dest any) error {
 func (r *Query) Group(name string) contractsorm.Query {
 	tx := r.instance.Group(name)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Having(query, args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Instance() *gorm.DB {
@@ -383,13 +387,13 @@ func (r *Query) Instance() *gorm.DB {
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	tx := r.instance.Joins(query, args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Limit(limit int) contractsorm.Query {
 	tx := r.instance.Limit(limit)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Load(model any, relation string, args ...any) error {
@@ -455,31 +459,31 @@ func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 func (r *Query) Model(value any) contractsorm.Query {
 	tx := r.instance.Model(value)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Offset(offset int) contractsorm.Query {
 	tx := r.instance.Offset(offset)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Omit(columns ...string) contractsorm.Query {
 	tx := r.instance.Omit(columns...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Order(value any) contractsorm.Query {
 	tx := r.instance.Order(value)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Or(query, args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
@@ -506,7 +510,7 @@ func (r *Query) Pluck(column string, dest any) error {
 func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	tx := r.instance.Raw(sql, values...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Save(value any) error {
@@ -525,6 +529,10 @@ func (r *Query) Save(value any) error {
 	return r.save(value)
 }
 
+func (r *Query) SaveQuietly(value any) error {
+	return r.WithoutEvents().Save(value)
+}
+
 func (r *Query) Scan(dest any) error {
 	return r.instance.Scan(dest).Error
 }
@@ -532,13 +540,28 @@ func (r *Query) Scan(dest any) error {
 func (r *Query) Select(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Select(query, args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
+}
+
+func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
+	var gormFuncs []func(*gorm.DB) *gorm.DB
+	for _, item := range funcs {
+		gormFuncs = append(gormFuncs, func(tx *gorm.DB) *gorm.DB {
+			item(NewQueryWithInstance(r, tx))
+
+			return tx
+		})
+	}
+
+	tx := r.instance.Scopes(gormFuncs...)
+
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	tx := r.instance.Table(name, args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) Update(column string, value any) error {
@@ -605,13 +628,17 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	tx := r.instance.Where(query, args...)
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
+}
+
+func (r *Query) WithoutEvents() contractsorm.Query {
+	return NewQueryWithWithoutEvents(r)
 }
 
 func (r *Query) WithTrashed() contractsorm.Query {
 	tx := r.instance.Unscoped()
 
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) With(query string, args ...any) contractsorm.Query {
@@ -619,8 +646,8 @@ func (r *Query) With(query string, args ...any) contractsorm.Query {
 		switch arg := args[0].(type) {
 		case func(contractsorm.Query) contractsorm.Query:
 			newArgs := []any{
-				func(db *gorm.DB) *gorm.DB {
-					query := arg(NewQueryInstance(db))
+				func(tx *gorm.DB) *gorm.DB {
+					query := arg(NewQueryWithInstance(r, tx))
 
 					return query.(*Query).instance
 				},
@@ -628,28 +655,13 @@ func (r *Query) With(query string, args ...any) contractsorm.Query {
 
 			tx := r.instance.Preload(query, newArgs...)
 
-			return NewQueryInstance(tx)
+			return NewQueryWithInstance(r, tx)
 		}
 	}
 
 	tx := r.instance.Preload(query, args...)
 
-	return NewQueryInstance(tx)
-}
-
-func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
-	var gormFuncs []func(*gorm.DB) *gorm.DB
-	for _, item := range funcs {
-		gormFuncs = append(gormFuncs, func(db *gorm.DB) *gorm.DB {
-			item(&Query{db})
-
-			return db
-		})
-	}
-
-	tx := r.instance.Scopes(gormFuncs...)
-
-	return NewQueryInstance(tx)
+	return NewQueryWithInstance(r, tx)
 }
 
 func (r *Query) selectCreate(value any) error {
@@ -826,6 +838,10 @@ func (r *Query) save(value any) error {
 }
 
 func retrieved(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if retrievedModel, ok := dest.(contractsorm.Retrieved); ok {
 		if err := retrievedModel.Retrieved(query); err != nil {
 			return err
@@ -836,6 +852,10 @@ func retrieved(query *Query, dest any) error {
 }
 
 func updating(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if updatingModel, ok := dest.(contractsorm.Updating); ok {
 		if err := updatingModel.Updating(query); err != nil {
 			return err
@@ -846,6 +866,10 @@ func updating(query *Query, dest any) error {
 }
 
 func updated(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if updatedModel, ok := dest.(contractsorm.Updated); ok {
 		if err := updatedModel.Updated(query); err != nil {
 			return err
@@ -856,6 +880,10 @@ func updated(query *Query, dest any) error {
 }
 
 func saving(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if savingModel, ok := dest.(contractsorm.Saving); ok {
 		if err := savingModel.Saving(query); err != nil {
 			return err
@@ -866,6 +894,10 @@ func saving(query *Query, dest any) error {
 }
 
 func saved(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if savedModel, ok := dest.(contractsorm.Saved); ok {
 		if err := savedModel.Saved(query); err != nil {
 			return err
@@ -876,6 +908,10 @@ func saved(query *Query, dest any) error {
 }
 
 func creating(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if creatingModel, ok := dest.(contractsorm.Creating); ok {
 		if err := creatingModel.Creating(query); err != nil {
 			return err
@@ -886,8 +922,68 @@ func creating(query *Query, dest any) error {
 }
 
 func created(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
 	if createdModel, ok := dest.(contractsorm.Created); ok {
 		if err := createdModel.Created(query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deleting(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
+	if deletingModel, ok := dest.(contractsorm.Deleting); ok {
+		if err := deletingModel.Deleting(query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deleted(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
+	if deletedModel, ok := dest.(contractsorm.Deleted); ok {
+		if err := deletedModel.Deleted(query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func forceDeleting(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
+	if forceDeletingModel, ok := dest.(contractsorm.ForceDeleting); ok {
+		if err := forceDeletingModel.ForceDeleting(query); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func forceDeleted(query *Query, dest any) error {
+	if query.withoutEvents {
+		return nil
+	}
+
+	if forceDeletedModel, ok := dest.(contractsorm.ForceDeleted); ok {
+		if err := forceDeletedModel.ForceDeleted(query); err != nil {
 			return err
 		}
 	}
@@ -912,6 +1008,27 @@ func create(query *Query, dest any) error {
 	}
 	if err := saved(query, dest); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func filterFindConditions(conds ...any) error {
+	if len(conds) > 0 {
+		switch cond := conds[0].(type) {
+		case string:
+			if cond == "" {
+				return ErrorMissingWhereClause
+			}
+		default:
+			reflectValue := reflect.Indirect(reflect.ValueOf(cond))
+			switch reflectValue.Kind() {
+			case reflect.Slice, reflect.Array:
+				if reflectValue.Len() == 0 {
+					return ErrorMissingWhereClause
+				}
+			}
+		}
 	}
 
 	return nil

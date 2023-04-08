@@ -60,6 +60,12 @@ func (u *User) Saving(query contractsorm.Query) error {
 	if u.Name == "event_save_update_save_name" {
 		u.Avatar = "event_save_update_save_avatar"
 	}
+	if u.Name == "event_save_without_name" {
+		u.Avatar = "event_save_without_avatar"
+	}
+	if u.Name == "event_save_quietly_name" {
+		u.Avatar = "event_save_quietly_avatar"
+	}
 
 	return nil
 }
@@ -70,6 +76,12 @@ func (u *User) Saved(query contractsorm.Query) error {
 	}
 	if u.Name == "event_save_update_save_name" {
 		u.Avatar = u.Avatar + "1"
+	}
+	if u.Name == "event_save_without_name" {
+		u.Avatar = "event_saved_without_avatar"
+	}
+	if u.Name == "event_save_quietly_name" {
+		u.Avatar = "event_saved_quietly_avatar"
 	}
 
 	return nil
@@ -131,6 +143,9 @@ func (u *User) Retrieved(query contractsorm.Query) error {
 	}
 	if u.Name == "event_retrieve_first_or_new_name" {
 		u.Name = "event_retrieved_first_or_new_name"
+	}
+	if u.Name == "event_retrieve_find_or_fail_name" {
+		u.Name = "event_retrieved_find_or_fail_name"
 	}
 
 	return nil
@@ -790,6 +805,53 @@ func (s *GormQueryTestSuite) TestFind() {
 					s.Nil(query.Where("name", "event_retrieve_find_name").Find(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_find_name", user1.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
+	}
+}
+
+func (s *GormQueryTestSuite) TestFindOrFail() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "find_user"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user2 User
+					s.Nil(query.FindOrFail(&user2, user.ID))
+					s.True(user2.ID > 0)
+				},
+			},
+			{
+				name: "error",
+				setup: func() {
+					var user User
+					s.ErrorIs(query.FindOrFail(&user, 10000), orm.ErrRecordNotFound)
+				},
+			},
+			{
+				name: "success with event",
+				setup: func() {
+					user := User{Name: "event_retrieve_find_or_fail_name", Avatar: "find_or_fail_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_retrieve_find_or_fail_name").Find(&user1))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_find_or_fail_name", user1.Name)
 				},
 			},
 		}
@@ -1703,7 +1765,36 @@ func (s *GormQueryTestSuite) TestSave() {
 				test.setup()
 			})
 		}
+	}
+}
 
+func (s *GormQueryTestSuite) TestSaveQuietly() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "event_save_quietly_name", Avatar: "save_quietly_avatar"}
+					s.Nil(query.SaveQuietly(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_save_quietly_name", user.Name)
+					s.Equal("save_quietly_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_save_quietly_name", user1.Name)
+					s.Equal("save_quietly_avatar", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
@@ -1918,6 +2009,35 @@ func (s *GormQueryTestSuite) TestWhere() {
 			s.Nil(query.Where("name", "where_user").Find(&user4))
 			s.True(user4.ID > 0)
 		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestWithoutEvents() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "event_save_without_name", Avatar: "without_events_avatar"}
+					s.Nil(query.WithoutEvents().Save(&user))
+					s.True(user.ID > 0)
+					s.Equal("without_events_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_save_without_name", user1.Name)
+					s.Equal("without_events_avatar", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
