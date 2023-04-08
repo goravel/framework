@@ -1,7 +1,6 @@
 package gorm
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -27,6 +26,145 @@ type User struct {
 	House   *House   `gorm:"polymorphic:Houseable"`
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
+}
+
+func (u *User) Creating(query contractsorm.Query) error {
+	if u.Name == "event_create_name" {
+		u.Avatar = "event_create_avatar"
+	}
+	if u.Name == "event_save_create_name" {
+		u.Avatar = "event_create_avatar"
+	}
+	if u.Name == "event_create_first_or_create_name" {
+		u.Avatar = "event_create_first_or_create_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Created(query contractsorm.Query) error {
+	if u.Name == "event_create_name" {
+		u.Avatar = "event_created_avatar"
+	}
+	if u.Name == "event_create_first_or_create_name" {
+		u.Avatar = "event_created_first_or_create_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Saving(query contractsorm.Query) error {
+	if u.Name == "event_save_create_name" {
+		u.Avatar = "event_save_create_avatar"
+	}
+	if u.Name == "event_save_update_save_name" {
+		u.Avatar = "event_save_update_save_avatar"
+	}
+	if u.Name == "event_save_without_name" {
+		u.Avatar = "event_save_without_avatar"
+	}
+	if u.Name == "event_save_quietly_name" {
+		u.Avatar = "event_save_quietly_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Saved(query contractsorm.Query) error {
+	if u.Name == "event_save_create_name" {
+		u.Avatar = "event_saved_avatar"
+	}
+	if u.Name == "event_save_update_save_name" {
+		u.Avatar = u.Avatar + "1"
+	}
+	if u.Name == "event_save_without_name" {
+		u.Avatar = "event_saved_without_avatar"
+	}
+	if u.Name == "event_save_quietly_name" {
+		u.Avatar = "event_saved_quietly_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Updating(query contractsorm.Query) error {
+	if u.Name == "event_update_save_name" {
+		u.Avatar = "event_update_save_avatar"
+	}
+	if u.Name == "event_save_update_save_name" {
+		u.Avatar = u.Avatar + "1"
+	}
+
+	return nil
+}
+
+func (u *User) Updated(query contractsorm.Query) error {
+	if u.Name == "event_update_save_name" {
+		u.Avatar = "event_updated_save_avatar"
+	}
+	if u.Name == "event_save_update_save_name" {
+		u.Avatar = "event_saved_updated_save_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Deleting(query contractsorm.Query) error {
+	if u.Name == "event_delete_name" {
+		u.Avatar = "event_delete_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Deleted(query contractsorm.Query) error {
+	if u.Name == "event_delete_name" {
+		u.Avatar = "event_deleted_avatar"
+	}
+
+	return nil
+}
+
+func (u *User) Retrieved(query contractsorm.Query) error {
+	if u.Name == "event_retrieve_find_name" {
+		u.Name = "event_retrieved_find_name"
+	}
+	if u.Name == "event_retrieve_first_name" {
+		u.Name = "event_retrieved_first_name"
+	}
+	if u.Name == "event_retrieve_first_or_name" {
+		u.Name = "event_retrieved_first_or_name"
+	}
+	if u.Name == "event_retrieve_first_or_create_name" {
+		u.Name = "event_retrieved_first_or_create_name"
+	}
+	if u.Name == "event_retrieve_first_or_fail_name" {
+		u.Name = "event_retrieved_first_or_fail_name"
+	}
+	if u.Name == "event_retrieve_first_or_new_name" {
+		u.Name = "event_retrieved_first_or_new_name"
+	}
+	if u.Name == "event_retrieve_find_or_fail_name" {
+		u.Name = "event_retrieved_find_or_fail_name"
+	}
+
+	return nil
+}
+
+func (u *User) ForceDeleting(query contractsorm.Query) error {
+	if u.Name == "event_force_delete_name" {
+		u.Name = "event_force_delete_name1"
+	}
+
+	return nil
+}
+
+func (u *User) ForceDeleted(query contractsorm.Query) error {
+	if u.Name == "event_force_delete_name1" {
+		u.Name = "event_force_deleted_name"
+	}
+
+	return nil
 }
 
 type Role struct {
@@ -369,160 +507,223 @@ func (s *GormQueryTestSuite) TestCount() {
 }
 
 func (s *GormQueryTestSuite) TestCreate() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			tests := []struct {
-				description string
-				setup       func(description string)
-			}{
-				{
-					description: "success when create with no relationships",
-					setup: func(description string) {
-						user := User{Name: "create_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.Nil(query.Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID == 0, description)
-						s.True(user.Books[0].ID == 0, description)
-						s.True(user.Books[1].ID == 0, description)
-					},
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success when create with no relationships",
+				setup: func() {
+					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
 				},
-				{
-					description: "success when create with select orm.Associations",
-					setup: func(description string) {
-						user := User{Name: "create_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.Nil(query.Select(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
-						s.True(user.Books[0].ID > 0, description)
-						s.True(user.Books[1].ID > 0, description)
-					},
+			},
+			{
+				name: "success when create with select orm.Associations",
+				setup: func() {
+					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
 				},
-				{
-					description: "success when create with select fields",
-					setup: func(description string) {
-						user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.Nil(query.Select("Name", "Avatar", "Address").Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID > 0, description)
-						s.True(user.Books[0].ID == 0, description)
-						s.True(user.Books[1].ID == 0, description)
-					},
+			},
+			{
+				name: "success when create with select fields",
+				setup: func() {
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
 				},
-				{
-					description: "success when create with omit fields",
-					setup: func(description string) {
-						user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.Nil(query.Omit("Address").Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID == 0, description)
-						s.True(user.Books[0].ID > 0, description)
-						s.True(user.Books[1].ID > 0, description)
-					},
+			},
+			{
+				name: "success when create with omit fields",
+				setup: func() {
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.Nil(query.Omit("Address").Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
 				},
-				{
-					description: "success create with omit orm.Associations",
-					setup: func(description string) {
-						user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.Nil(query.Omit(orm.Associations).Create(&user), description)
-						s.True(user.ID > 0, description)
-						s.True(user.Address.ID == 0, description)
-						s.True(user.Books[0].ID == 0, description)
-						s.True(user.Books[1].ID == 0, description)
-					},
+			},
+			{
+				name: "success create with omit orm.Associations",
+				setup: func() {
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.Nil(query.Omit(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
 				},
-				{
-					description: "error when set select and omit at the same time",
-					setup: func(description string) {
-						user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.EqualError(query.Omit(orm.Associations).Select("Name").Create(&user), "cannot set Select and Omits at the same time", description)
-					},
+			},
+			{
+				name: "error when set select and omit at the same time",
+				setup: func() {
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.EqualError(query.Omit(orm.Associations).Select("Name").Create(&user), "cannot set Select and Omits at the same time")
 				},
-				{
-					description: "error when select that set fields and orm.Associations at the same time",
-					setup: func(description string) {
-						user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.EqualError(query.Select("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time", description)
-					},
+			},
+			{
+				name: "error when select that set fields and orm.Associations at the same time",
+				setup: func() {
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.EqualError(query.Select("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
 				},
-				{
-					description: "error when omit that set fields and orm.Associations at the same time",
-					setup: func(description string) {
-						user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-						user.Address.Name = "create_address"
-						user.Books[0].Name = "create_book0"
-						user.Books[1].Name = "create_book1"
-						s.EqualError(query.Omit("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time", description)
-					},
+			},
+			{
+				name: "error when omit that set fields and orm.Associations at the same time",
+				setup: func() {
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user.Address.Name = "create_address"
+					user.Books[0].Name = "create_book0"
+					user.Books[1].Name = "create_book1"
+					s.EqualError(query.Omit("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
 				},
-			}
-			for _, test := range tests {
-				test.setup(test.description)
-			}
-		})
+			},
+			{
+				name: "success with create event",
+				setup: func() {
+					user := User{Name: "event_create_name"}
+					s.Nil(query.Create(&user))
+					s.Equal("event_created_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_create_name").First(&user1))
+					s.Equal("event_create_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "success with save event",
+				setup: func() {
+					user := User{Name: "event_save_create_name"}
+					s.Nil(query.Create(&user))
+					s.Equal("event_saved_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_save_create_name").First(&user1))
+					s.Equal("event_create_avatar", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
 func (s *GormQueryTestSuite) TestDelete() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			user := User{Name: "delete_user", Avatar: "delete_avatar"}
-			s.Nil(query.Create(&user))
-			s.True(user.ID > 0)
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "delete_user", Avatar: "delete_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
 
-			res, err := query.Delete(&user)
-			s.Equal(int64(1), res.RowsAffected)
-			s.Nil(err)
+					res, err := query.Delete(&user)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
 
-			var user1 User
-			s.Nil(query.Find(&user1, user.ID))
-			s.Equal(uint(0), user1.ID)
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
+				name: "success by id",
+				setup: func() {
+					user := User{Name: "delete_user", Avatar: "delete_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
 
-			user2 := User{Name: "delete_user", Avatar: "delete_avatar"}
-			s.Nil(query.Create(&user2))
-			s.True(user2.ID > 0)
+					res, err := query.Delete(&User{}, user.ID)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
 
-			res, err = query.Delete(&User{}, user2.ID)
-			s.Equal(int64(1), res.RowsAffected)
-			s.Nil(err)
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
+				name: "success by multiple",
+				setup: func() {
+					users := []User{{Name: "delete_user", Avatar: "delete_avatar"}, {Name: "delete_user1", Avatar: "delete_avatar1"}}
+					s.Nil(query.Create(&users))
+					s.True(users[0].ID > 0)
+					s.True(users[1].ID > 0)
 
-			var user3 User
-			s.Nil(query.Find(&user3, user2.ID))
-			s.Equal(uint(0), user3.ID)
+					res, err := query.Delete(&User{}, []uint{users[0].ID, users[1].ID})
+					s.Equal(int64(2), res.RowsAffected)
+					s.Nil(err)
 
-			users := []User{{Name: "delete_user", Avatar: "delete_avatar"}, {Name: "delete_user1", Avatar: "delete_avatar1"}}
-			s.Nil(query.Create(&users))
-			s.True(users[0].ID > 0)
-			s.True(users[1].ID > 0)
+					var count int64
+					s.Nil(query.Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count(&count))
+					s.True(count == 0)
+				},
+			},
+			{
+				name: "delete with event",
+				setup: func() {
+					user := User{Name: "event_delete_name", Avatar: "event_delete_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
 
-			res, err = query.Delete(&User{}, []uint{users[0].ID, users[1].ID})
-			s.Equal(int64(2), res.RowsAffected)
-			s.Nil(err)
+					user.Avatar = "event_delete_avatar1"
+					res, err := query.Delete(&user)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Equal("event_deleted_avatar", user.Avatar)
+					s.Nil(err)
 
-			var count int64
-			s.Nil(query.Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count(&count))
-			s.True(count == 0)
-		})
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
@@ -568,102 +769,456 @@ func (s *GormQueryTestSuite) TestExec() {
 }
 
 func (s *GormQueryTestSuite) TestFind() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			user := User{Name: "find_user"}
-			s.Nil(query.Create(&user))
-			s.True(user.ID > 0)
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "find_user"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
 
-			var user2 User
-			s.Nil(query.Find(&user2, user.ID))
-			s.True(user2.ID > 0)
+					var user2 User
+					s.Nil(query.Find(&user2, user.ID))
+					s.True(user2.ID > 0)
 
-			var user3 []User
-			s.Nil(query.Find(&user3, []uint{user.ID}))
-			s.Equal(1, len(user3))
+					var user3 []User
+					s.Nil(query.Find(&user3, []uint{user.ID}))
+					s.Equal(1, len(user3))
 
-			var user4 []User
-			s.Nil(query.Where("id in ?", []uint{user.ID}).Find(&user4))
-			s.Equal(1, len(user4))
-		})
+					var user4 []User
+					s.Nil(query.Where("id in ?", []uint{user.ID}).Find(&user4))
+					s.Equal(1, len(user4))
+				},
+			},
+			{
+				name: "success with event",
+				setup: func() {
+					user := User{Name: "event_retrieve_find_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_retrieve_find_name").Find(&user1))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_find_name", user1.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
+	}
+}
+
+func (s *GormQueryTestSuite) TestFindOrFail() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "find_user"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user2 User
+					s.Nil(query.FindOrFail(&user2, user.ID))
+					s.True(user2.ID > 0)
+				},
+			},
+			{
+				name: "error",
+				setup: func() {
+					var user User
+					s.ErrorIs(query.FindOrFail(&user, 10000), orm.ErrRecordNotFound)
+				},
+			},
+			{
+				name: "success with event",
+				setup: func() {
+					user := User{Name: "event_retrieve_find_or_fail_name", Avatar: "find_or_fail_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_retrieve_find_or_fail_name").Find(&user1))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_find_or_fail_name", user1.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
 func (s *GormQueryTestSuite) TestFirst() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			user := User{Name: "first_user"}
-			s.Nil(query.Create(&user))
-			s.True(user.ID > 0)
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "first_user"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
 
-			var user1 User
-			s.Nil(query.Where("name", "first_user").First(&user1))
-			s.True(user1.ID > 0)
-		})
-	}
-}
+					var user1 User
+					s.Nil(query.Where("name", "first_user").First(&user1))
+					s.True(user1.ID > 0)
+				},
+			},
+			{
+				name: "success with event",
+				setup: func() {
+					user := User{Name: "event_retrieve_first_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
 
-func (s *GormQueryTestSuite) TestFirstOrCreate() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			var user User
-			s.Nil(query.Where("avatar", "first_or_create_avatar").FirstOrCreate(&user, User{Name: "first_or_create_user"}))
-			s.True(user.ID > 0)
+					var user1 User
+					s.Nil(query.Where("name", "event_retrieve_first_name").First(&user1))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_first_name", user1.Name)
 
-			var user1 User
-			s.Nil(query.Where("avatar", "first_or_create_avatar").FirstOrCreate(&user1, User{Name: "user"}, User{Avatar: "first_or_create_avatar1"}))
-			s.True(user1.ID > 0)
-			s.True(user1.Avatar == "first_or_create_avatar1")
-		})
+					var user2 User
+					s.Nil(query.Where("name", "event_retrieve_first_name1").First(&user2))
+					s.True(user2.ID == 0)
+					s.Equal("", user2.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
 func (s *GormQueryTestSuite) TestFirstOr() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			var user User
-			s.Nil(query.Where("name", "first_or_user").FirstOr(&user, func() error {
-				user.Name = "goravel"
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "not found, new one",
+				setup: func() {
+					var user User
+					s.Nil(query.Where("name", "first_or_user").FirstOr(&user, func() error {
+						user.Name = "goravel"
 
-				return nil
-			}))
-			s.Equal(uint(0), user.ID)
-			s.Equal("goravel", user.Name)
+						return nil
+					}))
+					s.Equal(uint(0), user.ID)
+					s.Equal("goravel", user.Name)
 
-			var user1 User
-			s.EqualError(query.Where("name", "first_or_user").FirstOr(&user1, func() error {
-				return errors.New("error")
-			}), "error")
-			s.Equal(uint(0), user1.ID)
-		})
+				},
+			},
+			{
+				name: "not found, new one with event",
+				setup: func() {
+					var user User
+					s.Nil(query.Where("name", "event_retrieve_first_or_name").FirstOr(&user, func() error {
+						user.Name = "goravel"
+
+						return nil
+					}))
+					s.Equal(uint(0), user.ID)
+					s.Equal("goravel", user.Name)
+
+				},
+			},
+			{
+				name: "found",
+				setup: func() {
+					user := User{Name: "first_or_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.Where("name", "first_or_name").Find(&user1))
+					s.True(user1.ID > 0)
+				},
+			},
+			{
+				name: "found with event",
+				setup: func() {
+					user := User{Name: "event_retrieve_first_or_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_retrieve_first_or_name").Find(&user1))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_first_or_name", user1.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
+	}
+}
+
+func (s *GormQueryTestSuite) TestFirstOrCreate() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "error when empty conditions",
+				setup: func() {
+					var user User
+					s.EqualError(query.FirstOrCreate(&user), "query condition is require")
+					s.True(user.ID == 0)
+				},
+			},
+			{
+				name: "success",
+				setup: func() {
+					var user User
+					s.Nil(query.FirstOrCreate(&user, User{Name: "first_or_create_user"}))
+					s.True(user.ID > 0)
+					s.Equal("first_or_create_user", user.Name)
+
+					var user1 User
+					s.Nil(query.FirstOrCreate(&user1, User{Name: "first_or_create_user"}))
+					s.Equal(user.ID, user1.ID)
+
+					var user2 User
+					s.Nil(query.Where("avatar", "first_or_create_avatar").FirstOrCreate(&user2, User{Name: "user"}, User{Avatar: "first_or_create_avatar2"}))
+					s.True(user2.ID > 0)
+					s.True(user2.Avatar == "first_or_create_avatar2")
+				},
+			},
+			{
+				name: "success with retrieved event",
+				setup: func() {
+					user := User{Name: "event_retrieve_first_or_create_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.FirstOrCreate(&user1, User{Name: "event_retrieve_first_or_create_name"}))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_first_or_create_name", user1.Name)
+				},
+			},
+			{
+				name: "success with create event",
+				setup: func() {
+					var user User
+					s.Nil(query.FirstOrCreate(&user, User{Name: "event_create_first_or_create_name"}))
+					s.True(user.ID > 0)
+					s.Equal("event_create_first_or_create_name", user.Name)
+					s.Equal("event_created_first_or_create_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Where("name", "event_create_first_or_create_name").First(&user1))
+					s.Equal("event_create_first_or_create_avatar", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
 func (s *GormQueryTestSuite) TestFirstOrFail() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			var user User
-			s.Equal(orm.ErrRecordNotFound, query.Where("name", "first_or_fail_user").FirstOrFail(&user))
-			s.Equal(uint(0), user.ID)
-		})
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "fail",
+				setup: func() {
+					var user User
+					s.Equal(orm.ErrRecordNotFound, query.Where("name", "first_or_fail_user").FirstOrFail(&user))
+					s.Equal(uint(0), user.ID)
+				},
+			},
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "first_or_fail_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("first_or_fail_name", user.Name)
+
+					var user1 User
+					s.Nil(query.Where("name", "first_or_fail_name").FirstOrFail(&user1))
+					s.True(user1.ID > 0)
+				},
+			},
+			{
+				name: "success with event",
+				setup: func() {
+					var user User
+					s.Equal(orm.ErrRecordNotFound, query.Where("name", "event_retrieve_first_or_fail_name").FirstOrFail(&user))
+					s.Equal(uint(0), user.ID)
+
+					user1 := User{Name: "event_retrieve_first_or_fail_name"}
+					s.Nil(query.Create(&user1))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieve_first_or_fail_name", user1.Name)
+
+					var user2 User
+					s.Nil(query.Where("name", "event_retrieve_first_or_fail_name").FirstOrFail(&user2))
+					s.True(user2.ID > 0)
+					s.Equal("event_retrieved_first_or_fail_name", user2.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
 func (s *GormQueryTestSuite) TestFirstOrNew() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			var user User
-			s.Nil(query.FirstOrNew(&user, User{Name: "first_or_new_name"}))
-			s.Equal(uint(0), user.ID)
-			s.Equal("first_or_new_name", user.Name)
-			s.Equal("", user.Avatar)
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "not found, new one",
+				setup: func() {
+					var user User
+					s.Nil(query.FirstOrNew(&user, User{Name: "first_or_new_name"}))
+					s.Equal(uint(0), user.ID)
+					s.Equal("first_or_new_name", user.Name)
+					s.Equal("", user.Avatar)
 
-			var user1 User
-			s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}, User{Avatar: "first_or_new_avatar"}))
-			s.Equal(uint(0), user1.ID)
-			s.Equal("first_or_new_name", user1.Name)
-			s.Equal("first_or_new_avatar", user1.Avatar)
-		})
+					var user1 User
+					s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}, User{Avatar: "first_or_new_avatar"}))
+					s.Equal(uint(0), user1.ID)
+					s.Equal("first_or_new_name", user1.Name)
+					s.Equal("first_or_new_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "not found, new one with event",
+				setup: func() {
+					var user User
+					s.Nil(query.FirstOrNew(&user, User{Name: "event_retrieve_first_or_new_name"}))
+					s.Equal(uint(0), user.ID)
+					s.Equal("event_retrieve_first_or_new_name", user.Name)
+					s.Equal("", user.Avatar)
+				},
+			},
+			{
+				name: "found",
+				setup: func() {
+					user := User{Name: "first_or_new_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("first_or_new_name", user.Name)
+
+					var user1 User
+					s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}))
+					s.True(user1.ID > 0)
+					s.Equal("first_or_new_name", user1.Name)
+				},
+			},
+			{
+				name: "found with event",
+				setup: func() {
+					user := User{Name: "event_retrieve_first_or_new_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_retrieve_first_or_new_name", user.Name)
+
+					var user1 User
+					s.Nil(query.FirstOrNew(&user1, User{Name: "event_retrieve_first_or_new_name"}))
+					s.True(user1.ID > 0)
+					s.Equal("event_retrieved_first_or_new_name", user1.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
+	}
+}
+
+func (s *GormQueryTestSuite) TestForceDelete() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "force_delete_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("force_delete_name", user.Name)
+
+					res, err := query.Where("name = ?", "force_delete_name").ForceDelete(&User{})
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+					s.Equal("force_delete_name", user.Name)
+
+					var user1 User
+					s.Nil(query.WithTrashed().Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
+				name: "success with event",
+				setup: func() {
+					user := User{Name: "event_force_delete_name"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_force_delete_name", user.Name)
+
+					user1 := User{
+						Name: "event_force_delete_name",
+					}
+					res, err := query.Where("name", "event_force_delete_name1").ForceDelete(&user1)
+					s.Equal(int64(0), res.RowsAffected)
+					s.Nil(err)
+					s.Equal("event_force_delete_name1", user1.Name)
+
+					res, err = query.ForceDelete(&user)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+					s.Equal("event_force_deleted_name", user.Name)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
@@ -1143,6 +1698,106 @@ func (s *GormQueryTestSuite) TestRaw() {
 	}
 }
 
+func (s *GormQueryTestSuite) TestSave() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success when create",
+				setup: func() {
+					user := User{Name: "save_create_user", Avatar: "save_create_avatar"}
+					s.Nil(query.Save(&user))
+					s.True(user.ID > 0)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("save_create_user", user1.Name)
+				},
+			},
+			{
+				name: "success when update",
+				setup: func() {
+					user := User{Name: "save_update_user", Avatar: "save_update_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					user.Name = "save_update_user1"
+					s.Nil(query.Save(&user))
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("save_update_user1", user1.Name)
+				},
+			},
+			{
+				name: "success with update event",
+				setup: func() {
+					user := User{Name: "event_update_save_name"}
+					s.Nil(query.Save(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_update_save_name", user.Name)
+					s.Equal("event_updated_save_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_update_save_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "success with update and save event",
+				setup: func() {
+					user := User{Name: "event_save_update_save_name"}
+					s.Nil(query.Save(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_save_update_save_name", user.Name)
+					s.Equal("event_saved_updated_save_avatar1", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_save_update_save_avatar1", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
+	}
+}
+
+func (s *GormQueryTestSuite) TestSaveQuietly() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "event_save_quietly_name", Avatar: "save_quietly_avatar"}
+					s.Nil(query.SaveQuietly(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_save_quietly_name", user.Name)
+					s.Equal("save_quietly_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_save_quietly_name", user1.Name)
+					s.Equal("save_quietly_avatar", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
+	}
+}
+
 func (s *GormQueryTestSuite) TestScope() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
@@ -1270,13 +1925,10 @@ func (s *GormQueryTestSuite) TestUpdate() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 
-			user.Name = "update_user1"
-			s.Nil(query.Save(&user))
 			s.Nil(query.Model(&User{}).Where("id = ?", user.ID).Update("avatar", "update_avatar1"))
 
 			var user1 User
 			s.Nil(query.Find(&user1, user.ID))
-			s.Equal("update_user1", user1.Name)
 			s.Equal("update_avatar1", user1.Avatar)
 		})
 	}
@@ -1357,6 +2009,35 @@ func (s *GormQueryTestSuite) TestWhere() {
 			s.Nil(query.Where("name", "where_user").Find(&user4))
 			s.True(user4.ID > 0)
 		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestWithoutEvents() {
+	for _, query := range s.queries {
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "success",
+				setup: func() {
+					user := User{Name: "event_save_without_name", Avatar: "without_events_avatar"}
+					s.Nil(query.WithoutEvents().Save(&user))
+					s.True(user.ID > 0)
+					s.Equal("without_events_avatar", user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_save_without_name", user1.Name)
+					s.Equal("without_events_avatar", user1.Avatar)
+				},
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
