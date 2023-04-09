@@ -12,6 +12,7 @@ import (
 	_ "gorm.io/driver/postgres"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
@@ -2133,6 +2134,31 @@ func (s *GormQueryTestSuite) TestWithNesting() {
 			s.Equal("with_nesting_book1", user1.Books[1].Name)
 			s.True(user1.Books[1].Author.ID > 0)
 			s.Equal("with_nesting_author1", user1.Books[1].Author.Name)
+		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestDBRaw() {
+	userName := "db_raw"
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := &User{
+				Name: userName,
+			}
+
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+			switch driver {
+			case contractsorm.DriverSqlserver, contractsorm.DriverMysql:
+				s.Nil(query.Model(&user).Update("Name", db.Raw("concat(name, ?)", driver.String())))
+			default:
+				s.Nil(query.Model(&user).Update("Name", db.Raw("name || ?", driver.String())))
+			}
+			
+			var user1 User
+			s.Nil(query.Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+			s.True(user1.Name == userName+driver.String())
 		})
 	}
 }
