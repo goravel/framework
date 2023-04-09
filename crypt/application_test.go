@@ -43,4 +43,16 @@ func (s *ApplicationTestSuite) TestDecryptString() {
 
 	_, err = facades.Crypt.DecryptString("Goravel")
 	s.Error(err)
+
+	_, err = facades.Crypt.DecryptString("R29yYXZlbA==")
+	s.Error(err)
+
+	_, err = facades.Crypt.DecryptString("eyJpIjoiMTIzNDUiLCJ2YWx1ZSI6IjEyMzQ1In0=")
+	s.Error(err)
+
+	_, err = facades.Crypt.DecryptString("eyJpdiI6IjEyMzQ1IiwidiI6IjEyMzQ1In0=")
+	s.Error(err)
+
+	_, err = facades.Crypt.DecryptString("eyJpdiI6IjEyMzQ1IiwidmFsdWUiOiIxMjM0NSJ9")
+	s.Error(err)
 }

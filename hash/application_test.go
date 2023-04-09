@@ -49,6 +49,12 @@ func (s *ApplicationTestSuite) TestCheckHash() {
 			s.True(hasher.Check("password", value))
 			s.False(hasher.Check("password1", value))
 			s.False(hasher.Check("password", "hash"))
+			s.False(hasher.Check("password", "hashhash"))
+			s.False(hasher.Check("password", "$argon2id$v=20$m=16,t=2,p=1$dTltTmtGb0JmNE9Zb0lTeQ$2lHJsAodBnV4u7j39gj7Uw"))
+			s.False(hasher.Check("password", "$argon2id$v=$m=16,t=2,p=1$dTltTmtGb0JmNE9Zb0lTeQ$2lHJsAodBnV4u7j39gj7Uw"))
+			s.False(hasher.Check("password", "$argon2id$v=19$m=16,t=2$dTltTmtGb0JmNE9Zb0lTeQ$2lHJsAodBnV4u7j39gj7Uw"))
+			s.False(hasher.Check("password", "$argon2id$v=19$m=16,t=2,p=1$dTltTmtGb0JmNE9Zb0lTeQ$123456"))
+			s.False(hasher.Check("password", "$argon2id$v=19$m=16,t=2,p=1$123456$2lHJsAodBnV4u7j39gj7xx"))
 		})
 	}
 }
@@ -60,6 +66,9 @@ func (s *ApplicationTestSuite) TestNeedsRehash() {
 			s.NoError(err)
 			s.False(hasher.NeedsRehash(value))
 			s.True(hasher.NeedsRehash("hash"))
+			s.True(hasher.NeedsRehash("hashhash"))
+			s.True(hasher.NeedsRehash("$argon2id$v=$m=16,t=2,p=1$dTltTmtGb0JmNE9Zb0lTeQ$2lHJsAodBnV4u7j39gj7Uw"))
+			s.True(hasher.NeedsRehash("$argon2id$v=19$m=16,t=2$dTltTmtGb0JmNE9Zb0lTeQ$2lHJsAodBnV4u7j39gj7Uw"))
 		})
 	}
 }

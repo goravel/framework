@@ -32,6 +32,7 @@ type Query interface {
 	Distinct(args ...any) Query
 	Exec(sql string, values ...any) (*Result, error)
 	Find(dest any, conds ...any) error
+	FindOrFail(dest any, conds ...any) error
 	First(dest any) error
 	FirstOrCreate(dest any, conds ...any) error
 	FirstOr(dest any, callback func() error) error
@@ -54,6 +55,7 @@ type Query interface {
 	Pluck(column string, dest any) error
 	Raw(sql string, values ...any) Query
 	Save(value any) error
+	SaveQuietly(value any) error
 	Scan(dest any) error
 	Scopes(funcs ...func(Query) Query) Query
 	Select(query any, args ...any) Query
@@ -62,6 +64,7 @@ type Query interface {
 	Updates(values any) (*Result, error)
 	UpdateOrCreate(dest any, attributes any, values any) error
 	Where(query any, args ...any) Query
+	WithoutEvents() Query
 	WithTrashed() Query
 	With(query string, args ...any) Query
 }
