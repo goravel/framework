@@ -1473,6 +1473,11 @@ func (s *GormQueryTestSuite) TestDBRaw() {
 			default:
 				s.Nil(query.Model(&user).Update("Name", db.Raw("name || ?", driver.String())))
 			}
+
+			var user1 User
+			s.Nil(query.Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+			s.True(user1.Name == userName+driver.String())
 		})
 	}
 }
