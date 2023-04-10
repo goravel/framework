@@ -16,31 +16,31 @@ type Route struct {
 	mock.Mock
 }
 
-// Any provides a mock function with given fields: _a0, _a1
-func (_m *Route) Any(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Any provides a mock function with given fields: relativePath, handler
+func (_m *Route) Any(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Delete provides a mock function with given fields: _a0, _a1
-func (_m *Route) Delete(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Delete provides a mock function with given fields: relativePath, handler
+func (_m *Route) Delete(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Get provides a mock function with given fields: _a0, _a1
-func (_m *Route) Get(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Get provides a mock function with given fields: relativePath, handler
+func (_m *Route) Get(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Group provides a mock function with given fields: _a0
-func (_m *Route) Group(_a0 route.GroupFunc) {
-	_m.Called(_a0)
+// Group provides a mock function with given fields: handler
+func (_m *Route) Group(handler route.GroupFunc) {
+	_m.Called(handler)
 }
 
-// Middleware provides a mock function with given fields: _a0
-func (_m *Route) Middleware(_a0 ...http.Middleware) route.Route {
-	_va := make([]interface{}, len(_a0))
-	for _i := range _a0 {
-		_va[_i] = _a0[_i]
+// Middleware provides a mock function with given fields: middlewares
+func (_m *Route) Middleware(middlewares ...http.Middleware) route.Route {
+	_va := make([]interface{}, len(middlewares))
+	for _i := range middlewares {
+		_va[_i] = middlewares[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -48,7 +48,7 @@ func (_m *Route) Middleware(_a0 ...http.Middleware) route.Route {
 
 	var r0 route.Route
 	if rf, ok := ret.Get(0).(func(...http.Middleware) route.Route); ok {
-		r0 = rf(_a0...)
+		r0 = rf(middlewares...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Route)
@@ -58,19 +58,19 @@ func (_m *Route) Middleware(_a0 ...http.Middleware) route.Route {
 	return r0
 }
 
-// Options provides a mock function with given fields: _a0, _a1
-func (_m *Route) Options(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Options provides a mock function with given fields: relativePath, handler
+func (_m *Route) Options(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Patch provides a mock function with given fields: _a0, _a1
-func (_m *Route) Patch(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Patch provides a mock function with given fields: relativePath, handler
+func (_m *Route) Patch(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Post provides a mock function with given fields: _a0, _a1
-func (_m *Route) Post(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Post provides a mock function with given fields: relativePath, handler
+func (_m *Route) Post(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
 // Prefix provides a mock function with given fields: addr
@@ -89,24 +89,24 @@ func (_m *Route) Prefix(addr string) route.Route {
 	return r0
 }
 
-// Put provides a mock function with given fields: _a0, _a1
-func (_m *Route) Put(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Put provides a mock function with given fields: relativePath, handler
+func (_m *Route) Put(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Static provides a mock function with given fields: _a0, _a1
-func (_m *Route) Static(_a0 string, _a1 string) {
-	_m.Called(_a0, _a1)
+// Static provides a mock function with given fields: relativePath, root
+func (_m *Route) Static(relativePath string, root string) {
+	_m.Called(relativePath, root)
 }
 
-// StaticFS provides a mock function with given fields: _a0, _a1
-func (_m *Route) StaticFS(_a0 string, _a1 nethttp.FileSystem) {
-	_m.Called(_a0, _a1)
+// StaticFS provides a mock function with given fields: relativePath, fs
+func (_m *Route) StaticFS(relativePath string, fs nethttp.FileSystem) {
+	_m.Called(relativePath, fs)
 }
 
-// StaticFile provides a mock function with given fields: _a0, _a1
-func (_m *Route) StaticFile(_a0 string, _a1 string) {
-	_m.Called(_a0, _a1)
+// StaticFile provides a mock function with given fields: relativePath, filepath
+func (_m *Route) StaticFile(relativePath string, filepath string) {
+	_m.Called(relativePath, filepath)
 }
 
 type mockConstructorTestingTNewRoute interface {

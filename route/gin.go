@@ -33,6 +33,22 @@ func NewGin() *Gin {
 	)}
 }
 
+func (r *Gin) Fallback(handler httpcontract.HandlerFunc) {
+	r.instance.NoRoute(handlerToGinHandler(handler))
+}
+
+func (r *Gin) GlobalMiddleware(middlewares ...httpcontract.Middleware) {
+	if len(middlewares) > 0 {
+		r.instance.Use(middlewaresToGinHandlers(middlewares)...)
+	}
+	r.Route = NewGinGroup(
+		r.instance.Group("/"),
+		"",
+		[]httpcontract.Middleware{},
+		[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
+	)
+}
+
 func (r *Gin) Run(host ...string) error {
 	if len(host) == 0 {
 		defaultHost := facades.Config.GetString("http.host")
@@ -91,16 +107,4 @@ func (r *Gin) RunTLSWithCert(host, certFile, keyFile string) error {
 
 func (r *Gin) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	r.instance.ServeHTTP(writer, request)
-}
-
-func (r *Gin) GlobalMiddleware(middlewares ...httpcontract.Middleware) {
-	if len(middlewares) > 0 {
-		r.instance.Use(middlewaresToGinHandlers(middlewares)...)
-	}
-	r.Route = NewGinGroup(
-		r.instance.Group("/"),
-		"",
-		[]httpcontract.Middleware{},
-		[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
-	)
 }
