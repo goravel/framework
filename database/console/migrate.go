@@ -7,7 +7,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
 
 	"github.com/goravel/framework/contracts/database/orm"
@@ -74,7 +74,7 @@ func getMigrate() (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		instance, err := sqlite3.WithInstance(db, &sqlite3.Config{
+		instance, err := sqlite.WithInstance(db, &sqlite.Config{
 			MigrationsTable: facades.Config.GetString("database.migrations"),
 		})
 		if err != nil {
