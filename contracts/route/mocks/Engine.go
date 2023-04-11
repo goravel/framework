@@ -16,42 +16,47 @@ type Engine struct {
 	mock.Mock
 }
 
-// Any provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Any(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Any provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Any(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Delete provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Delete(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Delete provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Delete(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Get provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Get(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Fallback provides a mock function with given fields: handler
+func (_m *Engine) Fallback(handler http.HandlerFunc) {
+	_m.Called(handler)
 }
 
-// GlobalMiddleware provides a mock function with given fields: _a0
-func (_m *Engine) GlobalMiddleware(_a0 ...http.Middleware) {
-	_va := make([]interface{}, len(_a0))
-	for _i := range _a0 {
-		_va[_i] = _a0[_i]
+// Get provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Get(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
+}
+
+// GlobalMiddleware provides a mock function with given fields: middlewares
+func (_m *Engine) GlobalMiddleware(middlewares ...http.Middleware) {
+	_va := make([]interface{}, len(middlewares))
+	for _i := range middlewares {
+		_va[_i] = middlewares[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
 	_m.Called(_ca...)
 }
 
-// Group provides a mock function with given fields: _a0
-func (_m *Engine) Group(_a0 route.GroupFunc) {
-	_m.Called(_a0)
+// Group provides a mock function with given fields: handler
+func (_m *Engine) Group(handler route.GroupFunc) {
+	_m.Called(handler)
 }
 
-// Middleware provides a mock function with given fields: _a0
-func (_m *Engine) Middleware(_a0 ...http.Middleware) route.Route {
-	_va := make([]interface{}, len(_a0))
-	for _i := range _a0 {
-		_va[_i] = _a0[_i]
+// Middleware provides a mock function with given fields: middlewares
+func (_m *Engine) Middleware(middlewares ...http.Middleware) route.Route {
+	_va := make([]interface{}, len(middlewares))
+	for _i := range middlewares {
+		_va[_i] = middlewares[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -59,7 +64,7 @@ func (_m *Engine) Middleware(_a0 ...http.Middleware) route.Route {
 
 	var r0 route.Route
 	if rf, ok := ret.Get(0).(func(...http.Middleware) route.Route); ok {
-		r0 = rf(_a0...)
+		r0 = rf(middlewares...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(route.Route)
@@ -69,19 +74,19 @@ func (_m *Engine) Middleware(_a0 ...http.Middleware) route.Route {
 	return r0
 }
 
-// Options provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Options(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Options provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Options(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Patch provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Patch(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Patch provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Patch(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Post provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Post(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Post provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Post(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
 // Prefix provides a mock function with given fields: addr
@@ -100,18 +105,24 @@ func (_m *Engine) Prefix(addr string) route.Route {
 	return r0
 }
 
-// Put provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Put(_a0 string, _a1 http.HandlerFunc) {
-	_m.Called(_a0, _a1)
+// Put provides a mock function with given fields: relativePath, handler
+func (_m *Engine) Put(relativePath string, handler http.HandlerFunc) {
+	_m.Called(relativePath, handler)
 }
 
-// Run provides a mock function with given fields: addr
-func (_m *Engine) Run(addr string) error {
-	ret := _m.Called(addr)
+// Run provides a mock function with given fields: host
+func (_m *Engine) Run(host ...string) error {
+	_va := make([]interface{}, len(host))
+	for _i := range host {
+		_va[_i] = host[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(addr)
+	if rf, ok := ret.Get(0).(func(...string) error); ok {
+		r0 = rf(host...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -119,13 +130,33 @@ func (_m *Engine) Run(addr string) error {
 	return r0
 }
 
-// RunTLS provides a mock function with given fields: addr, certFile, keyFile
-func (_m *Engine) RunTLS(addr string, certFile string, keyFile string) error {
-	ret := _m.Called(addr, certFile, keyFile)
+// RunTLS provides a mock function with given fields: host
+func (_m *Engine) RunTLS(host ...string) error {
+	_va := make([]interface{}, len(host))
+	for _i := range host {
+		_va[_i] = host[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(...string) error); ok {
+		r0 = rf(host...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RunTLSWithCert provides a mock function with given fields: host, certFile, keyFile
+func (_m *Engine) RunTLSWithCert(host string, certFile string, keyFile string) error {
+	ret := _m.Called(host, certFile, keyFile)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, string, string) error); ok {
-		r0 = rf(addr, certFile, keyFile)
+		r0 = rf(host, certFile, keyFile)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -133,24 +164,24 @@ func (_m *Engine) RunTLS(addr string, certFile string, keyFile string) error {
 	return r0
 }
 
-// ServeHTTP provides a mock function with given fields: w, req
-func (_m *Engine) ServeHTTP(w nethttp.ResponseWriter, req *nethttp.Request) {
-	_m.Called(w, req)
+// ServeHTTP provides a mock function with given fields: writer, request
+func (_m *Engine) ServeHTTP(writer nethttp.ResponseWriter, request *nethttp.Request) {
+	_m.Called(writer, request)
 }
 
-// Static provides a mock function with given fields: _a0, _a1
-func (_m *Engine) Static(_a0 string, _a1 string) {
-	_m.Called(_a0, _a1)
+// Static provides a mock function with given fields: relativePath, root
+func (_m *Engine) Static(relativePath string, root string) {
+	_m.Called(relativePath, root)
 }
 
-// StaticFS provides a mock function with given fields: _a0, _a1
-func (_m *Engine) StaticFS(_a0 string, _a1 nethttp.FileSystem) {
-	_m.Called(_a0, _a1)
+// StaticFS provides a mock function with given fields: relativePath, fs
+func (_m *Engine) StaticFS(relativePath string, fs nethttp.FileSystem) {
+	_m.Called(relativePath, fs)
 }
 
-// StaticFile provides a mock function with given fields: _a0, _a1
-func (_m *Engine) StaticFile(_a0 string, _a1 string) {
-	_m.Called(_a0, _a1)
+// StaticFile provides a mock function with given fields: relativePath, filepath
+func (_m *Engine) StaticFile(relativePath string, filepath string) {
+	_m.Called(relativePath, filepath)
 }
 
 type mockConstructorTestingTNewEngine interface {
