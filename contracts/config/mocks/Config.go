@@ -10,7 +10,7 @@ type Config struct {
 }
 
 // Add provides a mock function with given fields: name, configuration
-func (_m *Config) Add(name string, configuration map[string]interface{}) {
+func (_m *Config) Add(name string, configuration any) {
 	_m.Called(name, configuration)
 }
 
