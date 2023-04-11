@@ -86,7 +86,7 @@ func (app *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, 
 		return []byte(jwtSecret), nil
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), jwt.ErrTokenExpired.Error()) && tokenClaims != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
 			if !ok {
 				return nil, ErrorInvalidClaims

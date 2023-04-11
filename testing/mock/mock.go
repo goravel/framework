@@ -17,11 +17,11 @@ import (
 	"github.com/goravel/framework/log"
 )
 
-func Cache() *mockscache.Store {
-	mockCache := &mockscache.Store{}
+func Cache() (*mockscache.Cache, *mockscache.Driver, *mockscache.Lock) {
+	mockCache := &mockscache.Cache{}
 	facades.Cache = mockCache
 
-	return mockCache
+	return mockCache, &mockscache.Driver{}, &mockscache.Lock{}
 }
 
 func Config() *mocksconfig.Config {
