@@ -217,12 +217,30 @@ func (r *Minio) Get(file string) (string, error) {
 	return string(data), nil
 }
 
+func (r *Minio) LastModified(file string) (time.Time, error) {
+	objInfo, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return objInfo.LastModified, nil
+}
+
 func (r *Minio) MakeDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
 	}
 
 	return r.Put(directory, "")
+}
+
+func (r *Minio) MimeType(file string) (string, error) {
+	objInfo, err := r.instance.StatObject(r.ctx, r.bucket, file, minio.StatObjectOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return objInfo.ContentType, nil
 }
 
 func (r *Minio) Missing(file string) bool {

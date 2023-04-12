@@ -236,12 +236,36 @@ func (r *S3) Get(file string) (string, error) {
 	return string(data), nil
 }
 
+func (r *S3) LastModified(file string) (time.Time, error) {
+	resp, err := r.instance.HeadObject(r.ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+	})
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return aws.ToTime(resp.LastModified), nil
+}
+
 func (r *S3) MakeDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
 	}
 
 	return r.Put(directory, "")
+}
+
+func (r *S3) MimeType(file string) (string, error) {
+	resp, err := r.instance.HeadObject(r.ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(r.bucket),
+		Key:    aws.String(file),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return aws.ToString(resp.ContentType), nil
 }
 
 func (r *S3) Missing(file string) bool {

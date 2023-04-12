@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -206,12 +207,35 @@ func (r *Oss) Get(file string) (string, error) {
 	return string(data), nil
 }
 
+func (r *Oss) LastModified(file string) (time.Time, error) {
+	headers, err := r.bucketInstance.GetObjectDetailedMeta(file)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	lastModified, err := http.ParseTime(headers.Get("Last-Modified"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return lastModified, nil
+}
+
 func (r *Oss) MakeDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
 	}
 
 	return r.bucketInstance.PutObject(directory, bytes.NewReader([]byte("")))
+}
+
+func (r *Oss) MimeType(file string) (string, error) {
+	headers, err := r.bucketInstance.GetObjectDetailedMeta(file)
+	if err != nil {
+		return "", err
+	}
+
+	return headers.Get("Content-Type"), nil
 }
 
 func (r *Oss) Missing(file string) bool {

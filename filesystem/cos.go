@@ -262,6 +262,20 @@ func (r *Cos) Get(file string) (string, error) {
 	return string(data), nil
 }
 
+func (r *Cos) LastModified(file string) (time.Time, error) {
+	resp, err := r.instance.Object.Head(r.ctx, file, nil)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	lastModified, err := http.ParseTime(resp.Header.Get("Last-Modified"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return lastModified, nil
+}
+
 func (r *Cos) MakeDirectory(directory string) error {
 	if !strings.HasSuffix(directory, "/") {
 		directory += "/"
@@ -272,6 +286,15 @@ func (r *Cos) MakeDirectory(directory string) error {
 	}
 
 	return nil
+}
+
+func (r *Cos) MimeType(file string) (string, error) {
+	resp, err := r.instance.Object.Head(r.ctx, file, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Header.Get("Content-Type"), nil
 }
 
 func (r *Cos) Missing(file string) bool {

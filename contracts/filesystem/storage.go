@@ -22,7 +22,9 @@ type Driver interface {
 	Exists(file string) bool
 	Files(path string) ([]string, error)
 	Get(file string) (string, error)
+	LastModified(file string) (time.Time, error)
 	MakeDirectory(directory string) error
+	MimeType(file string) (string, error)
 	Missing(file string) bool
 	Move(oldFile, newFile string) error
 	Path(file string) string
