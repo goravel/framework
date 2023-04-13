@@ -1,8 +1,10 @@
 package arr
 
 import (
+	"math/rand"
 	"reflect"
 	"sort"
+	"strings"
 )
 
 // Accessible Determine whether the given value is array accessible.
@@ -29,12 +31,12 @@ func Collapse(arr []interface{}) []interface{} {
 	}
 	var res []interface{}
 
-	for _, values := range arr {
-		switch v := values.(type) {
+	for _, v := range arr {
+		switch val := v.(type) {
 		case []interface{}:
-			res = append(res, Collapse(v)...)
+			res = append(res, Collapse(val)...)
 		default:
-			res = append(res, v)
+			res = append(res, val)
 		}
 	}
 	return res
@@ -48,15 +50,15 @@ func CrossJoin(arr ...[]any) ([][]any, error) {
 
 	res := [][]any{{}}
 
-	for _, array := range arr {
-		if len(array) == 0 {
+	for _, v := range arr {
+		if len(v) == 0 {
 			return nil, ErrEmptyArrayNotAllowed
 		}
 
-		apd := [][]any{}
+		var apd [][]any
 
 		for _, product := range res {
-			for _, item := range array {
+			for _, item := range v {
 				productCopy := make([]any, len(product))
 				copy(productCopy, product)
 
@@ -101,18 +103,18 @@ func Undot(m []interface{}) ([]interface{}, error) {
 func Except[T any](arr []T, keys []int) []T {
 	excludedKeys := make(map[int]bool)
 
-	for _, key := range keys {
-		excludedKeys[key] = true
+	for _, v := range keys {
+		excludedKeys[v] = true
 	}
 
 	res := make([]T, 0, len(arr))
 
-	for key, item := range arr {
-		if excludedKeys[key] {
+	for i, v := range arr {
+		if excludedKeys[i] {
 			continue
 		}
 
-		res = append(res, item)
+		res = append(res, v)
 	}
 
 	return res
@@ -170,27 +172,27 @@ func Last[T any](arr []T, callback func(T) bool, defaultValue T) T {
 
 // Flatten flattens a multi-dimensional array into a single level.
 func Flatten(arr []interface{}, depth int) []interface{} {
-	var result []interface{}
+	var res []interface{}
 
-	for _, item := range arr {
-		if !isArray(item) {
-			result = append(result, item)
+	for _, v := range arr {
+		if !isArray(v) {
+			res = append(res, v)
 		} else {
 			values := make([]interface{}, 0)
 
 			if depth == 1 {
-				for _, v := range item.([]interface{}) {
+				for _, v := range v.([]interface{}) {
 					values = append(values, v)
 				}
 			} else {
-				values = Flatten(item.([]interface{}), depth-1)
+				values = Flatten(v.([]interface{}), depth-1)
 			}
 
-			result = append(result, values...)
+			res = append(res, values...)
 		}
 	}
 
-	return result
+	return res
 }
 
 // Forget Remove one or many array items from a given array.
@@ -208,9 +210,9 @@ func Forget[T any](arr []T, keys interface{}) ([]T, error) {
 		return arr, ErrInvalidKeys
 	}
 
-	for _, key := range keys.([]int) {
-		if key >= 0 && key < len(arr) {
-			copy(arr[key:], arr[key+1:])
+	for _, v := range keys.([]int) {
+		if v >= 0 && v < len(arr) {
+			copy(arr[v:], arr[v+1:])
 			arr[len(arr)-1] = reflect.Zero(reflect.TypeOf(arr[0])).Interface().(T)
 			arr = arr[:len(arr)-1]
 
@@ -247,8 +249,8 @@ func Has[T any](arr []T, keys interface{}) bool {
 		return false
 	}
 
-	for _, key := range keys.([]int) {
-		if key >= 0 && key < len(arr) {
+	for _, v := range keys.([]int) {
+		if v >= 0 && v < len(arr) {
 			return true
 		}
 	}
@@ -257,9 +259,37 @@ func Has[T any](arr []T, keys interface{}) bool {
 }
 
 // todo: hasAny($array, $keys)
-// todo: isAssoc(array $array)
-// todo: isList($array)
-// todo: join($array, $glue, $finalGlue = '')
+// HasAny Determine if any of the keys exist in an array using int key
+
+// IsAssoc Determines if an array is associative.
+func IsAssoc[T any](arr T) bool {
+	return false
+}
+
+// IsList Determines if an array is a list.
+func IsList[T any](arr T) bool {
+	return true
+}
+
+// Join concatenates elements of a slice into a string with a specified delimiter and final separator
+func Join(arr []string, delimiter string, finalSeparator ...string) string {
+	l := len(arr)
+	if l == 0 {
+		return ""
+	}
+	if l == 1 {
+		return arr[0]
+	}
+	if l == 2 {
+		return arr[0] + finalSeparator[0] + arr[1]
+	}
+	if len(finalSeparator) == 0 {
+		finalSeparator = []string{", "}
+	}
+
+	return strings.Join(arr[:l-1], delimiter) + finalSeparator[0] + arr[l-1]
+}
+
 // todo: keyBy($array, $keyBy)
 // todo: prependKeysWith($array, $prependWith)
 // todo: only($array, $keys)
@@ -296,8 +326,41 @@ func Set[T any](arr *[]T, key int, value T) error {
 	return nil
 }
 
-// todo: shuffle($array, $seed = null)
-// todo: sort($array, $callback = null)
+// Shuffle the given array and return the result.
+func Shuffle[T any](arr []T, seed *int64) []T {
+	res := make([]T, len(arr))
+	copy(res, arr)
+
+	if seed == nil {
+		rand.Shuffle(len(arr), func(i, j int) { arr[i], arr[j] = arr[j], arr[i] })
+	} else {
+		r := rand.New(rand.NewSource(*seed))
+		r.Shuffle(len(arr), func(i, j int) { arr[i], arr[j] = arr[j], arr[i] })
+	}
+	return res
+}
+
+// Sort the array using the given callback.
+func Sort(arr []interface{}, fn func(i, j int) bool) []interface{} {
+	if len(arr) == 0 {
+		return arr
+	}
+
+	sort.Slice(arr, func(i, j int) bool {
+		return fn(i, j)
+	})
+
+	for i, v := range arr {
+		switch val := v.(type) {
+		case []interface{}:
+			arr[i] = Sort(val, fn)
+		default:
+		}
+	}
+
+	return arr
+}
+
 // todo: sortDesc($array, $callback = null)
 // todo: sortRecursive($array, $options = SORT_REGULAR, $descending = false)
 // todo: toCssClasses($array)
