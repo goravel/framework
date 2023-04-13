@@ -5,7 +5,7 @@ type Config interface {
 	//Env Get config from env.
 	Env(envName string, defaultValue ...any) any
 	//Add config to application.
-	Add(name string, configuration map[string]any)
+	Add(name string, configuration any)
 	//Get config from application.
 	Get(path string, defaultValue ...any) any
 	//GetString Get string type config from application.
