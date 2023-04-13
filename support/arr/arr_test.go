@@ -3,6 +3,7 @@ package arr
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
@@ -156,10 +157,6 @@ func TestDivide(t *testing.T) {
 	arr = []any{}
 	_, _, err = Divide(arr)
 	assert.ErrorIs(t, ErrEmptyArrayNotAllowed, err)
-}
-
-func Undot(t *testing.T) {
-
 }
 
 func TestExcept(t *testing.T) {
@@ -345,6 +342,33 @@ func TestHas(t *testing.T) {
 	assert.False(t, Has(arr, 2))
 }
 
+func TestJoin(t *testing.T) {
+	arr1 := []string{"a", "b", "c"}
+	result1 := Join(arr1, ", ")
+	expectedStr := "a, b, c"
+	assert.Equal(t, expectedStr, result1)
+
+	arr2 := []string{"a", "b", "c"}
+	expectedStr2 := "a, b and c"
+	result2 := Join(arr2, ", ", " and ")
+	assert.Equal(t, expectedStr2, result2)
+
+	arr3 := []string{"a", "b"}
+	expectedStr3 := "a and b"
+	result3 := Join(arr3, ", ", " and ")
+	assert.Equal(t, expectedStr3, result3)
+
+	arr4 := []string{"a"}
+	expectedStr4 := "a"
+	result4 := Join(arr4, ", ", " and ")
+	assert.Equal(t, expectedStr4, result4)
+
+	arr5 := []string{}
+	expectedStr5 := ""
+	result5 := Join(arr5, ", ", " and ")
+	assert.Equal(t, expectedStr5, result5)
+}
+
 func TestMap(t *testing.T) {
 	{
 		arr := []int{1, 2, 3}
@@ -395,4 +419,85 @@ func TestSet(t *testing.T) {
 		expected := []any{"foo", "bar", "baz"}
 		assert.Equal(t, expected, arr)
 	}
+}
+
+func TestShuffle(t *testing.T) {
+	arr := []interface{}{1, 2, 3, 4, 5}
+	seed := int64(123456)
+	result := Shuffle(arr, &seed)
+
+	// Check if result is shuffled
+	assert.NotEqual(t, arr, result)
+
+	// Check if result has same elements as original array
+	for _, v := range arr {
+		assert.Contains(t, result, v)
+	}
+
+	result = Shuffle(arr, nil)
+
+	// Check if result is shuffled
+	assert.NotEqual(t, arr, result)
+
+	// Check if result has same elements as original array
+	for _, v := range arr {
+		assert.Contains(t, result, v)
+	}
+
+}
+
+func TestSort(t *testing.T) {
+	// Test case 1
+	arr := []interface{}{5, 3, 7, 1, 8}
+	expected := []interface{}{1, 3, 5, 7, 8}
+	result := Sort(arr, func(i, j int) bool {
+		return arr[i].(int) < arr[j].(int)
+	})
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Test case 2 failed. Expected: %v, but got: %v", expected, result)
+	}
+
+	// Test case 2
+	arr = []interface{}{"foo", "bar", "baz", "qux"}
+	expected = []interface{}{"bar", "baz", "foo", "qux"}
+	result = Sort(arr, func(i, j int) bool {
+		return arr[i].(string) < arr[j].(string)
+	})
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Test case 3 failed. Expected: %v, but got: %v", expected, result)
+	}
+
+	// Test case 3
+	// todo: this does not work now
+	//arr = []interface{}{
+	//	[]interface{}{3, 1, 4},
+	//	[]interface{}{2, 5, 9},
+	//	[]interface{}{6, 5, 3},
+	//}
+	//expected = []interface{}{
+	//	[]interface{}{1, 3, 4},
+	//	[]interface{}{2, 5, 9},
+	//	[]interface{}{3, 5, 6},
+	//}
+	//result = Sort(arr, func(i, j int) bool {
+	//	valType := reflect.TypeOf(arr[i]).String()
+	//	if valType == "int" {
+	//		return arr[i].(int) < arr[j].(int)
+	//	} else if valType == "string" {
+	//		return arr[i].(string) < arr[j].(string)
+	//	} else if valType == "[]interface {}" {
+	//		v := arr[i]
+	//		switch _ := v.(type) {
+	//		case []int:
+	//			return reflect.ValueOf(arr[i]).Index(0).Int() < reflect.ValueOf(arr[j]).Index(0).Int()
+	//		case []string:
+	//			return reflect.ValueOf(arr[i]).Index(0).String() < reflect.ValueOf(arr[j]).Index(0).String()
+	//		default:
+	//		}
+	//	}
+	//	return false
+	//})
+	//if !reflect.DeepEqual(result, expected) {
+	//	t.Errorf("Test case 1 failed. Expected: %v, but got: %v", expected, result)
+	//}
 }
