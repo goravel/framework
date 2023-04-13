@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gabriel-vasile/mimetype"
+	"github.com/h2non/filetype"
+
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support"
@@ -145,17 +146,12 @@ func (r *Local) Get(file string) (string, error) {
 }
 
 func (r *Local) LastModified(file string) (time.Time, error) {
-	fileInfo, err := os.Open(r.fullPath(file))
+	fileInfo, err := os.Stat(r.fullPath(file))
 	if err != nil {
 		return time.Time{}, err
 	}
 
-	fi, err := fileInfo.Stat()
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return fi.ModTime(), nil
+	return fileInfo.ModTime(), nil
 }
 
 func (r *Local) MakeDirectory(directory string) error {
@@ -163,12 +159,12 @@ func (r *Local) MakeDirectory(directory string) error {
 }
 
 func (r *Local) MimeType(file string) (string, error) {
-	mtype, err := mimetype.DetectFile(r.fullPath(file))
+	kind, err := filetype.MatchFile(r.fullPath(file))
 	if err != nil {
 		return "", err
 	}
 
-	return mtype.String(), nil
+	return kind.MIME.Value, nil
 }
 
 func (r *Local) Missing(file string) bool {
