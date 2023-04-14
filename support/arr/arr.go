@@ -152,10 +152,10 @@ func First[T any](arr []T, callback func(T, int) bool, def T) T {
 }
 
 // Last returns the last element in an array passing a given truth test.
-func Last[T any](arr []T, callback func(T) bool, defaultValue T) T {
+func Last[T any](arr []T, callback func(T) bool, def T) T {
 	if callback == nil {
 		if len(arr) == 0 {
-			return defaultValue
+			return def
 		}
 
 		return arr[len(arr)-1]
@@ -167,7 +167,7 @@ func Last[T any](arr []T, callback func(T) bool, defaultValue T) T {
 		}
 	}
 
-	return defaultValue
+	return def
 }
 
 // Flatten flattens a multi-dimensional array into a single level.
@@ -251,6 +251,29 @@ func Has[T any](arr []T, keys any) bool {
 	}
 
 	for _, v := range keys.([]int) {
+		if v < 0 || v >= len(arr) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// HasAny Determine if any of the keys exist in an array using int key
+func HasAny[T any](arr []T, keys any) bool {
+	if len(arr) == 0 || keys == nil {
+		return false
+	}
+
+	switch v := keys.(type) {
+	case int:
+		keys = []int{v}
+	case []int:
+	default:
+		return false
+	}
+
+	for _, v := range keys.([]int) {
 		if v >= 0 && v < len(arr) {
 			return true
 		}
@@ -258,9 +281,6 @@ func Has[T any](arr []T, keys any) bool {
 
 	return false
 }
-
-// todo: hasAny($array, $keys)
-// HasAny Determine if any of the keys exist in an array using int key
 
 // IsAssoc Determines if an array is associative.
 func IsAssoc[T any](arr T) bool {
@@ -300,11 +320,46 @@ func Join[T any](arr []T, delimiter string, finalSeparator ...string) string {
 	return builder.String()
 }
 
-// todo: keyBy($array, $keyBy)
-// todo: prependKeysWith($array, $prependWith)
-// todo: only($array, $keys)
-// todo: pluck($array, $value, $key = null)
-// todo: explodePluckParameters($value, $key)
+// KeyBy Key an associative array by a field or using a callback.
+func KeyBy[T any, K comparable](array []T, key K) ([]T, error) {
+	return nil, ErrNoImplementation
+}
+
+// PrependKeysWith Prepend the key names of an associative array.
+func PrependKeysWith[T any](array []T, prependWith string) ([]T, error) {
+	return nil, ErrNoImplementation
+}
+
+// Only returns a subset of the items from the given map with specified keys.
+func Only[T any](arr []T, keys any) []T {
+	var res []T
+	switch v := keys.(type) {
+	case int:
+		if v < 0 || v > len(arr)-1 {
+			return res
+		}
+		res = append(res, arr[v])
+
+	case []int:
+		for _, vv := range v {
+			if vv < 0 || vv > len(arr)-1 {
+				return res
+			}
+			res = append(res, arr[vv])
+		}
+	}
+	return res
+}
+
+// Pluck an array of values from an array.
+func Pluck[T any](array []T, value T, key ...int) ([]T, error) {
+	return nil, ErrNoImplementation
+}
+
+// ExplodePluckParameters Explode the "value" and "key" arguments passed to "pluck".
+func ExplodePluckParameters[T any](array []T, key ...int) ([]T, error) {
+	return nil, ErrNoImplementation
+}
 
 // Map Run a map over each of the items in the array.
 func Map[T, U any](arr []T, fn func(T, int) U) []U {
@@ -315,10 +370,58 @@ func Map[T, U any](arr []T, fn func(T, int) U) []U {
 	return res
 }
 
-// todo: prepend($array, $value, $key = null)
-// todo: pull(&$array, $key, $default = null)
-// todo: query($array)
-// todo: random($array, $number = null, $preserveKeys = false)
+// Prepend the given value to the beginning of an array or associative array.
+func Prepend[T any](arr []T, value T) []T {
+
+	return append([]T{value}, arr...)
+}
+
+// Pull Get a value from the array, and remove it.
+func Pull[T any](arr *[]T, key int, def T) (T, error) {
+	v := Get(*arr, key, def)
+
+	res, err := Forget(*arr, key)
+	arr = &res
+	return v, err
+}
+
+// Query Convert the array into a query string.
+func Query[T any](m []T) (*string, error) {
+	return nil, ErrNoImplementation
+}
+
+// Random returns one or a specified number of random values from a slice.
+func Random[T any](arr []T, number *int) ([]T, error) {
+	//rand.Seed(time.Now().UnixNano())
+
+	requested := 1
+	if number != nil {
+		requested = *number
+	}
+
+	count := len(arr)
+
+	if requested > count {
+		return nil, fmt.Errorf("%w: requested %d items, but there are only %d items available", ErrInvalidRequestedItems, requested, count)
+	}
+
+	if number == nil {
+		return []T{arr[rand.Intn(count)]}, nil
+	}
+
+	if requested == 0 {
+		return []T{}, nil
+	}
+
+	indices := rand.Perm(count)[:requested]
+
+	results := make([]T, 0, requested)
+	for _, index := range indices {
+		results = append(results, arr[index])
+	}
+
+	return results, nil
+}
 
 // Set an array item to a given value using int key
 func Set[T any](arr *[]T, key int, value T) error {
@@ -372,7 +475,28 @@ func Sort(arr []any, fn func(i, j int) bool) []any {
 	return arr
 }
 
-// todo: sortDesc($array, $callback = null)
+// Sort the nested array in descending order using the given callback.
+// todo: generic
+func SortDesc(arr []any, fn func(i, j int) bool) []any {
+	if len(arr) == 0 {
+		return arr
+	}
+
+	sort.Slice(arr, func(i, j int) bool {
+		return fn(i, j)
+	})
+
+	for i, v := range arr {
+		switch val := v.(type) {
+		case []any:
+			arr[i] = Sort(val, fn)
+		default:
+		}
+	}
+
+	return arr
+}
+
 // todo: sortRecursive($array, $options = SORT_REGULAR, $descending = false)
 
 // ToCssClasses Convert an array of strings to a string of CSS classes.

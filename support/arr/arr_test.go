@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -340,6 +341,16 @@ func TestHas(t *testing.T) {
 	assert.True(t, Has(arr, 0))
 	assert.True(t, Has(arr, 1))
 	assert.False(t, Has(arr, 2))
+	assert.False(t, Has(arr, []int{1, 3}))
+}
+
+func TestHasAny(t *testing.T) {
+	arr := []string{"foo", "bar"}
+
+	assert.True(t, HasAny(arr, 0))
+	assert.True(t, HasAny(arr, 1))
+	assert.False(t, HasAny(arr, 2))
+	assert.True(t, HasAny(arr, []int{1, 3}))
 }
 
 func TestJoin(t *testing.T) {
@@ -369,6 +380,30 @@ func TestJoin(t *testing.T) {
 	assert.Equal(t, expectedStr5, result5)
 }
 
+func TestOnly(t *testing.T) {
+	arr := []string{"one", "two", "three"}
+
+	// Test case 1: keys is int
+	expected := []string{"two"}
+	result := Only(arr, 1)
+	assert.Equal(t, expected, result)
+
+	// Test case 2: keys is an array of int
+	keys := []int{0, 2}
+	expected = []string{"one", "three"}
+	result = Only(arr, keys)
+	assert.Equal(t, expected, result)
+
+	// Test case 3: Out of range key
+	result = Only(arr, 3)
+	assert.Empty(t, result)
+
+	// Test case 4: Out of range keys in array of int
+	keys = []int{0, 3}
+	result = Only(arr, keys)
+	assert.Equal(t, []string{"one"}, result)
+}
+
 func TestMap(t *testing.T) {
 	{
 		arr := []int{1, 2, 3}
@@ -394,6 +429,86 @@ func TestMap(t *testing.T) {
 			assert.Equal(t, expected2[i], res[i])
 		}
 	}
+}
+
+func TestPrepend(t *testing.T) {
+	testCases := []struct {
+		name     string
+		arr      []any
+		value    any
+		expected []any
+	}{
+		{
+			name:     "Integers",
+			arr:      []any{2, 3, 4},
+			value:    1,
+			expected: []any{1, 2, 3, 4},
+		},
+		{
+			name:     "Strings",
+			arr:      []any{"b", "c", "d"},
+			value:    "a",
+			expected: []any{"a", "b", "c", "d"},
+		},
+		{
+			name:     "Mixed",
+			arr:      []any{"apple", 3.14, true},
+			value:    42,
+			expected: []any{42, "apple", 3.14, true},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Prepend(tc.arr, tc.value)
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Errorf("Expected: %v, got: %v", tc.expected, result)
+			}
+		})
+	}
+}
+
+func TestPull(t *testing.T) {
+	// Test case 1: Valid key
+	arr := []int{1, 2, 3, 4, 5}
+	expectedArr := []int{1, 2, 4, 5}
+	value, err := Pull(&arr, 2, -1)
+	if assert.NoError(t, err) {
+		assert.Equal(t, 3, value)
+		assert.Equal(t, expectedArr, arr)
+	}
+
+	// Test case 2: Invalid key
+	arr = []int{1, 2, 3, 4, 5}
+	expectedArr = []int{1, 2, 3, 4, 5}
+	value, err = Pull(&arr, 7, -1)
+	if assert.NoError(t, err) {
+		assert.Equal(t, -1, value)
+		assert.Equal(t, expectedArr, arr)
+	}
+}
+
+func TestRandom(t *testing.T) {
+	// Test case 1: Get one random value
+	arr := []interface{}{1, 2, 3, 4, 5}
+	results, err := Random(arr, nil)
+	if assert.NoError(t, err) && assert.Len(t, results, 1) {
+		assert.Contains(t, arr, results[0])
+	}
+
+	// Test case 2: Get a specified number of random values
+	number := 3
+	results, err = Random(arr, &number)
+	if assert.NoError(t, err) && assert.Len(t, results, number) {
+		for _, result := range results {
+			assert.Contains(t, arr, result)
+		}
+	}
+
+	// Test case 3: Invalid number of requested items
+	number = 10
+	results, err = Random(arr, &number)
+	assert.ErrorIs(t, err, ErrInvalidRequestedItems)
 }
 
 func TestSet(t *testing.T) {
@@ -422,7 +537,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestShuffle(t *testing.T) {
-	arr := []interface{}{1, 2, 3, 4, 5}
+	arr := []any{1, 2, 3, 4, 5}
 	seed := int64(123456)
 	result := Shuffle(arr, &seed)
 
@@ -448,8 +563,8 @@ func TestShuffle(t *testing.T) {
 
 func TestSort(t *testing.T) {
 	// Test case 1
-	arr := []interface{}{5, 3, 7, 1, 8}
-	expected := []interface{}{1, 3, 5, 7, 8}
+	arr := []any{5, 3, 7, 1, 8}
+	expected := []any{1, 3, 5, 7, 8}
 	result := Sort(arr, func(i, j int) bool {
 		return arr[i].(int) < arr[j].(int)
 	})
@@ -458,8 +573,8 @@ func TestSort(t *testing.T) {
 	}
 
 	// Test case 2
-	arr = []interface{}{"foo", "bar", "baz", "qux"}
-	expected = []interface{}{"bar", "baz", "foo", "qux"}
+	arr = []any{"foo", "bar", "baz", "qux"}
+	expected = []any{"bar", "baz", "foo", "qux"}
 	result = Sort(arr, func(i, j int) bool {
 		return arr[i].(string) < arr[j].(string)
 	})
@@ -469,15 +584,15 @@ func TestSort(t *testing.T) {
 
 	// Test case 3
 	// todo: this does not work now
-	//arr = []interface{}{
-	//	[]interface{}{3, 1, 4},
-	//	[]interface{}{2, 5, 9},
-	//	[]interface{}{6, 5, 3},
+	//arr = []any{
+	//	[]any{3, 1, 4},
+	//	[]any{2, 5, 9},
+	//	[]any{6, 5, 3},
 	//}
-	//expected = []interface{}{
-	//	[]interface{}{1, 3, 4},
-	//	[]interface{}{2, 5, 9},
-	//	[]interface{}{3, 5, 6},
+	//expected = []any{
+	//	[]any{1, 3, 4},
+	//	[]any{2, 5, 9},
+	//	[]any{3, 5, 6},
 	//}
 	//result = Sort(arr, func(i, j int) bool {
 	//	valType := reflect.TypeOf(arr[i]).String()
@@ -502,8 +617,28 @@ func TestSort(t *testing.T) {
 	//}
 }
 
+func TestSortDesc(t *testing.T) {
+	unsorted := []string{
+		"Chair",
+		"Desk",
+	}
+
+	expected := []string{
+		"Desk",
+		"Chair",
+	}
+
+	sort.SliceStable(unsorted, func(i, j int) bool {
+		return unsorted[i] > unsorted[j]
+	})
+
+	if !reflect.DeepEqual(unsorted, expected) {
+		t.Errorf("SortDesc() failed, expected %v, got %v", expected, unsorted)
+	}
+}
+
 func TestToCssClasses(t *testing.T) {
-	classes := ToCssClasses([]interface{}{"font-bold", "mt-4"})
+	classes := ToCssClasses([]any{"font-bold", "mt-4"})
 	expected := "font-bold mt-4"
 	assert.Equal(t, expected, classes)
 }
