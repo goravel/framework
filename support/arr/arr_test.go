@@ -501,3 +501,21 @@ func TestSort(t *testing.T) {
 	//	t.Errorf("Test case 1 failed. Expected: %v, but got: %v", expected, result)
 	//}
 }
+
+func TestToCssClasses(t *testing.T) {
+	classes := ToCssClasses([]interface{}{"font-bold", "mt-4"})
+	expected := "font-bold mt-4"
+	assert.Equal(t, expected, classes)
+}
+
+func TestToCssStyles(t *testing.T) {
+	styles := ToCssStyles([]string{
+		"font-weight: bold",
+		"margin-top: 4px;",
+	})
+
+	expected := "font-weight: bold; margin-top: 4px;"
+	if styles != expected {
+		t.Errorf("ToCssStyles() = %q, expected %q", styles, expected)
+	}
+}

@@ -1,6 +1,7 @@
 package arr
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -8,13 +9,12 @@ import (
 )
 
 // Accessible Determine whether the given value is array accessible.
-func Accessible(value interface{}) bool {
-	_, isArray := value.([]interface{})
-	return isArray
+func Accessible[T any](value T) bool {
+	return reflect.TypeOf(value).Kind() == reflect.Slice
 }
 
 // Add an element to an array using “dot” notation if it doesn't exist.
-func Add(arr []any, key int, value any) ([]any, error) {
+func Add[T any](arr []T, key int, value any) ([]T, error) {
 	if Get(arr, key, nil) == nil {
 		if err := Set(&arr, key, value); err != nil {
 			return arr, err
@@ -24,42 +24,42 @@ func Add(arr []any, key int, value any) ([]any, error) {
 	return arr, nil
 }
 
-// Collapse an array of arrays into a single array.
-func Collapse(arr []interface{}) []interface{} {
+// Collapse collapses an array of arrays into a single array.
+func Collapse[T any](arr []T) []T {
 	if len(arr) == 0 {
-		return []interface{}{}
+		return []T{}
 	}
-	var res []interface{}
+	var res []T
 
 	for _, v := range arr {
-		switch val := v.(type) {
-		case []interface{}:
-			res = append(res, Collapse(val)...)
-		default:
-			res = append(res, val)
+		vValue := reflect.ValueOf(v)
+		if vValue.Kind() == reflect.Slice {
+			for i := 0; i < vValue.Len(); i++ {
+				res = append(res, vValue.Index(i).Interface().(T))
+			}
 		}
 	}
 	return res
 }
 
 // CrossJoin returns all possible permutations of the given arrays.
-func CrossJoin(arr ...[]any) ([][]any, error) {
+func CrossJoin[T any](arr ...[]T) ([][]T, error) {
 	if len(arr) == 0 {
 		return nil, ErrArrayRequired
 	}
 
-	res := [][]any{{}}
+	res := [][]T{{}}
 
 	for _, v := range arr {
 		if len(v) == 0 {
 			return nil, ErrEmptyArrayNotAllowed
 		}
 
-		var apd [][]any
+		var apd [][]T
 
 		for _, product := range res {
 			for _, item := range v {
-				productCopy := make([]any, len(product))
+				productCopy := make([]T, len(product))
 				copy(productCopy, product)
 
 				apd = append(apd, append(productCopy, item))
@@ -73,13 +73,13 @@ func CrossJoin(arr ...[]any) ([][]any, error) {
 }
 
 // Divide an array into two arrays. One with keys and the other with values.
-func Divide(arr []any) ([]any, []any, error) {
+func Divide[T any](arr []T) ([]int, []T, error) {
 	if len(arr) == 0 {
 		return nil, nil, ErrEmptyArrayNotAllowed
 	}
 
-	keys := make([]any, len(arr))
-	values := make([]any, len(arr))
+	keys := make([]int, len(arr))
+	values := make([]T, len(arr))
 
 	for i, v := range arr {
 		keys[i] = i
@@ -90,16 +90,16 @@ func Divide(arr []any) ([]any, []any, error) {
 }
 
 // Dot returns a flattened associative array with dot notation
-func Dot(m []interface{}, prefix string) ([]interface{}, error) {
+func Dot[T any](m []T, prefix string) ([]T, error) {
 	return nil, ErrNoImplementation
 }
 
 // Undot returns an expanded array from flattened dot notation array
-func Undot(m []interface{}) ([]interface{}, error) {
+func Undot[T any](m []T) ([]T, error) {
 	return nil, ErrNoImplementation
 }
 
-// Except returns all of the given array except for a specified array of keys.
+// Except returns all the given array except for a specified array of keys.
 func Except[T any](arr []T, keys []int) []T {
 	excludedKeys := make(map[int]bool)
 
@@ -121,7 +121,7 @@ func Except[T any](arr []T, keys []int) []T {
 }
 
 // Exists determines if the given key exists in the provided array.
-func Exists(arr []interface{}, key int) bool {
+func Exists[T any](arr []T, key int) bool {
 	if key < 0 {
 		return false
 	}
@@ -171,21 +171,22 @@ func Last[T any](arr []T, callback func(T) bool, defaultValue T) T {
 }
 
 // Flatten flattens a multi-dimensional array into a single level.
-func Flatten(arr []interface{}, depth int) []interface{} {
-	var res []interface{}
+// todo: generic
+func Flatten(arr []any, depth int) []any {
+	var res []any
 
 	for _, v := range arr {
-		if !isArray(v) {
+		if !Accessible(v) {
 			res = append(res, v)
 		} else {
-			values := make([]interface{}, 0)
+			values := make([]any, 0)
 
 			if depth == 1 {
-				for _, v := range v.([]interface{}) {
+				for _, v := range v.([]any) {
 					values = append(values, v)
 				}
 			} else {
-				values = Flatten(v.([]interface{}), depth-1)
+				values = Flatten(v.([]any), depth-1)
 			}
 
 			res = append(res, values...)
@@ -196,7 +197,7 @@ func Flatten(arr []interface{}, depth int) []interface{} {
 }
 
 // Forget Remove one or many array items from a given array.
-func Forget[T any](arr []T, keys interface{}) ([]T, error) {
+func Forget[T any](arr []T, keys any) ([]T, error) {
 	if len(arr) == 0 || keys == nil {
 		return arr, nil
 	}
@@ -236,7 +237,7 @@ func Get[T any](arr []T, key int, def T) T {
 }
 
 // Has checks if an item or items exist in an array using "dot" notation.
-func Has[T any](arr []T, keys interface{}) bool {
+func Has[T any](arr []T, keys any) bool {
 	if len(arr) == 0 || keys == nil {
 		return false
 	}
@@ -272,22 +273,31 @@ func IsList[T any](arr T) bool {
 }
 
 // Join concatenates elements of a slice into a string with a specified delimiter and final separator
-func Join(arr []string, delimiter string, finalSeparator ...string) string {
+func Join[T any](arr []T, delimiter string, finalSeparator ...string) string {
 	l := len(arr)
 	if l == 0 {
 		return ""
 	}
 	if l == 1 {
-		return arr[0]
+		return fmt.Sprint(arr[0])
 	}
 	if l == 2 {
-		return arr[0] + finalSeparator[0] + arr[1]
+		return fmt.Sprintf("%s%s%s", arr[0], finalSeparator[0], arr[1])
 	}
 	if len(finalSeparator) == 0 {
-		finalSeparator = []string{", "}
+		finalSeparator = []string{delimiter}
 	}
 
-	return strings.Join(arr[:l-1], delimiter) + finalSeparator[0] + arr[l-1]
+	var builder strings.Builder
+	for i, v := range arr {
+		builder.WriteString(fmt.Sprint(v))
+		if i == len(arr)-2 {
+			builder.WriteString(finalSeparator[0])
+		} else if i < len(arr)-1 {
+			builder.WriteString(delimiter)
+		}
+	}
+	return builder.String()
 }
 
 // todo: keyBy($array, $keyBy)
@@ -340,8 +350,9 @@ func Shuffle[T any](arr []T, seed *int64) []T {
 	return res
 }
 
-// Sort the array using the given callback.
-func Sort(arr []interface{}, fn func(i, j int) bool) []interface{} {
+// Sort the nested array using the given callback.
+// todo: generic
+func Sort(arr []any, fn func(i, j int) bool) []any {
 	if len(arr) == 0 {
 		return arr
 	}
@@ -352,7 +363,7 @@ func Sort(arr []interface{}, fn func(i, j int) bool) []interface{} {
 
 	for i, v := range arr {
 		switch val := v.(type) {
-		case []interface{}:
+		case []any:
 			arr[i] = Sort(val, fn)
 		default:
 		}
@@ -363,14 +374,29 @@ func Sort(arr []interface{}, fn func(i, j int) bool) []interface{} {
 
 // todo: sortDesc($array, $callback = null)
 // todo: sortRecursive($array, $options = SORT_REGULAR, $descending = false)
-// todo: toCssClasses($array)
-// todo: toCssStyles($array)
+
+// ToCssClasses Convert an array of strings to a string of CSS classes.
+func ToCssClasses[T any](arr []T) string {
+	var res []string
+
+	for _, v := range arr {
+		res = append(res, fmt.Sprint(v))
+	}
+
+	return strings.Join(res, " ")
+}
+
+// ToCssStyles Convert an array of strings to a string of CSS styles.
+func ToCssStyles[T any](arr []T) string {
+	var res []string
+
+	for _, v := range arr {
+		res = append(res, fmt.Sprint(v))
+	}
+
+	return strings.Join(res, "; ")
+}
+
 // todo: where($array, callable $callback)
 // todo: whereNotNull($array)
 // todo: wrap($value)
-
-// IsArray determines whether the given value is an array.
-func isArray(arr interface{}) bool {
-	_, ok := arr.([]interface{})
-	return ok
-}
