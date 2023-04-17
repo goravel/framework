@@ -179,17 +179,17 @@ func Flatten(arr []any, depth int) []any {
 		if !Accessible(v) {
 			res = append(res, v)
 		} else {
-			values := make([]any, 0)
+			val := make([]any, 0)
 
 			if depth == 0 {
 				for _, v := range v.([]any) {
-					values = append(values, v)
+					val = append(val, v)
 				}
 			} else {
-				values = Flatten(v.([]any), depth-1)
+				val = Flatten(v.([]any), depth-1)
 			}
 
-			res = append(res, values...)
+			res = append(res, val...)
 		}
 	}
 
@@ -410,12 +410,12 @@ func Random[T any](arr []T, number *int) ([]T, error) {
 
 	indices := rand.Perm(count)[:requested]
 
-	results := make([]T, 0, requested)
+	res := make([]T, 0, requested)
 	for _, index := range indices {
-		results = append(results, arr[index])
+		res = append(res, arr[index])
 	}
 
-	return results, nil
+	return res, nil
 }
 
 // Set an array item to a given value using int key

@@ -3,7 +3,6 @@ package arr
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"sort"
 	"testing"
 )
@@ -138,10 +137,6 @@ func TestCrossJoin(t *testing.T) {
 	arr2 = []any{}
 	_, err = CrossJoin(arr1, arr2)
 	assert.ErrorIs(t, ErrEmptyArrayNotAllowed, err)
-
-	// Test case 4: No arrays
-	//_, err = CrossJoin()
-	//assert.ErrorIs(t, ErrArrayRequired, err)
 }
 
 func TestDivide(t *testing.T) {
@@ -158,6 +153,26 @@ func TestDivide(t *testing.T) {
 	arr = []any{}
 	_, _, err = Divide(arr)
 	assert.ErrorIs(t, ErrEmptyArrayNotAllowed, err)
+}
+
+func TestDot(t *testing.T) {
+	arr := []int{
+		1,
+		2,
+	}
+
+	_, err := Dot(arr, "")
+	assert.ErrorIs(t, err, ErrNoImplementation)
+}
+
+func TestUndot(t *testing.T) {
+	arr := []int{
+		1,
+		2,
+	}
+
+	_, err := Undot(arr)
+	assert.ErrorIs(t, err, ErrNoImplementation)
 }
 
 func TestExcept(t *testing.T) {
@@ -380,6 +395,29 @@ func TestJoin(t *testing.T) {
 	assert.Equal(t, expectedStr5, result5)
 }
 
+func TestKeyBy(t *testing.T) {
+	arr := []map[string]interface{}{
+		{"ID": 1, "Name": "foo"},
+		{"ID": 2, "Name": "bar"},
+		{"ID": 5, "Name": "one"},
+		{"ID": 4, "Name": "two"},
+		{"ID": 3, "Name": "three"},
+	}
+
+	_, err := KeyBy(arr, "ID")
+	assert.ErrorIs(t, err, ErrNoImplementation)
+}
+
+func TestPrependKeysWith(t *testing.T) {
+	arr := []int{
+		1,
+		2,
+	}
+
+	_, err := PrependKeysWith(arr, "prefix.")
+	assert.ErrorIs(t, err, ErrNoImplementation)
+}
+
 func TestOnly(t *testing.T) {
 	arr := []string{"one", "two", "three"}
 
@@ -409,24 +447,24 @@ func TestMap(t *testing.T) {
 		arr := []int{1, 2, 3}
 		expected := []string{"1!", "2!", "3!"}
 
-		res := Map(arr, func(n int, i int) string {
+		result := Map(arr, func(n int, i int) string {
 			return fmt.Sprintf("%d!", n)
 		})
 
-		for i := range res {
-			assert.Equal(t, expected[i], res[i])
+		for i := range result {
+			assert.Equal(t, expected[i], result[i])
 		}
 	}
 	{
 		strs := []string{"hello", "world"}
 		expected2 := []int{5, 5}
 
-		res := Map(strs, func(s string, i int) int {
+		result := Map(strs, func(s string, i int) int {
 			return len(s)
 		})
 
-		for i := range res {
-			assert.Equal(t, expected2[i], res[i])
+		for i := range result {
+			assert.Equal(t, expected2[i], result[i])
 		}
 	}
 }
@@ -461,9 +499,7 @@ func TestPrepend(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Prepend(tc.arr, tc.value)
-			if !reflect.DeepEqual(result, tc.expected) {
-				t.Errorf("Expected: %v, got: %v", tc.expected, result)
-			}
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
@@ -558,7 +594,6 @@ func TestShuffle(t *testing.T) {
 	for _, v := range arr {
 		assert.Contains(t, result, v)
 	}
-
 }
 
 func TestSort(t *testing.T) {
@@ -568,9 +603,7 @@ func TestSort(t *testing.T) {
 	result := Sort(arr, func(i, j int) bool {
 		return arr[i].(int) < arr[j].(int)
 	})
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Test case 2 failed. Expected: %v, but got: %v", expected, result)
-	}
+	assert.Equal(t, expected, result)
 
 	// Test case 2
 	arr = []any{"foo", "bar", "baz", "qux"}
@@ -578,9 +611,7 @@ func TestSort(t *testing.T) {
 	result = Sort(arr, func(i, j int) bool {
 		return arr[i].(string) < arr[j].(string)
 	})
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Test case 3 failed. Expected: %v, but got: %v", expected, result)
-	}
+	assert.Equal(t, expected, result)
 
 	// Test case 3
 	// todo: this does not work now
@@ -612,9 +643,7 @@ func TestSort(t *testing.T) {
 	//	}
 	//	return false
 	//})
-	//if !reflect.DeepEqual(result, expected) {
-	//	t.Errorf("Test case 1 failed. Expected: %v, but got: %v", expected, result)
-	//}
+	//assert.Equal(t, expected, result)
 }
 
 func TestSortDesc(t *testing.T) {
@@ -632,9 +661,7 @@ func TestSortDesc(t *testing.T) {
 		return unsorted[i] > unsorted[j]
 	})
 
-	if !reflect.DeepEqual(unsorted, expected) {
-		t.Errorf("SortDesc() failed, expected %v, got %v", expected, unsorted)
-	}
+	assert.Equal(t, expected, unsorted)
 }
 
 func TestSortRecursive(t *testing.T) {
@@ -700,9 +727,7 @@ func TestToCssStyles(t *testing.T) {
 	})
 
 	expected := "font-weight: bold; margin-top: 4px;"
-	if styles != expected {
-		t.Errorf("ToCssStyles() = %q, expected %q", styles, expected)
-	}
+	assert.Equal(t, expected, styles)
 }
 
 func TestWhere(t *testing.T) {
