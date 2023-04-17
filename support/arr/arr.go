@@ -557,7 +557,24 @@ func ToCssStyles[T any](arr []T) string {
 
 // todo: where($array, callable $callback)
 // todo: whereNotNull($array)
-// todo: wrap($value)
+
+// Wrap If the given value is not an array and not null, wrap it in one.
+func Wrap[T any](value T) []T {
+	if value == nil {
+		return []T{}
+	}
+
+	if reflect.TypeOf(value).Kind() == reflect.Slice || reflect.TypeOf(value).Kind() == reflect.Array {
+		v := reflect.ValueOf(value)
+		slice := make([]T, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			slice[i] = v.Index(i).Interface().(T)
+		}
+		return slice
+	}
+
+	return []T{value}
+}
 
 // generateLessFunc return a comparison func for sorting the elements based on their type
 func generateLessFunc[T any](arr []T) (func(a, b T) bool, error) {

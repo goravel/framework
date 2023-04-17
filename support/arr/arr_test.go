@@ -490,7 +490,7 @@ func TestPull(t *testing.T) {
 
 func TestRandom(t *testing.T) {
 	// Test case 1: Get one random value
-	arr := []interface{}{1, 2, 3, 4, 5}
+	arr := []any{1, 2, 3, 4, 5}
 	results, err := Random(arr, nil)
 	if assert.NoError(t, err) && assert.Len(t, results, 1) {
 		assert.Contains(t, arr, results[0])
@@ -703,4 +703,24 @@ func TestToCssStyles(t *testing.T) {
 	if styles != expected {
 		t.Errorf("ToCssStyles() = %q, expected %q", styles, expected)
 	}
+}
+
+func TestWrap(t *testing.T) {
+	// Test case 1: nil value should return an empty slice
+	value := any(nil)
+	expected := []any{}
+	result := Wrap(value)
+	assert.Equal(t, expected, result)
+
+	// Test case 2: Non-slice value should be wrapped in a slice
+	valueStr := "hello"
+	expectedStr := []string{"hello"}
+	resultStr := Wrap(valueStr)
+	assert.Equal(t, expectedStr, resultStr)
+
+	// Test case 3: Slice value should be returned as-is
+	valueInt := []int{1, 2, 3}
+	expectedInt := []int{1, 2, 3}
+	resultInt := Wrap(valueInt)
+	assert.Equal(t, expectedInt, resultInt)
 }
