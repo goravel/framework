@@ -555,25 +555,45 @@ func ToCssStyles[T any](arr []T) string {
 	return strings.Join(res, "; ")
 }
 
-// todo: where($array, callable $callback)
-// todo: whereNotNull($array)
+// Where Filter the array using the given callback.
+func Where[T any](arr []T, fn func(T) bool) []T {
+	res := make([]T, 0)
+
+	for _, v := range arr {
+		if fn(v) {
+			res = append(res, v)
+		}
+	}
+
+	return res
+}
+
+// WhereNotNull Filter items where the value is not null.
+func WhereNotNull[T any](arr []T) []T {
+	notNilFilter := func(item T) bool {
+		rv := reflect.ValueOf(item)
+		return rv.IsValid() && !rv.IsZero()
+	}
+	return Where(arr, notNilFilter)
+}
 
 // Wrap If the given value is not an array and not null, wrap it in one.
-func Wrap[T any](value T) []T {
+// todo: generic
+func Wrap(value any) []any {
 	if value == nil {
-		return []T{}
+		return []interface{}{}
 	}
 
 	if reflect.TypeOf(value).Kind() == reflect.Slice || reflect.TypeOf(value).Kind() == reflect.Array {
 		v := reflect.ValueOf(value)
-		slice := make([]T, v.Len())
+		slice := make([]any, v.Len())
 		for i := 0; i < v.Len(); i++ {
-			slice[i] = v.Index(i).Interface().(T)
+			slice[i] = v.Index(i).Interface().(any)
 		}
 		return slice
 	}
 
-	return []T{value}
+	return []any{value}
 }
 
 // generateLessFunc return a comparison func for sorting the elements based on their type

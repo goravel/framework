@@ -705,6 +705,61 @@ func TestToCssStyles(t *testing.T) {
 	}
 }
 
+func TestWhere(t *testing.T) {
+	// Test case 1: Filtering even numbers from an integer slice
+	arr := []int{1, 2, 3, 4, 5, 6, 7}
+	filterFn := func(item int) bool {
+		return item%2 == 0
+	}
+	expected := []int{2, 4, 6}
+	result := Where(arr, filterFn)
+	assert.Equal(t, expected, result)
+
+	// Test case 2: Filtering non-empty strings from a string slice
+	arrStr := []string{"apple", "", "banana", "", "cherry"}
+	filterFnStr := func(item string) bool {
+		return item != ""
+	}
+	expectedStr := []string{"apple", "banana", "cherry"}
+	resultStr := Where(arrStr, filterFnStr)
+	assert.Equal(t, expectedStr, resultStr)
+
+	// Test case 3: Filtering positive numbers from a float64 slice
+	arrFloat := []float64{-1.5, 2.3, -3.7, 4.1, -5.8, 6.0}
+	filterFnFloat := func(item float64) bool {
+		return item > 0
+	}
+	expectedFloat := []float64{2.3, 4.1, 6.0}
+	resultFloat := Where(arrFloat, filterFnFloat)
+	assert.Equal(t, expectedFloat, resultFloat)
+}
+
+func TestWhereNotNull(t *testing.T) {
+	// Test case 1: No nil values
+	arr1 := []interface{}{1, 2, 3, 4, 5}
+	expected1 := []interface{}{1, 2, 3, 4, 5}
+	result1 := WhereNotNull(arr1)
+	assert.Equal(t, expected1, result1)
+
+	// Test case 2: Some nil values
+	arr2 := []interface{}{nil, 1, nil, 2, 3, nil}
+	expected2 := []interface{}{1, 2, 3}
+	result2 := WhereNotNull(arr2)
+	assert.Equal(t, expected2, result2)
+
+	// Test case 3: All nil values
+	arr3 := []interface{}{nil, nil, nil}
+	expected3 := []interface{}{}
+	result3 := WhereNotNull(arr3)
+	assert.Equal(t, expected3, result3)
+
+	// Test case 4: Empty slice
+	arr4 := []interface{}{}
+	expected4 := []interface{}{}
+	result4 := WhereNotNull(arr4)
+	assert.Equal(t, expected4, result4)
+}
+
 func TestWrap(t *testing.T) {
 	// Test case 1: nil value should return an empty slice
 	value := any(nil)
@@ -714,13 +769,13 @@ func TestWrap(t *testing.T) {
 
 	// Test case 2: Non-slice value should be wrapped in a slice
 	valueStr := "hello"
-	expectedStr := []string{"hello"}
+	expectedStr := []any{"hello"}
 	resultStr := Wrap(valueStr)
 	assert.Equal(t, expectedStr, resultStr)
 
 	// Test case 3: Slice value should be returned as-is
 	valueInt := []int{1, 2, 3}
-	expectedInt := []int{1, 2, 3}
+	expectedInt := []any{1, 2, 3}
 	resultInt := Wrap(valueInt)
 	assert.Equal(t, expectedInt, resultInt)
 }
