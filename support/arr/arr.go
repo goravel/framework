@@ -14,8 +14,9 @@ func Accessible[T any](value T) bool {
 }
 
 // Add an element to an array using “dot” notation if it doesn't exist.
-func Add[T any](arr []T, key int, value any) ([]T, error) {
-	if Get(arr, key, nil) == nil {
+func Add[T any](arr []T, key int, value T) ([]T, error) {
+	_, found := Get(arr, key, false)
+	if !found {
 		if err := Set(&arr, key, value); err != nil {
 			return arr, err
 		}
@@ -32,11 +33,10 @@ func Collapse[T any](arr []T) []T {
 	var res []T
 
 	for _, v := range arr {
-		vValue := reflect.ValueOf(v)
-		if vValue.Kind() == reflect.Slice {
-			for i := 0; i < vValue.Len(); i++ {
-				res = append(res, vValue.Index(i).Interface().(T))
-			}
+		if Accessible(v) {
+			res = append(res, Collapse(reflect.ValueOf(v).Interface().([]T))...)
+		} else {
+			res = append(res, v)
 		}
 	}
 	return res
@@ -181,7 +181,7 @@ func Flatten(arr []any, depth int) []any {
 		} else {
 			values := make([]any, 0)
 
-			if depth == 1 {
+			if depth == 0 {
 				for _, v := range v.([]any) {
 					values = append(values, v)
 				}
@@ -224,16 +224,12 @@ func Forget[T any](arr []T, keys any) ([]T, error) {
 }
 
 // Get an item from an array using int key.
-func Get[T any](arr []T, key int, def T) T {
-	if key < 0 {
-		return def
+func Get[T any](arr []T, key int, def any) (T, bool) {
+	if key < 0 || key > len(arr)-1 {
+		return def.(T), false
 	}
 
-	if key > len(arr)-1 {
-		return def
-	}
-
-	return arr[key]
+	return arr[key], true
 }
 
 // Has checks if an item or items exist in an array using "dot" notation.
@@ -302,7 +298,7 @@ func Join[T any](arr []T, delimiter string, finalSeparator ...string) string {
 		return fmt.Sprint(arr[0])
 	}
 	if l == 2 {
-		return fmt.Sprintf("%s%s%s", arr[0], finalSeparator[0], arr[1])
+		return fmt.Sprintf("%v%s%v", arr[0], finalSeparator[0], arr[1])
 	}
 	if len(finalSeparator) == 0 {
 		finalSeparator = []string{delimiter}
@@ -377,12 +373,11 @@ func Prepend[T any](arr []T, value T) []T {
 }
 
 // Pull Get a value from the array, and remove it.
-func Pull[T any](arr *[]T, key int, def T) (T, error) {
-	v := Get(*arr, key, def)
+func Pull[T any](arr []T, key int, def T) ([]T, T, error) {
+	v, _ := Get(arr, key, def)
 
-	res, err := Forget(*arr, key)
-	arr = &res
-	return v, err
+	res, err := Forget(arr, key)
+	return res, v, err
 }
 
 // Query Convert the array into a query string.
@@ -497,7 +492,46 @@ func SortDesc(arr []any, fn func(i, j int) bool) []any {
 	return arr
 }
 
-// todo: sortRecursive($array, $options = SORT_REGULAR, $descending = false)
+// SortRecursive Recursively sort an array by values.
+// todo: generic
+func SortRecursive(arr []any, descending bool) ([]any, error) {
+	if len(arr) == 0 {
+		return arr, nil
+	}
+
+	res := make([]any, len(arr))
+	copy(res, arr)
+
+	var err error
+	for i, v := range res {
+		if reflect.TypeOf(v).Kind() == reflect.Slice {
+			vv := reflect.ValueOf(v)
+			subSlice := make([]any, vv.Len())
+			for j := 0; j < vv.Len(); j++ {
+				subSlice[j] = vv.Index(j).Interface()
+			}
+			res[i], err = SortRecursive(subSlice, descending)
+			if err != nil {
+				return arr, err
+			}
+		}
+	}
+
+	fn, err := generateLessFunc(arr)
+	if err != nil {
+		return res, nil
+	}
+
+	sort.Slice(res, func(i, j int) bool {
+		if !descending {
+			return fn(res[i], res[j])
+		} else {
+			return fn(res[j], res[i])
+		}
+	})
+
+	return res, nil
+}
 
 // ToCssClasses Convert an array of strings to a string of CSS classes.
 func ToCssClasses[T any](arr []T) string {
@@ -524,3 +558,32 @@ func ToCssStyles[T any](arr []T) string {
 // todo: where($array, callable $callback)
 // todo: whereNotNull($array)
 // todo: wrap($value)
+
+// generateLessFunc return a comparison func for sorting the elements based on their type
+func generateLessFunc[T any](arr []T) (func(a, b T) bool, error) {
+	if len(arr) == 0 {
+		return nil, fmt.Errorf("empty slice")
+	}
+
+	return func(a, b T) bool {
+		if reflect.TypeOf(a) != reflect.TypeOf(b) {
+			return false
+		}
+
+		switch reflect.TypeOf(a).Kind() {
+		case reflect.Int:
+			ai := reflect.ValueOf(a).Interface().(int)
+			bi := reflect.ValueOf(b).Interface().(int)
+			return ai < bi
+		case reflect.Float64:
+			af := reflect.ValueOf(a).Interface().(float64)
+			bf := reflect.ValueOf(b).Interface().(float64)
+			return af < bf
+		case reflect.String:
+			as := reflect.ValueOf(a).Interface().(string)
+			bs := reflect.ValueOf(b).Interface().(string)
+			return as < bs
+		}
+		return false
+	}, nil
+}

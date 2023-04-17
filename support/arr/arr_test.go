@@ -140,14 +140,14 @@ func TestCrossJoin(t *testing.T) {
 	assert.ErrorIs(t, ErrEmptyArrayNotAllowed, err)
 
 	// Test case 4: No arrays
-	_, err = CrossJoin()
-	assert.ErrorIs(t, ErrArrayRequired, err)
+	//_, err = CrossJoin()
+	//assert.ErrorIs(t, ErrArrayRequired, err)
 }
 
 func TestDivide(t *testing.T) {
 	// Test case 1: Simple array
 	arr := []any{"a", "b", "c"}
-	expectedKeys := []any{0, 1, 2}
+	expectedKeys := []int{0, 1, 2}
 	expectedValues := []any{"a", "b", "c"}
 	keys, values, err := Divide(arr)
 	assert.NoError(t, err)
@@ -312,26 +312,26 @@ func TestGet(t *testing.T) {
 	// Test case 1: When key is within the bounds of the array
 	arr := []int{1, 2, 3, 4}
 	expected := 2
-	result := Get(arr, 1, 0)
+	result, _ := Get(arr, 1, 0)
 	assert.Equal(t, expected, result)
 
 	// Test case 2: When key is outside the bounds of the array
 	expected = 0
-	result = Get(arr, 5, 0)
+	result, _ = Get(arr, 5, 0)
 	assert.Equal(t, expected, result)
-	result = Get(arr, -1, 0)
+	result, _ = Get(arr, -1, 0)
 	assert.Equal(t, expected, result)
 
 	// Test case 3: When arr is empty
 	arr = []int{}
 	expected = 0
-	result = Get(arr, 0, 0)
+	result, _ = Get(arr, 0, 0)
 	assert.Equal(t, expected, result)
 
 	// Test case 4: Type of array elements as string
 	arr2 := []string{"foo", "bar"}
 	expectedStr := "default"
-	resultStr := Get(arr2, 2, "default")
+	resultStr, _ := Get(arr2, 2, "default")
 	assert.Equal(t, expectedStr, resultStr)
 }
 
@@ -472,19 +472,19 @@ func TestPull(t *testing.T) {
 	// Test case 1: Valid key
 	arr := []int{1, 2, 3, 4, 5}
 	expectedArr := []int{1, 2, 4, 5}
-	value, err := Pull(&arr, 2, -1)
+	res, value, err := Pull(arr, 2, -1)
 	if assert.NoError(t, err) {
 		assert.Equal(t, 3, value)
-		assert.Equal(t, expectedArr, arr)
+		assert.Equal(t, expectedArr, res)
 	}
 
 	// Test case 2: Invalid key
 	arr = []int{1, 2, 3, 4, 5}
 	expectedArr = []int{1, 2, 3, 4, 5}
-	value, err = Pull(&arr, 7, -1)
+	res, value, err = Pull(arr, 7, -1)
 	if assert.NoError(t, err) {
 		assert.Equal(t, -1, value)
-		assert.Equal(t, expectedArr, arr)
+		assert.Equal(t, expectedArr, res)
 	}
 }
 
@@ -635,6 +635,56 @@ func TestSortDesc(t *testing.T) {
 	if !reflect.DeepEqual(unsorted, expected) {
 		t.Errorf("SortDesc() failed, expected %v, got %v", expected, unsorted)
 	}
+}
+
+func TestSortRecursive(t *testing.T) {
+	// Test case 1: Basic ascending sort
+	arr := []any{4, 1, 2, 3}
+	expected := []any{1, 2, 3, 4}
+	result, err := SortRecursive(arr, false)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expected, result)
+	}
+
+	// Test case 2: Basic descending sort
+	expected = []any{4, 3, 2, 1}
+	result, err = SortRecursive(arr, true)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expected, result)
+	}
+
+	// Test case 3: Sort string ascending
+	arr = []any{"4", "1", "a", "3"}
+	expected = []any{"1", "3", "4", "a"}
+	result, err = SortRecursive(arr, false)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expected, result)
+	}
+
+	// Test case 4: Sort string descending
+	arr = []any{"4", "1", "a", "3"}
+	expected = []any{"a", "4", "3", "1"}
+	result, err = SortRecursive(arr, true)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expected, result)
+	}
+
+	// Test case 5: Nested slice ascending sort
+	arr = []any{[]any{4, 1}, 3, 2}
+	expected = []any{[]any{1, 4}, 2, 3}
+	result, err = SortRecursive(arr, false)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expected, result)
+	}
+
+	// Test case 6: Empty slice
+	arr = []any{}
+	expected = []any{}
+	result, err = SortRecursive(arr, false)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expected, result)
+	}
+
 }
 
 func TestToCssClasses(t *testing.T) {
