@@ -59,6 +59,12 @@ func (s *ApplicationTestSuite) TestCheckHash() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestConfigurationOverride() {
+	value := "$argon2id$v=19$m=65536,t=8,p=1$NlVjQm5PQUdWTHVTM1RBUg$Q5T7WfeCI7ucIdk6Na6AdQ"
+	s.True(s.hashers["argon2id"].Check("goravel", value))
+	s.True(s.hashers["argon2id"].NeedsRehash(value))
+}
+
 func (s *ApplicationTestSuite) TestNeedsRehash() {
 	for name, hasher := range s.hashers {
 		s.Run(name, func() {
