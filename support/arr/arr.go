@@ -2,6 +2,7 @@ package arr
 
 import (
 	"fmt"
+	"github.com/goravel/framework/support/time"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -10,7 +11,7 @@ import (
 
 // Accessible Determine whether the given value is array accessible.
 func Accessible[T any](value T) bool {
-	return reflect.TypeOf(value).Kind() == reflect.Slice
+	return reflect.TypeOf(value).Kind() == reflect.Slice || reflect.TypeOf(value).Kind() == reflect.Array
 }
 
 // Add an element to an array using “dot” notation if it doesn't exist.
@@ -52,7 +53,7 @@ func CrossJoin[T any](arr ...[]T) ([][]T, error) {
 
 	for _, v := range arr {
 		if len(v) == 0 {
-			return nil, ErrEmptyArrayNotAllowed
+			return nil, ErrEmptySliceNotAllowed
 		}
 
 		var apd [][]T
@@ -75,7 +76,7 @@ func CrossJoin[T any](arr ...[]T) ([][]T, error) {
 // Divide an array into two arrays. One with keys and the other with values.
 func Divide[T any](arr []T) ([]int, []T, error) {
 	if len(arr) == 0 {
-		return nil, nil, ErrEmptyArrayNotAllowed
+		return nil, nil, ErrEmptySliceNotAllowed
 	}
 
 	keys := make([]int, len(arr))
@@ -122,15 +123,7 @@ func Except[T any](arr []T, keys []int) []T {
 
 // Exists determines if the given key exists in the provided array.
 func Exists[T any](arr []T, key int) bool {
-	if key < 0 {
-		return false
-	}
-
-	if key > len(arr)-1 {
-		return false
-	}
-
-	return true
+	return key >= 0 && key < len(arr)
 }
 
 // First returns the first element in an array that passes a given truth test.
@@ -224,6 +217,7 @@ func Forget[T any](arr []T, keys any) ([]T, error) {
 }
 
 // Get an item from an array using int key.
+// todo: thread safe?
 func Get[T any](arr []T, key int, def any) (T, bool) {
 	if key < 0 || key > len(arr)-1 {
 		return def.(T), false
@@ -368,7 +362,6 @@ func Map[T, U any](arr []T, fn func(T, int) U) []U {
 
 // Prepend the given value to the beginning of an array or associative array.
 func Prepend[T any](arr []T, value T) []T {
-
 	return append([]T{value}, arr...)
 }
 
@@ -397,7 +390,7 @@ func Random[T any](arr []T, number *int) ([]T, error) {
 	count := len(arr)
 
 	if requested > count {
-		return nil, fmt.Errorf("%w: requested %d items, but there are only %d items available", ErrInvalidRequestedItems, requested, count)
+		return nil, ErrExceedMaxLength
 	}
 
 	if number == nil {
@@ -419,6 +412,7 @@ func Random[T any](arr []T, number *int) ([]T, error) {
 }
 
 // Set an array item to a given value using int key
+// todo: thread safe?
 func Set[T any](arr *[]T, key int, value T) error {
 	if key < 0 {
 		return ErrInvalidKey
@@ -439,12 +433,14 @@ func Shuffle[T any](arr []T, seed *int64) []T {
 	res := make([]T, len(arr))
 	copy(res, arr)
 
+	var r *rand.Rand
 	if seed == nil {
-		rand.Shuffle(len(arr), func(i, j int) { arr[i], arr[j] = arr[j], arr[i] })
+		randSeed := time.Now().UnixNano()
+		r = rand.New(rand.NewSource(randSeed))
 	} else {
-		r := rand.New(rand.NewSource(*seed))
-		r.Shuffle(len(arr), func(i, j int) { arr[i], arr[j] = arr[j], arr[i] })
+		r = rand.New(rand.NewSource(*seed))
 	}
+	r.Shuffle(len(res), func(i, j int) { res[i], res[j] = res[j], res[i] })
 	return res
 }
 
@@ -473,23 +469,7 @@ func Sort(arr []any, fn func(i, j int) bool) []any {
 // Sort the nested array in descending order using the given callback.
 // todo: generic
 func SortDesc(arr []any, fn func(i, j int) bool) []any {
-	if len(arr) == 0 {
-		return arr
-	}
-
-	sort.Slice(arr, func(i, j int) bool {
-		return fn(i, j)
-	})
-
-	for i, v := range arr {
-		switch val := v.(type) {
-		case []any:
-			arr[i] = Sort(val, fn)
-		default:
-		}
-	}
-
-	return arr
+	return Sort(arr, fn)
 }
 
 // SortRecursive Recursively sort an array by values.
@@ -504,7 +484,7 @@ func SortRecursive(arr []any, descending bool) ([]any, error) {
 
 	var err error
 	for i, v := range res {
-		if reflect.TypeOf(v).Kind() == reflect.Slice {
+		if Accessible(v) {
 			vv := reflect.ValueOf(v)
 			subSlice := make([]any, vv.Len())
 			for j := 0; j < vv.Len(); j++ {
@@ -584,7 +564,7 @@ func Wrap(value any) []any {
 		return []interface{}{}
 	}
 
-	if reflect.TypeOf(value).Kind() == reflect.Slice || reflect.TypeOf(value).Kind() == reflect.Array {
+	if Accessible(value) {
 		v := reflect.ValueOf(value)
 		slice := make([]any, v.Len())
 		for i := 0; i < v.Len(); i++ {
@@ -599,7 +579,7 @@ func Wrap(value any) []any {
 // generateLessFunc return a comparison func for sorting the elements based on their type
 func generateLessFunc[T any](arr []T) (func(a, b T) bool, error) {
 	if len(arr) == 0 {
-		return nil, fmt.Errorf("empty slice")
+		return nil, ErrEmptySliceNotAllowed
 	}
 
 	return func(a, b T) bool {

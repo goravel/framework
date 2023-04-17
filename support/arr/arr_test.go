@@ -136,7 +136,7 @@ func TestCrossJoin(t *testing.T) {
 	arr1 = []any{"A", "B"}
 	arr2 = []any{}
 	_, err = CrossJoin(arr1, arr2)
-	assert.ErrorIs(t, ErrEmptyArrayNotAllowed, err)
+	assert.ErrorIs(t, ErrEmptySliceNotAllowed, err)
 }
 
 func TestDivide(t *testing.T) {
@@ -152,7 +152,7 @@ func TestDivide(t *testing.T) {
 	// Test case 2: Empty array
 	arr = []any{}
 	_, _, err = Divide(arr)
-	assert.ErrorIs(t, ErrEmptyArrayNotAllowed, err)
+	assert.ErrorIs(t, ErrEmptySliceNotAllowed, err)
 }
 
 func TestDot(t *testing.T) {
@@ -544,7 +544,7 @@ func TestRandom(t *testing.T) {
 	// Test case 3: Invalid number of requested items
 	number = 10
 	results, err = Random(arr, &number)
-	assert.ErrorIs(t, err, ErrInvalidRequestedItems)
+	assert.ErrorIs(t, err, ErrExceedMaxLength)
 }
 
 func TestSet(t *testing.T) {
