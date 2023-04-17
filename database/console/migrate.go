@@ -69,7 +69,7 @@ func getMigrate() (*migrate.Migrate, error) {
 			return nil, nil
 		}
 
-		db, err := sql.Open("sqlite3", dsn)
+		db, err := sql.Open("sqlite", dsn)
 		if err != nil {
 			return nil, err
 		}
