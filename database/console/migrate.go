@@ -7,8 +7,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
+	"github.com/goravel/framework/database/console/driver/sqlite"
 
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
