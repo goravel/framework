@@ -22,5 +22,6 @@ func (receiver *ServiceProvider) registerCommands() {
 		&console.ListCommand{},
 		&console.KeyGenerateCommand{},
 		&console.MakeCommand{},
+		&console.VendorPublishCommand{},
 	})
 }
