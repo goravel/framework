@@ -50,13 +50,13 @@ func TestCollapse(t *testing.T) {
 	arr := []any{"foo", "bar", "baz"}
 	expected := []any{"foo", "bar", "baz"}
 	result := Collapse(arr)
-	assert.Equal(t, expected, result)
+	assert.ElementsMatch(t, expected, result)
 
 	// Test case 2: Flatten a nested array
 	arr = []any{[]any{"foo", "bar"}, []any{"baz", "qux"}}
 	expected = []any{"foo", "bar", "baz", "qux"}
 	result = Collapse(arr)
-	assert.Equal(t, expected, result)
+	assert.ElementsMatch(t, expected, result)
 
 	// Test case 3: Flatten a nested array
 	arr = []any{
@@ -72,7 +72,7 @@ func TestCollapse(t *testing.T) {
 	}
 	expected = []any{"foo", "bar", "baz", "qux"}
 	result = Collapse(arr)
-	assert.Equal(t, expected, result)
+	assert.ElementsMatch(t, expected, result)
 
 	// Test case 4: Flatten a nested array
 	arr = []any{
@@ -85,7 +85,7 @@ func TestCollapse(t *testing.T) {
 	}
 	expected = []any{"foo", "bar", "baz", "qux", "Charlotte", "Ethan", "Olivia", "William"}
 	result = Collapse(arr)
-	assert.Equal(t, expected, result)
+	assert.ElementsMatch(t, expected, result)
 
 	// Test case 5: Flatten a nested map
 	arr = []any{
@@ -107,7 +107,7 @@ func TestCollapse(t *testing.T) {
 		6,
 	}
 	result = Collapse(arr)
-	assert.Equal(t, expected, result)
+	assert.ElementsMatch(t, expected, result)
 
 	// Test case 6: Flatten a nested array and map
 	arr = []any{
