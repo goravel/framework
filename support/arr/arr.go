@@ -11,7 +11,8 @@ import (
 
 // Accessible Determine whether the given value is array accessible.
 func Accessible[T any](value T) bool {
-	return reflect.TypeOf(value).Kind() == reflect.Slice || reflect.TypeOf(value).Kind() == reflect.Array
+	k := reflect.ValueOf(value).Kind()
+	return k == reflect.Slice || k == reflect.Array || k == reflect.Map
 }
 
 // Add an element to an array using “dot” notation if it doesn't exist.
