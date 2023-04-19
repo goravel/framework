@@ -28,20 +28,44 @@ func Add[T any](arr []T, key int, value T) ([]T, error) {
 }
 
 // Collapse collapses an array of arrays into a single array.
-func Collapse[T any](arr []T) []T {
+func Collapse(arr []any) []any {
 	if len(arr) == 0 {
-		return []T{}
+		return []any{}
 	}
-	var res []T
-
-	for _, v := range arr {
-		if Accessible(v) {
-			res = append(res, Collapse(reflect.ValueOf(v).Interface().([]T))...)
-		} else {
-			res = append(res, v)
-		}
-	}
+	res := make([]any, 0)
+	recursiveCollapse(arr, &res)
 	return res
+}
+
+func recursiveCollapse(value any, res *[]any) {
+	switch v := value.(type) {
+	case [][]interface{}:
+		for _, vv := range v {
+			recursiveCollapse(vv, res)
+		}
+	case []map[string]interface{}:
+		for _, vv := range v {
+			recursiveCollapse(vv, res)
+		}
+	case []interface{}:
+		for _, vv := range v {
+			recursiveCollapse(vv, res)
+		}
+	case map[string]map[string]interface{}:
+		for _, vv := range v {
+			recursiveCollapse(vv, res)
+		}
+	case map[string][]interface{}:
+		for _, vv := range v {
+			recursiveCollapse(vv, res)
+		}
+	case map[string]interface{}:
+		for _, vv := range v {
+			recursiveCollapse(vv, res)
+		}
+	default:
+		*res = append(*res, v)
+	}
 }
 
 // CrossJoin returns all possible permutations of the given arrays.
@@ -275,12 +299,14 @@ func HasAny[T any](arr []T, keys any) bool {
 
 // IsAssoc Determines if an array is associative.
 func IsAssoc[T any](arr T) bool {
-	return false
+	k := reflect.ValueOf(arr).Kind()
+	return k == reflect.Map
 }
 
 // IsList Determines if an array is a list.
 func IsList[T any](arr T) bool {
-	return true
+	k := reflect.ValueOf(arr).Kind()
+	return k == reflect.Slice || k == reflect.Array
 }
 
 // Join concatenates elements of a slice into a string with a specified delimiter and final separator

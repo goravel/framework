@@ -60,7 +60,15 @@ func TestCollapse(t *testing.T) {
 
 	// Test case 3: Flatten a nested array
 	arr = []any{
-		[]any{[]any{"foo", "bar"}, []any{"baz", "qux"}},
+		[]any{
+			[]any{
+				"foo",
+				"bar",
+			},
+			[]any{
+				"baz",
+				"qux",
+			}},
 	}
 	expected = []any{"foo", "bar", "baz", "qux"}
 	result = Collapse(arr)
@@ -68,8 +76,12 @@ func TestCollapse(t *testing.T) {
 
 	// Test case 4: Flatten a nested array
 	arr = []any{
-		[]any{"foo", "bar"}, []any{"baz", "qux"},
-		[]any{[]any{"Charlotte", "Ethan"}, []any{"Olivia", "William"}},
+		[]any{"foo", "bar"},
+		[]any{"baz", "qux"},
+		[]any{
+			[]any{"Charlotte", "Ethan"},
+			[]any{"Olivia", "William"},
+		},
 	}
 	expected = []any{"foo", "bar", "baz", "qux", "Charlotte", "Ethan", "Olivia", "William"}
 	result = Collapse(arr)
@@ -87,17 +99,64 @@ func TestCollapse(t *testing.T) {
 		},
 	}
 	expected = []any{
-		map[string]any{
-			"a": 1,
-			"b": map[string]any{"c": 2, "d": 3},
-		},
-		map[string]any{
-			"e": map[string]any{"f": 4, "g": 5},
-			"h": 6,
-		},
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
 	}
 	result = Collapse(arr)
 	assert.Equal(t, expected, result)
+
+	// Test case 6: Flatten a nested array and map
+	arr = []any{
+		[]any{"foo", "bar"},
+		map[string]any{"a": 1, "b": 2},
+		[]any{"baz", "qux"},
+	}
+	expected = []any{"foo", "bar", 1, 2, "baz", "qux"}
+	result = Collapse(arr)
+	assert.ElementsMatch(t, expected, result)
+
+	// Test case 7: Flatten a complex nested array and map
+	arr = []any{
+		[]any{
+			"foo",
+			map[string]any{"a": 1, "b": 2},
+			"bar",
+		},
+		map[string]any{
+			"c": 3,
+			"d": []any{"baz", "qux"},
+		},
+	}
+	expected = []any{"foo", "bar", 1, 2, 3, "baz", "qux"}
+	result = Collapse(arr)
+	assert.ElementsMatch(t, expected, result)
+
+	// Test case 8: Flatten a deeply nested array and map
+	arr = []any{
+		[]any{
+			"foo",
+			map[string]any{
+				"a": 1,
+				"b": []any{2, "bar"},
+			},
+		},
+		map[string]any{
+			"c": 3,
+			"d": []any{
+				"baz",
+				map[string]any{"e": 4, "f": 5},
+				"qux",
+			},
+		},
+	}
+	expected = []any{"foo", "bar", 1, 2, 3, "baz", "qux", 4, 5}
+	result = Collapse(arr)
+	assert.ElementsMatch(t, expected, result)
+
 }
 
 func TestCrossJoin(t *testing.T) {
