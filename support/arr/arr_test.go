@@ -193,8 +193,9 @@ func TestCrossJoin(t *testing.T) {
 	// Test case 3: Empty array
 	arr1 = []any{"A", "B"}
 	arr2 = []any{}
-	_, err = CrossJoin(arr1, arr2)
-	assert.ErrorIs(t, ErrEmptySliceNotAllowed, err)
+	expected2 := [][]any{{"A"}, {"B"}}
+	result, err = CrossJoin(arr1, arr2)
+	assert.Equal(t, expected2, result)
 }
 
 func TestDivide(t *testing.T) {

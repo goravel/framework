@@ -82,7 +82,7 @@ func CrossJoin[T any](arr ...[]T) ([][]T, error) {
 
 	for _, v := range arr {
 		if len(v) == 0 {
-			return nil, ErrEmptySliceNotAllowed
+			continue
 		}
 
 		var apd [][]T
@@ -136,7 +136,7 @@ func Except[T any, K int | []int](arr []T, key K) []T {
 		excludedKeys[v] = true
 	}
 
-	res := make([]T, 0, len(arr))
+	res := make([]T, 0, len(arr)-len(keys))
 
 	for i, v := range arr {
 		if excludedKeys[i] {
