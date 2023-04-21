@@ -156,7 +156,6 @@ func TestCollapse(t *testing.T) {
 	expected = []any{"foo", "bar", 1, 2, 3, "baz", "qux", 4, 5}
 	result = Collapse(arr)
 	assert.ElementsMatch(t, expected, result)
-
 }
 
 func TestCrossJoin(t *testing.T) {
@@ -203,35 +202,13 @@ func TestDivide(t *testing.T) {
 	arr := []any{"a", "b", "c"}
 	expectedKeys := []int{0, 1, 2}
 	expectedValues := []any{"a", "b", "c"}
-	keys, values, err := Divide(arr)
-	assert.NoError(t, err)
+	keys, values := Divide(arr)
 	assert.Equal(t, expectedKeys, keys)
 	assert.Equal(t, expectedValues, values)
 
 	// Test case 2: Empty array
 	arr = []any{}
-	_, _, err = Divide(arr)
-	assert.ErrorIs(t, ErrEmptySliceNotAllowed, err)
-}
-
-func TestDot(t *testing.T) {
-	arr := []int{
-		1,
-		2,
-	}
-
-	_, err := Dot(arr, "")
-	assert.ErrorIs(t, err, ErrNoImplementation)
-}
-
-func TestUndot(t *testing.T) {
-	arr := []int{
-		1,
-		2,
-	}
-
-	_, err := Undot(arr)
-	assert.ErrorIs(t, err, ErrNoImplementation)
+	_, _ = Divide(arr)
 }
 
 func TestExcept(t *testing.T) {
@@ -336,50 +313,32 @@ func TestForget(t *testing.T) {
 	// Test case 1: Remove a single item
 	arr1 := []string{"foo", "bar", "baz"}
 	expected1 := []string{"foo", "baz"}
-	result1, err1 := Forget(arr1, 1)
-	if assert.NoError(t, err1) {
-		assert.Equal(t, expected1, result1)
-	}
+	result1 := Forget(arr1, 1)
+	assert.Equal(t, expected1, result1)
 
 	// Test case 2: Remove multiple items
 	arr2 := []int{1, 2, 3, 4, 5}
 	expected2 := []int{1, 5}
-	result2, err2 := Forget(arr2, []int{1, 2, 3})
-	if assert.NoError(t, err2) {
-		assert.Equal(t, expected2, result2)
-	}
+	result2 := Forget(arr2, []int{1, 2, 3})
+	assert.Equal(t, expected2, result2)
 
 	// Test case 3: Remove an item out of range
 	arr3 := []bool{true, false, true}
 	expected3 := []bool{true, false, true}
-	result3, err3 := Forget(arr3, 3)
-	if assert.NoError(t, err3) {
-		assert.Equal(t, expected3, result3)
-	}
+	result3 := Forget(arr3, 3)
+	assert.Equal(t, expected3, result3)
 
 	// Test case 4: Invalid keys argument
 	arr4 := []any{"foo", "bar", "baz"}
 	expected4 := []any{"foo", "bar", "baz"}
-	result4, err4 := Forget(arr4, "invalid")
-	if assert.ErrorIs(t, ErrInvalidKeys, err4) {
-		assert.Equal(t, expected4, result4)
-	}
+	result4 := Forget(arr4, -1)
+	assert.Equal(t, expected4, result4)
 
 	// Test case 5: Remove empty array
 	var arr5 []any
 	var expected5 []any
-	result5, err5 := Forget(arr5, 0)
-	if assert.NoError(t, err5) {
-		assert.Equal(t, expected5, result5)
-	}
-
-	// Test case 6: Key is nil
-	arr6 := []any{"foo", "bar", "baz"}
-	expected6 := []any{"foo", "bar", "baz"}
-	result6, err6 := Forget(arr6, nil)
-	if assert.NoError(t, err6) {
-		assert.Equal(t, expected6, result6)
-	}
+	result5 := Forget(arr5, 0)
+	assert.Equal(t, expected5, result5)
 }
 
 func TestGet(t *testing.T) {
@@ -452,29 +411,6 @@ func TestJoin(t *testing.T) {
 	expectedStr5 := ""
 	result5 := Join(arr5, ", ", " and ")
 	assert.Equal(t, expectedStr5, result5)
-}
-
-func TestKeyBy(t *testing.T) {
-	arr := []map[string]interface{}{
-		{"ID": 1, "Name": "foo"},
-		{"ID": 2, "Name": "bar"},
-		{"ID": 5, "Name": "one"},
-		{"ID": 4, "Name": "two"},
-		{"ID": 3, "Name": "three"},
-	}
-
-	_, err := KeyBy(arr, "ID")
-	assert.ErrorIs(t, err, ErrNoImplementation)
-}
-
-func TestPrependKeysWith(t *testing.T) {
-	arr := []int{
-		1,
-		2,
-	}
-
-	_, err := PrependKeysWith(arr, "prefix.")
-	assert.ErrorIs(t, err, ErrNoImplementation)
 }
 
 func TestOnly(t *testing.T) {
@@ -567,20 +503,16 @@ func TestPull(t *testing.T) {
 	// Test case 1: Valid key
 	arr := []int{1, 2, 3, 4, 5}
 	expectedArr := []int{1, 2, 4, 5}
-	res, value, err := Pull(arr, 2, -1)
-	if assert.NoError(t, err) {
-		assert.Equal(t, 3, value)
-		assert.Equal(t, expectedArr, res)
-	}
+	res, value := Pull(arr, 2, -1)
+	assert.Equal(t, 3, value)
+	assert.Equal(t, expectedArr, res)
 
 	// Test case 2: Invalid key
 	arr = []int{1, 2, 3, 4, 5}
 	expectedArr = []int{1, 2, 3, 4, 5}
-	res, value, err = Pull(arr, 7, -1)
-	if assert.NoError(t, err) {
-		assert.Equal(t, -1, value)
-		assert.Equal(t, expectedArr, res)
-	}
+	res, value = Pull(arr, 7, -1)
+	assert.Equal(t, -1, value)
+	assert.Equal(t, expectedArr, res)
 }
 
 func TestRandom(t *testing.T) {
