@@ -33,7 +33,7 @@ type Argon2id struct {
 func NewArgon2id() *Argon2id {
 	return &Argon2id{
 		format:  "$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		version: 19,
+		version: argon2.Version,
 		time:    uint32(facades.Config.GetInt("hashing.argon2id.time", 4)),
 		memory:  uint32(facades.Config.GetInt("hashing.argon2id.memory", 65536)),
 		threads: uint8(facades.Config.GetInt("hashing.argon2id.threads", 1)),
@@ -64,11 +64,15 @@ func (a *Argon2id) Check(value, hash string) bool {
 	if err != nil {
 		return false
 	}
-	if version != argon2.Version {
+	if version != a.version {
 		return false
 	}
 
-	_, err = fmt.Sscanf(hashParts[3], "m=%d,t=%d,p=%d", &a.memory, &a.time, &a.threads)
+	memory := a.memory
+	time := a.time
+	threads := a.threads
+
+	_, err = fmt.Sscanf(hashParts[3], "m=%d,t=%d,p=%d", &memory, &time, &threads)
 	if err != nil {
 		return false
 	}
@@ -83,7 +87,7 @@ func (a *Argon2id) Check(value, hash string) bool {
 		return false
 	}
 
-	hashToCompare := argon2.IDKey([]byte(value), salt, a.time, a.memory, a.threads, uint32(len(decodedHash)))
+	hashToCompare := argon2.IDKey([]byte(value), salt, time, memory, threads, uint32(len(decodedHash)))
 
 	return subtle.ConstantTimeCompare(decodedHash, hashToCompare) == 1
 }
@@ -99,7 +103,7 @@ func (a *Argon2id) NeedsRehash(hash string) bool {
 	if err != nil {
 		return true
 	}
-	if version != argon2.Version {
+	if version != a.version {
 		return true
 	}
 
