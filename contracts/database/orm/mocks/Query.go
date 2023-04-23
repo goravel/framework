@@ -656,17 +656,29 @@ func (_m *Query) Table(name string, args ...interface{}) orm.Query {
 }
 
 // Update provides a mock function with given fields: column, value
-func (_m *Query) Update(column string, value interface{}) error {
-	ret := _m.Called(column, value)
+func (_m *Query) Update(column interface{}, value ...interface{}) (*orm.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, value...)
+	ret := _m.Called(_ca...)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
-		r0 = rf(column, value)
+	var r0 *orm.Result
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) *orm.Result); ok {
+		r0 = rf(column, value...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*orm.Result)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(interface{}, ...interface{}) error); ok {
+		r1 = rf(column, value...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // UpdateOrCreate provides a mock function with given fields: dest, attributes, values
@@ -681,29 +693,6 @@ func (_m *Query) UpdateOrCreate(dest interface{}, attributes interface{}, values
 	}
 
 	return r0
-}
-
-// Updates provides a mock function with given fields: values
-func (_m *Query) Updates(values interface{}) (*orm.Result, error) {
-	ret := _m.Called(values)
-
-	var r0 *orm.Result
-	if rf, ok := ret.Get(0).(func(interface{}) *orm.Result); ok {
-		r0 = rf(values)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*orm.Result)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
-		r1 = rf(values)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // Where provides a mock function with given fields: query, args
