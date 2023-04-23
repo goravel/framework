@@ -289,27 +289,27 @@ func TestGormQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	//postgresqlPool, postgresqlResource, postgresqlDB, err := PostgresqlDocker()
-	//if err != nil {
-	//	log.Fatalf("Init postgresql error: %s", err)
-	//}
-	//
-	//_, _, sqliteDB, err := SqliteDocker(dbDatabase)
-	//if err != nil {
-	//	log.Fatalf("Init sqlite error: %s", err)
-	//}
-	//
-	//sqlserverPool, sqlserverResource, sqlserverDB, err := SqlserverDocker()
-	//if err != nil {
-	//	log.Fatalf("Init sqlserver error: %s", err)
-	//}
+	postgresqlPool, postgresqlResource, postgresqlDB, err := PostgresqlDocker()
+	if err != nil {
+		log.Fatalf("Init postgresql error: %s", err)
+	}
+
+	_, _, sqliteDB, err := SqliteDocker(dbDatabase)
+	if err != nil {
+		log.Fatalf("Init sqlite error: %s", err)
+	}
+
+	sqlserverPool, sqlserverResource, sqlserverDB, err := SqlserverDocker()
+	if err != nil {
+		log.Fatalf("Init sqlserver error: %s", err)
+	}
 
 	suite.Run(t, &GormQueryTestSuite{
 		queries: map[contractsorm.Driver]contractsorm.Query{
-			contractsorm.DriverMysql: mysqlDB,
-			//contractsorm.DriverPostgresql: postgresqlDB,
-			//contractsorm.DriverSqlite:     sqliteDB,
-			//contractsorm.DriverSqlserver:  sqlserverDB,
+			contractsorm.DriverMysql:      mysqlDB,
+			contractsorm.DriverPostgresql: postgresqlDB,
+			contractsorm.DriverSqlite:     sqliteDB,
+			contractsorm.DriverSqlserver:  sqlserverDB,
 		},
 	})
 
@@ -318,12 +318,12 @@ func TestGormQueryTestSuite(t *testing.T) {
 	if err := mysqlPool.Purge(mysqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
-	//if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-	//	log.Fatalf("Could not purge resource: %s", err)
-	//}
-	//if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-	//	log.Fatalf("Could not purge resource: %s", err)
-	//}
+	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
+	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
 }
 
 func (s *GormQueryTestSuite) SetupTest() {

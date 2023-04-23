@@ -7,10 +7,10 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasegorm "github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/facades"
 )
 
@@ -39,11 +39,6 @@ func NewOrm(ctx context.Context) *Orm {
 			defaultConnection: gormQuery,
 		},
 	}
-}
-
-// DEPRECATED: use gorm.New()
-func NewGormInstance(connection string) (*gorm.DB, error) {
-	return databasegorm.New(connection)
 }
 
 func (r *Orm) Connection(name string) contractsorm.Orm {
@@ -82,6 +77,13 @@ func (r *Orm) DB() (*sql.DB, error) {
 
 func (r *Orm) Query() contractsorm.Query {
 	return r.instance
+}
+
+func (r *Orm) Observe(model any, observer contractsorm.Observer) {
+	orm.Observers = append(orm.Observers, orm.Observer{
+		Model:    model,
+		Observer: observer,
+	})
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error {

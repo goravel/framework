@@ -911,20 +911,40 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 		return nil
 	}
 
+	instance := NewEvent(r, model, dest)
+
 	if dispatchesEvents, exist := dest.(contractsorm.DispatchesEvents); exist {
 		if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
-			if err := event(NewEvent(r, model, dest)); err != nil {
-				return err
-			}
+			return event(instance)
 		}
+
+		return nil
 	}
 	if model != nil {
 		if dispatchesEvents, exist := model.(contractsorm.DispatchesEvents); exist {
 			if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
-				if err := event(NewEvent(r, model, dest)); err != nil {
-					return err
-				}
+				return event(instance)
 			}
+		}
+
+		return nil
+	}
+
+	if observer := observer(dest); observer != nil {
+		if observerEvent := observerEvent(event, observer); observerEvent != nil {
+			return observerEvent(instance)
+		}
+
+		return nil
+	}
+
+	if model != nil {
+		if observer := observer(model); observer != nil {
+			if observerEvent := observerEvent(event, observer); observerEvent != nil {
+				return observerEvent(instance)
+			}
+
+			return nil
 		}
 	}
 
@@ -947,6 +967,54 @@ func filterFindConditions(conds ...any) error {
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func observer(dest any) contractsorm.Observer {
+	destType := reflect.TypeOf(dest)
+	if destType.Kind() == reflect.Pointer {
+		destType = destType.Elem()
+	}
+
+	for _, observer := range orm.Observers {
+		modelType := reflect.TypeOf(observer.Model)
+		if modelType.Kind() == reflect.Pointer {
+			modelType = modelType.Elem()
+		}
+		if destType.Name() == modelType.Name() {
+			return observer.Observer
+		}
+	}
+
+	return nil
+}
+
+func observerEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
+	switch event {
+	case contractsorm.EventRetrieved:
+		return observer.Retrieved
+	case contractsorm.EventCreating:
+		return observer.Creating
+	case contractsorm.EventCreated:
+		return observer.Created
+	case contractsorm.EventUpdating:
+		return observer.Updating
+	case contractsorm.EventUpdated:
+		return observer.Updated
+	case contractsorm.EventSaving:
+		return observer.Saving
+	case contractsorm.EventSaved:
+		return observer.Saved
+	case contractsorm.EventDeleting:
+		return observer.Deleting
+	case contractsorm.EventDeleted:
+		return observer.Deleted
+	case contractsorm.EventForceDeleting:
+		return observer.ForceDeleting
+	case contractsorm.EventForceDeleted:
+		return observer.ForceDeleted
 	}
 
 	return nil
