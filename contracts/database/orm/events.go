@@ -19,13 +19,13 @@ const EventForceDeleting EventType = "force_deleting"
 const EventForceDeleted EventType = "force_deleted"
 
 type Event interface {
+	Context() context.Context
+	GetAttribute(key string) any
+	GetOriginal(key string, def ...any) any
 	IsDirty(columns ...string) bool
 	IsClean(columns ...string) bool
 	Query() Query
-	Context() context.Context
 	SetAttribute(key string, value any)
-	GetAttribute(key string) any
-	GetOriginal(key string, def ...any) any
 }
 
 type DispatchesEvents interface {
