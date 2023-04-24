@@ -204,7 +204,7 @@ func (r *Query) Create(value any) error {
 }
 
 func (r *Query) Delete(dest any, conds ...any) (*contractsorm.Result, error) {
-	if err := deleting(r, dest); err != nil {
+	if err := r.deleting(dest); err != nil {
 		return nil, err
 	}
 
@@ -213,7 +213,7 @@ func (r *Query) Delete(dest any, conds ...any) (*contractsorm.Result, error) {
 		return nil, res.Error
 	}
 
-	if err := deleted(r, dest); err != nil {
+	if err := r.deleted(dest); err != nil {
 		return nil, err
 	}
 
@@ -244,7 +244,7 @@ func (r *Query) Find(dest any, conds ...any) error {
 		return err
 	}
 
-	return retrieved(r, dest)
+	return r.retrieved(dest)
 }
 
 func (r *Query) FindOrFail(dest any, conds ...any) error {
@@ -261,7 +261,7 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 		return orm.ErrRecordNotFound
 	}
 
-	return retrieved(r, dest)
+	return r.retrieved(dest)
 }
 
 func (r *Query) First(dest any) error {
@@ -274,7 +274,7 @@ func (r *Query) First(dest any) error {
 		return res.Error
 	}
 
-	return retrieved(r, dest)
+	return r.retrieved(dest)
 }
 
 func (r *Query) FirstOr(dest any, callback func() error) error {
@@ -287,7 +287,7 @@ func (r *Query) FirstOr(dest any, callback func() error) error {
 		return err
 	}
 
-	return retrieved(r, dest)
+	return r.retrieved(dest)
 }
 
 func (r *Query) FirstOrCreate(dest any, conds ...any) error {
@@ -306,7 +306,7 @@ func (r *Query) FirstOrCreate(dest any, conds ...any) error {
 		return res.Error
 	}
 	if res.RowsAffected > 0 {
-		return retrieved(r, dest)
+		return r.retrieved(dest)
 	}
 
 	return r.Create(dest)
@@ -322,7 +322,7 @@ func (r *Query) FirstOrFail(dest any) error {
 		return err
 	}
 
-	return retrieved(r, dest)
+	return r.retrieved(dest)
 }
 
 func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
@@ -337,14 +337,14 @@ func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
 		return res.Error
 	}
 	if res.RowsAffected > 0 {
-		return retrieved(r, dest)
+		return r.retrieved(dest)
 	}
 
 	return nil
 }
 
 func (r *Query) ForceDelete(value any, conds ...any) (*contractsorm.Result, error) {
-	if err := forceDeleting(r, value); err != nil {
+	if err := r.forceDeleting(value); err != nil {
 		return nil, err
 	}
 
@@ -354,7 +354,7 @@ func (r *Query) ForceDelete(value any, conds ...any) (*contractsorm.Result, erro
 	}
 
 	if res.RowsAffected > 0 {
-		if err := forceDeleted(r, value); err != nil {
+		if err := r.forceDeleted(value); err != nil {
 			return nil, err
 		}
 	}
@@ -518,15 +518,51 @@ func (r *Query) Save(value any) error {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
 
+	model := r.instance.Statement.Model
+	id := database.GetID(value)
+	update := id != nil
+
+	if err := r.saving(model, value); err != nil {
+		return err
+	}
+	if update {
+		if err := r.updating(model, value); err != nil {
+			return err
+		}
+	} else {
+		if err := r.creating(value); err != nil {
+			return err
+		}
+	}
+
 	if len(r.instance.Statement.Selects) > 0 {
-		return r.selectSave(value)
+		if err := r.selectSave(value); err != nil {
+			return err
+		}
+	} else if len(r.instance.Statement.Omits) > 0 {
+		if err := r.omitSave(value); err != nil {
+			return err
+		}
+	} else {
+		if err := r.save(value); err != nil {
+			return err
+		}
 	}
 
-	if len(r.instance.Statement.Omits) > 0 {
-		return r.omitSave(value)
+	if update {
+		if err := r.updated(model, value); err != nil {
+			return err
+		}
+	} else {
+		if err := r.created(value); err != nil {
+			return err
+		}
+	}
+	if err := r.saved(model, value); err != nil {
+		return err
 	}
 
-	return r.save(value)
+	return nil
 }
 
 func (r *Query) SaveQuietly(value any) error {
@@ -564,53 +600,46 @@ func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	return NewQueryWithInstance(r, tx)
 }
 
-func (r *Query) Update(column string, value any) error {
-	return r.instance.Update(column, value).Error
-}
-
-func (r *Query) Updates(values any) (*contractsorm.Result, error) {
-	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
-		return nil, errors.New("cannot set Select and Omits at the same time")
+func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
+	if _, ok := column.(string); !ok && len(value) > 0 {
+		return nil, errors.New("parameter error, please check the document")
 	}
 
-	if len(r.instance.Statement.Selects) > 0 {
-		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Associations {
-				result := r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Updates(values)
-				return &contractsorm.Result{
-					RowsAffected: result.RowsAffected,
-				}, result.Error
-			}
+	var singleUpdate bool
+	model := r.instance.Statement.Model
+	if model != nil {
+		id := database.GetID(model)
+		singleUpdate = id != nil
+	}
+
+	if c, ok := column.(string); ok && len(value) > 0 {
+		r.instance.Statement.Dest = map[string]any{c: value[0]}
+	}
+	if len(value) == 0 {
+		r.instance.Statement.Dest = column
+	}
+
+	if singleUpdate {
+		if err := r.saving(model, r.instance.Statement.Dest); err != nil {
+			return nil, err
 		}
-
-		result := r.instance.Updates(values)
-
-		return &contractsorm.Result{
-			RowsAffected: result.RowsAffected,
-		}, result.Error
-	}
-
-	if len(r.instance.Statement.Omits) > 0 {
-		for _, val := range r.instance.Statement.Omits {
-			if val == orm.Associations {
-				result := r.instance.Omit(orm.Associations).Updates(values)
-
-				return &contractsorm.Result{
-					RowsAffected: result.RowsAffected,
-				}, result.Error
-			}
+		if err := r.updating(model, r.instance.Statement.Dest); err != nil {
+			return nil, err
 		}
-		result := r.instance.Updates(values)
-
-		return &contractsorm.Result{
-			RowsAffected: result.RowsAffected,
-		}, result.Error
 	}
-	result := r.instance.Omit(orm.Associations).Updates(values)
 
-	return &contractsorm.Result{
-		RowsAffected: result.RowsAffected,
-	}, result.Error
+	res, err := r.updates(r.instance.Statement.Dest)
+
+	if singleUpdate && err == nil {
+		if err := r.updated(model, r.instance.Statement.Dest); err != nil {
+			return nil, err
+		}
+		if err := r.saved(model, r.instance.Statement.Dest); err != nil {
+			return nil, err
+		}
+	}
+
+	return res, err
 }
 
 func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
@@ -665,57 +694,84 @@ func (r *Query) With(query string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) selectCreate(value any) error {
-	if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Associations {
-		r.instance.Statement.Selects = []string{}
-
-		return create(r, value)
-	}
-
-	for _, val := range r.instance.Statement.Selects {
-		if val == orm.Associations {
-			return errors.New("cannot set orm.Associations and other fields at the same time")
+	if len(r.instance.Statement.Selects) > 1 {
+		for _, val := range r.instance.Statement.Selects {
+			if val == orm.Associations {
+				return errors.New("cannot set orm.Associations and other fields at the same time")
+			}
 		}
 	}
 
-	return create(r, value)
+	if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Associations {
+		r.instance.Statement.Selects = []string{}
+	}
+
+	if err := r.saving(nil, value); err != nil {
+		return err
+	}
+	if err := r.creating(value); err != nil {
+		return err
+	}
+
+	if err := r.instance.Create(value).Error; err != nil {
+		return err
+	}
+
+	if err := r.created(value); err != nil {
+		return err
+	}
+	if err := r.saved(nil, value); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Query) omitCreate(value any) error {
+	if len(r.instance.Statement.Omits) > 1 {
+		for _, val := range r.instance.Statement.Omits {
+			if val == orm.Associations {
+				return errors.New("cannot set orm.Associations and other fields at the same time")
+			}
+		}
+	}
+
 	if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == orm.Associations {
 		r.instance.Statement.Selects = []string{}
-		if err := saving(r, value); err != nil {
-			return err
-		}
-		if err := creating(r, value); err != nil {
-			return err
-		}
+	}
+
+	if err := r.saving(nil, value); err != nil {
+		return err
+	}
+	if err := r.creating(value); err != nil {
+		return err
+	}
+
+	if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == orm.Associations {
 		if err := r.instance.Omit(orm.Associations).Create(value).Error; err != nil {
 			return err
 		}
-		if err := created(r, value); err != nil {
+	} else {
+		if err := r.instance.Create(value).Error; err != nil {
 			return err
-		}
-		if err := saved(r, value); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	for _, val := range r.instance.Statement.Omits {
-		if val == orm.Associations {
-			return errors.New("cannot set orm.Associations and other fields at the same time")
 		}
 	}
 
-	return create(r, value)
+	if err := r.created(value); err != nil {
+		return err
+	}
+	if err := r.saved(nil, value); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Query) create(value any) error {
-	if err := saving(r, value); err != nil {
+	if err := r.saving(nil, value); err != nil {
 		return err
 	}
-	if err := creating(r, value); err != nil {
+	if err := r.creating(value); err != nil {
 		return err
 	}
 
@@ -723,10 +779,10 @@ func (r *Query) create(value any) error {
 		return err
 	}
 
-	if err := created(r, value); err != nil {
+	if err := r.created(value); err != nil {
 		return err
 	}
-	if err := saved(r, value); err != nil {
+	if err := r.saved(nil, value); err != nil {
 		return err
 	}
 
@@ -736,39 +792,11 @@ func (r *Query) create(value any) error {
 func (r *Query) selectSave(value any) error {
 	for _, val := range r.instance.Statement.Selects {
 		if val == orm.Associations {
-			if err := saving(r, value); err != nil {
-				return err
-			}
-			if err := updating(r, value); err != nil {
-				return err
-			}
-			if err := r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Save(value).Error; err != nil {
-				return err
-			}
-			if err := updated(r, value); err != nil {
-				return err
-			}
-			if err := saved(r, value); err != nil {
-				return err
-			}
-
-			return nil
+			return r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Save(value).Error
 		}
 	}
 
-	if err := saving(r, value); err != nil {
-		return err
-	}
-	if err := updating(r, value); err != nil {
-		return err
-	}
 	if err := r.instance.Save(value).Error; err != nil {
-		return err
-	}
-	if err := updated(r, value); err != nil {
-		return err
-	}
-	if err := saved(r, value); err != nil {
 		return err
 	}
 
@@ -778,236 +806,146 @@ func (r *Query) selectSave(value any) error {
 func (r *Query) omitSave(value any) error {
 	for _, val := range r.instance.Statement.Omits {
 		if val == orm.Associations {
-			if err := saving(r, value); err != nil {
-				return err
+			return r.instance.Omit(orm.Associations).Save(value).Error
+		}
+	}
+
+	return r.instance.Save(value).Error
+}
+
+func (r *Query) save(value any) error {
+	return r.instance.Omit(orm.Associations).Save(value).Error
+}
+
+func (r *Query) updates(values any) (*contractsorm.Result, error) {
+	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+		return nil, errors.New("cannot set Select and Omits at the same time")
+	}
+
+	if len(r.instance.Statement.Selects) > 0 {
+		for _, val := range r.instance.Statement.Selects {
+			if val == orm.Associations {
+				result := r.instance.Session(&gorm.Session{FullSaveAssociations: true}).Updates(values)
+				return &contractsorm.Result{
+					RowsAffected: result.RowsAffected,
+				}, result.Error
 			}
-			if err := updating(r, value); err != nil {
-				return err
+		}
+
+		result := r.instance.Updates(values)
+
+		return &contractsorm.Result{
+			RowsAffected: result.RowsAffected,
+		}, result.Error
+	}
+
+	if len(r.instance.Statement.Omits) > 0 {
+		for _, val := range r.instance.Statement.Omits {
+			if val == orm.Associations {
+				result := r.instance.Omit(orm.Associations).Updates(values)
+
+				return &contractsorm.Result{
+					RowsAffected: result.RowsAffected,
+				}, result.Error
 			}
-			if err := r.instance.Omit(orm.Associations).Save(value).Error; err != nil {
-				return err
+		}
+		result := r.instance.Updates(values)
+
+		return &contractsorm.Result{
+			RowsAffected: result.RowsAffected,
+		}, result.Error
+	}
+	result := r.instance.Omit(orm.Associations).Updates(values)
+
+	return &contractsorm.Result{
+		RowsAffected: result.RowsAffected,
+	}, result.Error
+}
+
+func (r *Query) retrieved(dest any) error {
+	return r.event(contractsorm.EventRetrieved, nil, dest)
+}
+
+func (r *Query) updating(model, dest any) error {
+	return r.event(contractsorm.EventUpdating, model, dest)
+}
+
+func (r *Query) updated(model, dest any) error {
+	return r.event(contractsorm.EventUpdated, model, dest)
+}
+
+func (r *Query) saving(model, dest any) error {
+	return r.event(contractsorm.EventSaving, model, dest)
+}
+
+func (r *Query) saved(model, dest any) error {
+	return r.event(contractsorm.EventSaved, model, dest)
+}
+
+func (r *Query) creating(dest any) error {
+	return r.event(contractsorm.EventCreating, nil, dest)
+}
+
+func (r *Query) created(dest any) error {
+	return r.event(contractsorm.EventCreated, nil, dest)
+}
+
+func (r *Query) deleting(dest any) error {
+	return r.event(contractsorm.EventDeleting, nil, dest)
+}
+
+func (r *Query) deleted(dest any) error {
+	return r.event(contractsorm.EventDeleted, nil, dest)
+}
+
+func (r *Query) forceDeleting(dest any) error {
+	return r.event(contractsorm.EventForceDeleting, nil, dest)
+}
+
+func (r *Query) forceDeleted(dest any) error {
+	return r.event(contractsorm.EventForceDeleted, nil, dest)
+}
+
+func (r *Query) event(event contractsorm.EventType, model, dest any) error {
+	if r.withoutEvents {
+		return nil
+	}
+
+	instance := NewEvent(r, model, dest)
+
+	if dispatchesEvents, exist := dest.(contractsorm.DispatchesEvents); exist {
+		if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
+			return event(instance)
+		}
+
+		return nil
+	}
+	if model != nil {
+		if dispatchesEvents, exist := model.(contractsorm.DispatchesEvents); exist {
+			if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
+				return event(instance)
 			}
-			if err := updated(r, value); err != nil {
-				return err
-			}
-			if err := saved(r, value); err != nil {
-				return err
+		}
+
+		return nil
+	}
+
+	if observer := observer(dest); observer != nil {
+		if observerEvent := observerEvent(event, observer); observerEvent != nil {
+			return observerEvent(instance)
+		}
+
+		return nil
+	}
+
+	if model != nil {
+		if observer := observer(model); observer != nil {
+			if observerEvent := observerEvent(event, observer); observerEvent != nil {
+				return observerEvent(instance)
 			}
 
 			return nil
 		}
-	}
-
-	if err := saving(r, value); err != nil {
-		return err
-	}
-	if err := updating(r, value); err != nil {
-		return err
-	}
-	if err := r.instance.Save(value).Error; err != nil {
-		return err
-	}
-	if err := updated(r, value); err != nil {
-		return err
-	}
-	if err := saved(r, value); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *Query) save(value any) error {
-	if err := saving(r, value); err != nil {
-		return err
-	}
-	if err := updating(r, value); err != nil {
-		return err
-	}
-	if err := r.instance.Omit(orm.Associations).Save(value).Error; err != nil {
-		return err
-	}
-	if err := updated(r, value); err != nil {
-		return err
-	}
-	if err := saved(r, value); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func retrieved(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if retrievedModel, ok := dest.(contractsorm.Retrieved); ok {
-		if err := retrievedModel.Retrieved(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func updating(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if updatingModel, ok := dest.(contractsorm.Updating); ok {
-		if err := updatingModel.Updating(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func updated(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if updatedModel, ok := dest.(contractsorm.Updated); ok {
-		if err := updatedModel.Updated(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func saving(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if savingModel, ok := dest.(contractsorm.Saving); ok {
-		if err := savingModel.Saving(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func saved(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if savedModel, ok := dest.(contractsorm.Saved); ok {
-		if err := savedModel.Saved(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func creating(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if creatingModel, ok := dest.(contractsorm.Creating); ok {
-		if err := creatingModel.Creating(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func created(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if createdModel, ok := dest.(contractsorm.Created); ok {
-		if err := createdModel.Created(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func deleting(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if deletingModel, ok := dest.(contractsorm.Deleting); ok {
-		if err := deletingModel.Deleting(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func deleted(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if deletedModel, ok := dest.(contractsorm.Deleted); ok {
-		if err := deletedModel.Deleted(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func forceDeleting(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if forceDeletingModel, ok := dest.(contractsorm.ForceDeleting); ok {
-		if err := forceDeletingModel.ForceDeleting(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func forceDeleted(query *Query, dest any) error {
-	if query.withoutEvents {
-		return nil
-	}
-
-	if forceDeletedModel, ok := dest.(contractsorm.ForceDeleted); ok {
-		if err := forceDeletedModel.ForceDeleted(query); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func create(query *Query, dest any) error {
-	if err := saving(query, dest); err != nil {
-		return err
-	}
-	if err := creating(query, dest); err != nil {
-		return err
-	}
-
-	if err := query.instance.Create(dest).Error; err != nil {
-		return err
-	}
-
-	if err := created(query, dest); err != nil {
-		return err
-	}
-	if err := saved(query, dest); err != nil {
-		return err
 	}
 
 	return nil
@@ -1029,6 +967,54 @@ func filterFindConditions(conds ...any) error {
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func observer(dest any) contractsorm.Observer {
+	destType := reflect.TypeOf(dest)
+	if destType.Kind() == reflect.Pointer {
+		destType = destType.Elem()
+	}
+
+	for _, observer := range orm.Observers {
+		modelType := reflect.TypeOf(observer.Model)
+		if modelType.Kind() == reflect.Pointer {
+			modelType = modelType.Elem()
+		}
+		if destType.Name() == modelType.Name() {
+			return observer.Observer
+		}
+	}
+
+	return nil
+}
+
+func observerEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
+	switch event {
+	case contractsorm.EventRetrieved:
+		return observer.Retrieved
+	case contractsorm.EventCreating:
+		return observer.Creating
+	case contractsorm.EventCreated:
+		return observer.Created
+	case contractsorm.EventUpdating:
+		return observer.Updating
+	case contractsorm.EventUpdated:
+		return observer.Updated
+	case contractsorm.EventSaving:
+		return observer.Saving
+	case contractsorm.EventSaved:
+		return observer.Saved
+	case contractsorm.EventDeleting:
+		return observer.Deleting
+	case contractsorm.EventDeleted:
+		return observer.Deleted
+	case contractsorm.EventForceDeleting:
+		return observer.ForceDeleting
+	case contractsorm.EventForceDeleted:
+		return observer.ForceDeleted
 	}
 
 	return nil

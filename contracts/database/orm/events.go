@@ -1,45 +1,33 @@
 package orm
 
-type Retrieved interface {
-	Retrieved(Query) error
+import (
+	"context"
+)
+
+type EventType string
+
+const EventRetrieved EventType = "retrieved"
+const EventCreating EventType = "creating"
+const EventCreated EventType = "created"
+const EventUpdating EventType = "updating"
+const EventUpdated EventType = "Updated"
+const EventSaving EventType = "saving"
+const EventSaved EventType = "saved"
+const EventDeleting EventType = "deleting"
+const EventDeleted EventType = "deleted"
+const EventForceDeleting EventType = "force_deleting"
+const EventForceDeleted EventType = "force_deleted"
+
+type Event interface {
+	Context() context.Context
+	GetAttribute(key string) any
+	GetOriginal(key string, def ...any) any
+	IsDirty(columns ...string) bool
+	IsClean(columns ...string) bool
+	Query() Query
+	SetAttribute(key string, value any)
 }
 
-type Creating interface {
-	Creating(Query) error
-}
-
-type Created interface {
-	Created(Query) error
-}
-
-type Updating interface {
-	Updating(Query) error
-}
-
-type Updated interface {
-	Updated(Query) error
-}
-
-type Saving interface {
-	Saving(Query) error
-}
-
-type Saved interface {
-	Saved(Query) error
-}
-
-type Deleting interface {
-	Deleting(Query) error
-}
-
-type Deleted interface {
-	Deleted(Query) error
-}
-
-type ForceDeleting interface {
-	ForceDeleting(Query) error
-}
-
-type ForceDeleted interface {
-	ForceDeleted(Query) error
+type DispatchesEvents interface {
+	DispatchesEvents() map[EventType]func(Event) error
 }

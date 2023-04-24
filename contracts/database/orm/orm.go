@@ -10,6 +10,7 @@ type Orm interface {
 	Connection(name string) Orm
 	DB() (*sql.DB, error)
 	Query() Query
+	Observe(model any, observer Observer)
 	Transaction(txFunc func(tx Transaction) error) error
 	WithContext(ctx context.Context) Orm
 }
@@ -60,8 +61,7 @@ type Query interface {
 	Scopes(funcs ...func(Query) Query) Query
 	Select(query any, args ...any) Query
 	Table(name string, args ...any) Query
-	Update(column string, value any) error
-	Updates(values any) (*Result, error)
+	Update(column any, value ...any) (*Result, error)
 	UpdateOrCreate(dest any, attributes any, values any) error
 	Where(query any, args ...any) Query
 	WithoutEvents() Query

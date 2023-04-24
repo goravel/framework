@@ -22,6 +22,8 @@ const (
 	resourceExpire = 600
 )
 
+var testContext context.Context
+
 func MysqlDocker() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
 	pool, resource, err := initMysqlDocker()
 	if err != nil {
@@ -338,7 +340,7 @@ func initMysql(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), orm.DriverMysql.String())
+		db, err = NewQuery(testContext, orm.DriverMysql.String())
 		if err != nil {
 			return err
 		}
@@ -406,7 +408,7 @@ func initPostgresql(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), orm.DriverPostgresql.String())
+		db, err = NewQuery(testContext, orm.DriverPostgresql.String())
 		if err != nil {
 			return err
 		}
@@ -470,7 +472,7 @@ func initSqlite(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), orm.DriverSqlite.String())
+		db, err = NewQuery(testContext, orm.DriverSqlite.String())
 
 		return err
 	}); err != nil {
@@ -534,7 +536,7 @@ func initSqlserver(pool *dockertest.Pool) (orm.Query, error) {
 	var db orm.Query
 	if err := pool.Retry(func() error {
 		var err error
-		db, err = NewQuery(context.Background(), orm.DriverSqlserver.String())
+		db, err = NewQuery(testContext, orm.DriverSqlserver.String())
 		if err != nil {
 			return err
 		}

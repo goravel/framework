@@ -55,6 +55,11 @@ func (_m *Orm) DB() (*sql.DB, error) {
 	return r0, r1
 }
 
+// Observe provides a mock function with given fields: model, observer
+func (_m *Orm) Observe(model interface{}, observer orm.Observer) {
+	_m.Called(model, observer)
+}
+
 // Query provides a mock function with given fields:
 func (_m *Orm) Query() orm.Query {
 	ret := _m.Called()
