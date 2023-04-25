@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 请移步到 goravel 仓库提交 (Please submit to the goravel repository)
+    url: https://github.com/goravel/goravel/issues
+    about: 请移步到 goravel 仓库提交 (Please submit to the goravel repository)
