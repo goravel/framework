@@ -23,9 +23,9 @@ type AES struct {
 func NewAES() *AES {
 	key := facades.Config.GetString("app.key")
 
-	// Don't use AES in artisan command
+	// Don't use AES in artisan key:generate command
 	args := os.Args
-	if len(args) >= 2 && args[1] == "artisan" {
+	if len(args) >= 3 && args[1] == "artisan" && args[2] == "key:generate" {
 		return nil
 	}
 
