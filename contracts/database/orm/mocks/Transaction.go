@@ -431,6 +431,22 @@ func (_m *Transaction) LoadMissing(dest interface{}, relation string, args ...in
 	return r0
 }
 
+// LockForUpdate provides a mock function with given fields:
+func (_m *Transaction) LockForUpdate() orm.Query {
+	ret := _m.Called()
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Model provides a mock function with given fields: value
 func (_m *Transaction) Model(value interface{}) orm.Query {
 	ret := _m.Called(value)
@@ -655,6 +671,22 @@ func (_m *Transaction) Select(query interface{}, args ...interface{}) orm.Query 
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) orm.Query); ok {
 		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// SharedLock provides a mock function with given fields:
+func (_m *Transaction) SharedLock() orm.Query {
+	ret := _m.Called()
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
