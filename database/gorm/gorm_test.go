@@ -7,6 +7,7 @@ import (
 	"log"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
@@ -35,34 +36,38 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 	return map[contractsorm.EventType]func(contractsorm.Event) error{
 		contractsorm.EventCreating: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
-			if name.(string) == "event_creating_name" {
-				event.SetAttribute("avatar", "event_creating_avatar")
-			}
-			if name.(string) == "event_creating_FirstOrCreate_name" {
-				event.SetAttribute("avatar", "event_creating_FirstOrCreate_avatar")
-			}
-			if name.(string) == "event_creating_IsDirty_name" {
-				if event.IsDirty("name") {
-					event.SetAttribute("avatar", "event_creating_IsDirty_avatar")
+			if name != nil {
+				if name.(string) == "event_creating_name" {
+					event.SetAttribute("avatar", "event_creating_avatar")
 				}
-			}
-			if name.(string) == "event_context" {
-				val := event.Context().Value("hello")
-				event.SetAttribute("avatar", val.(string))
-			}
-			if name.(string) == "event_query" {
-				event.Query().Create(&User{Name: "event_query1"})
+				if name.(string) == "event_creating_FirstOrCreate_name" {
+					event.SetAttribute("avatar", "event_creating_FirstOrCreate_avatar")
+				}
+				if name.(string) == "event_creating_IsDirty_name" {
+					if event.IsDirty("name") {
+						event.SetAttribute("avatar", "event_creating_IsDirty_avatar")
+					}
+				}
+				if name.(string) == "event_context" {
+					val := event.Context().Value("hello")
+					event.SetAttribute("avatar", val.(string))
+				}
+				if name.(string) == "event_query" {
+					event.Query().Create(&User{Name: "event_query1"})
+				}
 			}
 
 			return nil
 		},
 		contractsorm.EventCreated: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
-			if name.(string) == "event_created_name" {
-				event.SetAttribute("avatar", "event_created_avatar")
-			}
-			if name.(string) == "event_created_FirstOrCreate_name" {
-				event.SetAttribute("avatar", "event_created_FirstOrCreate_avatar")
+			if name != nil {
+				if name.(string) == "event_created_name" {
+					event.SetAttribute("avatar", "event_created_avatar")
+				}
+				if name.(string) == "event_created_FirstOrCreate_name" {
+					event.SetAttribute("avatar", "event_created_FirstOrCreate_avatar")
+				}
 			}
 
 			return nil
@@ -101,20 +106,22 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 		},
 		contractsorm.EventSaved: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
-			if name.(string) == "event_saved_create_name" {
-				event.SetAttribute("avatar", "event_saved_create_avatar")
-			}
-			if name.(string) == "event_saved_save_name" {
-				event.SetAttribute("avatar", "event_saved_save_avatar")
-			}
-			if name.(string) == "event_saved_FirstOrCreate_name" {
-				event.SetAttribute("avatar", "event_saved_FirstOrCreate_avatar")
-			}
-			if name.(string) == "event_save_without_name" {
-				event.SetAttribute("avatar", "event_saved_without_avatar")
-			}
-			if name.(string) == "event_save_quietly_name" {
-				event.SetAttribute("avatar", "event_saved_quietly_avatar")
+			if name != nil {
+				if name.(string) == "event_saved_create_name" {
+					event.SetAttribute("avatar", "event_saved_create_avatar")
+				}
+				if name.(string) == "event_saved_save_name" {
+					event.SetAttribute("avatar", "event_saved_save_avatar")
+				}
+				if name.(string) == "event_saved_FirstOrCreate_name" {
+					event.SetAttribute("avatar", "event_saved_FirstOrCreate_avatar")
+				}
+				if name.(string) == "event_save_without_name" {
+					event.SetAttribute("avatar", "event_saved_without_avatar")
+				}
+				if name.(string) == "event_save_quietly_name" {
+					event.SetAttribute("avatar", "event_saved_quietly_avatar")
+				}
 			}
 
 			avatar := event.GetAttribute("avatar")
@@ -126,66 +133,75 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 		},
 		contractsorm.EventUpdating: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
-			if name.(string) == "event_updating_create_name" {
-				event.SetAttribute("avatar", "event_updating_create_avatar")
-			}
-			if name.(string) == "event_updating_save_name" {
-				event.SetAttribute("avatar", "event_updating_save_avatar")
-			}
-			if name.(string) == "event_updating_single_update_IsDirty_name1" {
-				if event.IsDirty("name") {
-					name := event.GetAttribute("name")
-					if name != "event_updating_single_update_IsDirty_name1" {
-						return errors.New("error")
-					}
+			if name != nil {
+				if name.(string) == "event_updating_create_name" {
+					event.SetAttribute("avatar", "event_updating_create_avatar")
+				}
+				if name.(string) == "event_updating_save_name" {
+					event.SetAttribute("avatar", "event_updating_save_avatar")
+				}
+				if name.(string) == "event_updating_single_update_IsDirty_name1" {
+					if event.IsDirty("name") {
+						name := event.GetAttribute("name")
+						if name != "event_updating_single_update_IsDirty_name1" {
+							return errors.New("error")
+						}
 
-					event.SetAttribute("avatar", "event_updating_single_update_IsDirty_avatar")
-				}
-			}
-			if name.(string) == "event_updating_map_update_IsDirty_name1" {
-				if event.IsDirty("name") {
-					name := event.GetAttribute("name")
-					if name != "event_updating_map_update_IsDirty_name1" {
-						return errors.New("error")
+						event.SetAttribute("avatar", "event_updating_single_update_IsDirty_avatar")
 					}
+				}
+				if name.(string) == "event_updating_map_update_IsDirty_name1" {
+					if event.IsDirty("name") {
+						name := event.GetAttribute("name")
+						if name != "event_updating_map_update_IsDirty_name1" {
+							return errors.New("error")
+						}
 
-					event.SetAttribute("avatar", "event_updating_map_update_IsDirty_avatar")
-				}
-			}
-			if name.(string) == "event_updating_model_update_IsDirty_name1" {
-				if event.IsDirty("name") {
-					name := event.GetAttribute("name")
-					if name != "event_updating_model_update_IsDirty_name1" {
-						return errors.New("error")
+						event.SetAttribute("avatar", "event_updating_map_update_IsDirty_avatar")
 					}
-					event.SetAttribute("avatar", "event_updating_model_update_IsDirty_avatar")
+				}
+				if name.(string) == "event_updating_model_update_IsDirty_name1" {
+					if event.IsDirty("name") {
+						name := event.GetAttribute("name")
+						if name != "event_updating_model_update_IsDirty_name1" {
+							return errors.New("error")
+						}
+						event.SetAttribute("avatar", "event_updating_model_update_IsDirty_avatar")
+					}
 				}
 			}
+
 			avatar := event.GetAttribute("avatar")
-			if avatar.(string) == "event_updating_save_avatar" {
-				event.SetAttribute("avatar", "event_updating_save_avatar1")
-			}
-			if avatar.(string) == "event_updating_model_update_avatar" {
-				event.SetAttribute("avatar", "event_updating_model_update_avatar1")
+			if avatar != nil {
+				if avatar.(string) == "event_updating_save_avatar" {
+					event.SetAttribute("avatar", "event_updating_save_avatar1")
+				}
+				if avatar.(string) == "event_updating_model_update_avatar" {
+					event.SetAttribute("avatar", "event_updating_model_update_avatar1")
+				}
 			}
 
 			return nil
 		},
 		contractsorm.EventUpdated: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
-			if name.(string) == "event_updated_create_name" {
-				event.SetAttribute("avatar", "event_updated_create_avatar")
-			}
-			if name.(string) == "event_updated_save_name" {
-				event.SetAttribute("avatar", "event_updated_save_avatar")
+			if name != nil {
+				if name.(string) == "event_updated_create_name" {
+					event.SetAttribute("avatar", "event_updated_create_avatar")
+				}
+				if name.(string) == "event_updated_save_name" {
+					event.SetAttribute("avatar", "event_updated_save_avatar")
+				}
 			}
 
 			avatar := event.GetAttribute("avatar")
-			if avatar.(string) == "event_updated_save_avatar" {
-				event.SetAttribute("avatar", "event_updated_save_avatar1")
-			}
-			if avatar.(string) == "event_updated_model_update_avatar" {
-				event.SetAttribute("avatar", "event_updated_model_update_avatar1")
+			if avatar != nil {
+				if avatar.(string) == "event_updated_save_avatar" {
+					event.SetAttribute("avatar", "event_updated_save_avatar1")
+				}
+				if avatar.(string) == "event_updated_model_update_avatar" {
+					event.SetAttribute("avatar", "event_updated_model_update_avatar1")
+				}
 			}
 
 			return nil
@@ -1749,9 +1765,9 @@ func (s *GormQueryTestSuite) TestGet() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 
-			var user5 []User
-			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user5))
-			s.Equal(1, len(user5))
+			var user1 []User
+			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user1))
+			s.Equal(1, len(user1))
 		})
 	}
 }
@@ -1778,6 +1794,39 @@ func (s *GormQueryTestSuite) TestJoin() {
 			s.Equal("join_user", result[0].UserName)
 			s.Equal("join_address", result[0].UserAddressName)
 		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestLockForUpdate() {
+	for driver, query := range s.queries {
+		if driver != contractsorm.DriverSqlite {
+			s.Run(driver.String(), func() {
+				user := User{Name: "lock_for_update_user"}
+				s.Nil(query.Create(&user))
+				s.True(user.ID > 0)
+
+				for i := 0; i < 10; i++ {
+					go func() {
+						tx, err := query.Begin()
+						s.Nil(err)
+
+						var user1 User
+						s.Nil(tx.LockForUpdate().Find(&user1, user.ID))
+						s.True(user1.ID > 0)
+						user1.Name += "1"
+						s.Nil(tx.Save(&user1))
+
+						s.Nil(tx.Commit())
+					}()
+				}
+
+				time.Sleep(2 * time.Second)
+
+				var user2 User
+				s.Nil(query.Find(&user2, user.ID))
+				s.Equal("lock_for_update_user1111111111", user2.Name)
+			})
+		}
 	}
 }
 
@@ -2319,6 +2368,37 @@ func (s *GormQueryTestSuite) TestSelect() {
 			s.Equal("select_user", result1[0].Name)
 			s.Equal("2", result1[0].Count)
 		})
+	}
+}
+
+func (s *GormQueryTestSuite) TestSharedLock() {
+	for driver, query := range s.queries {
+		if driver != contractsorm.DriverSqlite {
+			s.Run(driver.String(), func() {
+				user := User{Name: "shared_lock_user"}
+				s.Nil(query.Create(&user))
+				s.True(user.ID > 0)
+
+				tx, err := query.Begin()
+				s.Nil(err)
+				var user1 User
+				s.Nil(tx.SharedLock().Find(&user1, user.ID))
+				s.True(user1.ID > 0)
+
+				var user2 User
+				s.Nil(query.SharedLock().Find(&user2, user.ID))
+				s.True(user2.ID > 0)
+
+				user1.Name += "1"
+				s.Nil(tx.Save(&user1))
+
+				s.Nil(tx.Commit())
+
+				var user3 User
+				s.Nil(query.Find(&user3, user.ID))
+				s.Equal("shared_lock_user1", user3.Name)
+			})
+		}
 	}
 }
 

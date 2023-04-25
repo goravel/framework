@@ -10,13 +10,18 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	gormLogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/database"
@@ -456,6 +461,25 @@ func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 	return r.Load(model, relation, args...)
 }
 
+func (r *Query) LockForUpdate() contractsorm.Query {
+	driver := r.instance.Name()
+	mysqlDialector := mysql.Dialector{}
+	postgresqlDialector := postgres.Dialector{}
+	sqlserverDialector := sqlserver.Dialector{}
+
+	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
+		tx := r.instance.Clauses(clause.Locking{Strength: "UPDATE"})
+
+		return NewQueryWithInstance(r, tx)
+	} else if driver == sqlserverDialector.Name() {
+		tx := r.instance.Clauses(hints.With("rowlock", "updlock", "holdlock"))
+
+		return NewQueryWithInstance(r, tx)
+	}
+
+	return r
+}
+
 func (r *Query) Model(value any) contractsorm.Query {
 	tx := r.instance.Model(value)
 
@@ -592,6 +616,25 @@ func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) con
 	tx := r.instance.Scopes(gormFuncs...)
 
 	return NewQueryWithInstance(r, tx)
+}
+
+func (r *Query) SharedLock() contractsorm.Query {
+	driver := r.instance.Name()
+	mysqlDialector := mysql.Dialector{}
+	postgresqlDialector := postgres.Dialector{}
+	sqlserverDialector := sqlserver.Dialector{}
+
+	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
+		tx := r.instance.Clauses(clause.Locking{Strength: "SHARE"})
+
+		return NewQueryWithInstance(r, tx)
+	} else if driver == sqlserverDialector.Name() {
+		tx := r.instance.Clauses(hints.With("rowlock", "holdlock"))
+
+		return NewQueryWithInstance(r, tx)
+	}
+
+	return r
 }
 
 func (r *Query) Table(name string, args ...any) contractsorm.Query {

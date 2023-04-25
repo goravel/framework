@@ -47,6 +47,7 @@ type Query interface {
 	Limit(limit int) Query
 	Load(dest any, relation string, args ...any) error
 	LoadMissing(dest any, relation string, args ...any) error
+	LockForUpdate() Query
 	Model(value any) Query
 	Offset(offset int) Query
 	Omit(columns ...string) Query
@@ -60,6 +61,7 @@ type Query interface {
 	Scan(dest any) error
 	Scopes(funcs ...func(Query) Query) Query
 	Select(query any, args ...any) Query
+	SharedLock() Query
 	Table(name string, args ...any) Query
 	Update(column any, value ...any) (*Result, error)
 	UpdateOrCreate(dest any, attributes any, values any) error
