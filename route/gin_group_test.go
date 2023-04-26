@@ -27,8 +27,10 @@ func (c resourceController) Index(ctx httpcontract.Context) {
 }
 
 func (c resourceController) Show(ctx httpcontract.Context) {
+	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
 		"action": "show",
+		"id":     id,
 	})
 }
 
@@ -39,14 +41,18 @@ func (c resourceController) Store(ctx httpcontract.Context) {
 }
 
 func (c resourceController) Update(ctx httpcontract.Context) {
+	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
 		"action": "update",
+		"id":     id,
 	})
 }
 
 func (c resourceController) Destroy(ctx httpcontract.Context) {
+	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
 		"action": "destroy",
+		"id":     id,
 	})
 }
 
@@ -264,7 +270,7 @@ func TestGinGroup(t *testing.T) {
 			method:     "GET",
 			url:        "/resource/1",
 			expectCode: http.StatusOK,
-			expectBody: "{\"action\":\"show\"}",
+			expectBody: "{\"action\":\"show\",\"id\":\"1\"}",
 		},
 		{
 			name: "Resource Store",
@@ -286,7 +292,7 @@ func TestGinGroup(t *testing.T) {
 			method:     "PUT",
 			url:        "/resource/1",
 			expectCode: http.StatusOK,
-			expectBody: "{\"action\":\"update\"}",
+			expectBody: "{\"action\":\"update\",\"id\":\"1\"}",
 		},
 		{
 			name: "Resource Update (PATCH)",
@@ -297,7 +303,7 @@ func TestGinGroup(t *testing.T) {
 			method:     "PATCH",
 			url:        "/resource/1",
 			expectCode: http.StatusOK,
-			expectBody: "{\"action\":\"update\"}",
+			expectBody: "{\"action\":\"update\",\"id\":\"1\"}",
 		},
 		{
 			name: "Resource Destroy",
@@ -308,7 +314,7 @@ func TestGinGroup(t *testing.T) {
 			method:     "DELETE",
 			url:        "/resource/1",
 			expectCode: http.StatusOK,
-			expectBody: "{\"action\":\"destroy\"}",
+			expectBody: "{\"action\":\"destroy\",\"id\":\"1\"}",
 		},
 		{
 			name: "Static",

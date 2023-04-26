@@ -78,7 +78,7 @@ func (r *GinGroup) Options(relativePath string, handler httpcontract.HandlerFunc
 	r.getGinRoutesWithMiddlewares().OPTIONS(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
 }
 
-func (r *GinGroup) Resource(relativePath string, controller httpcontract.Controller) {
+func (r *GinGroup) Resource(relativePath string, controller httpcontract.ResourceController) {
 	r.getGinRoutesWithMiddlewares().GET(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(controller.Index)}...)
 	r.getGinRoutesWithMiddlewares().POST(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(controller.Store)}...)
 	r.getGinRoutesWithMiddlewares().GET(pathToGinPath(relativePath+"/{id}"), []gin.HandlerFunc{handlerToGinHandler(controller.Show)}...)

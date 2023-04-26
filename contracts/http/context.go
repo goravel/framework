@@ -6,7 +6,7 @@ import (
 
 type Middleware func(Context)
 type HandlerFunc func(Context)
-type Controller interface {
+type ResourceController interface {
 	Index(Context)
 	Show(Context)
 	Store(Context)
