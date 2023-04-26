@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 
 	"github.com/gookit/color"
 
@@ -21,6 +22,13 @@ type AES struct {
 // NewAES returns a new AES hasher.
 func NewAES() *AES {
 	key := facades.Config.GetString("app.key")
+
+	// Don't use AES in artisan key:generate command
+	args := os.Args
+	if len(args) >= 3 && args[1] == "artisan" && args[2] == "key:generate" {
+		return nil
+	}
+
 	// check key length before using it
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		color.Redln("[Crypt] Empty or invalid APP_KEY, please reset it.\nRun command:\ngo run . artisan key:generate")
