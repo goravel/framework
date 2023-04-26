@@ -234,16 +234,13 @@ func (r *Local) Url(file string) string {
 }
 
 func (r *Local) fullPath(path string) string {
-	if path == "." {
-		path = ""
-	}
-	realPath := strings.TrimPrefix(path, "."+string(filepath.Separator))
-	realPath = strings.TrimSuffix(strings.TrimPrefix(realPath, string(filepath.Separator)), string(filepath.Separator))
-	if realPath == "" {
+	realPath := filepath.Clean(path)
+
+	if realPath == "." {
 		return r.rootPath()
-	} else {
-		return r.rootPath() + realPath
 	}
+
+	return filepath.Join(r.rootPath(), realPath)
 }
 
 func (r *Local) rootPath() string {
