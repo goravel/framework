@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -37,9 +35,9 @@ func (r *Local) AllDirectories(path string) ([]string, error) {
 		}
 		if info.IsDir() {
 			realPath := strings.ReplaceAll(fullPath, r.fullPath(path), "")
-			realPath = strings.TrimPrefix(realPath, "/")
+			realPath = strings.TrimPrefix(realPath, string(filepath.Separator))
 			if realPath != "" {
-				directories = append(directories, realPath+"/")
+				directories = append(directories, realPath+string(filepath.Separator))
 			}
 		}
 
@@ -56,7 +54,7 @@ func (r *Local) AllFiles(path string) ([]string, error) {
 			return err
 		}
 		if !info.IsDir() {
-			files = append(files, strings.ReplaceAll(fullPath, r.fullPath(path)+"/", ""))
+			files = append(files, strings.ReplaceAll(fullPath, r.fullPath(path)+string(filepath.Separator), ""))
 		}
 
 		return nil
@@ -101,10 +99,10 @@ func (r *Local) DeleteDirectory(directory string) error {
 
 func (r *Local) Directories(path string) ([]string, error) {
 	var directories []string
-	fileInfo, _ := ioutil.ReadDir(r.fullPath(path))
+	fileInfo, _ := os.ReadDir(r.fullPath(path))
 	for _, f := range fileInfo {
 		if f.IsDir() {
-			directories = append(directories, f.Name()+"/")
+			directories = append(directories, f.Name()+string(filepath.Separator))
 		}
 	}
 
@@ -121,7 +119,7 @@ func (r *Local) Exists(file string) bool {
 
 func (r *Local) Files(path string) ([]string, error) {
 	var files []string
-	fileInfo, err := ioutil.ReadDir(r.fullPath(path))
+	fileInfo, err := os.ReadDir(r.fullPath(path))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,7 @@ func (r *Local) Files(path string) ([]string, error) {
 }
 
 func (r *Local) Get(file string) (string, error) {
-	data, err := ioutil.ReadFile(r.fullPath(file))
+	data, err := os.ReadFile(r.fullPath(file))
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +142,7 @@ func (r *Local) Get(file string) (string, error) {
 }
 
 func (r *Local) MakeDirectory(directory string) error {
-	return os.MkdirAll(path.Dir(r.fullPath(directory)+"/"), os.ModePerm)
+	return os.MkdirAll(filepath.Dir(r.fullPath(directory)+string(filepath.Separator)), os.ModePerm)
 }
 
 func (r *Local) Missing(file string) bool {
@@ -153,7 +151,7 @@ func (r *Local) Missing(file string) bool {
 
 func (r *Local) Move(oldFile, newFile string) error {
 	newFile = r.fullPath(newFile)
-	if err := os.MkdirAll(path.Dir(newFile), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(newFile), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -165,12 +163,12 @@ func (r *Local) Move(oldFile, newFile string) error {
 }
 
 func (r *Local) Path(file string) string {
-	return support.RootPath + "/" + strings.TrimPrefix(strings.TrimPrefix(r.fullPath(file), "/"), "./")
+	return filepath.Join(support.RootPath, strings.TrimPrefix(strings.TrimPrefix(r.fullPath(file), string(filepath.Separator)), "."+string(filepath.Separator)))
 }
 
 func (r *Local) Put(file, content string) error {
 	file = r.fullPath(file)
-	if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -192,7 +190,7 @@ func (r *Local) PutFile(filePath string, source filesystem.File) (string, error)
 }
 
 func (r *Local) PutFileAs(filePath string, source filesystem.File, name string) (string, error) {
-	data, err := ioutil.ReadFile(source.File())
+	data, err := os.ReadFile(source.File())
 	if err != nil {
 		return "", err
 	}
@@ -239,8 +237,8 @@ func (r *Local) fullPath(path string) string {
 	if path == "." {
 		path = ""
 	}
-	realPath := strings.TrimPrefix(path, "./")
-	realPath = strings.TrimSuffix(strings.TrimPrefix(realPath, "/"), "/")
+	realPath := strings.TrimPrefix(path, "."+string(filepath.Separator))
+	realPath = strings.TrimSuffix(strings.TrimPrefix(realPath, string(filepath.Separator)), string(filepath.Separator))
 	if realPath == "" {
 		return r.rootPath()
 	} else {
@@ -249,5 +247,5 @@ func (r *Local) fullPath(path string) string {
 }
 
 func (r *Local) rootPath() string {
-	return strings.TrimSuffix(r.root, "/") + "/"
+	return strings.TrimSuffix(r.root, string(filepath.Separator)) + string(filepath.Separator)
 }
