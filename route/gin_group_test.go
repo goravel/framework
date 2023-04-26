@@ -18,6 +18,44 @@ import (
 	"github.com/goravel/framework/testing/mock"
 )
 
+type resourceController struct{}
+
+func (c resourceController) Index(ctx httpcontract.Context) {
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": "index",
+	})
+}
+
+func (c resourceController) Show(ctx httpcontract.Context) {
+	id := ctx.Request().Input("id")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": "show",
+		"id":     id,
+	})
+}
+
+func (c resourceController) Store(ctx httpcontract.Context) {
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": "store",
+	})
+}
+
+func (c resourceController) Update(ctx httpcontract.Context) {
+	id := ctx.Request().Input("id")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": "update",
+		"id":     id,
+	})
+}
+
+func (c resourceController) Destroy(ctx httpcontract.Context) {
+	id := ctx.Request().Input("id")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": "destroy",
+		"id":     id,
+	})
+}
+
 func TestGinGroup(t *testing.T) {
 	var (
 		gin        *Gin
@@ -211,6 +249,72 @@ func TestGinGroup(t *testing.T) {
 			url:        "/any/1",
 			expectCode: http.StatusOK,
 			expectBody: "{\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Index",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.Resource("/resource", resource)
+			},
+			method:     "GET",
+			url:        "/resource",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"index\"}",
+		},
+		{
+			name: "Resource Show",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.Resource("/resource", resource)
+			},
+			method:     "GET",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"show\",\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Store",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.Resource("/resource", resource)
+			},
+			method:     "POST",
+			url:        "/resource",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"store\"}",
+		},
+		{
+			name: "Resource Update (PUT)",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.Resource("/resource", resource)
+			},
+			method:     "PUT",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"update\",\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Update (PATCH)",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.Resource("/resource", resource)
+			},
+			method:     "PATCH",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"update\",\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Destroy",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.Resource("/resource", resource)
+			},
+			method:     "DELETE",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"destroy\",\"id\":\"1\"}",
 		},
 		{
 			name: "Static",

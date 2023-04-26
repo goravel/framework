@@ -32,6 +32,7 @@ type Route interface {
 	Patch(relativePath string, handler contractshttp.HandlerFunc)
 	Put(relativePath string, handler contractshttp.HandlerFunc)
 	Options(relativePath string, handler contractshttp.HandlerFunc)
+	Resource(relativePath string, controller contractshttp.ResourceController)
 
 	Static(relativePath, root string)
 	StaticFile(relativePath, filepath string)
