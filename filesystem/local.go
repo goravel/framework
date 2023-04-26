@@ -11,7 +11,6 @@ import (
 
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -163,7 +162,7 @@ func (r *Local) Move(oldFile, newFile string) error {
 }
 
 func (r *Local) Path(file string) string {
-	return filepath.Join(support.RootPath, strings.TrimPrefix(strings.TrimPrefix(r.fullPath(file), string(filepath.Separator)), "."+string(filepath.Separator)))
+	return r.fullPath(file)
 }
 
 func (r *Local) Put(file, content string) error {
