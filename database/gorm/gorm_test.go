@@ -20,6 +20,10 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
+type contextKey int
+
+const testContextKey contextKey = 0
+
 type User struct {
 	orm.Model
 	orm.SoftDeletes
@@ -49,11 +53,11 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 					}
 				}
 				if name.(string) == "event_context" {
-					val := event.Context().Value("hello")
+					val := event.Context().Value(testContextKey)
 					event.SetAttribute("avatar", val.(string))
 				}
 				if name.(string) == "event_query" {
-					event.Query().Create(&User{Name: "event_query1"})
+					_ = event.Query().Create(&User{Name: "event_query1"})
 				}
 			}
 
@@ -298,7 +302,7 @@ type GormQueryTestSuite struct {
 
 func TestGormQueryTestSuite(t *testing.T) {
 	testContext = context.Background()
-	testContext = context.WithValue(testContext, "hello", "goravel")
+	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
 	mysqlPool, mysqlResource, mysqlDB, err := MysqlDocker()
 	if err != nil {
