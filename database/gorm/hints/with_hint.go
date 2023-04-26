@@ -30,15 +30,15 @@ func (indexHint WithHint) ModifyStatement(stmt *gorm.Statement) {
 
 func (indexHint WithHint) Build(builder clause.Builder) {
 	if len(indexHint.Keys) > 0 {
-		builder.WriteString(indexHint.Type)
-		builder.WriteByte('(')
+		_, _ = builder.WriteString(indexHint.Type)
+		_ = builder.WriteByte('(')
 		for idx, key := range indexHint.Keys {
 			if idx > 0 {
-				builder.WriteByte(',')
+				_ = builder.WriteByte(',')
 			}
-			builder.WriteString(key)
+			_, _ = builder.WriteString(key)
 		}
-		builder.WriteByte(')')
+		_ = builder.WriteByte(')')
 	}
 }
 
@@ -51,7 +51,7 @@ type Exprs []clause.Expression
 func (exprs Exprs) Build(builder clause.Builder) {
 	for idx, expr := range exprs {
 		if idx > 0 {
-			builder.WriteByte(' ')
+			_ = builder.WriteByte(' ')
 		}
 		expr.Build(builder)
 	}
