@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/h2non/filetype"
+	"github.com/gabriel-vasile/mimetype"
 )
 
 func Create(file string, content string) {
@@ -77,15 +77,14 @@ func Contain(file string, search string) bool {
 	return false
 }
 
-//Extension Supported types: https://github.com/h2non/filetype#supported-types
+//Extension Supported types: https://github.com/gabriel-vasile/mimetype/blob/master/supported_mimes.md
 func Extension(file string, originalWhenUnknown ...bool) (string, error) {
-	buf, _ := ioutil.ReadFile(file)
-	kind, err := filetype.Match(buf)
+	mtype, err := mimetype.DetectFile(file)
 	if err != nil {
 		return "", err
 	}
 
-	if kind == filetype.Unknown {
+	if mtype.String() == "" {
 		if len(originalWhenUnknown) > 0 {
 			if originalWhenUnknown[0] {
 				return ClientOriginalExtension(file), nil
@@ -95,7 +94,7 @@ func Extension(file string, originalWhenUnknown ...bool) (string, error) {
 		return "", errors.New("unknown file extension")
 	}
 
-	return kind.Extension, nil
+	return strings.TrimPrefix(mtype.Extension(), "."), nil
 }
 
 func ClientOriginalExtension(file string) string {

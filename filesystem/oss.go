@@ -218,7 +218,12 @@ func (r *Oss) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return lastModified, nil
+	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return lastModified.In(l), nil
 }
 
 func (r *Oss) MakeDirectory(directory string) error {

@@ -21,12 +21,8 @@ func TestCreate(t *testing.T) {
 
 func TestExtension(t *testing.T) {
 	extension, err := Extension("file.go")
-	assert.EqualError(t, err, "unknown file extension")
-	assert.Empty(t, extension)
-
-	extension, err = Extension("file.go", true)
 	assert.Nil(t, err)
-	assert.Equal(t, extension, "go")
+	assert.Equal(t, "txt", extension)
 }
 
 func TestClientOriginalExtension(t *testing.T) {
