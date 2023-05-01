@@ -1,4 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Please submit to goravel/goravel (请提交至 goravel/goravel)
-    url: https://github.com/goravel/goravel/issues
+    url: https://github.com/goravel/goravel/issues/new/choose
+    about: Thanks in advance for your feedback (提前感谢您的反馈)
