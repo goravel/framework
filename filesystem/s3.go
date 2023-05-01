@@ -7,20 +7,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/support/str"
-	supporttime "github.com/goravel/framework/support/time"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/gabriel-vasile/mimetype"
+
+	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/support/str"
+	supporttime "github.com/goravel/framework/support/time"
 )
 
 /*
  * S3 OSS
- * Document: https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/gov2/s3/common/main.go
+ * Document: https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/gov2/s3
  * More: https://aws.github.io/aws-sdk-go-v2/docs/sdk-utilities/s3/#putobjectinput-body-field-ioreadseeker-vs-ioreader
  */
 
@@ -231,7 +232,9 @@ func (r *S3) Get(file string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		return "", err
+	}
 
 	return string(data), nil
 }
@@ -245,7 +248,12 @@ func (r *S3) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return aws.ToTime(resp.LastModified), nil
+	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return aws.ToTime(resp.LastModified).In(l), nil
 }
 
 func (r *S3) MakeDirectory(directory string) error {
@@ -285,10 +293,13 @@ func (r *S3) Path(file string) string {
 }
 
 func (r *S3) Put(file string, content string) error {
+	mtype := mimetype.Detect([]byte(content))
 	_, err := r.instance.PutObject(r.ctx, &s3.PutObjectInput{
-		Bucket: aws.String(r.bucket),
-		Key:    aws.String(file),
-		Body:   strings.NewReader(content),
+		Bucket:        aws.String(r.bucket),
+		Key:           aws.String(file),
+		Body:          strings.NewReader(content),
+		ContentLength: int64(len(content)),
+		ContentType:   aws.String(mtype.String()),
 	})
 
 	return err

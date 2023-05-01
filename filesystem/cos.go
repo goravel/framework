@@ -257,7 +257,9 @@ func (r *Cos) Get(file string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		return "", err
+	}
 
 	return string(data), nil
 }
@@ -273,7 +275,12 @@ func (r *Cos) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return lastModified, nil
+	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return lastModified.In(l), nil
 }
 
 func (r *Cos) MakeDirectory(directory string) error {

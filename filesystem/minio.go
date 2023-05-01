@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 
@@ -223,7 +224,12 @@ func (r *Minio) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return objInfo.LastModified, nil
+	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return objInfo.LastModified.In(l), nil
 }
 
 func (r *Minio) MakeDirectory(directory string) error {
@@ -260,6 +266,7 @@ func (r *Minio) Path(file string) string {
 }
 
 func (r *Minio) Put(file string, content string) error {
+	mtype := mimetype.Detect([]byte(content))
 	reader := strings.NewReader(content)
 	_, err := r.instance.PutObject(
 		r.ctx,
@@ -267,7 +274,9 @@ func (r *Minio) Put(file string, content string) error {
 		file,
 		reader,
 		reader.Size(),
-		minio.PutObjectOptions{},
+		minio.PutObjectOptions{
+			ContentType: mtype.String(),
+		},
 	)
 
 	return err

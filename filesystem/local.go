@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/h2non/filetype"
+	"github.com/gabriel-vasile/mimetype"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
@@ -148,7 +148,12 @@ func (r *Local) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return fileInfo.ModTime(), nil
+	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return fileInfo.ModTime().In(l), nil
 }
 
 func (r *Local) MakeDirectory(directory string) error {
@@ -156,12 +161,12 @@ func (r *Local) MakeDirectory(directory string) error {
 }
 
 func (r *Local) MimeType(file string) (string, error) {
-	kind, err := filetype.MatchFile(r.fullPath(file))
+	mtype, err := mimetype.DetectFile(r.fullPath(file))
 	if err != nil {
 		return "", err
 	}
 
-	return kind.MIME.Value, nil
+	return mtype.String(), nil
 }
 
 func (r *Local) Missing(file string) bool {

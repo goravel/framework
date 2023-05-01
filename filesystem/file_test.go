@@ -54,13 +54,13 @@ func (s *FileTestSuite) TestGetClientOriginalExtension() {
 }
 
 func (s *FileTestSuite) TestHashName() {
-	s.Len(testFile.HashName("goravel"), 51)
+	s.Len(testFile.HashName("goravel"), 52)
 }
 
 func (s *FileTestSuite) TestExtension() {
 	extension, err := testFile.Extension()
-	s.Empty(extension)
-	s.EqualError(err, "unknown file extension")
+	s.Equal("txt", extension)
+	s.Nil(err)
 }
 
 func TestNewFileFromRequest(t *testing.T) {
@@ -75,7 +75,7 @@ func TestNewFileFromRequest(t *testing.T) {
 		_, err = w.Write([]byte("test"))
 		assert.NoError(t, err)
 	}
-	mw.Close()
+	assert.Nil(t, mw.Close())
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("POST", "/", buf)
 	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
