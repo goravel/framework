@@ -285,6 +285,10 @@ func (r *GinRequest) Ip() string {
 	return r.instance.ClientIP()
 }
 
+func (r *GinRequest) Host() string {
+	return r.instance.Request.Host
+}
+
 func (r *GinRequest) Origin() *http.Request {
 	return r.instance.Request
 }

@@ -16,6 +16,7 @@ type Request interface {
 	Url() string
 	FullUrl() string
 	Ip() string
+	Host() string
 
 	// Route Retrieve  an input item from the request: /users/{id}
 	Route(key string) string
