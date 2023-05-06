@@ -2,25 +2,29 @@ package console
 
 import (
 	"github.com/goravel/framework/console/console"
-	console2 "github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/facades"
+	consolecontract "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/foundation"
 )
+
+const Binding = "goravel.console"
 
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register() {
-	facades.Artisan = NewApplication()
+func (receiver *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(Binding, func() (any, error) {
+		return NewApplication(), nil
+	})
 }
 
-func (receiver *ServiceProvider) Boot() {
-	receiver.registerCommands()
+func (receiver *ServiceProvider) Boot(app foundation.Application) {
+	receiver.registerCommands(app)
 }
 
-func (receiver *ServiceProvider) registerCommands() {
-	facades.Artisan.Register([]console2.Command{
-		&console.ListCommand{},
-		&console.KeyGenerateCommand{},
+func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
+	app.MakeArtisan().Register([]consolecontract.Command{
+		&console.ListCommand{App: app},
+		&console.KeyGenerateCommand{App: app},
 		&console.MakeCommand{},
 	})
 }

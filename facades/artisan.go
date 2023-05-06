@@ -5,3 +5,7 @@ import (
 )
 
 var Artisan console.Artisan
+
+func NewArtisan() console.Artisan {
+	return App().MakeArtisan()
+}

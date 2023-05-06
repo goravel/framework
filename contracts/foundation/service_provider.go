@@ -1,8 +1,8 @@
-package contracts
+package foundation
 
 type ServiceProvider interface {
 	//Register any application services.
-	Register()
+	Register(app Application)
 	//Boot any application services after register.
-	Boot()
+	Boot(app Application)
 }
