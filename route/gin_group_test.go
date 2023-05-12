@@ -21,37 +21,42 @@ import (
 type resourceController struct{}
 
 func (c resourceController) Index(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "index",
+		"action": action,
 	})
 }
 
 func (c resourceController) Show(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "show",
+		"action": action,
 		"id":     id,
 	})
 }
 
 func (c resourceController) Store(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "store",
+		"action": action,
 	})
 }
 
 func (c resourceController) Update(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "update",
+		"action": action,
 		"id":     id,
 	})
 }
 
 func (c resourceController) Destroy(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "destroy",
+		"action": action,
 		"id":     id,
 	})
 }
@@ -255,6 +260,10 @@ func TestGinGroup(t *testing.T) {
 			setup: func(req *http.Request) {
 				resource := resourceController{}
 				gin.Resource("/resource", resource)
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "index")
+					ctx.Request().Next()
+				})
 			},
 			method:     "GET",
 			url:        "/resource",
@@ -266,6 +275,10 @@ func TestGinGroup(t *testing.T) {
 			setup: func(req *http.Request) {
 				resource := resourceController{}
 				gin.Resource("/resource", resource)
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "show")
+					ctx.Request().Next()
+				})
 			},
 			method:     "GET",
 			url:        "/resource/1",
@@ -277,6 +290,10 @@ func TestGinGroup(t *testing.T) {
 			setup: func(req *http.Request) {
 				resource := resourceController{}
 				gin.Resource("/resource", resource)
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "store")
+					ctx.Request().Next()
+				})
 			},
 			method:     "POST",
 			url:        "/resource",
@@ -288,6 +305,10 @@ func TestGinGroup(t *testing.T) {
 			setup: func(req *http.Request) {
 				resource := resourceController{}
 				gin.Resource("/resource", resource)
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "update")
+					ctx.Request().Next()
+				})
 			},
 			method:     "PUT",
 			url:        "/resource/1",
@@ -299,6 +320,10 @@ func TestGinGroup(t *testing.T) {
 			setup: func(req *http.Request) {
 				resource := resourceController{}
 				gin.Resource("/resource", resource)
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "update")
+					ctx.Request().Next()
+				})
 			},
 			method:     "PATCH",
 			url:        "/resource/1",
@@ -310,6 +335,10 @@ func TestGinGroup(t *testing.T) {
 			setup: func(req *http.Request) {
 				resource := resourceController{}
 				gin.Resource("/resource", resource)
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "destroy")
+					ctx.Request().Next()
+				})
 			},
 			method:     "DELETE",
 			url:        "/resource/1",
