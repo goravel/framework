@@ -111,7 +111,6 @@ func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
 	middlewares = append(middlewares, ginOriginMiddlewares...)
 	middlewares = append(middlewares, ginMiddlewares...)
 	middlewares = append(middlewares, ginLastMiddlewares...)
-	r.middlewares = []httpcontract.Middleware{}
 	if len(middlewares) > 0 {
 		return ginGroup.Use(middlewares...)
 	} else {
