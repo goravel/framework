@@ -12,7 +12,7 @@ import (
 
 	"github.com/gookit/color"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type AES struct {
@@ -20,8 +20,8 @@ type AES struct {
 }
 
 // NewAES returns a new AES hasher.
-func NewAES() *AES {
-	key := facades.Config.GetString("app.key")
+func NewAES(config config.Config) *AES {
+	key := config.GetString("app.key")
 
 	// Don't use AES in artisan key:generate command
 	args := os.Args
