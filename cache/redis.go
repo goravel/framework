@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -10,26 +11,28 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type Redis struct {
-	ctx        context.Context
-	connection string
-	prefix     string
-	instance   *redis.Client
+	ctx      context.Context
+	config   config.Config
+	prefix   string
+	instance *redis.Client
+	store    string
 }
 
-func NewRedis(ctx context.Context, connection string) (*Redis, error) {
-	host := facades.Config.GetString("database.redis." + connection + ".host")
+func NewRedis(ctx context.Context, config config.Config, store string) (*Redis, error) {
+	connection := config.GetString(fmt.Sprintf("cache.stores.%s.connection", store), "default")
+	host := config.GetString("database.redis." + connection + ".host")
 	if host == "" {
 		return nil, nil
 	}
 
 	client := redis.NewClient(&redis.Options{
-		Addr:     host + ":" + facades.Config.GetString("database.redis."+connection+".port"),
-		Password: facades.Config.GetString("database.redis." + connection + ".password"),
-		DB:       facades.Config.GetInt("database.redis." + connection + ".database"),
+		Addr:     host + ":" + config.GetString("database.redis."+connection+".port"),
+		Password: config.GetString("database.redis." + connection + ".password"),
+		DB:       config.GetInt("database.redis." + connection + ".database"),
 	})
 
 	if _, err := client.Ping(context.Background()).Result(); err != nil {
@@ -37,10 +40,10 @@ func NewRedis(ctx context.Context, connection string) (*Redis, error) {
 	}
 
 	return &Redis{
-		ctx:        ctx,
-		connection: connection,
-		prefix:     prefix(),
-		instance:   client,
+		ctx:      ctx,
+		prefix:   prefix(config),
+		instance: client,
+		store:    store,
 	}, nil
 }
 
@@ -246,7 +249,7 @@ func (r *Redis) RememberForever(key string, callback func() any) (any, error) {
 }
 
 func (r *Redis) WithContext(ctx context.Context) cache.Driver {
-	store, _ := NewRedis(ctx, r.connection)
+	store, _ := NewRedis(ctx, r.config, r.store)
 
 	return store
 }

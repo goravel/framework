@@ -3,12 +3,17 @@ package console
 import (
 	"github.com/gookit/color"
 
+	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/facades"
 )
 
 type ClearCommand struct {
+	cache cache.Cache
+}
+
+func NewClearCommand(cache cache.Cache) *ClearCommand {
+	return &ClearCommand{cache: cache}
 }
 
 //Signature The name and signature of the console command.
@@ -30,9 +35,7 @@ func (receiver *ClearCommand) Extend() command.Extend {
 
 //Handle Execute the console command.
 func (receiver *ClearCommand) Handle(ctx console.Context) error {
-	res := facades.Cache.Flush()
-
-	if res {
+	if receiver.cache.Flush() {
 		color.Greenln("Application cache cleared")
 	} else {
 		color.Redln("Clear Application cache Failed")
