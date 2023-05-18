@@ -9,14 +9,16 @@ import (
 	"github.com/goravel/framework/support"
 )
 
-var App *Application
+var App foundation.Application
 
 func init() {
 	setEnv()
 
-	App = &Application{Container: NewContainer()}
-	App.registerBaseServiceProviders()
-	App.bootBaseServiceProviders()
+	app := &Application{Container: NewContainer()}
+	app.registerBaseServiceProviders()
+	app.bootBaseServiceProviders()
+
+	App = app
 }
 
 type Application struct {
