@@ -237,6 +237,10 @@ func (r *GinRequest) Header(key string, defaultValue ...string) string {
 		return header
 	}
 
+	if len(defaultValue) == 0 {
+		return ""
+	}
+
 	return defaultValue[0]
 }
 
