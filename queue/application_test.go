@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/event"
+	eventmock "github.com/goravel/framework/contracts/event/mocks"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/queue/support"
+	queuemock "github.com/goravel/framework/contracts/queue/mocks"
 	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
-	"github.com/goravel/framework/testing/mock"
 )
 
 var (
@@ -33,6 +33,9 @@ type QueueTestSuite struct {
 	suite.Suite
 	app           *Application
 	redisResource *dockertest.Resource
+	mockConfig    *configmock.Config
+	mockEvent     *eventmock.Instance
+	mockQueue     *queuemock.Queue
 }
 
 func TestQueueTestSuite(t *testing.T) {
@@ -42,7 +45,6 @@ func TestQueueTestSuite(t *testing.T) {
 	}
 
 	suite.Run(t, &QueueTestSuite{
-		app:           NewApplication(),
 		redisResource: redisResource,
 	})
 
@@ -52,64 +54,14 @@ func TestQueueTestSuite(t *testing.T) {
 }
 
 func (s *QueueTestSuite) SetupTest() {
-}
-
-func (s *QueueTestSuite) TestWorker() {
-	var (
-		mockConfig *configmocks.Config
-	)
-
-	beforeEach := func() {
-		mockConfig = mock.Config()
-	}
-
-	tests := []struct {
-		description  string
-		setup        func()
-		args         *queue.Args
-		expectWorker queue.Worker
-	}{
-		{
-			description: "success when args is nil",
-			setup: func() {
-				mockConfig.On("GetString", "queue.default").Return("redis").Once()
-				mockConfig.On("GetString", "app.name").Return("app").Once()
-				mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("queue").Once()
-			},
-			expectWorker: &support.Worker{
-				Connection: "redis",
-				Queue:      "app_queues:queue",
-				Concurrent: 1,
-			},
-		},
-		{
-			description: "success when args isn't nil",
-			setup: func() {
-				mockConfig.On("GetString", "app.name").Return("app").Once()
-			},
-			args: &queue.Args{
-				Connection: "redis",
-				Queue:      "queue",
-				Concurrent: 2,
-			},
-			expectWorker: &support.Worker{
-				Connection: "redis",
-				Queue:      "app_queues:queue",
-				Concurrent: 2,
-			},
-		},
-	}
-
-	for _, test := range tests {
-		beforeEach()
-		test.setup()
-		worker := s.app.Worker(test.args)
-		s.Equal(test.expectWorker, worker, test.description)
-		mockConfig.AssertExpectations(s.T())
-	}
+	s.mockConfig = &configmock.Config{}
+	s.mockEvent = &eventmock.Instance{}
+	s.mockQueue = &queuemock.Queue{}
+	s.app = NewApplication(s.mockConfig, s.mockEvent)
 }
 
 func (s *QueueTestSuite) TestSyncQueue() {
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Once()
 	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestSyncQueue"},
 		{Type: "int", Value: 1},
@@ -118,22 +70,17 @@ func (s *QueueTestSuite) TestSyncQueue() {
 }
 
 func (s *QueueTestSuite) TestDefaultAsyncQueue() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-
-	mockQueue, _ := mock.Queue()
-	mockQueue.On("GetJobs").Return([]queue.Job{&TestAsyncJob{}}).Once()
-
-	mockEvent, _ := mock.Event()
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.app.jobs = []queue.Job{&TestAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -152,28 +99,23 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testAsyncJob)
 
-	mockConfig.AssertExpectations(s.T())
-	mockQueue.AssertExpectations(s.T())
-	mockEvent.AssertExpectations(s.T())
+	s.mockConfig.AssertExpectations(s.T())
+	s.mockQueue.AssertExpectations(s.T())
+	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestDelayAsyncQueue() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Times(5)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-
-	mockQueue, _ := mock.Queue()
-	mockQueue.On("GetJobs").Return([]queue.Job{&TestDelayAsyncJob{}}).Once()
-
-	mockEvent, _ := mock.Event()
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.app.jobs = []queue.Job{&TestDelayAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -196,27 +138,23 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	time.Sleep(3 * time.Second)
 	s.Equal(1, testDelayAsyncJob)
 
-	mockConfig.AssertExpectations(s.T())
-	mockQueue.AssertExpectations(s.T())
-	mockEvent.AssertExpectations(s.T())
+	s.mockConfig.AssertExpectations(s.T())
+	s.mockQueue.AssertExpectations(s.T())
+	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestCustomAsyncQueue() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
-	mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
-	mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-
-	mockQueue, _ := mock.Queue()
-	mockQueue.On("GetJobs").Return([]queue.Job{&TestCustomAsyncJob{}}).Once()
-
-	mockEvent, _ := mock.Event()
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.app.jobs = []queue.Job{&TestCustomAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -239,28 +177,23 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomAsyncJob)
 
-	mockConfig.AssertExpectations(s.T())
-	mockQueue.AssertExpectations(s.T())
-	mockEvent.AssertExpectations(s.T())
+	s.mockConfig.AssertExpectations(s.T())
+	s.mockQueue.AssertExpectations(s.T())
+	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestErrorAsyncQueue() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-
-	mockQueue, _ := mock.Queue()
-	mockQueue.On("GetJobs").Return([]queue.Job{&TestErrorAsyncJob{}}).Once()
-
-	mockEvent, _ := mock.Event()
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.app.jobs = []queue.Job{&TestErrorAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -281,28 +214,23 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorAsyncJob)
 
-	mockConfig.AssertExpectations(s.T())
-	mockQueue.AssertExpectations(s.T())
-	mockEvent.AssertExpectations(s.T())
+	s.mockConfig.AssertExpectations(s.T())
+	s.mockQueue.AssertExpectations(s.T())
+	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestChainAsyncQueue() {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "queue.default").Return("redis").Times(5)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-
-	mockQueue, _ := mock.Queue()
-	mockQueue.On("GetJobs").Return([]queue.Job{&TestChainAsyncJob{}, &TestChainSyncJob{}}).Once()
-
-	mockEvent, _ := mock.Event()
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
+	s.app.jobs = []queue.Job{&TestChainAsyncJob{}, &TestChainSyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -315,6 +243,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 			return
 		}
 	}(ctx)
+
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
@@ -332,13 +261,13 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 			},
 		},
 	}).OnQueue("chain").Dispatch())
+
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainAsyncJob)
 	s.Equal(1, testChainSyncJob)
 
-	mockConfig.AssertExpectations(s.T())
-	mockQueue.AssertExpectations(s.T())
-	mockEvent.AssertExpectations(s.T())
+	s.mockConfig.AssertExpectations(s.T())
+	s.mockEvent.AssertExpectations(s.T())
 }
 
 type TestAsyncJob struct {
