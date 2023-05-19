@@ -13,29 +13,30 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/support/file"
 )
-
-var testFile *File
 
 type FileTestSuite struct {
 	suite.Suite
+	file       *File
 	mockConfig *configmock.Config
 }
 
 func TestFileTestSuite(t *testing.T) {
 	suite.Run(t, new(FileTestSuite))
+
+	file.Remove("test.txt")
 }
 
 func (s *FileTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
 	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
-	configModule = s.mockConfig
-}
+	ConfigFacade = s.mockConfig
 
-func (s *FileTestSuite) TestNewFile_Success() {
-	testFile, err := NewFile("./file.go")
+	var err error
+	s.file, err = NewFile("./file.go")
 	s.Nil(err)
-	s.NotNil(testFile)
+	s.NotNil(s.file)
 }
 
 func (s *FileTestSuite) TestNewFile_Error() {
@@ -45,26 +46,26 @@ func (s *FileTestSuite) TestNewFile_Error() {
 }
 
 func (s *FileTestSuite) TestGetClientOriginalName() {
-	s.Equal("file.go", testFile.GetClientOriginalName())
+	s.Equal("file.go", s.file.GetClientOriginalName())
 }
 
 func (s *FileTestSuite) TestGetClientOriginalExtension() {
-	s.Equal("go", testFile.GetClientOriginalExtension())
+	s.Equal("go", s.file.GetClientOriginalExtension())
 }
 
 func (s *FileTestSuite) TestHashName() {
-	s.Len(testFile.HashName("goravel"), 52)
+	s.Len(s.file.HashName("goravel"), 52)
 }
 
 func (s *FileTestSuite) TestExtension() {
-	extension, err := testFile.Extension()
+	extension, err := s.file.Extension()
 	s.Equal("txt", extension)
 	s.Nil(err)
 }
 
 func TestNewFileFromRequest(t *testing.T) {
 	mockConfig := &configmock.Config{}
-	configModule = mockConfig
+	ConfigFacade = mockConfig
 	mockConfig.On("GetString", "app.name").Return("goravel").Once()
 	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 

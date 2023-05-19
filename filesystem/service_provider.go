@@ -8,15 +8,15 @@ import (
 
 const Binding = "goravel.filesystem"
 
-var configModule configcontract.Config
-var storageModule filesystemcontract.Storage
+var ConfigFacade configcontract.Config
+var StorageFacade filesystemcontract.Storage
 
 type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register(app foundation.Application) {
-	configModule = app.MakeConfig()
-	storageModule = app.MakeStorage()
+	ConfigFacade = app.MakeConfig()
+	StorageFacade = app.MakeStorage()
 
 	app.Singleton(Binding, func() (any, error) {
 		return NewStorage(app.MakeConfig()), nil

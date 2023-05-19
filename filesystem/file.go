@@ -29,10 +29,10 @@ func NewFile(file string) (*File, error) {
 	}
 
 	return &File{
-		disk:    configModule.GetString("filesystems.default"),
+		disk:    ConfigFacade.GetString("filesystems.default"),
 		path:    file,
 		name:    path.Base(file),
-		storage: storageModule,
+		storage: StorageFacade,
 	}, nil
 }
 
@@ -43,7 +43,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	}
 	defer src.Close()
 
-	tempFileName := fmt.Sprintf("%s_*%s", configModule.GetString("app.name"), path.Ext(fileHeader.Filename))
+	tempFileName := fmt.Sprintf("%s_*%s", ConfigFacade.GetString("app.name"), path.Ext(fileHeader.Filename))
 	tempFile, err := ioutil.TempFile(os.TempDir(), tempFileName)
 	if err != nil {
 		return nil, err
@@ -56,10 +56,10 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	}
 
 	return &File{
-		disk:    configModule.GetString("filesystems.default"),
+		disk:    ConfigFacade.GetString("filesystems.default"),
 		path:    tempFile.Name(),
 		name:    fileHeader.Filename,
-		storage: storageModule,
+		storage: StorageFacade,
 	}, nil
 }
 

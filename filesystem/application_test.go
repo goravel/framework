@@ -434,7 +434,7 @@ func TestStorage(t *testing.T) {
 
 func initConfig() *configmocks.Config {
 	mockConfig := &configmocks.Config{}
-	configModule = mockConfig
+	ConfigFacade = mockConfig
 	mockConfig.On("GetString", "app.timezone").Return("UTC")
 	mockConfig.On("GetString", "filesystems.default").Return("local")
 	mockConfig.On("GetString", "filesystems.disks.local.driver").Return("local")
