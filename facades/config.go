@@ -1,11 +1,9 @@
 package facades
 
 import (
-	configcontract "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/config"
 )
 
-var Config = NewConfig()
-
-func NewConfig() configcontract.Config {
+func Config() config.Config {
 	return App().MakeConfig()
 }

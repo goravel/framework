@@ -4,8 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 )
 
-var Artisan console.Artisan
-
-func NewArtisan() console.Artisan {
+func Artisan() console.Artisan {
 	return App().MakeArtisan()
 }
