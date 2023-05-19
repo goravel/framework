@@ -4,4 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
-var Orm orm.Orm
+func Orm() orm.Orm {
+	return App().MakeOrm()
+}

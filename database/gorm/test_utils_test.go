@@ -9,25 +9,28 @@ import (
 )
 
 func TestMysqlDocker(t *testing.T) {
-	pool, resource, db, err := MysqlDocker()
+	docker := NewMysqlDocker()
+	pool, resource, query, err := docker.New()
 
 	assert.NotNil(t, pool)
 	assert.NotNil(t, resource)
-	assert.NotNil(t, db)
+	assert.NotNil(t, query)
 	assert.Nil(t, err)
 }
 
 func TestPostgresqlDocker(t *testing.T) {
-	pool, resource, db, err := PostgresqlDocker()
+	docker := NewPostgresqlDocker()
+	pool, resource, query, err := docker.New()
 
 	assert.NotNil(t, pool)
 	assert.NotNil(t, resource)
-	assert.NotNil(t, db)
+	assert.NotNil(t, query)
 	assert.Nil(t, err)
 }
 
 func TestSqliteDocker(t *testing.T) {
-	pool, resource, db, err := SqliteDocker(dbDatabase)
+	docker := NewSqliteDocker(dbDatabase)
+	pool, resource, db, err := docker.New()
 
 	assert.NotNil(t, pool)
 	assert.NotNil(t, resource)
@@ -38,7 +41,8 @@ func TestSqliteDocker(t *testing.T) {
 }
 
 func TestSqlserverDocker(t *testing.T) {
-	pool, resource, db, err := SqlserverDocker()
+	docker := NewSqlserverDocker()
+	pool, resource, db, err := docker.New()
 
 	assert.NotNil(t, pool)
 	assert.NotNil(t, resource)

@@ -15,6 +15,10 @@ import (
 type ObserverMakeCommand struct {
 }
 
+func NewObserverMakeCommand() *ObserverMakeCommand {
+	return &ObserverMakeCommand{}
+}
+
 // Signature The name and signature of the console command.
 func (receiver *ObserverMakeCommand) Signature() string {
 	return "make:observer"

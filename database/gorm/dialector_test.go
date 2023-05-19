@@ -5,110 +5,89 @@ import (
 	"testing"
 
 	"github.com/glebarez/sqlite"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
-	"gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/config/mocks"
-	contractsdatabase "github.com/goravel/framework/contracts/database"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
+	databasecontract "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/testing/mock"
 )
 
-func TestDialector(t *testing.T) {
-	var mockConfig *mocks.Config
-	host := "localhost"
-	port := 3306
-	database := "forge"
-	username := "root"
-	password := "123123"
+type DialectorTestSuite struct {
+	suite.Suite
+	mockConfig *configmock.Config
+	config     databasecontract.Config
+}
 
-	tests := []struct {
-		description     string
-		connection      orm.Driver
-		setup           func()
-		expectDialector gorm.Dialector
-		expectErr       error
-	}{
-		{
-			description: "mysql",
-			connection:  orm.DriverMysql,
-			setup: func() {
-				mockConfig.On("GetString", "database.connections.mysql.driver").
-					Return(orm.DriverMysql.String()).Once()
-				mockConfig.On("GetString", "database.connections.mysql.charset").
-					Return("utf8mb4").Once()
-				mockConfig.On("GetString", "database.connections.mysql.loc").
-					Return("Local").Once()
-			},
-			expectDialector: mysql.New(mysql.Config{
-				DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
-					username, password, host, port, database, "utf8mb4", true, "Local"),
-			}),
+func TestDialectorTestSuite(t *testing.T) {
+	suite.Run(t, &DialectorTestSuite{
+		config: databasecontract.Config{
+			Host:     "localhost",
+			Port:     3306,
+			Database: "forge",
+			Username: "root",
+			Password: "123123",
 		},
-		{
-			description: "postgresql",
-			connection:  orm.DriverPostgresql,
-			setup: func() {
-				mockConfig.On("GetString", "database.connections.postgresql.driver").
-					Return(orm.DriverPostgresql.String()).Once()
-				mockConfig.On("GetString", "database.connections.postgresql.sslmode").
-					Return("disable").Once()
-				mockConfig.On("GetString", "database.connections.postgresql.timezone").
-					Return("UTC").Once()
-			},
-			expectDialector: postgres.New(postgres.Config{
-				DSN: fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-					host, username, password, database, port, "disable", "UTC"),
-			}),
-		},
-		{
-			description: "sqlite",
-			connection:  orm.DriverSqlite,
-			setup: func() {
-				mockConfig.On("GetString", "database.connections.sqlite.driver").
-					Return(orm.DriverSqlite.String()).Once()
-			},
-			expectDialector: sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", database)),
-		},
-		{
-			description: "sqlserver",
-			connection:  orm.DriverSqlserver,
-			setup: func() {
-				mockConfig.On("GetString", "database.connections.sqlserver.driver").
-					Return(orm.DriverSqlserver.String()).Once()
-				mockConfig.On("GetString", "database.connections.sqlserver.charset").
-					Return("utf8mb4").Once()
-			},
-			expectDialector: sqlserver.New(sqlserver.Config{
-				DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
-					username, password, host, port, database, "utf8mb4"),
-			}),
-		},
-		{
-			description: "error driver",
-			connection:  "goravel",
-			setup: func() {
-				mockConfig.On("GetString", "database.connections.goravel.driver").
-					Return("goravel").Once()
-			},
-			expectErr: fmt.Errorf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", "goravel"),
-		},
-	}
+	})
+}
 
-	for _, test := range tests {
-		mockConfig = mock.Config()
-		test.setup()
-		dialector, err := dialector(test.connection.String(), contractsdatabase.Config{
-			Host:     host,
-			Port:     port,
-			Database: database,
-			Username: username,
-			Password: password,
-		})
-		assert.Equal(t, test.expectDialector, dialector)
-		assert.Equal(t, test.expectErr, err)
-	}
+func (s *DialectorTestSuite) SetupTest() {
+	s.mockConfig = &configmock.Config{}
+}
+
+func (s *DialectorTestSuite) TestMysql() {
+	dialector := NewDialectorImpl(s.mockConfig, orm.DriverMysql.String())
+	s.mockConfig.On("GetString", "database.connections.mysql.driver").
+		Return(orm.DriverMysql.String()).Once()
+	s.mockConfig.On("GetString", "database.connections.mysql.charset").
+		Return("utf8mb4").Once()
+	s.mockConfig.On("GetString", "database.connections.mysql.loc").
+		Return("Local").Once()
+	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Equal(mysql.New(mysql.Config{
+		DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
+			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "utf8mb4", true, "Local"),
+	}), dialectors[0])
+	s.Nil(err)
+}
+
+func (s *DialectorTestSuite) TestPostgresql() {
+	dialector := NewDialectorImpl(s.mockConfig, orm.DriverPostgresql.String())
+	s.mockConfig.On("GetString", "database.connections.postgresql.driver").
+		Return(orm.DriverPostgresql.String()).Once()
+	s.mockConfig.On("GetString", "database.connections.postgresql.sslmode").
+		Return("disable").Once()
+	s.mockConfig.On("GetString", "database.connections.postgresql.timezone").
+		Return("UTC").Once()
+	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Equal(postgres.New(postgres.Config{
+		DSN: fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
+			s.config.Host, s.config.Username, s.config.Password, s.config.Database, s.config.Port, "disable", "UTC"),
+	}), dialectors[0])
+	s.Nil(err)
+}
+
+func (s *DialectorTestSuite) TestSqlite() {
+	dialector := NewDialectorImpl(s.mockConfig, orm.DriverSqlite.String())
+	s.mockConfig.On("GetString", "database.connections.sqlite.driver").
+		Return(orm.DriverSqlite.String()).Once()
+	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Equal(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", s.config.Database)), dialectors[0])
+	s.Nil(err)
+}
+
+func (s *DialectorTestSuite) TestSqlserver() {
+	dialector := NewDialectorImpl(s.mockConfig, orm.DriverSqlserver.String())
+	s.mockConfig.On("GetString", "database.connections.sqlserver.driver").
+		Return(orm.DriverSqlserver.String()).Once()
+	s.mockConfig.On("GetString", "database.connections.sqlserver.charset").
+		Return("utf8mb4").Once()
+	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Equal(sqlserver.New(sqlserver.Config{
+		DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
+			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "utf8mb4"),
+	}), dialectors[0])
+	s.Nil(err)
 }
