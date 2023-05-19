@@ -2,14 +2,17 @@ package log
 
 import (
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/facades"
 )
+
+const Binding = "goravel.log"
 
 type ServiceProvider struct {
 }
 
 func (log *ServiceProvider) Register(app foundation.Application) {
-	facades.Log = NewLogrusApplication()
+	app.Singleton(Binding, func() (any, error) {
+		return NewLogrusApplication(app.MakeConfig()), nil
+	})
 }
 
 func (log *ServiceProvider) Boot(app foundation.Application) {

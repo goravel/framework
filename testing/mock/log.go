@@ -1,4 +1,4 @@
-package log
+package mock
 
 import (
 	"fmt"
@@ -7,69 +7,69 @@ import (
 	"github.com/goravel/framework/support/time"
 )
 
-type TestWriter struct {
+type TestLog struct {
 }
 
-func NewTestWriter() log.Writer {
-	return &TestWriter{}
+func NewTestLog() log.Writer {
+	return &TestLog{}
 }
 
-func (r *TestWriter) Debug(args ...any) {
+func (r *TestLog) Debug(args ...any) {
 	fmt.Print(prefix("debug"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Debugf(format string, args ...any) {
+func (r *TestLog) Debugf(format string, args ...any) {
 	fmt.Print(prefix("debug"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Info(args ...any) {
+func (r *TestLog) Info(args ...any) {
 	fmt.Print(prefix("info"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Infof(format string, args ...any) {
+func (r *TestLog) Infof(format string, args ...any) {
 	fmt.Print(prefix("info"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Warning(args ...any) {
+func (r *TestLog) Warning(args ...any) {
 	fmt.Print(prefix("warning"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Warningf(format string, args ...any) {
+func (r *TestLog) Warningf(format string, args ...any) {
 	fmt.Print(prefix("warning"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Error(args ...any) {
+func (r *TestLog) Error(args ...any) {
 	fmt.Print(prefix("error"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Errorf(format string, args ...any) {
+func (r *TestLog) Errorf(format string, args ...any) {
 	fmt.Print(prefix("error"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Fatal(args ...any) {
+func (r *TestLog) Fatal(args ...any) {
 	fmt.Print(prefix("fatal"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Fatalf(format string, args ...any) {
+func (r *TestLog) Fatalf(format string, args ...any) {
 	fmt.Print(prefix("fatal"))
 	fmt.Printf(format+"\n", args...)
 }
 
-func (r *TestWriter) Panic(args ...any) {
+func (r *TestLog) Panic(args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Println(args...)
 }
 
-func (r *TestWriter) Panicf(format string, args ...any) {
+func (r *TestLog) Panicf(format string, args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Printf(format+"\n", args...)
 }
