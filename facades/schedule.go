@@ -4,4 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/schedule"
 )
 
-var Schedule schedule.Schedule
+func Schedule() schedule.Schedule {
+	return App().MakeSchedule()
+}
