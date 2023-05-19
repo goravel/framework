@@ -3,30 +3,29 @@ package middleware
 import (
 	nethttp "net/http"
 
-	contractshttp "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/rs/cors"
+
+	httpcontract "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/http"
 )
 
-func Cors() contractshttp.Middleware {
-	return func(ctx contractshttp.Context) {
+func Cors() httpcontract.Middleware {
+	return func(ctx httpcontract.Context) {
 		switch ctx := ctx.(type) {
 		case *http.GinContext:
-			allowedMethods := facades.Config.Get("cors.allowed_methods").([]string)
+			allowedMethods := http.ConfigFacade.Get("cors.allowed_methods").([]string)
 			if len(allowedMethods) == 1 && allowedMethods[0] == "*" {
 				allowedMethods = []string{nethttp.MethodPost, nethttp.MethodGet, nethttp.MethodOptions, nethttp.MethodPut, nethttp.MethodDelete}
 			}
 
 			New(Options{
 				AllowedMethods:      allowedMethods,
-				AllowedOrigins:      facades.Config.Get("cors.allowed_origins").([]string),
-				AllowedHeaders:      facades.Config.Get("cors.allowed_headers").([]string),
-				ExposedHeaders:      facades.Config.Get("cors.exposed_headers").([]string),
-				MaxAge:              facades.Config.GetInt("cors.max_age"),
-				AllowCredentials:    facades.Config.GetBool("cors.supports_credentials"),
+				AllowedOrigins:      http.ConfigFacade.Get("cors.allowed_origins").([]string),
+				AllowedHeaders:      http.ConfigFacade.Get("cors.allowed_headers").([]string),
+				ExposedHeaders:      http.ConfigFacade.Get("cors.exposed_headers").([]string),
+				MaxAge:              http.ConfigFacade.GetInt("cors.max_age"),
+				AllowCredentials:    http.ConfigFacade.GetBool("cors.supports_credentials"),
 				AllowPrivateNetwork: true,
 			})(ctx.Instance())
 		}
