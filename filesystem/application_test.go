@@ -19,7 +19,6 @@ import (
 	"github.com/goravel/framework/config"
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
 	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
@@ -51,19 +50,19 @@ func TestStorage(t *testing.T) {
 		},
 		{
 			disk: "oss",
-			url:  facades.Config.GetString("filesystems.disks.oss.url"),
+			url:  mockConfig.GetString("filesystems.disks.oss.url"),
 		},
 		{
 			disk: "cos",
-			url:  facades.Config.GetString("filesystems.disks.cos.url"),
+			url:  mockConfig.GetString("filesystems.disks.cos.url"),
 		},
 		{
 			disk: "s3",
-			url:  facades.Config.GetString("filesystems.disks.s3.url"),
+			url:  mockConfig.GetString("filesystems.disks.s3.url"),
 		},
 		{
 			disk: "minio",
-			url:  facades.Config.GetString("filesystems.disks.minio.url"),
+			url:  mockConfig.GetString("filesystems.disks.minio.url"),
 		},
 		{
 			disk: "custom",
@@ -416,7 +415,7 @@ func TestStorage(t *testing.T) {
 
 	for _, disk := range disks {
 		var err error
-		driver, err = NewDriver(disk.disk)
+		driver, err = NewDriver(mockConfig, disk.disk)
 		assert.NotNil(t, driver)
 		assert.Nil(t, err)
 
@@ -503,9 +502,9 @@ func initMinioDocker(mockConfig *configmocks.Config) (*dockertest.Pool, *dockert
 		return nil, nil, err
 	}
 
-	key := facades.Config.GetString("filesystems.disks.minio.key")
-	secret := facades.Config.GetString("filesystems.disks.minio.secret")
-	bucket := facades.Config.GetString("filesystems.disks.minio.bucket")
+	key := mockConfig.GetString("filesystems.disks.minio.key")
+	secret := mockConfig.GetString("filesystems.disks.minio.secret")
+	bucket := mockConfig.GetString("filesystems.disks.minio.bucket")
 	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "minio/minio",
 		Tag:        "latest",
@@ -539,7 +538,7 @@ func initMinioDocker(mockConfig *configmocks.Config) (*dockertest.Pool, *dockert
 			return err
 		}
 
-		if err := client.MakeBucket(context.Background(), facades.Config.GetString("filesystems.disks.minio.bucket"), minio.MakeBucketOptions{}); err != nil {
+		if err := client.MakeBucket(context.Background(), mockConfig.GetString("filesystems.disks.minio.bucket"), minio.MakeBucketOptions{}); err != nil {
 			return err
 		}
 

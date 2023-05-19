@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -28,7 +27,7 @@ func NewFile(file string) (*File, error) {
 		return nil, errors.New("file doesn't exist")
 	}
 
-	disk := facades.Config.GetString("filesystems.default")
+	disk := application.MakeConfig().GetString("filesystems.default")
 
 	return &File{disk: disk, path: file, name: path.Base(file)}, nil
 }
@@ -40,7 +39,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	}
 	defer src.Close()
 
-	tempFileName := fmt.Sprintf("%s_*%s", facades.Config.GetString("app.name"), path.Ext(fileHeader.Filename))
+	tempFileName := fmt.Sprintf("%s_*%s", application.MakeConfig().GetString("app.name"), path.Ext(fileHeader.Filename))
 	tempFile, err := ioutil.TempFile(os.TempDir(), tempFileName)
 	if err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 		return nil, err
 	}
 
-	disk := facades.Config.GetString("filesystems.default")
+	disk := application.MakeConfig().GetString("filesystems.default")
 
 	return &File{disk: disk, path: tempFile.Name(), name: fileHeader.Filename}, nil
 }
@@ -106,9 +105,9 @@ func (f *File) Size() (int64, error) {
 }
 
 func (f *File) Store(path string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFile(path, f)
+	return application.MakeStorage().Disk(f.disk).PutFile(path, f)
 }
 
 func (f *File) StoreAs(path string, name string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFileAs(path, f, name)
+	return application.MakeStorage().Disk(f.disk).PutFileAs(path, f, name)
 }

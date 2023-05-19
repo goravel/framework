@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/gookit/color"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
 	supporttime "github.com/goravel/framework/support/time"
 )
@@ -26,20 +27,21 @@ import (
 
 type Minio struct {
 	ctx      context.Context
+	config   config.Config
 	instance *minio.Client
 	bucket   string
 	disk     string
 	url      string
 }
 
-func NewMinio(ctx context.Context, disk string) (*Minio, error) {
-	key := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
-	secret := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
-	region := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.region", disk))
-	bucket := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
-	diskUrl := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
-	ssl := facades.Config.GetBool(fmt.Sprintf("filesystems.disks.%s.ssl", disk), false)
-	endpoint := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.endpoint", disk))
+func NewMinio(ctx context.Context, config config.Config, disk string) (*Minio, error) {
+	key := config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
+	secret := config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
+	region := config.GetString(fmt.Sprintf("filesystems.disks.%s.region", disk))
+	bucket := config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
+	diskUrl := config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
+	ssl := config.GetBool(fmt.Sprintf("filesystems.disks.%s.ssl", disk), false)
+	endpoint := config.GetString(fmt.Sprintf("filesystems.disks.%s.endpoint", disk))
 	endpoint = strings.TrimPrefix(endpoint, "http://")
 	endpoint = strings.TrimPrefix(endpoint, "https://")
 
@@ -54,6 +56,7 @@ func NewMinio(ctx context.Context, disk string) (*Minio, error) {
 
 	return &Minio{
 		ctx:      ctx,
+		config:   config,
 		instance: client,
 		bucket:   bucket,
 		disk:     disk,
@@ -224,7 +227,7 @@ func (r *Minio) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	l, err := time.LoadLocation(r.config.GetString("app.timezone"))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -325,9 +328,11 @@ func (r *Minio) TemporaryUrl(file string, time time.Time) (string, error) {
 }
 
 func (r *Minio) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewMinio(ctx, r.disk)
+	driver, err := NewMinio(ctx, r.config, r.disk)
 	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+		color.Redf("[filesystem] init %s disk fail: %+v\n", r.disk, err)
+
+		return nil
 	}
 
 	return driver
