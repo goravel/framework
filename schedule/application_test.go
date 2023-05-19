@@ -8,20 +8,23 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	consolemock "github.com/goravel/framework/contracts/console/mocks"
+	logmock "github.com/goravel/framework/contracts/log/mocks"
 	"github.com/goravel/framework/contracts/schedule"
 	supporttime "github.com/goravel/framework/support/time"
-	"github.com/goravel/framework/testing/mock"
 )
 
 func TestApplication(t *testing.T) {
-	mockArtisan := mock.Artisan()
+	mockArtisan := &consolemock.Artisan{}
 	mockArtisan.On("Call", "test --name Goravel argument0 argument1").Return().Times(3)
+
+	mockLog := &logmock.Log{}
 
 	immediatelyCall := 0
 	delayIfStillRunningCall := 0
 	skipIfStillRunningCall := 0
 
-	app := NewApplication()
+	app := NewApplication(mockArtisan, mockLog)
 	app.Register([]schedule.Event{
 		app.Call(func() {
 			immediatelyCall++
