@@ -17,9 +17,10 @@ import (
 )
 
 type File struct {
-	disk string
-	path string
-	name string
+	disk    string
+	path    string
+	name    string
+	storage filesystem.Storage
 }
 
 func NewFile(file string) (*File, error) {
@@ -27,9 +28,12 @@ func NewFile(file string) (*File, error) {
 		return nil, errors.New("file doesn't exist")
 	}
 
-	disk := application.MakeConfig().GetString("filesystems.default")
-
-	return &File{disk: disk, path: file, name: path.Base(file)}, nil
+	return &File{
+		disk:    configModule.GetString("filesystems.default"),
+		path:    file,
+		name:    path.Base(file),
+		storage: storageModule,
+	}, nil
 }
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
@@ -39,7 +43,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	}
 	defer src.Close()
 
-	tempFileName := fmt.Sprintf("%s_*%s", application.MakeConfig().GetString("app.name"), path.Ext(fileHeader.Filename))
+	tempFileName := fmt.Sprintf("%s_*%s", configModule.GetString("app.name"), path.Ext(fileHeader.Filename))
 	tempFile, err := ioutil.TempFile(os.TempDir(), tempFileName)
 	if err != nil {
 		return nil, err
@@ -51,9 +55,12 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 		return nil, err
 	}
 
-	disk := application.MakeConfig().GetString("filesystems.default")
-
-	return &File{disk: disk, path: tempFile.Name(), name: fileHeader.Filename}, nil
+	return &File{
+		disk:    configModule.GetString("filesystems.default"),
+		path:    tempFile.Name(),
+		name:    fileHeader.Filename,
+		storage: storageModule,
+	}, nil
 }
 
 func (f *File) Disk(disk string) filesystem.File {
@@ -105,9 +112,9 @@ func (f *File) Size() (int64, error) {
 }
 
 func (f *File) Store(path string) (string, error) {
-	return application.MakeStorage().Disk(f.disk).PutFile(path, f)
+	return f.storage.Disk(f.disk).PutFile(path, f)
 }
 
 func (f *File) StoreAs(path string, name string) (string, error) {
-	return application.MakeStorage().Disk(f.disk).PutFileAs(path, f, name)
+	return f.storage.Disk(f.disk).PutFileAs(path, f, name)
 }

@@ -9,34 +9,33 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/goravel/framework/testing/mock"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 )
 
 var testFile *File
 
 type FileTestSuite struct {
 	suite.Suite
+	mockConfig *configmock.Config
 }
 
 func TestFileTestSuite(t *testing.T) {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
-
-	var err error
-	testFile, err = NewFile("./file.go")
-	assert.Nil(t, err)
-	assert.NotNil(t, testFile)
-
 	suite.Run(t, new(FileTestSuite))
-	mockConfig.AssertExpectations(t)
 }
 
 func (s *FileTestSuite) SetupTest() {
+	s.mockConfig = &configmock.Config{}
+	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
+	configModule = s.mockConfig
+}
 
+func (s *FileTestSuite) TestNewFile_Success() {
+	testFile, err := NewFile("./file.go")
+	s.Nil(err)
+	s.NotNil(testFile)
 }
 
 func (s *FileTestSuite) TestNewFile_Error() {
@@ -64,7 +63,8 @@ func (s *FileTestSuite) TestExtension() {
 }
 
 func TestNewFileFromRequest(t *testing.T) {
-	mockConfig := mock.Config()
+	mockConfig := &configmock.Config{}
+	configModule = mockConfig
 	mockConfig.On("GetString", "app.name").Return("goravel").Once()
 	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 
