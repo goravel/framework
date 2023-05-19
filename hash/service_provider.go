@@ -11,7 +11,7 @@ type ServiceProvider struct {
 
 func (hash *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func() (any, error) {
-		return NewApplication(), nil
+		return NewApplication(app.MakeConfig()), nil
 	})
 }
 
