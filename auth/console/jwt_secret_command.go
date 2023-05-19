@@ -5,15 +5,20 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/gookit/color"
+
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
-
-	"github.com/gookit/color"
 )
 
 type JwtSecretCommand struct {
+	config config.Config
+}
+
+func NewJwtSecretCommand(config config.Config) *JwtSecretCommand {
+	return &JwtSecretCommand{config: config}
 }
 
 //Signature The name and signature of the console command.
@@ -55,7 +60,7 @@ func (receiver *JwtSecretCommand) generateRandomKey() string {
 
 //setSecretInEnvironmentFile Set the application key in the environment file.
 func (receiver *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
-	currentKey := facades.Config.GetString("jwt.secret")
+	currentKey := receiver.config.GetString("jwt.secret")
 
 	if currentKey != "" {
 		return errors.New("Exist jwt secret")
@@ -77,7 +82,7 @@ func (receiver *JwtSecretCommand) writeNewEnvironmentFileWith(key string) error 
 		return err
 	}
 
-	newContent := strings.Replace(string(content), "JWT_SECRET="+facades.Config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
+	newContent := strings.Replace(string(content), "JWT_SECRET="+receiver.config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
 
 	err = ioutil.WriteFile(".env", []byte(newContent), 0644)
 	if err != nil {
