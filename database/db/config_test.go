@@ -25,9 +25,7 @@ func TestConfigTestSuite(t *testing.T) {
 
 func (s *ConfigTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
-	s.config = &ConfigImpl{
-		config: s.mockConfig,
-	}
+	s.config = NewConfigImpl(s.mockConfig, s.connection)
 }
 
 func (s *ConfigTestSuite) TestFillDefaultForConfigs() {
