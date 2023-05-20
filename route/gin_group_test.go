@@ -494,15 +494,15 @@ func TestGinGroup(t *testing.T) {
 					route1.Middleware(contextMiddleware()).Get("/middleware1/{id}", func(ctx httpcontract.Context) {
 						ctx.Response().Success().Json(httpcontract.Json{
 							"id":   ctx.Request().Input("id"),
-							"ctx":  ctx.Value("ctx").(string),
-							"ctx2": ctx.Value("ctx2").(string),
+							"ctx":  ctx.Value("ctx"),
+							"ctx2": ctx.Value("ctx2"),
 						})
 					})
 					route1.Middleware(contextMiddleware2()).Post("/middleware2/{id}", func(ctx httpcontract.Context) {
 						ctx.Response().Success().Json(httpcontract.Json{
 							"id":   ctx.Request().Input("id"),
-							"ctx":  ctx.Value("ctx").(string),
-							"ctx2": ctx.Value("ctx2").(string),
+							"ctx":  ctx.Value("ctx"),
+							"ctx2": ctx.Value("ctx2"),
 						})
 					})
 				})
@@ -510,7 +510,7 @@ func TestGinGroup(t *testing.T) {
 			method:     "POST",
 			url:        "/conflict/middleware2/1",
 			expectCode: http.StatusOK,
-			expectBody: "{\"ctx\":\"\",\"ctx2\":\"World\",\"id\":\"1\"}",
+			expectBody: "{\"ctx\":null,\"ctx2\":\"World\",\"id\":\"1\"}",
 		},
 	}
 	for _, test := range tests {
