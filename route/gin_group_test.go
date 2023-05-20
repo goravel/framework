@@ -487,6 +487,31 @@ func TestGinGroup(t *testing.T) {
 			expectCode: http.StatusOK,
 			expectBody: "{\"global\":\"goravel\"}",
 		},
+		{
+			name: "Middleware Conflict",
+			setup: func(req *http.Request) {
+				gin.Prefix("conflict").Group(func(route1 route.Route) {
+					route1.Middleware(contextMiddleware()).Get("/middleware1/{id}", func(ctx httpcontract.Context) {
+						ctx.Response().Success().Json(httpcontract.Json{
+							"id":   ctx.Request().Input("id"),
+							"ctx":  ctx.Value("ctx").(string),
+							"ctx2": ctx.Value("ctx2").(string),
+						})
+					})
+					route1.Middleware(contextMiddleware2()).Post("/middleware2/{id}", func(ctx httpcontract.Context) {
+						ctx.Response().Success().Json(httpcontract.Json{
+							"id":   ctx.Request().Input("id"),
+							"ctx":  ctx.Value("ctx").(string),
+							"ctx2": ctx.Value("ctx2").(string),
+						})
+					})
+				})
+			},
+			method:     "POST",
+			url:        "/conflict/middleware2/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"ctx\":\"\",\"ctx2\":\"World\",\"id\":\"1\"}",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
