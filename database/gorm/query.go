@@ -24,7 +24,6 @@ var QuerySet = wire.NewSet(NewQueryImpl, wire.Bind(new(ormcontract.Query), new(*
 var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
-	gorm          Gorm
 	instance      *gormio.DB
 	withoutEvents bool
 }

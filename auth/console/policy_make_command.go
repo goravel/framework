@@ -16,6 +16,10 @@ import (
 type PolicyMakeCommand struct {
 }
 
+func NewPolicyMakeCommand() *PolicyMakeCommand {
+	return &PolicyMakeCommand{}
+}
+
 //Signature The name and signature of the console command.
 func (receiver *PolicyMakeCommand) Signature() string {
 	return "make:policy"

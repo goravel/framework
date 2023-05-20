@@ -39,8 +39,8 @@ func (receiver *Task) Dispatch() error {
 	}
 
 	for _, listener := range receiver.listeners {
+		var err error
 		task := receiver.queue.Job(listener, eventArgsToQueueArgs(handledArgs))
-
 		queue := listener.Queue(mapArgs...)
 		if queue.Connection != "" {
 			task.OnConnection(queue.Connection)
@@ -49,10 +49,14 @@ func (receiver *Task) Dispatch() error {
 			task.OnQueue(queue.Queue)
 		}
 		if queue.Enable {
-			return task.Dispatch()
+			err = task.Dispatch()
+		} else {
+			err = task.DispatchSync()
 		}
 
-		return task.DispatchSync()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

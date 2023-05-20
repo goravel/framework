@@ -2,7 +2,7 @@ package cache
 
 import (
 	"github.com/goravel/framework/cache/console"
-	console2 "github.com/goravel/framework/contracts/console"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -24,7 +24,7 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (database *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]console2.Command{
+	app.MakeArtisan().Register([]contractsconsole.Command{
 		console.NewClearCommand(app.MakeCache()),
 	})
 }

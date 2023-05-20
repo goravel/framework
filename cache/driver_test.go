@@ -56,11 +56,6 @@ func (s *DriverTestSuite) TestMemory() {
 }
 
 func (s *DriverTestSuite) TestRedis() {
-	beforeEach := func() {
-		//s.mockConfig = &configmock.Config{}
-		//s.driver = NewDriverImpl(s.mockConfig)
-	}
-
 	tests := []struct {
 		description string
 		setup       func()
@@ -89,7 +84,6 @@ func (s *DriverTestSuite) TestRedis() {
 
 	for _, test := range tests {
 		s.Run(test.description, func() {
-			beforeEach()
 			test.setup()
 			redis := s.driver.redis("redis")
 			s.Equal(test.expectErr, redis == nil)

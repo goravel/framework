@@ -22,9 +22,11 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]consolecontract.Command{
-		&console.ListCommand{App: app},
-		&console.KeyGenerateCommand{App: app},
-		&console.MakeCommand{},
+	artisan := app.MakeArtisan()
+	config := app.MakeConfig()
+	artisan.Register([]consolecontract.Command{
+		console.NewListCommand(artisan),
+		console.NewKeyGenerateCommand(config),
+		console.NewMakeCommand(),
 	})
 }
