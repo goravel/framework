@@ -21,37 +21,42 @@ import (
 type resourceController struct{}
 
 func (c resourceController) Index(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "index",
+		"action": action,
 	})
 }
 
 func (c resourceController) Show(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "show",
+		"action": action,
 		"id":     id,
 	})
 }
 
 func (c resourceController) Store(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "store",
+		"action": action,
 	})
 }
 
 func (c resourceController) Update(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "update",
+		"action": action,
 		"id":     id,
 	})
 }
 
 func (c resourceController) Destroy(ctx httpcontract.Context) {
+	action := ctx.Value("action")
 	id := ctx.Request().Input("id")
 	ctx.Response().Json(http.StatusOK, httpcontract.Json{
-		"action": "destroy",
+		"action": action,
 		"id":     id,
 	})
 }
@@ -254,6 +259,10 @@ func TestGinGroup(t *testing.T) {
 			name: "Resource Index",
 			setup: func(req *http.Request) {
 				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "index")
+					ctx.Request().Next()
+				})
 				gin.Resource("/resource", resource)
 			},
 			method:     "GET",
@@ -265,6 +274,10 @@ func TestGinGroup(t *testing.T) {
 			name: "Resource Show",
 			setup: func(req *http.Request) {
 				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "show")
+					ctx.Request().Next()
+				})
 				gin.Resource("/resource", resource)
 			},
 			method:     "GET",
@@ -276,6 +289,10 @@ func TestGinGroup(t *testing.T) {
 			name: "Resource Store",
 			setup: func(req *http.Request) {
 				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "store")
+					ctx.Request().Next()
+				})
 				gin.Resource("/resource", resource)
 			},
 			method:     "POST",
@@ -287,6 +304,10 @@ func TestGinGroup(t *testing.T) {
 			name: "Resource Update (PUT)",
 			setup: func(req *http.Request) {
 				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "update")
+					ctx.Request().Next()
+				})
 				gin.Resource("/resource", resource)
 			},
 			method:     "PUT",
@@ -298,6 +319,10 @@ func TestGinGroup(t *testing.T) {
 			name: "Resource Update (PATCH)",
 			setup: func(req *http.Request) {
 				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "update")
+					ctx.Request().Next()
+				})
 				gin.Resource("/resource", resource)
 			},
 			method:     "PATCH",
@@ -309,6 +334,10 @@ func TestGinGroup(t *testing.T) {
 			name: "Resource Destroy",
 			setup: func(req *http.Request) {
 				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "destroy")
+					ctx.Request().Next()
+				})
 				gin.Resource("/resource", resource)
 			},
 			method:     "DELETE",
@@ -457,6 +486,31 @@ func TestGinGroup(t *testing.T) {
 			url:        "/global-middleware",
 			expectCode: http.StatusOK,
 			expectBody: "{\"global\":\"goravel\"}",
+		},
+		{
+			name: "Middleware Conflict",
+			setup: func(req *http.Request) {
+				gin.Prefix("conflict").Group(func(route1 route.Route) {
+					route1.Middleware(contextMiddleware()).Get("/middleware1/{id}", func(ctx httpcontract.Context) {
+						ctx.Response().Success().Json(httpcontract.Json{
+							"id":   ctx.Request().Input("id"),
+							"ctx":  ctx.Value("ctx"),
+							"ctx2": ctx.Value("ctx2"),
+						})
+					})
+					route1.Middleware(contextMiddleware2()).Post("/middleware2/{id}", func(ctx httpcontract.Context) {
+						ctx.Response().Success().Json(httpcontract.Json{
+							"id":   ctx.Request().Input("id"),
+							"ctx":  ctx.Value("ctx"),
+							"ctx2": ctx.Value("ctx2"),
+						})
+					})
+				})
+			},
+			method:     "POST",
+			url:        "/conflict/middleware2/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"ctx\":null,\"ctx2\":\"World\",\"id\":\"1\"}",
 		},
 	}
 	for _, test := range tests {

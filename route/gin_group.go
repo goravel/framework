@@ -52,30 +52,37 @@ func (r *GinGroup) Middleware(middlewares ...httpcontract.Middleware) route.Rout
 
 func (r *GinGroup) Any(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().Any(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Get(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().GET(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Post(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().POST(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Delete(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().DELETE(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Patch(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().PATCH(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Put(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().PUT(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Options(relativePath string, handler httpcontract.HandlerFunc) {
 	r.getGinRoutesWithMiddlewares().OPTIONS(pathToGinPath(relativePath), []gin.HandlerFunc{handlerToGinHandler(handler)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Resource(relativePath string, controller httpcontract.ResourceController) {
@@ -85,18 +92,22 @@ func (r *GinGroup) Resource(relativePath string, controller httpcontract.Resourc
 	r.getGinRoutesWithMiddlewares().PUT(pathToGinPath(relativePath+"/{id}"), []gin.HandlerFunc{handlerToGinHandler(controller.Update)}...)
 	r.getGinRoutesWithMiddlewares().PATCH(pathToGinPath(relativePath+"/{id}"), []gin.HandlerFunc{handlerToGinHandler(controller.Update)}...)
 	r.getGinRoutesWithMiddlewares().DELETE(pathToGinPath(relativePath+"/{id}"), []gin.HandlerFunc{handlerToGinHandler(controller.Destroy)}...)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) Static(relativePath, root string) {
 	r.getGinRoutesWithMiddlewares().Static(pathToGinPath(relativePath), root)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) StaticFile(relativePath, filepath string) {
 	r.getGinRoutesWithMiddlewares().StaticFile(pathToGinPath(relativePath), filepath)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) StaticFS(relativePath string, fs http.FileSystem) {
 	r.getGinRoutesWithMiddlewares().StaticFS(pathToGinPath(relativePath), fs)
+	r.clearMiddlewares()
 }
 
 func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
@@ -111,10 +122,13 @@ func (r *GinGroup) getGinRoutesWithMiddlewares() gin.IRoutes {
 	middlewares = append(middlewares, ginOriginMiddlewares...)
 	middlewares = append(middlewares, ginMiddlewares...)
 	middlewares = append(middlewares, ginLastMiddlewares...)
-	r.middlewares = []httpcontract.Middleware{}
 	if len(middlewares) > 0 {
 		return ginGroup.Use(middlewares...)
 	} else {
 		return ginGroup
 	}
+}
+
+func (r *GinGroup) clearMiddlewares() {
+	r.middlewares = []httpcontract.Middleware{}
 }
