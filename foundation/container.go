@@ -64,6 +64,10 @@ func (c *Container) BindWith(key any, callback func(parameters map[string]any) (
 	c.bindings.Store(key, instance{concrete: callback, shared: false})
 }
 
+func (c *Container) Instance(key any, ins any) {
+	c.bindings.Store(key, instance{concrete: ins, shared: true})
+}
+
 func (c *Container) Make(key any) (any, error) {
 	return c.make(key, nil)
 }
@@ -289,6 +293,8 @@ func (c *Container) make(key any, parameters map[string]any) (any, error) {
 
 		return concreteImpl, nil
 	default:
-		return nil, fmt.Errorf("binding type error: %+v", binding)
+		c.instances.Store(key, concrete)
+
+		return concrete, nil
 	}
 }

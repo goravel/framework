@@ -61,6 +61,11 @@ func (_m *Application) Boot() {
 	_m.Called()
 }
 
+// Instance provides a mock function with given fields: key, instance
+func (_m *Application) Instance(key interface{}, instance interface{}) {
+	_m.Called(key, instance)
+}
+
 // Make provides a mock function with given fields: key
 func (_m *Application) Make(key interface{}) (interface{}, error) {
 	ret := _m.Called(key)

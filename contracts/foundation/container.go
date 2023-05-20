@@ -24,6 +24,7 @@ import (
 type Container interface {
 	Bind(key any, callback func() (any, error))
 	BindWith(key any, callback func(parameters map[string]any) (any, error))
+	Instance(key, instance any)
 	Make(key any) (any, error)
 	MakeArtisan() console.Artisan
 	MakeAuth() auth.Auth
