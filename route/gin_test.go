@@ -380,6 +380,168 @@ func TestGinRequest(t *testing.T) {
 		expectBody string
 	}{
 		{
+			name:   "All when Get and query is empty",
+			method: "GET",
+			url:    "/all",
+			setup: func(method, url string) error {
+				gin.Get("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{}}",
+		},
+		{
+			name:   "All when Get and query is not empty",
+			method: "GET",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Get("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"3\"}}",
+		},
+		{
+			name:   "All with form when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				payload := &bytes.Buffer{}
+				writer := multipart.NewWriter(payload)
+
+				if err := writer.WriteField("b", "4"); err != nil {
+					return err
+				}
+				if err := writer.WriteField("e", "e"); err != nil {
+					return err
+				}
+
+				logo, err := os.Open("../logo.png")
+				if err != nil {
+					return err
+				}
+				defer logo.Close()
+				part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
+				if err != nil {
+					return err
+				}
+
+				if _, err = io.Copy(part1, logo); err != nil {
+					return err
+				}
+
+				if err := writer.Close(); err != nil {
+					return err
+				}
+
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", writer.FormDataContentType())
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"4\",\"e\":\"e\",\"file\":{\"Filename\":\"logo.png\",\"Header\":{\"Content-Disposition\":[\"form-data; name=\\\"file\\\"; filename=\\\"logo.png\\\"\"],\"Content-Type\":[\"application/octet-stream\"]},\"Size\":16438}}}",
+		},
+		{
+			name:   "All with json when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&name=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx contractshttp.Context) {
+					all := ctx.Request().All()
+					type Test struct {
+						Name string
+						Age  int
+					}
+					var test Test
+					_ = ctx.Request().Bind(&test)
+
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all":  all,
+						"name": test.Name,
+						"age":  test.Age,
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"Name": "goravel",
+					"Age": 1
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"age\":1,\"all\":{\"Age\":1,\"Name\":\"goravel\",\"a\":\"1,2\",\"name\":\"3\"},\"name\":\"goravel\"}",
+		},
+		{
+			name:   "All with json when Put",
+			method: "PUT",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Put("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"b": 4,
+					"e": "e"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":4,\"e\":\"e\"}}",
+		},
+		{
+			name:   "All with json when Delete",
+			method: "DELETE",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Delete("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"b": 4,
+					"e": "e"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":4,\"e\":\"e\"}}",
+		},
+		{
 			name:   "Methods",
 			method: "GET",
 			url:    "/methods/1?name=Goravel",
@@ -790,6 +952,24 @@ func TestGinRequest(t *testing.T) {
 			},
 			expectCode: http.StatusOK,
 			expectBody: "{\"name\":{\"a\":\"Goravel\",\"b\":\"Goravel1\"}}",
+		},
+		{
+			name:   "Queries",
+			method: "GET",
+			url:    "/queries?string=Goravel&int=1&int64=2&bool1=1&bool2=true&bool3=on&bool4=yes&bool5=0&error=a",
+			setup: func(method, url string) error {
+				gin.Get("/queries", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"bool1\":\"1\",\"bool2\":\"true\",\"bool3\":\"on\",\"bool4\":\"yes\",\"bool5\":\"0\",\"error\":\"a\",\"int\":\"1\",\"int64\":\"2\",\"string\":\"Goravel\"}}",
 		},
 		{
 			name:   "File",

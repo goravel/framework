@@ -1,8 +1,13 @@
 package http
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
+	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/validate"
@@ -25,20 +30,157 @@ func NewGinRequest(ctx *GinContext) contractshttp.Request {
 	return &GinRequest{ctx, ctx.instance}
 }
 
-func (r *GinRequest) Route(key string) string {
-	return r.instance.Param(key)
+func (r *GinRequest) AbortWithStatus(code int) {
+	r.instance.AbortWithStatus(code)
 }
 
-func (r *GinRequest) RouteInt(key string) int {
-	val := r.instance.Param(key)
-
-	return cast.ToInt(val)
+func (r *GinRequest) AbortWithStatusJson(code int, jsonObj any) {
+	r.instance.AbortWithStatusJSON(code, jsonObj)
 }
 
-func (r *GinRequest) RouteInt64(key string) int64 {
-	val := r.instance.Param(key)
+func (r *GinRequest) All() map[string]any {
+	const defaultMemory = 32 << 20
+	contentType := r.instance.ContentType()
 
-	return cast.ToInt64(val)
+	var (
+		dataMap  = make(map[string]any)
+		queryMap = make(map[string]any)
+		postMap  = make(map[string]any)
+	)
+
+	for key, query := range r.instance.Request.URL.Query() {
+		queryMap[key] = strings.Join(query, ",")
+	}
+
+	if contentType == "application/json" && r.instance.Request != nil && r.instance.Request.Body != nil {
+		bodyBytes, err := ioutil.ReadAll(r.instance.Request.Body)
+		if err != nil {
+			facades.Log.Errorf("when calling request all method, retrieve json error: %v", err)
+			return nil
+		}
+
+		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		if r.instance.Request.Body != nil {
+			if err := json.NewDecoder(r.instance.Request.Body).Decode(&postMap); err != nil {
+				facades.Log.Errorf("when calling request all method, decode json error: %v", err)
+				return nil
+			}
+		}
+		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	} else if contentType == "multipart/form-data" {
+		if r.instance.Request.PostForm == nil {
+			if err := r.instance.Request.ParseMultipartForm(defaultMemory); err != nil {
+				facades.Log.Errorf("when calling request all method, parse multipart form error: %v", err)
+				return nil
+			}
+		}
+		for k, v := range r.instance.Request.PostForm {
+			postMap[k] = strings.Join(v, ",")
+		}
+		for k, v := range r.instance.Request.MultipartForm.File {
+			if len(v) > 0 {
+				postMap[k] = v[0]
+			}
+		}
+	}
+
+	var mu sync.RWMutex
+	for k, v := range queryMap {
+		mu.Lock()
+		dataMap[k] = v
+		mu.Unlock()
+	}
+	for k, v := range postMap {
+		mu.Lock()
+		dataMap[k] = v
+		mu.Unlock()
+	}
+
+	return dataMap
+}
+
+func (r *GinRequest) Bind(obj any) error {
+	return r.instance.ShouldBind(obj)
+}
+
+func (r *GinRequest) Form(key string, defaultValue ...string) string {
+	if len(defaultValue) == 0 {
+		return r.instance.PostForm(key)
+	}
+
+	return r.instance.DefaultPostForm(key, defaultValue[0])
+}
+
+func (r *GinRequest) File(name string) (contractsfilesystem.File, error) {
+	file, err := r.instance.FormFile(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return filesystem.NewFileFromRequest(file)
+}
+
+func (r *GinRequest) FullUrl() string {
+	prefix := "https://"
+	if r.instance.Request.TLS == nil {
+		prefix = "http://"
+	}
+
+	if r.instance.Request.Host == "" {
+		return ""
+	}
+
+	return prefix + r.instance.Request.Host + r.instance.Request.RequestURI
+}
+
+func (r *GinRequest) Header(key string, defaultValue ...string) string {
+	header := r.instance.GetHeader(key)
+	if header != "" {
+		return header
+	}
+
+	if len(defaultValue) == 0 {
+		return ""
+	}
+
+	return defaultValue[0]
+}
+
+func (r *GinRequest) Headers() http.Header {
+	return r.instance.Request.Header
+}
+
+func (r *GinRequest) Host() string {
+	return r.instance.Request.Host
+}
+
+func (r *GinRequest) Json(key string, defaultValue ...string) string {
+	var data map[string]any
+	if err := r.Bind(&data); err != nil {
+		if len(defaultValue) == 0 {
+			return ""
+		} else {
+			return defaultValue[0]
+		}
+	}
+
+	if value, exist := data[key]; exist {
+		return cast.ToString(value)
+	}
+
+	if len(defaultValue) == 0 {
+		return ""
+	}
+
+	return defaultValue[0]
+}
+
+func (r *GinRequest) Method() string {
+	return r.instance.Request.Method
+}
+
+func (r *GinRequest) Next() {
+	r.instance.Next()
 }
 
 func (r *GinRequest) Query(key string, defaultValue ...string) string {
@@ -93,37 +235,22 @@ func (r *GinRequest) QueryMap(key string) map[string]string {
 	return r.instance.QueryMap(key)
 }
 
-func (r *GinRequest) Form(key string, defaultValue ...string) string {
-	if len(defaultValue) == 0 {
-		return r.instance.PostForm(key)
+func (r *GinRequest) Queries() map[string]string {
+	queries := make(map[string]string)
+
+	for key, query := range r.instance.Request.URL.Query() {
+		queries[key] = strings.Join(query, ",")
 	}
 
-	return r.instance.DefaultPostForm(key, defaultValue[0])
+	return queries
 }
 
-func (r *GinRequest) Json(key string, defaultValue ...string) string {
-	var data map[string]any
-	if err := r.Bind(&data); err != nil {
-		if len(defaultValue) == 0 {
-			return ""
-		} else {
-			return defaultValue[0]
-		}
-	}
-
-	if value, exist := data[key]; exist {
-		return cast.ToString(value)
-	}
-
-	if len(defaultValue) == 0 {
-		return ""
-	}
-
-	return defaultValue[0]
+func (r *GinRequest) Origin() *http.Request {
+	return r.instance.Request
 }
 
-func (r *GinRequest) Bind(obj any) error {
-	return r.instance.ShouldBind(obj)
+func (r *GinRequest) Path() string {
+	return r.instance.Request.URL.Path
 }
 
 func (r *GinRequest) Input(key string, defaultValue ...string) string {
@@ -222,79 +349,28 @@ func (r *GinRequest) InputBool(key string, defaultValue ...bool) bool {
 	return stringToBool(value)
 }
 
-func (r *GinRequest) File(name string) (contractsfilesystem.File, error) {
-	file, err := r.instance.FormFile(name)
-	if err != nil {
-		return nil, err
-	}
-
-	return filesystem.NewFileFromRequest(file)
-}
-
-func (r *GinRequest) Header(key string, defaultValue ...string) string {
-	header := r.instance.GetHeader(key)
-	if header != "" {
-		return header
-	}
-
-	if len(defaultValue) == 0 {
-		return ""
-	}
-
-	return defaultValue[0]
-}
-
-func (r *GinRequest) Headers() http.Header {
-	return r.instance.Request.Header
-}
-
-func (r *GinRequest) Method() string {
-	return r.instance.Request.Method
-}
-
-func (r *GinRequest) Url() string {
-	return r.instance.Request.RequestURI
-}
-
-func (r *GinRequest) FullUrl() string {
-	prefix := "https://"
-	if r.instance.Request.TLS == nil {
-		prefix = "http://"
-	}
-
-	if r.instance.Request.Host == "" {
-		return ""
-	}
-
-	return prefix + r.instance.Request.Host + r.instance.Request.RequestURI
-}
-
-func (r *GinRequest) AbortWithStatus(code int) {
-	r.instance.AbortWithStatus(code)
-}
-
-func (r *GinRequest) AbortWithStatusJson(code int, jsonObj any) {
-	r.instance.AbortWithStatusJSON(code, jsonObj)
-}
-
-func (r *GinRequest) Next() {
-	r.instance.Next()
-}
-
-func (r *GinRequest) Path() string {
-	return r.instance.Request.URL.Path
-}
-
 func (r *GinRequest) Ip() string {
 	return r.instance.ClientIP()
 }
 
-func (r *GinRequest) Host() string {
-	return r.instance.Request.Host
+func (r *GinRequest) Route(key string) string {
+	return r.instance.Param(key)
 }
 
-func (r *GinRequest) Origin() *http.Request {
-	return r.instance.Request
+func (r *GinRequest) RouteInt(key string) int {
+	val := r.instance.Param(key)
+
+	return cast.ToInt(val)
+}
+
+func (r *GinRequest) RouteInt64(key string) int64 {
+	val := r.instance.Param(key)
+
+	return cast.ToInt64(val)
+}
+
+func (r *GinRequest) Url() string {
+	return r.instance.Request.RequestURI
 }
 
 func (r *GinRequest) Validate(rules map[string]string, options ...contractsvalidate.Option) (contractsvalidate.Validator, error) {
