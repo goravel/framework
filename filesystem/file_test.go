@@ -83,7 +83,7 @@ func TestNewFileFromRequest(t *testing.T) {
 	assert.Nil(t, err)
 	file, err := NewFileFromRequest(f)
 	assert.Nil(t, err)
-	assert.Equal(t, ".txt", path.Ext(file.file))
+	assert.Equal(t, ".txt", path.Ext(file.path))
 
 	mockConfig.AssertExpectations(t)
 }

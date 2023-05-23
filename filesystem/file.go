@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
@@ -17,9 +18,9 @@ import (
 )
 
 type File struct {
-	disk     string
-	file     string
-	filename string
+	disk string
+	path string
+	name string
 }
 
 func NewFile(file string) (*File, error) {
@@ -29,7 +30,7 @@ func NewFile(file string) (*File, error) {
 
 	disk := facades.Config.GetString("filesystems.default")
 
-	return &File{disk: disk, file: file, filename: path.Base(file)}, nil
+	return &File{disk: disk, path: file, name: path.Base(file)}, nil
 }
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
@@ -53,7 +54,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 
 	disk := facades.Config.GetString("filesystems.default")
 
-	return &File{disk: disk, file: tempFile.Name(), filename: fileHeader.Filename}, nil
+	return &File{disk: disk, path: tempFile.Name(), name: fileHeader.Filename}, nil
 }
 
 func (f *File) Disk(disk string) filesystem.File {
@@ -62,24 +63,20 @@ func (f *File) Disk(disk string) filesystem.File {
 	return f
 }
 
+func (f *File) Extension() (string, error) {
+	return supportfile.Extension(f.path)
+}
+
 func (f *File) File() string {
-	return f.file
-}
-
-func (f *File) Store(path string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFile(path, f)
-}
-
-func (f *File) StoreAs(path string, name string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFileAs(path, f, name)
+	return f.path
 }
 
 func (f *File) GetClientOriginalName() string {
-	return f.filename
+	return f.name
 }
 
 func (f *File) GetClientOriginalExtension() string {
-	return supportfile.ClientOriginalExtension(f.filename)
+	return supportfile.ClientOriginalExtension(f.name)
 }
 
 func (f *File) HashName(path ...string) string {
@@ -88,7 +85,7 @@ func (f *File) HashName(path ...string) string {
 		realPath = strings.TrimRight(path[0], "/") + "/"
 	}
 
-	extension, _ := supportfile.Extension(f.file, true)
+	extension, _ := supportfile.Extension(f.path, true)
 	if extension == "" {
 		return realPath + str.Random(40)
 	}
@@ -96,6 +93,22 @@ func (f *File) HashName(path ...string) string {
 	return realPath + str.Random(40) + "." + extension
 }
 
-func (f *File) Extension() (string, error) {
-	return supportfile.Extension(f.file)
+func (f *File) LastModified() (time.Time, error) {
+	return supportfile.LastModified(f.path, facades.Config.GetString("app.timezone"))
+}
+
+func (f *File) MimeType() (string, error) {
+	return supportfile.MimeType(f.path)
+}
+
+func (f *File) Size() (int64, error) {
+	return supportfile.Size(f.path)
+}
+
+func (f *File) Store(path string) (string, error) {
+	return facades.Storage.Disk(f.disk).PutFile(path, f)
+}
+
+func (f *File) StoreAs(path string, name string) (string, error) {
+	return facades.Storage.Disk(f.disk).PutFileAs(path, f, name)
 }

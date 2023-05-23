@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gabriel-vasile/mimetype"
-
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/facades"
+	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -143,17 +142,7 @@ func (r *Local) Get(file string) (string, error) {
 }
 
 func (r *Local) LastModified(file string) (time.Time, error) {
-	fileInfo, err := os.Stat(r.fullPath(file))
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return fileInfo.ModTime().In(l), nil
+	return supportfile.LastModified(r.fullPath(file), facades.Config.GetString("app.timezone"))
 }
 
 func (r *Local) MakeDirectory(directory string) error {
@@ -161,12 +150,7 @@ func (r *Local) MakeDirectory(directory string) error {
 }
 
 func (r *Local) MimeType(file string) (string, error) {
-	mtype, err := mimetype.DetectFile(r.fullPath(file))
-	if err != nil {
-		return "", err
-	}
-
-	return mtype.String(), nil
+	return supportfile.MimeType(r.fullPath(file))
 }
 
 func (r *Local) Missing(file string) bool {
@@ -232,17 +216,7 @@ func (r *Local) PutFileAs(filePath string, source filesystem.File, name string) 
 }
 
 func (r *Local) Size(file string) (int64, error) {
-	fileInfo, err := os.Open(r.fullPath(file))
-	if err != nil {
-		return 0, err
-	}
-
-	fi, err := fileInfo.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	return fi.Size(), nil
+	return supportfile.Size(r.fullPath(file))
 }
 
 func (r *Local) TemporaryUrl(file string, time time.Time) (string, error) {
