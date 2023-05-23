@@ -475,17 +475,13 @@ func TestGinRequest(t *testing.T) {
 					})
 				})
 
-				//writer := multipart.NewWriter(nil)
-				//if err := writer.Close(); err != nil {
-				//	return err
-				//}
 				req, _ = http.NewRequest(method, url, nil)
-				req.Header.Set("Content-Type", "multipart/form-data")
+				req.Header.Set("Content-Type", "multipart/form-data;boundary=0")
 
 				return nil
 			},
 			expectCode: http.StatusOK,
-			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"4\",\"e\":\"e\",\"file\":{\"Filename\":\"logo.png\",\"Header\":{\"Content-Disposition\":[\"form-data; name=\\\"file\\\"; filename=\\\"logo.png\\\"\"],\"Content-Type\":[\"application/octet-stream\"]},\"Size\":16438}}}",
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"3\"}}",
 		},
 		{
 			name:   "All with json when Post",

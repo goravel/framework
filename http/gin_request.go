@@ -67,7 +67,7 @@ func (r *GinRequest) All() map[string]any {
 			}
 		}
 		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-	} else if contentType == "multipart/form-data" {
+	} else if contentType == "multipart/form-data" && r.instance.Request.ContentLength > 0 {
 		if r.instance.Request.PostForm == nil {
 			if err := r.instance.Request.ParseMultipartForm(defaultMemory); err != nil {
 				facades.Log.Errorf("when calling request all method, parse multipart form error: %v", err)
