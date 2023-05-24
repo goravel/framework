@@ -24,7 +24,7 @@ func NewGinContext(ctx *gin.Context) http.Context {
 }
 
 func (c *GinContext) Request() http.Request {
-	return NewGinRequest(c)
+	return NewGinRequest(c, LogFacade, ValidationFacade)
 }
 
 func (c *GinContext) Response() http.Response {

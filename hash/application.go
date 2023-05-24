@@ -1,8 +1,8 @@
 package hash
 
 import (
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/hash"
-	"github.com/goravel/framework/facades"
 )
 
 const (
@@ -12,13 +12,12 @@ const (
 type Application struct {
 }
 
-func NewApplication() hash.Hash {
-	driver := facades.Config.GetString("hashing.driver", "argon2id")
+func NewApplication(config config.Config) hash.Hash {
+	driver := config.GetString("hashing.driver", "argon2id")
 
 	if driver == DriverBcrypt {
-		return NewBcrypt()
+		return NewBcrypt(config)
 	}
 
-	// Default set to argon2id
-	return NewArgon2id()
+	return NewArgon2id(config)
 }

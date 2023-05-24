@@ -3,7 +3,7 @@ package hash
 import (
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type Bcrypt struct {
@@ -11,9 +11,9 @@ type Bcrypt struct {
 }
 
 // NewBcrypt returns a new Bcrypt hasher.
-func NewBcrypt() *Bcrypt {
+func NewBcrypt(config config.Config) *Bcrypt {
 	return &Bcrypt{
-		rounds: facades.Config.GetInt("hashing.bcrypt.rounds", 10),
+		rounds: config.GetInt("hashing.bcrypt.rounds", 10),
 	}
 }
 

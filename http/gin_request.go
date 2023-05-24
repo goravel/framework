@@ -13,21 +13,23 @@ import (
 	"github.com/gookit/validate"
 	"github.com/spf13/cast"
 
-	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
-	contractshttp "github.com/goravel/framework/contracts/http"
-	contractsvalidate "github.com/goravel/framework/contracts/validation"
-	"github.com/goravel/framework/facades"
+	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
+	httpcontract "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/log"
+	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/validation"
 )
 
 type GinRequest struct {
-	ctx      *GinContext
-	instance *gin.Context
+	ctx        *GinContext
+	instance   *gin.Context
+	log        log.Log
+	validation validatecontract.Validation
 }
 
-func NewGinRequest(ctx *GinContext) contractshttp.Request {
-	return &GinRequest{ctx, ctx.instance}
+func NewGinRequest(ctx *GinContext, log log.Log, validation validatecontract.Validation) httpcontract.Request {
+	return &GinRequest{ctx: ctx, instance: ctx.instance, log: log, validation: validation}
 }
 
 func (r *GinRequest) AbortWithStatus(code int) {
@@ -55,14 +57,14 @@ func (r *GinRequest) All() map[string]any {
 	if contentType == "application/json" && r.instance.Request != nil && r.instance.Request.Body != nil {
 		bodyBytes, err := ioutil.ReadAll(r.instance.Request.Body)
 		if err != nil {
-			facades.Log.Errorf("when calling request all method, retrieve json error: %v", err)
+			r.log.Errorf("when calling request all method, retrieve json error: %v", err)
 			return nil
 		}
 
 		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 		if r.instance.Request.Body != nil {
 			if err := json.NewDecoder(r.instance.Request.Body).Decode(&postMap); err != nil {
-				facades.Log.Errorf("when calling request all method, decode json error: %v", err)
+				r.log.Errorf("when calling request all method, decode json error: %v", err)
 				return nil
 			}
 		}
@@ -70,7 +72,7 @@ func (r *GinRequest) All() map[string]any {
 	} else if contentType == "multipart/form-data" && r.instance.Request.ContentLength > 0 {
 		if r.instance.Request.PostForm == nil {
 			if err := r.instance.Request.ParseMultipartForm(defaultMemory); err != nil {
-				facades.Log.Errorf("when calling request all method, parse multipart form error: %v", err)
+				r.log.Errorf("when calling request all method, parse multipart form error: %v", err)
 				return nil
 			}
 		}
@@ -111,7 +113,7 @@ func (r *GinRequest) Form(key string, defaultValue ...string) string {
 	return r.instance.DefaultPostForm(key, defaultValue[0])
 }
 
-func (r *GinRequest) File(name string) (contractsfilesystem.File, error) {
+func (r *GinRequest) File(name string) (filesystemcontract.File, error) {
 	file, err := r.instance.FormFile(name)
 	if err != nil {
 		return nil, err
@@ -373,12 +375,12 @@ func (r *GinRequest) Url() string {
 	return r.instance.Request.RequestURI
 }
 
-func (r *GinRequest) Validate(rules map[string]string, options ...contractsvalidate.Option) (contractsvalidate.Validator, error) {
+func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")
 	}
 
-	options = append(options, validation.Rules(rules), validation.CustomRules(facades.Validation.Rules()))
+	options = append(options, validation.Rules(rules), validation.CustomRules(r.validation.Rules()))
 	generateOptions := validation.GenerateOptions(options)
 
 	var v *validate.Validation
@@ -390,7 +392,7 @@ func (r *GinRequest) Validate(rules map[string]string, options ...contractsvalid
 		v = validate.NewValidation(dataFace)
 	} else {
 		if generateOptions["prepareForValidation"] != nil {
-			if err := generateOptions["prepareForValidation"].(func(ctx contractshttp.Context, data contractsvalidate.Data) error)(r.ctx, validation.NewData(dataFace)); err != nil {
+			if err := generateOptions["prepareForValidation"].(func(ctx httpcontract.Context, data validatecontract.Data) error)(r.ctx, validation.NewData(dataFace)); err != nil {
 				return nil, err
 			}
 		}
@@ -403,7 +405,7 @@ func (r *GinRequest) Validate(rules map[string]string, options ...contractsvalid
 	return validation.NewValidator(v, dataFace), nil
 }
 
-func (r *GinRequest) ValidateRequest(request contractshttp.FormRequest) (contractsvalidate.Errors, error) {
+func (r *GinRequest) ValidateRequest(request httpcontract.FormRequest) (validatecontract.Errors, error) {
 	if err := request.Authorize(r.ctx); err != nil {
 		return nil, err
 	}

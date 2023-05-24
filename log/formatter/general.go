@@ -8,10 +8,17 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type General struct {
+	config config.Config
+}
+
+func NewGeneral(config config.Config) *General {
+	return &General{
+		config: config,
+	}
 }
 
 func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
@@ -22,7 +29,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 		b = &bytes.Buffer{}
 	}
 
-	cstSh, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	cstSh, err := time.LoadLocation(general.config.GetString("app.timezone"))
 	if err != nil {
 		return nil, err
 	}
@@ -32,9 +39,9 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 
 	if len(entry.Data) > 0 {
 		data, _ := json.Marshal(entry.Data)
-		newLog = fmt.Sprintf("[%s] %s.%s: %s %s\n", timestamp, facades.Config.GetString("app.env"), entry.Level, entry.Message, string(data))
+		newLog = fmt.Sprintf("[%s] %s.%s: %s %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message, string(data))
 	} else {
-		newLog = fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, facades.Config.GetString("app.env"), entry.Level, entry.Message)
+		newLog = fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message)
 	}
 
 	b.WriteString(newLog)

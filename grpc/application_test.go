@@ -12,8 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/testing/mock"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 )
 
 type contextKey int
@@ -24,14 +23,14 @@ const client contextKey = 1
 func TestRun(t *testing.T) {
 	var (
 		app        *Application
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 		name       = "test"
 	)
 
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 
-		app = NewApplication()
+		app = NewApplication(mockConfig)
 		app.UnaryServerInterceptors([]grpc.UnaryServerInterceptor{
 			serverInterceptor,
 		})
@@ -51,7 +50,7 @@ func TestRun(t *testing.T) {
 		{
 			name: "success",
 			setup: func() {
-				host := "127.0.0.1:3001"
+				host := "127.0.0.1:3030"
 				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
@@ -74,7 +73,7 @@ func TestRun(t *testing.T) {
 		{
 			name: "success when host with port",
 			setup: func() {
-				mockConfig.On("GetString", "grpc.host").Return("127.0.0.1:3002").Once()
+				mockConfig.On("GetString", "grpc.host").Return("127.0.0.1:3032").Once()
 				go func() {
 					assert.Nil(t, app.Run())
 				}()
@@ -99,7 +98,7 @@ func TestRun(t *testing.T) {
 		{
 			name: "error when request name = error",
 			setup: func() {
-				host := "127.0.0.1:3003"
+				host := "127.0.0.1:3033"
 				mockConfig.On("GetString", fmt.Sprintf("grpc.clients.%s.host", name)).Return(host).Once()
 				mockConfig.On("Get", fmt.Sprintf("grpc.clients.%s.interceptors", name)).Return([]string{"test"}).Once()
 
@@ -133,14 +132,14 @@ func TestRun(t *testing.T) {
 func TestClient(t *testing.T) {
 	var (
 		app        *Application
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 		name       = "user"
-		host       = "127.0.0.1:3001"
+		host       = "127.0.0.1:3030"
 	)
 
 	beforeEach := func() {
-		mockConfig = mock.Config()
-		app = NewApplication()
+		mockConfig = &configmock.Config{}
+		app = NewApplication(mockConfig)
 	}
 
 	tests := []struct {

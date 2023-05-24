@@ -18,23 +18,28 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	contractshttp "github.com/goravel/framework/contracts/http"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
+	filesystemmock "github.com/goravel/framework/contracts/filesystem/mocks"
+	httpcontract "github.com/goravel/framework/contracts/http"
+	logmock "github.com/goravel/framework/contracts/log/mocks"
 	"github.com/goravel/framework/contracts/validation"
-	"github.com/goravel/framework/testing/mock"
+	validationmock "github.com/goravel/framework/contracts/validation/mocks"
+	frameworkfilesystem "github.com/goravel/framework/filesystem"
+	frameworkhttp "github.com/goravel/framework/http"
 )
 
 func TestFallback(t *testing.T) {
 	var (
 		gin        *Gin
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name       string
@@ -47,7 +52,7 @@ func TestFallback(t *testing.T) {
 		{
 			name: "success",
 			setup: func(req *http.Request) {
-				gin.Fallback(func(ctx contractshttp.Context) {
+				gin.Fallback(func(ctx httpcontract.Context) {
 					ctx.Response().String(404, "not found")
 				})
 			},
@@ -76,7 +81,7 @@ func TestFallback(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	var mockConfig *configmocks.Config
+	var mockConfig *configmock.Config
 	var route *Gin
 
 	tests := []struct {
@@ -125,10 +130,12 @@ func TestRun(t *testing.T) {
 					assert.Nil(t, route.Run())
 				}()
 
+				time.Sleep(1 * time.Second)
+
 				return nil
 			},
 			host: "127.0.0.1",
-			port: "3001",
+			port: "3031",
 		},
 		{
 			name: "use custom host",
@@ -141,17 +148,17 @@ func TestRun(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3002",
+			host: "127.0.0.1:3032",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockConfig = mock.Config()
+			mockConfig = &configmock.Config{}
 			mockConfig.On("GetBool", "app.debug").Return(true).Once()
-			route = NewGin()
-			route.Get("/", func(ctx contractshttp.Context) {
-				ctx.Response().Json(200, contractshttp.Json{
+			route = NewGin(mockConfig)
+			route.Get("/", func(ctx httpcontract.Context) {
+				ctx.Response().Json(200, httpcontract.Json{
 					"Hello": "Goravel",
 				})
 			})
@@ -175,7 +182,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunTLS(t *testing.T) {
-	var mockConfig *configmocks.Config
+	var mockConfig *configmock.Config
 	var route *Gin
 
 	tests := []struct {
@@ -250,11 +257,11 @@ func TestRunTLS(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockConfig = mock.Config()
+			mockConfig = &configmock.Config{}
 			mockConfig.On("GetBool", "app.debug").Return(true).Once()
-			route = NewGin()
-			route.Get("/", func(ctx contractshttp.Context) {
-				ctx.Response().Json(200, contractshttp.Json{
+			route = NewGin(mockConfig)
+			route.Get("/", func(ctx httpcontract.Context) {
+				ctx.Response().Json(200, httpcontract.Json{
 					"Hello": "Goravel",
 				})
 			})
@@ -282,7 +289,7 @@ func TestRunTLS(t *testing.T) {
 }
 
 func TestRunTLSWithCert(t *testing.T) {
-	var mockConfig *configmocks.Config
+	var mockConfig *configmock.Config
 	var route *Gin
 
 	tests := []struct {
@@ -332,11 +339,11 @@ func TestRunTLSWithCert(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockConfig = mock.Config()
+			mockConfig = &configmock.Config{}
 			mockConfig.On("GetBool", "app.debug").Return(true).Once()
-			route = NewGin()
-			route.Get("/", func(ctx contractshttp.Context) {
-				ctx.Response().Json(200, contractshttp.Json{
+			route = NewGin(mockConfig)
+			route.Get("/", func(ctx httpcontract.Context) {
+				ctx.Response().Json(200, httpcontract.Json{
 					"Hello": "Goravel",
 				})
 			})
@@ -363,13 +370,13 @@ func TestGinRequest(t *testing.T) {
 	var (
 		gin        *Gin
 		req        *http.Request
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name       string
@@ -384,8 +391,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/all",
 			setup: func(method, url string) error {
-				gin.Get("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -402,8 +409,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/all?a=1&a=2&b=3",
 			setup: func(method, url string) error {
-				gin.Get("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -420,8 +427,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/all?a=1&a=2&b=3",
 			setup: func(method, url string) error {
-				gin.Post("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -467,10 +474,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/all?a=1&a=2&b=3",
 			setup: func(method, url string) error {
-				mock.Log()
-
-				gin.Post("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -488,7 +493,7 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/all?a=1&a=2&name=3",
 			setup: func(method, url string) error {
-				gin.Post("/all", func(ctx contractshttp.Context) {
+				gin.Post("/all", func(ctx httpcontract.Context) {
 					all := ctx.Request().All()
 					type Test struct {
 						Name string
@@ -497,7 +502,7 @@ func TestGinRequest(t *testing.T) {
 					var test Test
 					_ = ctx.Request().Bind(&test)
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all":  all,
 						"name": test.Name,
 						"age":  test.Age,
@@ -521,8 +526,11 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/all?a=1&a=2&name=3",
 			setup: func(method, url string) error {
-				mock.Log()
-				gin.Post("/all", func(ctx contractshttp.Context) {
+				mockLog := &logmock.Log{}
+				frameworkhttp.LogFacade = mockLog
+				mockLog.On("Errorf", "when calling request all method, decode json error: %v", mock.Anything).Once()
+
+				gin.Post("/all", func(ctx httpcontract.Context) {
 					all := ctx.Request().All()
 					type Test struct {
 						Name string
@@ -531,7 +539,7 @@ func TestGinRequest(t *testing.T) {
 					var test Test
 					_ = ctx.Request().Bind(&test)
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all":  all,
 						"name": test.Name,
 						"age":  test.Age,
@@ -555,8 +563,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/all?a=1&a=2&name=3",
 			setup: func(method, url string) error {
-				gin.Post("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -574,8 +582,8 @@ func TestGinRequest(t *testing.T) {
 			method: "PUT",
 			url:    "/all?a=1&a=2&b=3",
 			setup: func(method, url string) error {
-				gin.Put("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Put("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -597,8 +605,8 @@ func TestGinRequest(t *testing.T) {
 			method: "DELETE",
 			url:    "/all?a=1&a=2&b=3",
 			setup: func(method, url string) error {
-				gin.Delete("/all", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Delete("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -620,8 +628,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/methods/1?name=Goravel",
 			setup: func(method, url string) error {
-				gin.Get("/methods/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/methods/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id":       ctx.Request().Input("id"),
 						"name":     ctx.Request().Query("name", "Hello"),
 						"header":   ctx.Request().Header("Hello", "World"),
@@ -650,7 +658,7 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/headers",
 			setup: func(method, url string) error {
-				gin.Get("/headers", func(ctx contractshttp.Context) {
+				gin.Get("/headers", func(ctx httpcontract.Context) {
 					str, _ := json.Marshal(ctx.Request().Headers())
 					ctx.Response().Success().String(string(str))
 				})
@@ -672,8 +680,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/route/1/2/3/a",
 			setup: func(method, url string) error {
-				gin.Get("/route/{string}/{int}/{int64}/{string1}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/route/{string}/{int}/{int64}/{string1}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"string": ctx.Request().Route("string"),
 						"int":    ctx.Request().RouteInt("int"),
 						"int64":  ctx.Request().RouteInt64("int64"),
@@ -697,8 +705,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input1/1?id=2",
 			setup: func(method, url string) error {
-				gin.Post("/input1/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input1/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": ctx.Request().Input("id"),
 					})
 				})
@@ -719,8 +727,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input2/1?id=2",
 			setup: func(method, url string) error {
-				gin.Post("/input2/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input2/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": ctx.Request().Input("id"),
 					})
 				})
@@ -747,8 +755,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input3/1?id=2",
 			setup: func(method, url string) error {
-				gin.Post("/input3/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input3/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": ctx.Request().Input("id"),
 					})
 				})
@@ -766,8 +774,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input4/1",
 			setup: func(method, url string) error {
-				gin.Post("/input4/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input4/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": ctx.Request().Input("id"),
 					})
 				})
@@ -785,8 +793,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input5/1",
 			setup: func(method, url string) error {
-				gin.Post("/input5/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input5/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id1": ctx.Request().Input("id1"),
 					})
 				})
@@ -804,8 +812,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input6/1",
 			setup: func(method, url string) error {
-				gin.Post("/input6/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input6/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id1": ctx.Request().Input("id1", "2"),
 					})
 				})
@@ -823,8 +831,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input-int/1",
 			setup: func(method, url string) error {
-				gin.Post("/input-int/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input-int/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": ctx.Request().InputInt("id"),
 					})
 				})
@@ -842,8 +850,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input-int64/1",
 			setup: func(method, url string) error {
-				gin.Post("/input-int64/{id}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input-int64/{id}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": ctx.Request().InputInt64("id"),
 					})
 				})
@@ -861,8 +869,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input-bool/1/true/on/yes/a",
 			setup: func(method, url string) error {
-				gin.Post("/input-bool/{id1}/{id2}/{id3}/{id4}/{id5}", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/input-bool/{id1}/{id2}/{id3}/{id4}/{id5}", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id1": ctx.Request().InputBool("id1"),
 						"id2": ctx.Request().InputBool("id2"),
 						"id3": ctx.Request().InputBool("id3"),
@@ -884,8 +892,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/form",
 			setup: func(method, url string) error {
-				gin.Post("/form", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/form", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name":  ctx.Request().Form("name", "Hello"),
 						"name1": ctx.Request().Form("name1", "Hello"),
 					})
@@ -913,8 +921,8 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/json",
 			setup: func(method, url string) error {
-				gin.Post("/json", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Post("/json", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name":   ctx.Request().Json("name"),
 						"info":   ctx.Request().Json("info"),
 						"avatar": ctx.Request().Json("avatar", "logo"),
@@ -938,13 +946,13 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/bind",
 			setup: func(method, url string) error {
-				gin.Post("/bind", func(ctx contractshttp.Context) {
+				gin.Post("/bind", func(ctx httpcontract.Context) {
 					type Test struct {
 						Name string
 					}
 					var test Test
 					_ = ctx.Request().Bind(&test)
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": test.Name,
 					})
 				})
@@ -965,8 +973,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/query?string=Goravel&int=1&int64=2&bool1=1&bool2=true&bool3=on&bool4=yes&bool5=0&error=a",
 			setup: func(method, url string) error {
-				gin.Get("/query", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/query", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"string":        ctx.Request().Query("string", ""),
 						"int":           ctx.Request().QueryInt("int", 11),
 						"int_default":   ctx.Request().QueryInt("int_default", 11),
@@ -994,8 +1002,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/query-array?name=Goravel&name=Goravel1",
 			setup: func(method, url string) error {
-				gin.Get("/query-array", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/query-array", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": ctx.Request().QueryArray("name"),
 					})
 				})
@@ -1013,8 +1021,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/query-map?name[a]=Goravel&name[b]=Goravel1",
 			setup: func(method, url string) error {
-				gin.Get("/query-map", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/query-map", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": ctx.Request().QueryMap("name"),
 					})
 				})
@@ -1032,8 +1040,8 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/queries?string=Goravel&int=1&int64=2&bool1=1&bool2=true&bool3=on&bool4=yes&bool5=0&error=a",
 			setup: func(method, url string) error {
-				gin.Get("/queries", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/queries", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"all": ctx.Request().All(),
 					})
 				})
@@ -1050,14 +1058,18 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/file",
 			setup: func(method, url string) error {
-				gin.Post("/file", func(ctx contractshttp.Context) {
+				gin.Post("/file", func(ctx httpcontract.Context) {
 					mockConfig.On("GetString", "app.name").Return("goravel").Once()
 					mockConfig.On("GetString", "filesystems.default").Return("local").Once()
+					frameworkfilesystem.ConfigFacade = mockConfig
+
+					mockStorage := &filesystemmock.Storage{}
+					mockDriver := &filesystemmock.Driver{}
+					mockStorage.On("Disk", "local").Return(mockDriver).Once()
+					frameworkfilesystem.StorageFacade = mockStorage
 
 					fileInfo, err := ctx.Request().File("file")
 
-					mockStorage, mockDriver, _ := mock.Storage()
-					mockStorage.On("Disk", "local").Return(mockDriver).Once()
 					mockDriver.On("PutFile", "test", fileInfo).Return("test/logo.png", nil).Once()
 					mockStorage.On("Exists", "test/logo.png").Return(true).Once()
 
@@ -1077,7 +1089,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"exist":              mockStorage.Exists(filePath),
 						"hash_name_length":   len(fileInfo.HashName()),
 						"hash_name_length1":  len(fileInfo.HashName("test")),
@@ -1121,9 +1133,10 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/validator/validate/success?name=Goravel",
 			setup: func(method, url string) error {
-				gin.Get("/validator/validate/success", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Get("/validator/validate/success", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name": "required",
@@ -1146,7 +1159,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": test.Name,
 					})
 				})
@@ -1166,9 +1179,10 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/validator/validate/fail?name=Goravel",
 			setup: func(method, url string) error {
-				gin.Get("/validator/validate/fail", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Get("/validator/validate/fail", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name1": "required",
@@ -1182,7 +1196,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": "",
 					})
 				})
@@ -1203,9 +1217,10 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/validator/validate-request/success?name=Goravel",
 			setup: func(method, url string) error {
-				gin.Get("/validator/validate-request/success", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Get("/validator/validate-request/success", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -1218,7 +1233,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": createUser.Name,
 					})
 				})
@@ -1239,9 +1254,10 @@ func TestGinRequest(t *testing.T) {
 			method: "GET",
 			url:    "/validator/validate-request/fail?name1=Goravel",
 			setup: func(method, url string) error {
-				gin.Get("/validator/validate-request/fail", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Get("/validator/validate-request/fail", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -1254,7 +1270,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": createUser.Name,
 					})
 				})
@@ -1275,9 +1291,10 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/validator/validate/success",
 			setup: func(method, url string) error {
-				gin.Post("/validator/validate/success", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Post("/validator/validate/success", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name": "required",
@@ -1300,7 +1317,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": test.Name,
 					})
 				})
@@ -1321,9 +1338,10 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/validator/validate/fail",
 			setup: func(method, url string) error {
-				gin.Post("/validator/validate/fail", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Post("/validator/validate/fail", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name1": "required",
@@ -1337,7 +1355,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": "",
 					})
 				})
@@ -1357,9 +1375,10 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/validator/validate-request/success",
 			setup: func(method, url string) error {
-				gin.Post("/validator/validate-request/success", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Post("/validator/validate-request/success", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -1372,7 +1391,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": createUser.Name,
 					})
 				})
@@ -1393,9 +1412,10 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/validator/validate-request/fail",
 			setup: func(method, url string) error {
-				gin.Post("/validator/validate-request/fail", func(ctx contractshttp.Context) {
-					mockValication, _, _ := mock.Validation()
+				gin.Post("/validator/validate-request/fail", func(ctx httpcontract.Context) {
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -1408,7 +1428,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": createUser.Name,
 					})
 				})
@@ -1429,7 +1449,7 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/validator/validate-request/unauthorize",
 			setup: func(method, url string) error {
-				gin.Post("/validator/validate-request/unauthorize", func(ctx contractshttp.Context) {
+				gin.Post("/validator/validate-request/unauthorize", func(ctx httpcontract.Context) {
 					var unauthorize Unauthorize
 					validateErrors, err := ctx.Request().ValidateRequest(&unauthorize)
 					if err != nil {
@@ -1441,7 +1461,7 @@ func TestGinRequest(t *testing.T) {
 						return
 					}
 
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name": unauthorize.Name,
 					})
 				})
@@ -1479,13 +1499,13 @@ func TestGinResponse(t *testing.T) {
 	var (
 		gin        *Gin
 		req        *http.Request
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name         string
@@ -1501,7 +1521,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/data",
 			setup: func(method, url string) error {
-				gin.Get("/data", func(ctx contractshttp.Context) {
+				gin.Get("/data", func(ctx httpcontract.Context) {
 					ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", []byte("<b>Goravel</b>"))
 				})
 
@@ -1521,7 +1541,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/success/data",
 			setup: func(method, url string) error {
-				gin.Get("/success/data", func(ctx contractshttp.Context) {
+				gin.Get("/success/data", func(ctx httpcontract.Context) {
 					ctx.Response().Success().Data("text/html; charset=utf-8", []byte("<b>Goravel</b>"))
 				})
 
@@ -1541,8 +1561,8 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/json",
 			setup: func(method, url string) error {
-				gin.Get("/json", func(ctx contractshttp.Context) {
-					ctx.Response().Json(http.StatusOK, contractshttp.Json{
+				gin.Get("/json", func(ctx httpcontract.Context) {
+					ctx.Response().Json(http.StatusOK, httpcontract.Json{
 						"id": "1",
 					})
 				})
@@ -1563,7 +1583,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/string",
 			setup: func(method, url string) error {
-				gin.Get("/string", func(ctx contractshttp.Context) {
+				gin.Get("/string", func(ctx httpcontract.Context) {
 					ctx.Response().String(http.StatusCreated, "Goravel")
 				})
 
@@ -1583,8 +1603,8 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/success/json",
 			setup: func(method, url string) error {
-				gin.Get("/success/json", func(ctx contractshttp.Context) {
-					ctx.Response().Success().Json(contractshttp.Json{
+				gin.Get("/success/json", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id": "1",
 					})
 				})
@@ -1605,7 +1625,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/success/string",
 			setup: func(method, url string) error {
-				gin.Get("/success/string", func(ctx contractshttp.Context) {
+				gin.Get("/success/string", func(ctx httpcontract.Context) {
 					ctx.Response().Success().String("Goravel")
 				})
 
@@ -1625,7 +1645,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/file",
 			setup: func(method, url string) error {
-				gin.Get("/file", func(ctx contractshttp.Context) {
+				gin.Get("/file", func(ctx httpcontract.Context) {
 					ctx.Response().File("../logo.png")
 				})
 
@@ -1644,7 +1664,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/download",
 			setup: func(method, url string) error {
-				gin.Get("/download", func(ctx contractshttp.Context) {
+				gin.Get("/download", func(ctx httpcontract.Context) {
 					ctx.Response().Download("../logo.png", "1.png")
 				})
 
@@ -1663,7 +1683,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/header",
 			setup: func(method, url string) error {
-				gin.Get("/header", func(ctx contractshttp.Context) {
+				gin.Get("/header", func(ctx httpcontract.Context) {
 					ctx.Response().Header("Hello", "goravel").String(http.StatusOK, "Goravel")
 				})
 
@@ -1684,7 +1704,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/origin",
 			setup: func(method, url string) error {
-				gin.GlobalMiddleware(func(ctx contractshttp.Context) {
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
 					ctx.Response().Header("global", "goravel")
 					ctx.Request().Next()
 
@@ -1693,7 +1713,7 @@ func TestGinResponse(t *testing.T) {
 					assert.Equal(t, 7, ctx.Response().Origin().Size())
 					assert.Equal(t, 200, ctx.Response().Origin().Status())
 				})
-				gin.Get("/origin", func(ctx contractshttp.Context) {
+				gin.Get("/origin", func(ctx httpcontract.Context) {
 					ctx.Response().String(http.StatusOK, "Goravel")
 				})
 
@@ -1713,7 +1733,7 @@ func TestGinResponse(t *testing.T) {
 			method: "GET",
 			url:    "/redirect",
 			setup: func(method, url string) error {
-				gin.Get("/redirect", func(ctx contractshttp.Context) {
+				gin.Get("/redirect", func(ctx httpcontract.Context) {
 					ctx.Response().Redirect(http.StatusMovedPermanently, "https://goravel.dev")
 				})
 
@@ -1754,25 +1774,25 @@ type CreateUser struct {
 	Name string `form:"name" json:"name"`
 }
 
-func (r *CreateUser) Authorize(ctx contractshttp.Context) error {
+func (r *CreateUser) Authorize(ctx httpcontract.Context) error {
 	return nil
 }
 
-func (r *CreateUser) Rules(ctx contractshttp.Context) map[string]string {
+func (r *CreateUser) Rules(ctx httpcontract.Context) map[string]string {
 	return map[string]string{
 		"name": "required",
 	}
 }
 
-func (r *CreateUser) Messages(ctx contractshttp.Context) map[string]string {
+func (r *CreateUser) Messages(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *CreateUser) Attributes(ctx contractshttp.Context) map[string]string {
+func (r *CreateUser) Attributes(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *CreateUser) PrepareForValidation(ctx contractshttp.Context, data validation.Data) error {
+func (r *CreateUser) PrepareForValidation(ctx httpcontract.Context, data validation.Data) error {
 	if name, exist := data.Get("name"); exist {
 		return data.Set("name", name.(string)+"1")
 	}
@@ -1784,24 +1804,24 @@ type Unauthorize struct {
 	Name string `form:"name" json:"name"`
 }
 
-func (r *Unauthorize) Authorize(ctx contractshttp.Context) error {
+func (r *Unauthorize) Authorize(ctx httpcontract.Context) error {
 	return errors.New("error")
 }
 
-func (r *Unauthorize) Rules(ctx contractshttp.Context) map[string]string {
+func (r *Unauthorize) Rules(ctx httpcontract.Context) map[string]string {
 	return map[string]string{
 		"name": "required",
 	}
 }
 
-func (r *Unauthorize) Messages(ctx contractshttp.Context) map[string]string {
+func (r *Unauthorize) Messages(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *Unauthorize) Attributes(ctx contractshttp.Context) map[string]string {
+func (r *Unauthorize) Attributes(ctx httpcontract.Context) map[string]string {
 	return map[string]string{}
 }
 
-func (r *Unauthorize) PrepareForValidation(ctx contractshttp.Context, data validation.Data) error {
+func (r *Unauthorize) PrepareForValidation(ctx httpcontract.Context, data validation.Data) error {
 	return nil
 }

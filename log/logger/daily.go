@@ -10,16 +10,23 @@ import (
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/log/formatter"
 )
 
 type Daily struct {
+	config config.Config
+}
+
+func NewDaily(config config.Config) *Daily {
+	return &Daily{
+		config: config,
+	}
 }
 
 func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 	var hook logrus.Hook
-	logPath := facades.Config.GetString(channel + ".path")
+	logPath := daily.config.GetString(channel + ".path")
 	if logPath == "" {
 		return hook, errors.New("error log path")
 	}
@@ -30,13 +37,13 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 	writer, err := rotatelogs.New(
 		logPath+"-%Y-%m-%d"+ext,
 		rotatelogs.WithRotationTime(time.Duration(24)*time.Hour),
-		rotatelogs.WithRotationCount(uint(facades.Config.GetInt(channel+".days"))),
+		rotatelogs.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
 	)
 	if err != nil {
 		return hook, errors.New("Config local file system for logger error: " + err.Error())
 	}
 
-	levels := getLevels(facades.Config.GetString(channel + ".level"))
+	levels := getLevels(daily.config.GetString(channel + ".level"))
 	writerMap := lfshook.WriterMap{}
 	for _, level := range levels {
 		writerMap[level] = writer
@@ -44,6 +51,6 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		writerMap,
-		&formatter.General{},
+		formatter.NewGeneral(daily.config),
 	), nil
 }

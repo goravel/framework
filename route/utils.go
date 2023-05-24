@@ -9,8 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/goravel/framework/contracts/config"
 	httpcontract "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
 	frameworkhttp "github.com/goravel/framework/http"
 )
 
@@ -39,7 +39,7 @@ func middlewareToGinHandler(handler httpcontract.Middleware) gin.HandlerFunc {
 	}
 }
 
-func getDebugLog() gin.HandlerFunc {
+func getDebugLog(config config.Config) gin.HandlerFunc {
 	logFormatter := func(param gin.LogFormatterParams) string {
 		var statusColor, methodColor, resetColor string
 		if param.IsOutputColor() {
@@ -63,7 +63,7 @@ func getDebugLog() gin.HandlerFunc {
 		)
 	}
 
-	if facades.Config.GetBool("app.debug") {
+	if config.GetBool("app.debug") {
 		return gin.LoggerWithFormatter(logFormatter)
 	}
 
@@ -104,12 +104,4 @@ func runningInConsole() bool {
 	args := os.Args
 
 	return len(args) >= 2 && args[1] == "artisan"
-}
-
-func outputRoutes(routes gin.RoutesInfo) {
-	if facades.Config.GetBool("app.debug") && !runningInConsole() {
-		for _, item := range routes {
-			fmt.Printf("%-10s %s\n", item.Method, colonToBracket(item.Path))
-		}
-	}
 }

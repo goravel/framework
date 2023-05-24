@@ -1,16 +1,20 @@
 package route
 
 import (
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/foundation"
 )
+
+const Binding = "goravel.route"
 
 type ServiceProvider struct {
 }
 
-func (route *ServiceProvider) Register() {
-	facades.Route = NewGin()
+func (route *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(Binding, func() (any, error) {
+		return NewGin(app.MakeConfig()), nil
+	})
 }
 
-func (route *ServiceProvider) Boot() {
+func (route *ServiceProvider) Boot(app foundation.Application) {
 
 }

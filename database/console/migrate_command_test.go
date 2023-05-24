@@ -3,9 +3,12 @@ package console
 import (
 	"testing"
 
+	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
+	consolemock "github.com/goravel/framework/contracts/console/mocks"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
@@ -17,6 +20,18 @@ type Agent struct {
 }
 
 func TestMigrateCommand(t *testing.T) {
+	var (
+		mockConfig *configmock.Config
+		pool       *dockertest.Pool
+		resource   *dockertest.Resource
+		query      ormcontract.Query
+	)
+
+	beforeEach := func() {
+		pool = nil
+		mockConfig = &configmock.Config{}
+	}
+
 	tests := []struct {
 		name  string
 		setup func()
@@ -24,95 +39,67 @@ func TestMigrateCommand(t *testing.T) {
 		{
 			name: "mysql",
 			setup: func() {
-				mysqlPool, mysqlResource, mysqlQuery, err := gorm.MysqlDocker()
+				var err error
+				docker := gorm.NewMysqlDocker()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createMysqlMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = mysqlQuery.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				err = mysqlPool.Purge(mysqlResource)
-				assert.Nil(t, err)
 			},
 		},
 		{
 			name: "postgresql",
 			setup: func() {
-				postgresqlPool, postgresqlResource, postgresqlDB, err := gorm.PostgresqlDocker()
+				var err error
+				docker := gorm.NewPostgresqlDocker()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createPostgresqlMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = postgresqlDB.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				err = postgresqlPool.Purge(postgresqlResource)
-				assert.Nil(t, err)
 			},
 		},
 		{
 			name: "sqlserver",
 			setup: func() {
-				sqlserverPool, sqlserverResource, sqlserverDB, err := gorm.SqlserverDocker()
+				var err error
+				docker := gorm.NewSqlserverDocker()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createSqlserverMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = sqlserverDB.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				err = sqlserverPool.Purge(sqlserverResource)
-				assert.Nil(t, err)
 			},
 		},
 		{
 			name: "sqlite",
 			setup: func() {
-				_, _, sqliteDB, err := gorm.SqliteDocker("goravel")
+				var err error
+				docker := gorm.NewSqliteDocker("goravel")
+				_, _, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createSqliteMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = sqliteDB.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				file.Remove("goravel")
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
 			test.setup()
+
+			migrateCommand := NewMigrateCommand(mockConfig)
+			mockContext := &consolemock.Context{}
+			assert.Nil(t, migrateCommand.Handle(mockContext))
+
+			var agent Agent
+			assert.Nil(t, query.Where("name", "goravel").First(&agent))
+			assert.True(t, agent.ID > 0)
+
+			if pool != nil {
+				assert.Nil(t, pool.Purge(resource))
+			}
+
+			removeMigrations()
 		})
 	}
 }
@@ -171,4 +158,5 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 
 func removeMigrations() {
 	file.Remove("database")
+	file.Remove("goravel")
 }

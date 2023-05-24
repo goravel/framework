@@ -2,15 +2,18 @@ package event
 
 import (
 	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/event/support"
+	queuecontract "github.com/goravel/framework/contracts/queue"
 )
 
 type Application struct {
 	events map[event.Event][]event.Listener
+	queue  queuecontract.Queue
 }
 
-func NewApplication() *Application {
-	return &Application{}
+func NewApplication(queue queuecontract.Queue) *Application {
+	return &Application{
+		queue: queue,
+	}
 }
 
 func (app *Application) Register(events map[event.Event][]event.Listener) {
@@ -22,9 +25,7 @@ func (app *Application) GetEvents() map[event.Event][]event.Listener {
 }
 
 func (app *Application) Job(event event.Event, args []event.Arg) event.Task {
-	return &support.Task{
-		Events: app.events,
-		Event:  event,
-		Args:   args,
-	}
+	listeners, _ := app.events[event]
+
+	return NewTask(app.queue, args, event, listeners)
 }

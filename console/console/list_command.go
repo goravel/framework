@@ -3,10 +3,16 @@ package console
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/facades"
 )
 
 type ListCommand struct {
+	artisan console.Artisan
+}
+
+func NewListCommand(artisan console.Artisan) *ListCommand {
+	return &ListCommand{
+		artisan: artisan,
+	}
 }
 
 //Signature The name and signature of the console command.
@@ -26,7 +32,7 @@ func (receiver *ListCommand) Extend() command.Extend {
 
 //Handle Execute the console command.
 func (receiver *ListCommand) Handle(ctx console.Context) error {
-	facades.Artisan.Call("--help")
+	receiver.artisan.Call("--help")
 
 	return nil
 }

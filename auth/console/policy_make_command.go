@@ -5,15 +5,19 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
-
-	"github.com/gookit/color"
 )
 
 type PolicyMakeCommand struct {
+}
+
+func NewPolicyMakeCommand() *PolicyMakeCommand {
+	return &PolicyMakeCommand{}
 }
 
 //Signature The name and signature of the console command.
