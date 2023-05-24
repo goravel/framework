@@ -1,6 +1,6 @@
 package support
 
-const Version string = "v1.11.0"
+const Version string = "v1.11.1"
 
 const (
 	EnvRuntime = "runtime"
