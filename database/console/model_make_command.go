@@ -15,6 +15,10 @@ import (
 type ModelMakeCommand struct {
 }
 
+func NewModelMakeCommand() *ModelMakeCommand {
+	return &ModelMakeCommand{}
+}
+
 // Signature The name and signature of the console command.
 func (receiver *ModelMakeCommand) Signature() string {
 	return "make:model"

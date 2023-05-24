@@ -5,14 +5,14 @@ import (
 
 	"github.com/unrolled/secure"
 
-	contractshttp "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/facades"
+	httpcontract "github.com/goravel/framework/contracts/http"
+	frameworkhttp "github.com/goravel/framework/http"
 )
 
-func Tls(host ...string) contractshttp.Middleware {
-	return func(ctx contractshttp.Context) {
+func Tls(host ...string) httpcontract.Middleware {
+	return func(ctx httpcontract.Context) {
 		if len(host) == 0 {
-			defaultHost := facades.Config.GetString("http.tls.host")
+			defaultHost := frameworkhttp.ConfigFacade.GetString("http.tls.host")
 			if defaultHost == "" {
 				ctx.Request().Next()
 

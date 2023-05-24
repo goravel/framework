@@ -4,4 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/log"
 )
 
-var Log log.Log
+func Log() log.Log {
+	return App().MakeLog()
+}

@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gookit/color"
+
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
 	supporttime "github.com/goravel/framework/support/time"
 
@@ -26,6 +28,7 @@ import (
 
 type Oss struct {
 	ctx            context.Context
+	config         config.Config
 	instance       *oss.Client
 	bucketInstance *oss.Bucket
 	bucket         string
@@ -34,12 +37,12 @@ type Oss struct {
 	endpoint       string
 }
 
-func NewOss(ctx context.Context, disk string) (*Oss, error) {
-	accessKeyId := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
-	accessKeySecret := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
-	bucket := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
-	url := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
-	endpoint := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.endpoint", disk))
+func NewOss(ctx context.Context, config config.Config, disk string) (*Oss, error) {
+	accessKeyId := config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
+	accessKeySecret := config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
+	bucket := config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
+	url := config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
+	endpoint := config.GetString(fmt.Sprintf("filesystems.disks.%s.endpoint", disk))
 
 	client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
 	if err != nil {
@@ -53,6 +56,7 @@ func NewOss(ctx context.Context, disk string) (*Oss, error) {
 
 	return &Oss{
 		ctx:            ctx,
+		config:         config,
 		instance:       client,
 		bucketInstance: bucketInstance,
 		bucket:         bucket,
@@ -218,7 +222,7 @@ func (r *Oss) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	l, err := time.LoadLocation(r.config.GetString("app.timezone"))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -315,9 +319,11 @@ func (r *Oss) TemporaryUrl(file string, time time.Time) (string, error) {
 }
 
 func (r *Oss) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewOss(ctx, r.disk)
+	driver, err := NewOss(ctx, r.config, r.disk)
 	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+		color.Redf("[filesystem] init %s disk fail: %+v\n", r.disk, err)
+
+		return nil
 	}
 
 	return driver

@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gookit/color"
+
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
 	supporttime "github.com/goravel/framework/support/time"
 
@@ -26,6 +28,7 @@ import (
 
 type Cos struct {
 	ctx             context.Context
+	config          config.Config
 	instance        *cos.Client
 	disk            string
 	url             string
@@ -33,10 +36,10 @@ type Cos struct {
 	accessKeySecret string
 }
 
-func NewCos(ctx context.Context, disk string) (*Cos, error) {
-	accessKeyId := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
-	accessKeySecret := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
-	cosUrl := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
+func NewCos(ctx context.Context, config config.Config, disk string) (*Cos, error) {
+	accessKeyId := config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
+	accessKeySecret := config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
+	cosUrl := config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
 
 	u, err := url.Parse(cosUrl)
 	if err != nil {
@@ -53,6 +56,7 @@ func NewCos(ctx context.Context, disk string) (*Cos, error) {
 
 	return &Cos{
 		ctx:             ctx,
+		config:          config,
 		instance:        client,
 		disk:            disk,
 		url:             cosUrl,
@@ -275,7 +279,7 @@ func (r *Cos) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	l, err := time.LoadLocation(r.config.GetString("app.timezone"))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -379,9 +383,11 @@ func (r *Cos) TemporaryUrl(file string, time time.Time) (string, error) {
 }
 
 func (r *Cos) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewCos(ctx, r.disk)
+	driver, err := NewCos(ctx, r.config, r.disk)
 	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+		color.Redf("[filesystem] init %s disk fail: %+v\n", r.disk, err)
+
+		return nil
 	}
 
 	return driver

@@ -5,7 +5,10 @@ import (
 	"github.com/goravel/framework/contracts/auth/access"
 )
 
-var (
-	Auth auth.Auth
-	Gate access.Gate
-)
+func Auth() auth.Auth {
+	return App().MakeAuth()
+}
+
+func Gate() access.Gate {
+	return App().MakeGate()
+}

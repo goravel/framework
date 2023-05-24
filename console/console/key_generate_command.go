@@ -7,13 +7,20 @@ import (
 	"github.com/gookit/color"
 	"github.com/manifoldco/promptui"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
 )
 
 type KeyGenerateCommand struct {
+	config config.Config
+}
+
+func NewKeyGenerateCommand(config config.Config) *KeyGenerateCommand {
+	return &KeyGenerateCommand{
+		config: config,
+	}
 }
 
 //Signature The name and signature of the console command.
@@ -35,7 +42,7 @@ func (receiver *KeyGenerateCommand) Extend() command.Extend {
 
 //Handle Execute the console command.
 func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
-	if facades.Config.GetString("app.env") == "production" {
+	if receiver.config.GetString("app.env") == "production" {
 		color.Yellowln("**************************************")
 		color.Yellowln("*     Application In Production!     *")
 		color.Yellowln("**************************************")
@@ -79,7 +86,7 @@ func (receiver *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) erro
 		return err
 	}
 
-	newContent := strings.Replace(string(content), "APP_KEY="+facades.Config.GetString("app.key"), "APP_KEY="+key, 1)
+	newContent := strings.Replace(string(content), "APP_KEY="+receiver.config.GetString("app.key"), "APP_KEY="+key, 1)
 
 	err = ioutil.WriteFile(".env", []byte(newContent), 0644)
 	if err != nil {

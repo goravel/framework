@@ -1,6 +1,7 @@
 package database
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/goravel/framework/database/orm"
@@ -102,4 +103,18 @@ func TestGetID(t *testing.T) {
 	for _, test := range tests {
 		test.setup(test.description)
 	}
+}
+
+type TestStruct struct {
+	ID int `gorm:"primaryKey"`
+}
+
+func TestGetIDByReflect(t *testing.T) {
+	ts := TestStruct{ID: 1}
+	v := reflect.ValueOf(ts)
+	tpe := reflect.TypeOf(ts)
+
+	result := GetIDByReflect(tpe, v)
+
+	assert.Equal(t, 1, result)
 }

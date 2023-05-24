@@ -11,16 +11,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
 
 type File struct {
-	disk string
-	path string
-	name string
+	config  config.Config
+	disk    string
+	path    string
+	name    string
+	storage filesystem.Storage
 }
 
 func NewFile(file string) (*File, error) {
@@ -28,9 +30,13 @@ func NewFile(file string) (*File, error) {
 		return nil, errors.New("file doesn't exist")
 	}
 
-	disk := facades.Config.GetString("filesystems.default")
-
-	return &File{disk: disk, path: file, name: path.Base(file)}, nil
+	return &File{
+		config:  ConfigFacade,
+		disk:    ConfigFacade.GetString("filesystems.default"),
+		path:    file,
+		name:    path.Base(file),
+		storage: StorageFacade,
+	}, nil
 }
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
@@ -40,7 +46,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	}
 	defer src.Close()
 
-	tempFileName := fmt.Sprintf("%s_*%s", facades.Config.GetString("app.name"), path.Ext(fileHeader.Filename))
+	tempFileName := fmt.Sprintf("%s_*%s", ConfigFacade.GetString("app.name"), path.Ext(fileHeader.Filename))
 	tempFile, err := ioutil.TempFile(os.TempDir(), tempFileName)
 	if err != nil {
 		return nil, err
@@ -52,9 +58,13 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 		return nil, err
 	}
 
-	disk := facades.Config.GetString("filesystems.default")
-
-	return &File{disk: disk, path: tempFile.Name(), name: fileHeader.Filename}, nil
+	return &File{
+		config:  ConfigFacade,
+		disk:    ConfigFacade.GetString("filesystems.default"),
+		path:    tempFile.Name(),
+		name:    fileHeader.Filename,
+		storage: StorageFacade,
+	}, nil
 }
 
 func (f *File) Disk(disk string) filesystem.File {
@@ -94,7 +104,7 @@ func (f *File) HashName(path ...string) string {
 }
 
 func (f *File) LastModified() (time.Time, error) {
-	return supportfile.LastModified(f.path, facades.Config.GetString("app.timezone"))
+	return supportfile.LastModified(f.path, f.config.GetString("app.timezone"))
 }
 
 func (f *File) MimeType() (string, error) {
@@ -106,9 +116,9 @@ func (f *File) Size() (int64, error) {
 }
 
 func (f *File) Store(path string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFile(path, f)
+	return f.storage.Disk(f.disk).PutFile(path, f)
 }
 
 func (f *File) StoreAs(path string, name string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFileAs(path, f, name)
+	return f.storage.Disk(f.disk).PutFileAs(path, f, name)
 }

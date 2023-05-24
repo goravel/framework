@@ -8,85 +8,78 @@ import (
 	"github.com/gookit/color"
 	"github.com/pkg/errors"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/config"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/facades"
 )
 
-type Orm struct {
-	ctx       context.Context
-	instance  contractsorm.Query
-	instances map[string]contractsorm.Query
+type OrmImpl struct {
+	ctx        context.Context
+	config     config.Config
+	connection string
+	query      ormcontract.Query
+	queries    map[string]ormcontract.Query
 }
 
-func NewOrm(ctx context.Context) *Orm {
-	defaultConnection := facades.Config.GetString("database.default")
-	gormQuery, err := databasegorm.NewQuery(ctx, defaultConnection)
-	if err != nil {
-		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", defaultConnection, err))
-
-		return nil
-	}
-	if gormQuery == nil {
-		return nil
-	}
-
-	return &Orm{
-		ctx:      ctx,
-		instance: gormQuery,
-		instances: map[string]contractsorm.Query{
-			defaultConnection: gormQuery,
+func NewOrmImpl(ctx context.Context, config config.Config, connection string, query ormcontract.Query) (*OrmImpl, error) {
+	return &OrmImpl{
+		ctx:        ctx,
+		config:     config,
+		connection: connection,
+		query:      query,
+		queries: map[string]ormcontract.Query{
+			connection: query,
 		},
-	}
+	}, nil
 }
 
-func (r *Orm) Connection(name string) contractsorm.Orm {
+func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 	if name == "" {
-		name = facades.Config.GetString("database.default")
+		name = r.config.GetString("database.default")
 	}
-	if instance, exist := r.instances[name]; exist {
-		return &Orm{
-			ctx:       r.ctx,
-			instance:  instance,
-			instances: r.instances,
+	if instance, exist := r.queries[name]; exist {
+		return &OrmImpl{
+			ctx:     r.ctx,
+			query:   instance,
+			queries: r.queries,
 		}
 	}
 
-	gormDB, err := databasegorm.NewQuery(r.ctx, name)
-	if err != nil || gormDB == nil {
+	queue, err := databasegorm.InitializeQuery(r.ctx, r.config, name)
+	if err != nil || queue == nil {
 		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
 
 		return nil
 	}
 
-	r.instances[name] = gormDB
+	r.queries[name] = queue
 
-	return &Orm{
-		ctx:       r.ctx,
-		instance:  gormDB,
-		instances: r.instances,
+	return &OrmImpl{
+		ctx:     r.ctx,
+		query:   queue,
+		queries: r.queries,
 	}
 }
 
-func (r *Orm) DB() (*sql.DB, error) {
-	db := r.Query().(*databasegorm.Query)
+func (r *OrmImpl) DB() (*sql.DB, error) {
+	db := r.Query().(*databasegorm.QueryImpl)
 
 	return db.Instance().DB()
 }
 
-func (r *Orm) Query() contractsorm.Query {
-	return r.instance
+func (r *OrmImpl) Query() ormcontract.Query {
+	return r.query
 }
 
-func (r *Orm) Observe(model any, observer contractsorm.Observer) {
+func (r *OrmImpl) Observe(model any, observer ormcontract.Observer) {
 	orm.Observers = append(orm.Observers, orm.Observer{
 		Model:    model,
 		Observer: observer,
 	})
 }
 
-func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error {
+func (r *OrmImpl) Transaction(txFunc func(tx ormcontract.Transaction) error) error {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
@@ -103,6 +96,8 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Transaction) error) error 
 	}
 }
 
-func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
-	return NewOrm(ctx)
+func (r *OrmImpl) WithContext(ctx context.Context) ormcontract.Orm {
+	instance, _ := NewOrmImpl(ctx, r.config, r.connection, r.query)
+
+	return instance
 }

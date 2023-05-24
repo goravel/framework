@@ -1,16 +1,28 @@
 package filesystem
 
 import (
-	"github.com/goravel/framework/facades"
+	configcontract "github.com/goravel/framework/contracts/config"
+	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/contracts/foundation"
 )
+
+const Binding = "goravel.filesystem"
+
+var ConfigFacade configcontract.Config
+var StorageFacade filesystemcontract.Storage
 
 type ServiceProvider struct {
 }
 
-func (database *ServiceProvider) Register() {
-	facades.Storage = NewStorage()
+func (database *ServiceProvider) Register(app foundation.Application) {
+	ConfigFacade = app.MakeConfig()
+	StorageFacade = app.MakeStorage()
+
+	app.Singleton(Binding, func() (any, error) {
+		return NewStorage(app.MakeConfig()), nil
+	})
 }
 
-func (database *ServiceProvider) Boot() {
+func (database *ServiceProvider) Boot(app foundation.Application) {
 
 }

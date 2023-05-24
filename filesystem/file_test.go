@@ -9,34 +9,34 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/goravel/framework/testing/mock"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-)
 
-var testFile *File
+	configmock "github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/support/file"
+)
 
 type FileTestSuite struct {
 	suite.Suite
+	file       *File
+	mockConfig *configmock.Config
 }
 
 func TestFileTestSuite(t *testing.T) {
-	mockConfig := mock.Config()
-	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
-
-	var err error
-	testFile, err = NewFile("./file.go")
-	assert.Nil(t, err)
-	assert.NotNil(t, testFile)
-
 	suite.Run(t, new(FileTestSuite))
-	mockConfig.AssertExpectations(t)
+
+	file.Remove("test.txt")
 }
 
 func (s *FileTestSuite) SetupTest() {
+	s.mockConfig = &configmock.Config{}
+	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
+	ConfigFacade = s.mockConfig
 
+	var err error
+	s.file, err = NewFile("./file.go")
+	s.Nil(err)
+	s.NotNil(s.file)
 }
 
 func (s *FileTestSuite) TestNewFile_Error() {
@@ -46,25 +46,26 @@ func (s *FileTestSuite) TestNewFile_Error() {
 }
 
 func (s *FileTestSuite) TestGetClientOriginalName() {
-	s.Equal("file.go", testFile.GetClientOriginalName())
+	s.Equal("file.go", s.file.GetClientOriginalName())
 }
 
 func (s *FileTestSuite) TestGetClientOriginalExtension() {
-	s.Equal("go", testFile.GetClientOriginalExtension())
+	s.Equal("go", s.file.GetClientOriginalExtension())
 }
 
 func (s *FileTestSuite) TestHashName() {
-	s.Len(testFile.HashName("goravel"), 52)
+	s.Len(s.file.HashName("goravel"), 52)
 }
 
 func (s *FileTestSuite) TestExtension() {
-	extension, err := testFile.Extension()
+	extension, err := s.file.Extension()
 	s.Equal("txt", extension)
 	s.Nil(err)
 }
 
 func TestNewFileFromRequest(t *testing.T) {
-	mockConfig := mock.Config()
+	mockConfig := &configmock.Config{}
+	ConfigFacade = mockConfig
 	mockConfig.On("GetString", "app.name").Return("goravel").Once()
 	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 

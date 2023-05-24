@@ -6,20 +6,27 @@ import (
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/log/formatter"
 )
 
 type Single struct {
+	config config.Config
+}
+
+func NewSingle(config config.Config) *Single {
+	return &Single{
+		config: config,
+	}
 }
 
 func (single *Single) Handle(channel string) (logrus.Hook, error) {
-	logPath := facades.Config.GetString(channel + ".path")
+	logPath := single.config.GetString(channel + ".path")
 	if logPath == "" {
 		return nil, errors.New("error log path")
 	}
 
-	levels := getLevels(facades.Config.GetString(channel + ".level"))
+	levels := getLevels(single.config.GetString(channel + ".level"))
 	pathMap := lfshook.PathMap{}
 	for _, level := range levels {
 		pathMap[level] = logPath
@@ -27,7 +34,7 @@ func (single *Single) Handle(channel string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		pathMap,
-		&formatter.General{},
+		formatter.NewGeneral(single.config),
 	), nil
 }
 

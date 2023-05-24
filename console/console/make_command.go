@@ -14,6 +14,10 @@ import (
 type MakeCommand struct {
 }
 
+func NewMakeCommand() *MakeCommand {
+	return &MakeCommand{}
+}
+
 //Signature The name and signature of the console command.
 func (receiver *MakeCommand) Signature() string {
 	return "make:command"

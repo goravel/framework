@@ -9,17 +9,17 @@ import (
 	"strings"
 )
 
-func getCurrentAbPath() string {
-	dir := getCurrentAbPathByExecutable()
+func getCurrentAbsolutePath() string {
+	dir := getCurrentAbsolutePathByExecutable()
 	tmpDir, _ := filepath.EvalSymlinks(os.TempDir())
 	if strings.Contains(dir, tmpDir) {
-		return getCurrentAbPathByCaller()
+		return getCurrentAbsolutePathByCaller()
 	}
 
 	return dir
 }
 
-func getCurrentAbPathByExecutable() string {
+func getCurrentAbsolutePathByExecutable() string {
 	exePath, err := os.Executable()
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +29,7 @@ func getCurrentAbPathByExecutable() string {
 	return res
 }
 
-func getCurrentAbPathByCaller() string {
+func getCurrentAbsolutePathByCaller() string {
 	var abPath string
 	for i := 0; i < 15; i++ {
 		_, filename, _, ok := runtime.Caller(i)

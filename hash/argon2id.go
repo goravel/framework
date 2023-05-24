@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/crypto/argon2"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type Argon2id struct {
@@ -30,13 +30,13 @@ type Argon2id struct {
 }
 
 // NewArgon2id returns a new Argon2id hasher.
-func NewArgon2id() *Argon2id {
+func NewArgon2id(config config.Config) *Argon2id {
 	return &Argon2id{
 		format:  "$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
 		version: argon2.Version,
-		time:    uint32(facades.Config.GetInt("hashing.argon2id.time", 4)),
-		memory:  uint32(facades.Config.GetInt("hashing.argon2id.memory", 65536)),
-		threads: uint8(facades.Config.GetInt("hashing.argon2id.threads", 1)),
+		time:    uint32(config.GetInt("hashing.argon2id.time", 4)),
+		memory:  uint32(config.GetInt("hashing.argon2id.memory", 65536)),
+		threads: uint8(config.GetInt("hashing.argon2id.threads", 1)),
 		keyLen:  32,
 		saltLen: 16,
 	}

@@ -30,64 +30,68 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm *Orm
+	orm *OrmImpl
 }
 
 var (
-	testMysqlDB      contractsorm.Query
-	testPostgresqlDB contractsorm.Query
-	testSqliteDB     contractsorm.Query
-	testSqlserverDB  contractsorm.Query
+	testMysqlQuery      contractsorm.Query
+	testPostgresqlQuery contractsorm.Query
+	testSqliteQuery     contractsorm.Query
+	testSqlserverDB     contractsorm.Query
 )
 
 func TestOrmSuite(t *testing.T) {
-	mysqlPool, mysqlDocker, mysqlDB, err := gorm.MysqlDocker()
+	mysqlDocker := gorm.NewMysqlDocker()
+	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get mysql error: %s", err)
 	}
-	testMysqlDB = mysqlDB
+	testMysqlQuery = mysqlQuery
 
-	postgresqlPool, postgresqlDocker, postgresqlDB, err := gorm.PostgresqlDocker()
+	postgresqlDocker := gorm.NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get postgresql error: %s", err)
 	}
-	testPostgresqlDB = postgresqlDB
+	testPostgresqlQuery = postgresqlQuery
 
-	_, _, sqliteDB, err := gorm.SqliteDocker("goravel")
+	sqliteDocker := gorm.NewSqliteDocker("goravel")
+	_, _, sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlite error: %s", err)
 	}
-	testSqliteDB = sqliteDB
+	testSqliteQuery = sqliteQuery
 
-	sqlserverPool, sqlserverDocker, sqlserverDB, err := gorm.SqlserverDocker()
+	sqlserverDocker := gorm.NewSqlserverDocker()
+	sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlserver error: %s", err)
 	}
-	testSqlserverDB = sqlserverDB
+	testSqlserverDB = sqlserverQuery
 
 	suite.Run(t, new(OrmSuite))
 
 	file.Remove("goravel")
 
-	if err := mysqlPool.Purge(mysqlDocker); err != nil {
+	if err := mysqlPool.Purge(mysqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
-	if err := postgresqlPool.Purge(postgresqlDocker); err != nil {
+	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
-	if err := sqlserverPool.Purge(sqlserverDocker); err != nil {
+	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
 }
 
 func (s *OrmSuite) SetupTest() {
-	s.orm = &Orm{
-		ctx:      context.Background(),
-		instance: testMysqlDB,
-		instances: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String():      testMysqlDB,
-			contractsorm.DriverPostgresql.String(): testPostgresqlDB,
-			contractsorm.DriverSqlite.String():     testSqliteDB,
+	s.orm = &OrmImpl{
+		ctx:   context.Background(),
+		query: testMysqlQuery,
+		queries: map[string]contractsorm.Query{
+			contractsorm.DriverMysql.String():      testMysqlQuery,
+			contractsorm.DriverPostgresql.String(): testPostgresqlQuery,
+			contractsorm.DriverSqlite.String():     testSqliteQuery,
 			contractsorm.DriverSqlserver.String():  testSqlserverDB,
 		},
 	}

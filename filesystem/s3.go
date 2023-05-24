@@ -12,9 +12,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/gookit/color"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/str"
 	supporttime "github.com/goravel/framework/support/time"
 )
@@ -27,18 +28,19 @@ import (
 
 type S3 struct {
 	ctx      context.Context
+	config   config.Config
 	instance *s3.Client
 	bucket   string
 	disk     string
 	url      string
 }
 
-func NewS3(ctx context.Context, disk string) (*S3, error) {
-	accessKeyId := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
-	accessKeySecret := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
-	region := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.region", disk))
-	bucket := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
-	url := facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
+func NewS3(ctx context.Context, config config.Config, disk string) (*S3, error) {
+	accessKeyId := config.GetString(fmt.Sprintf("filesystems.disks.%s.key", disk))
+	accessKeySecret := config.GetString(fmt.Sprintf("filesystems.disks.%s.secret", disk))
+	region := config.GetString(fmt.Sprintf("filesystems.disks.%s.region", disk))
+	bucket := config.GetString(fmt.Sprintf("filesystems.disks.%s.bucket", disk))
+	url := config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk))
 
 	client := s3.New(s3.Options{
 		Region:      region,
@@ -47,6 +49,7 @@ func NewS3(ctx context.Context, disk string) (*S3, error) {
 
 	return &S3{
 		ctx:      ctx,
+		config:   config,
 		instance: client,
 		bucket:   bucket,
 		disk:     disk,
@@ -248,7 +251,7 @@ func (r *S3) LastModified(file string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	l, err := time.LoadLocation(facades.Config.GetString("app.timezone"))
+	l, err := time.LoadLocation(r.config.GetString("app.timezone"))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -357,9 +360,11 @@ func (r *S3) TemporaryUrl(file string, time time.Time) (string, error) {
 }
 
 func (r *S3) WithContext(ctx context.Context) filesystem.Driver {
-	driver, err := NewS3(ctx, r.disk)
+	driver, err := NewS3(ctx, r.config, r.disk)
 	if err != nil {
-		facades.Log.Errorf("init %s disk fail: %+v", r.disk, err)
+		color.Redf("[filesystem] init %s disk fail: %+v\n", r.disk, err)
+
+		return nil
 	}
 
 	return driver

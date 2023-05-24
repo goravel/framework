@@ -4,4 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
-var Validation validation.Validation
+func Validation() validation.Validation {
+	return App().MakeValidation()
+}
