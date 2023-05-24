@@ -463,6 +463,27 @@ func TestGinRequest(t *testing.T) {
 			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"4\",\"e\":\"e\",\"file\":{\"Filename\":\"logo.png\",\"Header\":{\"Content-Disposition\":[\"form-data; name=\\\"file\\\"; filename=\\\"logo.png\\\"\"],\"Content-Type\":[\"application/octet-stream\"]},\"Size\":16438}}}",
 		},
 		{
+			name:   "All with empty form when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				mock.Log()
+
+				gin.Post("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "multipart/form-data;boundary=0")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"3\"}}",
+		},
+		{
 			name:   "All with json when Post",
 			method: "POST",
 			url:    "/all?a=1&a=2&name=3",
@@ -494,6 +515,59 @@ func TestGinRequest(t *testing.T) {
 			},
 			expectCode: http.StatusOK,
 			expectBody: "{\"age\":1,\"all\":{\"Age\":1,\"Name\":\"goravel\",\"a\":\"1,2\",\"name\":\"3\"},\"name\":\"goravel\"}",
+		},
+		{
+			name:   "All with error json when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&name=3",
+			setup: func(method, url string) error {
+				mock.Log()
+				gin.Post("/all", func(ctx contractshttp.Context) {
+					all := ctx.Request().All()
+					type Test struct {
+						Name string
+						Age  int
+					}
+					var test Test
+					_ = ctx.Request().Bind(&test)
+
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all":  all,
+						"name": test.Name,
+						"age":  test.Age,
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"Name": "goravel",
+					"Age": 1,
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"age\":0,\"all\":null,\"name\":\"\"}",
+		},
+		{
+			name:   "All with empty json when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&name=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx contractshttp.Context) {
+					ctx.Response().Success().Json(contractshttp.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"name\":\"3\"}}",
 		},
 		{
 			name:   "All with json when Put",
