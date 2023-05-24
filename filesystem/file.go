@@ -11,12 +11,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
 
 type File struct {
+	config  config.Config
 	disk    string
 	path    string
 	name    string
@@ -29,6 +31,7 @@ func NewFile(file string) (*File, error) {
 	}
 
 	return &File{
+		config:  ConfigFacade,
 		disk:    ConfigFacade.GetString("filesystems.default"),
 		path:    file,
 		name:    path.Base(file),
@@ -56,6 +59,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	}
 
 	return &File{
+		config:  ConfigFacade,
 		disk:    ConfigFacade.GetString("filesystems.default"),
 		path:    tempFile.Name(),
 		name:    fileHeader.Filename,
@@ -100,7 +104,7 @@ func (f *File) HashName(path ...string) string {
 }
 
 func (f *File) LastModified() (time.Time, error) {
-	return supportfile.LastModified(f.path, facades.Config.GetString("app.timezone"))
+	return supportfile.LastModified(f.path, f.config.GetString("app.timezone"))
 }
 
 func (f *File) MimeType() (string, error) {

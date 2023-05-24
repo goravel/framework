@@ -6,6 +6,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/http/console"
 )
@@ -15,6 +16,7 @@ const Binding = "goravel.http"
 var (
 	ConfigFacade      config.Config
 	CacheFacade       cache.Cache
+	LogFacade         log.Log
 	RateLimiterFacade http.RateLimiter
 	ValidationFacade  validation.Validation
 )
@@ -25,6 +27,7 @@ type ServiceProvider struct {
 func (database *ServiceProvider) Register(app foundation.Application) {
 	ConfigFacade = app.MakeConfig()
 	CacheFacade = app.MakeCache()
+	LogFacade = app.MakeLog()
 	ValidationFacade = app.MakeValidation()
 
 	app.Singleton(Binding, func() (any, error) {

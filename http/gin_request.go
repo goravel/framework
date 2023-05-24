@@ -15,6 +15,7 @@ import (
 
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
 	httpcontract "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/log"
 	validatecontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/validation"
@@ -23,11 +24,12 @@ import (
 type GinRequest struct {
 	ctx        *GinContext
 	instance   *gin.Context
+	log        log.Log
 	validation validatecontract.Validation
 }
 
-func NewGinRequest(ctx *GinContext, validation validatecontract.Validation) httpcontract.Request {
-	return &GinRequest{ctx: ctx, instance: ctx.instance, validation: validation}
+func NewGinRequest(ctx *GinContext, log log.Log, validation validatecontract.Validation) httpcontract.Request {
+	return &GinRequest{ctx: ctx, instance: ctx.instance, log: log, validation: validation}
 }
 
 func (r *GinRequest) AbortWithStatus(code int) {
@@ -55,14 +57,14 @@ func (r *GinRequest) All() map[string]any {
 	if contentType == "application/json" && r.instance.Request != nil && r.instance.Request.Body != nil {
 		bodyBytes, err := ioutil.ReadAll(r.instance.Request.Body)
 		if err != nil {
-			facades.Log.Errorf("when calling request all method, retrieve json error: %v", err)
+			r.log.Errorf("when calling request all method, retrieve json error: %v", err)
 			return nil
 		}
 
 		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 		if r.instance.Request.Body != nil {
 			if err := json.NewDecoder(r.instance.Request.Body).Decode(&postMap); err != nil {
-				facades.Log.Errorf("when calling request all method, decode json error: %v", err)
+				r.log.Errorf("when calling request all method, decode json error: %v", err)
 				return nil
 			}
 		}
@@ -70,7 +72,7 @@ func (r *GinRequest) All() map[string]any {
 	} else if contentType == "multipart/form-data" && r.instance.Request.ContentLength > 0 {
 		if r.instance.Request.PostForm == nil {
 			if err := r.instance.Request.ParseMultipartForm(defaultMemory); err != nil {
-				facades.Log.Errorf("when calling request all method, parse multipart form error: %v", err)
+				r.log.Errorf("when calling request all method, parse multipart form error: %v", err)
 				return nil
 			}
 		}
