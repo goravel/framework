@@ -548,7 +548,7 @@ func TestGinRequest(t *testing.T) {
 				return nil
 			},
 			expectCode: http.StatusOK,
-			expectBody: "{\"age\":0,\"all\":null,\"name\":\"\"}",
+			expectBody: "{\"age\":0,\"all\":{\"a\":\"1,2\",\"name\":\"3\"},\"name\":\"\"}",
 		},
 		{
 			name:   "All with empty json when Post",
@@ -741,6 +741,68 @@ func TestGinRequest(t *testing.T) {
 			},
 			expectCode: http.StatusOK,
 			expectBody: "{\"id\":\"4\"}",
+		},
+		{
+			name:   "Input - from json, then Bind",
+			method: "POST",
+			url:    "/input/json/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input/json/{id}", func(ctx contractshttp.Context) {
+					id := ctx.Request().Input("id")
+					var data struct {
+						Name string `form:"name" json:"name"`
+					}
+					_ = ctx.Request().Bind(&data)
+					ctx.Response().Success().Json(contractshttp.Json{
+						"id":   id,
+						"name": data.Name,
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"name": "Goravel"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"2\",\"name\":\"Goravel\"}",
+		},
+		{
+			name:   "Input - from form, then Bind",
+			method: "POST",
+			url:    "/input/form/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input/form/{id}", func(ctx contractshttp.Context) {
+					id := ctx.Request().Input("id")
+					var data struct {
+						Name string `form:"name" json:"name"`
+					}
+					_ = ctx.Request().Bind(&data)
+					ctx.Response().Success().Json(contractshttp.Json{
+						"id":   id,
+						"name": data.Name,
+					})
+				})
+
+				payload := &bytes.Buffer{}
+				writer := multipart.NewWriter(payload)
+				if err := writer.WriteField("name", "Goravel"); err != nil {
+					return err
+				}
+				if err := writer.Close(); err != nil {
+					return err
+				}
+
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", writer.FormDataContentType())
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"2\",\"name\":\"Goravel\"}",
 		},
 		{
 			name:   "Input - from query",
@@ -959,6 +1021,36 @@ func TestGinRequest(t *testing.T) {
 			},
 			expectCode: http.StatusOK,
 			expectBody: "{\"name\":\"Goravel\"}",
+		},
+		{
+			name:   "Bind, then Input",
+			method: "POST",
+			url:    "/bind",
+			setup: func(method, url string) error {
+				mock.Log()
+
+				gin.Post("/bind", func(ctx contractshttp.Context) {
+					type Test struct {
+						Name string
+					}
+					var test Test
+					_ = ctx.Request().Bind(&test)
+					ctx.Response().Success().Json(contractshttp.Json{
+						"name":  test.Name,
+						"name1": ctx.Request().Input("Name"),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"Name": "Goravel"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"name\":\"Goravel\",\"name1\":\"Goravel\"}",
 		},
 		{
 			name:   "Query",

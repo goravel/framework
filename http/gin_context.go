@@ -17,14 +17,19 @@ func Background() http.Context {
 
 type GinContext struct {
 	instance *gin.Context
+	request  http.Request
 }
 
 func NewGinContext(ctx *gin.Context) http.Context {
-	return &GinContext{ctx}
+	return &GinContext{instance: ctx}
 }
 
 func (c *GinContext) Request() http.Request {
-	return NewGinRequest(c)
+	if c.request == nil {
+		c.request = NewGinRequest(c)
+	}
+
+	return c.request
 }
 
 func (c *GinContext) Response() http.Response {
