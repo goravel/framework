@@ -391,9 +391,9 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 	if request == nil || request.Body == nil || request.ContentLength == 0 {
 		return nil, nil
 	}
-	contentType := ctx.instance.ContentType()
 
 	const defaultMemory = 32 << 20
+	contentType := ctx.instance.ContentType()
 	data := make(map[string]any)
 	if contentType == "application/json" {
 		bodyBytes, err := ioutil.ReadAll(request.Body)
