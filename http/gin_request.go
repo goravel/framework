@@ -242,22 +242,7 @@ func (r *GinRequest) Input(key string, defaultValue ...string) string {
 }
 
 func (r *GinRequest) InputInt(key string, defaultValue ...int) int {
-	var data map[string]string
-	if err := r.Bind(&data); err == nil {
-		if item, exist := data[key]; exist {
-			return cast.ToInt(item)
-		}
-	}
-
-	if value, exist := r.instance.GetPostForm(key); exist {
-		return cast.ToInt(value)
-	}
-
-	if value, ok := r.instance.GetQuery(key); ok {
-		return cast.ToInt(value)
-	}
-
-	value := r.instance.Param(key)
+	value := r.Input(key)
 	if value == "" && len(defaultValue) > 0 {
 		return defaultValue[0]
 	}
@@ -266,22 +251,7 @@ func (r *GinRequest) InputInt(key string, defaultValue ...int) int {
 }
 
 func (r *GinRequest) InputInt64(key string, defaultValue ...int64) int64 {
-	var data map[string]string
-	if err := r.Bind(&data); err == nil {
-		if item, exist := data[key]; exist {
-			return cast.ToInt64(item)
-		}
-	}
-
-	if value, exist := r.instance.GetPostForm(key); exist {
-		return cast.ToInt64(value)
-	}
-
-	if value, ok := r.instance.GetQuery(key); ok {
-		return cast.ToInt64(value)
-	}
-
-	value := r.instance.Param(key)
+	value := r.Input(key)
 	if value == "" && len(defaultValue) > 0 {
 		return defaultValue[0]
 	}
@@ -290,22 +260,7 @@ func (r *GinRequest) InputInt64(key string, defaultValue ...int64) int64 {
 }
 
 func (r *GinRequest) InputBool(key string, defaultValue ...bool) bool {
-	var data map[string]string
-	if err := r.Bind(&data); err == nil {
-		if item, exist := data[key]; exist {
-			return stringToBool(item)
-		}
-	}
-
-	if value, exist := r.instance.GetPostForm(key); exist {
-		return stringToBool(value)
-	}
-
-	if value, ok := r.instance.GetQuery(key); ok {
-		return stringToBool(value)
-	}
-
-	value := r.instance.Param(key)
+	value := r.Input(key)
 	if value == "" && len(defaultValue) > 0 {
 		return defaultValue[0]
 	}
