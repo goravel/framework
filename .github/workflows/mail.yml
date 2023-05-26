@@ -17,15 +17,12 @@ env:
   MAIL_BCC: ${{ secrets.MAIL_BCC }}
 jobs:
   mail:
-    strategy:
-      matrix:
-        go: [ '1.18' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: ${{ matrix.go }}
+          go-version: 'stable'
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
