@@ -528,7 +528,7 @@ func TestGinRequest(t *testing.T) {
 			setup: func(method, url string) error {
 				mockLog := &logmock.Log{}
 				frameworkhttp.LogFacade = mockLog
-				mockLog.On("Errorf", "when calling request all method, decode json error: %v", mock.Anything).Once()
+				mockLog.On("Error", mock.Anything).Twice()
 
 				gin.Post("/all", func(ctx httpcontract.Context) {
 					all := ctx.Request().All()
@@ -755,13 +755,13 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input/json/1?id=2",
 			setup: func(method, url string) error {
-				gin.Post("/input/json/{id}", func(ctx contractshttp.Context) {
+				gin.Post("/input/json/{id}", func(ctx httpcontract.Context) {
 					id := ctx.Request().Input("id")
 					var data struct {
 						Name string `form:"name" json:"name"`
 					}
 					_ = ctx.Request().Bind(&data)
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id":   id,
 						"name": data.Name,
 					})
@@ -783,13 +783,13 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/input/form/1?id=2",
 			setup: func(method, url string) error {
-				gin.Post("/input/form/{id}", func(ctx contractshttp.Context) {
+				gin.Post("/input/form/{id}", func(ctx httpcontract.Context) {
 					id := ctx.Request().Input("id")
 					var data struct {
 						Name string `form:"name" json:"name"`
 					}
 					_ = ctx.Request().Bind(&data)
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"id":   id,
 						"name": data.Name,
 					})
@@ -1035,15 +1035,13 @@ func TestGinRequest(t *testing.T) {
 			method: "POST",
 			url:    "/bind",
 			setup: func(method, url string) error {
-				mock.Log()
-
-				gin.Post("/bind", func(ctx contractshttp.Context) {
+				gin.Post("/bind", func(ctx httpcontract.Context) {
 					type Test struct {
 						Name string
 					}
 					var test Test
 					_ = ctx.Request().Bind(&test)
-					ctx.Response().Success().Json(contractshttp.Json{
+					ctx.Response().Success().Json(httpcontract.Json{
 						"name":  test.Name,
 						"name1": ctx.Request().Input("Name"),
 					})
