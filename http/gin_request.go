@@ -349,7 +349,6 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 		return nil, nil
 	}
 
-	const defaultMemory = 32 << 20
 	contentType := ctx.instance.ContentType()
 	data := make(map[string]any)
 	if contentType == "application/json" {
@@ -368,6 +367,7 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 
 	if contentType == "multipart/form-data" {
 		if request.PostForm == nil {
+			const defaultMemory = 32 << 20
 			if err := request.ParseMultipartForm(defaultMemory); err != nil {
 				return nil, fmt.Errorf("parse multipart form error: %v", err)
 			}
