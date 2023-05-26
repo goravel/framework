@@ -12,16 +12,19 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type Application struct {
+	config                       config.Config
 	server                       *grpc.Server
 	unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor
 }
 
-func NewApplication() *Application {
-	return &Application{}
+func NewApplication(config config.Config) *Application {
+	return &Application{
+		config: config,
+	}
 }
 
 func (app *Application) Server() *grpc.Server {
@@ -29,12 +32,12 @@ func (app *Application) Server() *grpc.Server {
 }
 
 func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientConn, error) {
-	host := facades.Config.GetString(fmt.Sprintf("grpc.clients.%s.host", name))
+	host := app.config.GetString(fmt.Sprintf("grpc.clients.%s.host", name))
 	if host == "" {
 		return nil, errors.New("client host can't be empty")
 	}
 	if !strings.Contains(host, ":") {
-		port := facades.Config.GetString(fmt.Sprintf("grpc.clients.%s.port", name))
+		port := app.config.GetString(fmt.Sprintf("grpc.clients.%s.port", name))
 		if port == "" {
 			return nil, errors.New("client port can't be empty")
 		}
@@ -42,7 +45,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 		host += ":" + port
 	}
 
-	interceptors, ok := facades.Config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).([]string)
+	interceptors, ok := app.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).([]string)
 	if !ok {
 		return nil, fmt.Errorf("the type of clients.%s.interceptors must be []string", name)
 	}
@@ -59,13 +62,13 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 func (app *Application) Run(host ...string) error {
 	if len(host) == 0 {
-		defaultHost := facades.Config.GetString("grpc.host")
+		defaultHost := app.config.GetString("grpc.host")
 		if defaultHost == "" {
 			return errors.New("host can't be empty")
 		}
 
 		if !strings.Contains(defaultHost, ":") {
-			defaultPort := facades.Config.GetString("grpc.port")
+			defaultPort := app.config.GetString("grpc.port")
 			if defaultPort == "" {
 				return errors.New("port can't be empty")
 			}

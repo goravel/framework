@@ -17,10 +17,10 @@ type Event struct {
 	destOfMap                    map[string]any
 	model                        any
 	modelOfMap                   map[string]any
-	query                        *Query
+	query                        *QueryImpl
 }
 
-func NewEvent(query *Query, model, dest any) *Event {
+func NewEvent(query *QueryImpl, model, dest any) *Event {
 	return &Event{
 		dest:  dest,
 		model: model,
@@ -64,7 +64,7 @@ func (e *Event) IsClean(fields ...string) bool {
 }
 
 func (e *Event) Query() orm.Query {
-	return NewQueryWithInstance(nil, e.query.instance.Session(&gorm.Session{NewDB: true}))
+	return NewQueryWithWithoutEvents(e.query.instance.Session(&gorm.Session{NewDB: true}), false)
 }
 
 func (e *Event) Context() context.Context {

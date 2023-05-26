@@ -4,4 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/grpc"
 )
 
-var Grpc grpc.Grpc
+func Grpc() grpc.Grpc {
+	return App().MakeGrpc()
+}

@@ -4,4 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-var RateLimiter http.RateLimiter
+func RateLimiter() http.RateLimiter {
+	return App().MakeRateLimiter()
+}

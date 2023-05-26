@@ -8,35 +8,39 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
+
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/console/driver"
-	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/database/db"
 )
 
-func getMigrate() (*migrate.Migrate, error) {
-	connection := facades.Config.GetString("database.default")
-	driver := facades.Config.GetString("database.connections." + connection + ".driver")
+func getMigrate(config config.Config) (*migrate.Migrate, error) {
+	connection := config.GetString("database.default")
+	driver := config.GetString("database.connections." + connection + ".driver")
 	dir := "file://./database/migrations"
-	_, writeConfigs, err := gorm.Configs(connection)
-	if err != nil {
-		return nil, err
+
+	gormConfig := db.NewConfigImpl(config, connection)
+	writeConfigs := gormConfig.Writes()
+	if len(writeConfigs) == 0 {
+		return nil, errors.New("not found database configuration")
 	}
 
 	switch orm.Driver(driver) {
 	case orm.DriverMysql:
-		dsn := gorm.MysqlDsn(connection, writeConfigs[0])
-		if dsn == "" {
+		dsn := db.NewDsnImpl(config, connection)
+		mysqlDsn := dsn.Mysql(writeConfigs[0])
+		if mysqlDsn == "" {
 			return nil, nil
 		}
 
-		db, err := sql.Open("mysql", dsn)
+		db, err := sql.Open("mysql", mysqlDsn)
 		if err != nil {
 			return nil, err
 		}
 
 		instance, err := mysql.WithInstance(db, &mysql.Config{
-			MigrationsTable: facades.Config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations"),
 		})
 		if err != nil {
 			return nil, err
@@ -44,18 +48,19 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "mysql", instance)
 	case orm.DriverPostgresql:
-		dsn := gorm.PostgresqlDsn(connection, writeConfigs[0])
-		if dsn == "" {
+		dsn := db.NewDsnImpl(config, connection)
+		postgresqlDsn := dsn.Postgresql(writeConfigs[0])
+		if postgresqlDsn == "" {
 			return nil, nil
 		}
 
-		db, err := sql.Open("postgres", dsn)
+		db, err := sql.Open("postgres", postgresqlDsn)
 		if err != nil {
 			return nil, err
 		}
 
 		instance, err := postgres.WithInstance(db, &postgres.Config{
-			MigrationsTable: facades.Config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations"),
 		})
 		if err != nil {
 			return nil, err
@@ -63,18 +68,19 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "postgres", instance)
 	case orm.DriverSqlite:
-		dsn := gorm.SqliteDsn(writeConfigs[0])
-		if dsn == "" {
+		dsn := db.NewDsnImpl(config, "")
+		sqliteDsn := dsn.Sqlite(writeConfigs[0])
+		if sqliteDsn == "" {
 			return nil, nil
 		}
 
-		db, err := sql.Open("sqlite", dsn)
+		db, err := sql.Open("sqlite", sqliteDsn)
 		if err != nil {
 			return nil, err
 		}
 
 		instance, err := sqlite.WithInstance(db, &sqlite.Config{
-			MigrationsTable: facades.Config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations"),
 		})
 		if err != nil {
 			return nil, err
@@ -82,18 +88,19 @@ func getMigrate() (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlite3", instance)
 	case orm.DriverSqlserver:
-		dsn := gorm.SqlserverDsn(connection, writeConfigs[0])
-		if dsn == "" {
+		dsn := db.NewDsnImpl(config, connection)
+		sqlserverDsn := dsn.Sqlserver(writeConfigs[0])
+		if sqlserverDsn == "" {
 			return nil, nil
 		}
 
-		db, err := sql.Open("sqlserver", dsn)
+		db, err := sql.Open("sqlserver", sqlserverDsn)
 		if err != nil {
 			return nil, err
 		}
 
 		instance, err := sqlserver.WithInstance(db, &sqlserver.Config{
-			MigrationsTable: facades.Config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations"),
 		})
 
 		if err != nil {

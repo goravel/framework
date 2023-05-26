@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
 	"github.com/goravel/framework/support/file"
 	supporttime "github.com/goravel/framework/support/time"
-	"github.com/goravel/framework/testing/mock"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
@@ -19,12 +19,12 @@ func TestMigrateMakeCommand(t *testing.T) {
 	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")
 	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")
 
-	mockConfig := mock.Config()
+	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Times(3)
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return("mysql").Once()
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Twice()
 
-	migrateMakeCommand := &MigrateMakeCommand{}
+	migrateMakeCommand := NewMigrateMakeCommand(mockConfig)
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	assert.Nil(t, migrateMakeCommand.Handle(mockContext))

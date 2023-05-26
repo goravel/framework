@@ -5,20 +5,28 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/config"
-	"github.com/goravel/framework/contracts"
-	"github.com/goravel/framework/facades"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support"
 )
+
+var App foundation.Application
 
 func init() {
 	setEnv()
 
-	app := Application{}
+	app := &Application{Container: NewContainer()}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
+
+	App = app
 }
 
 type Application struct {
+	foundation.Container
+}
+
+func NewApplication() foundation.Application {
+	return App
 }
 
 //Boot Register and bootstrap configured service providers.
@@ -32,19 +40,19 @@ func (app *Application) Boot() {
 
 //bootArtisan Boot artisan command.
 func (app *Application) bootArtisan() {
-	facades.Artisan.Run(os.Args, true)
+	app.MakeArtisan().Run(os.Args, true)
 }
 
 //getBaseServiceProviders Get base service providers.
-func (app *Application) getBaseServiceProviders() []contracts.ServiceProvider {
-	return []contracts.ServiceProvider{
+func (app *Application) getBaseServiceProviders() []foundation.ServiceProvider {
+	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 	}
 }
 
 //getConfiguredServiceProviders Get configured service providers.
-func (app *Application) getConfiguredServiceProviders() []contracts.ServiceProvider {
-	return facades.Config.Get("app.providers").([]contracts.ServiceProvider)
+func (app *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
+	return app.MakeConfig().Get("app.providers").([]foundation.ServiceProvider)
 }
 
 //registerBaseServiceProviders Register base service providers.
@@ -68,16 +76,16 @@ func (app *Application) bootConfiguredServiceProviders() {
 }
 
 //registerServiceProviders Register service providers.
-func (app *Application) registerServiceProviders(serviceProviders []contracts.ServiceProvider) {
+func (app *Application) registerServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
-		serviceProvider.Register()
+		serviceProvider.Register(app)
 	}
 }
 
 //bootServiceProviders Bootstrap service providers.
-func (app *Application) bootServiceProviders(serviceProviders []contracts.ServiceProvider) {
+func (app *Application) bootServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
-		serviceProvider.Boot()
+		serviceProvider.Boot(app)
 	}
 }
 
@@ -94,7 +102,7 @@ func setEnv() {
 }
 
 func setRootPath() {
-	rootPath := getCurrentAbPath()
+	rootPath := getCurrentAbsolutePath()
 
 	// Hack air path
 	airPath := "/storage/temp"

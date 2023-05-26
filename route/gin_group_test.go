@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
-	frameworkcache "github.com/goravel/framework/cache"
-	mockconfig "github.com/goravel/framework/contracts/config/mocks"
+	cachemock "github.com/goravel/framework/contracts/cache/mocks"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 	httpcontract "github.com/goravel/framework/contracts/http"
+	httpmock "github.com/goravel/framework/contracts/http/mocks"
 	"github.com/goravel/framework/contracts/route"
-	"github.com/goravel/framework/facades"
 	frameworkhttp "github.com/goravel/framework/http"
 	"github.com/goravel/framework/http/limit"
 	"github.com/goravel/framework/http/middleware"
-	"github.com/goravel/framework/testing/mock"
 )
 
 type resourceController struct{}
@@ -64,13 +64,13 @@ func (c resourceController) Destroy(ctx httpcontract.Context) {
 func TestGinGroup(t *testing.T) {
 	var (
 		gin        *Gin
-		mockConfig *mockconfig.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name       string
@@ -228,6 +228,7 @@ func TestGinGroup(t *testing.T) {
 				mockConfig.On("Get", "cors.exposed_headers").Return([]string{"*"}).Once()
 				mockConfig.On("GetInt", "cors.max_age").Return(0).Once()
 				mockConfig.On("GetBool", "cors.supports_credentials").Return(false).Once()
+				frameworkhttp.ConfigFacade = mockConfig
 				gin.GlobalMiddleware(middleware.Cors())
 				gin.Any("/any/{id}", func(ctx httpcontract.Context) {
 					ctx.Response().Success().Json(httpcontract.Json{
@@ -532,18 +533,28 @@ func TestGinGroup(t *testing.T) {
 }
 
 func TestThrottle(t *testing.T) {
-	mockConfig := mock.Config()
+	mockConfig := &configmock.Config{}
 	mockConfig.On("GetBool", "app.debug").Return(true).Once()
-	mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
-	mockConfig.On("GetString", "cache.prefix").Return("throttle").Times(3)
+	mockConfig.On("GetString", "cache.prefix").Return("throttle").Twice()
+	frameworkhttp.ConfigFacade = mockConfig
 
-	facades.Cache = frameworkcache.NewApplication("memory")
-	facades.RateLimiter = frameworkhttp.NewRateLimiter()
-	facades.RateLimiter.For("test", func(ctx httpcontract.Context) httpcontract.Limit {
-		return limit.PerMinute(1)
-	})
+	mockCache := &cachemock.Cache{}
+	mockCache.On("Has", mock.Anything).Return(false).Once()
+	mockCache.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+	frameworkhttp.CacheFacade = mockCache
 
-	gin := NewGin()
+	mockRateLimiter := &httpmock.RateLimiter{}
+	mockRateLimiter.On("Limiter", "test").Return(
+		func(ctx httpcontract.Context) []httpcontract.Limit {
+			return []httpcontract.Limit{
+				func(ctx httpcontract.Context) httpcontract.Limit {
+					return limit.PerMinute(1)
+				}(ctx),
+			}
+		}).Twice()
+	frameworkhttp.RateLimiterFacade = mockRateLimiter
+
+	gin := NewGin(mockConfig)
 	gin.GlobalMiddleware(middleware.Throttle("test"))
 	gin.Get("/throttle/{id}", func(ctx httpcontract.Context) {
 		ctx.Response().Success().Json(httpcontract.Json{
@@ -555,6 +566,11 @@ func TestThrottle(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/throttle/1", nil)
 	gin.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	mockCache.On("Has", mock.Anything).Return(true).Once()
+	mockCache.On("GetInt", mock.Anything, 0).Return(1).Once()
+	mockCache.On("GetInt", mock.Anything, 0).Return(10).Once()
+	mockCache.On("Increment", mock.Anything).Return(10, nil).Once()
 
 	w1 := httptest.NewRecorder()
 	req1, _ := http.NewRequest("GET", "/throttle/1", nil)

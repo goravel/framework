@@ -5,13 +5,20 @@ import (
 	"os"
 	"strings"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
 	supporttime "github.com/goravel/framework/support/time"
 )
 
 type MigrateCreator struct {
+	config config.Config
+}
+
+func NewMigrateCreator(config config.Config) *MigrateCreator {
+	return &MigrateCreator{
+		config: config,
+	}
 }
 
 //Create a new migration
@@ -34,7 +41,7 @@ func (receiver MigrateCreator) getStub(table string, create bool) (string, strin
 		return "", ""
 	}
 
-	driver := facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".driver")
+	driver := receiver.config.GetString("database.connections." + receiver.config.GetString("database.default") + ".driver")
 	switch orm.Driver(driver) {
 	case orm.DriverPostgresql:
 		if create {
@@ -65,7 +72,7 @@ func (receiver MigrateCreator) getStub(table string, create bool) (string, strin
 
 //populateStub Populate the place-holders in the migration stub.
 func (receiver MigrateCreator) populateStub(stub string, table string) string {
-	stub = strings.ReplaceAll(stub, "DummyDatabaseCharset", facades.Config.GetString("database.connections."+facades.Config.GetString("database.default")+".charset"))
+	stub = strings.ReplaceAll(stub, "DummyDatabaseCharset", receiver.config.GetString("database.connections."+receiver.config.GetString("database.default")+".charset"))
 
 	if table != "" {
 		stub = strings.ReplaceAll(stub, "DummyTable", table)

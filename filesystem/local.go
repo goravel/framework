@@ -9,21 +9,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
 
 type Local struct {
-	root string
-	url  string
+	config config.Config
+	root   string
+	url    string
 }
 
-func NewLocal(disk string) (*Local, error) {
+func NewLocal(config config.Config, disk string) (*Local, error) {
 	return &Local{
-		root: facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.root", disk)),
-		url:  facades.Config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk)),
+		config: config,
+		root:   config.GetString(fmt.Sprintf("filesystems.disks.%s.root", disk)),
+		url:    config.GetString(fmt.Sprintf("filesystems.disks.%s.url", disk)),
 	}, nil
 }
 
@@ -142,7 +144,7 @@ func (r *Local) Get(file string) (string, error) {
 }
 
 func (r *Local) LastModified(file string) (time.Time, error) {
-	return supportfile.LastModified(r.fullPath(file), facades.Config.GetString("app.timezone"))
+	return supportfile.LastModified(r.fullPath(file), r.config.GetString("app.timezone"))
 }
 
 func (r *Local) MakeDirectory(directory string) error {

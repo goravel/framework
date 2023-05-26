@@ -7,23 +7,28 @@ import (
 
 	"github.com/jordan-wright/email"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/facades"
 )
 
 type Application struct {
 	clone    int
+	config   config.Config
 	content  mail.Content
 	from     mail.From
-	to       []string
-	cc       []string
-	bcc      []string
+	queue    queuecontract.Queue
 	attaches []string
+	bcc      []string
+	cc       []string
+	to       []string
 }
 
-func NewApplication() *Application {
-	return &Application{}
+func NewApplication(config config.Config, queue queuecontract.Queue) *Application {
+	return &Application{
+		config: config,
+		queue:  queue,
+	}
 }
 
 func (r *Application) Content(content mail.Content) mail.Mail {
@@ -69,11 +74,11 @@ func (r *Application) Attach(files []string) mail.Mail {
 }
 
 func (r *Application) Send() error {
-	return SendMail(r.content.Subject, r.content.Html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
+	return SendMail(r.config, r.content.Subject, r.content.Html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
 }
 
 func (r *Application) Queue(queue *mail.Queue) error {
-	job := facades.Queue.Job(&SendMailJob{}, []queuecontract.Arg{
+	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
 		{Value: r.content.Subject, Type: "string"},
 		{Value: r.content.Html, Type: "string"},
 		{Value: r.from.Address, Type: "string"},
@@ -97,23 +102,31 @@ func (r *Application) Queue(queue *mail.Queue) error {
 
 func (r *Application) instance() *Application {
 	if r.clone == 0 {
-		return &Application{clone: 1}
+		return &Application{
+			clone:  1,
+			config: r.config,
+			queue:  r.queue,
+		}
 	}
 
 	return r
 }
 
-func SendMail(subject, html string, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
+func SendMail(config config.Config, subject, html string, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
 	e := email.NewEmail()
 	if fromAddress == "" {
-		e.From = fmt.Sprintf("%s <%s>", facades.Config.GetString("mail.from.name"), facades.Config.GetString("mail.from.address"))
+		e.From = fmt.Sprintf("%s <%s>", config.GetString("mail.from.name"), config.GetString("mail.from.address"))
 	} else {
 		e.From = fmt.Sprintf("%s <%s>", fromName, fromAddress)
 	}
 
 	e.To = to
-	e.Bcc = bcc
-	e.Cc = cc
+	if len(e.Bcc) > 0 {
+		e.Bcc = bcc
+	}
+	if len(e.Cc) > 0 {
+		e.Cc = cc
+	}
 	e.Subject = subject
 	e.HTML = []byte(html)
 
@@ -123,19 +136,19 @@ func SendMail(subject, html string, fromAddress, fromName string, to, cc, bcc, a
 		}
 	}
 
-	port := facades.Config.GetInt("mail.port")
+	port := config.GetInt("mail.port")
 	switch port {
 	case 465:
-		return e.SendWithTLS(fmt.Sprintf("%s:%d", facades.Config.GetString("mail.host"), facades.Config.GetInt("mail.port")),
-			LoginAuth(facades.Config.GetString("mail.username"), facades.Config.GetString("mail.password")),
-			&tls.Config{ServerName: facades.Config.GetString("mail.host")})
+		return e.SendWithTLS(fmt.Sprintf("%s:%d", config.GetString("mail.host"), config.GetInt("mail.port")),
+			LoginAuth(config.GetString("mail.username"), config.GetString("mail.password")),
+			&tls.Config{ServerName: config.GetString("mail.host")})
 	case 587:
-		return e.SendWithStartTLS(fmt.Sprintf("%s:%d", facades.Config.GetString("mail.host"), facades.Config.GetInt("mail.port")),
-			LoginAuth(facades.Config.GetString("mail.username"), facades.Config.GetString("mail.password")),
-			&tls.Config{ServerName: facades.Config.GetString("mail.host")})
+		return e.SendWithStartTLS(fmt.Sprintf("%s:%d", config.GetString("mail.host"), config.GetInt("mail.port")),
+			LoginAuth(config.GetString("mail.username"), config.GetString("mail.password")),
+			&tls.Config{ServerName: config.GetString("mail.host")})
 	default:
-		return e.Send(fmt.Sprintf("%s:%d", facades.Config.GetString("mail.host"), port),
-			LoginAuth(facades.Config.GetString("mail.username"), facades.Config.GetString("mail.password")))
+		return e.Send(fmt.Sprintf("%s:%d", config.GetString("mail.host"), port),
+			LoginAuth(config.GetString("mail.username"), config.GetString("mail.password")))
 	}
 }
 

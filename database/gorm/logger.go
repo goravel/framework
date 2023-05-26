@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// NewLogger initialize Logger
 func NewLogger(writer logger.Writer, config logger.Config) logger.Interface {
 	var (
 		infoStr      = "%s\n[Orm] "

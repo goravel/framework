@@ -6,21 +6,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goravel/framework/contracts/cache"
-	testingdocker "github.com/goravel/framework/testing/docker"
-	"github.com/goravel/framework/testing/mock"
-
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/contracts/cache"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
+	testingdocker "github.com/goravel/framework/testing/docker"
 )
 
-type ApplicationTestSuite struct {
+type DriverTestSuite struct {
 	suite.Suite
+	driver      *DriverImpl
+	mockConfig  *configmock.Config
 	stores      map[string]cache.Driver
 	redisDocker *dockertest.Resource
 }
 
-func TestApplicationTestSuite(t *testing.T) {
+func TestDriverTestSuite(t *testing.T) {
 	redisPool, redisDocker, redisStore, err := getRedisDocker()
 	if err != nil {
 		log.Fatalf("Get redis store error: %s", err)
@@ -30,7 +32,7 @@ func TestApplicationTestSuite(t *testing.T) {
 		log.Fatalf("Get memory store error: %s", err)
 	}
 
-	suite.Run(t, &ApplicationTestSuite{
+	suite.Run(t, &DriverTestSuite{
 		stores: map[string]cache.Driver{
 			"redis":  redisStore,
 			"memory": memoryStore,
@@ -43,93 +45,69 @@ func TestApplicationTestSuite(t *testing.T) {
 	}
 }
 
-func (s *ApplicationTestSuite) SetupTest() {
+func (s *DriverTestSuite) SetupTest() {
+	s.mockConfig = &configmock.Config{}
+	s.driver = NewDriverImpl(s.mockConfig)
 }
 
-func (s *ApplicationTestSuite) TestInitMemory() {
+func (s *DriverTestSuite) TestMemory() {
+	s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
+	s.NotNil(s.driver.memory())
+}
+
+func (s *DriverTestSuite) TestRedis() {
 	tests := []struct {
 		description string
 		setup       func()
+		expectErr   bool
 	}{
 		{
 			description: "success",
 			setup: func() {
-				mockConfig := mock.Config()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-
-				s.NotNil(initMemory())
-
-				mockConfig.AssertExpectations(s.T())
-			},
-		},
-	}
-
-	for _, test := range tests {
-		s.Run(test.description, func() {
-			test.setup()
-		})
-	}
-}
-
-func (s *ApplicationTestSuite) TestInitRedis() {
-	tests := []struct {
-		description string
-		setup       func()
-	}{
-		{
-			description: "success",
-			setup: func() {
-				mockConfig := mock.Config()
-				mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
-				mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
-				mockConfig.On("GetString", "database.redis.default.port").Return(s.redisDocker.GetPort("6379/tcp")).Once()
-				mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-				mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-
-				s.NotNil(initRedis("redis"))
-
-				mockConfig.AssertExpectations(s.T())
+				s.mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
+				s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
+				s.mockConfig.On("GetString", "database.redis.default.port").Return(s.redisDocker.GetPort("6379/tcp")).Once()
+				s.mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
+				s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
+				s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
 			},
 		},
 		{
 			description: "error",
 			setup: func() {
-				mockConfig := mock.Config()
-				mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
-				mockConfig.On("GetString", "database.redis.default.host").Return("").Once()
-
-				s.Nil(initRedis("redis"))
-
-				mockConfig.AssertExpectations(s.T())
+				s.mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
+				s.mockConfig.On("GetString", "database.redis.default.host").Return("").Once()
 			},
+			expectErr: true,
 		},
 	}
 
 	for _, test := range tests {
 		s.Run(test.description, func() {
 			test.setup()
+			redis := s.driver.redis("redis")
+			s.Equal(test.expectErr, redis == nil)
+			s.mockConfig.AssertExpectations(s.T())
 		})
 	}
 }
 
-func (s *ApplicationTestSuite) TestInitCustom() {
-	mockConfig := mock.Config()
-	mockConfig.On("Get", "cache.stores.store.via").Return(&Store{}).Once()
+func (s *DriverTestSuite) TestCustom() {
+	s.mockConfig.On("Get", "cache.stores.store.via").Return(&Store{}).Once()
 
-	store := initCustom("store")
+	store := s.driver.custom("store")
 	s.NotNil(store)
 	s.Equal("name", store.Get("name", "Goravel").(string))
 
-	mockConfig.AssertExpectations(s.T())
+	s.mockConfig.AssertExpectations(s.T())
 }
 
-func (s *ApplicationTestSuite) TestStore() {
-	mockConfig := mock.Config()
+func (s *DriverTestSuite) TestStore() {
+	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
 	mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
 
-	memory := NewApplication("memory")
+	memory := NewApplication(mockConfig, "memory")
 	s.NotNil(memory)
 	s.True(memory.Add("hello", "goravel", 5*time.Second))
 	s.Equal("goravel", memory.GetString("hello"))
@@ -153,7 +131,7 @@ func (s *ApplicationTestSuite) TestStore() {
 	mockConfig.AssertExpectations(s.T())
 }
 
-func (s *ApplicationTestSuite) TestAdd() {
+func (s *DriverTestSuite) TestAdd() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("name", "Goravel", 1*time.Second))
@@ -167,7 +145,7 @@ func (s *ApplicationTestSuite) TestAdd() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestDecrement() {
+func (s *DriverTestSuite) TestDecrement() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			res, err := store.Decrement("decrement")
@@ -198,7 +176,7 @@ func (s *ApplicationTestSuite) TestDecrement() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestForever() {
+func (s *DriverTestSuite) TestForever() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.True(store.Forever("name", "Goravel"))
@@ -208,7 +186,7 @@ func (s *ApplicationTestSuite) TestForever() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestForget() {
+func (s *DriverTestSuite) TestForget() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			val := store.Forget("test-forget")
@@ -221,7 +199,7 @@ func (s *ApplicationTestSuite) TestForget() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestFlush() {
+func (s *DriverTestSuite) TestFlush() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("test-flush", "goravel", 5*time.Second))
@@ -233,7 +211,7 @@ func (s *ApplicationTestSuite) TestFlush() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestGet() {
+func (s *DriverTestSuite) TestGet() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("name", "Goravel", 1*time.Second))
@@ -248,7 +226,7 @@ func (s *ApplicationTestSuite) TestGet() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestGetBool() {
+func (s *DriverTestSuite) TestGetBool() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Equal(true, store.GetBool("test-get-bool", true))
@@ -258,7 +236,7 @@ func (s *ApplicationTestSuite) TestGetBool() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestGetInt() {
+func (s *DriverTestSuite) TestGetInt() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Equal(2, store.GetInt("test-get-int", 2))
@@ -268,7 +246,7 @@ func (s *ApplicationTestSuite) TestGetInt() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestGetString() {
+func (s *DriverTestSuite) TestGetString() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Equal("2", store.GetString("test-get-string", "2"))
@@ -278,7 +256,7 @@ func (s *ApplicationTestSuite) TestGetString() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestHas() {
+func (s *DriverTestSuite) TestHas() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.False(store.Has("test-has"))
@@ -288,7 +266,7 @@ func (s *ApplicationTestSuite) TestHas() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestIncrement() {
+func (s *DriverTestSuite) TestIncrement() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			res, err := store.Increment("Increment")
@@ -319,7 +297,7 @@ func (s *ApplicationTestSuite) TestIncrement() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestLock() {
+func (s *DriverTestSuite) TestLock() {
 	for _, store := range s.stores {
 		tests := []struct {
 			name  string
@@ -488,7 +466,7 @@ func (s *ApplicationTestSuite) TestLock() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestPull() {
+func (s *DriverTestSuite) TestPull() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("name", "Goravel", 1*time.Second))
@@ -499,7 +477,7 @@ func (s *ApplicationTestSuite) TestPull() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestPut() {
+func (s *DriverTestSuite) TestPut() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("name", "Goravel", 1*time.Second))
@@ -511,7 +489,7 @@ func (s *ApplicationTestSuite) TestPut() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestRemember() {
+func (s *DriverTestSuite) TestRemember() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("name", "Goravel", 1*time.Second))
@@ -533,7 +511,7 @@ func (s *ApplicationTestSuite) TestRemember() {
 	}
 }
 
-func (s *ApplicationTestSuite) TestRememberForever() {
+func (s *DriverTestSuite) TestRememberForever() {
 	for name, store := range s.stores {
 		s.Run(name, func() {
 			s.Nil(store.Put("name", "Goravel", 1*time.Second))
@@ -554,6 +532,7 @@ func (s *ApplicationTestSuite) TestRememberForever() {
 }
 
 func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Driver, error) {
+	mockConfig := &configmock.Config{}
 	pool, resource, err := testingdocker.Redis()
 	if err != nil {
 		return nil, nil, nil, err
@@ -562,14 +541,13 @@ func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Driver, err
 	var store cache.Driver
 	if err := pool.Retry(func() error {
 		var err error
-		mockConfig := mock.Config()
-		mockConfig.On("GetString", "cache.stores.redis.connection").Return("default").Once()
+		mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
 		mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
 		mockConfig.On("GetString", "database.redis.default.port").Return(resource.GetPort("6379/tcp")).Once()
 		mockConfig.On("GetString", "database.redis.default.password").Return(resource.GetPort("")).Once()
 		mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
 		mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-		store, err = NewRedis(context.Background(), "default")
+		store, err = NewRedis(context.Background(), mockConfig, "redis")
 
 		return err
 	}); err != nil {
@@ -580,10 +558,10 @@ func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Driver, err
 }
 
 func getMemoryStore() (*Memory, error) {
-	mockConfig := mock.Config()
+	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
 
-	memory, err := NewMemory()
+	memory, err := NewMemory(mockConfig)
 	if err != nil {
 		return nil, err
 	}

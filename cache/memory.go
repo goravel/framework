@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cast"
 
 	contractscache "github.com/goravel/framework/contracts/cache"
+	"github.com/goravel/framework/contracts/config"
 )
 
 type Memory struct {
@@ -16,11 +17,11 @@ type Memory struct {
 	instance *cache.Cache
 }
 
-func NewMemory() (*Memory, error) {
+func NewMemory(config config.Config) (*Memory, error) {
 	memory := cache.New(5*time.Minute, 10*time.Minute)
 
 	return &Memory{
-		prefix:   prefix(),
+		prefix:   prefix(config),
 		instance: memory,
 	}, nil
 }

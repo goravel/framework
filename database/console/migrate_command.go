@@ -6,11 +6,19 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gookit/color"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 )
 
 type MigrateCommand struct {
+	config config.Config
+}
+
+func NewMigrateCommand(config config.Config) *MigrateCommand {
+	return &MigrateCommand{
+		config: config,
+	}
 }
 
 //Signature The name and signature of the console command.
@@ -32,7 +40,7 @@ func (receiver *MigrateCommand) Extend() command.Extend {
 
 //Handle Execute the console command.
 func (receiver *MigrateCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate()
+	m, err := getMigrate(receiver.config)
 	if err != nil {
 		return err
 	}

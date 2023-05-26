@@ -9,13 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/db"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
@@ -36,9 +35,9 @@ type User struct {
 	Roles   []*Role  `gorm:"many2many:role_user"`
 }
 
-func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
-	return map[contractsorm.EventType]func(contractsorm.Event) error{
-		contractsorm.EventCreating: func(event contractsorm.Event) error {
+func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Event) error {
+	return map[ormcontract.EventType]func(ormcontract.Event) error{
+		ormcontract.EventCreating: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_creating_name" {
@@ -63,7 +62,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventCreated: func(event contractsorm.Event) error {
+		ormcontract.EventCreated: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_created_name" {
@@ -76,7 +75,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventSaving: func(event contractsorm.Event) error {
+		ormcontract.EventSaving: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_saving_create_name" {
@@ -108,7 +107,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventSaved: func(event contractsorm.Event) error {
+		ormcontract.EventSaved: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_saved_create_name" {
@@ -135,7 +134,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventUpdating: func(event contractsorm.Event) error {
+		ormcontract.EventUpdating: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_updating_create_name" {
@@ -187,7 +186,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventUpdated: func(event contractsorm.Event) error {
+		ormcontract.EventUpdated: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_updated_create_name" {
@@ -210,7 +209,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventDeleting: func(event contractsorm.Event) error {
+		ormcontract.EventDeleting: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleting_name" {
 				return errors.New("deleting error")
@@ -218,7 +217,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventDeleted: func(event contractsorm.Event) error {
+		ormcontract.EventDeleted: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleted_name" {
 				return errors.New("deleted error")
@@ -226,7 +225,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventForceDeleting: func(event contractsorm.Event) error {
+		ormcontract.EventForceDeleting: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleting_name" {
 				return errors.New("force deleting error")
@@ -234,7 +233,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventForceDeleted: func(event contractsorm.Event) error {
+		ormcontract.EventForceDeleted: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleted_name" {
 				return errors.New("force deleted error")
@@ -242,7 +241,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 			return nil
 		},
-		contractsorm.EventRetrieved: func(event contractsorm.Event) error {
+		ormcontract.EventRetrieved: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_retrieved_name" {
 				event.SetAttribute("name", "event_retrieved_name1")
@@ -295,41 +294,45 @@ type Phone struct {
 	PhoneableType string
 }
 
-type GormQueryTestSuite struct {
+type QueryTestSuite struct {
 	suite.Suite
-	queries map[contractsorm.Driver]contractsorm.Query
+	queries map[ormcontract.Driver]ormcontract.Query
 }
 
-func TestGormQueryTestSuite(t *testing.T) {
+func TestQueryTestSuite(t *testing.T) {
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	mysqlPool, mysqlResource, mysqlDB, err := MysqlDocker()
+	mysqlDocker := NewMysqlDocker()
+	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlPool, postgresqlResource, postgresqlDB, err := PostgresqlDocker()
+	postgresqlDocker := NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
 
-	_, _, sqliteDB, err := SqliteDocker(dbDatabase)
+	sqliteDocker := NewSqliteDocker(dbDatabase)
+	_, _, sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverPool, sqlserverResource, sqlserverDB, err := SqlserverDocker()
+	sqlserverDocker := NewSqlserverDocker()
+	sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
-	suite.Run(t, &GormQueryTestSuite{
-		queries: map[contractsorm.Driver]contractsorm.Query{
-			contractsorm.DriverMysql:      mysqlDB,
-			contractsorm.DriverPostgresql: postgresqlDB,
-			contractsorm.DriverSqlite:     sqliteDB,
-			contractsorm.DriverSqlserver:  sqlserverDB,
+	suite.Run(t, &QueryTestSuite{
+		queries: map[ormcontract.Driver]ormcontract.Query{
+			ormcontract.DriverMysql:      mysqlQuery,
+			ormcontract.DriverPostgresql: postgresqlQuery,
+			ormcontract.DriverSqlite:     sqliteQuery,
+			ormcontract.DriverSqlserver:  sqlserverQuery,
 		},
 	})
 
@@ -346,10 +349,9 @@ func TestGormQueryTestSuite(t *testing.T) {
 	}
 }
 
-func (s *GormQueryTestSuite) SetupTest() {
-}
+func (s *QueryTestSuite) SetupTest() {}
 
-func (s *GormQueryTestSuite) TestAssociation() {
+func (s *QueryTestSuite) TestAssociation() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			tests := []struct {
@@ -573,7 +575,7 @@ func (s *GormQueryTestSuite) TestAssociation() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestBelongsTo() {
+func (s *QueryTestSuite) TestBelongsTo() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := &User{
@@ -595,7 +597,7 @@ func (s *GormQueryTestSuite) TestBelongsTo() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestCount() {
+func (s *QueryTestSuite) TestCount() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "count_user", Avatar: "count_avatar"}
@@ -617,7 +619,7 @@ func (s *GormQueryTestSuite) TestCount() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestCreate() {
+func (s *QueryTestSuite) TestCreate() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -732,7 +734,7 @@ func (s *GormQueryTestSuite) TestCreate() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestDelete() {
+func (s *QueryTestSuite) TestDelete() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -796,7 +798,7 @@ func (s *GormQueryTestSuite) TestDelete() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestDistinct() {
+func (s *QueryTestSuite) TestDistinct() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "distinct_user", Avatar: "distinct_avatar"}
@@ -814,7 +816,7 @@ func (s *GormQueryTestSuite) TestDistinct() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Creating() {
+func (s *QueryTestSuite) TestEvent_Creating() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -857,7 +859,7 @@ func (s *GormQueryTestSuite) TestEvent_Creating() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Created() {
+func (s *QueryTestSuite) TestEvent_Created() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -900,7 +902,7 @@ func (s *GormQueryTestSuite) TestEvent_Created() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Saving() {
+func (s *QueryTestSuite) TestEvent_Saving() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -974,7 +976,7 @@ func (s *GormQueryTestSuite) TestEvent_Saving() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Saved() {
+func (s *QueryTestSuite) TestEvent_Saved() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1050,7 +1052,7 @@ func (s *GormQueryTestSuite) TestEvent_Saved() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Updating() {
+func (s *QueryTestSuite) TestEvent_Updating() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1118,7 +1120,7 @@ func (s *GormQueryTestSuite) TestEvent_Updating() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Updated() {
+func (s *QueryTestSuite) TestEvent_Updated() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1186,7 +1188,7 @@ func (s *GormQueryTestSuite) TestEvent_Updated() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Deleting() {
+func (s *QueryTestSuite) TestEvent_Deleting() {
 	for _, query := range s.queries {
 		user := User{Name: "event_deleting_name", Avatar: "event_deleting_avatar"}
 		s.Nil(query.Create(&user))
@@ -1201,7 +1203,7 @@ func (s *GormQueryTestSuite) TestEvent_Deleting() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Deleted() {
+func (s *QueryTestSuite) TestEvent_Deleted() {
 	for _, query := range s.queries {
 		user := User{Name: "event_deleted_name", Avatar: "event_deleted_avatar"}
 		s.Nil(query.Create(&user))
@@ -1216,7 +1218,7 @@ func (s *GormQueryTestSuite) TestEvent_Deleted() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_ForceDeleting() {
+func (s *QueryTestSuite) TestEvent_ForceDeleting() {
 	for _, query := range s.queries {
 		user := User{Name: "event_force_deleting_name", Avatar: "event_force_deleting_avatar"}
 		s.Nil(query.Create(&user))
@@ -1231,7 +1233,7 @@ func (s *GormQueryTestSuite) TestEvent_ForceDeleting() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_ForceDeleted() {
+func (s *QueryTestSuite) TestEvent_ForceDeleted() {
 	for _, query := range s.queries {
 		user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
 		s.Nil(query.Create(&user))
@@ -1246,7 +1248,7 @@ func (s *GormQueryTestSuite) TestEvent_ForceDeleted() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Retrieved() {
+func (s *QueryTestSuite) TestEvent_Retrieved() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1333,7 +1335,7 @@ func (s *GormQueryTestSuite) TestEvent_Retrieved() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_IsDirty() {
+func (s *QueryTestSuite) TestEvent_IsDirty() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1427,7 +1429,7 @@ func (s *GormQueryTestSuite) TestEvent_IsDirty() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Context() {
+func (s *QueryTestSuite) TestEvent_Context() {
 	for _, query := range s.queries {
 		user := User{Name: "event_context"}
 		s.Nil(query.Create(&user))
@@ -1435,7 +1437,7 @@ func (s *GormQueryTestSuite) TestEvent_Context() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestEvent_Query() {
+func (s *QueryTestSuite) TestEvent_Query() {
 	for _, query := range s.queries {
 		user := User{Name: "event_query"}
 		s.Nil(query.Create(&user))
@@ -1447,7 +1449,7 @@ func (s *GormQueryTestSuite) TestEvent_Query() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestExec() {
+func (s *QueryTestSuite) TestExec() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			res, err := query.Exec("INSERT INTO users (name, avatar, created_at, updated_at) VALUES ('exec_user', 'exec_avatar', '2023-03-09 18:56:33', '2023-03-09 18:56:35');")
@@ -1470,7 +1472,7 @@ func (s *GormQueryTestSuite) TestExec() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFind() {
+func (s *QueryTestSuite) TestFind() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1505,7 +1507,7 @@ func (s *GormQueryTestSuite) TestFind() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFindOrFail() {
+func (s *QueryTestSuite) TestFindOrFail() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1539,7 +1541,7 @@ func (s *GormQueryTestSuite) TestFindOrFail() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFirst() {
+func (s *QueryTestSuite) TestFirst() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1566,7 +1568,7 @@ func (s *GormQueryTestSuite) TestFirst() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFirstOr() {
+func (s *QueryTestSuite) TestFirstOr() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1607,7 +1609,7 @@ func (s *GormQueryTestSuite) TestFirstOr() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFirstOrCreate() {
+func (s *QueryTestSuite) TestFirstOrCreate() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1648,7 +1650,7 @@ func (s *GormQueryTestSuite) TestFirstOrCreate() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFirstOrFail() {
+func (s *QueryTestSuite) TestFirstOrFail() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1684,7 +1686,7 @@ func (s *GormQueryTestSuite) TestFirstOrFail() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestFirstOrNew() {
+func (s *QueryTestSuite) TestFirstOrNew() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1729,7 +1731,7 @@ func (s *GormQueryTestSuite) TestFirstOrNew() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestForceDelete() {
+func (s *QueryTestSuite) TestForceDelete() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -1762,7 +1764,7 @@ func (s *GormQueryTestSuite) TestForceDelete() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestGet() {
+func (s *QueryTestSuite) TestGet() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "get_user"}
@@ -1776,7 +1778,7 @@ func (s *GormQueryTestSuite) TestGet() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestJoin() {
+func (s *QueryTestSuite) TestJoin() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "join_user", Avatar: "join_avatar"}
@@ -1801,9 +1803,9 @@ func (s *GormQueryTestSuite) TestJoin() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestLockForUpdate() {
+func (s *QueryTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
-		if driver != contractsorm.DriverSqlite {
+		if driver != ormcontract.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "lock_for_update_user"}
 				s.Nil(query.Create(&user))
@@ -1834,7 +1836,7 @@ func (s *GormQueryTestSuite) TestLockForUpdate() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestOffset() {
+func (s *QueryTestSuite) TestOffset() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "offset_user", Avatar: "offset_avatar"}
@@ -1853,7 +1855,7 @@ func (s *GormQueryTestSuite) TestOffset() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestOrder() {
+func (s *QueryTestSuite) TestOrder() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "order_user", Avatar: "order_avatar"}
@@ -1872,7 +1874,7 @@ func (s *GormQueryTestSuite) TestOrder() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestPaginate() {
+func (s *QueryTestSuite) TestPaginate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "paginate_user", Avatar: "paginate_avatar"}
@@ -1911,7 +1913,7 @@ func (s *GormQueryTestSuite) TestPaginate() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestPluck() {
+func (s *QueryTestSuite) TestPluck() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "pluck_user", Avatar: "pluck_avatar"}
@@ -1931,7 +1933,7 @@ func (s *GormQueryTestSuite) TestPluck() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestHasOne() {
+func (s *QueryTestSuite) TestHasOne() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := &User{
@@ -1953,7 +1955,7 @@ func (s *GormQueryTestSuite) TestHasOne() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestHasOneMorph() {
+func (s *QueryTestSuite) TestHasOneMorph() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := &User{
@@ -1980,7 +1982,7 @@ func (s *GormQueryTestSuite) TestHasOneMorph() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestHasMany() {
+func (s *QueryTestSuite) TestHasMany() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := &User{
@@ -2004,7 +2006,7 @@ func (s *GormQueryTestSuite) TestHasMany() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestHasManyMorph() {
+func (s *QueryTestSuite) TestHasManyMorph() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := &User{
@@ -2034,7 +2036,7 @@ func (s *GormQueryTestSuite) TestHasManyMorph() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestManyToMany() {
+func (s *QueryTestSuite) TestManyToMany() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := &User{
@@ -2064,7 +2066,7 @@ func (s *GormQueryTestSuite) TestManyToMany() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestLimit() {
+func (s *QueryTestSuite) TestLimit() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "limit_user", Avatar: "limit_avatar"}
@@ -2083,7 +2085,7 @@ func (s *GormQueryTestSuite) TestLimit() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestLoad() {
+func (s *QueryTestSuite) TestLoad() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "load_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
@@ -2139,7 +2141,7 @@ func (s *GormQueryTestSuite) TestLoad() {
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.Equal(0, len(user1.Books))
-						s.Nil(query.Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
+						s.Nil(query.Load(&user1, "Books", func(query ormcontract.Query) ormcontract.Query {
 							return query.Where("name = ?", "load_book0")
 						}))
 						s.True(user1.ID > 0)
@@ -2178,7 +2180,7 @@ func (s *GormQueryTestSuite) TestLoad() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestLoadMissing() {
+func (s *QueryTestSuite) TestLoadMissing() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "load_missing_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
@@ -2233,7 +2235,7 @@ func (s *GormQueryTestSuite) TestLoadMissing() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestRaw() {
+func (s *QueryTestSuite) TestRaw() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "raw_user", Avatar: "raw_avatar"}
@@ -2249,7 +2251,7 @@ func (s *GormQueryTestSuite) TestRaw() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestSave() {
+func (s *QueryTestSuite) TestSave() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -2291,7 +2293,7 @@ func (s *GormQueryTestSuite) TestSave() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestSaveQuietly() {
+func (s *QueryTestSuite) TestSaveQuietly() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -2321,7 +2323,7 @@ func (s *GormQueryTestSuite) TestSaveQuietly() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestScope() {
+func (s *QueryTestSuite) TestScope() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			users := []User{{Name: "scope_user", Avatar: "scope_avatar"}, {Name: "scope_user1", Avatar: "scope_avatar1"}}
@@ -2338,7 +2340,7 @@ func (s *GormQueryTestSuite) TestScope() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestSelect() {
+func (s *QueryTestSuite) TestSelect() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "select_user", Avatar: "select_avatar"}
@@ -2375,9 +2377,9 @@ func (s *GormQueryTestSuite) TestSelect() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestSharedLock() {
+func (s *QueryTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
-		if driver != contractsorm.DriverSqlite {
+		if driver != ormcontract.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "shared_lock_user"}
 				s.Nil(query.Create(&user))
@@ -2406,7 +2408,7 @@ func (s *GormQueryTestSuite) TestSharedLock() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestSoftDelete() {
+func (s *QueryTestSuite) TestSoftDelete() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "soft_delete_user", Avatar: "soft_delete_avatar"}
@@ -2436,7 +2438,7 @@ func (s *GormQueryTestSuite) TestSoftDelete() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestTransactionSuccess() {
+func (s *QueryTestSuite) TestTransactionSuccess() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
@@ -2454,7 +2456,7 @@ func (s *GormQueryTestSuite) TestTransactionSuccess() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestTransactionError() {
+func (s *QueryTestSuite) TestTransactionError() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
@@ -2472,7 +2474,7 @@ func (s *GormQueryTestSuite) TestTransactionError() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestUpdate() {
+func (s *QueryTestSuite) TestUpdate() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -2549,7 +2551,7 @@ func (s *GormQueryTestSuite) TestUpdate() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestUpdateOrCreate() {
+func (s *QueryTestSuite) TestUpdateOrCreate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			var user User
@@ -2581,7 +2583,7 @@ func (s *GormQueryTestSuite) TestUpdateOrCreate() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestWhere() {
+func (s *QueryTestSuite) TestWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_user", Avatar: "where_avatar"}
@@ -2607,7 +2609,7 @@ func (s *GormQueryTestSuite) TestWhere() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestWithoutEvents() {
+func (s *QueryTestSuite) TestWithoutEvents() {
 	for _, query := range s.queries {
 		tests := []struct {
 			name  string
@@ -2636,7 +2638,7 @@ func (s *GormQueryTestSuite) TestWithoutEvents() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestWith() {
+func (s *QueryTestSuite) TestWith() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "with_user", Address: &Address{
@@ -2682,7 +2684,7 @@ func (s *GormQueryTestSuite) TestWith() {
 					description: "with func conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", func(query contractsorm.Query) contractsorm.Query {
+						s.Nil(query.With("Books", func(query ormcontract.Query) ormcontract.Query {
 							return query.Where("name = ?", "with_book0")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
@@ -2699,7 +2701,7 @@ func (s *GormQueryTestSuite) TestWith() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestWithNesting() {
+func (s *QueryTestSuite) TestWithNesting() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "with_nesting_user", Books: []*Book{{
@@ -2732,7 +2734,7 @@ func (s *GormQueryTestSuite) TestWithNesting() {
 	}
 }
 
-func (s *GormQueryTestSuite) TestDBRaw() {
+func (s *QueryTestSuite) TestDBRaw() {
 	userName := "db_raw"
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
@@ -2741,12 +2743,12 @@ func (s *GormQueryTestSuite) TestDBRaw() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 			switch driver {
-			case contractsorm.DriverSqlserver, contractsorm.DriverMysql:
-				res, err := query.Model(&user).Update("Name", db.Raw("concat(name, ?)", driver.String()))
+			case ormcontract.DriverSqlserver, ormcontract.DriverMysql:
+				res, err := query.Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver.String()))
 				s.Nil(err)
 				s.Equal(int64(1), res.RowsAffected)
 			default:
-				res, err := query.Model(&user).Update("Name", db.Raw("name || ?", driver.String()))
+				res, err := query.Model(&user).Update("Name", databasedb.Raw("name || ?", driver.String()))
 				s.Nil(err)
 				s.Equal(int64(1), res.RowsAffected)
 			}
@@ -2760,82 +2762,97 @@ func (s *GormQueryTestSuite) TestDBRaw() {
 }
 
 func TestReadWriteSeparate(t *testing.T) {
-	readMysqlPool, readMysqlResource, readMysqlDB, err := MysqlDocker()
+	readMysqlDocker := NewMysqlDocker()
+	readMysqlPool, readMysqlResource, readMysqlQuery, err := readMysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get read mysql error: %s", err)
 	}
-	writeMysqlPool, writeMysqlResource, writeMysqlDB, err := MysqlDocker()
+
+	writeMysqlDocker := NewMysqlDocker()
+	writeMysqlPool, writeMysqlResource, writeMysqlQuery, err := writeMysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get write mysql error: %s", err)
 	}
-	mockReadWriteMysql(cast.ToInt(readMysqlResource.GetPort("3306/tcp")), cast.ToInt(writeMysqlResource.GetPort("3306/tcp")))
-	mysqlDB, err := mysqlDockerDB(writeMysqlPool, false)
+
+	writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
+	mysqlQuery, err := writeMysqlDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get mysql gorm error: %s", err)
 	}
 
-	readPostgresqlPool, readPostgresqlResource, readPostgresqlDB, err := PostgresqlDocker()
+	readPostgresqlDocker := NewPostgresqlDocker()
+	readPostgresqlPool, readPostgresqlResource, readPostgresqlQuery, err := readPostgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get read postgresql error: %s", err)
 	}
-	writePostgresqlPool, writePostgresqlResource, writePostgresqlDB, err := PostgresqlDocker()
+
+	writePostgresqlDocker := NewPostgresqlDocker()
+	writePostgresqlPool, writePostgresqlResource, writePostgresqlQuery, err := writePostgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get write postgresql error: %s", err)
 	}
-	mockReadWritePostgresql(cast.ToInt(readPostgresqlResource.GetPort("5432/tcp")), cast.ToInt(writePostgresqlResource.GetPort("5432/tcp")))
-	postgresqlDB, err := postgresqlDockerDB(writePostgresqlPool, false)
+
+	writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
+	postgresqlQuery, err := writePostgresqlDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get postgresql gorm error: %s", err)
 	}
 
-	_, _, readSqliteDB, err := SqliteDocker(dbDatabase)
+	readSqliteDocker := NewSqliteDocker(dbDatabase)
+	_, _, readSqliteQuery, err := readSqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get read sqlite error: %s", err)
 	}
-	writeSqlitePool, _, writeSqliteDB, err := SqliteDocker(dbDatabase1)
+
+	writeSqliteDocker := NewSqliteDocker(dbDatabase1)
+	_, _, writeSqliteQuery, err := writeSqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get write sqlite error: %s", err)
 	}
-	mockReadWriteSqlite()
-	sqliteDB, err := sqliteDockerDB(writeSqlitePool, false)
+
+	writeSqliteDocker.MockReadWrite()
+	sqliteDB, err := writeSqliteDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get sqlite gorm error: %s", err)
 	}
 
-	readSqlserverPool, readSqlserverResource, readSqlserverDB, err := SqlserverDocker()
+	readSqlserverDocker := NewSqlserverDocker()
+	readSqlserverPool, readSqlserverResource, readSqlserverQuery, err := readSqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get read sqlserver error: %s", err)
 	}
-	writeSqlserverPool, writeSqlserverResource, writeSqlserverDB, err := SqlserverDocker()
+
+	writeSqlserverDocker := NewSqlserverDocker()
+	writeSqlserverPool, writeSqlserverResource, writeSqlserverQuery, err := writeSqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get write sqlserver error: %s", err)
 	}
-	mockReadWriteSqlserver(cast.ToInt(readSqlserverResource.GetPort("1433/tcp")), cast.ToInt(writeSqlserverResource.GetPort("1433/tcp")))
-	sqlserverDB, err := sqlserverDockerDB(writeSqlserverPool, false)
+	writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
+	sqlserverDB, err := writeSqlserverDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
 
-	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
-		contractsorm.DriverMysql: {
-			"mix":   mysqlDB,
-			"read":  readMysqlDB,
-			"write": writeMysqlDB,
+	dbs := map[ormcontract.Driver]map[string]ormcontract.Query{
+		ormcontract.DriverMysql: {
+			"mix":   mysqlQuery,
+			"read":  readMysqlQuery,
+			"write": writeMysqlQuery,
 		},
-		contractsorm.DriverPostgresql: {
-			"mix":   postgresqlDB,
-			"read":  readPostgresqlDB,
-			"write": writePostgresqlDB,
+		ormcontract.DriverPostgresql: {
+			"mix":   postgresqlQuery,
+			"read":  readPostgresqlQuery,
+			"write": writePostgresqlQuery,
 		},
-		contractsorm.DriverSqlite: {
+		ormcontract.DriverSqlite: {
 			"mix":   sqliteDB,
-			"read":  readSqliteDB,
-			"write": writeSqliteDB,
+			"read":  readSqliteQuery,
+			"write": writeSqliteQuery,
 		},
-		contractsorm.DriverSqlserver: {
+		ormcontract.DriverSqlserver: {
 			"mix":   sqlserverDB,
-			"read":  readSqlserverDB,
-			"write": writeSqlserverDB,
+			"read":  readSqlserverQuery,
+			"write": writeSqlserverQuery,
 		},
 	}
 
@@ -2883,51 +2900,55 @@ func TestReadWriteSeparate(t *testing.T) {
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
-	mysqlPool, mysqlResource, err := initMysqlDocker()
+	mysqlDocker := NewMysqlDocker()
+	mysqlPool, mysqlResource, err := mysqlDocker.Init()
 	if err != nil {
 		log.Fatalf("Init mysql docker error: %s", err)
 	}
-	mockMysqlWithPrefixAndSingular(cast.ToInt(mysqlResource.GetPort("3306/tcp")))
-	mysqlDB, err := mysqlDockerDBWithPrefixAndSingular(mysqlPool)
+	mysqlDocker.mockWithPrefixAndSingular()
+	mysqlQuery, err := mysqlDocker.QueryWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlPool, postgresqlResource, err := initPostgresqlDocker()
+	postgresqlDocker := NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, err := postgresqlDocker.Init()
 	if err != nil {
 		log.Fatalf("Init postgresql docker error: %s", err)
 	}
-	mockPostgresqlWithPrefixAndSingular(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
-	postgresqlDB, err := postgresqlDockerDBWithPrefixAndSingular(postgresqlPool)
+	postgresqlDocker.mockWithPrefixAndSingular()
+	postgresqlQuery, err := postgresqlDocker.QueryWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
 
-	sqlitePool, _, err := initSqliteDocker()
+	sqliteDocker := NewSqliteDocker(dbDatabase)
+	_, _, err = sqliteDocker.Init()
 	if err != nil {
 		log.Fatalf("Init sqlite docker error: %s", err)
 	}
-	mockSqliteWithPrefixAndSingular(dbDatabase)
-	sqliteDB, err := sqliteDockerDBWithPrefixAndSingular(sqlitePool)
+	sqliteDocker.mockWithPrefixAndSingular()
+	sqliteDB, err := sqliteDocker.QueryWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverPool, sqlserverResource, err := initSqlserverDocker()
+	sqlserverDocker := NewSqlserverDocker()
+	sqlserverPool, sqlserverResource, err := sqlserverDocker.Init()
 	if err != nil {
 		log.Fatalf("Init sqlserver docker error: %s", err)
 	}
-	mockSqlserverWithPrefixAndSingular(cast.ToInt(sqlserverResource.GetPort("1433/tcp")))
-	sqlserverDB, err := sqlserverDockerDBWithPrefixAndSingular(sqlserverPool)
+	sqlserverDocker.mockWithPrefixAndSingular()
+	sqlserverDB, err := sqlserverDocker.QueryWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
-	dbs := map[contractsorm.Driver]contractsorm.Query{
-		contractsorm.DriverMysql:      mysqlDB,
-		contractsorm.DriverPostgresql: postgresqlDB,
-		contractsorm.DriverSqlite:     sqliteDB,
-		contractsorm.DriverSqlserver:  sqlserverDB,
+	dbs := map[ormcontract.Driver]ormcontract.Query{
+		ormcontract.DriverMysql:      mysqlQuery,
+		ormcontract.DriverPostgresql: postgresqlQuery,
+		ormcontract.DriverSqlite:     sqliteDB,
+		ormcontract.DriverSqlserver:  sqlserverDB,
 	}
 
 	for drive, db := range dbs {
@@ -2955,8 +2976,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 }
 
-func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
-	return func(query contractsorm.Query) contractsorm.Query {
+func paginator(page string, limit string) func(methods ormcontract.Query) ormcontract.Query {
+	return func(query ormcontract.Query) ormcontract.Query {
 		page, _ := strconv.Atoi(page)
 		limit, _ := strconv.Atoi(limit)
 		offset := (page - 1) * limit

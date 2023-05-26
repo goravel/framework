@@ -3,11 +3,17 @@ package console
 import (
 	"github.com/gookit/color"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 )
 
 type MigrateMakeCommand struct {
+	config config.Config
+}
+
+func NewMigrateMakeCommand(config config.Config) *MigrateMakeCommand {
+	return &MigrateMakeCommand{config: config}
 }
 
 //Signature The name and signature of the console command.
@@ -45,7 +51,8 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	table, create := TableGuesser{}.Guess(name)
 
 	//Write the migration file to disk.
-	MigrateCreator{}.Create(name, table, create)
+	migrateCreator := NewMigrateCreator(receiver.config)
+	migrateCreator.Create(name, table, create)
 
 	color.Green.Printf("Created Migration: %s\n", name)
 

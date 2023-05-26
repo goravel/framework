@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/goravel/framework/facades"
+	frameworkgrpc "github.com/goravel/framework/grpc"
 )
 
 type MDReaderWriter struct {
@@ -77,7 +77,7 @@ func OpentracingServer(tracer opentracing.Tracer) grpc.UnaryServerInterceptor {
 		}
 		spanContext, err := tracer.Extract(opentracing.TextMap, MDReaderWriter{md})
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			facades.Log.Error(fmt.Sprintf("extract from metadata error: %v", err))
+			frameworkgrpc.LogFacade.Error(fmt.Sprintf("extract from metadata error: %v", err))
 		} else {
 			span := tracer.StartSpan(
 				info.FullMethod,

@@ -6,8 +6,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log/logger"
 )
 
@@ -67,47 +67,47 @@ func (r *Writer) Panicf(format string, args ...any) {
 	r.instance.Panicf(format, args...)
 }
 
-func registerHook(instance *logrus.Logger, channel string) error {
+func registerHook(config config.Config, instance *logrus.Logger, channel string) error {
 	channelPath := "logging.channels." + channel
-	driver := facades.Config.GetString(channelPath + ".driver")
+	driver := config.GetString(channelPath + ".driver")
 
 	var hook logrus.Hook
 	var err error
 	switch driver {
 	case log.StackDriver:
-		for _, stackChannel := range facades.Config.Get(channelPath + ".channels").([]string) {
+		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
 				return errors.New("stack drive can't include self channel")
 			}
 
-			if err := registerHook(instance, stackChannel); err != nil {
+			if err := registerHook(config, instance, stackChannel); err != nil {
 				return err
 			}
 		}
 
 		return nil
 	case log.SingleDriver:
-		if !facades.Config.GetBool(channelPath + ".print") {
+		if !config.GetBool(channelPath + ".print") {
 			instance.SetOutput(ioutil.Discard)
 		}
 
-		logLogger := &logger.Single{}
+		logLogger := logger.NewSingle(config)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
 		}
 	case log.DailyDriver:
-		if !facades.Config.GetBool(channelPath + ".print") {
+		if !config.GetBool(channelPath + ".print") {
 			instance.SetOutput(ioutil.Discard)
 		}
 
-		logLogger := &logger.Daily{}
+		logLogger := logger.NewDaily(config)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
 		}
 	case log.CustomDriver:
-		logLogger := facades.Config.Get(channelPath + ".via").(log.Logger)
+		logLogger := config.Get(channelPath + ".via").(log.Logger)
 		logHook, err := logLogger.Handle(channelPath)
 		if err != nil {
 			return err

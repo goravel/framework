@@ -14,16 +14,14 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/ory/dockertest/v3"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/config"
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/support/file"
 	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
-	"github.com/goravel/framework/testing/mock"
 )
 
 type TestDisk struct {
@@ -51,19 +49,19 @@ func TestStorage(t *testing.T) {
 		},
 		{
 			disk: "oss",
-			url:  facades.Config.GetString("filesystems.disks.oss.url"),
+			url:  mockConfig.GetString("filesystems.disks.oss.url"),
 		},
 		{
 			disk: "cos",
-			url:  facades.Config.GetString("filesystems.disks.cos.url"),
+			url:  mockConfig.GetString("filesystems.disks.cos.url"),
 		},
 		{
 			disk: "s3",
-			url:  facades.Config.GetString("filesystems.disks.s3.url"),
+			url:  mockConfig.GetString("filesystems.disks.s3.url"),
 		},
 		{
 			disk: "minio",
-			url:  facades.Config.GetString("filesystems.disks.minio.url"),
+			url:  mockConfig.GetString("filesystems.disks.minio.url"),
 		},
 		{
 			disk: "custom",
@@ -416,10 +414,9 @@ func TestStorage(t *testing.T) {
 
 	for _, disk := range disks {
 		var err error
-		driver, err = NewDriver(disk.disk)
+		driver, err = NewDriver(mockConfig, disk.disk)
 		assert.NotNil(t, driver)
 		assert.Nil(t, err)
-
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup(disk)
@@ -436,7 +433,8 @@ func TestStorage(t *testing.T) {
 }
 
 func initConfig() *configmocks.Config {
-	mockConfig := mock.Config()
+	mockConfig := &configmocks.Config{}
+	ConfigFacade = mockConfig
 	mockConfig.On("GetString", "app.timezone").Return("UTC")
 	mockConfig.On("GetString", "filesystems.default").Return("local")
 	mockConfig.On("GetString", "filesystems.disks.local.driver").Return("local")
@@ -444,8 +442,9 @@ func initConfig() *configmocks.Config {
 	mockConfig.On("GetString", "filesystems.disks.local.url").Return("http://localhost/storage")
 	mockConfig.On("GetString", "filesystems.disks.custom.driver").Return("custom")
 	mockConfig.On("Get", "filesystems.disks.custom.via").Return(&Local{
-		root: "storage/app/public",
-		url:  "http://localhost/storage",
+		config: mockConfig,
+		root:   "storage/app/public",
+		url:    "http://localhost/storage",
 	})
 	mockConfig.On("GetString", "filesystems.disks.s3.driver").Return("s3")
 	mockConfig.On("GetString", "filesystems.disks.oss.driver").Return("oss")
@@ -455,24 +454,31 @@ func initConfig() *configmocks.Config {
 	mockConfig.On("GetBool", "filesystems.disks.minio.ssl", false).Return(false)
 
 	if file.Exists("../.env") {
-		application := config.NewApplication("../.env")
-		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(application.Env("AWS_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.s3.secret").Return(application.Env("AWS_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.s3.region").Return(application.Env("AWS_DEFAULT_REGION"))
-		mockConfig.On("GetString", "filesystems.disks.s3.bucket").Return(application.Env("AWS_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.s3.url").Return(application.Env("AWS_URL"))
-		mockConfig.On("GetString", "filesystems.disks.oss.key").Return(application.Env("ALIYUN_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.oss.secret").Return(application.Env("ALIYUN_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.oss.bucket").Return(application.Env("ALIYUN_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.oss.url").Return(application.Env("ALIYUN_URL"))
-		mockConfig.On("GetString", "filesystems.disks.oss.endpoint").Return(application.Env("ALIYUN_ENDPOINT"))
-		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(application.Env("TENCENT_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(application.Env("TENCENT_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(application.Env("TENCENT_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.cos.url").Return(application.Env("TENCENT_URL"))
-		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(application.Env("MINIO_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(application.Env("MINIO_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(application.Env("MINIO_BUCKET"))
+		vip := viper.New()
+		vip.SetConfigName("../.env")
+		vip.SetConfigType("env")
+		vip.AddConfigPath(".")
+		_ = vip.ReadInConfig()
+		vip.SetEnvPrefix("goravel")
+		vip.AutomaticEnv()
+
+		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(vip.Get("AWS_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.s3.secret").Return(vip.Get("AWS_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.s3.region").Return(vip.Get("AWS_DEFAULT_REGION"))
+		mockConfig.On("GetString", "filesystems.disks.s3.bucket").Return(vip.Get("AWS_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.s3.url").Return(vip.Get("AWS_URL"))
+		mockConfig.On("GetString", "filesystems.disks.oss.key").Return(vip.Get("ALIYUN_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.oss.secret").Return(vip.Get("ALIYUN_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.oss.bucket").Return(vip.Get("ALIYUN_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.oss.url").Return(vip.Get("ALIYUN_URL"))
+		mockConfig.On("GetString", "filesystems.disks.oss.endpoint").Return(vip.Get("ALIYUN_ENDPOINT"))
+		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(vip.Get("TENCENT_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(vip.Get("TENCENT_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(vip.Get("TENCENT_BUCKET"))
+		mockConfig.On("GetString", "filesystems.disks.cos.url").Return(vip.Get("TENCENT_URL"))
+		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(vip.Get("MINIO_ACCESS_KEY_ID"))
+		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(vip.Get("MINIO_ACCESS_KEY_SECRET"))
+		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(vip.Get("MINIO_BUCKET"))
 	}
 	if os.Getenv("AWS_ACCESS_KEY_ID") != "" {
 		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(os.Getenv("AWS_ACCESS_KEY_ID"))
@@ -503,9 +509,9 @@ func initMinioDocker(mockConfig *configmocks.Config) (*dockertest.Pool, *dockert
 		return nil, nil, err
 	}
 
-	key := facades.Config.GetString("filesystems.disks.minio.key")
-	secret := facades.Config.GetString("filesystems.disks.minio.secret")
-	bucket := facades.Config.GetString("filesystems.disks.minio.bucket")
+	key := mockConfig.GetString("filesystems.disks.minio.key")
+	secret := mockConfig.GetString("filesystems.disks.minio.secret")
+	bucket := mockConfig.GetString("filesystems.disks.minio.bucket")
 	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "minio/minio",
 		Tag:        "latest",
@@ -539,7 +545,7 @@ func initMinioDocker(mockConfig *configmocks.Config) (*dockertest.Pool, *dockert
 			return err
 		}
 
-		if err := client.MakeBucket(context.Background(), facades.Config.GetString("filesystems.disks.minio.bucket"), minio.MakeBucketOptions{}); err != nil {
+		if err := client.MakeBucket(context.Background(), mockConfig.GetString("filesystems.disks.minio.bucket"), minio.MakeBucketOptions{}); err != nil {
 			return err
 		}
 
