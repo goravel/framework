@@ -30,7 +30,7 @@ type GinRequest struct {
 	validation validatecontract.Validation
 }
 
-func NewGinRequest(ctx *GinContext) httpcontract.Request {
+func NewGinRequest(ctx *GinContext, log log.Log, validation validatecontract.Validation) *GinRequest {
 	postData, err := getPostData(ctx)
 	if err != nil {
 		LogFacade.Error(fmt.Sprintf("%+v", errors.Unwrap(err)))

@@ -26,7 +26,7 @@ func NewGinContext(ctx *gin.Context) http.Context {
 
 func (c *GinContext) Request() http.Request {
 	if c.request == nil {
-		c.request = NewGinRequest(c)
+		c.request = NewGinRequest(c, LogFacade, ValidationFacade)
 	}
 
 	return c.request
