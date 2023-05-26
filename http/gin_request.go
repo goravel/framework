@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -24,10 +25,16 @@ import (
 type GinRequest struct {
 	ctx      *GinContext
 	instance *gin.Context
+	postData map[string]any
 }
 
 func NewGinRequest(ctx *GinContext) contractshttp.Request {
-	return &GinRequest{ctx, ctx.instance}
+	postData, err := getPostData(ctx)
+	if err != nil {
+		facades.Log.Error(fmt.Sprintf("%+v", errors.Unwrap(err)))
+	}
+
+	return &GinRequest{ctx: ctx, instance: ctx.instance, postData: postData}
 }
 
 func (r *GinRequest) AbortWithStatus(code int) {
@@ -39,49 +46,13 @@ func (r *GinRequest) AbortWithStatusJson(code int, jsonObj any) {
 }
 
 func (r *GinRequest) All() map[string]any {
-	const defaultMemory = 32 << 20
-	contentType := r.instance.ContentType()
-
 	var (
 		dataMap  = make(map[string]any)
 		queryMap = make(map[string]any)
-		postMap  = make(map[string]any)
 	)
 
 	for key, query := range r.instance.Request.URL.Query() {
 		queryMap[key] = strings.Join(query, ",")
-	}
-
-	if contentType == "application/json" && r.instance.Request != nil && r.instance.Request.Body != nil {
-		bodyBytes, err := ioutil.ReadAll(r.instance.Request.Body)
-		if err != nil {
-			facades.Log.Errorf("when calling request all method, retrieve json error: %v", err)
-			return nil
-		}
-
-		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-		if r.instance.Request.Body != nil {
-			if err := json.NewDecoder(r.instance.Request.Body).Decode(&postMap); err != nil {
-				facades.Log.Errorf("when calling request all method, decode json error: %v", err)
-				return nil
-			}
-		}
-		r.instance.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-	} else if contentType == "multipart/form-data" && r.instance.Request.ContentLength > 0 {
-		if r.instance.Request.PostForm == nil {
-			if err := r.instance.Request.ParseMultipartForm(defaultMemory); err != nil {
-				facades.Log.Errorf("when calling request all method, parse multipart form error: %v", err)
-				return nil
-			}
-		}
-		for k, v := range r.instance.Request.PostForm {
-			postMap[k] = strings.Join(v, ",")
-		}
-		for k, v := range r.instance.Request.MultipartForm.File {
-			if len(v) > 0 {
-				postMap[k] = v[0]
-			}
-		}
 	}
 
 	var mu sync.RWMutex
@@ -90,7 +61,7 @@ func (r *GinRequest) All() map[string]any {
 		dataMap[k] = v
 		mu.Unlock()
 	}
-	for k, v := range postMap {
+	for k, v := range r.postData {
 		mu.Lock()
 		dataMap[k] = v
 		mu.Unlock()
@@ -254,18 +225,11 @@ func (r *GinRequest) Path() string {
 }
 
 func (r *GinRequest) Input(key string, defaultValue ...string) string {
-	data := make(map[string]any)
-	if err := r.Bind(&data); err == nil {
-		if item, exist := data[key]; exist {
-			return cast.ToString(item)
-		}
+	if value, exist := r.postData[key]; exist {
+		return cast.ToString(value)
 	}
 
-	if value, exist := r.instance.GetPostForm(key); exist {
-		return value
-	}
-
-	if value, ok := r.instance.GetQuery(key); ok {
+	if value, exist := r.instance.GetQuery(key); exist {
 		return value
 	}
 
@@ -420,6 +384,48 @@ func (r *GinRequest) ValidateRequest(request contractshttp.FormRequest) (contrac
 	}
 
 	return validator.Errors(), nil
+}
+
+func getPostData(ctx *GinContext) (map[string]any, error) {
+	request := ctx.instance.Request
+	if request == nil || request.Body == nil || request.ContentLength == 0 {
+		return nil, nil
+	}
+
+	const defaultMemory = 32 << 20
+	contentType := ctx.instance.ContentType()
+	data := make(map[string]any)
+	if contentType == "application/json" {
+		bodyBytes, err := ioutil.ReadAll(request.Body)
+		_ = request.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("retrieve json error: %v", err)
+		}
+
+		if err := json.Unmarshal(bodyBytes, &data); err != nil {
+			return nil, fmt.Errorf("decode json [%v] error: %v", string(bodyBytes), err)
+		}
+
+		request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	if contentType == "multipart/form-data" {
+		if request.PostForm == nil {
+			if err := request.ParseMultipartForm(defaultMemory); err != nil {
+				return nil, fmt.Errorf("parse multipart form error: %v", err)
+			}
+		}
+		for k, v := range request.PostForm {
+			data[k] = strings.Join(v, ",")
+		}
+		for k, v := range request.MultipartForm.File {
+			if len(v) > 0 {
+				data[k] = v[0]
+			}
+		}
+	}
+
+	return data, nil
 }
 
 func stringToBool(value string) bool {
