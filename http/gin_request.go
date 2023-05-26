@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/validate"
-	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 
 	contractsfilesystem "github.com/goravel/framework/contracts/filesystem"
@@ -31,7 +31,7 @@ type GinRequest struct {
 func NewGinRequest(ctx *GinContext) contractshttp.Request {
 	postData, err := getPostData(ctx)
 	if err != nil {
-		facades.Log.Error(fmt.Sprintf("%+v", err))
+		facades.Log.Error(fmt.Sprintf("%+v", errors.Unwrap(err)))
 	}
 
 	return &GinRequest{ctx: ctx, instance: ctx.instance, postData: postData}
@@ -399,11 +399,11 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 		bodyBytes, err := ioutil.ReadAll(request.Body)
 		_ = request.Body.Close()
 		if err != nil {
-			return nil, errors.Wrap(err, "retrieve json error")
+			return nil, fmt.Errorf("retrieve json error: %v", err)
 		}
 
 		if err := json.Unmarshal(bodyBytes, &data); err != nil {
-			return nil, errors.Wrapf(err, "decode json [%v] error", string(bodyBytes))
+			return nil, fmt.Errorf("decode json [%v] error: %v", string(bodyBytes), err)
 		}
 
 		request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
@@ -412,7 +412,7 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 	if contentType == "multipart/form-data" {
 		if request.PostForm == nil {
 			if err := request.ParseMultipartForm(defaultMemory); err != nil {
-				return nil, errors.Wrap(err, "parse multipart form error")
+				return nil, fmt.Errorf("parse multipart form error: %v", err)
 			}
 		}
 		for k, v := range request.PostForm {
