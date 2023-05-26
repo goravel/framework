@@ -25,7 +25,7 @@ func (app *Application) GetEvents() map[event.Event][]event.Listener {
 }
 
 func (app *Application) Job(event event.Event, args []event.Arg) event.Task {
-	listeners, _ := app.events[event]
+	listeners := app.events[event]
 
 	return NewTask(app.queue, args, event, listeners)
 }
