@@ -21,7 +21,7 @@ require (
 	github.com/gookit/color v1.5.3
 	github.com/gookit/validate v1.4.5
 	github.com/goravel/file-rotatelogs/v2 v2.4.1
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/manifoldco/promptui v0.9.0
