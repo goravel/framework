@@ -37,7 +37,7 @@ require (
 	github.com/spf13/cast v1.5.1
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.8.1
-	github.com/tencentyun/cos-go-sdk-v5 v0.7.40
+	github.com/tencentyun/cos-go-sdk-v5 v0.7.41
 	github.com/unrolled/secure v1.13.0
 	github.com/urfave/cli/v2 v2.25.4
 	go.uber.org/atomic v1.10.0
