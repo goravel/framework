@@ -40,7 +40,7 @@ require (
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.41
 	github.com/unrolled/secure v1.13.0
 	github.com/urfave/cli/v2 v2.25.4
-	go.uber.org/atomic v1.10.0
+	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.9.0
 	google.golang.org/grpc v1.55.0
 	gorm.io/driver/mysql v1.5.1
