@@ -395,8 +395,8 @@ github.com/gookit/filter v1.1.4/go.mod h1:0CEPQvudso375RitQf9X8HerUg9cz8N7c/yn6b
 github.com/gookit/goutil v0.5.12/go.mod h1:6vhWm/bSYXGE8poqFbFz6IGM7jV2r6qVhyK567SX/AI=
 github.com/gookit/goutil v0.5.15 h1:FaRyj0uVqi7j92QHsG+2Sc1VZ7/7ma77UD3/wBpwyTc=
 github.com/gookit/goutil v0.5.15/go.mod h1:ozPE16eJS9f89aVbVk05ocEJsia3KPrYUqPTs8GvUTw=
-github.com/gookit/validate v1.4.5 h1:694Mu6Fv+K+a8ZEWiM069UBEt85gvkq85GTkbytWt2s=
-github.com/gookit/validate v1.4.5/go.mod h1:1rjeYaYlMK/8od4oge5C+Gt/3DnHkXymLPda7+3urC8=
+github.com/gookit/validate v1.4.6 h1:Ix8NRy2+6z4YGHWXgZL9+emy9wRI2GWyhW2smPcIlSU=
+github.com/gookit/validate v1.4.6/go.mod h1:1rjeYaYlMK/8od4oge5C+Gt/3DnHkXymLPda7+3urC8=
 github.com/goravel/file-rotatelogs v0.0.0-20211215053220-2ab31dd9575c h1:obhFK91JAhcf7s6h5sggZishm1VyGW/gBCreo+7/SwQ=
 github.com/goravel/file-rotatelogs v0.0.0-20211215053220-2ab31dd9575c/go.mod h1:YSWsLXlG16u5CWFaXNZHhEQD10+NwF3xfgDV816OwLE=
 github.com/goravel/file-rotatelogs/v2 v2.4.1 h1:ogkeIFcTHSBRUBpZYiyJbpul8hkVXxHPuDbOaP78O1M=
