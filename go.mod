@@ -6,7 +6,7 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.11
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible
 	github.com/aws/aws-sdk-go-v2 v1.18.0
-	github.com/aws/aws-sdk-go-v2/credentials v1.13.2
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.24
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.33.1
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/gin-gonic/gin v1.9.0
