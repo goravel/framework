@@ -13,7 +13,7 @@ require (
 	github.com/glebarez/go-sqlite v1.21.1
 	github.com/glebarez/sqlite v1.8.0
 	github.com/go-redis/redis/v8 v8.11.4
-	github.com/go-sql-driver/mysql v1.7.0
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang-migrate/migrate/v4 v4.16.0
 	github.com/golang/protobuf v1.5.3
