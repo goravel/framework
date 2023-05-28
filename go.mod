@@ -45,7 +45,7 @@ require (
 	google.golang.org/grpc v1.51.0
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
-	gorm.io/driver/sqlserver v1.4.2
+	gorm.io/driver/sqlserver v1.5.0
 	gorm.io/gorm v1.25.1
 	gorm.io/plugin/dbresolver v1.4.1
 )
