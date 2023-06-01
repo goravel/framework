@@ -25,17 +25,17 @@ type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register(app foundation.Application) {
-	ConfigFacade = app.MakeConfig()
-	CacheFacade = app.MakeCache()
-	LogFacade = app.MakeLog()
-	ValidationFacade = app.MakeValidation()
-
-	app.Singleton(Binding, func() (any, error) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
 }
 
 func (database *ServiceProvider) Boot(app foundation.Application) {
+	ConfigFacade = app.MakeConfig()
+	CacheFacade = app.MakeCache()
+	LogFacade = app.MakeLog()
+	ValidationFacade = app.MakeValidation()
+
 	database.registerCommands(app)
 }
 

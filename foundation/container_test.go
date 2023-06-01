@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/contracts/foundation"
 )
 
 type ContainerTestSuite struct {
@@ -21,7 +23,7 @@ func (s *ContainerTestSuite) SetupTest() {
 }
 
 func (s *ContainerTestSuite) TestBind() {
-	callback := func() (any, error) {
+	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
 	s.container.Bind("Bind", callback)
@@ -43,7 +45,7 @@ func (s *ContainerTestSuite) TestBind() {
 }
 
 func (s *ContainerTestSuite) TestBindWith() {
-	callback := func(parameters map[string]any) (any, error) {
+	callback := func(app foundation.Application, parameters map[string]any) (any, error) {
 		return parameters["name"], nil
 	}
 	s.container.BindWith("BindWith", callback)
@@ -78,7 +80,7 @@ func (s *ContainerTestSuite) TestInstance() {
 }
 
 func (s *ContainerTestSuite) TestSingleton() {
-	callback := func() (any, error) {
+	callback := func(app foundation.Application) (any, error) {
 		return 1, nil
 	}
 	s.container.Singleton("Singleton", callback)
@@ -118,7 +120,7 @@ func (s *ContainerTestSuite) TestMake() {
 			name: "found Singleton",
 			key:  "Singleton",
 			setup: func() {
-				s.container.Singleton("Singleton", func() (any, error) {
+				s.container.Singleton("Singleton", func(app foundation.Application) (any, error) {
 					return 1, nil
 				})
 			},
@@ -128,7 +130,7 @@ func (s *ContainerTestSuite) TestMake() {
 			name: "found Bind",
 			key:  "Bind",
 			setup: func() {
-				s.container.Bind("Bind", func() (any, error) {
+				s.container.Bind("Bind", func(app foundation.Application) (any, error) {
 					return 1, nil
 				})
 			},
@@ -141,7 +143,7 @@ func (s *ContainerTestSuite) TestMake() {
 				"name": "goravel",
 			},
 			setup: func() {
-				s.container.BindWith("BindWith", func(parameters map[string]any) (any, error) {
+				s.container.BindWith("BindWith", func(app foundation.Application, parameters map[string]any) (any, error) {
 					return parameters["name"], nil
 				})
 			},

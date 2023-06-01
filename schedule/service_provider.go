@@ -10,7 +10,7 @@ type ServiceProvider struct {
 }
 
 func (receiver *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func() (any, error) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		return NewApplication(app.MakeArtisan(), app.MakeLog()), nil
 	})
 }

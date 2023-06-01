@@ -16,12 +16,12 @@ type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(BindingAuth, func() (any, error) {
+	app.Singleton(BindingAuth, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		return NewAuth(config.GetString("auth.defaults.guard"),
 			app.MakeCache(), config, app.MakeOrm()), nil
 	})
-	app.Singleton(BindingGate, func() (any, error) {
+	app.Singleton(BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil
 	})
 }

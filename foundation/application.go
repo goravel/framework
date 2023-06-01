@@ -17,7 +17,6 @@ func init() {
 	app := &Application{Container: NewContainer()}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
-
 	App = app
 }
 

@@ -18,6 +18,7 @@ import (
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
+	foundationcontract "github.com/goravel/framework/contracts/foundation"
 	grpccontract "github.com/goravel/framework/contracts/grpc"
 	hashcontract "github.com/goravel/framework/contracts/hash"
 	httpcontract "github.com/goravel/framework/contracts/http"
@@ -56,11 +57,11 @@ func NewContainer() *Container {
 	return &Container{}
 }
 
-func (c *Container) Bind(key any, callback func() (any, error)) {
+func (c *Container) Bind(key any, callback func(app foundationcontract.Application) (any, error)) {
 	c.bindings.Store(key, instance{concrete: callback, shared: false})
 }
 
-func (c *Container) BindWith(key any, callback func(parameters map[string]any) (any, error)) {
+func (c *Container) BindWith(key any, callback func(app foundationcontract.Application, parameters map[string]any) (any, error)) {
 	c.bindings.Store(key, instance{concrete: callback, shared: false})
 }
 
@@ -256,7 +257,7 @@ func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {
 	return c.make(key, parameters)
 }
 
-func (c *Container) Singleton(key any, callback func() (any, error)) {
+func (c *Container) Singleton(key any, callback func(app foundationcontract.Application) (any, error)) {
 	c.bindings.Store(key, instance{concrete: callback, shared: true})
 }
 
@@ -275,8 +276,8 @@ func (c *Container) make(key any, parameters map[string]any) (any, error) {
 
 	bindingImpl := binding.(instance)
 	switch concrete := bindingImpl.concrete.(type) {
-	case func() (any, error):
-		concreteImpl, err := concrete()
+	case func(app foundationcontract.Application) (any, error):
+		concreteImpl, err := concrete(App)
 		if err != nil {
 			return nil, err
 		}
@@ -285,8 +286,8 @@ func (c *Container) make(key any, parameters map[string]any) (any, error) {
 		}
 
 		return concreteImpl, nil
-	case func(parameters map[string]any) (any, error):
-		concreteImpl, err := concrete(parameters)
+	case func(app foundationcontract.Application, parameters map[string]any) (any, error):
+		concreteImpl, err := concrete(App, parameters)
 		if err != nil {
 			return nil, err
 		}

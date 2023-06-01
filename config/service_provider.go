@@ -22,7 +22,7 @@ func (config *ServiceProvider) Register(app foundation.Application) {
 		flag.Parse()
 	}
 
-	app.Singleton(Binding, func() (any, error) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		return NewApplication(*env), nil
 	})
 }
