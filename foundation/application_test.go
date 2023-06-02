@@ -48,7 +48,7 @@ func (s *ApplicationTestSuite) TestPublishes() {
 	s.Equal(2, len(s.app.publishes["github.com/goravel/sms"]))
 	s.Equal("config1.go", s.app.publishes["github.com/goravel/sms"]["config.go"])
 	s.Equal(2, len(s.app.publishGroups["public"]))
-	s.Equal("config1.go", s.app.publishes["public"]["config.go"])
+	s.Equal("config1.go", s.app.publishGroups["public"]["config.go"])
 	s.Equal(2, len(s.app.publishGroups["private"]))
 }
 
