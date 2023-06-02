@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/contracts/event"
-	eventmock "github.com/goravel/framework/contracts/event/mocks"
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/queue"
@@ -83,10 +81,8 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 
 func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
-	mockEvent := &eventmock.Instance{}
-	mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
 
-	queueFacade := queue.NewApplication(mockConfig, mockEvent)
+	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})
@@ -110,8 +106,6 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Content(mail.Content{Subject: "Goravel Test Queue", Html: "<h1>Hello Goravel</h1>"}).
 		Queue(nil))
 	time.Sleep(3 * time.Second)
-
-	mockEvent.AssertExpectations(s.T())
 }
 
 func mockConfig(mailPort, redisPort int) *configmock.Config {

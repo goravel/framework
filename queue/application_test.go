@@ -57,7 +57,7 @@ func (s *QueueTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
 	s.mockEvent = &eventmock.Instance{}
 	s.mockQueue = &queuemock.Queue{}
-	s.app = NewApplication(s.mockConfig, s.mockEvent)
+	s.app = NewApplication(s.mockConfig)
 }
 
 func (s *QueueTestSuite) TestSyncQueue() {
