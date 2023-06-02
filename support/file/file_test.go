@@ -55,6 +55,7 @@ func TestRemove(t *testing.T) {
 	assert.Nil(t, Create(path, `goravel`))
 
 	assert.True(t, Remove(path))
+	assert.True(t, Remove(pwd+"/goravel"))
 }
 
 func TestSize(t *testing.T) {

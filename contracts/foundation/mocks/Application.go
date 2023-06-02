@@ -18,6 +18,8 @@ import (
 
 	filesystem "github.com/goravel/framework/contracts/filesystem"
 
+	foundation "github.com/goravel/framework/contracts/foundation"
+
 	grpc "github.com/goravel/framework/contracts/grpc"
 
 	hash "github.com/goravel/framework/contracts/hash"
@@ -47,18 +49,51 @@ type Application struct {
 }
 
 // Bind provides a mock function with given fields: key, callback
-func (_m *Application) Bind(key interface{}, callback func() (interface{}, error)) {
+func (_m *Application) Bind(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
 }
 
 // BindWith provides a mock function with given fields: key, callback
-func (_m *Application) BindWith(key interface{}, callback func(map[string]interface{}) (interface{}, error)) {
+func (_m *Application) BindWith(key interface{}, callback func(foundation.Application, map[string]interface{}) (interface{}, error)) {
 	_m.Called(key, callback)
 }
 
 // Boot provides a mock function with given fields:
 func (_m *Application) Boot() {
 	_m.Called()
+}
+
+// Commands provides a mock function with given fields: _a0
+func (_m *Application) Commands(_a0 []console.Command) {
+	_m.Called(_a0)
+}
+
+// ConfigPath provides a mock function with given fields: path
+func (_m *Application) ConfigPath(path string) string {
+	ret := _m.Called(path)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// DatabasePath provides a mock function with given fields: path
+func (_m *Application) DatabasePath(path string) string {
+	ret := _m.Called(path)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // Instance provides a mock function with given fields: key, instance
@@ -400,8 +435,34 @@ func (_m *Application) MakeWith(key interface{}, parameters map[string]interface
 	return r0, r1
 }
 
+// PublicPath provides a mock function with given fields: path
+func (_m *Application) PublicPath(path string) string {
+	ret := _m.Called(path)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Publishes provides a mock function with given fields: packageName, paths, groups
+func (_m *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
+	_va := make([]interface{}, len(groups))
+	for _i := range groups {
+		_va[_i] = groups[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, packageName, paths)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
 // Singleton provides a mock function with given fields: key, callback
-func (_m *Application) Singleton(key interface{}, callback func() (interface{}, error)) {
+func (_m *Application) Singleton(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
 }
 
