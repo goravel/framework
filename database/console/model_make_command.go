@@ -45,7 +45,10 @@ func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+		return err
+	}
+
 	color.Greenln("Model created successfully")
 
 	return nil

@@ -105,7 +105,7 @@ func TestMigrateCommand(t *testing.T) {
 }
 
 func createMysqlMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -120,7 +120,7 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 }
 
 func createPostgresqlMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -132,7 +132,7 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 }
 
 func createSqlserverMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -145,7 +145,7 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 }
 
 func createSqliteMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,

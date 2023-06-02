@@ -35,7 +35,7 @@ func TestStorage(t *testing.T) {
 		return
 	}
 
-	file.Create("test.txt", "Goravel")
+	assert.Nil(t, file.Create("test.txt", "Goravel"))
 	mockConfig := initConfig()
 	minioPool, minioResource, err := initMinioDocker(mockConfig)
 	assert.Nil(t, err)
