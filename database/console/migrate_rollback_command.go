@@ -38,7 +38,7 @@ func (receiver *MigrateRollbackCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 		Flags: []command.Flag{
-			{
+			&command.StringFlag{
 				Name:  "step",
 				Value: "1",
 				Usage: "rollback steps",

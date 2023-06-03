@@ -20,4 +20,12 @@ type Context interface {
 	Argument(index int) string
 	Arguments() []string
 	Option(key string) string
+	OptionSlice(key string) []string
+	OptionBool(key string) bool
+	OptionFloat64(key string) float64
+	OptionFloat64Slice(key string) []float64
+	OptionInt(key string) int
+	OptionIntSlice(key string) []int
+	OptionInt64(key string) int64
+	OptionInt64Slice(key string) []int64
 }

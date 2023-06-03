@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gookit/color"
-	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -42,27 +41,23 @@ func (receiver *VendorPublishCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "vendor",
 		Flags: []command.Flag{
-			{
+			&command.BoolFlag{
 				Name:    "existing",
-				Value:   "",
 				Aliases: []string{"e"},
 				Usage:   "Publish and overwrite only the files that have already been published",
 			},
-			{
+			&command.BoolFlag{
 				Name:    "force",
-				Value:   "",
 				Aliases: []string{"f"},
 				Usage:   "Overwrite any existing files",
 			},
-			{
+			&command.StringFlag{
 				Name:    "package",
-				Value:   "",
 				Aliases: []string{"p"},
 				Usage:   "Package name to publish",
 			},
-			{
+			&command.StringFlag{
 				Name:    "tag",
-				Value:   "",
 				Aliases: []string{"t"},
 				Usage:   "One tag that have assets you want to publish",
 			},
@@ -90,7 +85,7 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 			return err
 		}
 
-		success, err := receiver.publish(value, string(content), cast.ToBool(ctx.Option("existing")), cast.ToBool(ctx.Option("force")))
+		success, err := receiver.publish(value, string(content), ctx.OptionBool("existing"), ctx.OptionBool("force"))
 		if err != nil {
 			return err
 		}

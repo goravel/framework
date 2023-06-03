@@ -35,8 +35,8 @@ func (s *ContainerTestSuite) TestBind() {
 	s.False(ins.shared)
 	s.NotNil(ins.concrete)
 	switch concrete := ins.concrete.(type) {
-	case func() (any, error):
-		concreteImpl, err := concrete()
+	case func(app foundation.Application) (any, error):
+		concreteImpl, err := concrete(nil)
 		s.Equal(1, concreteImpl)
 		s.Nil(err)
 	default:
@@ -57,8 +57,8 @@ func (s *ContainerTestSuite) TestBindWith() {
 	s.False(ins.shared)
 	s.NotNil(ins.concrete)
 	switch concrete := ins.concrete.(type) {
-	case func(parameters map[string]any) (any, error):
-		concreteImpl, err := concrete(map[string]any{"name": "goravel"})
+	case func(app foundation.Application, parameters map[string]any) (any, error):
+		concreteImpl, err := concrete(nil, map[string]any{"name": "goravel"})
 		s.Equal("goravel", concreteImpl)
 		s.Nil(err)
 	default:
@@ -92,8 +92,8 @@ func (s *ContainerTestSuite) TestSingleton() {
 	s.True(ins.shared)
 	s.NotNil(ins.concrete)
 	switch concrete := ins.concrete.(type) {
-	case func() (any, error):
-		concreteImpl, err := concrete()
+	case func(app foundation.Application) (any, error):
+		concreteImpl, err := concrete(nil)
 		s.Equal(1, concreteImpl)
 		s.Nil(err)
 	default:

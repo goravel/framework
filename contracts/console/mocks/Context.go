@@ -53,6 +53,126 @@ func (_m *Context) Option(key string) string {
 	return r0
 }
 
+// OptionBool provides a mock function with given fields: key
+func (_m *Context) OptionBool(key string) bool {
+	ret := _m.Called(key)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// OptionFloat64 provides a mock function with given fields: key
+func (_m *Context) OptionFloat64(key string) float64 {
+	ret := _m.Called(key)
+
+	var r0 float64
+	if rf, ok := ret.Get(0).(func(string) float64); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(float64)
+	}
+
+	return r0
+}
+
+// OptionFloat64Slice provides a mock function with given fields: key
+func (_m *Context) OptionFloat64Slice(key string) []float64 {
+	ret := _m.Called(key)
+
+	var r0 []float64
+	if rf, ok := ret.Get(0).(func(string) []float64); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]float64)
+		}
+	}
+
+	return r0
+}
+
+// OptionInt provides a mock function with given fields: key
+func (_m *Context) OptionInt(key string) int {
+	ret := _m.Called(key)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(string) int); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
+// OptionInt64 provides a mock function with given fields: key
+func (_m *Context) OptionInt64(key string) int64 {
+	ret := _m.Called(key)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
+// OptionInt64Slice provides a mock function with given fields: key
+func (_m *Context) OptionInt64Slice(key string) []int64 {
+	ret := _m.Called(key)
+
+	var r0 []int64
+	if rf, ok := ret.Get(0).(func(string) []int64); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]int64)
+		}
+	}
+
+	return r0
+}
+
+// OptionIntSlice provides a mock function with given fields: key
+func (_m *Context) OptionIntSlice(key string) []int {
+	ret := _m.Called(key)
+
+	var r0 []int
+	if rf, ok := ret.Get(0).(func(string) []int); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]int)
+		}
+	}
+
+	return r0
+}
+
+// OptionSlice provides a mock function with given fields: key
+func (_m *Context) OptionSlice(key string) []string {
+	ret := _m.Called(key)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewContext interface {
 	mock.TestingT
 	Cleanup(func())
