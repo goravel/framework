@@ -90,7 +90,12 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 			return err
 		}
 
-		if receiver.publish(value, string(content), cast.ToBool(ctx.Option("existing")), cast.ToBool(ctx.Option("force"))) {
+		success, err := receiver.publish(value, string(content), cast.ToBool(ctx.Option("existing")), cast.ToBool(ctx.Option("force")))
+		if err != nil {
+			return err
+		}
+
+		if success {
 			color.Greenp("Copied Directory ")
 			color.Yellowf("[%s/%s]", strings.TrimSuffix(packageName, "/"), strings.TrimPrefix(key, "/"))
 			color.Greenp(" To ")
@@ -154,15 +159,17 @@ func (receiver *VendorPublishCommand) packageDir(packageName string) (string, er
 	return pkg.Dir, nil
 }
 
-func (receiver *VendorPublishCommand) publish(path, content string, existing, force bool) bool {
+func (receiver *VendorPublishCommand) publish(path, content string, existing, force bool) (bool, error) {
 	if !file.Exists(path) && existing {
-		return false
+		return false, nil
 	}
 	if file.Exists(path) && !force && !existing {
-		return false
+		return false, nil
 	}
 
-	file.Create(path, content)
+	if err := file.Create(path, content); err != nil {
+		return false, err
+	}
 
-	return true
+	return true, nil
 }
