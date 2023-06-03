@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/contracts/event"
 	eventmock "github.com/goravel/framework/contracts/event/mocks"
 	"github.com/goravel/framework/contracts/queue"
 	queuemock "github.com/goravel/framework/contracts/queue/mocks"
@@ -55,7 +54,6 @@ func TestQueueTestSuite(t *testing.T) {
 
 func (s *QueueTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
-	s.mockEvent = &eventmock.Instance{}
 	s.mockQueue = &queuemock.Queue{}
 	s.app = NewApplication(s.mockConfig)
 }
@@ -79,7 +77,6 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
 	s.app.jobs = []queue.Job{&TestAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -101,7 +98,6 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
-	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestDelayAsyncQueue() {
@@ -114,7 +110,6 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
 	s.app.jobs = []queue.Job{&TestDelayAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -140,7 +135,6 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
-	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestCustomAsyncQueue() {
@@ -153,7 +147,6 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
 	s.app.jobs = []queue.Job{&TestCustomAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -179,7 +172,6 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
-	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestErrorAsyncQueue() {
@@ -192,7 +184,6 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
 	s.app.jobs = []queue.Job{&TestErrorAsyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -216,7 +207,6 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
-	s.mockEvent.AssertExpectations(s.T())
 }
 
 func (s *QueueTestSuite) TestChainAsyncQueue() {
@@ -229,7 +219,6 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.mockEvent.On("GetEvents").Return(map[event.Event][]event.Listener{}).Once()
 	s.app.jobs = []queue.Job{&TestChainAsyncJob{}, &TestChainSyncJob{}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -267,7 +256,6 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.Equal(1, testChainSyncJob)
 
 	s.mockConfig.AssertExpectations(s.T())
-	s.mockEvent.AssertExpectations(s.T())
 }
 
 type TestAsyncJob struct {
