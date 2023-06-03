@@ -27,25 +27,24 @@ func Contain(file string, search string) bool {
 	return false
 }
 
-func Create(file string, content string) {
-	err := os.MkdirAll(path.Dir(file), os.ModePerm)
-	if err != nil {
-		panic(err.Error())
+func Create(file string, content string) error {
+	if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+		return err
 	}
 
 	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
 	defer func() {
 		f.Close()
 	}()
 
-	if err != nil {
-		panic(err.Error())
+	if _, err = f.WriteString(content); err != nil {
+		return err
 	}
 
-	_, err = f.WriteString(content)
-	if err != nil {
-		panic(err.Error())
-	}
+	return nil
 }
 
 func Exists(file string) bool {

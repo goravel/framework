@@ -42,9 +42,7 @@ func (receiver *MakeCommand) Handle(ctx console.Context) error {
 		return errors.New("Not enough arguments (missing: name) ")
 	}
 
-	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
-
-	return nil
+	return file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
 }
 
 func (receiver *MakeCommand) getStub() string {

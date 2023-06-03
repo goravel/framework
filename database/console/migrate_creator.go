@@ -22,17 +22,23 @@ func NewMigrateCreator(config config.Config) *MigrateCreator {
 }
 
 //Create a new migration
-func (receiver MigrateCreator) Create(name string, table string, create bool) {
+func (receiver MigrateCreator) Create(name string, table string, create bool) error {
 	// First we will get the stub file for the migration, which serves as a type
 	// of template for the migration. Once we have those we will populate the
 	// various place-holders, save the file, and run the post create event.
 	upStub, downStub := receiver.getStub(table, create)
 
 	//Create the up.sql file.
-	file.Create(receiver.getPath(name, "up"), receiver.populateStub(upStub, table))
+	if err := file.Create(receiver.getPath(name, "up"), receiver.populateStub(upStub, table)); err != nil {
+		return err
+	}
 
 	//Create the down.sql file.
-	file.Create(receiver.getPath(name, "down"), receiver.populateStub(downStub, table))
+	if err := file.Create(receiver.getPath(name, "down"), receiver.populateStub(downStub, table)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //getStub Get the migration stub file.

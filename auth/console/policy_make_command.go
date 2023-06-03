@@ -44,7 +44,10 @@ func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 		return errors.New("Not enough arguments (missing: name) ")
 	}
 
-	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+		return err
+	}
+
 	color.Greenln("Policy created successfully")
 
 	return nil

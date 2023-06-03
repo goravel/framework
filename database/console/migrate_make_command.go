@@ -52,7 +52,9 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 
 	//Write the migration file to disk.
 	migrateCreator := NewMigrateCreator(receiver.config)
-	migrateCreator.Create(name, table, create)
+	if err := migrateCreator.Create(name, table, create); err != nil {
+		return err
+	}
 
 	color.Green.Printf("Created Migration: %s\n", name)
 
