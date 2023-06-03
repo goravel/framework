@@ -1,7 +1,6 @@
 package foundation
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,15 +55,15 @@ func (app *Application) Commands(commands []consolecontract.Command) {
 }
 
 func (app *Application) ConfigPath(path string) string {
-	return fmt.Sprintf("config%s%s", string(filepath.Separator), path)
+	return filepath.Join("config", path)
 }
 
 func (app *Application) DatabasePath(path string) string {
-	return fmt.Sprintf("database%s%s", string(filepath.Separator), path)
+	return filepath.Join("database", path)
 }
 
 func (app *Application) PublicPath(path string) string {
-	return fmt.Sprintf("public%s%s", string(filepath.Separator), path)
+	return filepath.Join("public", path)
 }
 
 func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {

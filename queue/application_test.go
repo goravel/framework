@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
-	eventmock "github.com/goravel/framework/contracts/event/mocks"
 	"github.com/goravel/framework/contracts/queue"
 	queuemock "github.com/goravel/framework/contracts/queue/mocks"
 	supporttime "github.com/goravel/framework/support/time"
@@ -33,7 +32,6 @@ type QueueTestSuite struct {
 	app           *Application
 	redisResource *dockertest.Resource
 	mockConfig    *configmock.Config
-	mockEvent     *eventmock.Instance
 	mockQueue     *queuemock.Queue
 }
 
