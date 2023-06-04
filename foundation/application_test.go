@@ -22,6 +22,14 @@ func (s *ApplicationTestSuite) SetupTest() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestPath() {
+	s.Equal("app/goravel.go", s.app.Path("goravel.go"))
+}
+
+func (s *ApplicationTestSuite) TestBasePath() {
+	s.Equal("goravel.go", s.app.BasePath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestConfigPath() {
 	s.Equal("config/goravel.go", s.app.ConfigPath("goravel.go"))
 }
