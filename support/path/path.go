@@ -52,3 +52,12 @@ func Storage(paths ...string) string {
 
 	return facades.App().StoragePath(finalPath)
 }
+
+func Public(paths ...string) string {
+	finalPath := ""
+	if len(paths) >= 1 {
+		finalPath = paths[0]
+	}
+
+	return facades.App().PublicPath(finalPath)
+}
