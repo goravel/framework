@@ -79,13 +79,89 @@ func (c *Application) Run(args []string, exitIfArtisan bool) {
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 	var cliFlags []cli.Flag
 	for _, flag := range flags {
-		cliFlags = append(cliFlags, &cli.StringFlag{
-			Name:     flag.Name,
-			Aliases:  flag.Aliases,
-			Usage:    flag.Usage,
-			Required: flag.Required,
-			Value:    flag.Value,
-		})
+		switch flag.Type() {
+		case command.FlagTypeBool:
+			flag := flag.(*command.BoolFlag)
+			cliFlags = append(cliFlags, &cli.BoolFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    flag.Value,
+			})
+		case command.FlagTypeFloat64:
+			flag := flag.(*command.Float64Flag)
+			cliFlags = append(cliFlags, &cli.Float64Flag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    flag.Value,
+			})
+		case command.FlagTypeFloat64Slice:
+			flag := flag.(*command.Float64SliceFlag)
+			cliFlags = append(cliFlags, &cli.Float64SliceFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    cli.NewFloat64Slice(flag.Value...),
+			})
+		case command.FlagTypeInt:
+			flag := flag.(*command.IntFlag)
+			cliFlags = append(cliFlags, &cli.IntFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    flag.Value,
+			})
+		case command.FlagTypeIntSlice:
+			flag := flag.(*command.IntSliceFlag)
+			cliFlags = append(cliFlags, &cli.IntSliceFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    cli.NewIntSlice(flag.Value...),
+			})
+		case command.FlagTypeInt64:
+			flag := flag.(*command.Int64Flag)
+			cliFlags = append(cliFlags, &cli.Int64Flag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    flag.Value,
+			})
+		case command.FlagTypeInt64Slice:
+			flag := flag.(*command.Int64SliceFlag)
+			cliFlags = append(cliFlags, &cli.Int64SliceFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    cli.NewInt64Slice(flag.Value...),
+			})
+		case command.FlagTypeString:
+			flag := flag.(*command.StringFlag)
+			cliFlags = append(cliFlags, &cli.StringFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    flag.Value,
+			})
+		case command.FlagTypeStringSlice:
+			flag := flag.(*command.StringSliceFlag)
+			cliFlags = append(cliFlags, &cli.StringSliceFlag{
+				Name:     flag.Name,
+				Aliases:  flag.Aliases,
+				Usage:    flag.Usage,
+				Required: flag.Required,
+				Value:    cli.NewStringSlice(flag.Value...),
+			})
+		}
 	}
 
 	return cliFlags
@@ -98,20 +174,4 @@ func printResult(command string) {
 	case "-V", "--version":
 		color.Greenln("Goravel Framework " + support.Version)
 	}
-}
-
-type CliContext struct {
-	instance *cli.Context
-}
-
-func (r *CliContext) Argument(index int) string {
-	return r.instance.Args().Get(index)
-}
-
-func (r *CliContext) Arguments() []string {
-	return r.instance.Args().Slice()
-}
-
-func (r *CliContext) Option(key string) string {
-	return r.instance.String(key)
 }

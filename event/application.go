@@ -18,6 +18,15 @@ func NewApplication(queue queuecontract.Queue) *Application {
 
 func (app *Application) Register(events map[event.Event][]event.Listener) {
 	app.events = events
+	var jobs []queuecontract.Job
+
+	for _, listeners := range events {
+		for _, listener := range listeners {
+			jobs = append(jobs, listener)
+		}
+	}
+
+	app.queue.Register(jobs)
 }
 
 func (app *Application) GetEvents() map[event.Event][]event.Listener {

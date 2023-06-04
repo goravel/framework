@@ -11,7 +11,7 @@ type ServiceProvider struct {
 }
 
 func (route *ServiceProvider) Register(app foundation.Application) {
-	app.Bind(Binding, func() (any, error) {
+	app.Bind(Binding, func(app foundation.Application) (any, error) {
 		return NewApplication(app.MakeConfig(), app.MakeQueue()), nil
 	})
 }

@@ -22,8 +22,8 @@ import (
 )
 
 type Container interface {
-	Bind(key any, callback func() (any, error))
-	BindWith(key any, callback func(parameters map[string]any) (any, error))
+	Bind(key any, callback func(app Application) (any, error))
+	BindWith(key any, callback func(app Application, parameters map[string]any) (any, error))
 	Instance(key, instance any)
 	Make(key any) (any, error)
 	MakeArtisan() console.Artisan
@@ -45,5 +45,5 @@ type Container interface {
 	MakeStorage() filesystem.Storage
 	MakeValidation() validation.Validation
 	MakeWith(key any, parameters map[string]any) (any, error)
-	Singleton(key any, callback func() (any, error))
+	Singleton(key any, callback func(app Application) (any, error))
 }

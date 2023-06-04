@@ -13,13 +13,11 @@ type ServiceProvider struct {
 }
 
 func (route *ServiceProvider) Register(app foundation.Application) {
-	LogFacade = app.MakeLog()
-
-	app.Singleton(Binding, func() (any, error) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		return NewApplication(app.MakeConfig()), nil
 	})
 }
 
 func (route *ServiceProvider) Boot(app foundation.Application) {
-
+	LogFacade = app.MakeLog()
 }

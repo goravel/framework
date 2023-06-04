@@ -2,27 +2,37 @@ package foundation
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/config"
+	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support"
 )
 
-var App foundation.Application
+var (
+	App foundation.Application
+)
 
 func init() {
 	setEnv()
 
-	app := &Application{Container: NewContainer()}
+	app := &Application{
+		Container:     NewContainer(),
+		publishes:     make(map[string]map[string]string),
+		publishGroups: make(map[string]map[string]string),
+	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
-
 	App = app
 }
 
 type Application struct {
 	foundation.Container
+	publishes     map[string]map[string]string
+	publishGroups map[string]map[string]string
 }
 
 func NewApplication() foundation.Application {
@@ -33,9 +43,55 @@ func NewApplication() foundation.Application {
 func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
-
+	app.registerCommands([]consolecontract.Command{
+		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
+	})
 	app.bootArtisan()
 	setRootPath()
+}
+
+func (app *Application) Commands(commands []consolecontract.Command) {
+	app.registerCommands(commands)
+}
+
+func (app *Application) ConfigPath(path string) string {
+	return filepath.Join("config", path)
+}
+
+func (app *Application) DatabasePath(path string) string {
+	return filepath.Join("database", path)
+}
+
+func (app *Application) PublicPath(path string) string {
+	return filepath.Join("public", path)
+}
+
+func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
+	app.ensurePublishArrayInitialized(packageName)
+
+	for key, value := range paths {
+		app.publishes[packageName][key] = value
+	}
+
+	for _, group := range groups {
+		app.addPublishGroup(group, paths)
+	}
+}
+
+func (app *Application) ensurePublishArrayInitialized(packageName string) {
+	if _, exist := app.publishes[packageName]; !exist {
+		app.publishes[packageName] = make(map[string]string)
+	}
+}
+
+func (app *Application) addPublishGroup(group string, paths map[string]string) {
+	if _, exist := app.publishGroups[group]; !exist {
+		app.publishGroups[group] = make(map[string]string)
+	}
+
+	for key, value := range paths {
+		app.publishGroups[group][key] = value
+	}
 }
 
 //bootArtisan Boot artisan command.
@@ -87,6 +143,10 @@ func (app *Application) bootServiceProviders(serviceProviders []foundation.Servi
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Boot(app)
 	}
+}
+
+func (app *Application) registerCommands(commands []consolecontract.Command) {
+	app.MakeArtisan().Register(commands)
 }
 
 func setEnv() {
