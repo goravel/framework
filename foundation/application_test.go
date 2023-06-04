@@ -38,6 +38,10 @@ func (s *ApplicationTestSuite) TestDatabasePath() {
 	s.Equal("database/goravel.go", s.app.DatabasePath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestStoragePath() {
+	s.Equal("storage/goravel.go", s.app.StoragePath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestPublicPath() {
 	s.Equal("public/goravel.go", s.app.PublicPath("goravel.go"))
 }

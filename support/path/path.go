@@ -43,3 +43,12 @@ func Database(paths ...string) string {
 
 	return facades.App().DatabasePath(finalPath)
 }
+
+func Storage(paths ...string) string {
+	finalPath := ""
+	if len(paths) >= 1 {
+		finalPath = paths[0]
+	}
+
+	return facades.App().StoragePath(finalPath)
+}

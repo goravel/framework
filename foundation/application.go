@@ -70,6 +70,10 @@ func (app *Application) DatabasePath(path string) string {
 	return filepath.Join("database", path)
 }
 
+func (app *Application) StoragePath(path string) string {
+	return filepath.Join("storage", path)
+}
+
 func (app *Application) PublicPath(path string) string {
 	return filepath.Join("public", path)
 }

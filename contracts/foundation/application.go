@@ -13,6 +13,7 @@ type Application interface {
 	BasePath(path string) string
 	ConfigPath(path string) string
 	DatabasePath(path string) string
+	StoragePath(path string) string
 	PublicPath(path string) string
 	Publishes(packageName string, paths map[string]string, groups ...string)
 }
