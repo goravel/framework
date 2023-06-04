@@ -1,11 +1,12 @@
 package console
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/goravel/framework/support/file"
 )
 
 type VendorPublishCommandTestSuite struct {
@@ -196,27 +197,98 @@ func (s *VendorPublishCommandTestSuite) TestPathsForProviderAndGroup() {
 func (s *VendorPublishCommandTestSuite) TestPublish() {
 	command := &VendorPublishCommand{}
 
-	success, err := command.publish("test.go", "123", true, false)
-	s.False(success)
+	// Create temporary source and target directories for testing
+	sourceData := "test"
+	sourceDir, err := ioutil.TempDir("", "source")
 	s.Nil(err)
-	success, err = command.publish("test.go", "123", false, false)
-	s.True(success)
+	defer os.RemoveAll(sourceDir)
+
+	targetDir, err := ioutil.TempDir("", "target")
 	s.Nil(err)
-	s.True(file.Contain("test.go", "123"))
-	success, err = command.publish("test.go", "123", false, false)
-	s.False(success)
+	defer os.RemoveAll(targetDir)
+
+	// source and target are directory
+	sourceFile := filepath.Join(sourceDir, "test.txt")
+	s.Nil(ioutil.WriteFile(sourceFile, []byte(sourceData), 0644))
+	targetDir = filepath.Join(targetDir, "test")
+
+	result, err := command.publish(sourceDir, targetDir, false, false)
 	s.Nil(err)
-	success, err = command.publish("test.go", "111", false, true)
-	s.True(success)
+	s.Equal(1, len(result))
+
+	targetFile := filepath.Join(targetDir, "test.txt")
+	content, err := ioutil.ReadFile(targetFile)
 	s.Nil(err)
-	s.True(file.Contain("test.go", "111"))
-	success, err = command.publish("test.go", "222", true, false)
-	s.True(success)
+	s.Equal(sourceData, string(content))
+
+	// source is file and target is directory
+	sourceFile = filepath.Join(sourceDir, "test1.txt")
+	s.Nil(ioutil.WriteFile(sourceFile, []byte(sourceData), 0644))
+
+	result, err = command.publish(sourceFile, targetDir, false, false)
 	s.Nil(err)
-	s.True(file.Contain("test.go", "222"))
-	success, err = command.publish("test.go", "333", true, true)
-	s.True(success)
+	s.Equal(1, len(result))
+
+	targetFile = filepath.Join(targetDir, "test1.txt")
+	content, err = ioutil.ReadFile(targetFile)
 	s.Nil(err)
-	s.True(file.Contain("test.go", "333"))
-	s.True(file.Remove("test.go"))
+	s.Equal("test", string(content))
+
+	// source and target are file
+	sourceFile = filepath.Join(sourceDir, "test2.txt")
+	s.Nil(ioutil.WriteFile(sourceFile, []byte(sourceData), 0644))
+	targetFile = filepath.Join(targetDir, "test3.txt")
+
+	result, err = command.publish(sourceFile, targetFile, false, false)
+	s.Nil(err)
+	s.Equal(1, len(result))
+
+	content, err = ioutil.ReadFile(targetFile)
+	s.Nil(err)
+	s.Equal("test", string(content))
+}
+
+func (s *VendorPublishCommandTestSuite) TestPublishFile() {
+	command := &VendorPublishCommand{}
+
+	sourceData := "This is a test file."
+	sourceFile := "./test_source.txt"
+	targetFile := "./test_target.txt"
+
+	// Create a test source file
+	err := ioutil.WriteFile(sourceFile, []byte(sourceData), 0644)
+	s.Nil(err)
+
+	// Ensure publishFile creates target file when it doesn't exist and 'existing' flag is set
+	created, err := command.publishFile(sourceFile, targetFile, true, false)
+	s.Nil(err)
+	s.False(created)
+
+	// Ensure publishFile returns false when target file already exists and 'force' flag is not set
+	created, err = command.publishFile(sourceFile, targetFile, false, false)
+	s.Nil(err)
+	s.True(created)
+	content, err := ioutil.ReadFile(targetFile)
+	s.Nil(err)
+	s.Equal(string(content), sourceData)
+
+	created, err = command.publishFile(sourceFile, targetFile, false, false)
+	s.Nil(err)
+	s.False(created)
+
+	// Ensure publishFile overwrites target file when 'force' flag is set
+	newSourceData := "This is a new test file."
+	err = ioutil.WriteFile(sourceFile, []byte(newSourceData), 0644)
+	s.Nil(err)
+
+	created, err = command.publishFile(sourceFile, targetFile, false, true)
+	s.Nil(err)
+	s.True(created)
+	content, err = ioutil.ReadFile(targetFile)
+	s.Nil(err)
+	s.Equal(string(content), newSourceData)
+
+	// Clean up test files
+	s.Nil(os.Remove(sourceFile))
+	s.Nil(os.Remove(targetFile))
 }
