@@ -58,9 +58,14 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 
 func (r PackageMakeCommandStubs) Main() string {
 	content := `package DummyName
+
+type DummyCamelName struct {}
 `
 
-	return strings.ReplaceAll(content, "DummyName", r.name)
+	content = strings.ReplaceAll(content, "DummyName", r.name)
+	content = strings.ReplaceAll(content, "DummyCamelName", str.Case2Camel(r.name))
+
+	return content
 }
 
 func (r PackageMakeCommandStubs) Config() string {
