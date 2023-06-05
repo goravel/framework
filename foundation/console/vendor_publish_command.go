@@ -4,6 +4,8 @@ import (
 	"errors"
 	"go/build"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -78,23 +80,22 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	for key, value := range paths {
-		value = strings.TrimPrefix(strings.TrimPrefix(value, "/"), "./")
-		content, err := ioutil.ReadFile(filepath.Join(packageDir, key))
+	for sourcePath, targetValue := range paths {
+		targetValue = strings.TrimPrefix(strings.TrimPrefix(targetValue, "/"), "./")
+		packagePath := filepath.Join(packageDir, sourcePath)
+
+		res, err := receiver.publish(packagePath, targetValue, ctx.OptionBool("existing"), ctx.OptionBool("force"))
 		if err != nil {
 			return err
 		}
 
-		success, err := receiver.publish(value, string(content), ctx.OptionBool("existing"), ctx.OptionBool("force"))
-		if err != nil {
-			return err
-		}
-
-		if success {
-			color.Greenp("Copied Directory ")
-			color.Yellowf("[%s/%s]", strings.TrimSuffix(packageName, "/"), strings.TrimPrefix(key, "/"))
-			color.Greenp(" To ")
-			color.Yellowf("/%s\n", value)
+		if len(res) > 0 {
+			for sourceFile, targetFile := range res {
+				color.Greenp("Copied Directory ")
+				color.Yellowf("[%s]", sourceFile)
+				color.Greenp(" To ")
+				color.Yellowf("/%s\n", targetFile)
+			}
 		}
 	}
 
@@ -154,15 +155,58 @@ func (receiver *VendorPublishCommand) packageDir(packageName string) (string, er
 	return pkg.Dir, nil
 }
 
-func (receiver *VendorPublishCommand) publish(path, content string, existing, force bool) (bool, error) {
-	if !file.Exists(path) && existing {
+func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, existing, force bool) (map[string]string, error) {
+	result := make(map[string]string)
+	sourcePathStat, err := os.Stat(sourcePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var sourceFiles []string
+	if sourcePathStat.IsDir() {
+		fileInfos, err := ioutil.ReadDir(sourcePath)
+		if err != nil {
+			return nil, err
+		}
+		for _, fileInfo := range fileInfos {
+			sourceFiles = append(sourceFiles, filepath.Join(sourcePath, fileInfo.Name()))
+		}
+	} else {
+		sourceFiles = append(sourceFiles, sourcePath)
+	}
+
+	for _, sourceFile := range sourceFiles {
+		targetFile := targetPath
+		if path.Ext(targetFile) == "" {
+			targetFile = filepath.Join(targetFile, filepath.Base(sourceFile))
+		}
+
+		success, err := receiver.publishFile(sourceFile, targetFile, existing, force)
+		if err != nil {
+			return nil, err
+		}
+		if success {
+			result[sourceFile] = targetFile
+		}
+	}
+
+	return result, nil
+}
+
+func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
+	content, err := ioutil.ReadFile(sourceFile)
+	if err != nil {
+		return false, err
+	}
+
+	if !file.Exists(targetFile) && existing {
 		return false, nil
 	}
-	if file.Exists(path) && !force && !existing {
+	if file.Exists(targetFile) && !force && !existing {
 		return false, nil
 	}
 
-	if err := file.Create(path, content); err != nil {
+	if err := file.Create(targetFile, string(content)); err != nil {
 		return false, err
 	}
 
