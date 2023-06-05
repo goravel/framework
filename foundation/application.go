@@ -39,7 +39,7 @@ func NewApplication() foundation.Application {
 	return App
 }
 
-//Boot Register and bootstrap configured service providers.
+// Boot Register and bootstrap configured service providers.
 func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
@@ -55,12 +55,24 @@ func (app *Application) Commands(commands []consolecontract.Command) {
 	app.registerCommands(commands)
 }
 
+func (app *Application) Path(path string) string {
+	return filepath.Join("app", path)
+}
+
+func (app *Application) BasePath(path string) string {
+	return filepath.Join("", path)
+}
+
 func (app *Application) ConfigPath(path string) string {
 	return filepath.Join("config", path)
 }
 
 func (app *Application) DatabasePath(path string) string {
 	return filepath.Join("database", path)
+}
+
+func (app *Application) StoragePath(path string) string {
+	return filepath.Join("storage", path)
 }
 
 func (app *Application) PublicPath(path string) string {
@@ -95,51 +107,51 @@ func (app *Application) addPublishGroup(group string, paths map[string]string) {
 	}
 }
 
-//bootArtisan Boot artisan command.
+// bootArtisan Boot artisan command.
 func (app *Application) bootArtisan() {
 	app.MakeArtisan().Run(os.Args, true)
 }
 
-//getBaseServiceProviders Get base service providers.
+// getBaseServiceProviders Get base service providers.
 func (app *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
 		&config.ServiceProvider{},
 	}
 }
 
-//getConfiguredServiceProviders Get configured service providers.
+// getConfiguredServiceProviders Get configured service providers.
 func (app *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
 	return app.MakeConfig().Get("app.providers").([]foundation.ServiceProvider)
 }
 
-//registerBaseServiceProviders Register base service providers.
+// registerBaseServiceProviders Register base service providers.
 func (app *Application) registerBaseServiceProviders() {
 	app.registerServiceProviders(app.getBaseServiceProviders())
 }
 
-//bootBaseServiceProviders Bootstrap base service providers.
+// bootBaseServiceProviders Bootstrap base service providers.
 func (app *Application) bootBaseServiceProviders() {
 	app.bootServiceProviders(app.getBaseServiceProviders())
 }
 
-//registerConfiguredServiceProviders Register configured service providers.
+// registerConfiguredServiceProviders Register configured service providers.
 func (app *Application) registerConfiguredServiceProviders() {
 	app.registerServiceProviders(app.getConfiguredServiceProviders())
 }
 
-//bootConfiguredServiceProviders Bootstrap configured service providers.
+// bootConfiguredServiceProviders Bootstrap configured service providers.
 func (app *Application) bootConfiguredServiceProviders() {
 	app.bootServiceProviders(app.getConfiguredServiceProviders())
 }
 
-//registerServiceProviders Register service providers.
+// registerServiceProviders Register service providers.
 func (app *Application) registerServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Register(app)
 	}
 }
 
-//bootServiceProviders Bootstrap service providers.
+// bootServiceProviders Bootstrap service providers.
 func (app *Application) bootServiceProviders(serviceProviders []foundation.ServiceProvider) {
 	for _, serviceProvider := range serviceProviders {
 		serviceProvider.Boot(app)

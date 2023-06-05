@@ -22,12 +22,24 @@ func (s *ApplicationTestSuite) SetupTest() {
 	}
 }
 
+func (s *ApplicationTestSuite) TestPath() {
+	s.Equal("app/goravel.go", s.app.Path("goravel.go"))
+}
+
+func (s *ApplicationTestSuite) TestBasePath() {
+	s.Equal("goravel.go", s.app.BasePath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestConfigPath() {
 	s.Equal("config/goravel.go", s.app.ConfigPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestDatabasePath() {
 	s.Equal("database/goravel.go", s.app.DatabasePath("goravel.go"))
+}
+
+func (s *ApplicationTestSuite) TestStoragePath() {
+	s.Equal("storage/goravel.go", s.app.StoragePath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {
