@@ -56,8 +56,6 @@ func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
 	switch driver {
 	case DriverLocal:
 		return NewLocal(config, disk)
-	case DriverCos:
-		return NewCos(ctx, config, disk)
 	case DriverMinio:
 		return NewMinio(ctx, config, disk)
 	case DriverCustom:

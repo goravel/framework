@@ -48,10 +48,6 @@ func TestStorage(t *testing.T) {
 			url:  "http://localhost/storage",
 		},
 		{
-			disk: "cos",
-			url:  mockConfig.GetString("filesystems.disks.cos.url"),
-		},
-		{
 			disk: "minio",
 			url:  mockConfig.GetString("filesystems.disks.minio.url"),
 		},
@@ -438,7 +434,6 @@ func initConfig() *configmocks.Config {
 		root:   "storage/app/public",
 		url:    "http://localhost/storage",
 	})
-	mockConfig.On("GetString", "filesystems.disks.cos.driver").Return("cos")
 	mockConfig.On("GetString", "filesystems.disks.minio.driver").Return("minio")
 	mockConfig.On("GetString", "filesystems.disks.minio.region").Return("")
 	mockConfig.On("GetBool", "filesystems.disks.minio.ssl", false).Return(false)
@@ -452,19 +447,11 @@ func initConfig() *configmocks.Config {
 		vip.SetEnvPrefix("goravel")
 		vip.AutomaticEnv()
 
-		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(vip.Get("TENCENT_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(vip.Get("TENCENT_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(vip.Get("TENCENT_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.cos.url").Return(vip.Get("TENCENT_URL"))
 		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(vip.Get("MINIO_ACCESS_KEY_ID"))
 		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(vip.Get("MINIO_ACCESS_KEY_SECRET"))
 		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(vip.Get("MINIO_BUCKET"))
 	}
 	if os.Getenv("AWS_ACCESS_KEY_ID") != "" {
-		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(os.Getenv("TENCENT_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(os.Getenv("TENCENT_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(os.Getenv("TENCENT_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.cos.url").Return(os.Getenv("TENCENT_URL"))
 		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(os.Getenv("MINIO_ACCESS_KEY_ID"))
 		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(os.Getenv("MINIO_ACCESS_KEY_SECRET"))
 		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(os.Getenv("MINIO_BUCKET"))
