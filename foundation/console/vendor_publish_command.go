@@ -199,6 +199,8 @@ func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string,
 		return false, err
 	}
 
+	realContent := transformFacades(string(content))
+
 	if !file.Exists(targetFile) && existing {
 		return false, nil
 	}
@@ -206,9 +208,13 @@ func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string,
 		return false, nil
 	}
 
-	if err := file.Create(targetFile, string(content)); err != nil {
+	if err := file.Create(targetFile, realContent); err != nil {
 		return false, err
 	}
 
 	return true, nil
+}
+
+func transformFacades(content string) string {
+	return strings.ReplaceAll(content, "github.com/goravel/contracts/facades", "github.com/goravel/framework/facades")
 }

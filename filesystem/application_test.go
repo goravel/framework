@@ -48,16 +48,8 @@ func TestStorage(t *testing.T) {
 			url:  "http://localhost/storage",
 		},
 		{
-			disk: "oss",
-			url:  mockConfig.GetString("filesystems.disks.oss.url"),
-		},
-		{
 			disk: "cos",
 			url:  mockConfig.GetString("filesystems.disks.cos.url"),
-		},
-		{
-			disk: "s3",
-			url:  mockConfig.GetString("filesystems.disks.s3.url"),
 		},
 		{
 			disk: "minio",
@@ -446,8 +438,6 @@ func initConfig() *configmocks.Config {
 		root:   "storage/app/public",
 		url:    "http://localhost/storage",
 	})
-	mockConfig.On("GetString", "filesystems.disks.s3.driver").Return("s3")
-	mockConfig.On("GetString", "filesystems.disks.oss.driver").Return("oss")
 	mockConfig.On("GetString", "filesystems.disks.cos.driver").Return("cos")
 	mockConfig.On("GetString", "filesystems.disks.minio.driver").Return("minio")
 	mockConfig.On("GetString", "filesystems.disks.minio.region").Return("")
@@ -462,16 +452,6 @@ func initConfig() *configmocks.Config {
 		vip.SetEnvPrefix("goravel")
 		vip.AutomaticEnv()
 
-		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(vip.Get("AWS_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.s3.secret").Return(vip.Get("AWS_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.s3.region").Return(vip.Get("AWS_DEFAULT_REGION"))
-		mockConfig.On("GetString", "filesystems.disks.s3.bucket").Return(vip.Get("AWS_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.s3.url").Return(vip.Get("AWS_URL"))
-		mockConfig.On("GetString", "filesystems.disks.oss.key").Return(vip.Get("ALIYUN_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.oss.secret").Return(vip.Get("ALIYUN_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.oss.bucket").Return(vip.Get("ALIYUN_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.oss.url").Return(vip.Get("ALIYUN_URL"))
-		mockConfig.On("GetString", "filesystems.disks.oss.endpoint").Return(vip.Get("ALIYUN_ENDPOINT"))
 		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(vip.Get("TENCENT_ACCESS_KEY_ID"))
 		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(vip.Get("TENCENT_ACCESS_KEY_SECRET"))
 		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(vip.Get("TENCENT_BUCKET"))
@@ -481,16 +461,6 @@ func initConfig() *configmocks.Config {
 		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(vip.Get("MINIO_BUCKET"))
 	}
 	if os.Getenv("AWS_ACCESS_KEY_ID") != "" {
-		mockConfig.On("GetString", "filesystems.disks.s3.key").Return(os.Getenv("AWS_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.s3.secret").Return(os.Getenv("AWS_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.s3.region").Return(os.Getenv("AWS_DEFAULT_REGION"))
-		mockConfig.On("GetString", "filesystems.disks.s3.bucket").Return(os.Getenv("AWS_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.s3.url").Return(os.Getenv("AWS_URL"))
-		mockConfig.On("GetString", "filesystems.disks.oss.key").Return(os.Getenv("ALIYUN_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.oss.secret").Return(os.Getenv("ALIYUN_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.oss.bucket").Return(os.Getenv("ALIYUN_BUCKET"))
-		mockConfig.On("GetString", "filesystems.disks.oss.url").Return(os.Getenv("ALIYUN_URL"))
-		mockConfig.On("GetString", "filesystems.disks.oss.endpoint").Return(os.Getenv("ALIYUN_ENDPOINT"))
 		mockConfig.On("GetString", "filesystems.disks.cos.key").Return(os.Getenv("TENCENT_ACCESS_KEY_ID"))
 		mockConfig.On("GetString", "filesystems.disks.cos.secret").Return(os.Getenv("TENCENT_ACCESS_KEY_SECRET"))
 		mockConfig.On("GetString", "filesystems.disks.cos.bucket").Return(os.Getenv("TENCENT_BUCKET"))
