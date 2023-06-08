@@ -14,6 +14,7 @@ import (
 )
 
 func TestApplication(t *testing.T) {
+	mock.Log()
 	mockArtisan := mock.Artisan()
 	mockArtisan.On("Call", "test --name Goravel argument0 argument1").Return().Times(3)
 
@@ -23,6 +24,9 @@ func TestApplication(t *testing.T) {
 
 	app := NewApplication()
 	app.Register([]schedule.Event{
+		app.Call(func() {
+			panic(1)
+		}).EveryMinute(),
 		app.Call(func() {
 			immediatelyCall++
 		}).EveryMinute(),
