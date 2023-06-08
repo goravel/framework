@@ -1,8 +1,6 @@
 package filesystem
 
 import (
-	"context"
-	"fmt"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -11,17 +9,12 @@ import (
 	"time"
 
 	"github.com/gookit/color"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/ory/dockertest/v3"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/support/file"
 	supporttime "github.com/goravel/framework/support/time"
-	testingdocker "github.com/goravel/framework/testing/docker"
 )
 
 type TestDisk struct {
@@ -37,8 +30,6 @@ func TestStorage(t *testing.T) {
 
 	assert.Nil(t, file.Create("test.txt", "Goravel"))
 	mockConfig := initConfig()
-	minioPool, minioResource, err := initMinioDocker(mockConfig)
-	assert.Nil(t, err)
 
 	var driver filesystem.Driver
 
@@ -46,10 +37,6 @@ func TestStorage(t *testing.T) {
 		{
 			disk: "local",
 			url:  "http://localhost/storage",
-		},
-		{
-			disk: "minio",
-			url:  mockConfig.GetString("filesystems.disks.minio.url"),
 		},
 		{
 			disk: "custom",
@@ -417,7 +404,6 @@ func TestStorage(t *testing.T) {
 	}
 
 	file.Remove("test.txt")
-	assert.Nil(t, minioPool.Purge(minioResource))
 }
 
 func initConfig() *configmocks.Config {
@@ -434,113 +420,6 @@ func initConfig() *configmocks.Config {
 		root:   "storage/app/public",
 		url:    "http://localhost/storage",
 	})
-	mockConfig.On("GetString", "filesystems.disks.minio.driver").Return("minio")
-	mockConfig.On("GetString", "filesystems.disks.minio.region").Return("")
-	mockConfig.On("GetBool", "filesystems.disks.minio.ssl", false).Return(false)
-
-	if file.Exists("../.env") {
-		vip := viper.New()
-		vip.SetConfigName("../.env")
-		vip.SetConfigType("env")
-		vip.AddConfigPath(".")
-		_ = vip.ReadInConfig()
-		vip.SetEnvPrefix("goravel")
-		vip.AutomaticEnv()
-
-		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(vip.Get("MINIO_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(vip.Get("MINIO_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(vip.Get("MINIO_BUCKET"))
-	}
-	if os.Getenv("AWS_ACCESS_KEY_ID") != "" {
-		mockConfig.On("GetString", "filesystems.disks.minio.key").Return(os.Getenv("MINIO_ACCESS_KEY_ID"))
-		mockConfig.On("GetString", "filesystems.disks.minio.secret").Return(os.Getenv("MINIO_ACCESS_KEY_SECRET"))
-		mockConfig.On("GetString", "filesystems.disks.minio.bucket").Return(os.Getenv("MINIO_BUCKET"))
-	}
 
 	return mockConfig
-}
-
-func initMinioDocker(mockConfig *configmocks.Config) (*dockertest.Pool, *dockertest.Resource, error) {
-	pool, err := testingdocker.Pool()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	key := mockConfig.GetString("filesystems.disks.minio.key")
-	secret := mockConfig.GetString("filesystems.disks.minio.secret")
-	bucket := mockConfig.GetString("filesystems.disks.minio.bucket")
-	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
-		Repository: "minio/minio",
-		Tag:        "latest",
-		Env: []string{
-			"MINIO_ACCESS_KEY=" + key,
-			"MINIO_SECRET_KEY=" + secret,
-		},
-		Cmd: []string{
-			"server",
-			"/data",
-		},
-		ExposedPorts: []string{
-			"9000/tcp",
-		},
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_ = resource.Expire(600)
-
-	endpoint := fmt.Sprintf("127.0.0.1:%s", resource.GetPort("9000/tcp"))
-	mockConfig.On("GetString", "filesystems.disks.minio.url").Return(fmt.Sprintf("http://%s/%s", endpoint, bucket))
-	mockConfig.On("GetString", "filesystems.disks.minio.endpoint").Return(endpoint)
-
-	if err := pool.Retry(func() error {
-		client, err := minio.New(endpoint, &minio.Options{
-			Creds: credentials.NewStaticV4(key, secret, ""),
-		})
-		if err != nil {
-			return err
-		}
-
-		if err := client.MakeBucket(context.Background(), mockConfig.GetString("filesystems.disks.minio.bucket"), minio.MakeBucketOptions{}); err != nil {
-			return err
-		}
-
-		policy := `{
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Action": [
-                    "s3:GetObject",
-                    "s3:PutObject"
-                ],
-                "Effect": "Allow",
-                "Principal": "*",
-                "Resource": [
-                    "arn:aws:s3:::` + bucket + `/*"
-                ]
-            },
-            {
-                "Action": [
-                    "s3:ListBucket"
-                ],
-                "Effect": "Allow",
-                "Principal": "*",
-                "Resource": [
-                    "arn:aws:s3:::` + bucket + `"
-                ]
-            }
-        ]
-    }`
-
-		if err := client.SetBucketPolicy(context.Background(), bucket, policy); err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
-		return nil, nil, err
-	}
-
-	return pool, resource, nil
 }

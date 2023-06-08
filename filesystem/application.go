@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/gookit/color"
@@ -14,9 +13,6 @@ type Driver string
 
 const (
 	DriverLocal  Driver = "local"
-	DriverOss    Driver = "oss"
-	DriverCos    Driver = "cos"
-	DriverMinio  Driver = "minio"
 	DriverCustom Driver = "custom"
 )
 
@@ -51,13 +47,10 @@ func NewStorage(config config.Config) *Storage {
 }
 
 func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
-	ctx := context.Background()
 	driver := Driver(config.GetString(fmt.Sprintf("filesystems.disks.%s.driver", disk)))
 	switch driver {
 	case DriverLocal:
 		return NewLocal(config, disk)
-	case DriverMinio:
-		return NewMinio(ctx, config, disk)
 	case DriverCustom:
 		driver, ok := config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(filesystem.Driver)
 		if ok {
