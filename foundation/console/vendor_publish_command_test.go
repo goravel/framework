@@ -1,7 +1,6 @@
 package console
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -292,28 +291,4 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 	// Clean up test files
 	s.Nil(os.Remove(sourceFile))
 	s.Nil(os.Remove(targetFile))
-}
-
-type A interface {
-	Name() string
-}
-type B interface {
-	Name() string
-}
-
-type BImpl struct {
-}
-
-func (receiver *BImpl) Name() string {
-	return "aaaaa"
-}
-
-func TestA(t *testing.T) {
-	var a A
-	a = BB()
-	fmt.Println(a.Name())
-}
-
-func BB() B {
-	return &BImpl{}
 }
