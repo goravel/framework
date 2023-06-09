@@ -2,11 +2,9 @@ package cache
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/cache"
@@ -15,23 +13,12 @@ import (
 
 type DriverTestSuite struct {
 	suite.Suite
-	driver      *DriverImpl
-	mockConfig  *configmock.Config
-	stores      map[string]cache.Driver
-	redisDocker *dockertest.Resource
+	driver     *DriverImpl
+	mockConfig *configmock.Config
 }
 
 func TestDriverTestSuite(t *testing.T) {
-	memoryStore, err := getMemoryStore()
-	if err != nil {
-		log.Fatalf("Get memory store error: %s", err)
-	}
-
-	suite.Run(t, &DriverTestSuite{
-		stores: map[string]cache.Driver{
-			"memory": memoryStore,
-		},
-	})
+	suite.Run(t, new(DriverTestSuite))
 }
 
 func (s *DriverTestSuite) SetupTest() {
