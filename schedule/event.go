@@ -138,15 +138,13 @@ func (receiver *Event) At(time string) schedule.Event {
 //DailyAt Schedule the event to run daily at a given time (10:00, 19:30, etc).
 func (receiver *Event) DailyAt(time string) schedule.Event {
 	segments := strings.Split(time, ":")
-	receiver.spliceIntoPosition(2, segments[0])
+	event := receiver.Cron(receiver.spliceIntoPosition(2, segments[0]))
 
 	if len(segments) == 2 {
-		receiver.spliceIntoPosition(1, segments[1])
+		return event.Cron(receiver.spliceIntoPosition(1, segments[1]))
 	} else {
-		receiver.spliceIntoPosition(1, "0")
+		return event.Cron(receiver.spliceIntoPosition(1, "0"))
 	}
-
-	return receiver
 }
 
 //SkipIfStillRunning Do not allow the event to overlap each other.

@@ -72,7 +72,12 @@ func (r *Gin) Run(host ...string) error {
 	r.outputRoutes()
 	color.Greenln("[HTTP] Listening and serving HTTP on " + host[0])
 
-	return r.instance.Run([]string{host[0]}...)
+	server := &http.Server{
+		Addr:    host[0],
+		Handler: http.AllowQuerySemicolons(r.instance),
+	}
+
+	return server.ListenAndServe()
 }
 
 func (r *Gin) RunTLS(host ...string) error {

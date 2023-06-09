@@ -44,11 +44,11 @@ func (app *Application) Run() {
 
 func (app *Application) addEvents(events []schedule.Event) {
 	for _, event := range events {
-		chain := cron.NewChain()
+		chain := cron.NewChain(cron.Recover(NewLogger(app.log)))
 		if event.GetDelayIfStillRunning() {
-			chain = cron.NewChain(cron.DelayIfStillRunning(NewLogger(app.log)))
+			chain = cron.NewChain(cron.DelayIfStillRunning(NewLogger(app.log)), cron.Recover(NewLogger(app.log)))
 		} else if event.GetSkipIfStillRunning() {
-			chain = cron.NewChain(cron.SkipIfStillRunning(NewLogger(app.log)))
+			chain = cron.NewChain(cron.SkipIfStillRunning(NewLogger(app.log)), cron.Recover(NewLogger(app.log)))
 		}
 		_, err := app.cron.AddJob(event.GetCron(), chain.Then(app.getJob(event)))
 
