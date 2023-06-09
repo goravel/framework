@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/gookit/color"
@@ -14,10 +13,6 @@ type Driver string
 
 const (
 	DriverLocal  Driver = "local"
-	DriverS3     Driver = "s3"
-	DriverOss    Driver = "oss"
-	DriverCos    Driver = "cos"
-	DriverMinio  Driver = "minio"
 	DriverCustom Driver = "custom"
 )
 
@@ -52,26 +47,22 @@ func NewStorage(config config.Config) *Storage {
 }
 
 func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
-	ctx := context.Background()
 	driver := Driver(config.GetString(fmt.Sprintf("filesystems.disks.%s.driver", disk)))
 	switch driver {
 	case DriverLocal:
 		return NewLocal(config, disk)
-	case DriverOss:
-		return NewOss(ctx, config, disk)
-	case DriverCos:
-		return NewCos(ctx, config, disk)
-	case DriverS3:
-		return NewS3(ctx, config, disk)
-	case DriverMinio:
-		return NewMinio(ctx, config, disk)
 	case DriverCustom:
 		driver, ok := config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(filesystem.Driver)
-		if !ok {
-			return nil, fmt.Errorf("init %s disk fail: via must be implement filesystem.Driver", disk)
+		if ok {
+			return driver, nil
 		}
 
-		return driver, nil
+		driverCallback, ok := config.Get(fmt.Sprintf("filesystems.disks.%s.via", disk)).(func() (filesystem.Driver, error))
+		if ok {
+			return driverCallback()
+		}
+
+		return nil, fmt.Errorf("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)", disk)
 	}
 
 	return nil, fmt.Errorf("invalid driver: %s, only support local, s3, oss, cos, minio, custom", driver)
