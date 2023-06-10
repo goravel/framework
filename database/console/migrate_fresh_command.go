@@ -54,9 +54,18 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration failed:", err.Error())
-		return err
+	m2, err2 := getMigrate(receiver.config)
+	if err2 != nil {
+		return err2
+	}
+	if m2 == nil {
+		color.Yellowln("Please fill database config first")
+		return nil
+	}
+
+	if err2 = m2.Up(); err2 != nil && err2 != migrate.ErrNoChange {
+		color.Redln("Migration failed:", err2.Error())
+		return err2
 	}
 
 	color.Greenln("Migration fresh success")
