@@ -17,6 +17,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		mockConfig *configmock.Config
 		pool       *dockertest.Pool
 		resource   *dockertest.Resource
+		query      ormcontract.Query
 	)
 
 	beforeEach := func() {
@@ -33,7 +34,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewMysqlDocker()
-				pool, resource, _, err = docker.New()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createMysqlMigrations()
@@ -45,7 +46,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewPostgresqlDocker()
-				pool, resource, _, err = docker.New()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createPostgresqlMigrations()
@@ -56,7 +57,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewSqlserverDocker()
-				pool, resource, _, err = docker.New()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqlserverMigrations()
@@ -67,7 +68,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewSqliteDocker("goravel")
-				pool, resource, _, err = docker.New()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqliteMigrations()
@@ -88,6 +89,10 @@ func TestMigrateRollbackCommand(t *testing.T) {
 
 			migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 			assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
+
+			var agent Agent
+			err := query.Where("name", "goravel").FirstOrFail(&agent)
+			assert.Error(t, err)
 
 			if pool != nil && test.name != "sqlite" {
 				assert.Nil(t, pool.Purge(resource))
