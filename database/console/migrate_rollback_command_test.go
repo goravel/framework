@@ -82,7 +82,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			test.setup()
 
 			mockContext := &consolemocks.Context{}
-			mockContext.On("Option", "step").Return(1).Once()
+			mockContext.On("Option", "step").Return("1").Once()
 
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))

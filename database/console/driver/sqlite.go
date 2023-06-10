@@ -85,7 +85,7 @@ func (m *Sqlite) ensureVersionTable() (err error) {
   CREATE UNIQUE INDEX IF NOT EXISTS version_unique ON %s (version);
   `, m.config.MigrationsTable, m.config.MigrationsTable)
 
-	if _, err := m.db.Exec(query); err != nil {
+	if _, err = m.db.Exec(query); err != nil {
 		return err
 	}
 	return nil
@@ -147,27 +147,37 @@ func (m *Sqlite) Drop() (err error) {
 	tableNames := make([]string, 0)
 	for tables.Next() {
 		var tableName string
-		if err := tables.Scan(&tableName); err != nil {
+		if err = tables.Scan(&tableName); err != nil {
 			return err
 		}
 		if len(tableName) > 0 {
 			tableNames = append(tableNames, tableName)
 		}
 	}
-	if err := tables.Err(); err != nil {
+	if err = tables.Err(); err != nil {
 		return &database.Error{OrigErr: err, Query: []byte(query)}
 	}
 
 	if len(tableNames) > 0 {
 		for _, t := range tableNames {
-			query := "DROP TABLE " + t
+			// SQLite has a sqlite_sequence table and it cannot be dropped
+			if t == "sqlite_sequence" {
+				_, err = m.db.Exec("DELETE FROM sqlite_sequence;")
+				if err != nil {
+					return &database.Error{OrigErr: err, Query: []byte("DELETE FROM sqlite_sequence;")}
+				}
+
+				continue
+			}
+
+			query = "DROP TABLE " + t
 			err = m.executeQuery(query)
 			if err != nil {
 				return &database.Error{OrigErr: err, Query: []byte(query)}
 			}
 		}
-		query := "VACUUM"
-		_, err = m.db.Query(query)
+		query = "VACUUM"
+		_, err = m.db.Exec(query)
 		if err != nil {
 			return &database.Error{OrigErr: err, Query: []byte(query)}
 		}
@@ -208,13 +218,13 @@ func (m *Sqlite) executeQuery(query string) error {
 	if err != nil {
 		return &database.Error{OrigErr: err, Err: "transaction start failed"}
 	}
-	if _, err := tx.Exec(query); err != nil {
+	if _, err = tx.Exec(query); err != nil {
 		if errRollback := tx.Rollback(); errRollback != nil {
 			err = multierror.Append(err, errRollback)
 		}
 		return &database.Error{OrigErr: err, Query: []byte(query)}
 	}
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return &database.Error{OrigErr: err, Err: "transaction commit failed"}
 	}
 	return nil
@@ -234,7 +244,7 @@ func (m *Sqlite) SetVersion(version int, dirty bool) error {
 	}
 
 	query := "DELETE FROM " + m.config.MigrationsTable
-	if _, err := tx.Exec(query); err != nil {
+	if _, err = tx.Exec(query); err != nil {
 		return &database.Error{OrigErr: err, Query: []byte(query)}
 	}
 
@@ -242,8 +252,8 @@ func (m *Sqlite) SetVersion(version int, dirty bool) error {
 	// empty schema version for failed down migration on the first migration
 	// See: https://github.com/golang-migrate/migrate/issues/330
 	if version >= 0 || (version == database.NilVersion && dirty) {
-		query := fmt.Sprintf(`INSERT INTO %s (version, dirty) VALUES (?, ?)`, m.config.MigrationsTable)
-		if _, err := tx.Exec(query, version, dirty); err != nil {
+		query = fmt.Sprintf(`INSERT INTO %s (version, dirty) VALUES (?, ?)`, m.config.MigrationsTable)
+		if _, err = tx.Exec(query, version, dirty); err != nil {
 			if errRollback := tx.Rollback(); errRollback != nil {
 				err = multierror.Append(err, errRollback)
 			}
@@ -251,7 +261,7 @@ func (m *Sqlite) SetVersion(version int, dirty bool) error {
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return &database.Error{OrigErr: err, Err: "transaction commit failed"}
 	}
 
