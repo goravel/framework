@@ -3,30 +3,33 @@ package cache
 import (
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/log"
 )
 
 type Application struct {
 	cache.Driver
 	config config.Config
 	driver Driver
+	log    log.Log
 	stores map[string]cache.Driver
 }
 
-func NewApplication(config config.Config, store string) *Application {
+func NewApplication(config config.Config, log log.Log, store string) (*Application, error) {
 	driver := NewDriverImpl(config)
-	instance := driver.New(store)
-	if instance == nil {
-		return nil
+	instance, err := driver.New(store)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Application{
 		Driver: instance,
 		config: config,
 		driver: driver,
+		log:    log,
 		stores: map[string]cache.Driver{
 			store: instance,
 		},
-	}
+	}, nil
 }
 
 func (app *Application) Store(name string) cache.Driver {
@@ -34,7 +37,13 @@ func (app *Application) Store(name string) cache.Driver {
 		return driver
 	}
 
-	instance := app.driver.New(name)
+	instance, err := app.driver.New(name)
+	if err != nil {
+		app.log.Error(err)
+
+		return nil
+	}
+
 	app.stores[name] = instance
 
 	return instance

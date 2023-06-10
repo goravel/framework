@@ -9,12 +9,14 @@ import (
 
 	"github.com/goravel/framework/contracts/cache"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
+	logmock "github.com/goravel/framework/contracts/log/mocks"
 )
 
 type DriverTestSuite struct {
 	suite.Suite
 	driver     *DriverImpl
 	mockConfig *configmock.Config
+	mockLog    *logmock.Log
 }
 
 func TestDriverTestSuite(t *testing.T) {
@@ -23,19 +25,23 @@ func TestDriverTestSuite(t *testing.T) {
 
 func (s *DriverTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
+	s.mockLog = &logmock.Log{}
 	s.driver = NewDriverImpl(s.mockConfig)
 }
 
 func (s *DriverTestSuite) TestMemory() {
 	s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-	s.NotNil(s.driver.memory())
+	memory, err := s.driver.memory()
+	s.NotNil(memory)
+	s.Nil(err)
 }
 
 func (s *DriverTestSuite) TestCustom() {
 	s.mockConfig.On("Get", "cache.stores.store.via").Return(&Store{}).Once()
 
-	store := s.driver.custom("store")
+	store, err := s.driver.custom("store")
 	s.NotNil(store)
+	s.Nil(err)
 	s.Equal("name", store.Get("name", "Goravel").(string))
 
 	s.mockConfig.AssertExpectations(s.T())
@@ -45,8 +51,9 @@ func (s *DriverTestSuite) TestStore() {
 	s.mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
 	s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
 
-	memory := NewApplication(s.mockConfig, "memory")
+	memory, err := NewApplication(s.mockConfig, s.mockLog, "memory")
 	s.NotNil(memory)
+	s.Nil(err)
 	s.True(memory.Add("hello", "goravel", 5*time.Second))
 	s.Equal("goravel", memory.GetString("hello"))
 
