@@ -65,7 +65,7 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 
 	if err2 = m2.Up(); err2 != nil && err2 != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err2.Error())
-		return err2
+		return nil
 	}
 
 	color.Greenln("Migration fresh success")
