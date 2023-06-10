@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/gookit/color"
@@ -28,8 +27,6 @@ func NewDriverImpl(config config.Config) *DriverImpl {
 func (d *DriverImpl) New(store string) cache.Driver {
 	driver := d.config.GetString(fmt.Sprintf("cache.stores.%s.driver", store))
 	switch driver {
-	case "redis":
-		return d.redis(store)
 	case "memory":
 		return d.memory()
 	case "custom":
@@ -38,19 +35,6 @@ func (d *DriverImpl) New(store string) cache.Driver {
 		color.Redf("[Cache] Not supported cache store: %s\n", store)
 		return nil
 	}
-}
-
-func (d *DriverImpl) redis(store string) cache.Driver {
-	redis, err := NewRedis(context.Background(), d.config, store)
-	if err != nil {
-		color.Redf("[Cache] Init redis driver error: %v\n", err)
-		return nil
-	}
-	if redis == nil {
-		return nil
-	}
-
-	return redis
 }
 
 func (d *DriverImpl) memory() cache.Driver {

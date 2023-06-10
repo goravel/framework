@@ -2,47 +2,23 @@ package cache
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/cache"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
-	testingdocker "github.com/goravel/framework/testing/docker"
 )
 
 type DriverTestSuite struct {
 	suite.Suite
-	driver      *DriverImpl
-	mockConfig  *configmock.Config
-	stores      map[string]cache.Driver
-	redisDocker *dockertest.Resource
+	driver     *DriverImpl
+	mockConfig *configmock.Config
 }
 
 func TestDriverTestSuite(t *testing.T) {
-	redisPool, redisDocker, redisStore, err := getRedisDocker()
-	if err != nil {
-		log.Fatalf("Get redis store error: %s", err)
-	}
-	memoryStore, err := getMemoryStore()
-	if err != nil {
-		log.Fatalf("Get memory store error: %s", err)
-	}
-
-	suite.Run(t, &DriverTestSuite{
-		stores: map[string]cache.Driver{
-			"redis":  redisStore,
-			"memory": memoryStore,
-		},
-		redisDocker: redisDocker,
-	})
-
-	if err := redisPool.Purge(redisDocker); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+	suite.Run(t, new(DriverTestSuite))
 }
 
 func (s *DriverTestSuite) SetupTest() {
@@ -53,43 +29,6 @@ func (s *DriverTestSuite) SetupTest() {
 func (s *DriverTestSuite) TestMemory() {
 	s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
 	s.NotNil(s.driver.memory())
-}
-
-func (s *DriverTestSuite) TestRedis() {
-	tests := []struct {
-		description string
-		setup       func()
-		expectErr   bool
-	}{
-		{
-			description: "success",
-			setup: func() {
-				s.mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
-				s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
-				s.mockConfig.On("GetString", "database.redis.default.port").Return(s.redisDocker.GetPort("6379/tcp")).Once()
-				s.mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-				s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-				s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-			},
-		},
-		{
-			description: "error",
-			setup: func() {
-				s.mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
-				s.mockConfig.On("GetString", "database.redis.default.host").Return("").Once()
-			},
-			expectErr: true,
-		},
-	}
-
-	for _, test := range tests {
-		s.Run(test.description, func() {
-			test.setup()
-			redis := s.driver.redis("redis")
-			s.Equal(test.expectErr, redis == nil)
-			s.mockConfig.AssertExpectations(s.T())
-		})
-	}
 }
 
 func (s *DriverTestSuite) TestCustom() {
@@ -103,470 +42,26 @@ func (s *DriverTestSuite) TestCustom() {
 }
 
 func (s *DriverTestSuite) TestStore() {
-	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
-	mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
+	s.mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
+	s.mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
 
-	memory := NewApplication(mockConfig, "memory")
+	memory := NewApplication(s.mockConfig, "memory")
 	s.NotNil(memory)
 	s.True(memory.Add("hello", "goravel", 5*time.Second))
 	s.Equal("goravel", memory.GetString("hello"))
 
-	mockConfig.On("GetString", "cache.stores.redis.driver").Return("redis").Once()
-	mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
-	mockConfig.On("GetString", "database.redis.default.port").Return(s.redisDocker.GetPort("6379/tcp")).Once()
-	mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-	mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
+	s.mockConfig.On("GetString", "cache.stores.custom.driver").Return("custom").Once()
+	s.mockConfig.On("Get", "cache.stores.custom.via").Return(&Store{}).Once()
 
-	redis := memory.Store("redis")
-	s.NotNil(redis)
-	s.Equal("", redis.GetString("hello"))
-	s.True(redis.Add("hello", "world", 5*time.Second))
-	s.Equal("world", redis.GetString("hello"))
+	custom := memory.Store("custom")
+	s.NotNil(custom)
+	s.Equal("", custom.GetString("hello"))
+	s.True(custom.Add("hello", "world", 5*time.Second))
+	s.Equal("", custom.GetString("hello"))
 
 	s.Equal("goravel", memory.GetString("hello"))
 
-	mockConfig.AssertExpectations(s.T())
-}
-
-func (s *DriverTestSuite) TestAdd() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("name", "Goravel", 1*time.Second))
-			s.False(store.Add("name", "World", 1*time.Second))
-			s.True(store.Add("name1", "World", 1*time.Second))
-			s.True(store.Has("name1"))
-			time.Sleep(2 * time.Second)
-			s.False(store.Has("name1"))
-			s.True(store.Flush())
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestDecrement() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			res, err := store.Decrement("decrement")
-			s.Equal(-1, res)
-			s.Nil(err)
-
-			s.Equal(-1, store.GetInt("decrement"))
-
-			res, err = store.Decrement("decrement", 2)
-			s.Equal(-3, res)
-			s.Nil(err)
-
-			res, err = store.Decrement("decrement1", 2)
-			s.Equal(-2, res)
-			s.Nil(err)
-
-			s.Equal(-2, store.GetInt("decrement1"))
-
-			s.True(store.Add("decrement2", 4, 2*time.Second))
-			res, err = store.Decrement("decrement2")
-			s.Equal(3, res)
-			s.Nil(err)
-
-			res, err = store.Decrement("decrement2", 2)
-			s.Equal(1, res)
-			s.Nil(err)
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestForever() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.True(store.Forever("name", "Goravel"))
-			s.Equal("Goravel", store.Get("name", "").(string))
-			s.True(store.Flush())
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestForget() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			val := store.Forget("test-forget")
-			s.True(val)
-
-			err := store.Put("test-forget", "goravel", 5*time.Second)
-			s.Nil(err)
-			s.True(store.Forget("test-forget"))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestFlush() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("test-flush", "goravel", 5*time.Second))
-			s.Equal("goravel", store.Get("test-flush", nil).(string))
-
-			s.True(store.Flush())
-			s.False(store.Has("test-flush"))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestGet() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("name", "Goravel", 1*time.Second))
-			s.Equal("Goravel", store.Get("name", "").(string))
-			s.Equal("World", store.Get("name1", "World").(string))
-			s.Equal("World1", store.Get("name2", func() any {
-				return "World1"
-			}).(string))
-			s.True(store.Forget("name"))
-			s.True(store.Flush())
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestGetBool() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Equal(true, store.GetBool("test-get-bool", true))
-			s.Nil(store.Put("test-get-bool", true, 2*time.Second))
-			s.Equal(true, store.GetBool("test-get-bool", false))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestGetInt() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Equal(2, store.GetInt("test-get-int", 2))
-			s.Nil(store.Put("test-get-int", 3, 2*time.Second))
-			s.Equal(3, store.GetInt("test-get-int", 2))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestGetString() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Equal("2", store.GetString("test-get-string", "2"))
-			s.Nil(store.Put("test-get-string", "3", 2*time.Second))
-			s.Equal("3", store.GetString("test-get-string", "2"))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestHas() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.False(store.Has("test-has"))
-			s.Nil(store.Put("test-has", "goravel", 5*time.Second))
-			s.True(store.Has("test-has"))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestIncrement() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			res, err := store.Increment("Increment")
-			s.Equal(1, res)
-			s.Nil(err)
-
-			s.Equal(1, store.GetInt("Increment"))
-
-			res, err = store.Increment("Increment", 2)
-			s.Equal(3, res)
-			s.Nil(err)
-
-			res, err = store.Increment("Increment1", 2)
-			s.Equal(2, res)
-			s.Nil(err)
-
-			s.Equal(2, store.GetInt("Increment1"))
-
-			s.True(store.Add("Increment2", 1, 2*time.Second))
-			res, err = store.Increment("Increment2")
-			s.Equal(2, res)
-			s.Nil(err)
-
-			res, err = store.Increment("Increment2", 2)
-			s.Equal(4, res)
-			s.Nil(err)
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestLock() {
-	for _, store := range s.stores {
-		tests := []struct {
-			name  string
-			setup func()
-		}{
-			{
-				name: "once got lock, lock can't be got again",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					lock1 := store.Lock("lock")
-					s.False(lock1.Get())
-
-					lock.Release()
-				},
-			},
-			{
-				name: "lock can be got again when had been released",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					s.True(lock.Release())
-
-					lock1 := store.Lock("lock")
-					s.True(lock1.Get())
-
-					s.True(lock1.Release())
-				},
-			},
-			{
-				name: "lock cannot be released when had been got",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					lock1 := store.Lock("lock")
-					s.False(lock1.Get())
-					s.False(lock1.Release())
-
-					s.True(lock.Release())
-				},
-			},
-			{
-				name: "lock can be force released",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					lock1 := store.Lock("lock")
-					s.False(lock1.Get())
-					s.False(lock1.Release())
-					s.True(lock1.ForceRelease())
-
-					s.True(lock.Release())
-				},
-			},
-			{
-				name: "lock can be got again when timeout",
-				setup: func() {
-					lock := store.Lock("lock", 1*time.Second)
-					s.True(lock.Get())
-
-					time.Sleep(2 * time.Second)
-
-					lock1 := store.Lock("lock")
-					s.True(lock1.Get())
-					s.True(lock1.Release())
-				},
-			},
-			{
-				name: "lock can be got again when had been released by callback",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get(func() {
-						s.True(true)
-					}))
-
-					lock1 := store.Lock("lock")
-					s.True(lock1.Get())
-					s.True(lock1.Release())
-				},
-			},
-			{
-				name: "block wait out",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					go func() {
-						lock1 := store.Lock("lock")
-						s.NotNil(lock1.Block(1 * time.Second))
-					}()
-
-					time.Sleep(2 * time.Second)
-
-					lock.Release()
-				},
-			},
-			{
-				name: "get lock by block when just timeout",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					go func() {
-						lock1 := store.Lock("lock")
-						s.True(lock1.Block(2 * time.Second))
-						s.True(lock1.Release())
-					}()
-
-					time.Sleep(1 * time.Second)
-
-					lock.Release()
-
-					time.Sleep(2 * time.Second)
-				},
-			},
-			{
-				name: "get lock by block",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					go func() {
-						lock1 := store.Lock("lock")
-						s.True(lock1.Block(3 * time.Second))
-						s.True(lock1.Release())
-					}()
-
-					time.Sleep(1 * time.Second)
-
-					lock.Release()
-
-					time.Sleep(3 * time.Second)
-				},
-			},
-			{
-				name: "get lock by block with callback",
-				setup: func() {
-					lock := store.Lock("lock")
-					s.True(lock.Get())
-
-					go func() {
-						lock1 := store.Lock("lock")
-						s.True(lock1.Block(2*time.Second, func() {
-							s.True(true)
-						}))
-					}()
-
-					time.Sleep(1 * time.Second)
-
-					lock.Release()
-
-					time.Sleep(2 * time.Second)
-				},
-			},
-		}
-
-		for _, test := range tests {
-			s.Run(test.name, func() {
-				test.setup()
-			})
-		}
-	}
-}
-
-func (s *DriverTestSuite) TestPull() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("name", "Goravel", 1*time.Second))
-			s.True(store.Has("name"))
-			s.Equal("Goravel", store.Pull("name", "").(string))
-			s.False(store.Has("name"))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestPut() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("name", "Goravel", 1*time.Second))
-			s.True(store.Has("name"))
-			s.Equal("Goravel", store.Get("name", "").(string))
-			time.Sleep(2 * time.Second)
-			s.False(store.Has("name"))
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestRemember() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("name", "Goravel", 1*time.Second))
-			value, err := store.Remember("name", 1*time.Second, func() any {
-				return "World"
-			})
-			s.Nil(err)
-			s.Equal("Goravel", value)
-
-			value, err = store.Remember("name1", 1*time.Second, func() any {
-				return "World1"
-			})
-			s.Nil(err)
-			s.Equal("World1", value)
-			time.Sleep(2 * time.Second)
-			s.False(store.Has("name1"))
-			s.True(store.Flush())
-		})
-	}
-}
-
-func (s *DriverTestSuite) TestRememberForever() {
-	for name, store := range s.stores {
-		s.Run(name, func() {
-			s.Nil(store.Put("name", "Goravel", 1*time.Second))
-			value, err := store.RememberForever("name", func() any {
-				return "World"
-			})
-			s.Nil(err)
-			s.Equal("Goravel", value)
-
-			value, err = store.RememberForever("name1", func() any {
-				return "World1"
-			})
-			s.Nil(err)
-			s.Equal("World1", value)
-			s.True(store.Flush())
-		})
-	}
-}
-
-func getRedisDocker() (*dockertest.Pool, *dockertest.Resource, cache.Driver, error) {
-	mockConfig := &configmock.Config{}
-	pool, resource, err := testingdocker.Redis()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	var store cache.Driver
-	if err := pool.Retry(func() error {
-		var err error
-		mockConfig.On("GetString", "cache.stores.redis.connection", "default").Return("default").Once()
-		mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Once()
-		mockConfig.On("GetString", "database.redis.default.port").Return(resource.GetPort("6379/tcp")).Once()
-		mockConfig.On("GetString", "database.redis.default.password").Return(resource.GetPort("")).Once()
-		mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-		mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-		store, err = NewRedis(context.Background(), mockConfig, "redis")
-
-		return err
-	}); err != nil {
-		return nil, nil, nil, err
-	}
-
-	return pool, resource, store, nil
-}
-
-func getMemoryStore() (*Memory, error) {
-	mockConfig := &configmock.Config{}
-	mockConfig.On("GetString", "cache.prefix").Return("goravel_cache").Once()
-
-	memory, err := NewMemory(mockConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return memory, nil
+	s.mockConfig.AssertExpectations(s.T())
 }
 
 type Store struct {
