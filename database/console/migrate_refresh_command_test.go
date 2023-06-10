@@ -38,7 +38,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createMysqlMigrations()
-
 			},
 		},
 		{
