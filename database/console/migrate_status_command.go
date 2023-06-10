@@ -54,7 +54,7 @@ func (receiver *MigrateStatusCommand) Handle(ctx console.Context) error {
 	if err != nil {
 		color.Redln("Migration status failed:", err.Error())
 
-		return err
+		return nil
 	}
 
 	if dirty {
