@@ -22,7 +22,7 @@ func TestModelMakeCommand(t *testing.T) {
 
 	mockContext.On("Argument", 0).Return("User/Phone").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/models/user/phone.go"))
+	assert.True(t, file.Exists("app/models/User/phone.go"))
 
 	assert.True(t, file.Remove("app"))
 }

@@ -24,7 +24,7 @@ func TestJobMakeCommand(t *testing.T) {
 	mockContext.On("Argument", 0).Return("Goravel/Job").Once()
 	err = jobMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
-	assert.True(t, file.Exists("app/jobs/goravel/job.go"))
+	assert.True(t, file.Exists("app/jobs/Goravel/job.go"))
 
 	assert.True(t, file.Remove("app"))
 }

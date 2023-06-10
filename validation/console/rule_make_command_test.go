@@ -24,7 +24,7 @@ func TestRuleMakeCommand(t *testing.T) {
 	mockContext.On("Argument", 0).Return("User/Phone").Once()
 	err = requestMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
-	assert.True(t, file.Exists("app/rules/user/phone.go"))
+	assert.True(t, file.Exists("app/rules/User/phone.go"))
 
 	assert.True(t, file.Remove("app"))
 }

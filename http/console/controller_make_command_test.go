@@ -24,7 +24,7 @@ func TestControllerMakeCommand(t *testing.T) {
 	mockContext.On("Argument", 0).Return("User/AuthController").Once()
 	err = controllerMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
-	assert.True(t, file.Exists("app/http/controllers/user/auth_controller.go"))
+	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
 
 	assert.True(t, file.Remove("app"))
 }

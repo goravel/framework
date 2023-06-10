@@ -22,7 +22,7 @@ func TestObserverMakeCommand(t *testing.T) {
 
 	mockContext.On("Argument", 0).Return("User/PhoneObserver").Once()
 	assert.Nil(t, observerMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("app/observers/user/phone_observer.go"))
+	assert.True(t, file.Exists("app/observers/User/phone_observer.go"))
 
 	assert.True(t, file.Remove("app"))
 }

@@ -24,7 +24,7 @@ func TestRequestMakeCommand(t *testing.T) {
 	mockContext.On("Argument", 0).Return("User/Auth").Once()
 	err = requestMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
-	assert.True(t, file.Exists("app/http/requests/user/auth.go"))
+	assert.True(t, file.Exists("app/http/requests/User/auth.go"))
 
 	assert.True(t, file.Remove("app"))
 }
