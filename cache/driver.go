@@ -3,8 +3,6 @@ package cache
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 )
@@ -32,14 +30,14 @@ func (d *DriverImpl) New(store string) (cache.Driver, error) {
 	case "custom":
 		return d.custom(store)
 	default:
-		return nil, errors.Errorf("not supported cache store: %s\n", store)
+		return nil, fmt.Errorf("not supported cache store: %s\n", store)
 	}
 }
 
 func (d *DriverImpl) memory() (cache.Driver, error) {
 	memory, err := NewMemory(d.config)
 	if err != nil {
-		return nil, errors.WithMessage(err, "init memory driver error")
+		return nil, fmt.Errorf("init memory driver error: %v", err)
 	}
 
 	return memory, nil
@@ -53,5 +51,5 @@ func (d *DriverImpl) custom(store string) (cache.Driver, error) {
 		return custom()
 	}
 
-	return nil, errors.Errorf("%s doesn't implement contracts/cache/store\n", store)
+	return nil, fmt.Errorf("%s doesn't implement contracts/cache/store\n", store)
 }
