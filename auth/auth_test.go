@@ -179,6 +179,7 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Nil(err)
 
 	time.Sleep(2 * unit)
+	now = supporttime.Now()
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
