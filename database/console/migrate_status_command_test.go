@@ -89,7 +89,7 @@ func TestMigrateStatusCommand(t *testing.T) {
 			migrateStatusCommand := NewMigrateStatusCommand(mockConfig)
 			assert.Nil(t, migrateStatusCommand.Handle(mockContext))
 
-			res, err := query.Table("migrations").Where("dirty", 0).Update("dirty", 1)
+			res, err := query.Table("migrations").Where("dirty", false).Update("dirty", true)
 			assert.Nil(t, err)
 			assert.Equal(t, int64(1), res.RowsAffected)
 
