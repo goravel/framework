@@ -2,7 +2,6 @@ package console
 
 import (
 	"github.com/gookit/color"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
