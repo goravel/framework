@@ -1,5 +1,11 @@
 package console
 
+import (
+	"fmt"
+
+	"github.com/goravel/framework/support/str"
+)
+
 type Stubs struct {
 }
 

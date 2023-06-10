@@ -1,8 +1,8 @@
 package console
 
 import (
+	"log"
 	"os"
-	"strings"
 
 	"github.com/gookit/color"
 
@@ -44,7 +44,9 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 
 		return nil
 	}
-
+	log.Printf("name: %s", name)
+	log.Println("receiver.getPath(name): ", receiver.getPath(name))
+	log.Println("receiver.getStub(name): ", receiver.getStub(name))
 	if err := file.Create(receiver.getPath(name), receiver.getStub(name)); err != nil {
 		return err
 	}

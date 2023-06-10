@@ -14,10 +14,10 @@ func TestFactoryMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	assert.Nil(t, factoryMakeCommand.Handle(mockContext))
-	assert.False(t, file.Exists("database/factories/userFactory.go"))
+	assert.False(t, file.Exists("database/factories/user_factory.go"))
 
 	mockContext.On("Argument", 0).Return("UserFactory").Once()
 	assert.Nil(t, factoryMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("database/factories/userFactory.go"))
+	assert.True(t, file.Exists("database/factories/user_factory.go"))
 	assert.True(t, file.Remove("database"))
 }
