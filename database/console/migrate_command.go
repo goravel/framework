@@ -50,7 +50,7 @@ func (receiver *MigrateCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())
 
 		return nil

@@ -41,21 +41,26 @@ func (receiver *MigrateRefreshCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
-	migrateResetCommand := &MigrateResetCommand{}
-	err := migrateResetCommand.Handle(ctx)
+	m, err := getMigrate(receiver.config)
+	if err != nil {
+		return err
+	}
+	if m == nil {
+		color.Yellowln("Please fill database config first")
 
-	if err != nil && err != migrate.ErrNoChange {
+		return nil
+	}
+
+	if err = m.Down(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration reset failed:", err.Error())
 
 		return err
 	}
 
-	migrateCommand := &MigrateCommand{}
-	err = migrateCommand.Handle(ctx)
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+		color.Redln("Migration failed:", err.Error())
 
-	if err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration refresh failed:", err.Error())
-		return err
+		return nil
 	}
 
 	color.Greenln("Migration refresh success")

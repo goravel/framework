@@ -49,13 +49,11 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	// Drop all tables
 	if err = m.Drop(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())
 		return err
 	}
 
-	// Run all migrations
 	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())
 		return err
