@@ -61,7 +61,7 @@ func (receiver *MigrateStatusCommand) Handle(ctx console.Context) error {
 		color.Yellowln("Migration status: dirty")
 		color.Greenln("Migration version:", version)
 
-		return errors.New("dirty migration")
+		return nil
 	}
 
 	color.Greenln("Migration status: clean")
