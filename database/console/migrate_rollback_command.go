@@ -67,7 +67,7 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := m.Steps(step); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
+	if err = m.Steps(step); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
 		switch err.(type) {
 		case migrate.ErrShortLimit:
 		default:

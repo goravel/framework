@@ -86,7 +86,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			mockConfig.On("Get", "step").Return(1).Once()
+			mockConfig.On("Option", "step").Return(1).Once()
 
 			migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 			assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
@@ -96,7 +96,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			assert.Nil(t, err)
 			assert.True(t, agent.ID == 0)
 
-			if pool != nil {
+			if pool != nil && test.name != "sqlite" {
 				assert.Nil(t, pool.Purge(resource))
 			}
 

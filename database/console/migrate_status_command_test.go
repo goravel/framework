@@ -95,7 +95,7 @@ func TestMigrateStatusCommand(t *testing.T) {
 
 			assert.Error(t, migrateStatusCommand.Handle(mockContext))
 
-			if pool != nil {
+			if pool != nil && test.name != "sqlite" {
 				assert.Nil(t, pool.Purge(resource))
 			}
 

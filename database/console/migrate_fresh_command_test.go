@@ -94,7 +94,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 			assert.Nil(t, err)
 			assert.True(t, agent.ID > 0)
 
-			if pool != nil {
+			if pool != nil && test.name != "sqlite" {
 				assert.Nil(t, pool.Purge(resource))
 			}
 
