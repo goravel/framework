@@ -14,9 +14,10 @@ type ServiceProvider struct {
 func (database *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
+		log := app.MakeLog()
 		store := config.GetString("cache.default")
 
-		return NewApplication(config, store), nil
+		return NewApplication(config, log, store)
 	})
 }
 
