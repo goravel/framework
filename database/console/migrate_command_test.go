@@ -117,6 +117,9 @@ func createMysqlMigrations() {
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
+`)
 }
 
 func createPostgresqlMigrations() {
@@ -128,6 +131,9 @@ func createPostgresqlMigrations() {
   updated_at timestamp NOT NULL
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
+`)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
 `)
 }
 
@@ -142,6 +148,9 @@ func createSqlserverMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
+`)
 }
 
 func createSqliteMigrations() {
@@ -153,6 +162,9 @@ func createSqliteMigrations() {
   updated_at datetime NOT NULL
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
+`)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
 `)
 }
 

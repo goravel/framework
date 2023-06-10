@@ -17,7 +17,7 @@ var ChangePatterns = []string{
 type TableGuesser struct {
 }
 
-//Guess Attempt to guess the table name and "creation" status of the given migration, return table, create.
+// Guess Attempt to guess the table name and "creation" status of the given migration, return table, create.
 func (receiver TableGuesser) Guess(migration string) (string, bool) {
 	for _, createPattern := range CreatePatterns {
 		reg := regexp.MustCompile(createPattern)

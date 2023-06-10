@@ -11,52 +11,64 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 )
 
-type MigrateCommand struct {
+type MigrateFreshCommand struct {
 	config config.Config
 }
 
-func NewMigrateCommand(config config.Config) *MigrateCommand {
-	return &MigrateCommand{
+func NewMigrateFreshCommand(config config.Config) *MigrateFreshCommand {
+	return &MigrateFreshCommand{
 		config: config,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateCommand) Signature() string {
-	return "migrate"
+func (receiver *MigrateFreshCommand) Signature() string {
+	return "migrate:fresh"
 }
 
 // Description The console command description.
-func (receiver *MigrateCommand) Description() string {
-	return "Run the database migrations"
+func (receiver *MigrateFreshCommand) Description() string {
+	return "Drop all tables and re-run all migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateCommand) Extend() command.Extend {
+func (receiver *MigrateFreshCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateCommand) Handle(ctx console.Context) error {
+func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 	m, err := getMigrate(receiver.config)
 	if err != nil {
 		return err
 	}
 	if m == nil {
 		color.Yellowln("Please fill database config first")
-
 		return nil
 	}
 
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Drop(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())
-
 		return nil
 	}
 
-	color.Greenln("Migration success")
+	m2, err2 := getMigrate(receiver.config)
+	if err2 != nil {
+		return err2
+	}
+	if m2 == nil {
+		color.Yellowln("Please fill database config first")
+		return nil
+	}
+
+	if err2 = m2.Up(); err2 != nil && err2 != migrate.ErrNoChange {
+		color.Redln("Migration failed:", err2.Error())
+		return nil
+	}
+
+	color.Greenln("Migration fresh success")
 
 	return nil
 }

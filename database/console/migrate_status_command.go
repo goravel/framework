@@ -2,7 +2,6 @@ package console
 
 import (
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gookit/color"
 
@@ -11,52 +10,60 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 )
 
-type MigrateCommand struct {
+type MigrateStatusCommand struct {
 	config config.Config
 }
 
-func NewMigrateCommand(config config.Config) *MigrateCommand {
-	return &MigrateCommand{
+func NewMigrateStatusCommand(config config.Config) *MigrateStatusCommand {
+	return &MigrateStatusCommand{
 		config: config,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateCommand) Signature() string {
-	return "migrate"
+func (receiver *MigrateStatusCommand) Signature() string {
+	return "migrate:status"
 }
 
 // Description The console command description.
-func (receiver *MigrateCommand) Description() string {
-	return "Run the database migrations"
+func (receiver *MigrateStatusCommand) Description() string {
+	return "Show the status of each migration"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateCommand) Extend() command.Extend {
+func (receiver *MigrateStatusCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateCommand) Handle(ctx console.Context) error {
+func (receiver *MigrateStatusCommand) Handle(ctx console.Context) error {
 	m, err := getMigrate(receiver.config)
 	if err != nil {
 		return err
 	}
 	if m == nil {
 		color.Yellowln("Please fill database config first")
+		return nil
+	}
+
+	version, dirty, err := m.Version()
+	if err != nil {
+		color.Redln("Migration status failed:", err.Error())
 
 		return nil
 	}
 
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration failed:", err.Error())
+	if dirty {
+		color.Yellowln("Migration status: dirty")
+		color.Greenln("Migration version:", version)
 
 		return nil
 	}
 
-	color.Greenln("Migration success")
+	color.Greenln("Migration status: clean")
+	color.Greenln("Migration version:", version)
 
 	return nil
 }

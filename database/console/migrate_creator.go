@@ -21,7 +21,7 @@ func NewMigrateCreator(config config.Config) *MigrateCreator {
 	}
 }
 
-//Create a new migration
+// Create a new migration
 func (receiver MigrateCreator) Create(name string, table string, create bool) error {
 	// First we will get the stub file for the migration, which serves as a type
 	// of template for the migration. Once we have those we will populate the
@@ -41,7 +41,7 @@ func (receiver MigrateCreator) Create(name string, table string, create bool) er
 	return nil
 }
 
-//getStub Get the migration stub file.
+// getStub Get the migration stub file.
 func (receiver MigrateCreator) getStub(table string, create bool) (string, string) {
 	if table == "" {
 		return "", ""
@@ -76,7 +76,7 @@ func (receiver MigrateCreator) getStub(table string, create bool) (string, strin
 	}
 }
 
-//populateStub Populate the place-holders in the migration stub.
+// populateStub Populate the place-holders in the migration stub.
 func (receiver MigrateCreator) populateStub(stub string, table string) string {
 	stub = strings.ReplaceAll(stub, "DummyDatabaseCharset", receiver.config.GetString("database.connections."+receiver.config.GetString("database.default")+".charset"))
 
@@ -87,7 +87,7 @@ func (receiver MigrateCreator) populateStub(stub string, table string) string {
 	return stub
 }
 
-//getPath Get the full path to the migration.
+// getPath Get the full path to the migration.
 func (receiver MigrateCreator) getPath(name string, category string) string {
 	pwd, _ := os.Getwd()
 
