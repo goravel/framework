@@ -17,7 +17,6 @@ func TestMigrateResetCommand(t *testing.T) {
 		mockConfig *configmock.Config
 		pool       *dockertest.Pool
 		resource   *dockertest.Resource
-		_          ormcontract.Query
 	)
 
 	beforeEach := func() {
