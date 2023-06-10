@@ -18,7 +18,7 @@ type Clock struct {
 	time    Time
 }
 
-// getInstance Get a singleton Time object.
+// getInstance Get a singleton Clock object.
 func getInstance(timezone ...string) *Clock {
 	once.Do(func() {
 		internalClock = &Clock{
