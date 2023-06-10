@@ -53,7 +53,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 	if err = m.Down(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration reset failed:", err.Error())
 
-		return err
+		return nil
 	}
 
 	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
