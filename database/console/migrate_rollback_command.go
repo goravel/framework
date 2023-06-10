@@ -23,17 +23,17 @@ func NewMigrateRollbackCommand(config config.Config) *MigrateRollbackCommand {
 	}
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *MigrateRollbackCommand) Signature() string {
 	return "migrate:rollback"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *MigrateRollbackCommand) Description() string {
 	return "Rollback the database migrations"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *MigrateRollbackCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
@@ -47,7 +47,7 @@ func (receiver *MigrateRollbackCommand) Extend() command.Extend {
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	m, err := getMigrate(receiver.config)
 	if err != nil {
@@ -67,7 +67,7 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := m.Steps(step); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
+	if err = m.Steps(step); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
 		switch err.(type) {
 		case migrate.ErrShortLimit:
 		default:

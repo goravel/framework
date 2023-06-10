@@ -38,6 +38,10 @@ func (database *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewMigrateMakeCommand(config),
 		console.NewMigrateCommand(config),
 		console.NewMigrateRollbackCommand(config),
+		console.NewMigrateResetCommand(config),
+		console.NewMigrateRefreshCommand(config),
+		console.NewMigrateFreshCommand(config),
+		console.NewMigrateStatusCommand(config),
 		console.NewModelMakeCommand(),
 		console.NewObserverMakeCommand(),
 	})
