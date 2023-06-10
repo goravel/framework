@@ -45,29 +45,22 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(receiver.getPath(name), receiver.getStub(name)); err != nil {
 		return err
 	}
 
-	color.Greenln("Model created successfully")
+	color.Greenln("Factory created successfully")
 
 	return nil
 }
 
-func (receiver *FactoryMakeCommand) getStub() string {
-	return Stubs{}.Model()
-}
-
-// populateStub Populate the place-holders in the command stub.
-func (receiver *FactoryMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyModel", str.Case2Camel(name))
-
-	return stub
+func (receiver *FactoryMakeCommand) getStub(name string) string {
+	return Stubs{}.Factory(name)
 }
 
 // getPath Get the full path to the command.
 func (receiver *FactoryMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/models/" + str.Camel2Case(name) + ".go"
+	return pwd + "/database/factories/" + str.Camel2Case(name) + ".go"
 }
