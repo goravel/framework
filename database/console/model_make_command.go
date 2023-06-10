@@ -78,7 +78,7 @@ func (receiver *ModelMakeCommand) getPath(name string) string {
 		folderPath = folderPath + "/"
 	}
 
-	return pwd + "/app/models/" + folderPath + str.Case2Camel(modelName) + ".go"
+	return pwd + "/app/models/" + folderPath + str.Camel2Case(modelName) + ".go"
 }
 
 // parseName Parse the name to get the model name, package name and folder path.
