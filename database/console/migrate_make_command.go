@@ -16,24 +16,24 @@ func NewMigrateMakeCommand(config config.Config) *MigrateMakeCommand {
 	return &MigrateMakeCommand{config: config}
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *MigrateMakeCommand) Signature() string {
 	return "make:migration"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *MigrateMakeCommand) Description() string {
 	return "Create a new migration file"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *MigrateMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// It's possible for the developer to specify the tables to modify in this
 	// schema operation. The developer may also specify if this table needs

@@ -21,24 +21,24 @@ func NewMigrateCommand(config config.Config) *MigrateCommand {
 	}
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *MigrateCommand) Signature() string {
 	return "migrate"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *MigrateCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *MigrateCommand) Handle(ctx console.Context) error {
 	m, err := getMigrate(receiver.config)
 	if err != nil {
