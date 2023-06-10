@@ -55,7 +55,10 @@ func (receiver *MiddlewareMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (receiver *MiddlewareMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyMiddleware", str.Case2Camel(name))
+	middlewareName, packageName, _ := receiver.parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyMiddleware", str.Case2Camel(middlewareName))
+	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
 }
@@ -64,5 +67,34 @@ func (receiver *MiddlewareMakeCommand) populateStub(stub string, name string) st
 func (receiver *MiddlewareMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/http/middleware/" + str.Camel2Case(name) + ".go"
+	middlewareName, _, folderPath := receiver.parseName(name)
+
+	if folderPath != "" {
+		folderPath = folderPath + "/"
+	}
+
+	return pwd + "/app/http/middleware/" + folderPath + str.Camel2Case(middlewareName) + ".go"
+}
+
+// parseName Parse the name to get the middleware name, package name and folder path.
+func (receiver *MiddlewareMakeCommand) parseName(name string) (string, string, string) {
+	name = strings.TrimSuffix(name, ".go")
+
+	segments := strings.Split(name, "/")
+
+	middlewareName := segments[len(segments)-1]
+
+	packageName := "middleware"
+
+	if len(segments) > 1 {
+		packageName = strings.Join(segments[:len(segments)-1], "/")
+	}
+
+	folderPath := ""
+
+	if packageName != "middleware" {
+		folderPath = packageName
+	}
+
+	return middlewareName, packageName, folderPath
 }

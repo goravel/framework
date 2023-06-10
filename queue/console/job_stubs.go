@@ -3,9 +3,9 @@ package console
 type JobStubs struct {
 }
 
-//Job Create a job.
+// Job Create a job.
 func (receiver JobStubs) Job() string {
-	return `package jobs
+	return `package DummyPackage
 
 type DummyJob struct {
 }

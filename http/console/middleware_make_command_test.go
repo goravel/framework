@@ -20,5 +20,11 @@ func TestMiddlewareMakeCommand(t *testing.T) {
 	err = middlewareMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/http/middleware/verify_csrf_token.go"))
+
+	mockContext.On("Argument", 0).Return("User/Auth").Once()
+	err = middlewareMakeCommand.Handle(mockContext)
+	assert.Nil(t, err)
+	assert.True(t, file.Exists("app/http/middleware/user/auth.go"))
+
 	assert.True(t, file.Remove("app"))
 }

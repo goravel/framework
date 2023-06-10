@@ -20,5 +20,11 @@ func TestEventMakeCommand(t *testing.T) {
 	err = policyMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/policies/user_policy.go"))
+
+	mockContext.On("Argument", 0).Return("User/AuthPolicy").Once()
+	err = policyMakeCommand.Handle(mockContext)
+	assert.Nil(t, err)
+	assert.True(t, file.Exists("app/policies/user/auth_policy.go"))
+
 	assert.True(t, file.Remove("app"))
 }
