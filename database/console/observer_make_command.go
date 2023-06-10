@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -74,11 +75,7 @@ func (receiver *ObserverMakeCommand) getPath(name string) string {
 
 	observerName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/observers/" + folderPath + str.Camel2Case(observerName) + ".go"
+	return filepath.Join(pwd, "app", "observers", folderPath, str.Camel2Case(observerName)+".go")
 }
 
 // parseName Parse the name to get the observer name, package name and folder path.
@@ -90,15 +87,11 @@ func (receiver *ObserverMakeCommand) parseName(name string) (string, string, str
 	observerName := segments[len(segments)-1]
 
 	packageName := "observers"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "observers" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return observerName, packageName, folderPath

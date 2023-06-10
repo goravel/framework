@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -73,11 +74,7 @@ func (receiver *PolicyMakeCommand) getPath(name string) string {
 
 	policyName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/policies/" + folderPath + str.Camel2Case(policyName) + ".go"
+	return filepath.Join(pwd, "app", "policies", folderPath, str.Camel2Case(policyName)+".go")
 }
 
 // parseName Parse the name to get the policy name, package name and folder path.
@@ -89,15 +86,11 @@ func (receiver *PolicyMakeCommand) parseName(name string) (string, string, strin
 	policyName := segments[len(segments)-1]
 
 	packageName := "policies"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "policies" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return policyName, packageName, folderPath

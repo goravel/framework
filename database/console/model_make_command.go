@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -74,11 +75,7 @@ func (receiver *ModelMakeCommand) getPath(name string) string {
 
 	modelName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/models/" + folderPath + str.Camel2Case(modelName) + ".go"
+	return filepath.Join(pwd, "app", "models", folderPath, str.Camel2Case(modelName)+".go")
 }
 
 // parseName Parse the name to get the model name, package name and folder path.
@@ -90,15 +87,11 @@ func (receiver *ModelMakeCommand) parseName(name string) (string, string, string
 	modelName := segments[len(segments)-1]
 
 	packageName := "models"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "models" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return modelName, packageName, folderPath

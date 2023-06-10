@@ -25,6 +25,8 @@ func TestEventMakeCommand(t *testing.T) {
 	err = policyMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/policies/User/auth_policy.go"))
+	assert.True(t, file.Contain("app/policies/User/auth_policy.go", "package User"))
+	assert.True(t, file.Contain("app/policies/User/auth_policy.go", "type AuthPolicy struct {"))
 
 	assert.True(t, file.Remove("app"))
 }

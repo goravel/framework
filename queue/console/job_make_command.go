@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -70,11 +71,7 @@ func (receiver *JobMakeCommand) getPath(name string) string {
 
 	jobName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/jobs/" + folderPath + str.Camel2Case(jobName) + ".go"
+	return filepath.Join(pwd, "app", "jobs", folderPath, str.Camel2Case(jobName)+".go")
 }
 
 // parseName Parse the name to get the job name, package name and folder path.
@@ -86,15 +83,11 @@ func (receiver *JobMakeCommand) parseName(name string) (string, string, string) 
 	jobName := segments[len(segments)-1]
 
 	packageName := "jobs"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "jobs" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return jobName, packageName, folderPath

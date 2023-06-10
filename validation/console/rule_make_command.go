@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -70,11 +71,7 @@ func (receiver *RuleMakeCommand) getPath(name string) string {
 
 	ruleName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/rules/" + folderPath + str.Camel2Case(ruleName) + ".go"
+	return filepath.Join(pwd, "app", "rules", folderPath, str.Camel2Case(ruleName)+".go")
 }
 
 // parseName Parse the name to get the rule name, package name and folder path.
@@ -86,15 +83,11 @@ func (receiver *RuleMakeCommand) parseName(name string) (string, string, string)
 	ruleName := segments[len(segments)-1]
 
 	packageName := "rules"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "rules" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return ruleName, packageName, folderPath

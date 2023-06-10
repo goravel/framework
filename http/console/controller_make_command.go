@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -69,11 +70,7 @@ func (receiver *ControllerMakeCommand) getPath(name string) string {
 
 	controllerName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/http/controllers/" + folderPath + str.Camel2Case(controllerName) + ".go"
+	return filepath.Join(pwd, "app", "http", "controllers", folderPath, str.Camel2Case(controllerName)+".go")
 }
 
 // parseName Parse the name to get the controller name, package name and folder path.
@@ -85,15 +82,11 @@ func (receiver *ControllerMakeCommand) parseName(name string) (string, string, s
 	controllerName := segments[len(segments)-1]
 
 	packageName := "controllers"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "controllers" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return controllerName, packageName, folderPath

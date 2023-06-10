@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -69,11 +70,7 @@ func (receiver *MiddlewareMakeCommand) getPath(name string) string {
 
 	middlewareName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/http/middleware/" + folderPath + str.Camel2Case(middlewareName) + ".go"
+	return filepath.Join(pwd, "app", "http", "middleware", folderPath, str.Camel2Case(middlewareName)+".go")
 }
 
 // parseName Parse the name to get the middleware name, package name and folder path.
@@ -85,15 +82,11 @@ func (receiver *MiddlewareMakeCommand) parseName(name string) (string, string, s
 	middlewareName := segments[len(segments)-1]
 
 	packageName := "middleware"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "middleware" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return middlewareName, packageName, folderPath

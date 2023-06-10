@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -70,11 +71,7 @@ func (receiver *RequestMakeCommand) getPath(name string) string {
 
 	requestName, _, folderPath := receiver.parseName(name)
 
-	if folderPath != "" {
-		folderPath = folderPath + "/"
-	}
-
-	return pwd + "/app/http/requests/" + folderPath + str.Camel2Case(requestName) + ".go"
+	return filepath.Join(pwd, "app", "http", "requests", folderPath, str.Camel2Case(requestName)+".go")
 }
 
 // parseName Parse the name to get the request name, package name and folder path.
@@ -86,15 +83,11 @@ func (receiver *RequestMakeCommand) parseName(name string) (string, string, stri
 	requestName := segments[len(segments)-1]
 
 	packageName := "requests"
-
-	if len(segments) > 1 {
-		packageName = strings.Join(segments[:len(segments)-1], "/")
-	}
-
 	folderPath := ""
 
-	if packageName != "requests" {
-		folderPath = packageName
+	if len(segments) > 1 {
+		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		packageName = segments[len(segments)-2]
 	}
 
 	return requestName, packageName, folderPath
