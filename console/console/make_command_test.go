@@ -14,7 +14,7 @@ func TestMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("CleanCache").Once()
 	assert.Nil(t, makeCommand.Handle(mockContext))
-	assert.False(t, file.Exists("app/console/commands/clean_cache.go"))
+	assert.True(t, file.Exists("app/console/commands/clean_cache.go"))
 
 	mockContext.On("Argument", 0).Return("Goravel/CleanCache").Once()
 	assert.Nil(t, makeCommand.Handle(mockContext))
