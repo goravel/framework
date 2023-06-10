@@ -71,3 +71,16 @@ func (u *DummyObserver) ForceDeleted(event orm.Event) error {
 }
 `
 }
+
+func (r Stubs) Factory(name string) string {
+	return fmt.Sprintf(`package factories
+
+import (
+	"github.com/goravel/framework/database/orm"
+)
+
+type %s struct {
+	orm.Model
+}
+`, str.Camel2Case(name))
+}
