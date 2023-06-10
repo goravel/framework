@@ -51,7 +51,7 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 
 	if err = m.Drop(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())
-		return err
+		return nil
 	}
 
 	m2, err2 := getMigrate(receiver.config)
