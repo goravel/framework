@@ -17,7 +17,7 @@ import (
 )
 
 var singleLog = "storage/logs/goravel.log"
-var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", time.Now().Format("2006-01-02"))
+var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", time.Now().ToDateString())
 
 type LogrusTestSuite struct {
 	suite.Suite
