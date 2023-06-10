@@ -90,3 +90,16 @@ type %s struct {
 }
 `, str.Camel2Case(name))
 }
+
+func (r Stubs) Seeder(name string) string {
+	return fmt.Sprintf(`package factories
+
+import (
+	"github.com/goravel/framework/database/orm"
+)
+
+type %s struct {
+	orm.Model
+}
+`, str.Camel2Case(name))
+}

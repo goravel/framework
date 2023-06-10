@@ -11,32 +11,32 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-type FactoryMakeCommand struct {
+type SeederMakeCommand struct {
 }
 
-func NewFactoryMakeCommand() *FactoryMakeCommand {
-	return &FactoryMakeCommand{}
+func NewSeederMakeCommand() *SeederMakeCommand {
+	return &SeederMakeCommand{}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *FactoryMakeCommand) Signature() string {
-	return "make:factory"
+func (receiver *SeederMakeCommand) Signature() string {
+	return "make:seeder"
 }
 
 // Description The console command description.
-func (receiver *FactoryMakeCommand) Description() string {
-	return "Create a new model factory"
+func (receiver *SeederMakeCommand) Description() string {
+	return "Create a new seeder class"
 }
 
 // Extend The console command extend.
-func (receiver *FactoryMakeCommand) Extend() command.Extend {
+func (receiver *SeederMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
+func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
 		color.Redln("Not enough arguments (missing: name)")
@@ -48,18 +48,18 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Factory created successfully")
+	color.Greenln("Seeder created successfully")
 
 	return nil
 }
 
-func (receiver *FactoryMakeCommand) getStub(name string) string {
-	return Stubs{}.Factory(name)
+func (receiver *SeederMakeCommand) getStub(name string) string {
+	return Stubs{}.Seeder(name)
 }
 
 // getPath Get the full path to the command.
-func (receiver *FactoryMakeCommand) getPath(name string) string {
+func (receiver *SeederMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/database/factories/" + str.Camel2Case(name) + ".go"
+	return pwd + "/database/seeders/" + str.Camel2Case(name) + ".go"
 }
