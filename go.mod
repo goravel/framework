@@ -39,7 +39,7 @@ require (
 	google.golang.org/grpc v1.55.0
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
-	gorm.io/driver/sqlserver v1.5.0
+	gorm.io/driver/sqlserver v1.5.1
 	gorm.io/gorm v1.25.1
 	gorm.io/plugin/dbresolver v1.4.1
 )
@@ -115,7 +115,7 @@ require (
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/microsoft/go-mssqldb v1.0.0 // indirect
+	github.com/microsoft/go-mssqldb v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
