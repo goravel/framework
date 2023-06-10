@@ -14,7 +14,7 @@ func Random(length int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
 	var result []byte
-	rand.Seed(supporttime.Now().UnixNano() + int64(rand.Intn(100)))
+	rand.Seed(supporttime.Now().TimestampNano())
 	for i := 0; i < length; i++ {
 		result = append(result, bytes[rand.Intn(len(bytes))])
 	}

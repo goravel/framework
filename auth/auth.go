@@ -44,7 +44,7 @@ type Auth struct {
 }
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, orm orm.Orm) *Auth {
-	jwt.TimeFunc = supporttime.Now
+	jwt.TimeFunc = supporttime.Now().ToStdTime
 
 	return &Auth{
 		cache:  cache,
@@ -58,7 +58,7 @@ func (a *Auth) Guard(name string) contractsauth.Auth {
 	return NewAuth(name, a.cache, a.config, a.orm)
 }
 
-//User need parse token first.
+// User need parse token first.
 func (a *Auth) User(ctx http.Context, user any) error {
 	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
@@ -148,7 +148,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 
 	nowTime := supporttime.Now()
 	ttl := a.config.GetInt("jwt.ttl")
-	expireTime := nowTime.Add(time.Duration(ttl) * unit)
+	expireTime := nowTime.ToStdTime().Add(time.Duration(ttl) * unit)
 	key := cast.ToString(id)
 	if key == "" {
 		return "", ErrorInvalidKey
@@ -157,7 +157,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 		key,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
-			IssuedAt:  jwt.NewNumericDate(nowTime),
+			IssuedAt:  jwt.NewNumericDate(nowTime.ToStdTime()),
 			Subject:   a.guard,
 		},
 	}
@@ -173,7 +173,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 	return
 }
 
-//Refresh need parse token first.
+// Refresh need parse token first.
 func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
@@ -186,7 +186,7 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 	nowTime := supporttime.Now()
 	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
 	expireTime := auth[a.guard].Claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
-	if nowTime.Unix() > expireTime.Unix() {
+	if nowTime.ToStdTime().Unix() > expireTime.Unix() {
 		return "", ErrorRefreshTimeExceeded
 	}
 

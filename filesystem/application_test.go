@@ -353,7 +353,7 @@ func TestStorage(t *testing.T) {
 			setup: func(disk TestDisk) {
 				assert.Nil(t, driver.Put("TemporaryUrl/1.txt", "Goravel"), disk.disk)
 				assert.True(t, driver.Exists("TemporaryUrl/1.txt"), disk.disk)
-				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", supporttime.Now().Add(5*time.Second))
+				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", supporttime.Now().AddSeconds(5).ToStdTime())
 				assert.Nil(t, err)
 				assert.NotEmpty(t, url)
 				if disk.disk != "local" && disk.disk != "custom" {

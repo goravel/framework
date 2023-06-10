@@ -28,7 +28,7 @@ func Throttle(name string) httpcontract.Middleware {
 							if value >= instance.MaxAttempts {
 								expireSecond := http.CacheFacade.GetInt(timer, 0) + instance.DecayMinutes*60
 								ctx.Response().Header("X-RateLimit-Reset", cast.ToString(expireSecond))
-								ctx.Response().Header("Retry-After", cast.ToString(expireSecond-int(supporttime.Now().Unix())))
+								ctx.Response().Header("Retry-After", cast.ToString(expireSecond-int(supporttime.Now().Timestamp())))
 								if instance.ResponseCallback != nil {
 									instance.ResponseCallback(ctx)
 									return
@@ -45,7 +45,7 @@ func Throttle(name string) httpcontract.Middleware {
 						} else {
 							expireMinute := time.Duration(instance.DecayMinutes) * time.Minute
 
-							err := http.CacheFacade.Put(timer, supporttime.Now().Unix(), expireMinute)
+							err := http.CacheFacade.Put(timer, supporttime.Now().Timestamp(), expireMinute)
 							if err != nil {
 								panic(err)
 							}

@@ -2,10 +2,8 @@ package console
 
 import (
 	"fmt"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
@@ -14,7 +12,7 @@ import (
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
-	now := time.Now()
+	now := supporttime.Now()
 	supporttime.SetTestNow(now)
 	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")
 	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")

@@ -186,8 +186,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(now.Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(now).Local(),
+		ExpireAt: jwt.NewNumericDate(now.ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(now.ToStdTime()).Local(),
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
 
@@ -216,8 +216,8 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(supporttime.Now().Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(supporttime.Now()).Local(),
+		ExpireAt: jwt.NewNumericDate(supporttime.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(supporttime.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
@@ -238,8 +238,8 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(supporttime.Now().Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(supporttime.Now()).Local(),
+		ExpireAt: jwt.NewNumericDate(supporttime.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(supporttime.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
