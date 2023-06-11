@@ -20,4 +20,6 @@ func TestObserverMakeCommand(t *testing.T) {
 	assert.Nil(t, observerMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/observers/user_observer.go"))
 	assert.True(t, file.Remove("app"))
+
+	mockContext.AssertExpectations(t)
 }

@@ -20,4 +20,6 @@ func TestModelMakeCommand(t *testing.T) {
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/models/user.go"))
 	assert.True(t, file.Remove("app"))
+
+	mockContext.AssertExpectations(t)
 }
