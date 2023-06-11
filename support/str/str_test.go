@@ -8,10 +8,7 @@ import (
 
 func TestRandom(t *testing.T) {
 	assert.Len(t, Random(10), 10)
-}
-
-func TestZeroRandom(t *testing.T) {
-	assert.Equal(t, "", Random(0))
+	assert.Empty(t, Random(0))
 }
 
 func TestCase2Camel(t *testing.T) {
