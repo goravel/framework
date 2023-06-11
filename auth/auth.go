@@ -148,7 +148,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 
 	nowTime := carbon.Now()
 	ttl := a.config.GetInt("jwt.ttl")
-	expireTime := nowTime.ToStdTime().Add(time.Duration(ttl) * unit)
+	expireTime := nowTime.AddSeconds(ttl).ToStdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", ErrorInvalidKey
