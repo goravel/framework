@@ -81,6 +81,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			test.setup()
 
 			mockContext := &consolemocks.Context{}
+			mockContext.On("Option", "step").Return("").Once()
 
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
@@ -93,10 +94,24 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			assert.Nil(t, err)
 			assert.True(t, agent.ID > 0)
 
+			mockContext.On("Option", "step").Return("5").Once()
+
+			migrateCommand = NewMigrateCommand(mockConfig)
+			assert.Nil(t, migrateCommand.Handle(mockContext))
+
+			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig)
+			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
+
+			var agent1 Agent
+			err = query.Where("name", "goravel").First(&agent1)
+			assert.Nil(t, err)
+			assert.True(t, agent1.ID > 0)
+
 			if pool != nil && test.name != "sqlite" {
 				assert.Nil(t, pool.Purge(resource))
 			}
 
+			mockContext.AssertExpectations(t)
 			removeMigrations()
 		})
 	}
