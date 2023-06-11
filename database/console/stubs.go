@@ -2,8 +2,6 @@ package console
 
 import (
 	"fmt"
-
-	"github.com/goravel/framework/support/str"
 )
 
 type Stubs struct {
@@ -88,18 +86,25 @@ import (
 type %s struct {
 	orm.Model
 }
-`, str.Camel2Case(name))
+`, name)
 }
 
 func (r Stubs) Seeder(name string) string {
-	return fmt.Sprintf(`package factories
+	return fmt.Sprintf(`package seeders
 
 import (
-	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/database"
 )
-
+	
 type %s struct {
-	orm.Model
+	database.Seeder
 }
-`, str.Camel2Case(name))
+	
+func (s *%s) Run(ctx console.Context) error {
+	// Perform your seeding operations here
+	// Access the container and command if needed: s.Container, s.Command
+	return nil
+}
+`, name, name)
 }
