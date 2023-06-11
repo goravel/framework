@@ -2,24 +2,24 @@ package str
 
 import (
 	"bytes"
-	"math/rand"
+	"crypto/rand"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/goravel/framework/carbon"
 )
 
 func Random(length int) string {
-	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	bytes := []byte(str)
-	var result []byte
-	rand.Seed(carbon.Now().TimestampNano())
-	for i := 0; i < length; i++ {
-		result = append(result, bytes[rand.Intn(len(bytes))])
+	b := make([]byte, length)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	letters := "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	for i, v := range b {
+		b[i] = letters[v%byte(len(letters))]
 	}
 
-	return string(result)
+	return string(b)
 }
 
 func Case2Camel(name string) string {

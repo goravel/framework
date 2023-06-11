@@ -4,7 +4,7 @@ type EventStubs struct {
 }
 
 func (receiver EventStubs) Event() string {
-	return `package events
+	return `package DummyPackage
 
 import "github.com/goravel/framework/contracts/event"
 

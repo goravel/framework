@@ -4,7 +4,7 @@ type Stubs struct {
 }
 
 func (r Stubs) Request() string {
-	return `package rules
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/validation"

@@ -62,7 +62,7 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	stepString := "-" + ctx.Option("step")
 	step, err := strconv.Atoi(stepString)
 	if err != nil {
-		color.Redln("Migration failed: invalid step", ctx.Option("step"))
+		color.Redln("Migration rollback failed: invalid step", ctx.Option("step"))
 
 		return nil
 	}
@@ -71,7 +71,7 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		switch err.(type) {
 		case migrate.ErrShortLimit:
 		default:
-			color.Redln("Migration failed:", err.Error())
+			color.Redln("Migration rollback failed:", err.Error())
 
 			return nil
 		}
