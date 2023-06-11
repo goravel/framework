@@ -90,7 +90,7 @@ func (receiver *ObserverMakeCommand) parseName(name string) (string, string, str
 	folderPath := ""
 
 	if len(segments) > 1 {
-		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
 		packageName = segments[len(segments)-2]
 	}
 

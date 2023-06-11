@@ -89,7 +89,7 @@ func (receiver *PolicyMakeCommand) parseName(name string) (string, string, strin
 	folderPath := ""
 
 	if len(segments) > 1 {
-		folderPath = strings.Join(segments[:len(segments)-1], "/")
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
 		packageName = segments[len(segments)-2]
 	}
 
