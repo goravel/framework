@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -16,24 +17,24 @@ import (
 type JobMakeCommand struct {
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *JobMakeCommand) Signature() string {
 	return "make:job"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *JobMakeCommand) Description() string {
 	return "Create a new job class"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *JobMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *JobMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
@@ -53,17 +54,41 @@ func (receiver *JobMakeCommand) getStub() string {
 	return JobStubs{}.Job()
 }
 
-//populateStub Populate the place-holders in the command stub.
+// populateStub Populate the place-holders in the command stub.
 func (receiver *JobMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyJob", str.Case2Camel(name))
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(name))
+	jobName, packageName, _ := receiver.parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyJob", str.Case2Camel(jobName))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(jobName))
+	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
 }
 
-//getPath Get the full path to the command.
+// getPath Get the full path to the command.
 func (receiver *JobMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/jobs/" + str.Camel2Case(name) + ".go"
+	jobName, _, folderPath := receiver.parseName(name)
+
+	return filepath.Join(pwd, "app", "jobs", folderPath, str.Camel2Case(jobName)+".go")
+}
+
+// parseName Parse the name to get the job name, package name and folder path.
+func (receiver *JobMakeCommand) parseName(name string) (string, string, string) {
+	name = strings.TrimSuffix(name, ".go")
+
+	segments := strings.Split(name, "/")
+
+	jobName := segments[len(segments)-1]
+
+	packageName := "jobs"
+	folderPath := ""
+
+	if len(segments) > 1 {
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
+		packageName = segments[len(segments)-2]
+	}
+
+	return jobName, packageName, folderPath
 }

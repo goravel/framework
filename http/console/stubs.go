@@ -4,7 +4,7 @@ type Stubs struct {
 }
 
 func (r Stubs) Request() string {
-	return `package requests
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
@@ -38,7 +38,7 @@ func (r *DummyRequest) PrepareForValidation(ctx http.Context, data validation.Da
 }
 
 func (r Stubs) Controller() string {
-	return `package controllers
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"
@@ -60,7 +60,7 @@ func (r *DummyController) Index(ctx http.Context) {
 }
 
 func (r Stubs) Middleware() string {
-	return `package middleware
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/http"

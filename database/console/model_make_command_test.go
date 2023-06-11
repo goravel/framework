@@ -19,6 +19,13 @@ func TestModelMakeCommand(t *testing.T) {
 	mockContext.On("Argument", 0).Return("User").Once()
 	assert.Nil(t, modelMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/models/user.go"))
+
+	mockContext.On("Argument", 0).Return("User/Phone").Once()
+	assert.Nil(t, modelMakeCommand.Handle(mockContext))
+	assert.True(t, file.Exists("app/models/User/phone.go"))
+	assert.True(t, file.Contain("app/models/User/phone.go", "package User"))
+	assert.True(t, file.Contain("app/models/User/phone.go", "type Phone struct"))
+
 	assert.True(t, file.Remove("app"))
 
 	mockContext.AssertExpectations(t)

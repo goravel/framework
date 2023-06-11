@@ -4,7 +4,7 @@ type PolicyStubs struct {
 }
 
 func (receiver PolicyStubs) Policy() string {
-	return `package policies
+	return `package DummyPackage
 
 import (
 	"context"

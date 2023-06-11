@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -60,7 +61,10 @@ func (receiver *ObserverMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (receiver *ObserverMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyObserver", str.Case2Camel(name))
+	observerName, packageName, _ := receiver.parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyObserver", str.Case2Camel(observerName))
+	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
 }
@@ -69,5 +73,26 @@ func (receiver *ObserverMakeCommand) populateStub(stub string, name string) stri
 func (receiver *ObserverMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/observers/" + str.Camel2Case(name) + ".go"
+	observerName, _, folderPath := receiver.parseName(name)
+
+	return filepath.Join(pwd, "app", "observers", folderPath, str.Camel2Case(observerName)+".go")
+}
+
+// parseName Parse the name to get the observer name, package name and folder path.
+func (receiver *ObserverMakeCommand) parseName(name string) (string, string, string) {
+	name = strings.TrimSuffix(name, ".go")
+
+	segments := strings.Split(name, "/")
+
+	observerName := segments[len(segments)-1]
+
+	packageName := "observers"
+	folderPath := ""
+
+	if len(segments) > 1 {
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
+		packageName = segments[len(segments)-2]
+	}
+
+	return observerName, packageName, folderPath
 }
