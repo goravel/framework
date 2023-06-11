@@ -23,6 +23,8 @@ func TestCreate(t *testing.T) {
 	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")))
 	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")))
 	assert.True(t, file.Remove("database"))
+	carbon.UnsetTestNow()
+
 	mockConfig.AssertExpectations(t)
 }
 

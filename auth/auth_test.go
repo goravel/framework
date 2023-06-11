@@ -179,7 +179,6 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Nil(err)
 
 	time.Sleep(2 * unit)
-	now = carbon.Now()
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
@@ -187,7 +186,7 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(now.ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		ExpireAt: jwt.NewNumericDate(now.AddSeconds(2).ToStdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(now.ToStdTime()).Local(),
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
@@ -217,7 +216,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddSeconds(2).ToStdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
@@ -239,7 +238,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddSeconds(2).ToStdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
