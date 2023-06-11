@@ -10,6 +10,10 @@ func TestRandom(t *testing.T) {
 	assert.Len(t, Random(10), 10)
 }
 
+func TestZeroRandom(t *testing.T) {
+	assert.Equal(t, "", Random(0))
+}
+
 func TestCase2Camel(t *testing.T) {
 	assert.Equal(t, "GoravelFramework", Case2Camel("goravel_framework"))
 	assert.Equal(t, "GoravelFramework1", Case2Camel("goravel_framework1"))
