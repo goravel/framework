@@ -20,5 +20,13 @@ func TestEventMakeCommand(t *testing.T) {
 	err = eventMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/events/goravel_event.go"))
+
+	mockContext.On("Argument", 0).Return("Goravel/Event").Once()
+	err = eventMakeCommand.Handle(mockContext)
+	assert.Nil(t, err)
+	assert.True(t, file.Exists("app/events/Goravel/event.go"))
+	assert.True(t, file.Contain("app/events/Goravel/event.go", "package Goravel"))
+	assert.True(t, file.Contain("app/events/Goravel/event.go", "type Event struct {"))
+
 	assert.True(t, file.Remove("app"))
 }
