@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"github.com/goravel/framework/carbon"
 	"testing"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm/clause"
 
+	"github.com/goravel/framework/carbon"
 	authcontract "github.com/goravel/framework/contracts/auth"
 	cachemock "github.com/goravel/framework/contracts/cache/mocks"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
@@ -191,8 +191,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(issuedAt).Local(),
-		IssuedAt: jwt.NewNumericDate(expireAt).Local(),
+		ExpireAt: expireAt,
+		IssuedAt: issuedAt,
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
 
@@ -325,12 +325,10 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
-	carbon.SetTestNow(carbon.Now())
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.NotEmpty(token)
 	s.Nil(err)
-	carbon.UnsetTestNow()
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 

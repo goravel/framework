@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"context"
-	"github.com/goravel/framework/carbon"
 	"strconv"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/goravel/framework/carbon"
 	consolemock "github.com/goravel/framework/contracts/console/mocks"
 	logmock "github.com/goravel/framework/contracts/log/mocks"
 	"github.com/goravel/framework/contracts/schedule"

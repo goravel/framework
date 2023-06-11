@@ -2,8 +2,8 @@ package mock
 
 import (
 	"fmt"
-	"github.com/goravel/framework/carbon"
 
+	"github.com/goravel/framework/carbon"
 	"github.com/goravel/framework/contracts/log"
 )
 
@@ -75,7 +75,7 @@ func (r *TestLog) Panicf(format string, args ...any) {
 }
 
 func prefix(model string) string {
-	timestamp := carbon.Now().Format("2006-01-02 15:04:05")
+	timestamp := carbon.Now().ToDateTimeString()
 
 	return fmt.Sprintf("[%s] %s.%s: ", timestamp, "test", model)
 }

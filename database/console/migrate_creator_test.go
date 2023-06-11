@@ -2,10 +2,11 @@ package console
 
 import (
 	"fmt"
-	"github.com/goravel/framework/carbon"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/carbon"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/support/file"
 )

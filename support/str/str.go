@@ -2,11 +2,12 @@ package str
 
 import (
 	"bytes"
-	"github.com/goravel/framework/carbon"
 	"math/rand"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/goravel/framework/carbon"
 )
 
 func Random(length int) string {

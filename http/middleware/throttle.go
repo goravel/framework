@@ -4,11 +4,10 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"github.com/goravel/framework/carbon"
+	"strconv"
 	"time"
 
-	"github.com/spf13/cast"
-
+	"github.com/goravel/framework/carbon"
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/http"
 	httplimit "github.com/goravel/framework/http/limit"
@@ -27,8 +26,8 @@ func Throttle(name string) httpcontract.Middleware {
 							value := http.CacheFacade.GetInt(key, 0)
 							if value >= instance.MaxAttempts {
 								expireSecond := http.CacheFacade.GetInt(timer, 0) + instance.DecayMinutes*60
-								ctx.Response().Header("X-RateLimit-Reset", cast.ToString(expireSecond))
-								ctx.Response().Header("Retry-After", cast.ToString(expireSecond-int(carbon.Now().Timestamp())))
+								ctx.Response().Header("X-RateLimit-Reset", strconv.Itoa(expireSecond))
+								ctx.Response().Header("Retry-After", strconv.Itoa(expireSecond-int(carbon.Now().Timestamp())))
 								if instance.ResponseCallback != nil {
 									instance.ResponseCallback(ctx)
 									return
@@ -57,8 +56,8 @@ func Throttle(name string) httpcontract.Middleware {
 						}
 
 						// add the headers for the passed request
-						ctx.Response().Header("X-RateLimit-Limit", cast.ToString(instance.MaxAttempts))
-						ctx.Response().Header("X-RateLimit-Remaining", cast.ToString(instance.MaxAttempts-currentTimes))
+						ctx.Response().Header("X-RateLimit-Limit", strconv.Itoa(instance.MaxAttempts))
+						ctx.Response().Header("X-RateLimit-Remaining", strconv.Itoa(instance.MaxAttempts-currentTimes))
 					}
 				}
 			}

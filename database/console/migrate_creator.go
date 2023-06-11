@@ -2,10 +2,10 @@ package console
 
 import (
 	"fmt"
-	"github.com/goravel/framework/carbon"
 	"os"
 	"strings"
 
+	"github.com/goravel/framework/carbon"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/support/file"
@@ -91,5 +91,5 @@ func (receiver MigrateCreator) populateStub(stub string, table string) string {
 func (receiver MigrateCreator) getPath(name string, category string) string {
 	pwd, _ := os.Getwd()
 
-	return fmt.Sprintf("%s/database/migrations/%s_%s.%s.sql", pwd, carbon.Now().Format("20060102150405"), name, category)
+	return fmt.Sprintf("%s/database/migrations/%s_%s.%s.sql", pwd, carbon.Now().ToShortDateTimeString(), name, category)
 }
