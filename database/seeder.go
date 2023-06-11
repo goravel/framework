@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 )
 
-
 type Seeder struct {
 	Container foundation.Container
 	Command   console.Context
@@ -20,15 +19,18 @@ type Seeder struct {
 
 func (s *Seeder) Call(class interface{}, silent bool, parameters []interface{}) error {
 	classes, ok := class.([]interface{})
+
 	if !ok {
+		log.Println(classes...)
 		classes = []interface{}{class}
 	}
 
 	for _, class := range classes {
+		log.Println("Resolving class:", class)
 		seeder := s.Resolve(class)
 
 		name := fmt.Sprintf("%T", seeder)
-
+		log.Println("name: ", name)
 		if !silent && s.Command != nil {
 			fmt.Printf("%s <fg=yellow;options=bold>RUNNING</>\n", name)
 		}
@@ -71,7 +73,8 @@ func (s *Seeder) CallOnce(class interface{}, silent bool, parameters []interface
 
 func (s *Seeder) Resolve(class interface{}) database.Seeder {
 	if s.Container != nil {
-		instance, err := s.Container.Make(class)
+		className := reflect.TypeOf(class).String()
+		instance, err := s.Container.Make(className)
 
 		if err != nil {
 			// Handle the error if necessary
@@ -81,11 +84,9 @@ func (s *Seeder) Resolve(class interface{}) database.Seeder {
 		// Check if the resolved instance implements the Seeder interface
 		seeder, ok := instance.(database.Seeder)
 		if !ok {
-			log.Println("database.Seeder", instance, ok)
 			// Handle the case where the resolved instance does not implement the Seeder interface
 			return nil
 		}
-		log.Println("database.Seeder", instance)
 		// Set the container and command on the seeder instance
 		seeder.SetContainer(s.Container)
 		seeder.SetCommand(s.Command)
@@ -94,7 +95,6 @@ func (s *Seeder) Resolve(class interface{}) database.Seeder {
 	}
 
 	// Handle the case where the container is nil
-	log.Println("Container is nil")
 	return nil
 }
 
@@ -139,7 +139,6 @@ func (s *Seeder) Invoke(seeder database.Seeder, parameters []interface{}) error 
 
 	callback := func() error {
 		if s.methodExists("Run", seeder) {
-			log.Println("Run method")
 			return seeder.Run(s.Command)
 		}
 		return fmt.Errorf("method [Run] missing from %T", s)

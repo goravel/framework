@@ -2,6 +2,10 @@ package console
 
 import (
 	"fmt"
+	"log"
+	"reflect"
+	"strings"
+
 	// "strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -11,7 +15,8 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	// "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/foundation"
 )
 
 type SeedCommand struct {
@@ -53,7 +58,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 
 	receiver.SetDatabase(ctx)
 
-	// receiver.GetSeeder(ctx).Run(ctx)
+	receiver.GetSeeder(ctx).Run(ctx)
 
 	// Reset the previous connection if available
 	if previousConnection != "" {
@@ -108,22 +113,44 @@ func (receiver *SeedCommand) SetDatabase(ctx console.Context) {
 }
 
 // GetSeeder returns a seeder instance from the container.
-// func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
-// 	class := ctx.Argument(0)
-// 	if class == "" {
-// 		class = ctx.Option("class")
-// 	}
+// GetSeeder returns a seeder instance from the container.
+func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
+	class := ctx.Argument(0)
+	if class == "" {
+		class = ctx.Option("class")
+	}
 
-// 	if class != "" && !strings.Contains(class, "\\") {
-// 		class = "Database\\Seeders\\" + class
-// 	}
+	if class != "" && !strings.Contains(class, "\\") {
+		class = "Database\\Seeders\\" + class
+	}
 
-// 	if class == "Database\\Seeders\\DatabaseSeeder" && !database.ClassExists(class) {
-// 		class = "DatabaseSeeder"
-// 	}
+	if class == "Database\\Seeders\\DatabaseSeeder" && !receiver.ClassExists(class) {
+		class = "DatabaseSeeder"
+	}
 
-// 	seeder := receiver.components.Make(class).(seeder.SeederInterface)
-// 	seeder.SetContainer(receiver.components)
+	var container foundation.Container
+	instance, err := container.Make(class)
 
-// 	return seeder
-// }
+	if err != nil {
+		// Handle the error if necessary
+		return nil
+	}
+	// Check if the resolved instance implements the Seeder interface
+	seeder, ok := instance.(database.Seeder)
+	if !ok {
+		// Handle the case where the resolved instance does not implement the Seeder interface
+		return nil
+	}
+	// Set the container and command on the seeder instance
+	seeder.SetContainer(container)
+	seeder.SetCommand(ctx)
+	log.Println("new class", class)
+	return seeder
+}
+
+// ClassExists checks if a class exists in the project.
+// ClassExists checks if a class exists in the project.
+func (receiver *SeedCommand) ClassExists(class string) bool {
+	_, found := reflect.TypeOf(receiver.config).Elem().FieldByName(class)
+	return found
+}
