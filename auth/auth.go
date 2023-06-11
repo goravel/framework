@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"github.com/goravel/framework/carbon"
 	"strings"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/cast"
 	"gorm.io/gorm/clause"
 
+	"github.com/goravel/framework/carbon"
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
@@ -185,8 +185,8 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 
 	nowTime := carbon.Now()
 	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
-	expireTime := auth[a.guard].Claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
-	if nowTime.ToStdTime().Unix() > expireTime.Unix() {
+	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddSeconds(refreshTtl)
+	if nowTime.Gt(expireTime) {
 		return "", ErrorRefreshTimeExceeded
 	}
 
