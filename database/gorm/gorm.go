@@ -135,9 +135,7 @@ func (r *GormImpl) init(dialector gormio.Dialector) error {
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger.LogMode(logLevel),
-		NowFunc: func() time.Time {
-			return carbon.Now().ToStdTime()
-		},
+		NowFunc:                                  carbon.Now().ToStdTime,
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)),
 			SingularTable: r.config.GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)),

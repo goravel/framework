@@ -173,6 +173,7 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
+	carbon.SetTestNow(carbon.Now())
 	now := carbon.Now()
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -190,6 +191,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 		IssuedAt: jwt.NewNumericDate(now.ToStdTime()).Local(),
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -320,6 +323,8 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
+	carbon.SetTestNow(carbon.Now())
+
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.NotEmpty(token)
@@ -344,6 +349,8 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 	token, err = s.auth.Refresh(ctx)
 	s.Empty(token)
 	s.EqualError(err, "refresh time exceeded")
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }

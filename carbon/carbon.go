@@ -30,14 +30,14 @@ func getInstance(timezone ...string) *Clock {
 	return internalClock
 }
 
-// SetTestNow Set the test now time.
+// SetTestNow Set the test time. Remember to unset after used.
 func SetTestNow(testNow Carbon) {
 	t := getInstance()
 	t.testNow = true
 	t.time = testNow
 }
 
-// UnsetTestNow Unset the test now time.
+// UnsetTestNow Unset the test time.
 func UnsetTestNow() {
 	t := getInstance()
 	t.testNow = false

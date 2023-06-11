@@ -2,10 +2,11 @@ package orm
 
 import (
 	"errors"
-	"github.com/goravel/framework/carbon"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/goravel/framework/carbon"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 )
 
@@ -30,6 +31,6 @@ type SoftDeletes struct {
 }
 
 type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"column:created_at"`
-	UpdatedAt carbon.DateTime `gorm:"column:updated_at"`
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at"`
 }
