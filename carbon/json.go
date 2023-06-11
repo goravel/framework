@@ -1,4 +1,4 @@
-package time
+package carbon
 
 import (
 	"bytes"
@@ -11,73 +11,73 @@ import (
 // DateTime defines a DateTime struct.
 // 定义 DateTime 结构体
 type DateTime struct {
-	Time
+	Carbon
 }
 
 // DateTimeMilli defines a DateTimeMilli struct.
 // 定义 DateTimeMilli 结构体
 type DateTimeMilli struct {
-	Time
+	Carbon
 }
 
 // DateTimeMicro defines a DateTimeMicro struct.
 // 定义 DateTimeMicro 结构体
 type DateTimeMicro struct {
-	Time
+	Carbon
 }
 
 // DateTimeNano defines a DateTimeNano struct.
 // 定义 DateTimeNano 结构体
 type DateTimeNano struct {
-	Time
+	Carbon
 }
 
 // Date defines a Date struct.
 // 定义 Date 结构体
 type Date struct {
-	Time
+	Carbon
 }
 
 // DateMilli defines a DateMilli struct.
 // 定义 DateMilli 结构体
 type DateMilli struct {
-	Time
+	Carbon
 }
 
 // DateMicro defines a DateMicro struct.
 // 定义 DateMicro 结构体
 type DateMicro struct {
-	Time
+	Carbon
 }
 
 // DateNano defines a DateNano struct.
 // 定义 DateNano 结构体
 type DateNano struct {
-	Time
+	Carbon
 }
 
 // Timestamp defines a Timestamp struct.
 // 定义 Timestamp 结构体
 type Timestamp struct {
-	Time
+	Carbon
 }
 
 // TimestampMilli defines a TimestampMilli struct.
 // 定义 TimestampMilli 结构体
 type TimestampMilli struct {
-	Time
+	Carbon
 }
 
 // TimestampMicro defines a TimestampMicro struct.
 // 定义 TimestampMicro 结构体
 type TimestampMicro struct {
-	Time
+	Carbon
 }
 
 // TimestampNano defines a TimestampNano struct.
 // 定义 TimestampNano 结构体
 type TimestampNano struct {
-	Time
+	Carbon
 }
 
 // MarshalJSON implements the interface json.Marshal for DateTime struct.

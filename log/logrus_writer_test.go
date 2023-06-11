@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
+	"github.com/goravel/framework/carbon"
 	"os"
 	"os/exec"
 	"reflect"
@@ -13,11 +14,10 @@ import (
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/time"
 )
 
 var singleLog = "storage/logs/goravel.log"
-var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", time.Now().ToDateString())
+var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
 
 type LogrusTestSuite struct {
 	suite.Suite

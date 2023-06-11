@@ -2,11 +2,11 @@ package orm
 
 import (
 	"errors"
+	"github.com/goravel/framework/carbon"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 const Associations = clause.Associations
@@ -30,6 +30,6 @@ type SoftDeletes struct {
 }
 
 type Timestamps struct {
-	CreatedAt supporttime.DateTime `gorm:"column:created_at"`
-	UpdatedAt supporttime.DateTime `gorm:"column:updated_at"`
+	CreatedAt carbon.DateTime `gorm:"column:created_at"`
+	UpdatedAt carbon.DateTime `gorm:"column:updated_at"`
 }

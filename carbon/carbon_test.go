@@ -1,4 +1,4 @@
-package time
+package carbon
 
 import (
 	"github.com/golang-module/carbon/v2"

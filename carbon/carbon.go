@@ -1,4 +1,4 @@
-package time
+package carbon
 
 import (
 	"sync"
@@ -11,11 +11,11 @@ var once sync.Once
 
 var internalClock *Clock
 
-type Time = carbon.Carbon
+type Carbon = carbon.Carbon
 
 type Clock struct {
 	testNow bool
-	time    Time
+	time    Carbon
 }
 
 // getInstance Get a singleton Clock object.
@@ -31,7 +31,7 @@ func getInstance(timezone ...string) *Clock {
 }
 
 // SetTestNow Set the test now time.
-func SetTestNow(testNow Time) {
+func SetTestNow(testNow Carbon) {
 	t := getInstance()
 	t.testNow = true
 	t.time = testNow
@@ -51,8 +51,8 @@ func IsTestNow() bool {
 	return t.testNow
 }
 
-// Now return a Time object of now.
-func Now(timezone ...string) Time {
+// Now return a Carbon object of now.
+func Now(timezone ...string) Carbon {
 	t := getInstance(timezone...)
 
 	if t.testNow {
@@ -65,8 +65,8 @@ func Now(timezone ...string) Time {
 	return t.time
 }
 
-// Parse return a Time object of given value.
-func Parse(value string, timezone ...string) Time {
+// Parse return a Carbon object of given value.
+func Parse(value string, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	parse := carbon.Parse(value, timezone...)
 	t.time = parse
@@ -74,8 +74,8 @@ func Parse(value string, timezone ...string) Time {
 	return t.time
 }
 
-// ParseByFormat return a Time object of given value and format.
-func ParseByFormat(value, format string, timezone ...string) Time {
+// ParseByFormat return a Carbon object of given value and format.
+func ParseByFormat(value, format string, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	parseByFormat := carbon.ParseByFormat(value, format, timezone...)
 	t.time = parseByFormat
@@ -83,8 +83,8 @@ func ParseByFormat(value, format string, timezone ...string) Time {
 	return t.time
 }
 
-// ParseByLayout return a Time object of given value and layout.
-func ParseByLayout(value, layout string, timezone ...string) Time {
+// ParseByLayout return a Carbon object of given value and layout.
+func ParseByLayout(value, layout string, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	parseByLayout := carbon.ParseByLayout(value, layout, timezone...)
 	t.time = parseByLayout
@@ -92,8 +92,8 @@ func ParseByLayout(value, layout string, timezone ...string) Time {
 	return t.time
 }
 
-// FromTimestamp return a Time object of given timestamp.
-func FromTimestamp(timestamp int64, timezone ...string) Time {
+// FromTimestamp return a Carbon object of given timestamp.
+func FromTimestamp(timestamp int64, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimestamp := carbon.CreateFromTimestamp(timestamp, timezone...)
 	t.time = createFromTimestamp
@@ -101,8 +101,8 @@ func FromTimestamp(timestamp int64, timezone ...string) Time {
 	return t.time
 }
 
-// FromTimestampMilli return a Time object of given millisecond timestamp.
-func FromTimestampMilli(timestamp int64, timezone ...string) Time {
+// FromTimestampMilli return a Carbon object of given millisecond timestamp.
+func FromTimestampMilli(timestamp int64, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimestampMilli := carbon.CreateFromTimestampMilli(timestamp, timezone...)
 	t.time = createFromTimestampMilli
@@ -110,8 +110,8 @@ func FromTimestampMilli(timestamp int64, timezone ...string) Time {
 	return t.time
 }
 
-// FromTimestampMicro return a Time object of given microsecond timestamp.
-func FromTimestampMicro(timestamp int64, timezone ...string) Time {
+// FromTimestampMicro return a Carbon object of given microsecond timestamp.
+func FromTimestampMicro(timestamp int64, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimestampMicro := carbon.CreateFromTimestampMicro(timestamp, timezone...)
 	t.time = createFromTimestampMicro
@@ -119,8 +119,8 @@ func FromTimestampMicro(timestamp int64, timezone ...string) Time {
 	return t.time
 }
 
-// FromTimestampNano return a Time object of given nanosecond timestamp.
-func FromTimestampNano(timestamp int64, timezone ...string) Time {
+// FromTimestampNano return a Carbon object of given nanosecond timestamp.
+func FromTimestampNano(timestamp int64, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimestampNano := carbon.CreateFromTimestampNano(timestamp, timezone...)
 	t.time = createFromTimestampNano
@@ -128,8 +128,8 @@ func FromTimestampNano(timestamp int64, timezone ...string) Time {
 	return t.time
 }
 
-// FromDateTime return a Time object of given date and time.
-func FromDateTime(year int, month int, day int, hour int, minute int, second int, timezone ...string) Time {
+// FromDateTime return a Carbon object of given date and time.
+func FromDateTime(year int, month int, day int, hour int, minute int, second int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateTime := carbon.CreateFromDateTime(year, month, day, hour, minute, second, timezone...)
 	t.time = createFromDateTime
@@ -137,8 +137,8 @@ func FromDateTime(year int, month int, day int, hour int, minute int, second int
 	return t.time
 }
 
-// FromDateTimeMilli return a Time object of given date and millisecond time.
-func FromDateTimeMilli(year int, month int, day int, hour int, minute int, second int, millisecond int, timezone ...string) Time {
+// FromDateTimeMilli return a Carbon object of given date and millisecond time.
+func FromDateTimeMilli(year int, month int, day int, hour int, minute int, second int, millisecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateTimeMilli := carbon.CreateFromDateTimeMilli(year, month, day, hour, minute, second, millisecond, timezone...)
 	t.time = createFromDateTimeMilli
@@ -146,8 +146,8 @@ func FromDateTimeMilli(year int, month int, day int, hour int, minute int, secon
 	return t.time
 }
 
-// FromDateTimeMicro return a Time object of given date and microsecond time.
-func FromDateTimeMicro(year int, month int, day int, hour int, minute int, second int, microsecond int, timezone ...string) Time {
+// FromDateTimeMicro return a Carbon object of given date and microsecond time.
+func FromDateTimeMicro(year int, month int, day int, hour int, minute int, second int, microsecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateTimeMicro := carbon.CreateFromDateTimeMicro(year, month, day, hour, minute, second, microsecond, timezone...)
 	t.time = createFromDateTimeMicro
@@ -155,8 +155,8 @@ func FromDateTimeMicro(year int, month int, day int, hour int, minute int, secon
 	return t.time
 }
 
-// FromDateTimeNano return a Time object of given date and nanosecond time.
-func FromDateTimeNano(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone ...string) Time {
+// FromDateTimeNano return a Carbon object of given date and nanosecond time.
+func FromDateTimeNano(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateTimeNano := carbon.CreateFromDateTimeNano(year, month, day, hour, minute, second, nanosecond, timezone...)
 	t.time = createFromDateTimeNano
@@ -164,8 +164,8 @@ func FromDateTimeNano(year int, month int, day int, hour int, minute int, second
 	return t.time
 }
 
-// FromDate return a Time object of given date.
-func FromDate(year int, month int, day int, timezone ...string) Time {
+// FromDate return a Carbon object of given date.
+func FromDate(year int, month int, day int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDate := carbon.CreateFromDate(year, month, day, timezone...)
 	t.time = createFromDate
@@ -173,8 +173,8 @@ func FromDate(year int, month int, day int, timezone ...string) Time {
 	return t.time
 }
 
-// FromDateMilli return a Time object of given millisecond date.
-func FromDateMilli(year int, month int, day int, millisecond int, timezone ...string) Time {
+// FromDateMilli return a Carbon object of given millisecond date.
+func FromDateMilli(year int, month int, day int, millisecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateMilli := carbon.CreateFromDateMilli(year, month, day, millisecond, timezone...)
 	t.time = createFromDateMilli
@@ -182,8 +182,8 @@ func FromDateMilli(year int, month int, day int, millisecond int, timezone ...st
 	return t.time
 }
 
-// FromDateMicro return a Time object of given microsecond date.
-func FromDateMicro(year int, month int, day int, microsecond int, timezone ...string) Time {
+// FromDateMicro return a Carbon object of given microsecond date.
+func FromDateMicro(year int, month int, day int, microsecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateMicro := carbon.CreateFromDateMicro(year, month, day, microsecond, timezone...)
 	t.time = createFromDateMicro
@@ -191,8 +191,8 @@ func FromDateMicro(year int, month int, day int, microsecond int, timezone ...st
 	return t.time
 }
 
-// FromDateNano return a Time object of given nanosecond date.
-func FromDateNano(year int, month int, day int, nanosecond int, timezone ...string) Time {
+// FromDateNano return a Carbon object of given nanosecond date.
+func FromDateNano(year int, month int, day int, nanosecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromDateNano := carbon.CreateFromDateNano(year, month, day, nanosecond, timezone...)
 	t.time = createFromDateNano
@@ -200,8 +200,8 @@ func FromDateNano(year int, month int, day int, nanosecond int, timezone ...stri
 	return t.time
 }
 
-// FromTime return a Time object of given time.
-func FromTime(hour int, minute int, second int, timezone ...string) Time {
+// FromTime return a Carbon object of given time.
+func FromTime(hour int, minute int, second int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTime := carbon.CreateFromTime(hour, minute, second, timezone...)
 	t.time = createFromTime
@@ -209,8 +209,8 @@ func FromTime(hour int, minute int, second int, timezone ...string) Time {
 	return t.time
 }
 
-// FromTimeMilli return a Time object of given millisecond time.
-func FromTimeMilli(hour int, minute int, second int, millisecond int, timezone ...string) Time {
+// FromTimeMilli return a Carbon object of given millisecond time.
+func FromTimeMilli(hour int, minute int, second int, millisecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimeMilli := carbon.CreateFromTimeMilli(hour, minute, second, millisecond, timezone...)
 	t.time = createFromTimeMilli
@@ -218,8 +218,8 @@ func FromTimeMilli(hour int, minute int, second int, millisecond int, timezone .
 	return t.time
 }
 
-// FromTimeMicro return a Time object of given microsecond time.
-func FromTimeMicro(hour int, minute int, second int, microsecond int, timezone ...string) Time {
+// FromTimeMicro return a Carbon object of given microsecond time.
+func FromTimeMicro(hour int, minute int, second int, microsecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimeMicro := carbon.CreateFromTimeMicro(hour, minute, second, microsecond, timezone...)
 	t.time = createFromTimeMicro
@@ -227,8 +227,8 @@ func FromTimeMicro(hour int, minute int, second int, microsecond int, timezone .
 	return t.time
 }
 
-// FromTimeNano return a Time object of given nanosecond time.
-func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...string) Time {
+// FromTimeNano return a Carbon object of given nanosecond time.
+func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...string) Carbon {
 	t := getInstance(timezone...)
 	createFromTimeNano := carbon.CreateFromTimeNano(hour, minute, second, nanosecond, timezone...)
 	t.time = createFromTimeNano
@@ -236,8 +236,8 @@ func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...
 	return t.time
 }
 
-// FromStdTime return a Time object of given time.Time object.
-func FromStdTime(time stdtime.Time) Time {
+// FromStdTime return a Carbon object of given time.Time object.
+func FromStdTime(time stdtime.Time) Carbon {
 	t := getInstance()
 	createFromStdTime := carbon.FromStdTime(time)
 	t.time = createFromStdTime

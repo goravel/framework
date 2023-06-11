@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"github.com/goravel/framework/carbon"
 	"log"
 	"testing"
 	"time"
@@ -13,7 +14,6 @@ import (
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/queue"
 	queuemock "github.com/goravel/framework/contracts/queue/mocks"
-	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
 )
 
@@ -125,7 +125,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(supporttime.Now().AddSeconds(3).ToStdTime()).Dispatch())
+	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3).ToStdTime()).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(3 * time.Second)

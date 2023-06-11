@@ -2,12 +2,12 @@ package console
 
 import (
 	"fmt"
+	"github.com/goravel/framework/carbon"
 	"github.com/stretchr/testify/assert"
 	"testing"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 func TestCreate(t *testing.T) {
@@ -15,8 +15,8 @@ func TestCreate(t *testing.T) {
 	mockConfig.On("GetString", "database.default").Return("mysql").Times(3)
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return("mysql").Once()
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Twice()
-	now := supporttime.Now()
-	supporttime.SetTestNow(supporttime.Now())
+	now := carbon.Now()
+	carbon.SetTestNow(carbon.Now())
 
 	migrateCreator := NewMigrateCreator(mockConfig)
 	assert.Nil(t, migrateCreator.Create("create_users_table", "users", true))

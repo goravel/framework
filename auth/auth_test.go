@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"github.com/goravel/framework/carbon"
 	"testing"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	ormmock "github.com/goravel/framework/contracts/database/orm/mocks"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/http"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 var guard = "user"
@@ -173,13 +173,13 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
-	now := supporttime.Now()
+	now := carbon.Now()
 	ctx := http.Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.Nil(err)
 
 	time.Sleep(2 * unit)
-	now = supporttime.Now()
+	now = carbon.Now()
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
@@ -217,8 +217,8 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(supporttime.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(supporttime.Now().ToStdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
@@ -239,8 +239,8 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(supporttime.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(supporttime.Now().ToStdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().ToStdTime().Add(time.Duration(2) * unit)).Local(),
+		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 

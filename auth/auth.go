@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"github.com/goravel/framework/carbon"
 	"strings"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support/database"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 const ctxKey = "GoravelAuth"
@@ -44,7 +44,7 @@ type Auth struct {
 }
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, orm orm.Orm) *Auth {
-	jwt.TimeFunc = supporttime.Now().ToStdTime
+	jwt.TimeFunc = carbon.Now().ToStdTime
 
 	return &Auth{
 		cache:  cache,
@@ -146,7 +146,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 		return "", ErrorEmptySecret
 	}
 
-	nowTime := supporttime.Now()
+	nowTime := carbon.Now()
 	ttl := a.config.GetInt("jwt.ttl")
 	expireTime := nowTime.ToStdTime().Add(time.Duration(ttl) * unit)
 	key := cast.ToString(id)
@@ -183,7 +183,7 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 		return "", ErrorParseTokenFirst
 	}
 
-	nowTime := supporttime.Now()
+	nowTime := carbon.Now()
 	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
 	expireTime := auth[a.guard].Claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
 	if nowTime.ToStdTime().Unix() > expireTime.Unix() {

@@ -3,6 +3,7 @@ package gorm
 import (
 	"errors"
 	"fmt"
+	"github.com/goravel/framework/carbon"
 	"log"
 	"os"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	databasecontract "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/db"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 var GormSet = wire.NewSet(NewGormImpl, wire.Bind(new(Gorm), new(*GormImpl)))
@@ -135,7 +135,7 @@ func (r *GormImpl) init(dialector gormio.Dialector) error {
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger.LogMode(logLevel),
-		NowFunc:                                  supporttime.Now().ToStdTime,
+		NowFunc:                                  carbon.Now().ToStdTime,
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)),
 			SingularTable: r.config.GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)),

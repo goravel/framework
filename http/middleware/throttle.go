@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/goravel/framework/carbon"
 	"time"
 
 	"github.com/spf13/cast"
@@ -11,7 +12,6 @@ import (
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/http"
 	httplimit "github.com/goravel/framework/http/limit"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 func Throttle(name string) httpcontract.Middleware {
@@ -28,7 +28,7 @@ func Throttle(name string) httpcontract.Middleware {
 							if value >= instance.MaxAttempts {
 								expireSecond := http.CacheFacade.GetInt(timer, 0) + instance.DecayMinutes*60
 								ctx.Response().Header("X-RateLimit-Reset", cast.ToString(expireSecond))
-								ctx.Response().Header("Retry-After", cast.ToString(expireSecond-int(supporttime.Now().Timestamp())))
+								ctx.Response().Header("Retry-After", cast.ToString(expireSecond-int(carbon.Now().Timestamp())))
 								if instance.ResponseCallback != nil {
 									instance.ResponseCallback(ctx)
 									return
@@ -45,7 +45,7 @@ func Throttle(name string) httpcontract.Middleware {
 						} else {
 							expireMinute := time.Duration(instance.DecayMinutes) * time.Minute
 
-							err := http.CacheFacade.Put(timer, supporttime.Now().Timestamp(), expireMinute)
+							err := http.CacheFacade.Put(timer, carbon.Now().Timestamp(), expireMinute)
 							if err != nil {
 								panic(err)
 							}

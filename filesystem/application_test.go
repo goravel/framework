@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"github.com/goravel/framework/carbon"
 	"io/ioutil"
 	"mime"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 type TestDisk struct {
@@ -353,7 +353,7 @@ func TestStorage(t *testing.T) {
 			setup: func(disk TestDisk) {
 				assert.Nil(t, driver.Put("TemporaryUrl/1.txt", "Goravel"), disk.disk)
 				assert.True(t, driver.Exists("TemporaryUrl/1.txt"), disk.disk)
-				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", supporttime.Now().AddSeconds(5).ToStdTime())
+				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", carbon.Now().AddSeconds(5).ToStdTime())
 				assert.Nil(t, err)
 				assert.NotEmpty(t, url)
 				if disk.disk != "local" && disk.disk != "custom" {

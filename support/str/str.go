@@ -2,19 +2,18 @@ package str
 
 import (
 	"bytes"
+	"github.com/goravel/framework/carbon"
 	"math/rand"
 	"strconv"
 	"strings"
 	"unicode"
-
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 func Random(length int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
 	var result []byte
-	rand.Seed(supporttime.Now().TimestampNano())
+	rand.Seed(carbon.Now().TimestampNano())
 	for i := 0; i < length; i++ {
 		result = append(result, bytes[rand.Intn(len(bytes))])
 	}
