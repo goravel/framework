@@ -175,13 +175,11 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 
 	ctx := http.Background()
 
-	carbon.SetTestNow(carbon.Now())
 	now := carbon.Now()
 	issuedAt := now.ToStdTime()
 	expireAt := now.AddSeconds(2).ToStdTime()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.Nil(err)
-	carbon.UnsetTestNow()
 
 	time.Sleep(2 * unit)
 
@@ -191,8 +189,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: expireAt,
-		IssuedAt: issuedAt,
+		ExpireAt: jwt.NewNumericDate(expireAt).Local(),
+		IssuedAt: jwt.NewNumericDate(issuedAt).Local(),
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
 
