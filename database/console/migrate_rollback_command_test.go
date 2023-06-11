@@ -98,6 +98,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 				assert.Nil(t, pool.Purge(resource))
 			}
 
+			mockContext.AssertExpectations(t)
 			removeMigrations()
 		})
 	}

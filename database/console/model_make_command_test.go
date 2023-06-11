@@ -27,4 +27,6 @@ func TestModelMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/models/User/phone.go", "type Phone struct"))
 
 	assert.True(t, file.Remove("app"))
+
+	mockContext.AssertExpectations(t)
 }

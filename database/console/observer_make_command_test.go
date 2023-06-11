@@ -27,4 +27,6 @@ func TestObserverMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/observers/User/phone_observer.go", "type PhoneObserver struct"))
 
 	assert.True(t, file.Remove("app"))
+
+	mockContext.AssertExpectations(t)
 }
