@@ -2,10 +2,11 @@ package console
 
 import (
 	"fmt"
-	"github.com/goravel/framework/carbon"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/carbon"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
 	"github.com/goravel/framework/support/file"
@@ -13,10 +14,8 @@ import (
 
 func TestMigrateMakeCommand(t *testing.T) {
 	now := carbon.Now()
-	carbon.SetTestNow(now)
 	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
 	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "down")
-	carbon.UnsetTestNow()
 
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Times(3)
