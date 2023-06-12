@@ -14,8 +14,8 @@ import (
 func TestMigrateMakeCommand(t *testing.T) {
 	now := carbon.Now()
 	carbon.SetTestNow(now)
-	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")
-	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")
+	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
+	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "down")
 	carbon.UnsetTestNow()
 
 	mockConfig := &configmock.Config{}

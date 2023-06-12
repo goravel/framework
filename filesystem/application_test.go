@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
@@ -210,9 +209,8 @@ func TestStorage(t *testing.T) {
 				date, err := driver.LastModified("LastModified/1.txt")
 				assert.Nil(t, err)
 
-				l, err := time.LoadLocation("UTC")
 				assert.Nil(t, err, disk.disk)
-				assert.Equal(t, time.Now().In(l).Format("2006-01-02 15"), date.Format("2006-01-02 15"), disk.disk)
+				assert.Equal(t, carbon.Now().ToDateString(), carbon.FromStdTime(date).ToDateString(), disk.disk)
 				assert.Nil(t, driver.DeleteDirectory("LastModified"), disk.disk)
 			},
 		},

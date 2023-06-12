@@ -21,8 +21,8 @@ func TestCreate(t *testing.T) {
 
 	migrateCreator := NewMigrateCreator(mockConfig)
 	assert.Nil(t, migrateCreator.Create("create_users_table", "users", true))
-	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")))
-	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")))
+	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")))
+	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "down")))
 	assert.True(t, file.Remove("database"))
 	carbon.UnsetTestNow()
 

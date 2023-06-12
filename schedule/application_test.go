@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -45,7 +44,7 @@ func TestApplication(t *testing.T) {
 		app.Command("test --name Goravel argument0 argument1").EveryMinute(),
 	})
 
-	second, _ := strconv.Atoi(carbon.Now().Format("05"))
+	second := carbon.Now().Second()
 	// Make sure run 3 times
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(120+6+60-second)*time.Second)
 	defer cancel()
