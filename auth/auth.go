@@ -44,7 +44,9 @@ type Auth struct {
 }
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, orm orm.Orm) *Auth {
-	jwt.TimeFunc = carbon.Now().ToStdTime
+	jwt.TimeFunc = func() time.Time {
+		return carbon.Now().ToStdTime()
+	}
 
 	return &Auth{
 		cache:  cache,
