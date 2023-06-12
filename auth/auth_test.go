@@ -21,6 +21,8 @@ import (
 
 var guard = "user"
 
+var unit = time.Second
+
 type User struct {
 	orm.Model
 	Name string
@@ -36,8 +38,6 @@ type AuthTestSuite struct {
 }
 
 func TestAuthTestSuite(t *testing.T) {
-	unit = time.Second
-
 	suite.Run(t, new(AuthTestSuite))
 }
 

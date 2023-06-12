@@ -20,10 +20,6 @@ import (
 
 const ctxKey = "GoravelAuth"
 
-var (
-	unit = time.Minute
-)
-
 type Claims struct {
 	Key string `json:"key"`
 	jwt.RegisteredClaims
@@ -207,7 +203,7 @@ func (a *Auth) Logout(ctx http.Context) error {
 
 	if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
 		true,
-		time.Duration(a.config.GetInt("jwt.ttl"))*unit,
+		time.Duration(a.config.GetInt("jwt.ttl"))*time.Minute,
 	); err != nil {
 		return err
 	}
