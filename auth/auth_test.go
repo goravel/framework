@@ -21,7 +21,7 @@ import (
 
 var guard = "user"
 
-var unit = time.Second
+var unit = time.Minute
 
 type User struct {
 	orm.Model
