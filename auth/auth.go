@@ -9,20 +9,16 @@ import (
 	"github.com/spf13/cast"
 	"gorm.io/gorm/clause"
 
+	"github.com/goravel/framework/carbon"
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/support/database"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 const ctxKey = "GoravelAuth"
-
-var (
-	unit = time.Minute
-)
 
 type Claims struct {
 	Key string `json:"key"`
@@ -44,7 +40,9 @@ type Auth struct {
 }
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, orm orm.Orm) *Auth {
-	jwt.TimeFunc = supporttime.Now
+	jwt.TimeFunc = func() time.Time {
+		return carbon.Now().ToStdTime()
+	}
 
 	return &Auth{
 		cache:  cache,
@@ -58,7 +56,7 @@ func (a *Auth) Guard(name string) contractsauth.Auth {
 	return NewAuth(name, a.cache, a.config, a.orm)
 }
 
-//User need parse token first.
+// User need parse token first.
 func (a *Auth) User(ctx http.Context, user any) error {
 	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
@@ -146,9 +144,9 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 		return "", ErrorEmptySecret
 	}
 
-	nowTime := supporttime.Now()
+	nowTime := carbon.Now()
 	ttl := a.config.GetInt("jwt.ttl")
-	expireTime := nowTime.Add(time.Duration(ttl) * unit)
+	expireTime := nowTime.AddMinutes(ttl).ToStdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", ErrorInvalidKey
@@ -157,7 +155,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 		key,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
-			IssuedAt:  jwt.NewNumericDate(nowTime),
+			IssuedAt:  jwt.NewNumericDate(nowTime.ToStdTime()),
 			Subject:   a.guard,
 		},
 	}
@@ -173,7 +171,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 	return
 }
 
-//Refresh need parse token first.
+// Refresh need parse token first.
 func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 	auth, ok := ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
@@ -183,10 +181,10 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 		return "", ErrorParseTokenFirst
 	}
 
-	nowTime := supporttime.Now()
+	nowTime := carbon.Now()
 	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
-	expireTime := auth[a.guard].Claims.ExpiresAt.Add(time.Duration(refreshTtl) * unit)
-	if nowTime.Unix() > expireTime.Unix() {
+	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
+	if nowTime.Gt(expireTime) {
 		return "", ErrorRefreshTimeExceeded
 	}
 
@@ -205,7 +203,7 @@ func (a *Auth) Logout(ctx http.Context) error {
 
 	if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
 		true,
-		time.Duration(a.config.GetInt("jwt.ttl"))*unit,
+		time.Duration(a.config.GetInt("jwt.ttl"))*time.Minute,
 	); err != nil {
 		return err
 	}
