@@ -150,7 +150,7 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 
 	nowTime := carbon.Now()
 	ttl := a.config.GetInt("jwt.ttl")
-	expireTime := nowTime.AddSeconds(ttl).ToStdTime()
+	expireTime := nowTime.AddMinutes(ttl).ToStdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", ErrorInvalidKey
@@ -187,7 +187,7 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 
 	nowTime := carbon.Now()
 	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
-	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddSeconds(refreshTtl)
+	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
 	if nowTime.Gt(expireTime) {
 		return "", ErrorRefreshTimeExceeded
 	}
