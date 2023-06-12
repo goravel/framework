@@ -1,10 +1,10 @@
 package carbon
 
 import (
-	"github.com/golang-module/carbon/v2"
 	"testing"
 	stdtime "time"
 
+	"github.com/golang-module/carbon/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,6 +15,23 @@ func TestSetTestNow(t *testing.T) {
 	assert.False(t, IsTestNow())
 }
 
+func TestTimezone(t *testing.T) {
+	timezones := []string{Local, UTC, GMT, EET, WET, CET, EST, MST, Cuba, Egypt, Eire, Greenwich, Iceland, Iran,
+		Israel, Jamaica, Japan, Libya, Poland, Portugal, PRC, Singapore, Turkey, Shanghai, Chongqing, Harbin, Urumqi,
+		HongKong, Macao, Taipei, Tokyo, Saigon, Seoul, Bangkok, Dubai, NewYork, LosAngeles, Chicago, Moscow, London,
+		Berlin, Paris, Rome, Sydney, Melbourne, Darwin}
+
+	for _, timezone := range timezones {
+		now := Now(timezone)
+		assert.Nil(t, now.Error, timezone)
+		assert.True(t, now.Timestamp() > 0, timezone)
+	}
+
+	now := Now()
+	assert.Nil(t, now.Error)
+	assert.True(t, now.Timestamp() > 0)
+}
+
 func TestNow(t *testing.T) {
 	SetTestNow(Now().SubSeconds(10))
 	stdtime.Sleep(2 * stdtime.Second)
@@ -22,6 +39,10 @@ func TestNow(t *testing.T) {
 	UnsetTestNow()
 	now := Now().Timestamp()
 	assert.True(t, now-testNow >= 10)
+
+	utcNow := Now()
+	shanghaiNow := Now(Shanghai)
+	assert.Equal(t, shanghaiNow.SubHours(8).ToDateTimeString(), utcNow.ToDateTimeString())
 }
 
 func TestParse(t *testing.T) {

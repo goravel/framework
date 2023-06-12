@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/carbon"
 )
 
 const Binding = "goravel.config"
@@ -28,5 +29,5 @@ func (config *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (config *ServiceProvider) Boot(app foundation.Application) {
-
+	carbon.SetTimezone(app.MakeConfig().GetString("app.timezone", carbon.UTC))
 }
