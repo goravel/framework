@@ -3,13 +3,12 @@ package console
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/carbon"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 func TestCreate(t *testing.T) {
@@ -17,14 +16,16 @@ func TestCreate(t *testing.T) {
 	mockConfig.On("GetString", "database.default").Return("mysql").Times(3)
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return("mysql").Once()
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Twice()
-	now := time.Now()
-	supporttime.SetTestNow(now)
+	now := carbon.Now()
+	carbon.SetTestNow(carbon.Now())
 
 	migrateCreator := NewMigrateCreator(mockConfig)
 	assert.Nil(t, migrateCreator.Create("create_users_table", "users", true))
-	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")))
-	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")))
+	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")))
+	assert.True(t, file.Exists(fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "down")))
 	assert.True(t, file.Remove("database"))
+	carbon.UnsetTestNow()
+
 	mockConfig.AssertExpectations(t)
 }
 

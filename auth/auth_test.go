@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm/clause"
 
+	"github.com/goravel/framework/carbon"
 	authcontract "github.com/goravel/framework/contracts/auth"
 	cachemock "github.com/goravel/framework/contracts/cache/mocks"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	ormmock "github.com/goravel/framework/contracts/database/orm/mocks"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/http"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 var guard = "user"
@@ -36,8 +36,6 @@ type AuthTestSuite struct {
 }
 
 func TestAuthTestSuite(t *testing.T) {
-	unit = time.Second
-
 	suite.Run(t, new(AuthTestSuite))
 }
 
@@ -173,12 +171,15 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
-	now := supporttime.Now()
 	ctx := http.Background()
+
+	now := carbon.Now()
+	issuedAt := now.ToStdTime()
+	expireAt := now.AddMinutes(2).ToStdTime()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.Nil(err)
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(now.AddMinutes(2))
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
@@ -186,10 +187,12 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(now.Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(now).Local(),
+		ExpireAt: jwt.NewNumericDate(expireAt).Local(),
+		IssuedAt: jwt.NewNumericDate(issuedAt).Local(),
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -216,8 +219,8 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(supporttime.Now().Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(supporttime.Now()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
@@ -238,8 +241,8 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(supporttime.Now().Add(time.Duration(2) * unit)).Local(),
-		IssuedAt: jwt.NewNumericDate(supporttime.Now()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
@@ -291,7 +294,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	payload, err := s.auth.Parse(ctx, token)
 	s.NotNil(payload)
@@ -313,6 +316,8 @@ func (s *AuthTestSuite) TestUser_Expired() {
 	err = s.auth.User(ctx, &user)
 	s.Nil(err)
 
+	carbon.UnsetTestNow()
+
 	s.mockConfig.AssertExpectations(s.T())
 }
 
@@ -327,7 +332,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	payload, err := s.auth.Parse(ctx, token)
 	s.NotNil(payload)
@@ -339,11 +344,13 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	token, err = s.auth.Refresh(ctx)
 	s.Empty(token)
 	s.EqualError(err, "refresh time exceeded")
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -397,11 +404,14 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 	s.Nil(err)
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
-	time.Sleep(4 * unit)
+
+	carbon.SetTestNow(carbon.Now().AddMinutes(4))
 
 	token, err = s.auth.Refresh(ctx)
 	s.Empty(token)
 	s.EqualError(err, "refresh time exceeded")
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -421,11 +431,14 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 	s.Nil(err)
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
-	time.Sleep(2 * unit)
+
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	token, err = s.auth.Refresh(ctx)
 	s.NotEmpty(token)
 	s.Nil(err)
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -462,7 +475,7 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.On("Put", testifymock.Anything, true, 2*unit).Return(errors.New("error")).Once()
+	s.mockCache.On("Put", testifymock.Anything, true, 2*time.Minute).Return(errors.New("error")).Once()
 
 	s.EqualError(s.auth.Logout(ctx), "error")
 
@@ -484,7 +497,7 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.On("Put", testifymock.Anything, true, 2*unit).Return(nil).Once()
+	s.mockCache.On("Put", testifymock.Anything, true, 2*time.Minute).Return(nil).Once()
 
 	s.Nil(s.auth.Logout(ctx))
 

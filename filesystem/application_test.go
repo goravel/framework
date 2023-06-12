@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/carbon"
 	configmocks "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
 )
 
 type TestDisk struct {
@@ -210,9 +209,8 @@ func TestStorage(t *testing.T) {
 				date, err := driver.LastModified("LastModified/1.txt")
 				assert.Nil(t, err)
 
-				l, err := time.LoadLocation("UTC")
 				assert.Nil(t, err, disk.disk)
-				assert.Equal(t, time.Now().In(l).Format("2006-01-02 15"), date.Format("2006-01-02 15"), disk.disk)
+				assert.Equal(t, carbon.Now().ToDateString(), carbon.FromStdTime(date).ToDateString(), disk.disk)
 				assert.Nil(t, driver.DeleteDirectory("LastModified"), disk.disk)
 			},
 		},
@@ -353,7 +351,7 @@ func TestStorage(t *testing.T) {
 			setup: func(disk TestDisk) {
 				assert.Nil(t, driver.Put("TemporaryUrl/1.txt", "Goravel"), disk.disk)
 				assert.True(t, driver.Exists("TemporaryUrl/1.txt"), disk.disk)
-				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", supporttime.Now().Add(5*time.Second))
+				url, err := driver.TemporaryUrl("TemporaryUrl/1.txt", carbon.Now().AddSeconds(5).ToStdTime())
 				assert.Nil(t, err)
 				assert.NotEmpty(t, url)
 				if disk.disk != "local" && disk.disk != "custom" {

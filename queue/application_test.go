@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/carbon"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/queue"
 	queuemock "github.com/goravel/framework/contracts/queue/mocks"
-	supporttime "github.com/goravel/framework/support/time"
 	testingdocker "github.com/goravel/framework/testing/docker"
 )
 
@@ -125,7 +125,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(supporttime.Now().Add(3 * time.Second)).Dispatch())
+	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3).ToStdTime()).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(3 * time.Second)
@@ -259,12 +259,12 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 type TestAsyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestAsyncJob) Signature() string {
 	return "test_async_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestAsyncJob) Handle(args ...any) error {
 	testAsyncJob++
 
@@ -274,12 +274,12 @@ func (receiver *TestAsyncJob) Handle(args ...any) error {
 type TestDelayAsyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestDelayAsyncJob) Signature() string {
 	return "test_delay_async_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestDelayAsyncJob) Handle(args ...any) error {
 	testDelayAsyncJob++
 
@@ -289,12 +289,12 @@ func (receiver *TestDelayAsyncJob) Handle(args ...any) error {
 type TestSyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestSyncJob) Signature() string {
 	return "test_sync_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestSyncJob) Handle(args ...any) error {
 	testSyncJob++
 
@@ -304,12 +304,12 @@ func (receiver *TestSyncJob) Handle(args ...any) error {
 type TestCustomAsyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestCustomAsyncJob) Signature() string {
 	return "test_async_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestCustomAsyncJob) Handle(args ...any) error {
 	testCustomAsyncJob++
 
@@ -319,12 +319,12 @@ func (receiver *TestCustomAsyncJob) Handle(args ...any) error {
 type TestErrorAsyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestErrorAsyncJob) Signature() string {
 	return "test_async_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestErrorAsyncJob) Handle(args ...any) error {
 	testErrorAsyncJob++
 
@@ -334,12 +334,12 @@ func (receiver *TestErrorAsyncJob) Handle(args ...any) error {
 type TestChainAsyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestChainAsyncJob) Signature() string {
 	return "test_async_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestChainAsyncJob) Handle(args ...any) error {
 	testChainAsyncJob++
 
@@ -349,12 +349,12 @@ func (receiver *TestChainAsyncJob) Handle(args ...any) error {
 type TestChainSyncJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *TestChainSyncJob) Signature() string {
 	return "test_sync_job"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *TestChainSyncJob) Handle(args ...any) error {
 	testChainSyncJob++
 
