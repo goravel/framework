@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -21,36 +21,45 @@ func (s *Seeder) Call(class interface{}, silent bool, parameters []interface{}) 
 	classes, ok := class.([]interface{})
 
 	if !ok {
-		log.Println(classes...)
 		classes = []interface{}{class}
 	}
 
 	for _, class := range classes {
-		log.Println("Resolving class:", class)
 		seeder := s.Resolve(class)
 
 		name := fmt.Sprintf("%T", seeder)
-		log.Println("name: ", name)
+
+		if contains(s.Called, name) {
+			continue
+		}
+
 		if !silent && s.Command != nil {
-			fmt.Printf("%s <fg=yellow;options=bold>RUNNING</>\n", name)
+			color.Yellowf("RUNNING: %s\n", name)
 		}
 
 		startTime := time.Now()
-		log.Println(seeder)
+
 		err := s.Invoke(seeder, parameters)
 		if err != nil {
+			log.Println("error", err)
 			return err
 		}
 
 		if !silent && s.Command != nil {
 			runTime := time.Since(startTime).Milliseconds()
-			fmt.Printf("%s <fg=gray>%d ms</> <fg=green;options=bold>DONE</>\n\n", name, runTime)
+			color.Printf("%s %d ms DONE\n", name, runTime)
 		}
-
 		s.Called = append(s.Called, name)
 	}
-
 	return nil
+}
+func contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Seeder) CallWith(class interface{}, parameters []interface{}) error {
@@ -62,8 +71,12 @@ func (s *Seeder) CallSilent(class interface{}, parameters []interface{}) error {
 }
 
 func (s *Seeder) CallOnce(class interface{}, silent bool, parameters []interface{}) error {
+	classType := reflect.TypeOf(class)
+	classTypeName := classType.String()
+	classPointerTypeName := "*" + classTypeName
+
 	for _, called := range s.Called {
-		if called == fmt.Sprintf("%T", class) {
+		if called == classTypeName || called == classPointerTypeName {
 			return nil
 		}
 	}
@@ -71,54 +84,39 @@ func (s *Seeder) CallOnce(class interface{}, silent bool, parameters []interface
 	return s.Call(class, silent, parameters)
 }
 
-func (s *Seeder) Resolve(class interface{}) database.Seeder {
-	if s.Container != nil {
-		className := reflect.TypeOf(class).String()
-		instance, err := s.Container.Make(className)
+func (s *Seeder) Resolve(class interface{}) interface{} {
+	instanceType := reflect.TypeOf(class)
 
+	var instance interface{}
+	var instanceValue reflect.Value
+	if s.Container != nil {
+		resolvedInstance, err := s.Container.Make(instanceType.String())
 		if err != nil {
 			// Handle the error if necessary
 			return nil
 		}
 
-		// Check if the resolved instance implements the Seeder interface
-		seeder, ok := instance.(database.Seeder)
-		if !ok {
-			// Handle the case where the resolved instance does not implement the Seeder interface
-			return nil
+		instanceValue = reflect.ValueOf(resolvedInstance)
+		instance = instanceValue.Interface()
+		// Set the container and command on the instance (assuming it has the necessary methods)
+		setContainerMethod := instanceValue.MethodByName("SetContainer")
+		if setContainerMethod.IsValid() {
+			setContainerMethod.Call([]reflect.Value{reflect.ValueOf(s.Container)})
 		}
-		// Set the container and command on the seeder instance
-		seeder.SetContainer(s.Container)
-		seeder.SetCommand(s.Command)
-
-		return seeder
+	} else {
+		// Create a new instance of the class using reflection
+		instanceValue = reflect.New(instanceType)
+		instance = instanceValue.Interface()
 	}
 
-	// Handle the case where the container is nil
-	return nil
+	if s.Command != nil {
+		setCommandMethod := instanceValue.MethodByName("SetCommand")
+		if setCommandMethod.IsValid() {
+			setCommandMethod.Call([]reflect.Value{reflect.ValueOf(s.Command)})
+		}
+	}
+	return instance
 }
-
-// func (s *Seeder) Resolve(class interface{}) database.Seeder {
-// 	var instance database.Seeder
-
-// 	if s.Container != nil {
-// 		resolvedInstance, _ := s.Container.Make(class)
-// 		instance, _ = resolvedInstance.(database.Seeder)
-// 		if instance == nil {
-// 			// Handle the case where the resolved instance does not implement the database.Seeder
-// 			return nil
-// 		}
-// 		instance.SetContainer(s.Container)
-// 	} else {
-// 		instance, _ = class.(database.Seeder)
-// 	}
-
-// 	if s.Command != nil {
-// 		instance.SetCommand(s.Command)
-// 	}
-
-// 	return instance
-// }
 
 func (s *Seeder) SetContainer(container foundation.Container) {
 	s.Container = container
@@ -128,26 +126,28 @@ func (s *Seeder) SetCommand(command console.Context) {
 	s.Command = command
 }
 
-func (s *Seeder) Invoke(seeder database.Seeder, parameters []interface{}) error {
-	if s.Container == nil {
-		return fmt.Errorf("container not set")
-	}
+func (s *Seeder) Invoke(seeder interface{}, parameters []interface{}) error {
+	runMethod := reflect.ValueOf(seeder).MethodByName("Run")
+	// if s.Container == nil {
+	// 	log.Println("running", runMethod)
+	// 	return fmt.Errorf("container not set")
+	// }
 
-	if !s.methodExists("Run", seeder) {
-		return fmt.Errorf("method [Run] missing from %T", s)
+	if !runMethod.IsValid() {
+		return fmt.Errorf("method [Run] missing from %T", seeder)
 	}
 
 	callback := func() error {
-		if s.methodExists("Run", seeder) {
-			return seeder.Run(s.Command)
+		// Invoke the Run method if it exists
+		if runMethod.IsValid() {
+			returnValue := runMethod.Call([]reflect.Value{reflect.ValueOf(s.Command)})
+			if len(returnValue) > 0 && !returnValue[0].IsNil() {
+				return returnValue[0].Interface().(error)
+			}
+			return nil
 		}
-		return fmt.Errorf("method [Run] missing from %T", s)
+		return fmt.Errorf("method [Run] missing from %T", seeder)
 	}
 
 	return callback()
-}
-
-func (s *Seeder) methodExists(name string, seeder database.Seeder) bool {
-	_, found := reflect.TypeOf(seeder).MethodByName(name)
-	return found
 }
