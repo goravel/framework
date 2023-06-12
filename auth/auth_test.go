@@ -21,8 +21,6 @@ import (
 
 var guard = "user"
 
-var unit = time.Minute
-
 type User struct {
 	orm.Model
 	Name string
@@ -177,11 +175,11 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 
 	now := carbon.Now()
 	issuedAt := now.ToStdTime()
-	expireAt := now.AddSeconds(2).ToStdTime()
+	expireAt := now.AddMinutes(2).ToStdTime()
 	token, err := s.auth.LoginUsingID(ctx, 1)
 	s.Nil(err)
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(now.AddMinutes(2))
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
@@ -193,6 +191,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 		IssuedAt: jwt.NewNumericDate(issuedAt).Local(),
 	}, payload)
 	s.ErrorIs(err, ErrorTokenExpired)
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -219,7 +219,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().AddSeconds(2).ToStdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
@@ -241,7 +241,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().AddSeconds(2).ToStdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
@@ -294,7 +294,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	payload, err := s.auth.Parse(ctx, token)
 	s.NotNil(payload)
@@ -316,6 +316,8 @@ func (s *AuthTestSuite) TestUser_Expired() {
 	err = s.auth.User(ctx, &user)
 	s.Nil(err)
 
+	carbon.UnsetTestNow()
+
 	s.mockConfig.AssertExpectations(s.T())
 }
 
@@ -330,7 +332,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	payload, err := s.auth.Parse(ctx, token)
 	s.NotNil(payload)
@@ -342,11 +344,13 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
 
-	time.Sleep(2 * unit)
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	token, err = s.auth.Refresh(ctx)
 	s.Empty(token)
 	s.EqualError(err, "refresh time exceeded")
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -400,11 +404,14 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 	s.Nil(err)
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
-	time.Sleep(4 * unit)
+
+	carbon.SetTestNow(carbon.Now().AddMinutes(4))
 
 	token, err = s.auth.Refresh(ctx)
 	s.Empty(token)
 	s.EqualError(err, "refresh time exceeded")
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -424,11 +431,14 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 	s.Nil(err)
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
-	time.Sleep(2 * unit)
+
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
 	token, err = s.auth.Refresh(ctx)
 	s.NotEmpty(token)
 	s.Nil(err)
+
+	carbon.UnsetTestNow()
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -465,7 +475,7 @@ func (s *AuthTestSuite) TestLogout_SetDisabledCacheError() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.On("Put", testifymock.Anything, true, 2*unit).Return(errors.New("error")).Once()
+	s.mockCache.On("Put", testifymock.Anything, true, 2*time.Minute).Return(errors.New("error")).Once()
 
 	s.EqualError(s.auth.Logout(ctx), "error")
 
@@ -487,7 +497,7 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	s.NotNil(payload)
 	s.Nil(err)
 
-	s.mockCache.On("Put", testifymock.Anything, true, 2*unit).Return(nil).Once()
+	s.mockCache.On("Put", testifymock.Anything, true, 2*time.Minute).Return(nil).Once()
 
 	s.Nil(s.auth.Logout(ctx))
 
