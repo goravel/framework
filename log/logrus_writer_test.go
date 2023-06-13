@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/carbon"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
 

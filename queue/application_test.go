@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/carbon"
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/queue"
 	queuemock "github.com/goravel/framework/contracts/queue/mocks"
+	"github.com/goravel/framework/support/carbon"
 	testingdocker "github.com/goravel/framework/testing/docker"
 )
 

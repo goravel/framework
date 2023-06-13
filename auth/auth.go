@@ -9,12 +9,12 @@ import (
 	"github.com/spf13/cast"
 	"gorm.io/gorm/clause"
 
-	"github.com/goravel/framework/carbon"
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/database"
 )
 
