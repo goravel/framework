@@ -18,6 +18,18 @@ type Seeder struct {
 }
 
 // Call executes the specified seeder(s).
+// Example usage:
+//   seeder := &Seeder{}
+//   seeder.Call(&UserSeeder{}, false, nil)
+//   seeder.Call([]interface{}{&UserSeeder{}, &PostSeeder{}}, true, nil)
+//
+// Parameters:
+//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
+//   - silent (bool): Determines whether the execution should be silent or display output.
+//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
+//
+// Returns:
+//   - error: An error if the execution fails.
 func (s *Seeder) Call(class interface{}, silent bool, parameters []interface{}) error {
 	classes, ok := class.([]interface{})
 
@@ -64,16 +76,54 @@ func contains(slice []string, str string) bool {
 }
 
 // CallWith executes the specified seeder(s) without displaying output.
+// CallWith executes the specified seeder(s) without displaying output.
+//
+// Example usage:
+//   seeder := &Seeder{}
+//   seeder.CallWith(&UserSeeder{}, nil)
+//   seeder.CallWith([]interface{}{&UserSeeder{}, &PostSeeder{}}, nil)
+//
+// Parameters:
+//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
+//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
+//
+// Returns:
+//   - error: An error if the execution fails.
 func (s *Seeder) CallWith(class interface{}, parameters []interface{}) error {
 	return s.Call(class, false, parameters)
 }
 
 // CallSilent executes the specified seeder(s) silently.
+//
+// Example usage:
+//   seeder := &Seeder{}
+//   seeder.CallSilent(&UserSeeder{}, nil)
+//   seeder.CallSilent([]interface{}{&UserSeeder{}, &PostSeeder{}}, nil)
+//
+// Parameters:
+//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
+//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
+//
+// Returns:
+//   - error: An error if the execution fails.
 func (s *Seeder) CallSilent(class interface{}, parameters []interface{}) error {
 	return s.Call(class, true, parameters)
 }
 
 // CallOnce executes the specified seeder(s) only if they haven't been executed before.
+//
+// Example usage:
+//   seeder := &Seeder{}
+//   seeder.CallOnce(&UserSeeder{}, false, nil)
+//   seeder.CallOnce([]interface{}{&UserSeeder{}, &PostSeeder{}}, true, nil)
+//
+// Parameters:
+//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
+//   - silent (bool): Determines whether the execution should be silent or display output.
+//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
+//
+// Returns:
+//   - error: An error if the execution fails.
 func (s *Seeder) CallOnce(class interface{}, silent bool, parameters []interface{}) error {
 	classType := reflect.TypeOf(class)
 	classTypeName := classType.String()
@@ -131,6 +181,13 @@ func (s *Seeder) SetContainer(container foundation.Container) {
 }
 
 // SetCommand sets the console command instance on the seeder.
+//
+// Example usage:
+//   seeder := &Seeder{}
+//   seeder.SetCommand(command)
+//
+// Parameters:
+//   - command (console.Context): The console command instance to set.
 func (s *Seeder) SetCommand(command console.Context) {
 	s.Command = command
 }
