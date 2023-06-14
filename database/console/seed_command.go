@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strings"
 
-	// "strings"
-
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	color "github.com/gookit/color"
@@ -21,11 +19,13 @@ import (
 
 type SeedCommand struct {
 	config config.Config
+	app    foundation.Application
 }
 
-func NewSeedCommand(config config.Config) *SeedCommand {
+func NewSeedCommand(config config.Config, app foundation.Application) *SeedCommand {
 	return &SeedCommand{
 		config: config,
+		app:    app,
 	}
 }
 
@@ -49,6 +49,7 @@ func (receiver *SeedCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	if !receiver.ConfirmToProceed(ctx) {
+		log.Println("confirm to proceed")
 		return nil
 	}
 
@@ -58,7 +59,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 
 	receiver.SetDatabase(ctx)
 
-	receiver.GetSeeder(ctx).Run(ctx)
+	receiver.GetSeeder(ctx)
 
 	// Reset the previous connection if available
 	if previousConnection != "" {
@@ -113,40 +114,87 @@ func (receiver *SeedCommand) SetDatabase(ctx console.Context) {
 }
 
 // GetSeeder returns a seeder instance from the container.
-// GetSeeder returns a seeder instance from the container.
 func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
 	class := ctx.Argument(0)
 	if class == "" {
 		class = ctx.Option("class")
 	}
-
+    // TODO: need to change logic of getseeder
 	if class != "" && !strings.Contains(class, "\\") {
-		class = "Database\\Seeders\\" + class
+		class = "database\\seeders\\" + class
 	}
+	log.Println("class:", class)
 
-	if class == "Database\\Seeders\\DatabaseSeeder" && !receiver.ClassExists(class) {
+	if class == "database\\seeders\\database_seeder" && !receiver.ClassExists(class) {
 		class = "DatabaseSeeder"
 	}
 
-	var container foundation.Container
-	instance, err := container.Make(class)
+	log.Println("class 2:", class)
 
+	// Resolve the seeder instance from the container
+	instance, err := receiver.app.Make(class)
 	if err != nil {
-		// Handle the error if necessary
+		log.Println(err)
 		return nil
 	}
+
 	// Check if the resolved instance implements the Seeder interface
 	seeder, ok := instance.(database.Seeder)
 	if !ok {
+		log.Println(ok)
 		// Handle the case where the resolved instance does not implement the Seeder interface
 		return nil
 	}
+
 	// Set the container and command on the seeder instance
-	seeder.SetContainer(container)
+	seeder.SetContainer(receiver.app)
 	seeder.SetCommand(ctx)
-	log.Println("new class", class)
+	log.Println("new class:", class)
 	return seeder
 }
+
+// func (receiver *SeedCommand) GetSeeder(ctx console.Context) interface{} {
+// 	class := ctx.Argument(0)
+// 	if class == "" {
+// 		class = ctx.Option("class")
+// 	}
+
+// 	if class != "" && !strings.Contains(class, "\\") {
+// 		class = "database\\seeders\\" + class
+// 	}
+
+// 	log.Println("class:", class)
+
+// 	if class == "database\\seeders\\database_seeder" && !receiver.ClassExists(class) {
+// 		class = "DatabaseSeeder"
+// 	}
+// 	log.Println("class 2:", class)
+
+// 	// Get the type of the seeder class
+// 	seederType := reflect.TypeOf("seeders.UserSeeder")
+
+// 	log.Println("seederType:", seederType)
+// 	// Create a new instance of the seeder using reflection
+// 	seederValue := reflect.New(seederType.Elem())
+
+// 	// Convert the seeder value to an interface{}
+// 	instance := seederValue.Interface()
+
+// 	log.Printf("new class: %T", instance)
+
+// 	return instance
+// }
+
+// func (receiver *SeedCommand) getContainer() foundation.Container {
+// 	container := receiver.config.Get("container")
+// 	if container == nil {
+// 		// Create a new container if it doesn't exist
+// 		container,_ = foundation.Container
+// 		receiver.config.Add("container", container)
+// 	}
+
+// 	return container.(foundation.Container)
+// }
 
 // ClassExists checks if a class exists in the project.
 // ClassExists checks if a class exists in the project.
