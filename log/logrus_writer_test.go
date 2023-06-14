@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/time"
 )
 
 var singleLog = "storage/logs/goravel.log"
-var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", time.Now().Format("2006-01-02"))
+var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
 
 type LogrusTestSuite struct {
 	suite.Suite

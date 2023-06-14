@@ -1,10 +1,12 @@
 package console
 
 import (
-	"github.com/gookit/color"
+	"strconv"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -35,6 +37,13 @@ func (receiver *MigrateRefreshCommand) Description() string {
 func (receiver *MigrateRefreshCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
+		Flags: []command.Flag{
+			&command.StringFlag{
+				Name:  "step",
+				Value: "",
+				Usage: "refresh steps",
+			},
+		},
 	}
 }
 
@@ -50,14 +59,34 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err = m.Down(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration reset failed:", err.Error())
+	if step := ctx.Option("step"); step != "" {
+		stepString := "-" + step
+		s, err := strconv.Atoi(stepString)
+		if err != nil {
+			color.Redln("Migration refresh failed: invalid step", ctx.Option("step"))
 
-		return nil
+			return nil
+		}
+
+		if err = m.Steps(s); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
+			switch err.(type) {
+			case migrate.ErrShortLimit:
+			default:
+				color.Redln("Migration refresh failed:", err.Error())
+
+				return nil
+			}
+		}
+	} else {
+		if err = m.Down(); err != nil && err != migrate.ErrNoChange {
+			color.Redln("Migration reset failed:", err.Error())
+
+			return nil
+		}
 	}
 
 	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration failed:", err.Error())
+		color.Redln("Migration refresh failed:", err.Error())
 
 		return nil
 	}

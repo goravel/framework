@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
@@ -16,24 +17,24 @@ import (
 type RuleMakeCommand struct {
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *RuleMakeCommand) Signature() string {
 	return "make:rule"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *RuleMakeCommand) Description() string {
 	return "Create a new rule class"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *RuleMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
@@ -53,17 +54,41 @@ func (receiver *RuleMakeCommand) getStub() string {
 	return Stubs{}.Request()
 }
 
-//populateStub Populate the place-holders in the command stub.
+// populateStub Populate the place-holders in the command stub.
 func (receiver *RuleMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyRule", str.Case2Camel(name))
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(name))
+	ruleName, packageName, _ := receiver.parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyRule", str.Case2Camel(ruleName))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(ruleName))
+	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
 }
 
-//getPath Get the full path to the command.
+// getPath Get the full path to the command.
 func (receiver *RuleMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/rules/" + str.Camel2Case(name) + ".go"
+	ruleName, _, folderPath := receiver.parseName(name)
+
+	return filepath.Join(pwd, "app", "rules", folderPath, str.Camel2Case(ruleName)+".go")
+}
+
+// parseName Parse the name to get the rule name, package name and folder path.
+func (receiver *RuleMakeCommand) parseName(name string) (string, string, string) {
+	name = strings.TrimSuffix(name, ".go")
+
+	segments := strings.Split(name, "/")
+
+	ruleName := segments[len(segments)-1]
+
+	packageName := "rules"
+	folderPath := ""
+
+	if len(segments) > 1 {
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
+		packageName = segments[len(segments)-2]
+	}
+
+	return ruleName, packageName, folderPath
 }

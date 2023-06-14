@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	consolemock "github.com/goravel/framework/contracts/console/mocks"
 	logmock "github.com/goravel/framework/contracts/log/mocks"
 	"github.com/goravel/framework/contracts/schedule"
-	supporttime "github.com/goravel/framework/support/time"
+	"github.com/goravel/framework/support/carbon"
 )
 
 func TestApplication(t *testing.T) {
@@ -45,7 +44,7 @@ func TestApplication(t *testing.T) {
 		app.Command("test --name Goravel argument0 argument1").EveryMinute(),
 	})
 
-	second, _ := strconv.Atoi(supporttime.Now().Format("05"))
+	second := carbon.Now().Second()
 	// Make sure run 3 times
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(120+6+60-second)*time.Second)
 	defer cancel()

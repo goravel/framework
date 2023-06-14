@@ -3,6 +3,7 @@ package console
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -55,7 +56,10 @@ func (receiver *ControllerMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (receiver *ControllerMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyController", str.Case2Camel(name))
+	controllerName, packageName, _ := receiver.parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyController", str.Case2Camel(controllerName))
+	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
 }
@@ -64,5 +68,26 @@ func (receiver *ControllerMakeCommand) populateStub(stub string, name string) st
 func (receiver *ControllerMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/http/controllers/" + str.Camel2Case(name) + ".go"
+	controllerName, _, folderPath := receiver.parseName(name)
+
+	return filepath.Join(pwd, "app", "http", "controllers", folderPath, str.Camel2Case(controllerName)+".go")
+}
+
+// parseName Parse the name to get the controller name, package name and folder path.
+func (receiver *ControllerMakeCommand) parseName(name string) (string, string, string) {
+	name = strings.TrimSuffix(name, ".go")
+
+	segments := strings.Split(name, "/")
+
+	controllerName := segments[len(segments)-1]
+
+	packageName := "controllers"
+	folderPath := ""
+
+	if len(segments) > 1 {
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
+		packageName = segments[len(segments)-2]
+	}
+
+	return controllerName, packageName, folderPath
 }

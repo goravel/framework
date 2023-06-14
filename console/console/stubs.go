@@ -4,7 +4,7 @@ type Stubs struct {
 }
 
 func (receiver Stubs) Command() string {
-	return `package commands
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/console"

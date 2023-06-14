@@ -8,7 +8,7 @@ type Stubs struct {
 }
 
 func (r Stubs) Model() string {
-	return `package models
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/database/orm"
@@ -21,7 +21,7 @@ type DummyModel struct {
 }
 
 func (r Stubs) Observer() string {
-	return `package observers
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/contracts/database/orm"
