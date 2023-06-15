@@ -93,7 +93,6 @@ func (r Stubs) Seeder(name string) string {
 	return fmt.Sprintf(`package seeders
 
 import (
-	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/database"
 )
 	
@@ -101,11 +100,11 @@ type %s struct {
 	database.Seeder
 }
 	
-func (s *%s) Run(ctx console.Context) error {
+func (s *%s) Run() error {
 	// Run executes the seeder logic.
 	// To use the %s, register it in a service provider by calling facades.Seeder().Register and passing an instance of the %s as a pointer.
 	// Example:
-	//     facades.Seeder().Register([]database.Seeder{
+	//     facades.Seeder().Register([]seeder.Seeder{
 	//         ...
 	//         &seeders.%s{},
 	//         ...
@@ -119,10 +118,7 @@ func (s *%s) Run(ctx console.Context) error {
 	// To register other seeders to run, use the CallOnce method and provide the seeder instances.
 	// Example:
 	//     // Register multiple seeders
-	//     s.CallOnce([]interface{}{&seeders.&OtherSeeder{},&seeders.&OtherSeeder2{}}, true, nil)
-	//
-	//     // Register a single seeder
-	//     s.CallOnce(&seeders.&OtherSeeder{}, true, nil)
+	//     s.CallOnce([]seeder.Seeder{&seeders.&OtherSeeder{},&seeders.&OtherSeeder2{}})
 	//
 	// Make sure to adjust the import statements and package paths based on your project structure.
 
