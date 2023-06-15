@@ -42,9 +42,14 @@ func (receiver *SeedCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "db",
 		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "force the operation to run when in production",
+			},
 			&command.StringFlag{
 				Name:    "seeder",
-				Value:   "DatabaseSeeder",
+				Value:   "",
 				Aliases: []string{"s"},
 				Usage:   "name of the seeder to run",
 			},
@@ -71,8 +76,8 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 
 // ConfirmToProceed determines if the command should proceed based on user confirmation.
 func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) bool {
-	force := ctx.Option("force")
-	if force == "true" || (force == "" && receiver.config.Env("APP_ENV") != "production") {
+	force := ctx.OptionBool("force")
+	if force || (force && receiver.config.Env("APP_ENV") != "production") {
 		return true
 	}
 
