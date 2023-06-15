@@ -41,6 +41,14 @@ func (receiver *SeedCommand) Description() string {
 func (receiver *SeedCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "db",
+		Flags: []command.Flag{
+			&command.StringFlag{
+				Name:    "seeder",
+				Value:   "DatabaseSeeder",
+				Aliases: []string{"s"},
+				Usage:   "name of the seeder to run",
+			},
+		},
 	}
 }
 
@@ -90,7 +98,7 @@ func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) bool {
 func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
 	class := ctx.Argument(0)
 	if class == "" {
-		class = "DatabaseSeeder"
+		class = ctx.Option("seeder")
 	}
 	class = "seeders." + class
 	instance, err := receiver.app.Make("goravel.seeder")
