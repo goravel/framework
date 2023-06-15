@@ -38,6 +38,7 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 
 func (database *ServiceProvider) registerCommands(app foundation.Application) {
 	config := app.MakeConfig()
+	facade := app.MakeSeeder()
 	app.MakeArtisan().Register([]consolecontract.Command{
 		console.NewMigrateMakeCommand(config),
 		console.NewMigrateCommand(config),
@@ -48,7 +49,7 @@ func (database *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewMigrateStatusCommand(config),
 		console.NewModelMakeCommand(),
 		console.NewObserverMakeCommand(),
-		console.NewSeedCommand(config, app),
+		console.NewSeedCommand(config, facade),
 		console.NewSeederMakeCommand(),
 	})
 }

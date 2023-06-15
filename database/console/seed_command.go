@@ -11,18 +11,17 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/seeder"
-	"github.com/goravel/framework/contracts/foundation"
 )
 
 type SeedCommand struct {
 	config config.Config
-	app    foundation.Application
+	facade seeder.Facade
 }
 
-func NewSeedCommand(config config.Config, app foundation.Application) *SeedCommand {
+func NewSeedCommand(config config.Config, facade seeder.Facade) *SeedCommand {
 	return &SeedCommand{
 		config: config,
-		app:    app,
+		facade: facade,
 	}
 }
 
@@ -95,16 +94,7 @@ func (receiver *SeedCommand) GetSeeder(ctx console.Context) seeder.Seeder {
 		class = ctx.Option("seeder")
 	}
 	class = "seeders." + class
-	instance, err := receiver.app.Make("goravel.seeder")
-	if err != nil {
-		log.Println("Failed to resolve seeder instance:", err)
-		return nil
-	}
-	seeders, ok := instance.(seeder.Facade)
-	if !ok {
-		log.Println("Resolved instance does not implement the Seeder interface")
-		return nil
-	}
+	seeders := receiver.facade
 	seeder := seeders.GetSeeder(class)
 	if seeder == nil {
 		log.Printf("No seeder of type %s found\n", class)
