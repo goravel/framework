@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -15,13 +16,13 @@ import (
 
 type SeedCommand struct {
 	config config.Config
-	facade seeder.Facade
+	seeder seeder.Facade
 }
 
-func NewSeedCommand(config config.Config, facade seeder.Facade) *SeedCommand {
+func NewSeedCommand(config config.Config, seeder seeder.Facade) *SeedCommand {
 	return &SeedCommand{
 		config: config,
-		facade: facade,
+		seeder: seeder,
 	}
 }
 
@@ -45,9 +46,9 @@ func (receiver *SeedCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "force the operation to run when in production",
 			},
-			&command.StringFlag{
+			&command.StringSliceFlag{
 				Name:    "seeder",
-				Value:   "",
+				Value:   []string{},
 				Aliases: []string{"s"},
 				Usage:   "name of the seeder to run",
 			},
@@ -57,57 +58,52 @@ func (receiver *SeedCommand) Extend() command.Extend {
 
 // Handle executes the console command.
 func (receiver *SeedCommand) Handle(ctx console.Context) error {
-	if !receiver.ConfirmToProceed(ctx) {
-		return nil
+	err := receiver.ConfirmToProceed(ctx)
+	if err != nil {
+		color.Redln(err)
+		return err
 	}
 
 	color.Greenln("Seeding database.")
-	err := receiver.RunSeeder(ctx)
-	if err != nil {
-		log.Println(err)
+	names := ctx.OptionSlice("seeder")
+	seeders := receiver.GetSeeders(names)
+
+	for _, seeder := range seeders {
+		err := seeder.Run()
+		if err != nil {
+			log.Printf("Error running seeder: %v\n", err)
+			continue
+		}
 	}
+
 	return nil
 }
 
 // ConfirmToProceed determines if the command should proceed based on user confirmation.
-func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) bool {
+func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) error {
 	force := ctx.OptionBool("force")
 	if force || (receiver.config.Env("APP_ENV") != "production") {
-		return true
+		return nil
 	}
-
-	// Display production alert message
-	receiver.config.Add("alert", "Application In Production")
-
-	alert := receiver.config.GetString("alert")
-
-	color.Yellowln(alert)
-	return false
+	return errors.New("application in production use --force to run this command")
 }
 
 // GetSeeder returns a seeder instance from the container.
-func (receiver *SeedCommand) RunSeeder(ctx console.Context) error {
-	class := ctx.Argument(0)
-	seeders := receiver.facade
-	if class == "" {
-		class = ctx.Option("seeder")
+func (receiver *SeedCommand) GetSeeders(names []string) []seeder.Seeder {
+	seeders := receiver.seeder
+	if len(names) == 0 {
+		log.Println("No seeders specified, running all seeders.")
+		return seeders.GetAllSeeder()
 	}
-	if class == "" {
-		// Run all seeders
-		for _, item := range seeders.GetAllSeeder() {
-			if item == nil {
-				log.Println("No seeder found.")
-				continue
-			}
-			item.Run()
+	var seederInstances []seeder.Seeder
+	for _, name := range names {
+		class := "seeders." + name
+		seeder := seeders.GetSeeder(class)
+		if seeder == nil {
+			log.Printf("No seeder of type %s found\n", class)
+			continue
 		}
-		return nil
+		seederInstances = append(seederInstances, seeder)
 	}
-	class = "seeders." + class
-	seeder := seeders.GetSeeder(class)
-	if seeder == nil {
-		log.Printf("No seeder of type %s found\n", class)
-	}
-	seeder.Run()
-	return nil
+	return seederInstances
 }
