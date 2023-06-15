@@ -10,6 +10,7 @@ import (
 )
 
 const Binding = "goravel.orm"
+const SeederBinding = "goravel.seeder"
 
 type ServiceProvider struct {
 }
@@ -25,6 +26,9 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		return orm, nil
+	})
+	app.Singleton(SeederBinding, func(app foundation.Application) (interface{}, error) {
+		return NewSeeder(), nil
 	})
 }
 

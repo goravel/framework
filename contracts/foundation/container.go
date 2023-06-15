@@ -7,6 +7,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/crypt"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/filesystem"
@@ -44,6 +45,7 @@ type Container interface {
 	MakeSchedule() schedule.Schedule
 	MakeStorage() filesystem.Storage
 	MakeValidation() validation.Validation
+	MakeSeeder()  database.Seeder
 	MakeWith(key any, parameters map[string]any) (any, error)
 	Singleton(key any, callback func(app Application) (any, error))
 }

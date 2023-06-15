@@ -15,6 +15,7 @@ import (
 	configcontract "github.com/goravel/framework/contracts/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	cryptcontract "github.com/goravel/framework/contracts/crypt"
+	databaseontract "github.com/goravel/framework/contracts/database"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
@@ -251,6 +252,15 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 	}
 
 	return instance.(validationcontract.Validation)
+}
+func (c *Container) MakeSeeder() databaseontract.Seeder {
+	instance, err := c.Make(database.SeederBinding)
+	if err != nil {
+		log.Fatalln(err)
+		return nil
+	}
+	
+	return instance.(databaseontract.Seeder)
 }
 
 func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {

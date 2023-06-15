@@ -93,19 +93,20 @@ func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
 		class = "DatabaseSeeder"
 	}
 	class = "seeders." + class
-
-	instance, err := receiver.app.Make(class)
+	instance, err := receiver.app.Make("goravel.seeder")
 	if err != nil {
 		log.Println("Failed to resolve seeder instance:", err)
 		return nil
 	}
-
-	seeder, ok := instance.(database.Seeder)
+	seeders, ok := instance.(database.Seeder)
 	if !ok {
 		log.Println("Resolved instance does not implement the Seeder interface")
 		return nil
 	}
-
+	seeder := seeders.GetSeeder(class)
+	if seeder == nil {
+		log.Printf("No seeder of type %s found\n", class)
+	}
 	seeder.SetCommand(ctx)
 	return seeder
 }

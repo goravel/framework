@@ -5,6 +5,7 @@ package mocks
 import (
 	auth "github.com/goravel/framework/contracts/auth"
 	access "github.com/goravel/framework/contracts/auth/access"
+	"github.com/goravel/framework/contracts/database"
 
 	cache "github.com/goravel/framework/contracts/cache"
 
@@ -423,6 +424,22 @@ func (_m *Application) MakeValidation() validation.Validation {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(validation.Validation)
+		}
+	}
+
+	return r0
+}
+
+// MakeSeeder provides a mock function with given fields:
+func (_m *Application) MakeSeeder() database.Seeder {
+	ret := _m.Called()
+
+	var r0 database.Seeder
+	if rf, ok := ret.Get(0).(func() database.Seeder); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(database.Seeder)
 		}
 	}
 
