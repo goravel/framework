@@ -1,7 +1,6 @@
 package console
 
 import (
-	"fmt"
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -60,7 +59,6 @@ func (receiver *SeedCommand) Extend() command.Extend {
 // Handle executes the console command.
 func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	if !receiver.ConfirmToProceed(ctx) {
-		log.Println("Confirmation to proceed denied.")
 		return nil
 	}
 
@@ -77,26 +75,17 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 // ConfirmToProceed determines if the command should proceed based on user confirmation.
 func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) bool {
 	force := ctx.OptionBool("force")
-	if force || (force && receiver.config.Env("APP_ENV") != "production") {
+	if force || (receiver.config.Env("APP_ENV") != "production") {
 		return true
 	}
 
-	// Display confirmation message
+	// Display production alert message
 	receiver.config.Add("alert", "Application In Production")
-	receiver.config.Add("confirm", "Do you really wish to run this command?")
-	receiver.config.Add("cancel", "Command canceled.")
 
 	alert := receiver.config.GetString("alert")
-	cancel := receiver.config.GetString("cancel")
 
-	fmt.Println(alert)
-
-	confirmed := receiver.config.GetBool("confirmed")
-	if !confirmed {
-		fmt.Println(cancel)
-		return false
-	}
-	return true
+	color.Yellowln(alert)
+	return false
 }
 
 // GetSeeder returns a seeder instance from the container.

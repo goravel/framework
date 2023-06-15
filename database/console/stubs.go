@@ -1,9 +1,5 @@
 package console
 
-import (
-	"fmt"
-)
-
 type Stubs struct {
 }
 
@@ -77,42 +73,42 @@ func (u *DummyObserver) ForceDeleted(event orm.Event) error {
 }
 
 func (r Stubs) Factory(name string) string {
-	return fmt.Sprintf(`package factories
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/database/orm"
 )
 
-type %s struct {
+type DummyFactory struct {
 	orm.Model
 }
-`, name)
+`
 }
 
-func (r Stubs) Seeder(name string) string {
-	return fmt.Sprintf(`package seeders
+func (r Stubs) Seeder() string {
+	return `package DummyPackage
 
 import (
 	"github.com/goravel/framework/database"
 )
 	
-type %s struct {
+type DummySeeder struct {
 	database.Seeder
 }
 	
-func (s *%s) Run() error {
+func (s *DummySeeder) Run() error {
 	// Run executes the seeder logic.
-	// To use the %s, register it in a service provider by calling facades.Seeder().Register and passing an instance of the %s as a pointer.
+	// To use the DummySeeder, register it in a service provider by calling facades.Seeder().Register and passing an instance of the DummySeeder as a pointer.
 	// Example:
 	//     facades.Seeder().Register([]seeder.Seeder{
 	//         ...
-	//         &seeders.%s{},
+	//         &seeders.DummySeeder{},
 	//         ...
 	//     })
 	//
 	// After registering, run the seeder by invoking the seed command in the console.
 	// Example:
-    //     go run . artisan db:seed --class=%s
+    //     go run . artisan db:seed --seeder DummySeeder
 	//
 	// The Run method performs the actual seeding operations.
 	// To register other seeders to run, use the CallOnce method and provide the seeder instances.
@@ -124,5 +120,5 @@ func (s *%s) Run() error {
 
 	return nil
 }
-`, name, name, name, name, name, name)
+`
 }
