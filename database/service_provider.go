@@ -28,7 +28,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 		return orm, nil
 	})
 	app.Singleton(SeederBinding, func(app foundation.Application) (interface{}, error) {
-		return NewSeeder(), nil
+		return NewSeederFacade(), nil
 	})
 }
 
@@ -48,7 +48,6 @@ func (database *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewMigrateStatusCommand(config),
 		console.NewModelMakeCommand(),
 		console.NewObserverMakeCommand(),
-		console.NewFactoryMakeCommand(),
 		console.NewSeedCommand(config, app),
 		console.NewSeederMakeCommand(),
 	})

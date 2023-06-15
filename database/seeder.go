@@ -4,35 +4,29 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"time"
 
-	"github.com/gookit/color"
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/seeder"
 )
 
 type Seeder struct {
-	Seeders []database.Seeder
-	Command console.Context
-	Called  []string
+	Called []string
 }
 
-func NewSeeder() database.Seeder {
-	return &Seeder{}
+type Facade struct {
+	Seeders []seeder.Seeder
 }
 
-func (s *Seeder) Run(ctx console.Context) error {
-	// Implement the seeder logic here
-	return nil
+func NewSeederFacade() seeder.Facade {
+	return &Facade{}
 }
 
-func (s *Seeder) Register(seeders []database.Seeder) {
-	s.Seeders = append(s.Seeders, seeders...)
+func (f *Facade) Register(seeders []seeder.Seeder) {
+	f.Seeders = append(f.Seeders, seeders...)
 }
 
-func (s *Seeder) GetSeeder(name string) database.Seeder {
-	var seeder database.Seeder
-	for _, item := range s.Seeders {
+func (f *Facade) GetSeeder(name string) seeder.Seeder {
+	var seeder seeder.Seeder
+	for _, item := range f.Seeders {
 		itemType := reflect.TypeOf(item).Elem()
 		if itemType.String() == name {
 			seeder = item
@@ -46,46 +40,28 @@ func (s *Seeder) GetSeeder(name string) database.Seeder {
 // Example usage:
 //
 //	seeder := &Seeder{}
-//	seeder.Call(&UserSeeder{}, false, nil)
-//	seeder.Call([]interface{}{&UserSeeder{}, &PostSeeder{}}, true, nil)
+//	seeder.Call([]seeder.Seeder{&UserSeeder{}})
+//	seeder.Call([]seeder.Seeder{&UserSeeder{}, &PostSeeder{}})
 //
 // Parameters:
-//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
-//   - silent (bool): Determines whether the execution should be silent or display output.
-//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
+//   - seeders ([]seeder.Seeder): The seeder class or a slice of seeder classes to execute.
 //
 // Returns:
 //   - error: An error if the execution fails.
-func (s *Seeder) Call(class interface{}, silent bool, parameters []interface{}) error {
-	classes, ok := class.([]interface{})
-
-	if !ok {
-		classes = []interface{}{class}
-	}
-
-	for _, class := range classes {
-		seeder := s.Resolve(class)
+func (s *Seeder) Call(seeders []seeder.Seeder) error {
+	for _, seeder := range seeders {
 		name := fmt.Sprintf("%T", seeder)
+
 		if contains(s.Called, name) {
 			continue
 		}
 
-		if !silent && s.Command != nil {
-			color.Yellowf("RUNNING: %s\n", name)
-		}
-
-		startTime := time.Now()
-
-		err := s.Invoke(seeder, parameters)
+		err := seeder.Run()
 		if err != nil {
 			log.Println("Error executing seeder:", err)
 			return err
 		}
 
-		if !silent && s.Command != nil {
-			runTime := time.Since(startTime).Milliseconds()
-			log.Printf("%s %d ms DONE\n", name, runTime)
-		}
 		s.Called = append(s.Called, name)
 	}
 	return nil
@@ -101,145 +77,29 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// CallWith executes the specified seeder(s) without displaying output.
-// CallWith executes the specified seeder(s) without displaying output.
-//
-// Example usage:
-//
-//	seeder := &Seeder{}
-//	seeder.CallWith(&UserSeeder{}, nil)
-//	seeder.CallWith([]interface{}{&UserSeeder{}, &PostSeeder{}}, nil)
-//
-// Parameters:
-//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
-//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
-//
-// Returns:
-//   - error: An error if the execution fails.
-func (s *Seeder) CallWith(class interface{}, parameters []interface{}) error {
-	return s.Call(class, false, parameters)
-}
-
-// CallSilent executes the specified seeder(s) silently.
-//
-// Example usage:
-//
-//	seeder := &Seeder{}
-//	seeder.CallSilent(&UserSeeder{}, nil)
-//	seeder.CallSilent([]interface{}{&UserSeeder{}, &PostSeeder{}}, nil)
-//
-// Parameters:
-//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
-//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
-//
-// Returns:
-//   - error: An error if the execution fails.
-func (s *Seeder) CallSilent(class interface{}, parameters []interface{}) error {
-	return s.Call(class, true, parameters)
-}
-
 // CallOnce executes the specified seeder(s) only if they haven't been executed before.
 //
 // Example usage:
 //
 //	seeder := &Seeder{}
-//	seeder.CallOnce(&UserSeeder{}, false, nil)
-//	seeder.CallOnce([]interface{}{&UserSeeder{}, &PostSeeder{}}, true, nil)
+//	seeder.CallOnce([]seeder.Seeder{&UserSeeder{}})
+//	seeder.CallOnce([]seeder.Seeder{&UserSeeder{}, &PostSeeder{}})
 //
 // Parameters:
-//   - class (interface{}): The seeder class or a slice of seeder classes to execute.
-//   - silent (bool): Determines whether the execution should be silent or display output.
-//   - parameters ([]interface{}): Optional. Additional parameters to pass to the seeder(s).
+//   - seeders ([]seeder.Seeder): The seeder class or a slice of seeder classes to execute.
 //
 // Returns:
 //   - error: An error if the execution fails.
-func (s *Seeder) CallOnce(class interface{}, silent bool, parameters []interface{}) error {
-	classType := reflect.TypeOf(class)
-	classTypeName := classType.String()
-	classPointerTypeName := "*" + classTypeName
+func (s *Seeder) CallOnce(seeders []seeder.Seeder) error {
+	seederType := reflect.TypeOf(seeders)
+	seederTypeName := seederType.String()
+	seederPointerTypeName := "*" + seederTypeName
 
 	for _, called := range s.Called {
-		if called == classTypeName || called == classPointerTypeName {
+		if called == seederTypeName || called == seederPointerTypeName {
 			return nil
 		}
 	}
 
-	return s.Call(class, silent, parameters)
-}
-
-// Resolve resolves the seeder instance from the container.
-func (s *Seeder) Resolve(class interface{}) interface{} {
-	instanceType := reflect.TypeOf(class)
-
-	var instance interface{}
-	// if s.Container != nil {
-	// 	resolvedInstance, err := s.Container.Make(instanceType.String())
-	// 	if err != nil {
-	// 		// Handle the error if necessary
-	// 		return nil
-	// 	}
-
-	// 	instanceValue = reflect.ValueOf(resolvedInstance)
-	// 	instance = instanceValue.Interface()
-
-	// 	// Set the container and command on the instance (assuming it has the necessary methods)
-	// 	setContainerMethod := instanceValue.MethodByName("SetContainer")
-	// 	if setContainerMethod.IsValid() {
-	// 		setContainerMethod.Call([]reflect.Value{reflect.ValueOf(s.Container)})
-	// 	}
-	// } else {
-	// Create a new instance of the class using reflection
-	instanceValue := reflect.New(instanceType)
-	instance = instanceValue.Interface()
-	// }
-
-	if s.Command != nil {
-		setCommandMethod := instanceValue.MethodByName("SetCommand")
-		if setCommandMethod.IsValid() {
-			setCommandMethod.Call([]reflect.Value{reflect.ValueOf(s.Command)})
-		}
-	}
-
-	return instance
-}
-
-// SetContainer sets the container instance on the seeder.
-// func (s *Seeder) SetContainer(container foundation.Container) {
-// 	s.Container = container
-// }
-
-// SetCommand sets the console command instance on the seeder.
-//
-// Example usage:
-//
-//	seeder := &Seeder{}
-//	seeder.SetCommand(command)
-//
-// Parameters:
-//   - command (console.Context): The console command instance to set.
-func (s *Seeder) SetCommand(command console.Context) {
-	s.Command = command
-}
-
-// Invoke calls the Run method on the seeder instance.
-func (s *Seeder) Invoke(seeder interface{}, parameters []interface{}) error {
-	runMethod := reflect.ValueOf(seeder).MethodByName("Run")
-
-	if !runMethod.IsValid() {
-		return fmt.Errorf("method [Run] missing from %T", seeder)
-	}
-
-	callback := func() error {
-		// Invoke the Run method if it exists
-		if runMethod.IsValid() {
-			returnValue := runMethod.Call([]reflect.Value{reflect.ValueOf(s.Command)})
-			if len(returnValue) > 0 && !returnValue[0].IsNil() {
-				return returnValue[0].Interface().(error)
-			}
-			return nil
-		}
-		return fmt.Errorf("method [Run] missing from %T", seeder)
-	}
-
-	return callback()
+	return s.Call(seeders)
 }

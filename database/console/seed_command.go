@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 )
 
@@ -65,7 +65,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 		log.Println("No valid seeder instance found.")
 		return nil
 	}
-	seeder.Run(ctx)
+	seeder.Run()
 	return nil
 }
 
@@ -95,7 +95,7 @@ func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) bool {
 }
 
 // GetSeeder returns a seeder instance from the container.
-func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
+func (receiver *SeedCommand) GetSeeder(ctx console.Context) seeder.Seeder {
 	class := ctx.Argument(0)
 	if class == "" {
 		class = ctx.Option("seeder")
@@ -106,7 +106,7 @@ func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
 		log.Println("Failed to resolve seeder instance:", err)
 		return nil
 	}
-	seeders, ok := instance.(database.Seeder)
+	seeders, ok := instance.(seeder.Facade)
 	if !ok {
 		log.Println("Resolved instance does not implement the Seeder interface")
 		return nil
@@ -115,6 +115,5 @@ func (receiver *SeedCommand) GetSeeder(ctx console.Context) database.Seeder {
 	if seeder == nil {
 		log.Printf("No seeder of type %s found\n", class)
 	}
-	seeder.SetCommand(ctx)
 	return seeder
 }

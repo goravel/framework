@@ -5,7 +5,6 @@ package mocks
 import (
 	auth "github.com/goravel/framework/contracts/auth"
 	access "github.com/goravel/framework/contracts/auth/access"
-	"github.com/goravel/framework/contracts/database"
 
 	cache "github.com/goravel/framework/contracts/cache"
 
@@ -34,6 +33,7 @@ import (
 	mock "github.com/stretchr/testify/mock"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/seeder"
 
 	queue "github.com/goravel/framework/contracts/queue"
 
@@ -431,15 +431,15 @@ func (_m *Application) MakeValidation() validation.Validation {
 }
 
 // MakeSeeder provides a mock function with given fields:
-func (_m *Application) MakeSeeder() database.Seeder {
+func (_m *Application) MakeSeeder() seeder.Facade {
 	ret := _m.Called()
 
-	var r0 database.Seeder
-	if rf, ok := ret.Get(0).(func() database.Seeder); ok {
+	var r0 seeder.Facade
+	if rf, ok := ret.Get(0).(func() seeder.Facade); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(database.Seeder)
+			r0 = ret.Get(0).(seeder.Facade)
 		}
 	}
 

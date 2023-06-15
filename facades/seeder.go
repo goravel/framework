@@ -1,9 +1,9 @@
 package facades
 
 import (
-	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/seeder"
 )
 
-func Seeder() database.Seeder {
+func Seeder() seeder.Facade {
 	return App().MakeSeeder()
 }
