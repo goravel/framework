@@ -6,6 +6,9 @@ type Facade interface {
 
 	// GetSeeder gets a seeder instance from the seeders.
 	GetSeeder(name string) Seeder
+
+	// All seeders
+	GetAllSeeder() []Seeder
 }
 type Seeder interface {
 	// Run executes the seeder logic.

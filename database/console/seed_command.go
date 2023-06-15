@@ -62,12 +62,10 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	}
 
 	color.Greenln("Seeding database.")
-	seeder := receiver.GetSeeder(ctx)
-	if seeder == nil {
-		log.Println("No valid seeder instance found.")
-		return nil
+	err := receiver.RunSeeder(ctx)
+	if err != nil {
+		log.Println(err)
 	}
-	seeder.Run()
 	return nil
 }
 
@@ -88,16 +86,28 @@ func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) bool {
 }
 
 // GetSeeder returns a seeder instance from the container.
-func (receiver *SeedCommand) GetSeeder(ctx console.Context) seeder.Seeder {
+func (receiver *SeedCommand) RunSeeder(ctx console.Context) error {
 	class := ctx.Argument(0)
+	seeders := receiver.facade
 	if class == "" {
 		class = ctx.Option("seeder")
 	}
+	if class == "" {
+		// Run all seeders
+		for _, item := range seeders.GetAllSeeder() {
+			if item == nil {
+				log.Println("No seeder found.")
+				continue
+			}
+			item.Run()
+		}
+		return nil
+	}
 	class = "seeders." + class
-	seeders := receiver.facade
 	seeder := seeders.GetSeeder(class)
 	if seeder == nil {
 		log.Printf("No seeder of type %s found\n", class)
 	}
-	return seeder
+	seeder.Run()
+	return nil
 }
