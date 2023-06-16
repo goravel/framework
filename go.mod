@@ -37,7 +37,7 @@ require (
 	github.com/urfave/cli/v2 v2.25.6
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.10.0
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.56.0
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.1
@@ -47,7 +47,7 @@ require (
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
-	cloud.google.com/go/compute v1.19.0 // indirect
+	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v0.13.0 // indirect
 	cloud.google.com/go/pubsub v1.30.0 // indirect
