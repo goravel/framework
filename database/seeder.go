@@ -2,14 +2,12 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
 type Seeder struct {
-	Called []string
 }
 
 type SeederFacade struct {
@@ -52,7 +50,6 @@ func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
 
 		err := seeder.Run()
 		if err != nil {
-			log.Println("Error executing seeder:", err)
 			return err
 		}
 
