@@ -12,21 +12,22 @@ type Seeder struct {
 	Called []string
 }
 
-type Facade struct {
+type SeederFacade struct {
 	Seeders []seeder.Seeder
+	Called  []string
 }
 
 func NewSeederFacade() seeder.Facade {
-	return &Facade{}
+	return &SeederFacade{}
 }
 
-func (f *Facade) Register(seeders []seeder.Seeder) {
-	f.Seeders = append(f.Seeders, seeders...)
+func (s *SeederFacade) Register(seeders []seeder.Seeder) {
+	s.Seeders = append(s.Seeders, seeders...)
 }
 
-func (f *Facade) GetSeeder(name string) seeder.Seeder {
+func (s *SeederFacade) GetSeeder(name string) seeder.Seeder {
 	var seeder seeder.Seeder
-	for _, item := range f.Seeders {
+	for _, item := range s.Seeders {
 		itemType := reflect.TypeOf(item).Elem()
 		if itemType.String() == name {
 			seeder = item
@@ -36,23 +37,12 @@ func (f *Facade) GetSeeder(name string) seeder.Seeder {
 	return seeder
 }
 
-func (f *Facade) GetSeeders() []seeder.Seeder {
-	return f.Seeders
+func (s *SeederFacade) GetSeeders() []seeder.Seeder {
+	return s.Seeders
 }
 
 // Call executes the specified seeder(s).
-// Example usage:
-//
-//	seeder := &Seeder{}
-//	seeder.Call([]seeder.Seeder{&UserSeeder{}})
-//	seeder.Call([]seeder.Seeder{&UserSeeder{}, &PostSeeder{}})
-//
-// Parameters:
-//   - seeders ([]seeder.Seeder): The seeder class or a slice of seeder classes to execute.
-//
-// Returns:
-//   - error: An error if the execution fails.
-func (s *Seeder) Call(seeders []seeder.Seeder) error {
+func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
 	for _, seeder := range seeders {
 		name := fmt.Sprintf("%T", seeder)
 
@@ -82,19 +72,7 @@ func contains(slice []string, str string) bool {
 }
 
 // CallOnce executes the specified seeder(s) only if they haven't been executed before.
-//
-// Example usage:
-//
-//	seeder := &Seeder{}
-//	seeder.CallOnce([]seeder.Seeder{&UserSeeder{}})
-//	seeder.CallOnce([]seeder.Seeder{&UserSeeder{}, &PostSeeder{}})
-//
-// Parameters:
-//   - seeders ([]seeder.Seeder): The seeder class or a slice of seeder classes to execute.
-//
-// Returns:
-//   - error: An error if the execution fails.
-func (s *Seeder) CallOnce(seeders []seeder.Seeder) error {
+func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
 	seederType := reflect.TypeOf(seeders)
 	seederTypeName := seederType.String()
 	seederPointerTypeName := "*" + seederTypeName

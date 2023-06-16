@@ -4,8 +4,6 @@ import (
 	"errors"
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	color "github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
@@ -61,7 +59,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	err := receiver.ConfirmToProceed(ctx)
 	if err != nil {
 		color.Redln(err)
-		return err
+		return nil
 	}
 
 	color.Greenln("Seeding database.")
@@ -71,7 +69,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	for _, seeder := range seeders {
 		err := seeder.Run()
 		if err != nil {
-			log.Printf("Error running seeder: %v\n", err)
+			color.Redf("Error running seeder: %v\n", err)
 			continue
 		}
 	}
@@ -90,20 +88,18 @@ func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) error {
 
 // GetSeeder returns a seeder instance from the container.
 func (receiver *SeedCommand) GetSeeders(names []string) []seeder.Seeder {
-	seeders := receiver.seeder
 	if len(names) == 0 {
-		log.Println("No seeders specified, running all seeders.")
-		return seeders.GetSeeders()
+		return receiver.seeder.GetSeeders()
 	}
-	var seederInstances []seeder.Seeder
+	var seeders []seeder.Seeder
 	for _, name := range names {
 		class := "seeders." + name
-		seeder := seeders.GetSeeder(class)
+		seeder := receiver.seeder.GetSeeder(class)
 		if seeder == nil {
 			log.Printf("No seeder of type %s found\n", class)
 			continue
 		}
-		seederInstances = append(seederInstances, seeder)
+		seeders = append(seeders, seeder)
 	}
-	return seederInstances
+	return seeders
 }
