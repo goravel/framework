@@ -36,7 +36,7 @@ func (f *Facade) GetSeeder(name string) seeder.Seeder {
 	return seeder
 }
 
-func (f *Facade) GetAllSeeder() []seeder.Seeder {
+func (f *Facade) GetSeeders() []seeder.Seeder {
 	return f.Seeders
 }
 

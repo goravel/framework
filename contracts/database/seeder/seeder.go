@@ -8,7 +8,7 @@ type Facade interface {
 	GetSeeder(name string) Seeder
 
 	// All seeders
-	GetAllSeeder() []Seeder
+	GetSeeders() []Seeder
 }
 type Seeder interface {
 	// Run executes the seeder logic.

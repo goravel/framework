@@ -72,18 +72,6 @@ func (u *DummyObserver) ForceDeleted(event orm.Event) error {
 `
 }
 
-func (r Stubs) Factory(name string) string {
-	return `package DummyPackage
-
-import (
-	"github.com/goravel/framework/database/orm"
-)
-
-type DummyFactory struct {
-	orm.Model
-}
-`
-}
 
 func (r Stubs) Seeder() string {
 	return `package DummyPackage

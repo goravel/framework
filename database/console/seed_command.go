@@ -93,7 +93,7 @@ func (receiver *SeedCommand) GetSeeders(names []string) []seeder.Seeder {
 	seeders := receiver.seeder
 	if len(names) == 0 {
 		log.Println("No seeders specified, running all seeders.")
-		return seeders.GetAllSeeder()
+		return seeders.GetSeeders()
 	}
 	var seederInstances []seeder.Seeder
 	for _, name := range names {
