@@ -20,4 +20,9 @@ func TestSeederMakeCommand(t *testing.T) {
 	assert.Nil(t, seederMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("database/seeders/user_seeder.go"))
 	assert.True(t, file.Remove("database"))
+
+	mockContext.On("Argument", 0).Return("subdir/DemoSeeder").Once()
+	assert.Nil(t, seederMakeCommand.Handle(mockContext))
+	assert.True(t, file.Exists("database/seeders/subdir/demo_seeder.go"))
+	assert.True(t, file.Remove("database"))
 }
