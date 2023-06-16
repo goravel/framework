@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/carbon"
 )
 
 var (
@@ -48,6 +49,7 @@ func (app *Application) Boot() {
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
 	})
 	app.bootArtisan()
+	app.setTimezone()
 	setRootPath()
 }
 
@@ -160,6 +162,10 @@ func (app *Application) bootServiceProviders(serviceProviders []foundation.Servi
 
 func (app *Application) registerCommands(commands []consolecontract.Command) {
 	app.MakeArtisan().Register(commands)
+}
+
+func (app *Application) setTimezone() {
+	carbon.SetTimezone(app.MakeConfig().GetString("app.timezone", carbon.UTC))
 }
 
 func setEnv() {
