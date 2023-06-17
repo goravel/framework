@@ -61,14 +61,11 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 	color.Greenln("Seeding database.")
-	for _, seeder := range seeders {
-		err := seeder.Run()
-		if err != nil {
-			color.Redf("Error running seeder: %v\n", err)
-			return nil
-		}
-	}
 
+	err = receiver.seeder.CallOnce(seeders)
+	if err != nil {
+		color.Redf("Error running seeder: %v\n", err)
+	}
 	return nil
 }
 

@@ -1,9 +1,6 @@
 package database
 
 import (
-	"fmt"
-	"reflect"
-
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
@@ -42,18 +39,16 @@ func (s *SeederFacade) GetSeeders() []seeder.Seeder {
 // Call executes the specified seeder(s).
 func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
 	for _, seeder := range seeders {
-		name := fmt.Sprintf("%T", seeder)
-
-		if contains(s.Called, name) {
-			continue
-		}
+		signature := seeder.Signature()
 
 		err := seeder.Run()
 		if err != nil {
 			return err
 		}
 
-		s.Called = append(s.Called, name)
+		if !contains(s.Called, signature) {
+			s.Called = append(s.Called, signature)
+		}
 	}
 	return nil
 }
@@ -70,15 +65,17 @@ func contains(slice []string, str string) bool {
 
 // CallOnce executes the specified seeder(s) only if they haven't been executed before.
 func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
-	seederType := reflect.TypeOf(seeders)
-	seederTypeName := seederType.String()
-	seederPointerTypeName := "*" + seederTypeName
+	for _, item := range seeders {
+		signature := item.Signature()
 
-	for _, called := range s.Called {
-		if called == seederTypeName || called == seederPointerTypeName {
+		if contains(s.Called, signature) {
 			return nil
 		}
-	}
 
-	return s.Call(seeders)
+		err := s.Call([]seeder.Seeder{item})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
