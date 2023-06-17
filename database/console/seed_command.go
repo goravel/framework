@@ -2,7 +2,6 @@ package console
 
 import (
 	"errors"
-	"log"
 
 	color "github.com/gookit/color"
 
@@ -62,15 +61,17 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	color.Greenln("Seeding database.")
 	names := ctx.OptionSlice("seeder")
 	seeders := receiver.GetSeeders(names)
-
+	if seeders == nil {
+		return nil
+	}
+	color.Greenln("Seeding database.")
 	for _, seeder := range seeders {
 		err := seeder.Run()
 		if err != nil {
 			color.Redf("Error running seeder: %v\n", err)
-			continue
+			return nil
 		}
 	}
 
@@ -96,8 +97,8 @@ func (receiver *SeedCommand) GetSeeders(names []string) []seeder.Seeder {
 		class := "seeders." + name
 		seeder := receiver.seeder.GetSeeder(class)
 		if seeder == nil {
-			log.Printf("No seeder of type %s found\n", class)
-			continue
+			color.Redf("No seeder of type %s found\n", class)
+			return nil
 		}
 		seeders = append(seeders, seeder)
 	}
