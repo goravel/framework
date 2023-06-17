@@ -62,7 +62,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	}
 	color.Greenln("Seeding database.")
 
-	err = receiver.seeder.CallOnce(seeders)
+	err = receiver.seeder.Call(seeders)
 	if err != nil {
 		color.Redf("Error running seeder: %v\n", err)
 	}
