@@ -11,7 +11,7 @@ import (
 func init() {
 	validate.Config(func(opt *validate.GlobalOption) {
 		opt.StopOnError = false
-		opt.SkipOnEmpty = false
+		opt.SkipOnEmpty = true
 	})
 }
 

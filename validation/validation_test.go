@@ -888,7 +888,7 @@ func TestRule_Bool(t *testing.T) {
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"bool": "name1 value must be a bool"}, validator.Errors().Get("name1"))
-				assert.Equal(t, map[string]string{"bool": "name2 value must be a bool"}, validator.Errors().Get("name2"))
+				assert.Nil(t, validator.Errors().Get("name2"))
 				assert.Equal(t, map[string]string{"bool": "name3 value must be a bool"}, validator.Errors().Get("name3"))
 			},
 		},
@@ -2064,9 +2064,12 @@ func TestRule_Date(t *testing.T) {
 				validator, err := validation.Make(map[string]any{
 					"name":  "2022-12-25",
 					"name1": "2022/12/25",
+					"name2": "",
 				}, map[string]string{
 					"name":  "required|date",
 					"name1": "required|date",
+					"name2": "date",
+					"name3": "date",
 				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
