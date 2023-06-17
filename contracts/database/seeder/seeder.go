@@ -1,5 +1,6 @@
 package seeder
 
+//go:generate mockery --name=Seeder
 type Facade interface {
 	// Register registers seeders.
 	Register(seeders []Seeder)
@@ -12,11 +13,14 @@ type Facade interface {
 
 	// Call executes the specified seeder(s).
 	Call(seeders []Seeder) error
-	
+
 	// CallOnce executes the specified seeder(s) only once.
 	CallOnce(seeders []Seeder) error
 }
 type Seeder interface {
 	// Run executes the seeder logic.
 	Run() error
+
+	// Signature The name and signature of the seeder.
+	Signature() string
 }

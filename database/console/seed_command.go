@@ -43,12 +43,6 @@ func (receiver *SeedCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "force the operation to run when in production",
 			},
-			&command.StringSliceFlag{
-				Name:    "seeder",
-				Value:   []string{},
-				Aliases: []string{"s"},
-				Usage:   "name of the seeder to run",
-			},
 		},
 	}
 }
@@ -61,7 +55,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	names := ctx.OptionSlice("seeder")
+	names := ctx.Arguments()
 	seeders := receiver.GetSeeders(names)
 	if seeders == nil {
 		return nil
@@ -94,10 +88,9 @@ func (receiver *SeedCommand) GetSeeders(names []string) []seeder.Seeder {
 	}
 	var seeders []seeder.Seeder
 	for _, name := range names {
-		class := "seeders." + name
-		seeder := receiver.seeder.GetSeeder(class)
+		seeder := receiver.seeder.GetSeeder(name)
 		if seeder == nil {
-			color.Redf("No seeder of type %s found\n", class)
+			color.Redf("No seeder of type %s found\n", name)
 			return nil
 		}
 		seeders = append(seeders, seeder)

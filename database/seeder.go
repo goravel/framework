@@ -26,12 +26,12 @@ func (s *SeederFacade) Register(seeders []seeder.Seeder) {
 func (s *SeederFacade) GetSeeder(name string) seeder.Seeder {
 	var seeder seeder.Seeder
 	for _, item := range s.Seeders {
-		itemType := reflect.TypeOf(item).Elem()
-		if itemType.String() == name {
+		if item.Signature() == name {
 			seeder = item
 			break
 		}
 	}
+
 	return seeder
 }
 

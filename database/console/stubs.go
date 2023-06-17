@@ -82,7 +82,13 @@ import (
 type DummySeeder struct {
 	database.Seeder
 }
+
+func (s *DummySeeder) Signature() string {
+	// Signature The name and signature of the seeder.
 	
+	return "DummySeeder"
+}
+
 func (s *DummySeeder) Run() error {
 	// Run executes the seeder logic.
 	
