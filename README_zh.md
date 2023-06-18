@@ -21,31 +21,22 @@ Laravel！
 
 ## 主要功能
 
-- [x] 自定义配置
-- [x] HTTP 服务
-- [x] 用户认证
-- [x] 用户授权
-- [x] 数据库 ORM
-- [x] 数据库迁移
-- [x] 日志
-- [x] 缓存
-- [x] Grpc
-- [x] Artisan 命令行
-- [x] 任务调度
-- [x] 队列
-- [x] 事件系统
-- [x] 文件存储
-- [x] 邮件
-- [x] 表单验证
-- [x] Mock
-- [x] Hash
-- [x] Crypt
-- [x] Carbon
-- [x] 扩展包开发
+|             |                      |                      |                      |
+| ----------  | --------------       | --------------       | --------------       |
+| [自定义配置](https://www.goravel.dev/zh/getting-started/configuration.html)   | [HTTP 服务](https://www.goravel.dev/zh/the-basics/routing.html)  | [用户认证](https://www.goravel.dev/zh/security/authentication.html)  | [用户授权](https://www.goravel.dev/zh/security/authorization.html)  |
+| [数据库 ORM](https://www.goravel.dev/zh/ORM/getting-started.html)   | [数据库迁移](https://www.goravel.dev/zh/ORM/migrations.html)  | [日志](https://www.goravel.dev/zh/the-basics/logging.html)  | [缓存](https://www.goravel.dev/zh/digging-deeper/cache.html)  |
+| [Grpc](https://www.goravel.dev/zh/the-basics/grpc.html)   | [Artisan 命令行](https://www.goravel.dev/zh/digging-deeper/artisan-console.html)  | [任务调度](https://www.goravel.dev/zh/digging-deeper/task-scheduling.html)  | [队列](https://www.goravel.dev/zh/digging-deeper/queues.html)  |
+| [事件系统](https://www.goravel.dev/zh/digging-deeper/event.html)   | [文件存储](https://www.goravel.dev/zh/digging-deeper/filesystem.html)  | [邮件](https://www.goravel.dev/zh/digging-deeper/mail.html)  | [表单验证](https://www.goravel.dev/zh/the-basics/validation.html)  |
+| [Mock](https://www.goravel.dev/zh/digging-deeper/mock.html)   | [Hash](https://www.goravel.dev/zh/security/hashing.html)  | [Crypt](https://www.goravel.dev/zh/security/encryption.html)  | [Carbon](https://www.goravel.dev/zh/digging-deeper/helpers.html)  |
+| [扩展包开发](https://www.goravel.dev/zh/digging-deeper/package-development.html)   |  |   |   |
 
 ## 路线图
 
 [查看详情](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+
+## 优秀扩展包
+
+[查看详情](https://goravel.dev/zh/prologue/packages.html)
 
 ## 贡献者
 
