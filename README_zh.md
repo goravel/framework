@@ -40,6 +40,8 @@ Laravel！
 - [x] Mock
 - [x] Hash
 - [x] Crypt
+- [x] Carbon
+- [x] 扩展包开发
 
 ## 路线图
 
@@ -57,6 +59,7 @@ Laravel！
 <a href="https://github.com/Juneezee" target="_blank"><img src="https://avatars.githubusercontent.com/u/20135478?v=4" width="48" height="48"></a>
 <a href="https://github.com/dragoonchang" target="_blank"><img src="https://avatars.githubusercontent.com/u/1432336?v=4" width="48" height="48"></a>
 <a href="https://github.com/dhanusaputra" target="_blank"><img src="https://avatars.githubusercontent.com/u/35093673?v=4" width="48" height="48"></a>
+<a href="https://github.com/mauri870" target="_blank"><img src="https://avatars.githubusercontent.com/u/10168637?v=4" width="48" height="48"></a>
 
 ## 群组
 
