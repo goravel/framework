@@ -9,6 +9,6 @@ const (
 )
 
 var (
-	Env      = "runtime"
+	Env      = EnvRuntime
 	RootPath string
 )
