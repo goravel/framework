@@ -51,8 +51,11 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 		var result string
 		_, err := fmt.Scanln(&result)
 		if err != nil {
-			return err
+			color.Redln(err.Error())
+
+			return nil
 		}
+
 		if result != "yes" {
 			color.Yellowln("Command Canceled")
 
