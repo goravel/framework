@@ -2,9 +2,8 @@ package file
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -12,12 +11,12 @@ import (
 )
 
 func ClientOriginalExtension(file string) string {
-	return strings.ReplaceAll(path.Ext(file), ".", "")
+	return strings.ReplaceAll(filepath.Ext(file), ".", "")
 }
 
 func Contain(file string, search string) bool {
 	if Exists(file) {
-		data, err := ioutil.ReadFile(file)
+		data, err := os.ReadFile(file)
 		if err != nil {
 			return false
 		}
@@ -28,7 +27,7 @@ func Contain(file string, search string) bool {
 }
 
 func Create(file string, content string) error {
-	if err := os.MkdirAll(path.Dir(file), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -37,7 +36,9 @@ func Create(file string, content string) error {
 		return err
 	}
 	defer func() {
-		f.Close()
+		if closeErr := f.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
 	}()
 
 	if _, err = f.WriteString(content); err != nil {
@@ -55,7 +56,7 @@ func Exists(file string) bool {
 	return true
 }
 
-//Extension Supported types: https://github.com/gabriel-vasile/mimetype/blob/master/supported_mimes.md
+// Extension Supported types: https://github.com/gabriel-vasile/mimetype/blob/master/supported_mimes.md
 func Extension(file string, originalWhenUnknown ...bool) (string, error) {
 	mtype, err := mimetype.DetectFile(file)
 	if err != nil {
@@ -105,14 +106,14 @@ func Remove(file string) bool {
 	}
 
 	if fi.IsDir() {
-		dir, err := ioutil.ReadDir(file)
+		dir, err := os.ReadDir(file)
 
 		if err != nil {
 			return false
 		}
 
 		for _, d := range dir {
-			err := os.RemoveAll(path.Join([]string{file, d.Name()}...))
+			err := os.RemoveAll(filepath.Join([]string{file, d.Name()}...))
 			if err != nil {
 				return false
 			}

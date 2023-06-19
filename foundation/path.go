@@ -3,7 +3,6 @@ package foundation
 import (
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -34,7 +33,7 @@ func getCurrentAbsolutePathByCaller() string {
 	for i := 0; i < 15; i++ {
 		_, filename, _, ok := runtime.Caller(i)
 		if ok && strings.HasSuffix(filename, "main.go") {
-			abPath = path.Dir(filename)
+			abPath = filepath.Dir(filename)
 			break
 		}
 	}
