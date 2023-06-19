@@ -2,7 +2,7 @@ package logger
 
 import (
 	"errors"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -31,7 +31,7 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 		return hook, errors.New("error log path")
 	}
 
-	ext := path.Ext(logPath)
+	ext := filepath.Ext(logPath)
 	logPath = strings.ReplaceAll(logPath, ext, "")
 
 	writer, err := rotatelogs.New(

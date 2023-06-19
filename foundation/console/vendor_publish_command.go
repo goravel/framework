@@ -3,9 +3,7 @@ package console
 import (
 	"errors"
 	"go/build"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -164,7 +162,7 @@ func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, exi
 
 	var sourceFiles []string
 	if sourcePathStat.IsDir() {
-		fileInfos, err := ioutil.ReadDir(sourcePath)
+		fileInfos, err := os.ReadDir(sourcePath)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +175,7 @@ func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, exi
 
 	for _, sourceFile := range sourceFiles {
 		targetFile := targetPath
-		if path.Ext(targetFile) == "" {
+		if filepath.Ext(targetFile) == "" {
 			targetFile = filepath.Join(targetFile, filepath.Base(sourceFile))
 		}
 
@@ -194,7 +192,7 @@ func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, exi
 }
 
 func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
-	content, err := ioutil.ReadFile(sourceFile)
+	content, err := os.ReadFile(sourceFile)
 	if err != nil {
 		return false, err
 	}

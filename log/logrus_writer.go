@@ -2,7 +2,7 @@ package log
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
 
 	"github.com/sirupsen/logrus"
 
@@ -88,7 +88,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 		return nil
 	case log.SingleDriver:
 		if !config.GetBool(channelPath + ".print") {
-			instance.SetOutput(ioutil.Discard)
+			instance.SetOutput(io.Discard)
 		}
 
 		logLogger := logger.NewSingle(config)
@@ -98,7 +98,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 		}
 	case log.DailyDriver:
 		if !config.GetBool(channelPath + ".print") {
-			instance.SetOutput(ioutil.Discard)
+			instance.SetOutput(io.Discard)
 		}
 
 		logLogger := logger.NewDaily(config)
