@@ -1,7 +1,7 @@
 package filesystem
 
 import (
-	"io/ioutil"
+	"io"
 	"mime"
 	"net/http"
 	"os"
@@ -357,7 +357,7 @@ func TestStorage(t *testing.T) {
 				if disk.disk != "local" && disk.disk != "custom" {
 					resp, err := http.Get(url)
 					assert.Nil(t, err)
-					content, err := ioutil.ReadAll(resp.Body)
+					content, err := io.ReadAll(resp.Body)
 					assert.Nil(t, resp.Body.Close())
 					assert.Nil(t, err)
 					assert.Equal(t, "Goravel", string(content), disk.disk)
@@ -375,7 +375,7 @@ func TestStorage(t *testing.T) {
 				if disk.disk != "local" && disk.disk != "custom" {
 					resp, err := http.Get(url)
 					assert.Nil(t, err)
-					content, err := ioutil.ReadAll(resp.Body)
+					content, err := io.ReadAll(resp.Body)
 					assert.Nil(t, resp.Body.Close())
 					assert.Nil(t, err)
 					assert.Equal(t, "Goravel", string(content), disk.disk)

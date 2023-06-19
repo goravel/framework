@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -34,7 +33,7 @@ func NewFile(file string) (*File, error) {
 		config:  ConfigFacade,
 		disk:    ConfigFacade.GetString("filesystems.default"),
 		path:    file,
-		name:    path.Base(file),
+		name:    filepath.Base(file),
 		storage: StorageFacade,
 	}, nil
 }
@@ -44,14 +43,22 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer src.Close()
+	defer func(src multipart.File) {
+		if err = src.Close(); err != nil {
+			panic(err)
+		}
+	}(src)
 
-	tempFileName := fmt.Sprintf("%s_*%s", ConfigFacade.GetString("app.name"), path.Ext(fileHeader.Filename))
-	tempFile, err := ioutil.TempFile(os.TempDir(), tempFileName)
+	tempFileName := fmt.Sprintf("%s_*%s", ConfigFacade.GetString("app.name"), filepath.Ext(fileHeader.Filename))
+	tempFile, err := os.CreateTemp(os.TempDir(), tempFileName)
 	if err != nil {
 		return nil, err
 	}
-	defer tempFile.Close()
+	defer func(tempFile *os.File) {
+		if err = tempFile.Close(); err != nil {
+			panic(err)
+		}
+	}(tempFile)
 
 	_, err = io.Copy(tempFile, src)
 	if err != nil {

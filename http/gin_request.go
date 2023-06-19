@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -352,7 +352,7 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 	contentType := ctx.instance.ContentType()
 	data := make(map[string]any)
 	if contentType == "application/json" {
-		bodyBytes, err := ioutil.ReadAll(request.Body)
+		bodyBytes, err := io.ReadAll(request.Body)
 		_ = request.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("retrieve json error: %v", err)
@@ -362,7 +362,7 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 			return nil, fmt.Errorf("decode json [%v] error: %v", string(bodyBytes), err)
 		}
 
-		request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
 	if contentType == "multipart/form-data" {

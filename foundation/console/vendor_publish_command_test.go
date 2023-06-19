@@ -1,7 +1,6 @@
 package console
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -199,17 +198,27 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 
 	// Create temporary source and target directories for testing
 	sourceData := "test"
-	sourceDir, err := ioutil.TempDir("", "source")
+	sourceDir, err := os.MkdirTemp("", "source")
 	s.Nil(err)
-	defer os.RemoveAll(sourceDir)
+	defer func(path string) {
+		err = os.RemoveAll(path)
+		if err != nil {
+			panic(err)
+		}
+	}(sourceDir)
 
-	targetDir, err := ioutil.TempDir("", "target")
+	targetDir, err := os.MkdirTemp("", "target")
 	s.Nil(err)
-	defer os.RemoveAll(targetDir)
+	defer func(path string) {
+		err = os.RemoveAll(path)
+		if err != nil {
+			panic(err)
+		}
+	}(targetDir)
 
 	// source and target are directory
 	sourceFile := filepath.Join(sourceDir, "test.txt")
-	s.Nil(ioutil.WriteFile(sourceFile, []byte(sourceData), 0644))
+	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
 	targetDir = filepath.Join(targetDir, "test")
 
 	result, err := command.publish(sourceDir, targetDir, false, false)
@@ -217,33 +226,33 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	s.Equal(1, len(result))
 
 	targetFile := filepath.Join(targetDir, "test.txt")
-	content, err := ioutil.ReadFile(targetFile)
+	content, err := os.ReadFile(targetFile)
 	s.Nil(err)
 	s.Equal(sourceData, string(content))
 
 	// source is file and target is directory
 	sourceFile = filepath.Join(sourceDir, "test1.txt")
-	s.Nil(ioutil.WriteFile(sourceFile, []byte(sourceData), 0644))
+	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
 
 	result, err = command.publish(sourceFile, targetDir, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
 	targetFile = filepath.Join(targetDir, "test1.txt")
-	content, err = ioutil.ReadFile(targetFile)
+	content, err = os.ReadFile(targetFile)
 	s.Nil(err)
 	s.Equal("test", string(content))
 
 	// source and target are file
 	sourceFile = filepath.Join(sourceDir, "test2.txt")
-	s.Nil(ioutil.WriteFile(sourceFile, []byte(sourceData), 0644))
+	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
 	targetFile = filepath.Join(targetDir, "test3.txt")
 
 	result, err = command.publish(sourceFile, targetFile, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
-	content, err = ioutil.ReadFile(targetFile)
+	content, err = os.ReadFile(targetFile)
 	s.Nil(err)
 	s.Equal("test", string(content))
 }
@@ -256,7 +265,7 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 	targetFile := "./test_target.txt"
 
 	// Create a test source file
-	err := ioutil.WriteFile(sourceFile, []byte(sourceData), 0644)
+	err := os.WriteFile(sourceFile, []byte(sourceData), 0644)
 	s.Nil(err)
 
 	// Ensure publishFile creates target file when it doesn't exist and 'existing' flag is set
@@ -268,7 +277,7 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 	created, err = command.publishFile(sourceFile, targetFile, false, false)
 	s.Nil(err)
 	s.True(created)
-	content, err := ioutil.ReadFile(targetFile)
+	content, err := os.ReadFile(targetFile)
 	s.Nil(err)
 	s.Equal(string(content), sourceData)
 
@@ -278,13 +287,13 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 
 	// Ensure publishFile overwrites target file when 'force' flag is set
 	newSourceData := "This is a new test file."
-	err = ioutil.WriteFile(sourceFile, []byte(newSourceData), 0644)
+	err = os.WriteFile(sourceFile, []byte(newSourceData), 0644)
 	s.Nil(err)
 
 	created, err = command.publishFile(sourceFile, targetFile, false, true)
 	s.Nil(err)
 	s.True(created)
-	content, err = ioutil.ReadFile(targetFile)
+	content, err = os.ReadFile(targetFile)
 	s.Nil(err)
 	s.Equal(string(content), newSourceData)
 
