@@ -13,7 +13,7 @@ import (
 func TestKeyGenerateCommand(t *testing.T) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.env").Return("local").Twice()
-	mockConfig.On("GetString", "app.key").Return("12345").Twice()
+	mockConfig.On("GetString", "app.key").Return("12345").Once()
 
 	keyGenerateCommand := NewKeyGenerateCommand(mockConfig)
 	mockContext := &consolemocks.Context{}
