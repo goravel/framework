@@ -45,29 +45,29 @@ func NewRoute(config config.Config) *Route {
 func NewDriver(config config.Config, driver string) (route.Engine, error) {
 	switch Driver(driver) {
 	case DriverGin:
-		driver, ok := config.Get("http.drivers.gin.via").(route.Engine)
+		driver, ok := config.Get("http.drivers.gin.route").(route.Engine)
 		if ok {
 			return driver, nil
 		}
 
-		driverCallback, ok := config.Get("http.drivers.gin.via").(func() (route.Engine, error))
+		driverCallback, ok := config.Get("http.drivers.gin.route").(func() (route.Engine, error))
 		if ok {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init gin route driver fail: via must be implement route.Engine or func() (route.Engine, error)")
+		return nil, fmt.Errorf("init gin route driver fail: route must be implement route.Engine or func() (route.Engine, error)")
 	case DriverFiber:
-		driver, ok := config.Get("http.drivers.fiber.via").(route.Engine)
+		driver, ok := config.Get("http.drivers.fiber.route").(route.Engine)
 		if ok {
 			return driver, nil
 		}
 
-		driverCallback, ok := config.Get("http.drivers.fiber.via").(func() (route.Engine, error))
+		driverCallback, ok := config.Get("http.drivers.fiber.route").(func() (route.Engine, error))
 		if ok {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init fiber route driver fail: via must be implement route.Engine or func() (route.Engine, error)")
+		return nil, fmt.Errorf("init fiber route driver fail: route must be implement route.Engine or func() (route.Engine, error)")
 	}
 
 	return nil, fmt.Errorf("invalid driver: %s, only support gin, fiber", driver)

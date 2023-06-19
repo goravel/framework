@@ -45,29 +45,29 @@ func NewContext(config config.Config) *Context {
 func NewDriver(config config.Config, driver string) (http.Context, error) {
 	switch Driver(driver) {
 	case DriverGin:
-		driver, ok := config.Get("http.drivers.gin.via").(http.Context)
+		driver, ok := config.Get("http.drivers.gin.http").(http.Context)
 		if ok {
 			return driver, nil
 		}
 
-		driverCallback, ok := config.Get("http.drivers.gin.via").(func() (http.Context, error))
+		driverCallback, ok := config.Get("http.drivers.gin.http").(func() (http.Context, error))
 		if ok {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init gin http driver fail: via must be implement http.Context or func() (http.Context, error)")
+		return nil, fmt.Errorf("init gin http driver fail: http must be implement http.Context or func() (http.Context, error)")
 	case DriverFiber:
-		driver, ok := config.Get("http.drivers.fiber.via").(http.Context)
+		driver, ok := config.Get("http.drivers.fiber.http").(http.Context)
 		if ok {
 			return driver, nil
 		}
 
-		driverCallback, ok := config.Get("http.drivers.fiber.via").(func() (http.Context, error))
+		driverCallback, ok := config.Get("http.drivers.fiber.http").(func() (http.Context, error))
 		if ok {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init fiber http driver fail: via must be implement http.Context or func() (http.Context, error)")
+		return nil, fmt.Errorf("init fiber http driver fail: http must be implement http.Context or func() (http.Context, error)")
 	}
 
 	return nil, fmt.Errorf("invalid driver: %s, only support gin, fiber", driver)
