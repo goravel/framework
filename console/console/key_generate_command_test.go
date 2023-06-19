@@ -34,7 +34,7 @@ func TestKeyGenerateCommand(t *testing.T) {
 	assert.True(t, len(env) > 10)
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
-	input := "yes\n"
+	input := "no\n"
 
 	reader, writer, err := os.Pipe()
 	assert.Nil(t, err)
