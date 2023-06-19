@@ -84,7 +84,9 @@ func (receiver *KeyGenerateCommand) generateRandomKey() string {
 func (receiver *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
 	content, err := os.ReadFile(".env")
 	if err != nil {
-		return err
+		color.Redln(err.Error())
+
+		return nil
 	}
 
 	newContent := strings.Replace(string(content), "APP_KEY="+receiver.config.GetString("app.key"), "APP_KEY="+key, 1)
