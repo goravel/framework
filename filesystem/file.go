@@ -44,8 +44,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 		return nil, err
 	}
 	defer func(src multipart.File) {
-		err = src.Close()
-		if err != nil {
+		if err = src.Close(); err != nil {
 			panic(err)
 		}
 	}(src)
@@ -56,8 +55,7 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 		return nil, err
 	}
 	defer func(tempFile *os.File) {
-		err = tempFile.Close()
-		if err != nil {
+		if err = tempFile.Close(); err != nil {
 			panic(err)
 		}
 	}(tempFile)
