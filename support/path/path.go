@@ -4,10 +4,6 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-const (
-	AppPath = "/app"
-)
-
 func App(paths ...string) string {
 	finalPath := ""
 	if len(paths) >= 1 {
