@@ -198,30 +198,30 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 
 	// Create temporary source and target directories for testing
 	sourceData := "test"
-	source, err := os.CreateTemp("", "source")
+	sourceDir, err := os.MkdirTemp("", "source")
 	s.Nil(err)
 	defer func(path string) {
 		err = os.RemoveAll(path)
 		if err != nil {
 			panic(err)
 		}
-	}(source.Name())
+	}(sourceDir)
 
-	target, err := os.CreateTemp("", "target")
+	targetDir, err := os.MkdirTemp("", "target")
 	s.Nil(err)
 	defer func(path string) {
 		err = os.RemoveAll(path)
 		if err != nil {
 			panic(err)
 		}
-	}(target.Name())
+	}(targetDir)
 
 	// source and target are directory
-	sourceFile := filepath.Join(source.Name(), "test.txt")
+	sourceFile := filepath.Join(sourceDir, "test.txt")
 	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
-	targetDir := filepath.Join(target.Name(), "test")
+	targetDir = filepath.Join(targetDir, "test")
 
-	result, err := command.publish(source.Name(), targetDir, false, false)
+	result, err := command.publish(sourceDir, targetDir, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
@@ -231,7 +231,7 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	s.Equal(sourceData, string(content))
 
 	// source is file and target is directory
-	sourceFile = filepath.Join(source.Name(), "test1.txt")
+	sourceFile = filepath.Join(sourceDir, "test1.txt")
 	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
 
 	result, err = command.publish(sourceFile, targetDir, false, false)
@@ -244,7 +244,7 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	s.Equal("test", string(content))
 
 	// source and target are file
-	sourceFile = filepath.Join(source.Name(), "test2.txt")
+	sourceFile = filepath.Join(sourceDir, "test2.txt")
 	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
 	targetFile = filepath.Join(targetDir, "test3.txt")
 
