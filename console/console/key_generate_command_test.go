@@ -30,4 +30,6 @@ func TestKeyGenerateCommand(t *testing.T) {
 	assert.True(t, file.Exists(".env"))
 	assert.True(t, file.Contain(".env", "APP_KEY="))
 	assert.True(t, file.Remove(".env"))
+
+	mockConfig.AssertExpectations(t)
 }
