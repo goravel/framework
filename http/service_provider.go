@@ -1,12 +1,17 @@
 package http
 
 import (
+	"github.com/goravel/framework/contracts/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/http/console"
 )
 
 const Binding = "goravel.http"
+
+var (
+	ConfigFacade config.Config
+)
 
 type ServiceProvider struct {
 }
@@ -21,6 +26,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (database *ServiceProvider) Boot(app foundation.Application) {
+	ConfigFacade = app.MakeConfig()
 	database.registerCommands(app)
 }
 

@@ -21,6 +21,11 @@ type Context struct {
 	config config.Config
 }
 
+func Background() http.Context {
+	c := NewContext(ConfigFacade)
+	return c.Context
+}
+
 func NewContext(config config.Config) *Context {
 	defaultDriver := config.GetString("http.driver")
 	if defaultDriver == "" {
