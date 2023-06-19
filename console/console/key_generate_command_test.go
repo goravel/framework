@@ -1,7 +1,6 @@
 package console
 
 import (
-	"io"
 	"os"
 	"testing"
 
@@ -15,7 +14,7 @@ import (
 func TestKeyGenerateCommand(t *testing.T) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.env").Return("local").Twice()
-	mockConfig.On("GetString", "app.key").Return("12345").Twice()
+	mockConfig.On("GetString", "app.key").Return("12345").Once()
 
 	keyGenerateCommand := NewKeyGenerateCommand(mockConfig)
 	mockContext := &consolemocks.Context{}
@@ -34,7 +33,6 @@ func TestKeyGenerateCommand(t *testing.T) {
 	assert.True(t, len(env) > 10)
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
-	input := "no\n"
 
 	reader, writer, err := os.Pipe()
 	assert.Nil(t, err)
@@ -42,10 +40,8 @@ func TestKeyGenerateCommand(t *testing.T) {
 	defer func() { os.Stdin = originalStdin }()
 	os.Stdin = reader
 	go func() {
-		defer func(writer *os.File) {
-			assert.Nil(t, writer.Close())
-		}(writer)
-		_, err = io.WriteString(writer, input)
+		defer writer.Close()
+		_, err = writer.Write([]byte("no\n"))
 		assert.Nil(t, err)
 	}()
 
