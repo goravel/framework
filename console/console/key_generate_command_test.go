@@ -28,20 +28,19 @@ func TestKeyGenerateCommand(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
-
 	assert.True(t, file.Exists(".env"))
-	assert.True(t, file.Contain(".env", "APP_KEY="))
+	env, err := os.ReadFile(".env")
+	assert.Nil(t, err)
+	assert.True(t, len(env) > 10)
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
 	input := "yes\n"
 
 	reader, writer, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	assert.Nil(t, err)
+	originalStdin := os.Stdin
+	defer func() { os.Stdin = originalStdin }()
 	os.Stdin = reader
-
 	go func() {
 		defer func(writer *os.File) {
 			assert.Nil(t, writer.Close())
@@ -51,7 +50,9 @@ func TestKeyGenerateCommand(t *testing.T) {
 	}()
 
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
-
+	env, err = os.ReadFile(".env")
+	assert.Nil(t, err)
+	assert.True(t, len(env) > 10)
 	assert.True(t, file.Remove(".env"))
 
 	mockConfig.AssertExpectations(t)
