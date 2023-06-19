@@ -92,7 +92,7 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 				color.Greenp("Copied Directory ")
 				color.Yellowf("[%s]", sourceFile)
 				color.Greenp(" To ")
-				color.Yellowf("/%s\n", targetFile)
+				color.Yellowf("%s\n", targetFile)
 			}
 		}
 	}
