@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
