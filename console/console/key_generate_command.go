@@ -1,11 +1,11 @@
 package console
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/gookit/color"
-	"github.com/manifoldco/promptui"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -46,15 +46,16 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 		color.Yellowln("**************************************")
 		color.Yellowln("*     Application In Production!     *")
 		color.Yellowln("**************************************")
-		prompt := promptui.Prompt{
-			Label: color.New(color.Green).Sprintf("Do you really wish to run this command?(yes/no)") + "[" + color.New(color.Yellow).Sprintf("no") + "]",
-		}
-		result, err := prompt.Run()
+		color.Println(color.New(color.Green).Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.New(color.Yellow).Sprintf("no") + "]" + ":")
+
+		var result string
+		_, err := fmt.Scanln(&result)
 		if err != nil {
 			color.Redln(err.Error())
 
 			return nil
 		}
+
 		if result != "yes" {
 			color.Yellowln("Command Canceled")
 
