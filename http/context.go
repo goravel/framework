@@ -55,7 +55,7 @@ func NewDriver(config config.Config, driver string) (http.Context, error) {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init gin route driver fail: via must be implement route.Route or func() (route.Route, error)")
+		return nil, fmt.Errorf("init gin http driver fail: via must be implement http.Context or func() (http.Context, error)")
 	case DriverFiber:
 		driver, ok := config.Get("http.drivers.fiber.via").(http.Context)
 		if ok {
@@ -67,7 +67,7 @@ func NewDriver(config config.Config, driver string) (http.Context, error) {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init fiber route driver fail: via must be implement route.Route or func() (route.Route, error)")
+		return nil, fmt.Errorf("init fiber http driver fail: via must be implement http.Context or func() (http.Context, error)")
 	}
 
 	return nil, fmt.Errorf("invalid driver: %s, only support gin, fiber", driver)
