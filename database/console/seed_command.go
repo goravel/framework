@@ -2,6 +2,7 @@ package console
 
 import (
 	"errors"
+	"fmt"
 
 	color "github.com/gookit/color"
 
@@ -49,48 +50,48 @@ func (receiver *SeedCommand) Extend() command.Extend {
 
 // Handle executes the console command.
 func (receiver *SeedCommand) Handle(ctx console.Context) error {
-	err := receiver.ConfirmToProceed(ctx)
-	if err != nil {
+	force := ctx.OptionBool("force")
+	if err := receiver.ConfirmToProceed(force); err != nil {
 		color.Redln(err)
 		return nil
 	}
 
 	names := ctx.Arguments()
-	seeders := receiver.GetSeeders(names)
-	if seeders == nil {
+	seeders, err := receiver.GetSeeders(names)
+	if len(seeders) == 0 || err != nil {
+		color.Redln(err)
 		return nil
 	}
 	color.Greenln("Seeding database.")
 
-	err = receiver.seeder.Call(seeders)
-	if err != nil {
+	if err := receiver.seeder.Call(seeders); err != nil {
 		color.Redf("Error running seeder: %v\n", err)
 	}
+
 	return nil
 }
 
 // ConfirmToProceed determines if the command should proceed based on user confirmation.
-func (receiver *SeedCommand) ConfirmToProceed(ctx console.Context) error {
-	force := ctx.OptionBool("force")
+func (receiver *SeedCommand) ConfirmToProceed(force bool) error {
 	if force || (receiver.config.Env("APP_ENV") != "production") {
 		return nil
 	}
+
 	return errors.New("application in production use --force to run this command")
 }
 
-// GetSeeder returns a seeder instance from the container.
-func (receiver *SeedCommand) GetSeeders(names []string) []seeder.Seeder {
+// GetSeeders returns a seeder instances
+func (receiver *SeedCommand) GetSeeders(names []string) ([]seeder.Seeder, error) {
 	if len(names) == 0 {
-		return receiver.seeder.GetSeeders()
+		return receiver.seeder.GetSeeders(), nil
 	}
 	var seeders []seeder.Seeder
 	for _, name := range names {
 		seeder := receiver.seeder.GetSeeder(name)
 		if seeder == nil {
-			color.Redf("No seeder of type %s found\n", name)
-			return nil
+			return nil, fmt.Errorf("no seeder of %s found", name)
 		}
 		seeders = append(seeders, seeder)
 	}
-	return seeders
+	return seeders, nil
 }

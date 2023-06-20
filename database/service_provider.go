@@ -9,14 +9,14 @@ import (
 	"github.com/goravel/framework/database/console"
 )
 
-const Binding = "goravel.orm"
-const SeederBinding = "goravel.seeder"
+const BindingOrm = "goravel.orm"
+const BindingSeeder = "goravel.seeder"
 
 type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		defaultConnection := config.GetString("database.default")
 
@@ -27,7 +27,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 
 		return orm, nil
 	})
-	app.Singleton(SeederBinding, func(app foundation.Application) (interface{}, error) {
+	app.Singleton(BindingSeeder, func(app foundation.Application) (interface{}, error) {
 		return NewSeederFacade(), nil
 	})
 }

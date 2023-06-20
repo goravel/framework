@@ -74,24 +74,17 @@ func (u *DummyObserver) ForceDeleted(event orm.Event) error {
 
 func (r Stubs) Seeder() string {
 	return `package DummyPackage
-
-import (
-	"github.com/goravel/framework/database"
-)
 	
 type DummySeeder struct {
-	database.Seeder
 }
 
+// Signature The name and signature of the seeder.
 func (s *DummySeeder) Signature() string {
-	// Signature The name and signature of the seeder.
-	
 	return "DummySeeder"
 }
 
+// Run executes the seeder logic.
 func (s *DummySeeder) Run() error {
-	// Run executes the seeder logic.
-	
 	return nil
 }
 `

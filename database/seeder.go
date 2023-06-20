@@ -1,6 +1,7 @@
 package database
 
 import (
+	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
@@ -17,7 +18,18 @@ func NewSeederFacade() seeder.Facade {
 }
 
 func (s *SeederFacade) Register(seeders []seeder.Seeder) {
-	s.Seeders = append(s.Seeders, seeders...)
+	existingSignatures := make(map[string]bool)
+
+	for _, seeder := range seeders {
+		signature := seeder.Signature()
+
+		if existingSignatures[signature] {
+			color.Redf("Duplicate seeder signature: %s in %T\n", signature, seeder)
+		} else {
+			existingSignatures[signature] = true
+			s.Seeders = append(s.Seeders, seeder)
+		}
+	}
 }
 
 func (s *SeederFacade) GetSeeder(name string) seeder.Seeder {
@@ -41,13 +53,28 @@ func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
 	for _, seeder := range seeders {
 		signature := seeder.Signature()
 
-		err := seeder.Run()
-		if err != nil {
+		if err := seeder.Run(); err != nil {
 			return err
 		}
 
 		if !contains(s.Called, signature) {
 			s.Called = append(s.Called, signature)
+		}
+	}
+	return nil
+}
+
+// CallOnce executes the specified seeder(s) only if they haven't been executed before.
+func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
+	for _, item := range seeders {
+		signature := item.Signature()
+
+		if contains(s.Called, signature) {
+			continue
+		}
+
+		if err := s.Call([]seeder.Seeder{item}); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -61,21 +88,4 @@ func contains(slice []string, str string) bool {
 		}
 	}
 	return false
-}
-
-// CallOnce executes the specified seeder(s) only if they haven't been executed before.
-func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
-	for _, item := range seeders {
-		signature := item.Signature()
-
-		if contains(s.Called, signature) {
-			return nil
-		}
-
-		err := s.Call([]seeder.Seeder{item})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

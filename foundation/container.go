@@ -185,7 +185,7 @@ func (c *Container) MakeMail() mailcontract.Mail {
 }
 
 func (c *Container) MakeOrm() ormcontract.Orm {
-	instance, err := c.Make(database.Binding)
+	instance, err := c.Make(database.BindingOrm)
 	if err != nil {
 		log.Fatalln(err)
 		return nil
@@ -254,7 +254,7 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 	return instance.(validationcontract.Validation)
 }
 func (c *Container) MakeSeeder() seerdercontract.Facade {
-	instance, err := c.Make(database.SeederBinding)
+	instance, err := c.Make(database.BindingSeeder)
 	
 	if err != nil {
 		log.Fatalln(err)
