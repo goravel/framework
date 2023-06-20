@@ -337,16 +337,9 @@ func TestQueryTestSuite(t *testing.T) {
 	})
 
 	file.Remove(dbDatabase)
-
-	if err := mysqlPool.Purge(mysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+	assert.Nil(t, mysqlPool.Purge(mysqlResource))
+	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
+	assert.Nil(t, sqlserverPool.Purge(sqlserverResource))
 }
 
 func (s *QueryTestSuite) SetupTest() {}

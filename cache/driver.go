@@ -30,7 +30,7 @@ func (d *DriverImpl) New(store string) (cache.Driver, error) {
 	case "custom":
 		return d.custom(store)
 	default:
-		return nil, fmt.Errorf("not supported cache store: %s\n", store)
+		return nil, fmt.Errorf("invalid driver: %s, only support memory, custom\n", driver)
 	}
 }
 

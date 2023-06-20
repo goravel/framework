@@ -108,7 +108,7 @@ import (
 func DummyCamelName() contracts.DummyCamelName {
 	instance, err := DummyName.App.Make(DummyName.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		return nil
 	}
 
