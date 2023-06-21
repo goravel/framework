@@ -22,7 +22,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
-          echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $env:GITHUB_ENV
+          export DOCKER_CLI_EXPERIMENTAL=enabled
           cat C:\ProgramData\Docker\config\daemon.json
           echo '{"experimental": true}' > C:\ProgramData\Docker\config\daemon.json
           cat C:\ProgramData\Docker\config\daemon.json
