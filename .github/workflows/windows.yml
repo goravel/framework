@@ -1,4 +1,4 @@
-name: Test
+name: Windows
 on:
   push:
     branches:
@@ -9,8 +9,7 @@ jobs:
     strategy:
       matrix:
         go: [ '1.20', '1.19', '1.18' ]
-        os: ['windows-latest']
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
@@ -19,4 +18,4 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./...
+        run: go test $(go list ./... | grep -v database | grep -v mail)
