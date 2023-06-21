@@ -23,10 +23,12 @@ jobs:
         run: |
           echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
           cat C:\ProgramData\Docker\config\daemon.json
-          echo '{\n    "experimental": true\n}' > C:\ProgramData\Docker\config\daemon.json
+          echo '{"experimental": true}' > C:\ProgramData\Docker\config\daemon.json
           cat C:\ProgramData\Docker\config\daemon.json
           Stop-Service -Name Docker
+          Start-Service -Name Docker
           C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
+          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version -f '{{.Server.Experimental}
 #      - uses: actions/checkout@v3
 #      - uses: actions/setup-go@v4
 #        with:
