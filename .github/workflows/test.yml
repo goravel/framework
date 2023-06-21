@@ -9,20 +9,18 @@ jobs:
     strategy:
       matrix:
         go: [ '1.20', '1.19', '1.18' ]
-        os: ['windows-latest']
+        os: ['macos-latest']
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup docker
         if: runner.os != 'Linux'
-        uses: crazy-max/ghaction-setup-docker@master
+        uses: crazy-max/ghaction-setup-docker@v1
       - name: Setup Docker MacOS var
         if: runner.os == 'macOS'
         run: echo "DOCKER_HOST=unix://$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
       - name: Setup Docker Windows var
         if: runner.os == 'Windows'
         run: echo "DOCKER_HOST=docker.for.win.localhost:2375" >> $env:GITHUB_ENV
-      - name: Test
-        run: echo $env:DOCKER_HOST
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
