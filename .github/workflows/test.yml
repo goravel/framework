@@ -12,27 +12,14 @@ jobs:
         os: ['windows-latest']
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup docker
-        if: runner.os != 'Linux'
-        uses: crazy-max/ghaction-setup-docker@v1
       - name: Setup Docker MacOS var
         if: runner.os == 'macOS'
         run: echo "DOCKER_HOST=unix://$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
-      - name: Setup Docker Windows var
-        if: runner.os == 'Windows'
-        run: |
-          echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
-          cat C:\ProgramData\Docker\config\daemon.json
-          echo $'{\n    "experimental": true\n}' | tee C:\ProgramData\Docker\config\daemon.json
-          cat C:\ProgramData\Docker\config\daemon.json
-          net stop docker
-          net start docker
-          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
-#      - uses: actions/checkout@v3
-#      - uses: actions/setup-go@v4
-#        with:
-#          go-version: ${{ matrix.go }}
-#      - name: Install dependencies
-#        run: go mod tidy
-#      - name: Run tests
-#        run: go test ./...
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Install dependencies
+        run: go mod tidy
+      - name: Run tests
+        run: go test ./...
