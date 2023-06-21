@@ -13,8 +13,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Setup docker (missing on MacOS and Windows)
-        if: runner.os != 'ubuntu'
-        uses: crazy-max/ghaction-setup-docker@v1
+        if: runner.os != 'Linux'
+        uses: crazy-max/ghaction-setup-docker@master
+      - name: Setup Docker MacOS var
+        if: runner.os == 'macOS'
+        run: sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
