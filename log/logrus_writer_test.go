@@ -234,7 +234,10 @@ func (s *LogrusTestSuite) TestLogrus() {
 			beforeEach()
 			test.setup()
 			test.assert()
+
 			mockConfig.AssertExpectations(s.T())
+
+			s.Nil(log.instance.Writer().Close())
 			s.Nil(file.Remove("storage"))
 		})
 	}

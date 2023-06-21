@@ -101,7 +101,7 @@ func MimeType(file string) (string, error) {
 }
 
 func Remove(file string) error {
-	fi, err := os.Stat(file)
+	_, err := os.Stat(file)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -110,21 +110,7 @@ func Remove(file string) error {
 		return err
 	}
 
-	if fi.IsDir() {
-		dir, err := os.ReadDir(file)
-		if err != nil {
-			return err
-		}
-
-		for _, d := range dir {
-			if err := os.RemoveAll(filepath.Join([]string{file, d.Name()}...)); err != nil {
-				fmt.Println("hwb------------------", err)
-				return err
-			}
-		}
-	}
-
-	err = os.Remove(file)
+	err = os.RemoveAll(file)
 	fmt.Println("hwb------------------111", err)
 	return err
 }
