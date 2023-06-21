@@ -18,13 +18,13 @@ jobs:
       - name: Setup Docker MacOS var
         if: runner.os == 'macOS'
         run: echo "DOCKER_HOST=unix://$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
-      - name: Setup Docker Windows var
-        if: runner.os == 'Windows'
-        run: |
-          echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
+#      - name: Setup Docker Windows var
+#        if: runner.os == 'Windows'
+#        run: |
+#          echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
 #          echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $env:GITHUB_ENV
-          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe --experimental --run-service
-          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
+#          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe --experimental --run-service
+#          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
