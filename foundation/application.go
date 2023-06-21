@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -170,6 +171,7 @@ func (app *Application) setTimezone() {
 
 func setEnv() {
 	args := os.Args
+	fmt.Println("hwb----", os.Args)
 	if strings.HasSuffix(os.Args[0], ".test") {
 		support.Env = support.EnvTest
 	}

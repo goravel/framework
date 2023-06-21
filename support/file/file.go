@@ -117,7 +117,9 @@ func Remove(file string) error {
 
 		for _, d := range dir {
 			if err := os.RemoveAll(filepath.Join([]string{file, d.Name()}...)); err != nil {
-				return err
+				if !os.IsNotExist(err) {
+					return err
+				}
 			}
 		}
 	}
