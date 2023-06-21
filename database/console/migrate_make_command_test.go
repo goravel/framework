@@ -33,7 +33,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	assert.Nil(t, migrateMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists(up))
 	assert.True(t, file.Exists(down))
-	assert.True(t, file.Remove("database"))
+	assert.Nil(t, file.Remove("database"))
 
 	mockConfig.AssertExpectations(t)
 }

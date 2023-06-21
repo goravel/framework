@@ -99,30 +99,30 @@ func MimeType(file string) (string, error) {
 	return mtype.String(), nil
 }
 
-func Remove(file string) bool {
+func Remove(file string) error {
 	fi, err := os.Stat(file)
 	if err != nil {
-		return false
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return err
 	}
 
 	if fi.IsDir() {
 		dir, err := os.ReadDir(file)
-
 		if err != nil {
-			return false
+			return err
 		}
 
 		for _, d := range dir {
-			err := os.RemoveAll(filepath.Join([]string{file, d.Name()}...))
-			if err != nil {
-				return false
+			if err := os.RemoveAll(filepath.Join([]string{file, d.Name()}...)); err != nil {
+				return err
 			}
 		}
 	}
 
-	err = os.Remove(file)
-
-	return err == nil
+	return os.Remove(file)
 }
 
 func Size(file string) (int64, error) {

@@ -28,5 +28,5 @@ func TestEventMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/policies/User/auth_policy.go", "package User"))
 	assert.True(t, file.Contain("app/policies/User/auth_policy.go", "type AuthPolicy struct {"))
 
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

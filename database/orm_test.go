@@ -6,6 +6,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -41,6 +42,10 @@ var (
 )
 
 func TestOrmSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	mysqlDocker := gorm.NewMysqlDocker()
 	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
@@ -71,7 +76,7 @@ func TestOrmSuite(t *testing.T) {
 
 	suite.Run(t, new(OrmSuite))
 
-	file.Remove("goravel")
+	assert.Nil(t, file.Remove("goravel"))
 
 	if err := mysqlPool.Purge(mysqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
@@ -82,6 +87,7 @@ func TestOrmSuite(t *testing.T) {
 	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
+
 }
 
 func (s *OrmSuite) SetupTest() {

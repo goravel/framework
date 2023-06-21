@@ -33,4 +33,4 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test $(go list ./... | grep -v database | grep -v foundation | grep -v mail | grep -v queue)
+        run: go test ./... -short

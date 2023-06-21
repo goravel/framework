@@ -28,6 +28,10 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	if !file.Exists("../.env") && os.Getenv("MAIL_HOST") == "" {
 		color.Redln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return

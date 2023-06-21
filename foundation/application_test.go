@@ -45,7 +45,7 @@ func TestApplicationTestSuite(t *testing.T) {
 
 	suite.Run(t, new(ApplicationTestSuite))
 
-	assert.True(t, file.Remove(".env"))
+	assert.Nil(t, file.Remove(".env"))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -252,6 +252,10 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 }
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
+	if testing.Short() {
+		s.T().Skip("Skipping tests of using docker")
+	}
+
 	mysqlDocker := gorm.NewMysqlDocker()
 	pool, resource, _, err := mysqlDocker.New()
 	s.Nil(err)

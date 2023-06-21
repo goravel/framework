@@ -49,7 +49,7 @@ func TestKeyGenerateCommand(t *testing.T) {
 	env, err = os.ReadFile(".env")
 	assert.Nil(t, err)
 	assert.True(t, len(env) > 10)
-	assert.True(t, file.Remove(".env"))
+	assert.Nil(t, file.Remove(".env"))
 
 	mockConfig.AssertExpectations(t)
 }
