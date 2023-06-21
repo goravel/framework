@@ -20,9 +20,9 @@ jobs:
         run: echo "DOCKER_HOST=unix://$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
       - name: Setup Docker Windows var
         if: runner.os == 'Windows'
-        run: echo "DOCKER_HOST=docker.for.win.localhost:2375" >> $GITHUB_ENV
+        run: echo "DOCKER_HOST=docker.for.win.localhost:2375" >> $env:GITHUB_ENV
       - name: Test
-        run: echo $DOCKER_HOST
+        run: echo $env:DOCKER_HOST
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
