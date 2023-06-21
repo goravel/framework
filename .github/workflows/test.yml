@@ -25,10 +25,9 @@ jobs:
           cat C:\ProgramData\Docker\config\daemon.json
           echo '{"experimental": true}' > C:\ProgramData\Docker\config\daemon.json
           cat C:\ProgramData\Docker\config\daemon.json
-          Stop-Service -Name Docker
-          Start-Service -Name Docker
+          net stop docker
+          net start docker
           C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
-          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version -f '{{.Server.Experimental}
 #      - uses: actions/checkout@v3
 #      - uses: actions/setup-go@v4
 #        with:
