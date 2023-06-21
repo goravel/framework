@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
           ls C:\hostedtoolcache\windows\docker-stable\24.0.2\x64
-          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\dockerd.exe --experimental --run-service
+          C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\dockerd.exe --experimental
           C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
 #      - uses: actions/checkout@v3
 #      - uses: actions/setup-go@v4
