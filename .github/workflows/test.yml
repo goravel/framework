@@ -21,6 +21,8 @@ jobs:
       - name: Setup Docker Windows var
         if: runner.os == 'Windows'
         run: echo "DOCKER_HOST=docker.for.win.localhost:2375" >> $GITHUB_ENV
+      - name: Test
+        run: echo $DOCKER_HOST
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
