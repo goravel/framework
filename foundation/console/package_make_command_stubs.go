@@ -116,7 +116,7 @@ func DummyCamelName() contracts.DummyCamelName {
 }
 `
 
-	content = strings.ReplaceAll(content, "DummyRoot", r.root)
+	content = strings.ReplaceAll(content, "DummyRoot", strings.ReplaceAll(r.root, `\`, `/`))
 	content = strings.ReplaceAll(content, "DummyName", r.name)
 	content = strings.ReplaceAll(content, "DummyCamelName", str.Case2Camel(r.name))
 
