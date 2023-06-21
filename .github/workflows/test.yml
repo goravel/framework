@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
           cat C:\ProgramData\Docker\config\daemon.json
-          echo $"{\n    "experimental": true\n}" | tee C:\ProgramData\Docker\config\daemon.json
+          echo '{"experimental": true}' > C:\ProgramData\Docker\config\daemon.json
           cat C:\ProgramData\Docker\config\daemon.json
           Stop-Service -Name Docker
           Start-Service -Name Docker
