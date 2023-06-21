@@ -22,9 +22,10 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           echo "DOCKER_HOST=npipe:////./pipe/setup_docker_action" >> $env:GITHUB_ENV
+          cat C:\ProgramData\Docker\config\daemon.json
           echo $'{\n    "experimental": true\n}' | tee C:\ProgramData\Docker\config\daemon.json
           cat C:\ProgramData\Docker\config\daemon.json
-          restart-service *docker*
+          docker-machine restart
           C:\hostedtoolcache\windows\docker-stable\24.0.2\x64\docker.exe version
 #      - uses: actions/checkout@v3
 #      - uses: actions/setup-go@v4
