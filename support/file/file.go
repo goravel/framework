@@ -2,6 +2,7 @@ package file
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -117,14 +118,15 @@ func Remove(file string) error {
 
 		for _, d := range dir {
 			if err := os.RemoveAll(filepath.Join([]string{file, d.Name()}...)); err != nil {
-				if !os.IsNotExist(err) {
-					return err
-				}
+				fmt.Println("hwb------------------", err)
+				return err
 			}
 		}
 	}
 
-	return os.Remove(file)
+	err = os.Remove(file)
+	fmt.Println("hwb------------------111", err)
+	return err
 }
 
 func Size(file string) (int64, error) {

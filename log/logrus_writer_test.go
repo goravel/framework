@@ -84,7 +84,7 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Debug("Goravel")
 			},
 			assert: func() {
-				//assert.False(s.T(), file.Exists(dailyLog))
+				assert.False(s.T(), file.Exists(dailyLog))
 				assert.False(s.T(), file.Exists(singleLog))
 			},
 		},
