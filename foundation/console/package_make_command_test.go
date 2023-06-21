@@ -42,6 +42,8 @@ func TestPackageMakeCommand(t *testing.T) {
 				assert.True(t, file.Exists("packages/sms/config/sms.go"))
 				assert.True(t, file.Exists("packages/sms/contracts/sms.go"))
 				assert.True(t, file.Exists("packages/sms/facades/sms.go"))
+				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
+				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
 
 				file.Remove("packages")
 			},

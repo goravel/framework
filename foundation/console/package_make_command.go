@@ -52,7 +52,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	pkg = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(pkg, "/", "_"), "-", "_"), ".", "_")
-	root := filepath.Join(ctx.Option("root"), pkg)
+	root := ctx.Option("root") + "/" + pkg
 	if file.Exists(root) {
 		color.Redf("Package %s already exists\n", pkg)
 
