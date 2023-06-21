@@ -12,12 +12,15 @@ jobs:
         os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup docker (missing on MacOS and Windows)
+      - name: Setup docker
         if: runner.os != 'Linux'
         uses: crazy-max/ghaction-setup-docker@master
       - name: Setup Docker MacOS var
         if: runner.os == 'macOS'
-        run: sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+        run: echo "DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"" >> $GITHUB_ENV
+      - name: Setup Docker Windows var
+        if: runner.os == 'Windows'
+        run: echo "DOCKER_HOST="docker.for.win.localhost:2375"" >> $GITHUB_ENV
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
