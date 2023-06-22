@@ -25,7 +25,7 @@ type FileTestSuite struct {
 func TestFileTestSuite(t *testing.T) {
 	suite.Run(t, new(FileTestSuite))
 
-	file.Remove("test.txt")
+	assert.Nil(t, file.Remove("test.txt"))
 }
 
 func (s *FileTestSuite) SetupTest() {

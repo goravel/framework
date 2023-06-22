@@ -20,6 +20,10 @@ type Agent struct {
 }
 
 func TestMigrateCommand(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	var (
 		mockConfig *configmock.Config
 		pool       *dockertest.Pool
@@ -169,6 +173,6 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 }
 
 func removeMigrations() {
-	file.Remove("database")
-	file.Remove("goravel")
+	_ = file.Remove("database")
+	_ = file.Remove("goravel")
 }

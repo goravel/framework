@@ -170,7 +170,7 @@ func (app *Application) setTimezone() {
 
 func setEnv() {
 	args := os.Args
-	if strings.HasSuffix(os.Args[0], ".test") {
+	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
 		support.Env = support.EnvTest
 	}
 	if len(args) >= 2 {

@@ -22,5 +22,5 @@ func TestMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "package Goravel"))
 	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "type CleanCache struct"))
 
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }
