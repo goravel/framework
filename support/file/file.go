@@ -2,7 +2,6 @@ package file
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,7 +110,7 @@ func Remove(file string) error {
 	}
 
 	err = os.RemoveAll(file)
-	fmt.Println("hwb------------------111", err)
+
 	return err
 }
 
