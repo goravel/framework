@@ -27,6 +27,5 @@ func TestControllerMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "package User"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "type AuthController struct"))
-
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

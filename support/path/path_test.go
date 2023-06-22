@@ -1,6 +1,7 @@
 package path
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,11 +18,11 @@ func TestApp(t *testing.T) {
 		},
 		"single arg": {
 			a:        []string{"config/goravel.go"},
-			expected: "app/config/goravel.go",
+			expected: filepath.Join("app", "config", "goravel.go"),
 		},
 		"multi arg": {
 			a:        []string{"config/goravel.go", "database/migrations"},
-			expected: "app/config/goravel.go",
+			expected: filepath.Join("app", "config", "goravel.go"),
 		},
 	}
 
@@ -45,11 +46,11 @@ func TestBase(t *testing.T) {
 		},
 		"single arg": {
 			a:        []string{"config/goravel.go"},
-			expected: "config/goravel.go",
+			expected: filepath.Join("config", "goravel.go"),
 		},
 		"multi arg": {
 			a:        []string{"config/goravel.go", "database/migrations"},
-			expected: "config/goravel.go",
+			expected: filepath.Join("config", "goravel.go"),
 		},
 	}
 
@@ -73,11 +74,11 @@ func TestConfig(t *testing.T) {
 		},
 		"single arg": {
 			a:        []string{"goravel.go"},
-			expected: "config/goravel.go",
+			expected: filepath.Join("config", "goravel.go"),
 		},
 		"multi arg": {
 			a:        []string{"goravel.go", "database/migrations"},
-			expected: "config/goravel.go",
+			expected: filepath.Join("config", "goravel.go"),
 		},
 	}
 
@@ -101,11 +102,11 @@ func TestDatabase(t *testing.T) {
 		},
 		"single arg": {
 			a:        []string{"migrations"},
-			expected: "database/migrations",
+			expected: filepath.Join("database", "migrations"),
 		},
 		"multi arg": {
 			a:        []string{"migrations", ".gitignore"},
-			expected: "database/migrations",
+			expected: filepath.Join("database", "migrations"),
 		},
 	}
 
@@ -128,12 +129,12 @@ func TestStorage(t *testing.T) {
 			expected: "storage",
 		},
 		"single arg": {
-			a:        []string{"testfile"},
-			expected: "storage/testfile",
+			a:        []string{"test"},
+			expected: filepath.Join("storage", "test"),
 		},
 		"multi arg": {
-			a:        []string{"testfile", ".gitignore"},
-			expected: "storage/testfile",
+			a:        []string{"test", ".gitignore"},
+			expected: filepath.Join("storage", "test"),
 		},
 	}
 
@@ -156,12 +157,12 @@ func TestPublic(t *testing.T) {
 			expected: "public",
 		},
 		"single arg": {
-			a:        []string{"testfile"},
-			expected: "public/testfile",
+			a:        []string{"test"},
+			expected: filepath.Join("public", "test"),
 		},
 		"multi arg": {
-			a:        []string{"testfile", ".gitignore"},
-			expected: "public/testfile",
+			a:        []string{"test", ".gitignore"},
+			expected: filepath.Join("public", "test"),
 		},
 	}
 

@@ -9,6 +9,10 @@ import (
 )
 
 func TestMysqlDocker(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	docker := NewMysqlDocker()
 	pool, resource, query, err := docker.New()
 
@@ -19,6 +23,10 @@ func TestMysqlDocker(t *testing.T) {
 }
 
 func TestPostgresqlDocker(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	docker := NewPostgresqlDocker()
 	pool, resource, query, err := docker.New()
 
@@ -29,6 +37,10 @@ func TestPostgresqlDocker(t *testing.T) {
 }
 
 func TestSqliteDocker(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	docker := NewSqliteDocker(dbDatabase)
 	pool, resource, db, err := docker.New()
 
@@ -36,11 +48,14 @@ func TestSqliteDocker(t *testing.T) {
 	assert.NotNil(t, resource)
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
-
-	file.Remove("goravel")
+	assert.Nil(t, file.Remove("goravel"))
 }
 
 func TestSqlserverDocker(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	docker := NewSqlserverDocker()
 	pool, resource, db, err := docker.New()
 

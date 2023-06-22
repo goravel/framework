@@ -21,7 +21,7 @@ func TestApplicationTestSuite(t *testing.T) {
 		config: NewApplication(".env"),
 	})
 
-	file.Remove(".env")
+	assert.Nil(t, file.Remove(".env"))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {

@@ -27,6 +27,5 @@ func TestRequestMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/http/requests/User/auth.go"))
 	assert.True(t, file.Contain("app/http/requests/User/auth.go", "package User"))
 	assert.True(t, file.Contain("app/http/requests/User/auth.go", "type Auth struct"))
-
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

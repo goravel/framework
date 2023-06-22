@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestApplicationTestSuite(t *testing.T) {
 
 	suite.Run(t, new(ApplicationTestSuite))
 
-	assert.True(t, file.Remove(".env"))
+	assert.Nil(t, file.Remove(".env"))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -58,7 +59,7 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestPath() {
-	s.Equal("app/goravel.go", s.app.Path("goravel.go"))
+	s.Equal(filepath.Join("app", "goravel.go"), s.app.Path("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestBasePath() {
@@ -66,19 +67,19 @@ func (s *ApplicationTestSuite) TestBasePath() {
 }
 
 func (s *ApplicationTestSuite) TestConfigPath() {
-	s.Equal("config/goravel.go", s.app.ConfigPath("goravel.go"))
+	s.Equal(filepath.Join("config", "goravel.go"), s.app.ConfigPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestDatabasePath() {
-	s.Equal("database/goravel.go", s.app.DatabasePath("goravel.go"))
+	s.Equal(filepath.Join("database", "goravel.go"), s.app.DatabasePath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestStoragePath() {
-	s.Equal("storage/goravel.go", s.app.StoragePath("goravel.go"))
+	s.Equal(filepath.Join("storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {
-	s.Equal("public/goravel.go", s.app.PublicPath("goravel.go"))
+	s.Equal(filepath.Join("public", "goravel.go"), s.app.PublicPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
@@ -252,6 +253,10 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 }
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
+	if testing.Short() {
+		s.T().Skip("Skipping tests of using docker")
+	}
+
 	mysqlDocker := gorm.NewMysqlDocker()
 	pool, resource, _, err := mysqlDocker.New()
 	s.Nil(err)
