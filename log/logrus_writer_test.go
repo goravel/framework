@@ -219,7 +219,7 @@ func (s *LogrusTestSuite) TestLogrus() {
 		})
 	}
 
-	file.Remove("storage")
+	_ = file.Remove("storage")
 }
 
 func TestLogrus_Fatal(t *testing.T) {
@@ -238,7 +238,7 @@ func TestLogrus_Fatal(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
-	file.Remove("storage")
+	_ = file.Remove("storage")
 }
 
 func TestLogrus_Fatalf(t *testing.T) {
@@ -257,7 +257,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
-	file.Remove("storage")
+	_ = file.Remove("storage")
 }
 
 func initMockConfig() *configmock.Config {
