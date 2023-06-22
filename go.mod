@@ -33,7 +33,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	github.com/unrolled/secure v1.13.0
-	github.com/urfave/cli/v2 v2.25.6
+	github.com/urfave/cli/v2 v2.25.7
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.10.0
 	google.golang.org/grpc v1.56.0
