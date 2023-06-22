@@ -17,17 +17,17 @@ func NewPackageMakeCommand() *PackageMakeCommand {
 	return &PackageMakeCommand{}
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *PackageMakeCommand) Signature() string {
 	return "make:package"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *PackageMakeCommand) Description() string {
 	return "Create a package template"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *PackageMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
@@ -42,7 +42,7 @@ func (receiver *PackageMakeCommand) Extend() command.Extend {
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	pkg := ctx.Argument(0)
 	if pkg == "" {
@@ -52,7 +52,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	pkg = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(pkg, "/", "_"), "-", "_"), ".", "_")
-	root := filepath.Join(ctx.Option("root"), pkg)
+	root := ctx.Option("root") + "/" + pkg
 	if file.Exists(root) {
 		color.Redf("Package %s already exists\n", pkg)
 
@@ -76,7 +76,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	color.Green.Printf("Package created successfully: /%s\n", root)
+	color.Green.Printf("Package created successfully: %s\n", root)
 
 	return nil
 }

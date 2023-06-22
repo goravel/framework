@@ -36,6 +36,10 @@ type QueueTestSuite struct {
 }
 
 func TestQueueTestSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	redisPool, redisResource, err := testingdocker.Redis()
 	if err != nil {
 		log.Fatalf("Get redis error: %s", err)

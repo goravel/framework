@@ -42,8 +42,9 @@ func TestPackageMakeCommand(t *testing.T) {
 				assert.True(t, file.Exists("packages/sms/config/sms.go"))
 				assert.True(t, file.Exists("packages/sms/contracts/sms.go"))
 				assert.True(t, file.Exists("packages/sms/facades/sms.go"))
-
-				file.Remove("packages")
+				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
+				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
+				assert.Nil(t, file.Remove("packages"))
 			},
 		},
 		{
@@ -59,8 +60,7 @@ func TestPackageMakeCommand(t *testing.T) {
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/config/github_com_goravel_sms_aws.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/contracts/github_com_goravel_sms_aws.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/facades/github_com_goravel_sms_aws.go"))
-
-				file.Remove("package")
+				assert.Nil(t, file.Remove("package"))
 			},
 		},
 	}

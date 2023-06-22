@@ -13,6 +13,10 @@ import (
 )
 
 func TestMigrateStatusCommand(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	var (
 		mockConfig *configmock.Config
 		pool       *dockertest.Pool

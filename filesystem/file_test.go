@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ type FileTestSuite struct {
 func TestFileTestSuite(t *testing.T) {
 	suite.Run(t, new(FileTestSuite))
 
-	file.Remove("test.txt")
+	assert.Nil(t, file.Remove("test.txt"))
 }
 
 func (s *FileTestSuite) SetupTest() {
@@ -82,9 +82,9 @@ func TestNewFileFromRequest(t *testing.T) {
 	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
 	f, err := c.FormFile("file")
 	assert.Nil(t, err)
-	file, err := NewFileFromRequest(f)
+	requestFile, err := NewFileFromRequest(f)
 	assert.Nil(t, err)
-	assert.Equal(t, ".txt", path.Ext(file.path))
+	assert.Equal(t, ".txt", filepath.Ext(requestFile.path))
 
 	mockConfig.AssertExpectations(t)
 }

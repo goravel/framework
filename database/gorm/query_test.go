@@ -300,6 +300,10 @@ type QueryTestSuite struct {
 }
 
 func TestQueryTestSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
@@ -336,17 +340,10 @@ func TestQueryTestSuite(t *testing.T) {
 		},
 	})
 
-	file.Remove(dbDatabase)
-
-	if err := mysqlPool.Purge(mysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+	assert.Nil(t, file.Remove(dbDatabase))
+	assert.Nil(t, mysqlPool.Purge(mysqlResource))
+	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
+	assert.Nil(t, sqlserverPool.Purge(sqlserverResource))
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -2762,6 +2759,10 @@ func (s *QueryTestSuite) TestDBRaw() {
 }
 
 func TestReadWriteSeparate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	readMysqlDocker := NewMysqlDocker()
 	readMysqlPool, readMysqlResource, readMysqlQuery, err := readMysqlDocker.New()
 	if err != nil {
@@ -2876,8 +2877,8 @@ func TestReadWriteSeparate(t *testing.T) {
 		})
 	}
 
-	file.Remove(dbDatabase)
-	file.Remove(dbDatabase1)
+	assert.Nil(t, file.Remove(dbDatabase))
+	assert.Nil(t, file.Remove(dbDatabase1))
 
 	if err := readMysqlPool.Purge(readMysqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
@@ -2900,6 +2901,10 @@ func TestReadWriteSeparate(t *testing.T) {
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	mysqlDocker := NewMysqlDocker()
 	mysqlPool, mysqlResource, err := mysqlDocker.Init()
 	if err != nil {
@@ -2963,7 +2968,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		})
 	}
 
-	file.Remove(dbDatabase)
+	assert.Nil(t, file.Remove(dbDatabase))
 
 	if err := mysqlPool.Purge(mysqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)

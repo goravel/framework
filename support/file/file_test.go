@@ -23,8 +23,8 @@ func TestCreate(t *testing.T) {
 	assert.Nil(t, Create(path, `goravel`))
 	assert.Equal(t, 1, file.GetLineNum(path))
 	assert.True(t, Exists(path))
-	assert.True(t, Remove(path))
-	assert.True(t, Remove(pwd+"/goravel"))
+	assert.Nil(t, Remove(path))
+	assert.Nil(t, Remove(pwd+"/goravel"))
 }
 
 func TestExists(t *testing.T) {
@@ -54,8 +54,8 @@ func TestRemove(t *testing.T) {
 	path := pwd + "/goravel/goravel.txt"
 	assert.Nil(t, Create(path, `goravel`))
 
-	assert.True(t, Remove(path))
-	assert.True(t, Remove(pwd+"/goravel"))
+	assert.Nil(t, Remove(path))
+	assert.Nil(t, Remove(pwd+"/goravel"))
 }
 
 func TestSize(t *testing.T) {

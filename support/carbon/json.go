@@ -14,10 +14,18 @@ type DateTime struct {
 	Carbon
 }
 
+func NewDateTime(carbon Carbon) DateTime {
+	return DateTime{Carbon: carbon}
+}
+
 // DateTimeMilli defines a DateTimeMilli struct.
 // 定义 DateTimeMilli 结构体
 type DateTimeMilli struct {
 	Carbon
+}
+
+func NewDateTimeMilli(carbon Carbon) DateTimeMilli {
+	return DateTimeMilli{Carbon: carbon}
 }
 
 // DateTimeMicro defines a DateTimeMicro struct.
@@ -26,10 +34,18 @@ type DateTimeMicro struct {
 	Carbon
 }
 
+func NewDateTimeMicro(carbon Carbon) DateTimeMicro {
+	return DateTimeMicro{Carbon: carbon}
+}
+
 // DateTimeNano defines a DateTimeNano struct.
 // 定义 DateTimeNano 结构体
 type DateTimeNano struct {
 	Carbon
+}
+
+func NewDateTimeNano(carbon Carbon) DateTimeNano {
+	return DateTimeNano{Carbon: carbon}
 }
 
 // Date defines a Date struct.
@@ -38,10 +54,18 @@ type Date struct {
 	Carbon
 }
 
+func NewDate(carbon Carbon) Date {
+	return Date{Carbon: carbon}
+}
+
 // DateMilli defines a DateMilli struct.
 // 定义 DateMilli 结构体
 type DateMilli struct {
 	Carbon
+}
+
+func NewDateMilli(carbon Carbon) DateMilli {
+	return DateMilli{Carbon: carbon}
 }
 
 // DateMicro defines a DateMicro struct.
@@ -50,10 +74,18 @@ type DateMicro struct {
 	Carbon
 }
 
+func NewDateMicro(carbon Carbon) DateMicro {
+	return DateMicro{Carbon: carbon}
+}
+
 // DateNano defines a DateNano struct.
 // 定义 DateNano 结构体
 type DateNano struct {
 	Carbon
+}
+
+func NewDateNano(carbon Carbon) DateNano {
+	return DateNano{Carbon: carbon}
 }
 
 // Timestamp defines a Timestamp struct.
@@ -62,10 +94,18 @@ type Timestamp struct {
 	Carbon
 }
 
+func NewTimestamp(carbon Carbon) Timestamp {
+	return Timestamp{Carbon: carbon}
+}
+
 // TimestampMilli defines a TimestampMilli struct.
 // 定义 TimestampMilli 结构体
 type TimestampMilli struct {
 	Carbon
+}
+
+func NewTimestampMilli(carbon Carbon) TimestampMilli {
+	return TimestampMilli{Carbon: carbon}
 }
 
 // TimestampMicro defines a TimestampMicro struct.
@@ -74,10 +114,18 @@ type TimestampMicro struct {
 	Carbon
 }
 
+func NewTimestampMicro(carbon Carbon) TimestampMicro {
+	return TimestampMicro{Carbon: carbon}
+}
+
 // TimestampNano defines a TimestampNano struct.
 // 定义 TimestampNano 结构体
 type TimestampNano struct {
 	Carbon
+}
+
+func NewTimestampNano(carbon Carbon) TimestampNano {
+	return TimestampNano{Carbon: carbon}
 }
 
 // MarshalJSON implements the interface json.Marshal for DateTime struct.
