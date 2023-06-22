@@ -173,6 +173,6 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 }
 
 func removeMigrations() {
-	file.Remove("database")
-	file.Remove("goravel")
+	_ = file.Remove("database")
+	_ = file.Remove("goravel")
 }

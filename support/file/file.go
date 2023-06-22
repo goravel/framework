@@ -109,9 +109,7 @@ func Remove(file string) error {
 		return err
 	}
 
-	err = os.RemoveAll(file)
-
-	return err
+	return os.RemoveAll(file)
 }
 
 func Size(file string) (int64, error) {
