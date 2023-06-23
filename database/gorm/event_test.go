@@ -18,7 +18,7 @@ type TestEventModel struct {
 	ManageAt time.Time
 }
 
-var testNow = time.Now()
+var testNow = time.Now().Add(-1 * time.Second)
 var testEventModel = TestEventModel{Name: "name", Avatar: "avatar", IsAdmin: true, IsManage: 0, AdminAt: testNow, ManageAt: testNow}
 var testQuery = NewQueryWithWithoutEvents(&gorm.DB{
 	Statement: &gorm.Statement{

@@ -39,6 +39,5 @@ func TestDispatchSync(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("test.txt"))
 	assert.True(t, testingfile.GetLineNum("test.txt") == 1)
-	res := file.Remove("test.txt")
-	assert.True(t, res)
+	assert.Nil(t, file.Remove("test.txt"))
 }

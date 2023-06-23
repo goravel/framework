@@ -32,7 +32,7 @@ Laravel！
 
 ## 路线图
 
-[查看详情](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+[查看详情](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen)
 
 ## 优秀扩展包
 

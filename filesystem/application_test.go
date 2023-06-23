@@ -397,11 +397,11 @@ func TestStorage(t *testing.T) {
 		}
 
 		if disk.disk == "local" || disk.disk == "custom" {
-			file.Remove("./storage")
+			assert.Nil(t, file.Remove("./storage"))
 		}
 	}
 
-	file.Remove("test.txt")
+	assert.Nil(t, file.Remove("test.txt"))
 }
 
 func initConfig() *configmocks.Config {
