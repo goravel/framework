@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/gookit/color"
@@ -256,7 +257,7 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 }
 func (c *Container) MakeSeeder() seerdercontract.Facade {
 	instance, err := c.Make(database.BindingSeeder)
-	
+
 	if err != nil {
 		log.Fatalln(err)
 		return nil
