@@ -57,7 +57,7 @@ func (r *GinResponse) Success() httpcontract.ResponseSuccess {
 }
 
 func (r *GinResponse) Status(code int) httpcontract.ResponseStatus {
-	return NewGinStatus(r.instance)
+	return NewGinStatus(r.instance, code)
 }
 
 func (r *GinResponse) Writer() http.ResponseWriter {
@@ -89,8 +89,8 @@ type GinStatus struct {
 	status   int
 }
 
-func NewGinStatus(instance *gin.Context) httpcontract.ResponseSuccess {
-	return &GinStatus{instance, http.StatusOK}
+func NewGinStatus(instance *gin.Context, code int) httpcontract.ResponseSuccess {
+	return &GinStatus{instance, code}
 }
 
 func (r *GinStatus) Data(contentType string, data []byte) {
