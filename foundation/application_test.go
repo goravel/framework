@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"github.com/goravel/framework/translation"
 	"path/filepath"
 	"testing"
 
@@ -363,4 +364,11 @@ func (s *ApplicationTestSuite) TestMakeValidation() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeValidation())
+}
+
+func (s *ApplicationTestSuite) TestMakeTranslation() {
+	serviceProvider := &translation.ServiceProvider{}
+	serviceProvider.Register(s.app)
+
+	s.NotNil(s.app.MakeTranslation())
 }

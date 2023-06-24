@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"fmt"
+	httpcontract "github.com/goravel/framework/contracts/http"
 	"sync"
 
 	"github.com/gookit/color"
@@ -22,12 +23,12 @@ import (
 	foundationcontract "github.com/goravel/framework/contracts/foundation"
 	grpccontract "github.com/goravel/framework/contracts/grpc"
 	hashcontract "github.com/goravel/framework/contracts/hash"
-	httpcontract "github.com/goravel/framework/contracts/http"
 	logcontract "github.com/goravel/framework/contracts/log"
 	mailcontract "github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	routecontract "github.com/goravel/framework/contracts/route"
 	schedulecontract "github.com/goravel/framework/contracts/schedule"
+	translationcontract "github.com/goravel/framework/contracts/translation"
 	validationcontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
@@ -41,6 +42,7 @@ import (
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
+	"github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
 )
 
@@ -112,6 +114,16 @@ func (c *Container) MakeConfig() configcontract.Config {
 	}
 
 	return instance.(configcontract.Config)
+}
+
+func (c *Container) MakeTranslation() translationcontract.Translation {
+	instance, err := c.Make(translation.Binding)
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(translationcontract.Translation)
 }
 
 func (c *Container) MakeCrypt() cryptcontract.Crypt {

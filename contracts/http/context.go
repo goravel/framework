@@ -17,8 +17,16 @@ type ResourceController interface {
 //go:generate mockery --name=Context
 type Context interface {
 	context.Context
+	Translation
 	Context() context.Context
 	WithValue(key string, value any)
 	Request() Request
 	Response() Response
+}
+
+//go:generate mockery --name=Translation
+type Translation interface {
+	Trans(key string, args ...interface{}) string
+	GetLocale() string
+	SetLocale(locale string)
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
 )
 
@@ -44,6 +45,7 @@ type Container interface {
 	MakeSchedule() schedule.Schedule
 	MakeStorage() filesystem.Storage
 	MakeValidation() validation.Validation
+	MakeTranslation() translation.Translation
 	MakeWith(key any, parameters map[string]any) (any, error)
 	Singleton(key any, callback func(app Application) (any, error))
 }

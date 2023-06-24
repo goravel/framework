@@ -20,6 +20,24 @@ type GinContext struct {
 	request  http.Request
 }
 
+func (c *GinContext) Trans(key string, args ...interface{}) string {
+	if len(args) == 2 {
+		return TranslationFacade.Language(args[1].(string)).Get(key, args[0])
+	}
+	return TranslationFacade.Language(c.GetLocale()).Get(key, args...)
+}
+
+func (c *GinContext) GetLocale() string {
+	if c.Value("locale") == nil {
+		return TranslationFacade.GetDefaultLocale()
+	}
+	return c.Value("locale").(string)
+}
+
+func (c *GinContext) SetLocale(locale string) {
+	c.WithValue("locale", locale)
+}
+
 func NewGinContext(ctx *gin.Context) http.Context {
 	return &GinContext{instance: ctx}
 }
