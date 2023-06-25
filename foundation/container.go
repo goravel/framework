@@ -2,6 +2,8 @@ package foundation
 
 import (
 	"fmt"
+	exceptioncontract "github.com/goravel/framework/contracts/exception"
+	"github.com/goravel/framework/foundation/exception"
 	"sync"
 
 	"github.com/gookit/color"
@@ -252,6 +254,16 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 	}
 
 	return instance.(validationcontract.Validation)
+}
+
+func (c *Container) MakeException() exceptioncontract.Exception {
+	instance, err := c.Make(exception.Binding)
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(exceptioncontract.Exception)
 }
 
 func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {

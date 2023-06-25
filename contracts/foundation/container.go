@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/crypt"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/event"
+	"github.com/goravel/framework/contracts/exception"
 	"github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/contracts/grpc"
 	"github.com/goravel/framework/contracts/hash"
@@ -44,6 +45,7 @@ type Container interface {
 	MakeSchedule() schedule.Schedule
 	MakeStorage() filesystem.Storage
 	MakeValidation() validation.Validation
+	MakeException() exception.Exception
 	MakeWith(key any, parameters map[string]any) (any, error)
 	Singleton(key any, callback func(app Application) (any, error))
 }

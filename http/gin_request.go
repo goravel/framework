@@ -294,6 +294,27 @@ func (r *GinRequest) Url() string {
 	return r.instance.Request.RequestURI
 }
 
+func (r *GinRequest) ExpectsJson() bool {
+	return r.Ajax() || r.WantsJson()
+}
+
+func (r *GinRequest) Ajax() bool {
+	return r.instance.GetHeader("X-Requested-With") == "XMLHttpRequest"
+}
+
+func (r *GinRequest) Pjax() bool {
+	return r.instance.GetHeader("X-PJAX") == "true"
+}
+
+func (r *GinRequest) WantsJson() bool {
+	return strings.Contains(r.instance.GetHeader("Accept"), "json")
+}
+
+func (r *GinRequest) AbortWithError(err error) {
+	handleException(r.ctx, err)
+	r.instance.Abort()
+}
+
 func (r *GinRequest) Validate(rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if len(rules) == 0 {
 		return nil, errors.New("rules can't be empty")

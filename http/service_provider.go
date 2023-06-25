@@ -4,6 +4,7 @@ import (
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/exception"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
@@ -17,6 +18,7 @@ var (
 	ConfigFacade      config.Config
 	CacheFacade       cache.Cache
 	LogFacade         log.Log
+	ExceptionFacade   exception.Exception
 	RateLimiterFacade http.RateLimiter
 	ValidationFacade  validation.Validation
 )
@@ -35,6 +37,7 @@ func (http *ServiceProvider) Boot(app foundation.Application) {
 	CacheFacade = app.MakeCache()
 	LogFacade = app.MakeLog()
 	ValidationFacade = app.MakeValidation()
+	ExceptionFacade = app.MakeException()
 
 	http.registerCommands(app)
 }

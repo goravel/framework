@@ -38,6 +38,10 @@ type Request interface {
 	Form(key string, defaultValue ...string) string
 	// DEPRECATED: Use input instead. Retrieve data from the post: /users JSON:{"id": 1}
 	Json(key string, defaultValue ...string) string
+	ExpectsJson() bool
+	WantsJson() bool
+	Ajax() bool
+	Pjax() bool
 
 	// Input Retrieve data by order: json, form, query, route
 	Input(key string, defaultValue ...string) string
@@ -49,6 +53,7 @@ type Request interface {
 
 	AbortWithStatus(code int)
 	AbortWithStatusJson(code int, jsonObj any)
+	AbortWithError(err error)
 
 	Next()
 	Origin() *http.Request
