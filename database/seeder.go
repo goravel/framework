@@ -5,9 +5,6 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
-type Seeder struct {
-}
-
 type SeederFacade struct {
 	Seeders []seeder.Seeder
 	Called  []string
