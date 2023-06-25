@@ -2,10 +2,10 @@ package formatter
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
@@ -38,7 +38,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 	var newLog string
 
 	if len(entry.Data) > 0 {
-		data, _ := json.Marshal(entry.Data)
+		data, _ := sonic.Marshal(entry.Data)
 		newLog = fmt.Sprintf("[%s] %s.%s: %s %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message, string(data))
 	} else {
 		newLog = fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message)
