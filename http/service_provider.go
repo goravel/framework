@@ -24,22 +24,22 @@ var (
 type ServiceProvider struct {
 }
 
-func (database *ServiceProvider) Register(app foundation.Application) {
+func (http *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
 }
 
-func (database *ServiceProvider) Boot(app foundation.Application) {
+func (http *ServiceProvider) Boot(app foundation.Application) {
 	ConfigFacade = app.MakeConfig()
 	CacheFacade = app.MakeCache()
 	LogFacade = app.MakeLog()
 	ValidationFacade = app.MakeValidation()
 
-	database.registerCommands(app)
+	http.registerCommands(app)
 }
 
-func (database *ServiceProvider) registerCommands(app foundation.Application) {
+func (http *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]consolecontract.Command{
 		&console.RequestMakeCommand{},
 		&console.ControllerMakeCommand{},
