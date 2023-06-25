@@ -56,6 +56,10 @@ func (r *GinResponse) Success() httpcontract.ResponseSuccess {
 	return NewGinSuccess(r.instance)
 }
 
+func (r *GinResponse) Status(code int) httpcontract.ResponseStatus {
+	return NewGinStatus(r.instance, code)
+}
+
 func (r *GinResponse) Writer() http.ResponseWriter {
 	return r.instance.Writer
 }
@@ -78,6 +82,27 @@ func (r *GinSuccess) Json(obj any) {
 
 func (r *GinSuccess) String(format string, values ...any) {
 	r.instance.String(http.StatusOK, format, values...)
+}
+
+type GinStatus struct {
+	instance *gin.Context
+	status   int
+}
+
+func NewGinStatus(instance *gin.Context, code int) httpcontract.ResponseSuccess {
+	return &GinStatus{instance, code}
+}
+
+func (r *GinStatus) Data(contentType string, data []byte) {
+	r.instance.Data(r.status, contentType, data)
+}
+
+func (r *GinStatus) Json(obj any) {
+	r.instance.JSON(r.status, obj)
+}
+
+func (r *GinStatus) String(format string, values ...any) {
+	r.instance.String(r.status, format, values...)
 }
 
 func GinResponseMiddleware() httpcontract.Middleware {
