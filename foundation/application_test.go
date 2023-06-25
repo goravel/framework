@@ -1,7 +1,6 @@
 package foundation
 
 import (
-	"github.com/goravel/framework/translation"
 	"path/filepath"
 	"testing"
 
@@ -34,6 +33,7 @@ import (
 	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
 )
 

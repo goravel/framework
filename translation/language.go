@@ -2,14 +2,15 @@ package translation
 
 import (
 	"encoding/json"
-	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/translation"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/translation"
 )
 
 var _ translation.Language = &Language{}

@@ -1,18 +1,19 @@
 package translation
 
 import (
-	"github.com/goravel/framework/contracts/http"
 	"github.com/spf13/cast"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/goravel/framework/contracts/http"
 )
 
 func filePathWalkDir(root string) ([]string, error) {
 	var files []string
 
-	if _, err := os.Stat(root); os.IsNotExist(err) {
+	if !isDirExists(root) {
 		return files, nil
 	}
 
@@ -33,7 +34,7 @@ func filePathWalkDir(root string) ([]string, error) {
 func getDirsInPath(root string) ([]string, error) {
 	var dirs []string
 
-	if _, err := os.Stat(root); os.IsNotExist(err) {
+	if !isDirExists(root) {
 		return dirs, nil
 	}
 
@@ -54,6 +55,14 @@ func getDirsInPath(root string) ([]string, error) {
 	}
 
 	return dirs, nil
+}
+
+func isDirExists(path string) bool {
+	if _, err := os.Stat(path); err != nil && os.IsNotExist(err) {
+		return false
+	}
+
+	return true
 }
 
 func parseTranslation(str string, replace http.Json) string {

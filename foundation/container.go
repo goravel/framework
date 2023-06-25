@@ -2,7 +2,6 @@ package foundation
 
 import (
 	"fmt"
-	httpcontract "github.com/goravel/framework/contracts/http"
 	"sync"
 
 	"github.com/gookit/color"
@@ -23,6 +22,7 @@ import (
 	foundationcontract "github.com/goravel/framework/contracts/foundation"
 	grpccontract "github.com/goravel/framework/contracts/grpc"
 	hashcontract "github.com/goravel/framework/contracts/hash"
+	httpcontract "github.com/goravel/framework/contracts/http"
 	logcontract "github.com/goravel/framework/contracts/log"
 	mailcontract "github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
