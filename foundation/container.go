@@ -2,7 +2,6 @@ package foundation
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/gookit/color"
@@ -259,7 +258,7 @@ func (c *Container) MakeSeeder() seerdercontract.Facade {
 	instance, err := c.Make(database.BindingSeeder)
 
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 

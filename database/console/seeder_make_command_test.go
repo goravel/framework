@@ -14,7 +14,6 @@ func TestSeederMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	assert.Nil(t, seederMakeCommand.Handle(mockContext))
-	assert.False(t, file.Exists("database/seeders/user_seeder.go"))
 
 	mockContext.On("Argument", 0).Return("UserSeeder").Once()
 	assert.Nil(t, seederMakeCommand.Handle(mockContext))

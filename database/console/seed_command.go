@@ -58,14 +58,18 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 
 	names := ctx.Arguments()
 	seeders, err := receiver.GetSeeders(names)
-	if len(seeders) == 0 || err != nil {
+	if err != nil {
 		color.Redln(err)
+		return nil
+	}
+	if len(seeders) == 0 {
+		color.Redln("no seeders found")
 		return nil
 	}
 	color.Greenln("Seeding database.")
 
 	if err := receiver.seeder.Call(seeders); err != nil {
-		color.Redf("Error running seeder: %v\n", err)
+		color.Redf("error running seeder: %v\n", err)
 	}
 
 	return nil

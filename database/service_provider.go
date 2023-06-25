@@ -27,7 +27,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 
 		return orm, nil
 	})
-	app.Singleton(BindingSeeder, func(app foundation.Application) (interface{}, error) {
+	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
 	})
 }
