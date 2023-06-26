@@ -44,6 +44,8 @@ Example [https://github.com/goravel/example](https://github.com/goravel/example)
 
 This project exists thanks to all the people who contribute, to participate in the contribution, please see [Contribution Guide](https://goravel.dev/prologue/contributions.html).
 
+<!--contributor-start-->
+
 <a href="https://github.com/hwbrzzl" target="_blank"><img src="https://avatars.githubusercontent.com/u/24771476?v=4" width="48" height="48"></a>
 <a href="https://github.com/DevHaoZi" target="_blank"><img src="https://avatars.githubusercontent.com/u/115467771?v=4" width="48" height="48"></a>
 <a href="https://github.com/merouanekhalili" target="_blank"><img src="https://avatars.githubusercontent.com/u/1122628?v=4" width="48" height="48"></a>
@@ -53,6 +55,8 @@ This project exists thanks to all the people who contribute, to participate in t
 <a href="https://github.com/dragoonchang" target="_blank"><img src="https://avatars.githubusercontent.com/u/1432336?v=4" width="48" height="48"></a>
 <a href="https://github.com/dhanusaputra" target="_blank"><img src="https://avatars.githubusercontent.com/u/35093673?v=4" width="48" height="48"></a>
 <a href="https://github.com/mauri870" target="_blank"><img src="https://avatars.githubusercontent.com/u/10168637?v=4" width="48" height="48"></a>
+
+<!--contributor-end-->
 
 ## Group
 
