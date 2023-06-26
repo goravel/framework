@@ -71,11 +71,11 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 		color.Redln("no seeders found")
 		return nil
 	}
-	color.Greenln("Seeding database.")
 
 	if err := receiver.seeder.Call(seeders); err != nil {
 		color.Redf("error running seeder: %v\n", err)
 	}
+	color.Greenln("Database seeding completed successfully.")
 
 	return nil
 }
