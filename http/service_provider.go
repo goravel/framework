@@ -34,6 +34,7 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 	ConfigFacade = app.MakeConfig()
 	CacheFacade = app.MakeCache()
 	LogFacade = app.MakeLog()
+	RateLimiterFacade = app.MakeRateLimiter()
 	ValidationFacade = app.MakeValidation()
 
 	database.registerCommands(app)
