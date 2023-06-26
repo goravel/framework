@@ -52,7 +52,7 @@ func (receiver *MigrateRefreshCommand) Extend() command.Extend {
 			},
 			&command.StringSliceFlag{
 				Name:  "seeder",
-				Usage: "specify the seeder to use for seeding the database",
+				Usage: "specify the seeder(s) to use for seeding the database",
 			},
 		},
 	}
@@ -105,9 +105,12 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 	// Seed the database if the "seed" flag is provided
 	if ctx.OptionBool("seed") {
 		seeders := ctx.OptionSlice("seeder")
-		receiver.artisan.Call("db:seed --seeder " + strings.Join(seeders, ","))
+		seederFlag := ""
+		if len(seeders) > 0 {
+			seederFlag = "--seeder " + strings.Join(seeders, ",")
+		}
+		receiver.artisan.Call("db:seed " + seederFlag)
 	}
-
 	color.Greenln("Migration refresh success")
 
 	return nil
