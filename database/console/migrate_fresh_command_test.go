@@ -86,11 +86,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 			test.setup()
 
 			mockContext := &consolemocks.Context{}
-
+            mockArtisan := &consolemocks.Artisan{}
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			migrateFreshCommand := NewMigrateFreshCommand(mockConfig)
+			migrateFreshCommand := NewMigrateFreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateFreshCommand.Handle(mockContext))
 
 			var agent Agent

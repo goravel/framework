@@ -33,7 +33,7 @@ func (s *SeedCommandTestSuite) SetupTest() {
 func (s *SeedCommandTestSuite) TestHandle() {
 	s.mockContext.On("OptionBool", "force").Return(false).Once()
 	s.mockConfig.On("Env", "APP_ENV").Return("development").Once()
-	s.mockContext.On("Arguments").Return([]string{"mock", "mock2"}).Once()
+	s.mockContext.On("OptionSlice", "seeder").Return([]string{"mock", "mock2"}).Once()
 	s.mockFacade.On("GetSeeder", "mock").Return(&MockSeeder{}).Once()
 	s.mockFacade.On("GetSeeder", "mock2").Return(&MockSeeder2{}).Once()
 	s.mockFacade.On("Call", []seeder.Seeder{&MockSeeder{}, &MockSeeder2{}}).Return(nil).Once()

@@ -89,8 +89,8 @@ func TestMigrateRefreshCommand(t *testing.T) {
 
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
-
-			migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig)
+			mockArtisan := &consolemocks.Artisan{}
+			migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
 			var agent Agent
@@ -103,7 +103,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			migrateCommand = NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig)
+			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
 			var agent1 Agent
