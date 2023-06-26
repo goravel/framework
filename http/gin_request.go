@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/validate"
 	"github.com/spf13/cast"
@@ -358,7 +358,7 @@ func getPostData(ctx *GinContext) (map[string]any, error) {
 			return nil, fmt.Errorf("retrieve json error: %v", err)
 		}
 
-		if err := json.Unmarshal(bodyBytes, &data); err != nil {
+		if err := sonic.Unmarshal(bodyBytes, &data); err != nil {
 			return nil, fmt.Errorf("decode json [%v] error: %v", string(bodyBytes), err)
 		}
 
