@@ -44,6 +44,11 @@ func (receiver *SeedCommand) Extend() command.Extend {
 				Aliases: []string{"f"},
 				Usage:   "force the operation to run when in production",
 			},
+			&command.StringSliceFlag{
+				Name:    "seeder",
+				Aliases: []string{"s"},
+				Usage:   "specify the seeder(s) to run",
+			},
 		},
 	}
 }
@@ -56,7 +61,7 @@ func (receiver *SeedCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	names := ctx.Arguments()
+	names := ctx.OptionSlice("seeder")
 	seeders, err := receiver.GetSeeders(names)
 	if err != nil {
 		color.Redln(err)
