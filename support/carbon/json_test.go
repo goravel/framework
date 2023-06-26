@@ -1,10 +1,10 @@
 package carbon
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/bytedance/sonic"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func TestMarshalJSON(t *testing.T) {
 		CreatedAt3:   TimestampMicro{Parse("2025-08-05 13:14:15.999999")},
 		CreatedAt4:   TimestampNano{Parse("2025-08-05 13:14:15.999999999")},
 	}
-	data, err := json.Marshal(&person)
+	data, err := sonic.Marshal(&person)
 	assert.Nil(t, err)
 	fmt.Printf("Person output by json:\n%s\n", data)
 }
@@ -67,7 +67,7 @@ func TestUnmarshalJSON(t *testing.T) {
 		"created_at4": 1596604455999999999
 	}`
 
-	err := json.Unmarshal([]byte(str), &person)
+	err := sonic.Unmarshal([]byte(str), &person)
 	assert.Nil(t, err)
 	fmt.Printf("Json string parse to person:\n%+v\n", person)
 }
@@ -89,7 +89,7 @@ func TestErrorJson(t *testing.T) {
 		"created_at3": 0,
 		"created_at4": 0
 	}`
-	err := json.Unmarshal([]byte(str), &person)
+	err := sonic.Unmarshal([]byte(str), &person)
 	assert.NotNil(t, err)
 	fmt.Printf("Json string parse to person:\n%+v\n", person)
 }

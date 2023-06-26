@@ -3,7 +3,6 @@ package route
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -658,7 +658,7 @@ func TestGinRequest(t *testing.T) {
 			url:    "/headers",
 			setup: func(method, url string) error {
 				gin.Get("/headers", func(ctx httpcontract.Context) {
-					str, _ := json.Marshal(ctx.Request().Headers())
+					str, _ := sonic.Marshal(ctx.Request().Headers())
 					ctx.Response().Success().String(string(str))
 				})
 
