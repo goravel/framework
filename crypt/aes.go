@@ -5,11 +5,11 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io"
 	"os"
 
+	"github.com/bytedance/sonic"
 	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
@@ -61,7 +61,7 @@ func (b *AES) EncryptString(value string) (string, error) {
 
 	ciphertext := aesgcm.Seal(nil, iv, plaintext, nil)
 
-	jsonEncoded, err := json.Marshal(map[string][]byte{
+	jsonEncoded, err := sonic.Marshal(map[string][]byte{
 		"iv":    iv,
 		"value": ciphertext,
 	})
@@ -80,7 +80,7 @@ func (b *AES) DecryptString(payload string) (string, error) {
 	}
 
 	decodeJson := make(map[string][]byte)
-	err = json.Unmarshal(decodePayload, &decodeJson)
+	err = sonic.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
 		return "", err
 	}
