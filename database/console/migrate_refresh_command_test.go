@@ -90,6 +90,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 			mockArtisan := &consolemocks.Artisan{}
+			mockContext.On("OptionBool", "seed").Return(false).Once()
 			migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
@@ -102,7 +103,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 
 			migrateCommand = NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
-
+			mockContext.On("OptionBool", "seed").Return(false).Once()
 			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
