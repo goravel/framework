@@ -34,6 +34,7 @@ func (http *ServiceProvider) Boot(app foundation.Application) {
 	ConfigFacade = app.MakeConfig()
 	CacheFacade = app.MakeCache()
 	LogFacade = app.MakeLog()
+	RateLimiterFacade = app.MakeRateLimiter()
 	ValidationFacade = app.MakeValidation()
 
 	http.registerCommands(app)
