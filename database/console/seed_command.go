@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	color "github.com/gookit/color"
+	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"

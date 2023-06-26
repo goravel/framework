@@ -87,9 +87,9 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		seeders := ctx.OptionSlice("seeder")
 		seederFlag := ""
 		if len(seeders) > 0 {
-			seederFlag = "--seeder " + strings.Join(seeders, ",")
+			seederFlag = " --seeder " + strings.Join(seeders, ",")
 		}
-		receiver.artisan.Call("db:seed " + seederFlag)
+		receiver.artisan.Call("db:seed" + seederFlag)
 	}
 
 	color.Greenln("Migration fresh success")
