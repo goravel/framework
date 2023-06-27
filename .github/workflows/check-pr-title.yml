@@ -8,4 +8,4 @@ jobs:
       - uses: Slashgear/action-check-pr-title@v4.3.0
         with:
           regexp: "^:[a-z_]+: .*"
-          helpMessage: "Your PR title must start with a gitmoji and a space. More info: https://gitmoji.dev/"
+          helpMessage: "Your PR title suggest to start with a gitmoji and a space. More info: https://gitmoji.dev/"
