@@ -1,6 +1,8 @@
 package console
 
 import (
+	"strings"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -12,12 +14,14 @@ import (
 )
 
 type MigrateFreshCommand struct {
-	config config.Config
+	config  config.Config
+	artisan console.Artisan
 }
 
-func NewMigrateFreshCommand(config config.Config) *MigrateFreshCommand {
+func NewMigrateFreshCommand(config config.Config, artisan console.Artisan) *MigrateFreshCommand {
 	return &MigrateFreshCommand{
-		config: config,
+		config:  config,
+		artisan: artisan,
 	}
 }
 
@@ -35,6 +39,16 @@ func (receiver *MigrateFreshCommand) Description() string {
 func (receiver *MigrateFreshCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:  "seed",
+				Usage: "seed the database after running migrations",
+			},
+			&command.StringSliceFlag{
+				Name:  "seeder",
+				Usage: "specify the seeder(s) to use for seeding the database",
+			},
+		},
 	}
 }
 
@@ -66,6 +80,16 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 	if err2 = m2.Up(); err2 != nil && err2 != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err2.Error())
 		return nil
+	}
+
+	// Seed the database if the "seed" flag is provided
+	if ctx.OptionBool("seed") {
+		seeders := ctx.OptionSlice("seeder")
+		seederFlag := ""
+		if len(seeders) > 0 {
+			seederFlag = " --seeder " + strings.Join(seeders, ",")
+		}
+		receiver.artisan.Call("db:seed" + seederFlag)
 	}
 
 	color.Greenln("Migration fresh success")

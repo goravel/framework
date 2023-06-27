@@ -2,6 +2,7 @@ package console
 
 import (
 	"strconv"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
@@ -14,12 +15,14 @@ import (
 )
 
 type MigrateRefreshCommand struct {
-	config config.Config
+	config  config.Config
+	artisan console.Artisan
 }
 
-func NewMigrateRefreshCommand(config config.Config) *MigrateRefreshCommand {
+func NewMigrateRefreshCommand(config config.Config, artisan console.Artisan) *MigrateRefreshCommand {
 	return &MigrateRefreshCommand{
-		config: config,
+		config:  config,
+		artisan: artisan,
 	}
 }
 
@@ -42,6 +45,14 @@ func (receiver *MigrateRefreshCommand) Extend() command.Extend {
 				Name:  "step",
 				Value: "",
 				Usage: "refresh steps",
+			},
+			&command.BoolFlag{
+				Name:  "seed",
+				Usage: "seed the database after running migrations",
+			},
+			&command.StringSliceFlag{
+				Name:  "seeder",
+				Usage: "specify the seeder(s) to use for seeding the database",
 			},
 		},
 	}
@@ -91,6 +102,15 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
+	// Seed the database if the "seed" flag is provided
+	if ctx.OptionBool("seed") {
+		seeders := ctx.OptionSlice("seeder")
+		seederFlag := ""
+		if len(seeders) > 0 {
+			seederFlag = " --seeder " + strings.Join(seeders, ",")
+		}
+		receiver.artisan.Call("db:seed" + seederFlag)
+	}
 	color.Greenln("Migration refresh success")
 
 	return nil

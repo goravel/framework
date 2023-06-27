@@ -86,11 +86,29 @@ func TestMigrateFreshCommand(t *testing.T) {
 			test.setup()
 
 			mockContext := &consolemocks.Context{}
-
+			mockArtisan := &consolemocks.Artisan{}
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
+			mockContext.On("OptionBool", "seed").Return(false).Once()
+			migrateFreshCommand := NewMigrateFreshCommand(mockConfig, mockArtisan)
+			assert.Nil(t, migrateFreshCommand.Handle(mockContext))
 
-			migrateFreshCommand := NewMigrateFreshCommand(mockConfig)
+			// Test MigrateFreshCommand with --seed flag and seeders specified
+			mockContext = &consolemocks.Context{}
+			mockArtisan = &consolemocks.Artisan{}
+			mockContext.On("OptionBool", "seed").Return(true).Once()
+			mockContext.On("OptionSlice", "seeder").Return([]string{"MockSeeder"}).Once()
+			mockArtisan.On("Call", "db:seed --seeder MockSeeder").Return(nil).Once()
+			migrateFreshCommand = NewMigrateFreshCommand(mockConfig, mockArtisan)
+			assert.Nil(t, migrateFreshCommand.Handle(mockContext))
+
+			// Test MigrateFreshCommand with --seed flag and no seeders specified
+			mockContext = &consolemocks.Context{}
+			mockArtisan = &consolemocks.Artisan{}
+			mockContext.On("OptionBool", "seed").Return(true).Once()
+			mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
+			mockArtisan.On("Call", "db:seed").Return(nil).Once()
+			migrateFreshCommand = NewMigrateFreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateFreshCommand.Handle(mockContext))
 
 			var agent Agent
