@@ -7,5 +7,5 @@ jobs:
     steps:
       - uses: Slashgear/action-check-pr-title@v4.3.0
         with:
-          regexp: "^:[a-z_]+: .*"
-          helpMessage: "Your PR title suggest to start with a gitmoji and a space. More info: [https://gitmoji.dev/](https://gitmoji.dev/)"
+          regexp: "^((feat|fix|docs|style|refactor|perf|test|workflow|build|ci|chore|types|wip|release|revert)(\\(.+\\))?: .{1,50}|Merge .{1,50})"
+          helpMessage: "Your PR title is invalid. Please follow the Conventional Commits specification: https://www.conventionalcommits.org/en/v1.0.0/"
