@@ -11,7 +11,7 @@ import (
 
 type SeederTestSuite struct {
 	suite.Suite
-	seederFacade seeder.Facade
+	seederFacade *SeederFacade
 }
 
 func TestSeederTestSuite(t *testing.T) {
@@ -63,7 +63,7 @@ func (s *SeederTestSuite) TestCall() {
 		&MockSeeder2{},
 	}))
 
-	s.Len(s.seederFacade.(*SeederFacade).Called, 2)
+	s.Len(s.seederFacade.Called, 2)
 }
 
 func (s *SeederTestSuite) TestCallOnce() {
@@ -77,7 +77,7 @@ func (s *SeederTestSuite) TestCallOnce() {
 		&MockSeeder2{},
 	}))
 
-	s.Len(s.seederFacade.(*SeederFacade).Called, 2)
+	s.Len(s.seederFacade.Called, 2)
 }
 
 func (s *SeederTestSuite) TestCallOnceWithCalled() {
@@ -86,14 +86,14 @@ func (s *SeederTestSuite) TestCallOnceWithCalled() {
 		&MockSeeder2{},
 	})
 
-	s.seederFacade.(*SeederFacade).Called = []string{"mock"}
+	s.seederFacade.Called = []string{"mock"}
 	s.NoError(s.seederFacade.CallOnce([]seeder.Seeder{
 		&MockSeeder2{},
 	}))
 
-	log.Println(s.seederFacade.(*SeederFacade).Called)
+	log.Println(s.seederFacade.Called)
 
-	s.Len(s.seederFacade.(*SeederFacade).Called, 2)
+	s.Len(s.seederFacade.Called, 2)
 }
 
 type MockSeeder struct{}

@@ -10,7 +10,7 @@ type SeederFacade struct {
 	Called  []string
 }
 
-func NewSeederFacade() seeder.Facade {
+func NewSeederFacade() *SeederFacade {
 	return &SeederFacade{}
 }
 
