@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'Review') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, '🚀 Review Ready') }}
     runs-on: ubuntu-latest
     steps:
       - uses: anc95/ChatGPT-CodeReview@main
