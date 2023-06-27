@@ -2,7 +2,7 @@ name: Check PR Title
 on:
   pull_request:
 jobs:
-  pr-title:
+  check-pr-title:
     runs-on: ubuntu-latest
     steps:
       - uses: Slashgear/action-check-pr-title@v4.3.0
