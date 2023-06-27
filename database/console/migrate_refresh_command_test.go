@@ -84,13 +84,16 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 
+			mockArtisan := &consolemocks.Artisan{}
 			mockContext := &consolemocks.Context{}
 			mockContext.On("Option", "step").Return("").Once()
 
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig)
+			// Test MigrateRefreshCommand without --seed flag
+			mockContext.On("OptionBool", "seed").Return(false).Once()
+			migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
 			var agent Agent
@@ -98,12 +101,29 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			assert.Nil(t, err)
 			assert.True(t, agent.ID > 0)
 
+			mockArtisan = &consolemocks.Artisan{}
+			mockContext = &consolemocks.Context{}
 			mockContext.On("Option", "step").Return("5").Once()
 
 			migrateCommand = NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig)
+			// Test MigrateRefreshCommand with --seed flag and --seeder specified
+			mockContext.On("OptionBool", "seed").Return(true).Once()
+			mockContext.On("OptionSlice", "seeder").Return([]string{"UserSeeder"}).Once()
+			mockArtisan.On("Call", "db:seed --seeder UserSeeder").Return(nil).Once()
+			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
+			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
+
+			mockArtisan = &consolemocks.Artisan{}
+			mockContext = &consolemocks.Context{}
+
+			// Test MigrateRefreshCommand with --seed flag and no --seeder specified
+			mockContext.On("Option", "step").Return("").Once()
+			mockContext.On("OptionBool", "seed").Return(true).Once()
+			mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
+			mockArtisan.On("Call", "db:seed").Return(nil).Once()
+			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
 			var agent1 Agent

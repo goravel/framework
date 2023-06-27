@@ -33,6 +33,7 @@ import (
 	mock "github.com/stretchr/testify/mock"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/seeder"
 
 	queue "github.com/goravel/framework/contracts/queue"
 
@@ -423,6 +424,22 @@ func (_m *Application) MakeValidation() validation.Validation {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(validation.Validation)
+		}
+	}
+
+	return r0
+}
+
+// MakeSeeder provides a mock function with given fields:
+func (_m *Application) MakeSeeder() seeder.Facade {
+	ret := _m.Called()
+
+	var r0 seeder.Facade
+	if rf, ok := ret.Get(0).(func() seeder.Facade); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(seeder.Facade)
 		}
 	}
 
