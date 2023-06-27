@@ -17,6 +17,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	cryptcontract "github.com/goravel/framework/contracts/crypt"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	seerdercontract "github.com/goravel/framework/contracts/database/seeder"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
 	foundationcontract "github.com/goravel/framework/contracts/foundation"
@@ -185,7 +186,7 @@ func (c *Container) MakeMail() mailcontract.Mail {
 }
 
 func (c *Container) MakeOrm() ormcontract.Orm {
-	instance, err := c.Make(database.Binding)
+	instance, err := c.Make(database.BindingOrm)
 	if err != nil {
 		color.Redln(err)
 		return nil
@@ -252,6 +253,16 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 	}
 
 	return instance.(validationcontract.Validation)
+}
+func (c *Container) MakeSeeder() seerdercontract.Facade {
+	instance, err := c.Make(database.BindingSeeder)
+
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(seerdercontract.Facade)
 }
 
 func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {

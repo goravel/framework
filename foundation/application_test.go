@@ -131,7 +131,7 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
 		return &cachemocks.Cache{}, nil
 	})
-	s.app.Singleton(database.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(database.BindingOrm, func(app foundation.Application) (any, error) {
 		return &ormmocks.Orm{}, nil
 	})
 
