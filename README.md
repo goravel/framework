@@ -1,6 +1,10 @@
-<p align="center">
+<div align="center">
 
 <img src="logo.png" width="300" alt="Logo">
+
+</div>
+
+<div align="center">
 
 [![Doc](https://pkg.go.dev/badge/github.com/goravel/framework)](https://pkg.go.dev/github.com/goravel/framework)
 [![Go](https://img.shields.io/github/go-mod/go-version/goravel/framework)](https://golang.org/)
@@ -10,7 +14,7 @@
 [![Codecov](https://codecov.io/gh/goravel/framework/branch/master/graph/badge.svg)](https://codecov.io/gh/goravel/framework)
 ![License](https://img.shields.io/github/license/goravel/framework)
 
-</p>
+</div>
 
 English | [中文](./README_zh.md)
 
