@@ -147,12 +147,12 @@ func (r *Store) Put(key string, value any, seconds time.Duration) error {
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
-func (r *Store) Remember(key string, ttl time.Duration, callback func() any) (any, error) {
+func (r *Store) Remember(key string, ttl time.Duration, callback func() (any, error)) (any, error) {
 	return "", nil
 }
 
 //RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
-func (r *Store) RememberForever(key string, callback func() any) (any, error) {
+func (r *Store) RememberForever(key string, callback func() (any, error)) (any, error) {
 	return "", nil
 }
 
