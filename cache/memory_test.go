@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -332,36 +333,48 @@ func (s *MemoryTestSuite) TestPut() {
 
 func (s *MemoryTestSuite) TestRemember() {
 	s.Nil(s.memory.Put("name", "Goravel", 1*time.Second))
-	value, err := s.memory.Remember("name", 1*time.Second, func() any {
-		return "World"
+	value, err := s.memory.Remember("name", 1*time.Second, func() (any, error) {
+		return "World", nil
 	})
 	s.Nil(err)
 	s.Equal("Goravel", value)
 
-	value, err = s.memory.Remember("name1", 1*time.Second, func() any {
-		return "World1"
+	value, err = s.memory.Remember("name1", 1*time.Second, func() (any, error) {
+		return "World1", nil
 	})
 	s.Nil(err)
 	s.Equal("World1", value)
 	time.Sleep(2 * time.Second)
 	s.False(s.memory.Has("name1"))
 	s.True(s.memory.Flush())
+
+	value, err = s.memory.Remember("name2", 1*time.Second, func() (any, error) {
+		return nil, errors.New("error")
+	})
+	s.EqualError(err, "error")
+	s.Nil(value)
 }
 
 func (s *MemoryTestSuite) TestRememberForever() {
 	s.Nil(s.memory.Put("name", "Goravel", 1*time.Second))
-	value, err := s.memory.RememberForever("name", func() any {
-		return "World"
+	value, err := s.memory.RememberForever("name", func() (any, error) {
+		return "World", nil
 	})
 	s.Nil(err)
 	s.Equal("Goravel", value)
 
-	value, err = s.memory.RememberForever("name1", func() any {
-		return "World1"
+	value, err = s.memory.RememberForever("name1", func() (any, error) {
+		return "World1", nil
 	})
 	s.Nil(err)
 	s.Equal("World1", value)
 	s.True(s.memory.Flush())
+
+	value, err = s.memory.RememberForever("name2", func() (any, error) {
+		return nil, errors.New("error")
+	})
+	s.EqualError(err, "error")
+	s.Nil(value)
 }
 
 func getMemoryStore() (*Memory, error) {

@@ -37,9 +37,9 @@ type Driver interface {
 	//Pull Retrieve an item from the cache and delete it.
 	Pull(key string, def ...any) any
 	//Remember Get an item from the cache, or execute the given Closure and store the result.
-	Remember(key string, ttl time.Duration, callback func() any) (any, error)
+	Remember(key string, ttl time.Duration, callback func() (any, error)) (any, error)
 	//RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
-	RememberForever(key string, callback func() any) (any, error)
+	RememberForever(key string, callback func() (any, error)) (any, error)
 	WithContext(ctx context.Context) Driver
 }
 
