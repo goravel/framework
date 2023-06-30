@@ -19,6 +19,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	logmocks "github.com/goravel/framework/contracts/log/mocks"
 	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
+	contractsroute "github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
 	"github.com/goravel/framework/database/gorm"
@@ -311,9 +312,14 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 	s.NotNil(s.app.MakeRateLimiter())
 }
 
+type Engine struct {
+	contractsroute.Engine
+}
+
 func (s *ApplicationTestSuite) TestMakeRoute() {
 	mockConfig := &configmocks.Config{}
-	mockConfig.On("GetBool", "app.debug").Return(false).Once()
+	mockConfig.On("GetString", "http.driver").Return("gin").Once()
+	mockConfig.On("Get", "http.drivers.gin.route").Return(&Engine{}).Once()
 
 	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
