@@ -27,6 +27,5 @@ func TestEventMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/events/Goravel/event.go"))
 	assert.True(t, file.Contain("app/events/Goravel/event.go", "package Goravel"))
 	assert.True(t, file.Contain("app/events/Goravel/event.go", "type Event struct {"))
-
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

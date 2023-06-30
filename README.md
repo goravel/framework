@@ -1,4 +1,16 @@
-<p align="center"><img src="logo.png" width="300"></p>
+<div align="center">
+
+<img src="https://www.goravel.dev/logo.png" width="300" alt="Logo">
+
+[![Doc](https://pkg.go.dev/badge/github.com/goravel/framework)](https://pkg.go.dev/github.com/goravel/framework)
+[![Go](https://img.shields.io/github/go-mod/go-version/goravel/framework)](https://go.dev/)
+[![Release](https://img.shields.io/github/release/goravel/framework.svg)](https://github.com/goravel/framework/releases)
+[![Test](https://github.com/goravel/framework/actions/workflows/test.yml/badge.svg)](https://github.com/goravel/framework/actions)
+[![Report Card](https://goreportcard.com/badge/github.com/goravel/framework)](https://goreportcard.com/report/github.com/goravel/framework)
+[![Codecov](https://codecov.io/gh/goravel/framework/branch/master/graph/badge.svg)](https://codecov.io/gh/goravel/framework)
+![License](https://img.shields.io/github/license/goravel/framework)
+
+</div>
 
 English | [中文](./README_zh.md)
 
@@ -34,7 +46,7 @@ Example [https://github.com/goravel/example](https://github.com/goravel/example)
 
 ## Roadmap
 
-[For Detail](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+[For Detail](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen)
 
 ## Excellent Extend Packages
 

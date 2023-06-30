@@ -65,7 +65,7 @@ func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
 		return nil, fmt.Errorf("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)", disk)
 	}
 
-	return nil, fmt.Errorf("invalid driver: %s, only support local, s3, oss, cos, minio, custom", driver)
+	return nil, fmt.Errorf("invalid driver: %s, only support local, custom", driver)
 }
 
 func (r *Storage) Disk(disk string) filesystem.Driver {

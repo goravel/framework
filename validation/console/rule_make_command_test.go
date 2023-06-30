@@ -27,5 +27,5 @@ func TestRuleMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/rules/User/phone.go"))
 	assert.True(t, file.Contain("app/rules/User/phone.go", "package User"))
 	assert.True(t, file.Contain("app/rules/User/phone.go", "type Phone struct"))
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

@@ -71,7 +71,7 @@ func (a *Auth) User(ctx http.Context, user any) error {
 	if auth[a.guard].Token == "" {
 		return ErrorTokenExpired
 	}
-	if err := a.orm.Query().Find(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[a.guard].Claims.Key}); err != nil {
+	if err := a.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[a.guard].Claims.Key}); err != nil {
 		return err
 	}
 

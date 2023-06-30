@@ -27,6 +27,5 @@ func TestListenerMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/listeners/Goravel/listen.go"))
 	assert.True(t, file.Contain("app/listeners/Goravel/listen.go", "package Goravel"))
 	assert.True(t, file.Contain("app/listeners/Goravel/listen.go", "type Listen struct {"))
-
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

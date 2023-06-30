@@ -27,6 +27,5 @@ func TestJobMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/jobs/Goravel/job.go"))
 	assert.True(t, file.Contain("app/jobs/Goravel/job.go", "package Goravel"))
 	assert.True(t, file.Contain("app/jobs/Goravel/job.go", "type Job struct"))
-
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }

@@ -71,3 +71,21 @@ func (u *DummyObserver) ForceDeleted(event orm.Event) error {
 }
 `
 }
+
+func (r Stubs) Seeder() string {
+	return `package DummyPackage
+	
+type DummySeeder struct {
+}
+
+// Signature The name and signature of the seeder.
+func (s *DummySeeder) Signature() string {
+	return "DummySeeder"
+}
+
+// Run executes the seeder logic.
+func (s *DummySeeder) Run() error {
+	return nil
+}
+`
+}

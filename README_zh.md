@@ -1,4 +1,16 @@
-<p align="center"><img src="logo.png" width="300"></p>
+<div align="center">
+
+<img src="https://www.goravel.dev/logo.png" width="300" alt="Logo">
+
+[![Doc](https://pkg.go.dev/badge/github.com/goravel/framework)](https://pkg.go.dev/github.com/goravel/framework)
+[![Go](https://img.shields.io/github/go-mod/go-version/goravel/framework)](https://go.dev/)
+[![Release](https://img.shields.io/github/release/goravel/framework.svg)](https://github.com/goravel/framework/releases)
+[![Test](https://github.com/goravel/framework/actions/workflows/test.yml/badge.svg)](https://github.com/goravel/framework/actions)
+[![Report Card](https://goreportcard.com/badge/github.com/goravel/framework)](https://goreportcard.com/report/github.com/goravel/framework)
+[![Codecov](https://codecov.io/gh/goravel/framework/branch/master/graph/badge.svg)](https://codecov.io/gh/goravel/framework)
+![License](https://img.shields.io/github/license/goravel/framework)
+
+</div>
 
 [English](./README.md) | 中文
 
@@ -32,7 +44,7 @@ Laravel！
 
 ## 路线图
 
-[查看详情](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+[查看详情](https://github.com/goravel/goravel/issues?q=is%3Aissue+is%3Aopen)
 
 ## 优秀扩展包
 

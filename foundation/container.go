@@ -2,8 +2,9 @@ package foundation
 
 import (
 	"fmt"
-	"log"
 	"sync"
+
+	"github.com/gookit/color"
 
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
@@ -16,6 +17,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	cryptcontract "github.com/goravel/framework/contracts/crypt"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	seerdercontract "github.com/goravel/framework/contracts/database/seeder"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
 	foundationcontract "github.com/goravel/framework/contracts/foundation"
@@ -76,7 +78,7 @@ func (c *Container) Make(key any) (any, error) {
 func (c *Container) MakeArtisan() consolecontract.Artisan {
 	instance, err := c.Make(console.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -86,7 +88,7 @@ func (c *Container) MakeArtisan() consolecontract.Artisan {
 func (c *Container) MakeAuth() authcontract.Auth {
 	instance, err := c.Make(auth.BindingAuth)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -96,7 +98,7 @@ func (c *Container) MakeAuth() authcontract.Auth {
 func (c *Container) MakeCache() cachecontract.Cache {
 	instance, err := c.Make(cache.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -106,7 +108,7 @@ func (c *Container) MakeCache() cachecontract.Cache {
 func (c *Container) MakeConfig() configcontract.Config {
 	instance, err := c.Make(config.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -116,7 +118,7 @@ func (c *Container) MakeConfig() configcontract.Config {
 func (c *Container) MakeCrypt() cryptcontract.Crypt {
 	instance, err := c.Make(crypt.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -126,7 +128,7 @@ func (c *Container) MakeCrypt() cryptcontract.Crypt {
 func (c *Container) MakeEvent() eventcontract.Instance {
 	instance, err := c.Make(event.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -134,9 +136,9 @@ func (c *Container) MakeEvent() eventcontract.Instance {
 }
 
 func (c *Container) MakeGate() accesscontract.Gate {
-	instance, err := c.Make(auth.BindingAuth)
+	instance, err := c.Make(auth.BindingGate)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -146,7 +148,7 @@ func (c *Container) MakeGate() accesscontract.Gate {
 func (c *Container) MakeGrpc() grpccontract.Grpc {
 	instance, err := c.Make(grpc.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -156,7 +158,7 @@ func (c *Container) MakeGrpc() grpccontract.Grpc {
 func (c *Container) MakeHash() hashcontract.Hash {
 	instance, err := c.Make(hash.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -166,7 +168,7 @@ func (c *Container) MakeHash() hashcontract.Hash {
 func (c *Container) MakeLog() logcontract.Log {
 	instance, err := c.Make(goravellog.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -176,7 +178,7 @@ func (c *Container) MakeLog() logcontract.Log {
 func (c *Container) MakeMail() mailcontract.Mail {
 	instance, err := c.Make(mail.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -184,9 +186,9 @@ func (c *Container) MakeMail() mailcontract.Mail {
 }
 
 func (c *Container) MakeOrm() ormcontract.Orm {
-	instance, err := c.Make(database.Binding)
+	instance, err := c.Make(database.BindingOrm)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -196,7 +198,7 @@ func (c *Container) MakeOrm() ormcontract.Orm {
 func (c *Container) MakeQueue() queuecontract.Queue {
 	instance, err := c.Make(queue.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -206,7 +208,7 @@ func (c *Container) MakeQueue() queuecontract.Queue {
 func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
 	instance, err := c.Make(http.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -216,7 +218,7 @@ func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
 func (c *Container) MakeRoute() routecontract.Engine {
 	instance, err := c.Make(route.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -226,7 +228,7 @@ func (c *Container) MakeRoute() routecontract.Engine {
 func (c *Container) MakeSchedule() schedulecontract.Schedule {
 	instance, err := c.Make(schedule.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -236,7 +238,7 @@ func (c *Container) MakeSchedule() schedulecontract.Schedule {
 func (c *Container) MakeStorage() filesystemcontract.Storage {
 	instance, err := c.Make(filesystem.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
@@ -246,11 +248,21 @@ func (c *Container) MakeStorage() filesystemcontract.Storage {
 func (c *Container) MakeValidation() validationcontract.Validation {
 	instance, err := c.Make(validation.Binding)
 	if err != nil {
-		log.Fatalln(err)
+		color.Redln(err)
 		return nil
 	}
 
 	return instance.(validationcontract.Validation)
+}
+func (c *Container) MakeSeeder() seerdercontract.Facade {
+	instance, err := c.Make(database.BindingSeeder)
+
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(seerdercontract.Facade)
 }
 
 func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {

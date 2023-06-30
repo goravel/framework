@@ -27,6 +27,5 @@ func TestMiddlewareMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/http/middleware/User/auth.go"))
 	assert.True(t, file.Contain("app/http/middleware/User/auth.go", "package User"))
 	assert.True(t, file.Contain("app/http/middleware/User/auth.go", "func Auth() http.Middleware {"))
-
-	assert.True(t, file.Remove("app"))
+	assert.Nil(t, file.Remove("app"))
 }
