@@ -39,7 +39,7 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 		}
 		if strings.Contains(t.Field(i).Tag.Get("gorm"), "primaryKey") {
 			id := v.Field(i).Interface()
-			if cast.ToString(id) == "" || cast.ToInt(id) == 0 {
+			if cast.ToString(id) == "" && cast.ToInt(id) == 0 {
 				return nil
 			}
 
