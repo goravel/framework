@@ -89,3 +89,16 @@ func (s *DummySeeder) Run() error {
 }
 `
 }
+
+func (r Stubs) Factory() string {
+	return `package DummyPackage
+
+type DummyFactory struct {
+}
+
+// Defination Define the model's default state.
+func (f *DummyFactory) Defination() {
+
+}
+`
+}

@@ -52,5 +52,6 @@ func (database *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewObserverMakeCommand(),
 		console.NewSeedCommand(config, seeder),
 		console.NewSeederMakeCommand(),
+		console.NewFactoryMakeCommand(),
 	})
 }
