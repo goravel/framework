@@ -15,6 +15,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/golang-module/carbon/v2 v2.2.3
 	github.com/golang/protobuf v1.5.3
+	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/gookit/color v1.5.3
 	github.com/gookit/validate v1.4.6
@@ -90,7 +91,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/s2a-go v0.1.3 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
 	github.com/gookit/filter v1.1.4 // indirect
