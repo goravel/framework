@@ -23,4 +23,7 @@ func TestUnimplementedServiceProvider(t *testing.T) {
 
 	assert.False(t, ok1)
 	assert.True(t, ok2)
+
+	sp2.Register(nil)
+	sp2.Boot(nil)
 }
