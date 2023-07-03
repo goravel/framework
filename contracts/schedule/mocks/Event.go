@@ -342,6 +342,20 @@ func (_m *Event) GetDelayIfStillRunning() bool {
 	return r0
 }
 
+// GetName provides a mock function with given fields:
+func (_m *Event) GetName() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GetSkipIfStillRunning provides a mock function with given fields:
 func (_m *Event) GetSkipIfStillRunning() bool {
 	ret := _m.Called()
@@ -379,6 +393,52 @@ func (_m *Event) HourlyAt(offset []string) schedule.Event {
 	var r0 schedule.Event
 	if rf, ok := ret.Get(0).(func([]string) schedule.Event); ok {
 		r0 = rf(offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// IsOnOneServer provides a mock function with given fields:
+func (_m *Event) IsOnOneServer() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Name provides a mock function with given fields: name
+func (_m *Event) Name(name string) schedule.Event {
+	ret := _m.Called(name)
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func(string) schedule.Event); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schedule.Event)
+		}
+	}
+
+	return r0
+}
+
+// OnOneServer provides a mock function with given fields:
+func (_m *Event) OnOneServer() schedule.Event {
+	ret := _m.Called()
+
+	var r0 schedule.Event
+	if rf, ok := ret.Get(0).(func() schedule.Event); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schedule.Event)

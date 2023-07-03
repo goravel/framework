@@ -2,12 +2,11 @@ package schedule
 
 //go:generate mockery --name=Event
 type Event interface {
-	GetCron() string
-	GetCommand() string
-	GetCallback() func()
-	GetSkipIfStillRunning() bool
-	GetDelayIfStillRunning() bool
+	At(time string) Event
 	Cron(expression string) Event
+	Daily() Event
+	DailyAt(time string) Event
+	DelayIfStillRunning() Event
 	EveryMinute() Event
 	EveryTwoMinutes() Event
 	EveryThreeMinutes() Event
@@ -16,15 +15,20 @@ type Event interface {
 	EveryTenMinutes() Event
 	EveryFifteenMinutes() Event
 	EveryThirtyMinutes() Event
-	Hourly() Event
-	HourlyAt(offset []string) Event
 	EveryTwoHours() Event
 	EveryThreeHours() Event
 	EveryFourHours() Event
 	EverySixHours() Event
-	Daily() Event
-	At(time string) Event
-	DailyAt(time string) Event
+	GetCron() string
+	GetCommand() string
+	GetCallback() func()
+	GetName() string
+	GetSkipIfStillRunning() bool
+	GetDelayIfStillRunning() bool
+	Hourly() Event
+	HourlyAt(offset []string) Event
+	IsOnOneServer() bool
+	Name(name string) Event
+	OnOneServer() Event
 	SkipIfStillRunning() Event
-	DelayIfStillRunning() Event
 }
