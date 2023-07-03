@@ -45,7 +45,7 @@ func (app *Application) Register(events []schedule.Event) {
 }
 
 func (app *Application) Run() {
-	app.cron.Start()
+	app.cron.Run()
 }
 
 func (app *Application) addEvents(events []schedule.Event) {

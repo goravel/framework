@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
 	cachemocks "github.com/goravel/framework/contracts/cache/mocks"
 	consolemocks "github.com/goravel/framework/contracts/console/mocks"
@@ -15,7 +15,18 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
-func TestApplication(t *testing.T) {
+type ApplicationTestSuite struct {
+	suite.Suite
+}
+
+func TestApplicationTestSuite(t *testing.T) {
+	suite.Run(t, new(ApplicationTestSuite))
+}
+
+func (s *ApplicationTestSuite) SetupTest() {
+}
+
+func (s *ApplicationTestSuite) TestCallAndCommand() {
 	mockArtisan := &consolemocks.Artisan{}
 	mockArtisan.On("Call", "test --name Goravel argument0 argument1").Return().Times(3)
 
@@ -58,15 +69,16 @@ func TestApplication(t *testing.T) {
 	}(ctx)
 
 	time.Sleep(time.Duration(120+5+60-second) * time.Second)
+	app.cron.Stop()
 
-	assert.Equal(t, 3, immediatelyCall)
-	assert.Equal(t, 2, delayIfStillRunningCall)
-	assert.Equal(t, 1, skipIfStillRunningCall)
-	mockArtisan.AssertExpectations(t)
-	mockLog.AssertExpectations(t)
+	s.Equal(3, immediatelyCall)
+	s.Equal(2, delayIfStillRunningCall)
+	s.Equal(1, skipIfStillRunningCall)
+	mockArtisan.AssertExpectations(s.T())
+	mockLog.AssertExpectations(s.T())
 }
 
-func TestApplication_OnOneServer(t *testing.T) {
+func (s *ApplicationTestSuite) TestOnOneServer() {
 	mockArtisan := &consolemocks.Artisan{}
 	mockArtisan.On("Call", "test --name Goravel argument0 argument1").Return().Twice()
 
@@ -118,19 +130,22 @@ func TestApplication_OnOneServer(t *testing.T) {
 	})
 
 	second := carbon.Now().Second()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60+6+60-second))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60+2+60-second)*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
 		app.Run()
+		app1.Run()
 
 		for range ctx.Done() {
 			return
 		}
 	}(ctx)
 
-	time.Sleep(time.Duration(60+5+60-second) * time.Second)
+	time.Sleep(time.Duration(60+1+60-second) * time.Second)
+	app.cron.Stop()
+	app1.cron.Stop()
 
-	assert.Equal(t, 2, immediatelyCall)
-	mockArtisan.AssertExpectations(t)
-	mockCache.AssertExpectations(t)
+	s.Equal(2, immediatelyCall)
+	mockArtisan.AssertExpectations(s.T())
+	mockCache.AssertExpectations(s.T())
 }
