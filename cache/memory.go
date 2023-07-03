@@ -161,14 +161,17 @@ func (r *Memory) Put(key string, value any, t time.Duration) error {
 }
 
 //Remember Get an item from the cache, or execute the given Closure and store the result.
-func (r *Memory) Remember(key string, seconds time.Duration, callback func() any) (any, error) {
+func (r *Memory) Remember(key string, seconds time.Duration, callback func() (any, error)) (any, error) {
 	val := r.Get(key, nil)
-
 	if val != nil {
 		return val, nil
 	}
 
-	val = callback()
+	var err error
+	val, err = callback()
+	if err != nil {
+		return nil, err
+	}
 
 	if err := r.Put(key, val, seconds); err != nil {
 		return nil, err
@@ -178,14 +181,17 @@ func (r *Memory) Remember(key string, seconds time.Duration, callback func() any
 }
 
 //RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
-func (r *Memory) RememberForever(key string, callback func() any) (any, error) {
+func (r *Memory) RememberForever(key string, callback func() (any, error)) (any, error) {
 	val := r.Get(key, nil)
-
 	if val != nil {
 		return val, nil
 	}
 
-	val = callback()
+	var err error
+	val, err = callback()
+	if err != nil {
+		return nil, err
+	}
 
 	if err := r.Put(key, val, cache.NoExpiration); err != nil {
 		return nil, err

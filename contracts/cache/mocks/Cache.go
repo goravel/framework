@@ -303,11 +303,11 @@ func (_m *Cache) Put(key string, value interface{}, t time.Duration) error {
 }
 
 // Remember provides a mock function with given fields: key, ttl, callback
-func (_m *Cache) Remember(key string, ttl time.Duration, callback func() interface{}) (interface{}, error) {
+func (_m *Cache) Remember(key string, ttl time.Duration, callback func() (interface{}, error)) (interface{}, error) {
 	ret := _m.Called(key, ttl, callback)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, time.Duration, func() interface{}) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(string, time.Duration, func() (interface{}, error)) interface{}); ok {
 		r0 = rf(key, ttl, callback)
 	} else {
 		if ret.Get(0) != nil {
@@ -316,7 +316,7 @@ func (_m *Cache) Remember(key string, ttl time.Duration, callback func() interfa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, time.Duration, func() interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(string, time.Duration, func() (interface{}, error)) error); ok {
 		r1 = rf(key, ttl, callback)
 	} else {
 		r1 = ret.Error(1)
@@ -326,11 +326,11 @@ func (_m *Cache) Remember(key string, ttl time.Duration, callback func() interfa
 }
 
 // RememberForever provides a mock function with given fields: key, callback
-func (_m *Cache) RememberForever(key string, callback func() interface{}) (interface{}, error) {
+func (_m *Cache) RememberForever(key string, callback func() (interface{}, error)) (interface{}, error) {
 	ret := _m.Called(key, callback)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, func() interface{}) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(string, func() (interface{}, error)) interface{}); ok {
 		r0 = rf(key, callback)
 	} else {
 		if ret.Get(0) != nil {
@@ -339,7 +339,7 @@ func (_m *Cache) RememberForever(key string, callback func() interface{}) (inter
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, func() interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(string, func() (interface{}, error)) error); ok {
 		r1 = rf(key, callback)
 	} else {
 		r1 = ret.Error(1)
