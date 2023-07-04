@@ -8,30 +8,23 @@ import (
 
 var testRegister = 0
 
-type test1ServiceProvider struct {
-}
-
-type test2ServiceProvider struct {
+type testServiceProvider struct {
 	*BaseServiceProvider
 }
 
-func (t *test2ServiceProvider) Register(Application) {
+func (t *testServiceProvider) Register(Application) {
 	testRegister++
 }
 
 func TestBaseServiceProvider(t *testing.T) {
-	var (
-		sp1 = &test1ServiceProvider{}
-		sp2 = &test2ServiceProvider{}
-	)
+	var sp = &testServiceProvider{}
 
-	_, ok1 := interface{}(sp1).(ServiceProvider)
-	_, ok2 := interface{}(sp2).(ServiceProvider)
+	_, ok := interface{}(sp).(ServiceProvider)
 
-	assert.False(t, ok1)
-	assert.True(t, ok2)
+	assert.True(t, ok)
 
-	sp2.Register(nil)
+	sp.Register(nil)
+	sp.Boot(nil)
+
 	assert.Equal(t, 1, testRegister)
-	sp2.Boot(nil)
 }
