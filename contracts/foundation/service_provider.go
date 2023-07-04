@@ -10,6 +10,6 @@ type ServiceProvider interface {
 // BaseServiceProvider is a default implementation of the Provider interface.
 type BaseServiceProvider struct{}
 
-func (u *BaseServiceProvider) Register(Application) {}
+func (s *BaseServiceProvider) Register(Application) {}
 
-func (u *BaseServiceProvider) Boot(Application) {}
+func (s *BaseServiceProvider) Boot(Application) {}
