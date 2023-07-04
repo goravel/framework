@@ -7,9 +7,9 @@ type ServiceProvider interface {
 	Boot(app Application)
 }
 
-// UnimplementedServiceProvider is a default implementation of the Provider interface.
-type UnimplementedServiceProvider struct{}
+// BaseServiceProvider is a default implementation of the Provider interface.
+type BaseServiceProvider struct{}
 
-func (u *UnimplementedServiceProvider) Register(app Application) {}
+func (u *BaseServiceProvider) Register(Application) {}
 
-func (u *UnimplementedServiceProvider) Boot(app Application) {}
+func (u *BaseServiceProvider) Boot(Application) {}

@@ -1,18 +1,25 @@
 package foundation
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+var testRegister = 0
 
 type test1ServiceProvider struct {
 }
 
 type test2ServiceProvider struct {
-	*UnimplementedServiceProvider
+	*BaseServiceProvider
 }
 
-func TestUnimplementedServiceProvider(t *testing.T) {
+func (t *test2ServiceProvider) Register(Application) {
+	testRegister++
+}
+
+func TestBaseServiceProvider(t *testing.T) {
 	var (
 		sp1 = &test1ServiceProvider{}
 		sp2 = &test2ServiceProvider{}
@@ -25,5 +32,6 @@ func TestUnimplementedServiceProvider(t *testing.T) {
 	assert.True(t, ok2)
 
 	sp2.Register(nil)
+	assert.Equal(t, 1, testRegister)
 	sp2.Boot(nil)
 }
