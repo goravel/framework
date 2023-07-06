@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/goravel/framework/database/orm"
 
 	"github.com/stretchr/testify/assert"
@@ -109,12 +110,74 @@ type TestStruct struct {
 	ID int `gorm:"primaryKey"`
 }
 
+type TestStructString struct {
+	ID string `gorm:"primaryKey"`
+}
+
+type TestStructUUID struct {
+	ID uuid.UUID `gorm:"primaryKey"`
+}
+
+type TestStructNoPK struct {
+	ID int
+}
+
 func TestGetIDByReflect(t *testing.T) {
-	ts := TestStruct{ID: 1}
-	v := reflect.ValueOf(ts)
-	tpe := reflect.TypeOf(ts)
+	tests := []struct {
+		description string
+		setup       func(description string)
+	}{
+		{
+			description: "TestStruct.ID type int",
+			setup: func(description string) {
+				ts := TestStruct{ID: 1}
+				v := reflect.ValueOf(ts)
+				tpe := reflect.TypeOf(ts)
 
-	result := GetIDByReflect(tpe, v)
+				result := GetIDByReflect(tpe, v)
 
-	assert.Equal(t, 1, result)
+				assert.Equal(t, 1, result)
+			},
+		},
+		{
+			description: "TestStruct.ID type string",
+			setup: func(description string) {
+				ts := TestStructString{ID: "goravel"}
+				v := reflect.ValueOf(ts)
+				tpe := reflect.TypeOf(ts)
+
+				result := GetIDByReflect(tpe, v)
+
+				assert.Equal(t, "goravel", result)
+			},
+		},
+		{
+			description: "TestStruct.ID type UUID",
+			setup: func(description string) {
+				id := uuid.New()
+				ts := TestStructUUID{ID: id}
+				v := reflect.ValueOf(ts)
+				tpe := reflect.TypeOf(ts)
+
+				result := GetIDByReflect(tpe, v)
+
+				assert.Equal(t, id, result)
+			},
+		},
+		{
+			description: "TestStruct without primaryKey",
+			setup: func(description string) {
+				ts := TestStructNoPK{ID: 1}
+				v := reflect.ValueOf(ts)
+				tpe := reflect.TypeOf(ts)
+
+				result := GetIDByReflect(tpe, v)
+
+				assert.Nil(t, result)
+			},
+		},
+	}
+	for _, test := range tests {
+		test.setup(test.description)
+	}
 }

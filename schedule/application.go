@@ -1,33 +1,39 @@
 package schedule
 
 import (
+	"time"
+
 	"github.com/gookit/color"
 	"github.com/robfig/cron/v3"
 
+	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/schedule"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type Application struct {
 	artisan console.Artisan
+	cache   cache.Cache
 	cron    *cron.Cron
 	log     log.Log
 }
 
-func NewApplication(artisan console.Artisan, log log.Log) *Application {
+func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log) *Application {
 	return &Application{
 		artisan: artisan,
+		cache:   cache,
 		log:     log,
 	}
 }
 
 func (app *Application) Call(callback func()) schedule.Event {
-	return &Event{Callback: callback}
+	return NewCallbackEvent(callback)
 }
 
 func (app *Application) Command(command string) schedule.Event {
-	return &Event{Command: command}
+	return NewCommandEvent(command)
 }
 
 func (app *Application) Register(events []schedule.Event) {
@@ -39,7 +45,7 @@ func (app *Application) Register(events []schedule.Event) {
 }
 
 func (app *Application) Run() {
-	app.cron.Start()
+	app.cron.Run()
 }
 
 func (app *Application) addEvents(events []schedule.Event) {
@@ -60,12 +66,22 @@ func (app *Application) addEvents(events []schedule.Event) {
 
 func (app *Application) getJob(event schedule.Event) cron.Job {
 	return cron.FuncJob(func() {
-		if event.GetCommand() != "" {
-			app.artisan.Call(event.GetCommand())
+		if event.IsOnOneServer() && event.GetName() != "" {
+			if app.cache.Lock(event.GetName()+carbon.Now().Format("Hi"), 1*time.Hour).Get() {
+				app.runJob(event)
+			}
 		} else {
-			event.GetCallback()()
+			app.runJob(event)
 		}
 	})
+}
+
+func (app *Application) runJob(event schedule.Event) {
+	if event.GetCommand() != "" {
+		app.artisan.Call(event.GetCommand())
+	} else {
+		event.GetCallback()()
+	}
 }
 
 type Logger struct {
