@@ -2,8 +2,6 @@ package config
 
 import (
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cast"
@@ -27,15 +25,9 @@ func NewApplication(envPath string) *Application {
 		os.Exit(0)
 	}
 
-	name := filepath.Base(envPath)
-	path := filepath.Dir(envPath)
-	ext := filepath.Ext(envPath)
-
 	app := &Application{}
 	app.vip = viper.New()
-	app.vip.SetConfigName(strings.TrimSuffix(name, ext))
-	app.vip.SetConfigType("env")
-	app.vip.AddConfigPath(path)
+	app.vip.SetConfigFile(envPath)
 
 	if err := app.vip.ReadInConfig(); err != nil {
 		color.Redln("Invalid Config error: " + err.Error())
