@@ -1,10 +1,11 @@
 package orm
 
-import "github.com/brianvoe/gofakeit/v6"
+import (
+	"github.com/brianvoe/gofakeit/v6"
+)
 
 //go:generate mockery --name=Factory
 type Factory interface {
-	Definition() any
 	New(attributes ...map[string]any) Factory
 	Times(count int) Factory
 	Count(count int) Factory

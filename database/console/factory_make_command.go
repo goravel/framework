@@ -61,7 +61,7 @@ func (receiver *FactoryMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (receiver *FactoryMakeCommand) populateStub(stub string, name string) string {
-	modelName, packageName, _ := receiver.parseName(name)
+	modelName, packageName, _ := parseName(name, "factories")
 
 	stub = strings.ReplaceAll(stub, "DummyFactory", str.Case2Camel(modelName))
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
@@ -73,20 +73,19 @@ func (receiver *FactoryMakeCommand) populateStub(stub string, name string) strin
 func (receiver *FactoryMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	modelName, _, folderPath := receiver.parseName(name)
+	modelName, _, folderPath := parseName(name, "factories")
 
 	return filepath.Join(pwd, "database", "factories", folderPath, str.Camel2Case(modelName)+".go")
 }
 
 // parseName Parse the name to get the model name, package name and folder path.
-func (receiver *FactoryMakeCommand) parseName(name string) (string, string, string) {
+func parseName(name string, packageName string) (string, string, string) {
 	name = strings.TrimSuffix(name, ".go")
 
 	segments := strings.Split(name, "/")
 
 	modelName := segments[len(segments)-1]
 
-	packageName := "factories"
 	folderPath := ""
 
 	if len(segments) > 1 {

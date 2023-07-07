@@ -1,24 +1,26 @@
 package gorm
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gookit/color"
+
+	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 )
 
 type FactoryImpl struct {
-	model  any             // model to generate
-	count  int             // number of models to generate
-	facker *gofakeit.Faker // faker instance
+	model any               // model to generate
+	count int               // number of models to generate
+	faker *gofakeit.Faker   // faker instance
+	query ormcontract.Query // query instance
 }
 
-func NewFactoryImpl() *FactoryImpl {
+func NewFactoryImpl(query ormcontract.Query) *FactoryImpl {
 	return &FactoryImpl{
-		count:  1,
-		facker: gofakeit.New(0),
+		faker: gofakeit.New(0),
+		query: query,
 	}
 }
 
@@ -47,6 +49,13 @@ func (f *FactoryImpl) CreateOneQuietly() error {
 }
 
 func (f *FactoryImpl) CreateMany() error {
+	for i := 0; i < f.count; i++ {
+		color.Cyanln(f.GetRawAttributes())
+		//err := f.query.Create(f.GenerateOne())
+		//if err != nil {
+		//	return err
+		//}
+	}
 	return nil
 }
 
@@ -55,8 +64,7 @@ func (f *FactoryImpl) CreateManyQuietly() error {
 }
 
 func (f *FactoryImpl) Create() error {
-	color.Redf("Create %v", f.model)
-	return nil
+	return f.query.Model(f.model).Create(f.GetRawAttributes())
 }
 
 func (f *FactoryImpl) CreateQuietly() error {
@@ -89,28 +97,24 @@ func (f *FactoryImpl) GetRawAttributes() any {
 	if modelFactoryMethod.IsValid() {
 		factoryResult := modelFactoryMethod.Call(nil)
 		if len(factoryResult) > 0 {
-			factoryInstance, ok := factoryResult[0].Interface().(ormcontract.Factory)
+			factoryInstance, ok := factoryResult[0].Interface().(factory.Factory)
 			if ok {
 				definitionMethod := reflect.ValueOf(factoryInstance).MethodByName("Definition")
 				if definitionMethod.IsValid() {
 					definitionResult := definitionMethod.Call(nil)
 					if len(definitionResult) > 0 {
-						definition := definitionResult[0].Interface()
-						fmt.Printf("%#v\n", definition) // Print the definition in a human-readable format
+						definition := definitionResult[0].Interface() // Print the definition in a human-readable format
 						return definition
 					}
 				}
 			}
 		}
 	}
-
-	definition := f.Definition()
-	return definition
+	return nil
 }
 
-func (f *FactoryImpl) Faker() *gofakeit.Faker { // Adjust this line to retrieve the Faker instance from your DI container
-	// return gofakeit.New(0)
-	return f.facker
+func (f *FactoryImpl) Faker() *gofakeit.Faker {
+	return f.faker
 }
 
 func (f *FactoryImpl) ExpandAttributes(definition map[string]interface{}) map[string]interface{} {
@@ -142,6 +146,8 @@ func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Fact
 	instance := &FactoryImpl{
 		count: f.count,
 		model: f.model,
+		query: f.query,
+		faker: f.faker,
 	}
 
 	if len(attributes) > 0 {
@@ -152,6 +158,12 @@ func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Fact
 		if model, ok := attr["model"]; ok {
 			instance.model = model
 		}
+		if faker, ok := attr["faker"]; ok {
+			instance.faker = faker.(*gofakeit.Faker)
+		}
+		if query, ok := attr["query"]; ok {
+			instance.query = query.(ormcontract.Query)
+		}
 	}
 
 	return instance
@@ -159,8 +171,4 @@ func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Fact
 
 func (f *FactoryImpl) Model(value any) ormcontract.Factory {
 	return f.NewInstance(map[string]any{"model": value})
-}
-
-func (f *FactoryImpl) Definition() any {
-	return nil
 }
