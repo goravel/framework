@@ -27,6 +27,7 @@ func NewApplication(envPath string) *Application {
 
 	app := &Application{}
 	app.vip = viper.New()
+	app.vip.SetConfigType("env")
 	app.vip.SetConfigFile(envPath)
 
 	if err := app.vip.ReadInConfig(); err != nil {
