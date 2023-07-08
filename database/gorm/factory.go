@@ -4,15 +4,13 @@ import (
 	"reflect"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 )
 
 type FactoryImpl struct {
 	model any               // model to generate
-	count int               // number of models to generate
+	count *int              // number of models to generate
 	faker *gofakeit.Faker   // faker instance
 	query ormcontract.Query // query instance
 }
@@ -24,74 +22,42 @@ func NewFactoryImpl(query ormcontract.Query) *FactoryImpl {
 	}
 }
 
-func (f *FactoryImpl) New(attributes ...map[string]any) ormcontract.Factory {
-	return f.NewInstance(attributes...).Configure()
+// Count Specify the number of models you wish to create / make.
+func (f *FactoryImpl) Count(count int) ormcontract.Factory {
+	return f.NewInstance(map[string]any{"count": count})
 }
 
-func (f *FactoryImpl) Times(count int) ormcontract.Factory {
-	return f.New().Count(count)
-}
-
-func (f *FactoryImpl) Configure() ormcontract.Factory {
-	return f
-}
-
+// Raw Get a raw attribute array for the model's fields.
 func (f *FactoryImpl) Raw() any {
-	return nil
-}
-
-func (f *FactoryImpl) CreateOne() error {
-	return nil
-}
-
-func (f *FactoryImpl) CreateOneQuietly() error {
-	return nil
-}
-
-func (f *FactoryImpl) CreateMany() error {
-	for i := 0; i < f.count; i++ {
-		color.Cyanln(f.GetRawAttributes())
-		//err := f.query.Create(f.GenerateOne())
-		//if err != nil {
-		//	return err
-		//}
+	if f.count == nil {
+		return f.getRawAttributes()
 	}
-	return nil
+	result := make([]map[string]any, *f.count)
+	for i := 0; i < *f.count; i++ {
+		item := f.getRawAttributes()
+		if itemMap, ok := item.(map[string]any); ok {
+			result[i] = itemMap
+		}
+	}
+	return result
 }
 
-func (f *FactoryImpl) CreateManyQuietly() error {
-	return nil
-}
-
+// Create a model and persist it in the database.
 func (f *FactoryImpl) Create() error {
-	return f.query.Model(f.model).Create(f.GetRawAttributes())
+	return f.query.Model(f.model).Create(f.Raw())
 }
 
+// CreateQuietly create a model and persist it in the database without firing any events.
 func (f *FactoryImpl) CreateQuietly() error {
-	return nil
+	return f.query.Model(f.model).WithoutEvents().Create(f.Raw())
 }
 
-func (f *FactoryImpl) Store() error {
-	return nil
-}
-
-func (f *FactoryImpl) MakeOne() ormcontract.Factory {
-	return nil
-}
-
+// Make a model instance that's not persisted in the database.
 func (f *FactoryImpl) Make() ormcontract.Factory {
 	return nil
 }
 
-func (f *FactoryImpl) MakeInstance() ormcontract.Factory {
-	return nil
-}
-
-func (f *FactoryImpl) GetExpandedAttributes() map[string]any {
-	return nil
-}
-
-func (f *FactoryImpl) GetRawAttributes() any {
+func (f *FactoryImpl) getRawAttributes() any {
 	modelFactoryMethod := reflect.ValueOf(f.model).MethodByName("Factory")
 
 	if modelFactoryMethod.IsValid() {
@@ -103,7 +69,7 @@ func (f *FactoryImpl) GetRawAttributes() any {
 				if definitionMethod.IsValid() {
 					definitionResult := definitionMethod.Call(nil)
 					if len(definitionResult) > 0 {
-						definition := definitionResult[0].Interface() // Print the definition in a human-readable format
+						definition := definitionResult[0].Interface()
 						return definition
 					}
 				}
@@ -117,31 +83,7 @@ func (f *FactoryImpl) Faker() *gofakeit.Faker {
 	return f.faker
 }
 
-func (f *FactoryImpl) ExpandAttributes(definition map[string]interface{}) map[string]interface{} {
-	expandedAttributes := make(map[string]interface{})
-
-	for key, attribute := range definition {
-		switch attr := attribute.(type) {
-		case func(map[string]interface{}) interface{}:
-			// Evaluate the callable attribute
-			expandedAttribute := attr(definition)
-			expandedAttributes[key] = expandedAttribute
-		default:
-			expandedAttributes[key] = attr
-		}
-	}
-
-	return expandedAttributes
-}
-
-func (f *FactoryImpl) Set() ormcontract.Factory {
-	return f
-}
-
-func (f *FactoryImpl) Count(count int) ormcontract.Factory {
-	return f.NewInstance(map[string]any{"count": count})
-}
-
+// NewInstance create a new factory instance.
 func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Factory {
 	instance := &FactoryImpl{
 		count: f.count,
@@ -153,7 +95,7 @@ func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Fact
 	if len(attributes) > 0 {
 		attr := attributes[0]
 		if count, ok := attr["count"].(int); ok {
-			instance.count = count
+			instance.count = &count
 		}
 		if model, ok := attr["model"]; ok {
 			instance.model = model
@@ -169,6 +111,7 @@ func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Fact
 	return instance
 }
 
+// Model Set the model's attributes.
 func (f *FactoryImpl) Model(value any) ormcontract.Factory {
 	return f.NewInstance(map[string]any{"model": value})
 }

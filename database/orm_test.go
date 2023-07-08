@@ -138,6 +138,10 @@ func (s *OrmSuite) TestQuery() {
 	}
 }
 
+func (s *OrmSuite) TestFactory() {
+	s.NotNil(s.orm.Factory())
+}
+
 func (s *OrmSuite) TestObserve() {
 	s.orm.Observe(User{}, &UserObserver{})
 
