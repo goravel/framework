@@ -2,6 +2,7 @@ package console
 
 import (
 	"errors"
+	"flag"
 	"os"
 	"strings"
 
@@ -77,14 +78,16 @@ func (receiver *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (receiver *JwtSecretCommand) writeNewEnvironmentFileWith(key string) error {
-	content, err := os.ReadFile(".env")
+	env := flag.String("env", ".env", "custom .env path")
+	flag.Parse()
+	content, err := os.ReadFile(*env)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "JWT_SECRET="+receiver.config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
 
-	err = os.WriteFile(".env", []byte(newContent), 0644)
+	err = os.WriteFile(*env, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}

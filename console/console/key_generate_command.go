@@ -1,6 +1,7 @@
 package console
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -82,14 +83,16 @@ func (receiver *KeyGenerateCommand) generateRandomKey() string {
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (receiver *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
-	content, err := os.ReadFile(".env")
+	env := flag.String("env", ".env", "custom .env path")
+	flag.Parse()
+	content, err := os.ReadFile(*env)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "APP_KEY="+receiver.config.GetString("app.key"), "APP_KEY="+key, 1)
 
-	err = os.WriteFile(".env", []byte(newContent), 0644)
+	err = os.WriteFile(*env, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}
