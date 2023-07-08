@@ -1,8 +1,6 @@
 package config
 
 import (
-	"flag"
-
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support"
 )
@@ -18,8 +16,7 @@ func (config *ServiceProvider) Register(app foundation.Application) {
 		testEnv := ".env"
 		env = &testEnv
 	} else {
-		env = flag.String("env", ".env", "custom .env path")
-		flag.Parse()
+		env = &support.EnvPath
 	}
 
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {

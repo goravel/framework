@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
@@ -178,6 +179,10 @@ func setEnv() {
 			support.Env = support.EnvArtisan
 		}
 	}
+
+	env := flag.String("env", ".env", "custom .env path")
+	flag.Parse()
+	support.EnvPath = *env
 }
 
 func setRootPath() {
