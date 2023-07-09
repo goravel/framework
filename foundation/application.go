@@ -180,8 +180,14 @@ func setEnv() {
 		}
 	}
 
-	env := flag.String("env", ".env", "custom .env path")
-	flag.Parse()
+	var env *string
+	if !flag.Parsed() {
+		env = flag.String("env", ".env", "custom .env path")
+		flag.Parse()
+	} else {
+		env = flag.Lookup("env").Value.(flag.Getter).Get().(*string)
+	}
+
 	support.EnvPath = *env
 }
 
