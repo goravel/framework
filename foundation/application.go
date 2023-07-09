@@ -181,11 +181,12 @@ func setEnv() {
 	}
 
 	var env *string
-	if !flag.Parsed() {
+	if !flag.Parsed() && support.Env != support.EnvTest {
 		env = flag.String("env", ".env", "custom .env path")
 		flag.Parse()
 	} else {
-		env = flag.Lookup("env").Value.(flag.Getter).Get().(*string)
+		testEnv := ".env"
+		env = &testEnv
 	}
 
 	support.EnvPath = *env
