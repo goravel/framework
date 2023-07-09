@@ -20,6 +20,7 @@ import (
 	logmocks "github.com/goravel/framework/contracts/log/mocks"
 	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
 	contractsroute "github.com/goravel/framework/contracts/route"
+	routemocks "github.com/goravel/framework/contracts/route/mocks"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
 	"github.com/goravel/framework/database/gorm"
@@ -31,7 +32,6 @@ import (
 	"github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
-	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/validation"
@@ -318,15 +318,15 @@ type Engine struct {
 
 func (s *ApplicationTestSuite) TestMakeRoute() {
 	mockConfig := &configmocks.Config{}
-	mockConfig.On("GetString", "http.driver").Return("gin").Once()
-	mockConfig.On("Get", "http.drivers.gin.route").Return(&Engine{}).Once()
 
 	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
-	serviceProvider := &route.ServiceProvider{}
-	serviceProvider.Register(s.app)
+	mockRoute := &routemocks.Engine{}
+	s.app.Singleton("goravel.route", func(app foundation.Application) (any, error) {
+		return mockRoute, nil
+	})
 
 	s.NotNil(s.app.MakeRoute())
 	mockConfig.AssertExpectations(s.T())

@@ -40,7 +40,6 @@ import (
 	goravellog "github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
-	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/validation"
 )
@@ -216,7 +215,7 @@ func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
 }
 
 func (c *Container) MakeRoute() routecontract.Engine {
-	instance, err := c.Make(route.Binding)
+	instance, err := c.Make("goravel.route")
 	if err != nil {
 		color.Redln(err)
 		return nil
