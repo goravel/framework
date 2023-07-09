@@ -1,6 +1,7 @@
 package gorm
 
 import (
+	"github.com/mitchellh/mapstructure"
 	"reflect"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -22,44 +23,57 @@ func NewFactoryImpl(query ormcontract.Query) *FactoryImpl {
 	}
 }
 
-// Count Specify the number of models you wish to create / make.
-func (f *FactoryImpl) Count(count int) ormcontract.Factory {
-	return f.NewInstance(map[string]any{"count": count})
-}
-
-// Raw Get a raw attribute array for the model's fields.
-func (f *FactoryImpl) Raw() any {
-	if f.count == nil {
-		return f.getRawAttributes()
-	}
-	result := make([]map[string]any, *f.count)
-	for i := 0; i < *f.count; i++ {
-		item := f.getRawAttributes()
-		if itemMap, ok := item.(map[string]any); ok {
-			result[i] = itemMap
-		}
-	}
-	return result
+// Times Specify the number of models you wish to create / make.
+func (f *FactoryImpl) Times(count int) ormcontract.Factory {
+	return f.newInstance(map[string]any{"count": count})
 }
 
 // Create a model and persist it in the database.
-func (f *FactoryImpl) Create() error {
-	return f.query.Model(f.model).Create(f.Raw())
+func (f *FactoryImpl) Create(value any) error {
+	if err := f.Make(value); err != nil {
+		return err
+	}
+	return f.query.Create(value)
 }
 
 // CreateQuietly create a model and persist it in the database without firing any events.
-func (f *FactoryImpl) CreateQuietly() error {
-	return f.query.Model(f.model).WithoutEvents().Create(f.Raw())
+func (f *FactoryImpl) CreateQuietly(value any) error {
+	if err := f.Make(value); err != nil {
+		return err
+	}
+	return f.query.WithoutEvents().Create(value)
 }
 
 // Make a model instance that's not persisted in the database.
-func (f *FactoryImpl) Make() ormcontract.Factory {
-	return nil
+func (f *FactoryImpl) Make(value any) error {
+	reflectValue := reflect.Indirect(reflect.ValueOf(value))
+	switch reflectValue.Kind() {
+	case reflect.Array, reflect.Slice:
+		count := 1
+		if f.count != nil {
+			count = *f.count
+		}
+		for i := 0; i < count; i++ {
+			elemValue := reflect.New(reflectValue.Type().Elem()).Interface()
+			attributes := f.getRawAttributes(elemValue)
+			if err := mapstructure.Decode(attributes, elemValue); err != nil {
+				return err
+			}
+			reflectValue = reflect.Append(reflectValue, reflect.ValueOf(elemValue).Elem())
+		}
+		reflect.ValueOf(value).Elem().Set(reflectValue)
+		return nil
+	default:
+		attributes := f.getRawAttributes(value)
+		if err := mapstructure.Decode(attributes, value); err != nil {
+			return err
+		}
+		return nil
+	}
 }
 
-func (f *FactoryImpl) getRawAttributes() any {
-	modelFactoryMethod := reflect.ValueOf(f.model).MethodByName("Factory")
-
+func (f *FactoryImpl) getRawAttributes(value any) any {
+	modelFactoryMethod := reflect.ValueOf(value).MethodByName("Factory")
 	if modelFactoryMethod.IsValid() {
 		factoryResult := modelFactoryMethod.Call(nil)
 		if len(factoryResult) > 0 {
@@ -69,8 +83,7 @@ func (f *FactoryImpl) getRawAttributes() any {
 				if definitionMethod.IsValid() {
 					definitionResult := definitionMethod.Call(nil)
 					if len(definitionResult) > 0 {
-						definition := definitionResult[0].Interface()
-						return definition
+						return definitionResult[0].Interface()
 					}
 				}
 			}
@@ -79,12 +92,8 @@ func (f *FactoryImpl) getRawAttributes() any {
 	return nil
 }
 
-func (f *FactoryImpl) Faker() *gofakeit.Faker {
-	return f.faker
-}
-
-// NewInstance create a new factory instance.
-func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Factory {
+// newInstance create a new factory instance.
+func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Factory {
 	instance := &FactoryImpl{
 		count: f.count,
 		model: f.model,
@@ -111,7 +120,29 @@ func (f *FactoryImpl) NewInstance(attributes ...map[string]any) ormcontract.Fact
 	return instance
 }
 
+// TODO: Method below this will be removed in final release
+
 // Model Set the model's attributes.
 func (f *FactoryImpl) Model(value any) ormcontract.Factory {
-	return f.NewInstance(map[string]any{"model": value})
+	return f.newInstance(map[string]any{"model": value})
+}
+
+func (f *FactoryImpl) Faker() *gofakeit.Faker {
+	return f.faker
+}
+
+// Raw Get a raw attribute array for the model's fields.
+func (f *FactoryImpl) Raw() any {
+	//if f.count == nil {
+	//	return f.getRawAttributes()
+	//}
+	//result := make([]map[string]any, *f.count)
+	//for i := 0; i < *f.count; i++ {
+	//	item := f.getRawAttributes()
+	//	if itemMap, ok := item.(map[string]any); ok {
+	//		result[i] = itemMap
+	//	}
+	//}
+	//return result
+	return nil
 }
