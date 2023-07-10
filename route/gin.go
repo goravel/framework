@@ -12,6 +12,7 @@ import (
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	goravelhttp "github.com/goravel/framework/http"
+	"github.com/goravel/framework/support"
 )
 
 type Gin struct {
@@ -120,7 +121,7 @@ func (r *Gin) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (r *Gin) outputRoutes() {
-	if r.config.GetBool("app.debug") && !runningInConsole() {
+	if r.config.GetBool("app.debug") && support.Env != support.EnvArtisan {
 		for _, item := range r.instance.Routes() {
 			fmt.Printf("%-10s %s\n", item.Method, colonToBracket(item.Path))
 		}
