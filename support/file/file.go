@@ -50,9 +50,10 @@ func Create(file string, content string) error {
 
 func Exists(file string) bool {
 	_, err := os.Stat(file)
-	if err != nil {
-		return os.IsExist(err)
+	if os.IsNotExist(err) {
+		return false
 	}
+
 	return true
 }
 

@@ -20,8 +20,8 @@ type Application struct {
 
 func NewApplication(envPath string) *Application {
 	if !file.Exists(envPath) {
-		color.Redln("Please create .env and initialize it first.")
-		color.Warnln("Run command: \ncp .env.example .env && go run . artisan key:generate")
+		color.Redln("Please create " + envPath + " and initialize it first.")
+		color.Warnln("Example command: \ncp .env.example .env && go run . artisan key:generate")
 		os.Exit(0)
 	}
 
