@@ -50,7 +50,7 @@ func Create(file string, content string) error {
 
 func Exists(file string) bool {
 	_, err := os.Stat(file)
-	if os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 
