@@ -140,6 +140,10 @@ func (s *OrmSuite) TestQuery() {
 
 func (s *OrmSuite) TestFactory() {
 	s.NotNil(s.orm.Factory())
+
+	for _, connection := range connections {
+		s.NotNil(s.orm.Connection(connection.String()).Factory())
+	}
 }
 
 func (s *OrmSuite) TestObserve() {
