@@ -97,5 +97,7 @@ func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
 	assert.True(t, len(env) > 10)
 	assert.Nil(t, file.Remove("config.conf"))
 
+	support.EnvPath = ".env"
+
 	mockConfig.AssertExpectations(t)
 }
