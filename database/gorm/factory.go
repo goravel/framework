@@ -1,10 +1,12 @@
 package gorm
 
 import (
-	"github.com/mitchellh/mapstructure"
+	"errors"
 	"reflect"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 )
@@ -56,6 +58,9 @@ func (f *FactoryImpl) Make(value any) error {
 		for i := 0; i < count; i++ {
 			elemValue := reflect.New(reflectValue.Type().Elem()).Interface()
 			attributes := f.getRawAttributes(elemValue)
+			if attributes == nil {
+				return errors.New("failed to get raw attributes")
+			}
 			if err := mapstructure.Decode(attributes, elemValue); err != nil {
 				return err
 			}
@@ -65,6 +70,9 @@ func (f *FactoryImpl) Make(value any) error {
 		return nil
 	default:
 		attributes := f.getRawAttributes(value)
+		if attributes == nil {
+			return errors.New("failed to get raw attributes")
+		}
 		if err := mapstructure.Decode(attributes, value); err != nil {
 			return err
 		}
@@ -118,31 +126,4 @@ func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Fact
 	}
 
 	return instance
-}
-
-// TODO: Method below this will be removed in final release
-
-// Model Set the model's attributes.
-func (f *FactoryImpl) Model(value any) ormcontract.Factory {
-	return f.newInstance(map[string]any{"model": value})
-}
-
-func (f *FactoryImpl) Faker() *gofakeit.Faker {
-	return f.faker
-}
-
-// Raw Get a raw attribute array for the model's fields.
-func (f *FactoryImpl) Raw() any {
-	//if f.count == nil {
-	//	return f.getRawAttributes()
-	//}
-	//result := make([]map[string]any, *f.count)
-	//for i := 0; i < *f.count; i++ {
-	//	item := f.getRawAttributes()
-	//	if itemMap, ok := item.(map[string]any); ok {
-	//		result[i] = itemMap
-	//	}
-	//}
-	//return result
-	return nil
 }
