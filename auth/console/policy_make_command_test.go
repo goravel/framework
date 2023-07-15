@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEventMakeCommand(t *testing.T) {
+func TestPolicyMakeCommand(t *testing.T) {
 	policyMakeCommand := &PolicyMakeCommand{}
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()

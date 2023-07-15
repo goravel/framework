@@ -31,6 +31,13 @@ func (receiver *ControllerMakeCommand) Description() string {
 func (receiver *ControllerMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:  "resource",
+				Value: false,
+				Usage: "resourceful controller",
+			},
+		},
 	}
 }
 
@@ -41,7 +48,12 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 		return errors.New("Not enough arguments (missing: name) ")
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	stub := receiver.getStub()
+	if ctx.OptionBool("resource") {
+		stub = receiver.getResourceStub()
+	}
+
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(stub, name)); err != nil {
 		return err
 	}
 
@@ -52,6 +64,10 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 
 func (receiver *ControllerMakeCommand) getStub() string {
 	return Stubs{}.Controller()
+}
+
+func (receiver *ControllerMakeCommand) getResourceStub() string {
+	return Stubs{}.ResourceController()
 }
 
 // populateStub Populate the place-holders in the command stub.
