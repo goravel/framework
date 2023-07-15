@@ -12,7 +12,6 @@ import (
 )
 
 type FactoryImpl struct {
-	model any               // model to generate
 	count *int              // number of models to generate
 	faker *gofakeit.Faker   // faker instance
 	query ormcontract.Query // query instance
@@ -104,7 +103,6 @@ func (f *FactoryImpl) getRawAttributes(value any) any {
 func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Factory {
 	instance := &FactoryImpl{
 		count: f.count,
-		model: f.model,
 		query: f.query,
 		faker: f.faker,
 	}
@@ -113,9 +111,6 @@ func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Fact
 		attr := attributes[0]
 		if count, ok := attr["count"].(int); ok {
 			instance.count = &count
-		}
-		if model, ok := attr["model"]; ok {
-			instance.model = model
 		}
 		if faker, ok := attr["faker"]; ok {
 			instance.faker = faker.(*gofakeit.Faker)

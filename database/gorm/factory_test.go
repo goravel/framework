@@ -1,14 +1,14 @@
 package gorm
 
 import (
-	"reflect"
+	"log"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/factory"
-	ormmocks "github.com/goravel/framework/contracts/database/orm/mocks"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
 )
 
@@ -38,8 +38,8 @@ func (p *PersonFactory) Definition() any {
 
 type FactoryTestSuite struct {
 	suite.Suite
-	factory   *FactoryImpl
-	mockQuery *ormmocks.Query
+	factory ormcontract.Factory
+	query   ormcontract.Query
 }
 
 func TestFactoryTestSuite(t *testing.T) {
@@ -47,37 +47,39 @@ func TestFactoryTestSuite(t *testing.T) {
 }
 
 func (s *FactoryTestSuite) SetupTest() {
-	s.mockQuery = ormmocks.NewQuery(s.T())
-	s.factory = NewFactoryImpl(s.mockQuery)
+	mysqlDocker := NewMysqlDocker()
+	_, _, mysqlQuery, err := mysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+	s.query = mysqlQuery
+	s.factory = NewFactoryImpl(s.query)
 }
 
 func (s *FactoryTestSuite) TestTimes() {
+	var person []Person
 	factInstance := s.factory.Times(2)
-	s.NotNil(factInstance)
-	s.NotNil(reflect.TypeOf(factInstance) == reflect.TypeOf((*FactoryImpl)(nil)))
-	s.mockQuery.AssertExpectations(s.T())
+	s.Nil(factInstance.Make(&person))
+	s.True(len(person) == 2)
+	s.True(len(person[0].Name) > 0)
+	s.True(len(person[1].Name) > 0)
 }
 
 func (s *FactoryTestSuite) TestCreate() {
 	var person []Person
-	s.mockQuery.On("Create", &person).Return(nil).Once()
 	s.Nil(s.factory.Create(&person))
 	s.True(len(person) > 0)
-	s.True(reflect.TypeOf(person) == reflect.TypeOf([]Person{}))
-	s.mockQuery.AssertExpectations(s.T())
+	s.True(person[0].ID > 0)
 
 	var person1 Person
-	s.mockQuery.On("Create", &person1).Return(nil).Once()
 	s.Nil(s.factory.Create(&person1))
 	s.NotNil(person1)
-	s.True(reflect.TypeOf(person1) == reflect.TypeOf(Person{}))
-	s.mockQuery.AssertExpectations(s.T())
+	s.True(person1.ID > 0)
 }
 
 func (s *FactoryTestSuite) TestMake() {
 	var person []Person
 	s.Nil(s.factory.Make(&person))
 	s.True(len(person) > 0)
-	s.True(reflect.TypeOf(person) == reflect.TypeOf([]Person{}))
-	s.mockQuery.AssertExpectations(s.T())
+	s.True(len(person[0].Name) > 0)
 }
