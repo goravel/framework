@@ -42,36 +42,43 @@ func (c *Application) Register(commands []console.Command) {
 	}
 }
 
-//Call Run an Artisan console command by name.
+// Call Run an Artisan console command by name.
 func (c *Application) Call(command string) {
 	c.Run(append([]string{os.Args[0], "artisan"}, strings.Split(command, " ")...), false)
 }
 
-//CallAndExit Run an Artisan console command by name and exit.
+// CallAndExit Run an Artisan console command by name and exit.
 func (c *Application) CallAndExit(command string) {
 	c.Run(append([]string{os.Args[0], "artisan"}, strings.Split(command, " ")...), true)
 }
 
-//Run a command. Args come from os.Args.
+// Run a command. Args come from os.Args.
 func (c *Application) Run(args []string, exitIfArtisan bool) {
-	if len(args) >= 2 {
-		if args[1] == "artisan" {
-			if len(args) == 2 {
-				args = append(args, "--help")
-			}
+	artisanIndex := -1
+	for i, arg := range args {
+		if arg == "artisan" {
+			artisanIndex = i
+			break
+		}
+	}
 
-			if args[2] != "-V" && args[2] != "--version" {
-				cliArgs := append([]string{args[0]}, args[2:]...)
-				if err := c.instance.Run(cliArgs); err != nil {
-					panic(err.Error())
-				}
-			}
+	if artisanIndex != -1 {
+		// Add --help if no command argument is provided.
+		if artisanIndex+1 == len(args) {
+			args = append(args, "--help")
+		}
 
-			printResult(args[2])
-
-			if exitIfArtisan {
-				os.Exit(0)
+		if args[artisanIndex+1] != "-V" && args[artisanIndex+1] != "--version" {
+			cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
+			if err := c.instance.Run(cliArgs); err != nil {
+				panic(err.Error())
 			}
+		}
+
+		printResult(args[artisanIndex+1])
+
+		if exitIfArtisan {
+			os.Exit(0)
 		}
 	}
 }
