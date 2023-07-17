@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/goravel/framework/support/file"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -30,23 +32,26 @@ type FactoryTestSuite struct {
 }
 
 func TestFactoryTestSuite(t *testing.T) {
-	suite.Run(t, new(FactoryTestSuite))
-}
-
-func (s *FactoryTestSuite) SetupTest() {
 	mysqlDocker := NewMysqlDocker()
-	_, _, mysqlQuery, err := mysqlDocker.New()
+	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
-	s.query = mysqlQuery
+	suite.Run(t, &FactoryTestSuite{
+		query: mysqlQuery,
+	})
+
+	assert.Nil(t, file.Remove(dbDatabase))
+	assert.Nil(t, mysqlPool.Purge(mysqlResource))
+}
+
+func (s *FactoryTestSuite) SetupTest() {
 	s.factory = NewFactoryImpl(s.query)
 }
 
 func (s *FactoryTestSuite) TestTimes() {
 	var user []User
-	factInstance := s.factory.Times(2)
-	s.Nil(factInstance.Make(&user))
+	s.Nil(s.factory.Times(2).Make(&user))
 	s.True(len(user) == 2)
 	s.True(len(user[0].Name) > 0)
 	s.True(len(user[1].Name) > 0)
@@ -65,8 +70,7 @@ func (s *FactoryTestSuite) TestCreate() {
 	s.True(user1.ID > 0)
 
 	var user3 []User
-	factInstance := s.factory.Times(2)
-	s.Nil(factInstance.Create(&user3))
+	s.Nil(s.factory.Times(2).Create(&user3))
 	s.True(len(user3) == 2)
 	s.True(user3[0].ID > 0)
 	s.True(user3[1].ID > 0)
@@ -87,8 +91,7 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 	s.True(user1.ID > 0)
 
 	var user3 []User
-	factInstance := s.factory.Times(2)
-	s.Nil(factInstance.CreateQuietly(&user3))
+	s.Nil(s.factory.Times(2).CreateQuietly(&user3))
 	s.True(len(user3) == 2)
 	s.True(user3[0].ID > 0)
 	s.True(user3[1].ID > 0)
