@@ -7,26 +7,13 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/orm"
 )
 
-type Person struct {
-	orm.Model
-	orm.SoftDeletes
-	Name   string
-	Avatar string
+type UserFactory struct {
 }
 
-func (p *Person) Factory() factory.Factory {
-	return &PersonFactory{}
-}
-
-type PersonFactory struct {
-}
-
-func (p *PersonFactory) Definition() any {
+func (u *UserFactory) Definition() any {
 	faker := gofakeit.New(0)
 	return map[string]interface{}{
 		"name":       faker.Name(),
@@ -38,7 +25,7 @@ func (p *PersonFactory) Definition() any {
 
 type FactoryTestSuite struct {
 	suite.Suite
-	factory ormcontract.Factory
+	factory *FactoryImpl
 	query   ormcontract.Query
 }
 
@@ -57,29 +44,78 @@ func (s *FactoryTestSuite) SetupTest() {
 }
 
 func (s *FactoryTestSuite) TestTimes() {
-	var person []Person
+	var user []User
 	factInstance := s.factory.Times(2)
-	s.Nil(factInstance.Make(&person))
-	s.True(len(person) == 2)
-	s.True(len(person[0].Name) > 0)
-	s.True(len(person[1].Name) > 0)
+	s.Nil(factInstance.Make(&user))
+	s.True(len(user) == 2)
+	s.True(len(user[0].Name) > 0)
+	s.True(len(user[1].Name) > 0)
 }
 
 func (s *FactoryTestSuite) TestCreate() {
-	var person []Person
-	s.Nil(s.factory.Create(&person))
-	s.True(len(person) > 0)
-	s.True(person[0].ID > 0)
+	var user []User
+	s.Nil(s.factory.Create(&user))
+	s.True(len(user) == 1)
+	s.True(user[0].ID > 0)
+	s.True(len(user[0].Name) > 0)
 
-	var person1 Person
-	s.Nil(s.factory.Create(&person1))
-	s.NotNil(person1)
-	s.True(person1.ID > 0)
+	var user1 User
+	s.Nil(s.factory.Create(&user1))
+	s.NotNil(user1)
+	s.True(user1.ID > 0)
+
+	var user3 []User
+	factInstance := s.factory.Times(2)
+	s.Nil(factInstance.Create(&user3))
+	s.True(len(user3) == 2)
+	s.True(user3[0].ID > 0)
+	s.True(user3[1].ID > 0)
+	s.True(len(user3[0].Name) > 0)
+	s.True(len(user3[1].Name) > 0)
+}
+
+func (s *FactoryTestSuite) TestCreateQuietly() {
+	var user []User
+	s.Nil(s.factory.CreateQuietly(&user))
+	s.True(len(user) == 1)
+	s.True(user[0].ID > 0)
+	s.True(len(user[0].Name) > 0)
+
+	var user1 User
+	s.Nil(s.factory.CreateQuietly(&user1))
+	s.NotNil(user1)
+	s.True(user1.ID > 0)
+
+	var user3 []User
+	factInstance := s.factory.Times(2)
+	s.Nil(factInstance.CreateQuietly(&user3))
+	s.True(len(user3) == 2)
+	s.True(user3[0].ID > 0)
+	s.True(user3[1].ID > 0)
+	s.True(len(user3[0].Name) > 0)
+	s.True(len(user3[1].Name) > 0)
 }
 
 func (s *FactoryTestSuite) TestMake() {
-	var person []Person
-	s.Nil(s.factory.Make(&person))
-	s.True(len(person) > 0)
-	s.True(len(person[0].Name) > 0)
+	var user []User
+	s.Nil(s.factory.Make(&user))
+	s.True(len(user) == 1)
+	s.True(len(user[0].Name) > 0)
+}
+
+func (s *FactoryTestSuite) TestGetRawAttributes() {
+	var author Author
+	attributes, err := s.factory.getRawAttributes(&author)
+	s.NotNil(err)
+	s.Nil(attributes)
+
+	var house House
+	attributes, err = s.factory.getRawAttributes(&house)
+	s.NotNil(err)
+	s.Nil(attributes)
+
+	var user User
+	attributes, err = s.factory.getRawAttributes(&user)
+	s.Nil(err)
+	s.NotNil(attributes)
 }

@@ -2,9 +2,9 @@ package gorm
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
-	"github.com/brianvoe/gofakeit/v6"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/goravel/framework/contracts/database/factory"
@@ -13,13 +13,11 @@ import (
 
 type FactoryImpl struct {
 	count *int              // number of models to generate
-	faker *gofakeit.Faker   // faker instance
 	query ormcontract.Query // query instance
 }
 
 func NewFactoryImpl(query ormcontract.Query) *FactoryImpl {
 	return &FactoryImpl{
-		faker: gofakeit.New(0),
 		query: query,
 	}
 }
@@ -56,7 +54,10 @@ func (f *FactoryImpl) Make(value any) error {
 		}
 		for i := 0; i < count; i++ {
 			elemValue := reflect.New(reflectValue.Type().Elem()).Interface()
-			attributes := f.getRawAttributes(elemValue)
+			attributes, err := f.getRawAttributes(elemValue)
+			if err != nil {
+				return err
+			}
 			if attributes == nil {
 				return errors.New("failed to get raw attributes")
 			}
@@ -68,7 +69,10 @@ func (f *FactoryImpl) Make(value any) error {
 		reflect.ValueOf(value).Elem().Set(reflectValue)
 		return nil
 	default:
-		attributes := f.getRawAttributes(value)
+		attributes, err := f.getRawAttributes(value)
+		if err != nil {
+			return err
+		}
 		if attributes == nil {
 			return errors.New("failed to get raw attributes")
 		}
@@ -79,24 +83,33 @@ func (f *FactoryImpl) Make(value any) error {
 	}
 }
 
-func (f *FactoryImpl) getRawAttributes(value any) any {
+func (f *FactoryImpl) getRawAttributes(value any) (any, error) {
 	modelFactoryMethod := reflect.ValueOf(value).MethodByName("Factory")
-	if modelFactoryMethod.IsValid() {
-		factoryResult := modelFactoryMethod.Call(nil)
-		if len(factoryResult) > 0 {
-			factoryInstance, ok := factoryResult[0].Interface().(factory.Factory)
-			if ok {
-				definitionMethod := reflect.ValueOf(factoryInstance).MethodByName("Definition")
-				if definitionMethod.IsValid() {
-					definitionResult := definitionMethod.Call(nil)
-					if len(definitionResult) > 0 {
-						return definitionResult[0].Interface()
-					}
-				}
-			}
-		}
+	if !modelFactoryMethod.IsValid() {
+		return nil, errors.New("factory method not found")
 	}
-	return nil
+	if !modelFactoryMethod.IsValid() {
+		return nil, errors.New("factory method not found for value type " + reflect.TypeOf(value).String())
+	}
+	factoryResult := modelFactoryMethod.Call(nil)
+	if len(factoryResult) == 0 {
+		return nil, errors.New("factory method returned nothing")
+	}
+	factoryInstance, ok := factoryResult[0].Interface().(factory.Factory)
+	if !ok {
+		expectedType := reflect.TypeOf((*factory.Factory)(nil)).Elem()
+		return nil, fmt.Errorf("factory method does not return a factory instance (expected %v)", expectedType)
+	}
+	definitionMethod := reflect.ValueOf(factoryInstance).MethodByName("Definition")
+	if !definitionMethod.IsValid() {
+		return nil, errors.New("definition method not found in factory instance")
+	}
+	definitionResult := definitionMethod.Call(nil)
+	if len(definitionResult) == 0 {
+		return nil, errors.New("definition method returned nothing")
+	}
+
+	return definitionResult[0].Interface(), nil
 }
 
 // newInstance create a new factory instance.
@@ -104,19 +117,12 @@ func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Fact
 	instance := &FactoryImpl{
 		count: f.count,
 		query: f.query,
-		faker: f.faker,
 	}
 
 	if len(attributes) > 0 {
 		attr := attributes[0]
 		if count, ok := attr["count"].(int); ok {
 			instance.count = &count
-		}
-		if faker, ok := attr["faker"]; ok {
-			instance.faker = faker.(*gofakeit.Faker)
-		}
-		if query, ok := attr["query"]; ok {
-			instance.query = query.(ormcontract.Query)
 		}
 	}
 

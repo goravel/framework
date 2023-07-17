@@ -592,11 +592,7 @@ type Table struct {
 }
 
 func (r Table) Create(driver orm.Driver, db orm.Query) error {
-	_, err := db.Exec(r.createPersonTable(driver))
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(r.createUserTable(driver))
+	_, err := db.Exec(r.createUserTable(driver))
 	if err != nil {
 		return err
 	}
@@ -639,48 +635,6 @@ func (r Table) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) erro
 	}
 
 	return nil
-}
-func (r Table) createPersonTable(driver orm.Driver) string {
-	switch driver {
-	case orm.DriverMysql:
-		return `
-CREATE TABLE people (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  avatar varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL,
-  PRIMARY KEY (id),
-  KEY idx_people_created_at (created_at),
-  KEY idx_people_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case orm.DriverPostgresql:
-		return `
-CREATE TABLE people (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  avatar varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL,
-  deleted_at timestamp DEFAULT NULL
-);
-`
-	case orm.DriverSqlite:
-		return `
-CREATE TABLE people (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  name varchar(255) NOT NULL,
-  avatar varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL
-);
-`
-	default:
-		return ""
-	}
 }
 
 func (r Table) createUserTable(driver orm.Driver) string {
