@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/goravel/framework/support/file"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -15,9 +14,9 @@ import (
 type UserFactory struct {
 }
 
-func (u *UserFactory) Definition() any {
+func (u *UserFactory) Definition() map[string]any {
 	faker := gofakeit.New(0)
-	return map[string]interface{}{
+	return map[string]any{
 		"name":       faker.Name(),
 		"avatar":     faker.Email(),
 		"created_at": faker.Date(),
@@ -40,8 +39,6 @@ func TestFactoryTestSuite(t *testing.T) {
 	suite.Run(t, &FactoryTestSuite{
 		query: mysqlQuery,
 	})
-
-	assert.Nil(t, file.Remove(dbDatabase))
 	assert.Nil(t, mysqlPool.Purge(mysqlResource))
 }
 
