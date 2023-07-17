@@ -96,8 +96,8 @@ func (r Stubs) Factory() string {
 type DummyFactory struct {
 }
 
-// Defination Define the model's default state.
-func (f *DummyFactory) Defination() {
+// Definition Define the model's default state.
+func (f *DummyFactory) Definition() {
 
 }
 `
