@@ -97,8 +97,8 @@ type DummyFactory struct {
 }
 
 // Definition Define the model's default state.
-func (f *DummyFactory) Definition() {
-
+func (f *DummyFactory) Definition() any {
+     return nil
 }
 `
 }
