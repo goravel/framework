@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
+	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
@@ -33,6 +34,10 @@ type User struct {
 	House   *House   `gorm:"polymorphic:Houseable"`
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
+}
+
+func (u *User) Factory() factory.Factory {
+	return &UserFactory{}
 }
 
 func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Event) error {
@@ -285,6 +290,10 @@ type House struct {
 	Name          string
 	HouseableID   uint
 	HouseableType string
+}
+
+func (h *House) Factory() string {
+	return "house"
 }
 
 type Phone struct {

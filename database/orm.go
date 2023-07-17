@@ -72,6 +72,10 @@ func (r *OrmImpl) Query() ormcontract.Query {
 	return r.query
 }
 
+func (r *OrmImpl) Factory() ormcontract.Factory {
+	return databasegorm.NewFactoryImpl(r.query)
+}
+
 func (r *OrmImpl) Observe(model any, observer ormcontract.Observer) {
 	orm.Observers = append(orm.Observers, orm.Observer{
 		Model:    model,
