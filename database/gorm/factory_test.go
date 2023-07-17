@@ -31,6 +31,10 @@ type FactoryTestSuite struct {
 }
 
 func TestFactoryTestSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	mysqlDocker := NewMysqlDocker()
 	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
