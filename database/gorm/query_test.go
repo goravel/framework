@@ -2455,7 +2455,10 @@ func (s *QueryTestSuite) TestSum() {
 			s.Nil(query.Create(&user1))
 			s.True(user1.ID > 0)
 
-			s.True(query.Table("users").Sum("id") > 0)
+			var value float64
+			err := query.Table("users").Sum("id", &value)
+			s.Nil(err)
+			s.True(value > 0)
 		})
 	}
 }
