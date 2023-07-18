@@ -510,6 +510,15 @@ func (r *QueryImpl) SharedLock() ormcontract.Query {
 	return r
 }
 
+func (r *QueryImpl) Sum(column string) float64 {
+	var sumResult float64
+	result := r.instance.Select("SUM(" + column + ")").Row()
+	if err := result.Scan(&sumResult); err != nil {
+		return 0
+	}
+	return sumResult
+}
+
 func (r *QueryImpl) Table(name string, args ...any) ormcontract.Query {
 	tx := r.instance.Table(name, args...)
 
