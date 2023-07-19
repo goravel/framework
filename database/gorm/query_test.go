@@ -2444,6 +2444,25 @@ func (s *QueryTestSuite) TestSoftDelete() {
 	}
 }
 
+func (s *QueryTestSuite) TestSum() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "count_user", Avatar: "count_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "count_user", Avatar: "count_avatar1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var value float64
+			err := query.Table("users").Sum("id", &value)
+			s.Nil(err)
+			s.True(value > 0)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestTransactionSuccess() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {

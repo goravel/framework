@@ -63,6 +63,7 @@ type Query interface {
 	Scopes(funcs ...func(Query) Query) Query
 	Select(query any, args ...any) Query
 	SharedLock() Query
+	Sum(column string, dest any) error
 	Table(name string, args ...any) Query
 	Update(column any, value ...any) (*Result, error)
 	UpdateOrCreate(dest any, attributes any, values any) error
