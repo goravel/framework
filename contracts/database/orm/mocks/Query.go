@@ -680,15 +680,15 @@ func (_m *Query) SharedLock() orm.Query {
 	return r0
 }
 
-// Sum provides a mock function with given fields: column
-func (_m *Query) Sum(column string) float64 {
-	ret := _m.Called(column)
+// Sum provides a mock function with given fields: column, dest
+func (_m *Query) Sum(column string, dest interface{}) error {
+	ret := _m.Called(column, dest)
 
-	var r0 float64
-	if rf, ok := ret.Get(0).(func(string) float64); ok {
-		r0 = rf(column)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
+		r0 = rf(column, dest)
 	} else {
-		r0 = ret.Get(0).(float64)
+		r0 = ret.Error(0)
 	}
 
 	return r0
