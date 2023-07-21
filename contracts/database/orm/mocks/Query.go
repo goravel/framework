@@ -82,6 +82,32 @@ func (_m *Query) Create(value interface{}) error {
 	return r0
 }
 
+// Cursor provides a mock function with given fields:
+func (_m *Query) Cursor() (chan orm.Cursor, error) {
+	ret := _m.Called()
+
+	var r0 chan orm.Cursor
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (chan orm.Cursor, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() chan orm.Cursor); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan orm.Cursor)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Delete provides a mock function with given fields: value, conds
 func (_m *Query) Delete(value interface{}, conds ...interface{}) (*orm.Result, error) {
 	var _ca []interface{}

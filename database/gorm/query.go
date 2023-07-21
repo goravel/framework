@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/google/wire"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -28,6 +29,10 @@ type QueryImpl struct {
 	withoutEvents bool
 }
 
+type CursorImpl struct {
+	row map[string]any
+}
+
 func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryImpl, error) {
 	tempConfig = config
 	db, err := gorm.Make()
@@ -41,6 +46,43 @@ func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryI
 	return &QueryImpl{
 		instance: db,
 	}, nil
+}
+
+func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
+	var err error
+	cursorChan := make(chan ormcontract.Cursor)
+	go func() {
+		rows, err := r.instance.Rows()
+		if err != nil {
+			return
+		}
+
+		for rows.Next() {
+			val := make(map[string]any)
+			err := r.instance.ScanRows(rows, val)
+			if err != nil {
+				err = rows.Close()
+				return
+			}
+			cursorChan <- &CursorImpl{row: val}
+		}
+		close(cursorChan)
+	}()
+	return cursorChan, err
+}
+
+func (c *CursorImpl) Scan(value any) error {
+	msConfig := &mapstructure.DecoderConfig{
+		Squash: true,
+		Result: value,
+	}
+
+	decoder, err := mapstructure.NewDecoder(msConfig)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(c.row)
 }
 
 func NewQueryWithWithoutEvents(instance *gormio.DB, withoutEvents bool) *QueryImpl {
