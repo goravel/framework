@@ -2458,6 +2458,32 @@ func (s *QueryTestSuite) TestSum() {
 	}
 }
 
+func (s *QueryTestSuite) TestCursor() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "cursor_user", Avatar: "cursor_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").Cursor()
+			s.Nil(err)
+			var size int
+			for row := range users {
+				var user User
+				s.Nil(row.Scan(&user))
+				s.True(user.ID > 0)
+				s.True(len(user.Name) > 0)
+				size++
+			}
+			s.Equal(2, size)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestTransactionSuccess() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {

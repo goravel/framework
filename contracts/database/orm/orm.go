@@ -30,6 +30,7 @@ type Query interface {
 	Driver() Driver
 	Count(count *int64) error
 	Create(value any) error
+	Cursor() (chan Cursor, error)
 	Delete(value any, conds ...any) (*Result, error)
 	Distinct(args ...any) Query
 	Exec(sql string, values ...any) (*Result, error)
@@ -81,6 +82,11 @@ type Association interface {
 	Delete(values ...any) error
 	Clear() error
 	Count() int64
+}
+
+//go:generate mockery --name=Cursor
+type Cursor interface {
+	Scan(value any) error
 }
 
 type Result struct {
