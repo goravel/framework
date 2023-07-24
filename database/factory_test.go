@@ -1,15 +1,25 @@
-package gorm
+package database
 
 import (
 	"log"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	gormio "gorm.io/gorm"
 
+	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/carbon"
 )
+
+func (u *User) Factory() factory.Factory {
+	return &UserFactory{}
+}
 
 type UserFactory struct {
 }
@@ -17,11 +27,44 @@ type UserFactory struct {
 func (u *UserFactory) Definition() map[string]any {
 	faker := gofakeit.New(0)
 	return map[string]any{
-		"name":       faker.Name(),
-		"avatar":     faker.Email(),
-		"created_at": faker.Date(),
-		"updated_at": faker.Date(),
+		"Name":      faker.Name(),
+		"Avatar":    faker.Email(),
+		"CreatedAt": carbon.NewDateTime(carbon.Now()),
+		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
 	}
+}
+
+type Author struct {
+	orm.Model
+	BookID uint
+	Name   string
+	orm.SoftDeletes
+}
+
+func (a *Author) Factory() factory.Factory {
+	return &AuthorFactory{}
+}
+
+type AuthorFactory struct {
+}
+
+func (a *AuthorFactory) Definition() map[string]any {
+	faker := gofakeit.New(0)
+	return map[string]any{
+		"ID":        1,
+		"BookID":    2,
+		"Name":      faker.Name(),
+		"CreatedAt": carbon.NewDateTime(carbon.Now()),
+		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+		"DeletedAt": gormio.DeletedAt{Time: time.Now(), Valid: true},
+	}
+}
+
+type House struct {
+	orm.Model
+	Name          string
+	HouseableID   uint
+	HouseableType string
 }
 
 type FactoryTestSuite struct {
@@ -35,7 +78,7 @@ func TestFactoryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker()
+	mysqlDocker := gorm.NewMysqlDocker()
 	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
@@ -101,20 +144,36 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 }
 
 func (s *FactoryTestSuite) TestMake() {
-	var user []User
+	var user User
 	s.Nil(s.factory.Make(&user))
-	s.True(len(user) == 1)
-	s.True(len(user[0].Name) > 0)
+	s.True(user.ID == 0)
+	s.True(len(user.Name) > 0)
+	s.True(len(user.Avatar) > 0)
+	s.NotEmpty(user.CreatedAt.String())
+	s.NotEmpty(user.UpdatedAt.String())
+
+	var users []User
+	s.Nil(s.factory.Make(&users))
+	s.True(len(users) == 1)
+	s.True(users[0].ID == 0)
+	s.True(len(users[0].Name) > 0)
+	s.True(len(users[0].Avatar) > 0)
+	s.NotEmpty(users[0].CreatedAt.String())
+	s.NotEmpty(users[0].UpdatedAt.String())
+
+	var author Author
+	s.Nil(s.factory.Make(&author))
+	s.True(author.ID == 1)
+	s.True(len(author.Name) > 0)
+	s.True(author.BookID == 2)
+	s.NotEmpty(author.CreatedAt.String())
+	s.NotEmpty(author.UpdatedAt.String())
+	s.True(author.DeletedAt.Valid)
 }
 
 func (s *FactoryTestSuite) TestGetRawAttributes() {
-	var author Author
-	attributes, err := s.factory.getRawAttributes(&author)
-	s.NotNil(err)
-	s.Nil(attributes)
-
 	var house House
-	attributes, err = s.factory.getRawAttributes(&house)
+	attributes, err := s.factory.getRawAttributes(&house)
 	s.NotNil(err)
 	s.Nil(attributes)
 
