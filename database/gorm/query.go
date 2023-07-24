@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"reflect"
 
@@ -90,12 +89,7 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 		if err != nil {
 			return
 		}
-		defer func(rows *sql.Rows) {
-			err := rows.Close()
-			if err != nil {
-
-			}
-		}(rows)
+		defer rows.Close()
 
 		for rows.Next() {
 			val := make(map[string]any)

@@ -2471,12 +2471,15 @@ func (s *QueryTestSuite) TestCursor() {
 
 			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").Cursor()
 			s.Nil(err)
+			var size int
 			for row := range users {
 				var user User
 				s.Nil(row.Scan(&user))
 				s.True(user.ID > 0)
 				s.True(len(user.Name) > 0)
+				size++
 			}
+			s.Equal(2, size)
 		})
 	}
 }
