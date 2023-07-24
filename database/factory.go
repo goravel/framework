@@ -1,4 +1,4 @@
-package gorm
+package database
 
 import (
 	"errors"
@@ -32,6 +32,7 @@ func (f *FactoryImpl) Create(value any) error {
 	if err := f.Make(value); err != nil {
 		return err
 	}
+
 	return f.query.Create(value)
 }
 
@@ -40,6 +41,7 @@ func (f *FactoryImpl) CreateQuietly(value any) error {
 	if err := f.Make(value); err != nil {
 		return err
 	}
+
 	return f.query.WithoutEvents().Create(value)
 }
 
@@ -61,12 +63,21 @@ func (f *FactoryImpl) Make(value any) error {
 			if attributes == nil {
 				return errors.New("failed to get raw attributes")
 			}
-			if err := mapstructure.Decode(attributes, elemValue); err != nil {
+			decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+				Squash: true,
+				Result: elemValue,
+			})
+			if err != nil {
+				return err
+			}
+			if err := decoder.Decode(attributes); err != nil {
 				return err
 			}
 			reflectValue = reflect.Append(reflectValue, reflect.ValueOf(elemValue).Elem())
 		}
+
 		reflect.ValueOf(value).Elem().Set(reflectValue)
+
 		return nil
 	default:
 		attributes, err := f.getRawAttributes(value)
@@ -76,40 +87,25 @@ func (f *FactoryImpl) Make(value any) error {
 		if attributes == nil {
 			return errors.New("failed to get raw attributes")
 		}
-		if err := mapstructure.Decode(attributes, value); err != nil {
+		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+			Squash: true,
+			Result: value,
+		})
+		if err != nil {
 			return err
 		}
-		return nil
+
+		return decoder.Decode(attributes)
 	}
 }
 
-func (f *FactoryImpl) getRawAttributes(value any) (any, error) {
-	modelFactoryMethod := reflect.ValueOf(value).MethodByName("Factory")
-	if !modelFactoryMethod.IsValid() {
-		return nil, errors.New("factory method not found")
-	}
-	if !modelFactoryMethod.IsValid() {
-		return nil, errors.New("factory method not found for value type " + reflect.TypeOf(value).String())
-	}
-	factoryResult := modelFactoryMethod.Call(nil)
-	if len(factoryResult) == 0 {
-		return nil, errors.New("factory method returned nothing")
-	}
-	factoryInstance, ok := factoryResult[0].Interface().(factory.Factory)
-	if !ok {
-		expectedType := reflect.TypeOf((*factory.Factory)(nil)).Elem()
-		return nil, fmt.Errorf("factory method does not return a factory instance (expected %v)", expectedType)
-	}
-	definitionMethod := reflect.ValueOf(factoryInstance).MethodByName("Definition")
-	if !definitionMethod.IsValid() {
-		return nil, errors.New("definition method not found in factory instance")
-	}
-	definitionResult := definitionMethod.Call(nil)
-	if len(definitionResult) == 0 {
-		return nil, errors.New("definition method returned nothing")
+func (f *FactoryImpl) getRawAttributes(value any) (map[string]any, error) {
+	factoryModel, exist := value.(factory.Model)
+	if !exist {
+		return nil, fmt.Errorf("%s does not find factory method", reflect.TypeOf(value).String())
 	}
 
-	return definitionResult[0].Interface(), nil
+	return factoryModel.Factory().Definition(), nil
 }
 
 // newInstance create a new factory instance.
