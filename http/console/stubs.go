@@ -61,10 +61,6 @@ func (r *DummyController) Index(ctx http.Context) {
 
 func (r Stubs) ResourceController() string {
 	return r.Controller() + `
-
-func (r *DummyController) Store(ctx http.Context) {
-}
-
 func (r *DummyController) Show(ctx http.Context) {
 }
 
