@@ -91,6 +91,9 @@ func (f *FactoryImpl) Make(value any) error {
 			Squash: true,
 			Result: value,
 		})
+		if err != nil {
+			return err
+		}
 
 		return decoder.Decode(attributes)
 	}
