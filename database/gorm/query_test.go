@@ -763,12 +763,7 @@ func (s *QueryTestSuite) TestCursor() {
 				s.True(len(tempUser.Name) > 0)
 				s.NotEmpty(tempUser.CreatedAt.String())
 				s.NotEmpty(tempUser.UpdatedAt.String())
-				if tempUser.ID == user2.ID {
-					s.True(tempUser.DeletedAt.Valid)
-				} else {
-					s.False(tempUser.DeletedAt.Valid)
-				}
-
+				s.Equal(tempUser.DeletedAt.Valid, tempUser.ID == user2.ID)
 				size++
 			}
 			s.Equal(3, size)
