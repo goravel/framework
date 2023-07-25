@@ -735,6 +735,42 @@ func (s *QueryTestSuite) TestCreate() {
 	}
 }
 
+func (s *QueryTestSuite) TestCursor() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "cursor_user", Avatar: "cursor_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "cursor_user", Avatar: "cursor_avatar2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+			res, err := query.Delete(&user2)
+			s.Nil(err)
+			s.Equal(int64(1), res.RowsAffected)
+
+			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().Cursor()
+			s.Nil(err)
+			var size int
+			for row := range users {
+				var tempUser User
+				s.Nil(row.Scan(&tempUser))
+				s.True(tempUser.ID > 0)
+				s.True(len(tempUser.Name) > 0)
+				s.NotEmpty(tempUser.CreatedAt.String())
+				s.NotEmpty(tempUser.UpdatedAt.String())
+				s.Equal(tempUser.DeletedAt.Valid, tempUser.ID == user2.ID)
+				size++
+			}
+			s.Equal(3, size)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestDelete() {
 	for _, query := range s.queries {
 		tests := []struct {
@@ -2454,32 +2490,6 @@ func (s *QueryTestSuite) TestSum() {
 			err := query.Table("users").Sum("id", &value)
 			s.Nil(err)
 			s.True(value > 0)
-		})
-	}
-}
-
-func (s *QueryTestSuite) TestCursor() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			user := User{Name: "cursor_user", Avatar: "cursor_avatar"}
-			s.Nil(query.Create(&user))
-			s.True(user.ID > 0)
-
-			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
-			s.Nil(query.Create(&user1))
-			s.True(user1.ID > 0)
-
-			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").Cursor()
-			s.Nil(err)
-			var size int
-			for row := range users {
-				var user User
-				s.Nil(row.Scan(&user))
-				s.True(user.ID > 0)
-				s.True(len(user.Name) > 0)
-				size++
-			}
-			s.Equal(2, size)
 		})
 	}
 }
