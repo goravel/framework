@@ -7,40 +7,57 @@ import (
 )
 
 type Event struct {
-	Command             string
-	Callback            func()
+	callback            func()
+	command             string
 	cron                string
-	skipIfStillRunning  bool
 	delayIfStillRunning bool
+	name                string
+	onOneServer         bool
+	skipIfStillRunning  bool
 }
 
-func (receiver *Event) GetCron() string {
-	if receiver.cron == "" {
-		receiver.cron = "* * * * *"
-	}
-
-	return receiver.cron
+func NewCallbackEvent(callback func()) *Event {
+	return &Event{callback: callback}
 }
 
-func (receiver *Event) GetCommand() string {
-	return receiver.Command
+func NewCommandEvent(command string) *Event {
+	return &Event{command: command, name: command}
 }
 
-func (receiver *Event) GetCallback() func() {
-	return receiver.Callback
-}
-
-func (receiver *Event) GetSkipIfStillRunning() bool {
-	return receiver.skipIfStillRunning
-}
-
-func (receiver *Event) GetDelayIfStillRunning() bool {
-	return receiver.delayIfStillRunning
+//At Schedule the command at a given time.
+func (receiver *Event) At(time string) schedule.Event {
+	return receiver.DailyAt(time)
 }
 
 //Cron The Cron expression representing the event's frequency.
 func (receiver *Event) Cron(expression string) schedule.Event {
 	receiver.cron = expression
+
+	return receiver
+}
+
+//Daily Schedule the event to run daily.
+func (receiver *Event) Daily() schedule.Event {
+	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
+
+	return event.Cron(receiver.spliceIntoPosition(2, "0"))
+}
+
+//DailyAt Schedule the event to run daily at a given time (10:00, 19:30, etc).
+func (receiver *Event) DailyAt(time string) schedule.Event {
+	segments := strings.Split(time, ":")
+	event := receiver.Cron(receiver.spliceIntoPosition(2, segments[0]))
+
+	if len(segments) == 2 {
+		return event.Cron(receiver.spliceIntoPosition(1, segments[1]))
+	} else {
+		return event.Cron(receiver.spliceIntoPosition(1, "0"))
+	}
+}
+
+//DelayIfStillRunning Do not allow the event to overlap each other.
+func (receiver *Event) DelayIfStillRunning() schedule.Event {
+	receiver.delayIfStillRunning = true
 
 	return receiver
 }
@@ -85,16 +102,6 @@ func (receiver *Event) EveryThirtyMinutes() schedule.Event {
 	return receiver.Cron(receiver.spliceIntoPosition(1, "0,30"))
 }
 
-//Hourly Schedule the event to run hourly.
-func (receiver *Event) Hourly() schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, "0"))
-}
-
-//HourlyAt Schedule the event to run hourly at a given offset in the hour.
-func (receiver *Event) HourlyAt(offset []string) schedule.Event {
-	return receiver.Cron(receiver.spliceIntoPosition(1, strings.Join(offset, ",")))
-}
-
 //EveryTwoHours Schedule the event to run every two hours.
 func (receiver *Event) EveryTwoHours() schedule.Event {
 	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
@@ -123,40 +130,63 @@ func (receiver *Event) EverySixHours() schedule.Event {
 	return event.Cron(receiver.spliceIntoPosition(2, "*/6"))
 }
 
-//Daily Schedule the event to run daily.
-func (receiver *Event) Daily() schedule.Event {
-	event := receiver.Cron(receiver.spliceIntoPosition(1, "0"))
-
-	return event.Cron(receiver.spliceIntoPosition(2, "0"))
-}
-
-//At Schedule the command at a given time.
-func (receiver *Event) At(time string) schedule.Event {
-	return receiver.DailyAt(time)
-}
-
-//DailyAt Schedule the event to run daily at a given time (10:00, 19:30, etc).
-func (receiver *Event) DailyAt(time string) schedule.Event {
-	segments := strings.Split(time, ":")
-	event := receiver.Cron(receiver.spliceIntoPosition(2, segments[0]))
-
-	if len(segments) == 2 {
-		return event.Cron(receiver.spliceIntoPosition(1, segments[1]))
-	} else {
-		return event.Cron(receiver.spliceIntoPosition(1, "0"))
+func (receiver *Event) GetCron() string {
+	if receiver.cron == "" {
+		receiver.cron = "* * * * *"
 	}
+
+	return receiver.cron
+}
+
+func (receiver *Event) GetCommand() string {
+	return receiver.command
+}
+
+func (receiver *Event) GetCallback() func() {
+	return receiver.callback
+}
+
+func (receiver *Event) GetName() string {
+	return receiver.name
+}
+
+func (receiver *Event) GetSkipIfStillRunning() bool {
+	return receiver.skipIfStillRunning
+}
+
+func (receiver *Event) GetDelayIfStillRunning() bool {
+	return receiver.delayIfStillRunning
+}
+
+//Hourly Schedule the event to run hourly.
+func (receiver *Event) Hourly() schedule.Event {
+	return receiver.Cron(receiver.spliceIntoPosition(1, "0"))
+}
+
+//HourlyAt Schedule the event to run hourly at a given offset in the hour.
+func (receiver *Event) HourlyAt(offset []string) schedule.Event {
+	return receiver.Cron(receiver.spliceIntoPosition(1, strings.Join(offset, ",")))
+}
+
+func (receiver *Event) IsOnOneServer() bool {
+	return receiver.onOneServer
+}
+
+func (receiver *Event) Name(name string) schedule.Event {
+	receiver.name = name
+
+	return receiver
+}
+
+func (receiver *Event) OnOneServer() schedule.Event {
+	receiver.onOneServer = true
+
+	return receiver
 }
 
 //SkipIfStillRunning Do not allow the event to overlap each other.
 func (receiver *Event) SkipIfStillRunning() schedule.Event {
 	receiver.skipIfStillRunning = true
-
-	return receiver
-}
-
-//DelayIfStillRunning Do not allow the event to overlap each other.
-func (receiver *Event) DelayIfStillRunning() schedule.Event {
-	receiver.delayIfStillRunning = true
 
 	return receiver
 }

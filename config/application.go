@@ -20,16 +20,15 @@ type Application struct {
 
 func NewApplication(envPath string) *Application {
 	if !file.Exists(envPath) {
-		color.Redln("Please create .env and initialize it first.")
-		color.Warnln("Run command: \ncp .env.example .env && go run . artisan key:generate")
+		color.Redln("Please create " + envPath + " and initialize it first.")
+		color.Warnln("Example command: \ncp .env.example .env && go run . artisan key:generate")
 		os.Exit(0)
 	}
 
 	app := &Application{}
 	app.vip = viper.New()
-	app.vip.SetConfigName(envPath)
 	app.vip.SetConfigType("env")
-	app.vip.AddConfigPath(".")
+	app.vip.SetConfigFile(envPath)
 
 	if err := app.vip.ReadInConfig(); err != nil {
 		color.Redln("Invalid Config error: " + err.Error())
@@ -43,13 +42,13 @@ func NewApplication(envPath string) *Application {
 	if support.Env != support.EnvArtisan {
 		if appKey == nil {
 			color.Redln("Please initialize APP_KEY first.")
-			color.Warnln("Run command: \ngo run . artisan key:generate")
+			color.Warnln("Example command: \ngo run . artisan key:generate")
 			os.Exit(0)
 		}
 
 		if len(appKey.(string)) != 32 {
 			color.Redln("Invalid APP_KEY, please reset it.")
-			color.Warnln("Run command: \ngo run . artisan key:generate")
+			color.Warnln("Example command: \ngo run . artisan key:generate")
 			os.Exit(0)
 		}
 	}

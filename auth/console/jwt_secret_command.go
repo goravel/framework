@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -77,14 +78,14 @@ func (receiver *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (receiver *JwtSecretCommand) writeNewEnvironmentFileWith(key string) error {
-	content, err := os.ReadFile(".env")
+	content, err := os.ReadFile(support.EnvPath)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "JWT_SECRET="+receiver.config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
 
-	err = os.WriteFile(".env", []byte(newContent), 0644)
+	err = os.WriteFile(support.EnvPath, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}

@@ -10,5 +10,6 @@ const (
 
 var (
 	Env      = EnvRuntime
+	EnvPath  = ".env"
 	RootPath string
 )

@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -82,14 +83,14 @@ func (receiver *KeyGenerateCommand) generateRandomKey() string {
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (receiver *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
-	content, err := os.ReadFile(".env")
+	content, err := os.ReadFile(support.EnvPath)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "APP_KEY="+receiver.config.GetString("app.key"), "APP_KEY="+key, 1)
 
-	err = os.WriteFile(".env", []byte(newContent), 0644)
+	err = os.WriteFile(support.EnvPath, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}

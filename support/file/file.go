@@ -50,10 +50,7 @@ func Create(file string, content string) error {
 
 func Exists(file string) bool {
 	_, err := os.Stat(file)
-	if err != nil {
-		return os.IsExist(err)
-	}
-	return true
+	return err == nil
 }
 
 // Extension Supported types: https://github.com/gabriel-vasile/mimetype/blob/master/supported_mimes.md

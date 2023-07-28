@@ -289,7 +289,7 @@ func (s *AuthTestSuite) TestUser_DBError() {
 	var user User
 
 	s.mockOrm.On("Query").Return(s.mockDB)
-	s.mockDB.On("Find", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(errors.New("error")).Once()
+	s.mockDB.On("FindOrFail", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(errors.New("error")).Once()
 
 	err = s.auth.User(ctx, &user)
 	s.EqualError(err, "error")
@@ -325,7 +325,7 @@ func (s *AuthTestSuite) TestUser_Expired() {
 	s.Nil(err)
 
 	s.mockOrm.On("Query").Return(s.mockDB)
-	s.mockDB.On("Find", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
+	s.mockDB.On("FindOrFail", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
 
 	err = s.auth.User(ctx, &user)
 	s.Nil(err)
@@ -385,7 +385,7 @@ func (s *AuthTestSuite) TestUser_Success() {
 
 	var user User
 	s.mockOrm.On("Query").Return(s.mockDB)
-	s.mockDB.On("Find", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
+	s.mockDB.On("FindOrFail", &user, clause.Eq{Column: clause.PrimaryColumn, Value: "1"}).Return(nil).Once()
 
 	err = s.auth.User(ctx, &user)
 	s.Nil(err)

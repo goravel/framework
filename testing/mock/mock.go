@@ -7,6 +7,7 @@ import (
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	consolemock "github.com/goravel/framework/contracts/console/mocks"
 	ormmock "github.com/goravel/framework/contracts/database/orm/mocks"
+	seedermocks "github.com/goravel/framework/contracts/database/seeder/mocks"
 	eventmock "github.com/goravel/framework/contracts/event/mocks"
 	filesystemmock "github.com/goravel/framework/contracts/filesystem/mocks"
 	foundationmock "github.com/goravel/framework/contracts/foundation/mocks"
@@ -118,4 +119,11 @@ func Validation() (*validatemock.Validation, *validatemock.Validator, *validatem
 	App().On("MakeValidation").Return(mockValidation)
 
 	return mockValidation, mockValidator, mockErrors
+}
+
+func Seeder() *seedermocks.Facade {
+	mockSeeder := &seedermocks.Facade{}
+	App().On("MakeSeeder").Return(mockSeeder)
+
+	return mockSeeder
 }

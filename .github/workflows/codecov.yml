@@ -12,11 +12,11 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: 'stable'
-      - name: Install dependencies
+      - name: Install dependencies 📦
         run: go mod tidy
-      - name: Run tests with coverage
+      - name: Run tests with coverage ✅
         run: go test -v -coverprofile="coverage.out" ./...
-      - name: Upload coverage report to Codecov
+      - name: Upload coverage report to Codecov 📝
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.out
