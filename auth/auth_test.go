@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm/clause"
@@ -245,6 +245,20 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
 	}, payload)
 	s.Nil(err)
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+
+	ctx := http.Background()
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiIxIiwic3ViIjoidXNlciIsImV4cCI6MTY4OTk3MDE3MiwiaWF0IjoxNjg5OTY2NTcyfQ.GApXNbicqzjF2jHsSCJ1AdziHnI1grPuJ5ddSQjGJUQ"
+
+	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
+
+	_, err := s.auth.Parse(ctx, token)
+	s.ErrorIs(err, ErrorInvalidToken)
 
 	s.mockConfig.AssertExpectations(s.T())
 }
