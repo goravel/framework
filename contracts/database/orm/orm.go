@@ -11,6 +11,7 @@ type Orm interface {
 	DB() (*sql.DB, error)
 	Query() Query
 	Factory() Factory
+	Model(value any) Orm
 	Observe(model any, observer Observer)
 	Transaction(txFunc func(tx Transaction) error) error
 	WithContext(ctx context.Context) Orm
@@ -82,6 +83,10 @@ type Association interface {
 	Delete(values ...any) error
 	Clear() error
 	Count() int64
+}
+
+type Model interface {
+	Connection() string
 }
 
 //go:generate mockery --name=Cursor

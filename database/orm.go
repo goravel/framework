@@ -76,6 +76,22 @@ func (r *OrmImpl) Factory() ormcontract.Factory {
 	return NewFactoryImpl(r.query)
 }
 
+func (r *OrmImpl) Model(value any) ormcontract.Orm {
+	model, ok := value.(ormcontract.Model)
+	if !ok {
+		return r
+	}
+
+	// Check if the model has a connection specified
+	if conn := model.Connection(); conn != "" {
+		r.query = r.query.Model(value)
+		return r.Connection(conn)
+	}
+
+	// If the model doesn't have a connection specified, return the current OrmImpl instance
+	return r
+}
+
 func (r *OrmImpl) Observe(model any, observer ormcontract.Observer) {
 	orm.Observers = append(orm.Observers, orm.Observer{
 		Model:    model,

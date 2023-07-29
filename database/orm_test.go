@@ -29,6 +29,10 @@ type User struct {
 	Avatar string
 }
 
+func (u *User) Connection() string {
+	return "postgresql"
+}
+
 type OrmSuite struct {
 	suite.Suite
 	orm *OrmImpl
@@ -107,6 +111,10 @@ func (s *OrmSuite) TestConnection() {
 	for _, connection := range connections {
 		s.NotNil(s.orm.Connection(connection.String()))
 	}
+}
+
+func (s *OrmSuite) TestModel() {
+	s.NotNil(s.orm.Model(&User{}))
 }
 
 func (s *OrmSuite) TestDB() {
