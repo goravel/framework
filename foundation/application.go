@@ -18,7 +18,7 @@ var (
 	App foundation.Application
 )
 
-var flagEnv = flag.String("env", ".env", "custom .env path")
+var _ = flag.String("env", ".env", "custom .env path")
 
 func init() {
 	setEnv()

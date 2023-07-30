@@ -24,14 +24,14 @@ func TestDummyTestSuite(t *testing.T) {
 }
 
 // SetupTest will run before each test in the suite.
-func (s *UserTestSuite) SetupTest() {
+func (s *DummyTestSuite) SetupTest() {
 }
 
 // TearDownTest will run after each test in the suite.
-func (s *UserTestSuite) TearDownTest() {
+func (s *DummyTestSuite) TearDownTest() {
 }
 
-func (s *UserTestSuite) TestIndex() {
+func (s *DummyTestSuite) TestIndex() {
 	// TODO
 }
 `
