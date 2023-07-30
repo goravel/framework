@@ -2,12 +2,14 @@ package logger
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/log/formatter"
+	"github.com/goravel/framework/support"
 )
 
 type Single struct {
@@ -26,6 +28,7 @@ func (single *Single) Handle(channel string) (logrus.Hook, error) {
 		return nil, errors.New("error log path")
 	}
 
+	logPath = filepath.Join(support.RelativePath, logPath)
 	levels := getLevels(single.config.GetString(channel + ".level"))
 	pathMap := lfshook.PathMap{}
 	for _, level := range levels {
