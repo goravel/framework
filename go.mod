@@ -19,7 +19,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/gookit/color v1.5.4
-	github.com/gookit/validate v1.5.0
+	github.com/gookit/validate v1.5.1
 	github.com/goravel/file-rotatelogs/v2 v2.4.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
