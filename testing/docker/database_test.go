@@ -19,14 +19,16 @@ import (
 
 func TestNewDatabase(t *testing.T) {
 	var (
-		mockApp    *foundationmocks.Application
-		mockConfig *configmocks.Config
+		mockApp            *foundationmocks.Application
+		mockConfig         *configmocks.Config
+		mockGormInitialize *gormmocks.Initialize
 	)
 
 	beforeEach := func() {
 		mockConfig = configmocks.NewConfig(t)
 		mockApp = foundationmocks.NewApplication(t)
 		mockApp.On("MakeConfig").Return(mockConfig).Once()
+		mockGormInitialize = gormmocks.NewInitialize(t)
 	}
 
 	tests := []struct {
@@ -44,9 +46,11 @@ func TestNewDatabase(t *testing.T) {
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:        mockApp,
-					connection: "mysql",
-					driver:     NewMysql(mockConfig, "mysql"),
+					app:            mockApp,
+					config:         mockConfig,
+					connection:     "mysql",
+					driver:         NewMysql(mockConfig, "mysql"),
+					gormInitialize: mockGormInitialize,
 				}
 			},
 		},
@@ -58,9 +62,11 @@ func TestNewDatabase(t *testing.T) {
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:        mockApp,
-					connection: "mysql",
-					driver:     NewMysql(mockConfig, "mysql"),
+					app:            mockApp,
+					config:         mockConfig,
+					connection:     "mysql",
+					driver:         NewMysql(mockConfig, "mysql"),
+					gormInitialize: mockGormInitialize,
 				}
 			},
 		},
@@ -72,9 +78,11 @@ func TestNewDatabase(t *testing.T) {
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:        mockApp,
-					connection: "postgresql",
-					driver:     NewPostgresql(mockConfig, "postgresql"),
+					app:            mockApp,
+					config:         mockConfig,
+					connection:     "postgresql",
+					driver:         NewPostgresql(mockConfig, "postgresql"),
+					gormInitialize: mockGormInitialize,
 				}
 			},
 		},
@@ -86,9 +94,11 @@ func TestNewDatabase(t *testing.T) {
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:        mockApp,
-					connection: "sqlserver",
-					driver:     NewSqlserver(mockConfig, "sqlserver"),
+					app:            mockApp,
+					config:         mockConfig,
+					connection:     "sqlserver",
+					driver:         NewSqlserver(mockConfig, "sqlserver"),
+					gormInitialize: mockGormInitialize,
 				}
 			},
 		},
@@ -100,9 +110,11 @@ func TestNewDatabase(t *testing.T) {
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:        mockApp,
-					connection: "sqlite",
-					driver:     NewSqlite(mockConfig, "sqlite"),
+					app:            mockApp,
+					config:         mockConfig,
+					connection:     "sqlite",
+					driver:         NewSqlite(mockConfig, "sqlite"),
+					gormInitialize: mockGormInitialize,
 				}
 			},
 		},
@@ -120,7 +132,7 @@ func TestNewDatabase(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			beforeEach()
 			tt.setup()
-			gotDatabase, err := NewDatabase(mockApp, tt.connection)
+			gotDatabase, err := NewDatabase(mockApp, tt.connection, mockGormInitialize)
 			if tt.wantDatabase != nil {
 				assert.Equal(t, tt.wantDatabase(), gotDatabase)
 			}
