@@ -231,22 +231,24 @@ func getEnvPath() string {
 	args := os.Args
 	for index, arg := range args {
 		if strings.HasPrefix(arg, "--env=") {
-			path := strings.TrimPrefix(arg, "--env=")
-
-			if path != "" {
+			if path := strings.TrimPrefix(arg, "--env="); path != "" {
 				envPath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-env=") {
-			path := strings.TrimPrefix(arg, "-env=")
-
-			if path != "" {
+			if path := strings.TrimPrefix(arg, "-env="); path != "" {
 				envPath = path
 				break
 			}
 		}
-		if arg == "--env" || arg == "-env" {
+		if strings.HasPrefix(arg, "-e=") {
+			if path := strings.TrimPrefix(arg, "-e="); path != "" {
+				envPath = path
+				break
+			}
+		}
+		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
 				envPath = args[index+1]
 				break

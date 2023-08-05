@@ -95,7 +95,7 @@ func (s *FactoryTestSuite) SetupTest() {
 
 func (s *FactoryTestSuite) TestTimes() {
 	var user []User
-	s.Nil(s.factory.Times(2).Make(&user))
+	s.Nil(s.factory.Count(2).Make(&user))
 	s.True(len(user) == 2)
 	s.True(len(user[0].Name) > 0)
 	s.True(len(user[1].Name) > 0)
@@ -107,14 +107,30 @@ func (s *FactoryTestSuite) TestCreate() {
 	s.True(len(user) == 1)
 	s.True(user[0].ID > 0)
 	s.True(len(user[0].Name) > 0)
+	s.True(len(user[0].Avatar) > 0)
+	s.NotEmpty(user[0].CreatedAt.String())
+	s.NotEmpty(user[0].UpdatedAt.String())
 
 	var user1 User
 	s.Nil(s.factory.Create(&user1))
 	s.NotNil(user1)
 	s.True(user1.ID > 0)
+	s.True(len(user1.Avatar) > 0)
+	s.NotEmpty(user1.CreatedAt.String())
+	s.NotEmpty(user1.UpdatedAt.String())
+
+	var user2 User
+	s.Nil(s.factory.Create(&user2, map[string]any{
+		"Avatar": "avatar",
+	}))
+	s.NotNil(user2)
+	s.True(user2.ID > 0)
+	s.Equal("avatar", user2.Avatar)
+	s.NotEmpty(user2.CreatedAt.String())
+	s.NotEmpty(user2.UpdatedAt.String())
 
 	var user3 []User
-	s.Nil(s.factory.Times(2).Create(&user3))
+	s.Nil(s.factory.Count(2).Create(&user3))
 	s.True(len(user3) == 2)
 	s.True(user3[0].ID > 0)
 	s.True(user3[1].ID > 0)
@@ -128,14 +144,30 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 	s.True(len(user) == 1)
 	s.True(user[0].ID > 0)
 	s.True(len(user[0].Name) > 0)
+	s.True(len(user[0].Avatar) > 0)
+	s.NotEmpty(user[0].CreatedAt.String())
+	s.NotEmpty(user[0].UpdatedAt.String())
 
 	var user1 User
 	s.Nil(s.factory.CreateQuietly(&user1))
 	s.NotNil(user1)
 	s.True(user1.ID > 0)
+	s.True(len(user1.Avatar) > 0)
+	s.NotEmpty(user1.CreatedAt.String())
+	s.NotEmpty(user1.UpdatedAt.String())
+
+	var user2 User
+	s.Nil(s.factory.CreateQuietly(&user2, map[string]any{
+		"Avatar": "avatar",
+	}))
+	s.NotNil(user2)
+	s.True(user2.ID > 0)
+	s.Equal("avatar", user2.Avatar)
+	s.NotEmpty(user2.CreatedAt.String())
+	s.NotEmpty(user2.UpdatedAt.String())
 
 	var user3 []User
-	s.Nil(s.factory.Times(2).CreateQuietly(&user3))
+	s.Nil(s.factory.Count(2).CreateQuietly(&user3))
 	s.True(len(user3) == 2)
 	s.True(user3[0].ID > 0)
 	s.True(user3[1].ID > 0)
@@ -151,6 +183,16 @@ func (s *FactoryTestSuite) TestMake() {
 	s.True(len(user.Avatar) > 0)
 	s.NotEmpty(user.CreatedAt.String())
 	s.NotEmpty(user.UpdatedAt.String())
+
+	var user1 User
+	s.Nil(s.factory.Make(&user1, map[string]any{
+		"Avatar": "avatar",
+	}))
+	s.True(user1.ID == 0)
+	s.True(len(user1.Name) > 0)
+	s.Equal("avatar", user1.Avatar)
+	s.NotEmpty(user1.CreatedAt.String())
+	s.NotEmpty(user1.UpdatedAt.String())
 
 	var users []User
 	s.Nil(s.factory.Make(&users))
@@ -181,4 +223,15 @@ func (s *FactoryTestSuite) TestGetRawAttributes() {
 	attributes, err = s.factory.getRawAttributes(&user)
 	s.Nil(err)
 	s.NotNil(attributes)
+
+	var user1 User
+	attributes, err = s.factory.getRawAttributes(&user1, map[string]any{
+		"Avatar": "avatar",
+	})
+	s.Nil(err)
+	s.NotNil(attributes)
+	s.True(len(attributes["Name"].(string)) > 0)
+	s.Equal("avatar", attributes["Avatar"].(string))
+	s.NotNil(attributes["CreatedAt"])
+	s.NotNil(attributes["UpdatedAt"])
 }

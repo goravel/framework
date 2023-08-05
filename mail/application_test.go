@@ -16,8 +16,8 @@ import (
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/queue"
+	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/file"
-	testingdocker "github.com/goravel/framework/testing/docker"
 )
 
 var testBcc, testCc, testTo, testFromAddress, testFromName string
