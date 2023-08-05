@@ -27,7 +27,7 @@ type Database struct {
 	resource       *dockertest.Resource
 }
 
-func NewDatabase(app foundation.Application, connection string) (*Database, error) {
+func NewDatabase(app foundation.Application, connection string, gormInitialize gorm.Initialize) (*Database, error) {
 	config := app.MakeConfig()
 
 	if connection == "" {
@@ -54,7 +54,7 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 		config:         config,
 		connection:     connection,
 		driver:         databaseDriver,
-		gormInitialize: gorm.NewInitializeImpl(),
+		gormInitialize: gormInitialize,
 	}, nil
 }
 
