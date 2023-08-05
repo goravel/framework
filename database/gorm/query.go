@@ -664,7 +664,7 @@ func (r *QueryImpl) customConnection(value any) {
 	}
 
 	// Check if the model has a connection specified
-	if conn := model.Connection(); conn != "" {
+	if conn := model.Connection(); conn != "" && r.orm != nil {
 		r.orm = r.orm.Connection(conn)
 		r.instance = r.orm.Query().(*QueryImpl).Instance()
 	}

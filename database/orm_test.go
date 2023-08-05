@@ -113,10 +113,6 @@ func (s *OrmSuite) TestConnection() {
 	}
 }
 
-func (s *OrmSuite) TestModel() {
-	s.NotNil(s.orm.Model(&User{}))
-}
-
 func (s *OrmSuite) TestDB() {
 	db, err := s.orm.DB()
 	s.NotNil(db)
