@@ -69,27 +69,11 @@ func (r *OrmImpl) DB() (*sql.DB, error) {
 }
 
 func (r *OrmImpl) Query() ormcontract.Query {
-	return r.query
+	return r.query.(*databasegorm.QueryImpl).WithOrm(r)
 }
 
 func (r *OrmImpl) Factory() ormcontract.Factory {
-	return NewFactoryImpl(r.query)
-}
-
-func (r *OrmImpl) Model(value any) ormcontract.Orm {
-	model, ok := value.(ormcontract.Model)
-	if !ok {
-		return r
-	}
-
-	// Check if the model has a connection specified
-	if conn := model.Connection(); conn != "" {
-		r.query = r.query.Model(value)
-		return r.Connection(conn)
-	}
-
-	// If the model doesn't have a connection specified, return the current OrmImpl instance
-	return r
+	return NewFactoryImpl(r.Query())
 }
 
 func (r *OrmImpl) Observe(model any, observer ormcontract.Observer) {

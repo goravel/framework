@@ -11,7 +11,6 @@ type Orm interface {
 	DB() (*sql.DB, error)
 	Query() Query
 	Factory() Factory
-	Model(value any) Orm
 	Observe(model any, observer Observer)
 	Transaction(txFunc func(tx Transaction) error) error
 	WithContext(ctx context.Context) Orm

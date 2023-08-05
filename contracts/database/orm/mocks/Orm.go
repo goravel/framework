@@ -74,22 +74,6 @@ func (_m *Orm) Factory() orm.Factory {
 	return r0
 }
 
-// Model provides a mock function with given fields: value
-func (_m *Orm) Model(value interface{}) orm.Orm {
-	ret := _m.Called(value)
-
-	var r0 orm.Orm
-	if rf, ok := ret.Get(0).(func(interface{}) orm.Orm); ok {
-		r0 = rf(value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Orm)
-		}
-	}
-
-	return r0
-}
-
 // Observe provides a mock function with given fields: model, observer
 func (_m *Orm) Observe(model interface{}, observer orm.Observer) {
 	_m.Called(model, observer)

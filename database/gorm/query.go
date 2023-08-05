@@ -25,6 +25,7 @@ var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
 	instance      *gormio.DB
+	orm           ormcontract.Orm
 	withoutEvents bool
 }
 
@@ -40,6 +41,7 @@ func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryI
 
 	return &QueryImpl{
 		instance: db,
+		orm:      nil,
 	}, nil
 }
 
@@ -66,6 +68,7 @@ func (r *QueryImpl) Count(count *int64) error {
 }
 
 func (r *QueryImpl) Create(value any) error {
+	r.customConnection(value)
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
@@ -105,6 +108,7 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 }
 
 func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
+	r.customConnection(dest)
 	if err := r.deleting(dest); err != nil {
 		return nil, err
 	}
@@ -138,6 +142,7 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {
+	r.customConnection(dest)
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
@@ -149,6 +154,7 @@ func (r *QueryImpl) Find(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
+	r.customConnection(dest)
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
@@ -166,6 +172,7 @@ func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) First(dest any) error {
+	r.customConnection(dest)
 	res := r.instance.First(dest)
 	if res.Error != nil {
 		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
@@ -179,6 +186,7 @@ func (r *QueryImpl) First(dest any) error {
 }
 
 func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
+	r.customConnection(dest)
 	err := r.instance.First(dest).Error
 	if err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -192,6 +200,7 @@ func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
 }
 
 func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
+	r.customConnection(dest)
 	if len(conds) == 0 {
 		return errors.New("query condition is require")
 	}
@@ -214,6 +223,7 @@ func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FirstOrFail(dest any) error {
+	r.customConnection(dest)
 	err := r.instance.First(dest).Error
 	if err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -227,6 +237,7 @@ func (r *QueryImpl) FirstOrFail(dest any) error {
 }
 
 func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
+	r.customConnection(dest)
 	var res *gormio.DB
 	if len(values) > 0 {
 		res = r.instance.Attrs(values[0]).FirstOrInit(dest, attributes)
@@ -245,6 +256,7 @@ func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
 }
 
 func (r *QueryImpl) ForceDelete(value any, conds ...any) (*ormcontract.Result, error) {
+	r.customConnection(value)
 	if err := r.forceDeleting(value); err != nil {
 		return nil, err
 	}
@@ -287,7 +299,6 @@ func (r *QueryImpl) Instance() *gormio.DB {
 
 func (r *QueryImpl) Join(query string, args ...any) ormcontract.Query {
 	tx := r.instance.Joins(query, args...)
-
 	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
 }
 
@@ -377,6 +388,7 @@ func (r *QueryImpl) LockForUpdate() ormcontract.Query {
 }
 
 func (r *QueryImpl) Model(value any) ormcontract.Query {
+	r.customConnection(value)
 	tx := r.instance.Model(value)
 
 	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
@@ -434,6 +446,7 @@ func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) Save(value any) error {
+	r.customConnection(value)
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
@@ -490,6 +503,8 @@ func (r *QueryImpl) SaveQuietly(value any) error {
 }
 
 func (r *QueryImpl) Scan(dest any) error {
+	r.customConnection(dest)
+
 	return r.instance.Scan(dest).Error
 }
 
@@ -586,6 +601,7 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 }
 
 func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
+	r.customConnection(dest)
 	res := r.instance.Assign(values).FirstOrInit(dest, attributes)
 	if res.Error != nil {
 		return res.Error
@@ -634,6 +650,24 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 	tx := r.instance.Preload(query, args...)
 
 	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+}
+
+func (r *QueryImpl) WithOrm(orm ormcontract.Orm) ormcontract.Query {
+	r.orm = orm
+	return r
+}
+
+func (r *QueryImpl) customConnection(value any) {
+	model, ok := value.(ormcontract.Model)
+	if !ok {
+		return
+	}
+
+	// Check if the model has a connection specified
+	if conn := model.Connection(); conn != "" {
+		r.orm = r.orm.Connection(conn)
+		r.instance = r.orm.Query().(*QueryImpl).Instance()
+	}
 }
 
 func (r *QueryImpl) selectCreate(value any) error {
