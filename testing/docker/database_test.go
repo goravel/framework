@@ -194,13 +194,13 @@ func (s *DatabaseTestSuite) TestSeed() {
 	mockArtisan.On("Call", "db:seed").Once()
 	s.mockApp.On("MakeArtisan").Return(mockArtisan).Once()
 
-	s.Nil(s.database.Seed())
+	s.database.Seed()
 
 	mockArtisan = consolemocks.NewArtisan(s.T())
 	mockArtisan.On("Call", "db:seed --seeder mock").Once()
 	s.mockApp.On("MakeArtisan").Return(mockArtisan).Once()
 
-	s.Nil(s.database.Seed(&MockSeeder{}))
+	s.database.Seed(&MockSeeder{})
 }
 
 type MockSeeder struct{}

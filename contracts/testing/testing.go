@@ -20,8 +20,7 @@ type Database interface {
 	Config() Config
 	Clear() error
 	Image(Image)
-	Refresh() error
-	Seed(seeds ...seeder.Seeder) error
+	Seed(seeds ...seeder.Seeder)
 }
 
 type DatabaseDriver interface {

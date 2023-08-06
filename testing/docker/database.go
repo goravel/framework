@@ -134,13 +134,7 @@ func (receiver *Database) Image(image testing.Image) {
 	receiver.image = &image
 }
 
-func (receiver *Database) Refresh() error {
-	receiver.app.MakeArtisan().Call("migrate:refresh")
-
-	return nil
-}
-
-func (receiver *Database) Seed(seeds ...seeder.Seeder) error {
+func (receiver *Database) Seed(seeds ...seeder.Seeder) {
 	command := "db:seed"
 	if len(seeds) > 0 {
 		command += " --seeder"
@@ -150,6 +144,4 @@ func (receiver *Database) Seed(seeds ...seeder.Seeder) error {
 	}
 
 	receiver.app.MakeArtisan().Call(command)
-
-	return nil
 }
