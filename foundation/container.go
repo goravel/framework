@@ -29,6 +29,7 @@ import (
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	routecontract "github.com/goravel/framework/contracts/route"
 	schedulecontract "github.com/goravel/framework/contracts/schedule"
+	testingcontract "github.com/goravel/framework/contracts/testing"
 	validationcontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
@@ -42,6 +43,7 @@ import (
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
+	"github.com/goravel/framework/testing"
 	"github.com/goravel/framework/validation"
 )
 
@@ -245,6 +247,16 @@ func (c *Container) MakeStorage() filesystemcontract.Storage {
 	return instance.(filesystemcontract.Storage)
 }
 
+func (c *Container) MakeTesting() testingcontract.Testing {
+	instance, err := c.Make(testing.Binding)
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(testingcontract.Testing)
+}
+
 func (c *Container) MakeValidation() validationcontract.Validation {
 	instance, err := c.Make(validation.Binding)
 	if err != nil {
@@ -254,6 +266,7 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 
 	return instance.(validationcontract.Validation)
 }
+
 func (c *Container) MakeSeeder() seerdercontract.Facade {
 	instance, err := c.Make(database.BindingSeeder)
 

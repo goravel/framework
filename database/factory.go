@@ -22,14 +22,14 @@ func NewFactoryImpl(query ormcontract.Query) *FactoryImpl {
 	}
 }
 
-// Times Specify the number of models you wish to create / make.
-func (f *FactoryImpl) Times(count int) ormcontract.Factory {
+// Count Specify the number of models you wish to create / make.
+func (f *FactoryImpl) Count(count int) ormcontract.Factory {
 	return f.newInstance(map[string]any{"count": count})
 }
 
 // Create a model and persist it in the database.
-func (f *FactoryImpl) Create(value any) error {
-	if err := f.Make(value); err != nil {
+func (f *FactoryImpl) Create(value any, attributes ...map[string]any) error {
+	if err := f.Make(value, attributes...); err != nil {
 		return err
 	}
 
@@ -37,8 +37,8 @@ func (f *FactoryImpl) Create(value any) error {
 }
 
 // CreateQuietly create a model and persist it in the database without firing any events.
-func (f *FactoryImpl) CreateQuietly(value any) error {
-	if err := f.Make(value); err != nil {
+func (f *FactoryImpl) CreateQuietly(value any, attributes ...map[string]any) error {
+	if err := f.Make(value, attributes...); err != nil {
 		return err
 	}
 
@@ -46,7 +46,7 @@ func (f *FactoryImpl) CreateQuietly(value any) error {
 }
 
 // Make a model instance that's not persisted in the database.
-func (f *FactoryImpl) Make(value any) error {
+func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 	reflectValue := reflect.Indirect(reflect.ValueOf(value))
 	switch reflectValue.Kind() {
 	case reflect.Array, reflect.Slice:
@@ -56,7 +56,7 @@ func (f *FactoryImpl) Make(value any) error {
 		}
 		for i := 0; i < count; i++ {
 			elemValue := reflect.New(reflectValue.Type().Elem()).Interface()
-			attributes, err := f.getRawAttributes(elemValue)
+			attributes, err := f.getRawAttributes(elemValue, attributes...)
 			if err != nil {
 				return err
 			}
@@ -80,7 +80,7 @@ func (f *FactoryImpl) Make(value any) error {
 
 		return nil
 	default:
-		attributes, err := f.getRawAttributes(value)
+		attributes, err := f.getRawAttributes(value, attributes...)
 		if err != nil {
 			return err
 		}
@@ -99,13 +99,20 @@ func (f *FactoryImpl) Make(value any) error {
 	}
 }
 
-func (f *FactoryImpl) getRawAttributes(value any) (map[string]any, error) {
+func (f *FactoryImpl) getRawAttributes(value any, attributes ...map[string]any) (map[string]any, error) {
 	factoryModel, exist := value.(factory.Model)
 	if !exist {
 		return nil, fmt.Errorf("%s does not find factory method", reflect.TypeOf(value).String())
 	}
 
-	return factoryModel.Factory().Definition(), nil
+	definition := factoryModel.Factory().Definition()
+	if len(attributes) > 0 {
+		for key, value := range attributes[0] {
+			definition[key] = value
+		}
+	}
+
+	return definition, nil
 }
 
 // newInstance create a new factory instance.

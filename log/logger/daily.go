@@ -12,6 +12,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/log/formatter"
+	"github.com/goravel/framework/support"
 )
 
 type Daily struct {
@@ -33,6 +34,7 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 
 	ext := filepath.Ext(logPath)
 	logPath = strings.ReplaceAll(logPath, ext, "")
+	logPath = filepath.Join(support.RelativePath, logPath)
 
 	writer, err := rotatelogs.New(
 		logPath+"-%Y-%m-%d"+ext,
