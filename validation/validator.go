@@ -29,10 +29,17 @@ func NewValidator(instance *validate.Validation, data validate.DataFace) *Valida
 func (v *Validator) Bind(ptr any) error {
 	var data any
 	if _, ok := v.data.Src().(url.Values); ok {
-		values := make(map[string]string)
+		values := make(map[string]any)
 		for key, value := range v.data.Src().(url.Values) {
 			if len(value) > 0 {
 				values[key] = value[0]
+			}
+		}
+
+		formData, ok := v.data.(*validate.FormData)
+		if ok {
+			for key, value := range formData.Files {
+				values[key] = value
 			}
 		}
 

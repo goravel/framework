@@ -9,7 +9,7 @@ import (
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
-	testingdocker "github.com/goravel/framework/testing/docker"
+	testingdocker "github.com/goravel/framework/support/docker"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 	dbDatabase     = "goravel"
 	dbDatabase1    = "goravel1"
 	dbUser1        = "sa"
-	resourceExpire = 600
+	resourceExpire = 1200
 )
 
 var testContext context.Context
@@ -56,9 +56,10 @@ func (r *MysqlDocker) Init() (*dockertest.Pool, *dockertest.Resource, error) {
 	}
 	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "mysql",
-		Tag:        "5.7",
+		Tag:        "latest",
 		Env: []string{
 			"MYSQL_ROOT_PASSWORD=" + DbPassword,
+			"MYSQL_DATABASE=" + dbDatabase,
 		},
 	})
 	if err != nil {
@@ -146,7 +147,7 @@ func (r *MysqlDocker) mockOfCommon() {
 	r.MockConfig.On("GetString", "database.connections.mysql.driver").Return(orm.DriverMysql.String())
 	r.MockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4")
 	r.MockConfig.On("GetString", "database.connections.mysql.loc").Return("Local")
-	r.MockConfig.On("GetString", "database.connections.mysql.database").Return("mysql")
+	r.MockConfig.On("GetString", "database.connections.mysql.database").Return(dbDatabase)
 
 	mockPool(r.MockConfig)
 }
@@ -201,7 +202,7 @@ func (r *PostgresqlDocker) Init() (*dockertest.Pool, *dockertest.Resource, error
 	}
 	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "postgres",
-		Tag:        "11",
+		Tag:        "latest",
 		Env: []string{
 			"POSTGRES_USER=" + DbUser,
 			"POSTGRES_PASSWORD=" + DbPassword,
@@ -478,7 +479,7 @@ func (r *SqlserverDocker) Init() (*dockertest.Pool, *dockertest.Resource, error)
 	}
 	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
 		Repository: "mcr.microsoft.com/mssql/server",
-		Tag:        "2022-latest",
+		Tag:        "latest",
 		Env: []string{
 			"MSSQL_SA_PASSWORD=" + DbPassword,
 			"ACCEPT_EULA=Y",

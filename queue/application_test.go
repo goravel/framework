@@ -14,7 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	queuemock "github.com/goravel/framework/contracts/queue/mocks"
 	"github.com/goravel/framework/support/carbon"
-	testingdocker "github.com/goravel/framework/testing/docker"
+	testingdocker "github.com/goravel/framework/support/docker"
 )
 
 var (

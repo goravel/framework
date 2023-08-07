@@ -91,11 +91,16 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			migrateCommand := NewMigrateCommand(mockConfig)
 			assert.Nil(t, migrateCommand.Handle(mockContext))
 
+			var agent Agent
+			err := query.Where("name", "goravel").FirstOrFail(&agent)
+			assert.Nil(t, err)
+			assert.True(t, agent.ID > 0)
+
 			migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 			assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
 
-			var agent Agent
-			err := query.Where("name", "goravel").FirstOrFail(&agent)
+			var agent1 Agent
+			err = query.Where("name", "goravel").FirstOrFail(&agent1)
 			assert.Error(t, err)
 
 			if pool != nil && test.name != "sqlite" {
