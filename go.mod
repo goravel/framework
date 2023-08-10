@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.11
-	github.com/bytedance/sonic v1.9.2
+	github.com/bytedance/sonic v1.10.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/gin-gonic/gin v1.9.1
@@ -43,11 +43,12 @@ require (
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.1
-	gorm.io/gorm v1.25.2
-	gorm.io/plugin/dbresolver v1.4.2
+	gorm.io/gorm v1.25.3
+	gorm.io/plugin/dbresolver v1.4.3
 )
 
 require (
+	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230525234035-dd9d682886f9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
 )
@@ -71,7 +72,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.23.1
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
+	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
