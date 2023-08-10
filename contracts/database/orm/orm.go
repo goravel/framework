@@ -84,7 +84,7 @@ type Association interface {
 	Count() int64
 }
 
-type Model interface {
+type ConnectionModel interface {
 	Connection() string
 }
 

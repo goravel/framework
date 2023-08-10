@@ -69,7 +69,7 @@ func (r *OrmImpl) DB() (*sql.DB, error) {
 }
 
 func (r *OrmImpl) Query() ormcontract.Query {
-	return r.query.(*databasegorm.QueryImpl).WithOrm(r)
+	return r.query
 }
 
 func (r *OrmImpl) Factory() ormcontract.Factory {

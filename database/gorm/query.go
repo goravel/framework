@@ -3,9 +3,11 @@ package gorm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/google/wire"
+	"github.com/gookit/color"
 	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -25,7 +27,8 @@ var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
 	instance      *gormio.DB
-	orm           ormcontract.Orm
+	config        config.Config
+	ctx           context.Context
 	withoutEvents bool
 }
 
@@ -41,12 +44,13 @@ func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryI
 
 	return &QueryImpl{
 		instance: db,
-		orm:      nil,
+		config:   config,
+		ctx:      ctx,
 	}, nil
 }
 
-func NewQueryWithWithoutEvents(instance *gormio.DB, withoutEvents bool) *QueryImpl {
-	return &QueryImpl{instance: instance, withoutEvents: withoutEvents}
+func NewQueryWithWithoutEvents(instance *gormio.DB, withoutEvents bool, config config.Config) *QueryImpl {
+	return &QueryImpl{instance: instance, withoutEvents: withoutEvents, config: config, ctx: instance.Statement.Context}
 }
 
 func (r *QueryImpl) Association(association string) ormcontract.Association {
@@ -56,7 +60,7 @@ func (r *QueryImpl) Association(association string) ormcontract.Association {
 func (r *QueryImpl) Begin() (ormcontract.Transaction, error) {
 	tx := r.instance.Begin()
 
-	return NewTransaction(tx), tx.Error
+	return NewTransaction(tx, r.config), tx.Error
 }
 
 func (r *QueryImpl) Driver() ormcontract.Driver {
@@ -68,7 +72,7 @@ func (r *QueryImpl) Count(count *int64) error {
 }
 
 func (r *QueryImpl) Create(value any) error {
-	r.customConnection(value)
+	r.refreshConnection(value)
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
@@ -108,7 +112,7 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 }
 
 func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	if err := r.deleting(dest); err != nil {
 		return nil, err
 	}
@@ -130,7 +134,7 @@ func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) 
 func (r *QueryImpl) Distinct(args ...any) ormcontract.Query {
 	tx := r.instance.Distinct(args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error) {
@@ -142,7 +146,7 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
@@ -154,7 +158,7 @@ func (r *QueryImpl) Find(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
@@ -172,7 +176,7 @@ func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) First(dest any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	res := r.instance.First(dest)
 	if res.Error != nil {
 		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
@@ -186,7 +190,7 @@ func (r *QueryImpl) First(dest any) error {
 }
 
 func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	err := r.instance.First(dest).Error
 	if err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -200,7 +204,7 @@ func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
 }
 
 func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	if len(conds) == 0 {
 		return errors.New("query condition is require")
 	}
@@ -223,7 +227,7 @@ func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FirstOrFail(dest any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	err := r.instance.First(dest).Error
 	if err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -237,7 +241,7 @@ func (r *QueryImpl) FirstOrFail(dest any) error {
 }
 
 func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	var res *gormio.DB
 	if len(values) > 0 {
 		res = r.instance.Attrs(values[0]).FirstOrInit(dest, attributes)
@@ -256,7 +260,7 @@ func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
 }
 
 func (r *QueryImpl) ForceDelete(value any, conds ...any) (*ormcontract.Result, error) {
-	r.customConnection(value)
+	r.refreshConnection(value)
 	if err := r.forceDeleting(value); err != nil {
 		return nil, err
 	}
@@ -284,13 +288,13 @@ func (r *QueryImpl) Get(dest any) error {
 func (r *QueryImpl) Group(name string) ormcontract.Query {
 	tx := r.instance.Group(name)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Having(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Having(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Instance() *gormio.DB {
@@ -299,13 +303,13 @@ func (r *QueryImpl) Instance() *gormio.DB {
 
 func (r *QueryImpl) Join(query string, args ...any) ormcontract.Query {
 	tx := r.instance.Joins(query, args...)
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Limit(limit int) ormcontract.Query {
 	tx := r.instance.Limit(limit)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Load(model any, relation string, args ...any) error {
@@ -377,45 +381,45 @@ func (r *QueryImpl) LockForUpdate() ormcontract.Query {
 	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
 		tx := r.instance.Clauses(clause.Locking{Strength: "UPDATE"})
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 	} else if driver == sqlserverDialector.Name() {
 		tx := r.instance.Clauses(hints.With("rowlock", "updlock", "holdlock"))
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 	}
 
 	return r
 }
 
 func (r *QueryImpl) Model(value any) ormcontract.Query {
-	r.customConnection(value)
+	r.refreshConnection(value)
 	tx := r.instance.Model(value)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Offset(offset int) ormcontract.Query {
 	tx := r.instance.Offset(offset)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Omit(columns ...string) ormcontract.Query {
 	tx := r.instance.Omit(columns...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Order(value any) ormcontract.Query {
 	tx := r.instance.Order(value)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) OrWhere(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Or(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Paginate(page, limit int, dest any, total *int64) error {
@@ -442,11 +446,11 @@ func (r *QueryImpl) Pluck(column string, dest any) error {
 func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
 	tx := r.instance.Raw(sql, values...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Save(value any) error {
-	r.customConnection(value)
+	r.refreshConnection(value)
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
@@ -503,7 +507,7 @@ func (r *QueryImpl) SaveQuietly(value any) error {
 }
 
 func (r *QueryImpl) Scan(dest any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 
 	return r.instance.Scan(dest).Error
 }
@@ -511,14 +515,14 @@ func (r *QueryImpl) Scan(dest any) error {
 func (r *QueryImpl) Select(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Select(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
 	var gormFuncs []func(*gormio.DB) *gormio.DB
 	for _, item := range funcs {
 		gormFuncs = append(gormFuncs, func(tx *gormio.DB) *gormio.DB {
-			item(NewQueryWithWithoutEvents(tx, r.withoutEvents))
+			item(NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config))
 
 			return tx
 		})
@@ -526,7 +530,7 @@ func (r *QueryImpl) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) o
 
 	tx := r.instance.Scopes(gormFuncs...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) SharedLock() ormcontract.Query {
@@ -538,11 +542,11 @@ func (r *QueryImpl) SharedLock() ormcontract.Query {
 	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
 		tx := r.instance.Clauses(clause.Locking{Strength: "SHARE"})
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 	} else if driver == sqlserverDialector.Name() {
 		tx := r.instance.Clauses(hints.With("rowlock", "holdlock"))
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 	}
 
 	return r
@@ -555,7 +559,7 @@ func (r *QueryImpl) Sum(column string, dest any) error {
 func (r *QueryImpl) Table(name string, args ...any) ormcontract.Query {
 	tx := r.instance.Table(name, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error) {
@@ -601,7 +605,7 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 }
 
 func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
-	r.customConnection(dest)
+	r.refreshConnection(dest)
 	res := r.instance.Assign(values).FirstOrInit(dest, attributes)
 	if res.Error != nil {
 		return res.Error
@@ -616,17 +620,17 @@ func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
 func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Where(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
-	return NewQueryWithWithoutEvents(r.instance, true)
+	return NewQueryWithWithoutEvents(r.instance, true, r.config)
 }
 
 func (r *QueryImpl) WithTrashed() ormcontract.Query {
 	tx := r.instance.Unscoped()
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
 func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
@@ -635,7 +639,7 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 		case func(ormcontract.Query) ormcontract.Query:
 			newArgs := []any{
 				func(tx *gormio.DB) *gormio.DB {
-					query := arg(NewQueryWithWithoutEvents(tx, r.withoutEvents))
+					query := arg(NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config))
 
 					return query.(*QueryImpl).instance
 				},
@@ -643,30 +647,29 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 
 			tx := r.instance.Preload(query, newArgs...)
 
-			return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+			return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 		}
 	}
 
 	tx := r.instance.Preload(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents)
+	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
-func (r *QueryImpl) WithOrm(orm ormcontract.Orm) ormcontract.Query {
-	r.orm = orm
-	return r
-}
-
-func (r *QueryImpl) customConnection(value any) {
-	model, ok := value.(ormcontract.Model)
+func (r *QueryImpl) refreshConnection(value any) {
+	model, ok := value.(ormcontract.ConnectionModel)
 	if !ok {
 		return
 	}
 
 	// Check if the model has a connection specified
-	if conn := model.Connection(); conn != "" && r.orm != nil {
-		r.orm = r.orm.Connection(conn)
-		r.instance = r.orm.Query().(*QueryImpl).Instance()
+	if conn := model.Connection(); conn != "" && conn != r.instance.Name() {
+		query, err := InitializeQuery(r.ctx, r.config, conn)
+		if err != nil || query == nil {
+			color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", conn, err))
+		}
+		query.instance.Statement = r.instance.Statement
+		r.instance = query.instance
 	}
 }
 
