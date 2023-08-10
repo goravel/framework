@@ -315,7 +315,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
 
-	ctx := http.Background()
+	ctx := Background()
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiIxIiwic3ViIjoidXNlciIsImV4cCI6MTY4OTk3MDE3MiwiaWF0IjoxNjg5OTY2NTcyfQ.GApXNbicqzjF2jHsSCJ1AdziHnI1grPuJ5ddSQjGJUQ"
 
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
