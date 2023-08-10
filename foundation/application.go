@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,8 @@ import (
 var (
 	App foundation.Application
 )
+
+var _ = flag.String("env", ".env", "custom .env path")
 
 func init() {
 	setEnv()
@@ -45,6 +48,7 @@ func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
 	app.registerCommands([]consolecontract.Command{
+		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
 	})
@@ -174,10 +178,40 @@ func setEnv() {
 		support.Env = support.EnvTest
 	}
 	if len(args) >= 2 {
-		if args[1] == "artisan" {
-			support.Env = support.EnvArtisan
+		for _, arg := range args[1:] {
+			if arg == "artisan" {
+				support.Env = support.EnvArtisan
+				break
+			}
 		}
 	}
+
+	env := getEnvPath()
+	if support.Env == support.EnvTest {
+		var (
+			relativePath string
+			envExist     bool
+			testEnv      = env
+		)
+
+		for i := 0; i < 50; i++ {
+			if _, err := os.Stat(testEnv); err == nil {
+				envExist = true
+
+				break
+			} else {
+				testEnv = filepath.Join("../", testEnv)
+				relativePath = filepath.Join("../", relativePath)
+			}
+		}
+
+		if envExist {
+			env = testEnv
+			support.RelativePath = relativePath
+		}
+	}
+
+	support.EnvPath = env
 }
 
 func setRootPath() {
@@ -190,4 +224,37 @@ func setRootPath() {
 	}
 
 	support.RootPath = rootPath
+}
+
+func getEnvPath() string {
+	envPath := ".env"
+	args := os.Args
+	for index, arg := range args {
+		if strings.HasPrefix(arg, "--env=") {
+			if path := strings.TrimPrefix(arg, "--env="); path != "" {
+				envPath = path
+				break
+			}
+		}
+		if strings.HasPrefix(arg, "-env=") {
+			if path := strings.TrimPrefix(arg, "-env="); path != "" {
+				envPath = path
+				break
+			}
+		}
+		if strings.HasPrefix(arg, "-e=") {
+			if path := strings.TrimPrefix(arg, "-e="); path != "" {
+				envPath = path
+				break
+			}
+		}
+		if arg == "--env" || arg == "-env" || arg == "-e" {
+			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
+				envPath = args[index+1]
+				break
+			}
+		}
+	}
+
+	return envPath
 }

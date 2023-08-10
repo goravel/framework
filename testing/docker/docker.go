@@ -1,30 +1,25 @@
 package docker
 
 import (
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
-	"github.com/pkg/errors"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/database/gorm"
 )
 
-func Pool() (*dockertest.Pool, error) {
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		return nil, errors.WithMessage(err, "Could not construct pool")
-	}
-
-	if err := pool.Client.Ping(); err != nil {
-		return nil, errors.WithMessage(err, "Could not connect to Docker")
-	}
-
-	return pool, nil
+type Docker struct {
+	app foundation.Application
 }
 
-func Resource(pool *dockertest.Pool, opts *dockertest.RunOptions) (*dockertest.Resource, error) {
-	return pool.RunWithOptions(opts, func(config *docker.HostConfig) {
-		// set AutoRemove to true so that stopped container goes away by itself
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
-		}
-	})
+func NewDocker(app foundation.Application) *Docker {
+	return &Docker{
+		app: app,
+	}
+}
+
+func (receiver *Docker) Database(connection ...string) (testing.Database, error) {
+	if len(connection) == 0 {
+		return NewDatabase(receiver.app, "", gorm.NewInitializeImpl())
+	} else {
+		return NewDatabase(receiver.app, connection[0], gorm.NewInitializeImpl())
+	}
 }

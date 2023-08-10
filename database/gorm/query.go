@@ -81,6 +81,29 @@ func (r *QueryImpl) Create(value any) error {
 	return r.create(value)
 }
 
+func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
+	var err error
+	cursorChan := make(chan ormcontract.Cursor)
+	go func() {
+		rows, err := r.instance.Rows()
+		if err != nil {
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			val := make(map[string]any)
+			err := r.instance.ScanRows(rows, val)
+			if err != nil {
+				return
+			}
+			cursorChan <- &CursorImpl{row: val}
+		}
+		close(cursorChan)
+	}()
+	return cursorChan, err
+}
+
 func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
 	if err := r.deleting(dest); err != nil {
 		return nil, err
@@ -508,6 +531,10 @@ func (r *QueryImpl) SharedLock() ormcontract.Query {
 	}
 
 	return r
+}
+
+func (r *QueryImpl) Sum(column string, dest any) error {
+	return r.instance.Select("SUM(" + column + ")").Row().Scan(dest)
 }
 
 func (r *QueryImpl) Table(name string, args ...any) ormcontract.Query {

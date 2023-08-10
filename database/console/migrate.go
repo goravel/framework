@@ -3,6 +3,7 @@ package console
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
@@ -13,12 +14,16 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/console/driver"
 	"github.com/goravel/framework/database/db"
+	"github.com/goravel/framework/support"
 )
 
 func getMigrate(config config.Config) (*migrate.Migrate, error) {
 	connection := config.GetString("database.default")
 	driver := config.GetString("database.connections." + connection + ".driver")
 	dir := "file://./database/migrations"
+	if support.RelativePath != "" {
+		dir = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
+	}
 
 	gormConfig := db.NewConfigImpl(config, connection)
 	writeConfigs := gormConfig.Writes()

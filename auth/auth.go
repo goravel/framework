@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/spf13/cast"
 	"gorm.io/gorm/clause"
 
@@ -40,10 +40,6 @@ type Auth struct {
 }
 
 func NewAuth(guard string, cache cache.Cache, config config.Config, orm orm.Orm) *Auth {
-	jwt.TimeFunc = func() time.Time {
-		return carbon.Now().ToStdTime()
-	}
-
 	return &Auth{
 		cache:  cache,
 		config: config,
@@ -90,7 +86,9 @@ func (a *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, er
 	jwtSecret := a.config.GetString("jwt.secret")
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return []byte(jwtSecret), nil
-	})
+	}, jwt.WithTimeFunc(func() time.Time {
+		return carbon.Now().ToStdTime()
+	}))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
