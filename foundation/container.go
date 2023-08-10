@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/gookit/color"
+	"github.com/goravel/framework/route"
 
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
@@ -217,7 +218,7 @@ func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
 }
 
 func (c *Container) MakeRoute() routecontract.Engine {
-	instance, err := c.Make("goravel.route")
+	instance, err := c.Make(route.Binding)
 	if err != nil {
 		color.Redln(err)
 		return nil
