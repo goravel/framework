@@ -19,7 +19,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	logmocks "github.com/goravel/framework/contracts/log/mocks"
 	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
-	contractsroute "github.com/goravel/framework/contracts/route"
 	routemocks "github.com/goravel/framework/contracts/route/mocks"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
@@ -310,10 +309,6 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeRateLimiter())
-}
-
-type Engine struct {
-	contractsroute.Engine
 }
 
 func (s *ApplicationTestSuite) TestMakeRoute() {
