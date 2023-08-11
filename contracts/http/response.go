@@ -20,7 +20,7 @@ type Response interface {
 	Success() ResponseSuccess
 	Status(code int) ResponseStatus
 	Writer() http.ResponseWriter
-	Flush() bool
+	Flush()
 }
 
 //go:generate mockery --name=ResponseStatus
