@@ -12,6 +12,9 @@ type ServiceProvider struct {
 }
 
 func (http *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+		return NewRateLimiter(), nil
+	})
 }
 
 func (http *ServiceProvider) Boot(app foundation.Application) {
