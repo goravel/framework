@@ -17,7 +17,7 @@ type Route struct {
 }
 
 func NewRoute(config config.Config) *Route {
-	defaultDriver := config.GetString("http.driver")
+	defaultDriver := config.GetString("http.default")
 	if defaultDriver == "" {
 		color.Redln("[http] please set default driver")
 
