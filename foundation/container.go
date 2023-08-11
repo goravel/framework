@@ -208,7 +208,7 @@ func (c *Container) MakeQueue() queuecontract.Queue {
 }
 
 func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
-	instance, err := c.Make(http.Binding)
+	instance, err := c.Make(http.BindingRateLimiter)
 	if err != nil {
 		color.Redln(err)
 		return nil

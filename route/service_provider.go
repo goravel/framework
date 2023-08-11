@@ -9,10 +9,12 @@ const Binding = "goravel.route"
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register(app foundation.Application) {
-
+func (route *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+		return NewRoute(app.MakeConfig()), nil
+	})
 }
 
-func (receiver *ServiceProvider) Boot(app foundation.Application) {
+func (route *ServiceProvider) Boot(app foundation.Application) {
 
 }
