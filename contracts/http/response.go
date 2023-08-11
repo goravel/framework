@@ -19,6 +19,8 @@ type Response interface {
 	String(code int, format string, values ...any)
 	Success() ResponseSuccess
 	Status(code int) ResponseStatus
+	Writer() http.ResponseWriter
+	Flush() bool
 }
 
 //go:generate mockery --name=ResponseStatus
@@ -41,6 +43,4 @@ type ResponseOrigin interface {
 	Header() http.Header
 	Size() int
 	Status() int
-	Writer() http.ResponseWriter
-	Flusher() http.Flusher
 }
