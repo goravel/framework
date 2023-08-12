@@ -6,7 +6,6 @@ import (
 	"github.com/goravel/framework/http/console"
 )
 
-const BindingHttp = "goravel.http"
 const BindingRateLimiter = "goravel.rate_limiter"
 
 type ServiceProvider struct {
