@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/gookit/color"
+	"github.com/goravel/framework/route"
 
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
@@ -41,7 +42,6 @@ import (
 	goravellog "github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
-	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/testing"
 	"github.com/goravel/framework/validation"
@@ -208,7 +208,7 @@ func (c *Container) MakeQueue() queuecontract.Queue {
 }
 
 func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
-	instance, err := c.Make(http.Binding)
+	instance, err := c.Make(http.BindingRateLimiter)
 	if err != nil {
 		color.Redln(err)
 		return nil

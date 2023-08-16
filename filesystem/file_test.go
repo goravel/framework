@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"mime/multipart"
 	"net/http"
-	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -77,13 +75,15 @@ func TestNewFileFromRequest(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	assert.Nil(t, mw.Close())
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request, _ = http.NewRequest("POST", "/", buf)
-	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
-	f, err := c.FormFile("file")
-	assert.Nil(t, err)
-	requestFile, err := NewFileFromRequest(f)
-	assert.Nil(t, err)
+	req, err := http.NewRequest("POST", "/", buf)
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	err = req.ParseMultipartForm(10 << 20) // 10 MB
+	assert.NoError(t, err)
+	_, fileHeader, err := req.FormFile("file")
+	assert.NoError(t, err)
+	requestFile, err := NewFileFromRequest(fileHeader)
+	assert.NoError(t, err)
 	assert.Equal(t, ".txt", filepath.Ext(requestFile.path))
 
 	mockConfig.AssertExpectations(t)
