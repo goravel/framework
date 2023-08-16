@@ -41,7 +41,7 @@ require (
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.1
 	gorm.io/gorm v1.25.3
-	gorm.io/plugin/dbresolver v1.4.5
+	gorm.io/plugin/dbresolver v1.4.6
 )
 
 require (
