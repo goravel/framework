@@ -11,7 +11,7 @@ type ServiceProvider struct {
 
 func (route *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		return NewGin(app.MakeConfig()), nil
+		return NewRoute(app.MakeConfig()), nil
 	})
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	logmocks "github.com/goravel/framework/contracts/log/mocks"
 	queuemocks "github.com/goravel/framework/contracts/queue/mocks"
+	routemocks "github.com/goravel/framework/contracts/route/mocks"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
 	"github.com/goravel/framework/database/gorm"
@@ -30,7 +31,6 @@ import (
 	"github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
-	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/validation"
@@ -313,14 +313,15 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 
 func (s *ApplicationTestSuite) TestMakeRoute() {
 	mockConfig := &configmocks.Config{}
-	mockConfig.On("GetBool", "app.debug").Return(false).Once()
 
 	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
-	serviceProvider := &route.ServiceProvider{}
-	serviceProvider.Register(s.app)
+	mockRoute := &routemocks.Engine{}
+	s.app.Singleton("goravel.route", func(app foundation.Application) (any, error) {
+		return mockRoute, nil
+	})
 
 	s.NotNil(s.app.MakeRoute())
 	mockConfig.AssertExpectations(s.T())
