@@ -19,8 +19,6 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-      - name: Install dependencies 📦
-        run: go mod tidy
       - name: Run tests
         run: go test ./...
   windows:
