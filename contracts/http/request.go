@@ -41,6 +41,8 @@ type Request interface {
 
 	// Input Retrieve data by order: json, form, query, route
 	Input(key string, defaultValue ...string) string
+	InputArray(key string, defaultValue ...[]string) []string
+	InputMap(key string, defaultValue ...map[string]string) map[string]string
 	InputInt(key string, defaultValue ...int) int
 	InputInt64(key string, defaultValue ...int64) int64
 	InputBool(key string, defaultValue ...bool) bool
