@@ -20,7 +20,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Install dependencies
-      - run: go mod tidy
+        run: go mod tidy
       - name: Run tests
         run: go test ./...
   windows:
@@ -38,6 +38,6 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Install dependencies
-      - run: go mod tidy
+        run: go mod tidy
       - name: Run tests
         run: go test ./... -short
