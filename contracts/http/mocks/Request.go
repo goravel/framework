@@ -278,7 +278,7 @@ func (_m *Request) InputInt64(key string, defaultValue ...int64) int64 {
 }
 
 // InputMap provides a mock function with given fields: key, defaultValue
-func (_m *Request) InputMap(key string, defaultValue ...map[string]interface{}) map[string]interface{} {
+func (_m *Request) InputMap(key string, defaultValue ...map[string]string) map[string]string {
 	_va := make([]interface{}, len(defaultValue))
 	for _i := range defaultValue {
 		_va[_i] = defaultValue[_i]
@@ -288,12 +288,12 @@ func (_m *Request) InputMap(key string, defaultValue ...map[string]interface{}) 
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(string, ...map[string]interface{}) map[string]interface{}); ok {
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func(string, ...map[string]string) map[string]string); ok {
 		r0 = rf(key, defaultValue...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(map[string]string)
 		}
 	}
 
