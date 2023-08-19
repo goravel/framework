@@ -1605,6 +1605,15 @@ func (s *QueryTestSuite) TestFirst() {
 					var user1 User
 					s.Nil(query.Where("name", "first_user").First(&user1))
 					s.True(user1.ID > 0)
+
+					// NOTE: this will throw error when create with no relationships
+					product := Product{Name: "create_product", Price: 200}
+					s.Nil(query.Create(&product))
+					s.True(product.ID > 0)
+
+					var product1 Product
+					s.Nil(query.Where("name", "create_product").First(&product1))
+					s.True(product1.ID > 0)
 				},
 			},
 		}
