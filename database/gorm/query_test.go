@@ -298,6 +298,17 @@ type Phone struct {
 	PhoneableType string
 }
 
+type Product struct {
+	orm.Model
+	orm.SoftDeletes
+	Name  string
+	Price float64
+}
+
+func (p *Product) Connection() string {
+	return "postgresql"
+}
+
 type QueryTestSuite struct {
 	suite.Suite
 	queries map[ormcontract.Driver]ormcontract.Query

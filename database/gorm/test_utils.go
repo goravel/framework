@@ -597,6 +597,10 @@ func (r Table) Create(driver orm.Driver, db orm.Query) error {
 	if err != nil {
 		return err
 	}
+	_, err = db.Exec(r.createProductTable(driver))
+	if err != nil {
+		return err
+	}
 	_, err = db.Exec(r.createAddressTable(driver))
 	if err != nil {
 		return err
@@ -636,6 +640,61 @@ func (r Table) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) erro
 	}
 
 	return nil
+}
+
+func (r Table) createProductTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `
+CREATE TABLE products (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  price decimal(10,2) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  deleted_at datetime(3) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY idx_users_created_at (created_at),
+  KEY idx_users_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case orm.DriverPostgresql:
+		return `
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  price decimal(10,2) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL,
+  deleted_at timestamp DEFAULT NULL
+);
+`
+	case orm.DriverSqlite:
+		return `
+CREATE TABLE products (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  price decimal(10,2) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL
+);
+`
+	case orm.DriverSqlserver:
+		return `
+CREATE TABLE products (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  price decimal(10,2) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
 }
 
 func (r Table) createUserTable(driver orm.Driver) string {

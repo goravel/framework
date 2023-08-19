@@ -1,9 +1,9 @@
 package gorm
 
 import (
-	"github.com/goravel/framework/contracts/config"
 	"gorm.io/gorm"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
