@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gookit/color"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
@@ -361,6 +363,44 @@ func TestQueryTestSuite(t *testing.T) {
 	assert.Nil(t, sqlserverPool.Purge(sqlserverResource))
 }
 
+func TestCustomConnection(t *testing.T) {
+	mysqlDocker := NewMysqlDocker()
+	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+	postgresqlDocker := NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, _, err := postgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
+	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("goravel_")
+	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(true)
+	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
+
+	// NOTE: this will throw error when create with no relationships
+	product := Product{Name: "create_product", Price: 200}
+	assert.Nil(t, query.Create(&product))
+	color.Redln(product)
+	assert.True(t, product.ID > 0)
+
+	var product1 Product
+	assert.Nil(t, query.Where("name", "create_product").First(&product1))
+	assert.True(t, product1.ID > 0)
+
+	assert.Nil(t, mysqlPool.Purge(mysqlResource))
+	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
+}
 func (s *QueryTestSuite) SetupTest() {}
 
 func (s *QueryTestSuite) TestAssociation() {
@@ -1605,15 +1645,6 @@ func (s *QueryTestSuite) TestFirst() {
 					var user1 User
 					s.Nil(query.Where("name", "first_user").First(&user1))
 					s.True(user1.ID > 0)
-
-					// NOTE: this will throw error when create with no relationships
-					product := Product{Name: "create_product", Price: 200}
-					s.Nil(query.Create(&product))
-					s.True(product.ID > 0)
-
-					var product1 Product
-					s.Nil(query.Where("name", "create_product").First(&product1))
-					s.True(product1.ID > 0)
 				},
 			},
 		}
