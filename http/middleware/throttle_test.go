@@ -431,9 +431,7 @@ func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
 	panic("implement me")
 }
 
-func (r *TestRequest) Next() {
-	return
-}
+func (r *TestRequest) Next() {}
 
 func (r *TestRequest) Origin() *nethttp.Request {
 	//TODO implement me
