@@ -26,13 +26,14 @@ func (http *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (http *ServiceProvider) Boot(app foundation.Application) {
+	CacheFacade = app.MakeCache()
+	ConfigFacade = app.MakeConfig()
+	RateLimiterFacade = app.MakeRateLimiter()
+
 	http.registerCommands(app)
 }
 
 func (http *ServiceProvider) registerCommands(app foundation.Application) {
-	CacheFacade = app.MakeCache()
-	ConfigFacade = app.MakeConfig()
-	RateLimiterFacade = app.MakeRateLimiter()
 	app.MakeArtisan().Register([]consolecontract.Command{
 		&console.RequestMakeCommand{},
 		&console.ControllerMakeCommand{},
