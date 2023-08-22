@@ -3,11 +3,10 @@ package gorm
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/google/wire"
-	"github.com/gookit/color"
+	"github.com/goravel/framework/database/db"
 	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -664,12 +663,14 @@ func (r *QueryImpl) refreshConnection(value any) {
 
 	// Check if the model has a connection specified
 	if conn := model.Connection(); conn != "" && conn != r.instance.Name() {
-		query, err := InitializeQuery(r.ctx, r.config, conn)
-		if err != nil || query == nil {
-			color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", conn, err))
+		configImpl := db.NewConfigImpl(r.config, conn)
+		dialectorImpl := NewDialectorImpl(r.config, conn)
+		gormImpl := NewGormImpl(r.config, conn, configImpl, dialectorImpl)
+		dbInstance, err := gormImpl.Make()
+		r.instance = dbInstance
+		if err != nil {
+			return
 		}
-		query.instance.Statement = r.instance.Statement
-		r.instance = query.instance
 	}
 }
 

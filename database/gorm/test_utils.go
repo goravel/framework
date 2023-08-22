@@ -649,7 +649,6 @@ func (r Table) createProductTable(driver orm.Driver) string {
 CREATE TABLE products (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
-  price decimal(10,2) NOT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   deleted_at datetime(3) DEFAULT NULL,
@@ -663,7 +662,6 @@ CREATE TABLE products (
 CREATE TABLE products (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
-  price decimal(10,2) NOT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL,
   deleted_at timestamp DEFAULT NULL
@@ -674,7 +672,6 @@ CREATE TABLE products (
 CREATE TABLE products (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
-  price decimal(10,2) NOT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL
@@ -685,7 +682,6 @@ CREATE TABLE products (
 CREATE TABLE products (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
-  price decimal(10,2) NOT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL,

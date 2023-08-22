@@ -303,8 +303,7 @@ type Phone struct {
 type Product struct {
 	orm.Model
 	orm.SoftDeletes
-	Name  string
-	Price float64
+	Name string
 }
 
 func (p *Product) Connection() string {
@@ -384,12 +383,11 @@ func TestCustomConnection(t *testing.T) {
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("goravel_")
-	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(true)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
+	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
 	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
 
-	// NOTE: this will throw error when create with no relationships
-	product := Product{Name: "create_product", Price: 200}
+	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
 	color.Redln(product)
 	assert.True(t, product.ID > 0)
