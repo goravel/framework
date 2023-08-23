@@ -29,10 +29,6 @@ type User struct {
 	Avatar string
 }
 
-func (u *User) Connection() string {
-	return "postgresql"
-}
-
 type OrmSuite struct {
 	suite.Suite
 	orm *OrmImpl
