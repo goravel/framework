@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -389,7 +388,6 @@ func TestCustomConnection(t *testing.T) {
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
-	color.Redln(product)
 	assert.True(t, product.ID > 0)
 
 	var product1 Product

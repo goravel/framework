@@ -667,6 +667,13 @@ func (r *QueryImpl) refreshConnection(value any) {
 		dialectorImpl := NewDialectorImpl(r.config, conn)
 		gormImpl := NewGormImpl(r.config, conn, configImpl, dialectorImpl)
 		dbInstance, err := gormImpl.Make()
+		stmt := r.instance.Statement
+		stmt.DB = dbInstance.Statement.DB
+		stmt.ConnPool = dbInstance.ConnPool
+		if r.ctx != nil {
+			dbInstance = dbInstance.WithContext(r.ctx)
+		}
+		dbInstance.Statement = stmt
 		r.instance = dbInstance
 		if err != nil {
 			return
