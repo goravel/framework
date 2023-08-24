@@ -362,6 +362,10 @@ func TestQueryTestSuite(t *testing.T) {
 }
 
 func TestCustomConnection(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	mysqlDocker := NewMysqlDocker()
 	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
 	if err != nil {
