@@ -309,6 +309,26 @@ func (p *Product) Connection() string {
 	return "postgresql"
 }
 
+type Review struct {
+	orm.Model
+	orm.SoftDeletes
+	Body string
+}
+
+func (r *Review) Connection() string {
+	return ""
+}
+
+type Person struct {
+	orm.Model
+	orm.SoftDeletes
+	Name string
+}
+
+func (p *Person) Connection() string {
+	return "dummy"
+}
+
 type QueryTestSuite struct {
 	suite.Suite
 	queries map[ormcontract.Driver]ormcontract.Query
@@ -377,6 +397,14 @@ func TestCustomConnection(t *testing.T) {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
+	review := Review{Body: "create_review"}
+	assert.Nil(t, query.Create(&review))
+	assert.True(t, review.ID > 0)
+
+	var review1 Review
+	assert.Nil(t, query.Where("body", "create_review").First(&review1))
+	assert.True(t, review1.ID > 0)
+
 	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
 	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
@@ -401,6 +429,12 @@ func TestCustomConnection(t *testing.T) {
 	var product2 Product
 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
 	assert.True(t, product2.ID == 0)
+
+	mysqlDocker.MockConfig.On("GetString", "database.connections.dummy.driver").Return("")
+
+	person := Person{Name: "create_person"}
+	assert.NotNil(t, query.Create(&person))
+	assert.True(t, person.ID == 0)
 
 	assert.Nil(t, mysqlPool.Purge(mysqlResource))
 	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))

@@ -683,20 +683,6 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
-func driver2gorm(driver string) string {
-	switch driver {
-	case "mysql":
-		return "mysql"
-	case "postgresql":
-		return "postgres"
-	case "sqlite":
-		return "sqlite"
-	case "sqlserver":
-		return "sqlserver"
-	}
-	return ""
-}
-
 func (r *QueryImpl) refreshConnection(value any) error {
 	model, ok := value.(ormcontract.ConnectionModel)
 	if !ok {
@@ -704,7 +690,7 @@ func (r *QueryImpl) refreshConnection(value any) error {
 	}
 	conn := model.Connection()
 	if conn == "" {
-		return fmt.Errorf("connection shouldn't be empty")
+		conn = r.config.GetString("database.default")
 	}
 	driver := driver2gorm(r.config.GetString(fmt.Sprintf("database.connections.%s.driver", conn)))
 	if driver == "" {
@@ -1054,4 +1040,19 @@ func observerEvent(event ormcontract.EventType, observer ormcontract.Observer) f
 	}
 
 	return nil
+}
+
+func driver2gorm(driver string) string {
+	switch driver {
+	case "mysql":
+		return "mysql"
+	case "postgresql":
+		return "postgres"
+	case "sqlite":
+		return "sqlite"
+	case "sqlserver":
+		return "sqlserver"
+	default:
+		return ""
+	}
 }
