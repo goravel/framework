@@ -398,6 +398,10 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("name", "create_product").First(&product1))
 	assert.True(t, product1.ID > 0)
 
+	var product2 Product
+	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
+	assert.True(t, product2.ID == 0)
+
 	assert.Nil(t, mysqlPool.Purge(mysqlResource))
 	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
 }

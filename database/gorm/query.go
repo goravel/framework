@@ -3,10 +3,10 @@ package gorm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/google/wire"
-	"github.com/goravel/framework/database/db"
 	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -25,9 +25,9 @@ var QuerySet = wire.NewSet(NewQueryImpl, wire.Bind(new(ormcontract.Query), new(*
 var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
-	instance      *gormio.DB
 	config        config.Config
 	ctx           context.Context
+	instance      *gormio.DB
 	withoutEvents bool
 }
 
@@ -71,7 +71,9 @@ func (r *QueryImpl) Count(count *int64) error {
 }
 
 func (r *QueryImpl) Create(value any) error {
-	r.refreshConnection(value)
+	if err := r.refreshConnection(value); err != nil {
+		return err
+	}
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
@@ -111,7 +113,9 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 }
 
 func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return nil, err
+	}
 	if err := r.deleting(dest); err != nil {
 		return nil, err
 	}
@@ -145,7 +149,9 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
@@ -157,7 +163,9 @@ func (r *QueryImpl) Find(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
@@ -175,7 +183,9 @@ func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) First(dest any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	res := r.instance.First(dest)
 	if res.Error != nil {
 		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
@@ -189,7 +199,9 @@ func (r *QueryImpl) First(dest any) error {
 }
 
 func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	err := r.instance.First(dest).Error
 	if err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -203,7 +215,9 @@ func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
 }
 
 func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	if len(conds) == 0 {
 		return errors.New("query condition is require")
 	}
@@ -226,7 +240,9 @@ func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FirstOrFail(dest any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	err := r.instance.First(dest).Error
 	if err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
@@ -240,7 +256,9 @@ func (r *QueryImpl) FirstOrFail(dest any) error {
 }
 
 func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	var res *gormio.DB
 	if len(values) > 0 {
 		res = r.instance.Attrs(values[0]).FirstOrInit(dest, attributes)
@@ -259,7 +277,9 @@ func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
 }
 
 func (r *QueryImpl) ForceDelete(value any, conds ...any) (*ormcontract.Result, error) {
-	r.refreshConnection(value)
+	if err := r.refreshConnection(value); err != nil {
+		return nil, err
+	}
 	if err := r.forceDeleting(value); err != nil {
 		return nil, err
 	}
@@ -391,7 +411,9 @@ func (r *QueryImpl) LockForUpdate() ormcontract.Query {
 }
 
 func (r *QueryImpl) Model(value any) ormcontract.Query {
-	r.refreshConnection(value)
+	if err := r.refreshConnection(value); err != nil {
+		return nil
+	}
 	tx := r.instance.Model(value)
 
 	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
@@ -449,7 +471,9 @@ func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) Save(value any) error {
-	r.refreshConnection(value)
+	if err := r.refreshConnection(value); err != nil {
+		return err
+	}
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
@@ -506,7 +530,9 @@ func (r *QueryImpl) SaveQuietly(value any) error {
 }
 
 func (r *QueryImpl) Scan(dest any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 
 	return r.instance.Scan(dest).Error
 }
@@ -604,7 +630,9 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 }
 
 func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
-	r.refreshConnection(dest)
+	if err := r.refreshConnection(dest); err != nil {
+		return err
+	}
 	res := r.instance.Assign(values).FirstOrInit(dest, attributes)
 	if res.Error != nil {
 		return res.Error
@@ -655,18 +683,40 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
 }
 
-func (r *QueryImpl) refreshConnection(value any) {
+func driver2gorm(driver string) string {
+	switch driver {
+	case "mysql":
+		return "mysql"
+	case "postgresql":
+		return "postgres"
+	case "sqlite":
+		return "sqlite"
+	case "sqlserver":
+		return "sqlserver"
+	}
+	return ""
+}
+
+func (r *QueryImpl) refreshConnection(value any) error {
 	model, ok := value.(ormcontract.ConnectionModel)
 	if !ok {
-		return
+		return nil
 	}
-
-	// Check if the model has a connection specified
-	if conn := model.Connection(); conn != "" && conn != r.instance.Name() {
-		configImpl := db.NewConfigImpl(r.config, conn)
-		dialectorImpl := NewDialectorImpl(r.config, conn)
-		gormImpl := NewGormImpl(r.config, conn, configImpl, dialectorImpl)
-		dbInstance, err := gormImpl.Make()
+	conn := model.Connection()
+	if conn == "" {
+		return fmt.Errorf("connection shouldn't be empty")
+	}
+	driver := driver2gorm(r.config.GetString(fmt.Sprintf("database.connections.%s.driver", conn)))
+	if driver == "" {
+		return fmt.Errorf("connection %s driver is not supported", conn)
+	}
+	// if a driver is not the same, we need to refresh the connection
+	if driver != r.instance.Name() {
+		query, err := InitializeQuery(r.ctx, r.config, conn)
+		if err != nil {
+			return err
+		}
+		dbInstance := query.instance
 		stmt := r.instance.Statement
 		stmt.DB = dbInstance.Statement.DB
 		stmt.ConnPool = dbInstance.ConnPool
@@ -675,10 +725,8 @@ func (r *QueryImpl) refreshConnection(value any) {
 		}
 		dbInstance.Statement = stmt
 		r.instance = dbInstance
-		if err != nil {
-			return
-		}
 	}
+	return nil
 }
 
 func (r *QueryImpl) selectCreate(value any) error {
