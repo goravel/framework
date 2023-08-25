@@ -513,6 +513,11 @@ func (r *TestResponse) Flush() {
 	panic("implement me")
 }
 
+func (r *TestResponse) View() contractshttp.ResponseView {
+	//TODO implement me
+	panic("implement me")
+}
+
 type TestLimit struct{}
 
 func (r *TestLimit) By(key string) contractshttp.Limit {
