@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/gookit/color"
-	"github.com/goravel/framework/route"
 
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
@@ -42,6 +41,7 @@ import (
 	goravellog "github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
+	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/testing"
 	"github.com/goravel/framework/validation"
@@ -265,6 +265,16 @@ func (c *Container) MakeValidation() validationcontract.Validation {
 	}
 
 	return instance.(validationcontract.Validation)
+}
+
+func (c *Container) MakeView() httpcontract.View {
+	instance, err := c.Make(http.BindingView)
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(httpcontract.View)
 }
 
 func (c *Container) MakeSeeder() seerdercontract.Facade {

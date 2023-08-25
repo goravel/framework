@@ -10,6 +10,7 @@ import (
 )
 
 const BindingRateLimiter = "goravel.rate_limiter"
+const BindingView = "goravel.view"
 
 type ServiceProvider struct{}
 
@@ -22,6 +23,9 @@ var (
 func (http *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingRateLimiter, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
+	})
+	app.Singleton(BindingView, func(app foundation.Application) (any, error) {
+		return NewView(), nil
 	})
 }
 

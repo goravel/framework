@@ -47,6 +47,7 @@ type Container interface {
 	MakeStorage() filesystem.Storage
 	MakeTesting() testing.Testing
 	MakeValidation() validation.Validation
+	MakeView() http.View
 	MakeSeeder() seeder.Facade
 	MakeWith(key any, parameters map[string]any) (any, error)
 	Singleton(key any, callback func(app Application) (any, error))
