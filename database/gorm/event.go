@@ -64,7 +64,7 @@ func (e *Event) IsClean(fields ...string) bool {
 }
 
 func (e *Event) Query() orm.Query {
-	return NewQueryWithWithoutEvents(e.query.instance.Session(&gorm.Session{NewDB: true}), false)
+	return NewQueryWithWithoutEvents(e.query.instance.Session(&gorm.Session{NewDB: true}), false, e.query.config)
 }
 
 func (e *Event) Context() context.Context {

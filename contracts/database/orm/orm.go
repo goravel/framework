@@ -84,6 +84,10 @@ type Association interface {
 	Count() int64
 }
 
+type ConnectionModel interface {
+	Connection() string
+}
+
 //go:generate mockery --name=Cursor
 type Cursor interface {
 	Scan(value any) error

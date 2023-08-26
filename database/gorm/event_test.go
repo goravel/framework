@@ -25,7 +25,7 @@ var testQuery = NewQueryWithWithoutEvents(&gorm.DB{
 		Selects: []string{},
 		Omits:   []string{},
 	},
-}, false)
+}, false, nil)
 
 type EventTestSuite struct {
 	suite.Suite
@@ -53,7 +53,7 @@ func (s *EventTestSuite) TestSetAttribute() {
 			Omits:   []string{},
 			Dest:    dest,
 		},
-	}, false)
+	}, false, nil)
 
 	event := NewEvent(query, &testEventModel, dest)
 
@@ -152,7 +152,7 @@ func (s *EventTestSuite) TestValidColumn() {
 				Selects: []string{"name"},
 				Omits:   []string{},
 			},
-		}, false)
+		}, false, nil)
 		s.True(event.validColumn("Name"))
 		s.True(event.validColumn("name"))
 		s.False(event.validColumn("avatar"))
@@ -163,7 +163,7 @@ func (s *EventTestSuite) TestValidColumn() {
 				Selects: []string{},
 				Omits:   []string{"name"},
 			},
-		}, false)
+		}, false, nil)
 		s.False(event.validColumn("Name"))
 		s.False(event.validColumn("name"))
 		s.True(event.validColumn("avatar"))
