@@ -19,6 +19,7 @@ type Response interface {
 	String(code int, format string, values ...any)
 	Success() ResponseSuccess
 	Status(code int) ResponseStatus
+	View() ResponseView
 	Writer() http.ResponseWriter
 	Flush()
 }
@@ -43,4 +44,9 @@ type ResponseOrigin interface {
 	Header() http.Header
 	Size() int
 	Status() int
+}
+
+type ResponseView interface {
+	Make(view string, data ...any)
+	First(views []string, data ...any)
 }

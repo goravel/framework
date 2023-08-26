@@ -106,10 +106,10 @@ func (r *MysqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 func (r *MysqlDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &configmock.Config{}
 	r.MockConfig.On("Get", "database.connections.mysql.read").Return([]database.Config{
-		{Host: "localhost", Port: readPort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: readPort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("Get", "database.connections.mysql.write").Return([]database.Config{
-		{Host: "localhost", Port: writePort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: writePort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
@@ -136,7 +136,7 @@ func (r *MysqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.mysql.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.mysql.write").Return(nil)
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
-	r.MockConfig.On("GetString", "database.connections.mysql.host").Return("localhost")
+	r.MockConfig.On("GetString", "database.connections.mysql.host").Return("127.0.0.1")
 	r.MockConfig.On("GetString", "database.connections.mysql.username").Return(DbUser)
 	r.MockConfig.On("GetString", "database.connections.mysql.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.mysql.port").Return(r.Port)
@@ -253,10 +253,10 @@ func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 func (r *PostgresqlDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &configmock.Config{}
 	r.MockConfig.On("Get", "database.connections.postgresql.read").Return([]database.Config{
-		{Host: "localhost", Port: readPort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: readPort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("Get", "database.connections.postgresql.write").Return([]database.Config{
-		{Host: "localhost", Port: writePort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: writePort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
@@ -282,7 +282,7 @@ func (r *PostgresqlDocker) mockWithPrefixAndSingular() {
 func (r *PostgresqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
-	r.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
+	r.MockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
 	r.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
 	r.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(r.Port)
@@ -538,10 +538,10 @@ func (r *SqlserverDocker) mock() {
 func (r *SqlserverDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &configmock.Config{}
 	r.MockConfig.On("Get", "database.connections.sqlserver.read").Return([]database.Config{
-		{Host: "localhost", Port: readPort, Username: dbUser1, Password: DbPassword},
+		{Host: "127.0.0.1", Port: readPort, Username: dbUser1, Password: DbPassword},
 	})
 	r.MockConfig.On("Get", "database.connections.sqlserver.write").Return([]database.Config{
-		{Host: "localhost", Port: writePort, Username: dbUser1, Password: DbPassword},
+		{Host: "127.0.0.1", Port: writePort, Username: dbUser1, Password: DbPassword},
 	})
 	r.MockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
@@ -558,7 +558,7 @@ func (r *SqlserverDocker) mockWithPrefixAndSingular() {
 func (r *SqlserverDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.sqlserver.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.sqlserver.write").Return(nil)
-	r.MockConfig.On("GetString", "database.connections.sqlserver.host").Return("localhost")
+	r.MockConfig.On("GetString", "database.connections.sqlserver.host").Return("127.0.0.1")
 	r.MockConfig.On("GetString", "database.connections.sqlserver.username").Return(dbUser1)
 	r.MockConfig.On("GetString", "database.connections.sqlserver.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.sqlserver.port").Return(r.Port)
