@@ -130,7 +130,7 @@ func NewTimestampNano(carbon Carbon) TimestampNano {
 
 // MarshalJSON implements the interface json.Marshal for DateTime struct.
 // 实现 MarshalJSON 接口
-func (t DateTime) MarshalJSON() ([]byte, error) {
+func (t *DateTime) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, t.ToDateTimeString())), nil
 }
 
@@ -146,8 +146,12 @@ func (t *DateTime) UnmarshalJSON(b []byte) error {
 
 // String implements the interface Stringer for DateTime struct.
 // 实现 Stringer 接口
-func (t DateTime) String() string {
+func (t *DateTime) String() string {
 	return t.ToDateTimeString()
+}
+
+func (t DateTime) GormDataType() string {
+	return "time"
 }
 
 // MarshalJSON implements the interface json.Marshal for DateTimeMilli struct.
@@ -172,6 +176,10 @@ func (t DateTimeMilli) String() string {
 	return t.ToDateTimeMilliString()
 }
 
+func (t DateTimeMilli) GormDataType() string {
+	return "time"
+}
+
 // MarshalJSON implements the interface json.Marshal for DateTimeMicro struct.
 // 实现 MarshalJSON 接口
 func (t DateTimeMicro) MarshalJSON() ([]byte, error) {
@@ -192,6 +200,10 @@ func (t *DateTimeMicro) UnmarshalJSON(b []byte) error {
 // 实现 Stringer 接口
 func (t DateTimeMicro) String() string {
 	return t.ToDateTimeMicroString()
+}
+
+func (t DateTimeMicro) GormDataType() string {
+	return "time"
 }
 
 // MarshalJSON implements the interface json.Marshal for DateTimeNano struct.
@@ -216,6 +228,10 @@ func (t DateTimeNano) String() string {
 	return t.ToDateTimeNanoString()
 }
 
+func (t DateTimeNano) GormDataType() string {
+	return "time"
+}
+
 // MarshalJSON implements the interface json.Marshal for Date struct.
 // 实现 MarshalJSON 接口
 func (t Date) MarshalJSON() ([]byte, error) {
@@ -236,6 +252,10 @@ func (t *Date) UnmarshalJSON(b []byte) error {
 // 实现 Stringer 接口
 func (t Date) String() string {
 	return t.ToDateString()
+}
+
+func (t Date) GormDataType() string {
+	return "time"
 }
 
 // MarshalJSON implements the interface json.Marshal for DateMilli struct.
@@ -260,6 +280,10 @@ func (t DateMilli) String() string {
 	return t.ToDateMilliString()
 }
 
+func (t DateMilli) GormDataType() string {
+	return "time"
+}
+
 // MarshalJSON implements the interface json.Marshal for DateMicro struct.
 // 实现 MarshalJSON 接口
 func (t DateMicro) MarshalJSON() ([]byte, error) {
@@ -282,6 +306,10 @@ func (t DateMicro) String() string {
 	return t.ToDateMicroString()
 }
 
+func (t DateMicro) GormDataType() string {
+	return "time"
+}
+
 // MarshalJSON implements the interface json.Marshal for DateNano struct.
 // 实现 MarshalJSON 接口
 func (t DateNano) MarshalJSON() ([]byte, error) {
@@ -302,6 +330,10 @@ func (t *DateNano) UnmarshalJSON(b []byte) error {
 // 实现 Stringer 接口
 func (t DateNano) String() string {
 	return t.ToDateNanoString()
+}
+
+func (t DateNano) GormDataType() string {
+	return "time"
 }
 
 // MarshalJSON implements the interface json.Marshal for Timestamp struct.
@@ -327,6 +359,10 @@ func (t Timestamp) String() string {
 	return t.ToDateTimeString()
 }
 
+func (t Timestamp) GormDataType() string {
+	return "time"
+}
+
 // MarshalJSON implements the interface json.Marshal for TimestampMilli struct.
 // 实现 MarshalJSON 接口
 func (t TimestampMilli) MarshalJSON() ([]byte, error) {
@@ -348,6 +384,10 @@ func (t *TimestampMilli) UnmarshalJSON(b []byte) error {
 // 实现 Stringer 接口
 func (t TimestampMilli) String() string {
 	return t.ToDateTimeMilliString()
+}
+
+func (t TimestampMilli) GormDataType() string {
+	return "int"
 }
 
 // MarshalJSON implements the interface MarshalJSON for TimestampMicro struct.
@@ -373,6 +413,10 @@ func (t TimestampMicro) String() string {
 	return t.ToDateTimeMicroString()
 }
 
+func (t TimestampMicro) GormDataType() string {
+	return "int"
+}
+
 // MarshalJSON implements the interface json.Marshal for TimestampNano struct.
 // 实现 MarshalJSON 接口
 func (t TimestampNano) MarshalJSON() ([]byte, error) {
@@ -394,4 +438,8 @@ func (t *TimestampNano) UnmarshalJSON(b []byte) error {
 // 实现 Stringer 接口
 func (t TimestampNano) String() string {
 	return t.ToDateTimeNanoString()
+}
+
+func (t TimestampNano) GormDataType() string {
+	return "int"
 }
