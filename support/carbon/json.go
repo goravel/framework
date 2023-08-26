@@ -130,7 +130,7 @@ func NewTimestampNano(carbon Carbon) TimestampNano {
 
 // MarshalJSON implements the interface json.Marshal for DateTime struct.
 // 实现 MarshalJSON 接口
-func (t *DateTime) MarshalJSON() ([]byte, error) {
+func (t DateTime) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, t.ToDateTimeString())), nil
 }
 
