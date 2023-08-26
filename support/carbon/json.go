@@ -146,7 +146,7 @@ func (t *DateTime) UnmarshalJSON(b []byte) error {
 
 // String implements the interface Stringer for DateTime struct.
 // 实现 Stringer 接口
-func (t *DateTime) String() string {
+func (t DateTime) String() string {
 	return t.ToDateTimeString()
 }
 
