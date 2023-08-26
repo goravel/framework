@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
@@ -298,6 +299,36 @@ type Phone struct {
 	PhoneableType string
 }
 
+type Product struct {
+	orm.Model
+	orm.SoftDeletes
+	Name string
+}
+
+func (p *Product) Connection() string {
+	return "postgresql"
+}
+
+type Review struct {
+	orm.Model
+	orm.SoftDeletes
+	Body string
+}
+
+func (r *Review) Connection() string {
+	return ""
+}
+
+type Person struct {
+	orm.Model
+	orm.SoftDeletes
+	Name string
+}
+
+func (p *Person) Connection() string {
+	return "dummy"
+}
+
 type QueryTestSuite struct {
 	suite.Suite
 	queries map[ormcontract.Driver]ormcontract.Query
@@ -350,6 +381,64 @@ func TestQueryTestSuite(t *testing.T) {
 	assert.Nil(t, sqlserverPool.Purge(sqlserverResource))
 }
 
+func TestCustomConnection(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
+	mysqlDocker := NewMysqlDocker()
+	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+	postgresqlDocker := NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, _, err := postgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	review := Review{Body: "create_review"}
+	assert.Nil(t, query.Create(&review))
+	assert.True(t, review.ID > 0)
+
+	var review1 Review
+	assert.Nil(t, query.Where("body", "create_review").First(&review1))
+	assert.True(t, review1.ID > 0)
+
+	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
+	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
+	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
+	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
+
+	product := Product{Name: "create_product"}
+	assert.Nil(t, query.Create(&product))
+	assert.True(t, product.ID > 0)
+
+	var product1 Product
+	assert.Nil(t, query.Where("name", "create_product").First(&product1))
+	assert.True(t, product1.ID > 0)
+
+	var product2 Product
+	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
+	assert.True(t, product2.ID == 0)
+
+	mysqlDocker.MockConfig.On("GetString", "database.connections.dummy.driver").Return("")
+
+	person := Person{Name: "create_person"}
+	assert.NotNil(t, query.Create(&person))
+	assert.True(t, person.ID == 0)
+
+	assert.Nil(t, mysqlPool.Purge(mysqlResource))
+	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
+}
 func (s *QueryTestSuite) SetupTest() {}
 
 func (s *QueryTestSuite) TestAssociation() {
