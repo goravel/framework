@@ -381,287 +381,227 @@ func TestQueryTestSuite(t *testing.T) {
 	assert.Nil(t, sqlserverPool.Purge(sqlserverResource))
 }
 
-func TestCustomConnection(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping tests of using docker")
-	}
-
-	mysqlDocker := NewMysqlDocker()
-	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
-	postgresqlDocker := NewPostgresqlDocker()
-	postgresqlPool, postgresqlResource, _, err := postgresqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
-
-	review := Review{Body: "create_review"}
-	assert.Nil(t, query.Create(&review))
-	assert.True(t, review.ID > 0)
-
-	var review1 Review
-	assert.Nil(t, query.Where("body", "create_review").First(&review1))
-	assert.True(t, review1.ID > 0)
-
-	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
-	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
-	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
-
-	product := Product{Name: "create_product"}
-	assert.Nil(t, query.Create(&product))
-	assert.True(t, product.ID > 0)
-
-	var product1 Product
-	assert.Nil(t, query.Where("name", "create_product").First(&product1))
-	assert.True(t, product1.ID > 0)
-
-	var product2 Product
-	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
-	assert.True(t, product2.ID == 0)
-
-	mysqlDocker.MockConfig.On("GetString", "database.connections.dummy.driver").Return("")
-
-	person := Person{Name: "create_person"}
-	assert.NotNil(t, query.Create(&person))
-	assert.True(t, person.ID == 0)
-
-	assert.Nil(t, mysqlPool.Purge(mysqlResource))
-	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
-}
 func (s *QueryTestSuite) SetupTest() {}
 
 func (s *QueryTestSuite) TestAssociation() {
 	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			tests := []struct {
-				description string
-				setup       func()
-			}{
-				{
-					description: "Find",
-					setup: func() {
-						user := &User{
-							Name: "association_find_name",
-							Address: &Address{
-								Name: "association_find_address",
-							},
-						}
+		tests := []struct {
+			name  string
+			setup func()
+		}{
+			{
+				name: "Find",
+				setup: func() {
+					user := &User{
+						Name: "association_find_name",
+						Address: &Address{
+							Name: "association_find_address",
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Address.ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
 
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
 
-						var userAddress Address
-						s.Nil(query.Model(&user1).Association("Address").Find(&userAddress))
-						s.True(userAddress.ID > 0)
-						s.Equal("association_find_address", userAddress.Name)
-					},
+					var userAddress Address
+					s.Nil(query.Model(&user1).Association("Address").Find(&userAddress))
+					s.True(userAddress.ID > 0)
+					s.Equal("association_find_address", userAddress.Name)
 				},
-				{
-					description: "hasOne Append",
-					setup: func() {
-						user := &User{
-							Name: "association_has_one_append_name",
-							Address: &Address{
-								Name: "association_has_one_append_address",
-							},
-						}
+			},
+			{
+				name: "hasOne Append",
+				setup: func() {
+					user := &User{
+						Name: "association_has_one_append_name",
+						Address: &Address{
+							Name: "association_has_one_append_address",
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Address.ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
 
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(query.Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}))
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID), driver)
+					s.True(user1.ID > 0, driver)
+					s.Nil(query.Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}), driver)
 
-						s.Nil(query.Load(&user1, "Address"))
-						s.True(user1.Address.ID > 0)
-						s.Equal("association_has_one_append_address1", user1.Address.Name)
-					},
+					s.Nil(query.Load(&user1, "Address"), driver)
+					s.True(user1.Address.ID > 0, driver)
+					s.Equal("association_has_one_append_address1", user1.Address.Name, driver)
 				},
-				{
-					description: "hasMany Append",
-					setup: func() {
-						user := &User{
-							Name: "association_has_many_append_name",
-							Books: []*Book{
-								{Name: "association_has_many_append_address1"},
-								{Name: "association_has_many_append_address2"},
-							},
-						}
+			},
+			{
+				name: "hasMany Append",
+				setup: func() {
+					user := &User{
+						Name: "association_has_many_append_name",
+						Books: []*Book{
+							{Name: "association_has_many_append_address1"},
+							{Name: "association_has_many_append_address2"},
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Books[0].ID > 0)
-						s.True(user.Books[1].ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
 
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(query.Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(query.Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
 
-						s.Nil(query.Load(&user1, "Books"))
-						s.Equal(3, len(user1.Books))
-						s.Equal("association_has_many_append_address3", user1.Books[2].Name)
-					},
+					s.Nil(query.Load(&user1, "Books"))
+					s.Equal(3, len(user1.Books))
+					s.Equal("association_has_many_append_address3", user1.Books[2].Name)
 				},
-				{
-					description: "hasOne Replace",
-					setup: func() {
-						user := &User{
-							Name: "association_has_one_append_name",
-							Address: &Address{
-								Name: "association_has_one_append_address",
-							},
-						}
+			},
+			{
+				name: "hasOne Replace",
+				setup: func() {
+					user := &User{
+						Name: "association_has_one_append_name",
+						Address: &Address{
+							Name: "association_has_one_append_address",
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Address.ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
 
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(query.Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(query.Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
 
-						s.Nil(query.Load(&user1, "Address"))
-						s.True(user1.Address.ID > 0)
-						s.Equal("association_has_one_append_address1", user1.Address.Name)
-					},
+					s.Nil(query.Load(&user1, "Address"))
+					s.True(user1.Address.ID > 0)
+					s.Equal("association_has_one_append_address1", user1.Address.Name)
 				},
-				{
-					description: "hasMany Replace",
-					setup: func() {
-						user := &User{
-							Name: "association_has_many_replace_name",
-							Books: []*Book{
-								{Name: "association_has_many_replace_address1"},
-								{Name: "association_has_many_replace_address2"},
-							},
-						}
+			},
+			{
+				name: "hasMany Replace",
+				setup: func() {
+					user := &User{
+						Name: "association_has_many_replace_name",
+						Books: []*Book{
+							{Name: "association_has_many_replace_address1"},
+							{Name: "association_has_many_replace_address2"},
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Books[0].ID > 0)
-						s.True(user.Books[1].ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
 
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(query.Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(query.Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
 
-						s.Nil(query.Load(&user1, "Books"))
-						s.Equal(1, len(user1.Books))
-						s.Equal("association_has_many_replace_address3", user1.Books[0].Name)
-					},
+					s.Nil(query.Load(&user1, "Books"))
+					s.Equal(1, len(user1.Books))
+					s.Equal("association_has_many_replace_address3", user1.Books[0].Name)
 				},
-				{
-					description: "Delete",
-					setup: func() {
-						user := &User{
-							Name: "association_delete_name",
-							Address: &Address{
-								Name: "association_delete_address",
-							},
-						}
+			},
+			{
+				name: "Delete",
+				setup: func() {
+					user := &User{
+						Name: "association_delete_name",
+						Address: &Address{
+							Name: "association_delete_address",
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Address.ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
 
-						// No ID when Delete
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(query.Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
+					// No ID when Delete
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(query.Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
 
-						s.Nil(query.Load(&user1, "Address"))
-						s.True(user1.Address.ID > 0)
-						s.Equal("association_delete_address", user1.Address.Name)
+					s.Nil(query.Load(&user1, "Address"))
+					s.True(user1.Address.ID > 0)
+					s.Equal("association_delete_address", user1.Address.Name)
 
-						// Has ID when Delete
-						var user2 User
-						s.Nil(query.Find(&user2, user.ID))
-						s.True(user2.ID > 0)
-						var userAddress Address
-						userAddress.ID = user1.Address.ID
-						s.Nil(query.Model(&user2).Association("Address").Delete(&userAddress))
+					// Has ID when Delete
+					var user2 User
+					s.Nil(query.Find(&user2, user.ID))
+					s.True(user2.ID > 0)
+					var userAddress Address
+					userAddress.ID = user1.Address.ID
+					s.Nil(query.Model(&user2).Association("Address").Delete(&userAddress))
 
-						s.Nil(query.Load(&user2, "Address"))
-						s.Nil(user2.Address)
-					},
+					s.Nil(query.Load(&user2, "Address"))
+					s.Nil(user2.Address)
 				},
-				{
-					description: "Clear",
-					setup: func() {
-						user := &User{
-							Name: "association_clear_name",
-							Address: &Address{
-								Name: "association_clear_address",
-							},
-						}
+			},
+			{
+				name: "Clear",
+				setup: func() {
+					user := &User{
+						Name: "association_clear_name",
+						Address: &Address{
+							Name: "association_clear_address",
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Address.ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
 
-						// No ID when Delete
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(query.Model(&user1).Association("Address").Clear())
+					// No ID when Delete
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(query.Model(&user1).Association("Address").Clear())
 
-						s.Nil(query.Load(&user1, "Address"))
-						s.Nil(user1.Address)
-					},
+					s.Nil(query.Load(&user1, "Address"))
+					s.Nil(user1.Address)
 				},
-				{
-					description: "Count",
-					setup: func() {
-						user := &User{
-							Name: "association_count_name",
-							Books: []*Book{
-								{Name: "association_count_address1"},
-								{Name: "association_count_address2"},
-							},
-						}
+			},
+			{
+				name: "Count",
+				setup: func() {
+					user := &User{
+						Name: "association_count_name",
+						Books: []*Book{
+							{Name: "association_count_address1"},
+							{Name: "association_count_address2"},
+						},
+					}
 
-						s.Nil(query.Select(orm.Associations).Create(&user))
-						s.True(user.ID > 0)
-						s.True(user.Books[0].ID > 0)
-						s.True(user.Books[1].ID > 0)
+					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
 
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Equal(int64(2), query.Model(&user1).Association("Books").Count())
-					},
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Equal(int64(2), query.Model(&user1).Association("Books").Count())
 				},
-			}
+			},
+		}
 
-			for _, test := range tests {
-				s.Run(test.description, func() {
-					test.setup()
-				})
-			}
-		})
+		for _, test := range tests {
+			s.Run(test.name, func() {
+				test.setup()
+			})
+		}
 	}
 }
 
@@ -2904,6 +2844,65 @@ func (s *QueryTestSuite) TestDBRaw() {
 			s.True(user1.Name == userName+driver.String())
 		})
 	}
+}
+
+func TestCustomConnection(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
+	mysqlDocker := NewMysqlDocker()
+	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+	postgresqlDocker := NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, _, err := postgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	review := Review{Body: "create_review"}
+	assert.Nil(t, query.Create(&review))
+	assert.True(t, review.ID > 0)
+
+	var review1 Review
+	assert.Nil(t, query.Where("body", "create_review").First(&review1))
+	assert.True(t, review1.ID > 0)
+
+	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
+	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
+	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
+	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
+
+	product := Product{Name: "create_product"}
+	assert.Nil(t, query.Create(&product))
+	assert.True(t, product.ID > 0)
+
+	var product1 Product
+	assert.Nil(t, query.Where("name", "create_product").First(&product1))
+	assert.True(t, product1.ID > 0)
+
+	var product2 Product
+	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
+	assert.True(t, product2.ID == 0)
+
+	mysqlDocker.MockConfig.On("GetString", "database.connections.dummy.driver").Return("")
+
+	person := Person{Name: "create_person"}
+	assert.NotNil(t, query.Create(&person))
+	assert.True(t, person.ID == 0)
+
+	assert.Nil(t, mysqlPool.Purge(mysqlResource))
+	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
 }
 
 func TestReadWriteSeparate(t *testing.T) {

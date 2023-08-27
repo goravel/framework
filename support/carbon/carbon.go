@@ -142,7 +142,7 @@ func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...
 
 // FromStdTime return a Carbon object of given time.Time object.
 func FromStdTime(time stdtime.Time) Carbon {
-	return carbon.FromStdTime(time)
+	return carbon.CreateFromStdTime(time)
 }
 
 func getTimezone(timezone []string) string {
