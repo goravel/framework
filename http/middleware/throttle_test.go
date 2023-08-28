@@ -236,33 +236,33 @@ type TestContext struct {
 }
 
 func (r *TestContext) Deadline() (deadline time.Time, ok bool) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestContext) Done() <-chan struct{} {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestContext) Err() error {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestContext) Value(key any) any {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestContext) Context() context.Context {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestContext) WithValue(key string, value any) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestContext) Request() contractshttp.Request {
@@ -282,18 +282,18 @@ func (r *TestContext) Response() contractshttp.Response {
 type TestRequest struct{}
 
 func (r *TestRequest) Header(key string, defaultValue ...string) string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Headers() nethttp.Header {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Method() string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Path() string {
@@ -301,13 +301,13 @@ func (r *TestRequest) Path() string {
 }
 
 func (r *TestRequest) Url() string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) FullUrl() string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Ip() string {
@@ -315,137 +315,135 @@ func (r *TestRequest) Ip() string {
 }
 
 func (r *TestRequest) Host() string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) All() map[string]any {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Bind(obj any) error {
-	//TODO implement me
-	panic("implement me")
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Route(key string) string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) RouteInt(key string) int {
-	//TODO implement me
-	panic("implement me")
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) RouteInt64(key string) int64 {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Query(key string, defaultValue ...string) string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryInt(key string, defaultValue ...int) int {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryInt64(key string, defaultValue ...int64) int64 {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryBool(key string, defaultValue ...bool) bool {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryArray(key string) []string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryMap(key string) map[string]string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Queries() map[string]string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Form(key string, defaultValue ...string) string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Json(key string, defaultValue ...string) string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Input(key string, defaultValue ...string) string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputArray(key string, defaultValue ...[]string) []string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputMap(key string, defaultValue ...map[string]string) map[string]string {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputInt(key string, defaultValue ...int) int {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputInt64(key string, defaultValue ...int64) int64 {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputBool(key string, defaultValue ...bool) bool {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) File(name string) (filesystem.File, error) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) AbortWithStatus(code int) {}
 
 func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Next() {}
 
 func (r *TestRequest) Origin() *nethttp.Request {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestRequest) ValidateRequest(request contractshttp.FormRequest) (validation.Errors, error) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 type TestResponse struct {
@@ -453,18 +451,18 @@ type TestResponse struct {
 }
 
 func (r *TestResponse) Data(code int, contentType string, data []byte) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Download(filepath, filename string) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) File(filepath string) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Header(key, value string) contractshttp.Response {
@@ -474,53 +472,54 @@ func (r *TestResponse) Header(key, value string) contractshttp.Response {
 }
 
 func (r *TestResponse) Json(code int, obj any) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Redirect(code int, location string) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) String(code int, format string, values ...any) {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Success() contractshttp.ResponseSuccess {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Writer() nethttp.ResponseWriter {
-	//TODO implement me
-	panic("implement me")
+
+	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Flush() {
-	//TODO implement me
-	panic("implement me")
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) View() contractshttp.ResponseView {
+	panic("do not need to implement it")
 }
 
 type TestLimit struct{}
 
 func (r *TestLimit) By(key string) contractshttp.Limit {
-	//TODO implement me
-	panic("implement me")
+	panic("do not need to implement it")
 }
 
 func (r *TestLimit) Response(f func(ctx contractshttp.Context)) contractshttp.Limit {
-	//TODO implement me
-	panic("implement me")
+	panic("do not need to implement it")
 }

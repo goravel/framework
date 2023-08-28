@@ -462,6 +462,22 @@ func (_m *Application) MakeValidation() validation.Validation {
 	return r0
 }
 
+// MakeView provides a mock function with given fields:
+func (_m *Application) MakeView() http.View {
+	ret := _m.Called()
+
+	var r0 http.View
+	if rf, ok := ret.Get(0).(func() http.View); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.View)
+		}
+	}
+
+	return r0
+}
+
 // MakeWith provides a mock function with given fields: key, parameters
 func (_m *Application) MakeWith(key interface{}, parameters map[string]interface{}) (interface{}, error) {
 	ret := _m.Called(key, parameters)
