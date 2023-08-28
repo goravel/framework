@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/rotisserie/eris"
 	"github.com/sirupsen/logrus"
@@ -18,10 +17,8 @@ import (
 type Writer struct {
 	instance *logrus.Entry
 
-	message  string
-	code     string
-	time     time.Time
-	duration time.Duration
+	message string
+	code    string
 
 	// context
 	domain  string
@@ -32,11 +29,10 @@ type Writer struct {
 	span  string
 
 	hint  string
-	owner string
+	owner any
 
 	// user
-	userID   string
-	userData map[string]any
+	user any
 
 	// http
 	request  http.Request
@@ -51,10 +47,8 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 	return &Writer{
 		instance: instance,
 
-		message:  "",
-		code:     "",
-		time:     time.Now(),
-		duration: 0,
+		message: "",
+		code:    "",
 
 		// context
 		domain:  "",
@@ -65,11 +59,10 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 		span:  "",
 
 		hint:  "",
-		owner: "",
+		owner: nil,
 
 		// user
-		userID:   "",
-		userData: map[string]any{},
+		user: nil,
 
 		// http
 		request:  nil,
@@ -106,66 +99,65 @@ func (r *Writer) Warningf(format string, args ...any) {
 }
 
 func (r *Writer) Error(args ...any) {
-	r.WithStackTrace(fmt.Sprint(args...))
+	r.withStackTrace(fmt.Sprint(args...))
 	r.instance.WithField("error", r.toMap()).Error(args...)
 }
 
 func (r *Writer) Errorf(format string, args ...any) {
-	r.WithStackTrace(fmt.Sprintf(format, args...))
+	r.withStackTrace(fmt.Sprintf(format, args...))
 	r.instance.WithField("error", r.toMap()).Errorf(format, args...)
 }
 
 func (r *Writer) Fatal(args ...any) {
-	r.WithStackTrace(fmt.Sprint(args...))
+	r.withStackTrace(fmt.Sprint(args...))
 	r.instance.WithField("fatal", r.toMap()).Fatal(args...)
 }
 
 func (r *Writer) Fatalf(format string, args ...any) {
-	r.WithStackTrace(fmt.Sprintf(format, args...))
+	r.withStackTrace(fmt.Sprintf(format, args...))
 	r.instance.WithField("fatal", r.toMap()).Fatalf(format, args...)
 }
 
 func (r *Writer) Panic(args ...any) {
-	r.WithStackTrace(fmt.Sprint(args...))
+	r.withStackTrace(fmt.Sprint(args...))
 	r.instance.WithField("panic", r.toMap()).Panic(args...)
 }
 
 func (r *Writer) Panicf(format string, args ...any) {
-	r.WithStackTrace(fmt.Sprintf(format, args...))
+	r.withStackTrace(fmt.Sprintf(format, args...))
 	r.instance.WithField("panic", r.toMap()).Panicf(format, args...)
 }
 
-func (r *Writer) User(userID string, userData ...map[string]any) log.Writer {
-	r.userID = userID
-	if len(userData) > 0 {
-		r.userData = userData[0]
-	}
+// User sets the user associated with the log entry.
+func (r *Writer) User(user any) log.Writer {
+	r.user = user
 	return r
 }
 
-func (r *Writer) Owner(ownerID string) log.Writer {
-	r.owner = ownerID
+// Owner set the name/email of the colleague/team responsible for handling this error.
+// Useful for alerting purpose.
+func (r *Writer) Owner(owner any) log.Writer {
+	r.owner = owner
 
 	return r
 }
 
+// Hint set a hint for faster debugging.
 func (r *Writer) Hint(hint string) log.Writer {
 	r.hint = hint
 
 	return r
 }
 
-func (r *Writer) Trace(trace string) log.Writer {
-	r.trace = trace
-
-	return r
-}
-
+// Code set a code or slug that describes the error.
+// Error messages are intended to be read by humans, but such code is expected to
+// be read by machines and even transported over different services.
 func (r *Writer) Code(code string) log.Writer {
 	r.code = code
 	return r
 }
 
+// With adds key-value pairs to the context of the log entry
 func (r *Writer) With(data map[string]any) log.Writer {
 	for k, v := range data {
 		r.context[k] = v
@@ -174,31 +166,35 @@ func (r *Writer) With(data map[string]any) log.Writer {
 	return r
 }
 
+// Tags add multiple tags, describing the feature returning an error.
 func (r *Writer) Tags(tags []string) log.Writer {
 	r.tags = append(r.tags, tags...)
 
 	return r
 }
 
+// Request supplies a http.Request.
 func (r *Writer) Request(req http.Request) log.Writer {
 	r.request = req
 
 	return r
 }
 
+// Response supplies a http.Response.
 func (r *Writer) Response(res http.Response) log.Writer {
 	r.response = res
 
 	return r
 }
 
+// In sets the feature category or domain in which the log entry is relevant.
 func (r *Writer) In(domain string) log.Writer {
 	r.domain = domain
 
 	return r
 }
 
-func (r *Writer) WithStackTrace(message string) {
+func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
 	r.message = erisNew.Error()
 	r.stacktrace = eris.ToString(erisNew, true)
@@ -215,14 +211,6 @@ func (r *Writer) toMap() map[string]any {
 
 	if code := r.code; code != "" {
 		payload["code"] = code
-	}
-
-	if t := r.time; t != (time.Time{}) {
-		payload["time"] = t.UTC()
-	}
-
-	if duration := r.duration; duration != 0 {
-		payload["duration"] = duration.String()
 	}
 
 	if domain := r.domain; domain != "" {
@@ -249,19 +237,12 @@ func (r *Writer) toMap() map[string]any {
 		payload["hint"] = hint
 	}
 
-	if owner := r.owner; owner != "" {
+	if owner := r.owner; owner != nil {
 		payload["owner"] = owner
 	}
 
-	if r.userID != "" || len(r.userData) > 0 {
-		user := make(map[string]any)
-		for k, v := range r.userData {
-			user[k] = v
-		}
-		if r.userID != "" {
-			user["id"] = r.userID
-		}
-		payload["user"] = user
+	if r.user != nil {
+		payload["user"] = r.user
 	}
 
 	if req := r.request; req != nil {

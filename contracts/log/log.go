@@ -43,10 +43,9 @@ type Writer interface {
 	Fatalf(format string, args ...any)
 	Panic(args ...any)
 	Panicf(format string, args ...any)
-	User(userID string, userData ...map[string]any) Writer
-	Owner(ownerID string) Writer
+	User(user any) Writer
+	Owner(owner any) Writer
 	Hint(hint string) Writer
-	Trace(trace string) Writer
 	Code(code string) Writer
 	With(data map[string]any) Writer
 	Tags(tags []string) Writer
