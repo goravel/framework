@@ -3,6 +3,8 @@ package log
 import (
 	"context"
 	"time"
+
+	"github.com/goravel/framework/contracts/http"
 )
 
 const (
@@ -41,6 +43,16 @@ type Writer interface {
 	Fatalf(format string, args ...any)
 	Panic(args ...any)
 	Panicf(format string, args ...any)
+	User(userID string, userData ...map[string]any) Writer
+	Owner(ownerID string) Writer
+	Hint(hint string) Writer
+	Trace(trace string) Writer
+	Code(code string) Writer
+	With(data map[string]any) Writer
+	Tags(tags []string) Writer
+	Request(req http.Request) Writer
+	Response(res http.Response) Writer
+	In(domain string) Writer
 }
 
 //go:generate mockery --name=Logger
