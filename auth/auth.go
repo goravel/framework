@@ -222,13 +222,6 @@ func (a *Auth) Logout(ctx http.Context) error {
 		}
 	}
 
-	if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
-		true,
-		time.Duration(ttl)*time.Minute,
-	); err != nil {
-		return err
-	}
-
 	delete(auth, a.guard)
 	ctx.WithValue(ctxKey, auth)
 
