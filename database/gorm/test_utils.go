@@ -106,10 +106,10 @@ func (r *MysqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 func (r *MysqlDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &configmock.Config{}
 	r.MockConfig.On("Get", "database.connections.mysql.read").Return([]database.Config{
-		{Host: "localhost", Port: readPort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: readPort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("Get", "database.connections.mysql.write").Return([]database.Config{
-		{Host: "localhost", Port: writePort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: writePort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
@@ -136,7 +136,7 @@ func (r *MysqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.mysql.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.mysql.write").Return(nil)
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
-	r.MockConfig.On("GetString", "database.connections.mysql.host").Return("localhost")
+	r.MockConfig.On("GetString", "database.connections.mysql.host").Return("127.0.0.1")
 	r.MockConfig.On("GetString", "database.connections.mysql.username").Return(DbUser)
 	r.MockConfig.On("GetString", "database.connections.mysql.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.mysql.port").Return(r.Port)
@@ -253,10 +253,10 @@ func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 func (r *PostgresqlDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &configmock.Config{}
 	r.MockConfig.On("Get", "database.connections.postgresql.read").Return([]database.Config{
-		{Host: "localhost", Port: readPort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: readPort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("Get", "database.connections.postgresql.write").Return([]database.Config{
-		{Host: "localhost", Port: writePort, Username: DbUser, Password: DbPassword},
+		{Host: "127.0.0.1", Port: writePort, Username: DbUser, Password: DbPassword},
 	})
 	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
@@ -282,7 +282,7 @@ func (r *PostgresqlDocker) mockWithPrefixAndSingular() {
 func (r *PostgresqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
-	r.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
+	r.MockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
 	r.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
 	r.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(r.Port)
@@ -538,10 +538,10 @@ func (r *SqlserverDocker) mock() {
 func (r *SqlserverDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &configmock.Config{}
 	r.MockConfig.On("Get", "database.connections.sqlserver.read").Return([]database.Config{
-		{Host: "localhost", Port: readPort, Username: dbUser1, Password: DbPassword},
+		{Host: "127.0.0.1", Port: readPort, Username: dbUser1, Password: DbPassword},
 	})
 	r.MockConfig.On("Get", "database.connections.sqlserver.write").Return([]database.Config{
-		{Host: "localhost", Port: writePort, Username: dbUser1, Password: DbPassword},
+		{Host: "127.0.0.1", Port: writePort, Username: dbUser1, Password: DbPassword},
 	})
 	r.MockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
@@ -558,7 +558,7 @@ func (r *SqlserverDocker) mockWithPrefixAndSingular() {
 func (r *SqlserverDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.sqlserver.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.sqlserver.write").Return(nil)
-	r.MockConfig.On("GetString", "database.connections.sqlserver.host").Return("localhost")
+	r.MockConfig.On("GetString", "database.connections.sqlserver.host").Return("127.0.0.1")
 	r.MockConfig.On("GetString", "database.connections.sqlserver.username").Return(dbUser1)
 	r.MockConfig.On("GetString", "database.connections.sqlserver.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.sqlserver.port").Return(r.Port)
@@ -593,7 +593,19 @@ type Table struct {
 }
 
 func (r Table) Create(driver orm.Driver, db orm.Query) error {
-	_, err := db.Exec(r.createUserTable(driver))
+	_, err := db.Exec(r.createPersonTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.createReviewTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.createUserTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.createProductTable(driver))
 	if err != nil {
 		return err
 	}
@@ -636,6 +648,159 @@ func (r Table) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) erro
 	}
 
 	return nil
+}
+
+func (r Table) createPersonTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `
+CREATE TABLE people (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  body varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  deleted_at datetime(3) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY idx_users_created_at (created_at),
+  KEY idx_users_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case orm.DriverPostgresql:
+		return `
+CREATE TABLE people (
+  id SERIAL PRIMARY KEY NOT NULL,
+  body varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL,
+  deleted_at timestamp DEFAULT NULL
+);
+`
+	case orm.DriverSqlite:
+		return `
+CREATE TABLE people (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  body varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL
+);
+`
+	case orm.DriverSqlserver:
+		return `
+CREATE TABLE people (
+  id bigint NOT NULL IDENTITY(1,1),
+  body varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func (r Table) createReviewTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `
+CREATE TABLE reviews (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  body varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  deleted_at datetime(3) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY idx_users_created_at (created_at),
+  KEY idx_users_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case orm.DriverPostgresql:
+		return `
+CREATE TABLE reviews (
+  id SERIAL PRIMARY KEY NOT NULL,
+  body varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL,
+  deleted_at timestamp DEFAULT NULL
+);
+`
+	case orm.DriverSqlite:
+		return `
+CREATE TABLE reviews (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  body varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL
+);
+`
+	case orm.DriverSqlserver:
+		return `
+CREATE TABLE reviews (
+  id bigint NOT NULL IDENTITY(1,1),
+  body varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func (r Table) createProductTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `
+CREATE TABLE products (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  deleted_at datetime(3) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY idx_users_created_at (created_at),
+  KEY idx_users_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case orm.DriverPostgresql:
+		return `
+CREATE TABLE products (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL,
+  deleted_at timestamp DEFAULT NULL
+);
+`
+	case orm.DriverSqlite:
+		return `
+CREATE TABLE products (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL
+);
+`
+	case orm.DriverSqlserver:
+		return `
+CREATE TABLE products (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  deleted_at datetime DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
 }
 
 func (r Table) createUserTable(driver orm.Driver) string {
