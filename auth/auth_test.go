@@ -132,11 +132,19 @@ func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
 }
 
 func (s *AuthTestSuite) TestLoginUsingID() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 
-	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+	// jwt.ttl > 0
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	token, err := s.auth.LoginUsingID(Background(), 1)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	// jwt.ttl == 0
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(0).Once()
+
+	token, err = s.auth.LoginUsingID(Background(), 1)
 	s.NotEmpty(token)
 	s.Nil(err)
 
@@ -494,8 +502,8 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 }
 
 func (s *AuthTestSuite) TestRefresh_Success() {
-	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Times(3)
-	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Twice()
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Times(4)
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Times(3)
 
 	ctx := Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -507,7 +515,17 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 	s.NotNil(payload)
 	s.Nil(err)
 
+	// jwt.refresh_ttl > 0
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
+
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
+
+	token, err = s.auth.Refresh(ctx)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	// jwt.refresh_ttl == 0
+	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(0).Once()
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
