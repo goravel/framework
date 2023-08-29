@@ -132,11 +132,19 @@ func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
 }
 
 func (s *AuthTestSuite) TestLoginUsingID() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 
-	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+	// jwt.ttl > 0
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	token, err := s.auth.LoginUsingID(Background(), 1)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	// jwt.ttl == 0
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(0).Once()
+
+	token, err = s.auth.LoginUsingID(Background(), 1)
 	s.NotEmpty(token)
 	s.Nil(err)
 
@@ -291,6 +299,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 }
 
 func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
+	carbon.SetTestNow(carbon.Now())
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
@@ -309,6 +318,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	}, payload)
 	s.Nil(err)
 
+	carbon.UnsetTestNow()
 	s.mockConfig.AssertExpectations(s.T())
 }
 
@@ -494,8 +504,8 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 }
 
 func (s *AuthTestSuite) TestRefresh_Success() {
-	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Times(3)
-	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Twice()
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Times(4)
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Times(3)
 
 	ctx := Background()
 	token, err := s.auth.LoginUsingID(ctx, 1)
@@ -507,7 +517,17 @@ func (s *AuthTestSuite) TestRefresh_Success() {
 	s.NotNil(payload)
 	s.Nil(err)
 
+	// jwt.refresh_ttl > 0
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
+
+	carbon.SetTestNow(carbon.Now().AddMinutes(2))
+
+	token, err = s.auth.Refresh(ctx)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	// jwt.refresh_ttl == 0
+	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(0).Once()
 
 	carbon.SetTestNow(carbon.Now().AddMinutes(2))
 
@@ -577,6 +597,50 @@ func (s *AuthTestSuite) TestLogout_Success() {
 	s.mockCache.On("Put", testifymock.Anything, true, 2*time.Minute).Return(nil).Once()
 
 	s.Nil(s.auth.Logout(ctx))
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *AuthTestSuite) TestLogout_Success_TTL_Is_0() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(0).Twice()
+
+	ctx := Background()
+	token, err := s.auth.LoginUsingID(ctx, 1)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
+
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
+	s.Nil(err)
+
+	s.mockCache.On("Forever", testifymock.Anything, true).Return(true).Once()
+
+	s.Nil(s.auth.Logout(ctx))
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(0).Twice()
+
+	ctx := Background()
+	token, err := s.auth.LoginUsingID(ctx, 1)
+	s.NotEmpty(token)
+	s.Nil(err)
+
+	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
+
+	payload, err := s.auth.Parse(ctx, token)
+	s.NotNil(payload)
+	s.Nil(err)
+
+	s.mockCache.On("Forever", testifymock.Anything, true).Return(false).Once()
+
+	s.EqualError(s.auth.Logout(ctx), "cache forever failed")
 
 	s.mockConfig.AssertExpectations(s.T())
 }

@@ -144,6 +144,10 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 
 	nowTime := carbon.Now()
 	ttl := a.config.GetInt("jwt.ttl")
+	if ttl == 0 {
+		// 100 years
+		ttl = 60 * 24 * 365 * 100
+	}
 	expireTime := nowTime.AddMinutes(ttl).ToStdTime()
 	key := cast.ToString(id)
 	if key == "" {
@@ -181,6 +185,11 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 
 	nowTime := carbon.Now()
 	refreshTtl := a.config.GetInt("jwt.refresh_ttl")
+	if refreshTtl == 0 {
+		// 100 years
+		refreshTtl = 60 * 24 * 365 * 100
+	}
+
 	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
 	if nowTime.Gt(expireTime) {
 		return "", ErrorRefreshTimeExceeded
@@ -199,11 +208,18 @@ func (a *Auth) Logout(ctx http.Context) error {
 		return errors.New("cache support is required")
 	}
 
-	if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
-		true,
-		time.Duration(a.config.GetInt("jwt.ttl"))*time.Minute,
-	); err != nil {
-		return err
+	ttl := a.config.GetInt("jwt.ttl")
+	if ttl == 0 {
+		if ok := a.cache.Forever(getDisabledCacheKey(auth[a.guard].Token), true); !ok {
+			return errors.New("cache forever failed")
+		}
+	} else {
+		if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
+			true,
+			time.Duration(ttl)*time.Minute,
+		); err != nil {
+			return err
+		}
 	}
 
 	delete(auth, a.guard)
