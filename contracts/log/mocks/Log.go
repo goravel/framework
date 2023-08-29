@@ -188,12 +188,18 @@ func (_m *Log) Response(res http.Response) log.Writer {
 }
 
 // Tags provides a mock function with given fields: tags
-func (_m *Log) Tags(tags []string) log.Writer {
-	ret := _m.Called(tags)
+func (_m *Log) Tags(tags ...string) log.Writer {
+	_va := make([]interface{}, len(tags))
+	for _i := range tags {
+		_va[_i] = tags[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func([]string) log.Writer); ok {
-		r0 = rf(tags)
+	if rf, ok := ret.Get(0).(func(...string) log.Writer); ok {
+		r0 = rf(tags...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(log.Writer)
