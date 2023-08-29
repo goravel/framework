@@ -20,6 +20,10 @@ type Gin struct {
 	instance *gin.Engine
 }
 
+func (r *Gin) GetInstance() *gin.Engine {
+	return r.instance
+}
+
 func NewGin(config config.Config) *Gin {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
