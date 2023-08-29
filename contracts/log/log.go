@@ -48,7 +48,7 @@ type Writer interface {
 	Hint(hint string) Writer
 	Code(code string) Writer
 	With(data map[string]any) Writer
-	Tags(tags []string) Writer
+	Tags(tags ...string) Writer
 	Request(req http.Request) Writer
 	Response(res http.Response) Writer
 	In(domain string) Writer

@@ -167,7 +167,7 @@ func (r *Writer) With(data map[string]any) log.Writer {
 }
 
 // Tags add multiple tags, describing the feature returning an error.
-func (r *Writer) Tags(tags []string) log.Writer {
+func (r *Writer) Tags(tags ...string) log.Writer {
 	r.tags = append(r.tags, tags...)
 
 	return r

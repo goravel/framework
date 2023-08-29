@@ -3,6 +3,7 @@ package formatter
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bytedance/sonic"
@@ -35,77 +36,76 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	timestamp := entry.Time.In(cstSh).Format("2006-01-02 15:04:05")
-	var newLog string
+	b.WriteString(fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message))
+	data := entry.Data
+	if len(data) > 0 {
+		formattedData, err := formatData(data)
+		if err != nil {
+			return nil, err
+		}
+		b.WriteString(formattedData)
+	}
 
-	newLog = fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message)
-	if len(entry.Data) > 0 {
-		data, _ := sonic.Marshal(entry.Data)
-		root, _ := sonic.Get(data, "root")
+	return b.Bytes(), nil
+}
 
-		delete(entry.Data, "root")
-		if len(entry.Data) > 0 {
-			removedData, _ := sonic.Marshal(entry.Data)
-			newLog = fmt.Sprintf("Fields: %s\n", string(removedData))
+func formatData(data logrus.Fields) (string, error) {
+	var builder strings.Builder
+
+	if len(data) > 0 {
+		dataBytes, err := sonic.Marshal(data)
+		if err != nil {
+			return "", err
 		}
 
-		code := root.Get("code")
-		if code.Valid() {
-			codeInfo, _ := code.Raw()
-			newLog += fmt.Sprintf("Code: %s\n", codeInfo)
+		root, err := sonic.Get(dataBytes, "root")
+		if err != nil {
+			return "", err
 		}
 
-		context := root.Get("context")
-		if context.Valid() {
-			contextInfo, _ := context.Raw()
-			newLog += fmt.Sprintf("Context: %s\n", contextInfo)
+		removedData := deleteKey(data, "root")
+		if len(removedData) > 0 {
+			removedDataBytes, err := sonic.Marshal(removedData)
+			if err != nil {
+				return "", err
+			}
+			builder.WriteString(fmt.Sprintf("fields: %s\n", string(removedDataBytes)))
 		}
 
-		domain := root.Get("domain")
-		if domain.Valid() {
-			domainInfo, _ := domain.Raw()
-			newLog += fmt.Sprintf("Domain: %s\n", domainInfo)
+		for _, key := range []string{"code", "context", "domain", "hint", "owner", "span", "tags", "user"} {
+			if value := root.Get(key); value.Valid() {
+				info, err := value.Raw()
+				if err != nil {
+					return "", err
+				}
+				builder.WriteString(fmt.Sprintf("%s: %s\n", key, info))
+			}
 		}
 
-		hint := root.Get("hint")
-		if hint.Valid() {
-			hintInfo, _ := hint.Raw()
-			newLog += fmt.Sprintf("Hint: %s\n", hintInfo)
-		}
-
-		owner := root.Get("owner")
-		if owner.Valid() {
-			ownerInfo, _ := owner.Raw()
-			newLog += fmt.Sprintf("Owner: %s\n", ownerInfo)
-		}
-
-		span := root.Get("span")
-		if span.Valid() {
-			spanInfo, _ := span.Raw()
-			newLog += fmt.Sprintf("Span: %s\n", spanInfo)
-		}
-
-		tags := root.Get("tags")
-		if tags.Valid() {
-			tagsInfo, _ := tags.Raw()
-			newLog += fmt.Sprintf("Tags: %s\n", tagsInfo)
-		}
-
-		user := root.Get("user")
-		if user.Valid() {
-			userInfo, _ := user.Raw()
-			newLog += fmt.Sprintf("User: %s\n", userInfo)
-		}
-
-		tracks := root.Get("stacktrace")
-		if tracks.Valid() {
-			tracksInfo, _ := tracks.Interface()
-			newLog += general.formatStackTraces(tracksInfo)
+		if stackTraceValue := root.Get("stacktrace"); stackTraceValue.Valid() {
+			stackTraces, err := stackTraceValue.Interface()
+			if err != nil {
+				return "", err
+			}
+			traces, err := formatStackTraces(stackTraces)
+			if err != nil {
+				return "", err
+			}
+			builder.WriteString(traces)
 		}
 	}
 
-	b.WriteString(newLog)
+	return builder.String(), nil
+}
 
-	return b.Bytes(), nil
+func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
+	dataCopy := make(logrus.Fields)
+	for key, value := range data {
+		if key != keyToDelete {
+			dataCopy[key] = value
+		}
+	}
+	return dataCopy
 }
 
 type StackTrace struct {
@@ -119,29 +119,24 @@ type StackTrace struct {
 	} `json:"wrap"`
 }
 
-func (general *General) formatStackTraces(stackTraces interface{}) string {
-	var formattedTraces string
-	data, _ := sonic.Marshal(stackTraces)
-	var traces StackTrace
-	err := sonic.Unmarshal(data, &traces)
+func formatStackTraces(stackTraces interface{}) (string, error) {
+	var formattedTraces strings.Builder
+	data, err := sonic.Marshal(stackTraces)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	formattedTraces += "Trace:\n"
+	var traces StackTrace
+	err = sonic.Unmarshal(data, &traces)
+	if err != nil {
+		return "", err
+	}
+	formattedTraces.WriteString("trace:\n")
 	root := traces.Root
 	if len(root.Stack) > 0 {
-		formattedTraces += "\t" + root.Message + "\n"
 		for _, stackStr := range root.Stack {
-			formattedTraces += fmt.Sprintf("\t\t%s\n", stackStr)
+			formattedTraces.WriteString(fmt.Sprintf("\t%s\n", stackStr))
 		}
 	}
 
-	for _, wrap := range traces.Wrap {
-		formattedTraces += "\t" + wrap.Message + "\n"
-		if wrap.Stack != "" {
-			formattedTraces += fmt.Sprintf("\t\t%s\n", wrap.Stack)
-		}
-	}
-
-	return formattedTraces
+	return formattedTraces.String(), nil
 }
