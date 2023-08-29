@@ -299,6 +299,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 }
 
 func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
+	carbon.SetTestNow(carbon.Now())
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
@@ -317,6 +318,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	}, payload)
 	s.Nil(err)
 
+	carbon.UnsetTestNow()
 	s.mockConfig.AssertExpectations(s.T())
 }
 
