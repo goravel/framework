@@ -95,7 +95,7 @@ func (r *TestLog) With(data map[string]any) log.Writer {
 	return r
 }
 
-func (r *TestLog) Tags(tags []string) log.Writer {
+func (r *TestLog) Tags(tags ...string) log.Writer {
 	return r
 }
 
