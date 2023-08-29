@@ -40,7 +40,7 @@ type Writer struct {
 
 	// stacktrace
 	stackEnabled bool
-	stacktrace   string
+	stacktrace   map[string]interface{}
 }
 
 func NewWriter(instance *logrus.Entry) log.Writer {
@@ -70,62 +70,62 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 
 		// stacktrace
 		stackEnabled: false,
-		stacktrace:   "",
+		stacktrace:   nil,
 	}
 }
 
 func (r *Writer) Debug(args ...any) {
-	r.instance.WithField("debug", r.toMap()).Debug(args...)
+	r.instance.WithField("root", r.toMap()).Debug(args...)
 }
 
 func (r *Writer) Debugf(format string, args ...any) {
-	r.instance.WithField("debug", r.toMap()).Debugf(format, args...)
+	r.instance.WithField("root", r.toMap()).Debugf(format, args...)
 }
 
 func (r *Writer) Info(args ...any) {
-	r.instance.WithField("info", r.toMap()).Info(args...)
+	r.instance.WithField("root", r.toMap()).Info(args...)
 }
 
 func (r *Writer) Infof(format string, args ...any) {
-	r.instance.WithField("info", r.toMap()).Infof(format, args...)
+	r.instance.WithField("root", r.toMap()).Infof(format, args...)
 }
 
 func (r *Writer) Warning(args ...any) {
-	r.instance.WithField("warning", r.toMap()).Warning(args...)
+	r.instance.WithField("root", r.toMap()).Warning(args...)
 }
 
 func (r *Writer) Warningf(format string, args ...any) {
-	r.instance.WithField("warning", r.toMap()).Warningf(format, args...)
+	r.instance.WithField("root", r.toMap()).Warningf(format, args...)
 }
 
 func (r *Writer) Error(args ...any) {
 	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.WithField("error", r.toMap()).Error(args...)
+	r.instance.WithField("root", r.toMap()).Error(args...)
 }
 
 func (r *Writer) Errorf(format string, args ...any) {
 	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.WithField("error", r.toMap()).Errorf(format, args...)
+	r.instance.WithField("root", r.toMap()).Errorf(format, args...)
 }
 
 func (r *Writer) Fatal(args ...any) {
 	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.WithField("fatal", r.toMap()).Fatal(args...)
+	r.instance.WithField("root", r.toMap()).Fatal(args...)
 }
 
 func (r *Writer) Fatalf(format string, args ...any) {
 	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.WithField("fatal", r.toMap()).Fatalf(format, args...)
+	r.instance.WithField("root", r.toMap()).Fatalf(format, args...)
 }
 
 func (r *Writer) Panic(args ...any) {
 	r.withStackTrace(fmt.Sprint(args...))
-	r.instance.WithField("panic", r.toMap()).Panic(args...)
+	r.instance.WithField("root", r.toMap()).Panic(args...)
 }
 
 func (r *Writer) Panicf(format string, args ...any) {
 	r.withStackTrace(fmt.Sprintf(format, args...))
-	r.instance.WithField("panic", r.toMap()).Panicf(format, args...)
+	r.instance.WithField("root", r.toMap()).Panicf(format, args...)
 }
 
 // User sets the user associated with the log entry.
@@ -197,7 +197,7 @@ func (r *Writer) In(domain string) log.Writer {
 func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
 	r.message = erisNew.Error()
-	r.stacktrace = eris.ToString(erisNew, true)
+	r.stacktrace = eris.ToJSON(erisNew, true)
 	r.stackEnabled = true
 }
 
@@ -253,7 +253,7 @@ func (r *Writer) toMap() map[string]any {
 		payload["response"] = res
 	}
 
-	if stacktrace := r.stacktrace; stacktrace != "" || r.stackEnabled {
+	if stacktrace := r.stacktrace; stacktrace != nil || r.stackEnabled {
 		payload["stacktrace"] = stacktrace
 	}
 
