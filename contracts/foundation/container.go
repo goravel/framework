@@ -42,7 +42,7 @@ type Container interface {
 	MakeOrm() orm.Orm
 	MakeQueue() queue.Queue
 	MakeRateLimiter() http.RateLimiter
-	MakeRoute() route.Engine
+	MakeRoute() route.Route
 	MakeSchedule() schedule.Schedule
 	MakeStorage() filesystem.Storage
 	MakeTesting() testing.Testing
