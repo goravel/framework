@@ -26,7 +26,6 @@ type Writer struct {
 	context map[string]any
 
 	trace string
-	span  string
 
 	hint  string
 	owner any
@@ -56,7 +55,6 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 		context: map[string]any{},
 
 		trace: "",
-		span:  "",
 
 		hint:  "",
 		owner: nil,
@@ -229,10 +227,6 @@ func (r *Writer) toMap() map[string]any {
 		payload["trace"] = trace
 	}
 
-	if span := r.span; span != "" {
-		payload["span"] = span
-	}
-
 	if hint := r.hint; hint != "" {
 		payload["hint"] = hint
 	}
@@ -246,11 +240,21 @@ func (r *Writer) toMap() map[string]any {
 	}
 
 	if req := r.request; req != nil {
-		payload["request"] = req
+		payload["request"] = map[string]any{
+			"method": req.Method(),
+			"uri":    req.FullUrl(),
+			"header": req.Headers(),
+			"body":   req.All(),
+		}
 	}
 
 	if res := r.response; res != nil {
-		payload["response"] = res
+		payload["response"] = map[string]any{
+			"status": res.Origin().Status(),
+			"header": res.Origin().Header(),
+			"body":   res.Origin().Body(),
+			"size":   res.Origin().Size(),
+		}
 	}
 
 	if stacktrace := r.stacktrace; stacktrace != nil || r.stackEnabled {

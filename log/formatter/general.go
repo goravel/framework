@@ -58,11 +58,6 @@ func formatData(data logrus.Fields) (string, error) {
 			return "", err
 		}
 
-		root, err := sonic.Get(dataBytes, "root")
-		if err != nil {
-			return "", err
-		}
-
 		removedData := deleteKey(data, "root")
 		if len(removedData) > 0 {
 			removedDataBytes, err := sonic.Marshal(removedData)
@@ -72,7 +67,12 @@ func formatData(data logrus.Fields) (string, error) {
 			builder.WriteString(fmt.Sprintf("fields: %s\n", string(removedDataBytes)))
 		}
 
-		for _, key := range []string{"code", "context", "domain", "hint", "owner", "span", "tags", "user"} {
+		root, err := sonic.Get(dataBytes, "root")
+		if err == nil {
+			return "", err
+		}
+
+		for _, key := range []string{"code", "context", "domain", "hint", "owner", "request", "response", "tags", "user"} {
 			if value := root.Get(key); value.Valid() {
 				info, err := value.Raw()
 				if err != nil {
