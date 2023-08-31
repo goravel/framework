@@ -32,7 +32,9 @@ func Throttle(name string) httpcontract.Middleware {
 									instance.ResponseCallback(ctx)
 									return
 								} else {
-									ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests)
+									if err := ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests); err != nil {
+										panic(err)
+									}
 									return
 								}
 							} else {
@@ -63,7 +65,9 @@ func Throttle(name string) httpcontract.Middleware {
 			}
 		}
 
-		ctx.Request().Next()
+		if err := ctx.Request().Next(); err != nil {
+			panic(err)
+		}
 	}
 }
 

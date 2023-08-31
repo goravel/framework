@@ -44,7 +44,9 @@ func NewLimit(maxAttempts, decayMinutes int) *Limit {
 		MaxAttempts:  maxAttempts,
 		DecayMinutes: decayMinutes,
 		ResponseCallback: func(ctx http.Context) {
-			ctx.Request().AbortWithStatus(http.StatusTooManyRequests)
+			if err := ctx.Request().AbortWithStatus(http.StatusTooManyRequests); err != nil {
+				panic(err)
+			}
 		},
 	}
 }
