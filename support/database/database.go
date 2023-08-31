@@ -24,9 +24,15 @@ func GetID(dest any) any {
 
 func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
 		if t.Field(i).Name == "Model" && v.Field(i).Type().Kind() == reflect.Struct {
 			structField := v.Field(i).Type()
 			for j := 0; j < structField.NumField(); j++ {
+				if !structField.Field(i).IsExported() {
+					continue
+				}
 				if strings.Contains(structField.Field(j).Tag.Get("gorm"), "primaryKey") {
 					id := v.Field(i).Field(j).Interface()
 					if cast.ToString(id) == "" || cast.ToInt(id) == 0 {

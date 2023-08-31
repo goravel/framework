@@ -352,6 +352,9 @@ func (r *QueryImpl) Load(model any, relation string, args ...any) error {
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
 	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
 		if t.Field(i).Name != relation {
 			v.Field(i).Set(copyDest.Field(i))
 		}
@@ -369,6 +372,9 @@ func (r *QueryImpl) LoadMissing(model any, relation string, args ...any) error {
 	t := reflect.TypeOf(model).Elem()
 	v := reflect.ValueOf(model).Elem()
 	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
 		if t.Field(i).Name == relation {
 			var id any
 			if v.Field(i).Kind() == reflect.Pointer {
