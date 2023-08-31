@@ -119,7 +119,7 @@ type StackTrace struct {
 	} `json:"wrap"`
 }
 
-func formatStackTraces(stackTraces interface{}) (string, error) {
+func formatStackTraces(stackTraces any) (string, error) {
 	var formattedTraces strings.Builder
 	data, err := sonic.Marshal(stackTraces)
 	if err != nil {

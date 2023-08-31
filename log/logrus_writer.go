@@ -16,23 +16,16 @@ import (
 )
 
 type Writer struct {
-	instance *logrus.Entry
-
-	message string
-	code    string
+	code string
 
 	// context
-	domain  string
-	tags    []string
 	context map[string]any
+	domain  string
 
-	trace string
-
-	hint  string
-	owner any
-
-	// user
-	user any
+	hint     string
+	instance *logrus.Entry
+	message  string
+	owner    any
 
 	// http
 	request  http.Request
@@ -40,28 +33,27 @@ type Writer struct {
 
 	// stacktrace
 	stackEnabled bool
-	stacktrace   map[string]interface{}
+	stacktrace   map[string]any
+
+	tags  []string
+	trace string
+
+	// user
+	user any
 }
 
 func NewWriter(instance *logrus.Entry) log.Writer {
 	return &Writer{
-		instance: instance,
-
-		message: "",
-		code:    "",
+		code: "",
 
 		// context
-		domain:  "",
-		tags:    []string{},
 		context: map[string]any{},
+		domain:  "",
 
-		trace: "",
-
-		hint:  "",
-		owner: nil,
-
-		// user
-		user: nil,
+		hint:     "",
+		instance: instance,
+		message:  "",
+		owner:    nil,
 
 		// http
 		request:  nil,
@@ -70,6 +62,12 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 		// stacktrace
 		stackEnabled: false,
 		stacktrace:   nil,
+
+		tags:  []string{},
+		trace: "",
+
+		// user
+		user: nil,
 	}
 }
 
@@ -127,17 +125,11 @@ func (r *Writer) Panicf(format string, args ...any) {
 	r.instance.WithField("root", r.toMap()).Panicf(format, args...)
 }
 
-// User sets the user associated with the log entry.
-func (r *Writer) User(user any) log.Writer {
-	r.user = user
-	return r
-}
-
-// Owner set the name/email of the colleague/team responsible for handling this error.
-// Useful for alerting purpose.
-func (r *Writer) Owner(owner any) log.Writer {
-	r.owner = owner
-
+// Code set a code or slug that describes the error.
+// Error messages are intended to be read by humans, but such code is expected to
+// be read by machines and even transported over different services.
+func (r *Writer) Code(code string) log.Writer {
+	r.code = code
 	return r
 }
 
@@ -148,26 +140,17 @@ func (r *Writer) Hint(hint string) log.Writer {
 	return r
 }
 
-// Code set a code or slug that describes the error.
-// Error messages are intended to be read by humans, but such code is expected to
-// be read by machines and even transported over different services.
-func (r *Writer) Code(code string) log.Writer {
-	r.code = code
-	return r
-}
-
-// With adds key-value pairs to the context of the log entry
-func (r *Writer) With(data map[string]any) log.Writer {
-	for k, v := range data {
-		r.context[k] = v
-	}
+// In sets the feature category or domain in which the log entry is relevant.
+func (r *Writer) In(domain string) log.Writer {
+	r.domain = domain
 
 	return r
 }
 
-// Tags add multiple tags, describing the feature returning an error.
-func (r *Writer) Tags(tags ...string) log.Writer {
-	r.tags = append(r.tags, tags...)
+// Owner set the name/email of the colleague/team responsible for handling this error.
+// Useful for alerting purpose.
+func (r *Writer) Owner(owner any) log.Writer {
+	r.owner = owner
 
 	return r
 }
@@ -186,9 +169,24 @@ func (r *Writer) Response(res http.Response) log.Writer {
 	return r
 }
 
-// In sets the feature category or domain in which the log entry is relevant.
-func (r *Writer) In(domain string) log.Writer {
-	r.domain = domain
+// Tags add multiple tags, describing the feature returning an error.
+func (r *Writer) Tags(tags ...string) log.Writer {
+	r.tags = append(r.tags, tags...)
+
+	return r
+}
+
+// User sets the user associated with the log entry.
+func (r *Writer) User(user any) log.Writer {
+	r.user = user
+	return r
+}
+
+// With adds key-value pairs to the context of the log entry
+func (r *Writer) With(data map[string]any) log.Writer {
+	for k, v := range data {
+		r.context[k] = v
+	}
 
 	return r
 }
