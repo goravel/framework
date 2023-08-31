@@ -9,14 +9,14 @@ type Json map[string]any
 
 //go:generate mockery --name=Response
 type Response interface {
-	Data(code int, contentType string, data []byte)
-	Download(filepath, filename string)
-	File(filepath string)
+	Data(code int, contentType string, data []byte) error
+	Download(filepath, filename string) error
+	File(filepath string) error
 	Header(key, value string) Response
-	Json(code int, obj any)
+	Json(code int, obj any) error
 	Origin() ResponseOrigin
-	Redirect(code int, location string)
-	String(code int, format string, values ...any)
+	Redirect(code int, location string) error
+	String(code int, format string, values ...any) error
 	Success() ResponseSuccess
 	Status(code int) ResponseStatus
 	View() ResponseView
@@ -26,16 +26,16 @@ type Response interface {
 
 //go:generate mockery --name=ResponseStatus
 type ResponseStatus interface {
-	Data(contentType string, data []byte)
-	Json(obj any)
-	String(format string, values ...any)
+	Data(contentType string, data []byte) error
+	Json(obj any) error
+	String(format string, values ...any) error
 }
 
 //go:generate mockery --name=ResponseSuccess
 type ResponseSuccess interface {
-	Data(contentType string, data []byte)
-	Json(obj any)
-	String(format string, values ...any)
+	Data(contentType string, data []byte) error
+	Json(obj any) error
+	String(format string, values ...any) error
 }
 
 //go:generate mockery --name=ResponseOrigin
@@ -47,6 +47,6 @@ type ResponseOrigin interface {
 }
 
 type ResponseView interface {
-	Make(view string, data ...any)
-	First(views []string, data ...any)
+	Make(view string, data ...any) error
+	First(views []string, data ...any) error
 }

@@ -234,13 +234,14 @@ func (s *EventTestSuite) TestColumnNamesWithDbColumnNames() {
 
 func TestModelOfMap(t *testing.T) {
 	assert.Equal(t, map[string]any{
-		"name":      testEventModel.Name,
-		"avatar":    testEventModel.Avatar,
-		"is_admin":  testEventModel.IsAdmin,
-		"manage":    testEventModel.IsManage,
-		"admin_at":  testEventModel.AdminAt,
-		"manage_at": testEventModel.ManageAt,
-	}, structToMap(testEventModel))
+		"name": testEventModel.Name,
+	}, structToMap(struct {
+		Name   string
+		avatar string
+	}{
+		Name:   "name",
+		avatar: "avatar",
+	}))
 }
 
 func TestStructNameToDbColumnName(t *testing.T) {

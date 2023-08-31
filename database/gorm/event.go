@@ -309,6 +309,10 @@ func structToMap(data any) map[string]any {
 	}
 
 	for i := 0; i < modelType.NumField(); i++ {
+		if !modelType.Field(i).IsExported() {
+			continue
+		}
+
 		dbColumn := structNameToDbColumnName(modelType.Field(i).Name, modelType.Field(i).Tag.Get("gorm"))
 		if modelValue.Field(i).Kind() == reflect.Pointer {
 			if modelValue.Field(i).IsNil() {

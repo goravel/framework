@@ -49,10 +49,10 @@ type Request interface {
 
 	File(name string) (filesystem.File, error)
 
-	AbortWithStatus(code int)
-	AbortWithStatusJson(code int, jsonObj any)
+	AbortWithStatus(code int) error
+	AbortWithStatusJson(code int, jsonObj any) error
 
-	Next()
+	Next() error
 	Origin() *http.Request
 
 	Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error)
