@@ -16,10 +16,11 @@ type TestEventModel struct {
 	IsManage int `gorm:"column:manage"`
 	AdminAt  time.Time
 	ManageAt time.Time
+	high     int
 }
 
 var testNow = time.Now().Add(-1 * time.Second)
-var testEventModel = TestEventModel{Name: "name", Avatar: "avatar", IsAdmin: true, IsManage: 0, AdminAt: testNow, ManageAt: testNow}
+var testEventModel = TestEventModel{Name: "name", Avatar: "avatar", IsAdmin: true, IsManage: 0, AdminAt: testNow, ManageAt: testNow, high: 1}
 var testQuery = NewQueryWithWithoutEvents(&gorm.DB{
 	Statement: &gorm.Statement{
 		Selects: []string{},
@@ -232,7 +233,7 @@ func (s *EventTestSuite) TestColumnNamesWithDbColumnNames() {
 	}
 }
 
-func TestModelOfMap(t *testing.T) {
+func TestStructToMap(t *testing.T) {
 	assert.Equal(t, map[string]any{
 		"name":      testEventModel.Name,
 		"avatar":    testEventModel.Avatar,

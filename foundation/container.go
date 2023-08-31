@@ -217,14 +217,14 @@ func (c *Container) MakeRateLimiter() httpcontract.RateLimiter {
 	return instance.(httpcontract.RateLimiter)
 }
 
-func (c *Container) MakeRoute() routecontract.Engine {
+func (c *Container) MakeRoute() routecontract.Route {
 	instance, err := c.Make(route.Binding)
 	if err != nil {
 		color.Redln(err)
 		return nil
 	}
 
-	return instance.(routecontract.Engine)
+	return instance.(routecontract.Route)
 }
 
 func (c *Container) MakeSchedule() schedulecontract.Schedule {

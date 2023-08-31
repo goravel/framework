@@ -367,15 +367,15 @@ func (_m *Application) MakeRateLimiter() http.RateLimiter {
 }
 
 // MakeRoute provides a mock function with given fields:
-func (_m *Application) MakeRoute() route.Engine {
+func (_m *Application) MakeRoute() route.Route {
 	ret := _m.Called()
 
-	var r0 route.Engine
-	if rf, ok := ret.Get(0).(func() route.Engine); ok {
+	var r0 route.Route
+	if rf, ok := ret.Get(0).(func() route.Route); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(route.Engine)
+			r0 = ret.Get(0).(route.Route)
 		}
 	}
 

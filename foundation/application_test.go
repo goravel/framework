@@ -318,7 +318,7 @@ func (s *ApplicationTestSuite) TestMakeRoute() {
 		return mockConfig, nil
 	})
 
-	mockRoute := &routemocks.Engine{}
+	mockRoute := &routemocks.Route{}
 	s.app.Singleton("goravel.route", func(app foundation.Application) (any, error) {
 		return mockRoute, nil
 	})

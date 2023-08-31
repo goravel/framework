@@ -4,6 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/route"
 )
 
-func Route() route.Engine {
+func Route() route.Route {
 	return App().MakeRoute()
 }
