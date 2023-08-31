@@ -68,7 +68,7 @@ func formatData(data logrus.Fields) (string, error) {
 		}
 
 		root, err := sonic.Get(dataBytes, "root")
-		if err == nil {
+		if err != nil {
 			return "", err
 		}
 

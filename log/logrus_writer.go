@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/log/logger"
 )
 
@@ -314,6 +315,8 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 	default:
 		return errors.New("Error logging channel: " + channel)
 	}
+
+	instance.SetFormatter(formatter.NewGeneral(config))
 
 	instance.AddHook(hook)
 
