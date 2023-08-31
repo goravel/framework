@@ -16,6 +16,7 @@ type TestEventModel struct {
 	IsManage int `gorm:"column:manage"`
 	AdminAt  time.Time
 	ManageAt time.Time
+	high     int
 }
 
 var testNow = time.Now().Add(-1 * time.Second)
@@ -232,7 +233,7 @@ func (s *EventTestSuite) TestColumnNamesWithDbColumnNames() {
 	}
 }
 
-func TestModelOfMap(t *testing.T) {
+func TestStructToMap(t *testing.T) {
 	assert.Equal(t, map[string]any{
 		"name":      testEventModel.Name,
 		"avatar":    testEventModel.Avatar,

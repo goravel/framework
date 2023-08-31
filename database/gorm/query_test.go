@@ -34,6 +34,7 @@ type User struct {
 	House   *House   `gorm:"polymorphic:Houseable"`
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
+	age     int
 }
 
 func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Event) error {

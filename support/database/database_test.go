@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/goravel/framework/database/orm"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/database/orm"
 )
 
 func TestGetID(t *testing.T) {
@@ -107,19 +107,23 @@ func TestGetID(t *testing.T) {
 }
 
 type TestStruct struct {
-	ID int `gorm:"primaryKey"`
+	ID   int `gorm:"primaryKey"`
+	name string
 }
 
 type TestStructString struct {
-	ID string `gorm:"primaryKey"`
+	ID   string `gorm:"primaryKey"`
+	name string
 }
 
 type TestStructUUID struct {
-	ID uuid.UUID `gorm:"primaryKey"`
+	ID   uuid.UUID `gorm:"primaryKey"`
+	name string
 }
 
 type TestStructNoPK struct {
-	ID int
+	ID   int
+	name string
 }
 
 func TestGetIDByReflect(t *testing.T) {
