@@ -282,17 +282,14 @@ func (r *TestContext) Response() contractshttp.Response {
 type TestRequest struct{}
 
 func (r *TestRequest) Header(key string, defaultValue ...string) string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Headers() nethttp.Header {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Method() string {
-
 	panic("do not need to implement it")
 }
 
@@ -301,12 +298,10 @@ func (r *TestRequest) Path() string {
 }
 
 func (r *TestRequest) Url() string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) FullUrl() string {
-
 	panic("do not need to implement it")
 }
 
@@ -315,12 +310,10 @@ func (r *TestRequest) Ip() string {
 }
 
 func (r *TestRequest) Host() string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) All() map[string]any {
-
 	panic("do not need to implement it")
 }
 
@@ -329,7 +322,6 @@ func (r *TestRequest) Bind(obj any) error {
 }
 
 func (r *TestRequest) Route(key string) string {
-
 	panic("do not need to implement it")
 }
 
@@ -338,111 +330,94 @@ func (r *TestRequest) RouteInt(key string) int {
 }
 
 func (r *TestRequest) RouteInt64(key string) int64 {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Query(key string, defaultValue ...string) string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryInt(key string, defaultValue ...int) int {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryInt64(key string, defaultValue ...int64) int64 {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryBool(key string, defaultValue ...bool) bool {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryArray(key string) []string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) QueryMap(key string) map[string]string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Queries() map[string]string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Form(key string, defaultValue ...string) string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Json(key string, defaultValue ...string) string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Input(key string, defaultValue ...string) string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputArray(key string, defaultValue ...[]string) []string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputMap(key string, defaultValue ...map[string]string) map[string]string {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputInt(key string, defaultValue ...int) int {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputInt64(key string, defaultValue ...int64) int64 {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) InputBool(key string, defaultValue ...bool) bool {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) File(name string) (filesystem.File, error) {
-
 	panic("do not need to implement it")
 }
 
-func (r *TestRequest) AbortWithStatus(code int) {}
+func (r *TestRequest) AbortWithStatus(code int) error {
+	return nil
+}
 
-func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
-
+func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) error {
 	panic("do not need to implement it")
 }
 
-func (r *TestRequest) Next() {}
+func (r *TestRequest) Next() error {
+	return nil
+}
 
 func (r *TestRequest) Origin() *nethttp.Request {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error) {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestRequest) ValidateRequest(request contractshttp.FormRequest) (validation.Errors, error) {
-
 	panic("do not need to implement it")
 }
 
@@ -450,18 +425,15 @@ type TestResponse struct {
 	Headers map[string]string
 }
 
-func (r *TestResponse) Data(code int, contentType string, data []byte) {
-
+func (r *TestResponse) Data(code int, contentType string, data []byte) error {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Download(filepath, filename string) {
-
+func (r *TestResponse) Download(filepath, filename string) error {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) File(filepath string) {
-
+func (r *TestResponse) File(filepath string) error {
 	panic("do not need to implement it")
 }
 
@@ -471,38 +443,31 @@ func (r *TestResponse) Header(key, value string) contractshttp.Response {
 	return r
 }
 
-func (r *TestResponse) Json(code int, obj any) {
-
+func (r *TestResponse) Json(code int, obj any) error {
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
-
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Redirect(code int, location string) {
-
+func (r *TestResponse) Redirect(code int, location string) error {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) String(code int, format string, values ...any) {
-
+func (r *TestResponse) String(code int, format string, values ...any) error {
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Success() contractshttp.ResponseSuccess {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Writer() nethttp.ResponseWriter {
-
 	panic("do not need to implement it")
 }
 
