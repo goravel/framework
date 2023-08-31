@@ -398,6 +398,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						Address: &Address{
 							Name: "association_find_address",
 						},
+						age: 1,
 					}
 
 					s.Nil(query.Select(orm.Associations).Create(&user))
