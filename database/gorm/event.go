@@ -95,6 +95,9 @@ func (e *Event) SetAttribute(key string, value any) {
 		}
 
 		for i := 0; i < destType.NumField(); i++ {
+			if !destType.Field(i).IsExported() {
+				continue
+			}
 			if e.equalColumnName(destType.Field(i).Name, key) {
 				if value == nil {
 					destValue.Field(i).Set(reflect.Zero(destValue.Field(i).Type()))
@@ -281,9 +284,15 @@ func (e *Event) ColumnNamesWithDbColumnNames() map[string]string {
 	}
 
 	for i := 0; i < modelType.NumField(); i++ {
+		if !modelType.Field(i).IsExported() {
+			continue
+		}
 		if modelType.Field(i).Name == "Model" && modelValue.Field(i).Type().Kind() == reflect.Struct {
 			structField := modelValue.Field(i).Type()
 			for j := 0; j < structField.NumField(); j++ {
+				if !structField.Field(i).IsExported() {
+					continue
+				}
 				dbColumn := structNameToDbColumnName(structField.Field(j).Name, structField.Field(j).Tag.Get("gorm"))
 				res[structField.Field(j).Name] = dbColumn
 				res[dbColumn] = dbColumn
@@ -309,6 +318,10 @@ func structToMap(data any) map[string]any {
 	}
 
 	for i := 0; i < modelType.NumField(); i++ {
+		if !modelType.Field(i).IsExported() {
+			continue
+		}
+
 		dbColumn := structNameToDbColumnName(modelType.Field(i).Name, modelType.Field(i).Tag.Get("gorm"))
 		if modelValue.Field(i).Kind() == reflect.Pointer {
 			if modelValue.Field(i).IsNil() {

@@ -6,11 +6,11 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 )
 
-type GroupFunc func(routes Route)
+type GroupFunc func(router Router)
 
-//go:generate mockery --name=Engine
-type Engine interface {
-	Route
+//go:generate mockery --name=Route
+type Route interface {
+	Router
 	Fallback(handler contractshttp.HandlerFunc)
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	Run(host ...string) error
@@ -19,11 +19,11 @@ type Engine interface {
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 }
 
-//go:generate mockery --name=Route
-type Route interface {
+//go:generate mockery --name=Router
+type Router interface {
 	Group(handler GroupFunc)
-	Prefix(addr string) Route
-	Middleware(middlewares ...contractshttp.Middleware) Route
+	Prefix(addr string) Router
+	Middleware(middlewares ...contractshttp.Middleware) Router
 
 	Any(relativePath string, handler contractshttp.HandlerFunc)
 	Get(relativePath string, handler contractshttp.HandlerFunc)

@@ -12,7 +12,7 @@ import (
 type Driver string
 
 type Route struct {
-	route.Engine
+	route.Route
 	config config.Config
 }
 
@@ -32,21 +32,21 @@ func NewRoute(config config.Config) *Route {
 	}
 
 	return &Route{
-		Engine: driver,
+		Route:  driver,
 		config: config,
 	}
 }
 
-func NewDriver(config config.Config, driver string) (route.Engine, error) {
-	engine, ok := config.Get("http.drivers." + driver + ".route").(route.Engine)
+func NewDriver(config config.Config, driver string) (route.Route, error) {
+	engine, ok := config.Get("http.drivers." + driver + ".route").(route.Route)
 	if ok {
 		return engine, nil
 	}
 
-	engineCallback, ok := config.Get("http.drivers." + driver + ".route").(func() (route.Engine, error))
+	engineCallback, ok := config.Get("http.drivers." + driver + ".route").(func() (route.Route, error))
 	if ok {
 		return engineCallback()
 	}
 
-	return nil, fmt.Errorf("init route driver fail: route must be implement route.Engine or func() (route.Engine, error)")
+	return nil, fmt.Errorf("init route driver fail: route must be implement route.Route or func() (route.Route, error)")
 }
