@@ -34,10 +34,6 @@ type Request interface {
 	QueryArray(key string) []string
 	QueryMap(key string) map[string]string
 	Queries() map[string]string
-	// DEPRECATED: Use input instead. Retrieve a form string item from the post: /users POST:id=1,
-	Form(key string, defaultValue ...string) string
-	// DEPRECATED: Use input instead. Retrieve data from the post: /users JSON:{"id": 1}
-	Json(key string, defaultValue ...string) string
 
 	// Input Retrieve data by order: json, form, query, route
 	Input(key string, defaultValue ...string) string
