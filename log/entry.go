@@ -29,18 +29,3 @@ func (r *Entry) Time() time.Time {
 func (r *Entry) Message() string {
 	return r.message
 }
-
-// DEPRECATED: use Level()
-func (r *Entry) GetLevel() log.Level {
-	return r.Level()
-}
-
-// DEPRECATED: use Time()
-func (r *Entry) GetTime() time.Time {
-	return r.Time()
-}
-
-// DEPRECATED: use Message()
-func (r *Entry) GetMessage() string {
-	return r.Message()
-}
