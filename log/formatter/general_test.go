@@ -5,41 +5,88 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 )
 
-type GeneralFormatterTestSuite struct {
+type GeneralTestSuite struct {
 	suite.Suite
-	mockConfig  *configmock.Config
-	entry       *logrus.Entry
-	stackTraces any
+	mockConfig *configmock.Config
+	entry      *logrus.Entry
 }
 
-func TestGeneralFormatterTestSuite(t *testing.T) {
-	suite.Run(t, new(GeneralFormatterTestSuite))
+func TestGeneralTestSuite(t *testing.T) {
+	suite.Run(t, new(GeneralTestSuite))
 }
 
-func (s *GeneralFormatterTestSuite) SetupTest() {
+func (s *GeneralTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
 	s.entry = &logrus.Entry{
 		Level:   logrus.InfoLevel,
 		Message: "Test Message",
 	}
+}
 
+func (s *GeneralTestSuite) TestFormat() {
 	s.mockConfig.On("GetString", "app.timezone").Return("UTC")
 	s.mockConfig.On("GetString", "app.env").Return("test")
-}
 
-func (s *GeneralFormatterTestSuite) TestGeneral_Format() {
 	general := NewGeneral(s.mockConfig)
-	formatLog, err := general.Format(s.entry)
-	s.Nil(err)
-	s.NotNil(formatLog)
+	tests := []struct {
+		name   string
+		setup  func()
+		assert func()
+	}{
+		{
+			name: "Error in Marshaling",
+			setup: func() {
+				s.entry.Data = logrus.Fields{
+					"root": make(chan int),
+				}
+			},
+			assert: func() {
+				formatLog, err := general.Format(s.entry)
+				s.NotNil(err)
+				s.Nil(formatLog)
+			},
+		},
+		{
+			name: "Data is not empty",
+			setup: func() {
+				s.entry.Data = logrus.Fields{
+					"root": map[string]interface{}{
+						"code":   "200",
+						"domain": "example.com",
+						"owner":  "owner",
+						"user":   "user1",
+					},
+				}
+			},
+			assert: func() {
+				formatLog, err := general.Format(s.entry)
+				s.Nil(err)
+				s.Contains(string(formatLog), "code: \"200\"")
+				s.Contains(string(formatLog), "domain: \"example.com\"")
+				s.Contains(string(formatLog), "owner: \"owner\"")
+				s.Contains(string(formatLog), "user: \"user1\"")
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			test.setup()
+			test.assert()
+		})
+	}
+
+	s.mockConfig.AssertExpectations(s.T())
 }
 
-func (s *GeneralFormatterTestSuite) TestFormatData() {
+func TestFormatData(t *testing.T) {
+	var data logrus.Fields
 	tests := []struct {
 		name   string
 		setup  func()
@@ -48,31 +95,31 @@ func (s *GeneralFormatterTestSuite) TestFormatData() {
 		{
 			name: "Data is empty",
 			setup: func() {
-				s.entry.Data = logrus.Fields{}
+				data = logrus.Fields{}
 			},
 			assert: func() {
-				formattedData, err := formatData(s.entry.Data)
-				s.Nil(err)
-				s.Empty(formattedData)
+				formattedData, err := formatData(data)
+				assert.Nil(t, err)
+				assert.Empty(t, formattedData)
 			},
 		},
 		{
 			name: "Root key is absent",
 			setup: func() {
-				s.entry.Data = logrus.Fields{
+				data = logrus.Fields{
 					"key": "value",
 				}
 			},
 			assert: func() {
-				formattedData, err := formatData(s.entry.Data)
-				s.NotNil(err)
-				s.Empty(formattedData)
+				formattedData, err := formatData(data)
+				assert.NotNil(t, err)
+				assert.Empty(t, formattedData)
 			},
 		},
 		{
 			name: "Invalid data type",
 			setup: func() {
-				s.entry.Data = logrus.Fields{
+				data = logrus.Fields{
 					"root": map[string]interface{}{
 						"code":     "123",
 						"context":  "sample",
@@ -87,22 +134,43 @@ func (s *GeneralFormatterTestSuite) TestFormatData() {
 				}
 			},
 			assert: func() {
-				formattedData, err := formatData(s.entry.Data)
-				s.NotNil(err)
-				s.Empty(formattedData)
+				formattedData, err := formatData(data)
+				assert.NotNil(t, err)
+				assert.Empty(t, formattedData)
+			},
+		},
+		{
+			name: "Data is not empty",
+			setup: func() {
+				data = logrus.Fields{
+					"root": map[string]interface{}{
+						"code":   "200",
+						"domain": "example.com",
+						"owner":  "owner",
+						"user":   "user1",
+					},
+				}
+			},
+			assert: func() {
+				formattedData, err := formatData(data)
+				assert.Nil(t, err)
+				assert.Contains(t, formattedData, "code: \"200\"")
+				assert.Contains(t, formattedData, "domain: \"example.com\"")
+				assert.Contains(t, formattedData, "owner: \"owner\"")
+				assert.Contains(t, formattedData, "user: \"user1\"")
 			},
 		},
 	}
 
 	for _, test := range tests {
-		s.Run(test.name, func() {
+		t.Run(test.name, func(t *testing.T) {
 			test.setup()
 			test.assert()
 		})
 	}
 }
 
-func (s *GeneralFormatterTestSuite) TestDeleteKey() {
+func TestDeleteKey(t *testing.T) {
 	tests := []struct {
 		name   string
 		data   logrus.Fields
@@ -119,7 +187,7 @@ func (s *GeneralFormatterTestSuite) TestDeleteKey() {
 				removedData := deleteKey(logrus.Fields{
 					"key": "value",
 				}, "notPresent")
-				s.Equal(logrus.Fields{
+				assert.Equal(t, logrus.Fields{
 					"key": "value",
 				}, removedData)
 			},
@@ -134,19 +202,20 @@ func (s *GeneralFormatterTestSuite) TestDeleteKey() {
 				removedData := deleteKey(logrus.Fields{
 					"key": "value",
 				}, "key")
-				s.Equal(logrus.Fields{}, removedData)
+				assert.Equal(t, logrus.Fields{}, removedData)
 			},
 		},
 	}
 
 	for _, test := range tests {
-		s.Run(test.name, func() {
+		t.Run(test.name, func(t *testing.T) {
 			test.assert()
 		})
 	}
 }
 
-func (s *GeneralFormatterTestSuite) TestFormatStackTraces() {
+func TestFormatStackTraces(t *testing.T) {
+	var stackTraces any
 	tests := []struct {
 		name   string
 		setup  func()
@@ -155,18 +224,18 @@ func (s *GeneralFormatterTestSuite) TestFormatStackTraces() {
 		{
 			name: "StackTraces is nil",
 			setup: func() {
-				s.stackTraces = nil
+				stackTraces = nil
 			},
 			assert: func() {
-				traces, err := formatStackTraces(s.stackTraces)
-				s.Nil(err)
-				s.Equal("trace:\n", traces)
+				traces, err := formatStackTraces(stackTraces)
+				assert.Nil(t, err)
+				assert.Equal(t, "trace:\n", traces)
 			},
 		},
 		{
 			name: "StackTraces is not nil",
 			setup: func() {
-				s.stackTraces = map[string]interface{}{
+				stackTraces = map[string]interface{}{
 					"root": map[string]interface{}{
 						"message": "error bad request", // root cause
 						"stack": []string{
@@ -185,8 +254,8 @@ func (s *GeneralFormatterTestSuite) TestFormatStackTraces() {
 				}
 			},
 			assert: func() {
-				traces, err := formatStackTraces(s.stackTraces)
-				s.Nil(err)
+				traces, err := formatStackTraces(stackTraces)
+				assert.Nil(t, err)
 				stackTraces := []string{
 					"main.main:/dummy/examples/logging/example.go:143",
 					"main.ProcessResource:/dummy/examples/logging/example.go:71",
@@ -195,13 +264,13 @@ func (s *GeneralFormatterTestSuite) TestFormatStackTraces() {
 				}
 				formattedStackTraces := "trace:\n\t" + strings.Join(stackTraces, "\n\t") + "\n"
 
-				s.Equal(formattedStackTraces, traces)
+				assert.Equal(t, formattedStackTraces, traces)
 			},
 		},
 	}
 
 	for _, test := range tests {
-		s.Run(test.name, func() {
+		t.Run(test.name, func(t *testing.T) {
 			test.setup()
 			test.assert()
 		})
