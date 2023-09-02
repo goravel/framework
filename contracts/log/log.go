@@ -63,10 +63,4 @@ type Entry interface {
 	Level() Level
 	Time() time.Time
 	Message() string
-	// DEPRECATED: use Level()
-	GetLevel() Level
-	// DEPRECATED: use Time()
-	GetTime() time.Time
-	// DEPRECATED: use Message()
-	GetMessage() string
 }

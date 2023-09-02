@@ -32,7 +32,6 @@ type QueryImpl struct {
 }
 
 func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryImpl, error) {
-	tempConfig = config
 	db, err := gorm.Make()
 	if err != nil {
 		return nil, err
