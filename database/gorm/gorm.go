@@ -22,16 +22,6 @@ import (
 var GormSet = wire.NewSet(NewGormImpl, wire.Bind(new(Gorm), new(*GormImpl)))
 var _ Gorm = &GormImpl{}
 
-// DEPRECATE: Can be removed when removing gorm.go::New()
-var tempConfig config.Config
-
-// DEPRECATED: Not recommended, if you must, use NewGormImpl.
-func New(connection string) (*gormio.DB, error) {
-	gorm := InitializeGorm(tempConfig, connection)
-
-	return gorm.Make()
-}
-
 type Gorm interface {
 	Make() (*gormio.DB, error)
 }
