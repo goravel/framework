@@ -30,8 +30,8 @@ type User struct {
 
 type Context struct {
 	ctx      context.Context
-	request  http.Request
-	response http.Response
+	request  http.ContextRequest
+	response http.ContextResponse
 	values   map[string]any
 	mu       sync.RWMutex
 }
@@ -72,11 +72,11 @@ func (mc *Context) WithValue(key string, value any) {
 	mc.mu.Unlock()
 }
 
-func (mc *Context) Request() http.Request {
+func (mc *Context) Request() http.ContextRequest {
 	return mc.request
 }
 
-func (mc *Context) Response() http.Response {
+func (mc *Context) Response() http.ContextResponse {
 	return mc.response
 }
 
