@@ -1,8 +1,10 @@
 package log
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	nethttp "net/http"
 	"os"
 	"os/exec"
 	"reflect"
@@ -12,6 +14,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
+	"github.com/goravel/framework/contracts/filesystem"
+	contractshttp "github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -77,7 +82,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockConfig.On("GetString", "logging.channels.daily.level").Return("info").Once()
 				mockConfig.On("GetString", "logging.channels.single.level").Return("info").Once()
-
+				mockConfig.On("GetString", "app.timezone").Return("UTC").Once()
+				mockConfig.On("GetString", "app.env").Return("test").Once()
 				log = NewLogrusApplication(mockConfig)
 				log.Debug("No Debug Goravel")
 			},
@@ -207,6 +213,147 @@ func (s *LogrusTestSuite) TestLogrus() {
 				assert.True(s.T(), file.Contain(dailyLog, "test.panic: Goravel: World"))
 			},
 		},
+		{
+			name: "Code",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.Code("code").Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ncode: \"code\""))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ncode: \"code\""))
+			},
+		},
+		{
+			name: "Hint",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.Hint("hint").Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\nhint: \"hint\""))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\nhint: \"hint\""))
+			},
+		},
+		{
+			name: "In",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.In("domain").Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ndomain: \"domain\""))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ndomain: \"domain\""))
+			},
+		},
+		{
+			name: "Owner",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.Owner("team@goravel.dev").Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+			},
+		},
+		{
+			name: "Request",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.Request(&TestRequest{}).Info("Goravel")
+			},
+			assert: func() {
+				expectedParts := []string{
+					`test.info: Goravel`,
+					`request: {`,
+					`"method":"GET`,
+					`"uri":"http://localhost:3000/"`,
+					`"header":{"Sec-Fetch-User":["?1"],"Host":["localhost:3000"]}`,
+					`"body":{`,
+					`"key1":"value1"`,
+					`"key2":"value2"`,
+				}
+
+				for _, part := range expectedParts {
+					assert.True(s.T(), file.Contain(singleLog, part))
+					assert.True(s.T(), file.Contain(dailyLog, part))
+				}
+			},
+		},
+		{
+			name: "Response",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.Response(&TestResponse{}).Info("Goravel")
+			},
+			assert: func() {
+				expectedParts := []string{
+					`test.info: Goravel`,
+					`response: {`,
+					`"status":200`,
+					`"header":{"Content-Type":["text/plain; charset=utf-8"]}`,
+					`"body":{}`,
+					`"size":4`,
+				}
+
+				for _, part := range expectedParts {
+					assert.True(s.T(), file.Contain(singleLog, part))
+					assert.True(s.T(), file.Contain(dailyLog, part))
+				}
+			},
+		},
+		{
+			name: "Tags",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.Tags("tag").Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ntags: [\"tag\"]"))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ntags: [\"tag\"]"))
+			},
+		},
+		{
+			name: "User",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
+			},
+		},
+		{
+			name: "With",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewLogrusApplication(mockConfig)
+				log.With(map[string]any{"key": "value"}).Info("Goravel")
+			},
+			assert: func() {
+				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -282,4 +429,225 @@ func mockDriverConfig(mockConfig *configmock.Config) {
 	mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
 	mockConfig.On("GetString", "app.timezone").Return("UTC")
 	mockConfig.On("GetString", "app.env").Return("test")
+}
+
+type TestRequest struct{}
+
+func (r *TestRequest) Header(key string, defaultValue ...string) string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Headers() nethttp.Header {
+	return nethttp.Header{
+		"Sec-Fetch-User": []string{"?1"},
+		"Host":           []string{"localhost:3000"},
+	}
+}
+
+func (r *TestRequest) Method() string {
+	return "GET"
+}
+
+func (r *TestRequest) Path() string {
+	return "/test"
+}
+
+func (r *TestRequest) Url() string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) FullUrl() string {
+	return "http://localhost:3000/"
+}
+
+func (r *TestRequest) Ip() string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Host() string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) All() map[string]any {
+	return map[string]interface{}{
+		"key1": "value1",
+		"key2": "value2",
+	}
+}
+
+func (r *TestRequest) Bind(obj any) error {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Route(key string) string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) RouteInt(key string) int {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) RouteInt64(key string) int64 {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Query(key string, defaultValue ...string) string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) QueryInt(key string, defaultValue ...int) int {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) QueryInt64(key string, defaultValue ...int64) int64 {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) QueryBool(key string, defaultValue ...bool) bool {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) QueryArray(key string) []string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) QueryMap(key string) map[string]string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Queries() map[string]string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Form(key string, defaultValue ...string) string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Json(key string, defaultValue ...string) string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Input(key string, defaultValue ...string) string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) InputArray(key string, defaultValue ...[]string) []string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) InputMap(key string, defaultValue ...map[string]string) map[string]string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) InputInt(key string, defaultValue ...int) int {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) InputInt64(key string, defaultValue ...int64) int64 {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) InputBool(key string, defaultValue ...bool) bool {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) File(name string) (filesystem.File, error) {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) AbortWithStatus(code int) {}
+
+func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Next() {}
+
+func (r *TestRequest) Origin() *nethttp.Request {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error) {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) ValidateRequest(request contractshttp.FormRequest) (validation.Errors, error) {
+	panic("do not need to implement it")
+}
+
+type TestResponse struct {
+}
+
+func (r *TestResponse) Data(code int, contentType string, data []byte) {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Download(filepath, filename string) {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) File(filepath string) {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Header(key, value string) contractshttp.Response {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Json(code int, obj any) {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
+	return &TestResponseOrigin{ctx: r}
+}
+
+func (r *TestResponse) Redirect(code int, location string) {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) String(code int, format string, values ...any) {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Success() contractshttp.ResponseSuccess {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Writer() nethttp.ResponseWriter {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Flush() {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) View() contractshttp.ResponseView {
+	panic("do not need to implement it")
+}
+
+type TestResponseOrigin struct {
+	ctx *TestResponse
+}
+
+func (r *TestResponseOrigin) Body() *bytes.Buffer {
+	return bytes.NewBuffer([]byte("body"))
+}
+
+func (r *TestResponseOrigin) Header() nethttp.Header {
+	return nethttp.Header{
+		"Content-Type": []string{"text/plain; charset=utf-8"},
+	}
+}
+
+func (r *TestResponseOrigin) Size() int {
+	return r.Body().Len()
+}
+
+func (r *TestResponseOrigin) Status() int {
+	return 200
 }

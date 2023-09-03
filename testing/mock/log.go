@@ -3,6 +3,7 @@ package mock
 import (
 	"fmt"
 
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -72,6 +73,42 @@ func (r *TestLog) Panic(args ...any) {
 func (r *TestLog) Panicf(format string, args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Printf(format+"\n", args...)
+}
+
+func (r *TestLog) User(user any) log.Writer {
+	return r
+}
+
+func (r *TestLog) Owner(owner any) log.Writer {
+	return r
+}
+
+func (r *TestLog) Hint(hint string) log.Writer {
+	return r
+}
+
+func (r *TestLog) Code(code string) log.Writer {
+	return r
+}
+
+func (r *TestLog) With(data map[string]any) log.Writer {
+	return r
+}
+
+func (r *TestLog) Tags(tags ...string) log.Writer {
+	return r
+}
+
+func (r *TestLog) Request(req http.Request) log.Writer {
+	return r
+}
+
+func (r *TestLog) Response(res http.Response) log.Writer {
+	return r
+}
+
+func (r *TestLog) In(domain string) log.Writer {
+	return r
 }
 
 func prefix(model string) string {
