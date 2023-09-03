@@ -18,10 +18,6 @@ type GeneralTestSuite struct {
 }
 
 func TestGeneralTestSuite(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping tests of using docker")
-	}
-
 	suite.Run(t, new(GeneralTestSuite))
 }
 
