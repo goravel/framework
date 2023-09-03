@@ -84,16 +84,11 @@ func (s *GeneralTestSuite) TestFormat() {
 			test.setup()
 			test.assert()
 		})
+		s.mockConfig.AssertExpectations(s.T())
 	}
-
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 func TestFormatData(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping tests of using docker")
-	}
-
 	var data logrus.Fields
 	tests := []struct {
 		name   string
@@ -179,10 +174,6 @@ func TestFormatData(t *testing.T) {
 }
 
 func TestDeleteKey(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping tests of using docker")
-	}
-
 	tests := []struct {
 		name   string
 		data   logrus.Fields
@@ -227,10 +218,6 @@ func TestDeleteKey(t *testing.T) {
 }
 
 func TestFormatStackTraces(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping tests of using docker")
-	}
-
 	var stackTraces any
 	tests := []struct {
 		name   string
