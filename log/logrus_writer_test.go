@@ -578,23 +578,23 @@ func (r *TestRequest) ValidateRequest(request contractshttp.FormRequest) (valida
 type TestResponse struct {
 }
 
-func (r *TestResponse) Data(code int, contentType string, data []byte) {
+func (r *TestResponse) Data(code int, contentType string, data []byte) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Download(filepath, filename string) {
+func (r *TestResponse) Download(filepath, filename string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) File(filepath string) {
+func (r *TestResponse) File(filepath string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Header(key, value string) contractshttp.Response {
+func (r *TestResponse) Header(key, value string) contractshttp.ContextResponse {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Json(code int, obj any) {
+func (r *TestResponse) Json(code int, obj any) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
@@ -602,11 +602,11 @@ func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
 	return &TestResponseOrigin{ctx: r}
 }
 
-func (r *TestResponse) Redirect(code int, location string) {
+func (r *TestResponse) Redirect(code int, location string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) String(code int, format string, values ...any) {
+func (r *TestResponse) String(code int, format string, values ...any) contractshttp.Response {
 	panic("do not need to implement it")
 }
 

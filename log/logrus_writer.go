@@ -28,8 +28,8 @@ type Writer struct {
 	owner    any
 
 	// http
-	request  http.Request
-	response http.Response
+	request  http.ContextRequest
+	response http.ContextResponse
 
 	// stacktrace
 	stackEnabled bool
@@ -156,14 +156,14 @@ func (r *Writer) Owner(owner any) log.Writer {
 }
 
 // Request supplies a http.Request.
-func (r *Writer) Request(req http.Request) log.Writer {
+func (r *Writer) Request(req http.ContextRequest) log.Writer {
 	r.request = req
 
 	return r
 }
 
 // Response supplies a http.Response.
-func (r *Writer) Response(res http.Response) log.Writer {
+func (r *Writer) Response(res http.ContextResponse) log.Writer {
 	r.response = res
 
 	return r

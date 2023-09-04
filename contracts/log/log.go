@@ -55,9 +55,9 @@ type Writer interface {
 	// Useful for alerting purpose.
 	Owner(owner any) Writer
 	// Request supplies a http.Request.
-	Request(req http.Request) Writer
+	Request(req http.ContextRequest) Writer
 	// Response supplies a http.Response.
-	Response(res http.Response) Writer
+	Response(res http.ContextResponse) Writer
 	// Tags add multiple tags, describing the feature returning an error.
 	Tags(tags ...string) Writer
 	// User sets the user associated with the log entry.
