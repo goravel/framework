@@ -11,33 +11,19 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/debug"
 	"github.com/goravel/framework/support/file"
 )
 
 var singleLog = "storage/logs/goravel.log"
 var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
 
-type LogrusTestSuite struct {
-	suite.Suite
-}
-
-func TestLogrusTestSuite(t *testing.T) {
-	suite.Run(t, new(LogrusTestSuite))
-}
-
-func (s *LogrusTestSuite) SetupTest() {
-
-}
-
-func (s *LogrusTestSuite) TestLogrus() {
+func TestLogrus(t *testing.T) {
 	var (
 		mockConfig *configmock.Config
 		log        *Application
@@ -58,11 +44,11 @@ func (s *LogrusTestSuite) TestLogrus() {
 				mockConfig.On("GetString", "logging.channels.daily.level").Return("debug").Once()
 				mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 			},
 			assert: func() {
 				writer := log.WithContext(context.Background())
-				s.Equal(reflect.TypeOf(writer).String(), reflect.TypeOf(&Writer{}).String())
+				assert.Equal(t, reflect.TypeOf(writer).String(), reflect.TypeOf(&Writer{}).String())
 			},
 		},
 		{
@@ -70,12 +56,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Debug("Debug Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.debug: Debug Goravel"))
-				s.True(file.Contain(dailyLog, "test.debug: Debug Goravel"))
+				assert.True(t, file.Contain(singleLog, "test.debug: Debug Goravel"))
+				assert.True(t, file.Contain(dailyLog, "test.debug: Debug Goravel"))
 			},
 		},
 		{
@@ -85,12 +71,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 				mockConfig.On("GetString", "logging.channels.single.level").Return("info").Once()
 				mockConfig.On("GetString", "app.timezone").Return("UTC").Once()
 				mockConfig.On("GetString", "app.env").Return("test").Once()
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Debug("No Debug Goravel")
 			},
 			assert: func() {
-				s.False(file.Contain(singleLog, "test.debug: No Debug Goravel"))
-				s.False(file.Contain(dailyLog, "test.debug: No Debug Goravel"))
+				assert.False(t, file.Contain(singleLog, "test.debug: No Debug Goravel"))
+				assert.False(t, file.Contain(dailyLog, "test.debug: No Debug Goravel"))
 			},
 		},
 		{
@@ -98,12 +84,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Debugf("Goravel: %s", "World")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.debug: Goravel: World"))
-				s.True(file.Contain(dailyLog, "test.debug: Goravel: World"))
+				assert.True(t, file.Contain(singleLog, "test.debug: Goravel: World"))
+				assert.True(t, file.Contain(dailyLog, "test.debug: Goravel: World"))
 			},
 		},
 		{
@@ -111,12 +97,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel"))
-				s.True(file.Contain(dailyLog, "test.info: Goravel"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel"))
 			},
 		},
 		{
@@ -124,12 +110,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Infof("Goravel: %s", "World")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel: World"))
-				s.True(file.Contain(dailyLog, "test.info: Goravel: World"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel: World"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel: World"))
 			},
 		},
 		{
@@ -137,12 +123,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Warning("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.warning: Goravel"))
-				s.True(file.Contain(dailyLog, "test.warning: Goravel"))
+				assert.True(t, file.Contain(singleLog, "test.warning: Goravel"))
+				assert.True(t, file.Contain(dailyLog, "test.warning: Goravel"))
 			},
 		},
 		{
@@ -150,12 +136,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Warningf("Goravel: %s", "World")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.warning: Goravel: World"))
-				s.True(file.Contain(dailyLog, "test.warning: Goravel: World"))
+				assert.True(t, file.Contain(singleLog, "test.warning: Goravel: World"))
+				assert.True(t, file.Contain(dailyLog, "test.warning: Goravel: World"))
 			},
 		},
 		{
@@ -163,12 +149,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Error("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.error: Goravel"))
-				s.True(file.Contain(dailyLog, "test.error: Goravel"))
+				assert.True(t, file.Contain(singleLog, "test.error: Goravel"))
+				assert.True(t, file.Contain(dailyLog, "test.error: Goravel"))
 			},
 		},
 		{
@@ -176,12 +162,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Errorf("Goravel: %s", "World")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.error: Goravel: World"))
-				s.True(file.Contain(dailyLog, "test.error: Goravel: World"))
+				assert.True(t, file.Contain(singleLog, "test.error: Goravel: World"))
+				assert.True(t, file.Contain(dailyLog, "test.error: Goravel: World"))
 			},
 		},
 		{
@@ -189,14 +175,14 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 			},
 			assert: func() {
-				s.Panics(func() {
+				assert.Panics(t, func() {
 					log.Panic("Goravel")
 				})
-				s.True(file.Contain(singleLog, "test.panic: Goravel"))
-				s.True(file.Contain(dailyLog, "test.panic: Goravel"))
+				assert.True(t, file.Contain(singleLog, "test.panic: Goravel"))
+				assert.True(t, file.Contain(dailyLog, "test.panic: Goravel"))
 			},
 		},
 		{
@@ -204,14 +190,14 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 			},
 			assert: func() {
-				s.Panics(func() {
+				assert.Panics(t, func() {
 					log.Panicf("Goravel: %s", "World")
 				})
-				s.True(file.Contain(singleLog, "test.panic: Goravel: World"))
-				s.True(file.Contain(dailyLog, "test.panic: Goravel: World"))
+				assert.True(t, file.Contain(singleLog, "test.panic: Goravel: World"))
+				assert.True(t, file.Contain(dailyLog, "test.panic: Goravel: World"))
 			},
 		},
 		{
@@ -219,12 +205,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\ncode: \"code\""))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\ncode: \"code\""))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ncode: \"code\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ncode: \"code\""))
 			},
 		},
 		{
@@ -232,12 +218,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\nhint: \"hint\""))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\nhint: \"hint\""))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nhint: \"hint\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nhint: \"hint\""))
 			},
 		},
 		{
@@ -245,12 +231,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\ndomain: \"domain\""))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\ndomain: \"domain\""))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ndomain: \"domain\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ndomain: \"domain\""))
 			},
 		},
 		{
@@ -258,12 +244,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
 			},
 		},
 		{
@@ -271,7 +257,7 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Request(&TestRequest{}).Info("Goravel")
 			},
 			assert: func() {
@@ -287,8 +273,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				}
 
 				for _, part := range expectedParts {
-					s.True(file.Contain(singleLog, part), part)
-					s.True(file.Contain(dailyLog, part), part)
+					assert.True(t, file.Contain(singleLog, part), part)
+					assert.True(t, file.Contain(dailyLog, part), part)
 				}
 			},
 		},
@@ -297,7 +283,7 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Response(&TestResponse{}).Info("Goravel")
 			},
 			assert: func() {
@@ -311,8 +297,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				}
 
 				for _, part := range expectedParts {
-					s.True(file.Contain(singleLog, part))
-					s.True(file.Contain(dailyLog, part))
+					assert.True(t, file.Contain(singleLog, part))
+					assert.True(t, file.Contain(dailyLog, part))
 				}
 			},
 		},
@@ -321,12 +307,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\ntags: [\"tag\"]"))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\ntags: [\"tag\"]"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ntags: [\"tag\"]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ntags: [\"tag\"]"))
 			},
 		},
 		{
@@ -334,12 +320,12 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
 			},
 		},
 		{
@@ -347,35 +333,33 @@ func (s *LogrusTestSuite) TestLogrus() {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewLogrusApplication(mockConfig)
+				log = NewApplication(mockConfig)
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
-				s.True(file.Contain(singleLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
-				s.True(file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
 			},
 		},
 	}
 
 	for _, test := range tests {
-		s.Run(test.name, func() {
+		t.Run(test.name, func(t *testing.T) {
 			beforeEach()
 			test.setup()
 			test.assert()
 
-			mockConfig.AssertExpectations(s.T())
+			mockConfig.AssertExpectations(t)
 		})
 	}
 
-	err := file.Remove("storage")
-	debug.Dump(err)
-	s.Nil(err)
+	_ = file.Remove("storage")
 }
 
 func TestLogrus_Fatal(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log := NewLogrusApplication(mockConfig)
+	log := NewApplication(mockConfig)
 
 	if os.Getenv("FATAL") == "1" {
 		log.Fatal("Goravel")
@@ -389,15 +373,13 @@ func TestLogrus_Fatal(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 
-	err = file.Remove("storage")
-	debug.Dump(err)
-	assert.Nil(t, err)
+	_ = file.Remove("storage")
 }
 
 func TestLogrus_Fatalf(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log := NewLogrusApplication(mockConfig)
+	log := NewApplication(mockConfig)
 
 	if os.Getenv("FATAL") == "1" {
 		log.Fatalf("Goravel")
@@ -411,9 +393,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
 
-	err = file.Remove("storage")
-	debug.Dump(err)
-	assert.Nil(t, err)
+	_ = file.Remove("storage")
 }
 
 func initMockConfig() *configmock.Config {

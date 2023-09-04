@@ -15,13 +15,7 @@ type Application struct {
 	instance *logrus.Logger
 }
 
-func NewApplication(writer log.Writer) *Application {
-	return &Application{
-		Writer: writer,
-	}
-}
-
-func NewLogrusApplication(config config.Config) *Application {
+func NewApplication(config config.Config) *Application {
 	instance := logrus.New()
 	instance.SetLevel(logrus.DebugLevel)
 
