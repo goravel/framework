@@ -18,6 +18,7 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/debug"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -366,7 +367,9 @@ func (s *LogrusTestSuite) TestLogrus() {
 		})
 	}
 
-	s.Nil(file.Remove("storage"))
+	err := file.Remove("storage")
+	debug.Dump(err)
+	s.Nil(err)
 }
 
 func TestLogrus_Fatal(t *testing.T) {
@@ -385,7 +388,10 @@ func TestLogrus_Fatal(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
-	assert.Nil(t, file.Remove("storage"))
+
+	err = file.Remove("storage")
+	debug.Dump(err)
+	assert.Nil(t, err)
 }
 
 func TestLogrus_Fatalf(t *testing.T) {
@@ -404,7 +410,10 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
-	assert.Nil(t, file.Remove("storage"))
+
+	err = file.Remove("storage")
+	debug.Dump(err)
+	assert.Nil(t, err)
 }
 
 func initMockConfig() *configmock.Config {
