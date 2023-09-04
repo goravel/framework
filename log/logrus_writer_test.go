@@ -17,7 +17,6 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/debug"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -275,19 +274,8 @@ func TestLogrus(t *testing.T) {
 				}
 
 				for _, part := range expectedParts {
-					res := file.Contain(singleLog, part)
-					if !res {
-						data, err := os.ReadFile(singleLog)
-						debug.Dump(err, string(data), part)
-					}
-					assert.True(t, res, part)
-
-					res = file.Contain(dailyLog, part)
-					if !res {
-						data, err := os.ReadFile(dailyLog)
-						debug.Dump(err, string(data), part)
-					}
-					assert.True(t, res, part)
+					assert.True(t, file.Contain(singleLog, part), part)
+					assert.True(t, file.Contain(dailyLog, part), part)
 				}
 			},
 		},
