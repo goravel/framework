@@ -276,13 +276,15 @@ func TestLogrus(t *testing.T) {
 				for _, part := range expectedParts {
 					res := file.Contain(singleLog, part)
 					if !res {
-						debug.Dump(singleLog, part)
+						data, err := os.ReadFile(singleLog)
+						debug.Dump(err, string(data), part)
 					}
 					assert.True(t, res, part)
 
 					res = file.Contain(dailyLog, part)
 					if !res {
-						debug.Dump(singleLog, part)
+						data, err := os.ReadFile(dailyLog)
+						debug.Dump(err, string(data), part)
 					}
 					assert.True(t, res, part)
 				}
