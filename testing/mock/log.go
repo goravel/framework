@@ -99,11 +99,11 @@ func (r *TestLog) Tags(tags ...string) log.Writer {
 	return r
 }
 
-func (r *TestLog) Request(req http.Request) log.Writer {
+func (r *TestLog) Request(req http.ContextRequest) log.Writer {
 	return r
 }
 
-func (r *TestLog) Response(res http.Response) log.Writer {
+func (r *TestLog) Response(res http.ContextResponse) log.Writer {
 	return r
 }
 
