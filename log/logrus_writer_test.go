@@ -61,7 +61,7 @@ func (s *LogrusTestSuite) TestLogrus() {
 			},
 			assert: func() {
 				writer := log.WithContext(context.Background())
-				assert.Equal(s.T(), reflect.TypeOf(writer).String(), reflect.TypeOf(&Writer{}).String())
+				s.Equal(reflect.TypeOf(writer).String(), reflect.TypeOf(&Writer{}).String())
 			},
 		},
 		{
@@ -73,8 +73,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Debug("Debug Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.debug: Debug Goravel"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.debug: Debug Goravel"))
+				s.True(file.Contain(singleLog, "test.debug: Debug Goravel"))
+				s.True(file.Contain(dailyLog, "test.debug: Debug Goravel"))
 			},
 		},
 		{
@@ -88,8 +88,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Debug("No Debug Goravel")
 			},
 			assert: func() {
-				assert.False(s.T(), file.Contain(singleLog, "test.debug: No Debug Goravel"))
-				assert.False(s.T(), file.Contain(dailyLog, "test.debug: No Debug Goravel"))
+				s.False(file.Contain(singleLog, "test.debug: No Debug Goravel"))
+				s.False(file.Contain(dailyLog, "test.debug: No Debug Goravel"))
 			},
 		},
 		{
@@ -101,8 +101,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Debugf("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.debug: Goravel: World"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.debug: Goravel: World"))
+				s.True(file.Contain(singleLog, "test.debug: Goravel: World"))
+				s.True(file.Contain(dailyLog, "test.debug: Goravel: World"))
 			},
 		},
 		{
@@ -114,8 +114,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel"))
+				s.True(file.Contain(singleLog, "test.info: Goravel"))
+				s.True(file.Contain(dailyLog, "test.info: Goravel"))
 			},
 		},
 		{
@@ -127,8 +127,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Infof("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel: World"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel: World"))
+				s.True(file.Contain(singleLog, "test.info: Goravel: World"))
+				s.True(file.Contain(dailyLog, "test.info: Goravel: World"))
 			},
 		},
 		{
@@ -140,8 +140,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Warning("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.warning: Goravel"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.warning: Goravel"))
+				s.True(file.Contain(singleLog, "test.warning: Goravel"))
+				s.True(file.Contain(dailyLog, "test.warning: Goravel"))
 			},
 		},
 		{
@@ -153,8 +153,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Warningf("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.warning: Goravel: World"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.warning: Goravel: World"))
+				s.True(file.Contain(singleLog, "test.warning: Goravel: World"))
+				s.True(file.Contain(dailyLog, "test.warning: Goravel: World"))
 			},
 		},
 		{
@@ -166,8 +166,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Error("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.error: Goravel"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.error: Goravel"))
+				s.True(file.Contain(singleLog, "test.error: Goravel"))
+				s.True(file.Contain(dailyLog, "test.error: Goravel"))
 			},
 		},
 		{
@@ -179,8 +179,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Errorf("Goravel: %s", "World")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.error: Goravel: World"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.error: Goravel: World"))
+				s.True(file.Contain(singleLog, "test.error: Goravel: World"))
+				s.True(file.Contain(dailyLog, "test.error: Goravel: World"))
 			},
 		},
 		{
@@ -191,11 +191,11 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log = NewLogrusApplication(mockConfig)
 			},
 			assert: func() {
-				assert.Panics(s.T(), func() {
+				s.Panics(func() {
 					log.Panic("Goravel")
 				})
-				assert.True(s.T(), file.Contain(singleLog, "test.panic: Goravel"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.panic: Goravel"))
+				s.True(file.Contain(singleLog, "test.panic: Goravel"))
+				s.True(file.Contain(dailyLog, "test.panic: Goravel"))
 			},
 		},
 		{
@@ -206,11 +206,11 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log = NewLogrusApplication(mockConfig)
 			},
 			assert: func() {
-				assert.Panics(s.T(), func() {
+				s.Panics(func() {
 					log.Panicf("Goravel: %s", "World")
 				})
-				assert.True(s.T(), file.Contain(singleLog, "test.panic: Goravel: World"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.panic: Goravel: World"))
+				s.True(file.Contain(singleLog, "test.panic: Goravel: World"))
+				s.True(file.Contain(dailyLog, "test.panic: Goravel: World"))
 			},
 		},
 		{
@@ -222,8 +222,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ncode: \"code\""))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ncode: \"code\""))
+				s.True(file.Contain(singleLog, "test.info: Goravel\ncode: \"code\""))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\ncode: \"code\""))
 			},
 		},
 		{
@@ -235,8 +235,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\nhint: \"hint\""))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\nhint: \"hint\""))
+				s.True(file.Contain(singleLog, "test.info: Goravel\nhint: \"hint\""))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\nhint: \"hint\""))
 			},
 		},
 		{
@@ -248,8 +248,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ndomain: \"domain\""))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ndomain: \"domain\""))
+				s.True(file.Contain(singleLog, "test.info: Goravel\ndomain: \"domain\""))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\ndomain: \"domain\""))
 			},
 		},
 		{
@@ -261,8 +261,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+				s.True(file.Contain(singleLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
 			},
 		},
 		{
@@ -286,8 +286,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				}
 
 				for _, part := range expectedParts {
-					assert.True(s.T(), file.Contain(singleLog, part))
-					assert.True(s.T(), file.Contain(dailyLog, part))
+					s.True(file.Contain(singleLog, part), part)
+					s.True(file.Contain(dailyLog, part), part)
 				}
 			},
 		},
@@ -310,8 +310,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				}
 
 				for _, part := range expectedParts {
-					assert.True(s.T(), file.Contain(singleLog, part))
-					assert.True(s.T(), file.Contain(dailyLog, part))
+					s.True(file.Contain(singleLog, part))
+					s.True(file.Contain(dailyLog, part))
 				}
 			},
 		},
@@ -324,8 +324,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ntags: [\"tag\"]"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ntags: [\"tag\"]"))
+				s.True(file.Contain(singleLog, "test.info: Goravel\ntags: [\"tag\"]"))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\ntags: [\"tag\"]"))
 			},
 		},
 		{
@@ -337,8 +337,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
+				s.True(file.Contain(singleLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\nuser: {\"name\":\"kkumar-gcc\"}"))
 			},
 		},
 		{
@@ -350,8 +350,8 @@ func (s *LogrusTestSuite) TestLogrus() {
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(s.T(), file.Contain(singleLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
-				assert.True(s.T(), file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+				s.True(file.Contain(singleLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+				s.True(file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
 			},
 		},
 	}
@@ -366,7 +366,7 @@ func (s *LogrusTestSuite) TestLogrus() {
 		})
 	}
 
-	_ = file.Remove("storage")
+	s.Nil(file.Remove("storage"))
 }
 
 func TestLogrus_Fatal(t *testing.T) {
@@ -385,7 +385,7 @@ func TestLogrus_Fatal(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
-	_ = file.Remove("storage")
+	assert.Nil(t, file.Remove("storage"))
 }
 
 func TestLogrus_Fatalf(t *testing.T) {
@@ -404,7 +404,7 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
-	_ = file.Remove("storage")
+	assert.Nil(t, file.Remove("storage"))
 }
 
 func initMockConfig() *configmock.Config {
