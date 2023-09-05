@@ -194,7 +194,12 @@ func (r *Writer) With(data map[string]any) log.Writer {
 func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
 	r.message = erisNew.Error()
-	r.stacktrace = eris.ToJSON(erisNew, true)
+	format := eris.NewDefaultJSONFormat(eris.FormatOptions{
+		InvertOutput: true,
+		WithTrace:    true,
+		InvertTrace:  true,
+	})
+	r.stacktrace = eris.ToCustomJSON(erisNew, format)
 	r.stackEnabled = true
 }
 
