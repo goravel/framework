@@ -7,8 +7,8 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
-//go:generate mockery --name=Request
-type Request interface {
+//go:generate mockery --name=ContextRequest
+type ContextRequest interface {
 	Header(key string, defaultValue ...string) string
 	Headers() http.Header
 	Method() string

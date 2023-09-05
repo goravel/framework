@@ -84,15 +84,15 @@ func (_m *Context) Err() error {
 }
 
 // Request provides a mock function with given fields:
-func (_m *Context) Request() http.Request {
+func (_m *Context) Request() http.ContextRequest {
 	ret := _m.Called()
 
-	var r0 http.Request
-	if rf, ok := ret.Get(0).(func() http.Request); ok {
+	var r0 http.ContextRequest
+	if rf, ok := ret.Get(0).(func() http.ContextRequest); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Request)
+			r0 = ret.Get(0).(http.ContextRequest)
 		}
 	}
 
@@ -100,15 +100,15 @@ func (_m *Context) Request() http.Request {
 }
 
 // Response provides a mock function with given fields:
-func (_m *Context) Response() http.Response {
+func (_m *Context) Response() http.ContextResponse {
 	ret := _m.Called()
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func() http.Response); ok {
+	var r0 http.ContextResponse
+	if rf, ok := ret.Get(0).(func() http.ContextResponse); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.ContextResponse)
 		}
 	}
 

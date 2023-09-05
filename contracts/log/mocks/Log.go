@@ -156,11 +156,11 @@ func (_m *Log) Panicf(format string, args ...interface{}) {
 }
 
 // Request provides a mock function with given fields: req
-func (_m *Log) Request(req http.Request) log.Writer {
+func (_m *Log) Request(req http.ContextRequest) log.Writer {
 	ret := _m.Called(req)
 
 	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(http.Request) log.Writer); ok {
+	if rf, ok := ret.Get(0).(func(http.ContextRequest) log.Writer); ok {
 		r0 = rf(req)
 	} else {
 		if ret.Get(0) != nil {
@@ -172,11 +172,11 @@ func (_m *Log) Request(req http.Request) log.Writer {
 }
 
 // Response provides a mock function with given fields: res
-func (_m *Log) Response(res http.Response) log.Writer {
+func (_m *Log) Response(res http.ContextResponse) log.Writer {
 	ret := _m.Called(res)
 
 	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(http.Response) log.Writer); ok {
+	if rf, ok := ret.Get(0).(func(http.ContextResponse) log.Writer); ok {
 		r0 = rf(res)
 	} else {
 		if ret.Get(0) != nil {

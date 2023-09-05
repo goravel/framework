@@ -7,16 +7,21 @@ import (
 
 type Json map[string]any
 
-//go:generate mockery --name=Response
+//go:generate mockery --name=ContextResponse
 type Response interface {
-	Data(code int, contentType string, data []byte)
-	Download(filepath, filename string)
-	File(filepath string)
-	Header(key, value string) Response
-	Json(code int, obj any)
+	Render()
+}
+
+//go:generate mockery --name=ContextResponse
+type ContextResponse interface {
+	Data(code int, contentType string, data []byte) Response
+	Download(filepath, filename string) Response
+	File(filepath string) Response
+	Header(key, value string) ContextResponse
+	Json(code int, obj any) Response
 	Origin() ResponseOrigin
-	Redirect(code int, location string)
-	String(code int, format string, values ...any)
+	Redirect(code int, location string) Response
+	String(code int, format string, values ...any) Response
 	Success() ResponseSuccess
 	Status(code int) ResponseStatus
 	View() ResponseView
@@ -26,16 +31,16 @@ type Response interface {
 
 //go:generate mockery --name=ResponseStatus
 type ResponseStatus interface {
-	Data(contentType string, data []byte)
-	Json(obj any)
-	String(format string, values ...any)
+	Data(contentType string, data []byte) Response
+	Json(obj any) Response
+	String(format string, values ...any) Response
 }
 
 //go:generate mockery --name=ResponseSuccess
 type ResponseSuccess interface {
-	Data(contentType string, data []byte)
-	Json(obj any)
-	String(format string, values ...any)
+	Data(contentType string, data []byte) Response
+	Json(obj any) Response
+	String(format string, values ...any) Response
 }
 
 //go:generate mockery --name=ResponseOrigin
@@ -47,6 +52,6 @@ type ResponseOrigin interface {
 }
 
 type ResponseView interface {
-	Make(view string, data ...any)
-	First(views []string, data ...any)
+	Make(view string, data ...any) Response
+	First(views []string, data ...any) Response
 }
