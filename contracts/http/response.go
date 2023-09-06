@@ -7,9 +7,9 @@ import (
 
 type Json map[string]any
 
-//go:generate mockery --name=ContextResponse
+//go:generate mockery --name=Response
 type Response interface {
-	Render()
+	Render() error
 }
 
 //go:generate mockery --name=ContextResponse
