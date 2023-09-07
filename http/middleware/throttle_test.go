@@ -232,7 +232,7 @@ func TestThrottle(t *testing.T) {
 }
 
 type TestContext struct {
-	response contractshttp.Response
+	response contractshttp.ContextResponse
 }
 
 func (r *TestContext) Deadline() (deadline time.Time, ok bool) {
@@ -265,11 +265,11 @@ func (r *TestContext) WithValue(key string, value any) {
 	panic("do not need to implement it")
 }
 
-func (r *TestContext) Request() contractshttp.Request {
+func (r *TestContext) Request() contractshttp.ContextRequest {
 	return new(TestRequest)
 }
 
-func (r *TestContext) Response() contractshttp.Response {
+func (r *TestContext) Response() contractshttp.ContextResponse {
 	if r.response == nil {
 		r.response = &TestResponse{
 			Headers: make(map[string]string),
@@ -450,59 +450,49 @@ type TestResponse struct {
 	Headers map[string]string
 }
 
-func (r *TestResponse) Data(code int, contentType string, data []byte) {
-
+func (r *TestResponse) Data(code int, contentType string, data []byte) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Download(filepath, filename string) {
-
+func (r *TestResponse) Download(filepath, filename string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) File(filepath string) {
-
+func (r *TestResponse) File(filepath string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Header(key, value string) contractshttp.Response {
+func (r *TestResponse) Header(key, value string) contractshttp.ContextResponse {
 	r.Headers[key] = value
 
 	return r
 }
 
-func (r *TestResponse) Json(code int, obj any) {
-
+func (r *TestResponse) Json(code int, obj any) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
-
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Redirect(code int, location string) {
-
+func (r *TestResponse) Redirect(code int, location string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) String(code int, format string, values ...any) {
-
+func (r *TestResponse) String(code int, format string, values ...any) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Success() contractshttp.ResponseSuccess {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
-
 	panic("do not need to implement it")
 }
 
 func (r *TestResponse) Writer() nethttp.ResponseWriter {
-
 	panic("do not need to implement it")
 }
 
