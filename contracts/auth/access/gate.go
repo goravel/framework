@@ -19,11 +19,3 @@ type Response interface {
 	Allowed() bool
 	Message() string
 }
-
-func NewAllowResponse() Response {
-	return &ResponseImpl{allowed: true}
-}
-
-func NewDenyResponse(message string) Response {
-	return &ResponseImpl{message: message}
-}
