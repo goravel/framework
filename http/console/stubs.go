@@ -54,23 +54,28 @@ func NewDummyController() *DummyController {
 	}
 }
 
-func (r *DummyController) Index(ctx http.Context) {
+func (r *DummyController) Index(ctx http.Context) http.Response {
+	return nil
 }	
 `
 }
 
 func (r Stubs) ResourceController() string {
 	return r.Controller() + `
-func (r *DummyController) Show(ctx http.Context) {
+func (r *DummyController) Show(ctx http.Context) http.Response {
+	return nil
 }
 
-func (r *DummyController) Store(ctx http.Context) {
+func (r *DummyController) Store(ctx http.Context) http.Response {
+	return nil
 }
 
-func (r *DummyController) Update(ctx http.Context) {
+func (r *DummyController) Update(ctx http.Context) http.Response {
+	return nil
 }
 
-func (r *DummyController) Destroy(ctx http.Context) {
+func (r *DummyController) Destroy(ctx http.Context) http.Response {
+	return nil
 }
 `
 }
