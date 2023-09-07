@@ -11,13 +11,18 @@ import (
 type ContextRequest interface {
 	Header(key string, defaultValue ...string) string
 	Headers() http.Header
+	// Method Retrieve request method
 	Method() string
+	// Path Retrieves the current path info for the request
 	Path() string
+	// Url Retrieve the URL(no query string) for the request
 	Url() string
+	// FullUrl Retrieve the full URL for the request
 	FullUrl() string
+	// Ip Retrieve the client IP address.
 	Ip() string
+	// Host Retrieve the host name.
 	Host() string
-
 	// All Retrieve json, form and query
 	All() map[string]any
 	// Bind Retrieve json and bind to obj
@@ -42,12 +47,12 @@ type ContextRequest interface {
 	InputInt(key string, defaultValue ...int) int
 	InputInt64(key string, defaultValue ...int64) int64
 	InputBool(key string, defaultValue ...bool) bool
-
+	// File Retrieve file by key
 	File(name string) (filesystem.File, error)
 
 	AbortWithStatus(code int)
 	AbortWithStatusJson(code int, jsonObj any)
-
+	// Next Skip the current handler
 	Next()
 	Origin() *http.Request
 

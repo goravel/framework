@@ -24,9 +24,13 @@ import (
 )
 
 type Container interface {
+	// Bind Registers a binding with the container.
 	Bind(key any, callback func(app Application) (any, error))
+	// BindWith Registers a binding with the container.
 	BindWith(key any, callback func(app Application, parameters map[string]any) (any, error))
+	// Instance Registers an existing instance as shared in the container.
 	Instance(key, instance any)
+	// Make Resolves the given type from the container.
 	Make(key any) (any, error)
 	MakeArtisan() console.Artisan
 	MakeAuth() auth.Auth
@@ -49,6 +53,8 @@ type Container interface {
 	MakeValidation() validation.Validation
 	MakeView() http.View
 	MakeSeeder() seeder.Facade
+	// MakeWith Resolves the given type with the given parameters from the container.
 	MakeWith(key any, parameters map[string]any) (any, error)
+	// Singleton Registers a shared binding in the container.
 	Singleton(key any, callback func(app Application) (any, error))
 }
