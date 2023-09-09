@@ -27,6 +27,7 @@ func (r *Context) Context() context.Context {
 }
 
 func (r *Context) WithValue(key string, value any) {
+	//nolint:all
 	r.Ctx = context.WithValue(r.Ctx, key, value)
 }
 
