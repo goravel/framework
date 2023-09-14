@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -225,7 +226,7 @@ func (s *LocalTestSuite) TestTemporaryUrl() {
 }
 
 func (s *LocalTestSuite) TestWithContext() {
-	driver := s.local.WithContext(nil)
+	driver := s.local.WithContext(context.Background())
 	s.Equal(s.local, driver)
 }
 
