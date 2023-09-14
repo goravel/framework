@@ -2,11 +2,12 @@ package filesystem
 
 import (
 	"context"
+	"mime"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
+	"github.com/goravel/framework/support/carbon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -56,51 +57,105 @@ func (s *LocalTestSuite) SetupTest() {
 }
 
 func (s *LocalTestSuite) TestAllDirectories() {
-	directories, err := s.local.AllDirectories("")
+	s.Nil(s.local.Put("AllDirectories/1.txt", "Goravel"))
+	s.Nil(s.local.Put("AllDirectories/2.txt", "Goravel"))
+	s.Nil(s.local.Put("AllDirectories/3/3.txt", "Goravel"))
+	s.Nil(s.local.Put("AllDirectories/3/5/6/6.txt", "Goravel"))
+	s.Nil(s.local.MakeDirectory("AllDirectories/3/4"))
+	s.True(s.local.Exists("AllDirectories/1.txt"))
+	s.True(s.local.Exists("AllDirectories/2.txt"))
+	s.True(s.local.Exists("AllDirectories/3/3.txt"))
+	s.True(s.local.Exists("AllDirectories/3/4/"))
+	s.True(s.local.Exists("AllDirectories/3/5/6/6.txt"))
+	files, err := s.local.AllDirectories("AllDirectories")
 	s.Nil(err)
-	s.Len(directories, 1)
+	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	files, err = s.local.AllDirectories("./AllDirectories")
+	s.Nil(err)
+	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	files, err = s.local.AllDirectories("/AllDirectories")
+	s.Nil(err)
+	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	files, err = s.local.AllDirectories("./AllDirectories/")
+	s.Nil(err)
+	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	s.Nil(s.local.DeleteDirectory("AllDirectories"))
 }
 
 func (s *LocalTestSuite) TestAllFiles() {
-	files, err := s.local.AllFiles("")
+	s.Nil(s.local.Put("AllFiles/1.txt", "Goravel"))
+	s.Nil(s.local.Put("AllFiles/2.txt", "Goravel"))
+	s.Nil(s.local.Put("AllFiles/3/3.txt", "Goravel"))
+	s.Nil(s.local.Put("AllFiles/3/4/4.txt", "Goravel"))
+	s.True(s.local.Exists("AllFiles/1.txt"))
+	s.True(s.local.Exists("AllFiles/2.txt"))
+	s.True(s.local.Exists("AllFiles/3/3.txt"))
+	s.True(s.local.Exists("AllFiles/3/4/4.txt"))
+	files, err := s.local.AllFiles("AllFiles")
 	s.Nil(err)
-	s.Len(files, 1)
+	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	files, err = s.local.AllFiles("./AllFiles")
+	s.Nil(err)
+	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	files, err = s.local.AllFiles("/AllFiles")
+	s.Nil(err)
+	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	files, err = s.local.AllFiles("./AllFiles/")
+	s.Nil(err)
+	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	s.Nil(s.local.DeleteDirectory("AllFiles"))
 }
 
 func (s *LocalTestSuite) TestCopy() {
-	err := s.local.Copy("test.txt", "test1.txt")
-	s.Nil(err)
-
-	_, err = os.Stat(s.local.fullPath("test1.txt"))
-	s.Nil(err)
-
-	err = os.Remove(s.local.fullPath("test1.txt"))
-	s.Nil(err)
+	s.Nil(s.local.Put("Copy/1.txt", "Goravel"))
+	s.True(s.local.Exists("Copy/1.txt"))
+	s.Nil(s.local.Copy("Copy/1.txt", "Copy1/1.txt"))
+	s.True(s.local.Exists("Copy/1.txt"))
+	s.True(s.local.Exists("Copy1/1.txt"))
+	s.Nil(s.local.DeleteDirectory("Copy"))
+	s.Nil(s.local.DeleteDirectory("Copy1"))
 }
 
 func (s *LocalTestSuite) TestDelete() {
-	err := s.local.Copy("test.txt", "test1.txt")
-	s.Nil(err)
-
-	err = s.local.Delete("test1.txt")
-	s.Nil(err)
-
-	_, err = os.Stat(s.local.fullPath("test1.txt"))
-	s.True(os.IsNotExist(err))
-}
-
-func (s *LocalTestSuite) TestDirectories() {
-	directories, err := s.local.Directories("")
-	s.Nil(err)
-	s.Len(directories, 1)
+	s.Nil(s.local.Put("Delete/1.txt", "Goravel"))
+	s.True(s.local.Exists("Delete/1.txt"))
+	s.Nil(s.local.Delete("Delete/1.txt"))
+	s.True(s.local.Missing("Delete/1.txt"))
+	s.Nil(s.local.DeleteDirectory("Delete"))
 }
 
 func (s *LocalTestSuite) TestDeleteDirectory() {
-	err := s.local.DeleteDirectory("test")
-	s.Nil(err)
+	s.Nil(s.local.Put("DeleteDirectory/1.txt", "Goravel"))
+	s.True(s.local.Exists("DeleteDirectory/1.txt"))
+	s.Nil(s.local.DeleteDirectory("DeleteDirectory"))
+	s.True(s.local.Missing("DeleteDirectory/1.txt"))
+	s.Nil(s.local.DeleteDirectory("DeleteDirectory"))
+}
 
-	_, err = os.Stat(s.local.fullPath("test"))
-	s.True(os.IsNotExist(err))
+func (s *LocalTestSuite) TestDirectories() {
+	s.Nil(s.local.Put("Directories/1.txt", "Goravel"))
+	s.Nil(s.local.Put("Directories/2.txt", "Goravel"))
+	s.Nil(s.local.Put("Directories/3/3.txt", "Goravel"))
+	s.Nil(s.local.Put("Directories/3/5/5.txt", "Goravel"))
+	s.Nil(s.local.MakeDirectory("Directories/3/4"))
+	s.True(s.local.Exists("Directories/1.txt"))
+	s.True(s.local.Exists("Directories/2.txt"))
+	s.True(s.local.Exists("Directories/3/3.txt"))
+	s.True(s.local.Exists("Directories/3/4/"))
+	s.True(s.local.Exists("Directories/3/5/5.txt"))
+	files, err := s.local.Directories("Directories")
+	s.Nil(err)
+	s.Equal([]string{"3/"}, files)
+	files, err = s.local.Directories("./Directories")
+	s.Nil(err)
+	s.Equal([]string{"3/"}, files)
+	files, err = s.local.Directories("/Directories")
+	s.Nil(err)
+	s.Equal([]string{"3/"}, files)
+	files, err = s.local.Directories("./Directories/")
+	s.Nil(err)
+	s.Equal([]string{"3/"}, files)
+	s.Nil(s.local.DeleteDirectory("Directories"))
 }
 
 func (s *LocalTestSuite) TestExists() {
@@ -112,46 +167,97 @@ func (s *LocalTestSuite) TestExists() {
 }
 
 func (s *LocalTestSuite) TestFiles() {
-	files, err := s.local.Files("")
+	s.Nil(s.local.Put("Files/1.txt", "Goravel"))
+	s.Nil(s.local.Put("Files/2.txt", "Goravel"))
+	s.Nil(s.local.Put("Files/3/3.txt", "Goravel"))
+	s.Nil(s.local.Put("Files/3/4/4.txt", "Goravel"))
+	s.True(s.local.Exists("Files/1.txt"))
+	s.True(s.local.Exists("Files/2.txt"))
+	s.True(s.local.Exists("Files/3/3.txt"))
+	s.True(s.local.Exists("Files/3/4/4.txt"))
+	files, err := s.local.Files("Files")
 	s.Nil(err)
-	s.Len(files, 1)
+	s.Equal([]string{"1.txt", "2.txt"}, files)
+	files, err = s.local.Files("./Files")
+	s.Nil(err)
+	s.Equal([]string{"1.txt", "2.txt"}, files)
+	files, err = s.local.Files("/Files")
+	s.Nil(err)
+	s.Equal([]string{"1.txt", "2.txt"}, files)
+	files, err = s.local.Files("./Files/")
+	s.Nil(err)
+	s.Equal([]string{"1.txt", "2.txt"}, files)
+	s.Nil(s.local.DeleteDirectory("Files"))
 }
 
 func (s *LocalTestSuite) TestGet() {
-	content, err := s.local.Get("test.txt")
+	s.Nil(s.local.Put("Get/1.txt", "Goravel"))
+	s.True(s.local.Exists("Get/1.txt"))
+	data, err := s.local.Get("Get/1.txt")
 	s.Nil(err)
-	s.Equal("goravel", content)
+	s.Equal("Goravel", data)
+	length, err := s.local.Size("Get/1.txt")
+	s.Nil(err)
+	s.Equal(int64(7), length)
+	s.Nil(s.local.DeleteDirectory("Get"))
 }
 
 func (s *LocalTestSuite) TestGetBytes() {
-	content, err := s.local.GetBytes("test.txt")
+	s.Nil(s.local.Put("Get/1.txt", "Goravel"))
+	s.True(s.local.Exists("Get/1.txt"))
+	data, err := s.local.GetBytes("Get/1.txt")
 	s.Nil(err)
-	s.Equal([]byte("goravel"), content)
+	s.Equal([]byte("Goravel"), data)
+	length, err := s.local.Size("Get/1.txt")
+	s.Nil(err)
+	s.Equal(int64(7), length)
+	s.Nil(s.local.DeleteDirectory("Get"))
 }
 
 func (s *LocalTestSuite) TestLastModified() {
 	s.mockConfig.On("GetString", "app.timezone").Return("UTC").Once()
 
-	lastModified, err := s.local.LastModified("test.txt")
+	s.Nil(s.local.Put("LastModified/1.txt", "Goravel"))
+	s.True(s.local.Exists("LastModified/1.txt"))
+	date, err := s.local.LastModified("LastModified/1.txt")
 	s.Nil(err)
-	s.NotNil(lastModified)
+
+	s.Nil(err)
+	s.Equal(carbon.Now().ToDateString(), carbon.FromStdTime(date).ToDateString())
+	s.Nil(s.local.DeleteDirectory("LastModified"))
 }
 
 func (s *LocalTestSuite) TestMakeDirectory() {
-	err := s.local.MakeDirectory("test1")
-	s.Nil(err)
-
-	_, err = os.Stat(s.local.fullPath("test1"))
-	s.Nil(err)
-
-	err = os.Remove(s.local.fullPath("test1"))
-	s.Nil(err)
+	s.Nil(s.local.MakeDirectory("MakeDirectory1/"))
+	s.Nil(s.local.MakeDirectory("MakeDirectory2"))
+	s.Nil(s.local.MakeDirectory("MakeDirectory3/MakeDirectory4"))
+	s.Nil(s.local.DeleteDirectory("MakeDirectory1"))
+	s.Nil(s.local.DeleteDirectory("MakeDirectory2"))
+	s.Nil(s.local.DeleteDirectory("MakeDirectory3"))
+	s.Nil(s.local.DeleteDirectory("MakeDirectory4"))
 }
 
-func (s *LocalTestSuite) TestMimeType() {
-	mimeType, err := s.local.MimeType("test.txt")
+func (s *LocalTestSuite) TestMimeType_File() {
+	s.Nil(s.local.Put("MimeType/1.txt", "Goravel"))
+	s.True(s.local.Exists("MimeType/1.txt"))
+	mimeType, err := s.local.MimeType("MimeType/1.txt")
 	s.Nil(err)
-	s.Equal("text/plain; charset=utf-8", mimeType)
+	mediaType, _, err := mime.ParseMediaType(mimeType)
+	s.Nil(err)
+	s.Equal("text/plain", mediaType)
+}
+
+func (s *LocalTestSuite) TestMimeType_Image() {
+	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
+
+	fileInfo, err := NewFile("../logo.png")
+	s.Nil(err)
+	path, err := s.local.PutFile("MimeType", fileInfo)
+	s.Nil(err)
+	s.True(s.local.Exists(path))
+	mimeType, err := s.local.MimeType(path)
+	s.Nil(err)
+	s.Equal("image/png", mimeType)
 }
 
 func (s *LocalTestSuite) TestMissing() {
@@ -163,11 +269,13 @@ func (s *LocalTestSuite) TestMissing() {
 }
 
 func (s *LocalTestSuite) TestMove() {
-	err := s.local.Move("test.txt", "test1.txt")
-	s.Nil(err)
-
-	_, err = os.Stat(s.local.fullPath("test1.txt"))
-	s.Nil(err)
+	s.Nil(s.local.Put("Move/1.txt", "Goravel"))
+	s.True(s.local.Exists("Move/1.txt"))
+	s.Nil(s.local.Move("Move/1.txt", "Move1/1.txt"))
+	s.True(s.local.Missing("Move/1.txt"))
+	s.True(s.local.Exists("Move1/1.txt"))
+	s.Nil(s.local.DeleteDirectory("Move"))
+	s.Nil(s.local.DeleteDirectory("Move1"))
 }
 
 func (s *LocalTestSuite) TestPath() {
@@ -176,53 +284,87 @@ func (s *LocalTestSuite) TestPath() {
 }
 
 func (s *LocalTestSuite) TestPut() {
-	err := s.local.Put("test1.txt", "goravel")
-	s.Nil(err)
-
-	content, err := s.local.Get("test1.txt")
-	s.Nil(err)
-	s.Equal("goravel", content)
-
-	err = os.Remove(s.local.fullPath("test1.txt"))
-	s.Nil(err)
+	s.Nil(s.local.Put("Put/1.txt", "Goravel"))
+	s.True(s.local.Exists("Put/1.txt"))
+	s.True(s.local.Missing("Put/2.txt"))
+	s.Nil(s.local.DeleteDirectory("Put"))
 }
 
-func (s *LocalTestSuite) TestPutFile() {
-	path, err := s.local.PutFile("put", s.file)
+func (s *LocalTestSuite) TestPutFile_Text() {
+	path, err := s.local.PutFile("PutFile", s.file)
 	s.Nil(err)
-	s.NotEmpty(path)
-
-	content, err := s.local.Get(path)
+	s.True(s.local.Exists(path))
+	data, err := s.local.Get(path)
 	s.Nil(err)
-	s.NotEmpty(content)
-
-	err = os.Remove(s.local.fullPath(path))
-	s.Nil(err)
+	s.NotEmpty(data)
+	s.Nil(s.local.DeleteDirectory("PutFile"))
 }
 
-func (s *LocalTestSuite) TestPutFileAs() {
-	path, err := s.local.PutFileAs("put", s.file, "goravel")
-	s.Nil(err)
-	s.Equal(filepath.Join("put", "goravel.txt"), path)
+func (s *LocalTestSuite) TestPutFile_Image() {
+	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 
-	content, err := s.local.Get("put/goravel.txt")
+	fileInfo, err := NewFile("../logo.png")
 	s.Nil(err)
-	s.NotEmpty(content)
+	path, err := s.local.PutFile("PutFile1", fileInfo)
+	s.Nil(err)
+	s.True(s.local.Exists(path))
+	s.Nil(s.local.DeleteDirectory("PutFile1"))
+}
 
-	err = os.Remove(s.local.fullPath("put/goravel.txt"))
+func (s *LocalTestSuite) TestPutFileAs_Text() {
+	path, err := s.local.PutFileAs("PutFileAs", s.file, "text")
 	s.Nil(err)
+	s.Equal(filepath.Join("PutFileAs", "text.txt"), path)
+	s.True(s.local.Exists(path))
+	data, err := s.local.Get(path)
+	s.Nil(err)
+	s.NotEmpty(data)
+
+	path, err = s.local.PutFileAs("PutFileAs", s.file, "text1.txt")
+	s.Nil(err)
+	s.Equal(filepath.Join("PutFileAs", "text1.txt"), path)
+	s.True(s.local.Exists(path))
+	data, err = s.local.Get(path)
+	s.Nil(err)
+	s.NotEmpty(data)
+
+	s.Nil(s.local.DeleteDirectory("PutFileAs"))
+}
+
+func (s *LocalTestSuite) TestPutFileAs_Image() {
+	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
+
+	fileInfo, err := NewFile("../logo.png")
+	s.Nil(err)
+	path, err := s.local.PutFileAs("PutFileAs1", fileInfo, "image")
+	s.Nil(err)
+	s.Equal(filepath.Join("PutFileAs1", "image.png"), path)
+	s.True(s.local.Exists(path))
+
+	path, err = s.local.PutFileAs("PutFileAs1", fileInfo, "image1.png")
+	s.Nil(err)
+	s.Equal(filepath.Join("PutFileAs1", "image1.png"), path)
+	s.True(s.local.Exists(path))
+
+	s.Nil(s.local.DeleteDirectory("PutFileAs1"))
 }
 
 func (s *LocalTestSuite) TestSize() {
-	size, err := s.local.Size("test.txt")
+	s.Nil(s.local.Put("Size/1.txt", "Goravel"))
+	s.True(s.local.Exists("Size/1.txt"))
+	length, err := s.local.Size("Size/1.txt")
 	s.Nil(err)
-	s.Equal(int64(7), size)
+	s.Equal(int64(7), length)
+	s.Nil(s.local.DeleteDirectory("Size"))
 }
 
 func (s *LocalTestSuite) TestTemporaryUrl() {
-	url, err := s.local.TemporaryUrl("test.txt", time.Now().Add(1*time.Minute))
+	s.Nil(s.local.Put("TemporaryUrl/1.txt", "Goravel"))
+	s.True(s.local.Exists("TemporaryUrl/1.txt"))
+	url, err := s.local.TemporaryUrl("TemporaryUrl/1.txt", carbon.Now().AddSeconds(5).ToStdTime())
 	s.Nil(err)
-	s.Equal("https://goravel.dev/test.txt", url)
+	s.NotEmpty(url)
+	s.Nil(s.local.DeleteDirectory("TemporaryUrl"))
 }
 
 func (s *LocalTestSuite) TestWithContext() {
@@ -231,6 +373,9 @@ func (s *LocalTestSuite) TestWithContext() {
 }
 
 func (s *LocalTestSuite) TestUrl() {
-	url := s.local.Url("test.txt")
-	s.Equal("https://goravel.dev/test.txt", url)
+	s.Nil(s.local.Put("Url/1.txt", "Goravel"))
+	s.True(s.local.Exists("Url/1.txt"))
+	url := "https://goravel.dev/Url/1.txt"
+	s.Equal(url, s.local.Url("Url/1.txt"))
+	s.Nil(s.local.DeleteDirectory("Url"))
 }
