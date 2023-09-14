@@ -143,6 +143,15 @@ func (r *Local) Get(file string) (string, error) {
 	return string(data), nil
 }
 
+func (r *Local) GetBytes(file string) ([]byte, error) {
+	data, err := os.ReadFile(r.fullPath(file))
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (r *Local) LastModified(file string) (time.Time, error) {
 	return supportfile.LastModified(r.fullPath(file), r.config.GetString("app.timezone"))
 }
