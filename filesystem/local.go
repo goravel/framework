@@ -135,12 +135,9 @@ func (r *Local) Files(path string) ([]string, error) {
 }
 
 func (r *Local) Get(file string) (string, error) {
-	data, err := os.ReadFile(r.fullPath(file))
-	if err != nil {
-		return "", err
-	}
+	data, err := r.GetBytes(file)
 
-	return string(data), nil
+	return string(data), err
 }
 
 func (r *Local) GetBytes(file string) ([]byte, error) {
