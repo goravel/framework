@@ -5,6 +5,7 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/goravel/framework/support/carbon"
@@ -69,16 +70,32 @@ func (s *LocalTestSuite) TestAllDirectories() {
 	s.True(s.local.Exists("AllDirectories/3/5/6/6.txt"))
 	files, err := s.local.AllDirectories("AllDirectories")
 	s.Nil(err)
-	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
+	} else {
+		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	}
 	files, err = s.local.AllDirectories("./AllDirectories")
 	s.Nil(err)
-	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
+	} else {
+		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	}
 	files, err = s.local.AllDirectories("/AllDirectories")
 	s.Nil(err)
-	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
+	} else {
+		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	}
 	files, err = s.local.AllDirectories("./AllDirectories/")
 	s.Nil(err)
-	s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
+	} else {
+		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
+	}
 	s.Nil(s.local.DeleteDirectory("AllDirectories"))
 }
 
@@ -93,16 +110,32 @@ func (s *LocalTestSuite) TestAllFiles() {
 	s.True(s.local.Exists("AllFiles/3/4/4.txt"))
 	files, err := s.local.AllFiles("AllFiles")
 	s.Nil(err)
-	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
+	} else {
+		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	}
 	files, err = s.local.AllFiles("./AllFiles")
 	s.Nil(err)
-	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
+	} else {
+		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	}
 	files, err = s.local.AllFiles("/AllFiles")
 	s.Nil(err)
-	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
+	} else {
+		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	}
 	files, err = s.local.AllFiles("./AllFiles/")
 	s.Nil(err)
-	s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
+	} else {
+		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
+	}
 	s.Nil(s.local.DeleteDirectory("AllFiles"))
 }
 
@@ -145,16 +178,32 @@ func (s *LocalTestSuite) TestDirectories() {
 	s.True(s.local.Exists("Directories/3/5/5.txt"))
 	files, err := s.local.Directories("Directories")
 	s.Nil(err)
-	s.Equal([]string{"3/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\"}, files)
+	} else {
+		s.Equal([]string{"3/"}, files)
+	}
 	files, err = s.local.Directories("./Directories")
 	s.Nil(err)
-	s.Equal([]string{"3/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\"}, files)
+	} else {
+		s.Equal([]string{"3/"}, files)
+	}
 	files, err = s.local.Directories("/Directories")
 	s.Nil(err)
-	s.Equal([]string{"3/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\"}, files)
+	} else {
+		s.Equal([]string{"3/"}, files)
+	}
 	files, err = s.local.Directories("./Directories/")
 	s.Nil(err)
-	s.Equal([]string{"3/"}, files)
+	if runtime.GOOS == "windows" {
+		s.Equal([]string{"3\\"}, files)
+	} else {
+		s.Equal([]string{"3/"}, files)
+	}
 	s.Nil(s.local.DeleteDirectory("Directories"))
 }
 
