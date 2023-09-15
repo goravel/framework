@@ -114,6 +114,7 @@ func Size(file string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer fileInfo.Close()
 
 	fi, err := fileInfo.Stat()
 	if err != nil {
