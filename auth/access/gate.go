@@ -44,7 +44,7 @@ func (r *Gate) Inspect(ability string, arguments map[string]any) access.Response
 		if _, exist := r.abilities[ability]; exist {
 			result = r.abilities[ability](r.ctx, arguments)
 		} else {
-			result = access.NewDenyResponse(fmt.Sprintf("ability doesn't exist: %s", ability))
+			result = NewDenyResponse(fmt.Sprintf("ability doesn't exist: %s", ability))
 		}
 	}
 

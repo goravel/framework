@@ -29,7 +29,7 @@ func TestControllerMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "package User"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "type AuthController struct"))
-	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Index(ctx http.Context) {"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Index(ctx http.Context) http.Response {"))
 	assert.Nil(t, file.Remove("app"))
 }
 
@@ -43,10 +43,10 @@ func TestResourceControllerMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "package User"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "type AuthController struct"))
-	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Index(ctx http.Context) {"))
-	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Show(ctx http.Context) {"))
-	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Store(ctx http.Context) {"))
-	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Update(ctx http.Context) {"))
-	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Destroy(ctx http.Context) {"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Index(ctx http.Context) http.Response {"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Show(ctx http.Context) http.Response {"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Store(ctx http.Context) http.Response {"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Update(ctx http.Context) http.Response {"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "func (r *AuthController) Destroy(ctx http.Context) http.Response {"))
 	assert.Nil(t, file.Remove("app"))
 }

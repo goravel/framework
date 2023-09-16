@@ -30,11 +30,3 @@ type Response interface {
 	// Message to get the response message.
 	Message() string
 }
-
-func NewAllowResponse() Response {
-	return &ResponseImpl{allowed: true}
-}
-
-func NewDenyResponse(message string) Response {
-	return &ResponseImpl{message: message}
-}
