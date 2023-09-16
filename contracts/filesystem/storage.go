@@ -8,6 +8,7 @@ import (
 //go:generate mockery --name=Storage
 type Storage interface {
 	Driver
+	// Disk gets the instance of the given disk.
 	Disk(disk string) Driver
 }
 

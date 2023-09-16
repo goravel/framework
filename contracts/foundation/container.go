@@ -32,26 +32,47 @@ type Container interface {
 	Instance(key, instance any)
 	// Make Resolves the given type from the container.
 	Make(key any) (any, error)
+	// MakeArtisan Resolves the artisan console instance.
 	MakeArtisan() console.Artisan
+	// MakeAuth Resolves the auth instance.
 	MakeAuth() auth.Auth
+	// MakeCache Resolves the cache instance.
 	MakeCache() cache.Cache
+	// MakeConfig Resolves the config instance.
 	MakeConfig() config.Config
+	// MakeCrypt Resolves the crypt instance.
 	MakeCrypt() crypt.Crypt
+	// MakeEvent Resolves the event instance.
 	MakeEvent() event.Instance
+	// MakeGate Resolves the gate instance.
 	MakeGate() access.Gate
+	// MakeGrpc Resolves the grpc instance.
 	MakeGrpc() grpc.Grpc
+	// MakeHash Resolves the hash instance.
 	MakeHash() hash.Hash
+	// MakeLog Resolves the log instance.
 	MakeLog() log.Log
+	// MakeMail Resolves the mail instance.
 	MakeMail() mail.Mail
+	// MakeOrm Resolves the orm instance.
 	MakeOrm() orm.Orm
+	// MakeQueue Resolves the queue instance.
 	MakeQueue() queue.Queue
+	// MakeRateLimiter Resolves the rate limiter instance.
 	MakeRateLimiter() http.RateLimiter
+	// MakeRoute Resolves the route instance.
 	MakeRoute() route.Route
+	// MakeSchedule Resolves the schedule instance.
 	MakeSchedule() schedule.Schedule
+	// MakeStorage Resolves the storage instance.
 	MakeStorage() filesystem.Storage
+	// MakeTesting Resolves the testing instance.
 	MakeTesting() testing.Testing
+	// MakeValidation Resolves the validation instance.
 	MakeValidation() validation.Validation
+	// MakeView Resolves the view instance.
 	MakeView() http.View
+	// MakeSeeder Resolves the seeder instance.
 	MakeSeeder() seeder.Facade
 	// MakeWith Resolves the given type with the given parameters from the container.
 	MakeWith(key any, parameters map[string]any) (any, error)

@@ -38,6 +38,7 @@ type Query interface {
 	Association(association string) Association
 	// Begin begins a new transaction
 	Begin() (Transaction, error)
+	// The Driver gets the driver for the query.
 	Driver() Driver
 	// Count retrieve the "count" result of the query.
 	Count(count *int64) error
