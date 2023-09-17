@@ -135,12 +135,18 @@ func (r *Local) Files(path string) ([]string, error) {
 }
 
 func (r *Local) Get(file string) (string, error) {
+	data, err := r.GetBytes(file)
+
+	return string(data), err
+}
+
+func (r *Local) GetBytes(file string) ([]byte, error) {
 	data, err := os.ReadFile(r.fullPath(file))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(data), nil
+	return data, nil
 }
 
 func (r *Local) LastModified(file string) (time.Time, error) {
