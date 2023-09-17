@@ -35,11 +35,7 @@ func Create(file string, content string) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if closeErr := f.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
+	defer f.Close()
 
 	if _, err = f.WriteString(content); err != nil {
 		return err
@@ -114,6 +110,7 @@ func Size(file string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer fileInfo.Close()
 
 	fi, err := fileInfo.Stat()
 	if err != nil {

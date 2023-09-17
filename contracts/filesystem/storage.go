@@ -32,7 +32,9 @@ type Driver interface {
 	Files(path string) ([]string, error)
 	// Get gets the contents of a file.
 	Get(file string) (string, error)
-	// LastModified gets the file's last modified time.
+  // GetBytes gets the contents of a file as a byte array.
+	GetBytes(file string) ([]byte, error)
+  // LastModified gets the file's last modified time.
 	LastModified(file string) (time.Time, error)
 	// MakeDirectory creates a directory.
 	MakeDirectory(directory string) error

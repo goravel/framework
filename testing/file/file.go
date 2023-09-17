@@ -24,9 +24,7 @@ func GetLineNum(file string) int {
 		}
 	}
 
-	defer func() {
-		f.Close()
-	}()
+	defer f.Close()
 
 	return total
 }
