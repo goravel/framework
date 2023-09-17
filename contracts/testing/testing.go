@@ -8,12 +8,12 @@ import (
 )
 
 type Testing interface {
-	// Docker Get the Docker instance.
+	// Docker get the Docker instance.
 	Docker() Docker
 }
 
 type Docker interface {
-	// Database Get a database connection instance.
+	// Database get a database connection instance.
 	Database(connection ...string) (Database, error)
 }
 

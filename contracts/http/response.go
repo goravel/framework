@@ -14,7 +14,7 @@ type Response interface {
 
 //go:generate mockery --name=ContextResponse
 type ContextResponse interface {
-	// Data Write the given data to the response.
+	// Data write the given data to the response.
 	Data(code int, contentType string, data []byte) Response
 	// Download initiates a file download by specifying the file path and the desired filename
 	Download(filepath, filename string) Response
@@ -45,7 +45,7 @@ type ContextResponse interface {
 
 //go:generate mockery --name=ResponseStatus
 type ResponseStatus interface {
-	// Data Write the given data to the Response.
+	// Data write the given data to the Response.
 	Data(contentType string, data []byte) Response
 	// Json sends a JSON Response with the specified data object.
 	Json(obj any) Response
@@ -55,7 +55,7 @@ type ResponseStatus interface {
 
 //go:generate mockery --name=ResponseSuccess
 type ResponseSuccess interface {
-	// Data Write the given data to the Response.
+	// Data write the given data to the Response.
 	Data(contentType string, data []byte) Response
 	// Json sends a JSON Response with the specified data object.
 	Json(obj any) Response

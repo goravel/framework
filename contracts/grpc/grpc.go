@@ -14,8 +14,8 @@ type Grpc interface {
 	Server() *grpc.Server
 	// Client gets the gRPC client instance.
 	Client(ctx context.Context, name string) (*grpc.ClientConn, error)
-	// UnaryServerInterceptors gets the gRPC server interceptors.
+	// UnaryServerInterceptors sets the gRPC server interceptors.
 	UnaryServerInterceptors([]grpc.UnaryServerInterceptor)
-	// UnaryClientInterceptorGroups gets the gRPC client interceptor groups.
+	// UnaryClientInterceptorGroups sets the gRPC client interceptor groups.
 	UnaryClientInterceptorGroups(map[string][]grpc.UnaryClientInterceptor)
 }

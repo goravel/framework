@@ -7,11 +7,11 @@ import (
 type Command interface {
 	// Signature set the unique signature for the command.
 	Signature() string
-	// Description The console command description.
+	// Description the console command description.
 	Description() string
-	// Extend The console command extend.
+	// Extend the console command extend.
 	Extend() command.Extend
-	// Handle Execute the console command.
+	// Handle execute the console command.
 	Handle(ctx Context) error
 }
 

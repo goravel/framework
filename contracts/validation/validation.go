@@ -4,11 +4,11 @@ type Option func(map[string]any)
 
 //go:generate mockery --name=Validation
 type Validation interface {
-	// Make Create a new validator instance.
+	// Make create a new validator instance.
 	Make(data any, rules map[string]string, options ...Option) (Validator, error)
-	// AddRules Add the custom rules.
+	// AddRules add the custom rules.
 	AddRules([]Rule) error
-	// Rules Get the custom rules.
+	// Rules get the custom rules.
 	Rules() []Rule
 }
 
@@ -16,9 +16,9 @@ type Validation interface {
 type Validator interface {
 	// Bind the data to the validation.
 	Bind(ptr any) error
-	// Errors Get the validation errors.
+	// Errors get the validation errors.
 	Errors() Errors
-	// Fails Determine if the validation fails.
+	// Fails determine if the validation fails.
 	Fails() bool
 }
 
@@ -44,7 +44,7 @@ type Data interface {
 type Rule interface {
 	// Signature set the unique signature of the rule.
 	Signature() string
-	// Passes Determine if the validation rule passes.
+	// Passes determine if the validation rule passes.
 	Passes(data Data, val any, options ...any) bool
 	// Message gets the validation error message.
 	Message() string

@@ -13,9 +13,9 @@ type Orm interface {
 	DB() (*sql.DB, error)
 	// Query gets a new query builder instance.
 	Query() Query
-	// Factory Gets a new factory instance for the given model name.
+	// Factory gets a new factory instance for the given model name.
 	Factory() Factory
-	// Observe Observer Registers an observer with the Orm.
+	// Observe registers an observer with the Orm.
 	Observe(model any, observer Observer)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Transaction) error) error
@@ -38,7 +38,7 @@ type Query interface {
 	Association(association string) Association
 	// Begin begins a new transaction
 	Begin() (Transaction, error)
-	// The Driver gets the driver for the query.
+	// Driver gets the driver for the query.
 	Driver() Driver
 	// Count retrieve the "count" result of the query.
 	Count(count *int64) error
@@ -69,7 +69,7 @@ type Query interface {
 	// FirstOrNew finds the first record that matches the given conditions or
 	// return a new instance of the model initialized with those attributes.
 	FirstOrNew(dest any, attributes any, values ...any) error
-	// ForceDelete deletes records matching given conditions.
+	// ForceDelete forces delete records matching given conditions.
 	ForceDelete(value any, conds ...any) (*Result, error)
 	// Get retrieves all rows from the database.
 	Get(dest any) error

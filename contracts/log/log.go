@@ -101,6 +101,6 @@ type Entry interface {
 	Level() Level
 	// Time returns the timestamp of the entry.
 	Time() time.Time
-	// The Message returns the message of the entry.
+	// Message returns the message of the entry.
 	Message() string
 }

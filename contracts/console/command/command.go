@@ -18,7 +18,7 @@ type Extend struct {
 }
 
 type Flag interface {
-	// Type Gets a flag type.
+	// Type gets a flag type.
 	Type() string
 }
 

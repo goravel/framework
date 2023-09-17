@@ -7,7 +7,7 @@ import (
 //go:generate mockery --name=Application
 type Application interface {
 	Container
-	// Boot Register and bootstrap configured service providers.
+	// Boot register and bootstrap configured service providers.
 	Boot()
 	// Commands register the given commands with the console application.
 	Commands([]console.Command)

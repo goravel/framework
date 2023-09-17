@@ -28,7 +28,7 @@ type ContextRequest interface {
 	Host() string
 	// All retrieves data from JSON, form, and query parameters.
 	All() map[string]any
-	// Bind Retrieve json and bind to obj
+	// Bind retrieve json and bind to obj
 	Bind(obj any) error
 	// Route retrieves a route parameter from the request path (e.g., /users/{id}).
 	Route(key string) string
@@ -79,14 +79,14 @@ type ContextRequest interface {
 }
 
 type FormRequest interface {
-	// Authorize Determine if the user is authorized to make this request.
+	// Authorize determine if the user is authorized to make this request.
 	Authorize(ctx Context) error
-	// Rules Get the validation rules that apply to the request.
+	// Rules get the validation rules that apply to the request.
 	Rules(ctx Context) map[string]string
-	// Messages Get the validation messages that apply to the request.
+	// Messages get the validation messages that apply to the request.
 	Messages(ctx Context) map[string]string
-	// Attributes Get custom attributes for validator errors.
+	// Attributes get custom attributes for validator errors.
 	Attributes(ctx Context) map[string]string
-	// PrepareForValidation Prepare the data for validation.
+	// PrepareForValidation prepare the data for validation.
 	PrepareForValidation(ctx Context, data validation.Data) error
 }
