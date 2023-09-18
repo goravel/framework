@@ -13,6 +13,6 @@ type RateLimiter interface {
 type Limit interface {
 	// By set the signature key name for the rate limiter.
 	By(key string) Limit
-	// Response Set the response callback that should be used.
+	// Response set the response callback that should be used.
 	Response(func(ctx Context)) Limit
 }
