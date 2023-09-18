@@ -3,13 +3,13 @@ package queue
 //go:generate mockery --name=Queue
 type Queue interface {
 	Worker(args *Args) Worker
-	// Register Register jobs
+	// Register register jobs
 	Register(jobs []Job)
-	// GetJobs Get all jobs
+	// GetJobs get all jobs
 	GetJobs() []Job
-	// Job Add a job to queue
+	// Job add a job to queue
 	Job(job Job, args []Arg) Task
-	// Chain Creates a chain of jobs to be processed one by one, passing
+	// Chain creates a chain of jobs to be processed one by one, passing
 	Chain(jobs []Jobs) Task
 }
 
