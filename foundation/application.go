@@ -97,6 +97,19 @@ func (app *Application) Publishes(packageName string, paths map[string]string, g
 	}
 }
 
+func (app *Application) Version() string {
+	return support.Version
+}
+
+func (app *Application) GetLocale() string {
+	return app.MakeConfig().GetString("app.locale")
+}
+
+func (app *Application) SetLocale(locale string) {
+	app.MakeConfig().Add("app.locale", locale)
+	app.MakeLang().SetLocale(locale)
+}
+
 func (app *Application) ensurePublishArrayInitialized(packageName string) {
 	if _, exist := app.publishes[packageName]; !exist {
 		app.publishes[packageName] = make(map[string]string)

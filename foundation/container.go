@@ -30,6 +30,7 @@ import (
 	routecontract "github.com/goravel/framework/contracts/route"
 	schedulecontract "github.com/goravel/framework/contracts/schedule"
 	testingcontract "github.com/goravel/framework/contracts/testing"
+	langcontract "github.com/goravel/framework/contracts/translation"
 	validationcontract "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
@@ -44,6 +45,7 @@ import (
 	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/testing"
+	"github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
 )
 
@@ -165,6 +167,16 @@ func (c *Container) MakeHash() hashcontract.Hash {
 	}
 
 	return instance.(hashcontract.Hash)
+}
+
+func (c *Container) MakeLang() langcontract.Translator {
+	instance, err := c.Make(translation.Binding)
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(langcontract.Translator)
 }
 
 func (c *Container) MakeLog() logcontract.Log {
