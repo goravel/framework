@@ -25,4 +25,10 @@ type Application interface {
 	PublicPath(path string) string
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
+	// GetLocale get the current application locale.
+	GetLocale() string
+	// SetLocale set the current application locale.
+	SetLocale(locale string)
+	// Version gets the version number of the application.
+	Version() string
 }
