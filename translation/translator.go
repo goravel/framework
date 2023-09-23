@@ -15,7 +15,7 @@ type Translator struct {
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
-	loaded   map[string]map[string]interface{}
+	loaded   map[string]map[string]any
 }
 
 func NewTranslator(loader translationcontract.Loader, locale string, fallback string) *Translator {
@@ -23,7 +23,7 @@ func NewTranslator(loader translationcontract.Loader, locale string, fallback st
 		loader:   loader,
 		locale:   locale,
 		fallback: fallback,
-		loaded:   make(map[string]map[string]interface{}),
+		loaded:   make(map[string]map[string]any),
 	}
 }
 
@@ -67,7 +67,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 		return "", err
 	}
 
-	return makeReplacements(line, options[0].Replace), nil
+	return makeReplacements(line, options...), nil
 }
 
 func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
@@ -92,7 +92,7 @@ func (t *Translator) SetFallback(locale string) {
 }
 
 func (t *Translator) load(folder string, locale string) error {
-	if t.isLoaded(locale, folder) {
+	if t.isLoaded(folder, locale) {
 		return nil
 	}
 
@@ -116,7 +116,13 @@ func (t *Translator) isLoaded(folder string, locale string) bool {
 	return true
 }
 
-func makeReplacements(line string, replace map[string]interface{}) string {
+func makeReplacements(line string, options ...translationcontract.Option) string {
+	if len(options) == 0 {
+		return line
+	}
+
+	replace := options[0].Replace
+
 	if len(replace) == 0 {
 		return line
 	}
@@ -124,9 +130,9 @@ func makeReplacements(line string, replace map[string]interface{}) string {
 	var shouldReplace []string
 	casesTitle := cases.Title(language.Und)
 	for k, v := range replace {
-		shouldReplace = append(shouldReplace, ":"+k, v.(string))
-		shouldReplace = append(shouldReplace, ":"+casesTitle.String(k), casesTitle.String(v.(string)))
-		shouldReplace = append(shouldReplace, ":"+strings.ToUpper(k), strings.ToUpper(v.(string)))
+		shouldReplace = append(shouldReplace, ":"+k, v)
+		shouldReplace = append(shouldReplace, ":"+casesTitle.String(k), casesTitle.String(v))
+		shouldReplace = append(shouldReplace, ":"+strings.ToUpper(k), strings.ToUpper(v))
 	}
 
 	return strings.NewReplacer(shouldReplace...).Replace(line)

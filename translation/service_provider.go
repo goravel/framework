@@ -1,8 +1,9 @@
 package translation
 
 import (
-	"github.com/goravel/framework/contracts/foundation"
 	"path/filepath"
+
+	"github.com/goravel/framework/contracts/foundation"
 )
 
 const Binding = "goravel.translation"

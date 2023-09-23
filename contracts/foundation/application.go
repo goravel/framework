@@ -30,4 +30,6 @@ type Application interface {
 	SetLocale(locale string)
 	// Version gets the version number of the application.
 	Version() string
+	// IsLocale get the current application locale.
+	IsLocale(locale string) bool
 }

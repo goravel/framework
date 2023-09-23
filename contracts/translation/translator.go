@@ -11,10 +11,9 @@ type Translator interface {
 }
 
 // Choice key, number, options => string [Get a translation for a given key]
-// SetLocale locale => Translator
 
 type Option struct {
 	Fallback bool
 	Locale   string
-	Replace  map[string]interface{}
+	Replace  map[string]string
 }
