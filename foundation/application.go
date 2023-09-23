@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -101,17 +102,19 @@ func (app *Application) Version() string {
 	return support.Version
 }
 
-func (app *Application) GetLocale() string {
+func (app *Application) GetLocale(ctx http.Context) string {
+	if locale, ok := ctx.Value("locale").(string); ok {
+		return locale
+	}
 	return app.MakeConfig().GetString("app.locale")
 }
 
-func (app *Application) SetLocale(locale string) {
-	app.MakeConfig().Add("app.locale", locale)
-	app.MakeLang().SetLocale(locale)
+func (app *Application) SetLocale(ctx http.Context, locale string) error {
+	return app.MakeLang().SetLocale(ctx, locale)
 }
 
-func (app *Application) IsLocale(locale string) bool {
-	return app.GetLocale() == locale
+func (app *Application) IsLocale(ctx http.Context, locale string) bool {
+	return app.GetLocale(ctx) == locale
 }
 
 func (app *Application) ensurePublishArrayInitialized(packageName string) {
@@ -234,7 +237,7 @@ func setEnv() {
 func setRootPath() {
 	rootPath := getCurrentAbsolutePath()
 
-	// Hack air path
+	// Hack an air path
 	airPath := "/storage/temp"
 	if strings.HasSuffix(rootPath, airPath) {
 		rootPath = strings.ReplaceAll(rootPath, airPath, "")

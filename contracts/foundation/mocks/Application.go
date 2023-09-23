@@ -116,13 +116,13 @@ func (_m *Application) DatabasePath(path string) string {
 	return r0
 }
 
-// GetLocale provides a mock function with given fields:
-func (_m *Application) GetLocale() string {
-	ret := _m.Called()
+// GetLocale provides a mock function with given fields: ctx
+func (_m *Application) GetLocale(ctx http.Context) string {
+	ret := _m.Called(ctx)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(http.Context) string); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -135,13 +135,13 @@ func (_m *Application) Instance(key interface{}, instance interface{}) {
 	_m.Called(key, instance)
 }
 
-// IsLocale provides a mock function with given fields: locale
-func (_m *Application) IsLocale(locale string) bool {
-	ret := _m.Called(locale)
+// IsLocale provides a mock function with given fields: ctx, locale
+func (_m *Application) IsLocale(ctx http.Context, locale string) bool {
+	ret := _m.Called(ctx, locale)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(locale)
+	if rf, ok := ret.Get(0).(func(http.Context, string) bool); ok {
+		r0 = rf(ctx, locale)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -593,9 +593,18 @@ func (_m *Application) Publishes(packageName string, paths map[string]string, gr
 	_m.Called(_ca...)
 }
 
-// SetLocale provides a mock function with given fields: locale
-func (_m *Application) SetLocale(locale string) {
-	_m.Called(locale)
+// SetLocale provides a mock function with given fields: ctx, locale
+func (_m *Application) SetLocale(ctx http.Context, locale string) error {
+	ret := _m.Called(ctx, locale)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(http.Context, string) error); ok {
+		r0 = rf(ctx, locale)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Singleton provides a mock function with given fields: key, callback

@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/http"
 )
 
 //go:generate mockery --name=Application
@@ -26,11 +27,11 @@ type Application interface {
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// GetLocale get the current application locale.
-	GetLocale() string
+	GetLocale(ctx http.Context) string
 	// SetLocale set the current application locale.
-	SetLocale(locale string)
+	SetLocale(ctx http.Context, locale string) error
 	// Version gets the version number of the application.
 	Version() string
 	// IsLocale get the current application locale.
-	IsLocale(locale string) bool
+	IsLocale(ctx http.Context, locale string) bool
 }
