@@ -110,6 +110,10 @@ func (app *Application) SetLocale(locale string) {
 	app.MakeLang().SetLocale(locale)
 }
 
+func (app *Application) IsLocale(locale string) bool {
+	return app.GetLocale() == locale
+}
+
 func (app *Application) ensurePublishArrayInitialized(packageName string) {
 	if _, exist := app.publishes[packageName]; !exist {
 		app.publishes[packageName] = make(map[string]string)
