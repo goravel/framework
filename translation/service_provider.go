@@ -1,6 +1,7 @@
 package translation
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/goravel/framework/contracts/foundation"
@@ -12,12 +13,14 @@ type ServiceProvider struct {
 }
 
 func (translation *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+	app.BindWith(Binding, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
-		local := config.GetString("app.locale")
+		locale := config.GetString("app.locale")
 		fallback := config.GetString("app.fallback_locale")
 		loader := NewFileLoader([]string{filepath.Join("lang")})
-		return NewTranslator(loader, local, fallback), nil
+		trans := NewTranslator(parameters["ctx"].(context.Context), loader, locale, fallback)
+		trans.SetLocale(locale)
+		return trans, nil
 	})
 }
 

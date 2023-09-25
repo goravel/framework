@@ -28,7 +28,7 @@ type Application interface {
 	// GetLocale get the current application locale.
 	GetLocale(ctx http.Context) string
 	// SetLocale set the current application locale.
-	SetLocale(ctx http.Context, locale string) error
+	SetLocale(ctx http.Context, locale string)
 	// Version gets the version number of the application.
 	Version() string
 	// IsLocale get the current application locale.

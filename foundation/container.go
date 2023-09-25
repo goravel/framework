@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -169,8 +170,10 @@ func (c *Container) MakeHash() hashcontract.Hash {
 	return instance.(hashcontract.Hash)
 }
 
-func (c *Container) MakeLang() langcontract.Translator {
-	instance, err := c.Make(translation.Binding)
+func (c *Container) MakeLang(ctx context.Context) langcontract.Translator {
+	instance, err := c.MakeWith(translation.Binding, map[string]any{
+		"ctx": ctx,
+	})
 	if err != nil {
 		color.Redln(err)
 		return nil
