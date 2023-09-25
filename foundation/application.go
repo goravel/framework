@@ -109,8 +109,8 @@ func (app *Application) GetLocale(ctx http.Context) string {
 	return app.MakeConfig().GetString("app.locale")
 }
 
-func (app *Application) SetLocale(ctx http.Context, locale string) error {
-	return app.MakeLang().SetLocale(ctx, locale)
+func (app *Application) SetLocale(ctx http.Context, locale string) {
+	app.MakeLang(ctx).SetLocale(locale)
 }
 
 func (app *Application) IsLocale(ctx http.Context, locale string) bool {

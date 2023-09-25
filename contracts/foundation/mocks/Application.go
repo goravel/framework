@@ -12,6 +12,8 @@ import (
 
 	console "github.com/goravel/framework/contracts/console"
 
+	context "context"
+
 	crypt "github.com/goravel/framework/contracts/crypt"
 
 	event "github.com/goravel/framework/contracts/event"
@@ -319,13 +321,13 @@ func (_m *Application) MakeHash() hash.Hash {
 	return r0
 }
 
-// MakeLang provides a mock function with given fields:
-func (_m *Application) MakeLang() translation.Translator {
-	ret := _m.Called()
+// MakeLang provides a mock function with given fields: ctx
+func (_m *Application) MakeLang(ctx context.Context) translation.Translator {
+	ret := _m.Called(ctx)
 
 	var r0 translation.Translator
-	if rf, ok := ret.Get(0).(func() translation.Translator); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) translation.Translator); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(translation.Translator)
@@ -594,17 +596,8 @@ func (_m *Application) Publishes(packageName string, paths map[string]string, gr
 }
 
 // SetLocale provides a mock function with given fields: ctx, locale
-func (_m *Application) SetLocale(ctx http.Context, locale string) error {
-	ret := _m.Called(ctx, locale)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(http.Context, string) error); ok {
-		r0 = rf(ctx, locale)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Application) SetLocale(ctx http.Context, locale string) {
+	_m.Called(ctx, locale)
 }
 
 // Singleton provides a mock function with given fields: key, callback

@@ -1,6 +1,7 @@
 package translation
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -9,11 +10,11 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/goravel/framework/contracts/http"
 	translationcontract "github.com/goravel/framework/contracts/translation"
 )
 
 type Translator struct {
+	ctx      context.Context
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
@@ -21,8 +22,9 @@ type Translator struct {
 	selector *MessageSelector
 }
 
-func NewTranslator(loader translationcontract.Loader, locale string, fallback string) *Translator {
+func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string) *Translator {
 	return &Translator{
+		ctx:      ctx,
 		loader:   loader,
 		locale:   locale,
 		fallback: fallback,
@@ -30,8 +32,8 @@ func NewTranslator(loader translationcontract.Loader, locale string, fallback st
 	}
 }
 
-func (t *Translator) Get(ctx http.Context, key string, options ...translationcontract.Option) (string, error) { // Check if a custom locale is provided in options.
-	locale := t.GetLocale(ctx)
+func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) { // Check if a custom locale is provided in options.
+	locale := t.GetLocale()
 	if len(options) > 0 && options[0].Locale != "" {
 		locale = options[0].Locale
 	}
@@ -47,7 +49,14 @@ func (t *Translator) Get(ctx http.Context, key string, options ...translationcon
 
 	// Load the translations for the given locale.
 	if err := t.load(folder, locale); err != nil {
-		return "", err
+		if err != ErrFileNotExist {
+			return "", err
+		}
+		if fallback {
+			folder, fallbackLocale := parseKey(t.GetFallback())
+			return t.getLine(folder, fallbackLocale, keyPart, options...)
+		}
+		return key, nil
 	}
 
 	// Check if the key exists in the loaded translations.
@@ -65,11 +74,8 @@ func (t *Translator) Get(ctx http.Context, key string, options ...translationcon
 		}
 
 		if fallback {
-			return t.Get(ctx, key, translationcontract.Option{
-				Locale:   t.fallback,
-				Fallback: options[0].Fallback,
-				Replace:  options[0].Replace,
-			})
+			folder, fallbackLocale := parseKey(t.GetFallback())
+			return t.getLine(folder, fallbackLocale, keyPart, options...)
 		}
 
 		// If key not found, return the key itself for debugging.
@@ -87,50 +93,48 @@ func (t *Translator) Get(ctx http.Context, key string, options ...translationcon
 	return line, nil
 }
 
-func (t *Translator) Choice(ctx http.Context, key string, number int, options ...translationcontract.Option) (string, error) {
-	line, err := t.Get(ctx, key, options...)
+func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) (string, error) {
+	line, err := t.Get(key, options...)
 	if err != nil {
 		return "", err
 	}
 	replace := map[string]string{
 		"count": strconv.Itoa(number),
 	}
-	locale := t.GetLocale(ctx)
+	locale := t.GetLocale()
 	if len(options) > 0 && options[0].Locale != "" {
 		locale = options[0].Locale
 	}
 	return makeReplacements(t.getSelector().Choose(line, number, locale), replace), nil
 }
 
-func (t *Translator) Has(ctx http.Context, key string, options ...translationcontract.Option) bool {
-	line, err := t.Get(ctx, key, options...)
+func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
+	line, err := t.Get(key, options...)
 	return err == nil && line != key
 }
 
-func (t *Translator) GetLocale(ctx http.Context) string {
-	if locale, ok := ctx.Value("locale").(string); ok {
+func (t *Translator) GetLocale() string {
+	if locale, ok := t.ctx.Value("locale").(string); ok {
 		return locale
 	}
 	return t.locale
 }
 
-func (t *Translator) SetLocale(ctx http.Context, locale string) error {
+func (t *Translator) SetLocale(locale string) {
 	t.locale = locale
-	ctx.WithValue("locale", locale)
-	return nil
+	t.ctx = context.WithValue(t.ctx, "locale", locale)
 }
 
-func (t *Translator) GetFallback(ctx http.Context) string {
-	if fallback, ok := ctx.Value("fallback_locale").(string); ok {
+func (t *Translator) GetFallback() string {
+	if fallback, ok := t.ctx.Value("fallback_locale").(string); ok {
 		return fallback
 	}
 	return t.fallback
 }
 
-func (t *Translator) SetFallback(ctx http.Context, locale string) error {
+func (t *Translator) SetFallback(locale string) {
 	t.fallback = locale
-	ctx.WithValue("fallback_locale", locale)
-	return nil
+	t.ctx = context.WithValue(t.ctx, "fallback_locale", locale)
 }
 
 func (t *Translator) getSelector() *MessageSelector {
@@ -138,6 +142,44 @@ func (t *Translator) getSelector() *MessageSelector {
 		t.selector = NewMessageSelector()
 	}
 	return t.selector
+}
+
+func (t *Translator) getLine(folder string, locale string, key string, options ...translationcontract.Option) (string, error) {
+	if err := t.load(folder, locale); err != nil {
+		if err != ErrFileNotExist {
+			return "", err
+		}
+
+		return key, nil
+	}
+
+	// Check if the key exists in the loaded translations.
+	dataBytes, err := sonic.Marshal(t.loaded[folder][locale])
+	if err != nil {
+		return "", err
+	}
+
+	// Use Sonic to get the translation for the keyPart.
+	root, err := sonic.Get(dataBytes, key)
+	if err != nil {
+		// Handle errors when key not found or other Sonic-related errors.
+		if err != ast.ErrNotExist {
+			return "", err
+		}
+
+		// If key not found, return the key itself for debugging.
+		return key, nil
+	}
+
+	line, err := root.Raw()
+	if err != nil {
+		return "", err
+	}
+	if len(options) > 0 {
+		return makeReplacements(line, options[0].Replace), nil
+	}
+
+	return line, nil
 }
 
 func (t *Translator) load(folder string, locale string) error {
@@ -163,13 +205,6 @@ func (t *Translator) isLoaded(folder string, locale string) bool {
 	}
 
 	return true
-}
-
-func (t *Translator) localeArray(locale string) []string {
-	if locale != "" {
-		return []string{locale, t.fallback}
-	}
-	return []string{t.locale, t.fallback}
 }
 
 func makeReplacements(line string, replace map[string]string) string {

@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/cache"
@@ -52,7 +54,7 @@ type Container interface {
 	// MakeHash resolves the hash instance.
 	MakeHash() hash.Hash
 	// MakeLang resolves the lang instance.
-	MakeLang() translation.Translator
+	MakeLang(ctx context.Context) translation.Translator
 	// MakeLog resolves the log instance.
 	MakeLog() log.Log
 	// MakeMail resolves the mail instance.

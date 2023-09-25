@@ -1,7 +1,6 @@
 package translation
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,7 +44,7 @@ func (f *FileLoader) Load(folder string, locale string) (map[string]any, error) 
 			}
 			translations[locale] = val
 		} else {
-			return nil, fmt.Errorf("translation file does not exist: %s", fullPath)
+			return nil, ErrFileNotExist
 		}
 	}
 	return translations, nil
