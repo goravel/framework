@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/gookit/color"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -18,6 +18,12 @@ import (
 
 type String struct {
 	value string
+}
+
+// ExcerptOption is the option for Excerpt method
+type ExcerptOption struct {
+	Radius   int
+	Omission string
 }
 
 func Of(value string) *String {
@@ -44,6 +50,14 @@ func (s *String) AfterLast(search string) *String {
 
 func (s *String) Append(values ...string) *String {
 	s.value += strings.Join(values, "")
+	return s
+}
+
+func (s *String) Basename(suffix ...string) *String {
+	s.value = filepath.Base(s.value)
+	if len(suffix) > 0 && suffix[0] != "" {
+		s.value = strings.TrimSuffix(s.value, suffix[0])
+	}
 	return s
 }
 
@@ -104,6 +118,21 @@ func (s *String) ContainsAll(values ...string) bool {
 	return true
 }
 
+func (s *String) Dirname(levels ...int) *String {
+	defaultLevels := 1
+	if len(levels) > 0 {
+		defaultLevels = levels[0]
+	}
+
+	dir := s.value
+	for i := 0; i < defaultLevels; i++ {
+		dir = filepath.Dir(dir)
+	}
+
+	s.value = dir
+	return s
+}
+
 func (s *String) EndsWith(values ...string) bool {
 	for _, value := range values {
 		if strings.HasSuffix(s.value, value) {
@@ -116,6 +145,51 @@ func (s *String) EndsWith(values ...string) bool {
 
 func (s *String) Exactly(value string) bool {
 	return s.value == value
+}
+
+func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
+	defaultOptions := ExcerptOption{
+		Radius:   100,
+		Omission: "...",
+	}
+
+	if len(options) > 0 {
+		if options[0].Radius != 0 {
+			defaultOptions.Radius = options[0].Radius
+		}
+		if options[0].Omission != "" {
+			defaultOptions.Omission = options[0].Omission
+		}
+	}
+
+	radius := Max(0, defaultOptions.Radius)
+	omission := defaultOptions.Omission
+
+	regex := regexp.MustCompile(`(.*?)(` + regexp.QuoteMeta(phrase) + `)(.*)`)
+	matches := regex.FindStringSubmatch(s.value)
+
+	if len(matches) == 0 {
+		return s
+	}
+
+	start := strings.TrimRight(matches[1], "")
+	end := strings.TrimLeft(matches[3], "")
+
+	end = Of(Substr(end, 0, radius)).LTrim("").
+		Unless(func(s *String) bool {
+			return s.Exactly(end)
+		}, func(s *String) *String {
+			return s.Append(omission)
+		}).String()
+
+	s.value = Of(Substr(start, Max(len(start)-radius, 0), radius)).LTrim("").
+		Unless(func(s *String) bool {
+			return s.Exactly(start)
+		}, func(s *String) *String {
+			return s.Prepend(omission)
+		}).Append(matches[2], end).String()
+
+	return s
 }
 
 func (s *String) Explode(delimiter string) []string {
@@ -387,7 +461,6 @@ func (s *String) Snake(delimiter ...string) *String {
 	}
 	value := s.Studly().String()
 	var result []rune
-	color.Redln(value)
 	for i, r := range value {
 		if unicode.IsUpper(r) {
 			if i > 0 {
@@ -442,8 +515,10 @@ func (s *String) String() string {
 }
 
 func (s *String) Studly() *String {
-	words := strings.FieldsFunc(s.value, func(r rune) bool {
-		return r == '_' || r == ' ' || r == '-'
+	words := FieldsFunc(s.value, func(r rune) bool {
+		return r == '_' || r == ' ' || r == '-' || r == ',' || r == '.'
+	}, func(r rune) bool {
+		return unicode.IsUpper(r)
 	})
 
 	casesTitle := cases.Title(language.Und)
@@ -458,6 +533,23 @@ func (s *String) Studly() *String {
 
 func (s *String) Substr(start int, length ...int) *String {
 	s.value = Substr(s.value, start, length...)
+	return s
+}
+
+func (s *String) Swap(replacements map[string]string) *String {
+	if len(replacements) == 0 {
+		return s
+	}
+
+	oldNewPairs := make([]string, 0, len(replacements)*2)
+	for k, v := range replacements {
+		if k == "" {
+			return s
+		}
+		oldNewPairs = append(oldNewPairs, k, v)
+	}
+
+	s.value = strings.NewReplacer(oldNewPairs...).Replace(s.value)
 	return s
 }
 
@@ -491,6 +583,23 @@ func (s *String) UcFirst() *String {
 		return s
 	}
 	s.value = strings.ToUpper(Substr(s.value, 0, 1)) + Substr(s.value, 1)
+	return s
+}
+
+func (s *String) UcSplit() []string {
+	words := FieldsFunc(s.value, func(r rune) bool {
+		return false
+	}, func(r rune) bool {
+		return unicode.IsUpper(r)
+	})
+	return words
+}
+
+func (s *String) Unless(callback func(*String) bool, fallback func(*String) *String) *String {
+	if !callback(s) {
+		fallback(s)
+	}
+
 	return s
 }
 
@@ -576,6 +685,45 @@ func (s *String) Words(limit int, end ...string) *String {
 
 	s.value = strings.Join(words[:limit], " ") + defaultEnd
 	return s
+}
+
+// FieldsFunc splits the input string into words with preservation, following the rules defined by
+// the provided functions f and preserveFunc.
+func FieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []string {
+	var fields []string
+	var currentField strings.Builder
+
+	shouldPreserve := func(r rune) bool {
+		for _, preserveFn := range preserveFunc {
+			if preserveFn(r) {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, r := range s {
+		if f(r) {
+			if currentField.Len() > 0 {
+				fields = append(fields, currentField.String())
+				currentField.Reset()
+			}
+		} else if shouldPreserve(r) {
+			if currentField.Len() > 0 {
+				fields = append(fields, currentField.String())
+				currentField.Reset()
+			}
+			currentField.WriteRune(r)
+		} else {
+			currentField.WriteRune(r)
+		}
+	}
+
+	if currentField.Len() > 0 {
+		fields = append(fields, currentField.String())
+	}
+
+	return fields
 }
 
 // Substr returns a substring of a given string, starting at the specified index
