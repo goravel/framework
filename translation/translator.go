@@ -20,6 +20,9 @@ type Translator struct {
 	selector *MessageSelector
 }
 
+// contextKey is an unexported type for keys defined in this package.
+type contextKey string
+
 func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string) *Translator {
 	return &Translator{
 		ctx:      ctx,
@@ -109,7 +112,8 @@ func (t *Translator) Has(key string, options ...translationcontract.Option) bool
 }
 
 func (t *Translator) GetLocale() string {
-	if locale, ok := t.ctx.Value("locale").(string); ok {
+	const key = contextKey("locale")
+	if locale, ok := t.ctx.Value(key).(string); ok {
 		return locale
 	}
 	return t.locale
@@ -117,13 +121,14 @@ func (t *Translator) GetLocale() string {
 
 func (t *Translator) SetLocale(locale string) context.Context {
 	t.locale = locale
-	t.ctx = context.WithValue(t.ctx, "locale", locale)
-
+	const key = contextKey("locale")
+	t.ctx = context.WithValue(t.ctx, key, locale)
 	return t.ctx
 }
 
 func (t *Translator) GetFallback() string {
-	if fallback, ok := t.ctx.Value("fallback_locale").(string); ok {
+	const key = contextKey("fallback_locale")
+	if fallback, ok := t.ctx.Value(key).(string); ok {
 		return fallback
 	}
 	return t.fallback
@@ -131,7 +136,8 @@ func (t *Translator) GetFallback() string {
 
 func (t *Translator) SetFallback(locale string) context.Context {
 	t.fallback = locale
-	t.ctx = context.WithValue(t.ctx, "fallback_locale", locale)
+	const key = contextKey("fallback_locale")
+	t.ctx = context.WithValue(t.ctx, key, locale)
 
 	return t.ctx
 }
