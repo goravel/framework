@@ -203,6 +203,23 @@ func (s *String) Finish(value string) *String {
 	return s
 }
 
+func (s *String) Headline() *String {
+	parts := s.Explode(" ")
+
+	if len(parts) > 1 {
+		return s.Studly()
+	}
+
+	parts = Of(strings.Join(parts, "_")).Studly().UcSplit()
+	collapsed := Of(strings.Join(parts, "_")).
+		Replace("-", "_").
+		Replace(" ", "_").
+		Replace("_", "_").Explode("_")
+
+	s.value = strings.Join(collapsed, " ")
+	return s
+}
+
 func (s *String) Is(patterns ...string) bool {
 	for _, pattern := range patterns {
 		if pattern == s.value {
@@ -424,6 +441,18 @@ func (s *String) Replace(search string, replace string, caseSensitive ...bool) *
 	return s
 }
 
+func (s *String) ReplaceEnd(search string, replace string) *String {
+	if search == "" {
+		return s
+	}
+
+	if s.EndsWith(search) {
+		return s.ReplaceLast(search, replace)
+	}
+
+	return s
+}
+
 func (s *String) ReplaceFirst(search string, replace string) *String {
 	s.value = strings.Replace(s.value, search, replace, 1)
 	return s
@@ -441,6 +470,18 @@ func (s *String) ReplaceLast(search string, replace string) *String {
 
 func (s *String) ReplaceMatches(pattern string, replace string) *String {
 	s.value = regexp.MustCompile(pattern).ReplaceAllString(s.value, replace)
+	return s
+}
+
+func (s *String) ReplaceStart(search string, replace string) *String {
+	if search == "" {
+		return s
+	}
+
+	if s.StartsWith(search) {
+		return s.ReplaceFirst(search, replace)
+	}
+
 	return s
 }
 
