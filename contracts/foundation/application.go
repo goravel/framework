@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/http"
 )
@@ -27,9 +29,9 @@ type Application interface {
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// GetLocale get the current application locale.
-	GetLocale(ctx http.Context) string
+	GetLocale(ctx context.Context) string
 	// SetLocale set the current application locale.
-	SetLocale(ctx http.Context, locale string)
+	SetLocale(ctx context.Context, locale string) context.Context
 	// Version gets the version number of the application.
 	Version() string
 	// IsLocale get the current application locale.
