@@ -20,10 +20,10 @@ func NewFileLoader(paths []string) *FileLoader {
 	}
 }
 
-func (f *FileLoader) Load(folder string, locale string) (map[string]any, error) {
-	translations := make(map[string]any)
+func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]string, error) {
+	translations := make(map[string]map[string]string)
 	for _, path := range f.paths {
-		var val any
+		var val map[string]string
 		fullPath := path
 		// Check if the folder is not "*", and if so, split it into subFolders
 		if folder != "*" {

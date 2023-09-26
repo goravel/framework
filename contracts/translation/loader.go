@@ -2,5 +2,6 @@ package translation
 
 //go:generate mockery --name=Loader
 type Loader interface {
-	Load(folder string, locale string) (map[string]any, error)
+	// Load the messages for the given locale.
+	Load(folder string, locale string) (map[string]map[string]string, error)
 }

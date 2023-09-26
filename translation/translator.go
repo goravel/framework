@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bytedance/sonic"
-	"github.com/bytedance/sonic/ast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -18,7 +16,7 @@ type Translator struct {
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
-	loaded   map[string]map[string]any
+	loaded   map[string]map[string]map[string]string
 	selector *MessageSelector
 }
 
@@ -28,18 +26,20 @@ func NewTranslator(ctx context.Context, loader translationcontract.Loader, local
 		loader:   loader,
 		locale:   locale,
 		fallback: fallback,
-		loaded:   make(map[string]map[string]any),
+		loaded:   make(map[string]map[string]map[string]string),
+		selector: NewMessageSelector(),
 	}
 }
 
-func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) { // Check if a custom locale is provided in options.
+func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) {
 	locale := t.GetLocale()
+	// Check if a custom locale is provided in options.
 	if len(options) > 0 && options[0].Locale != "" {
 		locale = options[0].Locale
 	}
 
-	// Check if a custom fallback locale is provided in options.
 	fallback := true
+	// Check if a custom fallback is provided in options.
 	if len(options) > 0 && options[0].Fallback != nil {
 		fallback = *options[0].Fallback
 	}
@@ -47,45 +47,37 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 	// Parse the key into folder and key parts.
 	folder, keyPart := parseKey(key)
 
-	// Load the translations for the given locale.
-	if err := t.load(folder, locale); err != nil {
-		if err != ErrFileNotExist {
-			return "", err
-		}
-		if fallback {
-			folder, fallbackLocale := parseKey(t.GetFallback())
-			return t.getLine(folder, fallbackLocale, keyPart, options...)
+	// For JSON translations, there is only one file per locale, so we will
+	// simply load the file and return the line if it exists.
+	// If the file doesn't exist, we will return fallback if it is enabled.
+	// Otherwise, we will return the key as the line.
+	if err := t.load(folder, locale); err != nil && err != ErrFileNotExist {
+		return "", err
+	}
+
+	line := t.loaded[folder][locale][keyPart]
+	if line == "" {
+		fallbackFolder, fallbackLocale := parseKey(t.GetFallback())
+		// If the fallback locale is different from the current locale, we will
+		// load in the lines for the fallback locale and try to retrieve the
+		// translation for the given key.If it is translated, we will return it.
+		// Otherwise, we can finally return the key as that will be the final
+		// fallback.
+		if (folder+locale != fallbackFolder+fallbackLocale) && fallback {
+			var fallbackOptions translationcontract.Option
+			if len(options) > 0 {
+				fallbackOptions = options[0]
+			}
+			fallbackOptions.Fallback = translationcontract.Bool(false)
+			fallbackOptions.Locale = fallbackLocale
+			return t.Get(fallbackFolder+"."+keyPart, fallbackOptions)
 		}
 		return key, nil
 	}
 
-	// Check if the key exists in the loaded translations.
-	dataBytes, err := sonic.Marshal(t.loaded[folder][locale])
-	if err != nil {
-		return "", err
-	}
-
-	// Use Sonic to get the translation for the keyPart.
-	root, err := sonic.Get(dataBytes, keyPart)
-	if err != nil {
-		// Handle errors when key not found or other Sonic-related errors.
-		if err != ast.ErrNotExist {
-			return "", err
-		}
-
-		if fallback {
-			folder, fallbackLocale := parseKey(t.GetFallback())
-			return t.getLine(folder, fallbackLocale, keyPart, options...)
-		}
-
-		// If key not found, return the key itself for debugging.
-		return key, nil
-	}
-
-	line, err := root.Raw()
-	if err != nil {
-		return "", err
-	}
+	// If the line doesn't contain any placeholders, we can return it right
+	// away.Otherwise, we will make the replacements on the line and return
+	// the result.
 	if len(options) > 0 {
 		return makeReplacements(line, options[0].Replace), nil
 	}
@@ -98,14 +90,17 @@ func (t *Translator) Choice(key string, number int, options ...translationcontra
 	if err != nil {
 		return "", err
 	}
+
 	replace := map[string]string{
 		"count": strconv.Itoa(number),
 	}
+
 	locale := t.GetLocale()
 	if len(options) > 0 && options[0].Locale != "" {
 		locale = options[0].Locale
 	}
-	return makeReplacements(t.getSelector().Choose(line, number, locale), replace), nil
+
+	return makeReplacements(t.selector.Choose(line, number, locale), replace), nil
 }
 
 func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
@@ -120,9 +115,11 @@ func (t *Translator) GetLocale() string {
 	return t.locale
 }
 
-func (t *Translator) SetLocale(locale string) {
+func (t *Translator) SetLocale(locale string) context.Context {
 	t.locale = locale
 	t.ctx = context.WithValue(t.ctx, "locale", locale)
+
+	return t.ctx
 }
 
 func (t *Translator) GetFallback() string {
@@ -132,54 +129,11 @@ func (t *Translator) GetFallback() string {
 	return t.fallback
 }
 
-func (t *Translator) SetFallback(locale string) {
+func (t *Translator) SetFallback(locale string) context.Context {
 	t.fallback = locale
 	t.ctx = context.WithValue(t.ctx, "fallback_locale", locale)
-}
 
-func (t *Translator) getSelector() *MessageSelector {
-	if t.selector == nil {
-		t.selector = NewMessageSelector()
-	}
-	return t.selector
-}
-
-func (t *Translator) getLine(folder string, locale string, key string, options ...translationcontract.Option) (string, error) {
-	if err := t.load(folder, locale); err != nil {
-		if err != ErrFileNotExist {
-			return "", err
-		}
-
-		return key, nil
-	}
-
-	// Check if the key exists in the loaded translations.
-	dataBytes, err := sonic.Marshal(t.loaded[folder][locale])
-	if err != nil {
-		return "", err
-	}
-
-	// Use Sonic to get the translation for the keyPart.
-	root, err := sonic.Get(dataBytes, key)
-	if err != nil {
-		// Handle errors when key not found or other Sonic-related errors.
-		if err != ast.ErrNotExist {
-			return "", err
-		}
-
-		// If key not found, return the key itself for debugging.
-		return key, nil
-	}
-
-	line, err := root.Raw()
-	if err != nil {
-		return "", err
-	}
-	if len(options) > 0 {
-		return makeReplacements(line, options[0].Replace), nil
-	}
-
-	return line, nil
+	return t.ctx
 }
 
 func (t *Translator) load(folder string, locale string) error {

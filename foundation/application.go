@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
@@ -102,15 +103,15 @@ func (app *Application) Version() string {
 	return support.Version
 }
 
-func (app *Application) GetLocale(ctx http.Context) string {
+func (app *Application) GetLocale(ctx context.Context) string {
 	if locale, ok := ctx.Value("locale").(string); ok {
 		return locale
 	}
 	return app.MakeConfig().GetString("app.locale")
 }
 
-func (app *Application) SetLocale(ctx http.Context, locale string) {
-	app.MakeLang(ctx).SetLocale(locale)
+func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
+	return app.MakeLang(ctx).SetLocale(locale)
 }
 
 func (app *Application) IsLocale(ctx http.Context, locale string) bool {

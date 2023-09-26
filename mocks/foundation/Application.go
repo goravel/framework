@@ -119,11 +119,11 @@ func (_m *Application) DatabasePath(path string) string {
 }
 
 // GetLocale provides a mock function with given fields: ctx
-func (_m *Application) GetLocale(ctx http.Context) string {
+func (_m *Application) GetLocale(ctx context.Context) string {
 	ret := _m.Called(ctx)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(http.Context) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
 		r0 = rf(ctx)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -596,8 +596,19 @@ func (_m *Application) Publishes(packageName string, paths map[string]string, gr
 }
 
 // SetLocale provides a mock function with given fields: ctx, locale
-func (_m *Application) SetLocale(ctx http.Context, locale string) {
-	_m.Called(ctx, locale)
+func (_m *Application) SetLocale(ctx context.Context, locale string) context.Context {
+	ret := _m.Called(ctx, locale)
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func(context.Context, string) context.Context); ok {
+		r0 = rf(ctx, locale)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
 }
 
 // Singleton provides a mock function with given fields: key, callback

@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	translation "github.com/goravel/framework/contracts/translation"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -124,13 +126,35 @@ func (_m *Translator) Has(key string, options ...translation.Option) bool {
 }
 
 // SetFallback provides a mock function with given fields: locale
-func (_m *Translator) SetFallback(locale string) {
-	_m.Called(locale)
+func (_m *Translator) SetFallback(locale string) context.Context {
+	ret := _m.Called(locale)
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func(string) context.Context); ok {
+		r0 = rf(locale)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
 }
 
 // SetLocale provides a mock function with given fields: locale
-func (_m *Translator) SetLocale(locale string) {
-	_m.Called(locale)
+func (_m *Translator) SetLocale(locale string) context.Context {
+	ret := _m.Called(locale)
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func(string) context.Context); ok {
+		r0 = rf(locale)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
 }
 
 // NewTranslator creates a new instance of Translator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
