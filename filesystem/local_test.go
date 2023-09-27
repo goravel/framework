@@ -422,9 +422,9 @@ func (s *LocalTestSuite) TestWithContext() {
 }
 
 func (s *LocalTestSuite) TestUrl() {
-	s.Nil(s.local.Put("Url/1.txt", "Goravel"))
-	s.True(s.local.Exists("Url/1.txt"))
-	url := "https://goravel.dev/Url/1.txt"
-	s.Equal(url, s.local.Url("Url/1.txt"))
-	s.Nil(s.local.DeleteDirectory("Url"))
+	s.Equal("https://goravel.dev/Url/1.txt", s.local.Url("Url/1.txt"))
+
+	if runtime.GOOS == "windows" {
+		s.Equal("https://goravel.dev/Url/2.txt", s.local.Url(`Url\2.txt`))
+	}
 }
