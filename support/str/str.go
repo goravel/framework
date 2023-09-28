@@ -257,7 +257,7 @@ func (s *String) Headline() *String {
 	parts := s.Explode(" ")
 
 	if len(parts) > 1 {
-		return s.Studly()
+		return s.Title()
 	}
 
 	parts = Of(strings.Join(parts, "_")).Studly().UcSplit()

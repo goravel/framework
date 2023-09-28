@@ -23,6 +23,7 @@ func (s *StringTestSuite) TestAfter() {
 	s.Equal("lel", Of("parallel").After("l").String())
 	s.Equal("3def", Of("abc123def").After("2").String())
 	s.Equal("abc123def", Of("abc123def").After("4").String())
+	s.Equal("GoravelFramework", Of("GoravelFramework").After("").String())
 }
 
 func (s *StringTestSuite) TestAfterLast() {
@@ -47,6 +48,7 @@ func (s *StringTestSuite) TestBasename() {
 	s.Equal("str", Of("str/").Basename().String())
 	s.Equal("/", Of("/").Basename().String())
 	s.Equal(".", Of("").Basename().String())
+	s.Equal("str", Of("/framework/support/str/str.go").Basename(".go").String())
 }
 
 func (s *StringTestSuite) TestBefore() {
@@ -150,6 +152,13 @@ func (s *StringTestSuite) TestExcerpt() {
 	s.Equal("...is a beautiful morn...", Of("This is a beautiful morning").Excerpt("beautiful", ExcerptOption{
 		Radius: 5,
 	}).String())
+	s.Equal("This is a beautiful morning", Of("This is a beautiful morning").Excerpt("foo", ExcerptOption{
+		Radius: 5,
+	}).String())
+	s.Equal("(...)is a beautiful morn(...)", Of("This is a beautiful morning").Excerpt("beautiful", ExcerptOption{
+		Omission: "(...)",
+		Radius:   5,
+	}).String())
 }
 
 func (s *StringTestSuite) TestExplode() {
@@ -157,6 +166,7 @@ func (s *StringTestSuite) TestExplode() {
 	// with limit
 	s.Equal([]string{"Foo", "Bar Baz"}, Of("Foo Bar Baz").Explode(" ", 2))
 	s.Equal([]string{"Foo", "Bar"}, Of("Foo Bar Baz").Explode(" ", -1))
+	s.Equal([]string{}, Of("Foo Bar Baz").Explode(" ", -10))
 }
 
 func (s *StringTestSuite) TestFinish() {
@@ -166,6 +176,10 @@ func (s *StringTestSuite) TestFinish() {
 }
 
 func (s *StringTestSuite) TestHeadline() {
+	s.Equal("Hello", Of("hello").Headline().String())
+	s.Equal("This Is A Headline", Of("this is a headline").Headline().String())
+	s.Equal("Camelcase Is A Headline", Of("CamelCase is a headline").Headline().String())
+	s.Equal("Kebab-Case Is A Headline", Of("kebab-case is a headline").Headline().String())
 }
 
 func (s *StringTestSuite) TestIs() {
@@ -178,7 +192,6 @@ func (s *StringTestSuite) TestIs() {
 	s.True(Of("foo/bar/baz").Is("foo/*", "bar/*", "baz*"))
 	// Is case-sensitive
 	s.False(Of("foo/bar/baz").Is("*BAZ*"))
-
 }
 
 func (s *StringTestSuite) TestIsEmpty() {
@@ -267,7 +280,9 @@ func (s *StringTestSuite) TestLength() {
 
 func (s *StringTestSuite) TestLimit() {
 	s.Equal("This is...", Of("This is a beautiful morning").Limit(7).String())
+	s.Equal("This is****", Of("This is a beautiful morning").Limit(7, "****").String())
 	s.Equal("这是一...", Of("这是一段中文").Limit(3).String())
+	s.Equal("这是一段中文", Of("这是一段中文").Limit(9).String())
 }
 
 func (s *StringTestSuite) TestLower() {
@@ -398,6 +413,8 @@ func (s *StringTestSuite) TestReplaceEnd() {
 	s.Equal("Hello, World!", Of("Hello, Earth!").ReplaceEnd("Earth!", "World!").String())
 	s.Equal("München Berlin", Of("München Frankfurt").ReplaceEnd("Frankfurt", "Berlin").String())
 	s.Equal("Café Latte", Of("Café Americano").ReplaceEnd("Americano", "Latte").String())
+	s.Equal("Golang is good!", Of("Golang is good!").ReplaceEnd("", "great!").String())
+	s.Equal("Golang is good!", Of("Golang is good!").ReplaceEnd("excellent!", "great!").String())
 }
 
 func (s *StringTestSuite) TestReplaceFirst() {
@@ -449,6 +466,7 @@ func (s *StringTestSuite) TestReplaceStart() {
 
 func (s *StringTestSuite) TestRTrim() {
 	s.Equal(" foo", Of(" foo ").RTrim().String())
+	s.Equal(" foo", Of(" foo__").RTrim("_").String())
 }
 
 func (s *StringTestSuite) TestSnake() {
@@ -464,6 +482,7 @@ func (s *StringTestSuite) TestSnake() {
 func (s *StringTestSuite) TestSplit() {
 	s.Equal([]string{"one", "two", "three", "four"}, Of("one-two-three-four").Split("-"))
 	s.Equal([]string{"", "", "D", "E", "", ""}, Of(",,D,E,,").Split(","))
+	s.Equal([]string{"one", "two", "three,four"}, Of("one,two,three,four").Split(",", 3))
 }
 
 func (s *StringTestSuite) TestSquish() {
@@ -523,6 +542,11 @@ func (s *StringTestSuite) TestSwap() {
 		"Golang":  "Go",
 		"awesome": "excellent",
 	}).String())
+	s.Equal("Golang is awesome", Of("Golang is awesome").Swap(map[string]string{}).String())
+	s.Equal("Golang is awesome", Of("Golang is awesome").Swap(map[string]string{
+		"":        "Go",
+		"awesome": "excellent",
+	}).String())
 }
 
 func (s *StringTestSuite) TestTap() {
@@ -542,9 +566,11 @@ func (s *StringTestSuite) TestTitle() {
 
 func (s *StringTestSuite) TestTrim() {
 	s.Equal("foo", Of(" foo ").Trim().String())
+	s.Equal("foo", Of("_foo_").Trim("_").String())
 }
 
 func (s *StringTestSuite) TestUcFirst() {
+	s.Equal("", Of("").UcFirst().String())
 	s.Equal("Framework", Of("framework").UcFirst().String())
 	s.Equal("Framework", Of("Framework").UcFirst().String())
 	s.Equal(" framework", Of(" framework").UcFirst().String())
@@ -940,6 +966,7 @@ func (s *StringTestSuite) TestWordCount() {
 
 func (s *StringTestSuite) TestWords() {
 	s.Equal("Perfectly balanced, as >>>", Of("Perfectly balanced, as all things should be.").Words(3, " >>>").String())
+	s.Equal("Perfectly balanced, as all things should be.", Of("Perfectly balanced, as all things should be.").Words(100).String())
 }
 
 func TestFieldsFunc(t *testing.T) {
@@ -1004,6 +1031,9 @@ func TestMax(t *testing.T) {
 func TestRandom(t *testing.T) {
 	assert.Len(t, Random(10), 10)
 	assert.Empty(t, Random(0))
+	assert.Panics(t, func() {
+		Random(-1)
+	})
 }
 
 func TestCase2Camel(t *testing.T) {
