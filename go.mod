@@ -37,7 +37,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.13.0
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
-	google.golang.org/grpc v1.58.1
+	google.golang.org/grpc v1.58.2
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.1
