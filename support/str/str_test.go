@@ -55,7 +55,6 @@ func (s *StringTestSuite) TestBasename() {
 		s.Equal("/", str)
 	}
 
-	s.Equal("/", Of("/").Basename().String())
 	s.Equal(".", Of("").Basename().String())
 	s.Equal("str", Of("/framework/support/str/str.go").Basename(".go").String())
 }
