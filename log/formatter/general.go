@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/support/environment"
+	"github.com/goravel/framework/support/env"
 )
 
 type General struct {
@@ -123,7 +123,7 @@ func formatStackTraces(stackTraces any) (string, error) {
 	var formattedTraces strings.Builder
 	var data []byte
 	var err error
-	if environment.IsX86() {
+	if env.IsX86() {
 		data, err = sonic.Marshal(stackTraces)
 	} else {
 		data, err = json.Marshal(stackTraces)
@@ -133,7 +133,7 @@ func formatStackTraces(stackTraces any) (string, error) {
 		return "", err
 	}
 	var traces StackTrace
-	if environment.IsX86() {
+	if env.IsX86() {
 		err = sonic.Unmarshal(data, &traces)
 	} else {
 		err = json.Unmarshal(data, &traces)

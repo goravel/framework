@@ -14,7 +14,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/environment"
+	"github.com/goravel/framework/support/env"
 )
 
 type AES struct {
@@ -63,7 +63,7 @@ func (b *AES) EncryptString(value string) (string, error) {
 	ciphertext := aesgcm.Seal(nil, iv, plaintext, nil)
 
 	var jsonEncoded []byte
-	if environment.IsX86() {
+	if env.IsX86() {
 		jsonEncoded, err = sonic.Marshal(map[string][]byte{
 			"iv":    iv,
 			"value": ciphertext,
