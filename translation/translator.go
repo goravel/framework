@@ -8,6 +8,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	"github.com/goravel/framework/contracts/http"
 	translationcontract "github.com/goravel/framework/contracts/translation"
 )
 
@@ -124,6 +125,12 @@ func (t *Translator) SetLocale(locale string) context.Context {
 	const key = contextKey("locale")
 	t.ctx = context.WithValue(t.ctx, key, locale)
 	return t.ctx
+}
+
+func (t *Translator) SetLocaleByHttp(ctx http.Context, locale string) {
+	t.locale = locale
+	ctx.WithValue("locale", locale)
+	t.ctx = ctx
 }
 
 func (t *Translator) GetFallback() string {
