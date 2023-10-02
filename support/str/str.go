@@ -59,7 +59,8 @@ func (s *String) Append(values ...string) *String {
 	return s
 }
 
-// Basename returns the String instance with the basename of the current file path string.
+// Basename returns the String instance with the basename of the current file path string,
+// and trims the suffix based on the parameter(optional).
 func (s *String) Basename(suffix ...string) *String {
 	s.value = filepath.Base(s.value)
 	if len(suffix) > 0 && suffix[0] != "" {
@@ -189,7 +190,7 @@ func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
 		}
 	}
 
-	radius := Max(0, defaultOptions.Radius)
+	radius := maximum(0, defaultOptions.Radius)
 	omission := defaultOptions.Omission
 
 	regex := regexp.MustCompile(`(.*?)(` + regexp.QuoteMeta(phrase) + `)(.*)`)
@@ -209,7 +210,7 @@ func (s *String) Excerpt(phrase string, options ...ExcerptOption) *String {
 			return s.Append(omission)
 		}).String()
 
-	s.value = Of(Substr(start, Max(len(start)-radius, 0), radius)).LTrim("").
+	s.value = Of(Substr(start, maximum(len(start)-radius, 0), radius)).LTrim("").
 		Unless(func(s *String) bool {
 			return s.Exactly(start)
 		}, func(s *String) *String {
@@ -438,10 +439,16 @@ func (s *String) MatchAll(pattern string) []string {
 	return reg.FindAllString(s.value, -1)
 }
 
-// IsMatch returns true if the string matches the given pattern.
-func (s *String) IsMatch(pattern string) bool {
-	reg := regexp.MustCompile(pattern)
-	return reg.MatchString(s.value)
+// IsMatch returns true if the string matches any of the given patterns.
+func (s *String) IsMatch(patterns ...string) bool {
+	for _, pattern := range patterns {
+		reg := regexp.MustCompile(pattern)
+		if reg.MatchString(s.value) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // NewLine appends one or more new lines to the current string.
@@ -461,7 +468,7 @@ func (s *String) PadBoth(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := Max(0, length-s.Length())
+	short := maximum(0, length-s.Length())
 	left := short / 2
 	right := short/2 + short%2
 
@@ -476,7 +483,7 @@ func (s *String) PadLeft(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := Max(0, length-s.Length())
+	short := maximum(0, length-s.Length())
 
 	s.value = Substr(strings.Repeat(defaultPad, short), 0, short) + s.value
 	return s
@@ -488,7 +495,7 @@ func (s *String) PadRight(length int, pad ...string) *String {
 	if len(pad) > 0 {
 		defaultPad = pad[0]
 	}
-	short := Max(0, length-s.Length())
+	short := maximum(0, length-s.Length())
 
 	s.value = s.value + Substr(strings.Repeat(defaultPad, short), 0, short)
 	return s
@@ -605,7 +612,7 @@ func (s *String) Snake(delimiter ...string) *String {
 	if len(delimiter) > 0 {
 		defaultDelimiter = delimiter[0]
 	}
-	words := FieldsFunc(s.value, func(r rune) bool {
+	words := fieldsFunc(s.value, func(r rune) bool {
 		return r == ' ' || r == ',' || r == '.' || r == '-' || r == '_'
 	}, func(r rune) bool {
 		return unicode.IsUpper(r)
@@ -667,7 +674,7 @@ func (s *String) String() string {
 
 // Studly returns the String instance in studly case.
 func (s *String) Studly() *String {
-	words := FieldsFunc(s.value, func(r rune) bool {
+	words := fieldsFunc(s.value, func(r rune) bool {
 		return r == '_' || r == ' ' || r == '-' || r == ',' || r == '.'
 	}, func(r rune) bool {
 		return unicode.IsUpper(r)
@@ -718,7 +725,7 @@ func (s *String) Test(pattern string) bool {
 	return s.IsMatch(pattern)
 }
 
-// Tittle returns the String instance in title case.
+// Title returns the String instance in title case.
 func (s *String) Title() *String {
 	casesTitle := cases.Title(language.Und)
 	s.value = casesTitle.String(s.value)
@@ -747,7 +754,7 @@ func (s *String) UcFirst() *String {
 
 // UcSplit splits the string into words using uppercase characters as the delimiter.
 func (s *String) UcSplit() []string {
-	words := FieldsFunc(s.value, func(r rune) bool {
+	words := fieldsFunc(s.value, func(r rune) bool {
 		return false
 	}, func(r rune) bool {
 		return unicode.IsUpper(r)
@@ -755,9 +762,10 @@ func (s *String) UcSplit() []string {
 	return words
 }
 
+// Unless returns the String instance with the given fallback applied if the given condition is false.
 func (s *String) Unless(callback func(*String) bool, fallback func(*String) *String) *String {
 	if !callback(s) {
-		fallback(s)
+		return fallback(s)
 	}
 
 	return s
@@ -869,9 +877,9 @@ func (s *String) Words(limit int, end ...string) *String {
 	return s
 }
 
-// FieldsFunc splits the input string into words with preservation, following the rules defined by
+// fieldsFunc splits the input string into words with preservation, following the rules defined by
 // the provided functions f and preserveFunc.
-func FieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []string {
+func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []string {
 	var fields []string
 	var currentField strings.Builder
 
@@ -955,8 +963,8 @@ func Substr(str string, start int, length ...int) string {
 	return string(runes[start:end])
 }
 
-// Max returns the largest of x or y.
-func Max[T constraints.Ordered](x T, y T) T {
+// maximum returns the largest of x or y.
+func maximum[T constraints.Ordered](x T, y T) T {
 	if x > y {
 		return x
 	}

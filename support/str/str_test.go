@@ -1,6 +1,7 @@
 package str
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,6 +47,14 @@ func (s *StringTestSuite) TestBasename() {
 	s.Equal("str", Of("/str").Basename().String())
 	s.Equal("str", Of("/str/").Basename().String())
 	s.Equal("str", Of("str/").Basename().String())
+
+	str := Of("/").Basename().String()
+	if runtime.GOOS == "windows" {
+		s.Equal("\\", str)
+	} else {
+		s.Equal("/", str)
+	}
+
 	s.Equal("/", Of("/").Basename().String())
 	s.Equal(".", Of("").Basename().String())
 	s.Equal("str", Of("/framework/support/str/str.go").Basename(".go").String())
@@ -118,12 +127,36 @@ func (s *StringTestSuite) TestContainsAll() {
 }
 
 func (s *StringTestSuite) TestDirname() {
-	s.Equal("/framework/support", Of("/framework/support/str").Dirname().String())
-	s.Equal("/framework", Of("/framework/support/str").Dirname(2).String())
+	str := Of("/framework/support/str").Dirname().String()
+	if runtime.GOOS == "windows" {
+		s.Equal("\\framework\\support", str)
+	} else {
+		s.Equal("/framework/support", str)
+	}
+
+	str = Of("/framework/support/str").Dirname(2).String()
+	if runtime.GOOS == "windows" {
+		s.Equal("\\framework", str)
+	} else {
+		s.Equal("/framework", str)
+	}
+
 	s.Equal(".", Of("framework").Dirname().String())
 	s.Equal(".", Of(".").Dirname().String())
-	s.Equal("/", Of("/").Dirname().String())
-	s.Equal("/", Of("/framework/").Dirname(2).String())
+
+	str = Of("/").Dirname().String()
+	if runtime.GOOS == "windows" {
+		s.Equal("\\", str)
+	} else {
+		s.Equal("/", str)
+	}
+
+	str = Of("/framework/").Dirname(2).String()
+	if runtime.GOOS == "windows" {
+		s.Equal("\\", str)
+	} else {
+		s.Equal("/", str)
+	}
 }
 
 func (s *StringTestSuite) TestEndsWith() {
@@ -344,6 +377,12 @@ func (s *StringTestSuite) TestIsMatch() {
 	s.False(Of("Hello, Goravel!").IsMatch(`^goravel!`))
 	s.False(Of("Hello, Goravel!").IsMatch(`goravel!(.*)`))
 	s.False(Of("Hello, Goravel!").IsMatch(`^[a-zA-Z,!]+$`))
+
+	// Test with multiple patterns
+	s.True(Of("Hello, Goravel!").IsMatch(`.*,.*!`, `H.o`))
+	s.True(Of("Hello, Goravel!").IsMatch(`(?i)goravel`, `^.*$(.*)`))
+	s.True(Of("Hello, Goravel!").IsMatch(`(?i)goravel`, `goravel!(.*)`))
+	s.True(Of("Hello, Goravel!").IsMatch(`^[a-zA-Z,!]+$`, `^(.*(.*(.*)))`))
 }
 
 func (s *StringTestSuite) TestNewLine() {
@@ -584,6 +623,28 @@ func (s *StringTestSuite) TestUcSplit() {
 }
 
 func (s *StringTestSuite) TestUnless() {
+	str := Of("Hello, World!")
+
+	// Test case 1: The callback returns true, so the fallback should not be applied
+	s.Equal("Hello, World!", str.Unless(func(s *String) bool {
+		return true
+	}, func(s *String) *String {
+		return Of("This should not be applied")
+	}).String())
+
+	// Test case 2: The callback returns false, so the fallback should be applied
+	s.Equal("Fallback Applied", str.Unless(func(s *String) bool {
+		return false
+	}, func(s *String) *String {
+		return Of("Fallback Applied")
+	}).String())
+
+	// Test case 3: Testing with an empty string
+	s.Equal("Fallback Applied", Of("").Unless(func(s *String) bool {
+		return false
+	}, func(s *String) *String {
+		return Of("Fallback Applied")
+	}).String())
 }
 
 func (s *StringTestSuite) TestUpper() {
@@ -1004,7 +1065,7 @@ func TestFieldsFunc(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			result := FieldsFunc(test.input, func(r rune) bool { return r == ' ' }, test.shouldPreserve...)
+			result := fieldsFunc(test.input, func(r rune) bool { return r == ' ' }, test.shouldPreserve...)
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -1020,12 +1081,12 @@ func TestSubstr(t *testing.T) {
 	assert.Equal(t, "世界！", Substr("你好，世界！", 3, 3))
 }
 
-func TestMax(t *testing.T) {
-	assert.Equal(t, 10, Max(5, 10))
-	assert.Equal(t, 3.14, Max(3.14, 2.71))
-	assert.Equal(t, "banana", Max("apple", "banana"))
-	assert.Equal(t, -5, Max(-5, -10))
-	assert.Equal(t, 42, Max(42, 42))
+func TestMaximum(t *testing.T) {
+	assert.Equal(t, 10, maximum(5, 10))
+	assert.Equal(t, 3.14, maximum(3.14, 2.71))
+	assert.Equal(t, "banana", maximum("apple", "banana"))
+	assert.Equal(t, -5, maximum(-5, -10))
+	assert.Equal(t, 42, maximum(42, 42))
 }
 
 func TestRandom(t *testing.T) {
