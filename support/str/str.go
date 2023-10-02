@@ -877,45 +877,6 @@ func (s *String) Words(limit int, end ...string) *String {
 	return s
 }
 
-// fieldsFunc splits the input string into words with preservation, following the rules defined by
-// the provided functions f and preserveFunc.
-func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []string {
-	var fields []string
-	var currentField strings.Builder
-
-	shouldPreserve := func(r rune) bool {
-		for _, preserveFn := range preserveFunc {
-			if preserveFn(r) {
-				return true
-			}
-		}
-		return false
-	}
-
-	for _, r := range s {
-		if f(r) {
-			if currentField.Len() > 0 {
-				fields = append(fields, currentField.String())
-				currentField.Reset()
-			}
-		} else if shouldPreserve(r) {
-			if currentField.Len() > 0 {
-				fields = append(fields, currentField.String())
-				currentField.Reset()
-			}
-			currentField.WriteRune(r)
-		} else {
-			currentField.WriteRune(r)
-		}
-	}
-
-	if currentField.Len() > 0 {
-		fields = append(fields, currentField.String())
-	}
-
-	return fields
-}
-
 // Substr returns a substring of a given string, starting at the specified index
 // and with a specified length.
 // It handles UTF-8 encoded strings.
@@ -961,14 +922,6 @@ func Substr(str string, start int, length ...int) string {
 
 	// Return the substring.
 	return string(runes[start:end])
-}
-
-// maximum returns the largest of x or y.
-func maximum[T constraints.Ordered](x T, y T) T {
-	if x > y {
-		return x
-	}
-	return y
 }
 
 func Random(length int) string {
@@ -1053,4 +1006,51 @@ func (b *Buffer) append(s string) *Buffer {
 	b.WriteString(s)
 
 	return b
+}
+
+// fieldsFunc splits the input string into words with preservation, following the rules defined by
+// the provided functions f and preserveFunc.
+func fieldsFunc(s string, f func(rune) bool, preserveFunc ...func(rune) bool) []string {
+	var fields []string
+	var currentField strings.Builder
+
+	shouldPreserve := func(r rune) bool {
+		for _, preserveFn := range preserveFunc {
+			if preserveFn(r) {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, r := range s {
+		if f(r) {
+			if currentField.Len() > 0 {
+				fields = append(fields, currentField.String())
+				currentField.Reset()
+			}
+		} else if shouldPreserve(r) {
+			if currentField.Len() > 0 {
+				fields = append(fields, currentField.String())
+				currentField.Reset()
+			}
+			currentField.WriteRune(r)
+		} else {
+			currentField.WriteRune(r)
+		}
+	}
+
+	if currentField.Len() > 0 {
+		fields = append(fields, currentField.String())
+	}
+
+	return fields
+}
+
+// maximum returns the largest of x or y.
+func maximum[T constraints.Ordered](x T, y T) T {
+	if x > y {
+		return x
+	}
+	return y
 }
