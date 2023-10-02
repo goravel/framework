@@ -209,8 +209,8 @@ func TestLogrus(t *testing.T) {
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ncode: code"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ncode: code"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ncode: \"code\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ncode: \"code\""))
 			},
 		},
 		{
@@ -222,8 +222,8 @@ func TestLogrus(t *testing.T) {
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nhint: hint"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nhint: hint"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nhint: \"hint\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nhint: \"hint\""))
 			},
 		},
 		{
@@ -235,8 +235,8 @@ func TestLogrus(t *testing.T) {
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ndomain: domain"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ndomain: domain"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ndomain: \"domain\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ndomain: \"domain\""))
 			},
 		},
 		{
@@ -248,8 +248,8 @@ func TestLogrus(t *testing.T) {
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nowner: team@goravel.dev"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nowner: team@goravel.dev"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nowner: \"team@goravel.dev\""))
 			},
 		},
 		{
@@ -312,8 +312,8 @@ func TestLogrus(t *testing.T) {
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ntags: [tag]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ntags: [tag]"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ntags: [\"tag\"]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ntags: [\"tag\"]"))
 			},
 		},
 		{

@@ -67,9 +67,9 @@ func (s *GeneralTestSuite) TestFormat() {
 			assert: func() {
 				formatLog, err := general.Format(s.entry)
 				s.Nil(err)
-				s.Contains(string(formatLog), "code: 200")
-				s.Contains(string(formatLog), "domain: example.com")
-				s.Contains(string(formatLog), "owner: owner")
+				s.Contains(string(formatLog), "code: \"200\"")
+				s.Contains(string(formatLog), "domain: \"example.com\"")
+				s.Contains(string(formatLog), "owner: \"owner\"")
 				s.Contains(string(formatLog), "user: \"user1\"")
 			},
 		},
@@ -116,6 +116,29 @@ func TestFormatData(t *testing.T) {
 			},
 		},
 		{
+			name: "Invalid data type",
+			setup: func() {
+				data = logrus.Fields{
+					"root": map[string]any{
+						"code":     "123",
+						"context":  "sample",
+						"domain":   "example.com",
+						"hint":     make(chan int), // Invalid data type that will cause an error during value extraction
+						"owner":    "owner",
+						"request":  map[string]any{"method": "GET", "uri": "http://localhost"},
+						"response": map[string]any{"status": 200},
+						"tags":     []string{"tag1", "tag2"},
+						"user":     "user1",
+					},
+				}
+			},
+			assert: func() {
+				formattedData, err := formatData(data)
+				assert.NotNil(t, err)
+				assert.Empty(t, formattedData)
+			},
+		},
+		{
 			name: "Data is not empty",
 			setup: func() {
 				data = logrus.Fields{
@@ -130,9 +153,9 @@ func TestFormatData(t *testing.T) {
 			assert: func() {
 				formattedData, err := formatData(data)
 				assert.Nil(t, err)
-				assert.Contains(t, formattedData, "code: 200")
-				assert.Contains(t, formattedData, "domain: example.com")
-				assert.Contains(t, formattedData, "owner: owner")
+				assert.Contains(t, formattedData, "code: \"200\"")
+				assert.Contains(t, formattedData, "domain: \"example.com\"")
+				assert.Contains(t, formattedData, "owner: \"owner\"")
 				assert.Contains(t, formattedData, "user: \"user1\"")
 			},
 		},
