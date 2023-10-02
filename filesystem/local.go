@@ -236,7 +236,7 @@ func (r *Local) WithContext(ctx context.Context) filesystem.Driver {
 }
 
 func (r *Local) Url(file string) string {
-	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
+	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(filepath.ToSlash(file), "/")
 }
 
 func (r *Local) fullPath(path string) string {
