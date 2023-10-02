@@ -73,12 +73,14 @@ func formatData(data logrus.Fields) (string, error) {
 
 		for _, key := range []string{"code", "context", "domain", "hint", "owner", "request", "response", "tags", "user"} {
 			if value, exists := root[key]; exists && value != nil {
-				value, err = cast.ToStringE(value)
-				if err != nil {
-					return "", err
+				if key == "request" || key == "response" || key == "user" || key == "context" {
+					v, err := json.Marshal(value)
+					if err != nil {
+						return "", err
+					}
+					value = string(v)
 				}
-
-				builder.WriteString(fmt.Sprintf(`%s: "%s""\n`, key, value))
+				builder.WriteString(fmt.Sprintf(`%s: %v"\n`, key, value))
 			}
 		}
 
