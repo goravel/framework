@@ -2,17 +2,15 @@ package formatter
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/bytedance/sonic"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/json"
 )
 
 type General struct {
@@ -121,23 +119,13 @@ type StackTrace struct {
 
 func formatStackTraces(stackTraces any) (string, error) {
 	var formattedTraces strings.Builder
-	var data []byte
-	var err error
-	if env.IsX86() {
-		data, err = sonic.Marshal(stackTraces)
-	} else {
-		data, err = json.Marshal(stackTraces)
-	}
+	data, err := json.Marshal(stackTraces)
 
 	if err != nil {
 		return "", err
 	}
 	var traces StackTrace
-	if env.IsX86() {
-		err = sonic.Unmarshal(data, &traces)
-	} else {
-		err = json.Unmarshal(data, &traces)
-	}
+	err = json.Unmarshal(data, &traces)
 	if err != nil {
 		return "", err
 	}
