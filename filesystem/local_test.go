@@ -5,7 +5,6 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,6 +12,7 @@ import (
 
 	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -70,28 +70,28 @@ func (s *LocalTestSuite) TestAllDirectories() {
 	s.True(s.local.Exists("AllDirectories/3/5/6/6.txt"))
 	files, err := s.local.AllDirectories("AllDirectories")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
 	} else {
 		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
 	}
 	files, err = s.local.AllDirectories("./AllDirectories")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
 	} else {
 		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
 	}
 	files, err = s.local.AllDirectories("/AllDirectories")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
 	} else {
 		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
 	}
 	files, err = s.local.AllDirectories("./AllDirectories/")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\", "3\\4\\", "3\\5\\", "3\\5\\6\\"}, files)
 	} else {
 		s.Equal([]string{"3/", "3/4/", "3/5/", "3/5/6/"}, files)
@@ -110,28 +110,28 @@ func (s *LocalTestSuite) TestAllFiles() {
 	s.True(s.local.Exists("AllFiles/3/4/4.txt"))
 	files, err := s.local.AllFiles("AllFiles")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
 	} else {
 		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
 	}
 	files, err = s.local.AllFiles("./AllFiles")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
 	} else {
 		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
 	}
 	files, err = s.local.AllFiles("/AllFiles")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
 	} else {
 		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
 	}
 	files, err = s.local.AllFiles("./AllFiles/")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"1.txt", "2.txt", "3\\3.txt", "3\\4\\4.txt"}, files)
 	} else {
 		s.Equal([]string{"1.txt", "2.txt", "3/3.txt", "3/4/4.txt"}, files)
@@ -178,28 +178,28 @@ func (s *LocalTestSuite) TestDirectories() {
 	s.True(s.local.Exists("Directories/3/5/5.txt"))
 	files, err := s.local.Directories("Directories")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\"}, files)
 	} else {
 		s.Equal([]string{"3/"}, files)
 	}
 	files, err = s.local.Directories("./Directories")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\"}, files)
 	} else {
 		s.Equal([]string{"3/"}, files)
 	}
 	files, err = s.local.Directories("/Directories")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\"}, files)
 	} else {
 		s.Equal([]string{"3/"}, files)
 	}
 	files, err = s.local.Directories("./Directories/")
 	s.Nil(err)
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal([]string{"3\\"}, files)
 	} else {
 		s.Equal([]string{"3/"}, files)
@@ -424,7 +424,7 @@ func (s *LocalTestSuite) TestWithContext() {
 func (s *LocalTestSuite) TestUrl() {
 	s.Equal("https://goravel.dev/Url/1.txt", s.local.Url("Url/1.txt"))
 
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal("https://goravel.dev/Url/2.txt", s.local.Url(`Url\2.txt`))
 	}
 }
