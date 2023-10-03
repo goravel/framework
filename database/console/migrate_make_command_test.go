@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configmock "github.com/goravel/framework/contracts/config/mocks"
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
+	configmock "github.com/goravel/framework/mocks/config"
+	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )

@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	cachemocks "github.com/goravel/framework/contracts/cache/mocks"
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	logmocks "github.com/goravel/framework/contracts/log/mocks"
 	"github.com/goravel/framework/contracts/schedule"
+	cachemocks "github.com/goravel/framework/mocks/cache"
+	consolemocks "github.com/goravel/framework/mocks/console"
+	logmocks "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/carbon"
 )
 

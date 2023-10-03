@@ -21,6 +21,7 @@ jobs:
       - name: Generate Mocks for given directory
         run: |
           ~/go/bin/mockery --all --keeptree --dir=contracts
+          ~/go/bin/mockery --all --keeptree --dir=database/gorm 
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
