@@ -13,7 +13,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang-migrate/migrate/v4 v4.16.2
-	github.com/golang-module/carbon/v2 v2.2.7
+	github.com/golang-module/carbon/v2 v2.2.8
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.3.1
 	github.com/google/wire v0.5.0
@@ -36,7 +36,8 @@ require (
 	github.com/urfave/cli/v2 v2.25.7
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.13.0
-	google.golang.org/grpc v1.58.1
+	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
+	google.golang.org/grpc v1.58.2
 	gorm.io/driver/mysql v1.5.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlserver v1.5.1
