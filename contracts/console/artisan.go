@@ -1,6 +1,5 @@
 package console
 
-//go:generate mockery --name=Artisan
 type Artisan interface {
 	// Register commands.
 	Register(commands []Command)

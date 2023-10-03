@@ -6,7 +6,6 @@ import (
 	"github.com/goravel/framework/contracts/http"
 )
 
-//go:generate mockery --name=Auth
 type Auth interface {
 	// Guard attempts to get the guard against the local cache.
 	Guard(name string) Auth

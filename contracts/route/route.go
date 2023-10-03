@@ -8,7 +8,6 @@ import (
 
 type GroupFunc func(router Router)
 
-//go:generate mockery --name=Route
 type Route interface {
 	Router
 	// Fallback registers a handler to be executed when no other route was matched.
@@ -25,7 +24,6 @@ type Route interface {
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 }
 
-//go:generate mockery --name=Router
 type Router interface {
 	// Group creates a new router group with the specified handler.
 	Group(handler GroupFunc)

@@ -7,7 +7,6 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
-//go:generate mockery --name=ContextRequest
 type ContextRequest interface {
 	// Header retrieves the value of the specified HTTP header by its key.
 	// If the header is not found, it returns the optional default value (if provided).

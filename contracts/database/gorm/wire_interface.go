@@ -7,7 +7,6 @@ import (
 	"github.com/goravel/framework/database/gorm"
 )
 
-//go:generate mockery --name=Initialize
 type Initialize interface {
 	InitializeGorm(config config.Config, connection string) *gorm.GormImpl
 	InitializeQuery(ctx context.Context, config config.Config, connection string) (*gorm.QueryImpl, error)

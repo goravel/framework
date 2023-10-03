@@ -1,6 +1,5 @@
 package queue
 
-//go:generate mockery --name=Queue
 type Queue interface {
 	Worker(args *Args) Worker
 	// Register register jobs
