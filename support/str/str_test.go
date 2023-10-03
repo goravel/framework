@@ -1,11 +1,12 @@
 package str
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/support/env"
 )
 
 type StringTestSuite struct {
@@ -49,7 +50,7 @@ func (s *StringTestSuite) TestBasename() {
 	s.Equal("str", Of("str/").Basename().String())
 
 	str := Of("/").Basename().String()
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal("\\", str)
 	} else {
 		s.Equal("/", str)
@@ -127,14 +128,14 @@ func (s *StringTestSuite) TestContainsAll() {
 
 func (s *StringTestSuite) TestDirname() {
 	str := Of("/framework/support/str").Dirname().String()
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal("\\framework\\support", str)
 	} else {
 		s.Equal("/framework/support", str)
 	}
 
 	str = Of("/framework/support/str").Dirname(2).String()
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal("\\framework", str)
 	} else {
 		s.Equal("/framework", str)
@@ -144,14 +145,14 @@ func (s *StringTestSuite) TestDirname() {
 	s.Equal(".", Of(".").Dirname().String())
 
 	str = Of("/").Dirname().String()
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal("\\", str)
 	} else {
 		s.Equal("/", str)
 	}
 
 	str = Of("/framework/").Dirname(2).String()
-	if runtime.GOOS == "windows" {
+	if env.IsWindows() {
 		s.Equal("\\", str)
 	} else {
 		s.Equal("/", str)
