@@ -1,9 +1,9 @@
 package docker
 
 import (
+	"github.com/goravel/framework/contracts/database/gorm"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
-	"github.com/goravel/framework/database/gorm"
 )
 
 type Docker struct {

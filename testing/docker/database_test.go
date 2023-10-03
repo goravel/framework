@@ -11,9 +11,9 @@ import (
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database"
-	gormmocks "github.com/goravel/framework/mocks"
 	configmocks "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
+	gormmocks "github.com/goravel/framework/mocks/database/gorm"
 	foundationmocks "github.com/goravel/framework/mocks/foundation"
 )
 
