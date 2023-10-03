@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/bytedance/sonic"
 	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
@@ -82,7 +81,7 @@ func (b *AES) DecryptString(payload string) (string, error) {
 	}
 
 	decodeJson := make(map[string][]byte)
-	err = sonic.Unmarshal(decodePayload, &decodeJson)
+	err = json.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
 		return "", err
 	}
