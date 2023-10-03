@@ -13,11 +13,11 @@ import (
 	"gorm.io/gorm/clause"
 
 	authcontract "github.com/goravel/framework/contracts/auth"
-	cachemock "github.com/goravel/framework/contracts/cache/mocks"
-	configmock "github.com/goravel/framework/contracts/config/mocks"
-	ormmock "github.com/goravel/framework/contracts/database/orm/mocks"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/database/orm"
+	cachemock "github.com/goravel/framework/mocks/cache"
+	configmock "github.com/goravel/framework/mocks/config"
+	ormmock "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/carbon"
 )
 

@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
+	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/queue"
 	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/file"
