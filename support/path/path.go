@@ -57,3 +57,12 @@ func Public(paths ...string) string {
 
 	return facades.App().PublicPath(finalPath)
 }
+
+func Lang(paths ...string) string {
+	finalPath := ""
+	if len(paths) >= 1 {
+		finalPath = paths[0]
+	}
+
+	return facades.App().LangPath(finalPath)
+}

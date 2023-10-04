@@ -2,8 +2,6 @@ package translation
 
 import (
 	"context"
-
-	"github.com/goravel/framework/contracts/http"
 )
 
 //go:generate mockery --name=Translator
@@ -18,8 +16,6 @@ type Translator interface {
 	GetLocale() string
 	// SetLocale set the current application/context locale.
 	SetLocale(locale string) context.Context
-	// SetLocaleByHttp set the current application/context locale by http request.
-	SetLocaleByHttp(ctx http.Context, locale string)
 	// GetFallback get the current application/context fallback locale.
 	GetFallback() string
 	// SetFallback set the current application/context fallback locale.

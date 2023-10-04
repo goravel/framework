@@ -32,6 +32,7 @@ import (
 	"github.com/goravel/framework/mail"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/validation"
 )
@@ -78,8 +79,16 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Equal(filepath.Join("storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestLangPath() {
+	s.Equal(filepath.Join("lang", "en.json"), s.app.LangPath("en.json"))
+}
+
 func (s *ApplicationTestSuite) TestPublicPath() {
 	s.Equal(filepath.Join("public", "goravel.go"), s.app.PublicPath("goravel.go"))
+}
+
+func (s *ApplicationTestSuite) TestVersion() {
+	s.Equal(support.Version, s.app.Version())
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
