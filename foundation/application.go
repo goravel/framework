@@ -83,6 +83,10 @@ func (app *Application) StoragePath(path string) string {
 	return filepath.Join("storage", path)
 }
 
+func (app *Application) LangPath(path string) string {
+	return filepath.Join("lang", path)
+}
+
 func (app *Application) PublicPath(path string) string {
 	return filepath.Join("public", path)
 }
@@ -104,15 +108,12 @@ func (app *Application) Version() string {
 }
 
 func (app *Application) GetLocale(ctx context.Context) string {
-	if locale, ok := ctx.Value("locale").(string); ok {
-		return locale
-	}
-	return app.MakeConfig().GetString("app.locale")
+	return app.MakeLang(ctx).GetLocale()
 }
 
-func (app *Application) SetLocaleByHttp(ctx http.Context, locale string) {
-	app.MakeLang(ctx).SetLocaleByHttp(ctx, locale)
-}
+//func (app *Application) SetLocaleByHttp(ctx http.Context, locale string) {
+//	app.MakeLang(ctx).SetLocaleByHttp(ctx, locale)
+//}
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
 	return app.MakeLang(ctx).SetLocale(locale)

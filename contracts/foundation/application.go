@@ -23,6 +23,8 @@ type Application interface {
 	DatabasePath(path string) string
 	// StoragePath get the path to the storage directory.
 	StoragePath(path string) string
+	// LangPath get the path to the language files.
+	LangPath(path string) string
 	// PublicPath get the path to the public directory.
 	PublicPath(path string) string
 	// Publishes register the given paths to be published by the "vendor:publish" command.
@@ -32,7 +34,8 @@ type Application interface {
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
 	// SetLocaleByHttp set the current application/context locale by http request.
-	SetLocaleByHttp(ctx http.Context, locale string)
+	//SetLocaleByHttp(ctx http.Context, locale string)
+
 	// Version gets the version number of the application.
 	Version() string
 	// IsLocale get the current application locale.

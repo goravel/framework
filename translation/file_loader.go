@@ -1,6 +1,7 @@
 package translation
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +43,12 @@ func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]s
 			if err := sonic.Unmarshal(data, &val); err != nil {
 				return nil, err
 			}
-			translations[locale] = val
+
+			// Initialize the map if it's a nil
+			if translations[locale] == nil {
+				translations[locale] = make(map[string]string)
+			}
+			maps.Copy(translations[locale], val)
 		} else {
 			return nil, ErrFileNotExist
 		}
