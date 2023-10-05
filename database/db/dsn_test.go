@@ -60,8 +60,8 @@ func (s *DsnTestSuite) TestPostgresql() {
 	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", connection)).Return(sslmode).Once()
 	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", connection)).Return(timezone).Once()
 
-	s.Equal(fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-		testHost, testUsername, testPassword, testDatabase, testPort, sslmode, timezone), dsn.Postgresql(testConfig))
+	s.Equal(fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
+		testUsername, testPassword, testHost, testPort, testDatabase, sslmode, timezone), dsn.Postgresql(testConfig))
 }
 
 func (s *DsnTestSuite) TestSqlite() {
