@@ -56,7 +56,7 @@ func (s *GeneralTestSuite) TestFormat() {
 			name: "Data is not empty",
 			setup: func() {
 				s.entry.Data = logrus.Fields{
-					"root": map[string]interface{}{
+					"root": map[string]any{
 						"code":   "200",
 						"domain": "example.com",
 						"owner":  "owner",
@@ -119,14 +119,14 @@ func TestFormatData(t *testing.T) {
 			name: "Invalid data type",
 			setup: func() {
 				data = logrus.Fields{
-					"root": map[string]interface{}{
+					"root": map[string]any{
 						"code":     "123",
 						"context":  "sample",
 						"domain":   "example.com",
 						"hint":     make(chan int), // Invalid data type that will cause an error during value extraction
 						"owner":    "owner",
-						"request":  map[string]interface{}{"method": "GET", "uri": "http://localhost"},
-						"response": map[string]interface{}{"status": 200},
+						"request":  map[string]any{"method": "GET", "uri": "http://localhost"},
+						"response": map[string]any{"status": 200},
 						"tags":     []string{"tag1", "tag2"},
 						"user":     "user1",
 					},
@@ -142,7 +142,7 @@ func TestFormatData(t *testing.T) {
 			name: "Data is not empty",
 			setup: func() {
 				data = logrus.Fields{
-					"root": map[string]interface{}{
+					"root": map[string]any{
 						"code":   "200",
 						"domain": "example.com",
 						"owner":  "owner",
@@ -234,8 +234,8 @@ func TestFormatStackTraces(t *testing.T) {
 		{
 			name: "StackTraces is not nil",
 			setup: func() {
-				stackTraces = map[string]interface{}{
-					"root": map[string]interface{}{
+				stackTraces = map[string]any{
+					"root": map[string]any{
 						"message": "error bad request", // root cause
 						"stack": []string{
 							"main.main:/dummy/examples/logging/example.go:143", // original calling method
@@ -244,7 +244,7 @@ func TestFormatStackTraces(t *testing.T) {
 							"main.(*Request).Validate:/dummy/examples/logging/example.go:28", // location of the root
 						},
 					},
-					"wrap": []map[string]interface{}{
+					"wrap": []map[string]any{
 						{
 							"message": "received a request with no ID",                                  // additional context
 							"stack":   "main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call

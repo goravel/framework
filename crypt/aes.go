@@ -8,11 +8,11 @@ import (
 	"errors"
 	"io"
 
-	"github.com/bytedance/sonic"
 	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/json"
 )
 
 type AES struct {
@@ -60,10 +60,12 @@ func (b *AES) EncryptString(value string) (string, error) {
 
 	ciphertext := aesgcm.Seal(nil, iv, plaintext, nil)
 
-	jsonEncoded, err := sonic.Marshal(map[string][]byte{
+	var jsonEncoded []byte
+	jsonEncoded, err = json.Marshal(map[string][]byte{
 		"iv":    iv,
 		"value": ciphertext,
 	})
+
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +81,7 @@ func (b *AES) DecryptString(payload string) (string, error) {
 	}
 
 	decodeJson := make(map[string][]byte)
-	err = sonic.Unmarshal(decodePayload, &decodeJson)
+	err = json.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
 		return "", err
 	}

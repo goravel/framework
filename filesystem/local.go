@@ -135,12 +135,18 @@ func (r *Local) Files(path string) ([]string, error) {
 }
 
 func (r *Local) Get(file string) (string, error) {
+	data, err := r.GetBytes(file)
+
+	return string(data), err
+}
+
+func (r *Local) GetBytes(file string) ([]byte, error) {
 	data, err := os.ReadFile(r.fullPath(file))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(data), nil
+	return data, nil
 }
 
 func (r *Local) LastModified(file string) (time.Time, error) {
@@ -230,7 +236,7 @@ func (r *Local) WithContext(ctx context.Context) filesystem.Driver {
 }
 
 func (r *Local) Url(file string) string {
-	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(file, "/")
+	return strings.TrimSuffix(r.url, "/") + "/" + strings.TrimPrefix(filepath.ToSlash(file), "/")
 }
 
 func (r *Local) fullPath(path string) string {

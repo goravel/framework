@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bytedance/sonic"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/support/json"
 )
 
 type General struct {
@@ -53,44 +54,38 @@ func formatData(data logrus.Fields) (string, error) {
 	var builder strings.Builder
 
 	if len(data) > 0 {
-		dataBytes, err := sonic.Marshal(data)
-		if err != nil {
-			return "", err
-		}
-
 		removedData := deleteKey(data, "root")
 		if len(removedData) > 0 {
-			removedDataBytes, err := sonic.Marshal(removedData)
+			removedDataBytes, err := json.Marshal(removedData)
 			if err != nil {
 				return "", err
 			}
+
 			builder.WriteString(fmt.Sprintf("fields: %s\n", string(removedDataBytes)))
 		}
 
-		root, err := sonic.Get(dataBytes, "root")
+		root, err := cast.ToStringMapE(data["root"])
 		if err != nil {
 			return "", err
 		}
 
 		for _, key := range []string{"code", "context", "domain", "hint", "owner", "request", "response", "tags", "user"} {
-			if value := root.Get(key); value.Valid() {
-				info, err := value.Raw()
+			if value, exists := root[key]; exists && value != nil {
+				v, err := json.Marshal(value)
 				if err != nil {
 					return "", err
 				}
-				builder.WriteString(fmt.Sprintf("%s: %s\n", key, info))
+
+				builder.WriteString(fmt.Sprintf(`%s: %v"\n`, key, string(v)))
 			}
 		}
 
-		if stackTraceValue := root.Get("stacktrace"); stackTraceValue.Valid() {
-			stackTraces, err := stackTraceValue.Interface()
+		if stackTraceValue, exists := root["stacktrace"]; exists && stackTraceValue != nil {
+			traces, err := formatStackTraces(stackTraceValue)
 			if err != nil {
 				return "", err
 			}
-			traces, err := formatStackTraces(stackTraces)
-			if err != nil {
-				return "", err
-			}
+
 			builder.WriteString(traces)
 		}
 	}
@@ -105,6 +100,7 @@ func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
 			dataCopy[key] = value
 		}
 	}
+
 	return dataCopy
 }
 
@@ -121,12 +117,13 @@ type StackTrace struct {
 
 func formatStackTraces(stackTraces any) (string, error) {
 	var formattedTraces strings.Builder
-	data, err := sonic.Marshal(stackTraces)
+	data, err := json.Marshal(stackTraces)
+
 	if err != nil {
 		return "", err
 	}
 	var traces StackTrace
-	err = sonic.Unmarshal(data, &traces)
+	err = json.Unmarshal(data, &traces)
 	if err != nil {
 		return "", err
 	}
