@@ -1,6 +1,5 @@
 package hash
 
-//go:generate mockery --name=Hash
 type Hash interface {
 	// Make returns the hashed value of the given string.
 	Make(value string) (string, error)

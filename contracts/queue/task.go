@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-//go:generate mockery --name=Task
 type Task interface {
 	// Dispatch dispatches the task.
 	Dispatch() error

@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/contracts/config"
+	gormcontract "github.com/goravel/framework/contracts/database/gorm"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/database/orm"
@@ -31,7 +32,7 @@ type QueryImpl struct {
 	withoutEvents bool
 }
 
-func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryImpl, error) {
+func NewQueryImpl(ctx context.Context, config config.Config, gorm gormcontract.Gorm) (*QueryImpl, error) {
 	db, err := gorm.Make()
 	if err != nil {
 		return nil, err

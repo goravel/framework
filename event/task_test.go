@@ -8,7 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/event"
 	queuecontract "github.com/goravel/framework/contracts/queue"
-	queuemock "github.com/goravel/framework/contracts/queue/mocks"
+	queuemock "github.com/goravel/framework/mocks/queue"
 )
 
 func TestDispatch(t *testing.T) {

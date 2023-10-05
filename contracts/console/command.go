@@ -15,7 +15,6 @@ type Command interface {
 	Handle(ctx Context) error
 }
 
-//go:generate mockery --name=Context
 type Context interface {
 	// Argument get the value of a command argument.
 	Argument(index int) string

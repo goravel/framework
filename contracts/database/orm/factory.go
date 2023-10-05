@@ -1,6 +1,5 @@
 package orm
 
-//go:generate mockery --name=Factory
 type Factory interface {
 	// Count sets the number of models that should be generated.
 	Count(count int) Factory

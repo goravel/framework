@@ -6,10 +6,10 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
-	configmock "github.com/goravel/framework/contracts/config/mocks"
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
+	configmock "github.com/goravel/framework/mocks/config"
+	consolemocks "github.com/goravel/framework/mocks/console"
 )
 
 func TestMigrateRefreshCommand(t *testing.T) {

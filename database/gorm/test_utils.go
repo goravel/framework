@@ -6,9 +6,9 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/spf13/cast"
 
-	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
+	configmock "github.com/goravel/framework/mocks/config"
 	testingdocker "github.com/goravel/framework/support/docker"
 )
 

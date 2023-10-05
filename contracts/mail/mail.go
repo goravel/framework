@@ -1,6 +1,5 @@
 package mail
 
-//go:generate mockery --name=Mail
 type Mail interface {
 	// Content set the content of Mail.
 	Content(content Content) Mail
