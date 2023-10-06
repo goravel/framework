@@ -768,7 +768,6 @@ func (s *QueryTestSuite) TestCreate() {
 
 func (s *QueryTestSuite) TestCursor() {
 	for driver, query := range s.queries {
-		//if driver == ormcontract.DriverMysql {
 		s.Run(driver.String(), func() {
 			user := User{Name: "cursor_user", Avatar: "cursor_avatar", Address: &Address{Name: "cursor_address"}, Books: []*Book{
 				{Name: "cursor_book"},
@@ -811,7 +810,6 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Equal(1, addressNum)
 			s.Equal(1, bookNum)
 		})
-		//}
 	}
 }
 
