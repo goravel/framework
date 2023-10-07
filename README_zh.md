@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="https://www.goravel.dev/logo.png" width="300" alt="Logo">
+    <img src="https://www.goravel.dev/logo.png" width="300" alt="Logo">
 
-[![Doc](https://pkg.go.dev/badge/github.com/goravel/framework)](https://pkg.go.dev/github.com/goravel/framework)
-[![Go](https://img.shields.io/github/go-mod/go-version/goravel/framework)](https://go.dev/)
-[![Release](https://img.shields.io/github/release/goravel/framework.svg)](https://github.com/goravel/framework/releases)
-[![Test](https://github.com/goravel/framework/actions/workflows/test.yml/badge.svg)](https://github.com/goravel/framework/actions)
-[![Report Card](https://goreportcard.com/badge/github.com/goravel/framework)](https://goreportcard.com/report/github.com/goravel/framework)
-[![Codecov](https://codecov.io/gh/goravel/framework/branch/master/graph/badge.svg)](https://codecov.io/gh/goravel/framework)
-![License](https://img.shields.io/github/license/goravel/framework)
+    [![Doc](https://pkg.go.dev/badge/github.com/goravel/framework)](https://pkg.go.dev/github.com/goravel/framework)
+    [![Go](https://img.shields.io/github/go-mod/go-version/goravel/framework)](https://go.dev/)
+    [![Release](https://img.shields.io/github/release/goravel/framework.svg)](https://github.com/goravel/framework/releases)
+    [![Test](https://github.com/goravel/framework/actions/workflows/test.yml/badge.svg)](https://github.com/goravel/framework/actions)
+    [![Report Card](https://goreportcard.com/badge/github.com/goravel/framework)](https://goreportcard.com/report/github.com/goravel/framework)
+    [![Codecov](https://codecov.io/gh/goravel/framework/branch/master/graph/badge.svg)](https://codecov.io/gh/goravel/framework)
+    ![License](https://img.shields.io/github/license/goravel/framework)
 
 </div>
 
@@ -67,6 +67,13 @@ Laravel！
 <a href="https://github.com/Marian0" target="_blank"><img src="https://avatars.githubusercontent.com/u/624592?v=4" width="48" height="48"></a>
 <a href="https://github.com/ahmed3mar" target="_blank"><img src="https://avatars.githubusercontent.com/u/12982325?v=4" width="48" height="48"></a>
 <a href="https://github.com/flc1125" target="_blank"><img src="https://avatars.githubusercontent.com/u/14297703?v=4" width="48" height="48"></a>
+<a href="https://github.com/zzpwestlife" target="_blank"><img src="https://avatars.githubusercontent.com/u/12382180?v=4" width="48" height="48"></a>
+
+## 打赏
+
+开源项目的发展离不开您的支持，感谢微信打赏。
+
+<p align="left"><img src="https://www.goravel.dev/reward-wechat.jpg" width="200"></p>
 
 ## 群组
 
