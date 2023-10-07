@@ -769,8 +769,10 @@ func (s *QueryTestSuite) TestCreate() {
 func (s *QueryTestSuite) TestCursor() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
-			user := User{Name: "cursor_user", Avatar: "cursor_avatar"}
-			s.Nil(query.Create(&user))
+			user := User{Name: "cursor_user", Avatar: "cursor_avatar", Address: &Address{Name: "cursor_address"}, Books: []*Book{
+				{Name: "cursor_book"},
+			}}
+			s.Nil(query.Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
@@ -784,9 +786,11 @@ func (s *QueryTestSuite) TestCursor() {
 			s.Nil(err)
 			s.Equal(int64(1), res.RowsAffected)
 
-			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().Cursor()
+			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
 			s.Nil(err)
 			var size int
+			var addressNum int
+			var bookNum int
 			for row := range users {
 				var tempUser User
 				s.Nil(row.Scan(&tempUser))
@@ -796,8 +800,15 @@ func (s *QueryTestSuite) TestCursor() {
 				s.NotEmpty(tempUser.UpdatedAt.String())
 				s.Equal(tempUser.DeletedAt.Valid, tempUser.ID == user2.ID)
 				size++
+
+				if tempUser.Address != nil {
+					addressNum++
+				}
+				bookNum += len(tempUser.Books)
 			}
 			s.Equal(3, size)
+			s.Equal(1, addressNum)
+			s.Equal(1, bookNum)
 		})
 	}
 }
