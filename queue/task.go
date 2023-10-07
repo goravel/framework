@@ -2,30 +2,26 @@ package queue
 
 import (
 	"errors"
-	"time"
-
-	"github.com/RichardKnop/machinery/v2"
-	"github.com/RichardKnop/machinery/v2/tasks"
 
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type Task struct {
 	config     *Config
 	connection string
 	chain      bool
-	delay      *time.Time
-	machinery  *Machinery
+	delay      *carbon.Carbon
+	driver     queue.Driver
 	jobs       []queue.Jobs
 	queue      string
-	server     *machinery.Server
 }
 
 func NewTask(config *Config, job queue.Job, args []queue.Arg) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
-		machinery:  NewMachinery(config),
+		driver:     NewDriver(config.DefaultConnection(), config),
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
@@ -40,12 +36,12 @@ func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
 		config:     config,
 		connection: config.DefaultConnection(),
 		chain:      true,
-		machinery:  NewMachinery(config),
+		driver:     NewDriver(config.DefaultConnection(), config),
 		jobs:       jobs,
 	}
 }
 
-func (receiver *Task) Delay(delay time.Time) queue.Task {
+func (receiver *Task) Delay(delay carbon.Carbon) queue.Task {
 	receiver.delay = &delay
 
 	return receiver
@@ -111,19 +107,11 @@ func (receiver *Task) OnQueue(queue string) queue.Task {
 }
 
 func (receiver *Task) handleAsync(job queue.Job, args []queue.Arg) error {
-	var realArgs []tasks.Arg
-	for _, arg := range args {
-		realArgs = append(realArgs, tasks.Arg{
-			Type:  arg.Type,
-			Value: arg.Value,
-		})
-	}
-
-	_, err := receiver.server.SendTask(&tasks.Signature{
+	/*_, err := receiver.server.SendTask(&tasks.Signature{
 		Name: job.Signature(),
 		Args: realArgs,
 		ETA:  receiver.delay,
-	})
+	})*/
 	if err != nil {
 		return err
 	}
@@ -132,10 +120,5 @@ func (receiver *Task) handleAsync(job queue.Job, args []queue.Arg) error {
 }
 
 func (receiver *Task) handleSync(job queue.Job, args []queue.Arg) error {
-	var realArgs []any
-	for _, arg := range args {
-		realArgs = append(realArgs, arg.Value)
-	}
-
 	return job.Handle(realArgs...)
 }

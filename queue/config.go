@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	configcontract "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/facades"
 )
 
 type Config struct {
@@ -58,4 +60,8 @@ func (r *Config) Redis(queueConnection string) (dsn string, database int, queue 
 	}
 
 	return
+}
+
+func (r *Config) Database(queueConnection string) orm.Orm {
+	return facades.Orm().Connection(queueConnection)
 }

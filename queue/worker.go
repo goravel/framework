@@ -4,13 +4,10 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 )
 
-const DriverSync string = "sync"
-const DriverRedis string = "redis"
-
 type Worker struct {
 	concurrent int
 	connection string
-	machinery  *Machinery
+	driver     queue.Driver
 	jobs       []queue.Job
 	queue      string
 }
@@ -19,14 +16,14 @@ func NewWorker(config *Config, concurrent int, connection string, jobs []queue.J
 	return &Worker{
 		concurrent: concurrent,
 		connection: connection,
-		machinery:  NewMachinery(config),
+		driver:     NewDriver(connection, config),
 		jobs:       jobs,
 		queue:      queue,
 	}
 }
 
 func (receiver *Worker) Run() error {
-	server, err := receiver.machinery.Server(receiver.connection, receiver.queue)
+	server, err := receiver.driver.Server(receiver.connection, receiver.queue)
 	if err != nil {
 		return err
 	}
