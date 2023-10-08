@@ -25,7 +25,7 @@ func (receiver *Database) Push(job queue.Job, args []queue.Arg) error {
 	return nil
 }
 
-func (receiver *Database) Bulk(jobs []queue.Job) error {
+func (receiver *Database) Bulk(jobs []queue.Jobs) error {
 	return nil
 }
 

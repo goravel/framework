@@ -13,14 +13,11 @@ const DriverDatabase string = "database"
 func NewDriver(connection string, config *Config) queue.Driver {
 	switch config.Driver(config.DefaultConnection()) {
 	case DriverSync:
-		// TODO
-		return nil
+		return driver.NewSync(connection)
 	case DriverASync:
-		// TODO
-		return nil
+		return driver.NewASync(connection)
 	case DriverRedis:
-		// TODO
-		return nil
+		return driver.NewRedis(connection, config.Redis(connection))
 	case DriverDatabase:
 		return driver.NewDatabase(connection, config.Database(connection))
 	default:

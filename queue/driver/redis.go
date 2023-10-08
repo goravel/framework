@@ -25,7 +25,7 @@ func (receiver *Redis) Push(job queue.Job, args []queue.Arg) error {
 	return nil
 }
 
-func (receiver *Redis) Bulk(jobs []queue.Job) error {
+func (receiver *Redis) Bulk(jobs []queue.Jobs) error {
 	return nil
 }
 

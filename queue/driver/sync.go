@@ -22,7 +22,7 @@ func (receiver *Sync) Push(job queue.Job, args []queue.Arg) error {
 	return nil
 }
 
-func (receiver *Sync) Bulk(jobs []queue.Job) error {
+func (receiver *Sync) Bulk(jobs []queue.Jobs) error {
 	return nil
 }
 
