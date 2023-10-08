@@ -13,11 +13,11 @@ type Driver struct {
 }
 
 // Bulk provides a mock function with given fields: jobs
-func (_m *Driver) Bulk(jobs []queue.Job) error {
+func (_m *Driver) Bulk(jobs []queue.Jobs) error {
 	ret := _m.Called(jobs)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]queue.Job) error); ok {
+	if rf, ok := ret.Get(0).(func([]queue.Jobs) error); ok {
 		r0 = rf(jobs)
 	} else {
 		r0 = ret.Error(0)
@@ -108,13 +108,13 @@ func (_m *Driver) Pop() (queue.Job, error) {
 	return r0, r1
 }
 
-// Push provides a mock function with given fields: job
-func (_m *Driver) Push(job queue.Job) error {
-	ret := _m.Called(job)
+// Push provides a mock function with given fields: job, args
+func (_m *Driver) Push(job queue.Job, args []queue.Arg) error {
+	ret := _m.Called(job, args)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job) error); ok {
-		r0 = rf(job)
+	if rf, ok := ret.Get(0).(func(queue.Job, []queue.Arg) error); ok {
+		r0 = rf(job, args)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -134,6 +134,11 @@ func (_m *Driver) Release(job queue.Job, delay int) error {
 	}
 
 	return r0
+}
+
+// Server provides a mock function with given fields: concurrent
+func (_m *Driver) Server(concurrent int) {
+	_m.Called(concurrent)
 }
 
 // Size provides a mock function with given fields:
