@@ -17,38 +17,42 @@ func NewDatabase(connection string, db orm.Orm) *Database {
 	}
 }
 
-func (d *Database) ConnectionName() string {
-	return d.connection
+func (receiver *Database) ConnectionName() string {
+	return receiver.connection
 }
 
-func (d *Database) Push(job queue.Job) error {
+func (receiver *Database) Push(job queue.Job, args []queue.Arg) error {
 	return nil
 }
 
-func (d *Database) Bulk(jobs []queue.Job) error {
+func (receiver *Database) Bulk(jobs []queue.Job) error {
 	return nil
 }
 
-func (d *Database) Later(job queue.Job, delay int) error {
+func (receiver *Database) Later(job queue.Job, delay int) error {
 	return nil
 }
 
-func (d *Database) Pop() (queue.Job, error) {
+func (receiver *Database) Pop() (queue.Job, error) {
 	return nil, nil
 }
 
-func (d *Database) Delete(job queue.Job) error {
+func (receiver *Database) Delete(job queue.Job) error {
 	return nil
 }
 
-func (d *Database) Release(job queue.Job, delay int) error {
+func (receiver *Database) Release(job queue.Job, delay int) error {
 	return nil
 }
 
-func (d *Database) Clear() error {
+func (receiver *Database) Clear() error {
 	return nil
 }
 
-func (d *Database) Size() (int, error) {
+func (receiver *Database) Size() (int, error) {
 	return 0, nil
+}
+
+func (receiver *Database) Server(concurrent int) {
+
 }

@@ -8,48 +8,20 @@ type Worker struct {
 	concurrent int
 	connection string
 	driver     queue.Driver
-	jobs       []queue.Job
 	queue      string
 }
 
-func NewWorker(config *Config, concurrent int, connection string, jobs []queue.Job, queue string) *Worker {
+func NewWorker(config *Config, concurrent int, connection string, queue string) *Worker {
 	return &Worker{
 		concurrent: concurrent,
 		connection: connection,
 		driver:     NewDriver(connection, config),
-		jobs:       jobs,
 		queue:      queue,
 	}
 }
 
 func (receiver *Worker) Run() error {
-	server, err := receiver.driver.Server(receiver.connection, receiver.queue)
-	if err != nil {
-		return err
-	}
-	if server == nil {
-		return nil
-	}
-
-	jobTasks, err := jobs2Tasks(receiver.jobs)
-	if err != nil {
-		return err
-	}
-
-	if err := server.RegisterTasks(jobTasks); err != nil {
-		return err
-	}
-
-	if receiver.queue == "" {
-		receiver.queue = server.GetConfig().DefaultQueue
-	}
-	if receiver.concurrent == 0 {
-		receiver.concurrent = 1
-	}
-	worker := server.NewWorker(receiver.queue, receiver.concurrent)
-	if err := worker.Launch(); err != nil {
-		return err
-	}
+	receiver.driver.Server(receiver.concurrent)
 
 	return nil
 }

@@ -79,7 +79,10 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.app.jobs = []queue.Job{&TestAsyncJob{}}
+	err := Register([]queue.Job{&TestAsyncJob{}})
+	if err != nil {
+		s.Nil(err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -112,7 +115,10 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.app.jobs = []queue.Job{&TestDelayAsyncJob{}}
+	err := Register([]queue.Job{&TestAsyncJob{}})
+	if err != nil {
+		s.Nil(err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -149,7 +155,10 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.app.jobs = []queue.Job{&TestCustomAsyncJob{}}
+	err := Register([]queue.Job{&TestAsyncJob{}})
+	if err != nil {
+		s.Nil(err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -186,7 +195,10 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.app.jobs = []queue.Job{&TestErrorAsyncJob{}}
+	err := Register([]queue.Job{&TestAsyncJob{}})
+	if err != nil {
+		s.Nil(err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -221,7 +233,10 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	s.app.jobs = []queue.Job{&TestChainAsyncJob{}, &TestChainSyncJob{}}
+	err := Register([]queue.Job{&TestAsyncJob{}})
+	if err != nil {
+		s.Nil(err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

@@ -3,6 +3,8 @@ package queue
 import (
 	"fmt"
 
+	"github.com/redis/go-redis/v9"
+
 	configcontract "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/facades"
@@ -45,21 +47,18 @@ func (r *Config) Driver(connection string) string {
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
-func (r *Config) Redis(queueConnection string) (dsn string, database int, queue string) {
+func (r *Config) Redis(queueConnection string) *redis.Client {
 	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	queue = r.Queue(queueConnection, "")
 	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
 	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
 	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
-	database = r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
+	database := r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
 
-	if password == "" {
-		dsn = fmt.Sprintf("%s:%d", host, port)
-	} else {
-		dsn = fmt.Sprintf("%s@%s:%d", password, host, port)
-	}
-
-	return
+	return redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", host, port),
+		Password: password,
+		DB:       database,
+	})
 }
 
 func (r *Config) Database(queueConnection string) orm.Orm {

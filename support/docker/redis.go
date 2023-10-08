@@ -3,8 +3,8 @@ package docker
 import (
 	"context"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/ory/dockertest/v3"
+	"github.com/redis/go-redis/v9"
 )
 
 func Redis() (*dockertest.Pool, *dockertest.Resource, error) {

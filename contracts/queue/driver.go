@@ -4,9 +4,9 @@ type Driver interface {
 	// ConnectionName returns the connection name for the driver.
 	ConnectionName() string
 	// Push pushes the job onto the queue.
-	Push(job Job) error
+	Push(job Job, args []Arg) error
 	// Bulk pushes a slice of jobs onto the queue.
-	Bulk(jobs []Job) error
+	Bulk(jobs []Jobs) error
 	// Later pushes the job onto the queue after a delay.
 	Later(job Job, delay int) error
 	// Pop pops the next job off of the queue.
@@ -19,4 +19,6 @@ type Driver interface {
 	Clear() error
 	// Size returns the size of the queue.
 	Size() (int, error)
+	// Server starts a queue server.
+	Server(concurrent int)
 }
