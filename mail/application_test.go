@@ -87,9 +87,10 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
 
 	queueFacade := queue.NewApplication(mockConfig)
-	queueFacade.Register([]queuecontract.Job{
+	err := queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})
+	s.Nil(err)
 
 	app := NewApplication(mockConfig, queueFacade)
 

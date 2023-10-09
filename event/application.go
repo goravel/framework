@@ -26,7 +26,10 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 		}
 	}
 
-	app.queue.Register(jobs)
+	err := app.queue.Register(jobs)
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 func (app *Application) GetEvents() map[event.Event][]event.Listener {
