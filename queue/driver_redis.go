@@ -1,8 +1,9 @@
-package driver
+package queue
 
 import (
-	"github.com/goravel/framework/contracts/queue"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/goravel/framework/contracts/queue"
 )
 
 type Redis struct {

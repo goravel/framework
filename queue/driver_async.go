@@ -1,4 +1,4 @@
-package driver
+package queue
 
 import (
 	"github.com/goravel/framework/contracts/queue"
