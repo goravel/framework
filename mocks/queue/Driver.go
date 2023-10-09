@@ -12,13 +12,13 @@ type Driver struct {
 	mock.Mock
 }
 
-// Bulk provides a mock function with given fields: jobs
-func (_m *Driver) Bulk(jobs []queue.Jobs) error {
-	ret := _m.Called(jobs)
+// Bulk provides a mock function with given fields: jobs, _a1
+func (_m *Driver) Bulk(jobs []queue.Jobs, _a1 string) error {
+	ret := _m.Called(jobs, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]queue.Jobs) error); ok {
-		r0 = rf(jobs)
+	if rf, ok := ret.Get(0).(func([]queue.Jobs, string) error); ok {
+		r0 = rf(jobs, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -26,13 +26,13 @@ func (_m *Driver) Bulk(jobs []queue.Jobs) error {
 	return r0
 }
 
-// Clear provides a mock function with given fields:
-func (_m *Driver) Clear() error {
-	ret := _m.Called()
+// Clear provides a mock function with given fields: _a0
+func (_m *Driver) Clear(_a0 string) error {
+	ret := _m.Called(_a0)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -54,13 +54,13 @@ func (_m *Driver) ConnectionName() string {
 	return r0
 }
 
-// Delete provides a mock function with given fields: job
-func (_m *Driver) Delete(job queue.Job) error {
-	ret := _m.Called(job)
+// Delete provides a mock function with given fields: _a0, job
+func (_m *Driver) Delete(_a0 string, job queue.Job) error {
+	ret := _m.Called(_a0, job)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job) error); ok {
-		r0 = rf(job)
+	if rf, ok := ret.Get(0).(func(string, queue.Job) error); ok {
+		r0 = rf(_a0, job)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -68,13 +68,13 @@ func (_m *Driver) Delete(job queue.Job) error {
 	return r0
 }
 
-// Later provides a mock function with given fields: job, delay
-func (_m *Driver) Later(job queue.Job, delay int) error {
-	ret := _m.Called(job, delay)
+// Later provides a mock function with given fields: delay, job, args, _a3
+func (_m *Driver) Later(delay int, job queue.Job, args []queue.Arg, _a3 string) error {
+	ret := _m.Called(delay, job, args, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job, int) error); ok {
-		r0 = rf(job, delay)
+	if rf, ok := ret.Get(0).(func(int, queue.Job, []queue.Arg, string) error); ok {
+		r0 = rf(delay, job, args, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -82,39 +82,48 @@ func (_m *Driver) Later(job queue.Job, delay int) error {
 	return r0
 }
 
-// Pop provides a mock function with given fields:
-func (_m *Driver) Pop() (queue.Job, error) {
-	ret := _m.Called()
+// Pop provides a mock function with given fields: _a0
+func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Arg, error) {
+	ret := _m.Called(_a0)
 
 	var r0 queue.Job
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (queue.Job, error)); ok {
-		return rf()
+	var r1 []queue.Arg
+	var r2 error
+	if rf, ok := ret.Get(0).(func(string) (queue.Job, []queue.Arg, error)); ok {
+		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func() queue.Job); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) queue.Job); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(queue.Job)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(string) []queue.Arg); ok {
+		r1 = rf(_a0)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]queue.Arg)
+		}
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(string) error); ok {
+		r2 = rf(_a0)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
-// Push provides a mock function with given fields: job, args
-func (_m *Driver) Push(job queue.Job, args []queue.Arg) error {
-	ret := _m.Called(job, args)
+// Push provides a mock function with given fields: job, args, _a2
+func (_m *Driver) Push(job queue.Job, args []queue.Arg, _a2 string) error {
+	ret := _m.Called(job, args, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job, []queue.Arg) error); ok {
-		r0 = rf(job, args)
+	if rf, ok := ret.Get(0).(func(queue.Job, []queue.Arg, string) error); ok {
+		r0 = rf(job, args, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -122,13 +131,13 @@ func (_m *Driver) Push(job queue.Job, args []queue.Arg) error {
 	return r0
 }
 
-// Release provides a mock function with given fields: job, delay
-func (_m *Driver) Release(job queue.Job, delay int) error {
-	ret := _m.Called(job, delay)
+// Release provides a mock function with given fields: _a0, job, delay
+func (_m *Driver) Release(_a0 string, job queue.Job, delay int) error {
+	ret := _m.Called(_a0, job, delay)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job, int) error); ok {
-		r0 = rf(job, delay)
+	if rf, ok := ret.Get(0).(func(string, queue.Job, int) error); ok {
+		r0 = rf(_a0, job, delay)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -136,28 +145,28 @@ func (_m *Driver) Release(job queue.Job, delay int) error {
 	return r0
 }
 
-// Server provides a mock function with given fields: concurrent
-func (_m *Driver) Server(concurrent int) {
-	_m.Called(concurrent)
+// Server provides a mock function with given fields: concurrent, _a1
+func (_m *Driver) Server(concurrent int, _a1 string) {
+	_m.Called(concurrent, _a1)
 }
 
-// Size provides a mock function with given fields:
-func (_m *Driver) Size() (int, error) {
-	ret := _m.Called()
+// Size provides a mock function with given fields: _a0
+func (_m *Driver) Size(_a0 string) (int64, error) {
+	ret := _m.Called(_a0)
 
-	var r0 int
+	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (int, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func() int); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) int64); ok {
+		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
