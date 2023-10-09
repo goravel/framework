@@ -8,6 +8,7 @@ type Job interface {
 }
 
 type Jobs struct {
-	Job  Job
-	Args []Arg
+	Job   Job
+	Args  []Arg
+	Delay int64
 }

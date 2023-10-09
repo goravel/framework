@@ -3,6 +3,7 @@ package queue
 import (
 	"testing"
 
+	mocks "github.com/goravel/framework/mocks/database/orm"
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/mocks/config"
@@ -73,4 +74,23 @@ func (s *ConfigTestSuite) TestRedis() {
 	redisClient := s.config.Redis("redis")
 
 	s.NotNil(redisClient)
+}
+
+func (s *ConfigTestSuite) TestDatabase() {
+	mockOrm := &mocks.Orm{}
+	mockOrm.On("Connection", "database").Return(mockOrm)
+
+	OrmFacade = mockOrm
+
+	s.mockConfig.On("GetString", "queue.connections.database.connection").Return("default").Once()
+	s.mockConfig.On("GetString", "database.postgresql.default.host").Return("127.0.0.1").Once()
+	s.mockConfig.On("GetString", "database.postgresql.default.password").Return("").Once()
+	s.mockConfig.On("GetInt", "database.postgresql.default.port").Return(5432).Once()
+	s.mockConfig.On("GetInt", "database.postgresql.default.database").Return("test").Once()
+	s.mockConfig.On("GetString", "queue.connections.database.queue", "default").Return("default").Once()
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Once()
+
+	orm := s.config.Database("database")
+
+	s.NotNil(orm)
 }
