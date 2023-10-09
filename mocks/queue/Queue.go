@@ -61,8 +61,17 @@ func (_m *Queue) Job(job queue.Job, args []queue.Arg) queue.Task {
 }
 
 // Register provides a mock function with given fields: jobs
-func (_m *Queue) Register(jobs []queue.Job) {
-	_m.Called(jobs)
+func (_m *Queue) Register(jobs []queue.Job) error {
+	ret := _m.Called(jobs)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]queue.Job) error); ok {
+		r0 = rf(jobs)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Worker provides a mock function with given fields: args
