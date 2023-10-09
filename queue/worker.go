@@ -21,7 +21,7 @@ func NewWorker(config *Config, concurrent int, connection string, queue string) 
 }
 
 func (receiver *Worker) Run() error {
-	receiver.driver.Server(receiver.concurrent)
+	receiver.driver.Server(receiver.concurrent, receiver.queue)
 
 	return nil
 }

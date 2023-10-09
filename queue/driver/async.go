@@ -18,37 +18,38 @@ func (receiver *ASync) ConnectionName() string {
 	return receiver.connection
 }
 
-func (receiver *ASync) Push(job queue.Job, args []queue.Arg) error {
+func (receiver *ASync) Push(job queue.Job, args []queue.Arg, queue string) error {
 	return nil
 }
 
-func (receiver *ASync) Bulk(jobs []queue.Jobs) error {
+func (receiver *ASync) Bulk(jobs []queue.Jobs, queue string) error {
 	return nil
 }
 
-func (receiver *ASync) Later(job queue.Job, delay int) error {
+func (receiver *ASync) Later(delay int, job queue.Job, args []queue.Arg, queue string) error {
 	return nil
 }
 
-func (receiver *ASync) Pop() (queue.Job, error) {
-	return nil, nil
+func (receiver *ASync) Pop(queue string) (queue.Job, []queue.Arg, error) {
+	return nil, nil, nil
 }
 
-func (receiver *ASync) Delete(job queue.Job) error {
+func (receiver *ASync) Delete(queue string, job queue.Job) error {
 	return nil
 }
 
-func (receiver *ASync) Release(job queue.Job, delay int) error {
+func (receiver *ASync) Release(queue string, job queue.Job, delay int) error {
 	return nil
 }
 
-func (receiver *ASync) Clear() error {
+func (receiver *ASync) Clear(queue string) error {
 	return nil
 }
 
-func (receiver *ASync) Size() (int, error) {
+func (receiver *ASync) Size(queue string) (int64, error) {
 	return 0, nil
 }
 
-func (receiver *ASync) Server(concurrent int) {
+func (receiver *ASync) Server(concurrent int, queue string) {
+
 }

@@ -1,8 +1,13 @@
 package driver
 
 import (
+	"time"
+
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/queue"
+	"github.com/goravel/framework/queue/models"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type Database struct {
@@ -17,42 +22,116 @@ func NewDatabase(connection string, db orm.Orm) *Database {
 	}
 }
 
-func (receiver *Database) ConnectionName() string {
+func (receiver Database) ConnectionName() string {
 	return receiver.connection
 }
 
-func (receiver *Database) Push(job queue.Job, args []queue.Arg) error {
+func (receiver Database) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+	var j models.Job
+	j.Queue = queue
+	j.Job = job.Signature()
+	j.Arg = args
+	j.AvailableAt = &carbon.DateTime{Carbon: carbon.Now()}
+	j.CreatedAt = &carbon.DateTime{Carbon: carbon.Now()}
+
+	return receiver.db.Query().Create(&j)
+}
+
+func (receiver Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
+	var j []models.Job
+	for _, job := range jobs {
+		var jj models.Job
+		jj.Queue = queue
+		jj.Job = job.Job.Signature()
+		jj.Arg = job.Args
+		jj.AvailableAt = &carbon.DateTime{Carbon: carbon.Now()}
+		jj.CreatedAt = &carbon.DateTime{Carbon: carbon.Now()}
+		j = append(j, jj)
+	}
+
+	return receiver.db.Query().Create(&j)
+}
+
+func (receiver Database) Later(delay int, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+	var j models.Job
+	j.Queue = queue
+	j.Job = job.Signature()
+	j.Arg = args
+	j.AvailableAt = &carbon.DateTime{Carbon: carbon.Now().AddSeconds(delay)}
+	j.CreatedAt = &carbon.DateTime{Carbon: carbon.Now()}
+
+	return receiver.db.Query().Create(&j)
+}
+
+func (receiver Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Arg, error) {
+	var job models.Job
+	err := receiver.db.Query().Model(models.Job{}).Where("queue", q).Where("reserved_at", nil).First(&job)
+
+	return job, job.Arg, err
+}
+
+func (receiver Database) Delete(queue string, job contractsqueue.Job) error {
+	var j models.Job
+	err := receiver.db.Query().Model(models.Job{}).Where("queue", queue).Where("job", job.Signature()).First(&j)
+	if err != nil {
+		_, err = receiver.db.Query().Delete(&j)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (receiver *Database) Bulk(jobs []queue.Jobs) error {
+func (receiver Database) Release(queue string, job contractsqueue.Job, delay int) error {
+	var j models.Job
+	err := receiver.db.Query().Model(models.Job{}).Where("queue", queue).Where("job", job.Signature()).First(&j)
+	if err != nil {
+		j.ReservedAt = &carbon.DateTime{Carbon: carbon.Now().AddSeconds(delay)}
+		_, err = receiver.db.Query().Update(&j)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (receiver *Database) Later(job queue.Job, delay int) error {
+func (receiver Database) Clear(queue string) error {
+	var j []models.Job
+	err := receiver.db.Query().Model(models.Job{}).Where("queue", queue).Find(&j)
+	if err != nil {
+		_, err = receiver.db.Query().Delete(&j)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (receiver *Database) Pop() (queue.Job, error) {
-	return nil, nil
+func (receiver Database) Size(queue string) (int64, error) {
+	var count int64
+	err := receiver.db.Query().Model(models.Job{}).Where("queue", queue).Count(&count)
+	return count, err
 }
 
-func (receiver *Database) Delete(job queue.Job) error {
-	return nil
-}
+func (receiver Database) Server(concurrent int, q string) {
+	for i := 0; i < concurrent; i++ {
+		go func() {
+			for {
+				job, args, err := receiver.Pop(q)
+				if err != nil {
+					continue
+				}
 
-func (receiver *Database) Release(job queue.Job, delay int) error {
-	return nil
-}
+				err = queue.Call(job.Signature(), args)
+				if err != nil {
+					continue
+				}
 
-func (receiver *Database) Clear() error {
-	return nil
-}
-
-func (receiver *Database) Size() (int, error) {
-	return 0, nil
-}
-
-func (receiver *Database) Server(concurrent int) {
-
+				time.Sleep(time.Second)
+			}
+		}()
+	}
 }

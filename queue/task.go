@@ -28,6 +28,7 @@ func NewTask(config *Config, job queue.Job, args []queue.Arg) *Task {
 				Args: args,
 			},
 		},
+		queue: config.Queue(config.DefaultConnection(), ""),
 	}
 }
 
@@ -38,6 +39,7 @@ func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
 		chain:      true,
 		driver:     NewDriver(config.DefaultConnection(), config),
 		jobs:       jobs,
+		queue:      config.Queue(config.DefaultConnection(), ""),
 	}
 }
 
@@ -58,10 +60,10 @@ func (receiver *Task) Dispatch() error {
 	}
 
 	if receiver.chain {
-		return receiver.driver.Bulk(receiver.jobs)
+		return receiver.driver.Bulk(receiver.jobs, receiver.queue)
 	} else {
 		job := receiver.jobs[0]
-		return receiver.driver.Push(job.Job, job.Args)
+		return receiver.driver.Push(job.Job, job.Args, receiver.queue)
 	}
 }
 
