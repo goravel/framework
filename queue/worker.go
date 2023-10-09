@@ -6,7 +6,6 @@ import (
 
 type Worker struct {
 	concurrent int
-	connection string
 	driver     queue.Driver
 	queue      string
 }
@@ -14,7 +13,6 @@ type Worker struct {
 func NewWorker(config *Config, concurrent int, connection string, queue string) *Worker {
 	return &Worker{
 		concurrent: concurrent,
-		connection: connection,
 		driver:     NewDriver(connection, config),
 		queue:      queue,
 	}
