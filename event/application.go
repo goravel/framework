@@ -20,7 +20,7 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 	var jobs []queuecontract.Job
 
 	if app.events == nil {
-		app.events = map[event.Event][][event.Listner{}
+		app.events = map[event.Event][]event.Listener{}
 	}
 
 	for e, listeners := range events {
