@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.11
-	github.com/bytedance/sonic v1.10.1
+	github.com/bytedance/sonic v1.10.2
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.2
 	github.com/glebarez/go-sqlite v1.21.2
@@ -13,7 +13,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang-migrate/migrate/v4 v4.16.2
-	github.com/golang-module/carbon/v2 v2.2.8
+	github.com/golang-module/carbon/v2 v2.2.9
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.3.1
 	github.com/google/wire v0.5.0
