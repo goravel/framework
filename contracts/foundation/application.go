@@ -4,6 +4,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 )
 
+//go:generate mockery --name=Application
 type Application interface {
 	Container
 	// Boot register and bootstrap configured service providers.

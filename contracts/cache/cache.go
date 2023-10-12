@@ -5,11 +5,13 @@ import (
 	"time"
 )
 
+//go:generate mockery --name=Cache
 type Cache interface {
 	Driver
 	Store(name string) Driver
 }
 
+//go:generate mockery --name=Driver
 type Driver interface {
 	// Add an item in the cache if the key does not exist.
 	Add(key string, value any, t time.Duration) bool
@@ -49,6 +51,7 @@ type Driver interface {
 	WithContext(ctx context.Context) Driver
 }
 
+//go:generate mockery --name=Lock
 type Lock interface {
 	// Block attempt to acquire the lock for the given number of seconds.
 	Block(t time.Duration, callback ...func()) bool

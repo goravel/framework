@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	configmock "github.com/goravel/framework/mocks/config"
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 	"github.com/goravel/framework/support/file"
 )
 

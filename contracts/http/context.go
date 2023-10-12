@@ -19,6 +19,7 @@ type ResourceController interface {
 	Destroy(Context) Response
 }
 
+//go:generate mockery --name=Context
 type Context interface {
 	context.Context
 	// Context returns the Context

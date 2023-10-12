@@ -2,6 +2,7 @@ package access
 
 import "context"
 
+//go:generate mockery --name=Gate
 type Gate interface {
 	// WithContext returns a new Gate instance with the given context.
 	WithContext(ctx context.Context) Gate

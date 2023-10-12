@@ -23,12 +23,14 @@ const (
 	DebugLevel
 )
 
+//go:generate mockery --name=Log
 type Log interface {
 	// WithContext adds a context to the logger.
 	WithContext(ctx context.Context) Writer
 	Writer
 }
 
+//go:generate mockery --name=Writer
 type Writer interface {
 	// Debug logs a message at DebugLevel.
 	Debug(args ...any)
@@ -77,11 +79,13 @@ type Writer interface {
 	With(data map[string]any) Writer
 }
 
+//go:generate mockery --name=Logger
 type Logger interface {
 	// Handle pass a channel config path here
 	Handle(channel string) (Hook, error)
 }
 
+//go:generate mockery --name=Hook
 type Hook interface {
 	// Levels monitoring level
 	Levels() []Level
@@ -89,6 +93,7 @@ type Hook interface {
 	Fire(Entry) error
 }
 
+//go:generate mockery --name=Entry
 type Entry interface {
 	// Context returns the context of the entry.
 	Context() context.Context

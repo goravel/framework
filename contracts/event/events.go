@@ -1,5 +1,6 @@
 package event
 
+//go:generate mockery --name=Instance
 type Instance interface {
 	// Register event listeners to the application.
 	Register(map[Event][]Listener)
@@ -23,6 +24,7 @@ type Listener interface {
 	Handle(args ...any) error
 }
 
+//go:generate mockery --name=Task
 type Task interface {
 	// Dispatch an event and call the listeners.
 	Dispatch() error

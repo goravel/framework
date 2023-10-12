@@ -10,9 +10,9 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 
+	configmock "github.com/goravel/framework/contracts/config/mocks"
 	databasecontract "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
-	configmock "github.com/goravel/framework/mocks/config"
 )
 
 type DialectorTestSuite struct {
@@ -63,8 +63,8 @@ func (s *DialectorTestSuite) TestPostgresql() {
 		Return("UTC").Once()
 	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
 	s.Equal(postgres.New(postgres.Config{
-		DSN: fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-			s.config.Host, s.config.Username, s.config.Password, s.config.Database, s.config.Port, "disable", "UTC"),
+		DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
+			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "disable", "UTC"),
 	}), dialectors[0])
 	s.Nil(err)
 }
