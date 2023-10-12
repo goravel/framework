@@ -1,5 +1,6 @@
 package schedule
 
+//go:generate mockery --name=Event
 type Event interface {
 	// At schedule the event to run at the specified time.
 	At(time string) Event

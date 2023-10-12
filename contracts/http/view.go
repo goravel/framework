@@ -1,5 +1,6 @@
 package http
 
+//go:generate mockery --name=View
 type View interface {
 	// Exists checks if a view with the specified name exists.
 	Exists(view string) bool

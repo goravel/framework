@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	consolemocks "github.com/goravel/framework/contracts/console/mocks"
 )
 
 type TestCaseSuite struct {

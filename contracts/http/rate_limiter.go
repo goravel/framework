@@ -1,5 +1,6 @@
 package http
 
+//go:generate mockery --name=RateLimiter
 type RateLimiter interface {
 	// For register a new rate limiter.
 	For(name string, callback func(ctx Context) Limit)
