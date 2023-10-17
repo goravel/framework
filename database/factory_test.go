@@ -8,7 +8,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gookit/color"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	gormio "gorm.io/gorm"
 
@@ -85,14 +84,13 @@ func TestFactoryTestSuite(t *testing.T) {
 	}
 
 	mysqlDocker := gorm.NewMysqlDocker()
-	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
+	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 	suite.Run(t, &FactoryTestSuite{
 		query: mysqlQuery,
 	})
-	assert.Nil(t, mysqlPool.Purge(mysqlResource))
 }
 
 func (s *FactoryTestSuite) SetupTest() {
