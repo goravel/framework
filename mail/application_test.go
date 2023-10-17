@@ -106,6 +106,8 @@ func mockConfig(mailPort int) *configmock.Config {
 	mockConfig.On("GetString", "app.name").Return("goravel")
 	mockConfig.On("GetString", "queue.default").Return("sync")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
+	mockConfig.On("GetString", "queue.connections.sync.connection").Return("default")
+	mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default")
 
 	if file.Exists("../.env") {
 		vip := viper.New()
