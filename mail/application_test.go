@@ -104,10 +104,15 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 func mockConfig(mailPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "queue.default").Return("sync")
+	mockConfig.On("GetString", "queue.default").Return("redis")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
-	mockConfig.On("GetString", "queue.connections.sync.connection").Return("default")
-	mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
+	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default")
+	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default")
+	mockConfig.On("GetString", "database.redis.default.host").Return("localhost")
+	mockConfig.On("GetString", "database.redis.default.password").Return("")
+	mockConfig.On("GetInt", "database.redis.default.port").Return(6379)
+	mockConfig.On("GetInt", "database.redis.default.database").Return(0)
 
 	if file.Exists("../.env") {
 		vip := viper.New()

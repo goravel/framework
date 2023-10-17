@@ -40,7 +40,7 @@ jobs:
         image: mcmoe/mssqldocker:latest
         env:
           ACCEPT_EULA: Y
-          SA_PASSWORD: Password!1234
+          SA_PASSWORD: Goravel(!)
           MSSQL_DB: goravel
           MSSQL_USER: goravel
           MSSQL_PASSWORD: Goravel(!)
