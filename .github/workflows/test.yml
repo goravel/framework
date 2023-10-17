@@ -27,12 +27,10 @@ jobs:
 
     services:
       mysql:
-        image: mysql/mysql-server:latest
+        image: mysql:latest
         env:
           MYSQL_DATABASE: goravel
-          MYSQL_USER: goravel
-          MYSQL_PASSWORD: Goravel(!)
-          MYSQL_RANDOM_ROOT_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD: Goravel(!)
         ports:
           - 3306:3306
 
