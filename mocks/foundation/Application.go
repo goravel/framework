@@ -42,8 +42,6 @@ import (
 
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
-	testing "github.com/goravel/framework/contracts/testing"
-
 	validation "github.com/goravel/framework/contracts/validation"
 )
 
@@ -427,22 +425,6 @@ func (_m *Application) MakeStorage() filesystem.Storage {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(filesystem.Storage)
-		}
-	}
-
-	return r0
-}
-
-// MakeTesting provides a mock function with given fields:
-func (_m *Application) MakeTesting() testing.Testing {
-	ret := _m.Called()
-
-	var r0 testing.Testing
-	if rf, ok := ret.Get(0).(func() testing.Testing); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(testing.Testing)
 		}
 	}
 

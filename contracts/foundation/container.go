@@ -19,7 +19,6 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
-	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/contracts/validation"
 )
 
@@ -66,8 +65,6 @@ type Container interface {
 	MakeSchedule() schedule.Schedule
 	// MakeStorage resolves the storage instance.
 	MakeStorage() filesystem.Storage
-	// MakeTesting resolves the testing instance.
-	MakeTesting() testing.Testing
 	// MakeValidation resolves the validation instance.
 	MakeValidation() validation.Validation
 	// MakeView resolves the view instance.
