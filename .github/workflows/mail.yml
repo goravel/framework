@@ -1,4 +1,5 @@
-name: Test
+name: Mail
+
 on:
   push:
     branches:
@@ -6,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'mail/**'
+
 env:
   MAIL_HOST: ${{ secrets.MAIL_HOST }}
   MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
@@ -15,6 +17,7 @@ env:
   MAIL_TO: ${{ secrets.MAIL_TO }}
   MAIL_CC: ${{ secrets.MAIL_CC }}
   MAIL_BCC: ${{ secrets.MAIL_BCC }}
+
 jobs:
   mail:
     runs-on: ubuntu-latest

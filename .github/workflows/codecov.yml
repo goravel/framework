@@ -1,9 +1,11 @@
 name: Codecov
+
 on:
   push:
     branches:
       - master
   pull_request:
+
 jobs:
   codecov:
     runs-on: ubuntu-latest

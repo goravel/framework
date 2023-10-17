@@ -1,9 +1,11 @@
 name: Test
+
 on:
   push:
     branches:
       - master
   pull_request:
+
 jobs:
   test:
     strategy:
@@ -11,7 +13,10 @@ jobs:
         go:
           - "stable"
           - "oldstable"
-    runs-on: ubuntu-latest
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -21,19 +26,3 @@ jobs:
         run: go mod tidy
       - name: Run tests
         run: go test ./...
-  windows:
-    strategy:
-      matrix:
-        go:
-          - "stable"
-          - "oldstable"
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Run tests
-        run: go test ./... -short

@@ -2,8 +2,14 @@ name: Database
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   pull_request:
+    paths:
+      - 'database/**'
+
+env:
+  GORAVEL_DATABASE_TEST: "true"
 
 jobs:
   database:
@@ -54,4 +60,4 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Run tests
-        run: GORAVEL_DATABASE_TEST=true bash .github/database.sh
+        run: bash .github/database.sh

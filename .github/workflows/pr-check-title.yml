@@ -1,6 +1,8 @@
 name: PR Check Title
+
 on:
   pull_request:
+
 jobs:
   pr-check-title:
     runs-on: ubuntu-latest
