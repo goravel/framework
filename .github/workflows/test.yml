@@ -33,7 +33,6 @@ jobs:
           MYSQL_ROOT_PASSWORD: Goravel(!)
         ports:
           - 3306:3306
-
       postgresql:
         image: postgres:latest
         env:
@@ -43,7 +42,6 @@ jobs:
           POSTGRES_PASSWORD: Goravel(!)
         ports:
           - 5432:5432
-
       sqlserver:
         image: mcmoe/mssqldocker:latest
         env:
@@ -54,9 +52,6 @@ jobs:
           MSSQL_PASSWORD: Goravel(!)
         ports:
           - 1433:1433
-
-      sqlite:
-        image: nouchka/sqlite3:latest
       redis:
         image: redis:latest
         ports:
