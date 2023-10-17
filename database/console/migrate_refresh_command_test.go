@@ -127,11 +127,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			assert.Nil(t, err)
 			assert.True(t, agent1.ID > 0)
 
-			if test.name != "sqlite" {
-				_, err = query.Exec("DROP TABLE agents;")
-				assert.Nil(t, err)
-			}
-
 			mockContext.AssertExpectations(t)
 			removeMigrations()
 		})

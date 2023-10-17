@@ -99,11 +99,6 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			err = query.Where("name", "goravel").FirstOrFail(&agent1)
 			assert.Error(t, err)
 
-			if test.name != "sqlite" {
-				_, err = query.Exec("DROP TABLE agents;")
-				assert.Nil(t, err)
-			}
-
 			mockContext.AssertExpectations(t)
 			removeMigrations()
 		})
