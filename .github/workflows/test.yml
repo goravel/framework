@@ -37,19 +37,15 @@ jobs:
         image: postgres:latest
         env:
           TZ: Asia/Shanghai
-          POSTGRES_DB: goravel
           POSTGRES_USER: root
           POSTGRES_PASSWORD: Goravel(!)
         ports:
           - 5432:5432
       sqlserver:
-        image: mcmoe/mssqldocker:latest
+        image: mcr.microsoft.com/mssql/server:latest
         env:
           ACCEPT_EULA: Y
-          SA_PASSWORD: Goravel(!)
-          MSSQL_DB: goravel
-          MSSQL_USER: root
-          MSSQL_PASSWORD: Goravel(!)
+          MSSQL_SA_PASSWORD: Goravel(!)
         ports:
           - 1433:1433
       redis:
