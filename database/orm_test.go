@@ -77,6 +77,25 @@ func TestOrmSuite(t *testing.T) {
 	suite.Run(t, new(OrmSuite))
 
 	assert.Nil(t, file.Remove("goravel"))
+
+	_, err = mysqlQuery.Exec("DROP TABLE `users`")
+	assert.Nil(t, err)
+	_, err = mysqlQuery.Exec("DROP TABLE `authors`")
+	assert.Nil(t, err)
+	_, err = mysqlQuery.Exec("DROP TABLE `houses`")
+	assert.Nil(t, err)
+	_, err = postgresqlQuery.Exec("DROP TABLE `users`")
+	assert.Nil(t, err)
+	_, err = postgresqlQuery.Exec("DROP TABLE `authors`")
+	assert.Nil(t, err)
+	_, err = postgresqlQuery.Exec("DROP TABLE `houses`")
+	assert.Nil(t, err)
+	_, err = sqlserverQuery.Exec("DROP TABLE `users`")
+	assert.Nil(t, err)
+	_, err = sqlserverQuery.Exec("DROP TABLE `authors`")
+	assert.Nil(t, err)
+	_, err = sqlserverQuery.Exec("DROP TABLE `houses`")
+	assert.Nil(t, err)
 }
 
 func (s *OrmSuite) SetupTest() {

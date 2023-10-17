@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	gormio "gorm.io/gorm"
 
@@ -85,6 +86,13 @@ func TestFactoryTestSuite(t *testing.T) {
 	suite.Run(t, &FactoryTestSuite{
 		query: mysqlQuery,
 	})
+
+	_, err = mysqlQuery.Exec("DROP TABLE `users`")
+	assert.Nil(t, err)
+	_, err = mysqlQuery.Exec("DROP TABLE `authors`")
+	assert.Nil(t, err)
+	_, err = mysqlQuery.Exec("DROP TABLE `houses`")
+	assert.Nil(t, err)
 }
 
 func (s *FactoryTestSuite) SetupTest() {

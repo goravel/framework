@@ -376,6 +376,12 @@ func TestQueryTestSuite(t *testing.T) {
 	})
 
 	assert.Nil(t, file.Remove(dbDatabase))
+	_, err = mysqlQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
+	_, err = postgresqlQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
+	_, err = sqlserverQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -2854,11 +2860,6 @@ func TestCustomConnection(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
-	postgresqlDocker := NewPostgresqlDocker()
-	_, err = postgresqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
 
 	review := Review{Body: "create_review"}
 	assert.Nil(t, query.Create(&review))
@@ -2898,6 +2899,9 @@ func TestCustomConnection(t *testing.T) {
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
 	assert.True(t, person.ID == 0)
+
+	_, err = query.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
 }
 
 func TestReadWriteSeparate(t *testing.T) {
@@ -3021,6 +3025,13 @@ func TestReadWriteSeparate(t *testing.T) {
 
 	assert.Nil(t, file.Remove(dbDatabase))
 	assert.Nil(t, file.Remove(dbDatabase1))
+
+	_, err = writeMysqlQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
+	_, err = writePostgresqlQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
+	_, err = writeSqliteQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
@@ -3076,6 +3087,13 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 
 	assert.Nil(t, file.Remove(dbDatabase))
+
+	_, err = mysqlQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
+	_, err = postgresqlQuery.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
+	_, err = sqlserverDB.Exec("DROP DATABASE IF EXISTS " + dbDatabase)
+	assert.Nil(t, err)
 }
 
 func paginator(page string, limit string) func(methods ormcontract.Query) ormcontract.Query {

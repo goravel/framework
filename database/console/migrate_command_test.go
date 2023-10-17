@@ -95,6 +95,9 @@ func TestMigrateCommand(t *testing.T) {
 			assert.Nil(t, query.Where("name", "goravel").First(&agent))
 			assert.True(t, agent.ID > 0)
 
+			_, err := query.Exec("DROP TABLE agents;")
+			assert.Nil(t, err)
+
 			removeMigrations()
 		})
 	}

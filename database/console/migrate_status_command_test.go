@@ -95,6 +95,11 @@ func TestMigrateStatusCommand(t *testing.T) {
 
 			assert.Nil(t, migrateStatusCommand.Handle(mockContext))
 
+			if test.name != "sqlite" {
+				_, err = query.Exec("DROP TABLE agents;")
+				assert.Nil(t, err)
+			}
+
 			removeMigrations()
 		})
 	}
