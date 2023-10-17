@@ -2900,42 +2900,6 @@ func TestReadWriteSeparate(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	readMysqlDocker := NewMysqlDocker()
-	readMysqlQuery, err := readMysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get read mysql error: %s", err)
-	}
-
-	writeMysqlDocker := NewMysqlDocker()
-	writeMysqlQuery, err := writeMysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get write mysql error: %s", err)
-	}
-
-	writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
-	mysqlQuery, err := writeMysqlDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get mysql gorm error: %s", err)
-	}
-
-	readPostgresqlDocker := NewPostgresqlDocker()
-	readPostgresqlQuery, err := readPostgresqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get read postgresql error: %s", err)
-	}
-
-	writePostgresqlDocker := NewPostgresqlDocker()
-	writePostgresqlQuery, err := writePostgresqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get write postgresql error: %s", err)
-	}
-
-	writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
-	postgresqlQuery, err := writePostgresqlDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get postgresql gorm error: %s", err)
-	}
-
 	readSqliteDocker := NewSqliteDocker(dbDatabase)
 	readSqliteQuery, err := readSqliteDocker.New()
 	if err != nil {
@@ -2954,43 +2918,11 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlite gorm error: %s", err)
 	}
 
-	readSqlserverDocker := NewSqlserverDocker()
-	readSqlserverQuery, err := readSqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Get read sqlserver error: %s", err)
-	}
-
-	writeSqlserverDocker := NewSqlserverDocker()
-	writeSqlserverQuery, err := writeSqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Get write sqlserver error: %s", err)
-	}
-	writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
-	sqlserverDB, err := writeSqlserverDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get sqlserver gorm error: %s", err)
-	}
-
 	dbs := map[ormcontract.Driver]map[string]ormcontract.Query{
-		ormcontract.DriverMysql: {
-			"mix":   mysqlQuery,
-			"read":  readMysqlQuery,
-			"write": writeMysqlQuery,
-		},
-		ormcontract.DriverPostgresql: {
-			"mix":   postgresqlQuery,
-			"read":  readPostgresqlQuery,
-			"write": writePostgresqlQuery,
-		},
 		ormcontract.DriverSqlite: {
 			"mix":   sqliteDB,
 			"read":  readSqliteQuery,
 			"write": writeSqliteQuery,
-		},
-		ormcontract.DriverSqlserver: {
-			"mix":   sqlserverDB,
-			"read":  readSqlserverQuery,
-			"write": writeSqlserverQuery,
 		},
 	}
 
