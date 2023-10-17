@@ -7,16 +7,13 @@ on:
   pull_request:
 
 jobs:
-  test:
+  linux:
     strategy:
       matrix:
         go:
           - "stable"
           - "oldstable"
-        os:
-          - ubuntu-latest
-          - windows-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     services:
       mysql:
@@ -64,10 +61,28 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Install dependencies
         run: go mod tidy
-      - name: Run tests
+      - name: Run tests with coverage
         run: go test -v -coverprofile="coverage.out" ./...
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.out
           token: ${{ secrets.CODECOV }}
+
+  windows:
+    strategy:
+      matrix:
+        go:
+          - "stable"
+          - "oldstable"
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Install dependencies
+        run: go mod tidy
+      - name: Run tests
+        run: go test ./... -short
