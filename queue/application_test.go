@@ -2,11 +2,9 @@ package queue
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -35,10 +33,6 @@ type QueueTestSuite struct {
 func TestQueueTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
-	}
-	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
-		return
 	}
 
 	suite.Run(t, &QueueTestSuite{})

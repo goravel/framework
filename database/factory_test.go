@@ -2,12 +2,10 @@ package database
 
 import (
 	"log"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/gookit/color"
 	"github.com/stretchr/testify/suite"
 	gormio "gorm.io/gorm"
 
@@ -77,10 +75,6 @@ type FactoryTestSuite struct {
 func TestFactoryTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
-	}
-	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
-		return
 	}
 
 	mysqlDocker := gorm.NewMysqlDocker()

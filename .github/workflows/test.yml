@@ -17,6 +17,46 @@ jobs:
           - ubuntu-latest
           - windows-latest
     runs-on: ${{ matrix.os }}
+
+    services:
+      mysql:
+        image: mysql/mysql-server:latest
+        env:
+          MYSQL_DATABASE: goravel
+          MYSQL_USER: goravel
+          MYSQL_PASSWORD: GoravelTest123
+          MYSQL_RANDOM_ROOT_PASSWORD: yes
+        ports:
+          - 3306:3306
+
+      postgresql:
+        image: postgres:latest
+        env:
+          TZ: Asia/Shanghai
+          POSTGRES_DB: goravel
+          POSTGRES_USER: goravel
+          POSTGRES_PASSWORD: GoravelTest123
+        ports:
+          - 5432:5432
+
+      sqlserver:
+        image: mcmoe/mssqldocker:latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: Password!1234
+          MSSQL_DB: goravel
+          MSSQL_USER: goravel
+          MSSQL_PASSWORD: GoravelTest123
+        ports:
+          - 1433:1433
+
+      sqlite:
+        image: nouchka/sqlite3:latest
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -25,4 +65,9 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./...
+        run: go test -v -coverprofile="coverage.out" ./...
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.out
+          token: ${{ secrets.CODECOV }}

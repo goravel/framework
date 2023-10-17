@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
 	"testing"
 
-	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -46,11 +44,6 @@ var (
 func TestOrmSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
-	}
-
-	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
-		return
 	}
 
 	mysqlDocker := gorm.NewMysqlDocker()
