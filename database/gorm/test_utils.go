@@ -46,6 +46,7 @@ func (r *MysqlDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
+		_ = Table{}.Delete(orm.DriverMysql, db)
 		err = Table{}.Create(orm.DriverMysql, db)
 		if err != nil {
 			return nil, err
@@ -61,6 +62,7 @@ func (r *MysqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, err
 	}
 
+	_ = Table{}.DeleteWithPrefixAndSingular(orm.DriverMysql, db)
 	err = Table{}.CreateWithPrefixAndSingular(orm.DriverMysql, db)
 	if err != nil {
 		return nil, err
@@ -155,6 +157,7 @@ func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
+		_ = Table{}.Delete(orm.DriverPostgresql, db)
 		err = Table{}.Create(orm.DriverPostgresql, db)
 		if err != nil {
 			return nil, err
@@ -170,6 +173,7 @@ func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, err
 	}
 
+	_ = Table{}.DeleteWithPrefixAndSingular(orm.DriverPostgresql, db)
 	err = Table{}.CreateWithPrefixAndSingular(orm.DriverPostgresql, db)
 	if err != nil {
 		return nil, err
@@ -262,6 +266,7 @@ func (r *SqliteDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
+		_ = Table{}.Delete(orm.DriverSqlite, db)
 		err = Table{}.Create(orm.DriverSqlite, db)
 		if err != nil {
 			return nil, err
@@ -277,6 +282,7 @@ func (r *SqliteDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, err
 	}
 
+	_ = Table{}.DeleteWithPrefixAndSingular(orm.DriverSqlite, db)
 	err = Table{}.CreateWithPrefixAndSingular(orm.DriverSqlite, db)
 	if err != nil {
 		return nil, err
@@ -363,6 +369,7 @@ func (r *SqlserverDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
+		_ = Table{}.Delete(orm.DriverSqlserver, db)
 		err = Table{}.Create(orm.DriverSqlserver, db)
 		if err != nil {
 			return nil, err
@@ -378,6 +385,7 @@ func (r *SqlserverDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, err
 	}
 
+	_ = Table{}.DeleteWithPrefixAndSingular(orm.DriverSqlserver, db)
 	err = Table{}.CreateWithPrefixAndSingular(orm.DriverSqlserver, db)
 	if err != nil {
 		return nil, err
@@ -493,8 +501,66 @@ func (r Table) Create(driver orm.Driver, db orm.Query) error {
 	return nil
 }
 
+func (r Table) Delete(driver orm.Driver, db orm.Query) error {
+	_, err := db.Exec(r.dropPersonTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropReviewTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropUserTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropProductTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropAddressTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropBookTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropRoleTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropHouseTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropPhoneTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropRoleUserTable(driver))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(r.dropAuthorTable(driver))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r Table) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) error {
 	_, err := db.Exec(r.createUserTableWithPrefixAndSingular(driver))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r Table) DeleteWithPrefixAndSingular(driver orm.Driver, db orm.Query) error {
+	_, err := db.Exec(r.dropUserTableWithPrefixAndSingular(driver))
 	if err != nil {
 		return err
 	}
@@ -760,6 +826,21 @@ CREATE TABLE goravel_user (
   PRIMARY KEY (id)
 );
 `
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropUserTableWithPrefixAndSingular(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS goravel_user;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS goravel_user;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS goravel_user;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS goravel_user;`
 	default:
 		return ""
 	}
@@ -1115,6 +1196,171 @@ CREATE TABLE role_user (
   PRIMARY KEY (id)
 );
 `
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropPersonTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS people;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS people;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS people;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS people;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropReviewTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS reviews;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS reviews;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS reviews;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS reviews;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropProductTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS products;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS products;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS products;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS products;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropUserTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS users;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS users;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS users;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS users;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropAddressTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS addresses;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS addresses;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS addresses;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS addresses;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropBookTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS books;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS books;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS books;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS books;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropAuthorTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS authors;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS authors;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS authors;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS authors;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropRoleTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS roles;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS roles;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS roles;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS roles;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropHouseTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS houses;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS houses;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS houses;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS houses;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropPhoneTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS phones;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS phones;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS phones;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS phones;`
+	default:
+		return ""
+	}
+}
+
+func (r Table) dropRoleUserTable(driver orm.Driver) string {
+	switch driver {
+	case orm.DriverMysql:
+		return `DROP TABLE IF EXISTS role_user;`
+	case orm.DriverPostgresql:
+		return `DROP TABLE IF EXISTS role_user;`
+	case orm.DriverSqlite:
+		return `DROP TABLE IF EXISTS role_user;`
+	case orm.DriverSqlserver:
+		return `DROP TABLE IF EXISTS role_user;`
 	default:
 		return ""
 	}
