@@ -21,7 +21,7 @@ jobs:
         env:
           MYSQL_DATABASE: goravel
           MYSQL_USER: goravel
-          MYSQL_PASSWORD: GoravelTest123
+          MYSQL_PASSWORD: Goravel(!)
           MYSQL_RANDOM_ROOT_PASSWORD: yes
         ports:
           - 3306:3306
@@ -32,7 +32,7 @@ jobs:
           TZ: Asia/Shanghai
           POSTGRES_DB: goravel
           POSTGRES_USER: goravel
-          POSTGRES_PASSWORD: GoravelTest123
+          POSTGRES_PASSWORD: Goravel(!)
         ports:
           - 5432:5432
 
@@ -43,7 +43,7 @@ jobs:
           SA_PASSWORD: Password!1234
           MSSQL_DB: goravel
           MSSQL_USER: goravel
-          MSSQL_PASSWORD: GoravelTest123
+          MSSQL_PASSWORD: Goravel(!)
         ports:
           - 1433:1433
 

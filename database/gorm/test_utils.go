@@ -9,12 +9,11 @@ import (
 )
 
 const (
-	DbPassword     = "Goravel(!)"
-	DbUser         = "root"
-	dbDatabase     = "goravel"
-	dbDatabase1    = "goravel1"
-	dbUser1        = "sa"
-	resourceExpire = 1200
+	DbPassword  = "Goravel(!)"
+	DbUser      = "root"
+	dbDatabase  = "goravel"
+	dbDatabase1 = "goravel1"
+	dbUser1     = "sa"
 )
 
 var testContext context.Context
@@ -30,6 +29,7 @@ func NewMysqlDocker() *MysqlDocker {
 
 func (r *MysqlDocker) New() (orm.Query, error) {
 	r.mock()
+	r.Port = 3306
 
 	db, err := r.Query(true)
 	if err != nil {
@@ -138,6 +138,7 @@ func NewPostgresqlDocker() *PostgresqlDocker {
 
 func (r *PostgresqlDocker) New() (orm.Query, error) {
 	r.mock()
+	r.Port = 5432
 
 	db, err := r.Query(true)
 	if err != nil {
@@ -345,6 +346,7 @@ func NewSqlserverDocker() *SqlserverDocker {
 
 func (r *SqlserverDocker) New() (orm.Query, error) {
 	r.mock()
+	r.Port = 1433
 
 	db, err := r.Query(true)
 	if err != nil {
