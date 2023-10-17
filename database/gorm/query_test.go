@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -338,6 +340,10 @@ type QueryTestSuite struct {
 func TestQueryTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	testContext = context.Background()
@@ -2852,6 +2858,10 @@ func TestCustomConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
+	}
 
 	mysqlDocker := NewMysqlDocker()
 	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
@@ -2910,6 +2920,10 @@ func TestCustomConnection(t *testing.T) {
 func TestReadWriteSeparate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	readMysqlDocker := NewMysqlDocker()
@@ -3052,6 +3066,10 @@ func TestReadWriteSeparate(t *testing.T) {
 func TestTablePrefixAndSingular(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	mysqlDocker := NewMysqlDocker()

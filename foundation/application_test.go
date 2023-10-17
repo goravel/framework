@@ -1,9 +1,11 @@
 package foundation
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -255,6 +257,10 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 func (s *ApplicationTestSuite) TestMakeOrm() {
 	if testing.Short() {
 		s.T().Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	mysqlDocker := gorm.NewMysqlDocker()

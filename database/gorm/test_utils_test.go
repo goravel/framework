@@ -1,8 +1,10 @@
 package gorm
 
 import (
+	"os"
 	"testing"
 
+	"github.com/gookit/color"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/support/file"
@@ -11,6 +13,10 @@ import (
 func TestMysqlDocker(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	docker := NewMysqlDocker()
@@ -26,6 +32,10 @@ func TestPostgresqlDocker(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
+	}
 
 	docker := NewPostgresqlDocker()
 	pool, resource, query, err := docker.New()
@@ -39,6 +49,10 @@ func TestPostgresqlDocker(t *testing.T) {
 func TestSqliteDocker(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	docker := NewSqliteDocker(dbDatabase)
@@ -54,6 +68,10 @@ func TestSqliteDocker(t *testing.T) {
 func TestSqlserverDocker(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	docker := NewSqlserverDocker()

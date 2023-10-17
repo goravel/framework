@@ -1,8 +1,10 @@
 package console
 
 import (
+	"os"
 	"testing"
 
+	"github.com/gookit/color"
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
@@ -15,6 +17,10 @@ import (
 func TestMigrateStatusCommand(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
+	}
+	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+		return
 	}
 
 	var (
