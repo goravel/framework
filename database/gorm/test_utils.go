@@ -28,8 +28,8 @@ func NewMysqlDocker() *MysqlDocker {
 }
 
 func (r *MysqlDocker) New() (orm.Query, error) {
-	r.mock()
 	r.Port = 3306
+	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {
@@ -137,8 +137,8 @@ func NewPostgresqlDocker() *PostgresqlDocker {
 }
 
 func (r *PostgresqlDocker) New() (orm.Query, error) {
-	r.mock()
 	r.Port = 5432
+	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {
@@ -345,8 +345,8 @@ func NewSqlserverDocker() *SqlserverDocker {
 }
 
 func (r *SqlserverDocker) New() (orm.Query, error) {
-	r.mock()
 	r.Port = 1433
+	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {

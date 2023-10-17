@@ -6,6 +6,16 @@ on:
       - master
   pull_request:
 
+env:
+  MAIL_HOST: ${{ secrets.MAIL_HOST }}
+  MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+  MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+  MAIL_FROM_ADDRESS: ${{ secrets.MAIL_FROM_ADDRESS }}
+  MAIL_FROM_NAME: ${{ secrets.MAIL_FROM_NAME }}
+  MAIL_TO: ${{ secrets.MAIL_TO }}
+  MAIL_CC: ${{ secrets.MAIL_CC }}
+  MAIL_BCC: ${{ secrets.MAIL_BCC }}
+
 jobs:
   linux:
     strategy:
