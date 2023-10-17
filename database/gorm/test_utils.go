@@ -3,13 +3,9 @@ package gorm
 import (
 	"context"
 
-	"github.com/ory/dockertest/v3"
-	"github.com/spf13/cast"
-
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
 	configmock "github.com/goravel/framework/mocks/config"
-	testingdocker "github.com/goravel/framework/support/docker"
 )
 
 const (
@@ -26,51 +22,21 @@ var testContext context.Context
 type MysqlDocker struct {
 	MockConfig *configmock.Config
 	Port       int
-	pool       *dockertest.Pool
 }
 
 func NewMysqlDocker() *MysqlDocker {
 	return &MysqlDocker{MockConfig: &configmock.Config{}}
 }
 
-func (r *MysqlDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
-	pool, resource, err := r.Init()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
+func (r *MysqlDocker) New() (orm.Query, error) {
 	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	return pool, resource, db, nil
-}
-
-func (r *MysqlDocker) Init() (*dockertest.Pool, *dockertest.Resource, error) {
-	pool, err := testingdocker.Pool()
-	if err != nil {
-		return nil, nil, err
-	}
-	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
-		Repository: "mysql",
-		Tag:        "latest",
-		Env: []string{
-			"MYSQL_ROOT_PASSWORD=" + DbPassword,
-			"MYSQL_DATABASE=" + dbDatabase,
-		},
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_ = resource.Expire(resourceExpire)
-	r.pool = pool
-	r.Port = cast.ToInt(resource.GetPort("3306/tcp"))
-
-	return pool, resource, nil
+	return db, nil
 }
 
 func (r *MysqlDocker) Query(createTable bool) (orm.Query, error) {
@@ -153,16 +119,8 @@ func (r *MysqlDocker) mockOfCommon() {
 }
 
 func (r *MysqlDocker) query() (orm.Query, error) {
-	var db orm.Query
-	if err := r.pool.Retry(func() error {
-		var err error
-		db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
+	db, err := InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
+	if err != nil {
 		return nil, err
 	}
 
@@ -170,7 +128,6 @@ func (r *MysqlDocker) query() (orm.Query, error) {
 }
 
 type PostgresqlDocker struct {
-	pool       *dockertest.Pool
 	MockConfig *configmock.Config
 	Port       int
 }
@@ -179,45 +136,15 @@ func NewPostgresqlDocker() *PostgresqlDocker {
 	return &PostgresqlDocker{MockConfig: &configmock.Config{}}
 }
 
-func (r *PostgresqlDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
-	pool, resource, err := r.Init()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
+func (r *PostgresqlDocker) New() (orm.Query, error) {
 	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	return pool, resource, db, nil
-}
-
-func (r *PostgresqlDocker) Init() (*dockertest.Pool, *dockertest.Resource, error) {
-	pool, err := testingdocker.Pool()
-	if err != nil {
-		return nil, nil, err
-	}
-	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
-		Repository: "postgres",
-		Tag:        "latest",
-		Env: []string{
-			"POSTGRES_USER=" + DbUser,
-			"POSTGRES_PASSWORD=" + DbPassword,
-			"listen_addresses = '*'",
-		},
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_ = resource.Expire(resourceExpire)
-	r.pool = pool
-	r.Port = cast.ToInt(resource.GetPort("5432/tcp"))
-
-	return pool, resource, nil
+	return db, nil
 }
 
 func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
@@ -299,16 +226,8 @@ func (r *PostgresqlDocker) mockOfCommon() {
 }
 
 func (r *PostgresqlDocker) query() (orm.Query, error) {
-	var db orm.Query
-	if err := r.pool.Retry(func() error {
-		var err error
-		db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
+	db, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
+	if err != nil {
 		return nil, err
 	}
 
@@ -318,47 +237,21 @@ func (r *PostgresqlDocker) query() (orm.Query, error) {
 type SqliteDocker struct {
 	name       string
 	MockConfig *configmock.Config
-	pool       *dockertest.Pool
 }
 
 func NewSqliteDocker(dbName string) *SqliteDocker {
 	return &SqliteDocker{MockConfig: &configmock.Config{}, name: dbName}
 }
 
-func (r *SqliteDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
-	pool, resource, err := r.Init()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
+func (r *SqliteDocker) New() (orm.Query, error) {
 	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	return pool, resource, db, nil
-}
-
-func (r *SqliteDocker) Init() (*dockertest.Pool, *dockertest.Resource, error) {
-	pool, err := testingdocker.Pool()
-	if err != nil {
-		return nil, nil, err
-	}
-	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
-		Repository: "nouchka/sqlite3",
-		Tag:        "latest",
-		Env:        []string{},
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_ = resource.Expire(resourceExpire)
-	r.pool = pool
-
-	return pool, resource, nil
+	return db, nil
 }
 
 func (r *SqliteDocker) Query(createTable bool) (orm.Query, error) {
@@ -433,13 +326,8 @@ func (r *SqliteDocker) mockOfCommon() {
 }
 
 func (r *SqliteDocker) query() (orm.Query, error) {
-	var db orm.Query
-	if err := r.pool.Retry(func() error {
-		var err error
-		db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverSqlite.String())
-
-		return err
-	}); err != nil {
+	db, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlite.String())
+	if err != nil {
 		return nil, err
 	}
 
@@ -447,7 +335,6 @@ func (r *SqliteDocker) query() (orm.Query, error) {
 }
 
 type SqlserverDocker struct {
-	pool       *dockertest.Pool
 	MockConfig *configmock.Config
 	Port       int
 }
@@ -456,44 +343,15 @@ func NewSqlserverDocker() *SqlserverDocker {
 	return &SqlserverDocker{MockConfig: &configmock.Config{}}
 }
 
-func (r *SqlserverDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
-	pool, resource, err := r.Init()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
+func (r *SqlserverDocker) New() (orm.Query, error) {
 	r.mock()
 
 	db, err := r.Query(true)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	return pool, resource, db, nil
-}
-
-func (r *SqlserverDocker) Init() (*dockertest.Pool, *dockertest.Resource, error) {
-	pool, err := testingdocker.Pool()
-	if err != nil {
-		return nil, nil, err
-	}
-	resource, err := testingdocker.Resource(pool, &dockertest.RunOptions{
-		Repository: "mcr.microsoft.com/mssql/server",
-		Tag:        "latest",
-		Env: []string{
-			"MSSQL_SA_PASSWORD=" + DbPassword,
-			"ACCEPT_EULA=Y",
-		},
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	_ = resource.Expire(resourceExpire)
-	r.pool = pool
-	r.Port = cast.ToInt(resource.GetPort("1433/tcp"))
-
-	return pool, resource, nil
+	return db, nil
 }
 
 func (r *SqlserverDocker) Query(createTable bool) (orm.Query, error) {
@@ -573,16 +431,8 @@ func (r *SqlserverDocker) mockOfCommon() {
 }
 
 func (r *SqlserverDocker) query() (orm.Query, error) {
-	var db orm.Query
-	if err := r.pool.Retry(func() error {
-		var err error
-		db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
+	db, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
+	if err != nil {
 		return nil, err
 	}
 

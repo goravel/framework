@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gookit/color"
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -25,20 +24,17 @@ func TestMigrateCommand(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
 
 	var (
 		mockConfig *configmock.Config
-		pool       *dockertest.Pool
-		resource   *dockertest.Resource
 		query      ormcontract.Query
 	)
 
 	beforeEach := func() {
-		pool = nil
 		mockConfig = &configmock.Config{}
 	}
 
@@ -51,7 +47,7 @@ func TestMigrateCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewMysqlDocker()
-				pool, resource, query, err = docker.New()
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createMysqlMigrations()
@@ -62,7 +58,7 @@ func TestMigrateCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewPostgresqlDocker()
-				pool, resource, query, err = docker.New()
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createPostgresqlMigrations()
@@ -73,7 +69,7 @@ func TestMigrateCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewSqlserverDocker()
-				pool, resource, query, err = docker.New()
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqlserverMigrations()
@@ -84,7 +80,7 @@ func TestMigrateCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewSqliteDocker("goravel")
-				_, _, query, err = docker.New()
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqliteMigrations()
@@ -104,10 +100,6 @@ func TestMigrateCommand(t *testing.T) {
 			var agent Agent
 			assert.Nil(t, query.Where("name", "goravel").First(&agent))
 			assert.True(t, agent.ID > 0)
-
-			if pool != nil {
-				assert.Nil(t, pool.Purge(resource))
-			}
 
 			removeMigrations()
 		})

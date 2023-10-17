@@ -341,8 +341,8 @@ func TestQueryTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
 
@@ -2858,8 +2858,8 @@ func TestCustomConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
 
@@ -2921,8 +2921,8 @@ func TestReadWriteSeparate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
 
@@ -3067,8 +3067,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
 	}
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
 

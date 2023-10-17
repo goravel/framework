@@ -48,34 +48,34 @@ func TestOrmSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
 
 	mysqlDocker := gorm.NewMysqlDocker()
-	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
+	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get mysql error: %s", err)
 	}
 	testMysqlQuery = mysqlQuery
 
 	postgresqlDocker := gorm.NewPostgresqlDocker()
-	postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
+	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get postgresql error: %s", err)
 	}
 	testPostgresqlQuery = postgresqlQuery
 
 	sqliteDocker := gorm.NewSqliteDocker("goravel")
-	_, _, sqliteQuery, err := sqliteDocker.New()
+	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlite error: %s", err)
 	}
 	testSqliteQuery = sqliteQuery
 
 	sqlserverDocker := gorm.NewSqlserverDocker()
-	sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
+	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlserver error: %s", err)
 	}
@@ -84,17 +84,6 @@ func TestOrmSuite(t *testing.T) {
 	suite.Run(t, new(OrmSuite))
 
 	assert.Nil(t, file.Remove("goravel"))
-
-	if err := mysqlPool.Purge(mysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-
 }
 
 func (s *OrmSuite) SetupTest() {

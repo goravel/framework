@@ -258,14 +258,10 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	if testing.Short() {
 		s.T().Skip("Skipping tests of using docker")
 	}
-	if len(os.Getenv("GORAVEL_DATABASE_TEST")) == 0 {
-		color.Redln("Skip tests because not set GORAVEL_DATABASE_TEST environment variable")
+	if len(os.Getenv("GORAVEL_DOCKER_TEST")) == 0 {
+		color.Redln("Skip tests because not set GORAVEL_DOCKER_TEST environment variable")
 		return
 	}
-
-	mysqlDocker := gorm.NewMysqlDocker()
-	pool, resource, _, err := mysqlDocker.New()
-	s.Nil(err)
 
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
@@ -279,7 +275,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.On("GetString", "database.connections.mysql.username").Return(gorm.DbUser).Once()
 	mockConfig.On("GetString", "database.connections.mysql.password").Return(gorm.DbPassword).Once()
 	mockConfig.On("GetString", "database.connections.mysql.prefix").Return("").Once()
-	mockConfig.On("GetInt", "database.connections.mysql.port").Return(mysqlDocker.Port).Once()
+	mockConfig.On("GetInt", "database.connections.mysql.port").Return(3306).Once()
 	mockConfig.On("GetBool", "database.connections.mysql.singular").Return(true).Once()
 	mockConfig.On("GetBool", "app.debug").Return(true).Once()
 	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
@@ -295,7 +291,6 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeOrm())
-	s.Nil(pool.Purge(resource))
 	mockConfig.AssertExpectations(s.T())
 }
 

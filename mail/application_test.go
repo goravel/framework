@@ -7,16 +7,13 @@ import (
 	"time"
 
 	"github.com/gookit/color"
-	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/queue"
-	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -24,7 +21,6 @@ var testBcc, testCc, testTo, testFromAddress, testFromName string
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	redisPort int
 }
 
 func TestApplicationTestSuite(t *testing.T) {
@@ -37,20 +33,13 @@ func TestApplicationTestSuite(t *testing.T) {
 		return
 	}
 
-	redisPool, redisResource, err := testingdocker.Redis()
-	assert.Nil(t, err)
-
-	suite.Run(t, &ApplicationTestSuite{
-		redisPort: cast.ToInt(redisResource.GetPort("6379/tcp")),
-	})
-
-	assert.Nil(t, redisPool.Purge(redisResource))
+	suite.Run(t, &ApplicationTestSuite{})
 }
 
 func (s *ApplicationTestSuite) SetupTest() {}
 
 func (s *ApplicationTestSuite) TestSendMailBy465Port() {
-	mockConfig := mockConfig(465, s.redisPort)
+	mockConfig := mockConfig(465)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -61,7 +50,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailBy587Port() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -72,7 +61,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.From(mail.From{Address: testFromAddress, Name: testFromName}).
 		To([]string{testTo}).
@@ -84,7 +73,7 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMail() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 
 	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
@@ -112,18 +101,11 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	time.Sleep(3 * time.Second)
 }
 
-func mockConfig(mailPort, redisPort int) *configmock.Config {
+func mockConfig(mailPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "queue.default").Return("redis")
+	mockConfig.On("GetString", "queue.default").Return("sync")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default")
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default")
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost")
-	mockConfig.On("GetString", "database.redis.default.password").Return("")
-	mockConfig.On("GetInt", "database.redis.default.port").Return(redisPort)
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0)
 
 	if file.Exists("../.env") {
 		vip := viper.New()

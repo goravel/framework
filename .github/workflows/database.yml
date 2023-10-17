@@ -9,7 +9,7 @@ on:
       - 'database/**'
 
 env:
-  GORAVEL_DATABASE_TEST: "true"
+  GORAVEL_DOCKER_TEST: "true"
 
 jobs:
   database:
@@ -53,6 +53,13 @@ jobs:
           MSSQL_PASSWORD: GoravelTest123
         ports:
           - 1433:1433
+
+      sqlite:
+        image: nouchka/sqlite3:latest
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
 
     steps:
       - uses: actions/checkout@v4
