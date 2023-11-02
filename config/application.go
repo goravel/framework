@@ -29,14 +29,12 @@ func NewApplication(envPath string) *Application {
 	app.vip = viper.New()
 	app.vip.SetConfigType("env")
 	app.vip.SetConfigFile(envPath)
+	app.vip.AutomaticEnv()
 
 	if err := app.vip.ReadInConfig(); err != nil {
 		color.Redln("Invalid Config error: " + err.Error())
 		os.Exit(0)
 	}
-
-	app.vip.SetEnvPrefix("goravel")
-	app.vip.AutomaticEnv()
 
 	appKey := app.Env("APP_KEY")
 	if support.Env != support.EnvArtisan {
@@ -47,7 +45,7 @@ func NewApplication(envPath string) *Application {
 		}
 
 		if len(appKey.(string)) != 32 {
-			color.Redln("Invalid APP_KEY, please reset it.")
+			color.Redln("Invalid APP_KEY, the length must be 32, please reset it.")
 			color.Warnln("Example command: \ngo run . artisan key:generate")
 			os.Exit(0)
 		}
