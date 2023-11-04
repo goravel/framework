@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/goravel/framework/support/debug"
 )
 
 func TestCopyStruct(t *testing.T) {
@@ -15,7 +13,7 @@ func TestCopyStruct(t *testing.T) {
 	}
 
 	data := copyStruct(Data{Name: "name", age: 18})
-	debug.Dump(data)
+
 	assert.Equal(t, "name", data.Field(0).Interface().(string))
 	assert.Panics(t, func() {
 		data.Field(1).Interface()
