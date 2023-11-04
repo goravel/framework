@@ -13,7 +13,8 @@ import (
 )
 
 type CursorImpl struct {
-	row map[string]any
+	query *QueryImpl
+	row   map[string]any
 }
 
 func (c *CursorImpl) Scan(value any) error {
@@ -33,7 +34,17 @@ func (c *CursorImpl) Scan(value any) error {
 		return err
 	}
 
-	return decoder.Decode(c.row)
+	if err := decoder.Decode(c.row); err != nil {
+		return err
+	}
+
+	for relation, args := range c.query.with {
+		if err := c.query.origin.Load(value, relation, args...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func ToTimeHookFunc() mapstructure.DecodeHookFunc {

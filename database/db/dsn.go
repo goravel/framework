@@ -48,8 +48,8 @@ func (d *DsnImpl) Postgresql(config databasecontract.Config) string {
 	sslmode := d.config.GetString("database.connections." + d.connection + ".sslmode")
 	timezone := d.config.GetString("database.connections." + d.connection + ".timezone")
 
-	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-		host, config.Username, config.Password, config.Database, config.Port, sslmode, timezone)
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
+		config.Username, config.Password, host, config.Port, config.Database, sslmode, timezone)
 }
 
 func (d *DsnImpl) Sqlite(config databasecontract.Config) string {

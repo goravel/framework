@@ -21,12 +21,15 @@ type TestEventModel struct {
 
 var testNow = time.Now().Add(-1 * time.Second)
 var testEventModel = TestEventModel{Name: "name", Avatar: "avatar", IsAdmin: true, IsManage: 0, AdminAt: testNow, ManageAt: testNow, high: 1}
-var testQuery = NewQueryWithWithoutEvents(&gorm.DB{
+var testQuery = NewQueryImplByInstance(&gorm.DB{
 	Statement: &gorm.Statement{
 		Selects: []string{},
 		Omits:   []string{},
 	},
-}, false, nil)
+}, &QueryImpl{
+	config:        nil,
+	withoutEvents: false,
+})
 
 type EventTestSuite struct {
 	suite.Suite
@@ -48,13 +51,16 @@ func (s *EventTestSuite) SetupTest() {
 
 func (s *EventTestSuite) TestSetAttribute() {
 	dest := map[string]any{"avatar": "avatar1"}
-	query := NewQueryWithWithoutEvents(&gorm.DB{
+	query := NewQueryImplByInstance(&gorm.DB{
 		Statement: &gorm.Statement{
 			Selects: []string{},
 			Omits:   []string{},
 			Dest:    dest,
 		},
-	}, false, nil)
+	}, &QueryImpl{
+		config:        nil,
+		withoutEvents: false,
+	})
 
 	event := NewEvent(query, &testEventModel, dest)
 
@@ -148,23 +154,29 @@ func (s *EventTestSuite) TestValidColumn() {
 		s.True(event.validColumn("manage"))
 		s.False(event.validColumn("age"))
 
-		event.query = NewQueryWithWithoutEvents(&gorm.DB{
+		event.query = NewQueryImplByInstance(&gorm.DB{
 			Statement: &gorm.Statement{
 				Selects: []string{"name"},
 				Omits:   []string{},
 			},
-		}, false, nil)
+		}, &QueryImpl{
+			config:        nil,
+			withoutEvents: false,
+		})
 		s.True(event.validColumn("Name"))
 		s.True(event.validColumn("name"))
 		s.False(event.validColumn("avatar"))
 		s.False(event.validColumn("Avatar"))
 
-		event.query = NewQueryWithWithoutEvents(&gorm.DB{
+		event.query = NewQueryImplByInstance(&gorm.DB{
 			Statement: &gorm.Statement{
 				Selects: []string{},
 				Omits:   []string{"name"},
 			},
-		}, false, nil)
+		}, &QueryImpl{
+			config:        nil,
+			withoutEvents: false,
+		})
 		s.False(event.validColumn("Name"))
 		s.False(event.validColumn("name"))
 		s.True(event.validColumn("avatar"))
