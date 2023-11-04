@@ -2,6 +2,8 @@ package gorm
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/spf13/cast"
@@ -9,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
 	configmock "github.com/goravel/framework/mocks/config"
+	supportdocker "github.com/goravel/framework/support/docker"
 	testingdocker "github.com/goravel/framework/support/docker"
 )
 
@@ -30,7 +33,49 @@ type MysqlDocker struct {
 }
 
 func NewMysqlDocker() *MysqlDocker {
-	return &MysqlDocker{MockConfig: &configmock.Config{}}
+	return &MysqlDocker{MockConfig: &configmock.Config{}, Port: supportdocker.MysqlPort}
+}
+
+func (r *MysqlDocker) New1() (*supportdocker.Database, orm.Query, error) {
+	dockerDatabase := supportdocker.NewDatabase()
+	if err := dockerDatabase.Run(); err != nil {
+		return nil, nil, err
+	}
+
+	r.mock1()
+
+	db, err := r.Query1(true)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return dockerDatabase, db, nil
+}
+
+func (r *MysqlDocker) Query1(createTable bool) (orm.Query, error) {
+	var db orm.Query
+	for i := 0; i < 15; i++ {
+		var err error
+		db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
+		if err != nil {
+			time.Sleep(2 * time.Second)
+
+			continue
+		}
+	}
+
+	if db == nil {
+		return nil, errors.New("connect to mysql failed")
+	}
+
+	if createTable {
+		err := Table{}.Create(orm.DriverMysql, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return db, nil
 }
 
 func (r *MysqlDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
@@ -125,6 +170,15 @@ func (r *MysqlDocker) mock() {
 	r.mockOfCommon()
 }
 
+func (r *MysqlDocker) mock1() {
+	r.MockConfig.On("GetString", "database.default").Return("mysql")
+	r.MockConfig.On("GetString", "database.migrations").Return("migrations")
+	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
+	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
+	r.mockSingleOfCommon1()
+	r.mockOfCommon()
+}
+
 func (r *MysqlDocker) mockWithPrefixAndSingular() {
 	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("goravel_")
 	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(true)
@@ -140,6 +194,16 @@ func (r *MysqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("GetString", "database.connections.mysql.username").Return(DbUser)
 	r.MockConfig.On("GetString", "database.connections.mysql.password").Return(DbPassword)
 	r.MockConfig.On("GetInt", "database.connections.mysql.port").Return(r.Port)
+}
+
+func (r *MysqlDocker) mockSingleOfCommon1() {
+	r.MockConfig.On("Get", "database.connections.mysql.read").Return(nil)
+	r.MockConfig.On("Get", "database.connections.mysql.write").Return(nil)
+	r.MockConfig.On("GetBool", "app.debug").Return(true)
+	r.MockConfig.On("GetString", "database.connections.mysql.host").Return("127.0.0.1")
+	r.MockConfig.On("GetString", "database.connections.mysql.username").Return(supportdocker.DbUser)
+	r.MockConfig.On("GetString", "database.connections.mysql.password").Return(supportdocker.DbPassword)
+	r.MockConfig.On("GetInt", "database.connections.mysql.port").Return(supportdocker.MysqlPort)
 }
 
 func (r *MysqlDocker) mockOfCommon() {

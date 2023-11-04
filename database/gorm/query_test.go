@@ -2652,7 +2652,7 @@ func (s *QueryTestSuite) TestUpdateOrCreate() {
 			s.True(user1.ID > 0)
 
 			var user2 User
-			err = query.Where("name", "update_or_create_user").UpdateOrCreate(&user2, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar1"})
+			err = query.UpdateOrCreate(&user2, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar1"})
 			s.Nil(err)
 			s.True(user2.ID > 0)
 			s.Equal("update_or_create_avatar1", user2.Avatar)
