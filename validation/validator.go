@@ -15,6 +15,7 @@ func init() {
 	validate.Config(func(opt *validate.GlobalOption) {
 		opt.StopOnError = false
 		opt.SkipOnEmpty = true
+		opt.FieldTag = "form"
 	})
 }
 
