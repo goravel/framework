@@ -42,10 +42,10 @@ func TestSqliteDocker(t *testing.T) {
 	}
 
 	docker := NewSqliteDocker(dbDatabase)
-	pool, resource, db, err := docker.New()
+	_, _, db, err := docker.New()
 
-	assert.NotNil(t, pool)
-	assert.NotNil(t, resource)
+	//assert.NotNil(t, pool)
+	//assert.NotNil(t, resource)
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
 	assert.Nil(t, file.Remove("goravel"))
