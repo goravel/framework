@@ -51,25 +51,25 @@ func (v *Validator) Bind(ptr any) error {
 	}
 
 	dataSrc := v.data.Src()
-
-	tagToFieldMap := createTagToFieldMap(val)
+	tagToFieldMap := v.createTagToFieldMap(val)
 
 	switch data := dataSrc.(type) {
 	case url.Values:
 		formData, ok := v.data.(*validate.FormData)
 		if ok {
-			return bindFromURLValues(data, formData, tagToFieldMap)
+			return v.bindFromURLValues(data, formData, tagToFieldMap)
 		}
-		return bindFromURLValues(data, nil, tagToFieldMap)
+
+		return v.bindFromURLValues(data, nil, tagToFieldMap)
 	case map[string]any:
-		return bindFromMap(data, tagToFieldMap)
+		return v.bindFromMap(data, tagToFieldMap)
 	default:
 		val := reflect.Indirect(reflect.ValueOf(dataSrc))
 		if val.Kind() == reflect.Struct {
-			return bindFromStruct(val, tagToFieldMap)
-		} else {
-			return fmt.Errorf("%s: %s", errUnsupportedType, reflect.TypeOf(dataSrc).String())
+			return v.bindFromStruct(val, tagToFieldMap)
 		}
+
+		return fmt.Errorf("%s: %s", errUnsupportedType, reflect.TypeOf(dataSrc).String())
 	}
 }
 
@@ -85,18 +85,19 @@ func (v *Validator) Fails() bool {
 	return v.instance.IsFail()
 }
 
-func getFieldKey(structField reflect.StructField) string {
+func (v *Validator) getFieldKey(structField reflect.StructField) string {
 	if formTag := structField.Tag.Get("form"); formTag != "" {
 		return formTag
 	}
 	if jsonTag := structField.Tag.Get("json"); jsonTag != "" {
 		return jsonTag
 	}
+
 	return structField.Name
 }
 
-func setFieldValue(field reflect.Value, value any) error {
-	castedValue, err := castValueToType(field, value)
+func (v *Validator) setFieldValue(field reflect.Value, value any) error {
+	castedValue, err := v.castValueToType(field, value)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w", errCastValueField, field.Type().String(), err)
 	}
@@ -105,7 +106,7 @@ func setFieldValue(field reflect.Value, value any) error {
 	return nil
 }
 
-func createTagToFieldMap(val reflect.Value) map[string]reflect.Value {
+func (v *Validator) createTagToFieldMap(val reflect.Value) map[string]reflect.Value {
 	tagToFieldMap := make(map[string]reflect.Value)
 	typ := val.Type()
 	for i := 0; i < val.NumField(); i++ {
@@ -114,55 +115,59 @@ func createTagToFieldMap(val reflect.Value) map[string]reflect.Value {
 			continue
 		}
 		structField := typ.Field(i)
-		tag := getFieldKey(structField)
+		tag := v.getFieldKey(structField)
 		tagToFieldMap[tag] = field
 		tagToFieldMap[strings.ToLower(tag)] = field
 		tagToFieldMap[str.Camel2Case(tag)] = field
 	}
+
 	return tagToFieldMap
 }
 
-func bindFromURLValues(values url.Values, formData *validate.FormData, tagToFieldMap map[string]reflect.Value) error {
+func (v *Validator) bindFromURLValues(values url.Values, formData *validate.FormData, tagToFieldMap map[string]reflect.Value) error {
 	for tag, field := range tagToFieldMap {
 		if value, ok := values[tag]; ok && len(value) > 0 {
-			if err := setFieldValue(field, value[0]); err != nil {
+			if err := v.setFieldValue(field, value[0]); err != nil {
 				return err
 			}
 		}
 		if formData != nil {
 			if value, ok := formData.Get(tag); ok {
-				if err := setFieldValue(field, value); err != nil {
+				if err := v.setFieldValue(field, value); err != nil {
 					return err
 				}
 			}
 		}
 	}
+
 	return nil
 }
 
-func bindFromMap(dataMap map[string]any, tagToFieldMap map[string]reflect.Value) error {
+func (v *Validator) bindFromMap(dataMap map[string]any, tagToFieldMap map[string]reflect.Value) error {
 	for tag, field := range tagToFieldMap {
 		if value, ok := dataMap[tag]; ok {
-			if err := setFieldValue(field, value); err != nil {
+			if err := v.setFieldValue(field, value); err != nil {
 				return err
 			}
 		}
 	}
+
 	return nil
 }
 
-func bindFromStruct(dataSrc reflect.Value, tagToFieldMap map[string]reflect.Value) error {
+func (v *Validator) bindFromStruct(dataSrc reflect.Value, tagToFieldMap map[string]reflect.Value) error {
 	for tag, field := range tagToFieldMap {
 		if value := dataSrc.FieldByName(tag); value.IsValid() && value.CanInterface() {
-			if err := setFieldValue(field, value.Interface()); err != nil {
+			if err := v.setFieldValue(field, value.Interface()); err != nil {
 				return err
 			}
 		}
 	}
+
 	return nil
 }
 
-func castValueToType(field reflect.Value, value any) (reflect.Value, error) {
+func (v *Validator) castValueToType(field reflect.Value, value any) (reflect.Value, error) {
 	var castedValue any
 	var err error
 
