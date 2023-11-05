@@ -18,6 +18,7 @@ func TestBind(t *testing.T) {
 		A    string
 		B    int
 		C    string
+		D    *Data
 		File *multipart.FileHeader
 	}
 
@@ -104,6 +105,27 @@ func TestBind(t *testing.T) {
 			expectData: Data{},
 		},
 		{
+			name: "empty when data is struct and key is struct",
+			data: func() validate.DataFace {
+				data, err := validate.FromStruct(struct {
+					D *Data
+				}{
+					D: &Data{
+						A: "aa",
+					},
+				})
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"d.a": "required"},
+			expectData: Data{
+				D: &Data{
+					A: "aa",
+				},
+			},
+		},
+		{
 			name: "success when data is get request",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodGet, "/?a=aa", nil)
@@ -179,6 +201,7 @@ func TestBind(t *testing.T) {
 			assert.Equal(t, test.expectData.A, data.A)
 			assert.Equal(t, test.expectData.B, data.B)
 			assert.Equal(t, test.expectData.C, data.C)
+			assert.Equal(t, test.expectData.D, data.D)
 			assert.Equal(t, test.expectData.File == nil, data.File == nil)
 		})
 	}

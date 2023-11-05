@@ -257,5 +257,6 @@ func (v *Validator) populateStruct(structVal reflect.Value, valueMap any) error 
 			}
 		}
 	}
+
 	return nil
 }
