@@ -6,33 +6,58 @@ import (
 	"os/exec"
 )
 
-type Database struct {
-	file *os.File
+var usingDatabaseNum = 0
+var usingDatabaseCompose *os.File
+
+type DB struct {
 }
 
-func NewDatabase() *Database {
-	return &Database{}
+func NewDB() *DB {
+	return &DB{}
 }
 
-func (r *Database) Run() error {
+func (r *DB) Run() error {
+	if usingDatabaseNum > 0 {
+		usingDatabaseNum++
+
+		return nil
+	}
+
 	file, err := os.CreateTemp("", "goravel-docker-composer-*.yml")
+	if err != nil {
+		return err
+	}
 	defer file.Close()
+	usingDatabaseCompose = file
 
-	r.file = file
 	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database()), 0755); err != nil {
 		return err
 	}
 
 	cmd := fmt.Sprintf("docker-compose -f %s up --detach --quiet-pull", file.Name())
-	_, err = exec.Command("/bin/sh", "-c", cmd).Output()
+	//cmd := fmt.Sprintf(`docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=yourStrong()" -p 1433:1433 --network dnmp-new_default --name mssql -d mysql:latest`)
+	if o, err := exec.Command("/bin/sh", "-c", cmd).Output(); err != nil {
+		fmt.Println(o, err.Error())
+		return err
+	}
 
-	return err
+	usingDatabaseNum++
+
+	return nil
 }
 
-func (r *Database) Stop() error {
-	cmd := fmt.Sprintf("docker-compose -f %s down", r.file.Name())
+func (r *DB) Stop() error {
+	usingDatabaseNum--
+	if usingDatabaseNum > 0 {
+		return nil
+	}
+
+	cmd := fmt.Sprintf("docker-compose -f %s down", usingDatabaseCompose.Name())
 	_, err := exec.Command("/bin/sh", "-c", cmd).Output()
-	defer os.Remove(r.file.Name())
+	defer func() {
+		os.Remove(usingDatabaseCompose.Name())
+		usingDatabaseCompose = nil
+	}()
 
 	return err
 }

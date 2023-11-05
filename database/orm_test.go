@@ -15,9 +15,9 @@ import (
 
 var connections = []contractsorm.Driver{
 	contractsorm.DriverMysql,
-	//contractsorm.DriverPostgresql,
+	contractsorm.DriverPostgresql,
 	//contractsorm.DriverSqlite,
-	//contractsorm.DriverSqlserver,
+	contractsorm.DriverSqlserver,
 }
 
 type User struct {
@@ -45,24 +45,29 @@ func TestOrmSuite(t *testing.T) {
 	}
 
 	mysqlDocker := gorm.NewMysqlDocker()
-	//mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	mysqlDatabase, mysqlQuery, err := mysqlDocker.New1()
 	if err != nil {
-		log.Fatalf("Get mysql error: %s", err)
+		log.Fatalf("Init mysql docker error: %v", err)
 	}
 	testMysqlQuery = mysqlQuery
 	defer func() {
 		if err := mysqlDatabase.Stop(); err != nil {
-			log.Fatalf("Could not purge resource: %s", err)
+			log.Fatalf("Could not stop mysql docker: %v", err)
 		}
 	}()
 
-	//postgresqlDocker := gorm.NewPostgresqlDocker()
-	//postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get postgresql error: %s", err)
-	//}
-	//testPostgresqlQuery = postgresqlQuery
+	postgresqlDocker := gorm.NewPostgresqlDocker()
+	postgresqlDatabase, postgresqlQuery, err := postgresqlDocker.New1()
+	if err != nil {
+		log.Fatalf("Init postgresql docker error: %v", err)
+	}
+	testPostgresqlQuery = postgresqlQuery
+	defer func() {
+		if err := postgresqlDatabase.Stop(); err != nil {
+			log.Fatalf("Could not stop postgresql docker: %v", err)
+		}
+	}()
+
 	//
 	//sqliteDocker := gorm.NewSqliteDocker("goravel")
 	//_, _, sqliteQuery, err := sqliteDocker.New()
@@ -71,12 +76,17 @@ func TestOrmSuite(t *testing.T) {
 	//}
 	//testSqliteQuery = sqliteQuery
 	//
-	//sqlserverDocker := gorm.NewSqlserverDocker()
-	//sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get sqlserver error: %s", err)
-	//}
-	//testSqlserverDB = sqlserverQuery
+	sqlserverDocker := gorm.NewSqlserverDocker()
+	sqlserverDatabase, sqlserverQuery, err := sqlserverDocker.New1()
+	if err != nil {
+		log.Fatalf("Init sqlserver docker error: %v", err)
+	}
+	testSqlserverDB = sqlserverQuery
+	defer func() {
+		if err := sqlserverDatabase.Stop(); err != nil {
+			log.Fatalf("Could not stop sqlserver docker: %v", err)
+		}
+	}()
 
 	suite.Run(t, new(OrmSuite))
 
@@ -99,10 +109,10 @@ func (s *OrmSuite) SetupTest() {
 		ctx:   context.Background(),
 		query: testMysqlQuery,
 		queries: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String(): testMysqlQuery,
-			//contractsorm.DriverPostgresql.String(): testPostgresqlQuery,
+			contractsorm.DriverMysql.String():      testMysqlQuery,
+			contractsorm.DriverPostgresql.String(): testPostgresqlQuery,
 			//contractsorm.DriverSqlite.String():     testSqliteQuery,
-			//contractsorm.DriverSqlserver.String():  testSqlserverDB,
+			contractsorm.DriverSqlserver.String(): testSqlserverDB,
 		},
 	}
 }

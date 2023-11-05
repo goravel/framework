@@ -10,7 +10,7 @@ services:
       - MYSQL_USER=goravel
       - MYSQL_PASSWORD=Goravel(!)
       - MYSQL_RANDOM_ROOT_PASSWORD="yes"
-  postgres:
+  postgresql:
     image: 'postgres:latest'
     ports:
       - 9920:5432
@@ -19,13 +19,13 @@ services:
       - POSTGRES_DB=goravel
       - POSTGRES_USER=goravel
       - POSTGRES_PASSWORD=Goravel(!)
-  mssql:
+  sqlserver:
     image: 'mcmoe/mssqldocker:latest'
     ports:
       - 9930:1433
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Goravel(!)
       - MSSQL_DB=goravel
       - MSSQL_USER=goravel
-      - MSSQL_PASSWORD=Goravel(!)
+      - MSSQL_PASSWORD=goravel
+      - SA_PASSWORD=Goravel(!)
