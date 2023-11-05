@@ -450,10 +450,10 @@ func NewSqliteDocker(dbName string) *SqliteDocker {
 }
 
 func (r *SqliteDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query, error) {
-	pool, resource, err := r.Init()
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	//pool, resource, err := r.Init()
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
 
 	r.mock()
 
@@ -462,7 +462,7 @@ func (r *SqliteDocker) New() (*dockertest.Pool, *dockertest.Resource, orm.Query,
 		return nil, nil, nil, err
 	}
 
-	return pool, resource, db, nil
+	return nil, nil, db, nil
 }
 
 func (r *SqliteDocker) Init() (*dockertest.Pool, *dockertest.Resource, error) {
@@ -557,17 +557,19 @@ func (r *SqliteDocker) mockOfCommon() {
 }
 
 func (r *SqliteDocker) query() (orm.Query, error) {
-	var db orm.Query
-	if err := r.pool.Retry(func() error {
-		var err error
-		db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverSqlite.String())
+	//var db orm.Query
+	//if err := r.pool.Retry(func() error {
+	//	var err error
+	//	db, err = InitializeQuery(testContext, r.MockConfig, orm.DriverSqlite.String())
+	//
+	//	return err
+	//}); err != nil {
+	//	return nil, err
+	//}
+	//
+	//return db, nil
 
-		return err
-	}); err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	return InitializeQuery(testContext, r.MockConfig, orm.DriverSqlite.String())
 }
 
 type SqlserverDocker struct {

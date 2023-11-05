@@ -6,17 +6,19 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/file"
 )
 
 var connections = []contractsorm.Driver{
 	contractsorm.DriverMysql,
 	contractsorm.DriverPostgresql,
-	//contractsorm.DriverSqlite,
+	contractsorm.DriverSqlite,
 	contractsorm.DriverSqlserver,
 }
 
@@ -50,11 +52,6 @@ func TestOrmSuite(t *testing.T) {
 		log.Fatalf("Init mysql docker error: %v", err)
 	}
 	testMysqlQuery = mysqlQuery
-	defer func() {
-		if err := mysqlDatabase.Stop(); err != nil {
-			log.Fatalf("Could not stop mysql docker: %v", err)
-		}
-	}()
 
 	postgresqlDocker := gorm.NewPostgresqlDocker()
 	postgresqlDatabase, postgresqlQuery, err := postgresqlDocker.New1()
@@ -62,46 +59,33 @@ func TestOrmSuite(t *testing.T) {
 		log.Fatalf("Init postgresql docker error: %v", err)
 	}
 	testPostgresqlQuery = postgresqlQuery
-	defer func() {
-		if err := postgresqlDatabase.Stop(); err != nil {
-			log.Fatalf("Could not stop postgresql docker: %v", err)
-		}
-	}()
 
-	//
-	//sqliteDocker := gorm.NewSqliteDocker("goravel")
-	//_, _, sqliteQuery, err := sqliteDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get sqlite error: %s", err)
-	//}
-	//testSqliteQuery = sqliteQuery
-	//
+	sqliteDocker := gorm.NewSqliteDocker("goravel")
+	_, _, sqliteQuery, err := sqliteDocker.New()
+	if err != nil {
+		log.Fatalf("Get sqlite error: %s", err)
+	}
+	testSqliteQuery = sqliteQuery
+
 	sqlserverDocker := gorm.NewSqlserverDocker()
 	sqlserverDatabase, sqlserverQuery, err := sqlserverDocker.New1()
 	if err != nil {
 		log.Fatalf("Init sqlserver docker error: %v", err)
 	}
 	testSqlserverDB = sqlserverQuery
-	defer func() {
-		if err := sqlserverDatabase.Stop(); err != nil {
-			log.Fatalf("Could not stop sqlserver docker: %v", err)
-		}
-	}()
 
 	suite.Run(t, new(OrmSuite))
 
-	//assert.Nil(t, file.Remove("goravel"))
-
-	//if err := mysqlPool.Purge(mysqlResource); err != nil {
-	//	log.Fatalf("Could not purge resource: %s", err)
-	//}
-
-	//if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-	//	log.Fatalf("Could not purge resource: %s", err)
-	//}
-	//if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-	//	log.Fatalf("Could not purge resource: %s", err)
-	//}
+	assert.Nil(t, file.Remove("goravel"))
+	if err := mysqlDatabase.Stop(); err != nil {
+		log.Fatalf("Could not stop mysql docker: %v", err)
+	}
+	if err := postgresqlDatabase.Stop(); err != nil {
+		log.Fatalf("Could not stop postgresql docker: %v", err)
+	}
+	if err := sqlserverDatabase.Stop(); err != nil {
+		log.Fatalf("Could not stop sqlserver docker: %v", err)
+	}
 }
 
 func (s *OrmSuite) SetupTest() {
@@ -111,8 +95,8 @@ func (s *OrmSuite) SetupTest() {
 		queries: map[string]contractsorm.Query{
 			contractsorm.DriverMysql.String():      testMysqlQuery,
 			contractsorm.DriverPostgresql.String(): testPostgresqlQuery,
-			//contractsorm.DriverSqlite.String():     testSqliteQuery,
-			contractsorm.DriverSqlserver.String(): testSqlserverDB,
+			contractsorm.DriverSqlite.String():     testSqliteQuery,
+			contractsorm.DriverSqlserver.String():  testSqlserverDB,
 		},
 	}
 }
