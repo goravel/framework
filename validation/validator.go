@@ -19,6 +19,7 @@ const (
 	errBindStructOnly  = "bind: must pass a pointer to a struct"
 	errUnsupportedType = "bind: unsupported data source type"
 	errCastValueField  = "bind: cannot cast value to field"
+	errCastValueMap    = "bind: cannot cast value to map"
 )
 
 func init() {
@@ -206,6 +207,14 @@ func (v *Validator) castValueToType(field reflect.Value, value any) (reflect.Val
 		castedValue, err = cast.ToStringMapE(value)
 	case reflect.Array:
 		castedValue, err = cast.ToSliceE(value)
+	case reflect.Struct:
+		structType := field.Type()
+		newStruct := reflect.New(structType).Elem()
+		err := v.populateStruct(newStruct, value)
+		if err != nil {
+			return reflect.Value{}, fmt.Errorf("%s: %w", errCastValueField, err)
+		}
+		castedValue = newStruct.Interface()
 	default:
 		castedValue = value
 	}
@@ -215,4 +224,38 @@ func (v *Validator) castValueToType(field reflect.Value, value any) (reflect.Val
 	}
 
 	return reflect.ValueOf(castedValue), nil
+}
+
+func (v *Validator) populateStruct(structVal reflect.Value, valueMap any) error {
+	valueMapCasted, ok := valueMap.(map[string]any)
+	if !ok {
+		return fmt.Errorf("%s: %s", errCastValueMap, reflect.TypeOf(valueMap).String())
+	}
+
+	for i := 0; i < structVal.NumField(); i++ {
+		structField := structVal.Field(i)
+		structTypeField := structVal.Type().Field(i)
+		if !structField.CanSet() {
+			continue
+		}
+
+		if value, exists := valueMapCasted[v.getFieldKey(structTypeField)]; exists {
+			// Handle the case where the struct field itself is a struct
+			if structField.Kind() == reflect.Struct {
+				// Recursively populate the nested struct
+				err := v.populateStruct(structField, value)
+				if err != nil {
+					return err
+				}
+			} else {
+				// Attempt to set the value directly
+				valueToSet, err := v.castValueToType(structField, value)
+				if err != nil {
+					return fmt.Errorf("%s %s: %w", errCastValueField, structField.Type().String(), err)
+				}
+				structField.Set(valueToSet)
+			}
+		}
+	}
+	return nil
 }
