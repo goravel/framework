@@ -9,8 +9,9 @@ const (
 )
 
 var (
-	Env          = EnvRuntime
-	EnvPath      = ".env"
-	RelativePath string
-	RootPath     string
+	Env                  = EnvRuntime
+	EnvPath              = ".env"
+	IsKeyGenerateCommand = false
+	RelativePath         string
+	RootPath             string
 )
