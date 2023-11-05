@@ -19,7 +19,6 @@ const (
 	errBindStructOnly  = "bind: must pass a pointer to a struct"
 	errUnsupportedType = "bind: unsupported data source type"
 	errCastValueField  = "bind: cannot cast value to field"
-	errCastSliceElem   = "bind: cannot cast slice element value to field"
 )
 
 func init() {
