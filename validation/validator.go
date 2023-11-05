@@ -97,12 +97,12 @@ func getFieldKey(structField reflect.StructField) string {
 }
 
 func setFieldValue(field reflect.Value, value any) error {
-	_, err := castValueToType(field, value)
+	castedValue, err := castValueToType(field, value)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w", errCastValueField, field.Type().String(), err)
 	}
 
-	field.Set(reflect.ValueOf(value))
+	field.Set(castedValue)
 	return nil
 }
 
@@ -170,13 +170,31 @@ func castValueToType(field reflect.Value, value any) (reflect.Value, error) {
 	switch field.Kind() {
 	case reflect.String:
 		castedValue = cast.ToString(value)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case reflect.Int:
+		castedValue, err = cast.ToIntE(value)
+	case reflect.Int8:
+		castedValue, err = cast.ToInt8E(value)
+	case reflect.Int16:
+		castedValue, err = cast.ToInt16E(value)
+	case reflect.Int32:
+		castedValue, err = cast.ToInt32E(value)
+	case reflect.Int64:
 		castedValue, err = cast.ToInt64E(value)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint:
+		castedValue, err = cast.ToUintE(value)
+	case reflect.Uint8:
+		castedValue, err = cast.ToUint8E(value)
+	case reflect.Uint16:
+		castedValue, err = cast.ToUint16E(value)
+	case reflect.Uint32:
+		castedValue, err = cast.ToUint32E(value)
+	case reflect.Uint64:
 		castedValue, err = cast.ToUint64E(value)
 	case reflect.Bool:
 		castedValue, err = cast.ToBoolE(value)
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float32:
+		castedValue, err = cast.ToFloat32E(value)
+	case reflect.Float64:
 		castedValue, err = cast.ToFloat64E(value)
 	case reflect.Slice:
 		castedValue, err = cast.ToSliceE(value)
@@ -190,20 +208,6 @@ func castValueToType(field reflect.Value, value any) (reflect.Value, error) {
 
 	if err != nil {
 		return reflect.Value{}, fmt.Errorf("%s: %w", errCastValueField, err)
-	}
-
-	if field.Kind() == reflect.Slice || field.Kind() == reflect.Array {
-		elemType := field.Type().Elem()
-		slice := reflect.MakeSlice(reflect.SliceOf(elemType), 0, len(castedValue.([]any)))
-		for _, v := range castedValue.([]any) {
-			elemVal := reflect.ValueOf(v)
-			if elemVal.Type().ConvertibleTo(elemType) {
-				slice = reflect.Append(slice, elemVal.Convert(elemType))
-			} else {
-				return reflect.Value{}, fmt.Errorf("%s: %w", errCastSliceElem, err)
-			}
-		}
-		return slice, nil
 	}
 
 	return reflect.ValueOf(castedValue), nil

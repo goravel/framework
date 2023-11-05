@@ -39,6 +39,22 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
+			name:  "success when data is map and key is int",
+			data:  validate.FromMap(map[string]any{"b": 1}),
+			rules: map[string]string{"a": "required"},
+			expectData: Data{
+				B: 1,
+			},
+		},
+		{
+			name:  "success when data is map and cast key",
+			data:  validate.FromMap(map[string]any{"b": "1"}),
+			rules: map[string]string{"a": "required"},
+			expectData: Data{
+				B: 1,
+			},
+		},
+		{
 			name:  "success when data is map, key is lowercase and has errors",
 			data:  validate.FromMap(map[string]any{"a": "aa", "c": "cc"}),
 			rules: map[string]string{"a": "required", "b": "required"},
@@ -100,6 +116,21 @@ func TestBind(t *testing.T) {
 			rules: map[string]string{"A": "required"},
 			expectData: Data{
 				A: "aa",
+			},
+		},
+		{
+			name: "success when data is get request and params is int",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodGet, "/?b=1", nil)
+				assert.Nil(t, err)
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"A": "required"},
+			expectData: Data{
+				B: 1,
 			},
 		},
 		{
