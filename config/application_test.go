@@ -24,7 +24,9 @@ DB_PORT=3306
 `))
 	temp, err := os.CreateTemp("", "goravel.env")
 	assert.Nil(t, err)
+	defer temp.Close()
 	defer os.Remove(temp.Name())
+
 	_, err = temp.Write([]byte(`
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
@@ -43,22 +45,6 @@ DB_PORT=3306
 
 func (s *ApplicationTestSuite) SetupTest() {
 
-}
-
-func (s *ApplicationTestSuite) TestOsVariables() {
-	s.Nil(os.Setenv("APP_KEY", "12345678901234567890123456789013"))
-	s.Nil(os.Setenv("OS_APP_NAME", "goravel"))
-	s.Nil(os.Setenv("OS_APP_PORT", "3306"))
-	s.Nil(os.Setenv("OS_APP_DEBUG", "true"))
-
-	s.Equal("12345678901234567890123456789013", s.config.GetString("APP_KEY"))
-	s.Equal("12345678901234567890123456789013", s.customConfig.GetString("APP_KEY"))
-	s.Equal("goravel", s.config.GetString("OS_APP_NAME"))
-	s.Equal("goravel", s.customConfig.GetString("OS_APP_NAME"))
-	s.Equal(3306, s.config.GetInt("OS_APP_PORT"))
-	s.Equal(3306, s.customConfig.GetInt("OS_APP_PORT"))
-	s.True(s.config.GetBool("OS_APP_DEBUG"))
-	s.True(s.customConfig.GetBool("OS_APP_DEBUG"))
 }
 
 func (s *ApplicationTestSuite) TestEnv() {
@@ -136,4 +122,18 @@ func (s *ApplicationTestSuite) TestGetInt() {
 func (s *ApplicationTestSuite) TestGetBool() {
 	s.Equal(true, s.config.GetBool("APP_DEBUG"))
 	s.Equal(true, s.customConfig.GetBool("APP_DEBUG"))
+}
+
+func TestOsVariables(t *testing.T) {
+	assert.Nil(t, os.Setenv("APP_KEY", "12345678901234567890123456789013"))
+	assert.Nil(t, os.Setenv("APP_NAME", "goravel"))
+	assert.Nil(t, os.Setenv("APP_PORT", "3306"))
+	assert.Nil(t, os.Setenv("APP_DEBUG", "true"))
+
+	config := NewApplication(".env")
+
+	assert.Equal(t, "12345678901234567890123456789013", config.GetString("APP_KEY"))
+	assert.Equal(t, "goravel", config.GetString("APP_NAME"))
+	assert.Equal(t, 3306, config.GetInt("APP_PORT"))
+	assert.True(t, config.GetBool("APP_DEBUG"))
 }
