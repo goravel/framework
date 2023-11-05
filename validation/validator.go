@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/gookit/validate"
-	"github.com/goravel/framework/support/str"
+	"github.com/spf13/cast"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/support/str"
 )
 
 func init() {
@@ -57,12 +58,50 @@ func (v *Validator) Bind(ptr any) error {
 
 	// setFieldValue sets the value of the given field
 	setFieldValue := func(field reflect.Value, structField reflect.StructField, value any) error {
-		fieldValue := reflect.ValueOf(value)
-		if fieldValue.Kind() == field.Kind() {
-			field.Set(fieldValue.Convert(field.Type()))
-		} else {
-			return errors.New("bind: cannot assign value to field " + structField.Name)
+		var castedValue any
+		var err error
+
+		switch field.Kind() {
+		case reflect.String:
+			castedValue = cast.ToString(value)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			castedValue, err = cast.ToInt64E(value)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			castedValue, err = cast.ToUint64E(value)
+		case reflect.Bool:
+			castedValue, err = cast.ToBoolE(value)
+		case reflect.Float32, reflect.Float64:
+			castedValue, err = cast.ToFloat64E(value)
+		case reflect.Slice:
+			castedValue, err = cast.ToSliceE(value)
+		case reflect.Map:
+			castedValue, err = cast.ToStringMapE(value)
+		case reflect.Array:
+			castedValue, err = cast.ToSliceE(value)
+		default:
+			castedValue = value
 		}
+
+		if err != nil {
+			return errors.New("bind: cannot cast value to field " + structField.Name + ": " + err.Error())
+		}
+
+		if field.Kind() == reflect.Slice || field.Kind() == reflect.Array {
+			elemType := field.Type().Elem()
+			slice := reflect.MakeSlice(reflect.SliceOf(elemType), 0, len(castedValue.([]any)))
+			for _, v := range castedValue.([]any) {
+				elemVal := reflect.ValueOf(v)
+				if elemVal.Type().ConvertibleTo(elemType) {
+					slice = reflect.Append(slice, elemVal.Convert(elemType))
+				} else {
+					return errors.New("bind: cannot cast slice element value to field " + structField.Name)
+				}
+			}
+			field.Set(slice)
+		} else {
+			field.Set(reflect.ValueOf(castedValue).Convert(field.Type()))
+		}
+
 		return nil
 	}
 
