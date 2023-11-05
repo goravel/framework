@@ -202,9 +202,29 @@ func (v *Validator) castValueToType(field reflect.Value, value any) (reflect.Val
 	case reflect.Float64:
 		castedValue, err = cast.ToFloat64E(value)
 	case reflect.Slice:
-		castedValue, err = cast.ToSliceE(value)
+		switch field.Type().Elem().Kind() {
+		case reflect.String:
+			castedValue, err = cast.ToStringSliceE(value)
+		case reflect.Int:
+			castedValue, err = cast.ToIntSliceE(value)
+		case reflect.Bool:
+			castedValue, err = cast.ToBoolSliceE(value)
+		default:
+			castedValue, err = cast.ToSliceE(value)
+		}
 	case reflect.Map:
-		castedValue, err = cast.ToStringMapE(value)
+		switch field.Type().Key().Kind() {
+		case reflect.String:
+			castedValue, err = cast.ToStringMapStringE(value)
+		case reflect.Bool:
+			castedValue, err = cast.ToStringMapBoolE(value)
+		case reflect.Int:
+			castedValue, err = cast.ToStringMapIntE(value)
+		case reflect.Int64:
+			castedValue, err = cast.ToStringMapInt64E(value)
+		default:
+			castedValue, err = cast.ToStringMapE(value)
+		}
 	case reflect.Array:
 		castedValue, err = cast.ToSliceE(value)
 	case reflect.Struct:
