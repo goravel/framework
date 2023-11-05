@@ -109,7 +109,7 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 			castedValue, err = cast.ToFloat32E(from.Interface())
 		case reflect.Float64:
 			castedValue, err = cast.ToFloat64E(from.Interface())
-		case reflect.Slice:
+		case reflect.Slice, reflect.Array:
 			switch to.Type().Elem().Kind() {
 			case reflect.String:
 				castedValue, err = cast.ToStringSliceE(from.Interface())
@@ -133,8 +133,6 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 			default:
 				castedValue, err = cast.ToStringMapE(from.Interface())
 			}
-		case reflect.Array:
-			castedValue, err = cast.ToSliceE(from.Interface())
 		default:
 			castedValue = from.Interface()
 		}
