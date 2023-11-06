@@ -8,7 +8,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/glebarez/go-sqlite v1.21.2
-	github.com/glebarez/sqlite v1.9.0
+	github.com/glebarez/sqlite v1.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
@@ -148,7 +148,7 @@ require (
 	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/text v0.13.0
+	golang.org/x/text v0.14.0
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/api v0.143.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
