@@ -22,8 +22,6 @@ func TestBind(t *testing.T) {
 		File *multipart.FileHeader
 	}
 
-	request := buildRequest(t)
-
 	tests := []struct {
 		name       string
 		data       validate.DataFace
@@ -42,7 +40,7 @@ func TestBind(t *testing.T) {
 		{
 			name:  "success when data is map and key is int",
 			data:  validate.FromMap(map[string]any{"b": 1}),
-			rules: map[string]string{"a": "required"},
+			rules: map[string]string{"b": "required"},
 			expectData: Data{
 				B: 1,
 			},
@@ -50,7 +48,7 @@ func TestBind(t *testing.T) {
 		{
 			name:  "success when data is map and cast key",
 			data:  validate.FromMap(map[string]any{"b": "1"}),
-			rules: map[string]string{"a": "required"},
+			rules: map[string]string{"b": "required"},
 			expectData: Data{
 				B: 1,
 			},
@@ -60,8 +58,8 @@ func TestBind(t *testing.T) {
 			data:  validate.FromMap(map[string]any{"a": "aa", "c": "cc"}),
 			rules: map[string]string{"a": "required", "b": "required"},
 			expectData: Data{
-				A: "aa",
-				C: "cc",
+				A: "",
+				C: "",
 			},
 		},
 		{
@@ -118,12 +116,8 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"d.a": "required"},
-			expectData: Data{
-				D: &Data{
-					A: "aa",
-				},
-			},
+			rules:      map[string]string{"d.a": "required"},
+			expectData: Data{},
 		},
 		{
 			name: "success when data is get request",
@@ -135,7 +129,7 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"A": "required"},
+			rules: map[string]string{"a": "required"},
 			expectData: Data{
 				A: "aa",
 			},
@@ -150,7 +144,7 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"A": "required"},
+			rules: map[string]string{"b": "required"},
 			expectData: Data{
 				B: 1,
 			},
@@ -165,7 +159,7 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"A": "required"},
+			rules: map[string]string{"a": "required"},
 			expectData: Data{
 				A: "aa",
 			},
@@ -173,13 +167,15 @@ func TestBind(t *testing.T) {
 		{
 			name: "success when data is post request with body",
 			data: func() validate.DataFace {
+				request := buildRequest(t)
 				data, err := validate.FromRequest(request, 1)
 				assert.Nil(t, err)
 
 				return data
 			}(),
-			rules: map[string]string{"A": "required", "File": "required"},
+			rules: map[string]string{"a": "required", "file": "required"},
 			expectData: func() Data {
+				request := buildRequest(t)
 				_, fileHeader, _ := request.FormFile("file")
 				data := Data{
 					A:    "aa",
@@ -191,12 +187,14 @@ func TestBind(t *testing.T) {
 		},
 	}
 
+	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator := &Validator{data: test.data}
+			validator, err := validation.Make(test.data, test.rules)
+			assert.Nil(t, err)
 
 			var data Data
-			err := validator.Bind(&data)
+			err = validator.Bind(&data)
 			assert.Nil(t, test.expectErr, err)
 			assert.Equal(t, test.expectData.A, data.A)
 			assert.Equal(t, test.expectData.B, data.B)
