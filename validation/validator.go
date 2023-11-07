@@ -30,9 +30,7 @@ func NewValidator(instance *validate.Validation, data validate.DataFace) *Valida
 }
 
 func (v *Validator) Bind(ptr any) error {
-	var data any
-	data = v.instance.SafeData()
-
+	data := v.instance.SafeData()
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:    "form",
 		Result:     &ptr,
