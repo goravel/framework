@@ -59,6 +59,10 @@ func InitDatabase() (*Database, error) {
 	}
 	defer file.Close()
 
+	lock.Lock()
+	usingDatabaseNum++
+	lock.Unlock()
+
 	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
 		return nil, err
 	}
@@ -68,9 +72,6 @@ func InitDatabase() (*Database, error) {
 	}
 
 	database.file = file
-	lock.Lock()
-	usingDatabaseNum++
-	lock.Unlock()
 
 	return database, nil
 }
