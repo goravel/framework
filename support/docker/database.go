@@ -44,6 +44,10 @@ type Database struct {
 }
 
 func InitDatabase() (*Database, error) {
+	lock.Lock()
+	usingDatabaseNum++
+	lock.Unlock()
+
 	database := &Database{
 		User:           "goravel",
 		Password:       "Goravel(!)",
@@ -59,11 +63,7 @@ func InitDatabase() (*Database, error) {
 	}
 	defer file.Close()
 
-	lock.Lock()
-	usingDatabaseNum++
-	lock.Unlock()
-
-	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
+	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(usingDatabaseNum, database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
 		return nil, err
 	}
 

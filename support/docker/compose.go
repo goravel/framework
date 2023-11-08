@@ -7,7 +7,7 @@ import (
 type Compose struct {
 }
 
-func (r Compose) Database(mysqlPort, postgresqlPort, sqlserverPort int) string {
+func (r Compose) Database(index, mysqlPort, postgresqlPort, sqlserverPort int) string {
 	return fmt.Sprintf(`version: '3'
 
 services:
@@ -48,7 +48,9 @@ services:
 networks:
   custom_network_%d:
     driver: bridge
-`, usingDatabaseNum, mysqlPort, DbDatabase, DbUser, DbPassword, usingDatabaseNum,
-		usingDatabaseNum, postgresqlPort, DbDatabase, DbUser, DbPassword, usingDatabaseNum,
-		usingDatabaseNum, sqlserverPort, DbDatabase, DbUser, DbPassword, DbPassword, usingDatabaseNum, usingDatabaseNum)
+`,
+		index, mysqlPort, DbDatabase, DbUser, DbPassword, index,
+		index, postgresqlPort, DbDatabase, DbUser, DbPassword, index,
+		index, sqlserverPort, DbDatabase, DbUser, DbPassword, DbPassword, index,
+		index)
 }
