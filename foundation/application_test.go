@@ -32,6 +32,7 @@ import (
 	routemocks "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/validation"
 )
@@ -253,7 +254,7 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 }
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
-	if testing.Short() {
+	if env.IsWindows() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 

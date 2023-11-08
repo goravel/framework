@@ -5,11 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestMysqlDocker(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -25,7 +26,7 @@ func TestMysqlDocker(t *testing.T) {
 }
 
 func TestPostgresqlDocker(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -41,7 +42,7 @@ func TestPostgresqlDocker(t *testing.T) {
 }
 
 func TestSqliteDocker(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -54,7 +55,7 @@ func TestSqliteDocker(t *testing.T) {
 }
 
 func TestSqlserverDocker(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

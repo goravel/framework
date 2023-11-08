@@ -15,6 +15,7 @@ import (
 	consolemocks "github.com/goravel/framework/mocks/console"
 	gormmocks "github.com/goravel/framework/mocks/database/gorm"
 	foundationmocks "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/support/env"
 )
 
 func TestNewDatabase(t *testing.T) {
@@ -169,7 +170,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 }
 
 func (s *DatabaseTestSuite) TestBuild() {
-	if testing.Short() {
+	if env.IsWindows() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 

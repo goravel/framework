@@ -17,6 +17,7 @@ import (
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/queue"
 	testingdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -28,7 +29,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

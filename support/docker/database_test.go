@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/support/env"
 )
 
 type DatabaseTestSuite struct {
@@ -16,7 +17,7 @@ type DatabaseTestSuite struct {
 }
 
 func TestDatabaseTestSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -148,7 +149,7 @@ SELECT count(*) FROM sys.tables WHERE name = 'users';
 }
 
 func TestInitDatabase(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

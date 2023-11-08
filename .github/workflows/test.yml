@@ -46,4 +46,4 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./... -short
+        run: go test ./...

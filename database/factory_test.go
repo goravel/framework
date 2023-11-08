@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/env"
 )
 
 func (u *User) Factory() factory.Factory {
@@ -73,7 +74,7 @@ type FactoryTestSuite struct {
 }
 
 func TestFactoryTestSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

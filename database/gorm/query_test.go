@@ -17,6 +17,7 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	supportdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -336,7 +337,7 @@ type QueryTestSuite struct {
 }
 
 func TestQueryTestSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -2861,7 +2862,7 @@ func (s *QueryTestSuite) TestDBRaw() {
 }
 
 func TestCustomConnection(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -2921,7 +2922,7 @@ func TestCustomConnection(t *testing.T) {
 }
 
 func TestReadWriteSeparate(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -3055,7 +3056,7 @@ func TestReadWriteSeparate(t *testing.T) {
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

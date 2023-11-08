@@ -9,10 +9,11 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/env"
 )
 
 func TestMigrateRefreshCommand(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

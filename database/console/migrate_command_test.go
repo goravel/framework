@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/database/orm"
 	configmock "github.com/goravel/framework/mocks/config"
 	consolemock "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -19,7 +20,7 @@ type Agent struct {
 }
 
 func TestMigrateCommand(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

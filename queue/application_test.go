@@ -15,6 +15,7 @@ import (
 	queuemock "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/support/carbon"
 	testingdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 )
 
 var (
@@ -36,7 +37,7 @@ type QueueTestSuite struct {
 }
 
 func TestQueueTestSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
