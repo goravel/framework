@@ -148,6 +148,10 @@ SELECT count(*) FROM sys.tables WHERE name = 'users';
 }
 
 func TestInitDatabase(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	database1, err := InitDatabase()
 	assert.Nil(t, err)
 	assert.NotNil(t, database1)

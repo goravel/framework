@@ -44,17 +44,19 @@ type Database struct {
 }
 
 func InitDatabase() (*Database, error) {
+	var index int
 	lock.Lock()
 	usingDatabaseNum++
+	index = usingDatabaseNum
 	lock.Unlock()
 
 	database := &Database{
 		User:           "goravel",
 		Password:       "Goravel(!)",
 		Database:       "goravel",
-		MysqlPort:      mysqlPort + usingDatabaseNum,
-		PostgresqlPort: postgresqlPort + usingDatabaseNum,
-		SqlserverPort:  sqlserverPort + usingDatabaseNum,
+		MysqlPort:      mysqlPort + index,
+		PostgresqlPort: postgresqlPort + index,
+		SqlserverPort:  sqlserverPort + index,
 	}
 
 	file, err := os.CreateTemp("", "goravel-docker-composer-*.yml")
@@ -63,7 +65,7 @@ func InitDatabase() (*Database, error) {
 	}
 	defer file.Close()
 
-	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(usingDatabaseNum, database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
+	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(index, database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
 		return nil, err
 	}
 
