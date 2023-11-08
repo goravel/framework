@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	gormio "gorm.io/gorm"
 
@@ -78,15 +77,18 @@ func TestFactoryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker()
-	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
+	mysqlDocker := gorm.NewMysqlDocker1(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 	suite.Run(t, &FactoryTestSuite{
 		query: mysqlQuery,
 	})
-	assert.Nil(t, mysqlPool.Purge(mysqlResource))
 }
 
 func (s *FactoryTestSuite) SetupTest() {

@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
@@ -17,6 +16,7 @@ import (
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
+	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -340,17 +340,21 @@ func TestQueryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	mysqlDocker := NewMysqlDocker()
-	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
+	mysqlDocker := NewMysqlDocker1(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresqlDocker()
-	postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
+	postgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
+	postgresqlQuery, err := postgresqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
@@ -361,8 +365,8 @@ func TestQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverDocker := NewSqlserverDocker()
-	sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
+	sqlserverDocker := NewSqlserverDocker1(testDatabaseDocker)
+	sqlserverQuery, err := sqlserverDocker.New1()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
@@ -377,9 +381,6 @@ func TestQueryTestSuite(t *testing.T) {
 	})
 
 	assert.Nil(t, file.Remove(dbDatabase))
-	assert.Nil(t, mysqlPool.Purge(mysqlResource))
-	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
-	assert.Nil(t, sqlserverPool.Purge(sqlserverResource))
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -2864,13 +2865,17 @@ func TestCustomConnection(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker()
-	mysqlPool, mysqlResource, query, err := mysqlDocker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
+	mysqlDocker := NewMysqlDocker1(testDatabaseDocker)
+	query, err := mysqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
-	postgresqlDocker := NewPostgresqlDocker()
-	postgresqlPool, postgresqlResource, _, err := postgresqlDocker.New()
+	postgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
+	_, err = postgresqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
@@ -2886,15 +2891,15 @@ func TestCustomConnection(t *testing.T) {
 	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
 	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(testDatabaseDocker.User)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(testDatabaseDocker.Password)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return(testDatabaseDocker.Database)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(cast.ToInt(postgresqlResource.GetPort("5432/tcp")))
+	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(testDatabaseDocker.PostgresqlPort)
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -2913,9 +2918,6 @@ func TestCustomConnection(t *testing.T) {
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
 	assert.True(t, person.ID == 0)
-
-	assert.Nil(t, mysqlPool.Purge(mysqlResource))
-	assert.Nil(t, postgresqlPool.Purge(postgresqlResource))
 }
 
 func TestReadWriteSeparate(t *testing.T) {
@@ -2923,38 +2925,47 @@ func TestReadWriteSeparate(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	readMysqlDocker := NewMysqlDocker()
-	readMysqlPool, readMysqlResource, readMysqlQuery, err := readMysqlDocker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
+	writeDatabaseDocker, err := supportdocker.InitDatabase()
+	if err != nil {
+		log.Fatalf("Init docker error: %s", err)
+	}
+
+	readMysqlDocker := NewMysqlDocker1(testDatabaseDocker)
+	readMysqlQuery, err := readMysqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Get read mysql error: %s", err)
 	}
 
-	writeMysqlDocker := NewMysqlDocker()
-	writeMysqlPool, writeMysqlResource, writeMysqlQuery, err := writeMysqlDocker.New()
+	writeMysqlDocker := NewMysqlDocker1(writeDatabaseDocker)
+	writeMysqlQuery, err := writeMysqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Get write mysql error: %s", err)
 	}
 
 	writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
-	mysqlQuery, err := writeMysqlDocker.Query(false)
+	mysqlQuery, err := writeMysqlDocker.Query1(false)
 	if err != nil {
 		log.Fatalf("Get mysql gorm error: %s", err)
 	}
 
-	readPostgresqlDocker := NewPostgresqlDocker()
-	readPostgresqlPool, readPostgresqlResource, readPostgresqlQuery, err := readPostgresqlDocker.New()
+	readPostgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
+	readPostgresqlQuery, err := readPostgresqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Get read postgresql error: %s", err)
 	}
 
-	writePostgresqlDocker := NewPostgresqlDocker()
-	writePostgresqlPool, writePostgresqlResource, writePostgresqlQuery, err := writePostgresqlDocker.New()
+	writePostgresqlDocker := NewPostgresqlDocker1(writeDatabaseDocker)
+	writePostgresqlQuery, err := writePostgresqlDocker.New1()
 	if err != nil {
 		log.Fatalf("Get write postgresql error: %s", err)
 	}
 
 	writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
-	postgresqlQuery, err := writePostgresqlDocker.Query(false)
+	postgresqlQuery, err := writePostgresqlDocker.Query1(false)
 	if err != nil {
 		log.Fatalf("Get postgresql gorm error: %s", err)
 	}
@@ -2977,19 +2988,19 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlite gorm error: %s", err)
 	}
 
-	readSqlserverDocker := NewSqlserverDocker()
-	readSqlserverPool, readSqlserverResource, readSqlserverQuery, err := readSqlserverDocker.New()
+	readSqlserverDocker := NewSqlserverDocker1(testDatabaseDocker)
+	readSqlserverQuery, err := readSqlserverDocker.New1()
 	if err != nil {
 		log.Fatalf("Get read sqlserver error: %s", err)
 	}
 
-	writeSqlserverDocker := NewSqlserverDocker()
-	writeSqlserverPool, writeSqlserverResource, writeSqlserverQuery, err := writeSqlserverDocker.New()
+	writeSqlserverDocker := NewSqlserverDocker1(writeDatabaseDocker)
+	writeSqlserverQuery, err := writeSqlserverDocker.New1()
 	if err != nil {
 		log.Fatalf("Get write sqlserver error: %s", err)
 	}
 	writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
-	sqlserverDB, err := writeSqlserverDocker.Query(false)
+	sqlserverDB, err := writeSqlserverDocker.Query1(false)
 	if err != nil {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
@@ -3040,24 +3051,7 @@ func TestReadWriteSeparate(t *testing.T) {
 	assert.Nil(t, file.Remove(dbDatabase))
 	assert.Nil(t, file.Remove(dbDatabase1))
 
-	if err := readMysqlPool.Purge(readMysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := writeMysqlPool.Purge(writeMysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := readPostgresqlPool.Purge(readPostgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := writePostgresqlPool.Purge(writePostgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := readSqlserverPool.Purge(readSqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := writeSqlserverPool.Purge(writeSqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+	defer assert.Nil(t, writeDatabaseDocker.Stop())
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
@@ -3065,46 +3059,30 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker()
-	mysqlPool, mysqlResource, err := mysqlDocker.Init()
-	if err != nil {
-		log.Fatalf("Init mysql docker error: %s", err)
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
 	}
-	mysqlDocker.mockWithPrefixAndSingular()
-	mysqlQuery, err := mysqlDocker.QueryWithPrefixAndSingular()
+
+	mysqlDocker := NewMysqlDocker1(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresqlDocker()
-	postgresqlPool, postgresqlResource, err := postgresqlDocker.Init()
-	if err != nil {
-		log.Fatalf("Init postgresql docker error: %s", err)
-	}
-	postgresqlDocker.mockWithPrefixAndSingular()
-	postgresqlQuery, err := postgresqlDocker.QueryWithPrefixAndSingular()
+	postgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
+	postgresqlQuery, err := postgresqlDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
 
 	sqliteDocker := NewSqliteDocker(dbDatabase)
-	_, _, err = sqliteDocker.Init()
-	if err != nil {
-		log.Fatalf("Init sqlite docker error: %s", err)
-	}
-	sqliteDocker.mockWithPrefixAndSingular()
-	sqliteDB, err := sqliteDocker.QueryWithPrefixAndSingular()
+	sqliteDB, err := sqliteDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverDocker := NewSqlserverDocker()
-	sqlserverPool, sqlserverResource, err := sqlserverDocker.Init()
-	if err != nil {
-		log.Fatalf("Init sqlserver docker error: %s", err)
-	}
-	sqlserverDocker.mockWithPrefixAndSingular()
-	sqlserverDB, err := sqlserverDocker.QueryWithPrefixAndSingular()
+	sqlserverDocker := NewSqlserverDocker1(testDatabaseDocker)
+	sqlserverDB, err := sqlserverDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
@@ -3129,16 +3107,6 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 
 	assert.Nil(t, file.Remove(dbDatabase))
-
-	if err := mysqlPool.Purge(mysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
 }
 
 func paginator(page string, limit string) func(methods ormcontract.Query) ormcontract.Query {

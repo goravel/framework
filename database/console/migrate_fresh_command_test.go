@@ -3,7 +3,6 @@ package console
 import (
 	"testing"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -19,13 +18,14 @@ func TestMigrateFreshCommand(t *testing.T) {
 
 	var (
 		mockConfig *configmock.Config
-		pool       *dockertest.Pool
-		resource   *dockertest.Resource
 		query      ormcontract.Query
 	)
 
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
 	beforeEach := func() {
-		pool = nil
 		mockConfig = &configmock.Config{}
 	}
 
@@ -34,11 +34,22 @@ func TestMigrateFreshCommand(t *testing.T) {
 		setup func()
 	}{
 		{
+			name: "sqlite",
+			setup: func() {
+				var err error
+				docker := gorm.NewSqliteDocker("goravel")
+				_, _, query, err = docker.New()
+				assert.Nil(t, err)
+				mockConfig = docker.MockConfig
+				createSqliteMigrations()
+			},
+		},
+		{
 			name: "mysql",
 			setup: func() {
 				var err error
-				docker := gorm.NewMysqlDocker()
-				pool, resource, query, err = docker.New()
+				docker := gorm.NewMysqlDocker1(testDatabaseDocker)
+				query, err = docker.New1()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createMysqlMigrations()
@@ -48,8 +59,8 @@ func TestMigrateFreshCommand(t *testing.T) {
 			name: "postgresql",
 			setup: func() {
 				var err error
-				docker := gorm.NewPostgresqlDocker()
-				pool, resource, query, err = docker.New()
+				docker := gorm.NewPostgresqlDocker1(testDatabaseDocker)
+				query, err = docker.New1()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createPostgresqlMigrations()
@@ -59,22 +70,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 			name: "sqlserver",
 			setup: func() {
 				var err error
-				docker := gorm.NewSqlserverDocker()
-				pool, resource, query, err = docker.New()
+				docker := gorm.NewSqlserverDocker1(testDatabaseDocker)
+				query, err = docker.New1()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqlserverMigrations()
-			},
-		},
-		{
-			name: "sqlite",
-			setup: func() {
-				var err error
-				docker := gorm.NewSqliteDocker("goravel")
-				pool, resource, query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createSqliteMigrations()
 			},
 		},
 	}
@@ -124,10 +124,6 @@ func TestMigrateFreshCommand(t *testing.T) {
 			err = query.Where("name", "goravel").First(&agent2)
 			assert.Nil(t, err)
 			assert.True(t, agent2.ID > 0)
-
-			if pool != nil && test.name != "sqlite" {
-				assert.Nil(t, pool.Purge(resource))
-			}
 
 			removeMigrations()
 		})

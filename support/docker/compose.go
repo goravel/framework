@@ -4,23 +4,14 @@ import (
 	"fmt"
 )
 
-const (
-	DbPassword     = "Goravel(!)"
-	DbUser         = "goravel"
-	DbDatabase     = "goravel"
-	MysqlPort      = 9910
-	PostgresqlPort = 9920
-	SqlserverPort  = 9930
-)
-
 type Compose struct {
 }
 
-func (r Compose) Database() string {
+func (r Compose) Database(mysqlPort, postgresqlPort, sqlserverPort int) string {
 	return fmt.Sprintf(`version: '3'
 
 services:
-  mysql:
+  mysql_%d:
     image: 'mysql:latest'
     ports:
       - %d:3306
@@ -29,7 +20,9 @@ services:
       - MYSQL_USER=%s
       - MYSQL_PASSWORD=%s
       - MYSQL_RANDOM_ROOT_PASSWORD="yes"
-  postgresql:
+    networks:
+      - custom_network_%d
+  postgresql_%d:
     image: 'postgres:latest'
     ports:
       - %d:5432
@@ -38,7 +31,9 @@ services:
       - POSTGRES_DB=%s
       - POSTGRES_USER=%s
       - POSTGRES_PASSWORD=%s
-  sqlserver:
+    networks:
+      - custom_network_%d
+  sqlserver_%d:
     image: 'mcmoe/mssqldocker:latest'
     ports:
       - %d:1433
@@ -48,5 +43,12 @@ services:
       - MSSQL_USER=%s
       - MSSQL_PASSWORD=%s
       - SA_PASSWORD=%s
-`, MysqlPort, DbDatabase, DbUser, DbPassword, PostgresqlPort, DbDatabase, DbUser, DbPassword, SqlserverPort, DbDatabase, DbUser, DbPassword, DbPassword)
+    networks:
+      - custom_network_%d
+networks:
+  custom_network_%d:
+    driver: bridge
+`, usingDatabaseNum, mysqlPort, DbDatabase, DbUser, DbPassword, usingDatabaseNum,
+		usingDatabaseNum, postgresqlPort, DbDatabase, DbUser, DbPassword, usingDatabaseNum,
+		usingDatabaseNum, sqlserverPort, DbDatabase, DbUser, DbPassword, DbPassword, usingDatabaseNum, usingDatabaseNum)
 }

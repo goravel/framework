@@ -13,11 +13,13 @@ func TestMysqlDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewMysqlDocker()
-	pool, resource, query, err := docker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
 
-	assert.NotNil(t, pool)
-	assert.NotNil(t, resource)
+	docker := NewMysqlDocker1(testDatabaseDocker)
+	query, err := docker.New1()
+
 	assert.NotNil(t, query)
 	assert.Nil(t, err)
 }
@@ -27,11 +29,13 @@ func TestPostgresqlDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewPostgresqlDocker()
-	pool, resource, query, err := docker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
 
-	assert.NotNil(t, pool)
-	assert.NotNil(t, resource)
+	docker := NewPostgresqlDocker1(testDatabaseDocker)
+	query, err := docker.New1()
+
 	assert.NotNil(t, query)
 	assert.Nil(t, err)
 }
@@ -44,8 +48,6 @@ func TestSqliteDocker(t *testing.T) {
 	docker := NewSqliteDocker(dbDatabase)
 	_, _, db, err := docker.New()
 
-	//assert.NotNil(t, pool)
-	//assert.NotNil(t, resource)
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
 	assert.Nil(t, file.Remove("goravel"))
@@ -56,11 +58,13 @@ func TestSqlserverDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewSqlserverDocker()
-	pool, resource, db, err := docker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
 
-	assert.NotNil(t, pool)
-	assert.NotNil(t, resource)
+	docker := NewSqlserverDocker1(testDatabaseDocker)
+	db, err := docker.New1()
+
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
 }

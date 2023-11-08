@@ -3,7 +3,6 @@ package console
 import (
 	"testing"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -26,13 +25,14 @@ func TestMigrateCommand(t *testing.T) {
 
 	var (
 		mockConfig *configmock.Config
-		pool       *dockertest.Pool
-		resource   *dockertest.Resource
 		query      ormcontract.Query
 	)
 
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
 	beforeEach := func() {
-		pool = nil
 		mockConfig = &configmock.Config{}
 	}
 
@@ -40,39 +40,6 @@ func TestMigrateCommand(t *testing.T) {
 		name  string
 		setup func()
 	}{
-		{
-			name: "mysql",
-			setup: func() {
-				var err error
-				docker := gorm.NewMysqlDocker()
-				pool, resource, query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createMysqlMigrations()
-			},
-		},
-		{
-			name: "postgresql",
-			setup: func() {
-				var err error
-				docker := gorm.NewPostgresqlDocker()
-				pool, resource, query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createPostgresqlMigrations()
-			},
-		},
-		{
-			name: "sqlserver",
-			setup: func() {
-				var err error
-				docker := gorm.NewSqlserverDocker()
-				pool, resource, query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createSqlserverMigrations()
-			},
-		},
 		{
 			name: "sqlite",
 			setup: func() {
@@ -82,6 +49,39 @@ func TestMigrateCommand(t *testing.T) {
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqliteMigrations()
+			},
+		},
+		{
+			name: "mysql",
+			setup: func() {
+				var err error
+				docker := gorm.NewMysqlDocker1(testDatabaseDocker)
+				query, err = docker.New1()
+				assert.Nil(t, err)
+				mockConfig = docker.MockConfig
+				createMysqlMigrations()
+			},
+		},
+		{
+			name: "postgresql",
+			setup: func() {
+				var err error
+				docker := gorm.NewPostgresqlDocker1(testDatabaseDocker)
+				query, err = docker.New1()
+				assert.Nil(t, err)
+				mockConfig = docker.MockConfig
+				createPostgresqlMigrations()
+			},
+		},
+		{
+			name: "sqlserver",
+			setup: func() {
+				var err error
+				docker := gorm.NewSqlserverDocker1(testDatabaseDocker)
+				query, err = docker.New1()
+				assert.Nil(t, err)
+				mockConfig = docker.MockConfig
+				createSqlserverMigrations()
 			},
 		},
 	}
@@ -98,10 +98,6 @@ func TestMigrateCommand(t *testing.T) {
 			var agent Agent
 			assert.Nil(t, query.Where("name", "goravel").First(&agent))
 			assert.True(t, agent.ID > 0)
-
-			if pool != nil {
-				assert.Nil(t, pool.Purge(resource))
-			}
 
 			removeMigrations()
 		})
