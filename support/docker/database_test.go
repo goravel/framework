@@ -155,16 +155,16 @@ func TestInitDatabase(t *testing.T) {
 	database1, err := InitDatabase()
 	assert.Nil(t, err)
 	assert.NotNil(t, database1)
-	assert.Equal(t, mysqlPort, database1.MysqlPort)
-	assert.Equal(t, postgresqlPort, database1.PostgresqlPort)
-	assert.Equal(t, sqlserverPort, database1.SqlserverPort)
+	assert.True(t, database1.MysqlPort > 0)
+	assert.True(t, database1.PostgresqlPort > 0)
+	assert.True(t, database1.SqlserverPort > 0)
 
 	database2, err := InitDatabase()
 	assert.Nil(t, err)
 	assert.NotNil(t, database2)
-	assert.Equal(t, mysqlPort+1, database2.MysqlPort)
-	assert.Equal(t, postgresqlPort+1, database2.PostgresqlPort)
-	assert.Equal(t, sqlserverPort+1, database2.SqlserverPort)
+	assert.True(t, database2.MysqlPort > 0)
+	assert.True(t, database2.PostgresqlPort > 0)
+	assert.True(t, database2.SqlserverPort > 0)
 
 	mysql1, err := database1.connect(contractsorm.DriverMysql)
 	assert.Nil(t, err)
@@ -174,15 +174,10 @@ func TestInitDatabase(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, mysql2)
 
-	err = database1.Stop()
-	if err != nil {
-		fmt.Println("hwb1-------", err.Error())
-	}
-	assert.Nil(t, err)
+	assert.Nil(t, database1.Stop())
+	assert.Nil(t, database2.Stop())
+}
 
-	err = database2.Stop()
-	if err != nil {
-		fmt.Println("hwb2-------", err.Error())
-	}
-	assert.Nil(t, err)
+func TestGetValidPort(t *testing.T) {
+	assert.True(t, getValidPort() > 0)
 }

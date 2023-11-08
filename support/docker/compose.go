@@ -7,7 +7,9 @@ import (
 type Compose struct {
 }
 
-func (r Compose) Database(index, mysqlPort, postgresqlPort, sqlserverPort int) string {
+func (r Compose) Database(mysqlPort, postgresqlPort, sqlserverPort int) string {
+	index := mysqlPort
+
 	return fmt.Sprintf(`version: '3'
 
 services:

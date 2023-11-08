@@ -3,9 +3,11 @@ package docker
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"net"
 	"os"
 	"os/exec"
-	"sync"
+	"strconv"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -28,11 +30,6 @@ const (
 	sqlserverPort  = 9900
 )
 
-var (
-	usingDatabaseNum = 0
-	lock             sync.Mutex
-)
-
 type Database struct {
 	file           *os.File
 	User           string
@@ -44,19 +41,13 @@ type Database struct {
 }
 
 func InitDatabase() (*Database, error) {
-	var index int
-	lock.Lock()
-	usingDatabaseNum++
-	index = usingDatabaseNum
-	lock.Unlock()
-
 	database := &Database{
 		User:           "goravel",
 		Password:       "Goravel(!)",
 		Database:       "goravel",
-		MysqlPort:      mysqlPort + index,
-		PostgresqlPort: postgresqlPort + index,
-		SqlserverPort:  sqlserverPort + index,
+		MysqlPort:      getValidPort(),
+		PostgresqlPort: getValidPort(),
+		SqlserverPort:  getValidPort(),
 	}
 
 	file, err := os.CreateTemp("", "goravel-docker-composer-*.yml")
@@ -65,7 +56,7 @@ func InitDatabase() (*Database, error) {
 	}
 	defer file.Close()
 
-	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(index, database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
+	if err := os.WriteFile(file.Name(), []byte(Compose{}.Database(database.MysqlPort, database.PostgresqlPort, database.SqlserverPort)), 0755); err != nil {
 		return nil, err
 	}
 
@@ -221,4 +212,19 @@ func shell(command string) error {
 	}
 
 	return nil
+}
+
+func getValidPort() int {
+	for i := 0; i < 20; i++ {
+		random := rand.Intn(2000) + 8000
+		l, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(random)))
+		if err != nil {
+			continue
+		}
+		defer l.Close()
+
+		return random
+	}
+
+	return 0
 }
