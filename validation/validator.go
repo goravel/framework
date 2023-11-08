@@ -20,13 +20,12 @@ func init() {
 
 type Validator struct {
 	instance *validate.Validation
-	data     validate.DataFace
 }
 
-func NewValidator(instance *validate.Validation, data validate.DataFace) *Validator {
+func NewValidator(instance *validate.Validation) *Validator {
 	instance.Validate()
 
-	return &Validator{instance: instance, data: data}
+	return &Validator{instance: instance}
 }
 
 func (v *Validator) Bind(ptr any) error {
