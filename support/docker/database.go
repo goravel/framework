@@ -216,7 +216,7 @@ func shell(command string) error {
 
 func getValidPort() int {
 	for i := 0; i < 20; i++ {
-		random := rand.Intn(2000) + 8000
+		random := rand.Intn(10000) + 10000
 		l, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(random)))
 		if err != nil {
 			continue
