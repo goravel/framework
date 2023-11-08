@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -27,7 +28,10 @@ const (
 	sqlserverPort  = 9900
 )
 
-var usingDatabaseNum = 0
+var (
+	usingDatabaseNum = 0
+	lock             sync.Mutex
+)
 
 type Database struct {
 	file           *os.File
@@ -64,7 +68,9 @@ func InitDatabase() (*Database, error) {
 	}
 
 	database.file = file
+	lock.Lock()
 	usingDatabaseNum++
+	lock.Unlock()
 
 	return database, nil
 }
