@@ -42,7 +42,7 @@ func TestMake(t *testing.T) {
 			expectData:      Data{A: "b"},
 		},
 		{
-			description: "error when data isn't map[string]any or struct",
+			description: "error when data isn't map[string]any or map[string][]string or struct",
 			data:        "1",
 			rules:       map[string]string{"a": "required"},
 			expectErr:   errors.New("data must be map[string]any or map[string][]string or struct"),
