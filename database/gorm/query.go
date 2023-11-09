@@ -29,6 +29,8 @@ type QueryImpl struct {
 	config        config.Config
 	ctx           context.Context
 	instance      *gormio.DB
+	origin        *QueryImpl
+	with          map[string][]any
 	withoutEvents bool
 }
 
@@ -48,8 +50,15 @@ func NewQueryImpl(ctx context.Context, config config.Config, gorm gormcontract.G
 	}, nil
 }
 
-func NewQueryWithWithoutEvents(instance *gormio.DB, withoutEvents bool, config config.Config) *QueryImpl {
-	return &QueryImpl{instance: instance, withoutEvents: withoutEvents, config: config, ctx: instance.Statement.Context}
+func NewQueryImplByInstance(db *gormio.DB, instance *QueryImpl) *QueryImpl {
+	queryImpl := &QueryImpl{config: instance.config, ctx: db.Statement.Context, instance: db, origin: instance.origin, with: instance.with, withoutEvents: instance.withoutEvents}
+
+	// The origin is used by the With method to load the relationship.
+	if instance.origin == nil && instance.instance != nil {
+		queryImpl.origin = instance
+	}
+
+	return queryImpl
 }
 
 func (r *QueryImpl) Association(association string) ormcontract.Association {
@@ -105,7 +114,7 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 			if err != nil {
 				return
 			}
-			cursorChan <- &CursorImpl{row: val}
+			cursorChan <- &CursorImpl{row: val, query: r}
 		}
 		close(cursorChan)
 	}()
@@ -137,7 +146,7 @@ func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) 
 func (r *QueryImpl) Distinct(args ...any) ormcontract.Query {
 	tx := r.instance.Distinct(args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error) {
@@ -307,13 +316,13 @@ func (r *QueryImpl) Get(dest any) error {
 func (r *QueryImpl) Group(name string) ormcontract.Query {
 	tx := r.instance.Group(name)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Having(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Having(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Instance() *gormio.DB {
@@ -322,13 +331,13 @@ func (r *QueryImpl) Instance() *gormio.DB {
 
 func (r *QueryImpl) Join(query string, args ...any) ormcontract.Query {
 	tx := r.instance.Joins(query, args...)
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Limit(limit int) ormcontract.Query {
 	tx := r.instance.Limit(limit)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Load(model any, relation string, args ...any) error {
@@ -346,8 +355,7 @@ func (r *QueryImpl) Load(model any, relation string, args ...any) error {
 	}
 
 	copyDest := copyStruct(model)
-	query := r.With(relation, args...)
-	err := query.Find(model)
+	err := r.With(relation, args...).Find(model)
 
 	t := destType.Elem()
 	v := reflect.ValueOf(model).Elem()
@@ -406,11 +414,11 @@ func (r *QueryImpl) LockForUpdate() ormcontract.Query {
 	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
 		tx := r.instance.Clauses(clause.Locking{Strength: "UPDATE"})
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+		return NewQueryImplByInstance(tx, r)
 	} else if driver == sqlserverDialector.Name() {
 		tx := r.instance.Clauses(hints.With("rowlock", "updlock", "holdlock"))
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+		return NewQueryImplByInstance(tx, r)
 	}
 
 	return r
@@ -422,31 +430,31 @@ func (r *QueryImpl) Model(value any) ormcontract.Query {
 	}
 	tx := r.instance.Model(value)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Offset(offset int) ormcontract.Query {
 	tx := r.instance.Offset(offset)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Omit(columns ...string) ormcontract.Query {
 	tx := r.instance.Omit(columns...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Order(value any) ormcontract.Query {
 	tx := r.instance.Order(value)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) OrWhere(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Or(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Paginate(page, limit int, dest any, total *int64) error {
@@ -473,7 +481,7 @@ func (r *QueryImpl) Pluck(column string, dest any) error {
 func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
 	tx := r.instance.Raw(sql, values...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Save(value any) error {
@@ -546,14 +554,14 @@ func (r *QueryImpl) Scan(dest any) error {
 func (r *QueryImpl) Select(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Select(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
 	var gormFuncs []func(*gormio.DB) *gormio.DB
 	for _, item := range funcs {
 		gormFuncs = append(gormFuncs, func(tx *gormio.DB) *gormio.DB {
-			item(NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config))
+			item(NewQueryImplByInstance(tx, r))
 
 			return tx
 		})
@@ -561,7 +569,7 @@ func (r *QueryImpl) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) o
 
 	tx := r.instance.Scopes(gormFuncs...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) SharedLock() ormcontract.Query {
@@ -573,11 +581,11 @@ func (r *QueryImpl) SharedLock() ormcontract.Query {
 	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
 		tx := r.instance.Clauses(clause.Locking{Strength: "SHARE"})
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+		return NewQueryImplByInstance(tx, r)
 	} else if driver == sqlserverDialector.Name() {
 		tx := r.instance.Clauses(hints.With("rowlock", "holdlock"))
 
-		return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+		return NewQueryImplByInstance(tx, r)
 	}
 
 	return r
@@ -590,7 +598,7 @@ func (r *QueryImpl) Sum(column string, dest any) error {
 func (r *QueryImpl) Table(name string, args ...any) ormcontract.Query {
 	tx := r.instance.Table(name, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error) {
@@ -653,17 +661,20 @@ func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
 func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Where(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
-	return NewQueryWithWithoutEvents(r.instance, true, r.config)
+	return NewQueryImplByInstance(r.instance, &QueryImpl{
+		config:        r.config,
+		withoutEvents: true,
+	})
 }
 
 func (r *QueryImpl) WithTrashed() ormcontract.Query {
 	tx := r.instance.Unscoped()
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	return NewQueryImplByInstance(tx, r)
 }
 
 func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
@@ -672,7 +683,7 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 		case func(ormcontract.Query) ormcontract.Query:
 			newArgs := []any{
 				func(tx *gormio.DB) *gormio.DB {
-					query := arg(NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config))
+					query := arg(NewQueryImplByInstance(tx, r))
 
 					return query.(*QueryImpl).instance
 				},
@@ -680,13 +691,20 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 
 			tx := r.instance.Preload(query, newArgs...)
 
-			return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+			return NewQueryImplByInstance(tx, r)
 		}
 	}
 
 	tx := r.instance.Preload(query, args...)
 
-	return NewQueryWithWithoutEvents(tx, r.withoutEvents, r.config)
+	queryImpl := NewQueryImplByInstance(tx, r)
+	if queryImpl.with == nil {
+		queryImpl.with = make(map[string][]any)
+	}
+
+	queryImpl.with[query] = args
+
+	return queryImpl
 }
 
 func (r *QueryImpl) refreshConnection(value any) error {

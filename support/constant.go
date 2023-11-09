@@ -1,6 +1,6 @@
 package support
 
-const Version string = "v1.13.1"
+const Version string = "v1.13.4"
 
 const (
 	EnvRuntime = "runtime"
@@ -9,8 +9,9 @@ const (
 )
 
 var (
-	Env          = EnvRuntime
-	EnvPath      = ".env"
-	RelativePath string
-	RootPath     string
+	Env                  = EnvRuntime
+	EnvPath              = ".env"
+	IsKeyGenerateCommand = false
+	RelativePath         string
+	RootPath             string
 )
