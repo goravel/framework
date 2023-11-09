@@ -45,7 +45,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	default:
 		dataFace, err = validate.FromStruct(data)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("data must be map[string]any or map[string][]string or struct")
 		}
 	}
 
