@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"log"
 	"path/filepath"
 	"testing"
 
@@ -21,7 +22,7 @@ import (
 	"github.com/goravel/framework/grpc"
 	"github.com/goravel/framework/hash"
 	"github.com/goravel/framework/http"
-	"github.com/goravel/framework/log"
+	frameworklog "github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
 	cachemocks "github.com/goravel/framework/mocks/cache"
 	configmocks "github.com/goravel/framework/mocks/config"
@@ -32,6 +33,7 @@ import (
 	routemocks "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
+	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/validation"
@@ -152,7 +154,7 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(log.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
 		return &logmocks.Log{}, nil
 	})
 
@@ -233,7 +235,7 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 }
 
 func (s *ApplicationTestSuite) TestMakeLog() {
-	serviceProvider := &log.ServiceProvider{}
+	serviceProvider := &frameworklog.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeLog())
@@ -258,8 +260,13 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker()
-	pool, resource, _, err := mysqlDocker.New()
+	databaseDocker, err := supportdocker.InitDatabase()
+	if err != nil {
+		log.Fatalf("Init docker error: %s", err)
+	}
+
+	mysqlDocker := gorm.NewMysqlDocker1(databaseDocker)
+	_, err = mysqlDocker.New1()
 	s.Nil(err)
 
 	mockConfig := &configmocks.Config{}
@@ -269,12 +276,12 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return(orm.DriverMysql.String()).Twice()
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Once()
 	mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local").Once()
-	mockConfig.On("GetString", "database.connections.mysql.database").Return("mysql").Once()
+	mockConfig.On("GetString", "database.connections.mysql.database").Return(databaseDocker.Database).Once()
 	mockConfig.On("GetString", "database.connections.mysql.host").Return("localhost").Once()
-	mockConfig.On("GetString", "database.connections.mysql.username").Return(gorm.DbUser).Once()
-	mockConfig.On("GetString", "database.connections.mysql.password").Return(gorm.DbPassword).Once()
+	mockConfig.On("GetString", "database.connections.mysql.username").Return(databaseDocker.User).Once()
+	mockConfig.On("GetString", "database.connections.mysql.password").Return(databaseDocker.Password).Once()
 	mockConfig.On("GetString", "database.connections.mysql.prefix").Return("").Once()
-	mockConfig.On("GetInt", "database.connections.mysql.port").Return(mysqlDocker.Port).Once()
+	mockConfig.On("GetInt", "database.connections.mysql.port").Return(databaseDocker.MysqlPort).Once()
 	mockConfig.On("GetBool", "database.connections.mysql.singular").Return(true).Once()
 	mockConfig.On("GetBool", "app.debug").Return(true).Once()
 	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
@@ -290,7 +297,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeOrm())
-	s.Nil(pool.Purge(resource))
+	s.Nil(databaseDocker.Stop())
 	mockConfig.AssertExpectations(s.T())
 }
 
@@ -332,7 +339,7 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	s.app.Singleton(console.Binding, func(app foundation.Application) (any, error) {
 		return &consolemocks.Artisan{}, nil
 	})
-	s.app.Singleton(log.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
 		return &logmocks.Log{}, nil
 	})
 

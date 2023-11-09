@@ -361,7 +361,7 @@ func TestQueryTestSuite(t *testing.T) {
 	}
 
 	sqliteDocker := NewSqliteDocker(dbDatabase)
-	_, _, sqliteQuery, err := sqliteDocker.New()
+	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
@@ -2972,13 +2972,13 @@ func TestReadWriteSeparate(t *testing.T) {
 	}
 
 	readSqliteDocker := NewSqliteDocker(dbDatabase)
-	_, _, readSqliteQuery, err := readSqliteDocker.New()
+	readSqliteQuery, err := readSqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get read sqlite error: %s", err)
 	}
 
 	writeSqliteDocker := NewSqliteDocker(dbDatabase1)
-	_, _, writeSqliteQuery, err := writeSqliteDocker.New()
+	writeSqliteQuery, err := writeSqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get write sqlite error: %s", err)
 	}

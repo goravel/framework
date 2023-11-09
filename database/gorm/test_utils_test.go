@@ -47,7 +47,7 @@ func TestSqliteDocker(t *testing.T) {
 	}
 
 	docker := NewSqliteDocker(dbDatabase)
-	_, _, db, err := docker.New()
+	db, err := docker.New()
 
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
