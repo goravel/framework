@@ -268,7 +268,7 @@ func TestCastValue(t *testing.T) {
 		expectErr  error
 	}{
 		{
-			name: "success when cast data",
+			name: "success without cast data",
 			data: func() validate.DataFace {
 				body := &Data{
 					A: "1",
@@ -287,6 +287,73 @@ func TestCastValue(t *testing.T) {
 					N: 1,
 					O: []string{"1"},
 					P: map[string]string{"a": "aa"},
+				}
+				jsonStr, err := json.Marshal(body)
+				assert.Nil(t, err)
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
+				request.Header.Set("Content-Type", "application/json")
+				assert.Nil(t, err)
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{
+				"a": "required",
+				"b": "required",
+				"c": "required",
+				"d": "required",
+				"e": "required",
+				"f": "required",
+				"g": "required",
+				"h": "required",
+				"i": "required",
+				"j": "required",
+				"k": "required",
+				"l": "required",
+				"m": "required",
+				"n": "required",
+				"o": "required",
+				"p": "required",
+			},
+			expectData: Data{
+				A: "1",
+				B: 1,
+				C: 1,
+				D: 1,
+				E: 1,
+				F: 1,
+				G: 1,
+				H: 1,
+				I: 1,
+				J: 1,
+				K: 1,
+				L: true,
+				M: 1,
+				N: 1,
+				O: []string{"1"},
+				P: map[string]string{"a": "aa"},
+			},
+		}, {
+			name: "success with cast data",
+			data: func() validate.DataFace {
+				body := map[string]any{
+					"a": 1,
+					"b": "1",
+					"c": "1",
+					"d": "1",
+					"e": "1",
+					"f": "1",
+					"g": "1",
+					"h": "1",
+					"i": "1",
+					"j": "1",
+					"k": "1",
+					"l": "true",
+					"m": "1",
+					"n": "1",
+					"o": []int{1},
+					"p": map[string]string{"a": "aa"},
 				}
 				jsonStr, err := json.Marshal(body)
 				assert.Nil(t, err)
