@@ -239,7 +239,7 @@ func TestFails(t *testing.T) {
 	}
 }
 
-func TestCast(t *testing.T) {
+func TestCastValue(t *testing.T) {
 	type Data struct {
 		A string            `form:"a" json:"a"`
 		B int               `form:"b" json:"b"`
