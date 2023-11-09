@@ -38,7 +38,7 @@ func (receiver *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return nil
 }
 
-func (receiver *ASync) Later(delay int64, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (receiver *ASync) Later(delay int, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
 	receiver.size++
 	receiver.jobs = append(receiver.jobs, contractsqueue.Jobs{Job: job, Args: args, Delay: int64(delay)})
 
@@ -77,6 +77,8 @@ func (receiver *ASync) Size(queue string) (int64, error) {
 }
 
 func (receiver *ASync) Server(concurrent int, queue string) {
+	var errChan chan error
+
 	go func() {
 		for {
 			if len(receiver.jobs) == 0 {
@@ -94,6 +96,7 @@ func (receiver *ASync) Server(concurrent int, queue string) {
 			err = Call(job.Signature(), args)
 			if err != nil {
 				receiver.size--
+				errChan <- err
 			}
 
 			time.Sleep(time.Second)
