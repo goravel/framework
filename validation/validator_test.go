@@ -10,8 +10,9 @@ import (
 	"testing"
 
 	"github.com/gookit/validate"
-	"github.com/goravel/framework/support/json"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/support/json"
 )
 
 func TestBind(t *testing.T) {
