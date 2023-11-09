@@ -1,0 +1,19 @@
+name: Mockery
+on:
+  pull_request:
+jobs:
+  mockery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Mockery
+        run: |
+          go install github.com/vektra/mockery/v2@v2.34.2
+      - name: Generate Mocks
+        run: |
+          ~/go/bin/mockery --all --keeptree --dir=contracts
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        name: Commit changes
+        with:
+          commit_message: "chore: update mocks"

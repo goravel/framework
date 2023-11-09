@@ -1,6 +1,5 @@
 package schedule
 
-//go:generate mockery --name=Schedule
 type Schedule interface {
 	// Call add a new callback event to the schedule.
 	Call(callback func()) Event

@@ -5,14 +5,12 @@ import (
 	"time"
 )
 
-//go:generate mockery --name=Storage
 type Storage interface {
 	Driver
 	// Disk gets the instance of the given disk.
 	Disk(disk string) Driver
 }
 
-//go:generate mockery --name=Driver
 type Driver interface {
 	// AllDirectories gets all the directories within a given directory(recursive).
 	AllDirectories(path string) ([]string, error)
@@ -62,7 +60,6 @@ type Driver interface {
 	Url(file string) string
 }
 
-//go:generate mockery --name=File
 type File interface {
 	// Disk gets the instance of the given disk.
 	Disk(disk string) File

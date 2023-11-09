@@ -1,6 +1,5 @@
 package seeder
 
-//go:generate mockery --name=Facade
 type Facade interface {
 	// Register registers seeders.
 	Register(seeders []Seeder)

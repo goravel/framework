@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
+	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 

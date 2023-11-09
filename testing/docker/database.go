@@ -7,12 +7,12 @@ import (
 	"github.com/ory/dockertest/v3"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/gorm"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/support/docker"
 )
 

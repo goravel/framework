@@ -47,6 +47,22 @@ func (s *ApplicationTestSuite) SetupTest() {
 
 }
 
+func (s *ApplicationTestSuite) TestOsVariables() {
+	s.Nil(os.Setenv("APP_KEY", "12345678901234567890123456789013"))
+	s.Nil(os.Setenv("OS_APP_NAME", "goravel"))
+	s.Nil(os.Setenv("OS_APP_PORT", "3306"))
+	s.Nil(os.Setenv("OS_APP_DEBUG", "true"))
+
+	s.Equal("12345678901234567890123456789013", s.config.GetString("APP_KEY"))
+	s.Equal("12345678901234567890123456789013", s.customConfig.GetString("APP_KEY"))
+	s.Equal("goravel", s.config.GetString("OS_APP_NAME"))
+	s.Equal("goravel", s.customConfig.GetString("OS_APP_NAME"))
+	s.Equal(3306, s.config.GetInt("OS_APP_PORT"))
+	s.Equal(3306, s.customConfig.GetInt("OS_APP_PORT"))
+	s.True(s.config.GetBool("OS_APP_DEBUG"))
+	s.True(s.customConfig.GetBool("OS_APP_DEBUG"))
+}
+
 func (s *ApplicationTestSuite) TestEnv() {
 	s.Equal("12345678901234567890123456789012", s.config.Env("APP_KEY").(string))
 	s.Equal("goravel", s.config.Env("APP_NAME", "goravel").(string))

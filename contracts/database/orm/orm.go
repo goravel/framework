@@ -5,7 +5,6 @@ import (
 	"database/sql"
 )
 
-//go:generate mockery --name=Orm
 type Orm interface {
 	// Connection gets an Orm instance from the connection pool.
 	Connection(name string) Orm
@@ -23,7 +22,6 @@ type Orm interface {
 	WithContext(ctx context.Context) Orm
 }
 
-//go:generate mockery --name=Transaction
 type Transaction interface {
 	Query
 	// Commit commits the changes in a transaction.
@@ -32,7 +30,6 @@ type Transaction interface {
 	Rollback() error
 }
 
-//go:generate mockery --name=Query
 type Query interface {
 	// Association gets an association instance by name.
 	Association(association string) Association
@@ -134,7 +131,6 @@ type Query interface {
 	With(query string, args ...any) Query
 }
 
-//go:generate mockery --name=Association
 type Association interface {
 	// Find finds records that match given conditions.
 	Find(out any, conds ...any) error
@@ -155,7 +151,6 @@ type ConnectionModel interface {
 	Connection() string
 }
 
-//go:generate mockery --name=Cursor
 type Cursor interface {
 	// Scan scans the current row into the given destination.
 	Scan(value any) error

@@ -6,7 +6,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-//go:generate mockery --name=Grpc
 type Grpc interface {
 	// Run starts the gRPC server.
 	Run(host ...string) error

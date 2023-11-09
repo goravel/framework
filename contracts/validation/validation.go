@@ -2,7 +2,6 @@ package validation
 
 type Option func(map[string]any)
 
-//go:generate mockery --name=Validation
 type Validation interface {
 	// Make create a new validator instance.
 	Make(data any, rules map[string]string, options ...Option) (Validator, error)
@@ -12,7 +11,6 @@ type Validation interface {
 	Rules() []Rule
 }
 
-//go:generate mockery --name=Validator
 type Validator interface {
 	// Bind the data to the validation.
 	Bind(ptr any) error
@@ -22,7 +20,6 @@ type Validator interface {
 	Fails() bool
 }
 
-//go:generate mockery --name=Errors
 type Errors interface {
 	// One gets the first error message for a given field.
 	One(key ...string) string
