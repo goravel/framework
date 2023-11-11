@@ -1,6 +1,10 @@
 package docker
 
 import (
+	"bytes"
+	"fmt"
+	"os/exec"
+
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/pkg/errors"
@@ -27,4 +31,20 @@ func Resource(pool *dockertest.Pool, opts *dockertest.RunOptions) (*dockertest.R
 			Name: "no",
 		}
 	})
+}
+
+func Run(command string) error {
+	cmd := exec.Command("/bin/sh", "-c", command)
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+	}
+
+	return nil
 }

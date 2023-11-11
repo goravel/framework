@@ -348,14 +348,14 @@ func TestQueryTestSuite(t *testing.T) {
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	mysqlDocker := NewMysqlDocker1(testDatabaseDocker)
-	mysqlQuery, err := mysqlDocker.New1()
+	mysqlDocker := NewMysqlDocker(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
-	postgresqlQuery, err := postgresqlDocker.New1()
+	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
+	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
@@ -366,8 +366,8 @@ func TestQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverDocker := NewSqlserverDocker1(testDatabaseDocker)
-	sqlserverQuery, err := sqlserverDocker.New1()
+	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
+	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
@@ -2870,13 +2870,13 @@ func TestCustomConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mysqlDocker := NewMysqlDocker1(testDatabaseDocker)
-	query, err := mysqlDocker.New1()
+	mysqlDocker := NewMysqlDocker(testDatabaseDocker)
+	query, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
-	postgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
-	_, err = postgresqlDocker.New1()
+	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
+	_, err = postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
@@ -2935,38 +2935,38 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Init docker error: %s", err)
 	}
 
-	readMysqlDocker := NewMysqlDocker1(testDatabaseDocker)
-	readMysqlQuery, err := readMysqlDocker.New1()
+	readMysqlDocker := NewMysqlDocker(testDatabaseDocker)
+	readMysqlQuery, err := readMysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get read mysql error: %s", err)
 	}
 
-	writeMysqlDocker := NewMysqlDocker1(writeDatabaseDocker)
-	writeMysqlQuery, err := writeMysqlDocker.New1()
+	writeMysqlDocker := NewMysqlDocker(writeDatabaseDocker)
+	writeMysqlQuery, err := writeMysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get write mysql error: %s", err)
 	}
 
 	writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
-	mysqlQuery, err := writeMysqlDocker.Query1(false)
+	mysqlQuery, err := writeMysqlDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get mysql gorm error: %s", err)
 	}
 
-	readPostgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
-	readPostgresqlQuery, err := readPostgresqlDocker.New1()
+	readPostgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
+	readPostgresqlQuery, err := readPostgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get read postgresql error: %s", err)
 	}
 
-	writePostgresqlDocker := NewPostgresqlDocker1(writeDatabaseDocker)
-	writePostgresqlQuery, err := writePostgresqlDocker.New1()
+	writePostgresqlDocker := NewPostgresqlDocker(writeDatabaseDocker)
+	writePostgresqlQuery, err := writePostgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get write postgresql error: %s", err)
 	}
 
 	writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
-	postgresqlQuery, err := writePostgresqlDocker.Query1(false)
+	postgresqlQuery, err := writePostgresqlDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get postgresql gorm error: %s", err)
 	}
@@ -2989,19 +2989,19 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlite gorm error: %s", err)
 	}
 
-	readSqlserverDocker := NewSqlserverDocker1(testDatabaseDocker)
-	readSqlserverQuery, err := readSqlserverDocker.New1()
+	readSqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
+	readSqlserverQuery, err := readSqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get read sqlserver error: %s", err)
 	}
 
-	writeSqlserverDocker := NewSqlserverDocker1(writeDatabaseDocker)
-	writeSqlserverQuery, err := writeSqlserverDocker.New1()
+	writeSqlserverDocker := NewSqlserverDocker(writeDatabaseDocker)
+	writeSqlserverQuery, err := writeSqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get write sqlserver error: %s", err)
 	}
 	writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
-	sqlserverDB, err := writeSqlserverDocker.Query1(false)
+	sqlserverDB, err := writeSqlserverDocker.Query(false)
 	if err != nil {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
@@ -3064,13 +3064,13 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mysqlDocker := NewMysqlDocker1(testDatabaseDocker)
+	mysqlDocker := NewMysqlDocker(testDatabaseDocker)
 	mysqlQuery, err := mysqlDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresqlDocker1(testDatabaseDocker)
+	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
 	postgresqlQuery, err := postgresqlDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
@@ -3082,7 +3082,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverDocker := NewSqlserverDocker1(testDatabaseDocker)
+	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
 	sqlserverDB, err := sqlserverDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)

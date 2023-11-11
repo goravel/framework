@@ -265,8 +265,8 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		log.Fatalf("Init docker error: %s", err)
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker1(databaseDocker)
-	_, err = mysqlDocker.New1()
+	mysqlDocker := gorm.NewMysqlDocker(databaseDocker)
+	_, err = mysqlDocker.New()
 	s.Nil(err)
 
 	mockConfig := &configmocks.Config{}

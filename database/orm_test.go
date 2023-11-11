@@ -48,14 +48,14 @@ func TestOrmSuite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker1(testDatabaseDocker)
-	mysqlQuery, err := mysqlDocker.New1()
+	mysqlDocker := gorm.NewMysqlDocker(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql docker error: %v", err)
 	}
 
-	postgresqlDocker := gorm.NewPostgresqlDocker1(testDatabaseDocker)
-	postgresqlQuery, err := postgresqlDocker.New1()
+	postgresqlDocker := gorm.NewPostgresqlDocker(testDatabaseDocker)
+	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql docker error: %v", err)
 	}
@@ -66,8 +66,8 @@ func TestOrmSuite(t *testing.T) {
 		log.Fatalf("Get sqlite error: %s", err)
 	}
 
-	sqlserverDocker := gorm.NewSqlserverDocker1(testDatabaseDocker)
-	sqlserverQuery, err := sqlserverDocker.New1()
+	sqlserverDocker := gorm.NewSqlserverDocker(testDatabaseDocker)
+	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlserver docker error: %v", err)
 	}

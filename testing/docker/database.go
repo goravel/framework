@@ -1,8 +1,8 @@
 package docker
 
 import (
-	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ory/dockertest/v3"
 
@@ -12,8 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
-	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/support/docker"
+	supportdocker "github.com/goravel/framework/support/docker"
 )
 
 type Database struct {
@@ -59,67 +58,82 @@ func NewDatabase(app foundation.Application, connection string, gormInitialize g
 }
 
 func (receiver *Database) Build() error {
-	pool, err := docker.Pool()
-	if err != nil {
-		return err
-	}
-	receiver.pool = pool
-
-	var opts *dockertest.RunOptions
 	if receiver.image != nil {
-		opts = &dockertest.RunOptions{
-			Repository: receiver.image.Repository,
-			Tag:        receiver.image.Tag,
-			Env:        receiver.image.Env,
-		}
+		return supportdocker.Run(imageToCommand(receiver.image))
 	} else {
-		opts = receiver.driver.Image()
-	}
-	resource, err := docker.Resource(pool, opts)
-	if err != nil {
-		return err
-	}
-	receiver.resource = resource
-
-	if receiver.image != nil && receiver.image.Timeout > 0 {
-		_ = resource.Expire(receiver.image.Timeout)
-	} else {
-		_ = resource.Expire(3600)
+		command := imageToCommand(&testing.Image{
+			Repository: "mysql",
+			Tag:        "latest",
+			Env: []string{
+				"MYSQL_ROOT_PASSWORD=123123",
+				"MYSQL_DATABASE=goravel",
+			},
+		})
+		fmt.Println(command)
+		return supportdocker.Run(command)
 	}
 
-	dbConfig := receiver.driver.Config(resource)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.host", receiver.connection), dbConfig.Host)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), dbConfig.Port)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.database", receiver.connection), dbConfig.Database)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.username", receiver.connection), dbConfig.Username)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.password", receiver.connection), dbConfig.Password)
+	//pool, err := docker.Pool()
+	//if err != nil {
+	//	return err
+	//}
+	//receiver.pool = pool
+	//
+	//var opts *dockertest.RunOptions
+	//if receiver.image != nil {
+	//	opts = &dockertest.RunOptions{
+	//		Repository: receiver.image.Repository,
+	//		Tag:        receiver.image.Tag,
+	//		Env:        receiver.image.Env,
+	//	}
+	//} else {
+	//	opts = receiver.driver.Image()
+	//}
+	//resource, err := docker.Resource(pool, opts)
+	//if err != nil {
+	//	return err
+	//}
+	//receiver.resource = resource
+	//
+	//if receiver.image != nil && receiver.image.Timeout > 0 {
+	//	_ = resource.Expire(receiver.image.Timeout)
+	//} else {
+	//	_ = resource.Expire(3600)
+	//}
+	//
+	//dbConfig := receiver.driver.Config(resource)
+	//receiver.config.Add(fmt.Sprintf("database.connections.%s.host", receiver.connection), dbConfig.Host)
+	//receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), dbConfig.Port)
+	//receiver.config.Add(fmt.Sprintf("database.connections.%s.database", receiver.connection), dbConfig.Database)
+	//receiver.config.Add(fmt.Sprintf("database.connections.%s.username", receiver.connection), dbConfig.Username)
+	//receiver.config.Add(fmt.Sprintf("database.connections.%s.password", receiver.connection), dbConfig.Password)
+	//
+	//if err := pool.Retry(func() error {
+	//	_, err := receiver.gormInitialize.InitializeQuery(context.Background(), receiver.config, receiver.driver.Name().String())
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	receiver.app.MakeArtisan().Call("migrate")
+	//
+	//	return nil
+	//}); err != nil {
+	//	return err
+	//}
+	//
+	//receiver.app.Singleton(database.BindingOrm, func(app foundation.Application) (any, error) {
+	//	config := app.MakeConfig()
+	//	defaultConnection := config.GetString("database.default")
+	//
+	//	orm, err := database.InitializeOrm(context.Background(), config, defaultConnection)
+	//	if err != nil {
+	//		return nil, fmt.Errorf("[Orm] Init %s connection error: %v", defaultConnection, err)
+	//	}
+	//
+	//	return orm, nil
+	//})
 
-	if err := pool.Retry(func() error {
-		_, err := receiver.gormInitialize.InitializeQuery(context.Background(), receiver.config, receiver.driver.Name().String())
-		if err != nil {
-			return err
-		}
-
-		receiver.app.MakeArtisan().Call("migrate")
-
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	receiver.app.Singleton(database.BindingOrm, func(app foundation.Application) (any, error) {
-		config := app.MakeConfig()
-		defaultConnection := config.GetString("database.default")
-
-		orm, err := database.InitializeOrm(context.Background(), config, defaultConnection)
-		if err != nil {
-			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", defaultConnection, err)
-		}
-
-		return orm, nil
-	})
-
-	return nil
+	//return nil
 }
 
 func (receiver *Database) Config() testing.Config {
@@ -144,4 +158,16 @@ func (receiver *Database) Seed(seeds ...seeder.Seeder) {
 	}
 
 	receiver.app.MakeArtisan().Call(command)
+}
+
+func imageToCommand(image *testing.Image) string {
+	command := []string{"docker", "run", "timeout", "20", "-d"}
+	if len(image.Env) > 0 {
+		for _, env := range image.Env {
+			command = append(command, "-e", env)
+		}
+	}
+	command = append(command, fmt.Sprintf("%s:%s", image.Repository, image.Tag))
+
+	return fmt.Sprintf(`%s`, strings.Join(command, " "))
 }

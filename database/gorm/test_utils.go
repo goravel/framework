@@ -30,14 +30,14 @@ type MysqlDocker struct {
 	database   string
 }
 
-func NewMysqlDocker1(database *supportdocker.Database) *MysqlDocker {
+func NewMysqlDocker(database *supportdocker.Database) *MysqlDocker {
 	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: database.MysqlPort, user: database.User, password: database.Password, database: database.Database}
 }
 
-func (r *MysqlDocker) New1() (orm.Query, error) {
-	r.mock1()
+func (r *MysqlDocker) New() (orm.Query, error) {
+	r.mock()
 
-	db, err := r.Query1(true)
+	db, err := r.Query(true)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (r *MysqlDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *MysqlDocker) Query1(createTable bool) (orm.Query, error) {
+func (r *MysqlDocker) Query(createTable bool) (orm.Query, error) {
 	var query orm.Query
 	for i := 0; i < 60; i++ {
 		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
@@ -116,26 +116,26 @@ func (r *MysqlDocker) MockReadWrite(readPort, writePort int) {
 	})
 	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
-	r.mockOfCommon1()
+	r.mockOfCommon()
 }
 
-func (r *MysqlDocker) mock1() {
+func (r *MysqlDocker) mock() {
 	r.MockConfig.On("GetString", "database.default").Return("mysql")
 	r.MockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
-	r.mockSingleOfCommon1()
-	r.mockOfCommon1()
+	r.mockSingleOfCommon()
+	r.mockOfCommon()
 }
 
 func (r *MysqlDocker) mockWithPrefixAndSingular() {
 	r.MockConfig.On("GetString", "database.connections.mysql.prefix").Return("goravel_")
 	r.MockConfig.On("GetBool", "database.connections.mysql.singular").Return(true)
-	r.mockSingleOfCommon1()
-	r.mockOfCommon1()
+	r.mockSingleOfCommon()
+	r.mockOfCommon()
 }
 
-func (r *MysqlDocker) mockSingleOfCommon1() {
+func (r *MysqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.mysql.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.mysql.write").Return(nil)
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
@@ -145,7 +145,7 @@ func (r *MysqlDocker) mockSingleOfCommon1() {
 	r.MockConfig.On("GetInt", "database.connections.mysql.port").Return(r.Port)
 }
 
-func (r *MysqlDocker) mockOfCommon1() {
+func (r *MysqlDocker) mockOfCommon() {
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
 	r.MockConfig.On("GetString", "database.connections.mysql.driver").Return(orm.DriverMysql.String())
 	r.MockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4")
@@ -163,14 +163,14 @@ type PostgresqlDocker struct {
 	password   string
 }
 
-func NewPostgresqlDocker1(database *supportdocker.Database) *PostgresqlDocker {
+func NewPostgresqlDocker(database *supportdocker.Database) *PostgresqlDocker {
 	return &PostgresqlDocker{MockConfig: &mocksconfig.Config{}, Port: database.PostgresqlPort, user: database.User, password: database.Password, database: database.Database}
 }
 
-func (r *PostgresqlDocker) New1() (orm.Query, error) {
-	r.mock1()
+func (r *PostgresqlDocker) New() (orm.Query, error) {
+	r.mock()
 
-	db, err := r.Query1(true)
+	db, err := r.Query(true)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (r *PostgresqlDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *PostgresqlDocker) Query1(createTable bool) (orm.Query, error) {
+func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
 	var query orm.Query
 	for i := 0; i < 60; i++ {
 		var err error
@@ -251,26 +251,26 @@ func (r *PostgresqlDocker) MockReadWrite(readPort, writePort int) {
 	})
 	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-	r.mockOfCommon1()
+	r.mockOfCommon()
 }
 
-func (r *PostgresqlDocker) mock1() {
+func (r *PostgresqlDocker) mock() {
 	r.MockConfig.On("GetString", "database.default").Return("postgresql")
 	r.MockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-	r.mockSingleOfCommon1()
-	r.mockOfCommon1()
+	r.mockSingleOfCommon()
+	r.mockOfCommon()
 }
 
 func (r *PostgresqlDocker) mockWithPrefixAndSingular() {
 	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("goravel_")
 	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(true)
-	r.mockSingleOfCommon1()
-	r.mockOfCommon1()
+	r.mockSingleOfCommon()
+	r.mockOfCommon()
 }
 
-func (r *PostgresqlDocker) mockSingleOfCommon1() {
+func (r *PostgresqlDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
 	r.MockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
@@ -279,7 +279,7 @@ func (r *PostgresqlDocker) mockSingleOfCommon1() {
 	r.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(r.Port)
 }
 
-func (r *PostgresqlDocker) mockOfCommon1() {
+func (r *PostgresqlDocker) mockOfCommon() {
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
 	r.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(orm.DriverPostgresql.String())
 	r.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
@@ -399,14 +399,14 @@ type SqlserverDocker struct {
 	password   string
 }
 
-func NewSqlserverDocker1(database *supportdocker.Database) *SqlserverDocker {
+func NewSqlserverDocker(database *supportdocker.Database) *SqlserverDocker {
 	return &SqlserverDocker{MockConfig: &mocksconfig.Config{}, Port: database.SqlserverPort, user: database.User, password: database.Password, database: database.Database}
 }
 
-func (r *SqlserverDocker) New1() (orm.Query, error) {
-	r.mock1()
+func (r *SqlserverDocker) New() (orm.Query, error) {
+	r.mock()
 
-	db, err := r.Query1(true)
+	db, err := r.Query(true)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +425,7 @@ func (r *SqlserverDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *SqlserverDocker) Query1(createTable bool) (orm.Query, error) {
+func (r *SqlserverDocker) Query(createTable bool) (orm.Query, error) {
 	var query orm.Query
 	for i := 0; i < 60; i++ {
 		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
@@ -475,13 +475,13 @@ func (r *SqlserverDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 	return query, nil
 }
 
-func (r *SqlserverDocker) mock1() {
+func (r *SqlserverDocker) mock() {
 	r.MockConfig.On("GetString", "database.default").Return("sqlserver")
 	r.MockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.MockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
-	r.mockSingleOfCommon1()
-	r.mockOfCommon1()
+	r.mockSingleOfCommon()
+	r.mockOfCommon()
 }
 
 func (r *SqlserverDocker) MockReadWrite(readPort, writePort int) {
@@ -494,17 +494,17 @@ func (r *SqlserverDocker) MockReadWrite(readPort, writePort int) {
 	})
 	r.MockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
-	r.mockOfCommon1()
+	r.mockOfCommon()
 }
 
 func (r *SqlserverDocker) mockWithPrefixAndSingular() {
 	r.MockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("goravel_")
 	r.MockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(true)
-	r.mockSingleOfCommon1()
-	r.mockOfCommon1()
+	r.mockSingleOfCommon()
+	r.mockOfCommon()
 }
 
-func (r *SqlserverDocker) mockSingleOfCommon1() {
+func (r *SqlserverDocker) mockSingleOfCommon() {
 	r.MockConfig.On("Get", "database.connections.sqlserver.read").Return(nil)
 	r.MockConfig.On("Get", "database.connections.sqlserver.write").Return(nil)
 	r.MockConfig.On("GetString", "database.connections.sqlserver.host").Return("127.0.0.1")
@@ -513,7 +513,7 @@ func (r *SqlserverDocker) mockSingleOfCommon1() {
 	r.MockConfig.On("GetInt", "database.connections.sqlserver.port").Return(r.Port)
 }
 
-func (r *SqlserverDocker) mockOfCommon1() {
+func (r *SqlserverDocker) mockOfCommon() {
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
 	r.MockConfig.On("GetString", "database.connections.sqlserver.driver").Return(orm.DriverSqlserver.String())
 	r.MockConfig.On("GetString", "database.connections.sqlserver.database").Return(r.database)

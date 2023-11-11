@@ -1,12 +1,10 @@
 package docker
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"net"
 	"os"
-	"os/exec"
 	"strconv"
 	"time"
 
@@ -60,7 +58,7 @@ func InitDatabase() (*Database, error) {
 		return nil, err
 	}
 
-	if err := shell(fmt.Sprintf("docker-compose -f %s up --detach --quiet-pull", file.Name())); err != nil {
+	if err := Run(fmt.Sprintf("docker-compose -f %s up --detach --quiet-pull", file.Name())); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +86,7 @@ func (r *Database) Stop() error {
 		os.Remove(r.file.Name())
 	}()
 
-	return shell(fmt.Sprintf("docker-compose -f %s down", r.file.Name()))
+	return Run(fmt.Sprintf("docker-compose -f %s down", r.file.Name()))
 }
 
 func (r *Database) freshMysql() error {
@@ -196,22 +194,6 @@ func (r *Database) connect(driver contractsorm.Driver) (*gormio.DB, error) {
 	}
 
 	return instance, err
-}
-
-func shell(command string) error {
-	cmd := exec.Command("/bin/sh", "-c", command)
-
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
-	}
-
-	return nil
 }
 
 func getValidPort() int {

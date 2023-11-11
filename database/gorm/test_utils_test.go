@@ -18,8 +18,8 @@ func TestMysqlDocker(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	docker := NewMysqlDocker1(testDatabaseDocker)
-	query, err := docker.New1()
+	docker := NewMysqlDocker(testDatabaseDocker)
+	query, err := docker.New()
 
 	assert.NotNil(t, query)
 	assert.Nil(t, err)
@@ -34,8 +34,8 @@ func TestPostgresqlDocker(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	docker := NewPostgresqlDocker1(testDatabaseDocker)
-	query, err := docker.New1()
+	docker := NewPostgresqlDocker(testDatabaseDocker)
+	query, err := docker.New()
 
 	assert.NotNil(t, query)
 	assert.Nil(t, err)
@@ -63,8 +63,8 @@ func TestSqlserverDocker(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	docker := NewSqlserverDocker1(testDatabaseDocker)
-	db, err := docker.New1()
+	docker := NewSqlserverDocker(testDatabaseDocker)
+	db, err := docker.New()
 
 	assert.NotNil(t, db)
 	assert.Nil(t, err)

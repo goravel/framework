@@ -56,8 +56,8 @@ func TestMigrateCommand(t *testing.T) {
 			name: "mysql",
 			setup: func() {
 				var err error
-				docker := gorm.NewMysqlDocker1(testDatabaseDocker)
-				query, err = docker.New1()
+				docker := gorm.NewMysqlDocker(testDatabaseDocker)
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createMysqlMigrations()
@@ -67,8 +67,8 @@ func TestMigrateCommand(t *testing.T) {
 			name: "postgresql",
 			setup: func() {
 				var err error
-				docker := gorm.NewPostgresqlDocker1(testDatabaseDocker)
-				query, err = docker.New1()
+				docker := gorm.NewPostgresqlDocker(testDatabaseDocker)
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createPostgresqlMigrations()
@@ -78,8 +78,8 @@ func TestMigrateCommand(t *testing.T) {
 			name: "sqlserver",
 			setup: func() {
 				var err error
-				docker := gorm.NewSqlserverDocker1(testDatabaseDocker)
-				query, err = docker.New1()
+				docker := gorm.NewSqlserverDocker(testDatabaseDocker)
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqlserverMigrations()
