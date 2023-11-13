@@ -18,6 +18,7 @@ import (
 	"github.com/goravel/framework/database/orm"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 type contextKey int
@@ -3048,6 +3049,7 @@ func TestReadWriteSeparate(t *testing.T) {
 	}
 
 	defer assert.Nil(t, writeDatabaseDocker.Stop())
+	defer assert.Nil(t, file.Remove(dbDatabase1))
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {

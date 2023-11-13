@@ -11,12 +11,8 @@ import (
 )
 
 const (
-	DbPassword     = "Goravel(!)"
-	DbUser         = "root"
-	dbDatabase     = "goravel"
-	dbDatabase1    = "goravel1"
-	dbUser1        = "sa"
-	resourceExpire = 1200
+	dbDatabase  = "goravel"
+	dbDatabase1 = "goravel1"
 )
 
 var testContext context.Context

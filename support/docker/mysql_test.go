@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	configmocks "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/env"
 )
 
 type MysqlTestSuite struct {
@@ -18,6 +19,10 @@ type MysqlTestSuite struct {
 }
 
 func TestMysqlTestSuite(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	suite.Run(t, new(MysqlTestSuite))
 }
 
