@@ -83,5 +83,5 @@ func imageToCommand(image *testing.Image) (command string, exposedPorts []string
 
 	commands = append(commands, fmt.Sprintf("%s:%s", image.Repository, image.Tag))
 
-	return fmt.Sprintf(`%s`, strings.Join(commands, " ")), ports
+	return strings.Join(commands, " "), ports
 }

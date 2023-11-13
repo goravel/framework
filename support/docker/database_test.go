@@ -11,7 +11,6 @@ import (
 
 type DatabaseTestSuite struct {
 	suite.Suite
-	database *Database
 }
 
 func TestDatabaseTestSuite(t *testing.T) {
@@ -24,14 +23,6 @@ func TestDatabaseTestSuite(t *testing.T) {
 
 func (s *DatabaseTestSuite) SetupTest() {
 }
-
-//func (s *DatabaseTestSuite) TestFreshPostgresql() {
-
-//}
-//
-//func (s *DatabaseTestSuite) TestFreshSqlserver() {
-
-//}
 
 func TestInitDatabase(t *testing.T) {
 	if env.IsWindows() {

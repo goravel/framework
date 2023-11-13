@@ -19,9 +19,7 @@ type Database struct {
 	app            foundation.Application
 	config         contractsconfig.Config
 	connection     string
-	containerID    string
 	driver         testing.DatabaseDriver
-	exposedPorts   []string
 	gormInitialize gorm.Initialize
 	image          *testing.Image
 }
