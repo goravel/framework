@@ -61,7 +61,7 @@ func TestOrmSuite(t *testing.T) {
 	}
 
 	sqliteDocker := gorm.NewSqliteDocker("goravel")
-	_, _, sqliteQuery, err := sqliteDocker.New()
+	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlite error: %s", err)
 	}

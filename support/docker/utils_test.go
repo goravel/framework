@@ -7,5 +7,6 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	assert.Nil(t, Run("ls"))
+	_, err := Run("ls")
+	assert.Nil(t, err)
 }

@@ -46,7 +46,7 @@ func TestMigrateCommand(t *testing.T) {
 			setup: func() {
 				var err error
 				docker := gorm.NewSqliteDocker("goravel")
-				_, _, query, err = docker.New()
+				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
 				createSqliteMigrations()

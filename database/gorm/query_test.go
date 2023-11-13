@@ -18,7 +18,6 @@ import (
 	"github.com/goravel/framework/database/orm"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/file"
 )
 
 type contextKey int
@@ -380,8 +379,6 @@ func TestQueryTestSuite(t *testing.T) {
 			ormcontract.DriverSqlserver:  sqlserverQuery,
 		},
 	})
-
-	assert.Nil(t, file.Remove(dbDatabase))
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -2889,18 +2886,19 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
+	config := testDatabaseDocker.Postgresql.Config()
 	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
 	mysqlDocker.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.host").Return("localhost")
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(testDatabaseDocker.User)
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(testDatabaseDocker.Password)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.username").Return(config.Username)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.password").Return(config.Password)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
-	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return(testDatabaseDocker.Database)
+	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.database").Return(config.Database)
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
 	mysqlDocker.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	mysqlDocker.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(testDatabaseDocker.PostgresqlPort)
+	mysqlDocker.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(config.Port)
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3049,9 +3047,6 @@ func TestReadWriteSeparate(t *testing.T) {
 		})
 	}
 
-	assert.Nil(t, file.Remove(dbDatabase))
-	assert.Nil(t, file.Remove(dbDatabase1))
-
 	defer assert.Nil(t, writeDatabaseDocker.Stop())
 }
 
@@ -3106,8 +3101,6 @@ func TestTablePrefixAndSingular(t *testing.T) {
 			assert.True(t, user1.ID > 0)
 		})
 	}
-
-	assert.Nil(t, file.Remove(dbDatabase))
 }
 
 func paginator(page string, limit string) func(methods ormcontract.Query) ormcontract.Query {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
-	"github.com/goravel/framework/config"
+	frameworkconfig "github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/foundation"
@@ -128,7 +128,7 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "auth.defaults.guard").Return("user").Once()
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
@@ -151,7 +151,7 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 	mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
 	mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
@@ -166,7 +166,7 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 }
 
 func (s *ApplicationTestSuite) TestMakeConfig() {
-	serviceProvider := &config.ServiceProvider{}
+	serviceProvider := &frameworkconfig.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeConfig())
@@ -176,7 +176,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "app.key").Return("12345678901234567890123456789012").Once()
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -206,7 +206,7 @@ func (s *ApplicationTestSuite) TestMakeGate() {
 }
 
 func (s *ApplicationTestSuite) TestMakeGrpc() {
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return &configmocks.Config{}, nil
 	})
 
@@ -223,7 +223,7 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 	mockConfig.On("GetInt", "hashing.argon2id.memory", 65536).Return(65536).Once()
 	mockConfig.On("GetInt", "hashing.argon2id.threads", 1).Return(1).Once()
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -242,7 +242,7 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 }
 
 func (s *ApplicationTestSuite) TestMakeMail() {
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return &configmocks.Config{}, nil
 	})
 	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
@@ -269,6 +269,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	_, err = mysqlDocker.New()
 	s.Nil(err)
 
+	config := databaseDocker.Mysql.Config()
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
 	mockConfig.On("Get", "database.connections.mysql.read").Return(nil).Once()
@@ -276,12 +277,12 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return(orm.DriverMysql.String()).Twice()
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Once()
 	mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local").Once()
-	mockConfig.On("GetString", "database.connections.mysql.database").Return(databaseDocker.Database).Once()
+	mockConfig.On("GetString", "database.connections.mysql.database").Return(config.Database).Once()
 	mockConfig.On("GetString", "database.connections.mysql.host").Return("localhost").Once()
-	mockConfig.On("GetString", "database.connections.mysql.username").Return(databaseDocker.User).Once()
-	mockConfig.On("GetString", "database.connections.mysql.password").Return(databaseDocker.Password).Once()
+	mockConfig.On("GetString", "database.connections.mysql.username").Return(config.Username).Once()
+	mockConfig.On("GetString", "database.connections.mysql.password").Return(config.Password).Once()
 	mockConfig.On("GetString", "database.connections.mysql.prefix").Return("").Once()
-	mockConfig.On("GetInt", "database.connections.mysql.port").Return(databaseDocker.MysqlPort).Once()
+	mockConfig.On("GetInt", "database.connections.mysql.port").Return(config.Port).Once()
 	mockConfig.On("GetBool", "database.connections.mysql.singular").Return(true).Once()
 	mockConfig.On("GetBool", "app.debug").Return(true).Once()
 	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
@@ -289,7 +290,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.On("GetInt", "database.pool.conn_max_idletime", 3600).Return(3600)
 	mockConfig.On("GetInt", "database.pool.conn_max_lifetime", 3600).Return(3600)
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -302,7 +303,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return &configmocks.Config{}, nil
 	})
 
@@ -322,7 +323,7 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 func (s *ApplicationTestSuite) TestMakeRoute() {
 	mockConfig := &configmocks.Config{}
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -356,7 +357,7 @@ func (s *ApplicationTestSuite) TestMakeStorage() {
 	mockConfig.On("GetString", "filesystems.disks.local.root").Return("").Once()
 	mockConfig.On("GetString", "filesystems.disks.local.url").Return("").Once()
 
-	s.app.Singleton(config.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 

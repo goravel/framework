@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gookit/color"
-	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -38,14 +37,15 @@ func TestApplicationTestSuite(t *testing.T) {
 		return
 	}
 
-	redisPool, redisResource, err := testingdocker.Redis()
+	redisDocker, err := testingdocker.NewRedis()
 	assert.Nil(t, err)
+	assert.Nil(t, redisDocker.Build())
 
 	suite.Run(t, &ApplicationTestSuite{
-		redisPort: cast.ToInt(redisResource.GetPort("6379/tcp")),
+		redisPort: redisDocker.Config().Port,
 	})
 
-	assert.Nil(t, redisPool.Purge(redisResource))
+	assert.Nil(t, redisDocker.Stop())
 }
 
 func (s *ApplicationTestSuite) SetupTest() {}

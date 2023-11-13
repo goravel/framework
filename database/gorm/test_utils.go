@@ -3,7 +3,6 @@ package gorm
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
@@ -31,7 +30,9 @@ type MysqlDocker struct {
 }
 
 func NewMysqlDocker(database *supportdocker.Database) *MysqlDocker {
-	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: database.MysqlPort, user: database.User, password: database.Password, database: database.Database}
+	config := database.Mysql.Config()
+
+	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
 
 func (r *MysqlDocker) New() (orm.Query, error) {
@@ -57,18 +58,8 @@ func (r *MysqlDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 }
 
 func (r *MysqlDocker) Query(createTable bool) (orm.Query, error) {
-	var query orm.Query
-	for i := 0; i < 60; i++ {
-		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	if query == nil {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
+	if err != nil {
 		return nil, errors.New("connect to mysql failed")
 	}
 
@@ -83,22 +74,12 @@ func (r *MysqlDocker) Query(createTable bool) (orm.Query, error) {
 }
 
 func (r *MysqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
-	var query orm.Query
-	for i := 0; i < 60; i++ {
-		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	if query == nil {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverMysql.String())
+	if err != nil {
 		return nil, errors.New("connect to mysql failed")
 	}
 
-	err := Table{}.CreateWithPrefixAndSingular(orm.DriverMysql, query)
+	err = Table{}.CreateWithPrefixAndSingular(orm.DriverMysql, query)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +145,9 @@ type PostgresqlDocker struct {
 }
 
 func NewPostgresqlDocker(database *supportdocker.Database) *PostgresqlDocker {
-	return &PostgresqlDocker{MockConfig: &mocksconfig.Config{}, Port: database.PostgresqlPort, user: database.User, password: database.Password, database: database.Database}
+	config := database.Postgresql.Config()
+
+	return &PostgresqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
 
 func (r *PostgresqlDocker) New() (orm.Query, error) {
@@ -190,19 +173,8 @@ func (r *PostgresqlDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 }
 
 func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
-	var query orm.Query
-	for i := 0; i < 60; i++ {
-		var err error
-		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	if query == nil {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
+	if err != nil {
 		return nil, errors.New("connect to postgresql failed")
 	}
 
@@ -217,23 +189,12 @@ func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
 }
 
 func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
-	var query orm.Query
-	for i := 0; i < 60; i++ {
-		var err error
-		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	if query == nil {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
+	if err != nil {
 		return nil, errors.New("connect to postgresql failed")
 	}
 
-	err := Table{}.CreateWithPrefixAndSingular(orm.DriverPostgresql, query)
+	err = Table{}.CreateWithPrefixAndSingular(orm.DriverPostgresql, query)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +361,9 @@ type SqlserverDocker struct {
 }
 
 func NewSqlserverDocker(database *supportdocker.Database) *SqlserverDocker {
-	return &SqlserverDocker{MockConfig: &mocksconfig.Config{}, Port: database.SqlserverPort, user: database.User, password: database.Password, database: database.Database}
+	config := database.Sqlserver.Config()
+
+	return &SqlserverDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
 
 func (r *SqlserverDocker) New() (orm.Query, error) {
@@ -426,18 +389,8 @@ func (r *SqlserverDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 }
 
 func (r *SqlserverDocker) Query(createTable bool) (orm.Query, error) {
-	var query orm.Query
-	for i := 0; i < 60; i++ {
-		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	if query == nil {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
+	if err != nil {
 		return nil, errors.New("connect to sqlserver failed")
 	}
 
@@ -452,22 +405,12 @@ func (r *SqlserverDocker) Query(createTable bool) (orm.Query, error) {
 }
 
 func (r *SqlserverDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
-	var query orm.Query
-	for i := 0; i < 60; i++ {
-		query1, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-
-	if query == nil {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverSqlserver.String())
+	if err != nil {
 		return nil, errors.New("connect to sqlserver failed")
 	}
 
-	err := Table{}.CreateWithPrefixAndSingular(orm.DriverSqlserver, query)
+	err = Table{}.CreateWithPrefixAndSingular(orm.DriverSqlserver, query)
 	if err != nil {
 		return nil, err
 	}

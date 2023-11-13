@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ory/dockertest/v3"
-	"github.com/spf13/cast"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -30,10 +29,10 @@ var (
 
 type QueueTestSuite struct {
 	suite.Suite
-	app           *Application
-	redisResource *dockertest.Resource
-	mockConfig    *configmock.Config
-	mockQueue     *queuemock.Queue
+	app        *Application
+	mockConfig *configmock.Config
+	mockQueue  *queuemock.Queue
+	port       int
 }
 
 func TestQueueTestSuite(t *testing.T) {
@@ -41,18 +40,17 @@ func TestQueueTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	redisPool, redisResource, err := testingdocker.Redis()
+	redisDocker, err := testingdocker.NewRedis()
 	if err != nil {
 		log.Fatalf("Get redis error: %s", err)
 	}
+	assert.Nil(t, redisDocker.Build())
 
 	suite.Run(t, &QueueTestSuite{
-		redisResource: redisResource,
+		port: redisDocker.Config().Port,
 	})
 
-	if err := redisPool.Purge(redisResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+	assert.Nil(t, redisDocker.Stop())
 }
 
 func (s *QueueTestSuite) SetupTest() {
@@ -78,7 +76,7 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.jobs = []queue.Job{&TestAsyncJob{}}
 
@@ -111,7 +109,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.jobs = []queue.Job{&TestDelayAsyncJob{}}
 
@@ -148,7 +146,7 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.jobs = []queue.Job{&TestCustomAsyncJob{}}
 
@@ -185,7 +183,7 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.jobs = []queue.Job{&TestErrorAsyncJob{}}
 
@@ -220,7 +218,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(cast.ToInt(s.redisResource.GetPort("6379/tcp"))).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.jobs = []queue.Job{&TestChainAsyncJob{}, &TestChainSyncJob{}}
 
