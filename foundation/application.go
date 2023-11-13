@@ -181,7 +181,9 @@ func setEnv() {
 		for _, arg := range args[1:] {
 			if arg == "artisan" {
 				support.Env = support.EnvArtisan
-				break
+			}
+			if arg == "key:generate" {
+				support.IsKeyGenerateCommand = true
 			}
 		}
 	}

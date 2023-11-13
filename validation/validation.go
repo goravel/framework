@@ -2,8 +2,7 @@ package validation
 
 import (
 	"errors"
-	"reflect"
-	"time"
+	"net/url"
 
 	"github.com/gookit/validate"
 
@@ -29,34 +28,25 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 		return nil, errors.New("rules can't be empty")
 	}
 
-	var dataType reflect.Kind
-	switch data := data.(type) {
+	var dataFace validate.DataFace
+	var err error
+	switch td := data.(type) {
+	case validate.DataFace:
+		dataFace = td
 	case map[string]any:
-		if len(data) == 0 {
+		if len(td) == 0 {
 			return nil, errors.New("data can't be empty")
 		}
-		dataType = reflect.Map
-	}
-
-	val := reflect.ValueOf(data)
-	indirectVal := reflect.Indirect(val)
-	typ := indirectVal.Type()
-	if indirectVal.Kind() == reflect.Struct && typ != reflect.TypeOf(time.Time{}) {
-		dataType = reflect.Struct
-	}
-
-	var dataFace validate.DataFace
-	switch dataType {
-	case reflect.Map:
-		dataFace = validate.FromMap(data.(map[string]any))
-	case reflect.Struct:
-		var err error
+		dataFace = validate.FromMap(td)
+	case url.Values:
+		dataFace = validate.FromURLValues(td)
+	case map[string][]string:
+		dataFace = validate.FromURLValues(td)
+	default:
 		dataFace, err = validate.FromStruct(data)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("data must be map[string]any or map[string][]string or struct")
 		}
-	default:
-		return nil, errors.New("data must be map[string]any or struct")
 	}
 
 	options = append(options, Rules(rules), CustomRules(r.rules))
@@ -70,7 +60,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	v := dataFace.Create()
 	AppendOptions(v, generateOptions)
 
-	return NewValidator(v, dataFace), nil
+	return NewValidator(v), nil
 }
 
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
