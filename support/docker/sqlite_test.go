@@ -30,27 +30,13 @@ func (s *SqliteTestSuite) SetupTest() {
 	s.sqlite = NewSqlite("goravel")
 }
 
-func (s *SqliteTestSuite) TestConfig() {
-	s.Equal("goravel", s.sqlite.Config().Database)
-}
-
-func (s *SqliteTestSuite) TestImage() {
-	image := contractstesting.Image{
-		Repository: "sqlite",
-	}
-	s.sqlite.Image(image)
-	s.Equal(&image, s.sqlite.image)
-}
-
-func (s *SqliteTestSuite) TestName() {
-	s.Equal(orm.DriverSqlite, s.sqlite.Name())
-}
-
-func (s *SqliteTestSuite) TestFresh() {
+func (s *SqliteTestSuite) TestBuild() {
 	s.Nil(s.sqlite.Build())
 	instance, err := s.sqlite.connect()
 	s.Nil(err)
 	s.NotNil(instance)
+
+	s.Equal("goravel", s.sqlite.Config().Database)
 
 	res := instance.Exec(`
 CREATE TABLE users (
@@ -82,4 +68,16 @@ INSERT INTO users (name) VALUES ('goravel');
 	s.Equal(int64(0), count)
 
 	s.Nil(s.sqlite.Stop())
+}
+
+func (s *SqliteTestSuite) TestImage() {
+	image := contractstesting.Image{
+		Repository: "sqlite",
+	}
+	s.sqlite.Image(image)
+	s.Equal(&image, s.sqlite.image)
+}
+
+func (s *SqliteTestSuite) TestName() {
+	s.Equal(orm.DriverSqlite, s.sqlite.Name())
 }

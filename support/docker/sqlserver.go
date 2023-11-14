@@ -44,7 +44,7 @@ func NewSqlserver(database, username, password string) *Sqlserver {
 
 func (receiver *Sqlserver) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
-	containerID, err := Run(command)
+	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Sqlserver docker error: %v", err)
 	}
@@ -53,7 +53,7 @@ func (receiver *Sqlserver) Build() error {
 	}
 
 	receiver.containerID = containerID
-	receiver.port = getPort(exposedPorts, 1433)
+	receiver.port = getExposedPort(exposedPorts, 1433)
 
 	if _, err := receiver.connect(); err != nil {
 		return fmt.Errorf("connect Sqlserver docker error: %v", err)
@@ -108,7 +108,7 @@ func (receiver *Sqlserver) Name() orm.Driver {
 }
 
 func (receiver *Sqlserver) Stop() error {
-	if _, err := Run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Sqlserver error: %v", err)
 	}
 

@@ -31,30 +31,17 @@ func (s *MysqlTestSuite) SetupTest() {
 	s.mysql = NewMysql("goravel", "goravel", "goravel")
 }
 
-func (s *MysqlTestSuite) TestConfig() {
-	s.Equal("127.0.0.1", s.mysql.Config().Host)
-	s.Equal("goravel", s.mysql.Config().Database)
-	s.Equal("goravel", s.mysql.Config().Username)
-	s.Equal("goravel", s.mysql.Config().Password)
-}
-
-func (s *MysqlTestSuite) TestImage() {
-	image := contractstesting.Image{
-		Repository: "mysql",
-	}
-	s.mysql.Image(image)
-	s.Equal(&image, s.mysql.image)
-}
-
-func (s *MysqlTestSuite) TestName() {
-	s.Equal(orm.DriverMysql, s.mysql.Name())
-}
-
-func (s *MysqlTestSuite) TestFresh() {
+func (s *MysqlTestSuite) TestBuild() {
 	s.Nil(s.mysql.Build())
 	instance, err := s.mysql.connect()
 	s.Nil(err)
 	s.NotNil(instance)
+
+	s.Equal("127.0.0.1", s.mysql.Config().Host)
+	s.Equal("goravel", s.mysql.Config().Database)
+	s.Equal("goravel", s.mysql.Config().Username)
+	s.Equal("goravel", s.mysql.Config().Password)
+	s.True(s.mysql.Config().Port > 0)
 
 	res := instance.Exec(`
 CREATE TABLE users (
@@ -83,4 +70,16 @@ INSERT INTO users (name) VALUES ('goravel');
 	s.Equal(int64(0), count)
 
 	s.Nil(s.mysql.Stop())
+}
+
+func (s *MysqlTestSuite) TestImage() {
+	image := contractstesting.Image{
+		Repository: "mysql",
+	}
+	s.mysql.Image(image)
+	s.Equal(&image, s.mysql.image)
+}
+
+func (s *MysqlTestSuite) TestName() {
+	s.Equal(orm.DriverMysql, s.mysql.Name())
 }

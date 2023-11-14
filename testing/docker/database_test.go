@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	contractstesting "github.com/goravel/framework/contracts/testing"
 	frameworkdatabase "github.com/goravel/framework/database"
 	"github.com/goravel/framework/database/gorm"
 	configmocks "github.com/goravel/framework/mocks/config"
@@ -212,6 +213,7 @@ func (s *DatabaseTestSuite) TestBuild() {
 	s.mockApp.On("Singleton", frameworkdatabase.BindingOrm, mock.Anything).Once()
 
 	s.Nil(s.database.Build())
+	s.True(s.database.Config().Port > 0)
 	s.Nil(s.database.Stop())
 
 	s.mockConfig.AssertExpectations(s.T())
@@ -226,6 +228,15 @@ func (s *DatabaseTestSuite) TestConfig() {
 	s.Equal("goravel", config.Database)
 	s.Equal("goravel", config.Username)
 	s.Equal("goravel", config.Password)
+}
+
+func (s *DatabaseTestSuite) TestImage() {
+	s.database.Image(contractstesting.Image{
+		Repository: "mysql",
+	})
+	s.Equal(&contractstesting.Image{
+		Repository: "mysql",
+	}, s.database.image)
 }
 
 func (s *DatabaseTestSuite) TestSeed() {

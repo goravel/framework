@@ -30,30 +30,17 @@ func (s *PostgresqlTestSuite) SetupTest() {
 	s.postgresql = NewPostgresql("goravel", "goravel", "goravel")
 }
 
-func (s *PostgresqlTestSuite) TestConfig() {
-	s.Equal("127.0.0.1", s.postgresql.Config().Host)
-	s.Equal("goravel", s.postgresql.Config().Database)
-	s.Equal("goravel", s.postgresql.Config().Username)
-	s.Equal("goravel", s.postgresql.Config().Password)
-}
-
-func (s *PostgresqlTestSuite) TestImage() {
-	image := contractstesting.Image{
-		Repository: "postgresql",
-	}
-	s.postgresql.Image(image)
-	s.Equal(&image, s.postgresql.image)
-}
-
-func (s *PostgresqlTestSuite) TestName() {
-	s.Equal(orm.DriverPostgresql, s.postgresql.Name())
-}
-
-func (s *PostgresqlTestSuite) TestFresh() {
+func (s *PostgresqlTestSuite) TestBuild() {
 	s.Nil(s.postgresql.Build())
 	instance, err := s.postgresql.connect()
 	s.Nil(err)
 	s.NotNil(instance)
+
+	s.Equal("127.0.0.1", s.postgresql.Config().Host)
+	s.Equal("goravel", s.postgresql.Config().Database)
+	s.Equal("goravel", s.postgresql.Config().Username)
+	s.Equal("goravel", s.postgresql.Config().Password)
+	s.True(s.postgresql.Config().Port > 0)
 
 	res := instance.Exec(`
 	CREATE TABLE users (
@@ -85,4 +72,16 @@ func (s *PostgresqlTestSuite) TestFresh() {
 	s.Equal(int64(0), count)
 
 	s.Nil(s.postgresql.Stop())
+}
+
+func (s *PostgresqlTestSuite) TestImage() {
+	image := contractstesting.Image{
+		Repository: "postgresql",
+	}
+	s.postgresql.Image(image)
+	s.Equal(&image, s.postgresql.image)
+}
+
+func (s *PostgresqlTestSuite) TestName() {
+	s.Equal(orm.DriverPostgresql, s.postgresql.Name())
 }

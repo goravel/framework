@@ -30,30 +30,17 @@ func (s *SqlserverTestSuite) SetupTest() {
 	s.sqlserver = NewSqlserver("goravel", "goravel", "Goravel123")
 }
 
-func (s *SqlserverTestSuite) TestConfig() {
-	s.Equal("127.0.0.1", s.sqlserver.Config().Host)
-	s.Equal("goravel", s.sqlserver.Config().Database)
-	s.Equal("goravel", s.sqlserver.Config().Username)
-	s.Equal("Goravel123", s.sqlserver.Config().Password)
-}
-
-func (s *SqlserverTestSuite) TestImage() {
-	image := contractstesting.Image{
-		Repository: "sqlserver",
-	}
-	s.sqlserver.Image(image)
-	s.Equal(&image, s.sqlserver.image)
-}
-
-func (s *SqlserverTestSuite) TestName() {
-	s.Equal(orm.DriverSqlserver, s.sqlserver.Name())
-}
-
-func (s *SqlserverTestSuite) TestFresh() {
+func (s *SqlserverTestSuite) TestBuild() {
 	s.Nil(s.sqlserver.Build())
 	instance, err := s.sqlserver.connect()
 	s.Nil(err)
 	s.NotNil(instance)
+
+	s.Equal("127.0.0.1", s.sqlserver.Config().Host)
+	s.Equal("goravel", s.sqlserver.Config().Database)
+	s.Equal("goravel", s.sqlserver.Config().Username)
+	s.Equal("Goravel123", s.sqlserver.Config().Password)
+	s.True(s.sqlserver.Config().Port > 0)
 
 	res := instance.Exec(`
 	CREATE TABLE users (
@@ -86,4 +73,16 @@ func (s *SqlserverTestSuite) TestFresh() {
 	s.Equal(int64(0), count)
 
 	s.Nil(s.sqlserver.Stop())
+}
+
+func (s *SqlserverTestSuite) TestImage() {
+	image := contractstesting.Image{
+		Repository: "sqlserver",
+	}
+	s.sqlserver.Image(image)
+	s.Equal(&image, s.sqlserver.image)
+}
+
+func (s *SqlserverTestSuite) TestName() {
+	s.Equal(orm.DriverSqlserver, s.sqlserver.Name())
 }

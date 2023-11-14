@@ -42,7 +42,7 @@ func NewPostgresql(database, username, password string) *Postgresql {
 
 func (receiver *Postgresql) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
-	containerID, err := Run(command)
+	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Postgresql error: %v", err)
 	}
@@ -51,7 +51,7 @@ func (receiver *Postgresql) Build() error {
 	}
 
 	receiver.containerID = containerID
-	receiver.port = getPort(exposedPorts, 5432)
+	receiver.port = getExposedPort(exposedPorts, 5432)
 
 	if _, err := receiver.connect(); err != nil {
 		return fmt.Errorf("connect Postgresql error: %v", err)
@@ -96,7 +96,7 @@ func (receiver *Postgresql) Name() orm.Driver {
 }
 
 func (receiver *Postgresql) Stop() error {
-	if _, err := Run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Postgresql error: %v", err)
 	}
 

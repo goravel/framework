@@ -2,7 +2,6 @@ package queue
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -40,10 +39,7 @@ func TestQueueTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	redisDocker, err := testingdocker.NewRedis()
-	if err != nil {
-		log.Fatalf("Get redis error: %s", err)
-	}
+	redisDocker := testingdocker.NewRedis()
 	assert.Nil(t, redisDocker.Build())
 
 	suite.Run(t, &QueueTestSuite{

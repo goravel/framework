@@ -47,7 +47,7 @@ func NewMysql(database, username, password string) *Mysql {
 
 func (receiver *Mysql) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
-	containerID, err := Run(command)
+	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Mysql docker error: %v", err)
 	}
@@ -56,7 +56,7 @@ func (receiver *Mysql) Build() error {
 	}
 
 	receiver.containerID = containerID
-	receiver.port = getPort(exposedPorts, 3306)
+	receiver.port = getExposedPort(exposedPorts, 3306)
 
 	if _, err := receiver.connect(); err != nil {
 		return fmt.Errorf("connect Mysql docker error: %v", err)
@@ -111,7 +111,7 @@ func (receiver *Mysql) Name() orm.Driver {
 }
 
 func (receiver *Mysql) Stop() error {
-	if _, err := Run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Mysql error: %v", err)
 	}
 

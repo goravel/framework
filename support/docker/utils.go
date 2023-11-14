@@ -14,7 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 )
 
-func getPort(exposedPorts []string, port int) int {
+func getExposedPort(exposedPorts []string, port int) int {
 	for _, exposedPort := range exposedPorts {
 		if !strings.Contains(exposedPort, cast.ToString(port)) {
 			continue
@@ -28,23 +28,7 @@ func getPort(exposedPorts []string, port int) int {
 	return 0
 }
 
-func Run(command string) (string, error) {
-	cmd := exec.Command("/bin/sh", "-c", command)
-
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
-	}
-
-	return out.String(), nil
-}
-
-func GetValidPort() int {
+func getValidPort() int {
 	for i := 0; i < 60; i++ {
 		random := rand.Intn(10000) + 10000
 		l, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(random)))
@@ -74,7 +58,7 @@ func imageToCommand(image *testing.Image) (command string, exposedPorts []string
 	if len(image.ExposedPorts) > 0 {
 		for _, port := range image.ExposedPorts {
 			if !strings.Contains(port, ":") {
-				port = fmt.Sprintf("%d:%s", GetValidPort(), port)
+				port = fmt.Sprintf("%d:%s", getValidPort(), port)
 			}
 			ports = append(ports, port)
 			commands = append(commands, "-p", port)
@@ -84,4 +68,20 @@ func imageToCommand(image *testing.Image) (command string, exposedPorts []string
 	commands = append(commands, fmt.Sprintf("%s:%s", image.Repository, image.Tag))
 
 	return strings.Join(commands, " "), ports
+}
+
+func run(command string) (string, error) {
+	cmd := exec.Command("/bin/sh", "-c", command)
+
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+	}
+
+	return out.String(), nil
 }

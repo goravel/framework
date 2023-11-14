@@ -37,8 +37,7 @@ func TestApplicationTestSuite(t *testing.T) {
 		return
 	}
 
-	redisDocker, err := testingdocker.NewRedis()
-	assert.Nil(t, err)
+	redisDocker := testingdocker.NewRedis()
 	assert.Nil(t, redisDocker.Build())
 
 	suite.Run(t, &ApplicationTestSuite{

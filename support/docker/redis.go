@@ -16,19 +16,19 @@ type Redis struct {
 	image       *testing.Image
 }
 
-func NewRedis() (*Redis, error) {
+func NewRedis() *Redis {
 	return &Redis{
 		image: &testing.Image{
 			Repository:   "redis",
 			Tag:          "latest",
 			ExposedPorts: []string{"6379"},
 		},
-	}, nil
+	}
 }
 
 func (receiver *Redis) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
-	containerID, err := Run(command)
+	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Redis docker error: %v", err)
 	}
@@ -37,9 +37,9 @@ func (receiver *Redis) Build() error {
 	}
 
 	receiver.containerID = containerID
-	receiver.port = getPort(exposedPorts, 6379)
+	receiver.port = getExposedPort(exposedPorts, 6379)
 
-	if err := receiver.connect(); err != nil {
+	if _, err := receiver.connect(); err != nil {
 		return fmt.Errorf("connect Redis docker error: %v", err)
 	}
 
@@ -53,17 +53,20 @@ func (receiver *Redis) Config() RedisConfig {
 }
 
 func (receiver *Redis) Stop() error {
-	if _, err := Run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Redis docker error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *Redis) connect() error {
-	var err error
+func (receiver *Redis) connect() (*redis.Client, error) {
+	var (
+		client *redis.Client
+		err    error
+	)
 	for i := 0; i < 60; i++ {
-		client := redis.NewClient(&redis.Options{
+		client = redis.NewClient(&redis.Options{
 			Addr:     fmt.Sprintf("localhost:%d", receiver.port),
 			Password: "",
 			DB:       0,
@@ -76,7 +79,7 @@ func (receiver *Redis) connect() error {
 		time.Sleep(2 * time.Second)
 	}
 
-	return err
+	return client, err
 }
 
 type RedisConfig struct {
