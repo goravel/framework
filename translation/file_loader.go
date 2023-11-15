@@ -1,7 +1,6 @@
 package translation
 
 import (
-	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,10 +47,16 @@ func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]s
 			if translations[locale] == nil {
 				translations[locale] = make(map[string]string)
 			}
-			maps.Copy(translations[locale], val)
+			mergeMaps(translations[locale], val)
 		} else {
 			return nil, ErrFileNotExist
 		}
 	}
 	return translations, nil
+}
+
+func mergeMaps[M1 ~map[K]V, M2 ~map[K]V, K comparable, V any](dst M1, src M2) {
+	for k, v := range src {
+		dst[k] = v
+	}
 }
