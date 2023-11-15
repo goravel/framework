@@ -219,14 +219,18 @@ func TestThrottle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx = new(TestContext)
-			mockCache = cachemocks.NewCache(t)
-			mockConfig = configmocks.NewConfig(t)
-			mockRateLimiterFacade = httpmocks.NewRateLimiter(t)
+			mockCache = &cachemocks.Cache{}
+			mockConfig = &configmocks.Config{}
+			mockRateLimiterFacade = &httpmocks.RateLimiter{}
 			http.CacheFacade = mockCache
 			http.ConfigFacade = mockConfig
 			http.RateLimiterFacade = mockRateLimiterFacade
 			test.setup()
 			test.assert()
+
+			mockCache.AssertExpectations(t)
+			mockConfig.AssertExpectations(t)
+			mockRateLimiterFacade.AssertExpectations(t)
 		})
 	}
 }

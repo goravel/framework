@@ -28,6 +28,9 @@ func (s *DockerTestSuite) TestDatabase() {
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return("mysql").Once()
+	mockConfig.On("GetString", "database.connections.mysql.database").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.mysql.username").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.mysql.password").Return("goravel").Once()
 	s.mockApp.On("MakeConfig").Return(mockConfig).Once()
 
 	database, err := s.docker.Database()
@@ -38,6 +41,9 @@ func (s *DockerTestSuite) TestDatabase() {
 
 	mockConfig = &configmocks.Config{}
 	mockConfig.On("GetString", "database.connections.postgresql.driver").Return("postgresql").Once()
+	mockConfig.On("GetString", "database.connections.postgresql.database").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.postgresql.username").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.postgresql.password").Return("goravel").Once()
 	s.mockApp.On("MakeConfig").Return(mockConfig).Once()
 
 	database, err = s.docker.Database("postgresql")

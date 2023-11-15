@@ -12,6 +12,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -31,74 +32,65 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm *OrmImpl
+	orm             *OrmImpl
+	mysqlQuery      contractsorm.Query
+	postgresqlQuery contractsorm.Query
+	sqliteQuery     contractsorm.Query
+	sqlserverDB     contractsorm.Query
 }
 
-var (
-	testMysqlQuery      contractsorm.Query
-	testPostgresqlQuery contractsorm.Query
-	testSqliteQuery     contractsorm.Query
-	testSqlserverDB     contractsorm.Query
-)
-
 func TestOrmSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker()
-	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get mysql error: %s", err)
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
 	}
-	testMysqlQuery = mysqlQuery
 
-	postgresqlDocker := gorm.NewPostgresqlDocker()
-	postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
+	mysqlDocker := gorm.NewMysqlDocker(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
-		log.Fatalf("Get postgresql error: %s", err)
+		log.Fatalf("Init mysql docker error: %v", err)
 	}
-	testPostgresqlQuery = postgresqlQuery
+
+	postgresqlDocker := gorm.NewPostgresqlDocker(testDatabaseDocker)
+	postgresqlQuery, err := postgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init postgresql docker error: %v", err)
+	}
 
 	sqliteDocker := gorm.NewSqliteDocker("goravel")
-	_, _, sqliteQuery, err := sqliteDocker.New()
+	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlite error: %s", err)
 	}
-	testSqliteQuery = sqliteQuery
 
-	sqlserverDocker := gorm.NewSqlserverDocker()
-	sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
+	sqlserverDocker := gorm.NewSqlserverDocker(testDatabaseDocker)
+	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
-		log.Fatalf("Get sqlserver error: %s", err)
+		log.Fatalf("Init sqlserver docker error: %v", err)
 	}
-	testSqlserverDB = sqlserverQuery
 
-	suite.Run(t, new(OrmSuite))
+	suite.Run(t, &OrmSuite{
+		mysqlQuery:      mysqlQuery,
+		postgresqlQuery: postgresqlQuery,
+		sqliteQuery:     sqliteQuery,
+		sqlserverDB:     sqlserverQuery,
+	})
 
 	assert.Nil(t, file.Remove("goravel"))
-
-	if err := mysqlPool.Purge(mysqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-
 }
 
 func (s *OrmSuite) SetupTest() {
 	s.orm = &OrmImpl{
 		ctx:   context.Background(),
-		query: testMysqlQuery,
+		query: s.mysqlQuery,
 		queries: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String():      testMysqlQuery,
-			contractsorm.DriverPostgresql.String(): testPostgresqlQuery,
-			contractsorm.DriverSqlite.String():     testSqliteQuery,
-			contractsorm.DriverSqlserver.String():  testSqlserverDB,
+			contractsorm.DriverMysql.String():      s.mysqlQuery,
+			contractsorm.DriverPostgresql.String(): s.postgresqlQuery,
+			contractsorm.DriverSqlite.String():     s.sqliteQuery,
+			contractsorm.DriverSqlserver.String():  s.sqlserverDB,
 		},
 	}
 }

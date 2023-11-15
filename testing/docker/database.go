@@ -3,8 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
-
-	"github.com/ory/dockertest/v3"
+	"time"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/gorm"
@@ -12,8 +11,8 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
-	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/support/docker"
+	frameworkdatabase "github.com/goravel/framework/database"
+	supportdocker "github.com/goravel/framework/support/docker"
 )
 
 type Database struct {
@@ -23,8 +22,6 @@ type Database struct {
 	driver         testing.DatabaseDriver
 	gormInitialize gorm.Initialize
 	image          *testing.Image
-	pool           *dockertest.Pool
-	resource       *dockertest.Resource
 }
 
 func NewDatabase(app foundation.Application, connection string, gormInitialize gorm.Initialize) (*Database, error) {
@@ -34,17 +31,20 @@ func NewDatabase(app foundation.Application, connection string, gormInitialize g
 		connection = config.GetString("database.default")
 	}
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
+	database := config.GetString(fmt.Sprintf("database.connections.%s.database", connection))
+	username := config.GetString(fmt.Sprintf("database.connections.%s.username", connection))
+	password := config.GetString(fmt.Sprintf("database.connections.%s.password", connection))
 
 	var databaseDriver testing.DatabaseDriver
 	switch contractsorm.Driver(driver) {
 	case contractsorm.DriverMysql:
-		databaseDriver = NewMysql(config, connection)
+		databaseDriver = supportdocker.NewMysql(database, username, password)
 	case contractsorm.DriverPostgresql:
-		databaseDriver = NewPostgresql(config, connection)
+		databaseDriver = supportdocker.NewPostgresql(database, username, password)
 	case contractsorm.DriverSqlserver:
-		databaseDriver = NewSqlserver(config, connection)
+		databaseDriver = supportdocker.NewSqlserver(database, username, password)
 	case contractsorm.DriverSqlite:
-		databaseDriver = NewSqlite(config, connection)
+		databaseDriver = supportdocker.NewSqlite(database)
 	default:
 		return nil, fmt.Errorf("not found database connection: %s", connection)
 	}
@@ -59,59 +59,37 @@ func NewDatabase(app foundation.Application, connection string, gormInitialize g
 }
 
 func (receiver *Database) Build() error {
-	pool, err := docker.Pool()
-	if err != nil {
-		return err
-	}
-	receiver.pool = pool
-
-	var opts *dockertest.RunOptions
 	if receiver.image != nil {
-		opts = &dockertest.RunOptions{
-			Repository: receiver.image.Repository,
-			Tag:        receiver.image.Tag,
-			Env:        receiver.image.Env,
-		}
-	} else {
-		opts = receiver.driver.Image()
-	}
-	resource, err := docker.Resource(pool, opts)
-	if err != nil {
-		return err
-	}
-	receiver.resource = resource
-
-	if receiver.image != nil && receiver.image.Timeout > 0 {
-		_ = resource.Expire(receiver.image.Timeout)
-	} else {
-		_ = resource.Expire(3600)
+		receiver.driver.Image(*receiver.image)
 	}
 
-	dbConfig := receiver.driver.Config(resource)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.host", receiver.connection), dbConfig.Host)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), dbConfig.Port)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.database", receiver.connection), dbConfig.Database)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.username", receiver.connection), dbConfig.Username)
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.password", receiver.connection), dbConfig.Password)
-
-	if err := pool.Retry(func() error {
-		_, err := receiver.gormInitialize.InitializeQuery(context.Background(), receiver.config, receiver.driver.Name().String())
-		if err != nil {
-			return err
-		}
-
-		receiver.app.MakeArtisan().Call("migrate")
-
-		return nil
-	}); err != nil {
+	if err := receiver.driver.Build(); err != nil {
 		return err
 	}
 
-	receiver.app.Singleton(database.BindingOrm, func(app foundation.Application) (any, error) {
+	config := receiver.driver.Config()
+	receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), config.Port)
+
+	var query contractsorm.Query
+	for i := 0; i < 60; i++ {
+		query1, err := receiver.gormInitialize.InitializeQuery(context.Background(), receiver.config, receiver.driver.Name().String())
+		if err == nil {
+			query = query1
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+	if query == nil {
+		return fmt.Errorf("connect to %s failed", receiver.driver.Name().String())
+	}
+
+	receiver.app.MakeArtisan().Call("migrate")
+	receiver.app.Singleton(frameworkdatabase.BindingOrm, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		defaultConnection := config.GetString("database.default")
 
-		orm, err := database.InitializeOrm(context.Background(), config, defaultConnection)
+		orm, err := frameworkdatabase.InitializeOrm(context.Background(), config, defaultConnection)
 		if err != nil {
 			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", defaultConnection, err)
 		}
@@ -122,12 +100,13 @@ func (receiver *Database) Build() error {
 	return nil
 }
 
-func (receiver *Database) Config() testing.Config {
-	return receiver.driver.Config(receiver.resource)
+func (receiver *Database) Config() testing.DatabaseConfig {
+	return receiver.driver.Config()
 }
 
+// Deprecated: Use Stop instead.
 func (receiver *Database) Clear() error {
-	return receiver.driver.Clear(receiver.pool, receiver.resource)
+	return receiver.Stop()
 }
 
 func (receiver *Database) Image(image testing.Image) {
@@ -144,4 +123,8 @@ func (receiver *Database) Seed(seeds ...seeder.Seeder) {
 	}
 
 	receiver.app.MakeArtisan().Call(command)
+}
+
+func (receiver *Database) Stop() error {
+	return receiver.driver.Stop()
 }
