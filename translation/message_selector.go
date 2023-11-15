@@ -20,7 +20,7 @@ func (m *MessageSelector) Choose(message string, number int, locale string) stri
 	}
 
 	segments = m.stripConditions(segments)
-	pluralIndex := m.getPluralIndex(number, locale)
+	pluralIndex := getPluralIndex(number, locale)
 
 	if len(segments) == 1 || pluralIndex >= len(segments) {
 		return strings.Trim(segments[0], "\" ")
@@ -108,7 +108,7 @@ func (m *MessageSelector) stripConditions(segments []string) []string {
 }
 
 // getPluralIndex returns the plural index for the given number and locale.
-func (m *MessageSelector) getPluralIndex(number int, locale string) int {
+func getPluralIndex(number int, locale string) int {
 	switch locale {
 	case "az", "az_AZ", "bo", "bo_CN", "bo_IN", "dz", "dz_BT", "id", "id_ID", "ja", "ja_JP", "jv", "ka", "ka_GE", "km", "km_KH", "kn", "kn_KR", "ko", "ko_KR", "ms", "ms_MY", "th", "th_TH", "tr", "tr_TR", "vi", "vi_VN", "zh", "zh_CN", "zh_HK", "zh_SG", "zh_TW":
 		return 0
