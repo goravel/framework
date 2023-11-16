@@ -2,11 +2,11 @@ package translation
 
 import (
 	"context"
-	"github.com/stretchr/testify/suite"
 	"testing"
 
 	translationcontract "github.com/goravel/framework/contracts/translation"
 	mockloader "github.com/goravel/framework/contracts/translation/mocks"
+	"github.com/stretchr/testify/suite"
 )
 
 type TranslatorTestSuite struct {

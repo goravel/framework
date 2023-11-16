@@ -16,7 +16,7 @@ func NewMessageSelector() *MessageSelector {
 func (m *MessageSelector) Choose(message string, number int, locale string) string {
 	segments := strings.Split(strings.Trim(message, "\" "), "|")
 	if value := m.extract(segments, number); value != nil {
-		return strings.Trim(*value, " ")
+		return strings.TrimSpace(*value)
 	}
 
 	segments = stripConditions(segments)

@@ -1,9 +1,11 @@
 package translation
 
 import (
-	"github.com/goravel/framework/support/file"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/goravel/framework/support/file"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type FileLoaderTestSuite struct {
@@ -11,11 +13,11 @@ type FileLoaderTestSuite struct {
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
-	_ = file.Create("lang/en.json", `{"foo": "bar"}`)
-	_ = file.Create("lang/another/en.json", `{"foo": "backagebar", "baz": "backagesplash"}`)
-	_ = file.Create("lang/invalid/en.json", `{"foo": "bar",}`)
+	assert.Nil(t, file.Create("lang/en.json", `{"foo": "bar"}`))
+	assert.Nil(t, file.Create("lang/another/en.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(t, file.Create("lang/invalid/en.json", `{"foo": "bar",}`))
 	suite.Run(t, &FileLoaderTestSuite{})
-	_ = file.Remove("lang")
+	assert.Nil(t, file.Remove("lang"))
 }
 
 func (f *FileLoaderTestSuite) SetupTest() {
@@ -61,4 +63,18 @@ func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 
 	f.Error(err)
 	f.Nil(translations)
+}
+
+func (f *FileLoaderTestSuite) TestMergeMaps() {
+	dst := map[string]string{
+		"foo": "bar",
+	}
+	src := map[string]string{
+		"baz": "backage",
+	}
+	mergeMaps(dst, src)
+	f.Equal(map[string]string{
+		"foo": "bar",
+		"baz": "backage",
+	}, dst)
 }
