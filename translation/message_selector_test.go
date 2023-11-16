@@ -71,15 +71,62 @@ func (m *MessageSelectorTestSuite) TestChoose() {
 }
 
 func (m *MessageSelectorTestSuite) TestExtract() {
+	tests := []struct {
+		segments []string
+		number   int
+		expected *string
+	}{
+		{[]string{"{0} first", "{1}second"}, 0, stringPtr(" first")},
+		{[]string{"{1}first", "{2}second"}, 0, nil},
+		{[]string{"{0}first", "{1}second"}, 0, stringPtr("first")},
+		{[]string{"[4,*]first", "[1,3]second"}, 100, stringPtr("first")},
+	}
+	for _, test := range tests {
+		value := m.selector.extract(test.segments, test.number)
+		if value == nil {
+			m.Equal(test.expected, value)
+			continue
+		}
+		m.Equal(*test.expected, *value)
+	}
 
 }
 
 func (m *MessageSelectorTestSuite) TestExtractFromString() {
+	var tests = []struct {
+		segment  string
+		number   int
+		expected *string
+	}{
+		{"{0}first", 0, stringPtr("first")},
+		{"[4,*]first", 5, stringPtr("first")},
+		{"[1,3]second", 0, nil},
+		{"[*,4]second", 3, stringPtr("second")},
+	}
 
+	for _, test := range tests {
+		value := m.selector.extractFromString(test.segment, test.number)
+		if value == nil {
+			m.Equal(test.expected, value)
+			continue
+		}
+		m.Equal(*test.expected, *value)
+	}
 }
 
 func (m *MessageSelectorTestSuite) TestStripConditions() {
+	tests := []struct {
+		segments []string
+		expected []string
+	}{
+		{[]string{"{0}first", "[2,9]second"}, []string{"first", "second"}},
+		{[]string{"[4,*]first", "[1,3]second"}, []string{"first", "second"}},
+		{[]string{"first", "second"}, []string{"first", "second"}},
+	}
 
+	for _, test := range tests {
+		m.Equal(test.expected, stripConditions(test.segments))
+	}
 }
 
 func (m *MessageSelectorTestSuite) TestGetPluralIndex() {
@@ -150,4 +197,8 @@ func (m *MessageSelectorTestSuite) TestGetPluralIndex() {
 	for _, test := range tests {
 		m.Equal(test.expected, getPluralIndex(test.number, test.locale))
 	}
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
