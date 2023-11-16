@@ -15,11 +15,11 @@ func NewMessageSelector() *MessageSelector {
 // Choose a translation string from an array according to a number.
 func (m *MessageSelector) Choose(message string, number int, locale string) string {
 	segments := strings.Split(strings.Trim(message, "\" "), "|")
-	if value := m.extract(segments, number); value != "" {
-		return value
+	if value := m.extract(segments, number); value != nil {
+		return strings.Trim(*value, " ")
 	}
 
-	segments = m.stripConditions(segments)
+	segments = stripConditions(segments)
 	pluralIndex := getPluralIndex(number, locale)
 
 	if len(segments) == 1 || pluralIndex >= len(segments) {
@@ -29,24 +29,24 @@ func (m *MessageSelector) Choose(message string, number int, locale string) stri
 	return segments[pluralIndex]
 }
 
-func (m *MessageSelector) extract(segments []string, number int) string {
+func (m *MessageSelector) extract(segments []string, number int) *string {
 	for _, segment := range segments {
-		if line := m.extractFromString(segment, number); line != "" {
+		if line := m.extractFromString(segment, number); line != nil {
 			return line
 		}
 	}
 
-	return ""
+	return nil
 }
 
-func (m *MessageSelector) extractFromString(segment string, number int) string {
+func (m *MessageSelector) extractFromString(segment string, number int) *string {
 	// Define a regular expression pattern for matching the condition and value in the part
-	pattern := `^[\{\[]([^\[\]\{\}]*)[\}\]](.*)`
+	pattern := `^[\{\[]([^\[\]\{\}]*)[\}\]]([\s\S]*)`
 	regex := regexp.MustCompile(pattern)
 	matches := regex.FindStringSubmatch(segment)
 	// Check if we have exactly three sub matches (full match and two capturing groups)
 	if len(matches) != 3 {
-		return ""
+		return nil
 	}
 
 	condition, value := matches[1], matches[2]
@@ -58,24 +58,24 @@ func (m *MessageSelector) extractFromString(segment string, number int) string {
 
 		if from == "*" {
 			if to == "*" {
-				return value
+				return &value
 			}
 
 			toInt, err := strconv.Atoi(to)
 			if err == nil && number <= toInt {
-				return value
+				return &value
 			}
 		} else if to == "*" {
 			fromInt, err := strconv.Atoi(from)
 			if err == nil && number >= fromInt {
-				return value
+				return &value
 			}
 		} else {
 			fromInt, errFrom := strconv.Atoi(from)
 			toInt, errTo := strconv.Atoi(to)
 
 			if errFrom == nil && errTo == nil && number >= fromInt && number <= toInt {
-				return value
+				return &value
 			}
 		}
 	}
@@ -83,13 +83,13 @@ func (m *MessageSelector) extractFromString(segment string, number int) string {
 	// Check if the condition is equal to the number
 	conditionInt, err := strconv.Atoi(condition)
 	if err == nil && conditionInt == number {
-		return value
+		return &value
 	}
 
-	return ""
+	return nil
 }
 
-func (m *MessageSelector) stripConditions(segments []string) []string {
+func stripConditions(segments []string) []string {
 	strippedSegments := make([]string, len(segments))
 
 	for i, part := range segments {
