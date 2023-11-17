@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	translationcontract "github.com/goravel/framework/contracts/translation"
 	mockloader "github.com/goravel/framework/mocks/translation"
-	"github.com/stretchr/testify/suite"
 )
 
 type TranslatorTestSuite struct {

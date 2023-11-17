@@ -1,6 +1,7 @@
 package translation
 
 import (
+	"os"
 	"testing"
 
 	"github.com/goravel/framework/support/file"
@@ -16,6 +17,9 @@ func TestFileLoaderTestSuite(t *testing.T) {
 	assert.Nil(t, file.Create("lang/en.json", `{"foo": "bar"}`))
 	assert.Nil(t, file.Create("lang/another/en.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
 	assert.Nil(t, file.Create("lang/invalid/en.json", `{"foo": "bar",}`))
+	restrictedFilePath := "lang/restricted/en.json"
+	assert.Nil(t, file.Create(restrictedFilePath, `{"foo": "restricted"}`))
+	assert.Nil(t, os.Chmod(restrictedFilePath, 0000))
 	suite.Run(t, &FileLoaderTestSuite{})
 	assert.Nil(t, file.Remove("lang"))
 }
@@ -44,6 +48,12 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["en"]["foo"])
+
+	paths = []string{"./lang/restricted"}
+	loader = NewFileLoader(paths)
+	translations, err = loader.Load("*", "en")
+	f.Error(err)
+	f.Nil(translations)
 }
 
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
@@ -65,7 +75,7 @@ func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 	f.Nil(translations)
 }
 
-func (f *FileLoaderTestSuite) TestMergeMaps() {
+func TestMergeMaps(t *testing.T) {
 	dst := map[string]string{
 		"foo": "bar",
 	}
@@ -73,7 +83,7 @@ func (f *FileLoaderTestSuite) TestMergeMaps() {
 		"baz": "backage",
 	}
 	mergeMaps(dst, src)
-	f.Equal(map[string]string{
+	assert.Equal(t, map[string]string{
 		"foo": "bar",
 		"baz": "backage",
 	}, dst)

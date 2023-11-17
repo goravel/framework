@@ -102,6 +102,7 @@ func (m *MessageSelectorTestSuite) TestExtractFromString() {
 		{"[4,*]first", 5, stringPtr("first")},
 		{"[1,3]second", 0, nil},
 		{"[*,4]second", 3, stringPtr("second")},
+		{"[*,*]second", 0, stringPtr("second")},
 	}
 
 	for _, test := range tests {
