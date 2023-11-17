@@ -4,9 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/goravel/framework/support/file"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 type FileLoaderTestSuite struct {
@@ -52,8 +54,14 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	paths = []string{"./lang/restricted"}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("*", "en")
-	f.Error(err)
-	f.Nil(translations)
+	if env.IsWindows() {
+		f.NoError(err)
+		f.NotNil(translations)
+		f.Equal("restricted", translations["en"]["foo"])
+	} else {
+		f.Error(err)
+		f.Nil(translations)
+	}
 }
 
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
