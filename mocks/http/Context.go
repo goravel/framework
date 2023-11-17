@@ -119,7 +119,7 @@ func (_m *Context) Response() http.ContextResponse {
 }
 
 // SetContext provides a mock function with given fields: ctx
-func (_m *Context) SetContext(ctx http.Context) {
+func (_m *Context) SetContext(ctx context.Context) {
 	_m.Called(ctx)
 }
 
