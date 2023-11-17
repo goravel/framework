@@ -118,6 +118,11 @@ func (_m *Context) Response() http.ContextResponse {
 	return r0
 }
 
+// SetContext provides a mock function with given fields: ctx
+func (_m *Context) SetContext(ctx http.Context) {
+	_m.Called(ctx)
+}
+
 // Value provides a mock function with given fields: key
 func (_m *Context) Value(key interface{}) interface{} {
 	ret := _m.Called(key)

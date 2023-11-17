@@ -80,6 +80,10 @@ func (mc *Context) Response() http.ContextResponse {
 	return mc.response
 }
 
+func (mc *Context) SetContext(ctx http.Context) {
+	mc.ctx = ctx.Context()
+}
+
 func Background() http.Context {
 	return &Context{
 		ctx:      context.Background(),
