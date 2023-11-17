@@ -625,6 +625,11 @@ func (_m *Application) SetLocale(ctx context.Context, locale string) context.Con
 	return r0
 }
 
+// SetLocaleByHttp provides a mock function with given fields: ctx, locale
+func (_m *Application) SetLocaleByHttp(ctx http.Context, locale string) {
+	_m.Called(ctx, locale)
+}
+
 // Singleton provides a mock function with given fields: key, callback
 func (_m *Application) Singleton(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
