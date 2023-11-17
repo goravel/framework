@@ -38,7 +38,6 @@ func (s *ContextTestSuite) TestResponse() {
 }
 
 func (s *ContextTestSuite) TestSetContext() {
-	ctx := NewContext()
-	s.ctx.SetContext(ctx)
-	s.Equal(ctx.Context(), s.ctx.Context())
+	s.ctx.SetContext(context.Background())
+	s.Equal(context.Background(), s.ctx.Context())
 }

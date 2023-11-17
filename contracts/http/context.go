@@ -30,5 +30,5 @@ type Context interface {
 	// Response returns the ContextResponse
 	Response() ContextResponse
 	// SetContext set the custom context
-	SetContext(ctx Context)
+	SetContext(ctx context.Context)
 }

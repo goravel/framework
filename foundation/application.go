@@ -112,7 +112,8 @@ func (app *Application) GetLocale(ctx context.Context) string {
 }
 
 func (app *Application) SetLocaleByHttp(ctx http.Context, locale string) {
-	app.MakeLang(ctx).SetLocale(locale)
+	ctxWithLocale := app.MakeLang(ctx).SetLocale(locale)
+	ctx.SetContext(ctxWithLocale)
 }
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {

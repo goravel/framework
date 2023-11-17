@@ -39,6 +39,6 @@ func (r *Context) Response() http.ContextResponse {
 	return nil
 }
 
-func (r *Context) SetContext(ctx http.Context) {
-	r.Ctx = ctx.Context()
+func (r *Context) SetContext(ctx context.Context) {
+	r.Ctx = ctx
 }
