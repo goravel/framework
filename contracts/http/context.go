@@ -29,6 +29,6 @@ type Context interface {
 	Request() ContextRequest
 	// Response returns the ContextResponse
 	Response() ContextResponse
-	// SetContext set the context
+	// SetContext set the custom context
 	SetContext(ctx Context)
 }
