@@ -216,6 +216,9 @@ func (t *TranslatorTestSuite) TestSetLocale() {
 	t.Equal("fr", newCtx.Value(localeKey))
 }
 
+func (t *TranslatorTestSuite) TestSetLocaleByHttp() {
+}
+
 func (t *TranslatorTestSuite) TestGetFallback() {
 	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
 

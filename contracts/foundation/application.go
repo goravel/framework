@@ -2,7 +2,9 @@ package foundation
 
 import (
 	"context"
+
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/http"
 )
 
 type Application interface {
@@ -32,7 +34,7 @@ type Application interface {
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
 	// SetLocaleByHttp set the current application/context locale by http request.
-	//SetLocaleByHttp(ctx http.Context, locale string)
+	SetLocaleByHttp(ctx http.Context, locale string)
 	// Version gets the version number of the application.
 	Version() string
 	// IsLocale get the current application locale.
