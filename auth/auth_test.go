@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	testifymock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"github.com/teivah/onecontext"
 	"gorm.io/gorm/clause"
 
 	authcontract "github.com/goravel/framework/contracts/auth"
@@ -80,8 +81,10 @@ func (mc *Context) Response() http.ContextResponse {
 	return mc.response
 }
 
-func (mc *Context) SetContext(ctx http.Context) {
-	mc.ctx = ctx.Context()
+func (mc *Context) SetContext(ctx context.Context) {
+	mergedCtx, _ := onecontext.Merge(ctx, mc.ctx)
+
+	mc.ctx = mergedCtx
 }
 
 func Background() http.Context {

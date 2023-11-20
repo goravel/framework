@@ -38,9 +38,11 @@ func (s *ContextTestSuite) TestResponse() {
 }
 
 func (s *ContextTestSuite) TestSetContext() {
+	//nolint:all
 	s.ctx.WithValue("1", "2")
 
 	ctx := context.Background()
+	//nolint:all
 	ctx = context.WithValue(ctx, "3", "4")
 	s.ctx.SetContext(ctx)
 	s.Equal("2", s.ctx.Value("1"))
