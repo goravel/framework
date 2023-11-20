@@ -38,7 +38,11 @@ func (s *ContextTestSuite) TestResponse() {
 }
 
 func (s *ContextTestSuite) TestSetContext() {
-	ctx := NewContext()
+	s.ctx.WithValue("1", "2")
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "3", "4")
 	s.ctx.SetContext(ctx)
-	s.Equal(ctx.Context(), s.ctx.Context())
+	s.Equal("2", s.ctx.Value("1"))
+	s.Equal("4", s.ctx.Value("3"))
 }
