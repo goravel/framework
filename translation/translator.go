@@ -116,7 +116,7 @@ func (t *Translator) Has(key string, options ...translationcontract.Option) bool
 }
 
 func (t *Translator) GetLocale() string {
-	if locale, ok := t.ctx.Value(localeKey).(string); ok {
+	if locale, ok := t.ctx.Value(string(localeKey)).(string); ok {
 		return locale
 	}
 	return t.locale
@@ -124,18 +124,18 @@ func (t *Translator) GetLocale() string {
 
 func (t *Translator) SetLocale(locale string) context.Context {
 	t.locale = locale
-	t.ctx = context.WithValue(t.ctx, localeKey, locale)
+	if ctx, ok := t.ctx.(http.Context); ok {
+		ctx.WithValue(string(localeKey), locale)
+		t.ctx = ctx
+	} else {
+		//nolint:all
+		t.ctx = context.WithValue(t.ctx, string(localeKey), locale)
+	}
 	return t.ctx
 }
 
-func (t *Translator) SetLocaleByHttp(ctx http.Context, locale string) {
-	t.locale = locale
-	ctx.WithValue("locale", locale)
-	t.ctx = ctx
-}
-
 func (t *Translator) GetFallback() string {
-	if fallback, ok := t.ctx.Value(fallbackLocaleKey).(string); ok {
+	if fallback, ok := t.ctx.Value(string(fallbackLocaleKey)).(string); ok {
 		return fallback
 	}
 	return t.fallback
@@ -143,7 +143,8 @@ func (t *Translator) GetFallback() string {
 
 func (t *Translator) SetFallback(locale string) context.Context {
 	t.fallback = locale
-	t.ctx = context.WithValue(t.ctx, fallbackLocaleKey, locale)
+	//nolint:all
+	t.ctx = context.WithValue(t.ctx, string(fallbackLocaleKey), locale)
 
 	return t.ctx
 }

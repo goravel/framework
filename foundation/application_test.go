@@ -36,6 +36,7 @@ import (
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
+	frameworktranslation "github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
 )
 
@@ -231,6 +232,23 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeHash())
+	mockConfig.AssertExpectations(s.T())
+}
+
+func (s *ApplicationTestSuite) TestMakeLang() {
+	mockConfig := &configmocks.Config{}
+	mockConfig.On("GetString", "app.locale").Return("en").Once()
+	mockConfig.On("GetString", "app.fallback_locale").Return("en").Once()
+
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	serviceProvider := &frameworktranslation.ServiceProvider{}
+	serviceProvider.Register(s.app)
+	ctx := http.Background()
+
+	s.NotNil(s.app.MakeLang(ctx))
 	mockConfig.AssertExpectations(s.T())
 }
 

@@ -10,7 +10,6 @@ import (
 	"github.com/goravel/framework/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -109,11 +108,6 @@ func (app *Application) Version() string {
 
 func (app *Application) GetLocale(ctx context.Context) string {
 	return app.MakeLang(ctx).GetLocale()
-}
-
-func (app *Application) SetLocaleByHttp(ctx http.Context, locale string) {
-	ctxWithLocale := app.MakeLang(ctx).SetLocale(locale)
-	ctx.SetContext(ctxWithLocale)
 }
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {

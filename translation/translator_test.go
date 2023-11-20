@@ -213,10 +213,7 @@ func (t *TranslatorTestSuite) TestSetLocale() {
 	// Case: Set locale using SetLocale
 	newCtx := translator.SetLocale("fr")
 	t.Equal("fr", translator.locale)
-	t.Equal("fr", newCtx.Value(localeKey))
-}
-
-func (t *TranslatorTestSuite) TestSetLocaleByHttp() {
+	t.Equal("fr", newCtx.Value(string(localeKey)))
 }
 
 func (t *TranslatorTestSuite) TestGetFallback() {
@@ -230,7 +227,7 @@ func (t *TranslatorTestSuite) TestGetFallback() {
 	newCtx := translator.SetFallback("fr")
 	fallback = translator.GetFallback()
 	t.Equal("fr", fallback)
-	t.Equal("fr", newCtx.Value(fallbackLocaleKey))
+	t.Equal("fr", newCtx.Value(string(fallbackLocaleKey)))
 }
 
 func (t *TranslatorTestSuite) TestSetFallback() {
@@ -239,7 +236,7 @@ func (t *TranslatorTestSuite) TestSetFallback() {
 	// Case: Set fallback using SetFallback
 	newCtx := translator.SetFallback("fr")
 	t.Equal("fr", translator.fallback)
-	t.Equal("fr", newCtx.Value(fallbackLocaleKey))
+	t.Equal("fr", newCtx.Value(string(fallbackLocaleKey)))
 }
 
 func (t *TranslatorTestSuite) TestLoad() {
