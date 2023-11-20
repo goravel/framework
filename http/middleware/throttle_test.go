@@ -283,7 +283,7 @@ func (r *TestContext) Response() contractshttp.ContextResponse {
 	return r.response
 }
 
-func (r *TestContext) SetContext(ctx contractshttp.Context) {
+func (r *TestContext) SetContext(ctx context.Context) {
 	panic("do not need to implement it")
 }
 
