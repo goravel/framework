@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	translationcontract "github.com/goravel/framework/contracts/translation"
+	"github.com/goravel/framework/http"
 	mockloader "github.com/goravel/framework/mocks/translation"
 )
 
@@ -25,6 +26,41 @@ func TestTranslatorTestSuite(t *testing.T) {
 func (t *TranslatorTestSuite) SetupTest() {
 	t.mockLoader = mockloader.NewLoader(t.T())
 	t.ctx = context.Background()
+}
+
+func (t *TranslatorTestSuite) TestChoice() {
+	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "*", "en").Once().Return(map[string]map[string]string{
+		"en": {
+			"foo": "{0} first|{1}second",
+		},
+	}, nil)
+	translation, err := translator.Choice("foo", 1)
+	t.NoError(err)
+	t.Equal("second", translation)
+
+	// test atomic replacements
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "*", "fr").Once().Return(map[string]map[string]string{
+		"en": {
+			"foo": "{0} first|{1}Hello, :foo!",
+		},
+	}, nil)
+	translation, err = translator.Choice("foo", 1, translationcontract.Option{
+		Replace: map[string]string{
+			"foo": "baz:bar",
+			"bar": "abcdef",
+		},
+		Locale: "fr",
+	})
+	t.NoError(err)
+	t.Equal("Hello, baz:bar!", translation)
+
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "*", "en").Once().Return(nil, errors.New("some error"))
+	translation, err = translator.Choice("foo", 1)
+	t.EqualError(err, "some error")
+	t.Equal("", translation)
 }
 
 func (t *TranslatorTestSuite) TestGet() {
@@ -127,39 +163,31 @@ func (t *TranslatorTestSuite) TestGet() {
 	t.Equal("French translation", translation)
 }
 
-func (t *TranslatorTestSuite) TestChoice() {
+func (t *TranslatorTestSuite) TestGetLocale() {
 	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
-	t.mockLoader.On("Load", "*", "en").Once().Return(map[string]map[string]string{
-		"en": {
-			"foo": "{0} first|{1}second",
-		},
-	}, nil)
-	translation, err := translator.Choice("foo", 1)
-	t.NoError(err)
-	t.Equal("second", translation)
 
-	// test atomic replacements
-	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
-	t.mockLoader.On("Load", "*", "fr").Once().Return(map[string]map[string]string{
-		"en": {
-			"foo": "{0} first|{1}Hello, :foo!",
-		},
-	}, nil)
-	translation, err = translator.Choice("foo", 1, translationcontract.Option{
-		Replace: map[string]string{
-			"foo": "baz:bar",
-			"bar": "abcdef",
-		},
-		Locale: "fr",
-	})
-	t.NoError(err)
-	t.Equal("Hello, baz:bar!", translation)
+	// Case: Get locale initially set
+	locale := translator.GetLocale()
+	t.Equal("en", locale)
 
-	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
-	t.mockLoader.On("Load", "*", "en").Once().Return(nil, errors.New("some error"))
-	translation, err = translator.Choice("foo", 1)
-	t.EqualError(err, "some error")
-	t.Equal("", translation)
+	// Case: Set locale using SetLocale and then get it
+	translator.SetLocale("fr")
+	locale = translator.GetLocale()
+	t.Equal("fr", locale)
+}
+
+func (t *TranslatorTestSuite) TestGetFallback() {
+	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
+
+	// Case: No explicit fallback set
+	fallback := translator.GetFallback()
+	t.Equal("en", fallback)
+
+	// Case: Set fallback using SetFallback
+	newCtx := translator.SetFallback("fr")
+	fallback = translator.GetFallback()
+	t.Equal("fr", fallback)
+	t.Equal("fr", newCtx.Value(string(fallbackLocaleKey)))
 }
 
 func (t *TranslatorTestSuite) TestHas() {
@@ -194,17 +222,13 @@ func (t *TranslatorTestSuite) TestHas() {
 	t.False(hasKey)
 }
 
-func (t *TranslatorTestSuite) TestGetLocale() {
+func (t *TranslatorTestSuite) TestSetFallback() {
 	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
 
-	// Case: Get locale initially set
-	locale := translator.GetLocale()
-	t.Equal("en", locale)
-
-	// Case: Set locale using SetLocale and then get it
-	translator.SetLocale("fr")
-	locale = translator.GetLocale()
-	t.Equal("fr", locale)
+	// Case: Set fallback using SetFallback
+	newCtx := translator.SetFallback("fr")
+	t.Equal("fr", translator.fallback)
+	t.Equal("fr", newCtx.Value(string(fallbackLocaleKey)))
 }
 
 func (t *TranslatorTestSuite) TestSetLocale() {
@@ -214,29 +238,11 @@ func (t *TranslatorTestSuite) TestSetLocale() {
 	newCtx := translator.SetLocale("fr")
 	t.Equal("fr", translator.locale)
 	t.Equal("fr", newCtx.Value(string(localeKey)))
-}
 
-func (t *TranslatorTestSuite) TestGetFallback() {
-	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
-
-	// Case: No explicit fallback set
-	fallback := translator.GetFallback()
-	t.Equal("en", fallback)
-
-	// Case: Set fallback using SetFallback
-	newCtx := translator.SetFallback("fr")
-	fallback = translator.GetFallback()
-	t.Equal("fr", fallback)
-	t.Equal("fr", newCtx.Value(string(fallbackLocaleKey)))
-}
-
-func (t *TranslatorTestSuite) TestSetFallback() {
-	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en")
-
-	// Case: Set fallback using SetFallback
-	newCtx := translator.SetFallback("fr")
-	t.Equal("fr", translator.fallback)
-	t.Equal("fr", newCtx.Value(string(fallbackLocaleKey)))
+	// Case: use http.Context
+	translator = NewTranslator(http.Background(), t.mockLoader, "en", "en")
+	newCtx = translator.SetLocale("lv")
+	t.Equal("lv", translator.locale)
 }
 
 func (t *TranslatorTestSuite) TestLoad() {

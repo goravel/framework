@@ -38,6 +38,24 @@ func NewTranslator(ctx context.Context, loader translationcontract.Loader, local
 	}
 }
 
+func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) (string, error) {
+	line, err := t.Get(key, options...)
+	if err != nil {
+		return "", err
+	}
+
+	replace := map[string]string{
+		"count": strconv.Itoa(number),
+	}
+
+	locale := t.GetLocale()
+	if len(options) > 0 && options[0].Locale != "" {
+		locale = options[0].Locale
+	}
+
+	return makeReplacements(t.selector.Choose(line, number, locale), replace), nil
+}
+
 func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) {
 	locale := t.GetLocale()
 	// Check if a custom locale is provided in options.
@@ -92,27 +110,11 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 	return line, nil
 }
 
-func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) (string, error) {
-	line, err := t.Get(key, options...)
-	if err != nil {
-		return "", err
+func (t *Translator) GetFallback() string {
+	if fallback, ok := t.ctx.Value(string(fallbackLocaleKey)).(string); ok {
+		return fallback
 	}
-
-	replace := map[string]string{
-		"count": strconv.Itoa(number),
-	}
-
-	locale := t.GetLocale()
-	if len(options) > 0 && options[0].Locale != "" {
-		locale = options[0].Locale
-	}
-
-	return makeReplacements(t.selector.Choose(line, number, locale), replace), nil
-}
-
-func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
-	line, err := t.Get(key, options...)
-	return err == nil && line != key
+	return t.fallback
 }
 
 func (t *Translator) GetLocale() string {
@@ -120,6 +122,19 @@ func (t *Translator) GetLocale() string {
 		return locale
 	}
 	return t.locale
+}
+
+func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
+	line, err := t.Get(key, options...)
+	return err == nil && line != key
+}
+
+func (t *Translator) SetFallback(locale string) context.Context {
+	t.fallback = locale
+	//nolint:all
+	t.ctx = context.WithValue(t.ctx, string(fallbackLocaleKey), locale)
+
+	return t.ctx
 }
 
 func (t *Translator) SetLocale(locale string) context.Context {
@@ -131,21 +146,6 @@ func (t *Translator) SetLocale(locale string) context.Context {
 		//nolint:all
 		t.ctx = context.WithValue(t.ctx, string(localeKey), locale)
 	}
-	return t.ctx
-}
-
-func (t *Translator) GetFallback() string {
-	if fallback, ok := t.ctx.Value(string(fallbackLocaleKey)).(string); ok {
-		return fallback
-	}
-	return t.fallback
-}
-
-func (t *Translator) SetFallback(locale string) context.Context {
-	t.fallback = locale
-	//nolint:all
-	t.ctx = context.WithValue(t.ctx, string(fallbackLocaleKey), locale)
-
 	return t.ctx
 }
 
