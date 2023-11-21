@@ -243,6 +243,7 @@ func (t *TranslatorTestSuite) TestSetLocale() {
 	translator = NewTranslator(http.Background(), t.mockLoader, "en", "en")
 	newCtx = translator.SetLocale("lv")
 	t.Equal("lv", translator.locale)
+	t.Equal("lv", newCtx.Value(string(localeKey)))
 }
 
 func (t *TranslatorTestSuite) TestLoad() {
