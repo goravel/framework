@@ -3,8 +3,6 @@ package http
 import (
 	"context"
 
-	"github.com/teivah/onecontext"
-
 	"github.com/goravel/framework/contracts/http"
 )
 
@@ -39,10 +37,4 @@ func (r *Context) Request() http.ContextRequest {
 
 func (r *Context) Response() http.ContextResponse {
 	return nil
-}
-
-func (r *Context) SetContext(ctx context.Context) {
-	mergedCtx, _ := onecontext.Merge(ctx, r.Ctx)
-
-	r.Ctx = mergedCtx
 }

@@ -44,8 +44,6 @@ require (
 	gorm.io/plugin/dbresolver v1.4.7
 )
 
-require github.com/teivah/onecontext v1.3.0 // indirect
-
 require (
 	cloud.google.com/go v0.110.7 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect
