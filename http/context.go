@@ -38,7 +38,3 @@ func (r *Context) Request() http.ContextRequest {
 func (r *Context) Response() http.ContextResponse {
 	return nil
 }
-
-func (r *Context) SetContext(ctx http.Context) {
-	r.Ctx = ctx.Context()
-}

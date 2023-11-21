@@ -283,10 +283,6 @@ func (r *TestContext) Response() contractshttp.ContextResponse {
 	return r.response
 }
 
-func (r *TestContext) SetContext(ctx contractshttp.Context) {
-	panic("do not need to implement it")
-}
-
 type TestRequest struct{}
 
 func (r *TestRequest) Header(key string, defaultValue ...string) string {
