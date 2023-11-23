@@ -19,6 +19,7 @@ type Translator struct {
 	fallback string
 	loaded   map[string]map[string]map[string]string
 	selector *MessageSelector
+	key      string
 }
 
 // contextKey is an unexported type for keys defined in this package.
@@ -57,6 +58,10 @@ func (t *Translator) Choice(key string, number int, options ...translationcontra
 }
 
 func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) {
+	if t.key == "" {
+		t.key = key
+	}
+
 	locale := t.GetLocale()
 	// Check if a custom locale is provided in options.
 	if len(options) > 0 && options[0].Locale != "" {
@@ -97,7 +102,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 			fallbackOptions.Locale = fallbackLocale
 			return t.Get(fallbackFolder+"."+keyPart, fallbackOptions)
 		}
-		return key, nil
+		return t.key, nil
 	}
 
 	// If the line doesn't contain any placeholders, we can return it right
