@@ -12,6 +12,8 @@ import (
 
 	console "github.com/goravel/framework/contracts/console"
 
+	context "context"
+
 	crypt "github.com/goravel/framework/contracts/crypt"
 
 	event "github.com/goravel/framework/contracts/event"
@@ -43,6 +45,8 @@ import (
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
 	testing "github.com/goravel/framework/contracts/testing"
+
+	translation "github.com/goravel/framework/contracts/translation"
 
 	validation "github.com/goravel/framework/contracts/validation"
 )
@@ -114,9 +118,51 @@ func (_m *Application) DatabasePath(path string) string {
 	return r0
 }
 
+// GetLocale provides a mock function with given fields: ctx
+func (_m *Application) GetLocale(ctx context.Context) string {
+	ret := _m.Called(ctx)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // Instance provides a mock function with given fields: key, instance
 func (_m *Application) Instance(key interface{}, instance interface{}) {
 	_m.Called(key, instance)
+}
+
+// IsLocale provides a mock function with given fields: ctx, locale
+func (_m *Application) IsLocale(ctx context.Context, locale string) bool {
+	ret := _m.Called(ctx, locale)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, locale)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// LangPath provides a mock function with given fields: path
+func (_m *Application) LangPath(path string) string {
+	ret := _m.Called(path)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // Make provides a mock function with given fields: key
@@ -283,6 +329,22 @@ func (_m *Application) MakeHash() hash.Hash {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(hash.Hash)
+		}
+	}
+
+	return r0
+}
+
+// MakeLang provides a mock function with given fields: ctx
+func (_m *Application) MakeLang(ctx context.Context) translation.Translator {
+	ret := _m.Called(ctx)
+
+	var r0 translation.Translator
+	if rf, ok := ret.Get(0).(func(context.Context) translation.Translator); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(translation.Translator)
 		}
 	}
 
@@ -547,6 +609,22 @@ func (_m *Application) Publishes(packageName string, paths map[string]string, gr
 	_m.Called(_ca...)
 }
 
+// SetLocale provides a mock function with given fields: ctx, locale
+func (_m *Application) SetLocale(ctx context.Context, locale string) context.Context {
+	ret := _m.Called(ctx, locale)
+
+	var r0 context.Context
+	if rf, ok := ret.Get(0).(func(context.Context, string) context.Context); ok {
+		r0 = rf(ctx, locale)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(context.Context)
+		}
+	}
+
+	return r0
+}
+
 // Singleton provides a mock function with given fields: key, callback
 func (_m *Application) Singleton(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
@@ -559,6 +637,20 @@ func (_m *Application) StoragePath(path string) string {
 	var r0 string
 	if rf, ok := ret.Get(0).(func(string) string); ok {
 		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Version provides a mock function with given fields:
+func (_m *Application) Version() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
 	}

@@ -12,6 +12,8 @@ import (
 
 	console "github.com/goravel/framework/contracts/console"
 
+	context "context"
+
 	crypt "github.com/goravel/framework/contracts/crypt"
 
 	event "github.com/goravel/framework/contracts/event"
@@ -43,6 +45,8 @@ import (
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
 	testing "github.com/goravel/framework/contracts/testing"
+
+	translation "github.com/goravel/framework/contracts/translation"
 
 	validation "github.com/goravel/framework/contracts/validation"
 )
@@ -231,6 +235,22 @@ func (_m *Container) MakeHash() hash.Hash {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(hash.Hash)
+		}
+	}
+
+	return r0
+}
+
+// MakeLang provides a mock function with given fields: ctx
+func (_m *Container) MakeLang(ctx context.Context) translation.Translator {
+	ret := _m.Called(ctx)
+
+	var r0 translation.Translator
+	if rf, ok := ret.Get(0).(func(context.Context) translation.Translator); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(translation.Translator)
 		}
 	}
 

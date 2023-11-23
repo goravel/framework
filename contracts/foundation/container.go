@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/auth/access"
 	"github.com/goravel/framework/contracts/cache"
@@ -20,6 +22,7 @@ import (
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
 )
 
@@ -50,6 +53,8 @@ type Container interface {
 	MakeGrpc() grpc.Grpc
 	// MakeHash resolves the hash instance.
 	MakeHash() hash.Hash
+	// MakeLang resolves the lang instance.
+	MakeLang(ctx context.Context) translation.Translator
 	// MakeLog resolves the log instance.
 	MakeLog() log.Log
 	// MakeMail resolves the mail instance.

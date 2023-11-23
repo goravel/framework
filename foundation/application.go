@@ -1,6 +1,7 @@
 package foundation
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
@@ -81,6 +82,10 @@ func (app *Application) StoragePath(path string) string {
 	return filepath.Join("storage", path)
 }
 
+func (app *Application) LangPath(path string) string {
+	return filepath.Join("lang", path)
+}
+
 func (app *Application) PublicPath(path string) string {
 	return filepath.Join("public", path)
 }
@@ -95,6 +100,22 @@ func (app *Application) Publishes(packageName string, paths map[string]string, g
 	for _, group := range groups {
 		app.addPublishGroup(group, paths)
 	}
+}
+
+func (app *Application) Version() string {
+	return support.Version
+}
+
+func (app *Application) GetLocale(ctx context.Context) string {
+	return app.MakeLang(ctx).GetLocale()
+}
+
+func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
+	return app.MakeLang(ctx).SetLocale(locale)
+}
+
+func (app *Application) IsLocale(ctx context.Context, locale string) bool {
+	return app.GetLocale(ctx) == locale
 }
 
 func (app *Application) ensurePublishArrayInitialized(packageName string) {
@@ -219,7 +240,7 @@ func setEnv() {
 func setRootPath() {
 	rootPath := getCurrentAbsolutePath()
 
-	// Hack air path
+	// Hack the air path
 	airPath := "/storage/temp"
 	if strings.HasSuffix(rootPath, airPath) {
 		rootPath = strings.ReplaceAll(rootPath, airPath, "")
