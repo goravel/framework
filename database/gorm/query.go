@@ -26,6 +26,7 @@ var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
 	config        config.Config
+	connection    string
 	ctx           context.Context
 	instance      *gormio.DB
 	origin        *QueryImpl
@@ -33,7 +34,7 @@ type QueryImpl struct {
 	withoutEvents bool
 }
 
-func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryImpl, error) {
+func NewQueryImpl(ctx context.Context, connection string, config config.Config, gorm Gorm) (*QueryImpl, error) {
 	db, err := gorm.Make()
 	if err != nil {
 		return nil, err
@@ -43,14 +44,23 @@ func NewQueryImpl(ctx context.Context, config config.Config, gorm Gorm) (*QueryI
 	}
 
 	return &QueryImpl{
-		instance: db,
-		config:   config,
-		ctx:      ctx,
+		config:     config,
+		connection: connection,
+		ctx:        ctx,
+		instance:   db,
 	}, nil
 }
 
 func NewQueryImplByInstance(db *gormio.DB, instance *QueryImpl) *QueryImpl {
-	queryImpl := &QueryImpl{config: instance.config, ctx: db.Statement.Context, instance: db, origin: instance.origin, with: instance.with, withoutEvents: instance.withoutEvents}
+	queryImpl := &QueryImpl{
+		config:        instance.config,
+		connection:    instance.connection,
+		ctx:           db.Statement.Context,
+		instance:      db,
+		origin:        instance.origin,
+		with:          instance.with,
+		withoutEvents: instance.withoutEvents,
+	}
 
 	// The origin is used by the With method to load the relationship.
 	if instance.origin == nil && instance.instance != nil {
@@ -79,22 +89,23 @@ func (r *QueryImpl) Count(count *int64) error {
 }
 
 func (r *QueryImpl) Create(value any) error {
-	if err := r.refreshConnection(value); err != nil {
+	query, err := r.refreshConnection1(value)
+	if err != nil {
 		return err
 	}
-	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
 
-	if len(r.instance.Statement.Selects) > 0 {
-		return r.selectCreate(value)
+	if len(query.instance.Statement.Selects) > 0 {
+		return query.selectCreate(value)
 	}
 
-	if len(r.instance.Statement.Omits) > 0 {
-		return r.omitCreate(value)
+	if len(query.instance.Statement.Omits) > 0 {
+		return query.omitCreate(value)
 	}
 
-	return r.create(value)
+	return query.create(value)
 }
 
 func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
@@ -157,17 +168,18 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection1(dest)
+	if err != nil {
 		return err
 	}
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
-	if err := r.instance.Find(dest, conds...).Error; err != nil {
+	if err := query.instance.Find(dest, conds...).Error; err != nil {
 		return err
 	}
 
-	return r.retrieved(dest)
+	return query.retrieved(dest)
 }
 
 func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
@@ -707,35 +719,107 @@ func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) refreshConnection(value any) error {
-	model, ok := value.(ormcontract.ConnectionModel)
+	value1 := reflect.ValueOf(value)
+	if value1.Kind() == reflect.Ptr && value1.IsNil() {
+		value1 = reflect.New(value1.Type().Elem())
+	}
+	modelType := reflect.Indirect(value1).Type()
+
+	if modelType.Kind() == reflect.Interface {
+		modelType = reflect.Indirect(reflect.ValueOf(value)).Elem().Type()
+	}
+
+	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
+
+	if modelType.Kind() != reflect.Struct {
+		if modelType.PkgPath() == "" {
+			return errors.New("invalid model")
+		}
+		return fmt.Errorf("%s: %s.%s", "invalid model", modelType.PkgPath(), modelType.Name())
+	}
+
+	modelValue := reflect.New(modelType)
+	model, ok := modelValue.Interface().(ormcontract.ConnectionModel)
 	if !ok {
 		return nil
 	}
+
 	conn := model.Connection()
-	if conn == "" {
-		conn = r.config.GetString("database.default")
+	if conn == "" || conn == r.connection {
+		return nil
 	}
-	driver := driver2gorm(r.config.GetString(fmt.Sprintf("database.connections.%s.driver", conn)))
-	if driver == "" {
-		return fmt.Errorf("connection %s driver is not supported", conn)
+
+	query, err := InitializeQuery(r.ctx, r.config, conn)
+	if err != nil {
+		return err
 	}
-	// if a driver is not the same, we need to refresh the connection
-	if driver != r.instance.Name() {
-		query, err := InitializeQuery(r.ctx, r.config, conn)
-		if err != nil {
-			return err
-		}
-		dbInstance := query.instance
-		stmt := r.instance.Statement
-		stmt.DB = dbInstance.Statement.DB
-		stmt.ConnPool = dbInstance.ConnPool
-		if r.ctx != nil {
-			dbInstance = dbInstance.WithContext(r.ctx)
-		}
-		dbInstance.Statement = stmt
-		r.instance = dbInstance
+	dbInstance := query.instance
+	stmt := r.instance.Statement
+	stmt.DB = dbInstance.Statement.DB
+	stmt.ConnPool = dbInstance.ConnPool
+	if r.ctx != nil {
+		dbInstance = dbInstance.WithContext(r.ctx)
 	}
+	dbInstance.Statement = stmt
+	r.instance = dbInstance
+
 	return nil
+}
+
+func (r *QueryImpl) refreshConnection1(value any) (*QueryImpl, error) {
+	value1 := reflect.ValueOf(value)
+	if value1.Kind() == reflect.Ptr && value1.IsNil() {
+		value1 = reflect.New(value1.Type().Elem())
+	}
+	modelType := reflect.Indirect(value1).Type()
+
+	if modelType.Kind() == reflect.Interface {
+		modelType = reflect.Indirect(reflect.ValueOf(value)).Elem().Type()
+	}
+
+	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
+
+	if modelType.Kind() != reflect.Struct {
+		if modelType.PkgPath() == "" {
+			return nil, errors.New("invalid model")
+		}
+		return nil, fmt.Errorf("%s: %s.%s", "invalid model", modelType.PkgPath(), modelType.Name())
+	}
+
+	modelValue := reflect.New(modelType)
+	model, ok := modelValue.Interface().(ormcontract.ConnectionModel)
+	if !ok {
+		return r, nil
+	}
+
+	connection := model.Connection()
+	if connection == "" || connection == r.connection {
+		return r, nil
+	}
+
+	query, err := InitializeQuery(r.ctx, r.config, connection)
+	if err != nil {
+		return nil, err
+	}
+	dbInstance := query.instance
+	stmt := r.instance.Statement
+	stmt.DB = dbInstance.Statement.DB
+	stmt.ConnPool = dbInstance.ConnPool
+	if r.ctx != nil {
+		dbInstance = dbInstance.WithContext(r.ctx)
+	}
+	dbInstance.Statement = stmt
+
+	return &QueryImpl{
+		config:     r.config,
+		connection: connection,
+		ctx:        r.ctx,
+		instance:   dbInstance,
+	}, nil
 }
 
 func (r *QueryImpl) selectCreate(value any) error {
@@ -1063,19 +1147,4 @@ func observerEvent(event ormcontract.EventType, observer ormcontract.Observer) f
 	}
 
 	return nil
-}
-
-func driver2gorm(driver string) string {
-	switch driver {
-	case "mysql":
-		return "mysql"
-	case "postgresql":
-		return "postgres"
-	case "sqlite":
-		return "sqlite"
-	case "sqlserver":
-		return "sqlserver"
-	default:
-		return ""
-	}
 }
