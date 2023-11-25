@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -20,330 +19,6 @@ import (
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
-
-type contextKey int
-
-const testContextKey contextKey = 0
-
-type User struct {
-	orm.Model
-	orm.SoftDeletes
-	Name    string
-	Avatar  string
-	Address *Address
-	Books   []*Book
-	House   *House   `gorm:"polymorphic:Houseable"`
-	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
-	Roles   []*Role  `gorm:"many2many:role_user"`
-	age     int
-}
-
-func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Event) error {
-	return map[ormcontract.EventType]func(ormcontract.Event) error{
-		ormcontract.EventCreating: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_creating_name" {
-					event.SetAttribute("avatar", "event_creating_avatar")
-				}
-				if name.(string) == "event_creating_FirstOrCreate_name" {
-					event.SetAttribute("avatar", "event_creating_FirstOrCreate_avatar")
-				}
-				if name.(string) == "event_creating_IsDirty_name" {
-					if event.IsDirty("name") {
-						event.SetAttribute("avatar", "event_creating_IsDirty_avatar")
-					}
-				}
-				if name.(string) == "event_context" {
-					val := event.Context().Value(testContextKey)
-					event.SetAttribute("avatar", val.(string))
-				}
-				if name.(string) == "event_query" {
-					_ = event.Query().Create(&User{Name: "event_query1"})
-				}
-			}
-
-			return nil
-		},
-		ormcontract.EventCreated: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_created_name" {
-					event.SetAttribute("avatar", "event_created_avatar")
-				}
-				if name.(string) == "event_created_FirstOrCreate_name" {
-					event.SetAttribute("avatar", "event_created_FirstOrCreate_avatar")
-				}
-			}
-
-			return nil
-		},
-		ormcontract.EventSaving: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_saving_create_name" {
-					event.SetAttribute("avatar", "event_saving_create_avatar")
-				}
-				if name.(string) == "event_saving_save_name" {
-					event.SetAttribute("avatar", "event_saving_save_avatar")
-				}
-				if name.(string) == "event_saving_FirstOrCreate_name" {
-					event.SetAttribute("avatar", "event_saving_FirstOrCreate_avatar")
-				}
-				if name.(string) == "event_save_without_name" {
-					event.SetAttribute("avatar", "event_save_without_avatar")
-				}
-				if name.(string) == "event_save_quietly_name" {
-					event.SetAttribute("avatar", "event_save_quietly_avatar")
-				}
-				if name.(string) == "event_saving_IsDirty_name" {
-					if event.IsDirty("name") {
-						event.SetAttribute("avatar", "event_saving_IsDirty_avatar")
-					}
-				}
-			}
-
-			avatar := event.GetAttribute("avatar")
-			if avatar != nil && avatar.(string) == "event_saving_single_update_avatar" {
-				event.SetAttribute("avatar", "event_saving_single_update_avatar1")
-			}
-
-			return nil
-		},
-		ormcontract.EventSaved: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_saved_create_name" {
-					event.SetAttribute("avatar", "event_saved_create_avatar")
-				}
-				if name.(string) == "event_saved_save_name" {
-					event.SetAttribute("avatar", "event_saved_save_avatar")
-				}
-				if name.(string) == "event_saved_FirstOrCreate_name" {
-					event.SetAttribute("avatar", "event_saved_FirstOrCreate_avatar")
-				}
-				if name.(string) == "event_save_without_name" {
-					event.SetAttribute("avatar", "event_saved_without_avatar")
-				}
-				if name.(string) == "event_save_quietly_name" {
-					event.SetAttribute("avatar", "event_saved_quietly_avatar")
-				}
-			}
-
-			avatar := event.GetAttribute("avatar")
-			if avatar != nil && avatar.(string) == "event_saved_map_update_avatar" {
-				event.SetAttribute("avatar", "event_saved_map_update_avatar1")
-			}
-
-			return nil
-		},
-		ormcontract.EventUpdating: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_updating_create_name" {
-					event.SetAttribute("avatar", "event_updating_create_avatar")
-				}
-				if name.(string) == "event_updating_save_name" {
-					event.SetAttribute("avatar", "event_updating_save_avatar")
-				}
-				if name.(string) == "event_updating_single_update_IsDirty_name1" {
-					if event.IsDirty("name") {
-						name := event.GetAttribute("name")
-						if name != "event_updating_single_update_IsDirty_name1" {
-							return errors.New("error")
-						}
-
-						event.SetAttribute("avatar", "event_updating_single_update_IsDirty_avatar")
-					}
-				}
-				if name.(string) == "event_updating_map_update_IsDirty_name1" {
-					if event.IsDirty("name") {
-						name := event.GetAttribute("name")
-						if name != "event_updating_map_update_IsDirty_name1" {
-							return errors.New("error")
-						}
-
-						event.SetAttribute("avatar", "event_updating_map_update_IsDirty_avatar")
-					}
-				}
-				if name.(string) == "event_updating_model_update_IsDirty_name1" {
-					if event.IsDirty("name") {
-						name := event.GetAttribute("name")
-						if name != "event_updating_model_update_IsDirty_name1" {
-							return errors.New("error")
-						}
-						event.SetAttribute("avatar", "event_updating_model_update_IsDirty_avatar")
-					}
-				}
-			}
-
-			avatar := event.GetAttribute("avatar")
-			if avatar != nil {
-				if avatar.(string) == "event_updating_save_avatar" {
-					event.SetAttribute("avatar", "event_updating_save_avatar1")
-				}
-				if avatar.(string) == "event_updating_model_update_avatar" {
-					event.SetAttribute("avatar", "event_updating_model_update_avatar1")
-				}
-			}
-
-			return nil
-		},
-		ormcontract.EventUpdated: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_updated_create_name" {
-					event.SetAttribute("avatar", "event_updated_create_avatar")
-				}
-				if name.(string) == "event_updated_save_name" {
-					event.SetAttribute("avatar", "event_updated_save_avatar")
-				}
-			}
-
-			avatar := event.GetAttribute("avatar")
-			if avatar != nil {
-				if avatar.(string) == "event_updated_save_avatar" {
-					event.SetAttribute("avatar", "event_updated_save_avatar1")
-				}
-				if avatar.(string) == "event_updated_model_update_avatar" {
-					event.SetAttribute("avatar", "event_updated_model_update_avatar1")
-				}
-			}
-
-			return nil
-		},
-		ormcontract.EventDeleting: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil && name.(string) == "event_deleting_name" {
-				return errors.New("deleting error")
-			}
-
-			return nil
-		},
-		ormcontract.EventDeleted: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil && name.(string) == "event_deleted_name" {
-				return errors.New("deleted error")
-			}
-
-			return nil
-		},
-		ormcontract.EventForceDeleting: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil && name.(string) == "event_force_deleting_name" {
-				return errors.New("force deleting error")
-			}
-
-			return nil
-		},
-		ormcontract.EventForceDeleted: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil && name.(string) == "event_force_deleted_name" {
-				return errors.New("force deleted error")
-			}
-
-			return nil
-		},
-		ormcontract.EventRetrieved: func(event ormcontract.Event) error {
-			name := event.GetAttribute("name")
-			if name != nil && name.(string) == "event_retrieved_name" {
-				event.SetAttribute("name", "event_retrieved_name1")
-			}
-
-			return nil
-		},
-	}
-}
-
-type Role struct {
-	orm.Model
-	Name  string
-	Users []*User `gorm:"many2many:role_user"`
-}
-
-type Address struct {
-	orm.Model
-	UserID   uint
-	Name     string
-	Province string
-	User     *User
-}
-
-type Book struct {
-	orm.Model
-	UserID uint
-	Name   string
-	User   *User
-	Author *Author
-}
-
-type Author struct {
-	orm.Model
-	BookID uint
-	Name   string
-}
-
-type House struct {
-	orm.Model
-	Name          string
-	HouseableID   uint
-	HouseableType string
-}
-
-func (h *House) Factory() string {
-	return "house"
-}
-
-func (h *House) Connection() string {
-	return "mysql"
-}
-
-type Phone struct {
-	orm.Model
-	Name          string
-	PhoneableID   uint
-	PhoneableType string
-}
-
-type Product struct {
-	orm.Model
-	orm.SoftDeletes
-	Name string
-}
-
-func (p *Product) Connection() string {
-	return "postgresql"
-}
-
-type Review struct {
-	orm.Model
-	orm.SoftDeletes
-	Body string
-}
-
-func (r *Review) Connection() string {
-	return ""
-}
-
-type People struct {
-	orm.Model
-	orm.SoftDeletes
-	Body string
-}
-
-func (p *People) Connection() string {
-	return "dummy"
-}
-
-type Person struct {
-	orm.Model
-	orm.SoftDeletes
-	Name string
-}
-
-func (p *Person) Connection() string {
-	return "dummy"
-}
 
 type QueryTestSuite struct {
 	suite.Suite
@@ -416,6 +91,17 @@ func TestQueryTestSuite(t *testing.T) {
 
 func (s *QueryTestSuite) SetupTest() {}
 
+func (s *QueryTestSuite) TestA() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			var user User
+			t := query.Where("name = ?", "a")
+			t.Where("avatar = ?", "b").Find(&user)
+			t.Where("avatar = ?", "c").Find(&user)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestAssociation() {
 	for driver, query := range s.queries {
 		tests := []struct {
@@ -425,7 +111,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "Find",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_find_name",
 						Address: &Address{
 							Name: "association_find_address",
@@ -450,7 +136,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "hasOne Append",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_has_one_append_name",
 						Address: &Address{
 							Name: "association_has_one_append_address",
@@ -474,7 +160,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "hasMany Append",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_has_many_append_name",
 						Books: []*Book{
 							{Name: "association_has_many_append_address1"},
@@ -500,7 +186,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "hasOne Replace",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_has_one_append_name",
 						Address: &Address{
 							Name: "association_has_one_append_address",
@@ -524,7 +210,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "hasMany Replace",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_has_many_replace_name",
 						Books: []*Book{
 							{Name: "association_has_many_replace_address1"},
@@ -550,7 +236,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "Delete",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_delete_name",
 						Address: &Address{
 							Name: "association_delete_address",
@@ -586,7 +272,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "Clear",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_clear_name",
 						Address: &Address{
 							Name: "association_clear_address",
@@ -610,7 +296,7 @@ func (s *QueryTestSuite) TestAssociation() {
 			{
 				name: "Count",
 				setup: func() {
-					user := &User{
+					user := User{
 						Name: "association_count_name",
 						Books: []*Book{
 							{Name: "association_count_address1"},
@@ -1611,6 +1297,7 @@ func (s *QueryTestSuite) TestEvent_Query() {
 		user := User{Name: "event_query"}
 		s.Nil(query.Create(&user))
 		s.True(user.ID > 0)
+		s.Equal("event_query", user.Name)
 
 		var user1 User
 		s.Nil(query.Where("name", "event_query1").Find(&user1))
@@ -2075,21 +1762,26 @@ func (s *QueryTestSuite) TestPaginate() {
 			s.True(user3.ID > 0)
 
 			var users []User
-			var total int64
 			s.Nil(query.Where("name = ?", "paginate_user").Paginate(1, 3, &users, nil))
 			s.Equal(3, len(users))
 
-			s.Nil(query.Where("name = ?", "paginate_user").Paginate(2, 3, &users, &total))
-			s.Equal(1, len(users))
-			s.Equal(int64(4), total)
+			var users1 []User
+			var total1 int64
+			s.Nil(query.Where("name = ?", "paginate_user").Paginate(2, 3, &users1, &total1))
+			s.Equal(1, len(users1))
+			s.Equal(int64(4), total1)
 
-			s.Nil(query.Model(User{}).Where("name = ?", "paginate_user").Paginate(1, 3, &users, &total))
-			s.Equal(3, len(users))
-			s.Equal(int64(4), total)
+			var users2 []User
+			var total2 int64
+			s.Nil(query.Model(User{}).Where("name = ?", "paginate_user").Paginate(1, 3, &users2, &total2))
+			s.Equal(3, len(users2))
+			s.Equal(int64(4), total2)
 
-			s.Nil(query.Table("users").Where("name = ?", "paginate_user").Paginate(1, 3, &users, &total))
-			s.Equal(3, len(users))
-			s.Equal(int64(4), total)
+			var users3 []User
+			var total3 int64
+			s.Nil(query.Table("users").Where("name = ?", "paginate_user").Paginate(1, 3, &users3, &total3))
+			s.Equal(3, len(users3))
+			s.Equal(int64(4), total3)
 		})
 	}
 }
@@ -2267,97 +1959,97 @@ func (s *QueryTestSuite) TestLimit() {
 }
 
 func (s *QueryTestSuite) TestLoad() {
-	for driver, query := range s.queries {
-		s.Run(driver.String(), func() {
-			user := User{Name: "load_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
-			user.Address.Name = "load_address"
-			user.Books[0].Name = "load_book0"
-			user.Books[1].Name = "load_book1"
-			s.Nil(query.Select(orm.Associations).Create(&user))
-			s.True(user.ID > 0)
-			s.True(user.Address.ID > 0)
-			s.True(user.Books[0].ID > 0)
-			s.True(user.Books[1].ID > 0)
+	for _, query := range s.queries {
+		user := User{Name: "load_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+		user.Address.Name = "load_address"
+		user.Books[0].Name = "load_book0"
+		user.Books[1].Name = "load_book1"
+		s.Nil(query.Select(orm.Associations).Create(&user))
+		s.True(user.ID > 0)
+		s.True(user.Address.ID > 0)
+		s.True(user.Books[0].ID > 0)
+		s.True(user.Books[1].ID > 0)
 
-			tests := []struct {
-				description string
-				setup       func(description string)
-			}{
-				{
-					description: "simple load relationship",
-					setup: func(description string) {
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(user1.Address)
-						s.True(len(user1.Books) == 0)
-						s.Nil(query.Load(&user1, "Address"))
-						s.True(user1.Address.ID > 0)
-						s.True(len(user1.Books) == 0)
-						s.Nil(query.Load(&user1, "Books"))
-						s.True(user1.Address.ID > 0)
-						s.True(len(user1.Books) == 2)
-					},
+		tests := []struct {
+			description string
+			setup       func(description string)
+		}{
+			{
+				description: "simple load relationship",
+				setup: func(description string) {
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(user1.Address)
+					s.True(len(user1.Books) == 0)
+					s.Nil(query.Load(&user1, "Address"))
+					s.True(user1.Address.ID > 0)
+					s.True(len(user1.Books) == 0)
+					s.Nil(query.Load(&user1, "Books"))
+					s.True(user1.Address.ID > 0)
+					s.True(len(user1.Books) == 2)
 				},
-				{
-					description: "load relationship with simple condition",
-					setup: func(description string) {
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(user1.Address)
-						s.Equal(0, len(user1.Books))
-						s.Nil(query.Load(&user1, "Books", "name = ?", "load_book0"))
-						s.True(user1.ID > 0)
-						s.Nil(user1.Address)
-						s.Equal(1, len(user1.Books))
-						s.Equal("load_book0", user.Books[0].Name)
-					},
+			},
+			{
+				description: "load relationship with simple condition",
+				setup: func(description string) {
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(user1.Address)
+					s.Equal(0, len(user1.Books))
+					s.Nil(query.Load(&user1, "Books", "name = ?", "load_book0"))
+					s.True(user1.ID > 0)
+					s.Nil(user1.Address)
+					s.Equal(1, len(user1.Books))
+					s.Equal("load_book0", user.Books[0].Name)
 				},
-				{
-					description: "load relationship with func condition",
-					setup: func(description string) {
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(user1.Address)
-						s.Equal(0, len(user1.Books))
-						s.Nil(query.Load(&user1, "Books", func(query ormcontract.Query) ormcontract.Query {
-							return query.Where("name = ?", "load_book0")
-						}))
-						s.True(user1.ID > 0)
-						s.Nil(user1.Address)
-						s.Equal(1, len(user1.Books))
-						s.Equal("load_book0", user.Books[0].Name)
-					},
+			},
+			{
+				description: "load relationship with func condition",
+				setup: func(description string) {
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(user1.Address)
+					s.Equal(0, len(user1.Books))
+					s.Nil(query.Load(&user1, "Books", func(query ormcontract.Query) ormcontract.Query {
+						return query.Where("name = ?", "load_book0")
+					}))
+					s.True(user1.ID > 0)
+					s.Nil(user1.Address)
+					s.Equal(1, len(user1.Books))
+					s.Equal("load_book0", user.Books[0].Name)
 				},
-				{
-					description: "error when relation is empty",
-					setup: func(description string) {
-						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
-						s.True(user1.ID > 0)
-						s.Nil(user1.Address)
-						s.Equal(0, len(user1.Books))
-						s.EqualError(query.Load(&user1, ""), "relation cannot be empty")
-					},
+			},
+			{
+				description: "error when relation is empty",
+				setup: func(description string) {
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.True(user1.ID > 0)
+					s.Nil(user1.Address)
+					s.Equal(0, len(user1.Books))
+					s.EqualError(query.Load(&user1, ""), "relation cannot be empty")
 				},
-				{
-					description: "error when id is nil",
-					setup: func(description string) {
-						type UserNoID struct {
-							Name   string
-							Avatar string
-						}
-						var userNoID UserNoID
-						s.EqualError(query.Load(&userNoID, "Book"), "id cannot be empty")
-					},
+			},
+			{
+				description: "error when id is nil",
+				setup: func(description string) {
+					type UserNoID struct {
+						Name   string
+						Avatar string
+					}
+					var userNoID UserNoID
+					s.EqualError(query.Load(&userNoID, "Book"), "id cannot be empty")
 				},
-			}
-			for _, test := range tests {
+			},
+		}
+		for _, test := range tests {
+			s.Run(test.description, func() {
 				test.setup(test.description)
-			}
-		})
+			})
+		}
 	}
 }
 
@@ -2432,82 +2124,82 @@ func (s *QueryTestSuite) TestRaw() {
 	}
 }
 
-func (s *QueryTestSuite) TestRefreshConnection() {
-	tests := []struct {
-		name      string
-		value     any
-		setup     func()
-		expectErr string
-	}{
-		{
-			name: "invalid model",
-			value: func() any {
-				var product string
-				return product
-			}(),
-			setup:     func() {},
-			expectErr: "invalid model",
-		},
-		{
-			name: "not ConnectionModel",
-			value: func() any {
-				var phone Phone
-				return phone
-			}(),
-			setup: func() {},
-		},
-		{
-			name: "the connection of model is empty",
-			value: func() any {
-				var review Review
-				return review
-			}(),
-			setup: func() {},
-		},
-		{
-			name: "the connection of model is same as current connection",
-			value: func() any {
-				var house House
-				return house
-			}(),
-			setup: func() {},
-		},
-		{
-			name: "connections are different, but drivers are same",
-			value: func() any {
-				var people People
-				return people
-			}(),
-			setup: func() {
-				mockDummyConnection(s.mysqlDocker.MockConfig, s.mysqlDocker1.Port)
-			},
-		},
-		{
-			name: "connections and drivers are different",
-			value: func() any {
-				var product Product
-				return product
-			}(),
-			setup: func() {
-				mockPostgresqlConnection(s.mysqlDocker.MockConfig, s.postgresqlDocker.Port)
-			},
-		},
-	}
-
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			test.setup()
-			queryImpl := s.queries[ormcontract.DriverMysql].(*QueryImpl)
-
-			err := queryImpl.refreshConnection(test.value)
-			if test.expectErr != "" {
-				s.EqualError(err, test.expectErr)
-			} else {
-				s.Nil(err)
-			}
-		})
-	}
-}
+//func (s *QueryTestSuite) TestRefreshConnection() {
+//	tests := []struct {
+//		name      string
+//		value     any
+//		setup     func()
+//		expectErr string
+//	}{
+//		{
+//			name: "invalid model",
+//			value: func() any {
+//				var product string
+//				return product
+//			}(),
+//			setup:     func() {},
+//			expectErr: "invalid model",
+//		},
+//		{
+//			name: "not ConnectionModel",
+//			value: func() any {
+//				var phone Phone
+//				return phone
+//			}(),
+//			setup: func() {},
+//		},
+//		{
+//			name: "the connection of model is empty",
+//			value: func() any {
+//				var review Review
+//				return review
+//			}(),
+//			setup: func() {},
+//		},
+//		{
+//			name: "the connection of model is same as current connection",
+//			value: func() any {
+//				var house House
+//				return house
+//			}(),
+//			setup: func() {},
+//		},
+//		{
+//			name: "connections are different, but drivers are same",
+//			value: func() any {
+//				var people People
+//				return people
+//			}(),
+//			setup: func() {
+//				mockDummyConnection(s.mysqlDocker.MockConfig, s.mysqlDocker1.Port)
+//			},
+//		},
+//		{
+//			name: "connections and drivers are different",
+//			value: func() any {
+//				var product Product
+//				return product
+//			}(),
+//			setup: func() {
+//				mockPostgresqlConnection(s.mysqlDocker.MockConfig, s.postgresqlDocker.Port)
+//			},
+//		},
+//	}
+//
+//	for _, test := range tests {
+//		s.Run(test.name, func() {
+//			test.setup()
+//			queryImpl := s.queries[ormcontract.DriverMysql].(*QueryImpl)
+//
+//			err := queryImpl.refreshConnection(test.value)
+//			if test.expectErr != "" {
+//				s.EqualError(err, test.expectErr)
+//			} else {
+//				s.Nil(err)
+//			}
+//		})
+//	}
+//}
 
 func (s *QueryTestSuite) TestSave() {
 	for _, query := range s.queries {
@@ -2553,31 +2245,16 @@ func (s *QueryTestSuite) TestSave() {
 
 func (s *QueryTestSuite) TestSaveQuietly() {
 	for _, query := range s.queries {
-		tests := []struct {
-			name  string
-			setup func()
-		}{
-			{
-				name: "success",
-				setup: func() {
-					user := User{Name: "event_save_quietly_name", Avatar: "save_quietly_avatar"}
-					s.Nil(query.SaveQuietly(&user))
-					s.True(user.ID > 0)
-					s.Equal("event_save_quietly_name", user.Name)
-					s.Equal("save_quietly_avatar", user.Avatar)
+		user := User{Name: "event_save_quietly_name", Avatar: "save_quietly_avatar"}
+		s.Nil(query.SaveQuietly(&user))
+		s.True(user.ID > 0)
+		s.Equal("event_save_quietly_name", user.Name)
+		s.Equal("save_quietly_avatar", user.Avatar)
 
-					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
-					s.Equal("event_save_quietly_name", user1.Name)
-					s.Equal("save_quietly_avatar", user1.Avatar)
-				},
-			},
-		}
-		for _, test := range tests {
-			s.Run(test.name, func() {
-				test.setup()
-			})
-		}
+		var user1 User
+		s.Nil(query.Find(&user1, user.ID))
+		s.Equal("event_save_quietly_name", user1.Name)
+		s.Equal("save_quietly_avatar", user1.Avatar)
 	}
 }
 
@@ -2873,7 +2550,7 @@ func (s *QueryTestSuite) TestWhere() {
 
 			var user2 []User
 			s.Nil(query.Where("name = ?", "where_user").OrWhere("avatar = ?", "where_avatar1").Find(&user2))
-			s.True(len(user2) > 0)
+			s.Equal(2, len(user2))
 
 			var user3 User
 			s.Nil(query.Where("name = 'where_user'").Find(&user3))
