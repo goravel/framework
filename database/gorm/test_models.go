@@ -280,10 +280,6 @@ func (h *House) Factory() string {
 	return "house"
 }
 
-func (h *House) Connection() string {
-	return "mysql"
-}
-
 type Phone struct {
 	orm.Model
 	Name          string
