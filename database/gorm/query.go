@@ -26,8 +26,6 @@ var QuerySet = wire.NewSet(BuildQueryImpl, wire.Bind(new(ormcontract.Query), new
 var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
-	// conditions only can be set when clone > 0, prevent concurrency error
-	clone      int
 	conditions Conditions
 	config     config.Config
 	connection string
@@ -64,7 +62,6 @@ func BuildQueryImpl(ctx context.Context, config config.Config, connection string
 	return NewQueryImpl(ctx, config, connection, db, nil), nil
 }
 
-// Association TODO Trigger events
 func (r *QueryImpl) Association(association string) ormcontract.Association {
 	query := r.buildConditions()
 
@@ -759,7 +756,6 @@ func (r *QueryImpl) WithTrashed() ormcontract.Query {
 }
 
 func (r *QueryImpl) buildConditions() *QueryImpl {
-	// The order of build methods is based on the sql structure, don't change them freely.
 	query := r.buildModel()
 	db := query.instance
 	db = query.buildTable(db)
@@ -1137,7 +1133,6 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 
 func (r *QueryImpl) new(db *gormio.DB) *QueryImpl {
 	query := NewQueryImpl(r.ctx, r.config, r.connection, db, &r.conditions)
-	query.clone = r.clone + 1
 
 	return query
 }
@@ -1285,12 +1280,6 @@ func (r *QueryImpl) selectSave(value any) error {
 }
 
 func (r *QueryImpl) setConditions(conditions Conditions) *QueryImpl {
-	//if r.clone > 0 {
-	//	r.conditions = conditions
-	//
-	//	return r
-	//}
-
 	query := r.new(r.instance)
 	query.conditions = conditions
 

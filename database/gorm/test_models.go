@@ -326,3 +326,13 @@ type Person struct {
 func (p *Person) Connection() string {
 	return "dummy"
 }
+
+type Box struct {
+	orm.Model
+	orm.SoftDeletes
+	Name string
+}
+
+func (p *Box) Connection() string {
+	return "mysql"
+}
