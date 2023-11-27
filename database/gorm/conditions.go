@@ -35,11 +35,6 @@ type Join struct {
 	args  []any
 }
 
-type OrWhere struct {
-	query any
-	args  []any
-}
-
 type Select struct {
 	query any
 	args  []any

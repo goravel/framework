@@ -2713,19 +2713,6 @@ func (s *QueryTestSuite) mockDummyConnection(driver ormcontract.Driver) {
 	}
 }
 
-func (s *QueryTestSuite) mockPostgresqlConnection(driver ormcontract.Driver) {
-	switch driver {
-	case ormcontract.DriverMysql:
-		mockPostgresqlConnection(s.mysqlDocker.MockConfig, s.postgresqlDocker.Port)
-	case ormcontract.DriverPostgresql:
-		mockPostgresqlConnection(s.postgresqlDocker.MockConfig, s.postgresqlDocker.Port)
-	case ormcontract.DriverSqlite:
-		mockPostgresqlConnection(s.sqliteDocker.MockConfig, s.postgresqlDocker.Port)
-	case ormcontract.DriverSqlserver:
-		mockPostgresqlConnection(s.sqlserverDocker.MockConfig, s.postgresqlDocker.Port)
-	}
-}
-
 func TestCustomConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping tests of using docker")
