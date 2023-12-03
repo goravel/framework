@@ -6,9 +6,9 @@ type MysqlStubs struct {
 // CreateUp Create up migration content.
 func (receiver MysqlStubs) CreateUp() string {
 	return `CREATE TABLE DummyTable (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
   KEY idx_DummyTable_created_at (created_at),
   KEY idx_DummyTable_updated_at (updated_at)
@@ -24,7 +24,7 @@ func (receiver MysqlStubs) CreateDown() string {
 
 // UpdateUp Update up migration content.
 func (receiver MysqlStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column varchar(255) COMMENT '';
+	return `ALTER TABLE DummyTable ADD column TEXT;
 `
 }
 
@@ -40,10 +40,13 @@ type PostgresqlStubs struct {
 // CreateUp Create up migration content.
 func (receiver PostgresqlStubs) CreateUp() string {
 	return `CREATE TABLE DummyTable (
-  id SERIAL PRIMARY KEY NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
+  created_at TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP NOT NULL
 );
+
+CREATE INDEX idx_DummyTable_created_at ON DummyTable (created_at);
+CREATE INDEX idx_DummyTable_updated_at ON DummyTable (updated_at);
 `
 }
 
@@ -55,7 +58,7 @@ func (receiver PostgresqlStubs) CreateDown() string {
 
 // UpdateUp Update up migration content.
 func (receiver PostgresqlStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column varchar(255) NOT NULL;
+	return `ALTER TABLE DummyTable ADD column TEXT NOT NULL;
 `
 }
 
@@ -71,10 +74,13 @@ type SqliteStubs struct {
 // CreateUp Create up migration content.
 func (receiver SqliteStubs) CreateUp() string {
 	return `CREATE TABLE DummyTable (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
+  id BIGINT PRIMARY KEY AUTOINCREMENT NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
 );
+
+CREATE INDEX idx_DummyTable_created_at ON DummyTable (created_at);
+CREATE INDEX idx_DummyTable_updated_at ON DummyTable (updated_at);
 `
 }
 
@@ -86,7 +92,7 @@ func (receiver SqliteStubs) CreateDown() string {
 
 // UpdateUp Update up migration content.
 func (receiver SqliteStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column text;
+	return `ALTER TABLE DummyTable ADD column TEXT;
 `
 }
 
@@ -102,11 +108,14 @@ type SqlserverStubs struct {
 // CreateUp Create up migration content.
 func (receiver SqlserverStubs) CreateUp() string {
 	return `CREATE TABLE DummyTable (
-  id bigint NOT NULL IDENTITY(1,1),
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
+  id BIGINT NOT NULL IDENTITY(1,1),
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
   PRIMARY KEY (id)
 );
+
+CREATE INDEX idx_DummyTable_created_at ON DummyTable (created_at);
+CREATE INDEX idx_DummyTable_updated_at ON DummyTable (updated_at);
 `
 }
 
@@ -118,7 +127,7 @@ func (receiver SqlserverStubs) CreateDown() string {
 
 // UpdateUp Update up migration content.
 func (receiver SqlserverStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column varchar(255);
+	return `ALTER TABLE DummyTable ADD column VARCHAR(255);
 `
 }
 
