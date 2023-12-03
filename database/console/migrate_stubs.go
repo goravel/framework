@@ -1,7 +1,6 @@
 package console
 
-type MysqlStubs struct {
-}
+type MysqlStubs struct{}
 
 // CreateUp Create up migration content.
 func (receiver MysqlStubs) CreateUp() string {
@@ -34,8 +33,7 @@ func (receiver MysqlStubs) UpdateDown() string {
 `
 }
 
-type PostgresqlStubs struct {
-}
+type PostgresqlStubs struct{}
 
 // CreateUp Create up migration content.
 func (receiver PostgresqlStubs) CreateUp() string {
@@ -68,8 +66,7 @@ func (receiver PostgresqlStubs) UpdateDown() string {
 `
 }
 
-type SqliteStubs struct {
-}
+type SqliteStubs struct{}
 
 // CreateUp Create up migration content.
 func (receiver SqliteStubs) CreateUp() string {
@@ -102,8 +99,7 @@ func (receiver SqliteStubs) UpdateDown() string {
 `
 }
 
-type SqlserverStubs struct {
-}
+type SqlserverStubs struct{}
 
 // CreateUp Create up migration content.
 func (receiver SqlserverStubs) CreateUp() string {
