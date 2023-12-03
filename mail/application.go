@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/smtp"
 
-	"github.com/jordan-wright/email"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
@@ -113,7 +111,7 @@ func (r *Application) instance() *Application {
 }
 
 func SendMail(config config.Config, subject, html string, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
-	e := email.NewEmail()
+	e := NewEmail()
 	if fromAddress == "" {
 		e.From = fmt.Sprintf("%s <%s>", config.GetString("mail.from.name"), config.GetString("mail.from.address"))
 	} else {
