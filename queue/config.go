@@ -60,6 +60,14 @@ func (r *Config) Redis(queueConnection string) *redis.Client {
 	})
 }
 
-func (r *Config) Database(queueConnection string) orm.Orm {
-	return OrmFacade.Connection(queueConnection)
+func (r *Config) Database(queueConnection string) orm.Query {
+	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
+	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.table", queueConnection), "jobs")
+	return OrmFacade.Connection(connection).Query().Table(table)
+}
+
+func (r *Config) FailedJobsDatabase(queueConnection string) orm.Query {
+	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
+	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.failed_table", queueConnection), "failed_jobs")
+	return OrmFacade.Connection(connection).Query().Table(table)
 }

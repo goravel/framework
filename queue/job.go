@@ -41,19 +41,19 @@ func Call(signature string, args ...any) error {
 }
 
 type Job struct {
-	ID            uint                 `gorm:"primaryKey"`                         // The unique ID of the job.
-	Queue         string               `gorm:"type:text;not null"`                 // The name of the queue the job belongs to.
-	Job           string               `gorm:"type:text;not null"`                 // The name of the handler for this job.
-	Arg           []contractsqueue.Arg `gorm:"type:json;not null;serializer:json"` // The arguments passed to the job.
-	Attempts      uint                 `gorm:"type:bigint;not null;default:0"`     // The number of attempts made on the job.
-	MaxTries      *uint                `gorm:"type:bigint;default:null;default:0"` // The maximum number of attempts for this job.
-	MaxExceptions *uint                `gorm:"type:bigint;default:null;default:0"` // The maximum number of exceptions to allow before failing.
-	Backoff       uint                 `gorm:"type:bigint;not null;default:0"`     // The number of seconds to wait before retrying the job.
-	Timeout       *uint                `gorm:"type:bigint;default:null;default:0"` // The number of seconds the job can run.
-	TimeoutAt     *carbon.DateTime     `gorm:"column:timeout_at"`                  // The timestamp when the job running timeout.
-	ReservedAt    *carbon.DateTime     `gorm:"column:reserved_at"`                 // The timestamp when the job started running.
-	AvailableAt   *carbon.DateTime     `gorm:"column:available_at"`                // The timestamp when the job can start running.
-	CreatedAt     *carbon.DateTime     `gorm:"column:created_at"`                  // The timestamp when the job was created.
+	ID            uint                 `gorm:"primaryKey"`               // The unique ID of the job.
+	Queue         string               `gorm:"not null"`                 // The name of the queue the job belongs to.
+	Job           string               `gorm:"not null"`                 // The name of the handler for this job.
+	Arg           []contractsqueue.Arg `gorm:"not null;serializer:json"` // The arguments passed to the job.
+	Attempts      uint                 `gorm:"not null;default:0"`       // The number of attempts made on the job.
+	MaxTries      *uint                `gorm:"default:null;default:0"`   // The maximum number of attempts for this job.
+	MaxExceptions *uint                `gorm:"default:null;default:0"`   // The maximum number of exceptions to allow before failing.
+	Backoff       uint                 `gorm:"not null;default:0"`       // The number of seconds to wait before retrying the job.
+	Timeout       *uint                `gorm:"default:null;default:0"`   // The number of seconds the job can run.
+	TimeoutAt     *carbon.DateTime     `gorm:"default:null"`             // The timestamp when the job running timeout.
+	ReservedAt    *carbon.DateTime     `gorm:"default:null"`             // The timestamp when the job started running.
+	AvailableAt   carbon.DateTime      `gorm:"not null"`                 // The timestamp when the job can start running.
+	CreatedAt     carbon.DateTime      `gorm:"not null"`                 // The timestamp when the job was created.
 }
 
 func (j Job) Signature() string {
@@ -65,10 +65,10 @@ func (j Job) Handle(args ...any) error {
 }
 
 type FailedJob struct {
-	ID        uint                 `gorm:"primaryKey"`                         // The unique ID of the job.
-	Queue     string               `gorm:"type:text;not null"`                 // The name of the queue the job belongs to.
-	Job       string               `gorm:"type:text;not null"`                 // The name of the handler for this job.
-	Arg       []contractsqueue.Arg `gorm:"type:json;not null;serializer:json"` // The arguments passed to the job.
-	Exception *string              `gorm:"type:text;default:null"`             // The exception that caused the job to fail.
-	FailedAt  *carbon.DateTime     `gorm:"column:failed_at"`                   // The timestamp when the job failed.
+	ID        uint                 `gorm:"primaryKey"`               // The unique ID of the job.
+	Queue     string               `gorm:"not null"`                 // The name of the queue the job belongs to.
+	Job       string               `gorm:"not null"`                 // The name of the handler for this job.
+	Arg       []contractsqueue.Arg `gorm:"not null;serializer:json"` // The arguments passed to the job.
+	Exception string               `gorm:"not null"`                 // The exception that caused the job to fail.
+	FailedAt  carbon.DateTime      `gorm:"not null"`                 // The timestamp when the job failed.
 }

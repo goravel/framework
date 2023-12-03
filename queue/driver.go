@@ -14,11 +14,11 @@ func NewDriver(connection string, config *Config) queue.Driver {
 	case DriverSync:
 		return NewSync(connection)
 	case DriverASync:
-		return NewASync(connection)
+		return NewASync(connection, config.FailedJobsDatabase(connection))
 	case DriverRedis:
 		return NewRedis(connection, config.Redis(connection))
 	case DriverDatabase:
-		return NewDatabase(connection, config.Database(connection))
+		return NewDatabase(connection, config.Database(connection), config.FailedJobsDatabase(connection))
 	default:
 		return nil
 	}
