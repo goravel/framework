@@ -736,7 +736,7 @@ func Test_base64Wrap(t *testing.T) {
 	var buf bytes.Buffer
 	base64Wrap(&buf, []byte(file))
 	if !bytes.Equal(buf.Bytes(), []byte(encoded)) {
-		t.Fatalf("Encoded file does not match expected: %#q != %#q", string(buf.Bytes()), encoded)
+		t.Fatalf("Encoded file does not match expected: %#q != %#q", buf.String(), encoded)
 	}
 }
 

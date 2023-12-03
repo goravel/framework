@@ -738,7 +738,7 @@ func base64Wrap(w io.Writer, b []byte) {
 	// Process raw chunks until there's no longer enough to fill a line.
 	for len(b) >= maxRaw {
 		base64.StdEncoding.Encode(buffer, b[:maxRaw])
-		w.Write(buffer)
+		_, _ = w.Write(buffer)
 		b = b[maxRaw:]
 	}
 	// Handle the last chunk of bytes.
@@ -746,7 +746,7 @@ func base64Wrap(w io.Writer, b []byte) {
 		out := buffer[:base64.StdEncoding.EncodedLen(len(b))]
 		base64.StdEncoding.Encode(out, b)
 		out = append(out, "\r\n"...)
-		w.Write(out)
+		_, _ = w.Write(out)
 	}
 }
 
@@ -756,12 +756,12 @@ func headerToBytes(buff io.Writer, header textproto.MIMEHeader) {
 	for field, vals := range header {
 		for _, subval := range vals {
 			// bytes.Buffer.Write() never returns an error.
-			io.WriteString(buff, field)
-			io.WriteString(buff, ": ")
+			_, _ = io.WriteString(buff, field)
+			_, _ = io.WriteString(buff, ": ")
 			// Write the encoded header if needed
 			switch {
 			case field == "Content-Type" || field == "Content-Disposition":
-				buff.Write([]byte(subval))
+				_, _ = buff.Write([]byte(subval))
 			case field == "From" || field == "To" || field == "Cc" || field == "Bcc":
 				participants := strings.Split(subval, ",")
 				for i, v := range participants {
@@ -771,11 +771,11 @@ func headerToBytes(buff io.Writer, header textproto.MIMEHeader) {
 					}
 					participants[i] = addr.String()
 				}
-				buff.Write([]byte(strings.Join(participants, ", ")))
+				_, _ = buff.Write([]byte(strings.Join(participants, ", ")))
 			default:
-				buff.Write([]byte(mime.QEncoding.Encode("UTF-8", subval)))
+				_, _ = buff.Write([]byte(mime.QEncoding.Encode("UTF-8", subval)))
 			}
-			io.WriteString(buff, "\r\n")
+			_, _ = io.WriteString(buff, "\r\n")
 		}
 	}
 }
