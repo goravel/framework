@@ -17,6 +17,11 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
+      - name: go mod pakcage cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('go.mod') }}
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
@@ -33,7 +38,12 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
+      - name: go mod pakcage cache
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('go.mod') }}
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./... -short
+        run: go test ./...

@@ -42,14 +42,14 @@ func (_m *Database) Clear() error {
 }
 
 // Config provides a mock function with given fields:
-func (_m *Database) Config() testing.Config {
+func (_m *Database) Config() testing.DatabaseConfig {
 	ret := _m.Called()
 
-	var r0 testing.Config
-	if rf, ok := ret.Get(0).(func() testing.Config); ok {
+	var r0 testing.DatabaseConfig
+	if rf, ok := ret.Get(0).(func() testing.DatabaseConfig); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(testing.Config)
+		r0 = ret.Get(0).(testing.DatabaseConfig)
 	}
 
 	return r0
@@ -69,6 +69,20 @@ func (_m *Database) Seed(seeds ...seeder.Seeder) {
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
 	_m.Called(_ca...)
+}
+
+// Stop provides a mock function with given fields:
+func (_m *Database) Stop() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewDatabase creates a new instance of Database. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

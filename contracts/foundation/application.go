@@ -1,6 +1,8 @@
 package foundation
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/console"
 )
 
@@ -20,8 +22,18 @@ type Application interface {
 	DatabasePath(path string) string
 	// StoragePath get the path to the storage directory.
 	StoragePath(path string) string
+	// LangPath get the path to the language files.
+	LangPath(path string) string
 	// PublicPath get the path to the public directory.
 	PublicPath(path string) string
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
+	// GetLocale get the current application locale.
+	GetLocale(ctx context.Context) string
+	// SetLocale set the current application locale.
+	SetLocale(ctx context.Context, locale string) context.Context
+	// Version gets the version number of the application.
+	Version() string
+	// IsLocale get the current application locale.
+	IsLocale(ctx context.Context, locale string) bool
 }

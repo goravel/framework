@@ -20,7 +20,7 @@ func TestTestCaseSuite(t *testing.T) {
 
 // SetupTest will run before each test in the suite.
 func (s *TestCaseSuite) SetupTest() {
-	s.mockArtisan = consolemocks.NewArtisan(s.T())
+	s.mockArtisan = &consolemocks.Artisan{}
 	s.testCase = &TestCase{}
 	artisanFacades = s.mockArtisan
 }
@@ -31,11 +31,15 @@ func (s *TestCaseSuite) TestSeed() {
 
 	s.mockArtisan.On("Call", "db:seed --seeder mock").Once()
 	s.testCase.Seed(&MockSeeder{})
+
+	s.mockArtisan.AssertExpectations(s.T())
 }
 
 func (s *TestCaseSuite) TestRefreshDatabase() {
 	s.mockArtisan.On("Call", "migrate:refresh").Once()
 	s.testCase.RefreshDatabase()
+
+	s.mockArtisan.AssertExpectations(s.T())
 }
 
 type MockSeeder struct{}

@@ -38,3 +38,4 @@ func (r *Context) Request() http.ContextRequest {
 func (r *Context) Response() http.ContextResponse {
 	return nil
 }
+

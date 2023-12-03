@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	gormio "gorm.io/gorm"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/env"
 )
 
 func (u *User) Factory() factory.Factory {
@@ -74,19 +74,22 @@ type FactoryTestSuite struct {
 }
 
 func TestFactoryTestSuite(t *testing.T) {
-	if testing.Short() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker()
-	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
+	mysqlDocker := gorm.NewMysqlDocker(testDatabaseDocker)
+	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 	suite.Run(t, &FactoryTestSuite{
 		query: mysqlQuery,
 	})
-	assert.Nil(t, mysqlPool.Purge(mysqlResource))
 }
 
 func (s *FactoryTestSuite) SetupTest() {
