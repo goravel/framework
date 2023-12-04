@@ -20,7 +20,7 @@ func NewConfig(config configcontract.Config) *Config {
 }
 
 func (r *Config) DefaultConnection() string {
-	return r.config.GetString("queue.default", "sync")
+	return r.config.GetString("queue.default", "async")
 }
 
 func (r *Config) Queue(connection, queue string) string {
@@ -66,8 +66,8 @@ func (r *Config) Database(queueConnection string) orm.Query {
 	return OrmFacade.Connection(connection).Query().Table(table)
 }
 
-func (r *Config) FailedJobsDatabase(queueConnection string) orm.Query {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.failed_table", queueConnection), "failed_jobs")
+func (r *Config) FailedJobsDatabase() orm.Query {
+	connection := r.config.GetString("queue.failed.connection")
+	table := r.config.GetString("queue.failed.table")
 	return OrmFacade.Connection(connection).Query().Table(table)
 }

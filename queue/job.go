@@ -29,7 +29,7 @@ func Register(jobs []contractsqueue.Job) error {
 
 // Call calls a registered job using its signature.
 // Call 使用其签名调用已注册的作业。
-func Call(signature string, args ...any) error {
+func Call(signature string, payloads []contractsqueue.Payloads) error {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
@@ -37,6 +37,12 @@ func Call(signature string, args ...any) error {
 	if !exists {
 		return errors.New("job not found")
 	}
+
+	var args []any
+	for _, payload := range payloads {
+		args = append(args, payload.Value)
+	}
+
 	return job.Handle(args...)
 }
 
@@ -61,7 +67,12 @@ func (j Job) Signature() string {
 }
 
 func (j Job) Handle(args ...any) error {
-	return Call(j.Job, args...)
+	job, exists := JobRegistry[j.Signature()]
+	if !exists {
+		return errors.New("job not found")
+	}
+
+	return job.Handle(args...)
 }
 
 type FailedJob struct {

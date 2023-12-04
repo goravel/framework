@@ -2,137 +2,169 @@ package queue
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"os/signal"
-	"sync"
-	"time"
 
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/carbon"
 	"github.com/redis/go-redis/v9"
+
+	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/json"
 )
 
 type Redis struct {
-	connection string
-	client     *redis.Client
-	failedJobs orm.Query
-	ctx        context.Context
+	connection   string
+	defaultQueue string
+	retryAfter   uint
+	client       *redis.Client
+	lua          RedisLua
+	ctx          context.Context
 }
 
-func NewRedis(connection string, client *redis.Client, failedJobs orm.Query) *Redis {
+func NewRedis(connection string, client *redis.Client) *Redis {
 	return &Redis{
-		connection: connection,
-		client:     client,
-		failedJobs: failedJobs,
-		ctx:        context.Background(),
+		connection:   connection,
+		defaultQueue: "default",
+		retryAfter:   60,
+		client:       client,
+		ctx:          context.Background(),
 	}
 }
 
-func (receiver *Redis) ConnectionName() string {
-	return receiver.connection
+func (r *Redis) ConnectionName() string {
+	return r.connection
 }
 
-func (receiver *Redis) Push(job queue.Job, args []queue.Payloads, queue string) error {
-	return receiver.client.RPush(receiver.ctx, queue, job).Err()
+func (r *Redis) DriverName() string {
+	return DriverRedis
 }
 
-func (receiver *Redis) Bulk(jobs []queue.Jobs, queue string) error {
+func (r *Redis) Push(job contractsqueue.Job, payloads []contractsqueue.Payloads, queue string) error {
+	queue = r.getQueue(queue)
+	data, err := json.Marshal(contractsqueue.Jobs{
+		Job:      job,
+		Payloads: payloads,
+	})
+	if err != nil {
+		return err
+	}
+
+	return r.lua.Push().Run(r.ctx, r.client, []string{queue, queue + ":notify"}, data).Err()
+}
+
+func (r *Redis) Bulk(jobs []contractsqueue.Jobs, queue string) error {
+	queue = r.getQueue(queue)
 	for _, job := range jobs {
-		err := receiver.client.RPush(receiver.ctx, queue, job).Err()
-		if err != nil {
-			return err
+		if job.Delay > 0 {
+			if err := r.Later(job.Delay, job.Job, job.Payloads, queue); err != nil {
+				return err
+			}
+		} else {
+			if err := r.Push(job.Job, job.Payloads, queue); err != nil {
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
-func (receiver *Redis) Later(delay int, job queue.Job, args []queue.Payloads, queue string) error {
-	return receiver.client.ZAdd(receiver.ctx, queue, redis.Z{
-		Score:  float64(time.Now().Add(time.Duration(delay) * time.Second).Unix()),
-		Member: job,
+func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []contractsqueue.Payloads, queue string) error {
+	data, err := json.Marshal(contractsqueue.Jobs{
+		Job:      job,
+		Payloads: payloads,
+	})
+	if err != nil {
+		return err
+	}
+
+	return r.client.ZAdd(r.ctx, r.getQueue(queue)+":delayed", redis.Z{
+		Score:  float64(carbon.Now().AddSeconds(int(delay)).Timestamp()),
+		Member: data,
 	}).Err()
 }
 
-func (receiver *Redis) Pop(queue string) (queue.Job, []queue.Payloads, error) {
-	job, err := receiver.client.XRead(receiver.ctx, queue).Result()
+func (r *Redis) Pop(queue string) (contractsqueue.Job, []contractsqueue.Payloads, error) {
+	prefixed := r.getQueue(queue)
+	r.migrate(prefixed)
+
+	job, err := r.retrieveNextJob(prefixed)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return job, nil, nil
+	return job.Job, job.Payloads, nil
 }
 
-func (receiver *Redis) Delete(queue string, job queue.Job) error {
-	// 实现从队列删除任务的逻辑
-	// 这里只是一个示例，具体实现需要根据你的需求来
-	return receiver.client.LRem(receiver.ctx, queue, 0, job).Err()
-}
-
-func (receiver *Redis) Release(queue string, job queue.Job, delay int) error {
-	// 实现释放任务回到队列的逻辑
-	// 这里只是一个示例，具体实现需要根据你的需求来
-	return receiver.client.ZAdd(receiver.ctx, queue, redis.Z{
-		Score:  float64(time.Now().Add(time.Duration(delay) * time.Second).Unix()),
-		Member: job,
-	}).Err()
-}
-
-func (receiver *Redis) Clear(queue string) error {
-	// 实现清空队列的逻辑
-	// 这里只是一个示例，具体实现需要根据你的需求来
-	return receiver.client.Del(receiver.ctx, queue).Err()
-}
-
-func (receiver *Redis) Size(queue string) (int64, error) {
-	// 实现获取队列大小的逻辑
-	// 这里只是一个示例，具体实现需要根据你的需求来
-	return receiver.client.LLen(receiver.ctx, queue).Result()
-}
-
-func (receiver *Redis) Server(concurrent int, queue string) {
-	failedJobChan := make(chan FailedJob)
-	sigChan := make(chan os.Signal)
-	quitChan := make(chan struct{})
-	var wg sync.WaitGroup
-	signal.Notify(sigChan)
-
-	for i := 0; i < concurrent; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for {
-				select {
-				case <-quitChan:
-					return
-				default:
-					job, args, _ := receiver.Pop(queue)
-					err := Call(job.Signature(), args)
-					if err != nil {
-						failedJobChan <- FailedJob{
-							Queue:     queue,
-							Job:       job.Signature(),
-							Arg:       args,
-							Exception: err.Error(),
-							FailedAt:  carbon.DateTime{Carbon: carbon.Now()},
-						}
-					}
-				}
-			}
-		}()
+func (r *Redis) Delete(queue string, job contractsqueue.Job) error {
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
 	}
 
-	go func() {
-		sig := <-sigChan
-		fmt.Printf("Received signal: %s, shutting down...\n", sig)
-		close(quitChan)
-		close(failedJobChan)
-		wg.Wait()
-	}()
+	return r.client.ZRem(r.ctx, r.getQueue(queue)+":reserved", data).Err()
+}
 
-	for {
-		job := <-failedJobChan
-		_ = receiver.failedJobs.Create(&job)
+func (r *Redis) Release(queue string, job contractsqueue.Job, delay uint) error {
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
 	}
+
+	queue = r.getQueue(queue)
+	return r.lua.Release().Run(r.ctx, r.client, []string{queue + ":delayed", queue + ":delayed"}, data, carbon.Now().AddSeconds(int(delay)).Timestamp()).Err()
+}
+
+func (r *Redis) Clear(queue string) error {
+	queue = r.getQueue(queue)
+	return r.lua.Clear().Run(r.ctx, r.client, []string{queue, queue + ":delayed", queue + ":reserved", queue + ":notify"}).Err()
+}
+
+func (r *Redis) getQueue(queue string) string {
+	if len(queue) == 0 {
+		return "queues:" + r.defaultQueue
+	}
+
+	return "queues:" + queue
+}
+
+func (r *Redis) Size(queue string) (uint64, error) {
+	return r.lua.Size().Run(r.ctx, r.client, []string{queue, queue + ":delayed", queue + ":reserved"}).Uint64()
+}
+
+func (r *Redis) migrate(queue string) {
+	r.migrateExpiredJobs(queue+":delayed", queue)
+	if r.retryAfter > 0 {
+		r.migrateExpiredJobs(queue+":reserved", queue)
+	}
+}
+
+func (r *Redis) migrateExpiredJobs(from, to string) {
+	r.lua.MigrateExpiredJobs().Run(r.ctx, r.client, []string{from, to, to + ":notify"}, carbon.Now().Timestamp()).Result()
+}
+
+func (r *Redis) retrieveNextJob(queue string, block ...bool) (contractsqueue.Jobs, error) {
+	if len(block) == 0 {
+		block = []bool{true}
+	}
+
+	raw, err := r.lua.Pop().Run(r.ctx, r.client, []string{queue, queue + ":reserved", queue + ":notify"}, carbon.Now().Timestamp()).Result()
+	if err != nil {
+		return contractsqueue.Jobs{}, err
+	}
+
+	var job contractsqueue.Jobs
+	if err = json.Unmarshal([]byte(raw.([]interface{})[0].(string)), &job); err != nil {
+		return contractsqueue.Jobs{}, err
+	}
+
+	// If there is no job, we will block the worker until there is a job.
+	if job.Job == nil && job.Payloads == nil && block[0] {
+		err = r.client.BRPop(r.ctx, 0, queue+":notify").Err()
+		if err != nil {
+			return contractsqueue.Jobs{}, err
+		}
+
+		return r.retrieveNextJob(queue, false)
+	}
+
+	return job, nil
 }

@@ -1,8 +1,6 @@
 package queue
 
 import (
-	"time"
-
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/carbon"
@@ -11,70 +9,72 @@ import (
 type Database struct {
 	connection string
 	jobs       orm.Query
-	failedJobs orm.Query
 }
 
-func NewDatabase(connection string, jobsOrm, failedJobsOrm orm.Query) *Database {
+func NewDatabase(connection string, jobsOrm orm.Query) *Database {
 	return &Database{
 		connection: connection,
 		jobs:       jobsOrm,
-		failedJobs: failedJobsOrm,
 	}
 }
 
-func (receiver Database) ConnectionName() string {
-	return receiver.connection
+func (r *Database) ConnectionName() string {
+	return r.connection
 }
 
-func (receiver Database) Push(job contractsqueue.Job, args []contractsqueue.Payloads, queue string) error {
+func (r *Database) DriverName() string {
+	return DriverDatabase
+}
+
+func (r *Database) Push(job contractsqueue.Job, payloads []contractsqueue.Payloads, queue string) error {
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
-	j.Arg = args
+	j.Payloads = payloads
 	j.AvailableAt = carbon.DateTime{Carbon: carbon.Now()}
 	j.CreatedAt = carbon.DateTime{Carbon: carbon.Now()}
 
-	return receiver.jobs.Create(&j)
+	return r.jobs.Create(&j)
 }
 
-func (receiver Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
+func (r *Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	var j []Job
 	for _, job := range jobs {
 		var jj Job
 		jj.Queue = queue
 		jj.Job = job.Job.Signature()
-		jj.Arg = job.Args
+		jj.Payloads = job.Payloads
 		jj.AvailableAt = carbon.DateTime{Carbon: carbon.Now()}
 		jj.CreatedAt = carbon.DateTime{Carbon: carbon.Now()}
 		j = append(j, jj)
 	}
 
-	return receiver.jobs.Create(&j)
+	return r.jobs.Create(&j)
 }
 
-func (receiver Database) Later(delay int, job contractsqueue.Job, args []contractsqueue.Payloads, queue string) error {
+func (r *Database) Later(delay uint, job contractsqueue.Job, payloads []contractsqueue.Payloads, queue string) error {
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
-	j.Arg = args
-	j.AvailableAt = carbon.DateTime{Carbon: carbon.Now().AddSeconds(delay)}
+	j.Payloads = payloads
+	j.AvailableAt = carbon.DateTime{Carbon: carbon.Now().AddSeconds(int(delay))}
 	j.CreatedAt = carbon.DateTime{Carbon: carbon.Now()}
 
-	return receiver.jobs.Create(&j)
+	return r.jobs.Create(&j)
 }
 
-func (receiver Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Payloads, error) {
+func (r *Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Payloads, error) {
 	var job Job
-	err := receiver.jobs.Where("queue", q).Where("reserved_at", nil).First(&job)
+	err := r.jobs.Where("queue", q).Where("reserved_at", nil).First(&job)
 
-	return job, job.Arg, err
+	return job, job.Payloads, err
 }
 
-func (receiver Database) Delete(queue string, job contractsqueue.Job) error {
+func (r *Database) Delete(queue string, job contractsqueue.Job) error {
 	var j Job
-	err := receiver.jobs.Where("queue", queue).Where("job", job.Signature()).First(&j)
+	err := r.jobs.Where("queue", queue).Where("job", job.Signature()).First(&j)
 	if err != nil {
-		_, err = receiver.jobs.Delete(&j)
+		_, err = r.jobs.Delete(&j)
 		if err != nil {
 			return err
 		}
@@ -83,12 +83,12 @@ func (receiver Database) Delete(queue string, job contractsqueue.Job) error {
 	return nil
 }
 
-func (receiver Database) Release(queue string, job contractsqueue.Job, delay int) error {
+func (r *Database) Release(queue string, job contractsqueue.Job, delay uint) error {
 	var j Job
-	err := receiver.jobs.Where("queue", queue).Where("job", job.Signature()).First(&j)
+	err := r.jobs.Where("queue", queue).Where("job", job.Signature()).First(&j)
 	if err != nil {
-		j.ReservedAt = &carbon.DateTime{Carbon: carbon.Now().AddSeconds(delay)}
-		_, err = receiver.jobs.Update(&j)
+		j.ReservedAt = &carbon.DateTime{Carbon: carbon.Now().AddSeconds(int(delay))}
+		_, err = r.jobs.Update(&j)
 		if err != nil {
 			return err
 		}
@@ -97,11 +97,11 @@ func (receiver Database) Release(queue string, job contractsqueue.Job, delay int
 	return nil
 }
 
-func (receiver Database) Clear(queue string) error {
+func (r *Database) Clear(queue string) error {
 	var j []Job
-	err := receiver.jobs.Where("queue", queue).Find(&j)
+	err := r.jobs.Where("queue", queue).Find(&j)
 	if err != nil {
-		_, err = receiver.jobs.Delete(&j)
+		_, err = r.jobs.Delete(&j)
 		if err != nil {
 			return err
 		}
@@ -110,28 +110,8 @@ func (receiver Database) Clear(queue string) error {
 	return nil
 }
 
-func (receiver Database) Size(queue string) (int64, error) {
+func (r *Database) Size(queue string) (uint64, error) {
 	var count int64
-	err := receiver.jobs.Where("queue", queue).Count(&count)
-	return count, err
-}
-
-func (receiver Database) Server(concurrent int, q string) {
-	for i := 0; i < concurrent; i++ {
-		go func() {
-			for {
-				job, args, err := receiver.Pop(q)
-				if err != nil {
-					continue
-				}
-
-				err = Call(job.Signature(), args)
-				if err != nil {
-					continue
-				}
-
-				time.Sleep(time.Second)
-			}
-		}()
-	}
+	err := r.jobs.Where("queue", queue).Count(&count)
+	return uint64(count), err
 }

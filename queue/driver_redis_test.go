@@ -17,16 +17,14 @@ import (
 )
 
 var (
-	testSyncJob        = 0
-	testAsyncJob       = 0
-	testDelayAsyncJob  = 0
-	testCustomAsyncJob = 0
-	testErrorAsyncJob  = 0
-	testChainAsyncJob  = 0
-	testChainSyncJob   = 0
+	testRedisJob       = 0
+	testDelayRedisJob  = 0
+	testCustomRedisJob = 0
+	testErrorRedisJob  = 0
+	testChainRedisJob  = 0
 )
 
-type QueueTestSuite struct {
+type DriverRedisTestSuite struct {
 	suite.Suite
 	app        *Application
 	mockConfig *configmock.Config
@@ -34,7 +32,7 @@ type QueueTestSuite struct {
 	port       int
 }
 
-func TestQueueTestSuite(t *testing.T) {
+func TestDriverRedisTestSuite(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
@@ -42,21 +40,21 @@ func TestQueueTestSuite(t *testing.T) {
 	redisDocker := testingdocker.NewRedis()
 	assert.Nil(t, redisDocker.Build())
 
-	suite.Run(t, &QueueTestSuite{
+	suite.Run(t, &DriverRedisTestSuite{
 		port: redisDocker.Config().Port,
 	})
 
 	assert.Nil(t, redisDocker.Stop())
 }
 
-func (s *QueueTestSuite) SetupTest() {
+func (s *DriverRedisTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
 	s.mockQueue = &queuemock.Queue{}
 	s.app = NewApplication(s.mockConfig)
 }
 
-func (s *QueueTestSuite) TestSyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Once()
+func (s *DriverRedisTestSuite) TestSyncQueue() {
+	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Once()
 	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Payloads{
 		{Type: "string", Value: "TestSyncQueue"},
 		{Type: "int", Value: 1},
@@ -64,8 +62,8 @@ func (s *QueueTestSuite) TestSyncQueue() {
 	s.Equal(1, testSyncJob)
 }
 
-func (s *QueueTestSuite) TestDefaultAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
+	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Twice()
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -74,7 +72,7 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	err := Register([]queue.Job{&TestAsyncJob{}})
+	err := Register([]queue.Job{&TestRedisJob{}})
 	if err != nil {
 		s.Nil(err)
 	}
@@ -89,19 +87,19 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestDefaultAsyncQueue"},
+	s.Nil(s.app.Job(&TestRedisJob{}, []queue.Payloads{
+		{Type: "string", Value: "TestDefaultRedisQueue"},
 		{Type: "int", Value: 1},
 	}).Dispatch())
 	time.Sleep(2 * time.Second)
-	s.Equal(1, testAsyncJob)
+	s.Equal(1, testRedisJob)
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
 }
 
-func (s *QueueTestSuite) TestDelayAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
+func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
+	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Times(2)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -110,7 +108,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	err := Register([]queue.Job{&TestAsyncJob{}})
+	err := Register([]queue.Job{&TestRedisJob{}})
 	if err != nil {
 		s.Nil(err)
 	}
@@ -127,21 +125,21 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestDelayAsyncQueue"},
+	s.Nil(s.app.Job(&TestDelayRedisJob{}, []queue.Payloads{
+		{Type: "string", Value: "TestDelayRedisQueue"},
 		{Type: "int", Value: 1},
 	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
 	time.Sleep(2 * time.Second)
-	s.Equal(0, testDelayAsyncJob)
+	s.Equal(0, testDelayRedisJob)
 	time.Sleep(3 * time.Second)
-	s.Equal(1, testDelayAsyncJob)
+	s.Equal(1, testDelayRedisJob)
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
 }
 
-func (s *QueueTestSuite) TestCustomAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
+	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Twice()
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
@@ -150,7 +148,7 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	err := Register([]queue.Job{&TestAsyncJob{}})
+	err := Register([]queue.Job{&TestRedisJob{}})
 	if err != nil {
 		s.Nil(err)
 	}
@@ -169,19 +167,19 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestCustomAsyncQueue"},
+	s.Nil(s.app.Job(&TestCustomRedisJob{}, []queue.Payloads{
+		{Type: "string", Value: "TestCustomRedisQueue"},
 		{Type: "int", Value: 1},
 	}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
-	s.Equal(1, testCustomAsyncJob)
+	s.Equal(1, testCustomRedisJob)
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
 }
 
-func (s *QueueTestSuite) TestErrorAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
+func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
+	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Twice()
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -190,7 +188,7 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	err := Register([]queue.Job{&TestAsyncJob{}})
+	err := Register([]queue.Job{&TestRedisJob{}})
 	if err != nil {
 		s.Nil(err)
 	}
@@ -207,19 +205,19 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestErrorAsyncJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestErrorAsyncQueue"},
+	s.Nil(s.app.Job(&TestErrorRedisJob{}, []queue.Payloads{
+		{Type: "string", Value: "TestErrorRedisQueue"},
 		{Type: "int", Value: 1},
 	}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
-	s.Equal(0, testErrorAsyncJob)
+	s.Equal(0, testErrorRedisJob)
 
 	s.mockConfig.AssertExpectations(s.T())
 	s.mockQueue.AssertExpectations(s.T())
 }
 
-func (s *QueueTestSuite) TestChainAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
+func (s *DriverRedisTestSuite) TestChainRedisQueue() {
+	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Times(2)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -228,7 +226,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
-	err := Register([]queue.Job{&TestAsyncJob{}})
+	err := Register([]queue.Job{&TestRedisJob{}})
 	if err != nil {
 		s.Nil(err)
 	}
@@ -248,15 +246,15 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job: &TestChainAsyncJob{},
-			Args: []queue.Payloads{
-				{Type: "string", Value: "TestChainAsyncQueue"},
+			Job: &TestChainRedisJob{},
+			Payloads: []queue.Payloads{
+				{Type: "string", Value: "TestChainRedisQueue"},
 				{Type: "int", Value: 1},
 			},
 		},
 		{
 			Job: &TestChainSyncJob{},
-			Args: []queue.Payloads{
+			Payloads: []queue.Payloads{
 				{Type: "string", Value: "TestChainSyncQueue"},
 				{Type: "int", Value: 1},
 			},
@@ -264,113 +262,83 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	}).OnQueue("chain").Dispatch())
 
 	time.Sleep(2 * time.Second)
-	s.Equal(1, testChainAsyncJob)
+	s.Equal(1, testChainRedisJob)
 	s.Equal(1, testChainSyncJob)
 
 	s.mockConfig.AssertExpectations(s.T())
 }
 
-type TestAsyncJob struct {
+type TestRedisJob struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestAsyncJob) Signature() string {
-	return "test_async_job"
+func (receiver *TestRedisJob) Signature() string {
+	return "test_redis_job"
 }
 
 // Handle Execute the job.
-func (receiver *TestAsyncJob) Handle(args ...any) error {
-	testAsyncJob++
+func (receiver *TestRedisJob) Handle(args ...any) error {
+	testRedisJob++
 
 	return nil
 }
 
-type TestDelayAsyncJob struct {
+type TestDelayRedisJob struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestDelayAsyncJob) Signature() string {
-	return "test_delay_async_job"
+func (receiver *TestDelayRedisJob) Signature() string {
+	return "test_delay_redis_job"
 }
 
 // Handle Execute the job.
-func (receiver *TestDelayAsyncJob) Handle(args ...any) error {
-	testDelayAsyncJob++
+func (receiver *TestDelayRedisJob) Handle(args ...any) error {
+	testDelayRedisJob++
 
 	return nil
 }
 
-type TestSyncJob struct {
+type TestCustomRedisJob struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestSyncJob) Signature() string {
-	return "test_sync_job"
+func (receiver *TestCustomRedisJob) Signature() string {
+	return "test_redis_job"
 }
 
 // Handle Execute the job.
-func (receiver *TestSyncJob) Handle(args ...any) error {
-	testSyncJob++
+func (receiver *TestCustomRedisJob) Handle(args ...any) error {
+	testCustomRedisJob++
 
 	return nil
 }
 
-type TestCustomAsyncJob struct {
+type TestErrorRedisJob struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestCustomAsyncJob) Signature() string {
-	return "test_async_job"
+func (receiver *TestErrorRedisJob) Signature() string {
+	return "test_redis_job"
 }
 
 // Handle Execute the job.
-func (receiver *TestCustomAsyncJob) Handle(args ...any) error {
-	testCustomAsyncJob++
+func (receiver *TestErrorRedisJob) Handle(args ...any) error {
+	testErrorRedisJob++
 
 	return nil
 }
 
-type TestErrorAsyncJob struct {
+type TestChainRedisJob struct {
 }
 
 // Signature The name and signature of the job.
-func (receiver *TestErrorAsyncJob) Signature() string {
-	return "test_async_job"
+func (receiver *TestChainRedisJob) Signature() string {
+	return "test_redis_job"
 }
 
 // Handle Execute the job.
-func (receiver *TestErrorAsyncJob) Handle(args ...any) error {
-	testErrorAsyncJob++
-
-	return nil
-}
-
-type TestChainAsyncJob struct {
-}
-
-// Signature The name and signature of the job.
-func (receiver *TestChainAsyncJob) Signature() string {
-	return "test_async_job"
-}
-
-// Handle Execute the job.
-func (receiver *TestChainAsyncJob) Handle(args ...any) error {
-	testChainAsyncJob++
-
-	return nil
-}
-
-type TestChainSyncJob struct {
-}
-
-// Signature The name and signature of the job.
-func (receiver *TestChainSyncJob) Signature() string {
-	return "test_sync_job"
-}
-
-// Handle Execute the job.
-func (receiver *TestChainSyncJob) Handle(args ...any) error {
-	testChainSyncJob++
+func (receiver *TestChainRedisJob) Handle(args ...any) error {
+	testChainRedisJob++
 
 	return nil
 }

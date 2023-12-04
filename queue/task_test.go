@@ -28,14 +28,18 @@ func TestDispatchSync(t *testing.T) {
 		jobs: []queue.Jobs{
 			{
 				Job: &Test{},
-				Args: []queue.Payloads{
+				Payloads: []queue.Payloads{
 					{Type: "uint64", Value: "test"},
 				},
 			},
 		},
 	}
 
-	err := task.DispatchSync()
+	err := Register([]queue.Job{
+		&Test{},
+	})
+
+	err = task.DispatchSync()
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("test.txt"))
 	assert.True(t, testingfile.GetLineNum("test.txt") == 1)

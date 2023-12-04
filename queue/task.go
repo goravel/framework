@@ -17,15 +17,15 @@ type Task struct {
 	queue      string
 }
 
-func NewTask(config *Config, job queue.Job, args []queue.Payloads) *Task {
+func NewTask(config *Config, job queue.Job, payloads []queue.Payloads) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
 		driver:     NewDriver(config.DefaultConnection(), config),
 		jobs: []queue.Jobs{
 			{
-				Job:  job,
-				Args: args,
+				Job:      job,
+				Payloads: payloads,
 			},
 		},
 		queue: config.Queue(config.DefaultConnection(), ""),
@@ -63,7 +63,7 @@ func (receiver *Task) Dispatch() error {
 		return receiver.driver.Bulk(receiver.jobs, receiver.queue)
 	} else {
 		job := receiver.jobs[0]
-		return receiver.driver.Push(job.Job, job.Args, receiver.queue)
+		return receiver.driver.Push(job.Job, job.Payloads, receiver.queue)
 	}
 }
 
@@ -72,7 +72,7 @@ func (receiver *Task) Dispatch() error {
 func (receiver *Task) DispatchSync() error {
 	if receiver.chain {
 		for _, job := range receiver.jobs {
-			if err := Call(job.Job.Signature(), job.Args); err != nil {
+			if err := Call(job.Job.Signature(), job.Payloads); err != nil {
 				return err
 			}
 		}
@@ -81,7 +81,7 @@ func (receiver *Task) DispatchSync() error {
 	} else {
 		job := receiver.jobs[0]
 
-		return Call(job.Job.Signature(), job.Args)
+		return Call(job.Job.Signature(), job.Payloads)
 	}
 }
 
