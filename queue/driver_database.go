@@ -27,25 +27,27 @@ func (r *Database) DriverName() string {
 }
 
 func (r *Database) Push(job contractsqueue.Job, payloads []any, queue string) error {
+	now := carbon.Now()
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
 	j.Payloads = payloads
-	j.AvailableAt = carbon.DateTime{Carbon: carbon.Now()}
-	j.CreatedAt = carbon.DateTime{Carbon: carbon.Now()}
+	j.AvailableAt = carbon.DateTime{Carbon: now}
+	j.CreatedAt = carbon.DateTime{Carbon: now}
 
 	return r.jobs.Create(&j)
 }
 
 func (r *Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
+	now := carbon.Now()
 	var j []Job
 	for _, job := range jobs {
 		var jj Job
 		jj.Queue = queue
 		jj.Job = job.Job.Signature()
 		jj.Payloads = job.Payloads
-		jj.AvailableAt = carbon.DateTime{Carbon: carbon.Now().AddSeconds(int(job.Delay))}
-		jj.CreatedAt = carbon.DateTime{Carbon: carbon.Now()}
+		jj.AvailableAt = carbon.DateTime{Carbon: now.AddSeconds(int(job.Delay))}
+		jj.CreatedAt = carbon.DateTime{Carbon: now}
 		j = append(j, jj)
 	}
 
@@ -53,12 +55,13 @@ func (r *Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 }
 
 func (r *Database) Later(delay uint, job contractsqueue.Job, payloads []any, queue string) error {
+	now := carbon.Now()
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
 	j.Payloads = payloads
-	j.AvailableAt = carbon.DateTime{Carbon: carbon.Now().AddSeconds(int(delay))}
-	j.CreatedAt = carbon.DateTime{Carbon: carbon.Now()}
+	j.AvailableAt = carbon.DateTime{Carbon: now.AddSeconds(int(delay))}
+	j.CreatedAt = carbon.DateTime{Carbon: now}
 
 	return r.jobs.Create(&j)
 }

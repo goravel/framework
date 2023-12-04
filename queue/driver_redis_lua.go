@@ -26,6 +26,8 @@ func (r *RedisLua) Push() *redis.Script {
 redis.call('rpush', KEYS[1], ARGV[1])
 -- Push a notification onto the "notify" queue...
 redis.call('rpush', KEYS[2], 1)
+-- This return does not exist in Laravel, but we must add it to avoid Redis client throw Nil error.
+return true
 `)
 }
 
@@ -78,7 +80,7 @@ return true
 func (r *RedisLua) MigrateExpiredJobs() *redis.Script {
 	return redis.NewScript(`
 -- Get all of the jobs with an expired "score"...
-local val = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1], 'limit', 0, ARGV[2])
+local val = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1], 'limit', 0, -1)
 
 -- If we have values in the array, we will remove them from the first queue
 -- and add them onto the destination queue in chunks of 100, which moves

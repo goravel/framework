@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 
@@ -10,28 +12,26 @@ import (
 	"github.com/goravel/framework/support/json"
 )
 
-type Redis struct {
-	connection   string
-	defaultQueue string
-	retryAfter   uint
-	client       *redis.Client
-	lua          RedisLua
-	ctx          context.Context
+type redisData struct {
+	Signature string `json:"signature"`
+	Args      []any  `json:"args"`
+	Attempts  uint   `json:"attempts"`
 }
 
-type RedisData struct {
-	Signature string
-	Args      []any
-	Delay     uint
+type Redis struct {
+	connection string
+	retryAfter uint
+	client     *redis.Client
+	lua        RedisLua
+	ctx        context.Context
 }
 
 func NewRedis(connection string, client *redis.Client) *Redis {
 	return &Redis{
-		connection:   connection,
-		defaultQueue: "default",
-		retryAfter:   60,
-		client:       client,
-		ctx:          context.Background(),
+		connection: connection,
+		retryAfter: 60,
+		client:     client,
+		ctx:        context.Background(),
 	}
 }
 
@@ -44,8 +44,7 @@ func (r *Redis) DriverName() string {
 }
 
 func (r *Redis) Push(job contractsqueue.Job, payloads []any, queue string) error {
-	queue = r.getQueue(queue)
-	data, err := json.Marshal(&RedisData{
+	data, err := json.MarshalString(&redisData{
 		Signature: job.Signature(),
 		Args:      payloads,
 	})
@@ -57,7 +56,6 @@ func (r *Redis) Push(job contractsqueue.Job, payloads []any, queue string) error
 }
 
 func (r *Redis) Bulk(jobs []contractsqueue.Jobs, queue string) error {
-	queue = r.getQueue(queue)
 	for _, job := range jobs {
 		if job.Delay > 0 {
 			if err := r.Later(job.Delay, job.Job, job.Payloads, queue); err != nil {
@@ -74,26 +72,24 @@ func (r *Redis) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 }
 
 func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []any, queue string) error {
-	data, err := json.Marshal(&RedisData{
+	data, err := json.MarshalString(&redisData{
 		Signature: job.Signature(),
 		Args:      payloads,
-		Delay:     delay,
 	})
 	if err != nil {
 		return err
 	}
 
-	return r.client.ZAdd(r.ctx, r.getQueue(queue)+":delayed", redis.Z{
+	return r.client.ZAdd(r.ctx, queue+":delayed", redis.Z{
 		Score:  float64(carbon.Now().AddSeconds(int(delay)).Timestamp()),
 		Member: data,
 	}).Err()
 }
 
 func (r *Redis) Pop(queue string) (contractsqueue.Job, []any, error) {
-	prefixed := r.getQueue(queue)
-	r.migrate(prefixed)
+	r.migrate(queue)
 
-	job, err := r.retrieveNextJob(prefixed)
+	job, err := r.retrieveNextJob(queue)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -102,7 +98,7 @@ func (r *Redis) Pop(queue string) (contractsqueue.Job, []any, error) {
 }
 
 func (r *Redis) Delete(queue string, job contractsqueue.Jobs) error {
-	payload, err := json.Marshal(&RedisData{
+	payload, err := json.MarshalString(&redisData{
 		Signature: job.Job.Signature(),
 		Args:      job.Payloads,
 	})
@@ -110,11 +106,11 @@ func (r *Redis) Delete(queue string, job contractsqueue.Jobs) error {
 		return err
 	}
 
-	return r.client.ZRem(r.ctx, r.getQueue(queue)+":reserved", payload).Err()
+	return r.client.ZRem(r.ctx, queue+":reserved", payload).Err()
 }
 
 func (r *Redis) Release(queue string, job contractsqueue.Jobs, delay uint) error {
-	payload, err := json.Marshal(&RedisData{
+	payload, err := json.MarshalString(&redisData{
 		Signature: job.Job.Signature(),
 		Args:      job.Payloads,
 	})
@@ -122,21 +118,11 @@ func (r *Redis) Release(queue string, job contractsqueue.Jobs, delay uint) error
 		return err
 	}
 
-	queue = r.getQueue(queue)
 	return r.lua.Release().Run(r.ctx, r.client, []string{queue + ":delayed", queue + ":delayed"}, payload, carbon.Now().AddSeconds(int(delay)).Timestamp()).Err()
 }
 
 func (r *Redis) Clear(queue string) error {
-	queue = r.getQueue(queue)
 	return r.lua.Clear().Run(r.ctx, r.client, []string{queue, queue + ":delayed", queue + ":reserved", queue + ":notify"}).Err()
-}
-
-func (r *Redis) getQueue(queue string) string {
-	if len(queue) == 0 {
-		return "queues:" + r.defaultQueue
-	}
-
-	return "queues:" + queue
 }
 
 func (r *Redis) Size(queue string) (uint64, error) {
@@ -163,14 +149,19 @@ func (r *Redis) retrieveNextJob(queue string, block ...bool) (contractsqueue.Job
 	if err != nil {
 		return contractsqueue.Jobs{}, err
 	}
-
-	var job RedisData
-	if err = json.Unmarshal([]byte(raw.(string)), &job); err != nil {
-		return contractsqueue.Jobs{}, err
+	value, ok := raw.([]any)
+	if !ok {
+		return contractsqueue.Jobs{}, fmt.Errorf("invalid return type: %T", raw)
+	}
+	if len(value) != 2 {
+		return contractsqueue.Jobs{}, fmt.Errorf("invalid return value: %v", raw)
 	}
 
 	// If there is no job, we will block the worker until there is a job.
-	if (len(job.Signature) == 0 || job.Args == nil) && block[0] {
+	if value[0] == nil || len(value[0].(string)) == 0 {
+		if !block[0] {
+			return contractsqueue.Jobs{}, errors.New("no job in queue")
+		}
 		err = r.client.BRPop(r.ctx, 0, queue+":notify").Err()
 		if err != nil {
 			return contractsqueue.Jobs{}, err
@@ -179,9 +170,13 @@ func (r *Redis) retrieveNextJob(queue string, block ...bool) (contractsqueue.Job
 		return r.retrieveNextJob(queue, false)
 	}
 
+	var job redisData
+	if err = json.UnmarshalString(value[0].(string), &job); err != nil {
+		return contractsqueue.Jobs{}, err
+	}
+
 	return contractsqueue.Jobs{
 		Job:      JobRegistry[job.Signature],
 		Payloads: job.Args,
-		Delay:    job.Delay,
 	}, nil
 }
