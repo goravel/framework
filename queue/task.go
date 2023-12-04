@@ -11,13 +11,13 @@ type Task struct {
 	config     *Config
 	connection string
 	chain      bool
-	delay      *carbon.Carbon
+	delay      uint
 	driver     queue.Driver
 	jobs       []queue.Jobs
 	queue      string
 }
 
-func NewTask(config *Config, job queue.Job, payloads []queue.Payloads) *Task {
+func NewTask(config *Config, job queue.Job, payloads []any) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
@@ -46,7 +46,7 @@ func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
 // Delay sets a delay time for the task.
 // Delay 设置任务的延迟时间。
 func (receiver *Task) Delay(delay carbon.Carbon) queue.Task {
-	receiver.delay = &delay
+	receiver.delay = uint(delay.Timestamp() - carbon.Now().Timestamp())
 
 	return receiver
 }
@@ -55,7 +55,7 @@ func (receiver *Task) Delay(delay carbon.Carbon) queue.Task {
 // Dispatch 调度任务。
 func (receiver *Task) Dispatch() error {
 	driver := receiver.config.Driver(receiver.connection)
-	if driver == "" {
+	if len(driver) == 0 {
 		return errors.New("unknown queue driver")
 	}
 
@@ -63,6 +63,9 @@ func (receiver *Task) Dispatch() error {
 		return receiver.driver.Bulk(receiver.jobs, receiver.queue)
 	} else {
 		job := receiver.jobs[0]
+		if receiver.delay != 0 {
+			return receiver.driver.Later(receiver.delay, job.Job, job.Payloads, receiver.queue)
+		}
 		return receiver.driver.Push(job.Job, job.Payloads, receiver.queue)
 	}
 }

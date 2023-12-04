@@ -3,10 +3,10 @@ package queue
 import (
 	"testing"
 
-	mocks "github.com/goravel/framework/mocks/database/orm"
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/mocks/config"
+	ormmock "github.com/goravel/framework/mocks/database/orm"
 )
 
 type ConfigTestSuite struct {
@@ -36,7 +36,7 @@ func (s *ConfigTestSuite) TestQueue() {
 			name: "success when connection and queue are empty",
 			setup: func() {
 				s.mockConfig.On("GetString", "app.name").Return("").Once()
-				s.mockConfig.On("GetString", "queue.default", "async").Return("async").Once()
+				s.mockConfig.On("GetString", "queue.default").Return("async").Once()
 				s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("queue").Once()
 			},
 			expectQueueName: "goravel_queues:queue",
@@ -76,8 +76,8 @@ func (s *ConfigTestSuite) TestRedis() {
 }
 
 func (s *ConfigTestSuite) TestDatabase() {
-	mockOrm := &mocks.Orm{}
-	mockQuery := &mocks.Query{}
+	mockOrm := &ormmock.Orm{}
+	mockQuery := &ormmock.Query{}
 	mockOrm.On("Connection", "database").Return(mockOrm)
 	mockOrm.On("Query").Return(mockQuery)
 	mockQuery.On("Table", "jobs").Return(mockQuery)
@@ -85,7 +85,7 @@ func (s *ConfigTestSuite) TestDatabase() {
 	OrmFacade = mockOrm
 
 	s.mockConfig.On("GetString", "queue.connections.database.connection").Return("database").Once()
-	s.mockConfig.On("GetString", "queue.connections.database.table", "jobs").Return("jobs").Once()
+	s.mockConfig.On("GetString", "queue.connections.database.table").Return("jobs").Once()
 
 	orm := s.config.Database("database")
 
@@ -94,8 +94,8 @@ func (s *ConfigTestSuite) TestDatabase() {
 }
 
 func (s *ConfigTestSuite) TestFailedJobsDatabase() {
-	mockOrm := &mocks.Orm{}
-	mockQuery := &mocks.Query{}
+	mockOrm := &ormmock.Orm{}
+	mockQuery := &ormmock.Query{}
 	mockOrm.On("Connection", "database").Return(mockOrm)
 	mockOrm.On("Query").Return(mockQuery)
 	mockQuery.On("Table", "failed_jobs").Return(mockQuery)

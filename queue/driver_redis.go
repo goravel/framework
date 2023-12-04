@@ -19,6 +19,12 @@ type Redis struct {
 	ctx          context.Context
 }
 
+type RedisData struct {
+	Signature string
+	Args      []any
+	Delay     uint
+}
+
 func NewRedis(connection string, client *redis.Client) *Redis {
 	return &Redis{
 		connection:   connection,
@@ -37,11 +43,11 @@ func (r *Redis) DriverName() string {
 	return DriverRedis
 }
 
-func (r *Redis) Push(job contractsqueue.Job, payloads []contractsqueue.Payloads, queue string) error {
+func (r *Redis) Push(job contractsqueue.Job, payloads []any, queue string) error {
 	queue = r.getQueue(queue)
-	data, err := json.Marshal(contractsqueue.Jobs{
-		Job:      job,
-		Payloads: payloads,
+	data, err := json.Marshal(&RedisData{
+		Signature: job.Signature(),
+		Args:      payloads,
 	})
 	if err != nil {
 		return err
@@ -67,10 +73,11 @@ func (r *Redis) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return nil
 }
 
-func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []contractsqueue.Payloads, queue string) error {
-	data, err := json.Marshal(contractsqueue.Jobs{
-		Job:      job,
-		Payloads: payloads,
+func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []any, queue string) error {
+	data, err := json.Marshal(&RedisData{
+		Signature: job.Signature(),
+		Args:      payloads,
+		Delay:     delay,
 	})
 	if err != nil {
 		return err
@@ -82,7 +89,7 @@ func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []contractsqu
 	}).Err()
 }
 
-func (r *Redis) Pop(queue string) (contractsqueue.Job, []contractsqueue.Payloads, error) {
+func (r *Redis) Pop(queue string) (contractsqueue.Job, []any, error) {
 	prefixed := r.getQueue(queue)
 	r.migrate(prefixed)
 
@@ -94,23 +101,29 @@ func (r *Redis) Pop(queue string) (contractsqueue.Job, []contractsqueue.Payloads
 	return job.Job, job.Payloads, nil
 }
 
-func (r *Redis) Delete(queue string, job contractsqueue.Job) error {
-	data, err := json.Marshal(job)
+func (r *Redis) Delete(queue string, job contractsqueue.Jobs) error {
+	payload, err := json.Marshal(&RedisData{
+		Signature: job.Job.Signature(),
+		Args:      job.Payloads,
+	})
 	if err != nil {
 		return err
 	}
 
-	return r.client.ZRem(r.ctx, r.getQueue(queue)+":reserved", data).Err()
+	return r.client.ZRem(r.ctx, r.getQueue(queue)+":reserved", payload).Err()
 }
 
-func (r *Redis) Release(queue string, job contractsqueue.Job, delay uint) error {
-	data, err := json.Marshal(job)
+func (r *Redis) Release(queue string, job contractsqueue.Jobs, delay uint) error {
+	payload, err := json.Marshal(&RedisData{
+		Signature: job.Job.Signature(),
+		Args:      job.Payloads,
+	})
 	if err != nil {
 		return err
 	}
 
 	queue = r.getQueue(queue)
-	return r.lua.Release().Run(r.ctx, r.client, []string{queue + ":delayed", queue + ":delayed"}, data, carbon.Now().AddSeconds(int(delay)).Timestamp()).Err()
+	return r.lua.Release().Run(r.ctx, r.client, []string{queue + ":delayed", queue + ":delayed"}, payload, carbon.Now().AddSeconds(int(delay)).Timestamp()).Err()
 }
 
 func (r *Redis) Clear(queue string) error {
@@ -138,7 +151,7 @@ func (r *Redis) migrate(queue string) {
 }
 
 func (r *Redis) migrateExpiredJobs(from, to string) {
-	r.lua.MigrateExpiredJobs().Run(r.ctx, r.client, []string{from, to, to + ":notify"}, carbon.Now().Timestamp()).Result()
+	_ = r.lua.MigrateExpiredJobs().Run(r.ctx, r.client, []string{from, to, to + ":notify"}, carbon.Now().Timestamp()).Err()
 }
 
 func (r *Redis) retrieveNextJob(queue string, block ...bool) (contractsqueue.Jobs, error) {
@@ -151,13 +164,13 @@ func (r *Redis) retrieveNextJob(queue string, block ...bool) (contractsqueue.Job
 		return contractsqueue.Jobs{}, err
 	}
 
-	var job contractsqueue.Jobs
-	if err = json.Unmarshal([]byte(raw.([]interface{})[0].(string)), &job); err != nil {
+	var job RedisData
+	if err = json.Unmarshal([]byte(raw.(string)), &job); err != nil {
 		return contractsqueue.Jobs{}, err
 	}
 
 	// If there is no job, we will block the worker until there is a job.
-	if job.Job == nil && job.Payloads == nil && block[0] {
+	if (len(job.Signature) == 0 || job.Args == nil) && block[0] {
 		err = r.client.BRPop(r.ctx, 0, queue+":notify").Err()
 		if err != nil {
 			return contractsqueue.Jobs{}, err
@@ -166,5 +179,9 @@ func (r *Redis) retrieveNextJob(queue string, block ...bool) (contractsqueue.Job
 		return r.retrieveNextJob(queue, false)
 	}
 
-	return job, nil
+	return contractsqueue.Jobs{
+		Job:      JobRegistry[job.Signature],
+		Payloads: job.Args,
+		Delay:    job.Delay,
+	}, nil
 }

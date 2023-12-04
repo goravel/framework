@@ -69,11 +69,11 @@ func (_m *Driver) Delete(_a0 string, job queue.Job) error {
 }
 
 // Later provides a mock function with given fields: delay, job, args, _a3
-func (_m *Driver) Later(delay int, job queue.Job, args []queue.Payloads, _a3 string) error {
+func (_m *Driver) Later(delay int, job queue.Job, args []any, _a3 string) error {
 	ret := _m.Called(delay, job, args, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, queue.Job, []queue.Payloads, string) error); ok {
+	if rf, ok := ret.Get(0).(func(int, queue.Job, []any, string) error); ok {
 		r0 = rf(delay, job, args, _a3)
 	} else {
 		r0 = ret.Error(0)
@@ -83,13 +83,13 @@ func (_m *Driver) Later(delay int, job queue.Job, args []queue.Payloads, _a3 str
 }
 
 // Pop provides a mock function with given fields: _a0
-func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Payloads, error) {
+func (_m *Driver) Pop(_a0 string) (queue.Job, []any, error) {
 	ret := _m.Called(_a0)
 
 	var r0 queue.Job
-	var r1 []queue.Payloads
+	var r1 []any
 	var r2 error
-	if rf, ok := ret.Get(0).(func(string) (queue.Job, []queue.Payloads, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (queue.Job, []any, error)); ok {
 		return rf(_a0)
 	}
 	if rf, ok := ret.Get(0).(func(string) queue.Job); ok {
@@ -100,11 +100,11 @@ func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Payloads, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) []queue.Payloads); ok {
+	if rf, ok := ret.Get(1).(func(string) []any); ok {
 		r1 = rf(_a0)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]queue.Payloads)
+			r1 = ret.Get(1).([]any)
 		}
 	}
 
@@ -118,11 +118,11 @@ func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Payloads, error) {
 }
 
 // Push provides a mock function with given fields: job, args, _a2
-func (_m *Driver) Push(job queue.Job, args []queue.Payloads, _a2 string) error {
+func (_m *Driver) Push(job queue.Job, args []any, _a2 string) error {
 	ret := _m.Called(job, args, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job, []queue.Payloads, string) error); ok {
+	if rf, ok := ret.Get(0).(func(queue.Job, []any, string) error); ok {
 		r0 = rf(job, args, _a2)
 	} else {
 		r0 = ret.Error(0)

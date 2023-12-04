@@ -27,6 +27,9 @@ func (app *Application) Worker(args *queue.Args) queue.Worker {
 	if args.Connection == "" {
 		args.Connection = defaultConnection
 	}
+	if args.Concurrent == 0 {
+		args.Concurrent = 1
+	}
 
 	return NewWorker(app.config, args.Concurrent, args.Connection, app.config.Queue(args.Connection, args.Queue))
 }
@@ -48,7 +51,7 @@ func (app *Application) GetJobs() []queue.Job {
 	return jobs
 }
 
-func (app *Application) Job(job queue.Job, args []queue.Payloads) queue.Task {
+func (app *Application) Job(job queue.Job, args []any) queue.Task {
 	return NewTask(app.config, job, args)
 }
 

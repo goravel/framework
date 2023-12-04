@@ -9,6 +9,6 @@ type Job interface {
 
 type Jobs struct {
 	Job      Job
-	Payloads []Payloads
+	Payloads []any
 	Delay    uint
 }

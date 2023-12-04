@@ -20,7 +20,7 @@ func NewConfig(config configcontract.Config) *Config {
 }
 
 func (r *Config) DefaultConnection() string {
-	return r.config.GetString("queue.default", "async")
+	return r.config.GetString("queue.default")
 }
 
 func (r *Config) Queue(connection, queue string) string {
@@ -62,7 +62,7 @@ func (r *Config) Redis(queueConnection string) *redis.Client {
 
 func (r *Config) Database(queueConnection string) orm.Query {
 	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.table", queueConnection), "jobs")
+	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.table", queueConnection))
 	return OrmFacade.Connection(connection).Query().Table(table)
 }
 

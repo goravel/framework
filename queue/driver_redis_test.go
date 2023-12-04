@@ -54,16 +54,13 @@ func (s *DriverRedisTestSuite) SetupTest() {
 }
 
 func (s *DriverRedisTestSuite) TestSyncQueue() {
-	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Once()
-	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestSyncQueue"},
-		{Type: "int", Value: 1},
-	}).DispatchSync())
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Once()
+	s.Nil(s.app.Job(&TestSyncJob{}, []any{"TestSyncQueue", 1}).DispatchSync())
 	s.Equal(1, testSyncJob)
 }
 
 func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Twice()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -87,10 +84,7 @@ func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestRedisJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestDefaultRedisQueue"},
-		{Type: "int", Value: 1},
-	}).Dispatch())
+	s.Nil(s.app.Job(&TestRedisJob{}, []any{"TestDefaultRedisQueue", 1}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testRedisJob)
 
@@ -99,7 +93,7 @@ func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Times(2)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -125,10 +119,7 @@ func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestDelayRedisJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestDelayRedisQueue"},
-		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
+	s.Nil(s.app.Job(&TestDelayRedisJob{}, []any{"TestDelayRedisQueue", 1}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayRedisJob)
 	time.Sleep(3 * time.Second)
@@ -139,7 +130,7 @@ func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Twice()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
@@ -167,10 +158,7 @@ func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestCustomRedisJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestCustomRedisQueue"},
-		{Type: "int", Value: 1},
-	}).OnConnection("custom").OnQueue("custom1").Dispatch())
+	s.Nil(s.app.Job(&TestCustomRedisJob{}, []any{"TestCustomRedisQueue", 1}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomRedisJob)
 
@@ -179,7 +167,7 @@ func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Twice()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -205,10 +193,7 @@ func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestErrorRedisJob{}, []queue.Payloads{
-		{Type: "string", Value: "TestErrorRedisQueue"},
-		{Type: "int", Value: 1},
-	}).OnConnection("redis").OnQueue("error1").Dispatch())
+	s.Nil(s.app.Job(&TestErrorRedisJob{}, []any{"TestErrorRedisQueue", 1}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorRedisJob)
 
@@ -217,7 +202,7 @@ func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestChainRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default", "async").Return("redis").Times(2)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
@@ -246,18 +231,12 @@ func (s *DriverRedisTestSuite) TestChainRedisQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job: &TestChainRedisJob{},
-			Payloads: []queue.Payloads{
-				{Type: "string", Value: "TestChainRedisQueue"},
-				{Type: "int", Value: 1},
-			},
+			Job:      &TestChainRedisJob{},
+			Payloads: []any{"TestChainRedisQueue", 1},
 		},
 		{
-			Job: &TestChainSyncJob{},
-			Payloads: []queue.Payloads{
-				{Type: "string", Value: "TestChainSyncQueue"},
-				{Type: "int", Value: 1},
-			},
+			Job:      &TestRedisJob{},
+			Payloads: []any{"TestRedisJob", 1},
 		},
 	}).OnQueue("chain").Dispatch())
 
