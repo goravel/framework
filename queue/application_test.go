@@ -57,7 +57,7 @@ func (s *QueueTestSuite) SetupTest() {
 
 func (s *QueueTestSuite) TestSyncQueue() {
 	s.mockConfig.On("GetString", "queue.default").Return("redis").Once()
-	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
+	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Payloads{
 		{Type: "string", Value: "TestSyncQueue"},
 		{Type: "int", Value: 1},
 	}).DispatchSync())
@@ -89,7 +89,7 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Arg{
+	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Payloads{
 		{Type: "string", Value: "TestDefaultAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).Dispatch())
@@ -127,7 +127,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
+	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Payloads{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
@@ -169,7 +169,7 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Arg{
+	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Payloads{
 		{Type: "string", Value: "TestCustomAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).OnConnection("custom").OnQueue("custom1").Dispatch())
@@ -207,7 +207,7 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestErrorAsyncJob{}, []queue.Arg{
+	s.Nil(s.app.Job(&TestErrorAsyncJob{}, []queue.Payloads{
 		{Type: "string", Value: "TestErrorAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).OnConnection("redis").OnQueue("error1").Dispatch())
@@ -249,14 +249,14 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
 			Job: &TestChainAsyncJob{},
-			Args: []queue.Arg{
+			Args: []queue.Payloads{
 				{Type: "string", Value: "TestChainAsyncQueue"},
 				{Type: "int", Value: 1},
 			},
 		},
 		{
 			Job: &TestChainSyncJob{},
-			Args: []queue.Arg{
+			Args: []queue.Payloads{
 				{Type: "string", Value: "TestChainSyncQueue"},
 				{Type: "int", Value: 1},
 			},

@@ -9,7 +9,7 @@ func (receiver MysqlStubs) Jobs() string {
     id             BIGINT AUTO_INCREMENT PRIMARY KEY,
     queue          VARCHAR(255) NOT NULL,
     job            VARCHAR(255) NOT NULL,
-    arg            JSON         NOT NULL,
+    payload        JSON         NOT NULL,
     attempts       BIGINT       NOT NULL DEFAULT 0,
     max_tries      BIGINT                DEFAULT NULL,
     max_exceptions BIGINT                DEFAULT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE failed_jobs
     id         BIGINT AUTO_INCREMENT PRIMARY KEY,
     queue      VARCHAR(255) NOT NULL,
     job        VARCHAR(255) NOT NULL,
-    arg        JSON         NOT NULL,
+    payload    JSON         NOT NULL,
     exception  TEXT         NOT NULL,
     failed_at  TIMESTAMP    NOT NULL
 );
@@ -45,7 +45,7 @@ func (receiver PostgresqlStubs) Jobs() string {
     id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     queue          TEXT      NOT NULL,
     job            TEXT      NOT NULL,
-    arg            JSONB     NOT NULL,
+    payload        JSONB     NOT NULL,
     attempts       BIGINT    NOT NULL DEFAULT 0,
     max_tries      BIGINT             DEFAULT NULL,
     max_exceptions BIGINT             DEFAULT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE failed_jobs
     id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     queue     TEXT      NOT NULL,
     job       TEXT      NOT NULL,
-    arg       JSONB     NOT NULL,
+    payload   JSONB     NOT NULL,
     exception TEXT      NOT NULL,
     failed_at TIMESTAMP NOT NULL
 );
@@ -81,7 +81,7 @@ func (receiver SqliteStubs) Jobs() string {
     id             BIGINT AUTO_INCREMENT PRIMARY KEY,
     queue          TEXT      NOT NULL,
     job            TEXT      NOT NULL,
-    arg            JSON      NOT NULL,
+    payload        JSON      NOT NULL,
     attempts       BIGINT    NOT NULL DEFAULT 0,
     max_tries      BIGINT             DEFAULT NULL,
     max_exceptions BIGINT             DEFAULT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE failed_jobs
     id        BIGINT AUTO_INCREMENT PRIMARY KEY,
     queue     TEXT      NOT NULL,
     job       TEXT      NOT NULL,
-    arg       JSON      NOT NULL,
+    payload   JSON      NOT NULL,
     exception TEXT      NOT NULL,
     failed_at TIMESTAMP NOT NULL
 );
@@ -117,7 +117,7 @@ func (receiver SqlserverStubs) Jobs() string {
     id             BIGINT IDENTITY (1,1) PRIMARY KEY,
     queue          VARCHAR(MAX) NOT NULL,
     job            VARCHAR(MAX) NOT NULL,
-    arg            VARCHAR(MAX) NOT NULL,
+    payload        VARCHAR(MAX) NOT NULL,
     attempts       BIGINT       NOT NULL DEFAULT 0,
     max_tries      BIGINT                DEFAULT NULL,
     max_exceptions BIGINT                DEFAULT NULL,
@@ -134,7 +134,7 @@ CREATE TABLE failed_jobs
     id        BIGINT IDENTITY (1,1) PRIMARY KEY,
     queue     VARCHAR(MAX) NOT NULL,
     job       VARCHAR(MAX) NOT NULL,
-    arg       VARCHAR(MAX) NOT NULL,
+    payload   VARCHAR(MAX) NOT NULL,
     exception VARCHAR(MAX) NOT NULL,
     failed_at TIMESTAMP    NOT NULL
 );

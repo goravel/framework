@@ -28,7 +28,7 @@ func TestDispatchSync(t *testing.T) {
 		jobs: []queue.Jobs{
 			{
 				Job: &Test{},
-				Args: []queue.Arg{
+				Args: []queue.Payloads{
 					{Type: "uint64", Value: "test"},
 				},
 			},

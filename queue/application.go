@@ -48,7 +48,7 @@ func (app *Application) GetJobs() []queue.Job {
 	return jobs
 }
 
-func (app *Application) Job(job queue.Job, args []queue.Arg) queue.Task {
+func (app *Application) Job(job queue.Job, args []queue.Payloads) queue.Task {
 	return NewTask(app.config, job, args)
 }
 

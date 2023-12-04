@@ -22,7 +22,7 @@ func (receiver *Sync) ConnectionName() string {
 	return receiver.connection
 }
 
-func (receiver *Sync) Push(job queue.Job, args []queue.Arg, queue string) error {
+func (receiver *Sync) Push(job queue.Job, args []queue.Payloads, queue string) error {
 	receiver.size++
 	err := Call(job.Signature(), args)
 	receiver.size--
@@ -45,7 +45,7 @@ func (receiver *Sync) Bulk(jobs []queue.Jobs, queue string) error {
 	return nil
 }
 
-func (receiver *Sync) Later(delay int, job queue.Job, args []queue.Arg, queue string) error {
+func (receiver *Sync) Later(delay int, job queue.Job, args []queue.Payloads, queue string) error {
 	receiver.size++
 	time.Sleep(time.Duration(delay) * time.Second)
 	err := Call(job.Signature(), args)
@@ -54,7 +54,7 @@ func (receiver *Sync) Later(delay int, job queue.Job, args []queue.Arg, queue st
 	return err
 }
 
-func (receiver *Sync) Pop(queue string) (queue.Job, []queue.Arg, error) {
+func (receiver *Sync) Pop(queue string) (queue.Job, []queue.Payloads, error) {
 	// Sync driver does not need to pop job.
 	return nil, nil, nil
 }

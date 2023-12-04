@@ -1,13 +1,13 @@
 package queue
 
 type Queue interface {
-	Worker(args *Args) Worker
+	Worker(payloads *Args) Worker
 	// Register register jobs
 	Register(jobs []Job) error
 	// GetJobs get all jobs
 	GetJobs() []Job
 	// Job add a job to queue
-	Job(job Job, args []Arg) Task
+	Job(job Job, payloads []Payloads) Task
 	// Chain creates a chain of jobs to be processed one by one, passing
 	Chain(jobs []Jobs) Task
 }
@@ -25,7 +25,7 @@ type Args struct {
 	Concurrent int
 }
 
-type Arg struct {
+type Payloads struct {
 	Type  string `json:"type"`
 	Value any    `json:"value"`
 }

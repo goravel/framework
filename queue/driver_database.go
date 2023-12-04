@@ -26,7 +26,7 @@ func (receiver Database) ConnectionName() string {
 	return receiver.connection
 }
 
-func (receiver Database) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (receiver Database) Push(job contractsqueue.Job, args []contractsqueue.Payloads, queue string) error {
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
@@ -52,7 +52,7 @@ func (receiver Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return receiver.jobs.Create(&j)
 }
 
-func (receiver Database) Later(delay int, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (receiver Database) Later(delay int, job contractsqueue.Job, args []contractsqueue.Payloads, queue string) error {
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
@@ -63,7 +63,7 @@ func (receiver Database) Later(delay int, job contractsqueue.Job, args []contrac
 	return receiver.jobs.Create(&j)
 }
 
-func (receiver Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Arg, error) {
+func (receiver Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Payloads, error) {
 	var job Job
 	err := receiver.jobs.Where("queue", q).Where("reserved_at", nil).First(&job)
 

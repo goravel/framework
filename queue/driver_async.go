@@ -33,7 +33,7 @@ func (receiver *ASync) ConnectionName() string {
 	return receiver.connection
 }
 
-func (receiver *ASync) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (receiver *ASync) Push(job contractsqueue.Job, args []contractsqueue.Payloads, queue string) error {
 	receiver.mu.Lock()
 	defer receiver.mu.Unlock()
 
@@ -53,7 +53,7 @@ func (receiver *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return nil
 }
 
-func (receiver *ASync) Later(delay int, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (receiver *ASync) Later(delay int, job contractsqueue.Job, args []contractsqueue.Payloads, queue string) error {
 	receiver.mu.Lock()
 	defer receiver.mu.Unlock()
 
@@ -63,7 +63,7 @@ func (receiver *ASync) Later(delay int, job contractsqueue.Job, args []contracts
 	return nil
 }
 
-func (receiver *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, error) {
+func (receiver *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Payloads, error) {
 	receiver.mu.Lock()
 	defer receiver.mu.Unlock()
 
