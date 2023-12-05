@@ -139,15 +139,17 @@ func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
-	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockConfig.On("GetString", "queue.default").Return("custom").Times(7)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Once()
+	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Times(3)
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Times(3)
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(3)
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(3)
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(3)
+	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -172,15 +174,17 @@ func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
-	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(7)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Times(3)
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Times(3)
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(3)
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(3)
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(3)
+	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -203,15 +207,17 @@ func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
 }
 
 func (s *DriverRedisTestSuite) TestChainRedisQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(6)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
-	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
-	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
-	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Times(2)
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Times(2)
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(2)
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(2)
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(2)
+	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -239,7 +245,7 @@ func (s *DriverRedisTestSuite) TestChainRedisQueue() {
 
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainRedisJob)
-	s.Equal(1, testChainSyncJob)
+	s.Equal(1, testRedisJob)
 
 	s.mockConfig.AssertExpectations(s.T())
 }

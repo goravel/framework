@@ -41,6 +41,20 @@ func Call(signature string, args []any) error {
 	return job.Handle(args...)
 }
 
+// Get gets a registered job using its signature.
+// Get 使用其签名获取已注册的作业。
+func Get(signature string) (contractsqueue.Job, error) {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	job, exists := JobRegistry[signature]
+	if !exists {
+		return nil, errors.New("job not found")
+	}
+
+	return job, nil
+}
+
 type Job struct {
 	ID            uint64           `gorm:"primaryKey" json:"id"`                        // The unique ID of the job.
 	Queue         string           `gorm:"not null" json:"queue"`                       // The name of the queue the job belongs to.

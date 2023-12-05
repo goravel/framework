@@ -50,7 +50,8 @@ func (r *Worker) Run() error {
 				default:
 					job, args, err := r.driver.Pop(r.queue)
 					if err != nil {
-						// TODO how to handle error?
+						// This error not need to be reported.
+						// It is usually caused by the queue being empty.
 						continue
 					}
 					err = Call(job.Signature(), args)
