@@ -4,11 +4,11 @@ type Job interface {
 	// Signature set the unique signature of the job.
 	Signature() string
 	// Handle executes the job.
-	Handle(payloads ...any) error
+	Handle(args ...any) error
 }
 
 type Jobs struct {
-	Job      Job
-	Payloads []any
-	Delay    uint
+	Job   Job
+	Args  []Arg
+	Delay uint
 }

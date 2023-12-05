@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,7 +34,7 @@ func (s *DriverSyncTestSuite) SetupTest() {
 	s.mockQueue = &queuemock.Queue{}
 	s.app = NewApplication(s.mockConfig)
 
-	JobRegistry = make(map[string]queue.Job)
+	JobRegistry = new(sync.Map)
 	testSyncJob = 0
 	testChainSyncJob = 0
 
@@ -45,7 +47,10 @@ func (s *DriverSyncTestSuite) TestSyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Once()
 
-	s.Nil(s.app.Job(&TestSyncJob{}, []any{"TestSyncQueue", 1}).DispatchSync())
+	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
+		{Type: "string", Value: "TestSyncQueue"},
+		{Type: "int", Value: json.Number("1")},
+	}).DispatchSync())
 	s.Equal(1, testSyncJob)
 
 	s.mockConfig.AssertExpectations(s.T())
@@ -59,12 +64,18 @@ func (s *DriverSyncTestSuite) TestChainSyncQueue() {
 
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job:      &TestChainSyncJob{},
-			Payloads: []any{"TestChainSyncQueue", 1},
+			Job: &TestChainSyncJob{},
+			Args: []queue.Arg{
+				{Type: "string", Value: "TestChainSyncJob"},
+				{Type: "int", Value: json.Number("1")},
+			},
 		},
 		{
-			Job:      &TestSyncJob{},
-			Payloads: []any{"TestSyncQueue", 1},
+			Job: &TestSyncJob{},
+			Args: []queue.Arg{
+				{Type: "string", Value: "TestSyncJob"},
+				{Type: "int", Value: json.Number("1")},
+			},
 		},
 	}).OnQueue("chain").Dispatch())
 

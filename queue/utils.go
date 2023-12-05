@@ -3,9 +3,11 @@ package queue
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/convert"
 )
 
 func jobs2Tasks(jobs []queue.Job) (map[string]any, error) {
@@ -44,4 +46,18 @@ func eventsToTasks(events map[event.Event][]event.Listener) (map[string]any, err
 	}
 
 	return tasks, nil
+}
+
+func ArgsToValues(args []queue.Arg) ([]reflect.Value, error) {
+	values := make([]reflect.Value, len(args))
+
+	for i, arg := range args {
+		v, err := convert.ReflectValue(arg.Type, arg.Value)
+		if err != nil {
+			return nil, err
+		}
+		values[i] = v
+	}
+
+	return values, nil
 }

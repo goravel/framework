@@ -1,12 +1,14 @@
 package queue
 
 import (
+	"sync"
+
 	configcontract "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/queue"
 )
 
 // JobRegistry is a map to store all registered jobs.
-var JobRegistry = make(map[string]queue.Job)
+var JobRegistry = new(sync.Map)
 
 type Application struct {
 	config *Config
@@ -44,14 +46,15 @@ func (app *Application) Register(jobs []queue.Job) error {
 
 func (app *Application) GetJobs() []queue.Job {
 	var jobs []queue.Job
-	for _, job := range JobRegistry {
-		jobs = append(jobs, job)
-	}
+	JobRegistry.Range(func(key, value any) bool {
+		jobs = append(jobs, value.(queue.Job))
+		return true
+	})
 
 	return jobs
 }
 
-func (app *Application) Job(job queue.Job, args []any) queue.Task {
+func (app *Application) Job(job queue.Job, args []queue.Arg) queue.Task {
 	return NewTask(app.config, job, args)
 }
 

@@ -28,7 +28,7 @@ func (r *Sync) DriverName() string {
 	return DriverSync
 }
 
-func (r *Sync) Push(job queue.Job, args []any, queue string) error {
+func (r *Sync) Push(job queue.Job, args []queue.Arg, queue string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (r *Sync) Bulk(jobs []queue.Jobs, queue string) error {
 		if job.Delay != 0 {
 			time.Sleep(time.Duration(job.Delay) * time.Second)
 		}
-		err := Call(job.Job.Signature(), job.Payloads)
+		err := Call(job.Job.Signature(), job.Args)
 		if err != nil {
 			r.size -= uint(len(jobs))
 			return err
@@ -59,7 +59,7 @@ func (r *Sync) Bulk(jobs []queue.Jobs, queue string) error {
 	return nil
 }
 
-func (r *Sync) Later(delay uint, job queue.Job, args []any, queue string) error {
+func (r *Sync) Later(delay uint, job queue.Job, args []queue.Arg, queue string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -71,7 +71,7 @@ func (r *Sync) Later(delay uint, job queue.Job, args []any, queue string) error 
 	return err
 }
 
-func (r *Sync) Pop(queue string) (queue.Job, []any, error) {
+func (r *Sync) Pop(queue string) (queue.Job, []queue.Arg, error) {
 	return nil, nil, nil
 }
 

@@ -2,6 +2,8 @@ package queue
 
 import (
 	"context"
+	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -53,7 +55,7 @@ func (s *DriverRedisTestSuite) SetupTest() {
 	s.mockQueue = &queuemock.Queue{}
 	s.app = NewApplication(s.mockConfig)
 
-	JobRegistry = make(map[string]queue.Job)
+	JobRegistry = new(sync.Map)
 	testRedisJob = 0
 	testDelayRedisJob = 0
 	testCustomRedisJob = 0
@@ -94,7 +96,10 @@ func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestRedisJob{}, []any{"TestDefaultRedisQueue", 1}).Dispatch())
+	s.Nil(s.app.Job(&TestRedisJob{}, []queue.Arg{
+		{Type: "string", Value: "TestDefaultRedisQueue"},
+		{Type: "int", Value: json.Number("1")},
+	}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testRedisJob)
 
@@ -127,7 +132,10 @@ func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestDelayRedisJob{}, []any{"TestDelayRedisQueue", 1}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
+	s.Nil(s.app.Job(&TestDelayRedisJob{}, []queue.Arg{
+		{Type: "string", Value: "TestDelayRedisQueue"},
+		{Type: "int", Value: json.Number("1")},
+	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayRedisJob)
 	time.Sleep(3 * time.Second)
@@ -164,7 +172,10 @@ func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestCustomRedisJob{}, []any{"TestCustomRedisQueue", 1}).OnConnection("custom").OnQueue("custom1").Dispatch())
+	s.Nil(s.app.Job(&TestCustomRedisJob{}, []queue.Arg{
+		{Type: "string", Value: "TestCustomRedisQueue"},
+		{Type: "int", Value: json.Number("1")},
+	}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomRedisJob)
 
@@ -197,7 +208,10 @@ func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
 		}
 	}(ctx)
 	time.Sleep(2 * time.Second)
-	s.Nil(s.app.Job(&TestErrorRedisJob{}, []any{"TestErrorRedisQueue", 1}).OnConnection("redis").OnQueue("error1").Dispatch())
+	s.Nil(s.app.Job(&TestErrorRedisJob{}, []queue.Arg{
+		{Type: "string", Value: "TestErrorRedisQueue"},
+		{Type: "int", Value: json.Number("1")},
+	}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorRedisJob)
 
@@ -233,12 +247,18 @@ func (s *DriverRedisTestSuite) TestChainRedisQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job:      &TestChainRedisJob{},
-			Payloads: []any{"TestChainRedisQueue", 1},
+			Job: &TestChainRedisJob{},
+			Args: []queue.Arg{
+				{Type: "string", Value: "TestChainRedisJob"},
+				{Type: "int", Value: json.Number("1")},
+			},
 		},
 		{
-			Job:      &TestRedisJob{},
-			Payloads: []any{"TestRedisJob", 1},
+			Job: &TestRedisJob{},
+			Args: []queue.Arg{
+				{Type: "string", Value: "TestRedisJob"},
+				{Type: "int", Value: json.Number("1")},
+			},
 		},
 	}).OnQueue("chain").Dispatch())
 

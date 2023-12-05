@@ -35,12 +35,12 @@ func (r *ASync) DriverName() string {
 	return DriverASync
 }
 
-func (r *ASync) Push(job contractsqueue.Job, payloads []any, queue string) error {
+func (r *ASync) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.size++
-	asyncJobs[queue] = append(asyncJobs[queue], contractsqueue.Jobs{Job: job, Payloads: payloads})
+	asyncJobs[queue] = append(asyncJobs[queue], contractsqueue.Jobs{Job: job, Args: args})
 
 	return nil
 }
@@ -55,19 +55,19 @@ func (r *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return nil
 }
 
-func (r *ASync) Later(delay uint, job contractsqueue.Job, payloads []any, queue string) error {
+func (r *ASync) Later(delay uint, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
 	time.AfterFunc(time.Duration(delay)*time.Second, func() {
 		r.mu.Lock()
 		defer r.mu.Unlock()
 
 		r.size++
-		asyncJobs[queue] = append(asyncJobs[queue], contractsqueue.Jobs{Job: job, Payloads: payloads})
+		asyncJobs[queue] = append(asyncJobs[queue], contractsqueue.Jobs{Job: job, Args: args})
 	})
 
 	return nil
 }
 
-func (r *ASync) Pop(queue string) (contractsqueue.Job, []any, error) {
+func (r *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -89,7 +89,7 @@ func (r *ASync) Pop(queue string) (contractsqueue.Job, []any, error) {
 		asyncJobs[queue] = asyncJobs[queue][1:]
 	}
 
-	return job.Job, job.Payloads, nil
+	return job.Job, job.Args, nil
 }
 
 func (r *ASync) Delete(queue string, job contractsqueue.Jobs) error {
@@ -101,7 +101,7 @@ func (r *ASync) Delete(queue string, job contractsqueue.Jobs) error {
 	}
 
 	for i, j := range asyncJobs[queue] {
-		if j.Job.Signature() == job.Job.Signature() && slices.Equal(j.Payloads, job.Payloads) {
+		if j.Job.Signature() == job.Job.Signature() && slices.Equal(j.Args, job.Args) {
 			asyncJobs[queue] = append(asyncJobs[queue][:i], asyncJobs[queue][i+1:]...)
 			r.size--
 			return nil

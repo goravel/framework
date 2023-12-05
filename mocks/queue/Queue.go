@@ -44,13 +44,13 @@ func (_m *Queue) GetJobs() []queue.Job {
 	return r0
 }
 
-// Job provides a mock function with given fields: job, payloads
-func (_m *Queue) Job(job queue.Job, payloads []interface{}) queue.Task {
-	ret := _m.Called(job, payloads)
+// Job provides a mock function with given fields: job, args
+func (_m *Queue) Job(job queue.Job, args []queue.Arg) queue.Task {
+	ret := _m.Called(job, args)
 
 	var r0 queue.Task
-	if rf, ok := ret.Get(0).(func(queue.Job, []interface{}) queue.Task); ok {
-		r0 = rf(job, payloads)
+	if rf, ok := ret.Get(0).(func(queue.Job, []queue.Arg) queue.Task); ok {
+		r0 = rf(job, args)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(queue.Task)

@@ -9,15 +9,15 @@ type Job struct {
 	mock.Mock
 }
 
-// Handle provides a mock function with given fields: payloads
-func (_m *Job) Handle(payloads ...interface{}) error {
+// Handle provides a mock function with given fields: args
+func (_m *Job) Handle(args ...interface{}) error {
 	var _ca []interface{}
-	_ca = append(_ca, payloads...)
+	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
-		r0 = rf(payloads...)
+		r0 = rf(args...)
 	} else {
 		r0 = ret.Error(0)
 	}

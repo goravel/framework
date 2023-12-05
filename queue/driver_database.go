@@ -26,12 +26,12 @@ func (r *Database) DriverName() string {
 	return DriverDatabase
 }
 
-func (r *Database) Push(job contractsqueue.Job, payloads []any, queue string) error {
+func (r *Database) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
 	now := carbon.Now()
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
-	j.Payloads = payloads
+	j.Payloads = args
 	j.AvailableAt = carbon.DateTime{Carbon: now}
 	j.CreatedAt = carbon.DateTime{Carbon: now}
 
@@ -45,7 +45,7 @@ func (r *Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 		var jj Job
 		jj.Queue = queue
 		jj.Job = job.Job.Signature()
-		jj.Payloads = job.Payloads
+		jj.Payloads = job.Args
 		jj.AvailableAt = carbon.DateTime{Carbon: now.AddSeconds(int(job.Delay))}
 		jj.CreatedAt = carbon.DateTime{Carbon: now}
 		j = append(j, jj)
@@ -54,19 +54,19 @@ func (r *Database) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return r.jobs.Create(&j)
 }
 
-func (r *Database) Later(delay uint, job contractsqueue.Job, payloads []any, queue string) error {
+func (r *Database) Later(delay uint, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
 	now := carbon.Now()
 	var j Job
 	j.Queue = queue
 	j.Job = job.Signature()
-	j.Payloads = payloads
+	j.Payloads = args
 	j.AvailableAt = carbon.DateTime{Carbon: now.AddSeconds(int(delay))}
 	j.CreatedAt = carbon.DateTime{Carbon: now}
 
 	return r.jobs.Create(&j)
 }
 
-func (r *Database) Pop(q string) (contractsqueue.Job, []any, error) {
+func (r *Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Arg, error) {
 	var job Job
 	err := r.jobs.Where("queue", q).Where("reserved_at", nil).Where("available_at", "<=", carbon.DateTime{Carbon: carbon.Now()}).Order("id asc").First(&job)
 
@@ -75,7 +75,7 @@ func (r *Database) Pop(q string) (contractsqueue.Job, []any, error) {
 
 func (r *Database) Delete(queue string, job contractsqueue.Jobs) error {
 	var j Job
-	err := r.jobs.Where("queue", queue).Where("job", job.Job.Signature()).Where("payloads", job.Payloads).Order("id desc").FirstOrFail(&j)
+	err := r.jobs.Where("queue", queue).Where("job", job.Job.Signature()).Where("payloads", job.Args).Order("id desc").FirstOrFail(&j)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (r *Database) Delete(queue string, job contractsqueue.Jobs) error {
 
 func (r *Database) Release(queue string, job contractsqueue.Jobs, delay uint) error {
 	var j Job
-	err := r.jobs.Where("queue", queue).Where("job", job.Job.Signature()).Where("payloads", job.Payloads).Order("id desc").FirstOrFail(&j)
+	err := r.jobs.Where("queue", queue).Where("job", job.Job.Signature()).Where("payloads", job.Args).Order("id desc").FirstOrFail(&j)
 	if err != nil {
 		return err
 	}

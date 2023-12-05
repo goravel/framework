@@ -27,8 +27,10 @@ func TestDispatchSync(t *testing.T) {
 	task := &Task{
 		jobs: []queue.Jobs{
 			{
-				Job:      &Test{},
-				Payloads: []any{"test"},
+				Job: &Test{},
+				Args: []queue.Arg{
+					{Type: "string", Value: "test"},
+				},
 			},
 		},
 	}

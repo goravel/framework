@@ -7,7 +7,7 @@ type Queue interface {
 	// GetJobs get all jobs
 	GetJobs() []Job
 	// Job add a job to queue
-	Job(job Job, payloads []any) Task
+	Job(job Job, args []Arg) Task
 	// Chain creates a chain of jobs to be processed one by one, passing
 	Chain(jobs []Jobs) Task
 }
@@ -23,4 +23,9 @@ type Args struct {
 	Queue string
 	// Concurrent num
 	Concurrent int
+}
+
+type Arg struct {
+	Type  string `json:"type"`
+	Value any    `json:"value"`
 }

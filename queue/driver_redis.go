@@ -12,9 +12,9 @@ import (
 )
 
 type redisData struct {
-	Signature string `json:"signature"`
-	Args      []any  `json:"args"`
-	Attempts  uint   `json:"attempts"`
+	Signature string               `json:"signature"`
+	Args      []contractsqueue.Arg `json:"args"`
+	Attempts  uint                 `json:"attempts"`
 }
 
 type Redis struct {
@@ -41,8 +41,8 @@ func (r *Redis) DriverName() string {
 	return DriverRedis
 }
 
-func (r *Redis) Push(job contractsqueue.Job, payloads []any, queue string) error {
-	payload, err := r.jobToJSON(job.Signature(), payloads)
+func (r *Redis) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+	payload, err := r.jobToJSON(job.Signature(), args)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (r *Redis) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	pipe := r.client.Pipeline()
 
 	for _, job := range jobs {
-		payload, err := r.jobToJSON(job.Job.Signature(), job.Payloads)
+		payload, err := r.jobToJSON(job.Job.Signature(), job.Args)
 		if err != nil {
 			return err
 		}
@@ -74,8 +74,8 @@ func (r *Redis) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return err
 }
 
-func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []any, queue string) error {
-	payload, err := r.jobToJSON(job.Signature(), payloads)
+func (r *Redis) Later(delay uint, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+	payload, err := r.jobToJSON(job.Signature(), args)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (r *Redis) Later(delay uint, job contractsqueue.Job, payloads []any, queue 
 	}).Err()
 }
 
-func (r *Redis) Pop(queue string) (contractsqueue.Job, []any, error) {
+func (r *Redis) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, error) {
 	if err := r.migrateDelayedJobs(queue); err != nil {
 		return nil, nil, err
 	}
@@ -112,7 +112,7 @@ func (r *Redis) Pop(queue string) (contractsqueue.Job, []any, error) {
 }
 
 func (r *Redis) Delete(queue string, job contractsqueue.Jobs) error {
-	payload, err := r.jobToJSON(job.Job.Signature(), job.Payloads)
+	payload, err := r.jobToJSON(job.Job.Signature(), job.Args)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (r *Redis) Delete(queue string, job contractsqueue.Jobs) error {
 }
 
 func (r *Redis) Release(queue string, job contractsqueue.Jobs, delay uint) error {
-	payload, err := r.jobToJSON(job.Job.Signature(), job.Payloads)
+	payload, err := r.jobToJSON(job.Job.Signature(), job.Args)
 	if err != nil {
 		return err
 	}
@@ -168,8 +168,8 @@ func (r *Redis) migrateDelayedJobs(queue string) error {
 	return nil
 }
 
-// jobToJSON convert signature and payloads to JSON
-func (r *Redis) jobToJSON(signature string, args []any) (string, error) {
+// jobToJSON convert signature and args to JSON
+func (r *Redis) jobToJSON(signature string, args []contractsqueue.Arg) (string, error) {
 	return json.MarshalString(&redisData{
 		Signature: signature,
 		Args:      args,
@@ -177,8 +177,8 @@ func (r *Redis) jobToJSON(signature string, args []any) (string, error) {
 	})
 }
 
-// jsonToJob convert JSON to signature and payloads
-func (r *Redis) jsonToJob(jsonString string) (string, []any, error) {
+// jsonToJob convert JSON to signature and args
+func (r *Redis) jsonToJob(jsonString string) (string, []contractsqueue.Arg, error) {
 	var data redisData
 	err := json.UnmarshalString(jsonString, &data)
 	if err != nil {

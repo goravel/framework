@@ -6,13 +6,13 @@ type Driver interface {
 	// DriverName returns the driver name for the driver.
 	DriverName() string
 	// Push pushes the job onto the queue.
-	Push(job Job, payloads []any, queue string) error
+	Push(job Job, args []Arg, queue string) error
 	// Bulk pushes a slice of jobs onto the queue.
 	Bulk(jobs []Jobs, queue string) error
 	// Later pushes the job onto the queue after a delay.
-	Later(delay uint, job Job, payloads []any, queue string) error
+	Later(delay uint, job Job, args []Arg, queue string) error
 	// Pop pops the next job off of the queue.
-	Pop(queue string) (Job, []any, error)
+	Pop(queue string) (Job, []Arg, error)
 	// Delete removes a job from the queue.
 	Delete(queue string, job Jobs) error
 	// Release releases a reserved job back onto the queue.
