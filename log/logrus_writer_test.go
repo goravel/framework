@@ -342,6 +342,19 @@ func TestLogrus(t *testing.T) {
 				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
 			},
 		},
+		{
+			name: "WithTrace",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewApplication(mockConfig)
+				log.WithTrace().Info("Goravel")
+			},
+			assert: func() {
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ntrace:"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ntrace:"))
+			},
+		},
 	}
 
 	for _, test := range tests {

@@ -99,6 +99,10 @@ func (r *TestLog) Tags(tags ...string) log.Writer {
 	return r
 }
 
+func (r *TestLog) WithTrace() log.Writer {
+	return r
+}
+
 func (r *TestLog) Request(req http.ContextRequest) log.Writer {
 	return r
 }

@@ -272,6 +272,22 @@ func (_m *Log) WithContext(ctx context.Context) log.Writer {
 	return r0
 }
 
+// WithTrace provides a mock function with given fields:
+func (_m *Log) WithTrace() log.Writer {
+	ret := _m.Called()
+
+	var r0 log.Writer
+	if rf, ok := ret.Get(0).(func() log.Writer); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Writer)
+		}
+	}
+
+	return r0
+}
+
 // NewLog creates a new instance of Log. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewLog(t interface {

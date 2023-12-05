@@ -191,6 +191,12 @@ func (r *Writer) With(data map[string]any) log.Writer {
 	return r
 }
 
+// WithTrace adds a stack trace to the log entry.
+func (r *Writer) WithTrace() log.Writer {
+	r.withStackTrace("")
+	return r
+}
+
 func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
 	r.message = erisNew.Error()
