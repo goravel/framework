@@ -76,7 +76,7 @@ func formatData(data logrus.Fields) (string, error) {
 					return "", err
 				}
 
-				builder.WriteString(fmt.Sprintf(`%s: %v"\n`, key, string(v)))
+				builder.WriteString(fmt.Sprintf("%s: %v\n", key, string(v)))
 			}
 		}
 
@@ -127,7 +127,7 @@ func formatStackTraces(stackTraces any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	formattedTraces.WriteString("trace:\n")
+	formattedTraces.WriteString(fmt.Sprintf("trace:\n"))
 	root := traces.Root
 	if len(root.Stack) > 0 {
 		for _, stackStr := range root.Stack {
