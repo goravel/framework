@@ -127,7 +127,7 @@ func formatStackTraces(stackTraces any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	formattedTraces.WriteString(fmt.Sprintf("trace:\n"))
+	formattedTraces.WriteString("trace:\n")
 	root := traces.Root
 	if len(root.Stack) > 0 {
 		for _, stackStr := range root.Stack {
