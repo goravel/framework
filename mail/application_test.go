@@ -121,6 +121,8 @@ func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
 	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default")
 	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost")
 	mockConfig.On("GetString", "database.redis.default.password").Return("")
 	mockConfig.On("GetInt", "database.redis.default.port").Return(redisPort)

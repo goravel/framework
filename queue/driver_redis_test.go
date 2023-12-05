@@ -5,13 +5,16 @@ import (
 	"testing"
 	"time"
 
-	ormmock "github.com/goravel/framework/mocks/database/orm"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
+	ormmock "github.com/goravel/framework/mocks/database/orm"
 	queuemock "github.com/goravel/framework/mocks/queue"
 	"github.com/goravel/framework/support/carbon"
+	testingdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 )
 
 var (
@@ -31,22 +34,18 @@ type DriverRedisTestSuite struct {
 }
 
 func TestDriverRedisTestSuite(t *testing.T) {
-	/*if env.IsWindows() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
 	redisDocker := testingdocker.NewRedis()
-	assert.Nil(t, redisDocker.Build())*/
+	assert.Nil(t, redisDocker.Build())
 
-	/*suite.Run(t, &DriverRedisTestSuite{
+	suite.Run(t, &DriverRedisTestSuite{
 		port: redisDocker.Config().Port,
 	})
 
-	assert.Nil(t, redisDocker.Stop())*/
-
-	suite.Run(t, &DriverRedisTestSuite{
-		port: 6379,
-	})
+	assert.Nil(t, redisDocker.Stop())
 }
 
 func (s *DriverRedisTestSuite) SetupTest() {
