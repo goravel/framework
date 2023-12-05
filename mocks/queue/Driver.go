@@ -55,11 +55,11 @@ func (_m *Driver) ConnectionName() string {
 }
 
 // Delete provides a mock function with given fields: _a0, job
-func (_m *Driver) Delete(_a0 string, job queue.Job) error {
+func (_m *Driver) Delete(_a0 string, job queue.Jobs) error {
 	ret := _m.Called(_a0, job)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, queue.Job) error); ok {
+	if rf, ok := ret.Get(0).(func(string, queue.Jobs) error); ok {
 		r0 = rf(_a0, job)
 	} else {
 		r0 = ret.Error(0)
@@ -68,13 +68,27 @@ func (_m *Driver) Delete(_a0 string, job queue.Job) error {
 	return r0
 }
 
-// Later provides a mock function with given fields: delay, job, args, _a3
-func (_m *Driver) Later(delay int, job queue.Job, args []any, _a3 string) error {
-	ret := _m.Called(delay, job, args, _a3)
+// DriverName provides a mock function with given fields:
+func (_m *Driver) DriverName() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Later provides a mock function with given fields: delay, job, payloads, _a3
+func (_m *Driver) Later(delay uint, job queue.Job, payloads []interface{}, _a3 string) error {
+	ret := _m.Called(delay, job, payloads, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, queue.Job, []any, string) error); ok {
-		r0 = rf(delay, job, args, _a3)
+	if rf, ok := ret.Get(0).(func(uint, queue.Job, []interface{}, string) error); ok {
+		r0 = rf(delay, job, payloads, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -83,13 +97,13 @@ func (_m *Driver) Later(delay int, job queue.Job, args []any, _a3 string) error 
 }
 
 // Pop provides a mock function with given fields: _a0
-func (_m *Driver) Pop(_a0 string) (queue.Job, []any, error) {
+func (_m *Driver) Pop(_a0 string) (queue.Job, []interface{}, error) {
 	ret := _m.Called(_a0)
 
 	var r0 queue.Job
-	var r1 []any
+	var r1 []interface{}
 	var r2 error
-	if rf, ok := ret.Get(0).(func(string) (queue.Job, []any, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (queue.Job, []interface{}, error)); ok {
 		return rf(_a0)
 	}
 	if rf, ok := ret.Get(0).(func(string) queue.Job); ok {
@@ -100,11 +114,11 @@ func (_m *Driver) Pop(_a0 string) (queue.Job, []any, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) []any); ok {
+	if rf, ok := ret.Get(1).(func(string) []interface{}); ok {
 		r1 = rf(_a0)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]any)
+			r1 = ret.Get(1).([]interface{})
 		}
 	}
 
@@ -117,13 +131,13 @@ func (_m *Driver) Pop(_a0 string) (queue.Job, []any, error) {
 	return r0, r1, r2
 }
 
-// Push provides a mock function with given fields: job, args, _a2
-func (_m *Driver) Push(job queue.Job, args []any, _a2 string) error {
-	ret := _m.Called(job, args, _a2)
+// Push provides a mock function with given fields: job, payloads, _a2
+func (_m *Driver) Push(job queue.Job, payloads []interface{}, _a2 string) error {
+	ret := _m.Called(job, payloads, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job, []any, string) error); ok {
-		r0 = rf(job, args, _a2)
+	if rf, ok := ret.Get(0).(func(queue.Job, []interface{}, string) error); ok {
+		r0 = rf(job, payloads, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -132,11 +146,11 @@ func (_m *Driver) Push(job queue.Job, args []any, _a2 string) error {
 }
 
 // Release provides a mock function with given fields: _a0, job, delay
-func (_m *Driver) Release(_a0 string, job queue.Job, delay int) error {
+func (_m *Driver) Release(_a0 string, job queue.Jobs, delay uint) error {
 	ret := _m.Called(_a0, job, delay)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, queue.Job, int) error); ok {
+	if rf, ok := ret.Get(0).(func(string, queue.Jobs, uint) error); ok {
 		r0 = rf(_a0, job, delay)
 	} else {
 		r0 = ret.Error(0)
@@ -145,24 +159,19 @@ func (_m *Driver) Release(_a0 string, job queue.Job, delay int) error {
 	return r0
 }
 
-// Server provides a mock function with given fields: concurrent, _a1
-func (_m *Driver) Server(concurrent int, _a1 string) {
-	_m.Called(concurrent, _a1)
-}
-
 // Size provides a mock function with given fields: _a0
-func (_m *Driver) Size(_a0 string) (int64, error) {
+func (_m *Driver) Size(_a0 string) (uint64, error) {
 	ret := _m.Called(_a0)
 
-	var r0 int64
+	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (int64, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (uint64, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(string) int64); ok {
+	if rf, ok := ret.Get(0).(func(string) uint64); ok {
 		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(int64)
+		r0 = ret.Get(0).(uint64)
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
