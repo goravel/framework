@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
+	ormmock "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/queue"
 	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -85,6 +86,14 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 
 func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
+
+	mockOrm := &ormmock.Orm{}
+	mockQuery := &ormmock.Query{}
+	mockOrm.On("Connection", "database").Return(mockOrm)
+	mockOrm.On("Query").Return(mockQuery)
+	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
+
+	queue.OrmFacade = mockOrm
 
 	queueFacade := queue.NewApplication(mockConfig)
 	err := queueFacade.Register([]queuecontract.Job{
