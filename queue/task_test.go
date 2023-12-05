@@ -36,6 +36,7 @@ func TestDispatchSync(t *testing.T) {
 	err := Register([]queue.Job{
 		&Test{},
 	})
+	assert.Nil(t, err)
 
 	err = task.DispatchSync()
 	assert.Nil(t, err)

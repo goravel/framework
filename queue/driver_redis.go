@@ -100,6 +100,9 @@ func (r *Redis) Pop(queue string) (contractsqueue.Job, []any, error) {
 	}
 
 	signature, args, err := r.jsonToJob(result[1])
+	if err != nil {
+		return nil, nil, err
+	}
 	job, err := Get(signature)
 	if err != nil {
 		return nil, nil, err
