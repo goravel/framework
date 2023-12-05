@@ -75,6 +75,8 @@ type Writer interface {
 	User(user any) Writer
 	// With adds key-value pairs to the context of the log entry
 	With(data map[string]any) Writer
+	// WithTrace adds a stack trace to the log entry.
+	WithTrace() Writer
 }
 
 type Logger interface {
