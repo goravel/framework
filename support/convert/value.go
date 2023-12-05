@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/cast"
 )
 
 var (
@@ -259,8 +261,8 @@ func reflectValues(valueType string, value any) (reflect.Value, error) {
 }
 
 func getBoolValue(theType string, value any) (bool, error) {
-	b, ok := value.(bool)
-	if !ok {
+	b, err := cast.ToBoolE(value)
+	if err != nil {
 		return false, typeConversionError(value, typesMap[theType].String())
 	}
 
@@ -280,8 +282,8 @@ func getIntValue(theType string, value any) (int64, error) {
 		return n.Int64()
 	}
 
-	n, ok := value.(int64)
-	if !ok {
+	n, err := cast.ToInt64E(value)
+	if err != nil {
 		return 0, typeConversionError(value, typesMap[theType].String())
 	}
 
@@ -306,15 +308,11 @@ func getUintValue(theType string, value any) (uint64, error) {
 		return uintVal, nil
 	}
 
-	var n uint64
-	switch value := value.(type) {
-	case uint64:
-		n = value
-	case uint8:
-		n = uint64(value)
-	default:
+	n, err := cast.ToUint64E(value)
+	if err != nil {
 		return 0, typeConversionError(value, typesMap[theType].String())
 	}
+
 	return n, nil
 }
 
@@ -330,8 +328,8 @@ func getFloatValue(theType string, value any) (float64, error) {
 		return n.Float64()
 	}
 
-	f, ok := value.(float64)
-	if !ok {
+	f, err := cast.ToFloat64E(value)
+	if err != nil {
 		return 0, typeConversionError(value, typesMap[theType].String())
 	}
 
@@ -339,8 +337,8 @@ func getFloatValue(theType string, value any) (float64, error) {
 }
 
 func getStringValue(theType string, value any) (string, error) {
-	s, ok := value.(string)
-	if !ok {
+	s, err := cast.ToStringE(value)
+	if err != nil {
 		return "", typeConversionError(value, typesMap[theType].String())
 	}
 

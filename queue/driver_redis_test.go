@@ -2,7 +2,6 @@ package queue
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
@@ -98,7 +97,7 @@ func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestRedisJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDefaultRedisQueue"},
-		{Type: "int", Value: json.Number("1")},
+		{Type: "int", Value: 1},
 	}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testRedisJob)
@@ -134,7 +133,7 @@ func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestDelayRedisJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayRedisQueue"},
-		{Type: "int", Value: json.Number("1")},
+		{Type: "int", Value: 1},
 	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayRedisJob)
@@ -174,7 +173,7 @@ func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestCustomRedisJob{}, []queue.Arg{
 		{Type: "string", Value: "TestCustomRedisQueue"},
-		{Type: "int", Value: json.Number("1")},
+		{Type: "int", Value: 1},
 	}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomRedisJob)
@@ -210,7 +209,7 @@ func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestErrorRedisJob{}, []queue.Arg{
 		{Type: "string", Value: "TestErrorRedisQueue"},
-		{Type: "int", Value: json.Number("1")},
+		{Type: "int", Value: 1},
 	}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorRedisJob)
@@ -250,14 +249,14 @@ func (s *DriverRedisTestSuite) TestChainRedisQueue() {
 			Job: &TestChainRedisJob{},
 			Args: []queue.Arg{
 				{Type: "string", Value: "TestChainRedisJob"},
-				{Type: "int", Value: json.Number("1")},
+				{Type: "int", Value: 1},
 			},
 		},
 		{
 			Job: &TestRedisJob{},
 			Args: []queue.Arg{
 				{Type: "string", Value: "TestRedisJob"},
-				{Type: "int", Value: json.Number("1")},
+				{Type: "int", Value: 1},
 			},
 		},
 	}).OnQueue("chain").Dispatch())

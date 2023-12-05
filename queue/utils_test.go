@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -161,7 +160,7 @@ func TestEvents2Tasks(t *testing.T) {
 func TestArgsToValuesWithValidArgs(t *testing.T) {
 	args := []contractsqueue.Arg{
 		{Type: "string", Value: "test"},
-		{Type: "int", Value: json.Number("1")},
+		{Type: "int", Value: 1},
 	}
 
 	values, err := argsToValues(args)

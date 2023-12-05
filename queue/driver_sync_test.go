@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
@@ -49,7 +48,7 @@ func (s *DriverSyncTestSuite) TestSyncQueue() {
 
 	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestSyncQueue"},
-		{Type: "int", Value: json.Number("1")},
+		{Type: "int", Value: 1},
 	}).DispatchSync())
 	s.Equal(1, testSyncJob)
 
@@ -67,14 +66,14 @@ func (s *DriverSyncTestSuite) TestChainSyncQueue() {
 			Job: &TestChainSyncJob{},
 			Args: []queue.Arg{
 				{Type: "string", Value: "TestChainSyncJob"},
-				{Type: "int", Value: json.Number("1")},
+				{Type: "int", Value: 1},
 			},
 		},
 		{
 			Job: &TestSyncJob{},
 			Args: []queue.Arg{
 				{Type: "string", Value: "TestSyncJob"},
-				{Type: "int", Value: json.Number("1")},
+				{Type: "int", Value: 1},
 			},
 		},
 	}).OnQueue("chain").Dispatch())
