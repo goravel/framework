@@ -35,7 +35,7 @@ func Call(signature string, args []contractsqueue.Arg) error {
 		if e := recover(); e != nil {
 			switch e := e.(type) {
 			default:
-				err = errors.New("invoking task caused a panic")
+				err = errors.New("invoking handle caused a panic")
 			case error:
 				err = e
 			case string:
@@ -55,15 +55,15 @@ func Call(signature string, args []contractsqueue.Arg) error {
 		return errors.New("job must implement contracts/queue/Job interface")
 	}
 
-	values, err := ArgsToValues(args)
+	values, err := argsToValues(args)
 	if err != nil {
 		return err
 	}
 
-	// Invoke the task
+	// Invoke the handle
 	results := reflect.ValueOf(job.Handle).Call(values)
 
-	// Task must return at least a value
+	// Handle must return at least a value
 	if len(results) == 0 {
 		return ErrTaskReturnsNoValue
 	}
@@ -72,7 +72,7 @@ func Call(signature string, args []contractsqueue.Arg) error {
 	lastResult := results[len(results)-1]
 
 	// If the last returned value is not nil, it has to be of error type, if that
-	// is not the case, return error message, otherwise propagate the task error
+	// is not the case, return error message, otherwise propagate the handle error
 	// to the caller
 	if !lastResult.IsNil() {
 		// check that the result implements the standard error interface,

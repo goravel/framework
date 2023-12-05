@@ -7,18 +7,18 @@ import (
 
 var (
 	// ErrTaskMustBeFunc ...
-	ErrTaskMustBeFunc = errors.New("task must be a func type")
+	ErrTaskMustBeFunc = errors.New("handle must be a func type")
 	// ErrTaskReturnsNoValue ...
-	ErrTaskReturnsNoValue = errors.New("task must return at least a single value")
+	ErrTaskReturnsNoValue = errors.New("handle must return at least a single value")
 	// ErrLastReturnValueMustBeError ..
-	ErrLastReturnValueMustBeError = errors.New("last return value of a task must be error")
+	ErrLastReturnValueMustBeError = errors.New("last return value of a handle must be error")
 )
 
-// ValidateTask validates task function using reflection and makes sure
+// ValidateTask validates handle function using reflection and makes sure
 // it has a proper signature. Functions used as tasks must return at least a
 // single value and the last return type must be error
-func ValidateTask(task any) error {
-	v := reflect.ValueOf(task)
+func ValidateTask(handle any) error {
+	v := reflect.ValueOf(handle)
 	t := v.Type()
 
 	// Task must be a function

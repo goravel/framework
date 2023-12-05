@@ -48,7 +48,7 @@ func eventsToTasks(events map[event.Event][]event.Listener) (map[string]any, err
 	return tasks, nil
 }
 
-func ArgsToValues(args []queue.Arg) ([]reflect.Value, error) {
+func argsToValues(args []queue.Arg) ([]reflect.Value, error) {
 	values := make([]reflect.Value, len(args))
 
 	for i, arg := range args {
