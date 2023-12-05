@@ -254,6 +254,22 @@ func (_m *Writer) With(data map[string]interface{}) log.Writer {
 	return r0
 }
 
+// WithTrace provides a mock function with given fields:
+func (_m *Writer) WithTrace() log.Writer {
+	ret := _m.Called()
+
+	var r0 log.Writer
+	if rf, ok := ret.Get(0).(func() log.Writer); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Writer)
+		}
+	}
+
+	return r0
+}
+
 // NewWriter creates a new instance of Writer. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewWriter(t interface {
