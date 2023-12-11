@@ -29,7 +29,7 @@ require (
 	github.com/rotisserie/eris v0.5.4
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.6.0
-	github.com/spf13/viper v1.18.0
+	github.com/spf13/viper v1.18.1
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.26.0
 	go.uber.org/atomic v1.11.0
