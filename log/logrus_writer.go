@@ -209,7 +209,22 @@ func (r *Writer) withStackTrace(message string) {
 	r.stackEnabled = true
 }
 
-// ToMap returns a map representation of the error.
+// resetAll resets all properties of the log.Writer for a new log entry.
+func (r *Writer) resetAll() {
+	r.code = ""
+	r.context = map[string]any{}
+	r.domain = ""
+	r.hint = ""
+	r.message = ""
+	r.owner = nil
+	r.request = nil
+	r.response = nil
+	r.tags = []string{}
+	r.trace = ""
+	r.user = nil
+}
+
+// toMap returns a map representation of the error.
 func (r *Writer) toMap() map[string]any {
 	payload := map[string]any{}
 
@@ -270,6 +285,9 @@ func (r *Writer) toMap() map[string]any {
 	if stacktrace := r.stacktrace; stacktrace != nil || r.stackEnabled {
 		payload["stacktrace"] = stacktrace
 	}
+
+	// reset all properties for a new log entry
+	r.resetAll()
 
 	return payload
 }
