@@ -14,7 +14,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/golang-module/carbon/v2 v2.2.14
 	github.com/golang/protobuf v1.5.3
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/google/wire v0.5.0
 	github.com/gookit/color v1.5.4
 	github.com/gookit/validate v1.5.1
@@ -35,7 +35,7 @@ require (
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.16.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	google.golang.org/grpc v1.59.0
+	google.golang.org/grpc v1.60.0
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/driver/sqlserver v1.5.2
@@ -125,7 +125,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.153.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
