@@ -108,7 +108,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Content(mail.Content{Subject: "Goravel Test Queue", Html: "<h1>Hello Goravel</h1>"}).
-		Queue(nil))
+		Queue())
 	time.Sleep(3 * time.Second)
 }
 

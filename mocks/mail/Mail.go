@@ -93,12 +93,18 @@ func (_m *Mail) From(address mail.From) mail.Mail {
 }
 
 // Queue provides a mock function with given fields: queue
-func (_m *Mail) Queue(queue *mail.Queue) error {
-	ret := _m.Called(queue)
+func (_m *Mail) Queue(queue ...mail.Queue) error {
+	_va := make([]interface{}, len(queue))
+	for _i := range queue {
+		_va[_i] = queue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*mail.Queue) error); ok {
-		r0 = rf(queue)
+	if rf, ok := ret.Get(0).(func(...mail.Queue) error); ok {
+		r0 = rf(queue...)
 	} else {
 		r0 = ret.Error(0)
 	}

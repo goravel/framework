@@ -75,7 +75,7 @@ func (r *Application) Send() error {
 	return SendMail(r.config, r.content.Subject, r.content.Html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
 }
 
-func (r *Application) Queue(queue *mail.Queue) error {
+func (r *Application) Queue(queue ...mail.Queue) error {
 	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
 		{Value: r.content.Subject, Type: "string"},
 		{Value: r.content.Html, Type: "string"},
@@ -86,12 +86,13 @@ func (r *Application) Queue(queue *mail.Queue) error {
 		{Value: r.bcc, Type: "[]string"},
 		{Value: r.attaches, Type: "[]string"},
 	})
-	if queue != nil {
-		if queue.Connection != "" {
-			job.OnConnection(queue.Connection)
+
+	if len(queue) > 0 {
+		if queue[0].Connection != "" {
+			job.OnConnection(queue[0].Connection)
 		}
-		if queue.Queue != "" {
-			job.OnQueue(queue.Queue)
+		if queue[0].Queue != "" {
+			job.OnQueue(queue[0].Queue)
 		}
 	}
 
