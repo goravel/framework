@@ -15,11 +15,11 @@ type ContextResponse struct {
 }
 
 // Cookie provides a mock function with given fields: cookie
-func (_m *ContextResponse) Cookie(cookie *http.Cookie) http.ContextResponse {
+func (_m *ContextResponse) Cookie(cookie http.Cookie) http.ContextResponse {
 	ret := _m.Called(cookie)
 
 	var r0 http.ContextResponse
-	if rf, ok := ret.Get(0).(func(*http.Cookie) http.ContextResponse); ok {
+	if rf, ok := ret.Get(0).(func(http.Cookie) http.ContextResponse); ok {
 		r0 = rf(cookie)
 	} else {
 		if ret.Get(0) != nil {
@@ -208,22 +208,6 @@ func (_m *ContextResponse) View() http.ResponseView {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.ResponseView)
-		}
-	}
-
-	return r0
-}
-
-// WithCookie provides a mock function with given fields: cookie
-func (_m *ContextResponse) WithCookie(cookie *http.Cookie) http.ContextResponse {
-	ret := _m.Called(cookie)
-
-	var r0 http.ContextResponse
-	if rf, ok := ret.Get(0).(func(*http.Cookie) http.ContextResponse); ok {
-		r0 = rf(cookie)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.ContextResponse)
 		}
 	}
 

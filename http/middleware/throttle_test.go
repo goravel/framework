@@ -458,7 +458,7 @@ type TestResponse struct {
 	Headers map[string]string
 }
 
-func (r *TestResponse) Cookie(cookie *contractshttp.Cookie) contractshttp.ContextResponse {
+func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.ContextResponse {
 	panic("do not need to implement it")
 }
 
@@ -501,10 +501,6 @@ func (r *TestResponse) Success() contractshttp.ResponseSuccess {
 }
 
 func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
-	panic("do not need to implement it")
-}
-
-func (r *TestResponse) WithCookie(cookie *contractshttp.Cookie) contractshttp.ContextResponse {
 	panic("do not need to implement it")
 }
 
