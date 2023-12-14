@@ -12,6 +12,8 @@ type Response interface {
 }
 
 type ContextResponse interface {
+	// Cookie adds a cookie to the response.
+	Cookie(cookie *Cookie) ContextResponse
 	// Data write the given data to the response.
 	Data(code int, contentType string, data []byte) Response
 	// Download initiates a file download by specifying the file path and the desired filename
@@ -37,6 +39,10 @@ type ContextResponse interface {
 	View() ResponseView
 	// Writer returns the underlying http.ResponseWriter associated with the response.
 	Writer() http.ResponseWriter
+	// WithCookie adds a cookie to the response.
+	WithCookie(cookie *Cookie) ContextResponse
+	// WithoutCookie removes a cookie from the response by setting its expiration time to a past date.
+	WithoutCookie(name string) ContextResponse
 	// Flush flushes any buffered data to the client.
 	Flush()
 }
