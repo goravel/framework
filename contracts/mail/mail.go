@@ -16,7 +16,7 @@ type Mail interface {
 	// Send the Mail
 	Send() error
 	// Queue a given Mail
-	Queue(queue *Queue) error
+	Queue(queue ...Queue) error
 }
 
 type Content struct {
