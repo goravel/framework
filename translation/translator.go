@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -17,7 +19,7 @@ type Translator struct {
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
-	loaded   map[string]map[string]map[string]string
+	loaded   map[string]map[string]map[string]any
 	selector *MessageSelector
 	key      string
 }
@@ -34,7 +36,7 @@ func NewTranslator(ctx context.Context, loader translationcontract.Loader, local
 		loader:   loader,
 		locale:   locale,
 		fallback: fallback,
-		loaded:   make(map[string]map[string]map[string]string),
+		loaded:   make(map[string]map[string]map[string]any),
 		selector: NewMessageSelector(),
 	}
 }
@@ -85,24 +87,42 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 		return "", err
 	}
 
-	line := t.loaded[folder][locale][keyPart]
-	if line == "" {
-		fallbackFolder, fallbackLocale := parseKey(t.GetFallback())
-		// If the fallback locale is different from the current locale, we will
-		// load in the lines for the fallback locale and try to retrieve the
-		// translation for the given key.If it is translated, we will return it.
-		// Otherwise, we can finally return the key as that will be the final
-		// fallback.
-		if (folder+locale != fallbackFolder+fallbackLocale) && fallback {
-			var fallbackOptions translationcontract.Option
-			if len(options) > 0 {
-				fallbackOptions = options[0]
+	marshal, err := sonic.Marshal(t.loaded[folder][locale])
+	if err != nil {
+		return "", err
+	}
+	var keyParts []interface{}
+	for _, part := range strings.Split(keyPart, ".") {
+		keyParts = append(keyParts, part)
+	}
+
+	keyValue, err := sonic.Get(marshal, keyParts...)
+
+	if err != nil {
+		if err == ast.ErrNotExist {
+			fallbackLocale := t.GetFallback()
+			// If the fallback locale is different from the current locale, we will
+			// load in the lines for the fallback locale and try to retrieve the
+			// translation for the given key.If it is translated, we will return it.
+			// Otherwise, we can finally return the key as that will be the final
+			// fallback.
+			if (locale != fallbackLocale) && fallback {
+				var fallbackOptions translationcontract.Option
+				if len(options) > 0 {
+					fallbackOptions = options[0]
+				}
+				fallbackOptions.Fallback = translationcontract.Bool(false)
+				fallbackOptions.Locale = fallbackLocale
+				return t.Get(t.key, fallbackOptions)
 			}
-			fallbackOptions.Fallback = translationcontract.Bool(false)
-			fallbackOptions.Locale = fallbackLocale
-			return t.Get(fallbackFolder+"."+keyPart, fallbackOptions)
+			return t.key, nil
 		}
-		return t.key, nil
+		return "", err
+	}
+
+	line, err := keyValue.String()
+	if err != nil {
+		return "", err
 	}
 
 	// If the line doesn't contain any placeholders, we can return it right
@@ -196,12 +216,20 @@ func makeReplacements(line string, replace map[string]string) string {
 }
 
 func parseKey(key string) (folder, keyPart string) {
-	parts := strings.Split(key, ".")
+	parts := strings.Split(key, "/")
+	keyParts := strings.Split(parts[len(parts)-1], ".")
 	folder = "*"
-	keyPart = key
+	keyPart = ""
+	if len(keyParts) > 1 {
+		keyPart = strings.Join(keyParts[1:], ".")
+	}
 	if len(parts) > 1 {
-		folder = strings.Join(parts[:len(parts)-1], ".")
-		keyPart = parts[len(parts)-1]
+		folder = strings.Join(parts[:len(parts)-1], "/")
+	}
+	if folder != "*" {
+		folder = folder + "/" + keyParts[0]
+	} else {
+		folder = keyParts[0]
 	}
 	return folder, keyPart
 }

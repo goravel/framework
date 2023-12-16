@@ -16,10 +16,11 @@ type FileLoaderTestSuite struct {
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
-	assert.Nil(t, file.Create("lang/en.json", `{"foo": "bar"}`))
-	assert.Nil(t, file.Create("lang/another/en.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
-	assert.Nil(t, file.Create("lang/invalid/en.json", `{"foo": "bar",}`))
-	restrictedFilePath := "lang/restricted/en.json"
+	assert.Nil(t, file.Create("lang/en/test.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
+	assert.Nil(t, file.Create("lang/en/another/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(t, file.Create("lang/another/en/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(t, file.Create("lang/en/invalid/test.json", `{"foo": "bar",}`))
+	restrictedFilePath := "lang/en/restricted/test.json"
 	assert.Nil(t, file.Create(restrictedFilePath, `{"foo": "restricted"}`))
 	assert.Nil(t, os.Chmod(restrictedFilePath, 0000))
 	suite.Run(t, &FileLoaderTestSuite{})
@@ -32,28 +33,28 @@ func (f *FileLoaderTestSuite) SetupTest() {
 func (f *FileLoaderTestSuite) TestLoad() {
 	paths := []string{"./lang"}
 	loader := NewFileLoader(paths)
-	translations, err := loader.Load("*", "en")
+	translations, err := loader.Load("test", "en")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("bar", translations["en"]["foo"])
 
 	paths = []string{"./lang/another", "./lang"}
 	loader = NewFileLoader(paths)
-	translations, err = loader.Load("*", "en")
+	translations, err = loader.Load("test", "en")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("bar", translations["en"]["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
-	translations, err = loader.Load("another", "en")
+	translations, err = loader.Load("another/test", "en")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["en"]["foo"])
 
-	paths = []string{"./lang/restricted"}
+	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
-	translations, err = loader.Load("*", "en")
+	translations, err = loader.Load("restricted/test", "en")
 	if env.IsWindows() {
 		f.NoError(err)
 		f.NotNil(translations)
@@ -67,7 +68,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 	paths := []string{"./lang"}
 	loader := NewFileLoader(paths)
-	translations, err := loader.Load("*", "hi")
+	translations, err := loader.Load("test", "hi")
 
 	f.Error(err)
 	f.Nil(translations)
@@ -75,9 +76,9 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 }
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
-	paths := []string{"./lang/invalid"}
+	paths := []string{"./lang"}
 	loader := NewFileLoader(paths)
-	translations, err := loader.Load("*", "en")
+	translations, err := loader.Load("invalid/test", "en")
 
 	f.Error(err)
 	f.Nil(translations)

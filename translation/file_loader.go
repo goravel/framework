@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bytedance/sonic"
 	"github.com/bytedance/sonic/decoder"
@@ -22,19 +21,11 @@ func NewFileLoader(paths []string) *FileLoader {
 	}
 }
 
-func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]string, error) {
-	translations := make(map[string]map[string]string)
+func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]any, error) {
+	translations := make(map[string]map[string]any)
 	for _, path := range f.paths {
-		var val map[string]string
-		fullPath := path
-		// Check if the folder is not "*", and if so, split it into subFolders
-		if folder != "*" {
-			subFolders := strings.Split(folder, ".")
-			for _, subFolder := range subFolders {
-				fullPath = filepath.Join(fullPath, subFolder)
-			}
-		}
-		fullPath = filepath.Join(fullPath, locale+".json")
+		var val map[string]any
+		fullPath := filepath.Join(path, locale, folder+".json")
 
 		if file.Exists(fullPath) {
 			data, err := os.ReadFile(fullPath)
@@ -51,7 +42,7 @@ func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]s
 			}
 			// Initialize the map if it's a nil
 			if translations[locale] == nil {
-				translations[locale] = make(map[string]string)
+				translations[locale] = make(map[string]any)
 			}
 			mergeMaps(translations[locale], val)
 		} else {
