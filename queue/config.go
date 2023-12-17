@@ -3,7 +3,10 @@ package queue
 import (
 	"fmt"
 
+	"github.com/redis/go-redis/v9"
+
 	configcontract "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/orm"
 )
 
 type Config struct {
@@ -22,13 +25,13 @@ func (r *Config) DefaultConnection() string {
 
 func (r *Config) Queue(connection, queue string) string {
 	appName := r.config.GetString("app.name")
-	if appName == "" {
+	if len(appName) == 0 {
 		appName = "goravel"
 	}
-	if connection == "" {
+	if len(connection) == 0 {
 		connection = r.DefaultConnection()
 	}
-	if queue == "" {
+	if len(queue) == 0 {
 		queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
 	}
 
@@ -36,26 +39,35 @@ func (r *Config) Queue(connection, queue string) string {
 }
 
 func (r *Config) Driver(connection string) string {
-	if connection == "" {
-		connection = r.config.GetString("queue.default")
+	if len(connection) == 0 {
+		connection = r.DefaultConnection()
 	}
 
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
-func (r *Config) Redis(queueConnection string) (dsn string, database int, queue string) {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	queue = r.Queue(queueConnection, "")
+func (r *Config) Redis(queueConnection string) *redis.Client {
+	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.database", queueConnection))
 	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
 	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
 	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
-	database = r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
+	database := r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
 
-	if password == "" {
-		dsn = fmt.Sprintf("%s:%d", host, port)
-	} else {
-		dsn = fmt.Sprintf("%s@%s:%d", password, host, port)
-	}
+	return redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", host, port),
+		Password: password,
+		DB:       database,
+	})
+}
 
-	return
+func (r *Config) Database(queueConnection string) orm.Query {
+	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.database", queueConnection))
+	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.table", queueConnection))
+	return OrmFacade.Connection(connection).Query().Table(table)
+}
+
+func (r *Config) FailedJobsQuery() orm.Query {
+	connection := r.config.GetString("queue.failed.database")
+	table := r.config.GetString("queue.failed.table")
+	return OrmFacade.Connection(connection).Query().Table(table)
 }

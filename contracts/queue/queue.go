@@ -1,9 +1,9 @@
 package queue
 
 type Queue interface {
-	Worker(args *Args) Worker
+	Worker(payloads ...*Args) Worker
 	// Register register jobs
-	Register(jobs []Job)
+	Register(jobs []Job) error
 	// GetJobs get all jobs
 	GetJobs() []Job
 	// Job add a job to queue
@@ -26,6 +26,6 @@ type Args struct {
 }
 
 type Arg struct {
-	Type  string
-	Value any
+	Type  string `json:"type"`
+	Value any    `json:"value"`
 }

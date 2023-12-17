@@ -13,12 +13,12 @@ import (
 type Test struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *Test) Signature() string {
 	return "test"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *Test) Handle(args ...any) error {
 	return file.Create("test.txt", args[0].(string))
 }
@@ -29,13 +29,18 @@ func TestDispatchSync(t *testing.T) {
 			{
 				Job: &Test{},
 				Args: []queue.Arg{
-					{Type: "uint64", Value: "test"},
+					{Type: "string", Value: "test"},
 				},
 			},
 		},
 	}
 
-	err := task.DispatchSync()
+	err := Register([]queue.Job{
+		&Test{},
+	})
+	assert.Nil(t, err)
+
+	err = task.DispatchSync()
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("test.txt"))
 	assert.True(t, testingfile.GetLineNum("test.txt") == 1)

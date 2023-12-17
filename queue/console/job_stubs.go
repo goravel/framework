@@ -10,12 +10,12 @@ func (receiver JobStubs) Job() string {
 type DummyJob struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *DummyJob) Signature() string {
 	return "DummyName"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *DummyJob) Handle(args ...any) error {
 	return nil
 }

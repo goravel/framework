@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
+	ormmock "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/queue"
 	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -86,17 +87,26 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
 
+	mockOrm := &ormmock.Orm{}
+	mockQuery := &ormmock.Query{}
+	mockOrm.On("Connection", "database").Return(mockOrm)
+	mockOrm.On("Query").Return(mockQuery)
+	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
+
+	queue.OrmFacade = mockOrm
+
 	queueFacade := queue.NewApplication(mockConfig)
-	queueFacade.Register([]queuecontract.Job{
+	err := queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})
+	s.Nil(err)
 
 	app := NewApplication(mockConfig, queueFacade)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker(nil).Run())
+		s.Nil(queueFacade.Worker().Run())
 
 		for range ctx.Done() {
 			return
@@ -118,8 +128,10 @@ func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig.On("GetString", "queue.default").Return("redis")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default")
+	mockConfig.On("GetString", "queue.connections.redis.database").Return("default")
 	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
+	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 	mockConfig.On("GetString", "database.redis.default.host").Return("localhost")
 	mockConfig.On("GetString", "database.redis.default.password").Return("")
 	mockConfig.On("GetInt", "database.redis.default.port").Return(redisPort)

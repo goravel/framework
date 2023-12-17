@@ -17,7 +17,10 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (route *ServiceProvider) Boot(app foundation.Application) {
-	app.MakeQueue().Register([]queue.Job{
+	err := app.MakeQueue().Register([]queue.Job{
 		NewSendMailJob(app.MakeConfig()),
 	})
+	if err != nil {
+		panic(err.Error())
+	}
 }
