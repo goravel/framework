@@ -35,8 +35,7 @@ func (t *TranslatorTestSuite) TestChoice() {
 			"foo": "{0} first|{1}second",
 		},
 	}, nil)
-	translation, err := translator.Choice("test.foo", 1)
-	t.NoError(err)
+	translation := translator.Choice("test.foo", 1)
 	t.Equal("second", translation)
 
 	// test atomic replacements
@@ -46,20 +45,19 @@ func (t *TranslatorTestSuite) TestChoice() {
 			"foo": "{0} first|{1}Hello, :foo!",
 		},
 	}, nil)
-	translation, err = translator.Choice("test.foo", 1, translationcontract.Option{
+	translation = translator.Choice("test.foo", 1, translationcontract.Option{
 		Replace: map[string]string{
 			"foo": "baz:bar",
 			"bar": "abcdef",
 		},
 		Locale: "fr",
 	})
-	t.NoError(err)
 	t.Equal("Hello, baz:bar!", translation)
 
 	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
 	t.mockLoader.On("Load", "test", "en").Once().Return(nil, errors.New("some error"))
-	translation, err = translator.Choice("test.foo", 1)
-	t.EqualError(err, "some error")
+	translation = translator.Choice("test.foo", 1)
+	//t.EqualError(err, "some error")
 	t.Equal("", translation)
 }
 
@@ -73,8 +71,7 @@ func (t *TranslatorTestSuite) TestGet() {
 			},
 		},
 	}, nil)
-	translation, err := translator.Get("test.bar.baz")
-	t.NoError(err)
+	translation := translator.Get("test.bar.baz")
 	t.Equal("two", translation)
 
 	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
@@ -83,15 +80,14 @@ func (t *TranslatorTestSuite) TestGet() {
 			"foo": "one",
 		},
 	}, nil)
-	translation, err = translator.Get("test.foo")
-	t.NoError(err)
+	translation = translator.Get("test.foo")
 	t.Equal("one", translation)
 
 	// Case: when file exists but there is some error
 	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
 	t.mockLoader.On("Load", "test", "en").Once().Return(nil, errors.New("some error"))
-	translation, err = translator.Get("test.foo")
-	t.EqualError(err, "some error")
+	translation = translator.Get("test.foo")
+	//t.EqualError(err, "some error")
 	t.Equal("", translation)
 
 	// Get json replacement
@@ -101,13 +97,12 @@ func (t *TranslatorTestSuite) TestGet() {
 			"foo": "Hello, :name! Welcome to :location.",
 		},
 	}, nil)
-	translation, err = translator.Get("test.foo", translationcontract.Option{
+	translation = translator.Get("test.foo", translationcontract.Option{
 		Replace: map[string]string{
 			"name":     "krishan",
 			"location": "india",
 		},
 	})
-	t.NoError(err)
 	t.Equal("Hello, krishan! Welcome to india.", translation)
 
 	// test atomic replacements
@@ -117,13 +112,12 @@ func (t *TranslatorTestSuite) TestGet() {
 			"foo": "Hello, :foo!",
 		},
 	}, nil)
-	translation, err = translator.Get("test.foo", translationcontract.Option{
+	translation = translator.Get("test.foo", translationcontract.Option{
 		Replace: map[string]string{
 			"foo": "baz:bar",
 			"bar": "abcdef",
 		},
 	})
-	t.NoError(err)
 	t.Equal("Hello, baz:bar!", translation)
 
 	// preserve order of replacements
@@ -133,13 +127,12 @@ func (t *TranslatorTestSuite) TestGet() {
 			"foo": ":greeting :name",
 		},
 	}, nil)
-	translation, err = translator.Get("test.foo", translationcontract.Option{
+	translation = translator.Get("test.foo", translationcontract.Option{
 		Replace: map[string]string{
 			"name":     "krishan",
 			"greeting": "Hello",
 		},
 	})
-	t.NoError(err)
 	t.Equal("Hello krishan", translation)
 
 	// non-existing json key looks for regular keys
@@ -149,8 +142,7 @@ func (t *TranslatorTestSuite) TestGet() {
 			"bar": "one",
 		},
 	}, nil)
-	translation, err = translator.Get("foo/test.bar")
-	t.NoError(err)
+	translation = translator.Get("foo/test.bar")
 	t.Equal("one", translation)
 
 	// empty fallback
@@ -158,8 +150,7 @@ func (t *TranslatorTestSuite) TestGet() {
 	t.mockLoader.On("Load", "test", "en").Once().Return(map[string]map[string]any{
 		"en": {},
 	}, nil)
-	translation, err = translator.Get("test.foo")
-	t.NoError(err)
+	translation = translator.Get("test.foo")
 	t.Equal("test.foo", translation)
 
 	// Case: Fallback to a different locale
@@ -172,17 +163,15 @@ func (t *TranslatorTestSuite) TestGet() {
 			"nonexistentKey": "French translation",
 		},
 	}, nil)
-	translation, err = translator.Get("test.nonexistentKey", translationcontract.Option{
+	translation = translator.Get("test.nonexistentKey", translationcontract.Option{
 		Fallback: translationcontract.Bool(true),
 		Locale:   "en",
 	})
-	t.NoError(err)
 	t.Equal("French translation", translation)
 
 	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
 	t.mockLoader.On("Load", "test", "en").Once().Return(map[string]map[string]any{}, nil)
-	translation, err = translator.Get("test.foo")
-	t.Error(err)
+	translation = translator.Get("test.foo")
 	t.Equal("", translation)
 }
 

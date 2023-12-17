@@ -41,11 +41,8 @@ func NewTranslator(ctx context.Context, loader translationcontract.Loader, local
 	}
 }
 
-func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) (string, error) {
-	line, err := t.Get(key, options...)
-	if err != nil {
-		return "", err
-	}
+func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) string {
+	line := t.Get(key, options...)
 
 	replace := map[string]string{
 		"count": strconv.Itoa(number),
@@ -56,10 +53,10 @@ func (t *Translator) Choice(key string, number int, options ...translationcontra
 		locale = options[0].Locale
 	}
 
-	return makeReplacements(t.selector.Choose(line, number, locale), replace), nil
+	return makeReplacements(t.selector.Choose(line, number, locale), replace)
 }
 
-func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) {
+func (t *Translator) Get(key string, options ...translationcontract.Option) string {
 	if t.key == "" {
 		t.key = key
 	}
@@ -84,12 +81,14 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 	// If the file doesn't exist, we will return fallback if it is enabled.
 	// Otherwise, we will return the key as the line.
 	if err := t.load(folder, locale); err != nil && err != ErrFileNotExist {
-		return "", err
+		//facades.Log().Error(err)
+		return t.key
 	}
 
-	marshal, err := sonic.Marshal(t.loaded[folder][locale])
+	marshal, err := json.Marshal(t.loaded[locale][folder])
 	if err != nil {
-		return "", err
+		//facades.Log().Error(err)
+		return t.key
 	}
 	var keyParts []interface{}
 	for _, part := range strings.Split(keyPart, ".") {
@@ -115,24 +114,26 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 				fallbackOptions.Locale = fallbackLocale
 				return t.Get(t.key, fallbackOptions)
 			}
-			return t.key, nil
+			return t.key
 		}
-		return "", err
+		//facades.Log().Error(err)
+		return t.key
 	}
 
 	line, err := keyValue.String()
 	if err != nil {
-		return "", err
+		//facades.Log().Error(err)
+		return t.key
 	}
 
 	// If the line doesn't contain any placeholders, we can return it right
 	// away.Otherwise, we will make the replacements on the line and return
 	// the result.
 	if len(options) > 0 {
-		return makeReplacements(line, options[0].Replace), nil
+		return makeReplacements(line, options[0].Replace)
 	}
 
-	return line, nil
+	return line
 }
 
 func (t *Translator) GetFallback() string {
@@ -150,8 +151,8 @@ func (t *Translator) GetLocale() string {
 }
 
 func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
-	line, err := t.Get(key, options...)
-	return err == nil && line != key
+	line := t.Get(key, options...)
+	return line != key
 }
 
 func (t *Translator) SetFallback(locale string) context.Context {
