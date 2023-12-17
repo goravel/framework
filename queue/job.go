@@ -2,10 +2,10 @@ package queue
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/carbon"
 )
 
 // Register registers jobs to the registry.
@@ -46,15 +46,10 @@ func Call(signature string, args []contractsqueue.Arg) error {
 		}
 	}()
 
-	value, exists := JobRegistry.Load(signature)
-	if !exists {
-		return errors.New("job not found")
+	job, err := Get(signature)
+	if err != nil {
+		return err
 	}
-	job, ok := value.(contractsqueue.Job)
-	if !ok {
-		return errors.New("job must implement contracts/queue/Job interface")
-	}
-
 	values, err := argsToValues(args)
 	if err != nil {
 		return err
@@ -94,7 +89,7 @@ func Call(signature string, args []contractsqueue.Arg) error {
 func Get(signature string) (contractsqueue.Job, error) {
 	value, exists := JobRegistry.Load(signature)
 	if !exists {
-		return nil, errors.New("job not found")
+		return nil, fmt.Errorf("job %s not found", signature)
 	}
 	job, ok := value.(contractsqueue.Job)
 	if !ok {
@@ -102,42 +97,4 @@ func Get(signature string) (contractsqueue.Job, error) {
 	}
 
 	return job, nil
-}
-
-type Job struct {
-	ID            uint64               `gorm:"primaryKey" json:"id"`                        // The unique ID of the job.
-	Queue         string               `gorm:"not null" json:"queue"`                       // The name of the queue the job belongs to.
-	Job           string               `gorm:"not null" json:"job"`                         // The name of the handler for this job.
-	Payloads      []contractsqueue.Arg `gorm:"not null;serializer:json" json:"payloads"`    // The arguments passed to the job.
-	Attempts      uint                 `gorm:"not null;default:0" json:"attempts"`          // The number of attempts made on the job.
-	MaxTries      *uint                `gorm:"default:null;default:0" json:"maxTries"`      // The maximum number of attempts for this job.
-	MaxExceptions *uint                `gorm:"default:null;default:0" json:"maxExceptions"` // The maximum number of exceptions to allow before failing.
-	Backoff       uint                 `gorm:"not null;default:0" json:"backoff"`           // The number of seconds to wait before retrying the job.
-	Timeout       *uint                `gorm:"default:null;default:0" json:"timeout"`       // The number of seconds the job can run.
-	TimeoutAt     *carbon.DateTime     `gorm:"default:null" json:"timeoutAt"`               // The timestamp when the job running timeout.
-	ReservedAt    *carbon.DateTime     `gorm:"default:null" json:"reservedAt"`              // The timestamp when the job started running.
-	AvailableAt   carbon.DateTime      `gorm:"not null" json:"availableAt"`                 // The timestamp when the job can start running.
-	CreatedAt     carbon.DateTime      `gorm:"not null" json:"createdAt"`                   // The timestamp when the job was created.
-}
-
-func (j Job) Signature() string {
-	return j.Job
-}
-
-func (j Job) Handle(args ...any) error {
-	job, err := Get(j.Signature())
-	if err != nil {
-		return err
-	}
-
-	return job.Handle(args...)
-}
-
-type FailedJob struct {
-	ID        uint                 `gorm:"primaryKey"`               // The unique ID of the job.
-	Queue     string               `gorm:"not null"`                 // The name of the queue the job belongs to.
-	Job       string               `gorm:"not null"`                 // The name of the handler for this job.
-	Payloads  []contractsqueue.Arg `gorm:"not null;serializer:json"` // The arguments passed to the job.
-	Exception string               `gorm:"not null"`                 // The exception that caused the job to fail.
-	FailedAt  carbon.DateTime      `gorm:"not null"`                 // The timestamp when the job failed.
 }

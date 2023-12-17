@@ -23,7 +23,7 @@ func (receiver MysqlStubs) CreateDown() string {
 
 // UpdateUp Update up migration content.
 func (receiver MysqlStubs) UpdateUp() string {
-	return `ALTER TABLE DummyTable ADD column TEXT;
+	return `ALTER TABLE DummyTable ADD column VARCHAR(255);
 `
 }
 

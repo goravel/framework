@@ -23,13 +23,13 @@ func NewWorker(config *Config, concurrent int, connection string, queue string) 
 	return &Worker{
 		concurrent: concurrent,
 		driver:     NewDriver(connection, config),
-		failedJobs: config.FailedJobsDatabase(),
+		failedJobs: config.FailedJobsQuery(),
 		queue:      queue,
 	}
 }
 
 func (r *Worker) Run() error {
-	if r.driver.DriverName() == DriverSync {
+	if r.driver.Driver() == DriverSync {
 		return fmt.Errorf("queue %s driver not need run", r.queue)
 	}
 
@@ -58,7 +58,7 @@ func (r *Worker) Run() error {
 					if err != nil {
 						failedJobChan <- FailedJob{
 							Queue:     r.queue,
-							Job:       job.Signature(),
+							Signature: job.Signature(),
 							Payloads:  args,
 							Exception: err.Error(),
 							FailedAt:  carbon.DateTime{Carbon: carbon.Now()},

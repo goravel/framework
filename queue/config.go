@@ -47,7 +47,7 @@ func (r *Config) Driver(connection string) string {
 }
 
 func (r *Config) Redis(queueConnection string) *redis.Client {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
+	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.database", queueConnection))
 	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
 	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
 	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
@@ -61,13 +61,13 @@ func (r *Config) Redis(queueConnection string) *redis.Client {
 }
 
 func (r *Config) Database(queueConnection string) orm.Query {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
+	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.database", queueConnection))
 	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.table", queueConnection))
 	return OrmFacade.Connection(connection).Query().Table(table)
 }
 
-func (r *Config) FailedJobsDatabase() orm.Query {
-	connection := r.config.GetString("queue.failed.connection")
+func (r *Config) FailedJobsQuery() orm.Query {
+	connection := r.config.GetString("queue.failed.database")
 	table := r.config.GetString("queue.failed.table")
 	return OrmFacade.Connection(connection).Query().Table(table)
 }

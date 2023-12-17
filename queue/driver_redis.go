@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
@@ -33,11 +34,11 @@ func NewRedis(connection string, client *redis.Client) *Redis {
 	}
 }
 
-func (r *Redis) ConnectionName() string {
+func (r *Redis) Connection() string {
 	return r.connection
 }
 
-func (r *Redis) DriverName() string {
+func (r *Redis) Driver() string {
 	return DriverRedis
 }
 
@@ -92,8 +93,8 @@ func (r *Redis) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, err
 		return nil, nil, err
 	}
 
-	result, err := r.client.BLPop(r.ctx, 1*time.Second, queue).Result()
-	if err == redis.Nil {
+	result, err := r.client.BLPop(r.ctx, 60*time.Second, queue).Result()
+	if errors.Is(err, redis.Nil) {
 		return r.Pop(queue)
 	} else if err != nil {
 		return nil, nil, err

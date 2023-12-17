@@ -93,7 +93,7 @@ func (s *ConfigTestSuite) TestDatabase() {
 	s.mockConfig.AssertExpectations(s.T())
 }
 
-func (s *ConfigTestSuite) TestFailedJobsDatabase() {
+func (s *ConfigTestSuite) TestFailedJobsQuery() {
 	mockOrm := &ormmock.Orm{}
 	mockQuery := &ormmock.Query{}
 	mockOrm.On("Connection", "database").Return(mockOrm)
@@ -102,10 +102,10 @@ func (s *ConfigTestSuite) TestFailedJobsDatabase() {
 
 	OrmFacade = mockOrm
 
-	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
-	orm := s.config.FailedJobsDatabase()
+	orm := s.config.FailedJobsQuery()
 
 	s.NotNil(orm)
 	s.mockConfig.AssertExpectations(s.T())

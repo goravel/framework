@@ -41,7 +41,7 @@ func (_m *Driver) Clear(_a0 string) error {
 }
 
 // ConnectionName provides a mock function with given fields:
-func (_m *Driver) ConnectionName() string {
+func (_m *Driver) Connection() string {
 	ret := _m.Called()
 
 	var r0 string
@@ -69,7 +69,7 @@ func (_m *Driver) Delete(_a0 string, job queue.Jobs) error {
 }
 
 // DriverName provides a mock function with given fields:
-func (_m *Driver) DriverName() string {
+func (_m *Driver) Driver() string {
 	ret := _m.Called()
 
 	var r0 string

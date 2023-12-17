@@ -20,20 +20,20 @@ func NewApplication(config configcontract.Config) *Application {
 	}
 }
 
-func (app *Application) Worker(args *queue.Args) queue.Worker {
+func (app *Application) Worker(payloads ...*queue.Args) queue.Worker {
 	defaultConnection := app.config.DefaultConnection()
 
-	if args == nil {
+	if len(payloads) == 0 {
 		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""))
 	}
-	if args.Connection == "" {
-		args.Connection = defaultConnection
+	if payloads[0].Connection == "" {
+		payloads[0].Connection = defaultConnection
 	}
-	if args.Concurrent == 0 {
-		args.Concurrent = 1
+	if payloads[0].Concurrent == 0 {
+		payloads[0].Concurrent = 1
 	}
 
-	return NewWorker(app.config, args.Concurrent, args.Connection, app.config.Queue(args.Connection, args.Queue))
+	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue))
 }
 
 func (app *Application) Register(jobs []queue.Job) error {

@@ -82,7 +82,7 @@ func (s *DriverRedisTestSuite) TestDefaultRedisQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(2)
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(2)
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(2)
-	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -116,7 +116,7 @@ func (s *DriverRedisTestSuite) TestDelayRedisQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(2)
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(2)
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(2)
-	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -154,7 +154,7 @@ func (s *DriverRedisTestSuite) TestCustomRedisQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(3)
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(3)
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(3)
-	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -192,7 +192,7 @@ func (s *DriverRedisTestSuite) TestErrorRedisQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(3)
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(3)
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(3)
-	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -228,7 +228,7 @@ func (s *DriverRedisTestSuite) TestChainRedisQueue() {
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Times(2)
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Times(2)
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Times(2)
-	s.mockConfig.On("GetString", "queue.failed.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

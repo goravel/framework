@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -27,11 +26,11 @@ func NewASync(connection string) *ASync {
 	}
 }
 
-func (r *ASync) ConnectionName() string {
+func (r *ASync) Connection() string {
 	return r.connection
 }
 
-func (r *ASync) DriverName() string {
+func (r *ASync) Driver() string {
 	return DriverASync
 }
 
@@ -71,14 +70,10 @@ func (r *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, err
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, exists := asyncJobs[queue]; !exists {
-		time.Sleep(1 * time.Second)
-		return nil, nil, errors.New("no job found in queue")
-	}
 	if len(asyncJobs[queue]) == 0 {
 		delete(asyncJobs, queue)
 		time.Sleep(1 * time.Second)
-		return nil, nil, errors.New("no job found in queue")
+		return nil, nil, fmt.Errorf("no job found in %s queue", queue)
 	}
 
 	job := asyncJobs[queue][0]
@@ -97,7 +92,7 @@ func (r *ASync) Delete(queue string, job contractsqueue.Jobs) error {
 	defer r.mu.Unlock()
 
 	if _, exists := asyncJobs[queue]; !exists {
-		return errors.New("no job found in queue")
+		return fmt.Errorf("no job found in %s queue", queue)
 	}
 
 	for i, j := range asyncJobs[queue] {
@@ -116,7 +111,7 @@ func (r *ASync) Release(queue string, job contractsqueue.Jobs, delay uint) error
 	defer r.mu.Unlock()
 
 	if _, exists := asyncJobs[queue]; !exists {
-		return errors.New("no job found in queue")
+		return fmt.Errorf("no job found in %s queue", queue)
 	}
 
 	job.Delay = delay
@@ -131,7 +126,10 @@ func (r *ASync) Clear(queue string) error {
 	defer r.mu.Unlock()
 
 	delete(asyncJobs, queue)
-	r.size = 0
+	if _, exists := asyncJobs[queue]; exists {
+		r.size = r.size - uint64(len(asyncJobs[queue]))
+	}
+
 	return nil
 }
 
@@ -139,5 +137,5 @@ func (r *ASync) Size(queue string) (uint64, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return r.size, nil
+	return uint64(len(asyncJobs[queue])), nil
 }
