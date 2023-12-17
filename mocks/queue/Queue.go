@@ -75,12 +75,18 @@ func (_m *Queue) Register(jobs []queue.Job) error {
 }
 
 // Worker provides a mock function with given fields: payloads
-func (_m *Queue) Worker(payloads *queue.Args) queue.Worker {
-	ret := _m.Called(payloads)
+func (_m *Queue) Worker(payloads ...*queue.Args) queue.Worker {
+	_va := make([]interface{}, len(payloads))
+	for _i := range payloads {
+		_va[_i] = payloads[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 queue.Worker
-	if rf, ok := ret.Get(0).(func(*queue.Args) queue.Worker); ok {
-		r0 = rf(payloads)
+	if rf, ok := ret.Get(0).(func(...*queue.Args) queue.Worker); ok {
+		r0 = rf(payloads...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(queue.Worker)
