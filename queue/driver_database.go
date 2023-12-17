@@ -94,10 +94,10 @@ func (r *Database) Later(delay uint, job contractsqueue.Job, args []contractsque
 func (r *Database) Pop(q string) (contractsqueue.Job, []contractsqueue.Arg, error) {
 	var job Job
 	err := r.query.Where("queue", q).Where("reserved_at", nil).Where("available_at", "<=", carbon.DateTime{Carbon: carbon.Now()}).Order("id asc").First(&job)
-	handler, err := Get(job.Signature)
 	if err != nil {
 		return nil, nil, err
 	}
+	handler, err := Get(job.Signature)
 
 	return handler, job.Payloads, err
 }

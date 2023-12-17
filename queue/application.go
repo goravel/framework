@@ -23,7 +23,7 @@ func NewApplication(config configcontract.Config) *Application {
 func (app *Application) Worker(payloads ...*queue.Args) queue.Worker {
 	defaultConnection := app.config.DefaultConnection()
 
-	if len(payloads) == 0 {
+	if len(payloads) == 0 || payloads[0] == nil {
 		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""))
 	}
 	if payloads[0].Connection == "" {

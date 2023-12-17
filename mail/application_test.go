@@ -106,7 +106,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker(nil).Run())
+		s.Nil(queueFacade.Worker().Run())
 
 		for range ctx.Done() {
 			return
