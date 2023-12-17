@@ -58,6 +58,27 @@ func (_m *ContextRequest) Bind(obj interface{}) error {
 	return r0
 }
 
+// Cookie provides a mock function with given fields: key, defaultValue
+func (_m *ContextRequest) Cookie(key string, defaultValue ...string) string {
+	_va := make([]interface{}, len(defaultValue))
+	for _i := range defaultValue {
+		_va[_i] = defaultValue[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, ...string) string); ok {
+		r0 = rf(key, defaultValue...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // File provides a mock function with given fields: name
 func (_m *ContextRequest) File(name string) (filesystem.File, error) {
 	ret := _m.Called(name)

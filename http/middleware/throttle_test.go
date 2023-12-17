@@ -328,6 +328,10 @@ func (r *TestRequest) All() map[string]any {
 	panic("do not need to implement it")
 }
 
+func (r *TestRequest) Cookie(key string, defaultValue ...string) string {
+	panic("do not need to implement it")
+}
+
 func (r *TestRequest) Bind(obj any) error {
 	panic("do not need to implement it")
 }
@@ -454,6 +458,10 @@ type TestResponse struct {
 	Headers map[string]string
 }
 
+func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.ContextResponse {
+	panic("do not need to implement it")
+}
+
 func (r *TestResponse) Data(code int, contentType string, data []byte) contractshttp.Response {
 	panic("do not need to implement it")
 }
@@ -493,6 +501,10 @@ func (r *TestResponse) Success() contractshttp.ResponseSuccess {
 }
 
 func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) WithoutCookie(name string) contractshttp.ContextResponse {
 	panic("do not need to implement it")
 }
 

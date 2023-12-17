@@ -8,6 +8,8 @@ import (
 )
 
 type ContextRequest interface {
+	// Cookie retrieves the value of the specified cookie by its key.
+	Cookie(key string, defaultValue ...string) string
 	// Header retrieves the value of the specified HTTP header by its key.
 	// If the header is not found, it returns the optional default value (if provided).
 	Header(key string, defaultValue ...string) string

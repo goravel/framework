@@ -14,6 +14,22 @@ type ContextResponse struct {
 	mock.Mock
 }
 
+// Cookie provides a mock function with given fields: cookie
+func (_m *ContextResponse) Cookie(cookie http.Cookie) http.ContextResponse {
+	ret := _m.Called(cookie)
+
+	var r0 http.ContextResponse
+	if rf, ok := ret.Get(0).(func(http.Cookie) http.ContextResponse); ok {
+		r0 = rf(cookie)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.ContextResponse)
+		}
+	}
+
+	return r0
+}
+
 // Data provides a mock function with given fields: code, contentType, data
 func (_m *ContextResponse) Data(code int, contentType string, data []byte) http.Response {
 	ret := _m.Called(code, contentType, data)
@@ -192,6 +208,22 @@ func (_m *ContextResponse) View() http.ResponseView {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.ResponseView)
+		}
+	}
+
+	return r0
+}
+
+// WithoutCookie provides a mock function with given fields: name
+func (_m *ContextResponse) WithoutCookie(name string) http.ContextResponse {
+	ret := _m.Called(name)
+
+	var r0 http.ContextResponse
+	if rf, ok := ret.Get(0).(func(string) http.ContextResponse); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.ContextResponse)
 		}
 	}
 
