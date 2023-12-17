@@ -57,8 +57,20 @@ func (t *TranslatorTestSuite) TestChoice() {
 	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
 	t.mockLoader.On("Load", "en", "test").Once().Return(nil, errors.New("some error"))
 	translation = translator.Choice("test.foo", 1)
-	//t.EqualError(err, "some error")
 	t.Equal("test.foo", translation)
+
+	// test nested folder and keys
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "en", "foo/test").Once().Return(map[string]map[string]any{
+		"foo/test": {
+			"bar": "{0} first|{1}second",
+			"baz": map[string]string{
+				"qux": "{0} first|{1}third",
+			},
+		},
+	}, nil)
+	translation = translator.Choice("foo/test.baz.qux", 1)
+	t.Equal("third", translation)
 }
 
 func (t *TranslatorTestSuite) TestGet() {
@@ -173,6 +185,19 @@ func (t *TranslatorTestSuite) TestGet() {
 	t.mockLoader.On("Load", "en", "test").Once().Return(map[string]map[string]any{}, nil)
 	translation = translator.Get("test.foo")
 	t.Equal("test.foo", translation)
+
+	// Case: Nested folder and keys
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "en", "foo/test").Once().Return(map[string]map[string]any{
+		"foo/test": {
+			"bar": "one",
+			"baz": map[string]string{
+				"qux": "two",
+			},
+		},
+	}, nil)
+	translation = translator.Get("foo/test.baz.qux")
+	t.Equal("two", translation)
 }
 
 func (t *TranslatorTestSuite) TestGetLocale() {
@@ -222,6 +247,18 @@ func (t *TranslatorTestSuite) TestHas() {
 	}, nil)
 	hasKey = translator.Has("test.email")
 	t.False(hasKey)
+
+	// Case: Nested folder and keys
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "en", "foo/test").Once().Return(map[string]map[string]any{
+		"foo/test": {
+			"bar": "one",
+			"baz": map[string]string{
+				"qux": "two",
+			},
+		},
+	}, nil)
+	t.True(translator.Has("foo/test.baz.qux"))
 }
 
 func (t *TranslatorTestSuite) TestSetFallback() {
@@ -272,6 +309,17 @@ func (t *TranslatorTestSuite) TestLoad() {
 	err = translator.load("es", "folder3")
 	t.EqualError(err, "translation file does not exist")
 	t.Nil(translator.loaded["folder3"])
+
+	// Case: Nested folder and keys
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "en")
+	t.mockLoader.On("Load", "en", "foo/test").Once().Return(map[string]map[string]any{
+		"foo/test": {
+			"bar": "one",
+		},
+	}, nil)
+	err = translator.load("en", "foo/test")
+	t.NoError(err)
+	t.Equal("one", translator.loaded["en"]["foo/test"]["bar"])
 }
 
 func (t *TranslatorTestSuite) TestIsLoaded() {
