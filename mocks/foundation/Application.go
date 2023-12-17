@@ -207,13 +207,13 @@ func (_m *Application) MakeArtisan() console.Artisan {
 	return r0
 }
 
-// MakeAuth provides a mock function with given fields:
-func (_m *Application) MakeAuth() auth.Auth {
-	ret := _m.Called()
+// MakeAuth provides a mock function with given fields: ctx
+func (_m *Application) MakeAuth(ctx http.Context) auth.Auth {
+	ret := _m.Called(ctx)
 
 	var r0 auth.Auth
-	if rf, ok := ret.Get(0).(func() auth.Auth); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(http.Context) auth.Auth); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(auth.Auth)

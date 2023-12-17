@@ -142,7 +142,7 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	serviceProvider := &auth.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
-	s.NotNil(s.app.MakeAuth())
+	s.NotNil(s.app.MakeAuth(http.Background()))
 	mockConfig.AssertExpectations(s.T())
 }
 
