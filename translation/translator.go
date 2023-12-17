@@ -81,7 +81,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	// simply load the file and return the line if it exists.
 	// If the file doesn't exist, we will return fallback if it is enabled.
 	// Otherwise, we will return the key as the line.
-	if err := t.load(folder, locale); err != nil && err != ErrFileNotExist {
+	if err := t.load(locale, folder); err != nil && err != ErrFileNotExist {
 		//facades.Log().Error(err)
 		return t.key
 	}
@@ -106,7 +106,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 			// translation for the given key.If it is translated, we will return it.
 			// Otherwise, we can finally return the key as that will be the final
 			// fallback.
-			if (locale != fallbackLocale) && fallback {
+			if (locale != fallbackLocale) && fallback && fallbackLocale != "" {
 				var fallbackOptions translationcontract.Option
 				if len(options) > 0 {
 					fallbackOptions = options[0]
@@ -176,12 +176,12 @@ func (t *Translator) SetLocale(locale string) context.Context {
 	return t.ctx
 }
 
-func (t *Translator) load(folder string, locale string) error {
-	if t.isLoaded(folder, locale) {
+func (t *Translator) load(locale string, folder string) error {
+	if t.isLoaded(locale, folder) {
 		return nil
 	}
 
-	translations, err := t.loader.Load(folder, locale)
+	translations, err := t.loader.Load(locale, folder)
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func (t *Translator) load(folder string, locale string) error {
 	return nil
 }
 
-func (t *Translator) isLoaded(folder string, locale string) bool {
+func (t *Translator) isLoaded(locale string, folder string) bool {
 	if _, ok := t.loaded[locale]; !ok {
 		return false
 	}

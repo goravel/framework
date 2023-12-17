@@ -18,7 +18,7 @@ func NewFileLoader(paths []string) *FileLoader {
 	}
 }
 
-func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]any, error) {
+func (f *FileLoader) Load(locale string, folder string) (map[string]map[string]any, error) {
 	translations := make(map[string]map[string]any)
 	for _, path := range f.paths {
 		var val map[string]any

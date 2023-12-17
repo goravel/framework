@@ -33,28 +33,28 @@ func (f *FileLoaderTestSuite) SetupTest() {
 func (f *FileLoaderTestSuite) TestLoad() {
 	paths := []string{"./lang"}
 	loader := NewFileLoader(paths)
-	translations, err := loader.Load("test", "en")
+	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("bar", translations["test"]["foo"])
 
 	paths = []string{"./lang/another", "./lang"}
 	loader = NewFileLoader(paths)
-	translations, err = loader.Load("test", "en")
+	translations, err = loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("bar", translations["test"]["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
-	translations, err = loader.Load("another/test", "en")
+	translations, err = loader.Load("en", "another/test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["another/test"]["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
-	translations, err = loader.Load("restricted/test", "en")
+	translations, err = loader.Load("en", "restricted/test")
 	if env.IsWindows() {
 		f.NoError(err)
 		f.NotNil(translations)
@@ -68,7 +68,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 	paths := []string{"./lang"}
 	loader := NewFileLoader(paths)
-	translations, err := loader.Load("test", "hi")
+	translations, err := loader.Load("hi", "test")
 
 	f.Error(err)
 	f.Nil(translations)
@@ -78,7 +78,7 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 	paths := []string{"./lang"}
 	loader := NewFileLoader(paths)
-	translations, err := loader.Load("invalid/test", "en")
+	translations, err := loader.Load("en", "invalid/test")
 
 	f.Error(err)
 	f.Nil(translations)
