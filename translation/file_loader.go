@@ -33,10 +33,10 @@ func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]a
 				return nil, err
 			}
 			// Initialize the map if it's a nil
-			if translations[locale] == nil {
-				translations[locale] = make(map[string]any)
+			if translations[folder] == nil {
+				translations[folder] = make(map[string]any)
 			}
-			mergeMaps(translations[locale], val)
+			mergeMaps(translations[folder], val)
 		} else {
 			return nil, ErrFileNotExist
 		}

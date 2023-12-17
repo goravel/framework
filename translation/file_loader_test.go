@@ -36,21 +36,21 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	translations, err := loader.Load("test", "en")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("bar", translations["en"]["foo"])
+	f.Equal("bar", translations["test"]["foo"])
 
 	paths = []string{"./lang/another", "./lang"}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("test", "en")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("bar", translations["en"]["foo"])
+	f.Equal("bar", translations["test"]["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("another/test", "en")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("backagebar", translations["en"]["foo"])
+	f.Equal("backagebar", translations["another/test"]["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
@@ -58,7 +58,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	if env.IsWindows() {
 		f.NoError(err)
 		f.NotNil(translations)
-		f.Equal("restricted", translations["en"]["foo"])
+		f.Equal("restricted", translations["restricted/test"]["foo"])
 	} else {
 		f.Error(err)
 		f.Nil(translations)

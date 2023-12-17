@@ -12,6 +12,7 @@ import (
 
 	"github.com/goravel/framework/contracts/http"
 	translationcontract "github.com/goravel/framework/contracts/translation"
+	"github.com/goravel/framework/support/json"
 )
 
 type Translator struct {
@@ -184,16 +185,16 @@ func (t *Translator) load(folder string, locale string) error {
 	if err != nil {
 		return err
 	}
-	t.loaded[folder] = translations
+	t.loaded[locale] = translations
 	return nil
 }
 
 func (t *Translator) isLoaded(folder string, locale string) bool {
-	if _, ok := t.loaded[folder]; !ok {
+	if _, ok := t.loaded[locale]; !ok {
 		return false
 	}
 
-	if _, ok := t.loaded[folder][locale]; !ok {
+	if _, ok := t.loaded[locale][folder]; !ok {
 		return false
 	}
 
