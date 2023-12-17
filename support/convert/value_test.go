@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -243,5 +244,87 @@ func TestReflectValue(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestReflectValueWithUnsupportedType(t *testing.T) {
+	t.Parallel()
+
+	_, err := ReflectValue("unsupportedType", "value")
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestReflectValueWithBool(t *testing.T) {
+	t.Parallel()
+
+	value, err := ReflectValue("bool", true)
+	if err != nil {
+		t.Error(err)
+	}
+	if value.Type().String() != "bool" {
+		t.Errorf("type is %v, want bool", value.Type().String())
+	}
+	if value.Interface() != true {
+		t.Errorf("value is %v, want true", value.Interface())
+	}
+}
+
+func TestReflectValueWithInvalidBool(t *testing.T) {
+	t.Parallel()
+
+	_, err := ReflectValue("bool", "not a bool")
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestReflectValuesWithUnsupportedType(t *testing.T) {
+	t.Parallel()
+
+	_, err := ReflectValue("[]unsupportedType", []interface{}{"value"})
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestReflectValuesWithBoolSlice(t *testing.T) {
+	t.Parallel()
+
+	value, err := ReflectValue("[]bool", []interface{}{true, false})
+	if err != nil {
+		t.Error(err)
+	}
+	if value.Type().String() != "[]bool" {
+		t.Errorf("type is %v, want []bool", value.Type().String())
+	}
+	if !reflect.DeepEqual(value.Interface(), []bool{true, false}) {
+		t.Errorf("value is %v, want [true, false]", value.Interface())
+	}
+}
+
+func TestReflectValuesWithInvalidBoolSlice(t *testing.T) {
+	t.Parallel()
+
+	_, err := ReflectValue("[]bool", []interface{}{"not a bool"})
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+}
+
+func TestIsContextTypeWithNonContext(t *testing.T) {
+	t.Parallel()
+
+	if IsContextType(reflect.TypeOf("string")) {
+		t.Error("expected false, got true")
+	}
+}
+
+func TestIsContextTypeWithContext(t *testing.T) {
+	t.Parallel()
+
+	if !IsContextType(reflect.TypeOf((*context.Context)(nil)).Elem()) {
+		t.Error("expected true, got false")
 	}
 }
