@@ -1,14 +1,11 @@
 package translation
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/bytedance/sonic"
-	"github.com/bytedance/sonic/decoder"
-
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/json"
 )
 
 type FileLoader struct {
@@ -32,12 +29,7 @@ func (f *FileLoader) Load(folder string, locale string) (map[string]map[string]a
 			if err != nil {
 				return nil, err
 			}
-			if err := sonic.Unmarshal(data, &val); err != nil {
-				if _, ok := err.(decoder.SyntaxError); ok {
-					return nil, fmt.Errorf("translation file [%s] contains an invalid JSON structure", fullPath)
-				} else if _, ok := err.(*decoder.MismatchTypeError); ok {
-					return nil, fmt.Errorf("translation file [%s] contains mismatched types", fullPath)
-				}
+			if err := json.Unmarshal(data, &val); err != nil {
 				return nil, err
 			}
 			// Initialize the map if it's a nil
