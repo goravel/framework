@@ -38,7 +38,7 @@ type Container interface {
 	// MakeArtisan resolves the artisan console instance.
 	MakeArtisan() console.Artisan
 	// MakeAuth resolves the auth instance.
-	MakeAuth() auth.Auth
+	MakeAuth(ctx http.Context) auth.Auth
 	// MakeCache resolves the cache instance.
 	MakeCache() cache.Cache
 	// MakeConfig resolves the config instance.
