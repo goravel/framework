@@ -90,8 +90,10 @@ func (c *Container) MakeArtisan() consolecontract.Artisan {
 	return instance.(consolecontract.Artisan)
 }
 
-func (c *Container) MakeAuth() authcontract.Auth {
-	instance, err := c.Make(auth.BindingAuth)
+func (c *Container) MakeAuth(ctx httpcontract.Context) authcontract.Auth {
+	instance, err := c.MakeWith(auth.BindingAuth, map[string]any{
+		"ctx": ctx,
+	})
 	if err != nil {
 		color.Redln(err)
 		return nil
