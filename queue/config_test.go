@@ -63,7 +63,7 @@ func (s *ConfigTestSuite) TestQueue() {
 }
 
 func (s *ConfigTestSuite) TestRedis() {
-	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
+	s.mockConfig.On("GetString", "queue.connections.redis.database").Return("default").Once()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("127.0.0.1").Once()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(6379).Once()
@@ -84,7 +84,7 @@ func (s *ConfigTestSuite) TestDatabase() {
 
 	OrmFacade = mockOrm
 
-	s.mockConfig.On("GetString", "queue.connections.database.connection").Return("database").Once()
+	s.mockConfig.On("GetString", "queue.connections.database.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.connections.database.table").Return("jobs").Once()
 
 	orm := s.config.Database("database")
