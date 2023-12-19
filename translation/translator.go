@@ -11,6 +11,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/goravel/framework/contracts/http"
+	logcontract "github.com/goravel/framework/contracts/log"
 	translationcontract "github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/support/json"
 )
@@ -20,9 +21,16 @@ type Translator struct {
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
+	// loaded is a map structure used to store loaded translation data.
+	// It is organized as follows:
+	//   - First map (map[string]): Maps from locale to...
+	//     - Second map (map[string]): Maps from folder to...
+	//       - Third map (map[string]): Maps from key to...
+	//         - Value (any): The translation line corresponding to the key in the specified locale, folder, and key hierarchy.
 	loaded   map[string]map[string]map[string]any
 	selector *MessageSelector
 	key      string
+	logger   logcontract.Log
 }
 
 // contextKey is an unexported type for keys defined in this package.
@@ -31,7 +39,7 @@ type contextKey string
 const fallbackLocaleKey = contextKey("fallback_locale")
 const localeKey = contextKey("locale")
 
-func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string) *Translator {
+func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string, logger logcontract.Log) *Translator {
 	return &Translator{
 		ctx:      ctx,
 		loader:   loader,
@@ -39,6 +47,7 @@ func NewTranslator(ctx context.Context, loader translationcontract.Loader, local
 		fallback: fallback,
 		loaded:   make(map[string]map[string]map[string]any),
 		selector: NewMessageSelector(),
+		logger:   logger,
 	}
 }
 
@@ -82,13 +91,13 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	// If the file doesn't exist, we will return fallback if it is enabled.
 	// Otherwise, we will return the key as the line.
 	if err := t.load(locale, folder); err != nil && err != ErrFileNotExist {
-		//facades.Log().Error(err)
+		t.logger.Error(err)
 		return t.key
 	}
 
 	marshal, err := json.Marshal(t.loaded[locale][folder])
 	if err != nil {
-		//facades.Log().Error(err)
+		t.logger.Error(err)
 		return t.key
 	}
 	var keyParts []interface{}
@@ -117,13 +126,13 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 			}
 			return t.key
 		}
-		//facades.Log().Error(err)
+		t.logger.Error(err)
 		return t.key
 	}
 
 	line, err := keyValue.String()
 	if err != nil {
-		//facades.Log().Error(err)
+		t.logger.Error(err)
 		return t.key
 	}
 
