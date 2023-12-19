@@ -24,9 +24,9 @@ type Translator struct {
 	// loaded is a map structure used to store loaded translation data.
 	// It is organized as follows:
 	//   - First map (map[string]): Maps from locale to...
-	//     - Second map (map[string]): Maps from folder to...
+	//     - Second map (map[string]): Maps from folder(group) to...
 	//       - Third map (map[string]): Maps from key to...
-	//         - Value (any): The translation line corresponding to the key in the specified locale, folder, and key hierarchy.
+	//         - Value (any): The translation line corresponding to the key in the specified locale, folder(group), and key hierarchy.
 	loaded   map[string]map[string]map[string]any
 	selector *MessageSelector
 	key      string
@@ -83,19 +83,19 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		fallback = *options[0].Fallback
 	}
 
-	// Parse the key into folder and key parts.
-	folder, keyPart := parseKey(key)
+	// Parse the key into group and key parts.
+	group, keyPart := parseKey(key)
 
 	// For JSON translations, there is only one file per locale, so we will
 	// simply load the file and return the line if it exists.
 	// If the file doesn't exist, we will return fallback if it is enabled.
 	// Otherwise, we will return the key as the line.
-	if err := t.load(locale, folder); err != nil && err != ErrFileNotExist {
+	if err := t.load(locale, group); err != nil && err != ErrFileNotExist {
 		t.logger.Error(err)
 		return t.key
 	}
 
-	marshal, err := json.Marshal(t.loaded[locale][folder])
+	marshal, err := json.Marshal(t.loaded[locale][group])
 	if err != nil {
 		t.logger.Error(err)
 		return t.key
@@ -185,12 +185,12 @@ func (t *Translator) SetLocale(locale string) context.Context {
 	return t.ctx
 }
 
-func (t *Translator) load(locale string, folder string) error {
-	if t.isLoaded(locale, folder) {
+func (t *Translator) load(locale string, group string) error {
+	if t.isLoaded(locale, group) {
 		return nil
 	}
 
-	translations, err := t.loader.Load(locale, folder)
+	translations, err := t.loader.Load(locale, group)
 	if err != nil {
 		return err
 	}
@@ -198,12 +198,12 @@ func (t *Translator) load(locale string, folder string) error {
 	return nil
 }
 
-func (t *Translator) isLoaded(locale string, folder string) bool {
+func (t *Translator) isLoaded(locale string, group string) bool {
 	if _, ok := t.loaded[locale]; !ok {
 		return false
 	}
 
-	if _, ok := t.loaded[locale][folder]; !ok {
+	if _, ok := t.loaded[locale][group]; !ok {
 		return false
 	}
 
@@ -226,21 +226,21 @@ func makeReplacements(line string, replace map[string]string) string {
 	return strings.NewReplacer(shouldReplace...).Replace(line)
 }
 
-func parseKey(key string) (folder, keyPart string) {
+func parseKey(key string) (group, keyPart string) {
 	parts := strings.Split(key, "/")
 	keyParts := strings.Split(parts[len(parts)-1], ".")
-	folder = "*"
+	group = "*"
 	keyPart = ""
 	if len(keyParts) > 1 {
 		keyPart = strings.Join(keyParts[1:], ".")
 	}
 	if len(parts) > 1 {
-		folder = strings.Join(parts[:len(parts)-1], "/")
+		group = strings.Join(parts[:len(parts)-1], "/")
 	}
-	if folder != "*" {
-		folder = folder + "/" + keyParts[0]
+	if group != "*" {
+		group = group + "/" + keyParts[0]
 	} else {
-		folder = keyParts[0]
+		group = keyParts[0]
 	}
-	return folder, keyPart
+	return group, keyPart
 }

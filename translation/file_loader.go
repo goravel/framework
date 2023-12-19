@@ -18,11 +18,11 @@ func NewFileLoader(paths []string) *FileLoader {
 	}
 }
 
-func (f *FileLoader) Load(locale string, folder string) (map[string]map[string]any, error) {
+func (f *FileLoader) Load(locale string, group string) (map[string]map[string]any, error) {
 	translations := make(map[string]map[string]any)
 	for _, path := range f.paths {
 		var val map[string]any
-		fullPath := filepath.Join(path, locale, folder+".json")
+		fullPath := filepath.Join(path, locale, group+".json")
 
 		if file.Exists(fullPath) {
 			data, err := os.ReadFile(fullPath)
@@ -33,10 +33,10 @@ func (f *FileLoader) Load(locale string, folder string) (map[string]map[string]a
 				return nil, err
 			}
 			// Initialize the map if it's a nil
-			if translations[folder] == nil {
-				translations[folder] = make(map[string]any)
+			if translations[group] == nil {
+				translations[group] = make(map[string]any)
 			}
-			mergeMaps(translations[folder], val)
+			mergeMaps(translations[group], val)
 		} else {
 			return nil, ErrFileNotExist
 		}
