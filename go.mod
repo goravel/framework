@@ -29,11 +29,11 @@ require (
 	github.com/rotisserie/eris v0.5.4
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.6.0
-	github.com/spf13/viper v1.18.1
+	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.26.0
 	go.uber.org/atomic v1.11.0
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	google.golang.org/grpc v1.60.0
 	gorm.io/driver/mysql v1.5.2
