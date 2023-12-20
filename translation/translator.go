@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spf13/cast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -93,6 +94,8 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	}
 
 	keyValue := getValue(t.loaded[locale][group], keyPart)
+	// if the key is not found in the current locale group, we will try to load the
+	// fallback locale and try to retrieve the translation for the given key.
 	if keyValue == nil {
 		fallbackLocale := t.GetFallback()
 		// If the fallback locale is different from the current locale, we will
@@ -112,8 +115,8 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		return t.key
 	}
 
-	line, ok := keyValue.(string)
-	if !ok {
+	line := cast.ToString(keyValue)
+	if line == "" {
 		return t.key
 	}
 

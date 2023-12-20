@@ -36,7 +36,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("bar", translations["foo"])
+	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
 
 	paths = []string{"./lang/another", "./lang"}
 	loader = NewFileLoader(paths)
