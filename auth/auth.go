@@ -35,26 +35,28 @@ type Guards map[string]*Guard
 type Auth struct {
 	cache  cache.Cache
 	config config.Config
+	ctx    http.Context
 	guard  string
 	orm    orm.Orm
 }
 
-func NewAuth(guard string, cache cache.Cache, config config.Config, orm orm.Orm) *Auth {
+func NewAuth(guard string, cache cache.Cache, config config.Config, ctx http.Context, orm orm.Orm) *Auth {
 	return &Auth{
 		cache:  cache,
 		config: config,
+		ctx:    ctx,
 		guard:  guard,
 		orm:    orm,
 	}
 }
 
 func (a *Auth) Guard(name string) contractsauth.Auth {
-	return NewAuth(name, a.cache, a.config, a.orm)
+	return NewAuth(name, a.cache, a.config, a.ctx, a.orm)
 }
 
 // User need parse token first.
-func (a *Auth) User(ctx http.Context, user any) error {
-	auth, ok := ctx.Value(ctxKey).(Guards)
+func (a *Auth) User(user any) error {
+	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
 		return ErrorParseTokenFirst
 	}
@@ -74,7 +76,7 @@ func (a *Auth) User(ctx http.Context, user any) error {
 	return nil
 }
 
-func (a *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, error) {
+func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if a.cache == nil {
 		return nil, errors.New("cache support is required")
@@ -96,7 +98,7 @@ func (a *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, er
 				return nil, ErrorInvalidClaims
 			}
 
-			a.makeAuthContext(ctx, claims, "")
+			a.makeAuthContext(claims, "")
 
 			return &contractsauth.Payload{
 				Guard:    claims.Subject,
@@ -117,7 +119,7 @@ func (a *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, er
 		return nil, ErrorInvalidClaims
 	}
 
-	a.makeAuthContext(ctx, claims, token)
+	a.makeAuthContext(claims, token)
 
 	return &contractsauth.Payload{
 		Guard:    claims.Subject,
@@ -127,16 +129,16 @@ func (a *Auth) Parse(ctx http.Context, token string) (*contractsauth.Payload, er
 	}, nil
 }
 
-func (a *Auth) Login(ctx http.Context, user any) (token string, err error) {
+func (a *Auth) Login(user any) (token string, err error) {
 	id := database.GetID(user)
 	if id == nil {
 		return "", ErrorNoPrimaryKeyField
 	}
 
-	return a.LoginUsingID(ctx, id)
+	return a.LoginUsingID(id)
 }
 
-func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) {
+func (a *Auth) LoginUsingID(id any) (token string, err error) {
 	jwtSecret := a.config.GetString("jwt.secret")
 	if jwtSecret == "" {
 		return "", ErrorEmptySecret
@@ -168,14 +170,14 @@ func (a *Auth) LoginUsingID(ctx http.Context, id any) (token string, err error) 
 		return "", err
 	}
 
-	a.makeAuthContext(ctx, &claims, token)
+	a.makeAuthContext(&claims, token)
 
 	return
 }
 
 // Refresh need parse token first.
-func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
-	auth, ok := ctx.Value(ctxKey).(Guards)
+func (a *Auth) Refresh() (token string, err error) {
+	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
 		return "", ErrorParseTokenFirst
 	}
@@ -195,11 +197,11 @@ func (a *Auth) Refresh(ctx http.Context) (token string, err error) {
 		return "", ErrorRefreshTimeExceeded
 	}
 
-	return a.LoginUsingID(ctx, auth[a.guard].Claims.Key)
+	return a.LoginUsingID(auth[a.guard].Claims.Key)
 }
 
-func (a *Auth) Logout(ctx http.Context) error {
-	auth, ok := ctx.Value(ctxKey).(Guards)
+func (a *Auth) Logout() error {
+	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil || auth[a.guard].Token == "" {
 		return nil
 	}
@@ -223,13 +225,13 @@ func (a *Auth) Logout(ctx http.Context) error {
 	}
 
 	delete(auth, a.guard)
-	ctx.WithValue(ctxKey, auth)
+	a.ctx.WithValue(ctxKey, auth)
 
 	return nil
 }
 
-func (a *Auth) makeAuthContext(ctx http.Context, claims *Claims, token string) {
-	ctx.WithValue(ctxKey, Guards{
+func (a *Auth) makeAuthContext(claims *Claims, token string) {
+	a.ctx.WithValue(ctxKey, Guards{
 		a.guard: {claims, token},
 	})
 }
