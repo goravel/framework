@@ -10,19 +10,19 @@ type Loader struct {
 }
 
 // Load provides a mock function with given fields: locale, group
-func (_m *Loader) Load(locale string, group string) (map[string]map[string]interface{}, error) {
+func (_m *Loader) Load(locale string, group string) (map[string]interface{}, error) {
 	ret := _m.Called(locale, group)
 
-	var r0 map[string]map[string]interface{}
+	var r0 map[string]interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (map[string]map[string]interface{}, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, string) (map[string]interface{}, error)); ok {
 		return rf(locale, group)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) map[string]map[string]interface{}); ok {
+	if rf, ok := ret.Get(0).(func(string, string) map[string]interface{}); ok {
 		r0 = rf(locale, group)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]map[string]interface{})
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 

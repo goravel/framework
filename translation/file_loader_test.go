@@ -36,21 +36,21 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("bar", translations["test"]["foo"])
+	f.Equal("bar", translations["foo"])
 
 	paths = []string{"./lang/another", "./lang"}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("bar", translations["test"]["foo"])
+	f.Equal("backagebar", translations["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("en", "another/test")
 	f.NoError(err)
 	f.NotNil(translations)
-	f.Equal("backagebar", translations["another/test"]["foo"])
+	f.Equal("backagebar", translations["foo"])
 
 	paths = []string{"./lang"}
 	loader = NewFileLoader(paths)
@@ -58,7 +58,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	if env.IsWindows() {
 		f.NoError(err)
 		f.NotNil(translations)
-		f.Equal("restricted", translations["restricted/test"]["foo"])
+		f.Equal("restricted", translations["foo"])
 	} else {
 		f.Error(err)
 		f.Nil(translations)
@@ -82,18 +82,4 @@ func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 
 	f.Error(err)
 	f.Nil(translations)
-}
-
-func TestMergeMaps(t *testing.T) {
-	dst := map[string]string{
-		"foo": "bar",
-	}
-	src := map[string]string{
-		"baz": "backage",
-	}
-	mergeMaps(dst, src)
-	assert.Equal(t, map[string]string{
-		"foo": "bar",
-		"baz": "backage",
-	}, dst)
 }

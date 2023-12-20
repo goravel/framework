@@ -5,15 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bytedance/sonic"
-	"github.com/bytedance/sonic/ast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
 	"github.com/goravel/framework/contracts/http"
 	logcontract "github.com/goravel/framework/contracts/log"
 	translationcontract "github.com/goravel/framework/contracts/translation"
-	"github.com/goravel/framework/support/json"
 )
 
 type Translator struct {
@@ -91,48 +88,32 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	// If the file doesn't exist, we will return fallback if it is enabled.
 	// Otherwise, we will return the key as the line.
 	if err := t.load(locale, group); err != nil && err != ErrFileNotExist {
-		t.logger.Error(err)
+		t.logger.Panic(err)
 		return t.key
 	}
 
-	marshal, err := json.Marshal(t.loaded[locale][group])
-	if err != nil {
-		t.logger.Error(err)
-		return t.key
-	}
-	var keyParts []interface{}
-	for _, part := range strings.Split(keyPart, ".") {
-		keyParts = append(keyParts, part)
-	}
-
-	keyValue, err := sonic.Get(marshal, keyParts...)
-
-	if err != nil {
-		if err == ast.ErrNotExist {
-			fallbackLocale := t.GetFallback()
-			// If the fallback locale is different from the current locale, we will
-			// load in the lines for the fallback locale and try to retrieve the
-			// translation for the given key.If it is translated, we will return it.
-			// Otherwise, we can finally return the key as that will be the final
-			// fallback.
-			if (locale != fallbackLocale) && fallback && fallbackLocale != "" {
-				var fallbackOptions translationcontract.Option
-				if len(options) > 0 {
-					fallbackOptions = options[0]
-				}
-				fallbackOptions.Fallback = translationcontract.Bool(false)
-				fallbackOptions.Locale = fallbackLocale
-				return t.Get(t.key, fallbackOptions)
+	keyValue := getValue(t.loaded[locale][group], keyPart)
+	if keyValue == nil {
+		fallbackLocale := t.GetFallback()
+		// If the fallback locale is different from the current locale, we will
+		// load in the lines for the fallback locale and try to retrieve the
+		// translation for the given key.If it is translated, we will return it.
+		// Otherwise, we can finally return the key as that will be the final
+		// fallback.
+		if (locale != fallbackLocale) && fallback && fallbackLocale != "" {
+			var fallbackOptions translationcontract.Option
+			if len(options) > 0 {
+				fallbackOptions = options[0]
 			}
-			return t.key
+			fallbackOptions.Fallback = translationcontract.Bool(false)
+			fallbackOptions.Locale = fallbackLocale
+			return t.Get(t.key, fallbackOptions)
 		}
-		t.logger.Error(err)
 		return t.key
 	}
 
-	line, err := keyValue.String()
-	if err != nil {
-		t.logger.Error(err)
+	line, ok := keyValue.(string)
+	if !ok {
 		return t.key
 	}
 
@@ -194,7 +175,10 @@ func (t *Translator) load(locale string, group string) error {
 	if err != nil {
 		return err
 	}
-	t.loaded[locale] = translations
+	if t.loaded[locale] == nil {
+		t.loaded[locale] = make(map[string]map[string]any)
+	}
+	t.loaded[locale][group] = translations
 	return nil
 }
 
@@ -243,4 +227,27 @@ func parseKey(key string) (group, keyPart string) {
 		group = keyParts[0]
 	}
 	return group, keyPart
+}
+
+// getValue an item from an object using "dot" notation.
+func getValue(obj any, key string) any {
+	keys := strings.Split(key, ".")
+
+	var currentObj any
+	currentObj = obj
+
+	for _, k := range keys {
+		switch v := currentObj.(type) {
+		case map[string]interface{}:
+			if val, found := v[k]; found {
+				currentObj = val
+			} else {
+				return nil
+			}
+		default:
+			return nil
+		}
+	}
+
+	return currentObj
 }

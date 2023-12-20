@@ -18,8 +18,7 @@ func NewFileLoader(paths []string) *FileLoader {
 	}
 }
 
-func (f *FileLoader) Load(locale string, group string) (map[string]map[string]any, error) {
-	translations := make(map[string]map[string]any)
+func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 	for _, path := range f.paths {
 		var val map[string]any
 		fullPath := filepath.Join(path, locale, group+".json")
@@ -32,20 +31,8 @@ func (f *FileLoader) Load(locale string, group string) (map[string]map[string]an
 			if err := json.Unmarshal(data, &val); err != nil {
 				return nil, err
 			}
-			// Initialize the map if it's a nil
-			if translations[group] == nil {
-				translations[group] = make(map[string]any)
-			}
-			mergeMaps(translations[group], val)
-		} else {
-			return nil, ErrFileNotExist
+			return val, nil
 		}
 	}
-	return translations, nil
-}
-
-func mergeMaps[M1 ~map[K]V, M2 ~map[K]V, K comparable, V any](dst M1, src M2) {
-	for k, v := range src {
-		dst[k] = v
-	}
+	return nil, ErrFileNotExist
 }
