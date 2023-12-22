@@ -20,6 +20,8 @@ func TestFileLoaderTestSuite(t *testing.T) {
 	assert.Nil(t, file.Create("lang/en/another/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
 	assert.Nil(t, file.Create("lang/another/en/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
 	assert.Nil(t, file.Create("lang/en/invalid/test.json", `{"foo": "bar",}`))
+	// We should adapt this situation.
+	assert.Nil(t, file.Create("lang/cn.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
 	restrictedFilePath := "lang/en/restricted/test.json"
 	assert.Nil(t, file.Create(restrictedFilePath, `{"foo": "restricted"}`))
 	assert.Nil(t, os.Chmod(restrictedFilePath, 0000))
@@ -36,6 +38,13 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
+	f.Equal("bar", translations["foo"])
+	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
+
+	translations, err = loader.Load("cn", "cn")
+	f.NoError(err)
+	f.NotNil(translations)
+	f.Equal("bar", translations["foo"])
 	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
 
 	paths = []string{"./lang/another", "./lang"}

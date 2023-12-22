@@ -349,7 +349,12 @@ func TestParseKey(t *testing.T) {
 		folder  string
 		keyPart string
 	}{
-		{key: "foo", folder: "foo", keyPart: ""},
+		// If the locale is en, in this situation, the file should be en.json, foo is the key
+		{key: "foo", folder: "", keyPart: "foo"},
+		// If the locale is en, there are two situations,
+		// 1. If en/foo.json exists, the key is bar
+		// 2. If en.json exists, the key is foo.bar
+		// so we need to create file for these two situations, and optimize the test cases.
 		{key: "foo.bar", folder: "foo", keyPart: "bar"},
 		{key: "foo.bar.baz", folder: "foo", keyPart: "bar.baz"},
 		{key: "foo/bar.baz", folder: "foo/bar", keyPart: "baz"},
