@@ -147,22 +147,7 @@ func (t *Translator) GetLocale() string {
 }
 
 func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
-	locale := t.GetLocale()
-	// Check if a custom locale is provided in options.
-	if len(options) > 0 && options[0].Locale != "" {
-		locale = options[0].Locale
-	}
-
 	line := t.Get(key, options...)
-
-	// For `{locale}.json` JSON translations, the loaded files will contain the
-	// entire translation tree; therefore, we will check to see if the key
-	// exists in the array of translations.
-	keyValue := getValue(t.loaded[locale]["*"], key)
-	if keyValue != nil {
-		return true
-	}
-
 	return line != key
 }
 
