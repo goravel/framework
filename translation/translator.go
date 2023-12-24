@@ -94,42 +94,42 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	keyValue := getValue(t.loaded[locale]["*"], key)
 	// if the key is not found `{locale}.json` file, we will try to find it in
 	// the group files.
-	if keyValue == nil {
-		// Parse the key into group and item.
-		group, item := parseKey(key)
-
-		// Here we will get the locale that should be used for the language line.
-		// If it doesn't exist, we will use the default locale which was given
-		// to us when the translator was instantiated.Then we can load the lines
-		// and return the value.
-		locales := []string{locale}
-		if fallback {
-			locales = t.localeArray(locale)
+	if keyValue != nil {
+		line := cast.ToString(keyValue)
+		if line == "" {
+			return t.key
 		}
 
-		for _, loc := range locales {
-			line := t.getLine(loc, group, item, options...)
-			if line != "" {
-				return line
-			}
+		// If the line doesn't contain any placeholders, we can return it right
+		// away.Otherwise, we will make the replacements on the line and return
+		// the result.
+		if len(options) > 0 {
+			return makeReplacements(line, options[0].Replace)
 		}
 
-		return t.key
+		return line
 	}
 
-	line := cast.ToString(keyValue)
-	if line == "" {
-		return t.key
+	// Parse the key into group and item.
+	group, item := parseKey(key)
+
+	// Here we will get the locale that should be used for the language line.
+	// If it doesn't exist, we will use the default locale which was given
+	// to us when the translator was instantiated.Then we can load the lines
+	// and return the value.
+	locales := []string{locale}
+	if fallback {
+		locales = t.appendFallbackLocale(locales)
 	}
 
-	// If the line doesn't contain any placeholders, we can return it right
-	// away.Otherwise, we will make the replacements on the line and return
-	// the result.
-	if len(options) > 0 {
-		return makeReplacements(line, options[0].Replace)
+	for _, loc := range locales {
+		line := t.getLine(loc, group, item, options...)
+		if line != "" {
+			return line
+		}
 	}
 
-	return line
+	return t.key
 }
 
 func (t *Translator) GetFallback() string {
@@ -221,8 +221,7 @@ func (t *Translator) load(locale string, group string) error {
 	return nil
 }
 
-func (t *Translator) localeArray(locale string) []string {
-	locales := []string{locale}
+func (t *Translator) appendFallbackLocale(locales []string) []string {
 	fallbackLocale := t.GetFallback()
 	if fallbackLocale != "" && !slices.Contains(locales, fallbackLocale) {
 		locales = append(locales, fallbackLocale)
@@ -282,7 +281,7 @@ func getValue(obj any, key string) any {
 
 	for _, k := range keys {
 		switch v := currentObj.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			if val, found := v[k]; found {
 				currentObj = val
 			} else {
