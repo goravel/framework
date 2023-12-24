@@ -41,7 +41,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	f.Equal("bar", translations["foo"])
 	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
 
-	translations, err = loader.Load("cn", "cn")
+	translations, err = loader.Load("cn", "*")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("bar", translations["foo"])

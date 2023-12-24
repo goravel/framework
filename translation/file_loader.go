@@ -22,6 +22,9 @@ func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 	for _, path := range f.paths {
 		var val map[string]any
 		fullPath := filepath.Join(path, locale, group+".json")
+		if group == "*" {
+			fullPath = filepath.Join(path, locale+".json")
+		}
 
 		if file.Exists(fullPath) {
 			data, err := os.ReadFile(fullPath)

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cast"
+	"golang.org/x/exp/slices"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -81,37 +82,38 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		fallback = *options[0].Fallback
 	}
 
-	// Parse the key into group and key parts.
-	group, keyPart := parseKey(key)
-
 	// For JSON translations, there is only one file per locale, so we will
 	// simply load the file and return the line if it exists.
 	// If the file doesn't exist, we will return fallback if it is enabled.
 	// Otherwise, we will return the key as the line.
-	if err := t.load(locale, group); err != nil && err != ErrFileNotExist {
+	if err := t.load(locale, "*"); err != nil && err != ErrFileNotExist {
 		t.logger.Panic(err)
 		return t.key
 	}
 
-	keyValue := getValue(t.loaded[locale][group], keyPart)
-	// if the key is not found in the current locale group, we will try to load the
-	// fallback locale and try to retrieve the translation for the given key.
+	keyValue := getValue(t.loaded[locale]["*"], key)
+	// if the key is not found `{locale}.json` file, we will try to find it in
+	// the group files.
 	if keyValue == nil {
-		fallbackLocale := t.GetFallback()
-		// If the fallback locale is different from the current locale, we will
-		// load in the lines for the fallback locale and try to retrieve the
-		// translation for the given key.If it is translated, we will return it.
-		// Otherwise, we can finally return the key as that will be the final
-		// fallback.
-		if (locale != fallbackLocale) && fallback && fallbackLocale != "" {
-			var fallbackOptions translationcontract.Option
-			if len(options) > 0 {
-				fallbackOptions = options[0]
-			}
-			fallbackOptions.Fallback = translationcontract.Bool(false)
-			fallbackOptions.Locale = fallbackLocale
-			return t.Get(t.key, fallbackOptions)
+		// Parse the key into group and item.
+		group, item := parseKey(key)
+
+		// Here we will get the locale that should be used for the language line.
+		// If it doesn't exist, we will use the default locale which was given
+		// to us when the translator was instantiated.Then we can load the lines
+		// and return the value.
+		locales := []string{locale}
+		if fallback {
+			locales = t.localeArray(locale)
 		}
+
+		for _, loc := range locales {
+			line := t.getLine(loc, group, item, options...)
+			if line != "" {
+				return line
+			}
+		}
+
 		return t.key
 	}
 
@@ -145,7 +147,22 @@ func (t *Translator) GetLocale() string {
 }
 
 func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
+	locale := t.GetLocale()
+	// Check if a custom locale is provided in options.
+	if len(options) > 0 && options[0].Locale != "" {
+		locale = options[0].Locale
+	}
+
 	line := t.Get(key, options...)
+
+	// For `{locale}.json` JSON translations, the loaded files will contain the
+	// entire translation tree; therefore, we will check to see if the key
+	// exists in the array of translations.
+	keyValue := getValue(t.loaded[locale]["*"], key)
+	if keyValue != nil {
+		return true
+	}
+
 	return line != key
 }
 
@@ -169,6 +186,25 @@ func (t *Translator) SetLocale(locale string) context.Context {
 	return t.ctx
 }
 
+func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
+	if err := t.load(locale, group); err != nil && err != ErrFileNotExist {
+		t.logger.Panic(err)
+		return t.key
+	}
+
+	keyValue := getValue(t.loaded[locale][group], key)
+	if keyValue == nil {
+		return ""
+	}
+
+	line := cast.ToString(keyValue)
+	if len(options) > 0 {
+		return makeReplacements(line, options[0].Replace)
+	}
+
+	return line
+}
+
 func (t *Translator) load(locale string, group string) error {
 	if t.isLoaded(locale, group) {
 		return nil
@@ -183,6 +219,15 @@ func (t *Translator) load(locale string, group string) error {
 	}
 	t.loaded[locale][group] = translations
 	return nil
+}
+
+func (t *Translator) localeArray(locale string) []string {
+	locales := []string{locale}
+	fallbackLocale := t.GetFallback()
+	if fallbackLocale != "" && !slices.Contains(locales, fallbackLocale) {
+		locales = append(locales, fallbackLocale)
+	}
+	return locales
 }
 
 func (t *Translator) isLoaded(locale string, group string) bool {
@@ -213,23 +258,19 @@ func makeReplacements(line string, replace map[string]string) string {
 	return strings.NewReplacer(shouldReplace...).Replace(line)
 }
 
-func parseKey(key string) (group, keyPart string) {
-	parts := strings.Split(key, "/")
-	keyParts := strings.Split(parts[len(parts)-1], ".")
-	group = "*"
-	keyPart = ""
-	if len(keyParts) > 1 {
-		keyPart = strings.Join(keyParts[1:], ".")
-	}
-	if len(parts) > 1 {
-		group = strings.Join(parts[:len(parts)-1], "/")
-	}
-	if group != "*" {
-		group = group + "/" + keyParts[0]
+// parseKey parses a key into group and item.
+func parseKey(key string) (group, item string) {
+	segments := strings.Split(key, ".")
+
+	group = segments[0]
+
+	if len(segments) == 1 {
+		item = ""
 	} else {
-		group = keyParts[0]
+		item = strings.Join(segments[1:], ".")
 	}
-	return group, keyPart
+
+	return group, item
 }
 
 // getValue an item from an object using "dot" notation.
