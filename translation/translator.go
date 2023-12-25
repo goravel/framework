@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cast"
-	"golang.org/x/exp/slices"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -92,8 +91,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 	}
 
 	keyValue := getValue(t.loaded[locale]["*"], key)
-	// if the key is not found `{locale}.json` file, we will try to find it in
-	// the group files.
+	// If the key is found, return the translated line
 	if keyValue != nil {
 		line := cast.ToString(keyValue)
 		if line == "" {
@@ -110,25 +108,27 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		return line
 	}
 
-	// Parse the key into group and item.
+	// If the key is not found, parse it into a group and item and get the line.
 	group, item := parseKey(key)
-
-	// Here we will get the locale that should be used for the language line.
-	// If it doesn't exist, we will use the default locale which was given
-	// to us when the translator was instantiated.Then we can load the lines
-	// and return the value.
-	locales := []string{locale}
-	if fallback {
-		locales = t.appendFallbackLocale(locales)
+	line := t.getLine(locale, group, item, options...)
+	if line != "" {
+		return line
 	}
 
-	for _, loc := range locales {
-		line := t.getLine(loc, group, item, options...)
-		if line != "" {
-			return line
+	// If the key is not found in the current locale and fallback is enabled,
+	// try to load from fallback locale
+	fallbackLocale := t.GetFallback()
+	if (locale != fallbackLocale) && fallback && fallbackLocale != "" {
+		var fallbackOptions translationcontract.Option
+		if len(options) > 0 {
+			fallbackOptions = options[0]
 		}
+		fallbackOptions.Fallback = translationcontract.Bool(false)
+		fallbackOptions.Locale = fallbackLocale
+		return t.Get(key, fallbackOptions)
 	}
 
+	// Return the original key if no translation is found.
 	return t.key
 }
 
@@ -204,14 +204,6 @@ func (t *Translator) load(locale string, group string) error {
 	}
 	t.loaded[locale][group] = translations
 	return nil
-}
-
-func (t *Translator) appendFallbackLocale(locales []string) []string {
-	fallbackLocale := t.GetFallback()
-	if fallbackLocale != "" && !slices.Contains(locales, fallbackLocale) {
-		locales = append(locales, fallbackLocale)
-	}
-	return locales
 }
 
 func (t *Translator) isLoaded(locale string, group string) bool {

@@ -175,8 +175,36 @@ func (t *TranslatorTestSuite) TestGet() {
 	translator = NewTranslator(t.ctx, t.mockLoader, "en", "fr", t.mockLog)
 	t.mockLoader.On("Load", "en", "*").Once().Return(map[string]any{}, ErrFileNotExist)
 	t.mockLoader.On("Load", "en", "test").Once().Return(map[string]any{}, ErrFileNotExist)
+	t.mockLoader.On("Load", "fr", "*").Once().Return(map[string]any{}, ErrFileNotExist)
 	t.mockLoader.On("Load", "fr", "test").Once().Return(map[string]any{
 		"nonexistentKey": "French translation",
+	}, nil)
+	translation = translator.Get("test.nonexistentKey", translationcontract.Option{
+		Fallback: translationcontract.Bool(true),
+		Locale:   "en",
+	})
+	t.Equal("French translation", translation)
+
+	// Case: Fallback to a different locale with fallback disabled
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "fr", t.mockLog)
+	t.mockLoader.On("Load", "en", "*").Once().Return(map[string]any{}, ErrFileNotExist)
+	t.mockLoader.On("Load", "en", "test").Once().Return(map[string]any{}, ErrFileNotExist)
+	translation = translator.Get("test.nonexistentKey", translationcontract.Option{
+		Fallback: translationcontract.Bool(false),
+		Locale:   "en",
+	})
+	t.Equal("test.nonexistentKey", translation)
+
+	// Case: use JSON file as fallback
+	translator = NewTranslator(t.ctx, t.mockLoader, "en", "fr", t.mockLog)
+	t.mockLoader.On("Load", "en", "*").Once().Return(map[string]any{
+		"nonexistentKey": "English translation",
+	}, nil)
+	t.mockLoader.On("Load", "en", "test").Once().Return(map[string]any{}, ErrFileNotExist)
+	t.mockLoader.On("Load", "fr", "*").Once().Return(map[string]any{
+		"test": map[string]any{
+			"nonexistentKey": "French translation",
+		},
 	}, nil)
 	translation = translator.Get("test.nonexistentKey", translationcontract.Option{
 		Fallback: translationcontract.Bool(true),
