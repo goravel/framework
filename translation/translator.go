@@ -81,36 +81,18 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		fallback = *options[0].Fallback
 	}
 
-	// For JSON translations, there is only one file per locale, so we will
-	// simply load the file and return the line if it exists.
-	// If the file doesn't exist, we will return fallback if it is enabled.
-	// Otherwise, we will return the key as the line.
-	if err := t.load(locale, "*"); err != nil && err != ErrFileNotExist {
-		t.logger.Panic(err)
-		return t.key
-	}
-
-	keyValue := getValue(t.loaded[locale]["*"], key)
-	// If the key is found, return the translated line
-	if keyValue != nil {
-		line := cast.ToString(keyValue)
-		if line == "" {
-			return t.key
-		}
-
-		// If the line doesn't contain any placeholders, we can return it right
-		// away.Otherwise, we will make the replacements on the line and return
-		// the result.
-		if len(options) > 0 {
-			return makeReplacements(line, options[0].Replace)
-		}
-
+	// For JSON translations({locale}.json), we can simply load the JSON file
+	// and pull the translation line from the JSON structure.We do not need
+	// to do any extra processing.
+	line := t.getLine(locale, "*", key, options...)
+	if line != "" {
 		return line
 	}
 
-	// If the key is not found, parse it into a group and item and get the line.
+	// If the key is not found in the JSON translation file, we will attempt
+	// to load the key from the `{locale}/{group}.json` file.
 	group, item := parseKey(key)
-	line := t.getLine(locale, group, item, options...)
+	line = t.getLine(locale, group, item, options...)
 	if line != "" {
 		return line
 	}
@@ -178,11 +160,15 @@ func (t *Translator) getLine(locale string, group string, key string, options ..
 	}
 
 	keyValue := getValue(t.loaded[locale][group], key)
+	// If the key doesn't exist, return empty string.
 	if keyValue == nil {
 		return ""
 	}
 
 	line := cast.ToString(keyValue)
+	// If the line doesn't contain any placeholders, we can return it right
+	// away.Otherwise, we will make the replacements on the line and return
+	// the result.
 	if len(options) > 0 {
 		return makeReplacements(line, options[0].Replace)
 	}
