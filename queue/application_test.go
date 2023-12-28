@@ -2,9 +2,11 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -17,13 +19,15 @@ import (
 )
 
 var (
-	testSyncJob        = 0
-	testAsyncJob       = 0
-	testDelayAsyncJob  = 0
-	testCustomAsyncJob = 0
-	testErrorAsyncJob  = 0
-	testChainAsyncJob  = 0
-	testChainSyncJob   = 0
+	testSyncJob            = 0
+	testAsyncJob           = 0
+	testDelayAsyncJob      = 0
+	testCustomAsyncJob     = 0
+	testErrorAsyncJob      = 0
+	testChainAsyncJob      = 0
+	testChainSyncJob       = 0
+	testChainAsyncJobError = 0
+	testChainSyncJobError  = 0
 )
 
 type QueueTestSuite struct {
@@ -255,6 +259,51 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.AssertExpectations(s.T())
 }
 
+func (s *QueueTestSuite) TestChainAsyncQueue_Error() {
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
+	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
+	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
+	s.app.jobs = []queue.Job{&TestChainAsyncJob{}, &TestChainSyncJob{}}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	go func(ctx context.Context) {
+		s.Nil(s.app.Worker(&queue.Args{
+			Queue: "chain",
+		}).Run())
+
+		for range ctx.Done() {
+			return
+		}
+	}(ctx)
+
+	time.Sleep(2 * time.Second)
+	s.Nil(s.app.Chain([]queue.Jobs{
+		{
+			Job: &TestChainAsyncJob{},
+			Args: []queue.Arg{
+				{Type: "bool", Value: true},
+			},
+		},
+		{
+			Job:  &TestChainSyncJob{},
+			Args: []queue.Arg{},
+		},
+	}).OnQueue("chain").Dispatch())
+
+	time.Sleep(2 * time.Second)
+	s.Equal(1, testChainAsyncJobError)
+	s.Equal(0, testChainSyncJobError)
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
 type TestAsyncJob struct {
 }
 
@@ -340,6 +389,12 @@ func (receiver *TestChainAsyncJob) Signature() string {
 
 // Handle Execute the job.
 func (receiver *TestChainAsyncJob) Handle(args ...any) error {
+	if len(args) > 0 && cast.ToBool(args[0]) {
+		testChainAsyncJobError++
+
+		return errors.New("error")
+	}
+
 	testChainAsyncJob++
 
 	return nil
