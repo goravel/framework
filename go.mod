@@ -1,6 +1,8 @@
 module github.com/goravel/framework
 
-go 1.20
+go 1.21
+
+toolchain go1.21.4
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.12-0.20231012204029-bdb94a90ca41
@@ -42,6 +44,8 @@ require (
 	gorm.io/gorm v1.25.5
 	gorm.io/plugin/dbresolver v1.5.0
 )
+
+require github.com/steebchen/prisma-client-go v0.31.3 // indirect
 
 require (
 	cloud.google.com/go v0.110.10 // indirect
