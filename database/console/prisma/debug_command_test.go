@@ -13,10 +13,8 @@ func TestDebugCommand(t *testing.T) {
 
 	// init prisma
 	handleInitPrisma(mockCtx, t)
+	defer removePrisma()
 
 	// check debug info
 	assert.Nil(t, debugCmd.Handle(mockCtx))
-
-	// remove prisma directory after tests
-	removePrisma()
 }

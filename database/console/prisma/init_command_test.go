@@ -14,16 +14,13 @@ func TestInitCommand(t *testing.T) {
 
 	// init prisma project
 	handleInitPrisma(mockCtx, t)
+	defer removePrisma()
 
 	// check directories created
 	assert.DirExists(t, "prisma")
 	assert.FileExists(t, "prisma/schema.prisma")
 	assert.FileExists(t, ".env")
 	assert.FileExists(t, ".gitignore")
-
-	// remove prisma directory
-	removePrisma()
-
 }
 
 func handleInitPrisma(ctx *consolemocks.Context, t *testing.T) {

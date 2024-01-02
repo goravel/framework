@@ -13,13 +13,11 @@ func TestGenerateCommand(t *testing.T) {
 
 	// init a prisma project before tests
 	handleInitPrisma(ctx, t)
+	defer removePrisma()
 
 	// fill schema.prisma with data
 	fillPrismaSchema()
 
 	// if database instance not running this passes
 	assert.Nil(t, genCmd.Handle(ctx))
-
-	// remove prisma folder
-	removePrisma()
 }

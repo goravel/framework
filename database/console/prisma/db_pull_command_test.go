@@ -14,6 +14,7 @@ func TestDBPullCommand(t *testing.T) {
 
 	// init prisma
 	handleInitPrisma(mockCtx, t)
+	defer removePrisma()
 
 	// fill schema.prisma with data
 	fillPrismaSchema()
@@ -24,6 +25,4 @@ func TestDBPullCommand(t *testing.T) {
 	mockCtx.On("Argument", 0).Return("").Once()
 	assert.Error(t, dbpc.Handle(mockCtx))
 
-	// remove prima directory
-	removePrisma()
 }

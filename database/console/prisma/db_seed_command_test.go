@@ -16,11 +16,10 @@ func TestDBSeedCommand(t *testing.T) {
 
 	// fill schema.prisma with data
 	fillPrismaSchema()
+	defer removePrisma()
 
 	// test on user model
 	mockCtx.On("Argument", 0).Return("")
 	assert.Nil(t, dbsc.Handle(mockCtx))
 
-	// remove prisma after all test
-	removePrisma()
 }

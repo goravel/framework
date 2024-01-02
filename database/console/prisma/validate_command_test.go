@@ -7,17 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFormatCommand(t *testing.T) {
-	fmtCmd := NewFormatCommand()
+func TestValidateCommand(t *testing.T) {
 	ctx := &consolemocks.Context{}
+	mdc := NewValidateCommand()
 
-	// init prisma project
+	// init prisma
 	handleInitPrisma(ctx, t)
 	defer removePrisma()
 
-	// fill schema.prisma with data
+	// create prisma schema
 	fillPrismaSchema()
 
-	// formatting the prisma schema file has no error
-	assert.NoError(t, fmtCmd.Handle(ctx))
+	// no args
+	ctx.On("Argument", 0).Return("").Once()
+	assert.Nil(t, mdc.Handle(ctx))
 }
