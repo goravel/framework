@@ -7,6 +7,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
+	"github.com/goravel/framework/database/console/prisma"
 )
 
 const BindingOrm = "goravel.orm"
@@ -40,6 +41,8 @@ func (database *ServiceProvider) registerCommands(app foundation.Application) {
 	config := app.MakeConfig()
 	seeder := app.MakeSeeder()
 	artisan := app.MakeArtisan()
+
+	// main ORM artisan commands
 	app.MakeArtisan().Register([]consolecontract.Command{
 		console.NewMigrateMakeCommand(config),
 		console.NewMigrateCommand(config),
@@ -53,5 +56,23 @@ func (database *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewSeedCommand(config, seeder),
 		console.NewSeederMakeCommand(),
 		console.NewFactoryMakeCommand(),
+	})
+
+	// prisma ORM artisan commands
+	app.MakeArtisan().Register([]consolecontract.Command{
+		prisma.NewDBExecCommand(),
+		prisma.NewDBPullCommand(),
+		prisma.NewDBPushCommand(),
+		prisma.NewDBSeedCommand(),
+		prisma.NewDebugCommand(),
+		prisma.NewFormatCommand(),
+		prisma.NewGenerateCommand(),
+		prisma.NewInitCommand(),
+		prisma.NewMigrateDeployCommand(),
+		prisma.NewMigrateDevCommand(),
+		prisma.NewMigrateResetCommand(),
+		prisma.NewMigrateStatusCommand(),
+		prisma.NewValidateCommand(),
+		prisma.NewVersionCommand(),
 	})
 }
