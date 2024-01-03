@@ -1,6 +1,8 @@
 package prisma
 
 import (
+	"strings"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/steebchen/prisma-client-go/cli"
@@ -31,5 +33,8 @@ func (receiver *FormatCommand) Extend() command.Extend {
 
 // Handle Execute the console command
 func (r *FormatCommand) Handle(ctx console.Context) error {
-	return cli.Run([]string{"format"}, true)
+	args := ctx.Argument(0)
+	cliCmds := []string{"debug"}
+	cliCmds = append(cliCmds, strings.Split(args, " ")...)
+	return cli.Run(cliCmds, true)
 }
