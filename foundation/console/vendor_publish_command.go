@@ -155,19 +155,28 @@ func (receiver *VendorPublishCommand) packageDir(packageName string) (string, er
 
 func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, existing, force bool) (map[string]string, error) {
 	result := make(map[string]string)
+	isTargetPathDir := filepath.Ext(targetPath) == ""
+	isSourcePathDir := filepath.Ext(sourcePath) == ""
+
 	sourceFiles, err := receiver.getSourceFiles(sourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, sourceFile := range sourceFiles {
-		targetFile := targetPath
-		if filepath.Ext(targetFile) == "" {
-			sourceRelativePath, err := filepath.Rel(sourcePath, sourceFile)
+		relativePath := ""
+		if isSourcePathDir {
+			relativePath, err = filepath.Rel(sourcePath, sourceFile)
 			if err != nil {
 				return nil, err
 			}
-			targetFile = filepath.Join(targetFile, sourceRelativePath)
+		} else {
+			relativePath = filepath.Base(sourcePath)
+		}
+
+		targetFile := targetPath
+		if isTargetPathDir {
+			targetFile = filepath.Join(targetPath, relativePath)
 		}
 
 		success, err := receiver.publishFile(sourceFile, targetFile, existing, force)
