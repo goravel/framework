@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/spf13/cast"
 	"golang.org/x/text/cases"
@@ -19,17 +20,19 @@ type Translator struct {
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
-	// loaded is a map structure used to store loaded translation data.
-	// It is organized as follows:
-	//   - First map (map[string]): Maps from locale to...
-	//     - Second map (map[string]): Maps from folder(group) to...
-	//       - Third map (map[string]): Maps from key to...
-	//         - Value (any): The translation line corresponding to the key in the specified locale, folder(group), and key hierarchy.
-	loaded   map[string]map[string]map[string]any
 	selector *MessageSelector
 	key      string
 	logger   logcontract.Log
+	mu       sync.Mutex
 }
+
+// loaded is a map structure used to store loaded translation data.
+// It is organized as follows:
+//   - First map (map[string]): Maps from locale to...
+//   - Second map (map[string]): Maps from folder(group) to...
+//   - Third map (map[string]): Maps from key to...
+//   - Value (any): The translation line corresponding to the key in the specified locale, folder(group), and key hierarchy.
+var loaded = make(map[string]map[string]map[string]any)
 
 // contextKey is an unexported type for keys defined in this package.
 type contextKey string
@@ -43,7 +46,6 @@ func NewTranslator(ctx context.Context, loader translationcontract.Loader, local
 		loader:   loader,
 		locale:   locale,
 		fallback: fallback,
-		loaded:   make(map[string]map[string]map[string]any),
 		selector: NewMessageSelector(),
 		logger:   logger,
 	}
@@ -159,7 +161,7 @@ func (t *Translator) getLine(locale string, group string, key string, options ..
 		return t.key
 	}
 
-	keyValue := getValue(t.loaded[locale][group], key)
+	keyValue := getValue(loaded[locale][group], key)
 	// If the key doesn't exist, return empty string.
 	if keyValue == nil {
 		return ""
@@ -177,6 +179,9 @@ func (t *Translator) getLine(locale string, group string, key string, options ..
 }
 
 func (t *Translator) load(locale string, group string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	if t.isLoaded(locale, group) {
 		return nil
 	}
@@ -185,19 +190,20 @@ func (t *Translator) load(locale string, group string) error {
 	if err != nil {
 		return err
 	}
-	if t.loaded[locale] == nil {
-		t.loaded[locale] = make(map[string]map[string]any)
+
+	if loaded[locale] == nil {
+		loaded[locale] = make(map[string]map[string]any)
 	}
-	t.loaded[locale][group] = translations
+	loaded[locale][group] = translations
 	return nil
 }
 
 func (t *Translator) isLoaded(locale string, group string) bool {
-	if _, ok := t.loaded[locale]; !ok {
+	if _, ok := loaded[locale]; !ok {
 		return false
 	}
 
-	if _, ok := t.loaded[locale][group]; !ok {
+	if _, ok := loaded[locale][group]; !ok {
 		return false
 	}
 
