@@ -101,27 +101,23 @@ func TestFromDateTimeNano(t *testing.T) {
 }
 
 func TestFromDate(t *testing.T) {
-	clock := Now(carbon.UTC).ToTimeString(carbon.UTC)
 	time := FromDate(2020, 1, 1, carbon.UTC)
-	assert.Equal(t, "2020-01-01 "+clock, time.ToDateTimeString(carbon.UTC))
+	assert.Equal(t, "2020-01-01 00:00:00", time.ToDateTimeString(carbon.UTC))
 }
 
 func TestFromDateMilli(t *testing.T) {
-	clock := Now().ToTimeString(carbon.UTC)
 	time := FromDateMilli(2020, 1, 1, 999, carbon.UTC)
-	assert.Equal(t, "2020-01-01 "+clock+".999", time.ToDateTimeMilliString(carbon.UTC))
+	assert.Equal(t, "2020-01-01 00:00:00.999", time.ToDateTimeMilliString(carbon.UTC))
 }
 
 func TestFromDateMicro(t *testing.T) {
-	clock := Now().ToTimeString(carbon.UTC)
 	time := FromDateMicro(2020, 1, 1, 999999, carbon.UTC)
-	assert.Equal(t, "2020-01-01 "+clock+".999999", time.ToDateTimeMicroString(carbon.UTC))
+	assert.Equal(t, "2020-01-01 00:00:00.999999", time.ToDateTimeMicroString(carbon.UTC))
 }
 
 func TestFromDateNano(t *testing.T) {
-	clock := Now().ToTimeString(carbon.UTC)
 	time := FromDateNano(2020, 1, 1, 999999999, carbon.UTC)
-	assert.Equal(t, "2020-01-01 "+clock+".999999999", time.ToDateTimeNanoString(carbon.UTC))
+	assert.Equal(t, "2020-01-01 00:00:00.999999999", time.ToDateTimeNanoString(carbon.UTC))
 }
 
 func TestFromTime(t *testing.T) {
