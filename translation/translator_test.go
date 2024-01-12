@@ -29,9 +29,6 @@ func (t *TranslatorTestSuite) SetupTest() {
 	t.mockLoader = mockloader.NewLoader(t.T())
 	t.ctx = context.Background()
 	t.mockLog = mocklog.NewLog(t.T())
-}
-
-func (t *TranslatorTestSuite) BeforeTest(string, string) {
 	loaded = make(map[string]map[string]map[string]any)
 }
 
