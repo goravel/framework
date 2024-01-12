@@ -6,9 +6,9 @@ import (
 
 type Translator interface {
 	// Choice gets a translation according to an integer value.
-	Choice(key string, number int, options ...Option) (string, error)
+	Choice(key string, number int, options ...Option) string
 	// Get the translation for the given key.
-	Get(key string, options ...Option) (string, error)
+	Get(key string, options ...Option) string
 	// GetFallback get the current application/context fallback locale.
 	GetFallback() string
 	// GetLocale get the current application/context locale.

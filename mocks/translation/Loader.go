@@ -9,25 +9,25 @@ type Loader struct {
 	mock.Mock
 }
 
-// Load provides a mock function with given fields: folder, locale
-func (_m *Loader) Load(folder string, locale string) (map[string]map[string]string, error) {
-	ret := _m.Called(folder, locale)
+// Load provides a mock function with given fields: locale, group
+func (_m *Loader) Load(locale string, group string) (map[string]interface{}, error) {
+	ret := _m.Called(locale, group)
 
-	var r0 map[string]map[string]string
+	var r0 map[string]interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (map[string]map[string]string, error)); ok {
-		return rf(folder, locale)
+	if rf, ok := ret.Get(0).(func(string, string) (map[string]interface{}, error)); ok {
+		return rf(locale, group)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) map[string]map[string]string); ok {
-		r0 = rf(folder, locale)
+	if rf, ok := ret.Get(0).(func(string, string) map[string]interface{}); ok {
+		r0 = rf(locale, group)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]map[string]string)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
 	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(folder, locale)
+		r1 = rf(locale, group)
 	} else {
 		r1 = ret.Error(1)
 	}

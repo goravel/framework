@@ -15,7 +15,7 @@ type Translator struct {
 }
 
 // Choice provides a mock function with given fields: key, number, options
-func (_m *Translator) Choice(key string, number int, options ...translation.Option) (string, error) {
+func (_m *Translator) Choice(key string, number int, options ...translation.Option) string {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -26,27 +26,17 @@ func (_m *Translator) Choice(key string, number int, options ...translation.Opti
 	ret := _m.Called(_ca...)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, int, ...translation.Option) (string, error)); ok {
-		return rf(key, number, options...)
-	}
 	if rf, ok := ret.Get(0).(func(string, int, ...translation.Option) string); ok {
 		r0 = rf(key, number, options...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, int, ...translation.Option) error); ok {
-		r1 = rf(key, number, options...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Get provides a mock function with given fields: key, options
-func (_m *Translator) Get(key string, options ...translation.Option) (string, error) {
+func (_m *Translator) Get(key string, options ...translation.Option) string {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -57,23 +47,13 @@ func (_m *Translator) Get(key string, options ...translation.Option) (string, er
 	ret := _m.Called(_ca...)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...translation.Option) (string, error)); ok {
-		return rf(key, options...)
-	}
 	if rf, ok := ret.Get(0).(func(string, ...translation.Option) string); ok {
 		r0 = rf(key, options...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...translation.Option) error); ok {
-		r1 = rf(key, options...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // GetFallback provides a mock function with given fields:
