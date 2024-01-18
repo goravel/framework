@@ -18,7 +18,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: go mod pakcage cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('go.mod') }}
@@ -39,7 +39,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: go mod pakcage cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('go.mod') }}
