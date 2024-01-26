@@ -2720,7 +2720,7 @@ func (s *QueryTestSuite) TestWhereIn() {
 
 			var users []User
 			s.Nil(query.WhereIn("id", []any{user.ID, user1.ID}).Find(&users))
-			s.True(len(users) > 0)
+			s.True(len(users) == 2)
 		})
 	}
 }
