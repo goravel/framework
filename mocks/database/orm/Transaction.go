@@ -829,6 +829,22 @@ func (_m *Transaction) Where(query interface{}, args ...interface{}) orm.Query {
 	return r0
 }
 
+// WhereIn provides a mock function with given fields: column, values
+func (_m *Transaction) WhereIn(column string, values []interface{}) orm.Query {
+	ret := _m.Called(column, values)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
+		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // With provides a mock function with given fields: query, args
 func (_m *Transaction) With(query string, args ...interface{}) orm.Query {
 	var _ca []interface{}

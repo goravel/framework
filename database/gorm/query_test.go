@@ -2707,6 +2707,24 @@ func (s *QueryTestSuite) TestWhere() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereIn() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users []User
+			s.Nil(query.WhereIn("id", []any{user.ID, user1.ID}).Find(&users))
+			s.True(len(users) == 2)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWithoutEvents() {
 	for _, query := range s.queries {
 		tests := []struct {
