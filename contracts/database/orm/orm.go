@@ -125,6 +125,8 @@ type Query interface {
 	Where(query any, args ...any) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
+	// OrWhereIn adds an "or where column in" clause to the query.
+	OrWhereIn(column string, values []any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.
