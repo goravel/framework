@@ -129,6 +129,8 @@ type Query interface {
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
+	// WhereIn adds a "where column in" clause to the query.
+	WhereIn(column string, values []any) Query
 }
 
 type Association interface {

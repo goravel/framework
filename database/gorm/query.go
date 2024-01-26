@@ -664,6 +664,10 @@ func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 	return NewQueryImplByInstance(tx, r)
 }
 
+func (r *QueryImpl) WhereIn(column string, values []any) ormcontract.Query {
+	return r.Where(fmt.Sprintf("%s IN ?", column), values)
+}
+
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
 	return NewQueryImplByInstance(r.instance, &QueryImpl{
 		config:        r.config,
