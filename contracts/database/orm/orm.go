@@ -123,14 +123,14 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereIn adds a "where column in" clause to the query.
+	WhereIn(column string, values []any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
-	// WhereIn adds a "where column in" clause to the query.
-	WhereIn(column string, values []any) Query
 }
 
 type Association interface {
