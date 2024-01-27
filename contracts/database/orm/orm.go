@@ -94,6 +94,8 @@ type Query interface {
 	Order(value any) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
+	// OrWhereIn adds an "or where column in" clause to the query.
+	OrWhereIn(column string, values []any) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
