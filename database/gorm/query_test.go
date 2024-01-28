@@ -2758,9 +2758,9 @@ func (s *QueryTestSuite) TestWhereNotIn() {
 			s.Nil(query.Create(&user2))
 			s.True(user2.ID > 0)
 
-			var users []User
-			s.Nil(query.WhereNotIn("id", []any{user.ID, user1.ID}).Find(&users))
-			s.True(len(users) >= 1)
+			var user3 User
+			s.Nil(query.Where("id = ?", user2.ID).WhereNotIn("id", []any{user.ID, user1.ID}).First(&user3))
+			s.True(user3.ID == user2.ID)
 		})
 	}
 }
