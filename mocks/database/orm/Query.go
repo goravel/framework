@@ -560,6 +560,22 @@ func (_m *Query) OrWhereIn(column string, values []interface{}) orm.Query {
 	return r0
 }
 
+// OrWhereNotIn provides a mock function with given fields: column, values
+func (_m *Query) OrWhereNotIn(column string, values []interface{}) orm.Query {
+	ret := _m.Called(column, values)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
+		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Order provides a mock function with given fields: value
 func (_m *Query) Order(value interface{}) orm.Query {
 	ret := _m.Called(value)
@@ -819,6 +835,22 @@ func (_m *Query) Where(query interface{}, args ...interface{}) orm.Query {
 
 // WhereIn provides a mock function with given fields: column, values
 func (_m *Query) WhereIn(column string, values []interface{}) orm.Query {
+	ret := _m.Called(column, values)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
+		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// WhereNotIn provides a mock function with given fields: column, values
+func (_m *Query) WhereNotIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
 
 	var r0 orm.Query

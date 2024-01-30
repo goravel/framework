@@ -2743,6 +2743,56 @@ func (s *QueryTestSuite) TestOrWhereIn() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereNotIn() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "where_in_user_2", Avatar: "where_in_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			var user3 User
+			s.Nil(query.Where("id = ?", user2.ID).WhereNotIn("id", []any{user.ID, user1.ID}).First(&user3))
+			s.True(user3.ID == user2.ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestOrWhereNotIn() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "where_in_user_2", Avatar: "where_in_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("id = ?", -1).OrWhereNotIn("id", []any{user.ID, user1.ID}).Find(&users))
+			var user2Found bool
+			for _, user := range users {
+				if user.ID == user2.ID {
+					user2Found = true
+				}
+			}
+			s.True(user2Found)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWithoutEvents() {
 	for _, query := range s.queries {
 		tests := []struct {
