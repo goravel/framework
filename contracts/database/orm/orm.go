@@ -92,6 +92,8 @@ type Query interface {
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
 	Order(value any) Query
+	// OrderByDesc specifies the order should be descending.
+	OrderByDesc(column string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
