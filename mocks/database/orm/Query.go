@@ -592,6 +592,22 @@ func (_m *Query) Order(value interface{}) orm.Query {
 	return r0
 }
 
+// OrderByDesc provides a mock function with given fields: column
+func (_m *Query) OrderByDesc(column string) orm.Query {
+	ret := _m.Called(column)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Paginate provides a mock function with given fields: page, limit, dest, total
 func (_m *Query) Paginate(page int, limit int, dest interface{}, total *int64) error {
 	ret := _m.Called(page, limit, dest, total)
