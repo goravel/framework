@@ -672,6 +672,22 @@ func (r *QueryImpl) OrWhereIn(column string, values []any) ormcontract.Query {
 	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
 }
 
+func (r *QueryImpl) WhereHas(table string, fk string,condition func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
+	
+	relatedModelQuery := NewQueryImplByInstance(r.instance.Table(table), r)
+
+	//wrap and modify query with the condition passed from function
+    modifiedQuery := condition(relatedModelQuery)
+
+    // Extract the *gorm.DB instance from the modified QueryImpl
+    subQuery := modifiedQuery.(*QueryImpl).instance.Select(fk)
+
+    // Use the subQuery the main query
+    tx := r.instance.Where("id IN (?)", subQuery)
+
+	return NewQueryImplByInstance(tx, r)
+}
+
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
 	return NewQueryImplByInstance(r.instance, &QueryImpl{
 		config:        r.config,

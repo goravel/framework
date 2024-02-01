@@ -82,7 +82,7 @@ type Query interface {
 	Load(dest any, relation string, args ...any) error
 	// LoadMissing loads a relationship for the model that is not already loaded.
 	LoadMissing(dest any, relation string, args ...any) error
-	// LockForUpdate locks the selected rows in the table for updating.
+	// LockForUpdate locks the selected rows in ormcontract.Querythe table for updating.
 	LockForUpdate() Query
 	// Model sets the model instance to be queried.
 	Model(value any) Query
@@ -96,6 +96,8 @@ type Query interface {
 	OrWhere(query any, args ...any) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
 	OrWhereIn(column string, values []any) Query
+
+	WhereHas(table string, fk string, conditions func(Query) Query ) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
@@ -127,12 +129,14 @@ type Query interface {
 	Where(query any, args ...any) Query
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
-	// WithoutEvents disables event firing for the query.
+		// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
+	
+	Debug() Query
 }
 
 type Association interface {

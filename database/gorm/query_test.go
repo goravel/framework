@@ -357,19 +357,19 @@ func TestQueryTestSuite(t *testing.T) {
 	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
 	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
-		log.Fatalf("Init postgresql error: %s", err)
+	log.Fatalf("Init postgresql error: %s", err)
 	}
 
 	sqliteDocker := NewSqliteDocker(dbDatabase)
 	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
-		log.Fatalf("Init sqlite error: %s", err)
+	log.Fatalf("Init sqlite error: %s", err)
 	}
 
 	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
 	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
-		log.Fatalf("Init sqlserver error: %s", err)
+	log.Fatalf("Init sqlserver error: %s", err)
 	}
 
 	suite.Run(t, &QueryTestSuite{
@@ -2739,6 +2739,58 @@ func (s *QueryTestSuite) TestOrWhereIn() {
 			var users []User
 			s.Nil(query.Where("id = ?", -1).OrWhereIn("id", []any{user.ID, user1.ID}).Find(&users))
 			s.True(len(users) == 2)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereHas() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user1 := User{Name: "George", Address: &Address{
+				Name: "Address_1",
+			}, Books: []*Book{{
+				Name: "Book A",
+			}, {
+				Name: "Book B",
+			}}}
+			user2 := User{Name: "Andrew", Address: &Address{
+				Name: "with address",
+			},
+			}
+
+			user3 := User{Name: "Nick", Address: &Address{
+				Name: "Address_2",
+			}, Books: []*Book{{
+				Name: "Book A",
+			}, {
+				Name: "Book B",
+			}}}
+
+			user4 := User{Name: "Nick", Address: &Address{
+				Name: "Address_2",
+			}, Books: []*Book{{
+				Name: "Book A",
+			}, {
+				Name: "Book C",
+			}}}
+
+			var users []User
+
+			s.Nil(query.Select(orm.Associations).Create(&user1))
+			s.Nil(query.Select(orm.Associations).Create(&user2))
+			s.Nil(query.Select(orm.Associations).Create(&user3))
+			s.Nil(query.Select(orm.Associations).Create(&user4))
+
+			query.WhereHas("books","user_id", func(query ormcontract.Query) ormcontract.Query {
+				return query.Where("Name = ?", "Book A")
+			}).Find(&users)
+
+
+			fmt.Println("USER", len(users))
+			
+			// 3 users only they have specified book in the Query 
+			s.Equal(3, len(users))
+
 		})
 	}
 }
