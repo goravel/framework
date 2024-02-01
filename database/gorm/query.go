@@ -455,6 +455,25 @@ func (r *QueryImpl) OrderByDesc(column string) ormcontract.Query {
 	return r.Order(fmt.Sprintf("%s DESC", column))
 }
 
+func (r *QueryImpl) InRandomOrder() ormcontract.Query {
+	order := ""
+	switch r.Driver() {
+	case "mysql":
+		order = "RAND()"
+		break
+	case "sqlserver":
+		order = "RAND()"
+		break
+	case "postgresql":
+		order = "RANDOM()"
+		break
+	case "sqlite":
+		order = "RANDOM()"
+		break
+	}
+	return r.Order(order)
+}
+
 func (r *QueryImpl) OrWhere(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Or(query, args...)
 

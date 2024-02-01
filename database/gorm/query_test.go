@@ -1973,6 +1973,24 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 	}
 }
 
+func (s *QueryTestSuite) TestInRandomOrder() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "random_order_user", Avatar: "random_order_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "random_order_user", Avatar: "random_order_avatar1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Get(&users))
+			s.True(len(users) == 2)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestPaginate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {

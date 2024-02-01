@@ -74,6 +74,8 @@ type Query interface {
 	Group(name string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// InRandomOrder specifies the order randomly.
+	InRandomOrder() Query
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Limit the number of records returned.
