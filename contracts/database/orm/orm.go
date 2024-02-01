@@ -82,7 +82,7 @@ type Query interface {
 	Load(dest any, relation string, args ...any) error
 	// LoadMissing loads a relationship for the model that is not already loaded.
 	LoadMissing(dest any, relation string, args ...any) error
-	// LockForUpdate locks the selected rows in ormcontract.Querythe table for updating.
+	// LockForUpdate locks the selected rows in the table for updating.
 	LockForUpdate() Query
 	// Model sets the model instance to be queried.
 	Model(value any) Query
