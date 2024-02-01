@@ -606,6 +606,22 @@ func (_m *Transaction) Order(value interface{}) orm.Query {
 	return r0
 }
 
+// OrderBy provides a mock function with given fields: column
+func (_m *Transaction) OrderBy(column string) orm.Query {
+	ret := _m.Called(column)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // OrderByDesc provides a mock function with given fields: column
 func (_m *Transaction) OrderByDesc(column string) orm.Query {
 	ret := _m.Called(column)

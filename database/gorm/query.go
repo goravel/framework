@@ -451,6 +451,10 @@ func (r *QueryImpl) Order(value any) ormcontract.Query {
 	return NewQueryImplByInstance(tx, r)
 }
 
+func (r *QueryImpl) OrderBy(column string) ormcontract.Query {
+	return r.Order(fmt.Sprintf("%s ASC", column))
+}
+
 func (r *QueryImpl) OrderByDesc(column string) ormcontract.Query {
 	return r.Order(fmt.Sprintf("%s DESC", column))
 }
