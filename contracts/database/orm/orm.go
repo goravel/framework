@@ -133,6 +133,8 @@ type Query interface {
 	WhereIn(column string, values []any) Query
 	// WhereNotIn adds a "where column not in" clause to the query.
 	WhereNotIn(column string, values []any) Query
+	// WhereNull adds a "where column is null" clause to the query.
+	WhereNull(column string) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.

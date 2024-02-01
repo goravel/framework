@@ -2813,6 +2813,20 @@ func (s *QueryTestSuite) TestOrWhereNotIn() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereNull() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_null_user", Avatar: "where_null_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			var users []User
+			s.Nil(query.WhereNull("name").Find(&users))
+			s.True(len(users) == 0)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWithoutEvents() {
 	for _, query := range s.queries {
 		tests := []struct {
