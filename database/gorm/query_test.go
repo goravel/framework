@@ -369,7 +369,7 @@ func TestQueryTestSuite(t *testing.T) {
 	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
 	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
-	log.Fatalf("Init sqlserver error: %s", err)
+		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
 	suite.Run(t, &QueryTestSuite{
