@@ -2829,7 +2829,7 @@ func (s *QueryTestSuite) TestWhereBetween() {
 			s.True(user2.ID > 0)
 
 			var users []User
-			s.Nil(query.WhereBetween("id", int(user.ID), int(user2.ID)).Find(&users))
+			s.Nil(query.WhereBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 3)
 		})
 	}
