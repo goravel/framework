@@ -878,11 +878,11 @@ func (_m *Transaction) Where(query interface{}, args ...interface{}) orm.Query {
 }
 
 // WhereBetween provides a mock function with given fields: column, x, y
-func (_m *Transaction) WhereBetween(column string, x int, y int) orm.Query {
+func (_m *Transaction) WhereBetween(column string, x interface{}, y interface{}) orm.Query {
 	ret := _m.Called(column, x, y)
 
 	var r0 orm.Query
-	if rf, ok := ret.Get(0).(func(string, int, int) orm.Query); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
 		r0 = rf(column, x, y)
 	} else {
 		if ret.Get(0) != nil {
