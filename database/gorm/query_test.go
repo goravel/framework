@@ -1964,10 +1964,15 @@ func (s *QueryTestSuite) TestOrderBy() {
 			s.Nil(query.Create(&user1))
 			s.True(user1.ID > 0)
 
-			var users []User
-			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id").Get(&users))
-			s.True(len(users) == 2)
-			s.True(users[0].ID == user.ID)
+			var users1 []User
+			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id").Get(&users1))
+			s.True(len(users1) == 2)
+			s.True(users1[0].ID == user.ID)
+
+			var users2 []User
+			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id", "DESC").Get(&users2))
+			s.True(len(users2) == 2)
+			s.True(users2[0].ID == user1.ID)
 		})
 	}
 }
