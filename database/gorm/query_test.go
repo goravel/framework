@@ -1976,17 +1976,21 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 func (s *QueryTestSuite) TestInRandomOrder() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
-			user := User{Name: "random_order_user", Avatar: "random_order_avatar"}
-			s.Nil(query.Create(&user))
-			s.True(user.ID > 0)
+			for i := 0; i < 30; i++ {
+				user := User{Name: "random_order_user", Avatar: "random_order_avatar"}
+				s.Nil(query.Create(&user))
+				s.True(user.ID > 0)
+			}
 
-			user1 := User{Name: "random_order_user", Avatar: "random_order_avatar1"}
-			s.Nil(query.Create(&user1))
-			s.True(user1.ID > 0)
+			var users1 []User
+			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Find(&users1))
+			s.True(len(users1) == 30)
 
-			var users []User
-			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Get(&users))
-			s.True(len(users) == 2)
+			var users2 []User
+			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Find(&users2))
+			s.True(len(users2) == 30)
+
+			s.True(users1[0].ID != users2[0].ID || users1[14].ID != users2[14].ID || users1[29].ID != users2[29].ID)
 		})
 	}
 }

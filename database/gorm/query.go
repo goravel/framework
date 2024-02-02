@@ -458,16 +458,16 @@ func (r *QueryImpl) OrderByDesc(column string) ormcontract.Query {
 func (r *QueryImpl) InRandomOrder() ormcontract.Query {
 	order := ""
 	switch r.Driver() {
-	case "mysql":
+	case ormcontract.DriverMysql:
 		order = "RAND()"
 		break
-	case "sqlserver":
+	case ormcontract.DriverSqlserver:
 		order = "RAND()"
 		break
-	case "postgresql":
+	case ormcontract.DriverPostgresql:
 		order = "RANDOM()"
 		break
-	case "sqlite":
+	case ormcontract.DriverSqlite:
 		order = "RANDOM()"
 		break
 	}
