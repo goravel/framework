@@ -1953,6 +1953,30 @@ func (s *QueryTestSuite) TestOrder() {
 	}
 }
 
+func (s *QueryTestSuite) TestOrderBy() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "order_asc_user", Avatar: "order_asc_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "order_asc_user", Avatar: "order_asc_avatar1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users1 []User
+			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id").Get(&users1))
+			s.True(len(users1) == 2)
+			s.True(users1[0].ID == user.ID)
+
+			var users2 []User
+			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id", "DESC").Get(&users2))
+			s.True(len(users2) == 2)
+			s.True(users2[0].ID == user1.ID)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestOrderByDesc() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {

@@ -124,7 +124,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3).ToStdTime()).Dispatch())
+	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3).StdTime()).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(3 * time.Second)
