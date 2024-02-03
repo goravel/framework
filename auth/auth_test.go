@@ -244,8 +244,8 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
 
 	now := carbon.Now()
-	issuedAt := now.ToStdTime()
-	expireAt := now.AddMinutes(2).ToStdTime()
+	issuedAt := now.StdTime()
+	expireAt := now.AddMinutes(2).StdTime()
 	token, err := s.auth.LoginUsingID(1)
 	s.Nil(err)
 
@@ -287,7 +287,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).StdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(carbon.Now().StdTime()).Local(),
 	}, payload)
 	s.Nil(err)
@@ -309,7 +309,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.Equal(&authcontract.Payload{
 		Guard:    guard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).StdTime()).Local(),
 		IssuedAt: jwt.NewNumericDate(carbon.Now().StdTime()).Local(),
 	}, payload)
 	s.Nil(err)
