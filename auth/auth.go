@@ -89,7 +89,7 @@ func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return []byte(jwtSecret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
-		return carbon.Now().ToStdTime()
+		return carbon.Now().StdTime()
 	}))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {

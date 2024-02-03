@@ -288,7 +288,7 @@ func (s *AuthTestSuite) TestParse_Success() {
 		Guard:    guard,
 		Key:      "1",
 		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(carbon.Now().StdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
@@ -310,7 +310,7 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 		Guard:    guard,
 		Key:      "1",
 		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).ToStdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(carbon.Now().ToStdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(carbon.Now().StdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
