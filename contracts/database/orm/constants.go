@@ -3,6 +3,7 @@ package orm
 const (
 	DriverMysql      Driver = "mysql"
 	DriverPostgresql Driver = "postgresql"
+	DriverPostgres   Driver = "postgres"
 	DriverSqlite     Driver = "sqlite"
 	DriverSqlserver  Driver = "sqlserver"
 )
