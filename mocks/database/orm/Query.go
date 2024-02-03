@@ -849,6 +849,22 @@ func (_m *Query) Where(query interface{}, args ...interface{}) orm.Query {
 	return r0
 }
 
+// WhereBetween provides a mock function with given fields: column, x, y
+func (_m *Query) WhereBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // WhereIn provides a mock function with given fields: column, values
 func (_m *Query) WhereIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
