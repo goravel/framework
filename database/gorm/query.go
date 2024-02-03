@@ -460,16 +460,12 @@ func (r *QueryImpl) InRandomOrder() ormcontract.Query {
 	switch r.Driver() {
 	case ormcontract.DriverMysql:
 		order = "RAND()"
-		break
 	case ormcontract.DriverSqlserver:
 		order = "NEWID()"
-		break
 	case ormcontract.DriverPostgres:
 		order = "RANDOM()"
-		break
 	case ormcontract.DriverSqlite:
 		order = "RANDOM()"
-		break
 	}
 	return r.Order(order)
 }
