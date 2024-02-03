@@ -92,6 +92,8 @@ type Query interface {
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
 	Order(value any) Query
+	// OrderBy specifies the order should be ascending.
+	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
 	// OrWhere add an "or where" clause to the query.

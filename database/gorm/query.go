@@ -451,6 +451,16 @@ func (r *QueryImpl) Order(value any) ormcontract.Query {
 	return NewQueryImplByInstance(tx, r)
 }
 
+func (r *QueryImpl) OrderBy(column string, direction ...string) ormcontract.Query {
+	var orderDirection string
+	if len(direction) > 0 {
+		orderDirection = direction[0]
+	} else {
+		orderDirection = "ASC"
+	}
+	return r.Order(fmt.Sprintf("%s %s", column, orderDirection))
+}
+
 func (r *QueryImpl) OrderByDesc(column string) ormcontract.Query {
 	return r.Order(fmt.Sprintf("%s DESC", column))
 }
