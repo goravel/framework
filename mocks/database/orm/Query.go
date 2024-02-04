@@ -386,6 +386,22 @@ func (_m *Query) Having(query interface{}, args ...interface{}) orm.Query {
 	return r0
 }
 
+// InRandomOrder provides a mock function with given fields:
+func (_m *Query) InRandomOrder() orm.Query {
+	ret := _m.Called()
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Join provides a mock function with given fields: query, args
 func (_m *Query) Join(query string, args ...interface{}) orm.Query {
 	var _ca []interface{}
