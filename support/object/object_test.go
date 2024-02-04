@@ -119,7 +119,217 @@ func TestExists(t *testing.T) {
 }
 
 func TestForget(t *testing.T) {
-	//
+	obj := map[string]any{
+		"products": map[string]any{
+			"desk": map[string]int{
+				"price": 100,
+			},
+		},
+	}
+	Forget(obj)
+	assert.Equal(t, map[string]any{
+		"products": map[string]any{
+			"desk": map[string]int{
+				"price": 100,
+			},
+		},
+	}, obj)
+
+	Forget(obj, "products.desk")
+	assert.Equal(t, map[string]any{
+		"products": map[string]any{},
+	}, obj)
+
+	obj = map[string]any{
+		"products": map[string]any{
+			"desk": map[string]int{
+				"price": 100,
+			},
+		},
+	}
+	Forget(obj, "products.desk.price")
+	assert.Equal(t, map[string]any{
+		"products": map[string]any{
+			"desk": map[string]int{},
+		},
+	}, obj)
+
+	obj = map[string]any{
+		"products": map[string]any{
+			"desk": map[string]int{
+				"price": 100,
+			},
+		},
+	}
+	Forget(obj, "products.chair.price")
+	assert.Equal(t, map[string]any{
+		"products": map[string]any{
+			"desk": map[string]int{
+				"price": 100,
+			},
+		},
+	}, obj)
+
+	obj = map[string]any{
+		"products": map[string]any{
+			"desk": map[string]any{
+				"price": map[string]int{
+					"original": 100,
+					"taxes":    120,
+				},
+			},
+		},
+	}
+	Forget(obj, "products.desk.price.taxes")
+	assert.Equal(t, map[string]any{
+		"products": map[string]any{
+			"desk": map[string]any{
+				"price": map[string]int{
+					"original": 100,
+				},
+			},
+		},
+	}, obj)
+
+	obj = map[string]any{
+		"developers": []map[string]any{
+			{
+				"name": "Bowen",
+				"lang": []string{
+					"Golang",
+					"PHP",
+				},
+			},
+			{
+				"name": "Krishan",
+				"lang": "Golang",
+			},
+		},
+	}
+	Forget(obj, "developers.*.lang")
+	assert.Equal(t, map[string]any{
+		"developers": []map[string]any{
+			{
+				"name": "Bowen",
+			},
+			{
+				"name": "Krishan",
+			},
+		},
+	}, obj)
+
+	obj = map[string]any{
+		"developers": []map[string]any{
+			{
+				"name": "Bowen",
+				"lang": []string{
+					"Golang",
+					"PHP",
+				},
+			},
+			{
+				"name": "Krishan",
+				"lang": []string{
+					"C",
+					"Golang",
+				},
+			},
+		},
+	}
+	Forget(obj, "developers.*.lang.1", "developers.*.name")
+	assert.Equal(t, map[string]any{
+		"developers": []map[string]any{
+			{
+				"lang": []string{
+					"Golang",
+				},
+			},
+			{
+				"lang": []string{
+					"C",
+				},
+			},
+		},
+	}, obj)
+
+	// Only works on first level keys
+	obj = map[string]any{
+		"joe@example.com": "Joe",
+		"jane@localhost":  "Jane",
+	}
+	Forget(obj, "joe@example.com")
+	assert.Equal(t, map[string]any{
+		"jane@localhost": "Jane",
+	}, obj)
+
+	// Doesn't remove nested keys
+	obj = map[string]any{
+		"emails": map[string]string{
+			"joe@example.com": "Joe",
+			"jane@localhost":  "Jane",
+		},
+	}
+	Forget(obj, "emails.joe@example.com")
+	assert.Equal(t, map[string]any{
+		"emails": map[string]string{
+			"joe@example.com": "Joe",
+			"jane@localhost":  "Jane",
+		},
+	}, obj)
+
+	obj = map[string]any{
+		"developers": []map[string]string{
+			{
+				"name": "Bowen",
+			},
+			{
+				"name": "Krishan",
+			},
+		},
+	}
+	Forget(obj, "developers.*.name")
+	assert.Equal(t, map[string]any{
+		"developers": []map[string]string{},
+	}, obj)
+
+	// Test nil value
+	obj = map[string]any{
+		"shop": map[string]any{
+			"cart": map[any]any{
+				150:   0,
+				"foo": "bar",
+			},
+		},
+	}
+	Forget(obj, "shop.cart.150")
+	Forget(obj, "shop.cart.100")
+	Forget(obj, "shop.cart.foo")
+	assert.Equal(t, map[string]any{
+		"shop": map[string]any{
+			"cart": map[any]any{},
+		},
+	}, obj)
+
+	obj = map[string]any{
+		"developers": []map[string]any{
+			{
+				"lang": []string{
+					"Golang",
+					"PHP",
+				},
+			},
+		},
+	}
+	Forget(obj, "developers.0.lang.0")
+	assert.Equal(t, map[string]any{
+		"developers": []map[string]any{
+			{
+				"lang": []string{
+					"PHP",
+				},
+			},
+		},
+	}, obj)
 }
 
 func TestGet(t *testing.T) {
@@ -283,7 +493,54 @@ func TestOnly(t *testing.T) {
 }
 
 func TestPull(t *testing.T) {
-	//
+	obj := map[string]any{
+		"name": "Krishan",
+		"age":  21,
+	}
+	assert.Equal(t, "Krishan", Pull(obj, "name"))
+	assert.Equal(t, map[string]any{"age": 21}, obj)
+
+	// Only works on first level keys
+	obj = map[string]any{
+		"joe@example.com": "Joe",
+		"jane@localhost":  "Jane",
+	}
+	assert.Equal(t, "Joe", Pull(obj, "joe@example.com"))
+	assert.Equal(t, map[string]any{"jane@localhost": "Jane"}, obj)
+
+	// Doesn't remove nested keys
+	obj = map[string]any{
+		"emails": map[string]any{
+			"joe@example.com": "Joe",
+			"jane@localhost":  "Jane",
+		},
+	}
+	assert.Nil(t, Pull(obj, "emails.joe@example.com"))
+	assert.Equal(t, map[string]any{
+		"emails": map[string]any{
+			"joe@example.com": "Joe",
+			"jane@localhost":  "Jane",
+		},
+	}, obj)
+
+	// work with slices
+	obj = map[string]any{
+		"names": []string{"Bowen", "Krishan"},
+	}
+	assert.Equal(t, "Bowen", Pull(obj, "names.0"))
+	assert.Equal(t, map[string]any{"names": []string{"Krishan"}}, obj)
+
+	obj = map[string]any{
+		"names": []string{"Bowen", "Krishan"},
+	}
+	assert.Equal(t, []string{"Bowen", "Krishan"}, Pull(obj, "names.*"))
+	assert.Equal(t, map[string]any{"names": []string{}}, obj)
+
+	// default value
+	obj = map[string]any{
+		"name": "Krishan",
+	}
+	assert.Equal(t, "default", Pull(obj, "age", "default"))
 }
 
 func TestSet(t *testing.T) {
