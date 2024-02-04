@@ -311,7 +311,7 @@ func TestRule_RequiredIf(t *testing.T) {
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
-					"required_if": "name1 is required when name is [goravel,goravel1]",
+					"required_if": "name1 is required when name is in [goravel,goravel1]",
 				}, validator.Errors().Get("name1"))
 			},
 		},
@@ -327,7 +327,7 @@ func TestRule_RequiredIf(t *testing.T) {
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
-					"required_if": "name1 is required when name is [goravel,goravel1]",
+					"required_if": "name1 is required when name is in [goravel,goravel1]",
 				}, validator.Errors().Get("name1"))
 			},
 		},

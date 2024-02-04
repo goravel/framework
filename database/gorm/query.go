@@ -451,6 +451,35 @@ func (r *QueryImpl) Order(value any) ormcontract.Query {
 	return NewQueryImplByInstance(tx, r)
 }
 
+func (r *QueryImpl) OrderBy(column string, direction ...string) ormcontract.Query {
+	var orderDirection string
+	if len(direction) > 0 {
+		orderDirection = direction[0]
+	} else {
+		orderDirection = "ASC"
+	}
+	return r.Order(fmt.Sprintf("%s %s", column, orderDirection))
+}
+
+func (r *QueryImpl) OrderByDesc(column string) ormcontract.Query {
+	return r.Order(fmt.Sprintf("%s DESC", column))
+}
+
+func (r *QueryImpl) InRandomOrder() ormcontract.Query {
+	order := ""
+	switch r.Driver() {
+	case ormcontract.DriverMysql:
+		order = "RAND()"
+	case ormcontract.DriverSqlserver:
+		order = "NEWID()"
+	case ormcontract.DriverPostgres:
+		order = "RANDOM()"
+	case ormcontract.DriverSqlite:
+		order = "RANDOM()"
+	}
+	return r.Order(order)
+}
+
 func (r *QueryImpl) OrWhere(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Or(query, args...)
 
@@ -662,6 +691,30 @@ func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 	tx := r.instance.Where(query, args...)
 
 	return NewQueryImplByInstance(tx, r)
+}
+
+func (r *QueryImpl) WhereIn(column string, values []any) ormcontract.Query {
+	return r.Where(fmt.Sprintf("%s IN ?", column), values)
+}
+
+func (r *QueryImpl) OrWhereIn(column string, values []any) ormcontract.Query {
+	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
+}
+
+func (r *QueryImpl) WhereNotIn(column string, values []any) ormcontract.Query {
+	return r.Where(fmt.Sprintf("%s NOT IN ?", column), values)
+}
+
+func (r *QueryImpl) OrWhereNotIn(column string, values []any) ormcontract.Query {
+	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", column), values)
+}
+
+func (r *QueryImpl) WhereBetween(column string, x, y any) ormcontract.Query {
+	return r.Where(fmt.Sprintf("%s BETWEEN %v AND %v", column, x, y))
+}
+
+func (r *QueryImpl) WhereNotBetween(column string, x, y any) ormcontract.Query {
+	return r.Where(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
 }
 
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
