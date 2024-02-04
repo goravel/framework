@@ -2881,6 +2881,33 @@ func (s *QueryTestSuite) TestWhereBetween() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereNotBetween() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			user3 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
+			s.Nil(query.Create(&user3))
+			s.True(user3.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "where_not_between_user").WhereNotBetween("id", user.ID, user2.ID).Find(&users))
+			s.True(len(users) == 1)
+			s.True(users[0].ID == user3.ID)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWithoutEvents() {
 	for _, query := range s.queries {
 		tests := []struct {

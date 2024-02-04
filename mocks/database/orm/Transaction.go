@@ -948,6 +948,22 @@ func (_m *Transaction) WhereIn(column string, values []interface{}) orm.Query {
 	return r0
 }
 
+// WhereNotBetween provides a mock function with given fields: column, x, y
+func (_m *Transaction) WhereNotBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // WhereNotIn provides a mock function with given fields: column, values
 func (_m *Transaction) WhereNotIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
