@@ -128,7 +128,7 @@ type Query interface {
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereHas applies a subquery condition to filter results based on a related table.
-	WhereHas(table string, fk string, conditions func(Query) Query ) Query
+	WhereHas(table any, fk string, conditions func(Query) (Query,error) ) (Query,error)
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.

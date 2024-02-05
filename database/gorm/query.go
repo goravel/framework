@@ -672,20 +672,29 @@ func (r *QueryImpl) OrWhereIn(column string, values []any) ormcontract.Query {
 	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
 }
 
-func (r *QueryImpl) WhereHas(table string, fk string, condition func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
+func (r *QueryImpl) WhereHas(table any, fk string, condition func(ormcontract.Query) (ormcontract.Query,error)) (ormcontract.Query,error) {
 
-	relatedModelQuery := NewQueryImplByInstance(r.instance.Table(table), r)
+	relatedModelQuery := NewQueryImplByInstance(r.instance.Model(table), r)
 
 	//wrap and modify query with the condition passed from function
-	modifiedQuery := condition(relatedModelQuery)
+	modifiedQuery,_ := condition(relatedModelQuery)
 
 	// Extract the *gorm.DB instance from the modified QueryImpl
 	subQuery := modifiedQuery.(*QueryImpl).instance.Select(fk)
+	//r.instance.Statement.Model
 
+	id := database.GetIDField(table)
+	
+	if id == "" {
+		// Handle the case where the primary key field is not found
+		// This might involve returning an error or using a default field
+		return nil, errors.New("primary key field not found")
+	}
+	
 	// Use the subQuery the main query
-	tx := r.instance.Where("id IN (?)", subQuery)
+	tx := r.instance.Where(id + " IN (?)", subQuery)
 
-	return NewQueryImplByInstance(tx, r)
+	return NewQueryImplByInstance(tx, r) , nil
 }
 
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
