@@ -681,7 +681,6 @@ func (r *QueryImpl) WhereHas(table any, fk string, condition func(ormcontract.Qu
 
 	// Extract the *gorm.DB instance from the modified QueryImpl
 	subQuery := modifiedQuery.(*QueryImpl).instance.Select(fk)
-	//r.instance.Statement.Model
 
 	id := database.GetIDField(table)
 	
