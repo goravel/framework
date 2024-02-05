@@ -15,39 +15,44 @@ const (
 )
 
 // Add an element to a map using “dot” notation if it doesn't exist.
-func Add(obj *map[string]any, k string, v any) error {
-	if val := Get(*obj, k); val != nil {
+func Add(mp *map[string]any, k string, v any) error {
+	if _, ok := maputil.GetByPath(k, *mp); ok {
 		return nil
 	}
 
-	return Set(obj, k, v)
+	return Set(mp, k, v)
 }
 
 // Dot flattens a map using dot notation.
-func Dot(obj map[string]any) map[string]any {
-	return maputil.Flatten(obj)
+func Dot(mp map[string]any) map[string]any {
+	return maputil.Flatten(mp)
 }
 
 // Exists checks if the given key exists in the provided map (only top level).
-func Exists[K comparable, V any](obj map[K]V, key K) bool {
-	_, ok := obj[key]
+func Exists[K comparable, V any](mp map[K]V, key K) bool {
+	_, ok := mp[key]
 	return ok
 }
 
 // Forget removes a given key or keys from the provided map.
-func Forget(obj map[string]any, keys ...string) {
+func Forget[K comparable, V any](mp map[K]V, keys ...K) {
 	for _, key := range keys {
-		if _, ok := obj[key]; ok {
-			delete(obj, key)
+		if _, ok := mp[key]; ok {
+			delete(mp, key)
 			continue
 		}
-		deleteByPath(obj, obj, strings.Split(key, PathSep))
+
+		if _, ok := any(key).(string); !ok {
+			continue
+		}
+
+		deleteByPathKeys(mp, mp, strings.Split(any(key).(string), PathSep))
 	}
 }
 
 // Get an item from an object using "dot" notation.
-func Get(obj map[string]any, key string, defaults ...any) any {
-	val, ok := maputil.GetByPath(key, obj)
+func Get(mp map[string]any, key string, defaults ...any) any {
+	val, ok := maputil.GetByPath(key, mp)
 
 	if !ok && len(defaults) > 0 {
 		return defaults[0]
@@ -57,14 +62,22 @@ func Get(obj map[string]any, key string, defaults ...any) any {
 }
 
 // Has checks if the given key or keys exist in the provided map.
-func Has(obj map[string]any, keys ...string) bool {
-	if len(keys) == 0 || len(obj) == 0 {
+func Has[K comparable, V any](mp map[K]V, keys ...K) bool {
+	if len(keys) == 0 || len(mp) == 0 {
 		return false
 	}
 
 	for _, key := range keys {
-		_, ok := maputil.GetByPath(key, obj)
-		if !ok {
+		if _, ok := any(key).(string); ok {
+			_, ok := maputil.GetByPath(any(key).(string), any(mp).(map[string]any))
+			if !ok {
+				return false
+			}
+
+			continue
+		}
+
+		if !Exists(mp, key) {
 			return false
 		}
 	}
@@ -73,9 +86,9 @@ func Has(obj map[string]any, keys ...string) bool {
 }
 
 // HasAny checks if the given key or keys exist in the provided map.
-func HasAny(obj map[string]any, keys ...string) bool {
+func HasAny[K comparable, V any](mp map[K]V, keys ...K) bool {
 	for _, key := range keys {
-		if Has(obj, key) {
+		if Has(mp, key) {
 			return true
 		}
 	}
@@ -84,11 +97,11 @@ func HasAny(obj map[string]any, keys ...string) bool {
 }
 
 // Only returns the items in the map with the specified keys.
-func Only[K comparable, V any](obj map[K]V, keys ...K) map[K]V {
+func Only[K comparable, V any](mp map[K]V, keys ...K) map[K]V {
 	result := make(map[K]V)
 	for _, key := range keys {
-		if Exists(obj, key) {
-			result[key] = obj[key]
+		if Exists(mp, key) {
+			result[key] = mp[key]
 		}
 	}
 
@@ -96,13 +109,17 @@ func Only[K comparable, V any](obj map[K]V, keys ...K) map[K]V {
 }
 
 // Pull returns a new map with the specified keys removed.
-func Pull(obj map[string]any, key string, def ...any) any {
-	if val, ok := obj[key]; ok {
-		delete(obj, key)
+func Pull[K comparable, V any](mp map[K]V, key K, def ...any) any {
+	if val, ok := mp[key]; ok {
+		delete(mp, key)
 		return val
 	}
 
-	value, ok := deleteByPath(obj, obj, strings.Split(key, PathSep))
+	if _, ok := any(key).(string); !ok {
+		return nil
+	}
+
+	value, ok := deleteByPathKeys(mp, mp, strings.Split(any(key).(string), PathSep))
 
 	if !ok && len(def) > 0 {
 		return def[0]
@@ -112,11 +129,11 @@ func Pull(obj map[string]any, key string, def ...any) any {
 }
 
 // Set an element to a map using “dot” notation.
-func Set(obj *map[string]any, k string, v any) error {
-	return maputil.SetByPath(obj, k, v)
+func Set(mp *map[string]any, k string, v any) error {
+	return maputil.SetByPath(mp, k, v)
 }
 
-// deleteByPath delete value by key path from a map(map[string]any).eg "top" "top.sub"
+// deleteByPathKeys delete value by key path from a map(map[string]any).eg "top" "top.sub"
 //
 // Example:
 //
@@ -125,10 +142,10 @@ func Set(obj *map[string]any, k string, v any) error {
 //			"sub": "value",
 //		},
 //	}
-//	val, ok := deleteByPath(mp, []string{"top", "sub"}) // return "value", true
+//	val, ok := deleteByPathKeys(mp, []string{"top", "sub"}) // return "value", true
 //
-// Inspired by GetByPathKeys function from https://github.com/gookit/goutil/maputil package
-func deleteByPath(parent, child any, keys []string) (any, bool) {
+// Inspired by GetByPathKeys function from https://github.com/gookit/goutil package
+func deleteByPathKeys(parent, child any, keys []string) (any, bool) {
 	var (
 		prevLevel, currLevel any
 		ok                   bool
@@ -219,7 +236,7 @@ func deleteByPath(parent, child any, keys []string) (any, bool) {
 						}
 
 						// el is map value.
-						if _, ok := deleteByPath(prevLevel, el.Interface(), keys[i+1:]); ok {
+						if _, ok := deleteByPathKeys(prevLevel, el.Interface(), keys[i+1:]); ok {
 							if reflects.IsEmpty(el) {
 								if rv.Len() > 1 {
 									rv = reflect.AppendSlice(rv.Slice(0, si), rv.Slice(si+1, rv.Len()))
@@ -257,5 +274,5 @@ func deleteByPath(parent, child any, keys []string) (any, bool) {
 		}
 	}
 
-	return currLevel, false
+	return nil, false
 }
