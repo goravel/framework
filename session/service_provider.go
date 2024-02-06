@@ -11,7 +11,7 @@ type ServiceProvider struct {
 }
 
 func (receiver *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(BindingStore, func(app foundation.Application) (any, error) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		return NewManager(app), nil
 	})
 

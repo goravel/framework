@@ -51,6 +51,27 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Handler, error) {
 	return m.drivers[driver], nil
 }
 
+func (m *Manager) Extend(driver string, handler func(app foundation.Application) sessioncontract.Handler) sessioncontract.Manager {
+	m.customCreators[driver] = handler
+	return m
+}
+
+func (m *Manager) Store(sessionId ...string) sessioncontract.Session {
+	driver, err := m.Driver()
+	if err != nil {
+		return nil
+	}
+	return m.BuildSession(driver, sessionId...)
+}
+
+func (m *Manager) getDefaultDriver() string {
+	return m.config.GetString("session.driver")
+}
+
+func (m *Manager) callCustomCreator(driver string) sessioncontract.Handler {
+	return m.customCreators[driver](m.app)
+}
+
 func (m *Manager) creatDriver(name string) (sessioncontract.Handler, error) {
 	if m.customCreators[name] != nil {
 		return m.customCreators[name](m.app), nil
@@ -61,27 +82,6 @@ func (m *Manager) creatDriver(name string) (sessioncontract.Handler, error) {
 	}
 
 	return nil, fmt.Errorf("driver [%s] not supported", name)
-}
-
-func (m *Manager) Extend(driver string, handler func(app foundation.Application) sessioncontract.Handler) sessioncontract.Manager {
-	m.customCreators[driver] = handler
-	return m
-}
-
-func (m *Manager) Store(sessionId string) sessioncontract.Session {
-	driver, err := m.Driver()
-	if err != nil {
-		return nil
-	}
-	return m.BuildSession(driver, sessionId)
-}
-
-func (m *Manager) getDefaultDriver() string {
-	return m.config.GetString("session.driver")
-}
-
-func (m *Manager) callCustomCreator(driver string) sessioncontract.Handler {
-	return m.customCreators[driver](m.app)
 }
 
 func (m *Manager) createFileDriver() sessioncontract.Handler {
