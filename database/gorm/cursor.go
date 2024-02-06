@@ -140,7 +140,7 @@ func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		if f.Kind() == reflect.String {
-			return gorm.DeletedAt{Time: carbon.Parse(data.(string)).ToStdTime(), Valid: true}, nil
+			return gorm.DeletedAt{Time: carbon.Parse(data.(string)).StdTime(), Valid: true}, nil
 		}
 
 		return data, nil
