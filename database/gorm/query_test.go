@@ -2847,12 +2847,12 @@ func (s *QueryTestSuite) TestWhereHas() {
 			s.Nil(query.Select(orm.Associations).Create(&user3))
 			s.Nil(query.Select(orm.Associations).Create(&user4))
 
-			resultQuery, err := query.WhereHas(Book{}, "user_id", func(query ormcontract.Query) (ormcontract.Query, error) {
+			resultQuery, _ := query.WhereHas(Book{}, "user_id", func(query ormcontract.Query) (ormcontract.Query, error) {
 				modifiedQuery := query.Where("Name = ?", "Book A")
 				return modifiedQuery, nil
 			})
 
-			err = resultQuery.Find(&users)
+			err := resultQuery.Find(&users)
 			
 			if err != nil {
 				// Handle the error, maybe log it or return it
