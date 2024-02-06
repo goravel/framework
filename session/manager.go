@@ -4,19 +4,23 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
 )
 
 type Manager struct {
+	app            foundation.Application
 	config         config.Config
-	customCreators map[string]sessioncontract.Handler
+	customCreators map[string]func(app foundation.Application) sessioncontract.Handler
 	drivers        map[string]sessioncontract.Handler
 }
 
-func NewManager(config config.Config) *Manager {
+func NewManager(app foundation.Application) *Manager {
+	con := app.MakeConfig()
 	manager := &Manager{
-		config:         config,
-		customCreators: make(map[string]sessioncontract.Handler),
+		app:            app,
+		config:         con,
+		customCreators: make(map[string]func(app foundation.Application) sessioncontract.Handler),
 		drivers:        make(map[string]sessioncontract.Handler),
 	}
 	manager.registerDrivers()
@@ -49,7 +53,7 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Handler, error) {
 
 func (m *Manager) creatDriver(name string) (sessioncontract.Handler, error) {
 	if m.customCreators[name] != nil {
-		return m.customCreators[name], nil
+		return m.customCreators[name](m.app), nil
 	}
 
 	if m.drivers[name] != nil {
@@ -59,8 +63,8 @@ func (m *Manager) creatDriver(name string) (sessioncontract.Handler, error) {
 	return nil, fmt.Errorf("driver [%s] not supported", name)
 }
 
-func (m *Manager) Extend(driver string, handler func() sessioncontract.Handler) sessioncontract.Manager {
-	m.customCreators[driver] = handler()
+func (m *Manager) Extend(driver string, handler func(app foundation.Application) sessioncontract.Handler) sessioncontract.Manager {
+	m.customCreators[driver] = handler
 	return m
 }
 
@@ -76,11 +80,15 @@ func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
 
-func (m *Manager) callCustomCreator(driver string) sessioncontract.Session {
-	return m.BuildSession(m.customCreators[driver])
+func (m *Manager) callCustomCreator(driver string) sessioncontract.Handler {
+	return m.customCreators[driver](m.app)
+}
+
+func (m *Manager) createFileDriver() sessioncontract.Handler {
+	lifetime := m.config.GetInt("session.lifetime")
+	return NewFileHandler(m.config.GetString("session.files"), lifetime)
 }
 
 func (m *Manager) registerDrivers() {
-	lifetime := m.config.GetInt("session.lifetime")
-	m.drivers["file"] = NewFileHandler(m.config.GetString("session.files"), lifetime)
+	m.drivers["file"] = m.createFileDriver()
 }
