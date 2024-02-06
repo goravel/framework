@@ -711,7 +711,7 @@ func (r *QueryImpl) WhereHas(table any, fk string, condition func(ormcontract.Qu
 	// Extract the *gorm.DB instance from the modified QueryImpl
 	subQuery := modifiedQuery.(*QueryImpl).instance.Select(fk)
 
-	id := database.GetIDField(table)
+	id := database.GetPrimaryField(table)
 	
 	if id == "" {
 		// Handle the case where the primary key field is not found

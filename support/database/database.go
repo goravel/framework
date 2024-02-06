@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -25,15 +24,13 @@ func GetID(dest any) any {
 
 
 // GetIDField returns the name of the primary key field of the provided struct (dest).
-func GetIDField(dest any) string {
+func GetPrimaryField(dest any) string {
 	if dest == nil {
 		return ""
 	}
 
 	t := reflect.TypeOf(dest)
 	v := reflect.ValueOf(dest)
-	fmt.Println(v)
-	fmt.Println("type" ,t)
 
 	if t.Kind() == reflect.Pointer {
 		return GetPrimaryKeyField(t.Elem(), v.Elem())
@@ -92,7 +89,6 @@ func GetPrimaryKeyField(t reflect.Type, v reflect.Value) string {
 
                 // Check if the field is the primary key
                 if strings.Contains(structField.Field(j).Tag.Get("gorm"), "primaryKey") {
-					fmt.Println(structField.Field(j).Name)
                     return structField.Field(j).Name
                 }
             }
@@ -100,7 +96,6 @@ func GetPrimaryKeyField(t reflect.Type, v reflect.Value) string {
 
         // Check if the field itself is the primary key
         if strings.Contains(t.Field(i).Tag.Get("gorm"), "primaryKey") {
-			fmt.Println(t.Field(i).Name)
             return t.Field(i).Name
         }
     }
