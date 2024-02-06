@@ -257,7 +257,7 @@ func (c *Container) MakeSchedule() schedulecontract.Schedule {
 }
 
 func (c *Container) MakeSession() sessioncontract.Manager {
-	instance, err := c.Make(session.BindingStore)
+	instance, err := c.Make(session.Binding)
 	if err != nil {
 		color.Redln(err)
 		return nil
