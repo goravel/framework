@@ -14,7 +14,6 @@ func GetID(dest any) any {
 
 	t := reflect.TypeOf(dest)
 	v := reflect.ValueOf(dest)
-	
 	if t.Kind() == reflect.Pointer {
 		return GetIDByReflect(t.Elem(), v.Elem())
 	}
@@ -48,7 +47,7 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 			structField := v.Field(i).Type()
 			for j := 0; j < structField.NumField(); j++ {
 				if !structField.Field(j).IsExported() {
-						continue
+					continue
 				}
 				if strings.Contains(structField.Field(j).Tag.Get("gorm"), "primaryKey") {
 					id := v.Field(i).Field(j).Interface()
