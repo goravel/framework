@@ -31,7 +31,7 @@ type User struct {
 	Name    string
 	Avatar  string
 	Address *Address
-	Books   []*Book  `gorm:"foreignKey:UserID"`
+	Books   []*Book
 	House   *House   `gorm:"polymorphic:Houseable"`
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
@@ -354,20 +354,20 @@ func TestQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	//postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
-	//postgresqlQuery, err := postgresqlDocker.New()
+	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
+	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
 
-	// sqliteDocker := NewSqliteDocker(dbDatabase)
-	// sqliteQuery, err := sqliteDocker.New()
+	sqliteDocker := NewSqliteDocker(dbDatabase)
+	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	// sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
-	// sqlserverQuery, err := sqlserverDocker.New()
+	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
+	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
@@ -375,9 +375,9 @@ func TestQueryTestSuite(t *testing.T) {
 	suite.Run(t, &QueryTestSuite{
 		queries: map[ormcontract.Driver]ormcontract.Query{
 			ormcontract.DriverMysql:      mysqlQuery,
-			// ormcontract.DriverPostgresql: postgresqlQuery,
-			// ormcontract.DriverSqlite:     sqliteQuery,
-			// ormcontract.DriverSqlserver:  sqlserverQuery,
+			ormcontract.DriverPostgresql: postgresqlQuery,
+			ormcontract.DriverSqlite:     sqliteQuery,
+			ormcontract.DriverSqlserver:  sqlserverQuery,
 		},
 	})
 }
@@ -2847,19 +2847,10 @@ func (s *QueryTestSuite) TestWhereHas() {
 			s.Nil(query.Select(orm.Associations).Create(&user3))
 			s.Nil(query.Select(orm.Associations).Create(&user4))
 
-			resultQuery, err := query.WhereHas(Book{}, "user_id", func(query ormcontract.Query) (ormcontract.Query, error) {
-				modifiedQuery := query.Where("Name = ?", "Book A")
-				return modifiedQuery, nil
-			})
+			query.WhereHas("books","user_id", func(query ormcontract.Query) ormcontract.Query {
+				return query.Where("Name = ?", "Book A")
+			}).Find(&users)
 
-			err = resultQuery.Find(&users)
-			
-			if err != nil {
-				// Handle the error, maybe log it or return it
-				log.Println("Error in WhereHas:", err)
-				return
-			}
-			
 
 			fmt.Println("USER", len(users))
 			
