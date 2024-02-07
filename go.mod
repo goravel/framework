@@ -15,7 +15,7 @@ require (
 	github.com/golang-module/carbon/v2 v2.3.8
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.6.0
-	github.com/google/wire v0.5.0
+	github.com/google/wire v0.6.0
 	github.com/gookit/color v1.5.4
 	github.com/gookit/validate v1.5.2
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
@@ -33,13 +33,13 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/atomic v1.11.0
-	golang.org/x/crypto v0.18.0
+	golang.org/x/crypto v0.19.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	google.golang.org/grpc v1.61.0
-	gorm.io/driver/mysql v1.5.2
-	gorm.io/driver/postgres v1.5.4
-	gorm.io/driver/sqlserver v1.5.2
-	gorm.io/gorm v1.25.6
+	gorm.io/driver/mysql v1.5.4
+	gorm.io/driver/postgres v1.5.6
+	gorm.io/driver/sqlserver v1.5.3
+	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
 	gorm.io/plugin/dbresolver v1.5.0
 )
 
@@ -118,10 +118,10 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/oauth2 v0.15.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.153.0 // indirect
