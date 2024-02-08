@@ -136,7 +136,6 @@ type Query interface {
 	// WhereIn adds a "where column in" clause to the query.
 	WhereIn(column string, values []any) Query
 	// WhereHas applies a subquery condition to filter results based on a related table.
-
 	WhereHas(table any, fk string, conditions func(Query) (Query,error) ) (Query,error)
 	// WhereNotIn adds a "where column not in" clause to the query.
 	WhereNotIn(column string, values []any) Query
