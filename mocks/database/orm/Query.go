@@ -908,10 +908,6 @@ func (_m *Query) WhereBetween(column string, x interface{}, y interface{}) orm.Q
 func (_m *Query) WhereHas(table interface{}, fk string, conditions func(orm.Query) (orm.Query, error)) (orm.Query, error) {
 	ret := _m.Called(table, fk, conditions)
 
-	if len(ret) == 0 {
-		panic("no return value specified for WhereHas")
-	}
-
 	var r0 orm.Query
 	var r1 error
 	if rf, ok := ret.Get(0).(func(interface{}, string, func(orm.Query) (orm.Query, error)) (orm.Query, error)); ok {
