@@ -715,7 +715,6 @@ func (r *QueryImpl) WhereHas(table any, fk string, condition func(ormcontract.Qu
 	
 	if primaryKey == "" {
 		// Handle the case where the primary key field is not found
-		// This might involve returning an error or using a default field
 		return nil, errors.New("primary key field not found")
 	}
 	
