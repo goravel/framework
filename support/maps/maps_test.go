@@ -10,103 +10,18 @@ func TestAdd(t *testing.T) {
 	mp := map[string]any{
 		"name": "Desk",
 	}
-	err := Add(&mp, "price", 100)
-	assert.Nil(t, err)
+	Add(mp, "price", 100)
 	assert.Equal(t, map[string]any{
 		"name":  "Desk",
 		"price": 100,
 	}, mp)
 
-	err = Add(&mp, "price", 200)
-	assert.Nil(t, err)
+	Add(mp, "price", 200)
 	assert.Equal(t, 100, Get(mp, "price"))
 
-	mp = map[string]any{}
-	err = Add(&mp, "surname", "Beniwal")
-	assert.Nil(t, err)
-	assert.Equal(t, "Beniwal", Get(mp, "surname"))
-
-	mp = map[string]any{}
-	err = Add(&mp, "developer.name", "Krishan")
-	assert.Nil(t, err)
-	assert.Equal(t, "Krishan", Get(mp, "developer.name"))
-
-	mp = map[string]any{
-		"developer": map[string]any{
-			"name": "Krishan",
-			"lang": []string{},
-		},
-	}
-	err = Add(&mp, "developer.lang.1", "Golang")
-	assert.Nil(t, err)
-	assert.Equal(t, "", Get(mp, "developer.lang.0"))
-	assert.Equal(t, "Golang", Get(mp, "developer.lang.1"))
-
-	mp = map[string]any{}
-	err = Add(&mp, "foo", map[string]any{
-		"bar": "baz",
-	})
-	assert.Nil(t, err)
-	assert.Equal(t, "baz", Get(mp, "foo.bar"))
-}
-
-func TestDot(t *testing.T) {
-	mp := Dot(map[string]any{
-		"foo": map[string]any{
-			"bar": "baz",
-		},
-	})
-	assert.Equal(t, map[string]any{
-		"foo.bar": "baz",
-	}, mp)
-
-	mp = Dot(map[string]any{
-		"foo": map[int]int{
-			10: 100,
-		},
-	})
-	assert.Equal(t, map[string]any{
-		"foo.10": 100,
-	}, mp)
-
-	mp = Dot(map[string]any{})
-	assert.Equal(t, map[string]any{}, mp)
-
-	mp = Dot(map[string]any{
-		"foo": []string{},
-	})
-	assert.Equal(t, map[string]any{}, mp)
-
-	mp = Dot(map[string]any{
-		"user": map[string]any{
-			"name": "Krishan",
-			"age":  21,
-			"languages": []string{
-				"Golang",
-				"PHP",
-			},
-		},
-	})
-	assert.Equal(t, map[string]any{
-		"user.name":         "Krishan",
-		"user.age":          21,
-		"user.languages[0]": "Golang",
-		"user.languages[1]": "PHP",
-	}, mp)
-
-	mp = Dot(map[string]any{
-		"user": map[string]any{
-			"name": "Krishan",
-		},
-		"empty_slice": []string{},
-		"key":         "value",
-		"zero":        0,
-	})
-	assert.Equal(t, map[string]any{
-		"user.name": "Krishan",
-		"key":       "value",
-		"zero":      0,
-	}, mp)
+	sMp := map[string]string{}
+	Add(sMp, "surname", "Beniwal")
+	assert.Equal(t, "Beniwal", Get(sMp, "surname"))
 }
 
 func TestExists(t *testing.T) {
@@ -119,166 +34,44 @@ func TestExists(t *testing.T) {
 }
 
 func TestForget(t *testing.T) {
-	mp := map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
+	mp := map[string]string{
+		"foo": "bar",
+		"baz": "qux",
 	}
 	Forget(mp)
-	assert.Equal(t, map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
+	assert.Equal(t, map[string]string{
+		"foo": "bar",
+		"baz": "qux",
 	}, mp)
 
-	Forget(mp, "products.desk")
-	assert.Equal(t, map[string]any{
-		"products": map[string]any{},
+	Forget(mp, "foo")
+	assert.Equal(t, map[string]string{
+		"baz": "qux",
 	}, mp)
 
-	mp = map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
+	mp = map[string]string{
+		"foo": "bar",
+		"baz": "qux",
 	}
-	Forget(mp, "products.desk.price")
-	Forget(mp, "products.desk.quantity")
-	assert.Equal(t, map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{},
-		},
-	}, mp)
-
-	mp = map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
-	}
-	Forget(mp, "products.chair.price")
-	assert.Equal(t, map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
-	}, mp)
-
-	mp = map[string]any{
-		"products": map[string]any{
-			"desk": map[string]any{
-				"price": map[string]int{
-					"original": 100,
-					"taxes":    120,
-				},
-			},
-		},
-	}
-	Forget(mp, "products.desk.price.taxes")
-	assert.Equal(t, map[string]any{
-		"products": map[string]any{
-			"desk": map[string]any{
-				"price": map[string]int{
-					"original": 100,
-				},
-			},
-		},
-	}, mp)
-
-	mp = map[string]any{
-		"developers": []map[string]any{
-			{
-				"name": "Bowen",
-				"lang": []string{
-					"Golang",
-					"PHP",
-				},
-			},
-			{
-				"name": "Krishan",
-				"lang": "Golang",
-			},
-		},
-	}
-	Forget(mp, "developers.*.lang")
-	assert.Equal(t, map[string]any{
-		"developers": []map[string]any{
-			{
-				"name": "Bowen",
-			},
-			{
-				"name": "Krishan",
-			},
-		},
-	}, mp)
-
-	mp = map[string]any{
-		"developers": []map[string]any{
-			{
-				"name": "Bowen",
-				"lang": []string{
-					"Golang",
-					"PHP",
-				},
-			},
-			{
-				"name": "Krishan",
-				"lang": []string{
-					"C",
-					"Golang",
-				},
-			},
-		},
-	}
-	Forget(mp, "developers.*.lang.1", "developers.*.name")
-	assert.Equal(t, map[string]any{
-		"developers": []map[string]any{
-			{
-				"lang": []string{
-					"Golang",
-				},
-			},
-			{
-				"lang": []string{
-					"C",
-				},
-			},
-		},
-	}, mp)
-
-	// Only works on first level keys
-	mp = map[string]any{
-		"joe@example.com": "Joe",
-		"jane@localhost":  "Jane",
-	}
-	Forget(mp, "joe@example.com")
-	assert.Equal(t, map[string]any{
-		"jane@localhost": "Jane",
-	}, mp)
+	Forget(mp, "baz", "foo")
+	assert.Equal(t, map[string]string{}, mp)
 
 	// Doesn't remove nested keys
-	mp = map[string]any{
+	aMp := map[string]any{
 		"emails": map[string]string{
 			"joe@example.com": "Joe",
 			"jane@localhost":  "Jane",
 		},
 	}
-	Forget(mp, "emails.joe@example.com")
+	Forget(aMp, "emails.joe@example.com")
 	assert.Equal(t, map[string]any{
 		"emails": map[string]string{
 			"joe@example.com": "Joe",
 			"jane@localhost":  "Jane",
 		},
-	}, mp)
+	}, aMp)
 
-	mp = map[string]any{
+	aMp = map[string]any{
 		"developers": []map[string]string{
 			{
 				"name": "Bowen",
@@ -288,48 +81,18 @@ func TestForget(t *testing.T) {
 			},
 		},
 	}
-	Forget(mp, "developers.*.name")
-	assert.Equal(t, map[string]any{
-		"developers": []map[string]string{},
-	}, mp)
+	Forget(aMp, "developers")
+	assert.Equal(t, map[string]any{}, aMp)
 
 	// Test nil value
-	mp = map[string]any{
-		"shop": map[string]any{
-			"cart": map[any]any{
-				150:   0,
-				"foo": "bar",
-			},
-		},
+	mp = map[string]string{
+		"foo": "bar",
+		"baz": "qux",
 	}
-	Forget(mp, "shop.cart.150")
-	Forget(mp, "shop.cart.100")
-	Forget(mp, "shop.cart.foo")
-	assert.Equal(t, map[string]any{
-		"shop": map[string]any{
-			"cart": map[any]any{},
-		},
-	}, mp)
-
-	mp = map[string]any{
-		"developers": []map[string]any{
-			{
-				"lang": []string{
-					"Golang",
-					"PHP",
-				},
-			},
-		},
-	}
-	Forget(mp, "developers.0.lang.0")
-	assert.Equal(t, map[string]any{
-		"developers": []map[string]any{
-			{
-				"lang": []string{
-					"PHP",
-				},
-			},
-		},
+	Forget(mp, "bar")
+	assert.Equal(t, map[string]string{
+		"foo": "bar",
+		"baz": "qux",
 	}, mp)
 
 	// Test generic type
@@ -345,53 +108,44 @@ func TestForget(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	mp := map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
+		"name": "Krishan",
+		"age":  21,
+		"languages": []string{
+			"Golang",
+			"PHP",
 		},
 	}
-	assert.Equal(t, map[string]int{"price": 100}, Get(mp, "products.desk"))
+	assert.Equal(t, "Krishan", Get(mp, "name"))
+	assert.Equal(t, 21, Get(mp, "age"))
+	assert.Equal(t, []string{"Golang", "PHP"}, Get(mp, "languages"))
 
 	// Test nil value
 	mp = map[string]any{
 		"foo": nil,
-		"bar": map[string]any{
-			"baz": nil,
-		},
+		"bar": "baz",
 	}
 	assert.Nil(t, Get(mp, "foo", "default"))
-	assert.Nil(t, Get(mp, "bar.baz", "default"))
+	assert.Equal(t, "baz", Get(mp, "bar"))
 	// Test missing
-	assert.Nil(t, Get(mp, "foo.bar"))
-
-	// Test numeric keys
-	mp = map[string]any{
-		"developers": []map[string]any{
-			{
-				"name": "Bowen",
-				"lang": []string{
-					"Golang",
-					"PHP",
-				},
-			},
-			{
-				"name": "Krishan",
-				"lang": "Golang",
-			},
-		},
-	}
-	assert.Equal(t, "Krishan", Get(mp, "developers.1.name"))
-	assert.Equal(t, "Bowen", Get(mp, "developers.0.name"))
-	assert.Equal(t, "Golang", Get(mp, "developers.0.lang.0"))
+	assert.Nil(t, Get(mp, "baz"))
 
 	// Test return default value
 	mp = map[string]any{
-		"names": map[string]any{
-			"developer": "Krishan",
+		"names": []string{
+			"Krishan",
+			"Bowen",
 		},
 	}
-	assert.Equal(t, "name", Get(mp, "names.designer", "name"))
+	assert.Equal(t, "name", Get(mp, "developers", "name"))
+
+	mp1 := map[string]int{
+		"foo": 1,
+		"bar": 2,
+		"baz": 3,
+	}
+	assert.Equal(t, 1, Get(mp1, "foo"))
+	assert.Equal(t, 0, Get(mp1, "qux"))
+	assert.Equal(t, 10, Get(mp1, "qux", 10))
 }
 
 func TestHas(t *testing.T) {
@@ -423,25 +177,13 @@ func TestHas(t *testing.T) {
 	}
 	assert.True(t, Has(mp, "developers"))
 
-	assert.True(t, Has(mp, "framework.lang"))
+	assert.False(t, Has(mp, "developers", "framework.lang"))
 
-	assert.True(t, Has(mp, "framework.dev.name"))
-
-	assert.False(t, Has(mp, "framework.foo"))
-
-	assert.False(t, Has(mp, "framework.dev.foo"))
+	assert.False(t, Has(mp, "framework.dev.name"))
 
 	assert.True(t, Has(mp, "foo"))
 
-	assert.True(t, Has(mp, "bar.baz"))
-
-	assert.True(t, Has(mp, "framework.name", "framework.dev.name"))
-
-	assert.False(t, Has(mp, "framework.name", "framework.dev.foo"))
-
-	assert.True(t, Has(mp, "developers.0.name"))
-
-	assert.False(t, Has(mp, "product.developers.0.foo"))
+	assert.True(t, Has(mp, "developers", "foo", "framework"))
 
 	assert.True(t, Has(map[string]any{
 		"": "some",
@@ -480,16 +222,13 @@ func TestHasAny(t *testing.T) {
 	assert.True(t, HasAny(mp, "name", "email"))
 	assert.False(t, HasAny(mp, "surname", "password"))
 
-	mp = map[string]any{
-		"foo": map[string]any{
-			"bar": nil,
-			"baz": "",
-		},
+	iMp := map[int]string{
+		1: "Krishan",
+		2: "Bowen",
 	}
-	assert.True(t, HasAny(mp, "foo.bar"))
-	assert.True(t, HasAny(mp, "foo.baz"))
-	assert.False(t, HasAny(mp, "foo.bax"))
-	assert.True(t, HasAny(mp, "foo.bax", "foo.baz"))
+	assert.True(t, HasAny(iMp, 1))
+	assert.False(t, HasAny(iMp, 3))
+	assert.True(t, HasAny(iMp, 1, 3))
 }
 
 func TestOnly(t *testing.T) {
@@ -518,14 +257,6 @@ func TestPull(t *testing.T) {
 	assert.Equal(t, "Krishan", Pull(mp, "name"))
 	assert.Equal(t, map[string]any{"age": 21}, mp)
 
-	// Only works on first level keys
-	mp = map[string]any{
-		"joe@example.com": "Joe",
-		"jane@localhost":  "Jane",
-	}
-	assert.Equal(t, "Joe", Pull(mp, "joe@example.com"))
-	assert.Equal(t, map[string]any{"jane@localhost": "Jane"}, mp)
-
 	// Doesn't remove nested keys
 	mp = map[string]any{
 		"emails": map[string]any{
@@ -545,20 +276,15 @@ func TestPull(t *testing.T) {
 	mp = map[string]any{
 		"names": []string{"Bowen", "Krishan"},
 	}
-	assert.Equal(t, "Bowen", Pull(mp, "names.0"))
-	assert.Equal(t, map[string]any{"names": []string{"Krishan"}}, mp)
-
-	mp = map[string]any{
-		"names": []string{"Bowen", "Krishan"},
-	}
-	assert.Equal(t, []string{"Bowen", "Krishan"}, Pull(mp, "names.*"))
-	assert.Equal(t, map[string]any{"names": []string{}}, mp)
+	assert.Equal(t, []string{"Bowen", "Krishan"}, Pull(mp, "names"))
+	assert.Equal(t, map[string]any{}, mp)
 
 	// default value
 	mp = map[string]any{
 		"name": "Krishan",
 	}
 	assert.Equal(t, "default", Pull(mp, "age", "default"))
+	assert.Equal(t, map[string]any{"name": "Krishan"}, mp)
 
 	// Test generic type
 	gMp := map[int]string{
@@ -567,62 +293,51 @@ func TestPull(t *testing.T) {
 	}
 	assert.Equal(t, "one", Pull(gMp, 1))
 	assert.Equal(t, map[int]string{2: "two"}, gMp)
-	assert.Equal(t, nil, Pull(gMp, 3))
+	assert.Equal(t, "", Pull(gMp, 3))
+	assert.Equal(t, "default", Pull(gMp, 3, "default"))
+
+	mp1 := map[string]int{}
+	assert.Equal(t, 0, Pull(mp1, "foo"))
+	assert.Equal(t, 10, Pull(mp1, "foo", 10))
 }
 
 func TestSet(t *testing.T) {
 	mp := map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
+		"name": "Krishan",
+		"age":  21,
 	}
-	err := Set(&mp, "products.desk.price", 200)
-	assert.Nil(t, err)
+	Set(mp, "name", "Bowen")
 	assert.Equal(t, map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 200,
-			},
-		},
+		"name": "Bowen",
+		"age":  21,
 	}, mp)
 
-	// key does not exist
-	mp = map[string]any{
-		"products": map[string]any{},
-	}
-	err = Set(&mp, "products.desk.price", 200)
-	assert.Nil(t, err)
+	Set(mp, "city", "Chandigarh")
 	assert.Equal(t, map[string]any{
-		"products": map[string]any{
-			"desk": map[string]any{
-				"price": 200,
-			},
-		},
+		"name": "Bowen",
+		"age":  21,
+		"city": "Chandigarh",
 	}, mp)
-}
 
-func TestDeleteByPathKeys(t *testing.T) {
-	mp := map[string]any{
-		"products": map[string]any{
-			"desk": map[string]int{
-				"price": 100,
-			},
-		},
-	}
-	val, ok := deleteByPathKeys(mp, mp, []string{})
-	assert.False(t, ok)
-	assert.Nil(t, val)
-
+	// Test nil value
 	mp = map[string]any{
-		"names": []string{"Bowen", "Krishan"},
+		"foo": nil,
+		"bar": "baz",
 	}
-	val, ok = deleteByPathKeys(mp, mp, []string{"names", "*", "foo"})
-	assert.False(t, ok)
-	assert.Nil(t, val)
+	Set(mp, "foo", "bar")
+	assert.Equal(t, map[string]any{
+		"foo": "bar",
+		"bar": "baz",
+	}, mp)
 
-	val, ok = deleteByPathKeys(mp, mp, []string{"names", "3"})
-	assert.False(t, ok)
-	assert.Nil(t, val)
+	// Test generic type
+	gMp := map[int]string{
+		1: "one",
+		2: "two",
+	}
+	Set(gMp, 1, "1")
+	assert.Equal(t, map[int]string{
+		1: "1",
+		2: "two",
+	}, gMp)
 }
