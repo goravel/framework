@@ -400,6 +400,22 @@ func (_m *Transaction) Having(query interface{}, args ...interface{}) orm.Query 
 	return r0
 }
 
+// InRandomOrder provides a mock function with given fields:
+func (_m *Transaction) InRandomOrder() orm.Query {
+	ret := _m.Called()
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // Join provides a mock function with given fields: query, args
 func (_m *Transaction) Join(query string, args ...interface{}) orm.Query {
 	var _ca []interface{}
@@ -597,6 +613,29 @@ func (_m *Transaction) Order(value interface{}) orm.Query {
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(interface{}) orm.Query); ok {
 		r0 = rf(value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// OrderBy provides a mock function with given fields: column, direction
+func (_m *Transaction) OrderBy(column string, direction ...string) orm.Query {
+	_va := make([]interface{}, len(direction))
+	for _i := range direction {
+		_va[_i] = direction[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, ...string) orm.Query); ok {
+		r0 = rf(column, direction...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
@@ -877,6 +916,22 @@ func (_m *Transaction) Where(query interface{}, args ...interface{}) orm.Query {
 	return r0
 }
 
+// WhereBetween provides a mock function with given fields: column, x, y
+func (_m *Transaction) WhereBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // WhereIn provides a mock function with given fields: column, values
 func (_m *Transaction) WhereIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
@@ -884,6 +939,22 @@ func (_m *Transaction) WhereIn(column string, values []interface{}) orm.Query {
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
 		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// WhereNotBetween provides a mock function with given fields: column, x, y
+func (_m *Transaction) WhereNotBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)

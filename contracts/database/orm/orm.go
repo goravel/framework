@@ -74,6 +74,8 @@ type Query interface {
 	Group(name string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// InRandomOrder specifies the order randomly.
+	InRandomOrder() Query
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Limit the number of records returned.
@@ -92,6 +94,8 @@ type Query interface {
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
 	Order(value any) Query
+	// OrderBy specifies the order should be ascending.
+	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
 	// OrWhere add an "or where" clause to the query.
@@ -135,6 +139,10 @@ type Query interface {
 	WhereNotIn(column string, values []any) Query
 	// WhereNull adds a "where column is null" clause to the query.
 	WhereNull(column string) Query
+	// WhereBetween adds a "where column between x and y" clause to the query.
+	WhereBetween(column string, x, y any) Query
+	// WhereNotBetween adds a "where column not between x and y" clause to the query.
+	WhereNotBetween(column string, x, y any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.

@@ -1954,6 +1954,30 @@ func (s *QueryTestSuite) TestOrder() {
 	}
 }
 
+func (s *QueryTestSuite) TestOrderBy() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "order_asc_user", Avatar: "order_asc_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "order_asc_user", Avatar: "order_asc_avatar1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users1 []User
+			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id").Get(&users1))
+			s.True(len(users1) == 2)
+			s.True(users1[0].ID == user.ID)
+
+			var users2 []User
+			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id", "DESC").Get(&users2))
+			s.True(len(users2) == 2)
+			s.True(users2[0].ID == user1.ID)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestOrderByDesc() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
@@ -1970,6 +1994,28 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 			usersLength := len(users)
 			s.True(usersLength == 2)
 			s.True(users[usersLength-1].ID == user.ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestInRandomOrder() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			for i := 0; i < 30; i++ {
+				user := User{Name: "random_order_user", Avatar: "random_order_avatar"}
+				s.Nil(query.Create(&user))
+				s.True(user.ID > 0)
+			}
+
+			var users1 []User
+			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Find(&users1))
+			s.True(len(users1) == 30)
+
+			var users2 []User
+			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Find(&users2))
+			s.True(len(users2) == 30)
+
+			s.True(users1[0].ID != users2[0].ID || users1[14].ID != users2[14].ID || users1[29].ID != users2[29].ID)
 		})
 	}
 }
@@ -2829,6 +2875,53 @@ func (s *QueryTestSuite) TestWhereNull() {
 			var users []User
 			s.Nil(query.WhereIn("id", []any{user.ID, user1.ID}).WhereNull("bio").Find(&users))
 			s.True(len(users) == 1)
+}
+
+func (s *QueryTestSuite) TestWhereBetween() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_between_user", Avatar: "where_between_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_between_user_1", Avatar: "where_between_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "where_between_user_2", Avatar: "where_between_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			var users []User
+			s.Nil(query.WhereBetween("id", user.ID, user2.ID).Find(&users))
+			s.True(len(users) == 3)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereNotBetween() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			user3 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
+			s.Nil(query.Create(&user3))
+			s.True(user3.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "where_not_between_user").WhereNotBetween("id", user.ID, user2.ID).Find(&users))
+			s.True(len(users) == 1)
+			s.True(users[0].ID == user3.ID)
 		})
 	}
 }
