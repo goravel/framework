@@ -92,3 +92,15 @@ func Pull[K comparable, V any](mp map[K]V, key K, def ...V) V {
 func Set[K comparable, V any](mp map[K]V, k K, v V) {
 	mp[k] = v
 }
+
+// Where filters the items in a map using the given callback.
+func Where[K comparable, V any](mp map[K]V, callback func(K, V) bool) map[K]V {
+	result := make(map[K]V)
+	for k, v := range mp {
+		if callback(k, v) {
+			result[k] = v
+		}
+	}
+
+	return result
+}

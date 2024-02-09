@@ -341,3 +341,33 @@ func TestSet(t *testing.T) {
 		2: "two",
 	}, gMp)
 }
+
+func TestWhere(t *testing.T) {
+	mp := map[string]any{
+		"name": "Krishan",
+		"age":  21,
+		"city": "Chandigarh",
+	}
+	assert.Equal(t, map[string]any{
+		"name": "Krishan",
+		"age":  21,
+	}, Where(mp, func(key string, value any) bool {
+		return key != "city"
+	}))
+
+	// empty
+	assert.Equal(t, map[string]any{}, Where(mp, func(key string, value any) bool {
+		return false
+	}))
+
+	iMp := map[string]int{
+		"foo": 1,
+		"bar": 2,
+		"baz": 3,
+	}
+	assert.Equal(t, map[string]int{
+		"foo": 1,
+	}, Where(iMp, func(key string, value int) bool {
+		return value < 2
+	}))
+}
