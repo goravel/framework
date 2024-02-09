@@ -681,6 +681,7 @@ func (r Table) createUserTable(driver orm.Driver) string {
 CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
+  bio varchar(255) DEFAULT NULL,
   avatar varchar(255) NOT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
@@ -695,6 +696,7 @@ CREATE TABLE users (
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
+  bio varchar(255) DEFAULT NULL,
   avatar varchar(255) NOT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL,
@@ -706,6 +708,7 @@ CREATE TABLE users (
 CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
+  bio varchar(255) DEFAULT NULL,
   avatar varchar(255) NOT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
@@ -717,6 +720,7 @@ CREATE TABLE users (
 CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
+  bio varchar(255) DEFAULT NULL,
   avatar varchar(255) NOT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
