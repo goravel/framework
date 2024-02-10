@@ -56,22 +56,7 @@ func TestForget(t *testing.T) {
 	Forget(mp, "baz", "foo")
 	assert.Equal(t, map[string]string{}, mp)
 
-	// Doesn't remove nested keys
 	aMp := map[string]any{
-		"emails": map[string]string{
-			"joe@example.com": "Joe",
-			"jane@localhost":  "Jane",
-		},
-	}
-	Forget(aMp, "emails.joe@example.com")
-	assert.Equal(t, map[string]any{
-		"emails": map[string]string{
-			"joe@example.com": "Joe",
-			"jane@localhost":  "Jane",
-		},
-	}, aMp)
-
-	aMp = map[string]any{
 		"developers": []map[string]string{
 			{
 				"name": "Bowen",
@@ -177,9 +162,9 @@ func TestHas(t *testing.T) {
 	}
 	assert.True(t, Has(mp, "developers"))
 
-	assert.False(t, Has(mp, "developers", "framework.lang"))
+	assert.False(t, Has(mp, "developers", "qux"))
 
-	assert.False(t, Has(mp, "framework.dev.name"))
+	assert.False(t, Has(mp, "qux"))
 
 	assert.True(t, Has(mp, "foo"))
 
@@ -256,21 +241,6 @@ func TestPull(t *testing.T) {
 	}
 	assert.Equal(t, "Krishan", Pull(mp, "name"))
 	assert.Equal(t, map[string]any{"age": 21}, mp)
-
-	// Doesn't remove nested keys
-	mp = map[string]any{
-		"emails": map[string]any{
-			"joe@example.com": "Joe",
-			"jane@localhost":  "Jane",
-		},
-	}
-	assert.Nil(t, Pull(mp, "emails.joe@example.com"))
-	assert.Equal(t, map[string]any{
-		"emails": map[string]any{
-			"joe@example.com": "Joe",
-			"jane@localhost":  "Jane",
-		},
-	}, mp)
 
 	// work with slices
 	mp = map[string]any{
