@@ -2917,13 +2917,14 @@ func (s *QueryTestSuite) TestWhereNull() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 
-			user1 := User{Name: "where_null_user_1", Avatar: "where_null_avatar_1"}
+			user1 := User{Name: "where_null_user", Avatar: "where_null_avatar_1"}
 			s.Nil(query.Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.WhereIn("id", []any{user.ID, user1.ID}).WhereNull("bio").Find(&users))
+			s.Nil(query.Where("name = ?", "where_null_user").WhereNull("bio").Find(&users))
 			s.True(len(users) == 1)
+			s.True(users[0].ID == user1.ID)
 		})
 	}
 }
