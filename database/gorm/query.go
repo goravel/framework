@@ -717,6 +717,14 @@ func (r *QueryImpl) WhereNotBetween(column string, x, y any) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
 }
 
+func (r *QueryImpl) OrWhereBetween(column string, x, y any) ormcontract.Query {
+	return r.OrWhere(fmt.Sprintf("%s BETWEEN %v AND %v", column, x, y))
+}
+
+func (r *QueryImpl) OrWhereNotBetween(column string, x, y any) ormcontract.Query {
+	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
+}
+
 func (r *QueryImpl) WhereNull(column string) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }

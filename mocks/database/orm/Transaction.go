@@ -574,6 +574,22 @@ func (_m *Transaction) OrWhere(query interface{}, args ...interface{}) orm.Query
 	return r0
 }
 
+// OrWhereBetween provides a mock function with given fields: column, x, y
+func (_m *Transaction) OrWhereBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // OrWhereIn provides a mock function with given fields: column, values
 func (_m *Transaction) OrWhereIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
@@ -581,6 +597,22 @@ func (_m *Transaction) OrWhereIn(column string, values []interface{}) orm.Query 
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
 		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// OrWhereNotBetween provides a mock function with given fields: column, x, y
+func (_m *Transaction) OrWhereNotBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
