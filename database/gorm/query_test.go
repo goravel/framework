@@ -357,19 +357,19 @@ func TestQueryTestSuite(t *testing.T) {
 	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
 	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
-	log.Fatalf("Init postgresql error: %s", err)
+		log.Fatalf("Init postgresql error: %s", err)
 	}
 
 	sqliteDocker := NewSqliteDocker(dbDatabase)
 	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
-	log.Fatalf("Init sqlite error: %s", err)
+		log.Fatalf("Init sqlite error: %s", err)
 	}
 
 	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
 	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
-	log.Fatalf("Init sqlserver error: %s", err)
+		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
 	suite.Run(t, &QueryTestSuite{
