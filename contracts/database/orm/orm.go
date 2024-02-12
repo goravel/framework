@@ -74,6 +74,8 @@ type Query interface {
 	Group(name string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// InRandomOrder specifies the order randomly.
+	InRandomOrder() Query
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Limit the number of records returned.
@@ -92,8 +94,16 @@ type Query interface {
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
 	Order(value any) Query
+	// OrderBy specifies the order should be ascending.
+	OrderBy(column string, direction ...string) Query
+	// OrderByDesc specifies the order should be descending.
+	OrderByDesc(column string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
+	// OrWhereIn adds an "or where column in" clause to the query.
+	OrWhereIn(column string, values []any) Query
+	// OrWhereNotIn adds an "or where column not in" clause to the query.
+	OrWhereNotIn(column string, values []any) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
@@ -123,6 +133,14 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereIn adds a "where column in" clause to the query.
+	WhereIn(column string, values []any) Query
+	// WhereNotIn adds a "where column not in" clause to the query.
+	WhereNotIn(column string, values []any) Query
+	// WhereBetween adds a "where column between x and y" clause to the query.
+	WhereBetween(column string, x, y any) Query
+	// WhereNotBetween adds a "where column not between x and y" clause to the query.
+	WhereNotBetween(column string, x, y any) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.
