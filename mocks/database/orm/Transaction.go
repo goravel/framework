@@ -932,25 +932,25 @@ func (_m *Transaction) WhereBetween(column string, x interface{}, y interface{})
 	return r0
 }
 
-// WhereHas provides a mock function with given fields: table, fk, conditions
-func (_m *Transaction) WhereHas(table interface{}, fk string, conditions func(orm.Query) (orm.Query, error)) (orm.Query, error) {
-	ret := _m.Called(table, fk, conditions)
+// WhereHas provides a mock function with given fields: parentModel, childModel, conditions
+func (_m *Transaction) WhereHas(parentModel interface{}, childModel interface{}, conditions func(orm.Query) (orm.Query, error)) (orm.Query, error) {
+	ret := _m.Called(parentModel, childModel, conditions)
 
 	var r0 orm.Query
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}, string, func(orm.Query) (orm.Query, error)) (orm.Query, error)); ok {
-		return rf(table, fk, conditions)
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}, func(orm.Query) (orm.Query, error)) (orm.Query, error)); ok {
+		return rf(parentModel, childModel, conditions)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}, string, func(orm.Query) (orm.Query, error)) orm.Query); ok {
-		r0 = rf(table, fk, conditions)
+	if rf, ok := ret.Get(0).(func(interface{}, interface{}, func(orm.Query) (orm.Query, error)) orm.Query); ok {
+		r0 = rf(parentModel, childModel, conditions)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}, string, func(orm.Query) (orm.Query, error)) error); ok {
-		r1 = rf(table, fk, conditions)
+	if rf, ok := ret.Get(1).(func(interface{}, interface{}, func(orm.Query) (orm.Query, error)) error); ok {
+		r1 = rf(parentModel, childModel, conditions)
 	} else {
 		r1 = ret.Error(1)
 	}
