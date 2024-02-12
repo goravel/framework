@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -100,4 +101,29 @@ func GetPrimaryKeyField(t reflect.Type, v reflect.Value) string {
     }
 
     return ""
+}
+
+// GetForeignKeyField retrieves the foreign key field name between parentModel and childModel by checking gorm tags and associations.
+// If not found, it returns an empty string.
+func GetForeignKeyField(parentModel,childModel interface{}) string {
+	parentType := reflect.TypeOf(parentModel) //get type
+	childType := reflect.TypeOf(childModel)
+
+    for i := 0; i < parentType.NumField(); i++ {
+        field := parentType.Field(i)
+        if strings.Contains(field.Tag.Get("gorm"), "ForeignKey") {
+            return field.Name
+        }
+    }
+
+    // try to find an association field in the child model
+    for i := 0; i < childType.NumField(); i++ {
+        field := childType.Field(i)
+		fmt.Println(field)
+        if field.Type.Kind() == reflect.Ptr && field.Type.Elem() == parentType {
+            return ToSnakeCase(field.Name) + "_id"
+        }
+    }
+
+	return ""
 }

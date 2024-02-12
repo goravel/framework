@@ -357,19 +357,19 @@ func TestQueryTestSuite(t *testing.T) {
 	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
 	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
-		log.Fatalf("Init postgresql error: %s", err)
+	log.Fatalf("Init postgresql error: %s", err)
 	}
 
 	sqliteDocker := NewSqliteDocker(dbDatabase)
 	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
-		log.Fatalf("Init sqlite error: %s", err)
+	log.Fatalf("Init sqlite error: %s", err)
 	}
 
 	sqlserverDocker := NewSqlserverDocker(testDatabaseDocker)
 	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
-		log.Fatalf("Init sqlserver error: %s", err)
+	log.Fatalf("Init sqlserver error: %s", err)
 	}
 
 	suite.Run(t, &QueryTestSuite{
@@ -2846,8 +2846,8 @@ func (s *QueryTestSuite) TestWhereHas() {
 			s.Nil(query.Select(orm.Associations).Create(&user2))
 			s.Nil(query.Select(orm.Associations).Create(&user3))
 			s.Nil(query.Select(orm.Associations).Create(&user4))
-
-			resultQuery, _ := query.WhereHas(Book{}, "user_id", func(query ormcontract.Query) (ormcontract.Query, error) {
+		
+			resultQuery, _ := query.WhereHas(User{}, Book{} , func(query ormcontract.Query) (ormcontract.Query, error) {
 				modifiedQuery := query.Where("Name = ?", "Book A")
 				return modifiedQuery, nil
 			})

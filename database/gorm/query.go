@@ -701,17 +701,21 @@ func (r *QueryImpl) OrWhereIn(column string, values []any) ormcontract.Query {
 	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
 }
 
-func (r *QueryImpl) WhereHas(table any, fk string, condition func(ormcontract.Query) (ormcontract.Query,error)) (ormcontract.Query,error) {
+func (r *QueryImpl) WhereHas(parentModel any, childModel any , condition func(ormcontract.Query) (ormcontract.Query,error)) (ormcontract.Query,error) {
 
-	relatedModelQuery := NewQueryImplByInstance(r.instance.Model(table), r)
+	relatedModelQuery := NewQueryImplByInstance(r.instance.Model(childModel), r)
 
 	//wrap and modify query with the condition passed from function
 	modifiedQuery,_ := condition(relatedModelQuery)
 
-	// Extract the *gorm.DB instance from the modified QueryImpl
-	subQuery := modifiedQuery.(*QueryImpl).instance.Select(fk)
+	//Extract foreign key of two models
+	foreignKey := database.GetForeignKeyField(parentModel, childModel)
 
-	primaryKey := database.GetPrimaryField(table)
+	// Extract the *gorm.DB instance from the modified QueryImpl
+	subQuery := modifiedQuery.(*QueryImpl).instance.Select(foreignKey)
+	
+	//Extract Primary key
+	primaryKey := database.GetPrimaryField(parentModel)
 	
 	if primaryKey == "" {
 		// Handle the case where the primary key field is not found
@@ -720,7 +724,7 @@ func (r *QueryImpl) WhereHas(table any, fk string, condition func(ormcontract.Qu
 	
 	// Use the subQuery the main query
 	tx := r.instance.Where(primaryKey + " IN (?)", subQuery)
-
+	
 	return NewQueryImplByInstance(tx, r) , nil
 }
 
