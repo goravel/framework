@@ -2929,6 +2929,26 @@ func (s *QueryTestSuite) TestWhereNull() {
 	}
 }
 
+func (s *QueryTestSuite) TestWhereNotNull() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			bio := "where_not_null_bio"
+			user := User{Name: "where_not_null_user", Avatar: "where_not_null_avatar", Bio: &bio}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_not_null_user", Avatar: "where_not_null_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "where_not_null_user").WhereNotNull("bio").Find(&users))
+			s.True(len(users) == 1)
+			s.True(users[0].ID == user.ID)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWithoutEvents() {
 	for _, query := range s.queries {
 		tests := []struct {
