@@ -29,6 +29,7 @@ type User struct {
 	orm.Model
 	orm.SoftDeletes
 	Name    string
+	Bio     *string
 	Avatar  string
 	Address *Address
 	Books   []*Book
@@ -2904,6 +2905,26 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 			s.Nil(query.Where("name = ?", "where_not_between_user").WhereNotBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 1)
 			s.True(users[0].ID == user3.ID)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestWhereNull() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			bio := "where_null_bio"
+			user := User{Name: "where_null_user", Avatar: "where_null_avatar", Bio: &bio}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "where_null_user", Avatar: "where_null_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "where_null_user").WhereNull("bio").Find(&users))
+			s.True(len(users) == 1)
+			s.True(users[0].ID == user1.ID)
 		})
 	}
 }
