@@ -721,6 +721,10 @@ func (r *QueryImpl) WhereNull(column string) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
+func (r *QueryImpl) WhereNotNull(column string) ormcontract.Query {
+	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
+}
+
 func (r *QueryImpl) WithoutEvents() ormcontract.Query {
 	return NewQueryImplByInstance(r.instance, &QueryImpl{
 		config:        r.config,

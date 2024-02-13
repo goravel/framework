@@ -143,6 +143,8 @@ type Query interface {
 	WhereNotBetween(column string, x, y any) Query
 	// WhereNull adds a "where column is null" clause to the query.
 	WhereNull(column string) Query
+	// WhereNotNull adds a "where column is not null" clause to the query.
+	WhereNotNull(column string) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.
