@@ -11,7 +11,7 @@ import (
 type Manager struct {
 	app            foundation.Application
 	config         config.Config
-	customCreators map[string]func(app foundation.Application) sessioncontract.Handler
+	customCreators map[string]func() sessioncontract.Handler
 	drivers        map[string]sessioncontract.Handler
 }
 
@@ -20,7 +20,7 @@ func NewManager(app foundation.Application) *Manager {
 	manager := &Manager{
 		app:            app,
 		config:         con,
-		customCreators: make(map[string]func(app foundation.Application) sessioncontract.Handler),
+		customCreators: make(map[string]func() sessioncontract.Handler),
 		drivers:        make(map[string]sessioncontract.Handler),
 	}
 	manager.registerDrivers()
@@ -51,7 +51,7 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Handler, error) {
 	return m.drivers[driver], nil
 }
 
-func (m *Manager) Extend(driver string, handler func(app foundation.Application) sessioncontract.Handler) sessioncontract.Manager {
+func (m *Manager) Extend(driver string, handler func() sessioncontract.Handler) sessioncontract.Manager {
 	m.customCreators[driver] = handler
 	return m
 }
@@ -69,12 +69,12 @@ func (m *Manager) getDefaultDriver() string {
 }
 
 func (m *Manager) callCustomCreator(driver string) sessioncontract.Handler {
-	return m.customCreators[driver](m.app)
+	return m.customCreators[driver]()
 }
 
 func (m *Manager) creatDriver(name string) (sessioncontract.Handler, error) {
 	if m.customCreators[name] != nil {
-		return m.customCreators[name](m.app), nil
+		return m.customCreators[name](), nil
 	}
 
 	if m.drivers[name] != nil {
