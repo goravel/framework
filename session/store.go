@@ -6,6 +6,7 @@ import (
 
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/support/json"
+	supportmaps "github.com/goravel/framework/support/maps"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -90,8 +91,7 @@ func (s *Store) All() map[string]any {
 }
 
 func (s *Store) Exists(key string) bool {
-	_, ok := s.attributes[key]
-	return ok
+	return supportmaps.Exists(s.attributes, key)
 }
 
 func (s *Store) Missing(key string) bool {
@@ -108,25 +108,11 @@ func (s *Store) Has(key string) bool {
 }
 
 func (s *Store) Get(key string, defaultValue ...any) any {
-	val, ok := s.attributes[key]
-	if !ok && len(defaultValue) > 0 {
-		return defaultValue[0]
-	}
-
-	return val
+	return supportmaps.Get(s.attributes, key, defaultValue...)
 }
 
 func (s *Store) Pull(key string, def ...any) any {
-	if val, ok := s.attributes[key]; ok {
-		delete(s.attributes, key)
-		return val
-	}
-
-	if len(def) > 0 {
-		return def[0]
-	}
-
-	return nil
+	return supportmaps.Pull(s.attributes, key, def...)
 }
 
 func (s *Store) Push(key string, value any) sessioncontract.Session {
@@ -153,9 +139,7 @@ func (s *Store) Remove(key string) any {
 }
 
 func (s *Store) Forget(keys ...string) sessioncontract.Session {
-	for _, key := range keys {
-		delete(s.attributes, key)
-	}
+	supportmaps.Forget(s.attributes, keys...)
 
 	return s
 }
@@ -174,14 +158,7 @@ func (s *Store) Flash(key string, value any) sessioncontract.Session {
 }
 
 func (s *Store) Only(keys []string) map[string]any {
-	result := make(map[string]any)
-	for _, key := range keys {
-		if val, ok := s.attributes[key]; ok {
-			result[key] = val
-		}
-	}
-
-	return result
+	return supportmaps.Only(s.attributes, keys...)
 }
 
 func (s *Store) Invalidate() bool {
