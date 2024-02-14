@@ -2909,6 +2909,58 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 	}
 }
 
+func (s *QueryTestSuite) TestOrWhereBetween() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "or_where_between_user", Avatar: "or_where_between_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "or_where_between_user_1", Avatar: "or_where_between_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "or_where_between_user_2", Avatar: "or_where_between_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			user3 := User{Name: "or_where_between_user_3", Avatar: "or_where_between_avatar_3"}
+			s.Nil(query.Create(&user3))
+			s.True(user3.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "or_where_between_user_3").OrWhereBetween("id", user.ID, user2.ID).Find(&users))
+			s.True(len(users) == 4)
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestOrWhereNotBetween() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "or_where_between_user", Avatar: "or_where_between_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "or_where_between_user_1", Avatar: "or_where_between_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			user2 := User{Name: "or_where_between_user_2", Avatar: "or_where_between_avatar_2"}
+			s.Nil(query.Create(&user2))
+			s.True(user2.ID > 0)
+
+			user3 := User{Name: "or_where_between_user_3", Avatar: "or_where_between_avatar_3"}
+			s.Nil(query.Create(&user3))
+			s.True(user3.ID > 0)
+
+			var users []User
+			s.Nil(query.Where("name = ?", "or_where_between_user_3").OrWhereNotBetween("id", user.ID, user2.ID).Find(&users))
+			s.True(len(users) >= 1)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestWhereNull() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
