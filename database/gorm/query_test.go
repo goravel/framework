@@ -1563,12 +1563,12 @@ func (s *QueryTestSuite) TestExists() {
 			s.Nil(query.Create(&user1))
 			s.True(user1.ID > 0)
 
-			t, err := query.Model(&User{}).Where("name = ?", "exists_user").Exists()
-			s.Nil(err)
+			var t bool
+			s.Nil(query.Model(&User{}).Where("name = ?", "exists_user").Exists(&t))
 			s.True(t)
 
-			f, err := query.Model(&User{}).Where("name = ?", "no_exists_user").Exists()
-			s.Nil(err)
+			var f bool
+			s.Nil(query.Model(&User{}).Where("name = ?", "no_exists_user").Exists(&f))
 			s.False(f)
 		})
 	}

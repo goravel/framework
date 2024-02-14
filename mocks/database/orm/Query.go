@@ -198,28 +198,18 @@ func (_m *Query) Exec(sql string, values ...interface{}) (*orm.Result, error) {
 	return r0, r1
 }
 
-// Exists provides a mock function with given fields:
-func (_m *Query) Exists() (bool, error) {
-	ret := _m.Called()
+// Exists provides a mock function with given fields: exists
+func (_m *Query) Exists(exists *bool) error {
+	ret := _m.Called(exists)
 
-	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (bool, error)); ok {
-		return rf()
-	}
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*bool) error); ok {
+		r0 = rf(exists)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Find provides a mock function with given fields: dest, conds
