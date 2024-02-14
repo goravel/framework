@@ -157,6 +157,12 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 	}, result.Error
 }
 
+func (r *QueryImpl) Exists() (bool, error) {
+	var exists bool
+	err := r.instance.Select("1").Limit(1).Find(&exists).Error
+	return exists, err
+}
+
 func (r *QueryImpl) Find(dest any, conds ...any) error {
 	if err := r.refreshConnection(dest); err != nil {
 		return err

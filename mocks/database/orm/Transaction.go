@@ -212,6 +212,30 @@ func (_m *Transaction) Exec(sql string, values ...interface{}) (*orm.Result, err
 	return r0, r1
 }
 
+// Exists provides a mock function with given fields:
+func (_m *Transaction) Exists() (bool, error) {
+	ret := _m.Called()
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (bool, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Find provides a mock function with given fields: dest, conds
 func (_m *Transaction) Find(dest interface{}, conds ...interface{}) error {
 	var _ca []interface{}
