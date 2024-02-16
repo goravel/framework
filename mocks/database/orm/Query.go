@@ -198,6 +198,20 @@ func (_m *Query) Exec(sql string, values ...interface{}) (*orm.Result, error) {
 	return r0, r1
 }
 
+// Exists provides a mock function with given fields: exists
+func (_m *Query) Exists(exists *bool) error {
+	ret := _m.Called(exists)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*bool) error); ok {
+		r0 = rf(exists)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Find provides a mock function with given fields: dest, conds
 func (_m *Query) Find(dest interface{}, conds ...interface{}) error {
 	var _ca []interface{}
@@ -560,6 +574,22 @@ func (_m *Query) OrWhere(query interface{}, args ...interface{}) orm.Query {
 	return r0
 }
 
+// OrWhereBetween provides a mock function with given fields: column, x, y
+func (_m *Query) OrWhereBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
 // OrWhereIn provides a mock function with given fields: column, values
 func (_m *Query) OrWhereIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
@@ -567,6 +597,22 @@ func (_m *Query) OrWhereIn(column string, values []interface{}) orm.Query {
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
 		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// OrWhereNotBetween provides a mock function with given fields: column, x, y
+func (_m *Query) OrWhereNotBetween(column string, x interface{}, y interface{}) orm.Query {
+	ret := _m.Called(column, x, y)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) orm.Query); ok {
+		r0 = rf(column, x, y)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
@@ -969,6 +1015,38 @@ func (_m *Query) WhereNotIn(column string, values []interface{}) orm.Query {
 	var r0 orm.Query
 	if rf, ok := ret.Get(0).(func(string, []interface{}) orm.Query); ok {
 		r0 = rf(column, values)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// WhereNotNull provides a mock function with given fields: column
+func (_m *Query) WhereNotNull(column string) orm.Query {
+	ret := _m.Called(column)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// WhereNull provides a mock function with given fields: column
+func (_m *Query) WhereNull(column string) orm.Query {
+	ret := _m.Called(column)
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orm.Query)
