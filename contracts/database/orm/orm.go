@@ -49,6 +49,8 @@ type Query interface {
 	Distinct(args ...any) Query
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*Result, error)
+	// Exists returns true if matching records exist; otherwise, it returns false.
+	Exists(exists *bool) error
 	// Find finds records that match given conditions.
 	Find(dest any, conds ...any) error
 	// FindOrFail finds records that match given conditions or throws an error.

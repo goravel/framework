@@ -1552,6 +1552,28 @@ func (s *QueryTestSuite) TestExec() {
 	}
 }
 
+func (s *QueryTestSuite) TestExists() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "exists_user", Avatar: "exists_avatar"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			user1 := User{Name: "exists_user", Avatar: "exists_avatar_1"}
+			s.Nil(query.Create(&user1))
+			s.True(user1.ID > 0)
+
+			var t bool
+			s.Nil(query.Model(&User{}).Where("name = ?", "exists_user").Exists(&t))
+			s.True(t)
+
+			var f bool
+			s.Nil(query.Model(&User{}).Where("name = ?", "no_exists_user").Exists(&f))
+			s.False(f)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestFind() {
 	for _, query := range s.queries {
 		tests := []struct {
