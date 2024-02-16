@@ -6,16 +6,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configmock "github.com/goravel/framework/mocks/config"
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 )
 
 func TestBuildCommand(t *testing.T) {
-	mockConfig := &configmock.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "app.env").Return("local").Once()
 
 	newBuildCommand := NewBuildCommand(mockConfig)
-	mockContext := &consolemocks.Context{}
+	mockContext := &mocksconsole.Context{}
 	mockContext.On("Option", "system").Return("linux").Once()
 
 	assert.Nil(t, newBuildCommand.Handle(mockContext))

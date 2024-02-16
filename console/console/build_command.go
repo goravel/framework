@@ -2,12 +2,15 @@ package console
 
 import (
 	"fmt"
+	"golang.org/x/exp/slices"
+	"os"
+	"os/exec"
+
 	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"os"
-	"os/exec"
 )
 
 type BuildCommand struct {
@@ -36,9 +39,10 @@ func (receiver *BuildCommand) Extend() command.Extend {
 		Category: "build",
 		Flags: []command.Flag{
 			&command.StringFlag{
-				Name:  "system",
-				Value: "",
-				Usage: "target system os",
+				Name:    "system",
+				Aliases: []string{"s"},
+				Value:   "",
+				Usage:   "target system os",
 			},
 		},
 	}
@@ -68,8 +72,8 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	}
 
 	system := ctx.Option("system")
-	if system == "" {
-		color.Redln("You missed --system flag.")
+	if !slices.Contains([]string{"linux", "windows", "darwin"}, system) {
+		color.Redln("The value of the --system flag is invalid.")
 		return nil
 	}
 
