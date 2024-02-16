@@ -39,4 +39,20 @@ func TestBuildCommand(t *testing.T) {
 	}()
 
 	assert.Nil(t, newBuildCommand.Handle(mockContext))
+
+	mockConfig.On("GetString", "app.env").Return("production").Once()
+	mockContext.On("Option", "system").Return("linux").Once()
+
+	reader, writer, err = os.Pipe()
+	assert.Nil(t, err)
+	originalStdin = os.Stdin
+	defer func() { os.Stdin = originalStdin }()
+	os.Stdin = reader
+	go func() {
+		defer writer.Close()
+		_, err = writer.Write([]byte("no\n"))
+		assert.Nil(t, err)
+	}()
+
+	assert.Nil(t, newBuildCommand.Handle(mockContext))
 }
