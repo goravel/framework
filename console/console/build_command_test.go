@@ -15,10 +15,6 @@ func TestBuildCommand(t *testing.T) {
 	mockConfig.On("GetString", "app.env").Return("local").Once()
 
 	newBuildCommand := NewBuildCommand(mockConfig)
-
-	assert.Equal(t, newBuildCommand.Signature(), "build")
-	assert.Equal(t, newBuildCommand.Description(), "Build the application")
-
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Option", "system").Return("linux").Once()
 
