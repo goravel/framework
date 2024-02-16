@@ -8,7 +8,6 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	"os"
 	"os/exec"
-	"runtime"
 )
 
 type BuildCommand struct {
@@ -38,7 +37,7 @@ func (receiver *BuildCommand) Extend() command.Extend {
 		Flags: []command.Flag{
 			&command.StringFlag{
 				Name:  "system",
-				Value: runtime.GOOS,
+				Value: "",
 				Usage: "target system os",
 			},
 		},
@@ -68,9 +67,13 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	systemOption := ctx.Option("system")
+	system := ctx.Option("system")
+	if system == "" {
+		color.Redln("You missed --system flag.")
+		return nil
+	}
 
-	if err := receiver.buildTheApplication(systemOption); err != nil {
+	if err := receiver.buildTheApplication(system); err != nil {
 		color.Redln(err.Error())
 
 		return nil
