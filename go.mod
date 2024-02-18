@@ -33,14 +33,14 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/atomic v1.11.0
-	golang.org/x/crypto v0.19.0
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	google.golang.org/grpc v1.61.1
-	gorm.io/driver/mysql v1.5.4
-	gorm.io/driver/postgres v1.5.6
-	gorm.io/driver/sqlserver v1.5.3
-	gorm.io/gorm v1.25.7
-	gorm.io/plugin/dbresolver v1.5.0
+	golang.org/x/crypto v0.13.0
+	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
+	google.golang.org/grpc v1.58.2
+	gorm.io/driver/mysql v1.5.1
+	gorm.io/driver/postgres v1.5.2
+	gorm.io/driver/sqlserver v1.5.1
+	gorm.io/gorm v1.25.4
+	gorm.io/plugin/dbresolver v1.4.7
 )
 
 require (
@@ -118,17 +118,18 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/oauth2 v0.15.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
-	golang.org/x/text v0.14.0
-	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/api v0.153.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
+	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0
+	golang.org/x/tools v0.9.1 // indirect
+	google.golang.org/api v0.126.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

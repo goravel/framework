@@ -68,13 +68,7 @@ func (receiver *Task) Dispatch() error {
 	receiver.server = server
 
 	if receiver.chain {
-		for _, job := range receiver.jobs {
-			if err := receiver.handleAsync(job.Job, job.Args); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return receiver.handleChain(receiver.jobs)
 	} else {
 		job := receiver.jobs[0]
 
@@ -108,6 +102,34 @@ func (receiver *Task) OnQueue(queue string) queue.Task {
 	receiver.queue = receiver.config.Queue(receiver.connection, queue)
 
 	return receiver
+}
+
+func (receiver *Task) handleChain(jobs []queue.Jobs) error {
+	var signatures []*tasks.Signature
+	for _, job := range jobs {
+		var realArgs []tasks.Arg
+		for _, arg := range job.Args {
+			realArgs = append(realArgs, tasks.Arg{
+				Type:  arg.Type,
+				Value: arg.Value,
+			})
+		}
+
+		signatures = append(signatures, &tasks.Signature{
+			Name: job.Job.Signature(),
+			Args: realArgs,
+			ETA:  receiver.delay,
+		})
+	}
+
+	chain, err := tasks.NewChain(signatures...)
+	if err != nil {
+		return err
+	}
+
+	_, err = receiver.server.SendChain(chain)
+
+	return err
 }
 
 func (receiver *Task) handleAsync(job queue.Job, args []queue.Arg) error {
