@@ -12,114 +12,163 @@ import (
 var _ log.Log = &TestLog{}
 
 type TestLog struct {
+	*TestLogWriter
 }
 
 func NewTestLog() log.Log {
-	return &TestLog{}
+	return &TestLog{
+		TestLogWriter: NewTestLogWriter(),
+	}
 }
 
 func (r *TestLog) WithContext(ctx context.Context) log.Writer {
-	return r
+	return NewTestLogWriter()
 }
 
-func (r *TestLog) Debug(args ...any) {
+type TestLogWriter struct {
+	data map[string]any
+}
+
+func NewTestLogWriter() *TestLogWriter {
+	return &TestLogWriter{
+		data: make(map[string]any),
+	}
+}
+
+func (r *TestLogWriter) Debug(args ...any) {
 	fmt.Print(prefix("debug"))
 	fmt.Println(args...)
+	r.printData()
 }
 
-func (r *TestLog) Debugf(format string, args ...any) {
+func (r *TestLogWriter) Debugf(format string, args ...any) {
 	fmt.Print(prefix("debug"))
 	fmt.Printf(format+"\n", args...)
+	r.printData()
 }
 
-func (r *TestLog) Info(args ...any) {
+func (r *TestLogWriter) Info(args ...any) {
 	fmt.Print(prefix("info"))
 	fmt.Println(args...)
+	r.printData()
 }
 
-func (r *TestLog) Infof(format string, args ...any) {
+func (r *TestLogWriter) Infof(format string, args ...any) {
 	fmt.Print(prefix("info"))
 	fmt.Printf(format+"\n", args...)
+	r.printData()
 }
 
-func (r *TestLog) Warning(args ...any) {
+func (r *TestLogWriter) Warning(args ...any) {
 	fmt.Print(prefix("warning"))
 	fmt.Println(args...)
+	r.printData()
 }
 
-func (r *TestLog) Warningf(format string, args ...any) {
+func (r *TestLogWriter) Warningf(format string, args ...any) {
 	fmt.Print(prefix("warning"))
 	fmt.Printf(format+"\n", args...)
+	r.printData()
 }
 
-func (r *TestLog) Error(args ...any) {
+func (r *TestLogWriter) Error(args ...any) {
 	fmt.Print(prefix("error"))
 	fmt.Println(args...)
+	r.printData()
 }
 
-func (r *TestLog) Errorf(format string, args ...any) {
+func (r *TestLogWriter) Errorf(format string, args ...any) {
 	fmt.Print(prefix("error"))
 	fmt.Printf(format+"\n", args...)
+	r.printData()
 }
 
-func (r *TestLog) Fatal(args ...any) {
+func (r *TestLogWriter) Fatal(args ...any) {
 	fmt.Print(prefix("fatal"))
 	fmt.Println(args...)
+	r.printData()
 }
 
-func (r *TestLog) Fatalf(format string, args ...any) {
+func (r *TestLogWriter) Fatalf(format string, args ...any) {
 	fmt.Print(prefix("fatal"))
 	fmt.Printf(format+"\n", args...)
+	r.printData()
 }
 
-func (r *TestLog) Panic(args ...any) {
+func (r *TestLogWriter) Panic(args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Println(args...)
+	r.printData()
 }
 
-func (r *TestLog) Panicf(format string, args ...any) {
+func (r *TestLogWriter) Panicf(format string, args ...any) {
 	fmt.Print(prefix("panic"))
 	fmt.Printf(format+"\n", args...)
+	r.printData()
 }
 
-func (r *TestLog) User(user any) log.Writer {
+func (r *TestLogWriter) User(user any) log.Writer {
+	r.data["user"] = user
+
 	return r
 }
 
-func (r *TestLog) Owner(owner any) log.Writer {
+func (r *TestLogWriter) Owner(owner any) log.Writer {
+	r.data["owner"] = owner
+
 	return r
 }
 
-func (r *TestLog) Hint(hint string) log.Writer {
+func (r *TestLogWriter) Hint(hint string) log.Writer {
+	r.data["hint"] = hint
+
 	return r
 }
 
-func (r *TestLog) Code(code string) log.Writer {
+func (r *TestLogWriter) Code(code string) log.Writer {
+	r.data["code"] = code
+
 	return r
 }
 
-func (r *TestLog) With(data map[string]any) log.Writer {
+func (r *TestLogWriter) With(data map[string]any) log.Writer {
+	r.data["with"] = data
+
 	return r
 }
 
-func (r *TestLog) Tags(tags ...string) log.Writer {
+func (r *TestLogWriter) Tags(tags ...string) log.Writer {
+	r.data["tags"] = tags
+
 	return r
 }
 
-func (r *TestLog) WithTrace() log.Writer {
+func (r *TestLogWriter) WithTrace() log.Writer {
 	return r
 }
 
-func (r *TestLog) Request(req http.ContextRequest) log.Writer {
+func (r *TestLogWriter) Request(req http.ContextRequest) log.Writer {
+	r.data["request"] = req
+
 	return r
 }
 
-func (r *TestLog) Response(res http.ContextResponse) log.Writer {
+func (r *TestLogWriter) Response(res http.ContextResponse) log.Writer {
+	r.data["response"] = res
+
 	return r
 }
 
-func (r *TestLog) In(domain string) log.Writer {
+func (r *TestLogWriter) In(domain string) log.Writer {
+	r.data["in"] = domain
+
 	return r
+}
+
+func (r *TestLogWriter) printData() {
+	if len(r.data) > 0 {
+		fmt.Println(r.data)
+	}
 }
 
 func prefix(model string) string {

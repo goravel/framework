@@ -31,6 +31,12 @@ func NewMysqlDocker(database *supportdocker.Database) *MysqlDocker {
 	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
 
+func NewMysql1Docker(database *supportdocker.Database) *MysqlDocker {
+	config := database.Mysql1.Config()
+
+	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
+}
+
 func (r *MysqlDocker) New() (orm.Query, error) {
 	r.mock()
 
@@ -60,7 +66,7 @@ func (r *MysqlDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
-		err := Table{}.Create(orm.DriverMysql, query)
+		err := Tables{}.Create(orm.DriverMysql, query)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +81,7 @@ func (r *MysqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, errors.New("connect to mysql failed")
 	}
 
-	err = Table{}.CreateWithPrefixAndSingular(orm.DriverMysql, query)
+	err = Tables{}.CreateWithPrefixAndSingular(orm.DriverMysql, query)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +181,7 @@ func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
-		err := Table{}.Create(orm.DriverPostgresql, query)
+		err := Tables{}.Create(orm.DriverPostgresql, query)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +196,7 @@ func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, errors.New("connect to postgresql failed")
 	}
 
-	err = Table{}.CreateWithPrefixAndSingular(orm.DriverPostgresql, query)
+	err = Tables{}.CreateWithPrefixAndSingular(orm.DriverPostgresql, query)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +290,7 @@ func (r *SqliteDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
-		err = Table{}.Create(orm.DriverSqlite, db)
+		err = Tables{}.Create(orm.DriverSqlite, db)
 		if err != nil {
 			return nil, err
 		}
@@ -299,7 +305,7 @@ func (r *SqliteDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, err
 	}
 
-	err = Table{}.CreateWithPrefixAndSingular(orm.DriverSqlite, db)
+	err = Tables{}.CreateWithPrefixAndSingular(orm.DriverSqlite, db)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +397,7 @@ func (r *SqlserverDocker) Query(createTable bool) (orm.Query, error) {
 	}
 
 	if createTable {
-		err := Table{}.Create(orm.DriverSqlserver, query)
+		err := Tables{}.Create(orm.DriverSqlserver, query)
 		if err != nil {
 			return nil, err
 		}
@@ -406,7 +412,7 @@ func (r *SqlserverDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 		return nil, errors.New("connect to sqlserver failed")
 	}
 
-	err = Table{}.CreateWithPrefixAndSingular(orm.DriverSqlserver, query)
+	err = Tables{}.CreateWithPrefixAndSingular(orm.DriverSqlserver, query)
 	if err != nil {
 		return nil, err
 	}
@@ -460,10 +466,10 @@ func (r *SqlserverDocker) mockOfCommon() {
 	mockPool(r.MockConfig)
 }
 
-type Table struct {
+type Tables struct {
 }
 
-func (r Table) Create(driver orm.Driver, db orm.Query) error {
+func (r Tables) Create(driver orm.Driver, db orm.Query) error {
 	_, err := db.Exec(r.createPeopleTable(driver))
 	if err != nil {
 		return err
@@ -512,7 +518,7 @@ func (r Table) Create(driver orm.Driver, db orm.Query) error {
 	return nil
 }
 
-func (r Table) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) error {
+func (r Tables) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) error {
 	_, err := db.Exec(r.createUserTableWithPrefixAndSingular(driver))
 	if err != nil {
 		return err
@@ -521,11 +527,11 @@ func (r Table) CreateWithPrefixAndSingular(driver orm.Driver, db orm.Query) erro
 	return nil
 }
 
-func (r Table) createPeopleTable(driver orm.Driver) string {
+func (r Tables) createPeopleTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
-CREATE TABLE people (
+CREATE TABLE peoples (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   body varchar(255) NOT NULL,
   created_at datetime(3) NOT NULL,
@@ -538,7 +544,7 @@ CREATE TABLE people (
 `
 	case orm.DriverPostgresql:
 		return `
-CREATE TABLE people (
+CREATE TABLE peoples (
   id SERIAL PRIMARY KEY NOT NULL,
   body varchar(255) NOT NULL,
   created_at timestamp NOT NULL,
@@ -548,7 +554,7 @@ CREATE TABLE people (
 `
 	case orm.DriverSqlite:
 		return `
-CREATE TABLE people (
+CREATE TABLE peoples (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   body varchar(255) NOT NULL,
   created_at datetime NOT NULL,
@@ -558,7 +564,7 @@ CREATE TABLE people (
 `
 	case orm.DriverSqlserver:
 		return `
-CREATE TABLE people (
+CREATE TABLE peoples (
   id bigint NOT NULL IDENTITY(1,1),
   body varchar(255) NOT NULL,
   created_at datetime NOT NULL,
@@ -572,7 +578,7 @@ CREATE TABLE people (
 	}
 }
 
-func (r Table) createReviewTable(driver orm.Driver) string {
+func (r Tables) createReviewTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -623,7 +629,7 @@ CREATE TABLE reviews (
 	}
 }
 
-func (r Table) createProductTable(driver orm.Driver) string {
+func (r Tables) createProductTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -674,7 +680,7 @@ CREATE TABLE products (
 	}
 }
 
-func (r Table) createUserTable(driver orm.Driver) string {
+func (r Tables) createUserTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -733,7 +739,7 @@ CREATE TABLE users (
 	}
 }
 
-func (r Table) createUserTableWithPrefixAndSingular(driver orm.Driver) string {
+func (r Tables) createUserTableWithPrefixAndSingular(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -792,7 +798,7 @@ CREATE TABLE goravel_user (
 	}
 }
 
-func (r Table) createAddressTable(driver orm.Driver) string {
+func (r Tables) createAddressTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -847,7 +853,7 @@ CREATE TABLE addresses (
 	}
 }
 
-func (r Table) createBookTable(driver orm.Driver) string {
+func (r Tables) createBookTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -898,7 +904,7 @@ CREATE TABLE books (
 	}
 }
 
-func (r Table) createAuthorTable(driver orm.Driver) string {
+func (r Tables) createAuthorTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -949,7 +955,7 @@ CREATE TABLE authors (
 	}
 }
 
-func (r Table) createRoleTable(driver orm.Driver) string {
+func (r Tables) createRoleTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -996,7 +1002,7 @@ CREATE TABLE roles (
 	}
 }
 
-func (r Table) createHouseTable(driver orm.Driver) string {
+func (r Tables) createHouseTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -1051,7 +1057,7 @@ CREATE TABLE houses (
 	}
 }
 
-func (r Table) createPhoneTable(driver orm.Driver) string {
+func (r Tables) createPhoneTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `
@@ -1106,7 +1112,7 @@ CREATE TABLE phones (
 	}
 }
 
-func (r Table) createRoleUserTable(driver orm.Driver) string {
+func (r Tables) createRoleUserTable(driver orm.Driver) string {
 	switch driver {
 	case orm.DriverMysql:
 		return `

@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -15,26 +16,42 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/contracts/config"
-	gormcontract "github.com/goravel/framework/contracts/database/gorm"
+	"github.com/goravel/framework/contracts/database/gorm"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/database"
 )
 
-var QuerySet = wire.NewSet(NewQueryImpl, wire.Bind(new(ormcontract.Query), new(*QueryImpl)))
+var QuerySet = wire.NewSet(BuildQueryImpl, wire.Bind(new(ormcontract.Query), new(*QueryImpl)))
 var _ ormcontract.Query = &QueryImpl{}
 
 type QueryImpl struct {
-	config        config.Config
-	ctx           context.Context
-	instance      *gormio.DB
-	origin        *QueryImpl
-	with          map[string][]any
-	withoutEvents bool
+	conditions Conditions
+	config     config.Config
+	connection string
+	ctx        context.Context
+	instance   *gormio.DB
+	queries    map[string]*QueryImpl
 }
 
-func NewQueryImpl(ctx context.Context, config config.Config, gorm gormcontract.Gorm) (*QueryImpl, error) {
+func NewQueryImpl(ctx context.Context, config config.Config, connection string, db *gormio.DB, conditions *Conditions) *QueryImpl {
+	queryImpl := &QueryImpl{
+		config:     config,
+		connection: connection,
+		ctx:        ctx,
+		instance:   db,
+		queries:    make(map[string]*QueryImpl),
+	}
+
+	if conditions != nil {
+		queryImpl.conditions = *conditions
+	}
+
+	return queryImpl
+}
+
+func BuildQueryImpl(ctx context.Context, config config.Config, connection string, gorm gorm.Gorm) (*QueryImpl, error) {
 	db, err := gorm.Make()
 	if err != nil {
 		return nil, err
@@ -43,32 +60,19 @@ func NewQueryImpl(ctx context.Context, config config.Config, gorm gormcontract.G
 		db = db.WithContext(ctx)
 	}
 
-	return &QueryImpl{
-		instance: db,
-		config:   config,
-		ctx:      ctx,
-	}, nil
-}
-
-func NewQueryImplByInstance(db *gormio.DB, instance *QueryImpl) *QueryImpl {
-	queryImpl := &QueryImpl{config: instance.config, ctx: db.Statement.Context, instance: db, origin: instance.origin, with: instance.with, withoutEvents: instance.withoutEvents}
-
-	// The origin is used by the With method to load the relationship.
-	if instance.origin == nil && instance.instance != nil {
-		queryImpl.origin = instance
-	}
-
-	return queryImpl
+	return NewQueryImpl(ctx, config, connection, db, nil), nil
 }
 
 func (r *QueryImpl) Association(association string) ormcontract.Association {
-	return r.instance.Association(association)
+	query := r.buildConditions()
+
+	return query.instance.Association(association)
 }
 
 func (r *QueryImpl) Begin() (ormcontract.Transaction, error) {
 	tx := r.instance.Begin()
 
-	return NewTransaction(tx, r.config), tx.Error
+	return NewTransaction(tx, r.config, r.connection), tx.Error
 }
 
 func (r *QueryImpl) Driver() ormcontract.Driver {
@@ -76,33 +80,43 @@ func (r *QueryImpl) Driver() ormcontract.Driver {
 }
 
 func (r *QueryImpl) Count(count *int64) error {
-	return r.instance.Count(count).Error
+	query := r.buildConditions()
+
+	return query.instance.Count(count).Error
 }
 
 func (r *QueryImpl) Create(value any) error {
-	if err := r.refreshConnection(value); err != nil {
+	query, err := r.refreshConnection(value)
+	if err != nil {
 		return err
 	}
-	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+	query = query.buildConditions()
+
+	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
 
-	if len(r.instance.Statement.Selects) > 0 {
-		return r.selectCreate(value)
+	if len(query.instance.Statement.Selects) > 0 {
+		return query.selectCreate(value)
 	}
 
-	if len(r.instance.Statement.Omits) > 0 {
-		return r.omitCreate(value)
+	if len(query.instance.Statement.Omits) > 0 {
+		return query.omitCreate(value)
 	}
 
-	return r.create(value)
+	return query.create(value)
 }
 
 func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
+	with := r.conditions.with
+	query := r.buildConditions()
+	r.conditions.with = with
+
 	var err error
 	cursorChan := make(chan ormcontract.Cursor)
 	go func() {
-		rows, err := r.instance.Rows()
+		var rows *sql.Rows
+		rows, err = query.instance.Rows()
 		if err != nil {
 			return
 		}
@@ -110,11 +124,11 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 
 		for rows.Next() {
 			val := make(map[string]any)
-			err := r.instance.ScanRows(rows, val)
+			err = query.instance.ScanRows(rows, val)
 			if err != nil {
 				return
 			}
-			cursorChan <- &CursorImpl{row: val, query: r}
+			cursorChan <- &CursorImpl{query: r, row: val}
 		}
 		close(cursorChan)
 	}()
@@ -122,19 +136,22 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 }
 
 func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return nil, err
 	}
-	if err := r.deleting(dest); err != nil {
+	query = query.buildConditions()
+
+	if err := query.deleting(dest); err != nil {
 		return nil, err
 	}
 
-	res := r.instance.Delete(dest, conds...)
+	res := query.instance.Delete(dest, conds...)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
-	if err := r.deleted(dest); err != nil {
+	if err := query.deleted(dest); err != nil {
 		return nil, err
 	}
 
@@ -144,13 +161,15 @@ func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) 
 }
 
 func (r *QueryImpl) Distinct(args ...any) ormcontract.Query {
-	tx := r.instance.Distinct(args...)
+	conditions := r.conditions
+	conditions.distinct = append(conditions.distinct, args...)
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error) {
-	result := r.instance.Exec(sql, values...)
+	query := r.buildConditions()
+	result := query.instance.Exec(sql, values...)
 
 	return &ormcontract.Result{
 		RowsAffected: result.RowsAffected,
@@ -158,32 +177,42 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Exists(exists *bool) error {
-	return r.instance.Select("1").Limit(1).Find(exists).Error
+	query := r.buildConditions()
+
+	return query.instance.Select("1").Limit(1).Find(exists).Error
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {
-	if err := r.refreshConnection(dest); err != nil {
-		return err
-	}
-	if err := filterFindConditions(conds...); err != nil {
-		return err
-	}
-	if err := r.instance.Find(dest, conds...).Error; err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
 
-	return r.retrieved(dest)
+	query = query.buildConditions()
+
+	if err := filterFindConditions(conds...); err != nil {
+		return err
+	}
+	if err := query.instance.Find(dest, conds...).Error; err != nil {
+		return err
+	}
+
+	return query.retrieved(dest)
 }
 
 func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
+
+	query = query.buildConditions()
+
 	if err := filterFindConditions(conds...); err != nil {
 		return err
 	}
 
-	res := r.instance.Find(dest, conds...)
+	res := query.instance.Find(dest, conds...)
 	if err := res.Error; err != nil {
 		return err
 	}
@@ -192,14 +221,18 @@ func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
 		return orm.ErrRecordNotFound
 	}
 
-	return r.retrieved(dest)
+	return query.retrieved(dest)
 }
 
 func (r *QueryImpl) First(dest any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
-	res := r.instance.First(dest)
+
+	query = query.buildConditions()
+
+	res := query.instance.First(dest)
 	if res.Error != nil {
 		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
 			return nil
@@ -208,15 +241,18 @@ func (r *QueryImpl) First(dest any) error {
 		return res.Error
 	}
 
-	return r.retrieved(dest)
+	return query.retrieved(dest)
 }
 
 func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
-	err := r.instance.First(dest).Error
-	if err != nil {
+
+	query = query.buildConditions()
+
+	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
 			return callback()
 		}
@@ -224,40 +260,47 @@ func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
 		return err
 	}
 
-	return r.retrieved(dest)
+	return query.retrieved(dest)
 }
 
 func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
+
+	query = query.buildConditions()
+
 	if len(conds) == 0 {
 		return errors.New("query condition is require")
 	}
 
 	var res *gormio.DB
 	if len(conds) > 1 {
-		res = r.instance.Attrs(conds[1]).FirstOrInit(dest, conds[0])
+		res = query.instance.Attrs(conds[1]).FirstOrInit(dest, conds[0])
 	} else {
-		res = r.instance.FirstOrInit(dest, conds[0])
+		res = query.instance.FirstOrInit(dest, conds[0])
 	}
 
 	if res.Error != nil {
 		return res.Error
 	}
 	if res.RowsAffected > 0 {
-		return r.retrieved(dest)
+		return query.retrieved(dest)
 	}
 
-	return r.Create(dest)
+	return query.Create(dest)
 }
 
 func (r *QueryImpl) FirstOrFail(dest any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
-	err := r.instance.First(dest).Error
-	if err != nil {
+
+	query = query.buildConditions()
+
+	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
 			return orm.ErrRecordNotFound
 		}
@@ -265,45 +308,53 @@ func (r *QueryImpl) FirstOrFail(dest any) error {
 		return err
 	}
 
-	return r.retrieved(dest)
+	return query.retrieved(dest)
 }
 
 func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
+
+	query = query.buildConditions()
+
 	var res *gormio.DB
 	if len(values) > 0 {
-		res = r.instance.Attrs(values[0]).FirstOrInit(dest, attributes)
+		res = query.instance.Attrs(values[0]).FirstOrInit(dest, attributes)
 	} else {
-		res = r.instance.FirstOrInit(dest, attributes)
+		res = query.instance.FirstOrInit(dest, attributes)
 	}
 
 	if res.Error != nil {
 		return res.Error
 	}
 	if res.RowsAffected > 0 {
-		return r.retrieved(dest)
+		return query.retrieved(dest)
 	}
 
 	return nil
 }
 
 func (r *QueryImpl) ForceDelete(value any, conds ...any) (*ormcontract.Result, error) {
-	if err := r.refreshConnection(value); err != nil {
-		return nil, err
-	}
-	if err := r.forceDeleting(value); err != nil {
+	query, err := r.refreshConnection(value)
+	if err != nil {
 		return nil, err
 	}
 
-	res := r.instance.Unscoped().Delete(value, conds...)
+	query = query.buildConditions()
+
+	if err := query.forceDeleting(value); err != nil {
+		return nil, err
+	}
+
+	res := query.instance.Unscoped().Delete(value, conds...)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
 	if res.RowsAffected > 0 {
-		if err := r.forceDeleted(value); err != nil {
+		if err := query.forceDeleted(value); err != nil {
 			return nil, err
 		}
 	}
@@ -318,15 +369,20 @@ func (r *QueryImpl) Get(dest any) error {
 }
 
 func (r *QueryImpl) Group(name string) ormcontract.Query {
-	tx := r.instance.Group(name)
+	conditions := r.conditions
+	conditions.group = name
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Having(query any, args ...any) ormcontract.Query {
-	tx := r.instance.Having(query, args...)
+	conditions := r.conditions
+	conditions.having = &Having{
+		query: query,
+		args:  args,
+	}
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Instance() *gormio.DB {
@@ -334,14 +390,20 @@ func (r *QueryImpl) Instance() *gormio.DB {
 }
 
 func (r *QueryImpl) Join(query string, args ...any) ormcontract.Query {
-	tx := r.instance.Joins(query, args...)
-	return NewQueryImplByInstance(tx, r)
+	conditions := r.conditions
+	conditions.join = append(conditions.join, Join{
+		query: query,
+		args:  args,
+	})
+
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Limit(limit int) ormcontract.Query {
-	tx := r.instance.Limit(limit)
+	conditions := r.conditions
+	conditions.limit = &limit
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Load(model any, relation string, args ...any) error {
@@ -410,49 +472,38 @@ func (r *QueryImpl) LoadMissing(model any, relation string, args ...any) error {
 }
 
 func (r *QueryImpl) LockForUpdate() ormcontract.Query {
-	driver := r.instance.Name()
-	mysqlDialector := mysql.Dialector{}
-	postgresqlDialector := postgres.Dialector{}
-	sqlserverDialector := sqlserver.Dialector{}
+	conditions := r.conditions
+	conditions.lockForUpdate = true
 
-	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
-		tx := r.instance.Clauses(clause.Locking{Strength: "UPDATE"})
-
-		return NewQueryImplByInstance(tx, r)
-	} else if driver == sqlserverDialector.Name() {
-		tx := r.instance.Clauses(hints.With("rowlock", "updlock", "holdlock"))
-
-		return NewQueryImplByInstance(tx, r)
-	}
-
-	return r
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Model(value any) ormcontract.Query {
-	if err := r.refreshConnection(value); err != nil {
-		return nil
-	}
-	tx := r.instance.Model(value)
+	conditions := r.conditions
+	conditions.model = value
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Offset(offset int) ormcontract.Query {
-	tx := r.instance.Offset(offset)
+	conditions := r.conditions
+	conditions.offset = &offset
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Omit(columns ...string) ormcontract.Query {
-	tx := r.instance.Omit(columns...)
+	conditions := r.conditions
+	conditions.omit = columns
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Order(value any) ormcontract.Query {
-	tx := r.instance.Order(value)
+	conditions := r.conditions
+	conditions.order = append(r.conditions.order, value)
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) OrderBy(column string, direction ...string) ormcontract.Query {
@@ -485,87 +536,103 @@ func (r *QueryImpl) InRandomOrder() ormcontract.Query {
 }
 
 func (r *QueryImpl) OrWhere(query any, args ...any) ormcontract.Query {
-	tx := r.instance.Or(query, args...)
+	conditions := r.conditions
+	conditions.where = append(r.conditions.where, Where{
+		query: query,
+		args:  args,
+		or:    true,
+	})
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Paginate(page, limit int, dest any, total *int64) error {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
+		return err
+	}
+
+	query = query.buildConditions()
+
 	offset := (page - 1) * limit
 	if total != nil {
-		if r.instance.Statement.Table == "" && r.instance.Statement.Model == nil {
-			if err := r.Model(dest).Count(total); err != nil {
+		if query.conditions.table == nil && query.conditions.model == nil {
+			if err := query.Model(dest).Count(total); err != nil {
 				return err
 			}
 		} else {
-			if err := r.Count(total); err != nil {
+			if err := query.Count(total); err != nil {
 				return err
 			}
 		}
 	}
 
-	return r.Offset(offset).Limit(limit).Find(dest)
+	return query.Offset(offset).Limit(limit).Find(dest)
 }
 
 func (r *QueryImpl) Pluck(column string, dest any) error {
-	return r.instance.Pluck(column, dest).Error
+	query := r.buildConditions()
+
+	return query.instance.Pluck(column, dest).Error
 }
 
 func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
-	tx := r.instance.Raw(sql, values...)
-
-	return NewQueryImplByInstance(tx, r)
+	return r.new(r.instance.Raw(sql, values...))
 }
 
 func (r *QueryImpl) Save(value any) error {
-	if err := r.refreshConnection(value); err != nil {
+	query, err := r.refreshConnection(value)
+	if err != nil {
 		return err
 	}
-	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
+
+	query = query.buildConditions()
+
+	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
 
-	model := r.instance.Statement.Model
+	model := query.instance.Statement.Model
 	id := database.GetID(value)
 	update := id != nil
 
-	if err := r.saving(model, value); err != nil {
+	if err := query.saving(model, value); err != nil {
 		return err
 	}
 	if update {
-		if err := r.updating(model, value); err != nil {
+		if err := query.updating(model, value); err != nil {
 			return err
 		}
 	} else {
-		if err := r.creating(value); err != nil {
+		if err := query.creating(value); err != nil {
 			return err
 		}
 	}
 
-	if len(r.instance.Statement.Selects) > 0 {
-		if err := r.selectSave(value); err != nil {
+	if len(query.instance.Statement.Selects) > 0 {
+		if err := query.selectSave(value); err != nil {
 			return err
 		}
-	} else if len(r.instance.Statement.Omits) > 0 {
-		if err := r.omitSave(value); err != nil {
+	} else if len(query.instance.Statement.Omits) > 0 {
+		if err := query.omitSave(value); err != nil {
 			return err
 		}
 	} else {
-		if err := r.save(value); err != nil {
+		if err := query.save(value); err != nil {
 			return err
 		}
 	}
 
 	if update {
-		if err := r.updated(model, value); err != nil {
+		if err := query.updated(model, value); err != nil {
 			return err
 		}
 	} else {
-		if err := r.created(value); err != nil {
+		if err := query.created(value); err != nil {
 			return err
 		}
 	}
-	if err := r.saved(model, value); err != nil {
+	if err := query.saved(model, value); err != nil {
 		return err
 	}
 
@@ -577,98 +644,93 @@ func (r *QueryImpl) SaveQuietly(value any) error {
 }
 
 func (r *QueryImpl) Scan(dest any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
 
-	return r.instance.Scan(dest).Error
-}
+	query = query.buildConditions()
 
-func (r *QueryImpl) Select(query any, args ...any) ormcontract.Query {
-	tx := r.instance.Select(query, args...)
-
-	return NewQueryImplByInstance(tx, r)
+	return query.instance.Scan(dest).Error
 }
 
 func (r *QueryImpl) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
-	var gormFuncs []func(*gormio.DB) *gormio.DB
-	for _, item := range funcs {
-		gormFuncs = append(gormFuncs, func(tx *gormio.DB) *gormio.DB {
-			item(NewQueryImplByInstance(tx, r))
+	conditions := r.conditions
+	conditions.scopes = append(r.conditions.scopes, funcs...)
 
-			return tx
-		})
+	return r.setConditions(conditions)
+}
+
+func (r *QueryImpl) Select(query any, args ...any) ormcontract.Query {
+	conditions := r.conditions
+	conditions.selectColumns = &Select{
+		query: query,
+		args:  args,
 	}
 
-	tx := r.instance.Scopes(gormFuncs...)
-
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) SharedLock() ormcontract.Query {
-	driver := r.instance.Name()
-	mysqlDialector := mysql.Dialector{}
-	postgresqlDialector := postgres.Dialector{}
-	sqlserverDialector := sqlserver.Dialector{}
+	conditions := r.conditions
+	conditions.sharedLock = true
 
-	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
-		tx := r.instance.Clauses(clause.Locking{Strength: "SHARE"})
-
-		return NewQueryImplByInstance(tx, r)
-	} else if driver == sqlserverDialector.Name() {
-		tx := r.instance.Clauses(hints.With("rowlock", "holdlock"))
-
-		return NewQueryImplByInstance(tx, r)
-	}
-
-	return r
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Sum(column string, dest any) error {
-	return r.instance.Select("SUM(" + column + ")").Row().Scan(dest)
+	query := r.buildConditions()
+
+	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
 }
 
 func (r *QueryImpl) Table(name string, args ...any) ormcontract.Query {
-	tx := r.instance.Table(name, args...)
+	conditions := r.conditions
+	conditions.table = &Table{
+		name: name,
+		args: args,
+	}
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error) {
+	query := r.buildConditions()
+
 	if _, ok := column.(string); !ok && len(value) > 0 {
 		return nil, errors.New("parameter error, please check the document")
 	}
 
 	var singleUpdate bool
-	model := r.instance.Statement.Model
+	model := query.instance.Statement.Model
 	if model != nil {
 		id := database.GetID(model)
 		singleUpdate = id != nil
 	}
 
 	if c, ok := column.(string); ok && len(value) > 0 {
-		r.instance.Statement.Dest = map[string]any{c: value[0]}
+		query.instance.Statement.Dest = map[string]any{c: value[0]}
 	}
 	if len(value) == 0 {
-		r.instance.Statement.Dest = column
+		query.instance.Statement.Dest = column
 	}
 
 	if singleUpdate {
-		if err := r.saving(model, r.instance.Statement.Dest); err != nil {
+		if err := query.saving(model, query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
-		if err := r.updating(model, r.instance.Statement.Dest); err != nil {
+		if err := query.updating(model, query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
 	}
 
-	res, err := r.updates(r.instance.Statement.Dest)
+	res, err := query.updates(query.instance.Statement.Dest)
 
 	if singleUpdate && err == nil {
-		if err := r.updated(model, r.instance.Statement.Dest); err != nil {
+		if err := query.updated(model, query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
-		if err := r.saved(model, r.instance.Statement.Dest); err != nil {
+		if err := query.saved(model, query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
 	}
@@ -677,24 +739,32 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 }
 
 func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
-	if err := r.refreshConnection(dest); err != nil {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
 		return err
 	}
-	res := r.instance.Assign(values).FirstOrInit(dest, attributes)
+
+	query = query.buildConditions()
+
+	res := query.instance.Assign(values).FirstOrInit(dest, attributes)
 	if res.Error != nil {
 		return res.Error
 	}
 	if res.RowsAffected > 0 {
-		return r.Save(dest)
+		return query.Save(dest)
 	}
 
-	return r.Create(dest)
+	return query.Create(dest)
 }
 
 func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
-	tx := r.instance.Where(query, args...)
+	conditions := r.conditions
+	conditions.where = append(r.conditions.where, Where{
+		query: query,
+		args:  args,
+	})
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) WhereIn(column string, values []any) ormcontract.Query {
@@ -737,94 +807,316 @@ func (r *QueryImpl) WhereNotNull(column string) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
 }
 
-func (r *QueryImpl) WithoutEvents() ormcontract.Query {
-	return NewQueryImplByInstance(r.instance, &QueryImpl{
-		config:        r.config,
-		withoutEvents: true,
+func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
+	conditions := r.conditions
+	conditions.with = append(r.conditions.with, With{
+		query: query,
+		args:  args,
 	})
+
+	return r.setConditions(conditions)
+}
+
+func (r *QueryImpl) WithoutEvents() ormcontract.Query {
+	conditions := r.conditions
+	conditions.withoutEvents = true
+
+	return r.setConditions(conditions)
 }
 
 func (r *QueryImpl) WithTrashed() ormcontract.Query {
-	tx := r.instance.Unscoped()
+	conditions := r.conditions
+	conditions.withTrashed = true
 
-	return NewQueryImplByInstance(tx, r)
+	return r.setConditions(conditions)
 }
 
-func (r *QueryImpl) With(query string, args ...any) ormcontract.Query {
-	if len(args) == 1 {
-		switch arg := args[0].(type) {
-		case func(ormcontract.Query) ormcontract.Query:
-			newArgs := []any{
-				func(tx *gormio.DB) *gormio.DB {
-					query := arg(NewQueryImplByInstance(tx, r))
+func (r *QueryImpl) buildConditions() *QueryImpl {
+	query := r.buildModel()
+	db := query.instance
+	db = query.buildDistinct(db)
+	db = query.buildGroup(db)
+	db = query.buildHaving(db)
+	db = query.buildJoin(db)
+	db = query.buildLockForUpdate(db)
+	db = query.buildLimit(db)
+	db = query.buildOrder(db)
+	db = query.buildOffset(db)
+	db = query.buildOmit(db)
+	db = query.buildScopes(db)
+	db = query.buildSelectColumns(db)
+	db = query.buildSharedLock(db)
+	db = query.buildTable(db)
+	db = query.buildWith(db)
+	db = query.buildWithTrashed(db)
+	db = query.buildWhere(db)
 
-					return query.(*QueryImpl).instance
-				},
-			}
-
-			tx := r.instance.Preload(query, newArgs...)
-
-			return NewQueryImplByInstance(tx, r)
-		}
-	}
-
-	tx := r.instance.Preload(query, args...)
-
-	queryImpl := NewQueryImplByInstance(tx, r)
-	if queryImpl.with == nil {
-		queryImpl.with = make(map[string][]any)
-	}
-
-	queryImpl.with[query] = args
-
-	return queryImpl
+	return query.new(db)
 }
 
-func (r *QueryImpl) refreshConnection(value any) error {
-	model, ok := value.(ormcontract.ConnectionModel)
-	if !ok {
+func (r *QueryImpl) buildDistinct(db *gormio.DB) *gormio.DB {
+	if len(r.conditions.distinct) == 0 {
+		return db
+	}
+
+	db = db.Distinct(r.conditions.distinct...)
+	r.conditions.distinct = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildGroup(db *gormio.DB) *gormio.DB {
+	if r.conditions.group == "" {
+		return db
+	}
+
+	db = db.Group(r.conditions.group)
+	r.conditions.group = ""
+
+	return db
+}
+
+func (r *QueryImpl) buildHaving(db *gormio.DB) *gormio.DB {
+	if r.conditions.having == nil {
+		return db
+	}
+
+	db = db.Having(r.conditions.having.query, r.conditions.having.args...)
+	r.conditions.having = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildJoin(db *gormio.DB) *gormio.DB {
+	if r.conditions.join == nil {
+		return db
+	}
+
+	for _, item := range r.conditions.join {
+		db = db.Joins(item.query, item.args...)
+	}
+
+	r.conditions.join = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildLimit(db *gormio.DB) *gormio.DB {
+	if r.conditions.limit == nil {
+		return db
+	}
+
+	db = db.Limit(*r.conditions.limit)
+	r.conditions.limit = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildLockForUpdate(db *gormio.DB) *gormio.DB {
+	if !r.conditions.lockForUpdate {
+		return db
+	}
+
+	driver := r.instance.Name()
+	mysqlDialector := mysql.Dialector{}
+	postgresqlDialector := postgres.Dialector{}
+	sqlserverDialector := sqlserver.Dialector{}
+
+	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
+		return db.Clauses(clause.Locking{Strength: "UPDATE"})
+	} else if driver == sqlserverDialector.Name() {
+		return db.Clauses(hints.With("rowlock", "updlock", "holdlock"))
+	}
+
+	r.conditions.lockForUpdate = false
+
+	return db
+}
+
+func (r *QueryImpl) buildModel() *QueryImpl {
+	if r.conditions.model == nil {
+		return r
+	}
+
+	query, err := r.refreshConnection(r.conditions.model)
+	if err != nil {
 		return nil
 	}
-	conn := model.Connection()
-	if conn == "" {
-		conn = r.config.GetString("database.default")
-	}
-	driver := driver2gorm(r.config.GetString(fmt.Sprintf("database.connections.%s.driver", conn)))
-	if driver == "" {
-		return fmt.Errorf("connection %s driver is not supported", conn)
-	}
-	// if a driver is not the same, we need to refresh the connection
-	if driver != r.instance.Name() {
-		query, err := InitializeQuery(r.ctx, r.config, conn)
-		if err != nil {
-			return err
-		}
-		dbInstance := query.instance
-		stmt := r.instance.Statement
-		stmt.DB = dbInstance.Statement.DB
-		stmt.ConnPool = dbInstance.ConnPool
-		if r.ctx != nil {
-			dbInstance = dbInstance.WithContext(r.ctx)
-		}
-		dbInstance.Statement = stmt
-		r.instance = dbInstance
-	}
-	return nil
+
+	return query.new(query.instance.Model(r.conditions.model))
 }
 
-func (r *QueryImpl) selectCreate(value any) error {
-	if len(r.instance.Statement.Selects) > 1 {
-		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Associations {
-				return errors.New("cannot set orm.Associations and other fields at the same time")
-			}
+func (r *QueryImpl) buildOffset(db *gormio.DB) *gormio.DB {
+	if r.conditions.offset == nil {
+		return db
+	}
+
+	db = db.Offset(*r.conditions.offset)
+	r.conditions.offset = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildOmit(db *gormio.DB) *gormio.DB {
+	if len(r.conditions.omit) == 0 {
+		return db
+	}
+
+	db = db.Omit(r.conditions.omit...)
+	r.conditions.omit = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildOrder(db *gormio.DB) *gormio.DB {
+	if len(r.conditions.order) == 0 {
+		return db
+	}
+
+	for _, order := range r.conditions.order {
+		db = db.Order(order)
+	}
+
+	r.conditions.order = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildSelectColumns(db *gormio.DB) *gormio.DB {
+	if r.conditions.selectColumns == nil {
+		return db
+	}
+
+	db = db.Select(r.conditions.selectColumns.query, r.conditions.selectColumns.args...)
+	r.conditions.selectColumns = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildScopes(db *gormio.DB) *gormio.DB {
+	if len(r.conditions.scopes) == 0 {
+		return db
+	}
+
+	var gormFuncs []func(*gormio.DB) *gormio.DB
+	for _, scope := range r.conditions.scopes {
+		gormFuncs = append(gormFuncs, func(tx *gormio.DB) *gormio.DB {
+			queryImpl := r.new(tx)
+			query := scope(queryImpl)
+			queryImpl = query.(*QueryImpl)
+			queryImpl = queryImpl.buildConditions()
+
+			return queryImpl.instance
+		})
+	}
+
+	db = db.Scopes(gormFuncs...)
+	r.conditions.scopes = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildSharedLock(db *gormio.DB) *gormio.DB {
+	if !r.conditions.sharedLock {
+		return db
+	}
+
+	driver := r.instance.Name()
+	mysqlDialector := mysql.Dialector{}
+	postgresqlDialector := postgres.Dialector{}
+	sqlserverDialector := sqlserver.Dialector{}
+
+	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
+		return db.Clauses(clause.Locking{Strength: "SHARE"})
+	} else if driver == sqlserverDialector.Name() {
+		return db.Clauses(hints.With("rowlock", "holdlock"))
+	}
+
+	r.conditions.sharedLock = false
+
+	return db
+}
+
+func (r *QueryImpl) buildTable(db *gormio.DB) *gormio.DB {
+	if r.conditions.table == nil {
+		return db
+	}
+
+	db = db.Table(r.conditions.table.name, r.conditions.table.args...)
+	r.conditions.table = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildWhere(db *gormio.DB) *gormio.DB {
+	if len(r.conditions.where) == 0 {
+		return db
+	}
+
+	for _, item := range r.conditions.where {
+		if item.or {
+			db = db.Or(item.query, item.args...)
+		} else {
+			db = db.Where(item.query, item.args...)
 		}
 	}
 
-	if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Associations {
-		r.instance.Statement.Selects = []string{}
+	r.conditions.where = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildWith(db *gormio.DB) *gormio.DB {
+	if len(r.conditions.with) == 0 {
+		return db
 	}
 
+	for _, item := range r.conditions.with {
+		isSet := false
+		if len(item.args) == 1 {
+			if arg, ok := item.args[0].(func(ormcontract.Query) ormcontract.Query); ok {
+				newArgs := []any{
+					func(tx *gormio.DB) *gormio.DB {
+						queryImpl := NewQueryImpl(r.ctx, r.config, r.connection, tx, nil)
+						query := arg(queryImpl)
+						queryImpl = query.(*QueryImpl)
+						queryImpl = queryImpl.buildConditions()
+
+						return queryImpl.instance
+					},
+				}
+
+				db = db.Preload(item.query, newArgs...)
+				isSet = true
+			}
+		}
+
+		if !isSet {
+			db = db.Preload(item.query, item.args...)
+		}
+	}
+
+	r.conditions.with = nil
+
+	return db
+}
+
+func (r *QueryImpl) buildWithTrashed(db *gormio.DB) *gormio.DB {
+	if !r.conditions.withTrashed {
+		return db
+	}
+
+	db = db.Unscoped()
+	r.conditions.withTrashed = false
+
+	return db
+}
+
+func (r *QueryImpl) clearConditions() {
+	r.conditions = Conditions{}
+}
+
+func (r *QueryImpl) create(value any) error {
 	if err := r.saving(nil, value); err != nil {
 		return err
 	}
@@ -832,7 +1124,7 @@ func (r *QueryImpl) selectCreate(value any) error {
 		return err
 	}
 
-	if err := r.instance.Create(value).Error; err != nil {
+	if err := r.instance.Omit(orm.Associations).Create(value).Error; err != nil {
 		return err
 	}
 
@@ -844,6 +1136,81 @@ func (r *QueryImpl) selectCreate(value any) error {
 	}
 
 	return nil
+}
+
+func (r *QueryImpl) created(dest any) error {
+	return r.event(ormcontract.EventCreated, nil, dest)
+}
+
+func (r *QueryImpl) creating(dest any) error {
+	return r.event(ormcontract.EventCreating, nil, dest)
+}
+
+func (r *QueryImpl) deleting(dest any) error {
+	return r.event(ormcontract.EventDeleting, nil, dest)
+}
+
+func (r *QueryImpl) deleted(dest any) error {
+	return r.event(ormcontract.EventDeleted, nil, dest)
+}
+
+func (r *QueryImpl) forceDeleting(dest any) error {
+	return r.event(ormcontract.EventForceDeleting, nil, dest)
+}
+
+func (r *QueryImpl) forceDeleted(dest any) error {
+	return r.event(ormcontract.EventForceDeleted, nil, dest)
+}
+
+func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
+	if r.conditions.withoutEvents {
+		return nil
+	}
+
+	instance := NewEvent(r, model, dest)
+
+	if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
+		if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
+			return event(instance)
+		}
+
+		return nil
+	}
+	if model != nil {
+		if dispatchesEvents, exist := model.(ormcontract.DispatchesEvents); exist {
+			if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
+				return event(instance)
+			}
+		}
+
+		return nil
+	}
+
+	if observer := observer(dest); observer != nil {
+		if observerEvent := observerEvent(event, observer); observerEvent != nil {
+			return observerEvent(instance)
+		}
+
+		return nil
+	}
+
+	if model != nil {
+		if observer := observer(model); observer != nil {
+			if observerEvent := observerEvent(event, observer); observerEvent != nil {
+				return observerEvent(instance)
+			}
+
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func (r *QueryImpl) new(db *gormio.DB) *QueryImpl {
+	query := NewQueryImpl(r.ctx, r.config, r.connection, db, &r.conditions)
+
+	return query
 }
 
 func (r *QueryImpl) omitCreate(value any) error {
@@ -886,7 +1253,73 @@ func (r *QueryImpl) omitCreate(value any) error {
 	return nil
 }
 
-func (r *QueryImpl) create(value any) error {
+func (r *QueryImpl) omitSave(value any) error {
+	for _, val := range r.instance.Statement.Omits {
+		if val == orm.Associations {
+			return r.instance.Omit(orm.Associations).Save(value).Error
+		}
+	}
+
+	return r.instance.Save(value).Error
+}
+
+func (r *QueryImpl) refreshConnection(model any) (*QueryImpl, error) {
+	connection, err := getModelConnection(model)
+	if err != nil {
+		return nil, err
+	}
+	if connection == "" || connection == r.connection {
+		return r, nil
+	}
+
+	query, ok := r.queries[connection]
+	if !ok {
+		var err error
+		query, err = InitializeQuery(r.ctx, r.config, connection)
+		if err != nil {
+			return nil, err
+		}
+
+		if r.queries == nil {
+			r.queries = make(map[string]*QueryImpl)
+		}
+		r.queries[connection] = query
+	}
+
+	query.conditions = r.conditions
+
+	return query, nil
+}
+
+func (r *QueryImpl) retrieved(dest any) error {
+	return r.event(ormcontract.EventRetrieved, nil, dest)
+}
+
+func (r *QueryImpl) save(value any) error {
+	return r.instance.Omit(orm.Associations).Save(value).Error
+}
+
+func (r *QueryImpl) saved(model, dest any) error {
+	return r.event(ormcontract.EventSaved, model, dest)
+}
+
+func (r *QueryImpl) saving(model, dest any) error {
+	return r.event(ormcontract.EventSaving, model, dest)
+}
+
+func (r *QueryImpl) selectCreate(value any) error {
+	if len(r.instance.Statement.Selects) > 1 {
+		for _, val := range r.instance.Statement.Selects {
+			if val == orm.Associations {
+				return errors.New("cannot set orm.Associations and other fields at the same time")
+			}
+		}
+	}
+
+	if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Associations {
+		r.instance.Statement.Selects = []string{}
+	}
+
 	if err := r.saving(nil, value); err != nil {
 		return err
 	}
@@ -894,7 +1327,7 @@ func (r *QueryImpl) create(value any) error {
 		return err
 	}
 
-	if err := r.instance.Omit(orm.Associations).Create(value).Error; err != nil {
+	if err := r.instance.Create(value).Error; err != nil {
 		return err
 	}
 
@@ -922,18 +1355,19 @@ func (r *QueryImpl) selectSave(value any) error {
 	return nil
 }
 
-func (r *QueryImpl) omitSave(value any) error {
-	for _, val := range r.instance.Statement.Omits {
-		if val == orm.Associations {
-			return r.instance.Omit(orm.Associations).Save(value).Error
-		}
-	}
+func (r *QueryImpl) setConditions(conditions Conditions) *QueryImpl {
+	query := r.new(r.instance)
+	query.conditions = conditions
 
-	return r.instance.Save(value).Error
+	return query
 }
 
-func (r *QueryImpl) save(value any) error {
-	return r.instance.Omit(orm.Associations).Save(value).Error
+func (r *QueryImpl) updating(model, dest any) error {
+	return r.event(ormcontract.EventUpdating, model, dest)
+}
+
+func (r *QueryImpl) updated(model, dest any) error {
+	return r.event(ormcontract.EventUpdated, model, dest)
 }
 
 func (r *QueryImpl) updates(values any) (*ormcontract.Result, error) {
@@ -981,95 +1415,6 @@ func (r *QueryImpl) updates(values any) (*ormcontract.Result, error) {
 	}, result.Error
 }
 
-func (r *QueryImpl) retrieved(dest any) error {
-	return r.event(ormcontract.EventRetrieved, nil, dest)
-}
-
-func (r *QueryImpl) updating(model, dest any) error {
-	return r.event(ormcontract.EventUpdating, model, dest)
-}
-
-func (r *QueryImpl) updated(model, dest any) error {
-	return r.event(ormcontract.EventUpdated, model, dest)
-}
-
-func (r *QueryImpl) saving(model, dest any) error {
-	return r.event(ormcontract.EventSaving, model, dest)
-}
-
-func (r *QueryImpl) saved(model, dest any) error {
-	return r.event(ormcontract.EventSaved, model, dest)
-}
-
-func (r *QueryImpl) creating(dest any) error {
-	return r.event(ormcontract.EventCreating, nil, dest)
-}
-
-func (r *QueryImpl) created(dest any) error {
-	return r.event(ormcontract.EventCreated, nil, dest)
-}
-
-func (r *QueryImpl) deleting(dest any) error {
-	return r.event(ormcontract.EventDeleting, nil, dest)
-}
-
-func (r *QueryImpl) deleted(dest any) error {
-	return r.event(ormcontract.EventDeleted, nil, dest)
-}
-
-func (r *QueryImpl) forceDeleting(dest any) error {
-	return r.event(ormcontract.EventForceDeleting, nil, dest)
-}
-
-func (r *QueryImpl) forceDeleted(dest any) error {
-	return r.event(ormcontract.EventForceDeleted, nil, dest)
-}
-
-func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
-	if r.withoutEvents {
-		return nil
-	}
-
-	instance := NewEvent(r, model, dest)
-
-	if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
-		if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
-			return event(instance)
-		}
-
-		return nil
-	}
-	if model != nil {
-		if dispatchesEvents, exist := model.(ormcontract.DispatchesEvents); exist {
-			if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
-				return event(instance)
-			}
-		}
-
-		return nil
-	}
-
-	if observer := observer(dest); observer != nil {
-		if observerEvent := observerEvent(event, observer); observerEvent != nil {
-			return observerEvent(instance)
-		}
-
-		return nil
-	}
-
-	if model != nil {
-		if observer := observer(model); observer != nil {
-			if observerEvent := observerEvent(event, observer); observerEvent != nil {
-				return observerEvent(instance)
-			}
-
-			return nil
-		}
-	}
-
-	return nil
-}
-
 func filterFindConditions(conds ...any) error {
 	if len(conds) > 0 {
 		switch cond := conds[0].(type) {
@@ -1089,6 +1434,37 @@ func filterFindConditions(conds ...any) error {
 	}
 
 	return nil
+}
+
+func getModelConnection(model any) (string, error) {
+	value1 := reflect.ValueOf(model)
+	if value1.Kind() == reflect.Ptr && value1.IsNil() {
+		value1 = reflect.New(value1.Type().Elem())
+	}
+	modelType := reflect.Indirect(value1).Type()
+
+	if modelType.Kind() == reflect.Interface {
+		modelType = reflect.Indirect(reflect.ValueOf(model)).Elem().Type()
+	}
+
+	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
+		modelType = modelType.Elem()
+	}
+
+	if modelType.Kind() != reflect.Struct {
+		if modelType.PkgPath() == "" {
+			return "", errors.New("invalid model")
+		}
+		return "", fmt.Errorf("%s: %s.%s", "invalid model", modelType.PkgPath(), modelType.Name())
+	}
+
+	modelValue := reflect.New(modelType)
+	connectionModel, ok := modelValue.Interface().(ormcontract.ConnectionModel)
+	if !ok {
+		return "", nil
+	}
+
+	return connectionModel.Connection(), nil
 }
 
 func observer(dest any) ormcontract.Observer {
@@ -1137,19 +1513,4 @@ func observerEvent(event ormcontract.EventType, observer ormcontract.Observer) f
 	}
 
 	return nil
-}
-
-func driver2gorm(driver string) string {
-	switch driver {
-	case "mysql":
-		return "mysql"
-	case "postgresql":
-		return "postgres"
-	case "sqlite":
-		return "sqlite"
-	case "sqlserver":
-		return "sqlserver"
-	default:
-		return ""
-	}
 }
