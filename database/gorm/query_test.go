@@ -14,8 +14,10 @@ import (
 	_ "gorm.io/driver/postgres"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	contractstesting "github.com/goravel/framework/contracts/testing"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
+	configmocks "github.com/goravel/framework/mocks/config"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -23,7 +25,12 @@ import (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries map[ormcontract.Driver]ormcontract.Query
+	queries          map[ormcontract.Driver]ormcontract.Query
+	mysqlDocker      *MysqlDocker
+	mysqlDocker1     *MysqlDocker
+	postgresqlDocker *PostgresqlDocker
+	sqliteDocker     *SqliteDocker
+	sqlserverDocker  *SqlserverDocker
 }
 
 func TestQueryTestSuite(t *testing.T) {
@@ -44,7 +51,7 @@ func TestQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	mysqlDocker1 := NewMysqlDocker(testDatabaseDocker)
+	mysqlDocker1 := NewMysql1Docker(testDatabaseDocker)
 	_, err = mysqlDocker1.New()
 	if err != nil {
 		log.Fatalf("Init mysql1 error: %s", err)
@@ -75,6 +82,11 @@ func TestQueryTestSuite(t *testing.T) {
 			ormcontract.DriverSqlite:     sqliteQuery,
 			ormcontract.DriverSqlserver:  sqlserverQuery,
 		},
+		mysqlDocker:      mysqlDocker,
+		mysqlDocker1:     mysqlDocker1,
+		postgresqlDocker: postgresqlDocker,
+		sqliteDocker:     sqliteDocker,
+		sqlserverDocker:  sqlserverDocker,
 	})
 }
 
@@ -348,25 +360,25 @@ func (s *QueryTestSuite) TestCount() {
 }
 
 func (s *QueryTestSuite) TestCreate() {
-	for _, query := range s.queries {
+	for driver, query := range s.queries {
 		tests := []struct {
 			name  string
 			setup func()
 		}{
-			//{
-			//	name: "success when refresh connection",
-			//	setup: func() {
-			//		s.mockDummyConnection(driver)
-			//
-			//		people := People{Body: "create_people"}
-			//		s.Nil(query.Create(&people))
-			//		s.True(people.ID > 0)
-			//
-			//		people1 := People{Body: "create_people1"}
-			//		s.Nil(query.Model(&People{}).Create(&people1))
-			//		s.True(people1.ID > 0)
-			//	},
-			//},
+			{
+				name: "success when refresh connection",
+				setup: func() {
+					s.mockDummyConnection(driver)
+
+					people := People{Body: "create_people"}
+					s.Nil(query.Create(&people))
+					s.True(people.ID > 0)
+
+					people1 := People{Body: "create_people1"}
+					s.Nil(query.Model(&People{}).Create(&people1))
+					s.True(people1.ID > 0)
+				},
+			},
 			{
 				name: "success when create with no relationships",
 				setup: func() {
@@ -551,7 +563,7 @@ func (s *QueryTestSuite) TestDBRaw() {
 }
 
 func (s *QueryTestSuite) TestDelete() {
-	for _, query := range s.queries {
+	for driver, query := range s.queries {
 		tests := []struct {
 			name  string
 			setup func()
@@ -572,37 +584,37 @@ func (s *QueryTestSuite) TestDelete() {
 					s.Equal(uint(0), user1.ID)
 				},
 			},
-			//{
-			//	name: "success when refresh connection",
-			//	setup: func() {
-			//		user := User{Name: "delete_user", Avatar: "delete_avatar"}
-			//		s.Nil(query.Create(&user))
-			//		s.True(user.ID > 0)
-			//
-			//		res, err := query.Delete(&user)
-			//		s.Equal(int64(1), res.RowsAffected)
-			//		s.Nil(err)
-			//
-			//		var user1 User
-			//		s.Nil(query.Find(&user1, user.ID))
-			//		s.Equal(uint(0), user1.ID)
-			//
-			//		// refresh connection
-			//		s.mockDummyConnection(driver)
-			//
-			//		people := People{Body: "delete_people"}
-			//		s.Nil(query.Create(&people))
-			//		s.True(people.ID > 0)
-			//
-			//		res, err = query.Delete(&people)
-			//		s.Equal(int64(1), res.RowsAffected)
-			//		s.Nil(err)
-			//
-			//		var people1 People
-			//		s.Nil(query.Find(&people1, people.ID))
-			//		s.Equal(uint(0), people1.ID)
-			//	},
-			//},
+			{
+				name: "success when refresh connection",
+				setup: func() {
+					user := User{Name: "delete_user", Avatar: "delete_avatar"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					res, err := query.Delete(&user)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+
+					// refresh connection
+					s.mockDummyConnection(driver)
+
+					people := People{Body: "delete_people"}
+					s.Nil(query.Create(&people))
+					s.True(people.ID > 0)
+
+					res, err = query.Delete(&people)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+
+					var people1 People
+					s.Nil(query.Find(&people1, people.ID))
+					s.Equal(uint(0), people1.ID)
+				},
+			},
 			{
 				name: "success by id",
 				setup: func() {
@@ -1396,28 +1408,28 @@ func (s *QueryTestSuite) TestFindOrFail() {
 	}
 }
 
-//func (s *QueryTestSuite) TestFirst() {
-//	for driver, query := range s.queries {
-//		user := User{Name: "first_user"}
-//		s.Nil(query.Create(&user))
-//		s.True(user.ID > 0)
-//
-//		var user1 User
-//		s.Nil(query.Where("name", "first_user").First(&user1))
-//		s.True(user1.ID > 0)
-//
-//		// refresh connection
-//		s.mockDummyConnection(driver)
-//
-//		people := People{Body: "first_people"}
-//		s.Nil(query.Create(&people))
-//		s.True(people.ID > 0)
-//
-//		var people1 People
-//		s.Nil(query.Where("id in ?", []uint{people.ID}).First(&people1))
-//		s.True(people1.ID > 0)
-//	}
-//}
+func (s *QueryTestSuite) TestFirst() {
+	for driver, query := range s.queries {
+		user := User{Name: "first_user"}
+		s.Nil(query.Create(&user))
+		s.True(user.ID > 0)
+
+		var user1 User
+		s.Nil(query.Where("name", "first_user").First(&user1))
+		s.True(user1.ID > 0)
+
+		// refresh connection
+		s.mockDummyConnection(driver)
+
+		people := People{Body: "first_people"}
+		s.Nil(query.Create(&people))
+		s.True(people.ID > 0)
+
+		var people1 People
+		s.Nil(query.Where("id in ?", []uint{people.ID}).First(&people1))
+		s.True(people1.ID > 0)
+	}
+}
 
 func (s *QueryTestSuite) TestFirstOr() {
 	for _, query := range s.queries {
@@ -1615,35 +1627,35 @@ func (s *QueryTestSuite) TestForceDelete() {
 	}
 }
 
-//func (s *QueryTestSuite) TestGet() {
-//	for driver, query := range s.queries {
-//		s.Run(driver.String(), func() {
-//			user := User{Name: "get_user"}
-//			s.Nil(query.Create(&user))
-//			s.True(user.ID > 0)
-//
-//			var user1 []User
-//			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user1))
-//			s.Equal(1, len(user1))
-//
-//			// refresh connection
-//			s.mockDummyConnection(driver)
-//
-//			people := People{Body: "get_people"}
-//			s.Nil(query.Create(&people))
-//			s.True(people.ID > 0)
-//
-//			var people1 []People
-//			s.Nil(query.Where("id in ?", []uint{people.ID}).Get(&people1))
-//			s.Equal(1, len(people1))
-//
-//			var user2 []User
-//			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user2))
-//			s.Equal(1, len(user2))
-//		})
-//		break
-//	}
-//}
+func (s *QueryTestSuite) TestGet() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			user := User{Name: "get_user"}
+			s.Nil(query.Create(&user))
+			s.True(user.ID > 0)
+
+			var user1 []User
+			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user1))
+			s.Equal(1, len(user1))
+
+			// refresh connection
+			s.mockDummyConnection(driver)
+
+			people := People{Body: "get_people"}
+			s.Nil(query.Create(&people))
+			s.True(people.ID > 0)
+
+			var people1 []People
+			s.Nil(query.Where("id in ?", []uint{people.ID}).Get(&people1))
+			s.Equal(1, len(people1))
+
+			var user2 []User
+			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user2))
+			s.Equal(1, len(user2))
+		})
+		break
+	}
+}
 
 func (s *QueryTestSuite) TestJoin() {
 	for driver, query := range s.queries {
@@ -2247,28 +2259,28 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 			setup:            func() {},
 			expectConnection: "mysql",
 		},
-		//{
-		//	name: "connections are different, but drivers are same",
-		//	model: func() any {
-		//		var people People
-		//		return people
-		//	}(),
-		//	setup: func() {
-		//		mockDummyConnection(s.mysqlDocker.MockConfig, s.mysqlDocker1.Port)
-		//	},
-		//	expectConnection: "dummy",
-		//},
-		//{
-		//	name: "connections and drivers are different",
-		//	model: func() any {
-		//		var product Product
-		//		return product
-		//	}(),
-		//	setup: func() {
-		//		mockPostgresqlConnection(s.mysqlDocker.MockConfig, s.postgresqlDocker.Port)
-		//	},
-		//	expectConnection: "postgresql",
-		//},
+		{
+			name: "connections are different, but drivers are same",
+			model: func() any {
+				var people People
+				return people
+			}(),
+			setup: func() {
+				mockDummyConnection(s.mysqlDocker.MockConfig, testDatabaseDocker.Mysql1.Config())
+			},
+			expectConnection: "dummy",
+		},
+		{
+			name: "connections and drivers are different",
+			model: func() any {
+				var product Product
+				return product
+			}(),
+			setup: func() {
+				mockPostgresqlConnection(s.mysqlDocker.MockConfig, testDatabaseDocker.Postgresql.Config())
+			},
+			expectConnection: "postgresql",
+		},
 	}
 
 	for _, test := range tests {
@@ -3004,67 +3016,67 @@ func (s *QueryTestSuite) TestWithNesting() {
 	}
 }
 
-//func (s *QueryTestSuite) mockDummyConnection(driver ormcontract.Driver) {
-//	switch driver {
-//	case ormcontract.DriverMysql:
-//		mockDummyConnection(s.mysqlDocker.MockConfig, s.mysqlDocker1.Port)
-//	case ormcontract.DriverPostgresql:
-//		mockDummyConnection(s.postgresqlDocker.MockConfig, s.mysqlDocker1.Port)
-//	case ormcontract.DriverSqlite:
-//		mockDummyConnection(s.sqliteDocker.MockConfig, s.mysqlDocker1.Port)
-//	case ormcontract.DriverSqlserver:
-//		mockDummyConnection(s.sqlserverDocker.MockConfig, s.mysqlDocker1.Port)
-//	}
-//}
+func (s *QueryTestSuite) mockDummyConnection(driver ormcontract.Driver) {
+	switch driver {
+	case ormcontract.DriverMysql:
+		mockDummyConnection(s.mysqlDocker.MockConfig, testDatabaseDocker.Mysql1.Config())
+	case ormcontract.DriverPostgresql:
+		mockDummyConnection(s.postgresqlDocker.MockConfig, testDatabaseDocker.Mysql1.Config())
+	case ormcontract.DriverSqlite:
+		mockDummyConnection(s.sqliteDocker.MockConfig, testDatabaseDocker.Mysql1.Config())
+	case ormcontract.DriverSqlserver:
+		mockDummyConnection(s.sqlserverDocker.MockConfig, testDatabaseDocker.Mysql1.Config())
+	}
+}
 
-//func TestCustomConnection(t *testing.T) {
-//	if env.IsWindows() {
-//		t.Skip("Skipping tests of using docker")
-//	}
-//
-//	if err := testDatabaseDocker.Fresh(); err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	mysqlDocker := NewMysqlDocker(testDatabaseDocker)
-//	query, err := mysqlDocker.New()
-//	if err != nil {
-//		log.Fatalf("Init mysql error: %s", err)
-//	}
-//	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
-//	_, err = postgresqlDocker.New()
-//	if err != nil {
-//		log.Fatalf("Init mysql error: %s", err)
-//	}
-//
-//	review := Review{Body: "create_review"}
-//	assert.Nil(t, query.Create(&review))
-//	assert.True(t, review.ID > 0)
-//
-//	var review1 Review
-//	assert.Nil(t, query.Where("body", "create_review").First(&review1))
-//	assert.True(t, review1.ID > 0)
-//
-//	mockPostgresqlConnection(mysqlDocker.MockConfig, postgresqlDocker.Port)
-//
-//	product := Product{Name: "create_product"}
-//	assert.Nil(t, query.Create(&product))
-//	assert.True(t, product.ID > 0)
-//
-//	var product1 Product
-//	assert.Nil(t, query.Where("name", "create_product").First(&product1))
-//	assert.True(t, product1.ID > 0)
-//
-//	var product2 Product
-//	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
-//	assert.True(t, product2.ID == 0)
-//
-//	mockDummyConnection(mysqlDocker.MockConfig, mysqlDocker.Port)
-//
-//	person := Person{Name: "create_person"}
-//	assert.NotNil(t, query.Create(&person))
-//	assert.True(t, person.ID == 0)
-//}
+func TestCustomConnection(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skipping tests of using docker")
+	}
+
+	if err := testDatabaseDocker.Fresh(); err != nil {
+		t.Fatal(err)
+	}
+
+	mysqlDocker := NewMysqlDocker(testDatabaseDocker)
+	query, err := mysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+	postgresqlDocker := NewPostgresqlDocker(testDatabaseDocker)
+	_, err = postgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	review := Review{Body: "create_review"}
+	assert.Nil(t, query.Create(&review))
+	assert.True(t, review.ID > 0)
+
+	var review1 Review
+	assert.Nil(t, query.Where("body", "create_review").First(&review1))
+	assert.True(t, review1.ID > 0)
+
+	mockPostgresqlConnection(mysqlDocker.MockConfig, testDatabaseDocker.Postgresql.Config())
+
+	product := Product{Name: "create_product"}
+	assert.Nil(t, query.Create(&product))
+	assert.True(t, product.ID > 0)
+
+	var product1 Product
+	assert.Nil(t, query.Where("name", "create_product").First(&product1))
+	assert.True(t, product1.ID > 0)
+
+	var product2 Product
+	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
+	assert.True(t, product2.ID == 0)
+
+	mockDummyConnection(mysqlDocker.MockConfig, testDatabaseDocker.Mysql.Config())
+
+	person := Person{Name: "create_person"}
+	assert.NotNil(t, query.Create(&person))
+	assert.True(t, person.ID == 0)
+}
 
 func TestFilterFindConditions(t *testing.T) {
 	tests := []struct {
@@ -3383,35 +3395,35 @@ func paginator(page string, limit string) func(methods ormcontract.Query) ormcon
 	}
 }
 
-//func mockDummyConnection(mockConfig *configmocks.Config, port int) {
-//	mockConfig.On("GetString", "database.connections.dummy.prefix").Return("")
-//	mockConfig.On("GetBool", "database.connections.dummy.singular").Return(false)
-//	mockConfig.On("Get", "database.connections.dummy.read").Return(nil)
-//	mockConfig.On("Get", "database.connections.dummy.write").Return(nil)
-//	mockConfig.On("GetString", "database.connections.dummy.host").Return("127.0.0.1")
-//	mockConfig.On("GetString", "database.connections.dummy.username").Return(DbUser)
-//	mockConfig.On("GetString", "database.connections.dummy.password").Return(DbPassword)
-//	mockConfig.On("GetInt", "database.connections.dummy.port").Return(port)
-//	mockConfig.On("GetString", "database.connections.dummy.driver").Return(ormcontract.DriverMysql.String())
-//	mockConfig.On("GetString", "database.connections.dummy.charset").Return("utf8mb4")
-//	mockConfig.On("GetString", "database.connections.dummy.loc").Return("Local")
-//	mockConfig.On("GetString", "database.connections.dummy.database").Return(dbDatabase)
-//}
-//
-//func mockPostgresqlConnection(mockConfig *configmocks.Config, port int) {
-//	mockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
-//	mockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-//	mockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
-//	mockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
-//	mockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
-//	mockConfig.On("GetString", "database.connections.postgresql.username").Return(DbUser)
-//	mockConfig.On("GetString", "database.connections.postgresql.password").Return(DbPassword)
-//	mockConfig.On("GetInt", "database.connections.postgresql.port").Return(port)
-//	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
-//	mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
-//	mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
-//	mockConfig.On("GetString", "database.connections.postgresql.database").Return("postgres")
-//}
+func mockDummyConnection(mockConfig *configmocks.Config, databaseConfig contractstesting.DatabaseConfig) {
+	mockConfig.On("GetString", "database.connections.dummy.prefix").Return("")
+	mockConfig.On("GetBool", "database.connections.dummy.singular").Return(false)
+	mockConfig.On("Get", "database.connections.dummy.read").Return(nil)
+	mockConfig.On("Get", "database.connections.dummy.write").Return(nil)
+	mockConfig.On("GetString", "database.connections.dummy.host").Return("127.0.0.1")
+	mockConfig.On("GetString", "database.connections.dummy.username").Return(databaseConfig.Username)
+	mockConfig.On("GetString", "database.connections.dummy.password").Return(databaseConfig.Password)
+	mockConfig.On("GetInt", "database.connections.dummy.port").Return(databaseConfig.Port)
+	mockConfig.On("GetString", "database.connections.dummy.driver").Return(ormcontract.DriverMysql.String())
+	mockConfig.On("GetString", "database.connections.dummy.charset").Return("utf8mb4")
+	mockConfig.On("GetString", "database.connections.dummy.loc").Return("Local")
+	mockConfig.On("GetString", "database.connections.dummy.database").Return(databaseConfig.Database)
+}
+
+func mockPostgresqlConnection(mockConfig *configmocks.Config, databaseConfig contractstesting.DatabaseConfig) {
+	mockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
+	mockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
+	mockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
+	mockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
+	mockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
+	mockConfig.On("GetString", "database.connections.postgresql.username").Return(databaseConfig.Username)
+	mockConfig.On("GetString", "database.connections.postgresql.password").Return(databaseConfig.Password)
+	mockConfig.On("GetInt", "database.connections.postgresql.port").Return(databaseConfig.Port)
+	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
+	mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
+	mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
+	mockConfig.On("GetString", "database.connections.postgresql.database").Return(databaseConfig.Database)
+}
 
 type UserObserver struct{}
 

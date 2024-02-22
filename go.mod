@@ -33,14 +33,14 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/atomic v1.11.0
-	golang.org/x/crypto v0.13.0
-	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
-	google.golang.org/grpc v1.58.2
-	gorm.io/driver/mysql v1.5.1
-	gorm.io/driver/postgres v1.5.2
-	gorm.io/driver/sqlserver v1.5.1
-	gorm.io/gorm v1.25.4
-	gorm.io/plugin/dbresolver v1.4.7
+	golang.org/x/crypto v0.19.0
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+	google.golang.org/grpc v1.61.1
+	gorm.io/driver/mysql v1.5.4
+	gorm.io/driver/postgres v1.5.6
+	gorm.io/driver/sqlserver v1.5.3
+	gorm.io/gorm v1.25.7
+	gorm.io/plugin/dbresolver v1.5.0
 )
 
 require (

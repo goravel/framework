@@ -177,7 +177,9 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Exists(exists *bool) error {
-	return r.instance.Select("1").Limit(1).Find(exists).Error
+	query := r.buildConditions()
+
+	return query.instance.Select("1").Limit(1).Find(exists).Error
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {

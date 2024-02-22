@@ -31,6 +31,12 @@ func NewMysqlDocker(database *supportdocker.Database) *MysqlDocker {
 	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
 
+func NewMysql1Docker(database *supportdocker.Database) *MysqlDocker {
+	config := database.Mysql1.Config()
+
+	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
+}
+
 func (r *MysqlDocker) New() (orm.Query, error) {
 	r.mock()
 
