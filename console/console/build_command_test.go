@@ -51,4 +51,9 @@ func TestBuildCommand(t *testing.T) {
 	}()
 
 	assert.Nil(t, newBuildCommand.Handle(mockContext))
+
+	mockConfig.On("GetString", "app.env").Return("local").Once()
+	mockContext.On("Option", "system").Return("invalid-system").Once()
+
+	assert.Nil(t, newBuildCommand.Handle(mockContext))
 }

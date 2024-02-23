@@ -2,9 +2,9 @@ package console
 
 import (
 	"fmt"
-	"golang.org/x/exp/slices"
 	"os"
 	"os/exec"
+	"slices"
 
 	"github.com/gookit/color"
 
@@ -72,8 +72,9 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	}
 
 	system := ctx.Option("system")
-	if !slices.Contains([]string{"linux", "windows", "darwin"}, system) {
-		color.Redln("The value of the --system flag is invalid.")
+	validSystems := []string{"linux", "windows", "darwin"}
+	if !slices.Contains(validSystems, system) {
+		color.Redln(fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems))
 		return nil
 	}
 
