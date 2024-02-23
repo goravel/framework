@@ -23,7 +23,7 @@ func InitializeGorm(config config.Config, connection string) *GormImpl {
 
 //go:generate wire
 func InitializeQuery(ctx context.Context, config config.Config, connection string) (*QueryImpl, error) {
-	wire.Build(NewQueryImpl, GormSet, db.ConfigSet, DialectorSet)
+	wire.Build(BuildQueryImpl, GormSet, db.ConfigSet, DialectorSet)
 
 	return nil, nil
 }
