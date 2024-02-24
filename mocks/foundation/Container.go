@@ -44,6 +44,8 @@ import (
 
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
+	session "github.com/goravel/framework/contracts/session"
+
 	testing "github.com/goravel/framework/contracts/testing"
 
 	translation "github.com/goravel/framework/contracts/translation"
@@ -379,6 +381,22 @@ func (_m *Container) MakeSeeder() seeder.Facade {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(seeder.Facade)
+		}
+	}
+
+	return r0
+}
+
+// MakeSession provides a mock function with given fields:
+func (_m *Container) MakeSession() session.Manager {
+	ret := _m.Called()
+
+	var r0 session.Manager
+	if rf, ok := ret.Get(0).(func() session.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Manager)
 		}
 	}
 
