@@ -7,7 +7,7 @@ type Handler interface {
 	// Destroy destroys the session with the given ID.
 	Destroy(id string) bool
 	// Gc performs garbage collection on the session handler with the given maximum lifetime.
-	Gc(maxLifetime int) (int, bool)
+	Gc(maxLifetime int) int
 	// Open opens a session with the given path and name.
 	Open(path string, name string) bool
 	// Read reads the session data associated with the given ID.

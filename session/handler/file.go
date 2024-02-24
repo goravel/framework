@@ -1,10 +1,11 @@
-package session
+package handler
 
 import (
-	"github.com/gookit/color"
+	"os"
+	"path/filepath"
+
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
-	"os"
 )
 
 type FileHandler struct {
@@ -25,12 +26,29 @@ func (f *FileHandler) Close() bool {
 
 func (f *FileHandler) Destroy(id string) bool {
 	err := file.Remove(f.path + "/" + id)
-
 	return err == nil
 }
 
-func (f *FileHandler) Gc(maxLifetime int) (int, bool) {
-	return 0, true
+func (f *FileHandler) Gc(maxLifetime int) int {
+	cutoffTime := carbon.Now("UTC").SubSeconds(maxLifetime)
+	deletedSessions := 0
+
+	_ = filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() && info.ModTime().Unix() < cutoffTime.Timestamp() {
+			err := os.Remove(path)
+			if err == nil {
+				deletedSessions++
+			}
+		}
+
+		return nil
+	})
+
+	return deletedSessions
 }
 
 func (f *FileHandler) Open(path string, name string) bool {
@@ -39,13 +57,12 @@ func (f *FileHandler) Open(path string, name string) bool {
 
 func (f *FileHandler) Read(id string) string {
 	path := f.path + "/" + id
-	color.Yellowln(path, file.Exists(path))
 	if file.Exists(path) {
 		modified, err := file.LastModified(path, "UTC")
 		if err != nil {
 			return ""
 		}
-		color.Greenln(modified, err, modified.Unix() >= carbon.Now().SubMinutes(f.minutes).Timestamp())
+
 		if modified.Unix() >= carbon.Now().SubMinutes(f.minutes).Timestamp() {
 			data, err := os.ReadFile(path)
 			if err != nil {

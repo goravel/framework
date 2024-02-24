@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	sessioncontract "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/session/handler"
 )
 
 type Manager struct {
@@ -78,7 +79,7 @@ func (m *Manager) creatDriver(name string) (func() sessioncontract.Handler, erro
 
 func (m *Manager) createFileDriver() sessioncontract.Handler {
 	lifetime := m.config.GetInt("session.lifetime")
-	return NewFileHandler(m.config.GetString("session.files"), lifetime)
+	return handler.NewFileHandler(m.config.GetString("session.files"), lifetime)
 }
 
 func (m *Manager) registerDrivers() {

@@ -38,27 +38,17 @@ func (_m *Handler) Destroy(id string) bool {
 }
 
 // Gc provides a mock function with given fields: maxLifetime
-func (_m *Handler) Gc(maxLifetime int) (int, bool) {
+func (_m *Handler) Gc(maxLifetime int) int {
 	ret := _m.Called(maxLifetime)
 
 	var r0 int
-	var r1 bool
-	if rf, ok := ret.Get(0).(func(int) (int, bool)); ok {
-		return rf(maxLifetime)
-	}
 	if rf, ok := ret.Get(0).(func(int) int); ok {
 		r0 = rf(maxLifetime)
 	} else {
 		r0 = ret.Get(0).(int)
 	}
 
-	if rf, ok := ret.Get(1).(func(int) bool); ok {
-		r1 = rf(maxLifetime)
-	} else {
-		r1 = ret.Get(1).(bool)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Open provides a mock function with given fields: path, name
