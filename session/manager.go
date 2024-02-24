@@ -27,7 +27,7 @@ func NewManager(app foundation.Application) *Manager {
 	return manager
 }
 
-func (m *Manager) BuildSession(handler sessioncontract.Handler, sessionId ...string) *Store {
+func (m *Manager) BuildSession(handler sessioncontract.Handler, sessionId ...string) sessioncontract.Session {
 	return NewStore(m.config.GetString("session.cookie"), handler, sessionId...)
 }
 

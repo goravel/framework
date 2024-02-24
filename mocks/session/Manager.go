@@ -12,6 +12,29 @@ type Manager struct {
 	mock.Mock
 }
 
+// BuildSession provides a mock function with given fields: handler, id
+func (_m *Manager) BuildSession(handler session.Handler, id ...string) session.Session {
+	_va := make([]interface{}, len(id))
+	for _i := range id {
+		_va[_i] = id[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, handler)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func(session.Handler, ...string) session.Session); ok {
+		r0 = rf(handler, id...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
+	}
+
+	return r0
+}
+
 // Driver provides a mock function with given fields: name
 func (_m *Manager) Driver(name ...string) (session.Handler, error) {
 	_va := make([]interface{}, len(name))
