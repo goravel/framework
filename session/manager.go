@@ -4,24 +4,20 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
 )
 
 type Manager struct {
-	app            foundation.Application
-	config         config.Config
-	customCreators map[string]func() sessioncontract.Handler
-	drivers        map[string]func() sessioncontract.Handler
+	config        config.Config
+	customDrivers map[string]func() sessioncontract.Handler
+	drivers       map[string]func() sessioncontract.Handler
 }
 
-func NewManager(app foundation.Application) *Manager {
-	con := app.MakeConfig()
+func NewManager(config config.Config) *Manager {
 	manager := &Manager{
-		app:            app,
-		config:         con,
-		customCreators: make(map[string]func() sessioncontract.Handler),
-		drivers:        make(map[string]func() sessioncontract.Handler),
+		config:        config,
+		customDrivers: make(map[string]func() sessioncontract.Handler),
+		drivers:       make(map[string]func() sessioncontract.Handler),
 	}
 	manager.registerDrivers()
 	return manager
@@ -52,7 +48,7 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Handler, error) {
 }
 
 func (m *Manager) Extend(driver string, handler func() sessioncontract.Handler) sessioncontract.Manager {
-	m.customCreators[driver] = handler
+	m.customDrivers[driver] = handler
 	return m
 }
 
@@ -68,13 +64,9 @@ func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
 
-func (m *Manager) callCustomCreator(driver string) sessioncontract.Handler {
-	return m.customCreators[driver]()
-}
-
 func (m *Manager) creatDriver(name string) (func() sessioncontract.Handler, error) {
-	if m.customCreators[name] != nil {
-		return m.customCreators[name], nil
+	if m.customDrivers[name] != nil {
+		return m.customDrivers[name], nil
 	}
 
 	if m.drivers[name] != nil {

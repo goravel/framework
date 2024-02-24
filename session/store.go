@@ -35,39 +35,44 @@ func NewStore(name string, handler sessioncontract.Handler, id ...string) *Store
 	return store
 }
 
-func (s *Store) GetName() string {
-	return s.name
+func (s *Store) All() map[string]any {
+	return s.attributes
 }
 
-func (s *Store) SetName(name string) sessioncontract.Session {
-	s.name = name
+func (s *Store) Forget(keys ...string) sessioncontract.Session {
+	supportmaps.Forget(s.attributes, keys...)
 
 	return s
+}
+
+func (s *Store) Get(key string, defaultValue ...any) any {
+	return supportmaps.Get(s.attributes, key, defaultValue...)
 }
 
 func (s *Store) GetId() string {
 	return s.id
 }
 
-func (s *Store) SetId(id string) sessioncontract.Session {
-	if s.isValidId(id) {
-		s.id = id
-	} else {
-		s.id = s.generateSessionId()
+func (s *Store) GetName() string {
+	return s.name
+}
+
+func (s *Store) Has(key string) bool {
+	val, ok := s.attributes[key]
+	if !ok {
+		return false
 	}
 
+	return val != nil
+}
+
+func (s *Store) Put(key string, value any) sessioncontract.Session {
+	s.attributes[key] = value
 	return s
 }
 
-func (s *Store) Start() bool {
-	s.loadSession()
-
-	if !s.Has("_token") {
-		s.RegenerateToken()
-	}
-
-	s.started = true
-	return s.started
+func (s *Store) RegenerateToken() sessioncontract.Session {
+	return s.Put("_token", str.Random(40))
 }
 
 func (s *Store) Save() error {
@@ -85,36 +90,31 @@ func (s *Store) Save() error {
 	return nil
 }
 
-func (s *Store) All() map[string]any {
-	return s.attributes
-}
-
-func (s *Store) Has(key string) bool {
-	val, ok := s.attributes[key]
-	if !ok {
-		return false
+func (s *Store) SetId(id string) sessioncontract.Session {
+	if s.isValidId(id) {
+		s.id = id
+	} else {
+		s.id = s.generateSessionId()
 	}
 
-	return val != nil
-}
-
-func (s *Store) Get(key string, defaultValue ...any) any {
-	return supportmaps.Get(s.attributes, key, defaultValue...)
-}
-
-func (s *Store) Put(key string, value any) sessioncontract.Session {
-	s.attributes[key] = value
 	return s
 }
 
-func (s *Store) RegenerateToken() sessioncontract.Session {
-	return s.Put("_token", str.Random(40))
-}
-
-func (s *Store) Forget(keys ...string) sessioncontract.Session {
-	supportmaps.Forget(s.attributes, keys...)
+func (s *Store) SetName(name string) sessioncontract.Session {
+	s.name = name
 
 	return s
+}
+
+func (s *Store) Start() bool {
+	s.loadSession()
+
+	if !s.Has("_token") {
+		s.RegenerateToken()
+	}
+
+	s.started = true
+	return s.started
 }
 
 func (s *Store) generateSessionId() string {
