@@ -24,34 +24,10 @@ type Session interface {
 	Has(key string) bool
 	// Get retrieves the value of a key from the session attributes.
 	Get(key string, defaultValue ...any) any
-	// Pull retrieves and removes the value of a key from the session attributes.
-	Pull(key string, defaultValue ...any) any
-	// Push adds a value to an array stored at the specified key in the session attributes.
-	Push(key string, value any) Session
 	// Put sets the value of a key in the session attributes.
 	Put(key string, value any) Session
-	// Token retrieves the session token.
-	Token() string
 	// RegenerateToken regenerates the session token.
 	RegenerateToken() Session
-	// Remove removes the value of a key from the session attributes.
-	Remove(key string) any
 	// Forget removes specified keys from the session attributes.
 	Forget(keys ...string) Session
-	// Flush clears all attributes from the session.
-	Flush() Session
-	// Flash sets a flash data value in the session attributes.
-	Flash(key string, value any) Session
-	// Invalidate invalidates the session.
-	Invalidate() bool
-	// Regenerate regenerates the session.
-	Regenerate(destroy bool) bool
-	// Only retrieves the specified keys and their values from the session attributes.
-	Only(keys []string) map[string]any
-	// Migrate migrates the session, optionally destroying the current session.
-	Migrate(destroy bool) bool
-	// PreviousUrl retrieves the previous URL stored in the session.
-	PreviousUrl() string
-	// SetPreviousUrl sets the previous URL in the session attributes.
-	SetPreviousUrl(url string) Session
 }

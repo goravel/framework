@@ -42,38 +42,6 @@ func (_m *Session) Exists(key string) bool {
 	return r0
 }
 
-// Flash provides a mock function with given fields: key, value
-func (_m *Session) Flash(key string, value interface{}) session.Session {
-	ret := _m.Called(key, value)
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
-		r0 = rf(key, value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
-// Flush provides a mock function with given fields:
-func (_m *Session) Flush() session.Session {
-	ret := _m.Called()
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func() session.Session); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
 // Forget provides a mock function with given fields: keys
 func (_m *Session) Forget(keys ...string) session.Session {
 	_va := make([]interface{}, len(keys))
@@ -157,34 +125,6 @@ func (_m *Session) Has(key string) bool {
 	return r0
 }
 
-// Invalidate provides a mock function with given fields:
-func (_m *Session) Invalidate() bool {
-	ret := _m.Called()
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Migrate provides a mock function with given fields: destroy
-func (_m *Session) Migrate(destroy bool) bool {
-	ret := _m.Called(destroy)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(bool) bool); ok {
-		r0 = rf(destroy)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
 // Missing provides a mock function with given fields: key
 func (_m *Session) Missing(key string) bool {
 	ret := _m.Called(key)
@@ -194,71 +134,6 @@ func (_m *Session) Missing(key string) bool {
 		r0 = rf(key)
 	} else {
 		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Only provides a mock function with given fields: keys
-func (_m *Session) Only(keys []string) map[string]interface{} {
-	ret := _m.Called(keys)
-
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func([]string) map[string]interface{}); ok {
-		r0 = rf(keys)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
-		}
-	}
-
-	return r0
-}
-
-// PreviousUrl provides a mock function with given fields:
-func (_m *Session) PreviousUrl() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Pull provides a mock function with given fields: key, defaultValue
-func (_m *Session) Pull(key string, defaultValue ...interface{}) interface{} {
-	var _ca []interface{}
-	_ca = append(_ca, key)
-	_ca = append(_ca, defaultValue...)
-	ret := _m.Called(_ca...)
-
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
-		r0 = rf(key, defaultValue...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
-		}
-	}
-
-	return r0
-}
-
-// Push provides a mock function with given fields: key, value
-func (_m *Session) Push(key string, value interface{}) session.Session {
-	ret := _m.Called(key, value)
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
-		r0 = rf(key, value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
 	}
 
 	return r0
@@ -280,20 +155,6 @@ func (_m *Session) Put(key string, value interface{}) session.Session {
 	return r0
 }
 
-// Regenerate provides a mock function with given fields: destroy
-func (_m *Session) Regenerate(destroy bool) bool {
-	ret := _m.Called(destroy)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(bool) bool); ok {
-		r0 = rf(destroy)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
 // RegenerateToken provides a mock function with given fields:
 func (_m *Session) RegenerateToken() session.Session {
 	ret := _m.Called()
@@ -304,22 +165,6 @@ func (_m *Session) RegenerateToken() session.Session {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
-// Remove provides a mock function with given fields: key
-func (_m *Session) Remove(key string) interface{} {
-	ret := _m.Called(key)
-
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
-		r0 = rf(key)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -372,22 +217,6 @@ func (_m *Session) SetName(name string) session.Session {
 	return r0
 }
 
-// SetPreviousUrl provides a mock function with given fields: url
-func (_m *Session) SetPreviousUrl(url string) session.Session {
-	ret := _m.Called(url)
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string) session.Session); ok {
-		r0 = rf(url)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
 // Start provides a mock function with given fields:
 func (_m *Session) Start() bool {
 	ret := _m.Called()
@@ -397,20 +226,6 @@ func (_m *Session) Start() bool {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Token provides a mock function with given fields:
-func (_m *Session) Token() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
 	}
 
 	return r0

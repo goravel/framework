@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 	"maps"
-	"slices"
 
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/support/json"
@@ -72,8 +71,6 @@ func (s *Store) Start() bool {
 }
 
 func (s *Store) Save() error {
-	s.ageFlashData()
-
 	data, err := json.MarshalString(s.attributes)
 	if err != nil {
 		return err
@@ -113,81 +110,19 @@ func (s *Store) Get(key string, defaultValue ...any) any {
 	return supportmaps.Get(s.attributes, key, defaultValue...)
 }
 
-func (s *Store) Pull(key string, def ...any) any {
-	return supportmaps.Pull(s.attributes, key, def...)
-}
-
-func (s *Store) Push(key string, value any) sessioncontract.Session {
-	arr := s.Get(key, make([]any, 0)).([]any)
-	arr = append(arr, value)
-	return s.Put(key, arr)
-}
-
 func (s *Store) Put(key string, value any) sessioncontract.Session {
 	s.attributes[key] = value
 	return s
-}
-
-func (s *Store) Token() string {
-	return s.Get("_token").(string)
 }
 
 func (s *Store) RegenerateToken() sessioncontract.Session {
 	return s.Put("_token", str.Random(40))
 }
 
-func (s *Store) Remove(key string) any {
-	return s.Pull(key)
-}
-
 func (s *Store) Forget(keys ...string) sessioncontract.Session {
 	supportmaps.Forget(s.attributes, keys...)
 
 	return s
-}
-
-func (s *Store) Flush() sessioncontract.Session {
-	s.attributes = make(map[string]any)
-	return s
-}
-
-func (s *Store) Flash(key string, value any) sessioncontract.Session {
-	s.Put(key, value)
-	s.Push("_flash.new", key)
-	s.removeFromOldFlashData(key)
-
-	return s
-}
-
-func (s *Store) Only(keys []string) map[string]any {
-	return supportmaps.Only(s.attributes, keys...)
-}
-
-func (s *Store) Invalidate() bool {
-	s.Flush()
-	return s.Migrate(true)
-}
-
-func (s *Store) Regenerate(destroy bool) bool {
-	return true
-}
-
-func (s *Store) Migrate(destroy bool) bool {
-	if destroy {
-		s.handler.Destroy(s.GetId())
-	}
-
-	s.SetId(s.generateSessionId())
-
-	return true
-}
-
-func (s *Store) PreviousUrl() string {
-	return s.Get("_previous.url").(string)
-}
-
-func (s *Store) SetPreviousUrl(url string) sessioncontract.Session {
-	return s.Put("_previous.url", url)
 }
 
 func (s *Store) generateSessionId() string {
@@ -211,26 +146,4 @@ func (s *Store) readFromHandler() map[string]any {
 		return nil
 	}
 	return data
-}
-
-func (s *Store) ageFlashData() {
-	oldAny := s.Get("_flash.old", make([]any, 0)).([]any)
-	old := make([]string, len(oldAny))
-	for i, v := range oldAny {
-		old[i] = v.(string)
-	}
-
-	s.Forget(old...)
-	s.Put("_flash.old", s.Get("_flash.new", make([]any, 0)))
-	s.Put("_flash.new", make([]any, 0))
-}
-
-func (s *Store) removeFromOldFlashData(keys ...string) {
-	old := s.Get("_flash.old", make([]any, 0)).([]any)
-	for _, key := range keys {
-		old = slices.DeleteFunc(old, func(i any) bool {
-			return i == key
-		})
-	}
-	s.Put("_flash.old", old)
 }
