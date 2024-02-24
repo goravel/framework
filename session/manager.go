@@ -12,7 +12,7 @@ type Manager struct {
 	app            foundation.Application
 	config         config.Config
 	customCreators map[string]func() sessioncontract.Handler
-	drivers        map[string]sessioncontract.Handler
+	drivers        map[string]func() sessioncontract.Handler
 }
 
 func NewManager(app foundation.Application) *Manager {
@@ -21,7 +21,7 @@ func NewManager(app foundation.Application) *Manager {
 		app:            app,
 		config:         con,
 		customCreators: make(map[string]func() sessioncontract.Handler),
-		drivers:        make(map[string]sessioncontract.Handler),
+		drivers:        make(map[string]func() sessioncontract.Handler),
 	}
 	manager.registerDrivers()
 	return manager
@@ -48,7 +48,7 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Handler, error) {
 		m.drivers[driver] = newDriver
 	}
 
-	return m.drivers[driver], nil
+	return m.drivers[driver](), nil
 }
 
 func (m *Manager) Extend(driver string, handler func() sessioncontract.Handler) sessioncontract.Manager {
@@ -72,9 +72,9 @@ func (m *Manager) callCustomCreator(driver string) sessioncontract.Handler {
 	return m.customCreators[driver]()
 }
 
-func (m *Manager) creatDriver(name string) (sessioncontract.Handler, error) {
+func (m *Manager) creatDriver(name string) (func() sessioncontract.Handler, error) {
 	if m.customCreators[name] != nil {
-		return m.customCreators[name](), nil
+		return m.customCreators[name], nil
 	}
 
 	if m.drivers[name] != nil {
@@ -90,5 +90,5 @@ func (m *Manager) createFileDriver() sessioncontract.Handler {
 }
 
 func (m *Manager) registerDrivers() {
-	m.drivers["file"] = m.createFileDriver()
+	m.drivers["file"] = m.createFileDriver
 }

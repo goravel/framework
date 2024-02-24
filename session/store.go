@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"maps"
 	"slices"
 
@@ -11,6 +12,7 @@ import (
 )
 
 type Store struct {
+	ctx        context.Context
 	id         string
 	name       string
 	attributes map[string]any
@@ -212,7 +214,13 @@ func (s *Store) readFromHandler() map[string]any {
 }
 
 func (s *Store) ageFlashData() {
-	s.Forget(s.Get("_flash.old", make([]string, 0)).([]string)...)
+	oldAny := s.Get("_flash.old", make([]any, 0)).([]any)
+	old := make([]string, len(oldAny))
+	for i, v := range oldAny {
+		old[i] = v.(string)
+	}
+
+	s.Forget(old...)
 	s.Put("_flash.old", s.Get("_flash.new", make([]any, 0)))
 	s.Put("_flash.new", make([]any, 0))
 }
