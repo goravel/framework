@@ -89,14 +89,6 @@ func (s *Store) All() map[string]any {
 	return s.attributes
 }
 
-func (s *Store) Exists(key string) bool {
-	return supportmaps.Exists(s.attributes, key)
-}
-
-func (s *Store) Missing(key string) bool {
-	return !s.Exists(key)
-}
-
 func (s *Store) Has(key string) bool {
 	val, ok := s.attributes[key]
 	if !ok {

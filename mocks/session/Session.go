@@ -28,20 +28,6 @@ func (_m *Session) All() map[string]interface{} {
 	return r0
 }
 
-// Exists provides a mock function with given fields: key
-func (_m *Session) Exists(key string) bool {
-	ret := _m.Called(key)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(key)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
 // Forget provides a mock function with given fields: keys
 func (_m *Session) Forget(keys ...string) session.Session {
 	_va := make([]interface{}, len(keys))
@@ -113,20 +99,6 @@ func (_m *Session) GetName() string {
 
 // Has provides a mock function with given fields: key
 func (_m *Session) Has(key string) bool {
-	ret := _m.Called(key)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(key)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Missing provides a mock function with given fields: key
-func (_m *Session) Missing(key string) bool {
 	ret := _m.Called(key)
 
 	var r0 bool

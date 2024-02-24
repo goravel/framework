@@ -16,10 +16,6 @@ type Session interface {
 	Save() error
 	// All returns all attributes of the session.
 	All() map[string]any
-	// Exists checks if a key exists in the session attributes.
-	Exists(key string) bool
-	// Missing checks if a key is missing in the session attributes.
-	Missing(key string) bool
 	// Has checks if a key exists and is not nil in the session attributes.
 	Has(key string) bool
 	// Get retrieves the value of a key from the session attributes.
