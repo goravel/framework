@@ -8,6 +8,7 @@ const (
 
 type Database struct {
 	Mysql      *Mysql
+	Mysql1     *Mysql
 	Postgresql *Postgresql
 	Sqlserver  *Sqlserver
 	Sqlite     *Sqlite
@@ -16,6 +17,11 @@ type Database struct {
 func InitDatabase() (*Database, error) {
 	mysqlDocker := NewMysql(database, username, password)
 	if err := mysqlDocker.Build(); err != nil {
+		return nil, err
+	}
+
+	mysql1Docker := NewMysql(database, username, password)
+	if err := mysql1Docker.Build(); err != nil {
 		return nil, err
 	}
 
@@ -36,6 +42,7 @@ func InitDatabase() (*Database, error) {
 
 	return &Database{
 		Mysql:      mysqlDocker,
+		Mysql1:     mysql1Docker,
 		Postgresql: postgresqlDocker,
 		Sqlserver:  sqlserverDocker,
 		Sqlite:     sqliteDocker,
