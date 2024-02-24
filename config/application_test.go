@@ -24,8 +24,8 @@ DB_PORT=3306
 `))
 	temp, err := os.CreateTemp("", "goravel.env")
 	assert.Nil(t, err)
-	defer os.Remove(temp.Name())
 	defer temp.Close()
+	defer os.Remove(temp.Name())
 
 	_, err = temp.Write([]byte(`
 APP_KEY=12345678901234567890123456789012

@@ -27,7 +27,7 @@ func InitializeQuery(ctx context.Context, config2 config.Config, connection stri
 	configImpl := db.NewConfigImpl(config2, connection)
 	dialectorImpl := NewDialectorImpl(config2, connection)
 	gormImpl := NewGormImpl(config2, connection, configImpl, dialectorImpl)
-	queryImpl, err := NewQueryImpl(ctx, config2, gormImpl)
+	queryImpl, err := BuildQueryImpl(ctx, config2, connection, gormImpl)
 	if err != nil {
 		return nil, err
 	}

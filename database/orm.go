@@ -40,9 +40,11 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 	}
 	if instance, exist := r.queries[name]; exist {
 		return &OrmImpl{
-			ctx:     r.ctx,
-			query:   instance,
-			queries: r.queries,
+			ctx:        r.ctx,
+			config:     r.config,
+			connection: name,
+			query:      instance,
+			queries:    r.queries,
 		}
 	}
 
@@ -56,9 +58,11 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 	r.queries[name] = queue
 
 	return &OrmImpl{
-		ctx:     r.ctx,
-		query:   queue,
-		queries: r.queries,
+		ctx:        r.ctx,
+		config:     r.config,
+		connection: name,
+		query:      queue,
+		queries:    r.queries,
 	}
 }
 

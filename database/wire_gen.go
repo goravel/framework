@@ -20,7 +20,7 @@ func InitializeOrm(ctx context.Context, config2 config.Config, connection string
 	configImpl := db.NewConfigImpl(config2, connection)
 	dialectorImpl := gorm.NewDialectorImpl(config2, connection)
 	gormImpl := gorm.NewGormImpl(config2, connection, configImpl, dialectorImpl)
-	queryImpl, err := gorm.NewQueryImpl(ctx, config2, gormImpl)
+	queryImpl, err := gorm.BuildQueryImpl(ctx, config2, connection, gormImpl)
 	if err != nil {
 		return nil, err
 	}
