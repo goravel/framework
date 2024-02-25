@@ -1,7 +1,6 @@
 package session
 
 import (
-	"context"
 	"maps"
 
 	sessioncontract "github.com/goravel/framework/contracts/session"
@@ -11,7 +10,6 @@ import (
 )
 
 type Store struct {
-	ctx        context.Context
 	id         string
 	name       string
 	attributes map[string]any
