@@ -30,7 +30,7 @@ func (f *FileHandler) Destroy(id string) bool {
 }
 
 func (f *FileHandler) Gc(maxLifetime int) int {
-	cutoffTime := carbon.Now(carbon.UTC).SubSeconds(maxLifetime)
+	cutoffTime := carbon.Now().SubSeconds(maxLifetime)
 	deletedSessions := 0
 
 	_ = filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
@@ -38,7 +38,7 @@ func (f *FileHandler) Gc(maxLifetime int) int {
 			return err
 		}
 
-		if !info.IsDir() && info.ModTime().Unix() < cutoffTime.StdTime().Unix() {
+		if !info.IsDir() && info.ModTime().Before(cutoffTime.StdTime()) {
 			err := os.Remove(path)
 			if err == nil {
 				deletedSessions++
@@ -51,7 +51,7 @@ func (f *FileHandler) Gc(maxLifetime int) int {
 	return deletedSessions
 }
 
-func (f *FileHandler) Open(path string, name string) bool {
+func (f *FileHandler) Open(string, string) bool {
 	return true
 }
 
