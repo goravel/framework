@@ -51,16 +51,15 @@ func (f *FileHandlerTestSuite) TestGc() {
 	f.Equal(0, handler.Gc(300))
 	f.Equal("bar", handler.Read("foo"))
 
-	//c := carbon.SetTimezone(carbon.UTC)
-	//f.Nil(handler.Write("baz", "qux"))
-	////carbon.UnsetTestNow()
-	//
-	//carbon.SetTestNow(carbon.Now("UTC").AddMinutes(5).AddSecond())
-	////defer carbon.UnsetTestNow()
-	//f.Equal(1, handler.Gc(300))
-	//f.Equal("", handler.Read("foo"))
-	//f.Equal("qux", handler.Read("baz"))
-	//carbon.UnsetTestNow()
+	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(5))
+	f.Nil(handler.Write("baz", "qux"))
+	carbon.UnsetTestNow()
+
+	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(6).AddSecond())
+	f.Equal(2, handler.Gc(300))
+	f.Equal("", handler.Read("foo"))
+	f.Equal("", handler.Read("baz"))
+	carbon.UnsetTestNow()
 }
 
 func (f *FileHandlerTestSuite) TestOpen() {
@@ -79,7 +78,7 @@ func (f *FileHandlerTestSuite) TestRead() {
 	f.Equal("bar", handler.Read("foo"))
 	carbon.UnsetTestNow()
 
-	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(f.getMinutes()).AddSecond())
+	carbon.SetTestNow(carbon.Now().AddMinutes(f.getMinutes()).AddSecond())
 	f.Equal("", handler.Read("foo"))
 	carbon.UnsetTestNow()
 }
