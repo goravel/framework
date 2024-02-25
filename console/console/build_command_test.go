@@ -16,9 +16,9 @@ func TestBuildCommand(t *testing.T) {
 
 	newBuildCommand := NewBuildCommand(mockConfig)
 	mockContext := &mocksconsole.Context{}
-	mockContext.On("Option", "system").Return("linux").Once()
+	mockContext.On("Option", "system").Return("invalidSystem").Once()
 
-	assert.Nil(t, newBuildCommand.Handle(mockContext))
+	assert.NotNil(t, newBuildCommand.Handle(mockContext))
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
 	mockContext.On("Option", "system").Return("linux").Once()
@@ -49,11 +49,6 @@ func TestBuildCommand(t *testing.T) {
 		_, err = writer.Write([]byte("no\n"))
 		assert.Nil(t, err)
 	}()
-
-	assert.Nil(t, newBuildCommand.Handle(mockContext))
-
-	mockConfig.On("GetString", "app.env").Return("local").Once()
-	mockContext.On("Option", "system").Return("invalid-system").Once()
 
 	assert.Nil(t, newBuildCommand.Handle(mockContext))
 }

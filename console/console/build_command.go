@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -74,8 +75,9 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	system := ctx.Option("system")
 	validSystems := []string{"linux", "windows", "darwin"}
 	if !slices.Contains(validSystems, system) {
-		color.Redln(fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems))
-		return nil
+		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
+		color.Redln(err)
+		return errors.New(err)
 	}
 
 	if err := receiver.buildTheApplication(system); err != nil {
