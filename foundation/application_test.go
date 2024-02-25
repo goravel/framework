@@ -377,9 +377,13 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 	})
 
 	serviceProvider := &frameworksession.ServiceProvider{}
-	serviceProvider.Register(s.app)
+	// error
+	s.Nil(s.app.MakeSession())
 
+	serviceProvider.Register(s.app)
 	s.NotNil(s.app.MakeSession())
+
+	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeStorage() {

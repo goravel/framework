@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -81,6 +82,12 @@ func (f *FileHandlerTestSuite) TestRead() {
 	carbon.SetTestNow(carbon.Now().AddMinutes(f.getMinutes()).AddSecond())
 	f.Equal("", handler.Read("foo"))
 	carbon.UnsetTestNow()
+
+	// error when reading file content
+	restrictedFilePath := f.getPath() + "/foo"
+	f.Nil(os.Chmod(restrictedFilePath, 0000))
+	f.Equal("", handler.Read("foo"))
+	f.Nil(os.Chmod(restrictedFilePath, 0777))
 }
 
 func (f *FileHandlerTestSuite) TestWrite() {
