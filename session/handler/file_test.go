@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -86,7 +87,11 @@ func (f *FileHandlerTestSuite) TestRead() {
 	// error when reading file content
 	restrictedFilePath := f.getPath() + "/foo"
 	f.Nil(os.Chmod(restrictedFilePath, 0000))
-	f.Equal("", handler.Read("foo"))
+	if env.IsWindows() {
+		f.Equal("bar", handler.Read("foo"))
+	} else {
+		f.Equal("", handler.Read("foo"))
+	}
 	f.Nil(os.Chmod(restrictedFilePath, 0777))
 }
 
