@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"slices"
 
 	"github.com/gookit/color"
 
@@ -74,7 +73,15 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 
 	system := ctx.Option("system")
 	validSystems := []string{"linux", "windows", "darwin"}
-	if !slices.Contains(validSystems, system) {
+	isValidOption := func(option string) bool {
+		for _, validOption := range validSystems {
+			if option == validOption {
+				return true
+			}
+		}
+		return false
+	}
+	if !isValidOption(system) {
 		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
 		color.Redln(err)
 		return errors.New(err)
