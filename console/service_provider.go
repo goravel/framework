@@ -28,5 +28,6 @@ func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 		console.NewListCommand(artisan),
 		console.NewKeyGenerateCommand(config),
 		console.NewMakeCommand(),
+		console.NewBuildCommand(config),
 	})
 }
