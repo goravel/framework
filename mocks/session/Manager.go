@@ -12,11 +12,11 @@ type Manager struct {
 	mock.Mock
 }
 
-// BuildSession provides a mock function with given fields: handler, id
-func (_m *Manager) BuildSession(handler session.Handler, id ...string) session.Session {
-	_va := make([]interface{}, len(id))
-	for _i := range id {
-		_va[_i] = id[_i]
+// BuildSession provides a mock function with given fields: handler, sessionID
+func (_m *Manager) BuildSession(handler session.Driver, sessionID ...string) session.Session {
+	_va := make([]interface{}, len(sessionID))
+	for _i := range sessionID {
+		_va[_i] = sessionID[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, handler)
@@ -24,8 +24,8 @@ func (_m *Manager) BuildSession(handler session.Handler, id ...string) session.S
 	ret := _m.Called(_ca...)
 
 	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(session.Handler, ...string) session.Session); ok {
-		r0 = rf(handler, id...)
+	if rf, ok := ret.Get(0).(func(session.Driver, ...string) session.Session); ok {
+		r0 = rf(handler, sessionID...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(session.Session)
@@ -36,7 +36,7 @@ func (_m *Manager) BuildSession(handler session.Handler, id ...string) session.S
 }
 
 // Driver provides a mock function with given fields: name
-func (_m *Manager) Driver(name ...string) (session.Handler, error) {
+func (_m *Manager) Driver(name ...string) (session.Driver, error) {
 	_va := make([]interface{}, len(name))
 	for _i := range name {
 		_va[_i] = name[_i]
@@ -45,16 +45,16 @@ func (_m *Manager) Driver(name ...string) (session.Handler, error) {
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 session.Handler
+	var r0 session.Driver
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...string) (session.Handler, error)); ok {
+	if rf, ok := ret.Get(0).(func(...string) (session.Driver, error)); ok {
 		return rf(name...)
 	}
-	if rf, ok := ret.Get(0).(func(...string) session.Handler); ok {
+	if rf, ok := ret.Get(0).(func(...string) session.Driver); ok {
 		r0 = rf(name...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Handler)
+			r0 = ret.Get(0).(session.Driver)
 		}
 	}
 
@@ -68,11 +68,11 @@ func (_m *Manager) Driver(name ...string) (session.Handler, error) {
 }
 
 // Extend provides a mock function with given fields: driver, handler
-func (_m *Manager) Extend(driver string, handler func() session.Handler) session.Manager {
+func (_m *Manager) Extend(driver string, handler func() session.Driver) session.Manager {
 	ret := _m.Called(driver, handler)
 
 	var r0 session.Manager
-	if rf, ok := ret.Get(0).(func(string, func() session.Handler) session.Manager); ok {
+	if rf, ok := ret.Get(0).(func(string, func() session.Driver) session.Manager); ok {
 		r0 = rf(driver, handler)
 	} else {
 		if ret.Get(0) != nil {

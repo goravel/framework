@@ -5,67 +5,67 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	sessioncontract "github.com/goravel/framework/contracts/session"
-	"github.com/goravel/framework/session/handler"
+	"github.com/goravel/framework/session/driver"
 )
 
 type Manager struct {
 	config        config.Config
-	customDrivers map[string]func() sessioncontract.Handler
-	drivers       map[string]func() sessioncontract.Handler
+	customDrivers map[string]func() sessioncontract.Driver
+	drivers       map[string]func() sessioncontract.Driver
 }
 
 func NewManager(config config.Config) *Manager {
 	manager := &Manager{
 		config:        config,
-		customDrivers: make(map[string]func() sessioncontract.Handler),
-		drivers:       make(map[string]func() sessioncontract.Handler),
+		customDrivers: make(map[string]func() sessioncontract.Driver),
+		drivers:       make(map[string]func() sessioncontract.Driver),
 	}
 	manager.registerDrivers()
 	return manager
 }
 
-func (m *Manager) BuildSession(handler sessioncontract.Handler, sessionId ...string) sessioncontract.Session {
-	return NewStore(m.config.GetString("session.cookie"), handler, sessionId...)
+func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) sessioncontract.Session {
+	return NewSession(m.config.GetString("session.cookie"), handler, sessionID...)
 }
 
-func (m *Manager) Driver(name ...string) (sessioncontract.Handler, error) {
-	var driver string
+func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
+	var d string
 	if len(name) > 0 {
-		driver = name[0]
+		d = name[0]
 	} else {
-		driver = m.getDefaultDriver()
+		d = m.getDefaultDriver()
 	}
 
-	if m.drivers[driver] == nil {
-		newDriver, err := m.creatDriver(driver)
+	if m.drivers[d] == nil {
+		newDriver, err := m.creatDriver(d)
 		if err != nil {
 			return nil, err
 		}
 
-		m.drivers[driver] = newDriver
+		m.drivers[d] = newDriver
 	}
 
-	return m.drivers[driver](), nil
+	return m.drivers[d](), nil
 }
 
-func (m *Manager) Extend(driver string, handler func() sessioncontract.Handler) sessioncontract.Manager {
+func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) sessioncontract.Manager {
 	m.customDrivers[driver] = handler
 	return m
 }
 
 func (m *Manager) Store(sessionId ...string) sessioncontract.Session {
-	driver, err := m.Driver()
+	d, err := m.Driver()
 	if err != nil {
 		return nil
 	}
-	return m.BuildSession(driver, sessionId...)
+	return m.BuildSession(d, sessionId...)
 }
 
 func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
 
-func (m *Manager) creatDriver(name string) (func() sessioncontract.Handler, error) {
+func (m *Manager) creatDriver(name string) (func() sessioncontract.Driver, error) {
 	if m.customDrivers[name] != nil {
 		return m.customDrivers[name], nil
 	}
@@ -77,9 +77,9 @@ func (m *Manager) creatDriver(name string) (func() sessioncontract.Handler, erro
 	return nil, fmt.Errorf("driver [%s] not supported", name)
 }
 
-func (m *Manager) createFileDriver() sessioncontract.Handler {
+func (m *Manager) createFileDriver() sessioncontract.Driver {
 	lifetime := m.config.GetInt("session.lifetime")
-	return handler.NewFileHandler(m.config.GetString("session.files"), lifetime)
+	return driver.NewFileDriver(m.config.GetString("session.files"), lifetime)
 }
 
 func (m *Manager) registerDrivers() {

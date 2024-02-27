@@ -69,8 +69,8 @@ func (_m *Session) Get(key string, defaultValue ...interface{}) interface{} {
 	return r0
 }
 
-// GetId provides a mock function with given fields:
-func (_m *Session) GetId() string {
+// GetID provides a mock function with given fields:
+func (_m *Session) GetID() string {
 	ret := _m.Called()
 
 	var r0 string
@@ -157,8 +157,8 @@ func (_m *Session) Save() error {
 	return r0
 }
 
-// SetId provides a mock function with given fields: id
-func (_m *Session) SetId(id string) session.Session {
+// SetID provides a mock function with given fields: id
+func (_m *Session) SetID(id string) session.Session {
 	ret := _m.Called(id)
 
 	var r0 session.Session

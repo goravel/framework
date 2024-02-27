@@ -9,53 +9,53 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-type Store struct {
+type Session struct {
 	id         string
 	name       string
 	attributes map[string]any
-	handler    sessioncontract.Handler
+	driver     sessioncontract.Driver
 	started    bool
 }
 
-func NewStore(name string, handler sessioncontract.Handler, id ...string) *Store {
-	store := &Store{
+func NewSession(name string, driver sessioncontract.Driver, id ...string) *Session {
+	store := &Session{
 		name:       name,
-		handler:    handler,
+		driver:     driver,
 		started:    false,
 		attributes: make(map[string]any),
 	}
 	if len(id) > 0 {
-		store.SetId(id[0])
+		store.SetID(id[0])
 	} else {
-		store.SetId("")
+		store.SetID("")
 	}
 
 	return store
 }
 
-func (s *Store) All() map[string]any {
+func (s *Session) All() map[string]any {
 	return s.attributes
 }
 
-func (s *Store) Forget(keys ...string) sessioncontract.Session {
+func (s *Session) Forget(keys ...string) sessioncontract.Session {
 	supportmaps.Forget(s.attributes, keys...)
 
 	return s
 }
 
-func (s *Store) Get(key string, defaultValue ...any) any {
+func (s *Session) Get(key string, defaultValue ...any) any {
 	return supportmaps.Get(s.attributes, key, defaultValue...)
 }
 
-func (s *Store) GetId() string {
+func (s *Session) GetID() string {
 	return s.id
 }
 
-func (s *Store) GetName() string {
+func (s *Session) GetName() string {
 	return s.name
 }
 
-func (s *Store) Has(key string) bool {
+func (s *Session) Has(key string) bool {
 	val, ok := s.attributes[key]
 	if !ok {
 		return false
@@ -64,22 +64,22 @@ func (s *Store) Has(key string) bool {
 	return val != nil
 }
 
-func (s *Store) Put(key string, value any) sessioncontract.Session {
+func (s *Session) Put(key string, value any) sessioncontract.Session {
 	s.attributes[key] = value
 	return s
 }
 
-func (s *Store) RegenerateToken() sessioncontract.Session {
+func (s *Session) RegenerateToken() sessioncontract.Session {
 	return s.Put("_token", str.Random(40))
 }
 
-func (s *Store) Save() error {
+func (s *Session) Save() error {
 	data, err := json.MarshalString(s.attributes)
 	if err != nil {
 		return err
 	}
 
-	if err = s.handler.Write(s.GetId(), data); err != nil {
+	if err = s.driver.Write(s.GetID(), data); err != nil {
 		return err
 	}
 
@@ -88,23 +88,23 @@ func (s *Store) Save() error {
 	return nil
 }
 
-func (s *Store) SetId(id string) sessioncontract.Session {
-	if s.isValidId(id) {
+func (s *Session) SetID(id string) sessioncontract.Session {
+	if s.isValidID(id) {
 		s.id = id
 	} else {
-		s.id = s.generateSessionId()
+		s.id = s.generateSessionID()
 	}
 
 	return s
 }
 
-func (s *Store) SetName(name string) sessioncontract.Session {
+func (s *Session) SetName(name string) sessioncontract.Session {
 	s.name = name
 
 	return s
 }
 
-func (s *Store) Start() bool {
+func (s *Session) Start() bool {
 	s.loadSession()
 
 	if !s.Has("_token") {
@@ -115,24 +115,24 @@ func (s *Store) Start() bool {
 	return s.started
 }
 
-func (s *Store) generateSessionId() string {
+func (s *Session) generateSessionID() string {
 	return str.Random(40)
 }
 
-func (s *Store) isValidId(id string) bool {
+func (s *Session) isValidID(id string) bool {
 	return len(id) == 40
 }
 
-func (s *Store) loadSession() {
+func (s *Session) loadSession() {
 	data := s.readFromHandler()
 	if data != nil {
 		maps.Copy(s.attributes, data)
 	}
 }
 
-func (s *Store) readFromHandler() map[string]any {
+func (s *Session) readFromHandler() map[string]any {
 	var data map[string]any
-	if err := json.Unmarshal([]byte(s.handler.Read(s.GetId())), &data); err != nil {
+	if err := json.Unmarshal([]byte(s.driver.Read(s.GetID())), &data); err != nil {
 		return nil
 	}
 	return data

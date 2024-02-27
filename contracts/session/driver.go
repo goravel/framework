@@ -1,11 +1,11 @@
 package session
 
-// Handler is the interface for Session handlers.
-type Handler interface {
+// Driver is the interface for Session handlers.
+type Driver interface {
 	// Close closes the session handler.
 	Close() bool
 	// Destroy destroys the session with the given ID.
-	Destroy(id string) bool
+	Destroy(id string) error
 	// Gc performs garbage collection on the session handler with the given maximum lifetime.
 	Gc(maxLifetime int) int
 	// Open opens a session with the given path and name.

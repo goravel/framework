@@ -10,8 +10,8 @@ type Session interface {
 	Get(key string, defaultValue ...any) any
 	// GetName returns the name of the session.
 	GetName() string
-	// GetId returns the ID of the session.
-	GetId() string
+	// GetID returns the ID of the session.
+	GetID() string
 	// Has checks if a key exists and is not nil in the session attributes.
 	Has(key string) bool
 	// Put sets the value of a key in the session attributes.
@@ -20,8 +20,8 @@ type Session interface {
 	RegenerateToken() Session
 	// Save saves the session.
 	Save() error
-	// SetId sets the ID of the session.
-	SetId(id string) Session
+	// SetID sets the ID of the session.
+	SetID(id string) Session
 	// SetName sets the name of the session.
 	SetName(name string) Session
 	// Start initiates the session.

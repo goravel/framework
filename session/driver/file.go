@@ -1,4 +1,4 @@
-package handler
+package driver
 
 import (
 	"os"
@@ -8,28 +8,27 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-type FileHandler struct {
+type FileDriver struct {
 	path    string
 	minutes int
 }
 
-func NewFileHandler(path string, minutes int) *FileHandler {
-	return &FileHandler{
+func NewFileDriver(path string, minutes int) *FileDriver {
+	return &FileDriver{
 		path:    path,
 		minutes: minutes,
 	}
 }
 
-func (f *FileHandler) Close() bool {
+func (f *FileDriver) Close() bool {
 	return true
 }
 
-func (f *FileHandler) Destroy(id string) bool {
-	err := file.Remove(f.path + "/" + id)
-	return err == nil
+func (f *FileDriver) Destroy(id string) error {
+	return file.Remove(f.path + "/" + id)
 }
 
-func (f *FileHandler) Gc(maxLifetime int) int {
+func (f *FileDriver) Gc(maxLifetime int) int {
 	cutoffTime := carbon.Now().SubSeconds(maxLifetime)
 	deletedSessions := 0
 
@@ -51,11 +50,11 @@ func (f *FileHandler) Gc(maxLifetime int) int {
 	return deletedSessions
 }
 
-func (f *FileHandler) Open(string, string) bool {
+func (f *FileDriver) Open(string, string) bool {
 	return true
 }
 
-func (f *FileHandler) Read(id string) string {
+func (f *FileDriver) Read(id string) string {
 	path := f.path + "/" + id
 	if file.Exists(path) {
 		modified, err := file.LastModified(path, "UTC")
@@ -75,6 +74,6 @@ func (f *FileHandler) Read(id string) string {
 	return ""
 }
 
-func (f *FileHandler) Write(id string, data string) error {
+func (f *FileDriver) Write(id string, data string) error {
 	return file.Create(f.path+"/"+id, data)
 }
