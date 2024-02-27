@@ -37,12 +37,11 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 	}
 
 	if m.drivers[d] == nil {
-		newDriver, err := m.creatDriver(d)
-		if err != nil {
-			return nil, err
+		if m.customDrivers[d] == nil {
+			return nil, fmt.Errorf("driver [%s] not supported", d)
 		}
 
-		m.drivers[d] = newDriver
+		m.drivers[d] = m.customDrivers[d]
 	}
 
 	return m.drivers[d](), nil
@@ -63,18 +62,6 @@ func (m *Manager) Store(sessionId ...string) sessioncontract.Session {
 
 func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
-}
-
-func (m *Manager) creatDriver(name string) (func() sessioncontract.Driver, error) {
-	if m.customDrivers[name] != nil {
-		return m.customDrivers[name], nil
-	}
-
-	if m.drivers[name] != nil {
-		return m.drivers[name], nil
-	}
-
-	return nil, fmt.Errorf("driver [%s] not supported", name)
 }
 
 func (m *Manager) createFileDriver() sessioncontract.Driver {

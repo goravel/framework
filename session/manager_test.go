@@ -51,6 +51,13 @@ func (m *ManagerTestSuite) TestDriver() {
 	m.Nil(err)
 	m.NotNil(driver)
 	m.Equal("*session.CustomDriver", fmt.Sprintf("%T", driver))
+
+	// not supported a driver
+	m.mockConfig.On("GetString", "session.driver").Once().Return("not_supported")
+	driver, err = manager.Driver()
+	m.NotNil(err)
+	m.Equal("driver [not_supported] not supported", err.Error())
+	m.Nil(driver)
 }
 
 func (m *ManagerTestSuite) TestExtend() {
@@ -92,32 +99,6 @@ func (m *ManagerTestSuite) TestGetDefaultDriver() {
 	manager := NewManager(m.mockConfig)
 	m.mockConfig.On("GetString", "session.driver").Return("file")
 	m.Equal("file", manager.getDefaultDriver())
-}
-
-func (m *ManagerTestSuite) TestCreatDriver() {
-	manager := NewManager(m.mockConfig)
-
-	// custom driver
-	manager.Extend("test", func() sessioncontract.Driver {
-		return NewCustomDriver()
-	})
-	driver, err := manager.creatDriver("test")
-	m.Nil(err)
-	m.NotNil(driver)
-	m.Equal("*session.CustomDriver", fmt.Sprintf("%T", driver()))
-
-	// built-in driver
-	driver, err = manager.creatDriver("file")
-	m.mockConfig.On("GetInt", "session.lifetime").Return(120)
-	m.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions")
-	m.Nil(err)
-	m.NotNil(driver)
-	m.Equal("*driver.FileDriver", fmt.Sprintf("%T", driver()))
-
-	// not supported a driver
-	driver, err = manager.creatDriver("not_supported")
-	m.NotNil(err)
-	m.Nil(driver)
 }
 
 type CustomDriver struct{}
