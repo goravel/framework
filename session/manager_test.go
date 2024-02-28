@@ -8,11 +8,15 @@ import (
 
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	mockconfig "github.com/goravel/framework/mocks/config"
+	mockfilesystem "github.com/goravel/framework/mocks/filesystem"
+	mockfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
 type ManagerTestSuite struct {
 	suite.Suite
-	mockConfig *mockconfig.Config
+	mockApp     *mockfoundation.Application
+	mockConfig  *mockconfig.Config
+	mockStorage *mockfilesystem.Storage
 }
 
 func TestManagerTestSuite(t *testing.T) {
@@ -20,14 +24,17 @@ func TestManagerTestSuite(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) SetupTest() {
+	m.mockApp = mockfoundation.NewApplication(m.T())
 	m.mockConfig = mockconfig.NewConfig(m.T())
+	m.mockStorage = mockfilesystem.NewStorage(m.T())
 }
 
 func (m *ManagerTestSuite) TestDriver() {
-	manager := NewManager(m.mockConfig)
+	manager := m.getManager()
 	m.mockConfig.On("GetInt", "session.lifetime").Once().Return(120)
 	m.mockConfig.On("GetString", "session.files").Once().Return("storage/framework/sessions")
 	// provide driver name
+	m.mockApp.On("MakeStorage").Once().Return(m.mockStorage)
 	driver, err := manager.Driver("file")
 	m.Nil(err)
 	m.NotNil(driver)
@@ -38,6 +45,7 @@ func (m *ManagerTestSuite) TestDriver() {
 	m.mockConfig.On("GetInt", "session.lifetime").Once().Return(120)
 	m.mockConfig.On("GetString", "session.files").Once().Return("storage/framework/sessions")
 
+	m.mockApp.On("MakeStorage").Once().Return(m.mockStorage)
 	driver, err = manager.Driver()
 	m.Nil(err)
 	m.NotNil(driver)
@@ -61,7 +69,7 @@ func (m *ManagerTestSuite) TestDriver() {
 }
 
 func (m *ManagerTestSuite) TestExtend() {
-	manager := NewManager(m.mockConfig)
+	manager := m.getManager()
 	manager.Extend("test", func() sessioncontract.Driver {
 		return NewCustomDriver()
 	})
@@ -72,7 +80,7 @@ func (m *ManagerTestSuite) TestExtend() {
 }
 
 func (m *ManagerTestSuite) TestBuildSession() {
-	manager := NewManager(m.mockConfig)
+	manager := m.getManager()
 	m.mockConfig.On("GetString", "session.cookie").Once().Return("test_cookie")
 	session := manager.BuildSession(nil)
 	m.NotNil(session)
@@ -80,9 +88,14 @@ func (m *ManagerTestSuite) TestBuildSession() {
 }
 
 func (m *ManagerTestSuite) TestGetDefaultDriver() {
-	manager := NewManager(m.mockConfig)
+	manager := m.getManager()
 	m.mockConfig.On("GetString", "session.driver").Return("file")
 	m.Equal("file", manager.getDefaultDriver())
+}
+
+func (m *ManagerTestSuite) getManager() *Manager {
+	m.mockApp.On("MakeConfig").Once().Return(m.mockConfig)
+	return NewManager(m.mockApp)
 }
 
 type CustomDriver struct{}
