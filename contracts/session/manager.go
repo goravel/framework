@@ -7,6 +7,4 @@ type Manager interface {
 	Driver(name ...string) (Driver, error)
 	// Extend extends the session manager with a custom driver.
 	Extend(driver string, handler func() Driver) Manager
-	// Store retrieves a Session by session ID.
-	Store(sessionId ...string) Session
 }

@@ -79,22 +79,6 @@ func (m *ManagerTestSuite) TestBuildSession() {
 	m.Equal("test_cookie", session.GetName())
 }
 
-func (m *ManagerTestSuite) TestStore() {
-	manager := NewManager(m.mockConfig)
-	m.mockConfig.On("GetString", "session.driver").Once().Return("not_supported")
-	session := manager.Store()
-	m.Nil(session)
-
-	manager.Extend("test", func() sessioncontract.Driver {
-		return NewCustomDriver()
-	})
-	m.mockConfig.On("GetString", "session.driver").Once().Return("test")
-	m.mockConfig.On("GetString", "session.cookie").Once().Return("test_cookie")
-	session = manager.Store()
-	m.NotNil(session)
-	m.Equal("test_cookie", session.GetName())
-}
-
 func (m *ManagerTestSuite) TestGetDefaultDriver() {
 	manager := NewManager(m.mockConfig)
 	m.mockConfig.On("GetString", "session.driver").Return("file")

@@ -83,28 +83,6 @@ func (_m *Manager) Extend(driver string, handler func() session.Driver) session.
 	return r0
 }
 
-// Store provides a mock function with given fields: sessionId
-func (_m *Manager) Store(sessionId ...string) session.Session {
-	_va := make([]interface{}, len(sessionId))
-	for _i := range sessionId {
-		_va[_i] = sessionId[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(...string) session.Session); ok {
-		r0 = rf(sessionId...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
 // NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewManager(t interface {

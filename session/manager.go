@@ -52,14 +52,6 @@ func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) s
 	return m
 }
 
-func (m *Manager) Store(sessionId ...string) sessioncontract.Session {
-	d, err := m.Driver()
-	if err != nil {
-		return nil
-	}
-	return m.BuildSession(d, sessionId...)
-}
-
 func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
