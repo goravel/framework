@@ -1,19 +1,20 @@
 package driver
 
 import (
-	"github.com/goravel/framework/contracts/filesystem"
+	"os"
+	"path/filepath"
+
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/file"
 )
 
 type FileDriver struct {
-	files   filesystem.Storage
 	path    string
 	minutes int
 }
 
-func NewFileDriver(files filesystem.Storage, path string, minutes int) *FileDriver {
+func NewFileDriver(path string, minutes int) *FileDriver {
 	return &FileDriver{
-		files:   files,
 		path:    path,
 		minutes: minutes,
 	}
@@ -24,31 +25,27 @@ func (f *FileDriver) Close() bool {
 }
 
 func (f *FileDriver) Destroy(id string) error {
-	return f.files.Delete(f.path + "/" + id)
+	return file.Remove(f.path + "/" + id)
 }
 
 func (f *FileDriver) Gc(maxLifetime int) int {
-	cutoffTime := carbon.Now().SubSeconds(maxLifetime)
+	cutoffTime := carbon.Now(carbon.UTC).SubSeconds(maxLifetime)
 	deletedSessions := 0
 
-	files, err := f.files.Files(f.path)
-	if err != nil {
-		return 0
-	}
-
-	for _, file := range files {
-		modified, err := f.files.LastModified(f.path + "/" + file)
+	_ = filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			continue
+			return err
 		}
 
-		if modified.Before(cutoffTime.StdTime()) {
-			err = f.files.Delete(f.path + "/" + file)
+		if !info.IsDir() && info.ModTime().Before(cutoffTime.StdTime()) {
+			err = os.Remove(path)
 			if err == nil {
 				deletedSessions++
 			}
 		}
-	}
+
+		return nil
+	})
 
 	return deletedSessions
 }
@@ -59,18 +56,17 @@ func (f *FileDriver) Open(string, string) bool {
 
 func (f *FileDriver) Read(id string) string {
 	path := f.path + "/" + id
-	if f.files.Exists(path) {
-		modified, err := f.files.LastModified(path)
+	if file.Exists(path) {
+		modified, err := file.LastModified(path, carbon.UTC)
 		if err != nil {
 			return ""
 		}
-
-		if modified.After(carbon.Now().SubMinutes(f.minutes).StdTime()) {
-			data, err := f.files.Get(path)
+		if modified.After(carbon.Now(carbon.UTC).SubMinutes(f.minutes).StdTime()) {
+			data, err := os.ReadFile(path)
 			if err != nil {
 				return ""
 			}
-			return data
+			return string(data)
 		}
 	}
 
@@ -78,5 +74,5 @@ func (f *FileDriver) Read(id string) string {
 }
 
 func (f *FileDriver) Write(id string, data string) error {
-	return f.files.Put(f.path+"/"+id, data)
+	return file.Create(f.path+"/"+id, data)
 }

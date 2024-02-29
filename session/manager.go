@@ -4,22 +4,19 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/session/driver"
 )
 
 type Manager struct {
-	app           foundation.Application
 	config        config.Config
 	customDrivers map[string]func() sessioncontract.Driver
 	drivers       map[string]func() sessioncontract.Driver
 }
 
-func NewManager(app foundation.Application) *Manager {
+func NewManager(config config.Config) *Manager {
 	manager := &Manager{
-		app:           app,
-		config:        app.MakeConfig(),
+		config:        config,
 		customDrivers: make(map[string]func() sessioncontract.Driver),
 		drivers:       make(map[string]func() sessioncontract.Driver),
 	}
@@ -61,7 +58,7 @@ func (m *Manager) getDefaultDriver() string {
 
 func (m *Manager) createFileDriver() sessioncontract.Driver {
 	lifetime := m.config.GetInt("session.lifetime")
-	return driver.NewFileDriver(m.app.MakeStorage(), m.config.GetString("session.files"), lifetime)
+	return driver.NewFileDriver(m.config.GetString("session.files"), lifetime)
 }
 
 func (m *Manager) registerDrivers() {

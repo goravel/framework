@@ -8,15 +8,11 @@ import (
 
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	mockconfig "github.com/goravel/framework/mocks/config"
-	mockfilesystem "github.com/goravel/framework/mocks/filesystem"
-	mockfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
 type ManagerTestSuite struct {
 	suite.Suite
-	mockApp     *mockfoundation.Application
-	mockConfig  *mockconfig.Config
-	mockStorage *mockfilesystem.Storage
+	mockConfig *mockconfig.Config
 }
 
 func TestManagerTestSuite(t *testing.T) {
@@ -24,17 +20,15 @@ func TestManagerTestSuite(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) SetupTest() {
-	m.mockApp = mockfoundation.NewApplication(m.T())
 	m.mockConfig = mockconfig.NewConfig(m.T())
-	m.mockStorage = mockfilesystem.NewStorage(m.T())
 }
 
 func (m *ManagerTestSuite) TestDriver() {
 	manager := m.getManager()
 	m.mockConfig.On("GetInt", "session.lifetime").Once().Return(120)
 	m.mockConfig.On("GetString", "session.files").Once().Return("storage/framework/sessions")
+
 	// provide driver name
-	m.mockApp.On("MakeStorage").Once().Return(m.mockStorage)
 	driver, err := manager.Driver("file")
 	m.Nil(err)
 	m.NotNil(driver)
@@ -45,7 +39,6 @@ func (m *ManagerTestSuite) TestDriver() {
 	m.mockConfig.On("GetInt", "session.lifetime").Once().Return(120)
 	m.mockConfig.On("GetString", "session.files").Once().Return("storage/framework/sessions")
 
-	m.mockApp.On("MakeStorage").Once().Return(m.mockStorage)
 	driver, err = manager.Driver()
 	m.Nil(err)
 	m.NotNil(driver)
@@ -94,8 +87,7 @@ func (m *ManagerTestSuite) TestGetDefaultDriver() {
 }
 
 func (m *ManagerTestSuite) getManager() *Manager {
-	m.mockApp.On("MakeConfig").Once().Return(m.mockConfig)
-	return NewManager(m.mockApp)
+	return NewManager(m.mockConfig)
 }
 
 type CustomDriver struct{}
