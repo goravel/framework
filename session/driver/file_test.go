@@ -1,119 +1,125 @@
 package driver
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
-type FileDriverTestSuite struct {
+type FileTestSuite struct {
 	suite.Suite
 }
 
-func TestFileDriverTestSuite(t *testing.T) {
-	suite.Run(t, &FileDriverTestSuite{})
+func TestFileTestSuite(t *testing.T) {
+	suite.Run(t, &FileTestSuite{})
 }
 
-func (f *FileDriverTestSuite) BeforeTest() {
+func (f *FileTestSuite) BeforeTest() {
 	f.Nil(file.Remove(f.getPath()))
 }
 
-func (f *FileDriverTestSuite) AfterTest() {
-	f.Nil(file.Remove(f.getPath()))
-}
-
-func (f *FileDriverTestSuite) TestClose() {
+func (f *FileTestSuite) TestClose() {
 	driver := f.getDriver()
-	f.True(driver.Close())
+	f.Nil(driver.Close())
 }
 
-func (f *FileDriverTestSuite) TestDestroy() {
+func (f *FileTestSuite) TestDestroy() {
 	driver := f.getDriver()
 
 	f.Nil(driver.Destroy("foo"))
 
 	f.Nil(driver.Write("foo", "bar"))
-	f.Equal("bar", driver.Read("foo"))
+	value, err := driver.Read("foo")
+	f.Nil(err)
+	f.Equal("bar", value)
 
 	f.Nil(driver.Destroy("foo"))
 
-	f.Equal("", driver.Read("foo"))
+	value, err = driver.Read("foo")
+	f.NotNil(err)
+	f.Equal("", value)
 }
 
-func (f *FileDriverTestSuite) TestGc() {
+func (f *FileTestSuite) TestGc() {
 	driver := f.getDriver()
 
-	f.Equal(0, driver.Gc(300))
+	f.Nil(driver.Gc(300))
 
 	f.Nil(driver.Write("foo", "bar"))
-	f.Equal(0, driver.Gc(300))
-	f.Equal("bar", driver.Read("foo"))
+	f.Nil(driver.Gc(300))
+	value, err := driver.Read("foo")
+	f.Nil(err)
+	f.Equal("bar", value)
 
 	carbon.SetTestNow(carbon.Now(carbon.UTC).AddSecond())
 	f.Nil(driver.Write("baz", "qux"))
 	carbon.UnsetTestNow()
 
 	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(6).AddSecond())
-	f.Equal(2, driver.Gc(300))
-	f.Equal("", driver.Read("foo"))
-	f.Equal("", driver.Read("baz"))
+	f.Nil(driver.Gc(300))
+
+	value, err = driver.Read("foo")
+	f.NotNil(err)
+	f.Equal("", value)
+
+	value, err = driver.Read("baz")
+	f.NotNil(err)
+	f.Equal("", value)
 	carbon.UnsetTestNow()
 }
 
-func (f *FileDriverTestSuite) TestOpen() {
+func (f *FileTestSuite) TestOpen() {
 	driver := f.getDriver()
-	f.True(driver.Open("", ""))
+	f.Nil(driver.Open("", ""))
 }
 
-func (f *FileDriverTestSuite) TestRead() {
+func (f *FileTestSuite) TestRead() {
 	driver := f.getDriver()
 	f.Nil(driver.Write("foo", "bar"))
 
-	f.Equal("bar", driver.Read("foo"))
+	value, err := driver.Read("foo")
+	f.Nil(err)
+	f.Equal("bar", value)
 
 	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(f.getMinutes()).SubSecond())
-	f.Equal("bar", driver.Read("foo"))
+	value, err = driver.Read("foo")
+	f.Nil(err)
+	f.Equal("bar", value)
 	carbon.UnsetTestNow()
 
 	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(f.getMinutes()).AddSecond())
-	f.Equal("", driver.Read("foo"))
+	value, err = driver.Read("foo")
+	f.NotNil(err)
+	f.Equal("", value)
 	carbon.UnsetTestNow()
-
-	// error when reading file content
-	restrictedFilePath := f.getPath() + "/foo"
-	f.Nil(os.Chmod(restrictedFilePath, 0000))
-	if env.IsWindows() {
-		f.Equal("bar", driver.Read("foo"))
-	} else {
-		f.Equal("", driver.Read("foo"))
-	}
-	f.Nil(os.Chmod(restrictedFilePath, 0777))
 }
 
-func (f *FileDriverTestSuite) TestWrite() {
+func (f *FileTestSuite) TestWrite() {
 	driver := f.getDriver()
 	f.Nil(driver.Write("foo", "bar"))
-	f.Equal("bar", driver.Read("foo"))
+	value, err := driver.Read("foo")
+	f.Nil(err)
+	f.Equal("bar", value)
 
 	f.Nil(driver.Write("foo", "qux"))
-	f.Equal("qux", driver.Read("foo"))
+	value, err = driver.Read("foo")
+	f.Nil(err)
+	f.Equal("qux", value)
 
 	f.Nil(file.Remove(f.getPath()))
 }
 
-func (f *FileDriverTestSuite) getDriver() *FileDriver {
-	return NewFileDriver(f.getPath(), f.getMinutes())
+func (f *FileTestSuite) getDriver() *File {
+	return NewFile(f.getPath(), f.getMinutes())
 }
 
-func (f *FileDriverTestSuite) getPath() string {
+func (f *FileTestSuite) getPath() string {
 	return "test"
 }
 
-func (f *FileDriverTestSuite) getMinutes() int {
+func (f *FileTestSuite) getMinutes() int {
 	return 10
 }

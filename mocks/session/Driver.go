@@ -10,14 +10,14 @@ type Driver struct {
 }
 
 // Close provides a mock function with given fields:
-func (_m *Driver) Close() bool {
+func (_m *Driver) Close() error {
 	ret := _m.Called()
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -38,45 +38,55 @@ func (_m *Driver) Destroy(id string) error {
 }
 
 // Gc provides a mock function with given fields: maxLifetime
-func (_m *Driver) Gc(maxLifetime int) int {
+func (_m *Driver) Gc(maxLifetime int) error {
 	ret := _m.Called(maxLifetime)
 
-	var r0 int
-	if rf, ok := ret.Get(0).(func(int) int); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int) error); ok {
 		r0 = rf(maxLifetime)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Error(0)
 	}
 
 	return r0
 }
 
 // Open provides a mock function with given fields: path, name
-func (_m *Driver) Open(path string, name string) bool {
+func (_m *Driver) Open(path string, name string) error {
 	ret := _m.Called(path, name)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
 		r0 = rf(path, name)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Error(0)
 	}
 
 	return r0
 }
 
 // Read provides a mock function with given fields: id
-func (_m *Driver) Read(id string) string {
+func (_m *Driver) Read(id string) (string, error) {
 	ret := _m.Called(id)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
+		return rf(id)
+	}
 	if rf, ok := ret.Get(0).(func(string) string); ok {
 		r0 = rf(id)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Write provides a mock function with given fields: id, data

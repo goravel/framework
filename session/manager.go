@@ -29,22 +29,22 @@ func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...stri
 }
 
 func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
-	var d string
+	var driverName string
 	if len(name) > 0 {
-		d = name[0]
+		driverName = name[0]
 	} else {
-		d = m.getDefaultDriver()
+		driverName = m.getDefaultDriver()
 	}
 
-	if m.drivers[d] == nil {
-		if m.customDrivers[d] == nil {
-			return nil, fmt.Errorf("driver [%s] not supported", d)
+	if m.drivers[driverName] == nil {
+		if m.customDrivers[driverName] == nil {
+			return nil, fmt.Errorf("driver [%s] not supported", driverName)
 		}
 
-		m.drivers[d] = m.customDrivers[d]
+		m.drivers[driverName] = m.customDrivers[driverName]
 	}
 
-	return m.drivers[d](), nil
+	return m.drivers[driverName](), nil
 }
 
 func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) sessioncontract.Manager {
@@ -58,7 +58,7 @@ func (m *Manager) getDefaultDriver() string {
 
 func (m *Manager) createFileDriver() sessioncontract.Driver {
 	lifetime := m.config.GetInt("session.lifetime")
-	return driver.NewFileDriver(m.config.GetString("session.files"), lifetime)
+	return driver.NewFile(m.config.GetString("session.files"), lifetime)
 }
 
 func (m *Manager) registerDrivers() {

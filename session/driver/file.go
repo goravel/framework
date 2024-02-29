@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -8,71 +9,69 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-type FileDriver struct {
+type File struct {
 	path    string
 	minutes int
 }
 
-func NewFileDriver(path string, minutes int) *FileDriver {
-	return &FileDriver{
+func NewFile(path string, minutes int) *File {
+	return &File{
 		path:    path,
 		minutes: minutes,
 	}
 }
 
-func (f *FileDriver) Close() bool {
-	return true
+func (f *File) Close() error {
+	return nil
 }
 
-func (f *FileDriver) Destroy(id string) error {
-	return file.Remove(f.path + "/" + id)
+func (f *File) Destroy(id string) error {
+	return file.Remove(f.getFilePath(id))
 }
 
-func (f *FileDriver) Gc(maxLifetime int) int {
+func (f *File) Gc(maxLifetime int) error {
 	cutoffTime := carbon.Now(carbon.UTC).SubSeconds(maxLifetime)
-	deletedSessions := 0
 
-	_ = filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if !info.IsDir() && info.ModTime().Before(cutoffTime.StdTime()) {
-			err = os.Remove(path)
-			if err == nil {
-				deletedSessions++
-			}
+			return os.Remove(path)
 		}
 
 		return nil
 	})
-
-	return deletedSessions
 }
 
-func (f *FileDriver) Open(string, string) bool {
-	return true
+func (f *File) Open(string, string) error {
+	return nil
 }
 
-func (f *FileDriver) Read(id string) string {
-	path := f.path + "/" + id
+func (f *File) Read(id string) (string, error) {
+	path := f.getFilePath(id)
 	if file.Exists(path) {
 		modified, err := file.LastModified(path, carbon.UTC)
 		if err != nil {
-			return ""
+			return "", err
 		}
 		if modified.After(carbon.Now(carbon.UTC).SubMinutes(f.minutes).StdTime()) {
 			data, err := os.ReadFile(path)
 			if err != nil {
-				return ""
+				return "", err
 			}
-			return string(data)
+			return string(data), nil
 		}
 	}
 
-	return ""
+	return "", fmt.Errorf("session [%s] not found", id)
 }
 
-func (f *FileDriver) Write(id string, data string) error {
-	return file.Create(f.path+"/"+id, data)
+func (f *File) Write(id string, data string) error {
+	return file.Create(f.getFilePath(id), data)
+}
+
+func (f *File) getFilePath(id string) string {
+	return f.path + "/" + id
 }

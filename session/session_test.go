@@ -1,7 +1,6 @@
 package session
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -13,8 +12,8 @@ import (
 
 type SessionTestSuite struct {
 	suite.Suite
-	ctx    context.Context
-	driver *mocksession.Driver
+	driver  *mocksession.Driver
+	session *Session
 }
 
 func TestSessionTestSuite(t *testing.T) {
@@ -22,146 +21,135 @@ func TestSessionTestSuite(t *testing.T) {
 }
 
 func (s *SessionTestSuite) SetupTest() {
-	s.ctx = context.Background()
 	s.driver = mocksession.NewDriver(s.T())
+	s.session = s.getSession()
 }
 
 func (s *SessionTestSuite) TestAll() {
-	session := s.getSession()
-	session.Put("key1", "value1").
+	s.session.Put("key1", "value1").
 		Put("key2", "value2")
 
-	s.Equal(session.attributes, session.All())
+	all := s.session.All()
+	s.Equal("value1", all["key1"])
+	s.Equal("value2", all["key2"])
 }
 
 func (s *SessionTestSuite) TestGet() {
-	session := s.getSession()
-	session.Put("key1", "value1")
+	s.session.Put("key1", "value1")
 
-	s.Equal("value1", session.Get("key1"))
-	s.Nil(session.Get("key2"))
+	s.Equal("value1", s.session.Get("key1"))
+	s.Nil(s.session.Get("key2"))
 }
 
 func (s *SessionTestSuite) TestGetID() {
-	session := s.getSession()
-	s.Equal(s.getSessionId(), session.GetID())
+	s.Equal(s.getSessionId(), s.session.GetID())
 }
 
 func (s *SessionTestSuite) TestGetName() {
-	session := s.getSession()
-	s.Equal(s.getSessionName(), session.GetName())
+	s.Equal(s.getSessionName(), s.session.GetName())
 }
 
 func (s *SessionTestSuite) TestForget() {
-	session := s.getSession()
-	session.Put("key1", "value1")
-	session.Forget("key1")
-	s.False(session.Has("key1"))
+	s.session.Put("key1", "value1")
+	s.session.Forget("key1")
+	s.False(s.session.Has("key1"))
 
-	session.Put("key2", "value2").
+	s.session.Put("key2", "value2").
 		Put("nilKey", nil)
-	session.Forget("nilKey", "key2")
-	s.False(session.Has("key2"))
-	s.False(session.Has("nilKey"))
+	s.session.Forget("nilKey", "key2")
+	s.False(s.session.Has("key2"))
+	s.False(s.session.Has("nilKey"))
 }
 
 func (s *SessionTestSuite) TestHas() {
-	session := s.getSession()
-	session.Put("key1", "value1").
+	s.session.Put("key1", "value1").
 		Put("nilKey", nil)
 
-	s.True(session.Has("key1"))
-	s.False(session.Has("key2"))
-	s.False(session.Has("nilKey"))
+	s.True(s.session.Has("key1"))
+	s.False(s.session.Has("key2"))
+	s.False(s.session.Has("nilKey"))
 }
 
 func (s *SessionTestSuite) TestPut() {
-	session := s.getSession()
-	session.Put("key1", "value1")
+	s.session.Put("key1", "value1")
 
-	s.Equal("value1", session.Get("key1"))
+	s.Equal("value1", s.session.Get("key1"))
 
-	session.Put("key1", "value2")
-	s.Equal("value2", session.Get("key1"))
+	s.session.Put("key1", "value2")
+	s.Equal("value2", s.session.Get("key1"))
 
-	session.Put("key2", nil)
-	s.Nil(session.Get("key2"))
+	s.session.Put("key2", nil)
+	s.Nil(s.session.Get("key2"))
 }
 
 func (s *SessionTestSuite) TestRegenerateToken() {
-	session := s.getSession()
-	token := session.Get("_token")
-	session.RegenerateToken()
-	s.NotEqual(token, session.Get("_token"))
+	token := s.session.Get("_token")
+	s.session.RegenerateToken()
+	s.NotEqual(token, s.session.Get("_token"))
 }
 
 func (s *SessionTestSuite) TestSave() {
-	session := s.getSession()
-	s.driver.On("Read", s.getSessionId()).Once().Return(``)
-	session.Start()
-	session.Put("key1", "value1").
+	s.driver.On("Read", s.getSessionId()).Return(``, nil).Once()
+	s.session.Start()
+	s.session.Put("key1", "value1").
 		Forget("_token")
 
-	data, _ := json.MarshalString(session.attributes)
-	s.driver.On("Write", s.getSessionId(), data).Once().Return(nil)
+	data, _ := json.MarshalString(s.session.All())
+	s.driver.On("Write", s.getSessionId(), data).Return(nil).Once()
 
-	s.Nil(session.Save())
-	s.False(session.started)
+	s.Nil(s.session.Save())
+	s.False(s.session.started)
 
 	// there is an error when writing the json
-	session = s.getSession()
-	s.driver.On("Read", s.getSessionId()).Once().Return(``)
-	session.Start()
-	session.Put("key1", "value1").
+	s.driver.On("Read", s.getSessionId()).Return(``, errors.New("error")).Once()
+	s.session.Start()
+	s.session.Put("key1", "value1").
 		Forget("_token")
 
-	data, _ = json.MarshalString(session.attributes)
-	s.driver.On("Write", s.getSessionId(), data).Once().Return(errors.New("error"))
+	data, _ = json.MarshalString(s.session.All())
+	s.driver.On("Write", s.getSessionId(), data).Return(errors.New("error")).Once()
 
-	s.Equal(errors.New("error"), session.Save())
-	s.True(session.started)
+	s.Equal(errors.New("error"), s.session.Save())
+	s.True(s.session.started)
 }
 
 func (s *SessionTestSuite) TestSetID() {
-	session := s.getSession()
-	s.True(session.isValidID(session.GetID()))
+	s.True(s.session.isValidID(s.session.GetID()))
 
-	session.SetID("wrongId")
-	s.NotEqual("wrongId", session.GetID())
-	s.True(session.isValidID(session.GetID()))
+	s.session.SetID("wrongId")
+	s.NotEqual("wrongId", s.session.GetID())
+	s.True(s.session.isValidID(s.session.GetID()))
 
-	session = NewSession(s.getSessionName(), s.driver)
+	session := NewSession(s.getSessionName(), s.driver)
 	s.True(session.isValidID(session.GetID()))
 }
 
 func (s *SessionTestSuite) TestSetName() {
-	session := s.getSession()
-	session.SetName("newName")
-	s.Equal("newName", session.GetName())
+	s.session.SetName("newName")
+	s.Equal("newName", s.session.GetName())
 }
 
 func (s *SessionTestSuite) TestStart() {
-	session := s.getSession()
-	s.driver.On("Read", s.getSessionId()).Once().Return(`{"foo":"bar"}`)
-	session.Start()
+	s.driver.On("Read", s.getSessionId()).Return(`{"foo":"bar"}`, nil).Once()
+	s.session.Start()
 
-	s.Equal("bar", session.Get("foo"))
-	s.Equal("baz", session.Get("bar", "baz"))
-	s.True(session.Has("foo"))
-	s.False(session.Has("bar"))
-	s.True(session.started)
+	s.Equal("bar", s.session.Get("foo"))
+	s.Equal("baz", s.session.Get("bar", "baz"))
+	s.True(s.session.Has("foo"))
+	s.False(s.session.Has("bar"))
+	s.True(s.session.started)
 
-	session.Put("baz", "qux")
-	s.True(session.Has("baz"))
+	s.session.Put("baz", "qux")
+	s.True(s.session.Has("baz"))
 
 	// there is an error when parsing the json
-	session = s.getSession()
-	session.Put("baz", "qux")
-	s.driver.On("Read", s.getSessionId()).Once().Return(`{"foo":"bar}`)
-	session.Start()
+	s.session = s.getSession()
+	s.session.Put("baz", "qux")
+	s.driver.On("Read", s.getSessionId()).Return(`{"foo":"bar}`, nil).Once()
+	s.session.Start()
 
-	s.Nil(session.Get("foo"))
-	s.Equal("qux", session.Get("baz"))
+	s.Nil(s.session.Get("foo"))
+	s.Equal("qux", s.session.Get("baz"))
 }
 
 func (s *SessionTestSuite) getSession() *Session {

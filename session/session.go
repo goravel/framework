@@ -131,8 +131,12 @@ func (s *Session) loadSession() {
 }
 
 func (s *Session) readFromHandler() map[string]any {
+	value, err := s.driver.Read(s.GetID())
+	if err != nil {
+		return nil
+	}
 	var data map[string]any
-	if err := json.Unmarshal([]byte(s.driver.Read(s.GetID())), &data); err != nil {
+	if err := json.Unmarshal([]byte(value), &data); err != nil {
 		return nil
 	}
 	return data

@@ -25,24 +25,24 @@ func (m *ManagerTestSuite) SetupTest() {
 
 func (m *ManagerTestSuite) TestDriver() {
 	manager := m.getManager()
-	m.mockConfig.On("GetInt", "session.lifetime").Once().Return(120)
-	m.mockConfig.On("GetString", "session.files").Once().Return("storage/framework/sessions")
+	m.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	m.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
 
 	// provide driver name
 	driver, err := manager.Driver("file")
 	m.Nil(err)
 	m.NotNil(driver)
-	m.Equal("*driver.FileDriver", fmt.Sprintf("%T", driver))
+	m.Equal("*driver.File", fmt.Sprintf("%T", driver))
 
 	// provide no driver name
-	m.mockConfig.On("GetString", "session.driver").Once().Return("file")
-	m.mockConfig.On("GetInt", "session.lifetime").Once().Return(120)
-	m.mockConfig.On("GetString", "session.files").Once().Return("storage/framework/sessions")
+	m.mockConfig.On("GetString", "session.driver").Return("file").Once()
+	m.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	m.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
 
 	driver, err = manager.Driver()
 	m.Nil(err)
 	m.NotNil(driver)
-	m.Equal("*driver.FileDriver", fmt.Sprintf("%T", driver))
+	m.Equal("*driver.File", fmt.Sprintf("%T", driver))
 
 	// provide custom driver
 	manager.Extend("test", func() sessioncontract.Driver {
@@ -54,7 +54,7 @@ func (m *ManagerTestSuite) TestDriver() {
 	m.Equal("*session.CustomDriver", fmt.Sprintf("%T", driver))
 
 	// not supported a driver
-	m.mockConfig.On("GetString", "session.driver").Once().Return("not_supported")
+	m.mockConfig.On("GetString", "session.driver").Return("not_supported").Once()
 	driver, err = manager.Driver()
 	m.NotNil(err)
 	m.Equal("driver [not_supported] not supported", err.Error())
@@ -74,7 +74,7 @@ func (m *ManagerTestSuite) TestExtend() {
 
 func (m *ManagerTestSuite) TestBuildSession() {
 	manager := m.getManager()
-	m.mockConfig.On("GetString", "session.cookie").Once().Return("test_cookie")
+	m.mockConfig.On("GetString", "session.cookie").Return("test_cookie").Once()
 	session := manager.BuildSession(nil)
 	m.NotNil(session)
 	m.Equal("test_cookie", session.GetName())
@@ -96,28 +96,28 @@ func NewCustomDriver() sessioncontract.Driver {
 	return &CustomDriver{}
 }
 
-func (c *CustomDriver) Close() bool {
-	return true
+func (c *CustomDriver) Close() error {
+	return nil
 }
 
 func (c *CustomDriver) Destroy(string) error {
 	return nil
 }
 
-func (c *CustomDriver) Gc(int) int {
-	return 0
+func (c *CustomDriver) Gc(int) error {
+	return nil
 }
 
 func (c *CustomDriver) Get(string) string {
 	return ""
 }
 
-func (c *CustomDriver) Open(string, string) bool {
-	return true
+func (c *CustomDriver) Open(string, string) error {
+	return nil
 }
 
-func (c *CustomDriver) Read(string) string {
-	return ""
+func (c *CustomDriver) Read(string) (string, error) {
+	return "", nil
 }
 
 func (c *CustomDriver) Write(string, string) error {
