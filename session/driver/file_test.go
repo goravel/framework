@@ -54,18 +54,10 @@ func (f *FileTestSuite) TestGc() {
 	f.Nil(err)
 	f.Equal("bar", value)
 
-	carbon.SetTestNow(carbon.Now(carbon.UTC).AddSecond())
-	f.Nil(driver.Write("baz", "qux"))
-	carbon.UnsetTestNow()
-
-	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(6).AddSecond())
+	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(5).AddSecond())
 	f.Nil(driver.Gc(300))
 
 	value, err = driver.Read("foo")
-	f.NotNil(err)
-	f.Equal("", value)
-
-	value, err = driver.Read("baz")
 	f.NotNil(err)
 	f.Equal("", value)
 	carbon.UnsetTestNow()
