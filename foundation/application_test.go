@@ -33,6 +33,7 @@ import (
 	routemocks "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
+	frameworksession "github.com/goravel/framework/session"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -366,6 +367,23 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeSchedule())
+}
+
+func (s *ApplicationTestSuite) TestMakeSession() {
+	mockConfig := &configmocks.Config{}
+
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	serviceProvider := &frameworksession.ServiceProvider{}
+	// error
+	s.Nil(s.app.MakeSession())
+
+	serviceProvider.Register(s.app)
+	s.NotNil(s.app.MakeSession())
+
+	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeStorage() {

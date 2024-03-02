@@ -30,6 +30,7 @@ import (
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	routecontract "github.com/goravel/framework/contracts/route"
 	schedulecontract "github.com/goravel/framework/contracts/schedule"
+	sessioncontract "github.com/goravel/framework/contracts/session"
 	testingcontract "github.com/goravel/framework/contracts/testing"
 	translationcontract "github.com/goravel/framework/contracts/translation"
 	validationcontract "github.com/goravel/framework/contracts/validation"
@@ -45,6 +46,7 @@ import (
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
+	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/testing"
 	"github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
@@ -252,6 +254,16 @@ func (c *Container) MakeSchedule() schedulecontract.Schedule {
 	}
 
 	return instance.(schedulecontract.Schedule)
+}
+
+func (c *Container) MakeSession() sessioncontract.Manager {
+	instance, err := c.Make(session.Binding)
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(sessioncontract.Manager)
 }
 
 func (c *Container) MakeStorage() filesystemcontract.Storage {
