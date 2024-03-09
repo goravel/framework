@@ -2,6 +2,7 @@ package session
 
 import (
 	"maps"
+	"slices"
 
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/support/json"
@@ -37,6 +38,23 @@ func (s *Session) All() map[string]any {
 	return s.attributes
 }
 
+func (s *Session) Exists(key string) bool {
+	return supportmaps.Exists(s.attributes, key)
+}
+
+func (s *Session) Flash(key string, value any) sessioncontract.Session {
+	s.Put(key, value)
+	s.Push("_flash.new", key)
+	s.removeFromOldFlashData(key)
+
+	return s
+}
+
+func (s *Session) Flush() sessioncontract.Session {
+	s.attributes = make(map[string]any)
+	return s
+}
+
 func (s *Session) Forget(keys ...string) sessioncontract.Session {
 	supportmaps.Forget(s.attributes, keys...)
 
@@ -64,16 +82,77 @@ func (s *Session) Has(key string) bool {
 	return val != nil
 }
 
+func (s *Session) Invalidate() error {
+	s.Flush()
+	return s.Migrate(true)
+}
+
+func (s *Session) Migrate(destroy ...bool) error {
+	shouldDestroy := false
+	if len(destroy) > 0 {
+		shouldDestroy = destroy[0]
+	}
+
+	if shouldDestroy {
+		err := s.driver.Destroy(s.GetID())
+		if err != nil {
+			return err
+		}
+	}
+
+	s.SetID(s.generateSessionID())
+
+	return nil
+}
+
+func (s *Session) Missing(key string) bool {
+	return !s.Exists(key)
+}
+
+func (s *Session) Only(keys []string) map[string]any {
+	return supportmaps.Only(s.attributes, keys...)
+}
+
+func (s *Session) PreviousUrl() string {
+	return s.Get("_previous.url").(string)
+}
+
+func (s *Session) Pull(key string, def ...any) any {
+	return supportmaps.Pull(s.attributes, key, def...)
+}
+
+func (s *Session) Push(key string, value any) sessioncontract.Session {
+	arr := s.Get(key, make([]any, 0)).([]any)
+	arr = append(arr, value)
+	return s.Put(key, arr)
+}
+
 func (s *Session) Put(key string, value any) sessioncontract.Session {
 	s.attributes[key] = value
 	return s
+}
+
+func (s *Session) Regenerate(destroy ...bool) error {
+	err := s.Migrate(destroy...)
+	if err != nil {
+		return err
+	}
+
+	s.RegenerateToken()
+	return nil
 }
 
 func (s *Session) RegenerateToken() sessioncontract.Session {
 	return s.Put("_token", str.Random(40))
 }
 
+func (s *Session) Remove(key string) any {
+	return s.Pull(key)
+}
+
 func (s *Session) Save() error {
+	s.ageFlashData()
+
 	data, err := json.MarshalString(s.attributes)
 	if err != nil {
 		return err
@@ -104,6 +183,10 @@ func (s *Session) SetName(name string) sessioncontract.Session {
 	return s
 }
 
+func (s *Session) SetPreviousUrl(url string) sessioncontract.Session {
+	return s.Put("_previous.url", url)
+}
+
 func (s *Session) Start() bool {
 	s.loadSession()
 
@@ -113,6 +196,10 @@ func (s *Session) Start() bool {
 
 	s.started = true
 	return s.started
+}
+
+func (s *Session) Token() string {
+	return s.Get("_token").(string)
 }
 
 func (s *Session) generateSessionID() string {
@@ -140,4 +227,26 @@ func (s *Session) readFromHandler() map[string]any {
 		return nil
 	}
 	return data
+}
+
+func (s *Session) ageFlashData() {
+	oldAny := s.Get("_flash.old", make([]any, 0)).([]any)
+	old := make([]string, len(oldAny))
+	for i, v := range oldAny {
+		old[i] = v.(string)
+	}
+
+	s.Forget(old...)
+	s.Put("_flash.old", s.Get("_flash.new", make([]any, 0)))
+	s.Put("_flash.new", make([]any, 0))
+}
+
+func (s *Session) removeFromOldFlashData(keys ...string) {
+	old := s.Get("_flash.old", make([]any, 0)).([]any)
+	for _, key := range keys {
+		old = slices.DeleteFunc(old, func(i any) bool {
+			return i == key
+		})
+	}
+	s.Put("_flash.old", old)
 }
