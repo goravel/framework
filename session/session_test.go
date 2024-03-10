@@ -70,17 +70,13 @@ func (s *SessionTestSuite) TestFlash() {
 
 	s.session.Flash("foo", "bar").
 		Put("fu", "baz").
-		Put("_flash.old", []any{"qu"})
+		Put("_flash.old", []string{"qu"})
 
-	s.Equal([]any{"foo"}, s.session.Get("_flash.new"))
-	s.Equal([]any{"qu"}, s.session.Get("_flash.old"))
+	s.Equal([]string{"foo"}, s.session.Get("_flash.new"))
+	s.Equal([]string{"qu"}, s.session.Get("_flash.old"))
 }
 
 func (s *SessionTestSuite) TestFlush() {
-	s.session.Put("foo", "bar")
-	s.session.Flush()
-	s.False(s.session.Has("foo"))
-
 	s.session.Put("foo", "bar")
 	s.session.Flush()
 	s.False(s.session.Has("foo"))
@@ -178,13 +174,6 @@ func (s *SessionTestSuite) TestPull() {
 	s.Equal("Krishan", s.session.Pull("name"))
 	s.Equal("Krishan Kumar", s.session.Pull("name", "Krishan Kumar"))
 	s.Nil(s.session.Get("name"))
-}
-
-func (s *SessionTestSuite) TestPush() {
-	s.session.Put("languages", []any{"english", "hindi"})
-	s.session.Push("languages", "spanish")
-
-	s.Equal([]any{"english", "hindi", "spanish"}, s.session.Get("languages"))
 }
 
 func (s *SessionTestSuite) TestPut() {
@@ -336,10 +325,10 @@ func (s *SessionTestSuite) TestToken() {
 func (s *SessionTestSuite) TestRemoveFromOldFlashData() {
 	s.session.Put("foo", "bar").
 		Put("baz", "qux").
-		Put("_flash.old", []any{"foo", "baz"})
+		Put("_flash.old", []string{"foo", "baz"})
 
 	s.session.removeFromOldFlashData("foo")
-	s.Equal([]any{"baz"}, s.session.Get("_flash.old"))
+	s.Equal([]string{"baz"}, s.session.Get("_flash.old"))
 }
 
 func (s *SessionTestSuite) getSession() *Session {

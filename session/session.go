@@ -44,7 +44,10 @@ func (s *Session) Exists(key string) bool {
 
 func (s *Session) Flash(key string, value any) sessioncontract.Session {
 	s.Put(key, value)
-	s.Push("_flash.new", key)
+
+	old := s.Get("_flash.new", []string{}).([]string)
+	s.Put("_flash.new", append(old, key))
+
 	s.removeFromOldFlashData(key)
 
 	return s
@@ -119,12 +122,6 @@ func (s *Session) PreviousUrl() string {
 
 func (s *Session) Pull(key string, def ...any) any {
 	return supportmaps.Pull(s.attributes, key, def...)
-}
-
-func (s *Session) Push(key string, value any) sessioncontract.Session {
-	arr := s.Get(key, make([]any, 0)).([]any)
-	arr = append(arr, value)
-	return s.Put(key, arr)
 }
 
 func (s *Session) Put(key string, value any) sessioncontract.Session {
@@ -230,21 +227,17 @@ func (s *Session) readFromHandler() map[string]any {
 }
 
 func (s *Session) ageFlashData() {
-	oldAny := s.Get("_flash.old", make([]any, 0)).([]any)
-	old := make([]string, len(oldAny))
-	for i, v := range oldAny {
-		old[i] = v.(string)
-	}
+	old := s.Get("_flash.old", []string{}).([]string)
 
 	s.Forget(old...)
-	s.Put("_flash.old", s.Get("_flash.new", make([]any, 0)))
-	s.Put("_flash.new", make([]any, 0))
+	s.Put("_flash.old", s.Get("_flash.new", []string{}))
+	s.Put("_flash.new", []string{})
 }
 
 func (s *Session) removeFromOldFlashData(keys ...string) {
-	old := s.Get("_flash.old", make([]any, 0)).([]any)
+	old := s.Get("_flash.old", []string{}).([]string)
 	for _, key := range keys {
-		old = slices.DeleteFunc(old, func(i any) bool {
+		old = slices.DeleteFunc(old, func(i string) bool {
 			return i == key
 		})
 	}
