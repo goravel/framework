@@ -171,6 +171,28 @@ func (_m *Session) Invalidate() error {
 	return r0
 }
 
+// Keep provides a mock function with given fields: keys
+func (_m *Session) Keep(keys ...string) session.Session {
+	_va := make([]interface{}, len(keys))
+	for _i := range keys {
+		_va[_i] = keys[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func(...string) session.Session); ok {
+		r0 = rf(keys...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
+	}
+
+	return r0
+}
+
 // Missing provides a mock function with given fields: key
 func (_m *Session) Missing(key string) bool {
 	ret := _m.Called(key)
@@ -180,6 +202,22 @@ func (_m *Session) Missing(key string) bool {
 		r0 = rf(key)
 	} else {
 		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Now provides a mock function with given fields: key, value
+func (_m *Session) Now(key string, value interface{}) session.Session {
+	ret := _m.Called(key, value)
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
+		r0 = rf(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
 	}
 
 	return r0
@@ -227,6 +265,22 @@ func (_m *Session) Put(key string, value interface{}) session.Session {
 	var r0 session.Session
 	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
 		r0 = rf(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
+	}
+
+	return r0
+}
+
+// Reflash provides a mock function with given fields:
+func (_m *Session) Reflash() session.Session {
+	ret := _m.Called()
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func() session.Session); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(session.Session)

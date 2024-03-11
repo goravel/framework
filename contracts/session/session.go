@@ -22,14 +22,20 @@ type Session interface {
 	Has(key string) bool
 	// Invalidate invalidates the session.
 	Invalidate() error
+	// Keep reflash a subset of the current flash data.
+	Keep(keys ...string) Session
 	// Missing checks if a key is missing in the session attributes.
 	Missing(key string) bool
+	// Now flashes a key and value for immediate use.
+	Now(key string, value any) Session
 	// Only retrieves the specified keys and their values from the session attributes.
 	Only(keys []string) map[string]any
 	// Pull retrieves and removes the value of a key from the session attributes.
 	Pull(key string, defaultValue ...any) any
 	// Put sets the value of a key in the session attributes.
 	Put(key string, value any) Session
+	// Reflash keeps all the flash data for an additional request.
+	Reflash() Session
 	// Regenerate regenerates the session.
 	Regenerate(destroy ...bool) error
 	// Remove removes the value of a key from the session attributes.

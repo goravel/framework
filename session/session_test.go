@@ -140,6 +140,17 @@ func (s *SessionTestSuite) TestInvalidate() {
 	s.Equal(oldID, s.session.GetID())
 }
 
+func (s *SessionTestSuite) TestKeep() {
+	s.session.Flash("name", "Krishan")
+	s.session.Put("age", 22)
+	s.session.Put("_flash.old", []string{"language"})
+	s.Equal([]string{"name"}, s.session.Get("_flash.new"))
+
+	s.session.Keep("name", "age", "language")
+	s.Equal([]string{"name", "age", "language"}, s.session.Get("_flash.new"))
+	s.Equal([]string{}, s.session.Get("_flash.old"))
+}
+
 func (s *SessionTestSuite) TestMigrate() {
 	oldID := s.session.GetID()
 	s.Nil(s.session.migrate())
@@ -158,6 +169,16 @@ func (s *SessionTestSuite) TestMissing() {
 	s.False(s.session.Has("baz"))
 	s.False(s.session.Missing("baz"))
 	s.True(s.session.Missing("bogus"))
+}
+
+func (s *SessionTestSuite) TestNow() {
+	s.session.Now("foo", "bar")
+	s.True(s.session.Has("foo"))
+	s.Equal("bar", s.session.Get("foo"))
+
+	s.session.ageFlashData()
+	s.False(s.session.Has("foo"))
+	s.Nil(s.session.Get("foo"))
 }
 
 func (s *SessionTestSuite) TestOnly() {
@@ -186,6 +207,20 @@ func (s *SessionTestSuite) TestPut() {
 
 	s.session.Put("key2", nil)
 	s.Nil(s.session.Get("key2"))
+}
+
+func (s *SessionTestSuite) TestReflash() {
+	s.session.Flash("foo", "bar").
+		Put("_flash.old", []string{"foo"})
+
+	s.session.Reflash()
+	s.Equal([]string{"foo"}, s.session.Get("_flash.new"))
+	s.Equal([]string{}, s.session.Get("_flash.old"))
+
+	s.session.Now("foo", "bar")
+	s.session.Reflash()
+	s.Equal([]string{"foo"}, s.session.Get("_flash.new"))
+	s.Equal([]string{}, s.session.Get("_flash.old"))
 }
 
 func (s *SessionTestSuite) TestRegenerate() {

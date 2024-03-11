@@ -90,8 +90,23 @@ func (s *Session) Invalidate() error {
 	return s.migrate(true)
 }
 
+func (s *Session) Keep(keys ...string) sessioncontract.Session {
+	s.mergeNewFlashes(keys...)
+	s.removeFromOldFlashData(keys...)
+	return s
+}
+
 func (s *Session) Missing(key string) bool {
 	return !s.Exists(key)
+}
+
+func (s *Session) Now(key string, value any) sessioncontract.Session {
+	s.Put(key, value)
+
+	old := s.Get("_flash.old", []string{}).([]string)
+	s.Put("_flash.old", append(old, key))
+
+	return s
 }
 
 func (s *Session) Only(keys []string) map[string]any {
@@ -104,6 +119,12 @@ func (s *Session) Pull(key string, def ...any) any {
 
 func (s *Session) Put(key string, value any) sessioncontract.Session {
 	s.attributes[key] = value
+	return s
+}
+
+func (s *Session) Reflash() sessioncontract.Session {
+	s.mergeNewFlashes(s.Get("_flash.old", []string{}).([]string)...)
+	s.Put("_flash.old", []string{})
 	return s
 }
 
@@ -220,6 +241,17 @@ func (s *Session) ageFlashData() {
 	s.Forget(old...)
 	s.Put("_flash.old", s.Get("_flash.new", []string{}))
 	s.Put("_flash.new", []string{})
+}
+
+func (s *Session) mergeNewFlashes(keys ...string) {
+	values := s.Get("_flash.new", []string{}).([]string)
+	for _, key := range keys {
+		if !slices.Contains(values, key) {
+			values = append(values, key)
+		}
+	}
+
+	s.Put("_flash.new", values)
 }
 
 func (s *Session) regenerateToken() sessioncontract.Session {
