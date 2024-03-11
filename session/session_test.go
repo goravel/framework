@@ -142,12 +142,12 @@ func (s *SessionTestSuite) TestInvalidate() {
 
 func (s *SessionTestSuite) TestMigrate() {
 	oldID := s.session.GetID()
-	s.Nil(s.session.Migrate())
+	s.Nil(s.session.migrate())
 	s.NotEqual(oldID, s.session.GetID())
 
 	oldID = s.session.GetID()
 	s.driver.On("Destroy", oldID).Return(nil).Once()
-	s.Nil(s.session.Migrate(true))
+	s.Nil(s.session.migrate(true))
 	s.NotEqual(oldID, s.session.GetID())
 }
 
@@ -202,12 +202,6 @@ func (s *SessionTestSuite) TestRegenerate() {
 	s.driver.On("Destroy", oldID).Return(errors.New("error")).Once()
 	s.Equal(errors.New("error"), s.session.Regenerate(true))
 	s.Equal(oldID, s.session.GetID())
-}
-
-func (s *SessionTestSuite) TestRegenerateToken() {
-	token := s.session.Get("_token")
-	s.session.RegenerateToken()
-	s.NotEqual(token, s.session.Get("_token"))
 }
 
 func (s *SessionTestSuite) TestRemove() {
@@ -282,15 +276,6 @@ func (s *SessionTestSuite) TestSetName() {
 	s.Equal("newName", s.session.GetName())
 }
 
-func (s *SessionTestSuite) TestSetPreviousUrl() {
-	s.session.SetPreviousUrl("http://example.com/foo/bar")
-	s.True(s.session.Has("_previous.url"))
-	s.Equal("http://example.com/foo/bar", s.session.Get("_previous.url"))
-
-	url := s.session.PreviousUrl()
-	s.Equal("http://example.com/foo/bar", url)
-}
-
 func (s *SessionTestSuite) TestStart() {
 	s.driver.On("Read", s.getSessionId()).Return(`{"foo":"bar"}`, nil).Once()
 	s.session.Start()
@@ -320,6 +305,12 @@ func (s *SessionTestSuite) TestToken() {
 
 	s.Equal(s.session.Token(), s.session.Token())
 	s.True(len(s.session.Token()) == 40)
+}
+
+func (s *SessionTestSuite) TestRegenerateToken() {
+	token := s.session.Get("_token")
+	s.session.regenerateToken()
+	s.NotEqual(token, s.session.Get("_token"))
 }
 
 func (s *SessionTestSuite) TestRemoveFromOldFlashData() {

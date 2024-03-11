@@ -171,26 +171,6 @@ func (_m *Session) Invalidate() error {
 	return r0
 }
 
-// Migrate provides a mock function with given fields: destroy
-func (_m *Session) Migrate(destroy ...bool) error {
-	_va := make([]interface{}, len(destroy))
-	for _i := range destroy {
-		_va[_i] = destroy[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(...bool) error); ok {
-		r0 = rf(destroy...)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Missing provides a mock function with given fields: key
 func (_m *Session) Missing(key string) bool {
 	ret := _m.Called(key)
@@ -216,20 +196,6 @@ func (_m *Session) Only(keys []string) map[string]interface{} {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})
 		}
-	}
-
-	return r0
-}
-
-// PreviousUrl provides a mock function with given fields:
-func (_m *Session) PreviousUrl() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
 	}
 
 	return r0
@@ -290,22 +256,6 @@ func (_m *Session) Regenerate(destroy ...bool) error {
 	return r0
 }
 
-// RegenerateToken provides a mock function with given fields:
-func (_m *Session) RegenerateToken() session.Session {
-	ret := _m.Called()
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func() session.Session); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
 // Remove provides a mock function with given fields: key
 func (_m *Session) Remove(key string) interface{} {
 	ret := _m.Called(key)
@@ -359,22 +309,6 @@ func (_m *Session) SetName(name string) session.Session {
 	var r0 session.Session
 	if rf, ok := ret.Get(0).(func(string) session.Session); ok {
 		r0 = rf(name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Session)
-		}
-	}
-
-	return r0
-}
-
-// SetPreviousUrl provides a mock function with given fields: url
-func (_m *Session) SetPreviousUrl(url string) session.Session {
-	ret := _m.Called(url)
-
-	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string) session.Session); ok {
-		r0 = rf(url)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(session.Session)

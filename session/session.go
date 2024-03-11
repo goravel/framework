@@ -87,25 +87,7 @@ func (s *Session) Has(key string) bool {
 
 func (s *Session) Invalidate() error {
 	s.Flush()
-	return s.Migrate(true)
-}
-
-func (s *Session) Migrate(destroy ...bool) error {
-	shouldDestroy := false
-	if len(destroy) > 0 {
-		shouldDestroy = destroy[0]
-	}
-
-	if shouldDestroy {
-		err := s.driver.Destroy(s.GetID())
-		if err != nil {
-			return err
-		}
-	}
-
-	s.SetID(s.generateSessionID())
-
-	return nil
+	return s.migrate(true)
 }
 
 func (s *Session) Missing(key string) bool {
@@ -114,10 +96,6 @@ func (s *Session) Missing(key string) bool {
 
 func (s *Session) Only(keys []string) map[string]any {
 	return supportmaps.Only(s.attributes, keys...)
-}
-
-func (s *Session) PreviousUrl() string {
-	return s.Get("_previous.url").(string)
 }
 
 func (s *Session) Pull(key string, def ...any) any {
@@ -130,17 +108,13 @@ func (s *Session) Put(key string, value any) sessioncontract.Session {
 }
 
 func (s *Session) Regenerate(destroy ...bool) error {
-	err := s.Migrate(destroy...)
+	err := s.migrate(destroy...)
 	if err != nil {
 		return err
 	}
 
-	s.RegenerateToken()
+	s.regenerateToken()
 	return nil
-}
-
-func (s *Session) RegenerateToken() sessioncontract.Session {
-	return s.Put("_token", str.Random(40))
 }
 
 func (s *Session) Remove(key string) any {
@@ -180,15 +154,11 @@ func (s *Session) SetName(name string) sessioncontract.Session {
 	return s
 }
 
-func (s *Session) SetPreviousUrl(url string) sessioncontract.Session {
-	return s.Put("_previous.url", url)
-}
-
 func (s *Session) Start() bool {
 	s.loadSession()
 
 	if !s.Has("_token") {
-		s.RegenerateToken()
+		s.regenerateToken()
 	}
 
 	s.started = true
@@ -214,6 +184,24 @@ func (s *Session) loadSession() {
 	}
 }
 
+func (s *Session) migrate(destroy ...bool) error {
+	shouldDestroy := false
+	if len(destroy) > 0 {
+		shouldDestroy = destroy[0]
+	}
+
+	if shouldDestroy {
+		err := s.driver.Destroy(s.GetID())
+		if err != nil {
+			return err
+		}
+	}
+
+	s.SetID(s.generateSessionID())
+
+	return nil
+}
+
 func (s *Session) readFromHandler() map[string]any {
 	value, err := s.driver.Read(s.GetID())
 	if err != nil {
@@ -232,6 +220,10 @@ func (s *Session) ageFlashData() {
 	s.Forget(old...)
 	s.Put("_flash.old", s.Get("_flash.new", []string{}))
 	s.Put("_flash.new", []string{})
+}
+
+func (s *Session) regenerateToken() sessioncontract.Session {
+	return s.Put("_token", str.Random(40))
 }
 
 func (s *Session) removeFromOldFlashData(keys ...string) {
