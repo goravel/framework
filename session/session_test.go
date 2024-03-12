@@ -360,7 +360,7 @@ func (s *SessionTestSuite) TestRemoveFromOldFlashData() {
 func (s *SessionTestSuite) TestToStringSlice() {
 	s.Equal([]string{"foo", "bar"}, toStringSlice([]any{"foo", "bar"}))
 
-	s.Equal([]string{"1", "", "3"}, toStringSlice([]any{"1", 2, "3"}))
+	s.Equal([]string{"1", "2", "3"}, toStringSlice([]any{"1", 2, "3"}))
 }
 
 func (s *SessionTestSuite) getSession() *Session {

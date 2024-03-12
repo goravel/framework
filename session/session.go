@@ -4,6 +4,8 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/spf13/cast"
+
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/support/json"
 	supportmaps "github.com/goravel/framework/support/maps"
@@ -262,7 +264,7 @@ func (s *Session) removeFromOldFlashData(keys ...string) {
 	old := s.Get("_flash.old", []any{}).([]any)
 	for _, key := range keys {
 		old = slices.DeleteFunc(old, func(i any) bool {
-			return i == any(key)
+			return cast.ToString(i) == key
 		})
 	}
 	s.Put("_flash.old", old)
@@ -272,9 +274,7 @@ func (s *Session) removeFromOldFlashData(keys ...string) {
 func toStringSlice(anySlice []any) []string {
 	strSlice := make([]string, len(anySlice))
 	for i, v := range anySlice {
-		if s, ok := v.(string); ok {
-			strSlice[i] = s
-		}
+		strSlice[i] = cast.ToString(v)
 	}
 	return strSlice
 }
