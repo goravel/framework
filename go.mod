@@ -9,7 +9,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.10.0
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-sql-driver/mysql v1.8.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/golang-module/carbon/v2 v2.3.10
@@ -37,13 +37,14 @@ require (
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	google.golang.org/grpc v1.62.1
 	gorm.io/driver/mysql v1.5.4
-	gorm.io/driver/postgres v1.5.6
+	gorm.io/driver/postgres v1.5.7
 	gorm.io/driver/sqlserver v1.5.3
 	gorm.io/gorm v1.25.7
 	gorm.io/plugin/dbresolver v1.5.1
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
