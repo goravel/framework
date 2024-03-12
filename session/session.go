@@ -45,7 +45,7 @@ func (s *Session) Exists(key string) bool {
 func (s *Session) Flash(key string, value any) sessioncontract.Session {
 	s.Put(key, value)
 
-	old := s.Get("_flash.new", []string{}).([]string)
+	old := s.Get("_flash.new", []any{}).([]any)
 	s.Put("_flash.new", append(old, key))
 
 	s.removeFromOldFlashData(key)
@@ -103,7 +103,7 @@ func (s *Session) Missing(key string) bool {
 func (s *Session) Now(key string, value any) sessioncontract.Session {
 	s.Put(key, value)
 
-	old := s.Get("_flash.old", []string{}).([]string)
+	old := s.Get("_flash.old", []any{}).([]any)
 	s.Put("_flash.old", append(old, key))
 
 	return s
@@ -123,8 +123,9 @@ func (s *Session) Put(key string, value any) sessioncontract.Session {
 }
 
 func (s *Session) Reflash() sessioncontract.Session {
-	s.mergeNewFlashes(s.Get("_flash.old", []string{}).([]string)...)
-	s.Put("_flash.old", []string{})
+	old := toStringSlice(s.Get("_flash.old", []any{}).([]any))
+	s.mergeNewFlashes(old...)
+	s.Put("_flash.old", []any{})
 	return s
 }
 
@@ -236,17 +237,16 @@ func (s *Session) readFromHandler() map[string]any {
 }
 
 func (s *Session) ageFlashData() {
-	old := s.Get("_flash.old", []string{}).([]string)
-
+	old := toStringSlice(s.Get("_flash.old", []any{}).([]any))
 	s.Forget(old...)
-	s.Put("_flash.old", s.Get("_flash.new", []string{}))
-	s.Put("_flash.new", []string{})
+	s.Put("_flash.old", s.Get("_flash.new", []any{}))
+	s.Put("_flash.new", []any{})
 }
 
 func (s *Session) mergeNewFlashes(keys ...string) {
-	values := s.Get("_flash.new", []string{}).([]string)
+	values := s.Get("_flash.new", []any{}).([]any)
 	for _, key := range keys {
-		if !slices.Contains(values, key) {
+		if !slices.Contains(values, any(key)) {
 			values = append(values, key)
 		}
 	}
@@ -259,11 +259,22 @@ func (s *Session) regenerateToken() sessioncontract.Session {
 }
 
 func (s *Session) removeFromOldFlashData(keys ...string) {
-	old := s.Get("_flash.old", []string{}).([]string)
+	old := s.Get("_flash.old", []any{}).([]any)
 	for _, key := range keys {
-		old = slices.DeleteFunc(old, func(i string) bool {
-			return i == key
+		old = slices.DeleteFunc(old, func(i any) bool {
+			return i == any(key)
 		})
 	}
 	s.Put("_flash.old", old)
+}
+
+// toStringSlice converts an interface slice to a string slice.
+func toStringSlice(anySlice []any) []string {
+	strSlice := make([]string, len(anySlice))
+	for i, v := range anySlice {
+		if s, ok := v.(string); ok {
+			strSlice[i] = s
+		}
+	}
+	return strSlice
 }
