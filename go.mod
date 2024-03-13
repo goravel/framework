@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.12-0.20231012204029-bdb94a90ca41
-	github.com/bytedance/sonic v1.11.2
+	github.com/bytedance/sonic v1.11.3
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/glebarez/go-sqlite v1.22.0
