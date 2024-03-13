@@ -41,4 +41,8 @@ type Cookie struct {
 	// impossible for the browser to send this cookie along with cross-site
 	// requests.It helps mitigate the risk of cross-origin information leaks.
 	SameSite string
+
+	// Partitioned is the partitioned value of the "Set-Cookie" header received from
+	// the server.
+	Partitioned bool
 }

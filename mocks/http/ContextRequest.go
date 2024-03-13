@@ -10,6 +10,8 @@ import (
 
 	nethttp "net/http"
 
+	session "github.com/goravel/framework/contracts/session"
+
 	validation "github.com/goravel/framework/contracts/validation"
 )
 
@@ -114,6 +116,20 @@ func (_m *ContextRequest) FullUrl() string {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// HasSession provides a mock function with given fields:
+func (_m *ContextRequest) HasSession() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
 	}
 
 	return r0
@@ -532,6 +548,38 @@ func (_m *ContextRequest) RouteInt64(key string) int64 {
 		r0 = rf(key)
 	} else {
 		r0 = ret.Get(0).(int64)
+	}
+
+	return r0
+}
+
+// Session provides a mock function with given fields:
+func (_m *ContextRequest) Session() session.Session {
+	ret := _m.Called()
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func() session.Session); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
+	}
+
+	return r0
+}
+
+// SetSession provides a mock function with given fields: _a0
+func (_m *ContextRequest) SetSession(_a0 session.Session) http.ContextRequest {
+	ret := _m.Called(_a0)
+
+	var r0 http.ContextRequest
+	if rf, ok := ret.Get(0).(func(session.Session) http.ContextRequest); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.ContextRequest)
+		}
 	}
 
 	return r0
