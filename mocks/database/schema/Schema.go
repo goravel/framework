@@ -393,23 +393,33 @@ func (_c *Schema_GetColumnListing_Call) RunAndReturn(run func(string) []string) 
 }
 
 // GetColumns provides a mock function with given fields: table
-func (_m *Schema) GetColumns(table string) []schema.ColumnDefinition {
+func (_m *Schema) GetColumns(table string) ([]schema.Column, error) {
 	ret := _m.Called(table)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetColumns")
 	}
 
-	var r0 []schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) []schema.ColumnDefinition); ok {
+	var r0 []schema.Column
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]schema.Column, error)); ok {
+		return rf(table)
+	}
+	if rf, ok := ret.Get(0).(func(string) []schema.Column); ok {
 		r0 = rf(table)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]schema.ColumnDefinition)
+			r0 = ret.Get(0).([]schema.Column)
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(table)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Schema_GetColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetColumns'
@@ -430,12 +440,12 @@ func (_c *Schema_GetColumns_Call) Run(run func(table string)) *Schema_GetColumns
 	return _c
 }
 
-func (_c *Schema_GetColumns_Call) Return(_a0 []schema.ColumnDefinition) *Schema_GetColumns_Call {
-	_c.Call.Return(_a0)
+func (_c *Schema_GetColumns_Call) Return(_a0 []schema.Column, _a1 error) *Schema_GetColumns_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Schema_GetColumns_Call) RunAndReturn(run func(string) []schema.ColumnDefinition) *Schema_GetColumns_Call {
+func (_c *Schema_GetColumns_Call) RunAndReturn(run func(string) ([]schema.Column, error)) *Schema_GetColumns_Call {
 	_c.Call.Return(run)
 	return _c
 }

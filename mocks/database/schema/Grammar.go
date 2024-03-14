@@ -163,17 +163,17 @@ func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(schema.Blueprint, st
 	return _c
 }
 
-// CompileColumns provides a mock function with given fields: database, table
-func (_m *Grammar) CompileColumns(database string, table string) string {
-	ret := _m.Called(database, table)
+// CompileColumns provides a mock function with given fields: database, table, _a2
+func (_m *Grammar) CompileColumns(database string, table string, _a2 string) string {
+	ret := _m.Called(database, table, _a2)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileColumns")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(database, table)
+	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
+		r0 = rf(database, table, _a2)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -189,13 +189,14 @@ type Grammar_CompileColumns_Call struct {
 // CompileColumns is a helper method to define mock.On call
 //   - database string
 //   - table string
-func (_e *Grammar_Expecter) CompileColumns(database interface{}, table interface{}) *Grammar_CompileColumns_Call {
-	return &Grammar_CompileColumns_Call{Call: _e.mock.On("CompileColumns", database, table)}
+//   - _a2 string
+func (_e *Grammar_Expecter) CompileColumns(database interface{}, table interface{}, _a2 interface{}) *Grammar_CompileColumns_Call {
+	return &Grammar_CompileColumns_Call{Call: _e.mock.On("CompileColumns", database, table, _a2)}
 }
 
-func (_c *Grammar_CompileColumns_Call) Run(run func(database string, table string)) *Grammar_CompileColumns_Call {
+func (_c *Grammar_CompileColumns_Call) Run(run func(database string, table string, _a2 string)) *Grammar_CompileColumns_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(string), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -205,7 +206,7 @@ func (_c *Grammar_CompileColumns_Call) Return(_a0 string) *Grammar_CompileColumn
 	return _c
 }
 
-func (_c *Grammar_CompileColumns_Call) RunAndReturn(run func(string, string) string) *Grammar_CompileColumns_Call {
+func (_c *Grammar_CompileColumns_Call) RunAndReturn(run func(string, string, string) string) *Grammar_CompileColumns_Call {
 	_c.Call.Return(run)
 	return _c
 }
