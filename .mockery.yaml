@@ -1,0 +1,4 @@
+with-expecter: True
+dir: "contracts"
+keeptree: True
+all: True
