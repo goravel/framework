@@ -170,6 +170,15 @@ func (s *SchemaSuite) TestGetColumns() {
 				}
 			}
 
+			columnListing := schema.schema.GetColumnListing(table)
+
+			s.Equal(2, len(columnListing))
+			s.Contains(columnListing, "char")
+			s.Contains(columnListing, "string")
+
+			s.True(schema.schema.HasColumn(table, "char"))
+			s.True(schema.schema.HasColumns(table, []string{"char", "string"}))
+
 			schema.mockConfig.AssertExpectations(s.T())
 		})
 	}

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	configcontract "github.com/goravel/framework/contracts/config"
@@ -98,8 +99,18 @@ func (r *Schema) GetColumns(table string) ([]schemacontract.Column, error) {
 }
 
 func (r *Schema) GetColumnListing(table string) []string {
-	//TODO implement me
-	panic("implement me")
+	columns, err := r.GetColumns(table)
+	if err != nil {
+		r.log.Errorf("failed to get %s columns: %v", table, err)
+		return nil
+	}
+
+	var names []string
+	for _, column := range columns {
+		names = append(names, column.Name)
+	}
+
+	return names
 }
 
 func (r *Schema) GetIndexes(table string) []schemacontract.Index {
@@ -132,13 +143,18 @@ func (r *Schema) GetViews() []schemacontract.View {
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
-	//TODO implement me
-	panic("implement me")
+	return slices.Contains(r.GetColumnListing(table), column)
 }
 
 func (r *Schema) HasColumns(table string, columns []string) bool {
-	//TODO implement me
-	panic("implement me")
+	columnListing := r.GetColumnListing(table)
+	for _, column := range columns {
+		if !slices.Contains(columnListing, column) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *Schema) HasIndex(table, index string) {
