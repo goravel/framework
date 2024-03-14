@@ -7,8 +7,8 @@ type Column struct {
 	Default       any
 	Name          string
 	Nullable      bool
-	TypeName      string
 	Type          string
+	TypeName      string
 }
 
 type ColumnDefinition interface {

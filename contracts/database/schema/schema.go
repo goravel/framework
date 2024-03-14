@@ -1,6 +1,7 @@
 package schema
 
 type Schema interface {
+	// Connection Get instance by database connection.
 	Connection(name string) Schema
 	// Create a new table on the schema.
 	Create(table string, callback func(table Blueprint)) error
