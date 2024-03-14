@@ -147,7 +147,7 @@ type PostgresqlDocker struct {
 }
 
 func NewPostgresqlDocker(database *supportdocker.Database) *PostgresqlDocker {
-	config := database.Postgresql.Config()
+	config := database.Postgres.Config()
 
 	return &PostgresqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }

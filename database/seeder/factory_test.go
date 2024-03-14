@@ -1,4 +1,4 @@
-package database
+package seeder
 
 import (
 	"log"
@@ -16,6 +16,13 @@ import (
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/env"
 )
+
+type User struct {
+	orm.Model
+	orm.SoftDeletes
+	Name   string
+	Avatar string
+}
 
 func (u *User) Factory() factory.Factory {
 	return &UserFactory{}

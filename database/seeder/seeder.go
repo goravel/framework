@@ -1,20 +1,21 @@
-package database
+package seeder
 
 import (
 	"github.com/gookit/color"
+
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
-type SeederFacade struct {
+type Seeder struct {
 	Seeders []seeder.Seeder
 	Called  []string
 }
 
-func NewSeederFacade() *SeederFacade {
-	return &SeederFacade{}
+func NewSeeder() *Seeder {
+	return &Seeder{}
 }
 
-func (s *SeederFacade) Register(seeders []seeder.Seeder) {
+func (s *Seeder) Register(seeders []seeder.Seeder) {
 	existingSignatures := make(map[string]bool)
 
 	for _, seeder := range seeders {
@@ -29,7 +30,7 @@ func (s *SeederFacade) Register(seeders []seeder.Seeder) {
 	}
 }
 
-func (s *SeederFacade) GetSeeder(name string) seeder.Seeder {
+func (s *Seeder) GetSeeder(name string) seeder.Seeder {
 	var seeder seeder.Seeder
 	for _, item := range s.Seeders {
 		if item.Signature() == name {
@@ -41,12 +42,12 @@ func (s *SeederFacade) GetSeeder(name string) seeder.Seeder {
 	return seeder
 }
 
-func (s *SeederFacade) GetSeeders() []seeder.Seeder {
+func (s *Seeder) GetSeeders() []seeder.Seeder {
 	return s.Seeders
 }
 
 // Call executes the specified seeder(s).
-func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
+func (s *Seeder) Call(seeders []seeder.Seeder) error {
 	for _, seeder := range seeders {
 		signature := seeder.Signature()
 
@@ -62,7 +63,7 @@ func (s *SeederFacade) Call(seeders []seeder.Seeder) error {
 }
 
 // CallOnce executes the specified seeder(s) only if they haven't been executed before.
-func (s *SeederFacade) CallOnce(seeders []seeder.Seeder) error {
+func (s *Seeder) CallOnce(seeders []seeder.Seeder) error {
 	for _, item := range seeders {
 		signature := item.Signature()
 

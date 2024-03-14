@@ -2277,7 +2277,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup: func() {
-				mockPostgresqlConnection(s.mysqlDocker.MockConfig, testDatabaseDocker.Postgresql.Config())
+				mockPostgresqlConnection(s.mysqlDocker.MockConfig, testDatabaseDocker.Postgres.Config())
 			},
 			expectConnection: "postgresql",
 		},
@@ -3057,7 +3057,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockPostgresqlConnection(mysqlDocker.MockConfig, testDatabaseDocker.Postgresql.Config())
+	mockPostgresqlConnection(mysqlDocker.MockConfig, testDatabaseDocker.Postgres.Config())
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))

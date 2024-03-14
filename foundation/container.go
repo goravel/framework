@@ -18,6 +18,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	cryptcontract "github.com/goravel/framework/contracts/crypt"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	schemacontract "github.com/goravel/framework/contracts/database/schema"
 	seerdercontract "github.com/goravel/framework/contracts/database/seeder"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
@@ -256,6 +257,28 @@ func (c *Container) MakeSchedule() schedulecontract.Schedule {
 	return instance.(schedulecontract.Schedule)
 }
 
+func (c *Container) MakeSchema() schemacontract.Schema {
+	instance, err := c.Make(database.BindingSchema)
+
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(schemacontract.Schema)
+}
+
+func (c *Container) MakeSeeder() seerdercontract.Facade {
+	instance, err := c.Make(database.BindingSeeder)
+
+	if err != nil {
+		color.Redln(err)
+		return nil
+	}
+
+	return instance.(seerdercontract.Facade)
+}
+
 func (c *Container) MakeSession() sessioncontract.Manager {
 	instance, err := c.Make(session.Binding)
 	if err != nil {
@@ -304,17 +327,6 @@ func (c *Container) MakeView() httpcontract.View {
 	}
 
 	return instance.(httpcontract.View)
-}
-
-func (c *Container) MakeSeeder() seerdercontract.Facade {
-	instance, err := c.Make(database.BindingSeeder)
-
-	if err != nil {
-		color.Redln(err)
-		return nil
-	}
-
-	return instance.(seerdercontract.Facade)
 }
 
 func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {

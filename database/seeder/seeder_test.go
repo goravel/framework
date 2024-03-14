@@ -1,4 +1,4 @@
-package database
+package seeder
 
 import (
 	"log"
@@ -11,7 +11,7 @@ import (
 
 type SeederTestSuite struct {
 	suite.Suite
-	seederFacade *SeederFacade
+	seederFacade *Seeder
 }
 
 func TestSeederTestSuite(t *testing.T) {
@@ -19,7 +19,7 @@ func TestSeederTestSuite(t *testing.T) {
 }
 
 func (s *SeederTestSuite) SetupTest() {
-	s.seederFacade = NewSeederFacade()
+	s.seederFacade = NewSeeder()
 }
 
 func (s *SeederTestSuite) TestRegister() {
