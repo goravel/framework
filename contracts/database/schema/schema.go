@@ -62,8 +62,9 @@ type Index struct {
 }
 
 type Table struct {
-	Name string
-	Size int
+	Comment string
+	Name    string
+	Size    int
 }
 
 type View struct {

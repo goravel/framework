@@ -78,13 +78,17 @@ func (r *Blueprint) Char(column string, length ...int) schemacontract.ColumnDefi
 	return columnImpl
 }
 
-func (r *Blueprint) Comment(comment string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Comment(comment string) {
+	r.addCommand(&Command{
+		Comment: comment,
+		Name:    "tableComment",
+	})
 }
 
 func (r *Blueprint) Create() {
-	r.addCommand("create")
+	r.addCommand(&Command{
+		Name: "create",
+	})
 }
 
 func (r *Blueprint) Date(column string) schemacontract.ColumnDefinition {
@@ -285,6 +289,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 		switch command.Name {
 		case "create":
 			statements = append(statements, grammar.CompileCreate(r, query))
+		case "tableComment":
+			statements = append(statements, grammar.CompileTableComment(r, command.Comment))
 		}
 	}
 
@@ -310,16 +316,11 @@ func (r *Blueprint) addColumn(column *ColumnDefinition) {
 	r.columns = append(r.columns, column)
 }
 
-func (r *Blueprint) addCommand(name string) {
-	r.commands = append(r.commands, r.createCommand(name))
-}
-
-func (r *Blueprint) createCommand(name string) *Command {
-	return &Command{
-		Name: name,
-	}
+func (r *Blueprint) addCommand(command *Command) {
+	r.commands = append(r.commands, command)
 }
 
 type Command struct {
-	Name string
+	Comment string
+	Name    string
 }

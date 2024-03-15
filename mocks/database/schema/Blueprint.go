@@ -276,21 +276,8 @@ func (_c *Blueprint_Char_Call) RunAndReturn(run func(string, ...int) schema.Colu
 }
 
 // Comment provides a mock function with given fields: comment
-func (_m *Blueprint) Comment(comment string) error {
-	ret := _m.Called(comment)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Comment")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(comment)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Blueprint) Comment(comment string) {
+	_m.Called(comment)
 }
 
 // Blueprint_Comment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Comment'
@@ -311,12 +298,12 @@ func (_c *Blueprint_Comment_Call) Run(run func(comment string)) *Blueprint_Comme
 	return _c
 }
 
-func (_c *Blueprint_Comment_Call) Return(_a0 error) *Blueprint_Comment_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_Comment_Call) Return() *Blueprint_Comment_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_Comment_Call) RunAndReturn(run func(string) error) *Blueprint_Comment_Call {
+func (_c *Blueprint_Comment_Call) RunAndReturn(run func(string)) *Blueprint_Comment_Call {
 	_c.Call.Return(run)
 	return _c
 }

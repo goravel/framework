@@ -130,9 +130,10 @@ func (r *Postgres) CompileRenameIndex(blueprint schemacontract.Blueprint, comman
 	panic("implement me")
 }
 
-func (r *Postgres) CompileTableComment(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileTableComment(blueprint schemacontract.Blueprint, comment string) string {
+	return fmt.Sprintf("comment on table %s is '%s'",
+		blueprint.GetTableName(),
+		strings.ReplaceAll(comment, "'", "''"))
 }
 
 func (r *Postgres) CompileTables(database string) string {

@@ -119,9 +119,18 @@ func (s *SchemaSuite) TestCreate() {
 
 			err := schema.schema.Create("create", func(table schemacontract.Blueprint) {
 				table.String("name")
+				table.Comment("This is a test table")
 			})
 			s.Nil(err)
 			s.True(schema.schema.HasTable("goravel_create"))
+
+			tables, err := schema.schema.GetTables()
+			s.Nil(err)
+			for _, table := range tables {
+				if table.Name == "goravel_create" {
+					s.Equal("This is a test table", table.Comment)
+				}
+			}
 		})
 	}
 }
