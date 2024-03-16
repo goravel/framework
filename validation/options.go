@@ -66,6 +66,10 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 		}
 	}
 
+	if options["filters"] != nil {
+		validator.FilterRules(options["filters"].(map[string]string))
+	}
+
 	if options["messages"] != nil {
 		messages := options["messages"].(map[string]string)
 		for key, value := range messages {
