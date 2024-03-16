@@ -4,7 +4,7 @@ type Column struct {
 	AutoIncrement bool
 	Collation     string
 	Comment       string
-	Default       any
+	Default       string
 	Name          string
 	Nullable      bool
 	Type          string

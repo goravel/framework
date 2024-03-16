@@ -92,8 +92,13 @@ func (r *Blueprint) Create() {
 }
 
 func (r *Blueprint) Date(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("date"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) DateTime(column string) schemacontract.ColumnDefinition {

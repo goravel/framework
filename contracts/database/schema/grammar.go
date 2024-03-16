@@ -71,6 +71,7 @@ type Grammar interface {
 	// TypeChar Create the column definition for a char type.
 	TypeChar(column ColumnDefinition) string
 	// TypeDate Create the column definition for a date type.
+	// TODO check if the column is required
 	TypeDate(column ColumnDefinition) string
 	// TypeDateTime Create the column definition for a date-time type.
 	TypeDateTime(column ColumnDefinition) string

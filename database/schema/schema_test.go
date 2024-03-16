@@ -140,14 +140,15 @@ func (s *SchemaSuite) TestGetColumns() {
 		s.Run(schema.driver.String(), func() {
 			table := "get_columns"
 			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Once()
+				Return(schema.dbConfig.Database).Times(4)
 			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Once()
+				Return("").Times(4)
 			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Twice()
+				Return("").Times(5)
 
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.Char("char")
+				table.Date("date")
 				table.String("string")
 			})
 
@@ -157,22 +158,31 @@ func (s *SchemaSuite) TestGetColumns() {
 			columns, err := schema.schema.GetColumns(table)
 
 			s.Nil(err)
-			s.Equal(2, len(columns))
+			s.Equal(3, len(columns))
 			for _, column := range columns {
 				if column.Name == "char" {
 					s.False(column.AutoIncrement)
 					s.Empty(column.Collation)
 					s.Empty(column.Comment)
-					s.Nil(column.Default)
+					s.Empty(column.Default)
 					s.True(column.Nullable)
 					s.Equal("character(255)", column.Type)
 					s.Equal("bpchar", column.TypeName)
+				}
+				if column.Name == "date" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("date", column.Type)
+					s.Equal("date", column.TypeName)
 				}
 				if column.Name == "string" {
 					s.False(column.AutoIncrement)
 					s.Empty(column.Collation)
 					s.Empty(column.Comment)
-					s.Nil(column.Default)
+					s.Empty(column.Default)
 					s.True(column.Nullable)
 					s.Equal("character varying(255)", column.Type)
 					s.Equal("varchar", column.TypeName)
@@ -181,8 +191,9 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(2, len(columnListing))
+			s.Equal(3, len(columnListing))
 			s.Contains(columnListing, "char")
+			s.Contains(columnListing, "date")
 			s.Contains(columnListing, "string")
 
 			s.True(schema.schema.HasColumn(table, "char"))
