@@ -149,16 +149,27 @@ func (s *SchemaSuite) TestGetColumns() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.Char("char")
 				table.Date("date")
+				table.DateTime("date_time", 3)
+				table.DateTimeTz("date_time_tz", 3)
 				table.String("string")
 			})
 
 			s.Nil(err)
 			s.True(schema.schema.HasTable(table))
 
+			columnListing := schema.schema.GetColumnListing(table)
+
+			s.Equal(5, len(columnListing))
+			s.Contains(columnListing, "char")
+			s.Contains(columnListing, "date")
+			s.Contains(columnListing, "date_time")
+			s.Contains(columnListing, "date_time_tz")
+			s.Contains(columnListing, "string")
+
 			columns, err := schema.schema.GetColumns(table)
 
 			s.Nil(err)
-			s.Equal(3, len(columns))
+			s.Equal(5, len(columns))
 			for _, column := range columns {
 				if column.Name == "char" {
 					s.False(column.AutoIncrement)
@@ -178,6 +189,24 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Equal("date", column.Type)
 					s.Equal("date", column.TypeName)
 				}
+				if column.Name == "date_time" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("timestamp(3) without time zone", column.Type)
+					s.Equal("timestamp", column.TypeName)
+				}
+				if column.Name == "date_time_tz" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("timestamp(3) with time zone", column.Type)
+					s.Equal("timestamptz", column.TypeName)
+				}
 				if column.Name == "string" {
 					s.False(column.AutoIncrement)
 					s.Empty(column.Collation)
@@ -188,13 +217,6 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Equal("varchar", column.TypeName)
 				}
 			}
-
-			columnListing := schema.schema.GetColumnListing(table)
-
-			s.Equal(3, len(columnListing))
-			s.Contains(columnListing, "char")
-			s.Contains(columnListing, "date")
-			s.Contains(columnListing, "string")
 
 			s.True(schema.schema.HasColumn(table, "char"))
 			s.True(schema.schema.HasColumns(table, []string{"char", "string"}))

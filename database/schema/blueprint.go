@@ -101,14 +101,30 @@ func (r *Blueprint) Date(column string) schemacontract.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) DateTime(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) DateTime(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("dateTime"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
-func (r *Blueprint) DateTimeTz(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) DateTimeTz(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("dateTimeTz"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Decimal(column string) schemacontract.ColumnDefinition {

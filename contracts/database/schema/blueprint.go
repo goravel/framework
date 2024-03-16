@@ -22,9 +22,9 @@ type Blueprint interface {
 	// Date Create a new date column on the table.
 	Date(column string) ColumnDefinition
 	// DateTime Create a new date-time column on the table.
-	DateTime(column string) ColumnDefinition
+	DateTime(column string, precision ...int) ColumnDefinition
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
-	DateTimeTz(column string) ColumnDefinition
+	DateTimeTz(column string, precision ...int) ColumnDefinition
 	// Decimal Create a new decimal column on the table.
 	Decimal(column string) ColumnDefinition
 	// Double Create a new double column on the table.
