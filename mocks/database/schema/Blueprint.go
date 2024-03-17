@@ -388,17 +388,24 @@ func (_c *Blueprint_Date_Call) RunAndReturn(run func(string) schema.ColumnDefini
 	return _c
 }
 
-// DateTime provides a mock function with given fields: column
-func (_m *Blueprint) DateTime(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// DateTime provides a mock function with given fields: column, precision
+func (_m *Blueprint) DateTime(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DateTime")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -415,13 +422,21 @@ type Blueprint_DateTime_Call struct {
 
 // DateTime is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) DateTime(column interface{}) *Blueprint_DateTime_Call {
-	return &Blueprint_DateTime_Call{Call: _e.mock.On("DateTime", column)}
+//   - precision ...int
+func (_e *Blueprint_Expecter) DateTime(column interface{}, precision ...interface{}) *Blueprint_DateTime_Call {
+	return &Blueprint_DateTime_Call{Call: _e.mock.On("DateTime",
+		append([]interface{}{column}, precision...)...)}
 }
 
-func (_c *Blueprint_DateTime_Call) Run(run func(column string)) *Blueprint_DateTime_Call {
+func (_c *Blueprint_DateTime_Call) Run(run func(column string, precision ...int)) *Blueprint_DateTime_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -431,22 +446,29 @@ func (_c *Blueprint_DateTime_Call) Return(_a0 schema.ColumnDefinition) *Blueprin
 	return _c
 }
 
-func (_c *Blueprint_DateTime_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_DateTime_Call {
+func (_c *Blueprint_DateTime_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_DateTime_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// DateTimeTz provides a mock function with given fields: column
-func (_m *Blueprint) DateTimeTz(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// DateTimeTz provides a mock function with given fields: column, precision
+func (_m *Blueprint) DateTimeTz(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DateTimeTz")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -463,13 +485,21 @@ type Blueprint_DateTimeTz_Call struct {
 
 // DateTimeTz is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) DateTimeTz(column interface{}) *Blueprint_DateTimeTz_Call {
-	return &Blueprint_DateTimeTz_Call{Call: _e.mock.On("DateTimeTz", column)}
+//   - precision ...int
+func (_e *Blueprint_Expecter) DateTimeTz(column interface{}, precision ...interface{}) *Blueprint_DateTimeTz_Call {
+	return &Blueprint_DateTimeTz_Call{Call: _e.mock.On("DateTimeTz",
+		append([]interface{}{column}, precision...)...)}
 }
 
-func (_c *Blueprint_DateTimeTz_Call) Run(run func(column string)) *Blueprint_DateTimeTz_Call {
+func (_c *Blueprint_DateTimeTz_Call) Run(run func(column string, precision ...int)) *Blueprint_DateTimeTz_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -479,22 +509,29 @@ func (_c *Blueprint_DateTimeTz_Call) Return(_a0 schema.ColumnDefinition) *Bluepr
 	return _c
 }
 
-func (_c *Blueprint_DateTimeTz_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_DateTimeTz_Call {
+func (_c *Blueprint_DateTimeTz_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_DateTimeTz_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Decimal provides a mock function with given fields: column
-func (_m *Blueprint) Decimal(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// Decimal provides a mock function with given fields: column, length
+func (_m *Blueprint) Decimal(column string, length ...schema.DecimalLength) schema.ColumnDefinition {
+	_va := make([]interface{}, len(length))
+	for _i := range length {
+		_va[_i] = length[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Decimal")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...schema.DecimalLength) schema.ColumnDefinition); ok {
+		r0 = rf(column, length...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -511,13 +548,21 @@ type Blueprint_Decimal_Call struct {
 
 // Decimal is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) Decimal(column interface{}) *Blueprint_Decimal_Call {
-	return &Blueprint_Decimal_Call{Call: _e.mock.On("Decimal", column)}
+//   - length ...schema.DecimalLength
+func (_e *Blueprint_Expecter) Decimal(column interface{}, length ...interface{}) *Blueprint_Decimal_Call {
+	return &Blueprint_Decimal_Call{Call: _e.mock.On("Decimal",
+		append([]interface{}{column}, length...)...)}
 }
 
-func (_c *Blueprint_Decimal_Call) Run(run func(column string)) *Blueprint_Decimal_Call {
+func (_c *Blueprint_Decimal_Call) Run(run func(column string, length ...schema.DecimalLength)) *Blueprint_Decimal_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]schema.DecimalLength, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(schema.DecimalLength)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -527,7 +572,7 @@ func (_c *Blueprint_Decimal_Call) Return(_a0 schema.ColumnDefinition) *Blueprint
 	return _c
 }
 
-func (_c *Blueprint_Decimal_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Decimal_Call {
+func (_c *Blueprint_Decimal_Call) RunAndReturn(run func(string, ...schema.DecimalLength) schema.ColumnDefinition) *Blueprint_Decimal_Call {
 	_c.Call.Return(run)
 	return _c
 }

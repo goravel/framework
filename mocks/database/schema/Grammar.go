@@ -211,6 +211,53 @@ func (_c *Grammar_CompileColumns_Call) RunAndReturn(run func(string, string, str
 	return _c
 }
 
+// CompileComment provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileComment")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileComment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileComment'
+type Grammar_CompileComment_Call struct {
+	*mock.Call
+}
+
+// CompileComment is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileComment(blueprint interface{}, command interface{}) *Grammar_CompileComment_Call {
+	return &Grammar_CompileComment_Call{Call: _e.mock.On("CompileComment", blueprint, command)}
+}
+
+func (_c *Grammar_CompileComment_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileComment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileComment_Call) Return(_a0 string) *Grammar_CompileComment_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileComment_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileComment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileCreate provides a mock function with given fields: blueprint, query
 func (_m *Grammar) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
 	ret := _m.Called(blueprint, query)
@@ -1241,6 +1288,53 @@ func (_c *Grammar_CompileViews_Call) Return(_a0 string) *Grammar_CompileViews_Ca
 }
 
 func (_c *Grammar_CompileViews_Call) RunAndReturn(run func(string) string) *Grammar_CompileViews_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetAttributeCommands provides a mock function with given fields:
+func (_m *Grammar) GetAttributeCommands() []string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAttributeCommands")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func() []string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Grammar_GetAttributeCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAttributeCommands'
+type Grammar_GetAttributeCommands_Call struct {
+	*mock.Call
+}
+
+// GetAttributeCommands is a helper method to define mock.On call
+func (_e *Grammar_Expecter) GetAttributeCommands() *Grammar_GetAttributeCommands_Call {
+	return &Grammar_GetAttributeCommands_Call{Call: _e.mock.On("GetAttributeCommands")}
+}
+
+func (_c *Grammar_GetAttributeCommands_Call) Run(run func()) *Grammar_GetAttributeCommands_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Grammar_GetAttributeCommands_Call) Return(_a0 []string) *Grammar_GetAttributeCommands_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_GetAttributeCommands_Call) RunAndReturn(run func() []string) *Grammar_GetAttributeCommands_Call {
 	_c.Call.Return(run)
 	return _c
 }

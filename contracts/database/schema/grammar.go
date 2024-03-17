@@ -14,6 +14,8 @@ type Grammar interface {
 	// CompileColumns Compile the query to determine the columns.
 	// TODO check if the database is required
 	CompileColumns(database, table, schema string) string
+	// CompileComment Compile a column comment command.
+	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint, query ormcontract.Query) string
 	// CompileCreateEncoding Append the character set specifications to a command.
@@ -58,6 +60,8 @@ type Grammar interface {
 	CompileUnique(blueprint Blueprint, command string) string
 	// CompileViews Compile the query to determine the views.
 	CompileViews(database string) string
+	// GetAttributeCommands Get the commands for the schema build.
+	GetAttributeCommands() []string
 	// ModifyNullable Get the SQL for a nullable column modifier.
 	ModifyNullable(blueprint Blueprint, column string) string
 	// ModifyDefault Get the SQL for a default column modifier.

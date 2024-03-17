@@ -6,21 +6,24 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
 	ormmock "github.com/goravel/framework/mocks/database/orm"
+	mockschema "github.com/goravel/framework/mocks/database/schema"
+	"github.com/goravel/framework/support/convert"
 )
 
 type BlueprintTestSuite struct {
 	suite.Suite
 	blueprint *Blueprint
-	grammars  []schema.Grammar
+	grammars  map[ormcontract.Driver]schema.Grammar
 }
 
 func TestBlueprintTestSuite(t *testing.T) {
 	suite.Run(t, &BlueprintTestSuite{
-		grammars: []schema.Grammar{
-			grammars.NewPostgres(),
+		grammars: map[ormcontract.Driver]schema.Grammar{
+			ormcontract.DriverPostgres: grammars.NewPostgres(),
 		},
 	})
 }
@@ -64,6 +67,87 @@ func (s *BlueprintTestSuite) TestChar() {
 		name:   &column,
 		ttype:  &ttype,
 	})
+}
+
+func (s *BlueprintTestSuite) TestDecimal() {
+	column := "name"
+	ttype := "decimal"
+
+	tests := []struct {
+		name          string
+		decimalLength *schema.DecimalLength
+		expectColumns []*ColumnDefinition
+		expectPlaces  int
+		expectTotal   int
+	}{
+		{
+			name:          "decimalLength is nil",
+			decimalLength: nil,
+			expectColumns: []*ColumnDefinition{
+				{
+					name:  &column,
+					ttype: &ttype,
+				},
+			},
+			expectPlaces: 2,
+			expectTotal:  8,
+		},
+		{
+			name:          "decimalLength only with places",
+			decimalLength: &schema.DecimalLength{Places: 4},
+			expectColumns: []*ColumnDefinition{
+				{
+					name:   &column,
+					places: convert.Pointer(4),
+					total:  convert.Pointer(0),
+					ttype:  &ttype,
+				},
+			},
+			expectPlaces: 4,
+			expectTotal:  0,
+		},
+		{
+			name:          "decimalLength only with total",
+			decimalLength: &schema.DecimalLength{Total: 10},
+			expectColumns: []*ColumnDefinition{
+				{
+					name:   &column,
+					places: convert.Pointer(0),
+					total:  convert.Pointer(10),
+					ttype:  &ttype,
+				},
+			},
+			expectPlaces: 0,
+			expectTotal:  10,
+		},
+		{
+			name:          "decimalLength with total",
+			decimalLength: &schema.DecimalLength{Places: 4, Total: 10},
+			expectColumns: []*ColumnDefinition{
+				{
+					name:   &column,
+					places: convert.Pointer(4),
+					total:  convert.Pointer(10),
+					ttype:  &ttype,
+				},
+			},
+			expectPlaces: 4,
+			expectTotal:  10,
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			s.blueprint.columns = []*ColumnDefinition{}
+
+			if test.decimalLength != nil {
+				s.blueprint.Decimal(column, *test.decimalLength)
+			} else {
+				s.blueprint.Decimal(column)
+			}
+			s.Equal(test.expectColumns, s.blueprint.columns)
+		})
+	}
 }
 
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
@@ -121,10 +205,183 @@ func (s *BlueprintTestSuite) TestString() {
 }
 
 func (s *BlueprintTestSuite) TestToSql() {
-	for _, grammar := range s.grammars {
+	for driver, grammar := range s.grammars {
 		mockQuery := &ormmock.Query{}
 		s.blueprint.Create()
-		s.blueprint.String("name")
-		s.NotEmpty(s.blueprint.ToSql(mockQuery, grammar))
+		s.blueprint.String("name").Comment("comment")
+		s.blueprint.Comment("comment")
+
+		if driver == ormcontract.DriverPostgres {
+			s.Len(s.blueprint.ToSql(mockQuery, grammar), 3)
+		} else {
+			s.Empty(s.blueprint.ToSql(mockQuery, grammar), 2)
+		}
 	}
+}
+
+func (s *BlueprintTestSuite) TestAddAttributeCommands() {
+	var (
+		mockGrammar      *mockschema.Grammar
+		columnDefinition = &ColumnDefinition{
+			comment: convert.Pointer("comment"),
+		}
+	)
+
+	tests := []struct {
+		name           string
+		columns        []*ColumnDefinition
+		setup          func()
+		expectCommands []*schema.Command
+	}{
+		{
+			name:  "Should not add command when columns is empty",
+			setup: func() {},
+		},
+		{
+			name:    "Should not add command when columns is not empty but GetAttributeCommands does not contain a valid command",
+			columns: []*ColumnDefinition{columnDefinition},
+			setup: func() {
+				mockGrammar.On("GetAttributeCommands").Return([]string{"test"}).Once()
+			},
+		},
+		{
+			name:    "Should add comment command when columns is not empty and GetAttributeCommands contains a comment command",
+			columns: []*ColumnDefinition{columnDefinition},
+			setup: func() {
+				mockGrammar.On("GetAttributeCommands").Return([]string{"comment"}).Once()
+			},
+			expectCommands: []*schema.Command{
+				{
+					Column: columnDefinition,
+					Name:   "comment",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockGrammar = &mockschema.Grammar{}
+			s.blueprint.columns = test.columns
+			test.setup()
+
+			s.blueprint.addAttributeCommands(mockGrammar)
+			s.Equal(test.expectCommands, s.blueprint.commands)
+
+			mockGrammar.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *BlueprintTestSuite) TestAddImpliedCommands() {
+	var (
+		mockGrammar *mockschema.Grammar
+	)
+
+	tests := []struct {
+		name           string
+		columns        []*ColumnDefinition
+		commands       []*schema.Command
+		setup          func()
+		expectCommands []*schema.Command
+	}{
+		{
+			name: "Should not add the add command when there are added columns but it is a create operation",
+			columns: []*ColumnDefinition{
+				{
+					name: convert.Pointer("name"),
+				},
+			},
+			commands: []*schema.Command{
+				{
+					Name: "create",
+				},
+			},
+			setup: func() {
+				mockGrammar.On("GetAttributeCommands").Return([]string{}).Once()
+			},
+			expectCommands: []*schema.Command{
+				{
+					Name: "create",
+				},
+			},
+		},
+		{
+			name: "Should not add the change command when there are changed columns but it is a create operation",
+			columns: []*ColumnDefinition{
+				{
+					name:   convert.Pointer("name"),
+					change: convert.Pointer(true),
+				},
+			},
+			commands: []*schema.Command{
+				{
+					Name: "create",
+				},
+			},
+			setup: func() {
+				mockGrammar.On("GetAttributeCommands").Return([]string{}).Once()
+			},
+			expectCommands: []*schema.Command{
+				{
+					Name: "create",
+				},
+			},
+		},
+		{
+			name: "Should add the add, change, attribute commands when there are added and changed columns, and it is not a create operation",
+			columns: []*ColumnDefinition{
+				{
+					name:    convert.Pointer("name"),
+					comment: convert.Pointer("comment"),
+				},
+				{
+					name:   convert.Pointer("age"),
+					change: convert.Pointer(true),
+				},
+			},
+			setup: func() {
+				mockGrammar.On("GetAttributeCommands").Return([]string{"comment"}).Once()
+			},
+			expectCommands: []*schema.Command{
+				{
+					Name: "add",
+				},
+				{
+					Name: "change",
+				},
+				{
+					Column: &ColumnDefinition{
+						name:    convert.Pointer("name"),
+						comment: convert.Pointer("comment"),
+					},
+					Name: "comment",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockGrammar = &mockschema.Grammar{}
+			s.blueprint.columns = test.columns
+			s.blueprint.commands = test.commands
+			test.setup()
+
+			s.blueprint.addImpliedCommands(mockGrammar)
+			s.Equal(test.expectCommands, s.blueprint.commands)
+
+			mockGrammar.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *BlueprintTestSuite) TestIsCreate() {
+	s.False(s.blueprint.isCreate())
+	s.blueprint.commands = []*schema.Command{
+		{
+			Name: "create",
+		},
+	}
+	s.True(s.blueprint.isCreate())
 }

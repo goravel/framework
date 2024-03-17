@@ -8,10 +8,20 @@ import (
 	schemacontract "github.com/goravel/framework/contracts/database/schema"
 )
 
-type Postgres struct{}
+type Postgres struct {
+	attributeCommands []string
+	modifiers         []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string
+}
 
 func NewPostgres() *Postgres {
-	return &Postgres{}
+	postgres := &Postgres{
+		attributeCommands: []string{"comment"},
+	}
+	postgres.modifiers = []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string{
+		//postgres.ModifyDefault,
+	}
+
+	return postgres
 }
 
 func (r *Postgres) CompileAdd(blueprint schemacontract.Blueprint, command string) string {
@@ -39,6 +49,13 @@ func (r *Postgres) CompileColumns(database, table, schema string) string {
 			"from pg_attribute a, pg_class c, pg_type t, pg_namespace n "+
 			"where c.relname = '%s' and n.nspname = '%s' and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid and n.oid = c.relnamespace "+
 			"order by a.attnum", table, schema)
+}
+
+func (r *Postgres) CompileComment(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
+	return fmt.Sprintf("comment on column %s.%s is '%s'",
+		blueprint.GetTableName(),
+		command.Column.GetName(),
+		strings.ReplaceAll(command.Column.GetComment(), "'", "''"))
 }
 
 func (r *Postgres) CompileCreate(blueprint schemacontract.Blueprint, query ormcontract.Query) string {
@@ -151,6 +168,10 @@ func (r *Postgres) CompileUnique(blueprint schemacontract.Blueprint, command str
 func (r *Postgres) CompileViews(database string) string {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (r *Postgres) GetAttributeCommands() []string {
+	return r.attributeCommands
 }
 
 func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column string) string {
@@ -281,10 +302,20 @@ func (r *Postgres) TypeTimestampTz(column schemacontract.ColumnDefinition) strin
 	return "timestamp"
 }
 
+func (r *Postgres) addModify(sql string, blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	for _, modifier := range r.modifiers {
+		sql += modifier(blueprint, column)
+	}
+
+	return sql
+}
+
 func (r *Postgres) getColumns(blueprint schemacontract.Blueprint) []string {
 	var columns []string
 	for _, column := range blueprint.GetAddedColumns() {
-		columns = append(columns, fmt.Sprintf("%s %s", column.GetName(), r.getType(column)))
+		sql := fmt.Sprintf("%s %s", column.GetName(), r.getType(column))
+
+		columns = append(columns, r.addModify(sql, blueprint, column))
 	}
 
 	return columns
@@ -300,6 +331,8 @@ func (r *Postgres) getType(column schemacontract.ColumnDefinition) string {
 		return r.TypeDateTime(column)
 	case "dateTimeTz":
 		return r.TypeDateTimeTz(column)
+	case "decimal":
+		return r.TypeDecimal(column)
 	case "string":
 		return r.TypeString(column)
 	default:

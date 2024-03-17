@@ -1,5 +1,9 @@
 package schema
 
+import (
+	schemacontract "github.com/goravel/framework/contracts/database/schema"
+)
+
 type ColumnDefinition struct {
 	allowed       []string
 	autoIncrement *bool
@@ -19,6 +23,12 @@ func (r *ColumnDefinition) Change() {
 	*r.change = true
 }
 
+func (r *ColumnDefinition) Comment(comment string) schemacontract.ColumnDefinition {
+	r.comment = &comment
+
+	return r
+}
+
 func (r *ColumnDefinition) GetAllowed() []string {
 	return r.allowed
 }
@@ -26,6 +36,14 @@ func (r *ColumnDefinition) GetAllowed() []string {
 func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
 	if r.autoIncrement != nil {
 		return *r.autoIncrement
+	}
+
+	return
+}
+
+func (r *ColumnDefinition) GetComment() (comment string) {
+	if r.comment != nil {
+		return *r.comment
 	}
 
 	return
@@ -52,7 +70,7 @@ func (r *ColumnDefinition) GetPlaces() (places int) {
 		return *r.places
 	}
 
-	return
+	return 2
 }
 
 func (r *ColumnDefinition) GetPrecision() (precision int) {
@@ -68,7 +86,7 @@ func (r *ColumnDefinition) GetTotal() (total int) {
 		return *r.total
 	}
 
-	return
+	return 8
 }
 
 func (r *ColumnDefinition) GetType() (ttype string) {

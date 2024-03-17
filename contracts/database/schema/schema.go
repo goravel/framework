@@ -47,10 +47,10 @@ type Schema interface {
 	Table(table string, callback func(table Blueprint)) error
 }
 
-type Migration interface {
-	Signature() string
-	Up() error
-	Down() error
+type Command struct {
+	Column ColumnDefinition
+	Value  string
+	Name   string
 }
 
 type Index struct {

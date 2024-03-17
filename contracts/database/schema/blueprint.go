@@ -26,7 +26,7 @@ type Blueprint interface {
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
 	DateTimeTz(column string, precision ...int) ColumnDefinition
 	// Decimal Create a new decimal column on the table.
-	Decimal(column string) ColumnDefinition
+	Decimal(column string, length ...DecimalLength) ColumnDefinition
 	// Double Create a new double column on the table.
 	Double(column string) ColumnDefinition
 	// DropColumn Indicate that the given columns should be dropped.

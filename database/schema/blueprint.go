@@ -10,7 +10,7 @@ const defaultStringLength = 255
 
 type Blueprint struct {
 	columns  []*ColumnDefinition
-	commands []*Command
+	commands []*schemacontract.Command
 	prefix   string
 	table    string
 }
@@ -79,14 +79,14 @@ func (r *Blueprint) Char(column string, length ...int) schemacontract.ColumnDefi
 }
 
 func (r *Blueprint) Comment(comment string) {
-	r.addCommand(&Command{
-		Comment: comment,
-		Name:    "tableComment",
+	r.addCommand(&schemacontract.Command{
+		Value: comment,
+		Name:  "tableComment",
 	})
 }
 
 func (r *Blueprint) Create() {
-	r.addCommand(&Command{
+	r.addCommand(&schemacontract.Command{
 		Name: "create",
 	})
 }
@@ -127,9 +127,18 @@ func (r *Blueprint) DateTimeTz(column string, precision ...int) schemacontract.C
 	return columnImpl
 }
 
-func (r *Blueprint) Decimal(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Decimal(column string, length ...schemacontract.DecimalLength) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("decimal"),
+	}
+	if len(length) > 0 {
+		columnImpl.total = &length[0].Total
+		columnImpl.places = &length[0].Places
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Double(column string) schemacontract.ColumnDefinition {
@@ -305,13 +314,17 @@ func (r *Blueprint) TimestampTz(column string) schemacontract.ColumnDefinition {
 }
 
 func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Grammar) []string {
+	r.addImpliedCommands(grammar)
+
 	var statements []string
 	for _, command := range r.commands {
 		switch command.Name {
+		case "comment":
+			statements = append(statements, grammar.CompileComment(r, command))
 		case "create":
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case "tableComment":
-			statements = append(statements, grammar.CompileTableComment(r, command.Comment))
+			statements = append(statements, grammar.CompileTableComment(r, command.Value))
 		}
 	}
 
@@ -337,8 +350,50 @@ func (r *Blueprint) addColumn(column *ColumnDefinition) {
 	r.columns = append(r.columns, column)
 }
 
-func (r *Blueprint) addCommand(command *Command) {
+func (r *Blueprint) addCommand(command *schemacontract.Command) {
 	r.commands = append(r.commands, command)
+}
+
+func (r *Blueprint) addAttributeCommands(grammar schemacontract.Grammar) {
+	attributeCommands := grammar.GetAttributeCommands()
+	for _, column := range r.columns {
+		for _, command := range attributeCommands {
+			if command == "comment" && column.comment != nil {
+				r.addCommand(&schemacontract.Command{
+					Column: column,
+					Name:   "comment",
+				})
+			}
+		}
+	}
+}
+
+func (r *Blueprint) addImpliedCommands(grammar schemacontract.Grammar) {
+	var commands []*schemacontract.Command
+	if len(r.GetAddedColumns()) > 0 && !r.isCreate() {
+		commands = append(commands, &schemacontract.Command{
+			Name: "add",
+		})
+	}
+	if len(r.GetChangedColumns()) > 0 && !r.isCreate() {
+		commands = append(commands, &schemacontract.Command{
+			Name: "change",
+		})
+	}
+	if len(commands) > 0 {
+		r.commands = append(commands, r.commands...)
+	}
+	r.addAttributeCommands(grammar)
+}
+
+func (r *Blueprint) isCreate() bool {
+	for _, command := range r.commands {
+		if command.Name == "create" {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Command struct {
