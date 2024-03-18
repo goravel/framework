@@ -5,12 +5,12 @@ type ColumnDefinition interface {
 	Change()
 	// Comment sets the comment value
 	Comment(comment string) ColumnDefinition
-	// GetComment returns the comment value
-	GetComment() (comment string)
 	// GetAllowed returns the allowed value
 	GetAllowed() []string
 	// GetAutoIncrement returns the autoIncrement value
 	GetAutoIncrement() bool
+	// GetComment returns the comment value
+	GetComment() (comment string)
 	// GetLength returns the length value
 	GetLength() int
 	// GetName returns the name value

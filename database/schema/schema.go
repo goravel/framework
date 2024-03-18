@@ -77,8 +77,9 @@ func (r *Schema) DropAllViews() error {
 }
 
 func (r *Schema) DropColumns(table string, columns []string) error {
-	//TODO implement me
-	panic("implement me")
+	return r.Table(table, func(table schemacontract.Blueprint) {
+		table.DropColumns(columns)
+	})
 }
 
 func (r *Schema) DropIfExists(table string) error {
@@ -193,8 +194,10 @@ func (r *Schema) Rename(from, to string) {
 }
 
 func (r *Schema) Table(table string, callback func(table schemacontract.Blueprint)) error {
-	//TODO implement me
-	panic("implement me")
+	blueprint := NewBlueprint(r.getTablePrefix(), table)
+	callback(blueprint)
+
+	return blueprint.Build(r.query, r.grammar)
 }
 
 func (r *Schema) initGrammarAndProcess() error {

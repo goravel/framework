@@ -124,13 +124,37 @@ func (s *SchemaSuite) TestCreate() {
 			s.Nil(err)
 			s.True(schema.schema.HasTable("goravel_create"))
 
-			tables, err := schema.schema.GetTables()
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestDropColumns() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
+				Return(schema.dbConfig.Database).Times(3)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
+				Return("").Times(3)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
+				Return("").Times(5)
+
+			err := schema.schema.Create("drop_columns", func(table schemacontract.Blueprint) {
+				table.String("name")
+				table.String("summary")
+				table.Comment("This is a test table")
+			})
 			s.Nil(err)
-			for _, table := range tables {
-				if table.Name == "goravel_create" {
-					s.Equal("This is a test table", table.Comment)
-				}
-			}
+			s.True(schema.schema.HasTable("drop_columns"))
+			s.True(schema.schema.HasColumns("drop_columns", []string{"name", "summary"}))
+
+			err = schema.schema.DropColumns("drop_columns", []string{"summary"})
+
+			s.Nil(err)
+			s.True(schema.schema.HasColumn("drop_columns", "name"))
+			s.False(schema.schema.HasColumn("drop_columns", "summary"))
+
+			schema.mockConfig.AssertExpectations(s.T())
 		})
 	}
 }

@@ -626,21 +626,8 @@ func (_c *Blueprint_Double_Call) RunAndReturn(run func(string) schema.ColumnDefi
 }
 
 // DropColumn provides a mock function with given fields: column
-func (_m *Blueprint) DropColumn(column string) error {
-	ret := _m.Called(column)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropColumn")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(column)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Blueprint) DropColumn(column string) {
+	_m.Called(column)
 }
 
 // Blueprint_DropColumn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropColumn'
@@ -661,12 +648,45 @@ func (_c *Blueprint_DropColumn_Call) Run(run func(column string)) *Blueprint_Dro
 	return _c
 }
 
-func (_c *Blueprint_DropColumn_Call) Return(_a0 error) *Blueprint_DropColumn_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_DropColumn_Call) Return() *Blueprint_DropColumn_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(string) error) *Blueprint_DropColumn_Call {
+func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(string)) *Blueprint_DropColumn_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropColumns provides a mock function with given fields: columns
+func (_m *Blueprint) DropColumns(columns []string) {
+	_m.Called(columns)
+}
+
+// Blueprint_DropColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropColumns'
+type Blueprint_DropColumns_Call struct {
+	*mock.Call
+}
+
+// DropColumns is a helper method to define mock.On call
+//   - columns []string
+func (_e *Blueprint_Expecter) DropColumns(columns interface{}) *Blueprint_DropColumns_Call {
+	return &Blueprint_DropColumns_Call{Call: _e.mock.On("DropColumns", columns)}
+}
+
+func (_c *Blueprint_DropColumns_Call) Run(run func(columns []string)) *Blueprint_DropColumns_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropColumns_Call) Return() *Blueprint_DropColumns_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropColumns_Call) RunAndReturn(run func([]string)) *Blueprint_DropColumns_Call {
 	_c.Call.Return(run)
 	return _c
 }

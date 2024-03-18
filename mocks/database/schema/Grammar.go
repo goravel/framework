@@ -589,7 +589,7 @@ func (_c *Grammar_CompileDropAllViews_Call) RunAndReturn(run func([]string) stri
 }
 
 // CompileDropColumn provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileDropColumn(blueprint schema.Blueprint, command string) string {
+func (_m *Grammar) CompileDropColumn(blueprint schema.Blueprint, command *schema.Command) string {
 	ret := _m.Called(blueprint, command)
 
 	if len(ret) == 0 {
@@ -597,7 +597,7 @@ func (_m *Grammar) CompileDropColumn(blueprint schema.Blueprint, command string)
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
 		r0 = rf(blueprint, command)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -613,14 +613,14 @@ type Grammar_CompileDropColumn_Call struct {
 
 // CompileDropColumn is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
+//   - command *schema.Command
 func (_e *Grammar_Expecter) CompileDropColumn(blueprint interface{}, command interface{}) *Grammar_CompileDropColumn_Call {
 	return &Grammar_CompileDropColumn_Call{Call: _e.mock.On("CompileDropColumn", blueprint, command)}
 }
 
-func (_c *Grammar_CompileDropColumn_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompileDropColumn_Call {
+func (_c *Grammar_CompileDropColumn_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileDropColumn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
 	})
 	return _c
 }
@@ -630,7 +630,7 @@ func (_c *Grammar_CompileDropColumn_Call) Return(_a0 string) *Grammar_CompileDro
 	return _c
 }
 
-func (_c *Grammar_CompileDropColumn_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_CompileDropColumn_Call {
+func (_c *Grammar_CompileDropColumn_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileDropColumn_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -31,7 +31,7 @@ type Grammar interface {
 	// CompileDropAllViews Compile the SQL needed to drop all views.
 	CompileDropAllViews(views []string) string
 	// CompileDropColumn Compile a drop column command.
-	CompileDropColumn(blueprint Blueprint, command string) string
+	CompileDropColumn(blueprint Blueprint, command *Command) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint, command string) string
 	// CompileDropIndex Compile a drop index command.

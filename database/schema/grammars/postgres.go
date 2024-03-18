@@ -92,9 +92,10 @@ func (r *Postgres) CompileDropAllViews(views []string) string {
 	panic("implement me")
 }
 
-func (r *Postgres) CompileDropColumn(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileDropColumn(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
+	columns := prefixArray("drop column", command.Columns)
+
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(columns, ","))
 }
 
 func (r *Postgres) CompileDropIfExists(blueprint schemacontract.Blueprint, command string) string {
