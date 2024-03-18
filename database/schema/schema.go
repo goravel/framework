@@ -9,8 +9,8 @@ import (
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	schemacontract "github.com/goravel/framework/contracts/database/schema"
 	logcontract "github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/processors"
 	"github.com/goravel/framework/database/schema/grammars"
+	"github.com/goravel/framework/database/schema/processors"
 )
 
 type Schema struct {

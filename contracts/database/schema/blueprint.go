@@ -29,8 +29,10 @@ type Blueprint interface {
 	Decimal(column string, length ...DecimalLength) ColumnDefinition
 	// Double Create a new double column on the table.
 	Double(column string) ColumnDefinition
-	// DropColumn Indicate that the given columns should be dropped.
-	DropColumn(column string) error
+	// DropColumn Indicate that the given column should be dropped.
+	DropColumn(column string)
+	// DropColumns Indicate that the given columns should be dropped.
+	DropColumns(columns []string)
 	// DropForeign Indicate that the given foreign key should be dropped.
 	DropForeign(index string) error
 	// DropIndex Indicate that the given index should be dropped.

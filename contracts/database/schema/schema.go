@@ -48,9 +48,10 @@ type Schema interface {
 }
 
 type Command struct {
-	Column ColumnDefinition
-	Value  string
-	Name   string
+	Column  ColumnDefinition
+	Columns []string
+	Value   string
+	Name    string
 }
 
 type Index struct {

@@ -152,6 +152,7 @@ func (s *SchemaSuite) TestGetColumns() {
 				table.DateTime("date_time", 3).Comment("This is a date time column")
 				table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
 				table.Decimal("decimal", schemacontract.DecimalLength{Places: 1, Total: 4}).Comment("This is a decimal column")
+				table.Double("double").Comment("This is a double column")
 				table.String("string").Comment("This is a string column")
 			})
 
@@ -160,18 +161,19 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(6, len(columnListing))
+			s.Equal(7, len(columnListing))
 			s.Contains(columnListing, "char")
 			s.Contains(columnListing, "date")
 			s.Contains(columnListing, "date_time")
 			s.Contains(columnListing, "date_time_tz")
 			s.Contains(columnListing, "decimal")
+			s.Contains(columnListing, "double")
 			s.Contains(columnListing, "string")
 
 			columns, err := schema.schema.GetColumns(table)
 
 			s.Nil(err)
-			s.Equal(6, len(columns))
+			s.Equal(7, len(columns))
 			for _, column := range columns {
 				if column.Name == "char" {
 					s.False(column.AutoIncrement)
@@ -217,6 +219,15 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.True(column.Nullable)
 					s.Equal("numeric(4,1)", column.Type)
 					s.Equal("numeric", column.TypeName)
+				}
+				if column.Name == "double" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a double column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("double precision", column.Type)
+					s.Equal("float8", column.TypeName)
 				}
 				if column.Name == "string" {
 					s.False(column.AutoIncrement)

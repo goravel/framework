@@ -142,13 +142,24 @@ func (r *Blueprint) Decimal(column string, length ...schemacontract.DecimalLengt
 }
 
 func (r *Blueprint) Double(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("double"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
-func (r *Blueprint) DropColumn(column string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) DropColumn(column string) {
+	r.DropColumns([]string{column})
+}
+
+func (r *Blueprint) DropColumns(columns []string) {
+	r.addCommand(&schemacontract.Command{
+		Columns: columns,
+		Name:    "dropColumn",
+	})
 }
 
 func (r *Blueprint) DropForeign(index string) error {

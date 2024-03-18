@@ -333,6 +333,8 @@ func (r *Postgres) getType(column schemacontract.ColumnDefinition) string {
 		return r.TypeDateTimeTz(column)
 	case "decimal":
 		return r.TypeDecimal(column)
+	case "double":
+		return r.TypeDouble(column)
 	case "string":
 		return r.TypeString(column)
 	default:
