@@ -182,9 +182,15 @@ func (r *Blueprint) DropTimestamps() error {
 	panic("implement me")
 }
 
-func (r *Blueprint) Enum(column string, array []any) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Enum(column string, allowed []string) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		allowed: allowed,
+		name:    &column,
+		ttype:   convert.Pointer("enum"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Float(column string) schemacontract.ColumnDefinition {

@@ -42,7 +42,7 @@ type Blueprint interface {
 	// DropTimestamps Indicate that the timestamp columns should be dropped.
 	DropTimestamps() error
 	// Enum Create a new enum column on the table.
-	Enum(column string, array []any) ColumnDefinition
+	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.
 	Float(column string) ColumnDefinition
 	// Foreign Specify a foreign key for the table.

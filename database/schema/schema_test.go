@@ -178,6 +178,7 @@ func (s *SchemaSuite) TestGetColumns() {
 				table.Decimal("decimal", schemacontract.DecimalLength{Places: 1, Total: 4}).Comment("This is a decimal column")
 				table.Double("double").Comment("This is a double column")
 				table.String("string").Comment("This is a string column")
+				table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
 			})
 
 			s.Nil(err)
@@ -185,7 +186,7 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(7, len(columnListing))
+			s.Equal(8, len(columnListing))
 			s.Contains(columnListing, "char")
 			s.Contains(columnListing, "date")
 			s.Contains(columnListing, "date_time")
@@ -193,11 +194,12 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.Contains(columnListing, "decimal")
 			s.Contains(columnListing, "double")
 			s.Contains(columnListing, "string")
+			s.Contains(columnListing, "enum")
 
 			columns, err := schema.schema.GetColumns(table)
 
 			s.Nil(err)
-			s.Equal(7, len(columns))
+			s.Equal(8, len(columns))
 			for _, column := range columns {
 				if column.Name == "char" {
 					s.False(column.AutoIncrement)
@@ -252,6 +254,15 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.True(column.Nullable)
 					s.Equal("double precision", column.Type)
 					s.Equal("float8", column.TypeName)
+				}
+				if column.Name == "enum" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a enum column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("enum", column.Type)
+					s.Equal("enum", column.TypeName)
 				}
 				if column.Name == "string" {
 					s.False(column.AutoIncrement)

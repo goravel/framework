@@ -336,6 +336,8 @@ func (r *Postgres) getType(column schemacontract.ColumnDefinition) string {
 		return r.TypeDecimal(column)
 	case "double":
 		return r.TypeDouble(column)
+	case "enum":
+		return r.TypeEnum(column)
 	case "string":
 		return r.TypeString(column)
 	default:
