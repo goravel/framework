@@ -10,37 +10,46 @@ import (
 
 func StartSession() http.Middleware {
 	return func(ctx http.Context) {
-		if ctx.Request().HasSession() {
-			ctx.Request().Next()
+		req := ctx.Request()
+
+		// Check if session exists
+		if req.HasSession() {
+			req.Next()
 			return
 		}
 
+		// Retrieve session driver
 		d, err := session.Facade.Driver()
 		if err != nil {
 			return
 		}
 
+		// Build session
 		s := session.Facade.BuildSession(d)
+		s.SetID(req.Cookie(s.GetName()))
 
-		s.SetID(ctx.Request().Cookie(s.GetName()))
+		// Start session
 		s.Start()
-		ctx.Request().SetSession(s)
+		req.SetSession(s)
 
+		// Perform garbage collection based on lottery
 		lottery := session.ConfigFacade.Get("lottery").([]int)
 		if len(lottery) == 2 {
-			randInt := rand.Intn(lottery[1]) + 1
-			if randInt <= lottery[0] {
-				err = d.Gc(300)
+			if rand.Intn(lottery[1])+1 <= lottery[0] {
+				err := d.Gc(300)
 				if err != nil {
 					return
 				}
 			}
 		}
 
-		ctx.Request().Next()
+		// Continue processing request
+		req.Next()
 
-		s = ctx.Request().Session()
+		// Retrieve updated session
+		s = req.Session()
 
+		// Set session cookie in response
 		config := session.ConfigFacade
 		ctx.Response().Cookie(http.Cookie{
 			Name:     s.GetName(),
@@ -53,6 +62,7 @@ func StartSession() http.Middleware {
 			SameSite: config.GetString("same_site"),
 		})
 
+		// Save session
 		err = s.Save()
 		if err != nil {
 			return
