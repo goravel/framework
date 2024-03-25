@@ -176,7 +176,7 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"a": "required", "file": "required"},
+			rules: map[string]string{"a": "required", "file": "required|file"},
 			expectData: func() Data {
 				request := buildRequest(t)
 				_, fileHeader, _ := request.FormFile("file")
