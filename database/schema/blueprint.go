@@ -278,13 +278,23 @@ func (r *Blueprint) Integer(column string, config ...schemacontract.IntegerConfi
 }
 
 func (r *Blueprint) Json(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("json"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Jsonb(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("jsonb"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Primary(columns []string, name string) error {
