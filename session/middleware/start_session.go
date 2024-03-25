@@ -33,7 +33,7 @@ func StartSession() http.Middleware {
 		req.SetSession(s)
 
 		// Perform garbage collection based on lottery
-		lottery := session.ConfigFacade.Get("lottery").([]int)
+		lottery := session.ConfigFacade.Get("session.lottery").([]int)
 		if len(lottery) == 2 {
 			if rand.Intn(lottery[1])+1 <= lottery[0] {
 				err := d.Gc(300)
@@ -54,12 +54,12 @@ func StartSession() http.Middleware {
 		ctx.Response().Cookie(http.Cookie{
 			Name:     s.GetName(),
 			Value:    s.GetID(),
-			Expires:  carbon.Now().AddMinutes(config.GetInt("lifetime")).StdTime(),
-			Path:     config.GetString("path"),
-			Domain:   config.GetString("domain"),
-			Secure:   config.GetBool("secure"),
-			HttpOnly: config.GetBool("http_only"),
-			SameSite: config.GetString("same_site"),
+			Expires:  carbon.Now().AddMinutes(config.GetInt("session.lifetime")).StdTime(),
+			Path:     config.GetString("session.path"),
+			Domain:   config.GetString("session.domain"),
+			Secure:   config.GetBool("session.secure"),
+			HttpOnly: config.GetBool("session.http_only"),
+			SameSite: config.GetString("session.same_site"),
 		})
 
 		// Save session
