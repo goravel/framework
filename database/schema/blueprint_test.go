@@ -32,6 +32,37 @@ func (s *BlueprintTestSuite) SetupTest() {
 	s.blueprint = NewBlueprint("goravel_", "users")
 }
 
+func (s *BlueprintTestSuite) TestBigIncrements() {
+	name := "name"
+	s.blueprint.BigIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("bigInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestBigInteger() {
+	name := "name"
+	s.blueprint.BigInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("bigInteger"),
+	})
+
+	s.blueprint.BigInteger(name, schema.IntegerConfig{
+		AutoIncrement: true,
+		Unsigned:      true,
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("bigInteger"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestBuild() {
 	for _, grammar := range s.grammars {
 		mockQuery := &ormmock.Query{}
@@ -75,7 +106,7 @@ func (s *BlueprintTestSuite) TestDecimal() {
 
 	tests := []struct {
 		name          string
-		decimalLength *schema.DecimalLength
+		decimalLength *schema.DecimalConfig
 		expectColumns []*ColumnDefinition
 		expectPlaces  int
 		expectTotal   int
@@ -94,7 +125,7 @@ func (s *BlueprintTestSuite) TestDecimal() {
 		},
 		{
 			name:          "decimalLength only with places",
-			decimalLength: &schema.DecimalLength{Places: 4},
+			decimalLength: &schema.DecimalConfig{Places: 4},
 			expectColumns: []*ColumnDefinition{
 				{
 					name:   &column,
@@ -108,7 +139,7 @@ func (s *BlueprintTestSuite) TestDecimal() {
 		},
 		{
 			name:          "decimalLength only with total",
-			decimalLength: &schema.DecimalLength{Total: 10},
+			decimalLength: &schema.DecimalConfig{Total: 10},
 			expectColumns: []*ColumnDefinition{
 				{
 					name:   &column,
@@ -122,7 +153,7 @@ func (s *BlueprintTestSuite) TestDecimal() {
 		},
 		{
 			name:          "decimalLength with total",
-			decimalLength: &schema.DecimalLength{Places: 4, Total: 10},
+			decimalLength: &schema.DecimalConfig{Places: 4, Total: 10},
 			expectColumns: []*ColumnDefinition{
 				{
 					name:   &column,
@@ -148,6 +179,25 @@ func (s *BlueprintTestSuite) TestDecimal() {
 			s.Equal(test.expectColumns, s.blueprint.columns)
 		})
 	}
+}
+
+func (s *BlueprintTestSuite) TestFloat() {
+	column := "name"
+	customPrecision := 100
+	ttype := "float"
+	s.blueprint.Float(column)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:      &column,
+		precision: convert.Pointer(53),
+		ttype:     &ttype,
+	})
+
+	s.blueprint.Float(column, customPrecision)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:      &column,
+		precision: &customPrecision,
+		ttype:     &ttype,
+	})
 }
 
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
@@ -182,6 +232,44 @@ func (s *BlueprintTestSuite) TestGetChangedColumns() {
 
 	s.Len(s.blueprint.GetChangedColumns(), 1)
 	s.Equal(changedColumn, s.blueprint.GetChangedColumns()[0])
+}
+
+func (s *BlueprintTestSuite) TestID() {
+	s.blueprint.ID()
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          convert.Pointer("id"),
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("bigInteger"),
+	})
+
+	s.blueprint.ID("name")
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          convert.Pointer("name"),
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("bigInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestInteger() {
+	name := "name"
+	s.blueprint.Integer(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("integer"),
+	})
+
+	s.blueprint.Integer(name, schema.IntegerConfig{
+		AutoIncrement: true,
+		Unsigned:      true,
+	})
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("integer"),
+	})
 }
 
 func (s *BlueprintTestSuite) TestString() {

@@ -17,6 +17,7 @@ type ColumnDefinition struct {
 	precision     *int
 	total         *int
 	ttype         *string
+	unsigned      *bool
 }
 
 func (r *ColumnDefinition) Change() {
@@ -92,6 +93,14 @@ func (r *ColumnDefinition) GetTotal() (total int) {
 func (r *ColumnDefinition) GetType() (ttype string) {
 	if r.ttype != nil {
 		return *r.ttype
+	}
+
+	return
+}
+
+func (r *ColumnDefinition) GetUnsigned() (unsigned bool) {
+	if r.unsigned != nil {
+		return *r.unsigned
 	}
 
 	return

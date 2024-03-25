@@ -16,8 +16,8 @@ func NewPostgres() *Postgres {
 }
 
 func (r *Postgres) ProcessColumns(columns []schemacontract.Column) []schemacontract.Column {
-	for _, column := range columns {
-		column.AutoIncrement = column.Default != "" && strings.HasPrefix(cast.ToString(column.Default), "nextval(")
+	for i, column := range columns {
+		columns[i].AutoIncrement = column.Default != "" && strings.HasPrefix(cast.ToString(column.Default), "nextval(")
 	}
 
 	return columns

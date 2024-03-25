@@ -2,7 +2,9 @@ package grammars
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
+	"unicode"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	schemacontract "github.com/goravel/framework/contracts/database/schema"
@@ -231,11 +233,16 @@ func (r *Postgres) TypeDouble(column schemacontract.ColumnDefinition) string {
 }
 
 func (r *Postgres) TypeEnum(column schemacontract.ColumnDefinition) string {
-	return fmt.Sprintf(`varchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(column.GetAllowed(), ","))
+	return fmt.Sprintf(`varchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(quoteString(column.GetAllowed()), ","))
 }
 
 func (r *Postgres) TypeFloat(column schemacontract.ColumnDefinition) string {
-	return r.TypeDouble(column)
+	precision := column.GetPrecision()
+	if precision > 0 {
+		return fmt.Sprintf("float(%d)", precision)
+	}
+
+	return "float"
 }
 
 func (r *Postgres) TypeInteger(column schemacontract.ColumnDefinition) string {
@@ -323,24 +330,16 @@ func (r *Postgres) getColumns(blueprint schemacontract.Blueprint) []string {
 }
 
 func (r *Postgres) getType(column schemacontract.ColumnDefinition) string {
-	switch column.GetType() {
-	case "char":
-		return r.TypeChar(column)
-	case "date":
-		return r.TypeDate(column)
-	case "dateTime":
-		return r.TypeDateTime(column)
-	case "dateTimeTz":
-		return r.TypeDateTimeTz(column)
-	case "decimal":
-		return r.TypeDecimal(column)
-	case "double":
-		return r.TypeDouble(column)
-	case "enum":
-		return r.TypeEnum(column)
-	case "string":
-		return r.TypeString(column)
-	default:
-		panic(fmt.Sprintf("unsupported column type: %s", column.GetType()))
+	t := []rune(column.GetType())
+	t[0] = unicode.ToUpper(t[0])
+	methodName := fmt.Sprintf("Type%s", string(t))
+	methodValue := reflect.ValueOf(r).MethodByName(methodName)
+	if methodValue.IsValid() {
+		args := []reflect.Value{reflect.ValueOf(column)}
+		callResult := methodValue.Call(args)
+
+		return callResult[0].String()
 	}
+
+	return ""
 }

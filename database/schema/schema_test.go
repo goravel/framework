@@ -171,36 +171,65 @@ func (s *SchemaSuite) TestGetColumns() {
 				Return("").Times(5)
 
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.BigIncrements("big_increments").Comment("This is a big_increments column")
+				table.BigInteger("big_integer").Comment("This is a big_integer column")
 				table.Char("char").Comment("This is a char column")
 				table.Date("date").Comment("This is a date column")
 				table.DateTime("date_time", 3).Comment("This is a date time column")
 				table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
-				table.Decimal("decimal", schemacontract.DecimalLength{Places: 1, Total: 4}).Comment("This is a decimal column")
+				table.Decimal("decimal", schemacontract.DecimalConfig{Places: 1, Total: 4}).Comment("This is a decimal column")
 				table.Double("double").Comment("This is a double column")
-				table.String("string").Comment("This is a string column")
 				table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
+				table.Float("float", 2).Comment("This is a float column")
+				table.ID().Comment("This is a id column")
+				table.ID("aid").Comment("This is a id column, name is aid")
+				table.Integer("integer").Comment("This is a integer column")
+				table.String("string").Comment("This is a string column")
+				table.UnsignedBigInteger("unsigned_big_integer").Comment("This is a unsigned_big_integer column")
 			})
 
-			s.Nil(err)
-			s.True(schema.schema.HasTable(table))
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(8, len(columnListing))
+			s.Equal(15, len(columnListing))
+			s.Contains(columnListing, "big_increments")
+			s.Contains(columnListing, "big_integer")
 			s.Contains(columnListing, "char")
 			s.Contains(columnListing, "date")
 			s.Contains(columnListing, "date_time")
 			s.Contains(columnListing, "date_time_tz")
 			s.Contains(columnListing, "decimal")
 			s.Contains(columnListing, "double")
-			s.Contains(columnListing, "string")
 			s.Contains(columnListing, "enum")
+			s.Contains(columnListing, "id")
+			s.Contains(columnListing, "aid")
+			s.Contains(columnListing, "integer")
+			s.Contains(columnListing, "string")
+			s.Contains(columnListing, "unsigned_big_integer")
 
 			columns, err := schema.schema.GetColumns(table)
-
-			s.Nil(err)
-			s.Equal(8, len(columns))
+			s.Require().Nil(err)
 			for _, column := range columns {
+				if column.Name == "big_increments" {
+					s.True(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a big_increments column", column.Comment)
+					s.Equal("nextval('get_columns_big_increments_seq'::regclass)", column.Default)
+					s.False(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
+				}
+				if column.Name == "big_integer" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a big_integer column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
+				}
 				if column.Name == "char" {
 					s.False(column.AutoIncrement)
 					s.Empty(column.Collation)
@@ -261,8 +290,44 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Equal("This is a enum column", column.Comment)
 					s.Empty(column.Default)
 					s.True(column.Nullable)
-					s.Equal("enum", column.Type)
-					s.Equal("enum", column.TypeName)
+					s.Equal("character varying(255)", column.Type)
+					s.Equal("varchar", column.TypeName)
+				}
+				if column.Name == "float" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a float column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("real", column.Type)
+					s.Equal("float4", column.TypeName)
+				}
+				if column.Name == "id" {
+					s.True(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a id column", column.Comment)
+					s.Equal("nextval('get_columns_id_seq'::regclass)", column.Default)
+					s.False(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
+				}
+				if column.Name == "aid" {
+					s.True(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a id column, name is aid", column.Comment)
+					s.Equal("nextval('get_columns_aid_seq'::regclass)", column.Default)
+					s.False(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
+				}
+				if column.Name == "integer" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a integer column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("integer", column.Type)
+					s.Equal("int4", column.TypeName)
 				}
 				if column.Name == "string" {
 					s.False(column.AutoIncrement)
@@ -272,6 +337,15 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.True(column.Nullable)
 					s.Equal("character varying(255)", column.Type)
 					s.Equal("varchar", column.TypeName)
+				}
+				if column.Name == "unsigned_big_integer" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a unsigned_big_integer column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
 				}
 			}
 

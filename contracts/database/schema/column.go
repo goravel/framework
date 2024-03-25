@@ -23,6 +23,8 @@ type ColumnDefinition interface {
 	GetTotal() int
 	// GetType returns the type value
 	GetType() string
+	// GetUnsigned returns the unsigned value
+	GetUnsigned() bool
 }
 
 type Column struct {
@@ -36,7 +38,12 @@ type Column struct {
 	TypeName      string
 }
 
-type DecimalLength struct {
+type DecimalConfig struct {
 	Places int
 	Total  int
+}
+
+type IntegerConfig struct {
+	AutoIncrement bool
+	Unsigned      bool
 }

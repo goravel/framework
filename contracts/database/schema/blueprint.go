@@ -7,8 +7,10 @@ import (
 type Blueprint interface {
 	// Boolean Create a new boolean column on the table.
 	Boolean(column string) ColumnDefinition
+	// BigIncrements Create a new auto-incrementing big integer (8-byte) column on the table.
+	BigIncrements(column string) ColumnDefinition
 	// BigInteger Create a new big integer (8-byte) column on the table.
-	BigInteger(column string) ColumnDefinition
+	BigInteger(column string, config ...IntegerConfig) ColumnDefinition
 	// Binary Create a new binary column on the table.
 	Binary(column string) ColumnDefinition
 	// Build Execute the blueprint to build / modify the table.
@@ -26,7 +28,7 @@ type Blueprint interface {
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
 	DateTimeTz(column string, precision ...int) ColumnDefinition
 	// Decimal Create a new decimal column on the table.
-	Decimal(column string, length ...DecimalLength) ColumnDefinition
+	Decimal(column string, length ...DecimalConfig) ColumnDefinition
 	// Double Create a new double column on the table.
 	Double(column string) ColumnDefinition
 	// DropColumn Indicate that the given column should be dropped.
@@ -44,7 +46,7 @@ type Blueprint interface {
 	// Enum Create a new enum column on the table.
 	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.
-	Float(column string) ColumnDefinition
+	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
 	Foreign(columns []string, name ...string) error
 	// GetAddedColumns Get the added columns.
@@ -54,11 +56,11 @@ type Blueprint interface {
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
-	ID() ColumnDefinition
+	ID(column ...string) ColumnDefinition
 	// Index Specify an index for the table.
 	Index(columns []string, name string) error
 	// Integer Create a new integer (4-byte) column on the table.
-	Integer(column string) ColumnDefinition
+	Integer(column string, config ...IntegerConfig) ColumnDefinition
 	// Json Create a new json column on the table.
 	Json(column string) ColumnDefinition
 	// Jsonb Create a new jsonb column on the table.
@@ -96,5 +98,5 @@ type Blueprint interface {
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.
 	UnsignedInteger(column string) ColumnDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
-	UnsignedBigInteger(column string) ColumnDefinition
+	UnsignedBigInteger(column string, autoIncrement ...bool) ColumnDefinition
 }

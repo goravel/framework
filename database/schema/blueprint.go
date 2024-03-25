@@ -32,11 +32,21 @@ func (r *Blueprint) Boolean(column string) schemacontract.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) BigInteger(column string) schemacontract.ColumnDefinition {
+func (r *Blueprint) BigIncrements(column string) schemacontract.ColumnDefinition {
+	return r.UnsignedBigInteger(column, true)
+}
+
+func (r *Blueprint) BigInteger(column string, config ...schemacontract.IntegerConfig) schemacontract.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("bigInteger"),
 	}
+
+	if len(config) > 0 {
+		columnImpl.autoIncrement = &config[0].AutoIncrement
+		columnImpl.unsigned = &config[0].Unsigned
+	}
+
 	r.addColumn(columnImpl)
 
 	return columnImpl
@@ -127,14 +137,14 @@ func (r *Blueprint) DateTimeTz(column string, precision ...int) schemacontract.C
 	return columnImpl
 }
 
-func (r *Blueprint) Decimal(column string, length ...schemacontract.DecimalLength) schemacontract.ColumnDefinition {
+func (r *Blueprint) Decimal(column string, config ...schemacontract.DecimalConfig) schemacontract.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("decimal"),
 	}
-	if len(length) > 0 {
-		columnImpl.total = &length[0].Total
-		columnImpl.places = &length[0].Places
+	if len(config) > 0 {
+		columnImpl.total = &config[0].Total
+		columnImpl.places = &config[0].Places
 	}
 	r.addColumn(columnImpl)
 
@@ -193,9 +203,18 @@ func (r *Blueprint) Enum(column string, allowed []string) schemacontract.ColumnD
 	return columnImpl
 }
 
-func (r *Blueprint) Float(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Float(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:      &column,
+		precision: convert.Pointer(53),
+		ttype:     convert.Pointer("float"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Foreign(columns []string, name ...string) error {
@@ -229,9 +248,12 @@ func (r *Blueprint) GetTableName() string {
 	return r.prefix + r.table
 }
 
-func (r *Blueprint) ID() schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) ID(column ...string) schemacontract.ColumnDefinition {
+	if len(column) > 0 {
+		return r.BigIncrements(column[0])
+	}
+
+	return r.BigIncrements("id")
 }
 
 func (r *Blueprint) Index(columns []string, name string) error {
@@ -239,9 +261,20 @@ func (r *Blueprint) Index(columns []string, name string) error {
 	panic("implement me")
 }
 
-func (r *Blueprint) Integer(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Integer(column string, config ...schemacontract.IntegerConfig) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("integer"),
+	}
+
+	if len(config) > 0 {
+		columnImpl.autoIncrement = &config[0].AutoIncrement
+		columnImpl.unsigned = &config[0].Unsigned
+	}
+
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Json(column string) schemacontract.ColumnDefinition {
@@ -360,9 +393,11 @@ func (r *Blueprint) UnsignedInteger(column string) schemacontract.ColumnDefiniti
 	panic("implement me")
 }
 
-func (r *Blueprint) UnsignedBigInteger(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) UnsignedBigInteger(column string, autoIncrement ...bool) schemacontract.ColumnDefinition {
+	return r.BigInteger(column, schemacontract.IntegerConfig{
+		AutoIncrement: len(autoIncrement) > 0 && autoIncrement[0],
+		Unsigned:      true,
+	})
 }
 
 func (r *Blueprint) addColumn(column *ColumnDefinition) {

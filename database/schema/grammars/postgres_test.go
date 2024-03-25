@@ -106,6 +106,18 @@ func (s *PostgresSuite) TestTypeEnum() {
 	s.Equal(`varchar(255) check ("name" in (a,b))`, s.grammar.TypeEnum(mockColumn))
 }
 
+func (s *PostgresSuite) TestTypeFloat() {
+	mockColumn1 := &mockschema.ColumnDefinition{}
+	mockColumn1.On("GetPrecision").Return(100).Once()
+
+	s.Equal("float(100)", s.grammar.TypeFloat(mockColumn1))
+
+	mockColumn2 := &mockschema.ColumnDefinition{}
+	mockColumn2.On("GetPrecision").Return(0).Once()
+
+	s.Equal("float", s.grammar.TypeFloat(mockColumn2))
+}
+
 func (s *PostgresSuite) TestTypeInteger() {
 	mockColumn1 := &mockschema.ColumnDefinition{}
 	mockColumn1.On("GetAutoIncrement").Return(true).Once()
@@ -194,4 +206,13 @@ func (s *PostgresSuite) TestGetColumns() {
 	}).Once()
 
 	s.Equal([]string{"id varchar(100)", "name varchar"}, s.grammar.getColumns(mockBlueprint))
+}
+
+func (s *PostgresSuite) TestGetType() {
+	mockColumn := &mockschema.ColumnDefinition{}
+	mockColumn.EXPECT().GetType().Return("text").Once()
+	s.Equal("text", s.grammar.getType(mockColumn))
+
+	mockColumn.EXPECT().GetType().Return("invalid").Once()
+	s.Empty(s.grammar.getType(mockColumn))
 }

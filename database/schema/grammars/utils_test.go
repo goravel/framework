@@ -10,3 +10,8 @@ func TestPrefixArray(t *testing.T) {
 	values := []string{"a", "b", "c"}
 	assert.Equal(t, []string{"prefix a", "prefix b", "prefix c"}, prefixArray("prefix", values))
 }
+
+func TestQuoteString(t *testing.T) {
+	values := []string{"a", "b", "c"}
+	assert.Equal(t, []string{"'a'", "'b'", "'c'"}, quoteString(values))
+}
