@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
 )
 
@@ -51,6 +52,13 @@ type ContextRequest interface {
 	QueryMap(key string) map[string]string
 	// Queries returns all the query string parameters from the request as a map of key-value pairs.
 	Queries() map[string]string
+
+	// HasSession checks if the request has a session.
+	HasSession() bool
+	// Session retrieves the session associated with the request.
+	Session() session.Session
+	// SetSession sets the session associated with the request.
+	SetSession(session session.Session) ContextRequest
 
 	// Input retrieves data from the request in the following order: JSON, form, query, and route parameters.
 	Input(key string, defaultValue ...string) string

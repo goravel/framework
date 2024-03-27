@@ -14,6 +14,7 @@ import (
 
 	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
@@ -523,6 +524,18 @@ func (r *TestRequest) QueryMap(key string) map[string]string {
 }
 
 func (r *TestRequest) Queries() map[string]string {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) HasSession() bool {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) SetSession(contractsession.Session) contractshttp.ContextRequest {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Session() contractsession.Session {
 	panic("do not need to implement it")
 }
 

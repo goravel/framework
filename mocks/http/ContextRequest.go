@@ -10,6 +10,8 @@ import (
 
 	nethttp "net/http"
 
+	session "github.com/goravel/framework/contracts/session"
+
 	validation "github.com/goravel/framework/contracts/validation"
 )
 
@@ -346,6 +348,51 @@ func (_c *ContextRequest_FullUrl_Call) Return(_a0 string) *ContextRequest_FullUr
 }
 
 func (_c *ContextRequest_FullUrl_Call) RunAndReturn(run func() string) *ContextRequest_FullUrl_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasSession provides a mock function with given fields:
+func (_m *ContextRequest) HasSession() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasSession")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ContextRequest_HasSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasSession'
+type ContextRequest_HasSession_Call struct {
+	*mock.Call
+}
+
+// HasSession is a helper method to define mock.On call
+func (_e *ContextRequest_Expecter) HasSession() *ContextRequest_HasSession_Call {
+	return &ContextRequest_HasSession_Call{Call: _e.mock.On("HasSession")}
+}
+
+func (_c *ContextRequest_HasSession_Call) Run(run func()) *ContextRequest_HasSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ContextRequest_HasSession_Call) Return(_a0 bool) *ContextRequest_HasSession_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ContextRequest_HasSession_Call) RunAndReturn(run func() bool) *ContextRequest_HasSession_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1608,6 +1655,101 @@ func (_c *ContextRequest_RouteInt64_Call) Return(_a0 int64) *ContextRequest_Rout
 }
 
 func (_c *ContextRequest_RouteInt64_Call) RunAndReturn(run func(string) int64) *ContextRequest_RouteInt64_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Session provides a mock function with given fields:
+func (_m *ContextRequest) Session() session.Session {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Session")
+	}
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func() session.Session); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
+	}
+
+	return r0
+}
+
+// ContextRequest_Session_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Session'
+type ContextRequest_Session_Call struct {
+	*mock.Call
+}
+
+// Session is a helper method to define mock.On call
+func (_e *ContextRequest_Expecter) Session() *ContextRequest_Session_Call {
+	return &ContextRequest_Session_Call{Call: _e.mock.On("Session")}
+}
+
+func (_c *ContextRequest_Session_Call) Run(run func()) *ContextRequest_Session_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ContextRequest_Session_Call) Return(_a0 session.Session) *ContextRequest_Session_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ContextRequest_Session_Call) RunAndReturn(run func() session.Session) *ContextRequest_Session_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetSession provides a mock function with given fields: _a0
+func (_m *ContextRequest) SetSession(_a0 session.Session) http.ContextRequest {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetSession")
+	}
+
+	var r0 http.ContextRequest
+	if rf, ok := ret.Get(0).(func(session.Session) http.ContextRequest); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.ContextRequest)
+		}
+	}
+
+	return r0
+}
+
+// ContextRequest_SetSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetSession'
+type ContextRequest_SetSession_Call struct {
+	*mock.Call
+}
+
+// SetSession is a helper method to define mock.On call
+//   - _a0 session.Session
+func (_e *ContextRequest_Expecter) SetSession(_a0 interface{}) *ContextRequest_SetSession_Call {
+	return &ContextRequest_SetSession_Call{Call: _e.mock.On("SetSession", _a0)}
+}
+
+func (_c *ContextRequest_SetSession_Call) Run(run func(_a0 session.Session)) *ContextRequest_SetSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(session.Session))
+	})
+	return _c
+}
+
+func (_c *ContextRequest_SetSession_Call) Return(_a0 http.ContextRequest) *ContextRequest_SetSession_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ContextRequest_SetSession_Call) RunAndReturn(run func(session.Session) http.ContextRequest) *ContextRequest_SetSession_Call {
 	_c.Call.Return(run)
 	return _c
 }
