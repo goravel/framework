@@ -36,7 +36,8 @@ func StartSession() http.Middleware {
 		lottery := session.ConfigFacade.Get("session.lottery").([]int)
 		if len(lottery) == 2 {
 			if rand.Intn(lottery[1])+1 <= lottery[0] {
-				err := d.Gc(300)
+				lifetime := session.ConfigFacade.GetInt("session.lifetime") * 60
+				err := d.Gc(lifetime)
 				if err != nil {
 					return
 				}
