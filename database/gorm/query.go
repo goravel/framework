@@ -803,6 +803,10 @@ func (r *QueryImpl) WhereNull(column string) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
+func (r *QueryImpl) OrWhereNull(column string) ormcontract.Query {
+	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
+}
+
 func (r *QueryImpl) WhereNotNull(column string) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
 }
