@@ -17,14 +17,14 @@ func TestInitDatabase(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, database1)
 	assert.True(t, database1.Mysql.Config().Port > 0)
-	assert.True(t, database1.Postgresql.Config().Port > 0)
+	assert.True(t, database1.Postgres.Config().Port > 0)
 	assert.True(t, database1.Sqlserver.Config().Port > 0)
 
 	database2, err := InitDatabase()
 	assert.Nil(t, err)
 	assert.NotNil(t, database2)
 	assert.True(t, database2.Mysql.Config().Port > 0)
-	assert.True(t, database2.Postgresql.Config().Port > 0)
+	assert.True(t, database2.Postgres.Config().Port > 0)
 	assert.True(t, database2.Sqlserver.Config().Port > 0)
 
 	assert.Nil(t, database1.Fresh())

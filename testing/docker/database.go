@@ -40,7 +40,7 @@ func NewDatabase(app foundation.Application, connection string, gormInitialize g
 	case contractsorm.DriverMysql:
 		databaseDriver = supportdocker.NewMysql(database, username, password)
 	case contractsorm.DriverPostgresql:
-		databaseDriver = supportdocker.NewPostgresql(database, username, password)
+		databaseDriver = supportdocker.NewPostgres(database, username, password)
 	case contractsorm.DriverSqlserver:
 		databaseDriver = supportdocker.NewSqlserver(database, username, password)
 	case contractsorm.DriverSqlite:

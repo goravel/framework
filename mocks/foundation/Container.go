@@ -42,6 +42,8 @@ import (
 
 	schedule "github.com/goravel/framework/contracts/schedule"
 
+	schema "github.com/goravel/framework/contracts/database/schema"
+
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
 	session "github.com/goravel/framework/contracts/session"
@@ -1023,6 +1025,53 @@ func (_c *Container_MakeSchedule_Call) Return(_a0 schedule.Schedule) *Container_
 }
 
 func (_c *Container_MakeSchedule_Call) RunAndReturn(run func() schedule.Schedule) *Container_MakeSchedule_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeSchema provides a mock function with given fields:
+func (_m *Container) MakeSchema() schema.Schema {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeSchema")
+	}
+
+	var r0 schema.Schema
+	if rf, ok := ret.Get(0).(func() schema.Schema); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.Schema)
+		}
+	}
+
+	return r0
+}
+
+// Container_MakeSchema_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeSchema'
+type Container_MakeSchema_Call struct {
+	*mock.Call
+}
+
+// MakeSchema is a helper method to define mock.On call
+func (_e *Container_Expecter) MakeSchema() *Container_MakeSchema_Call {
+	return &Container_MakeSchema_Call{Call: _e.mock.On("MakeSchema")}
+}
+
+func (_c *Container_MakeSchema_Call) Run(run func()) *Container_MakeSchema_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Container_MakeSchema_Call) Return(_a0 schema.Schema) *Container_MakeSchema_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Container_MakeSchema_Call) RunAndReturn(run func() schema.Schema) *Container_MakeSchema_Call {
 	_c.Call.Return(run)
 	return _c
 }

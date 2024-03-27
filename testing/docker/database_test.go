@@ -97,7 +97,7 @@ func TestNewDatabase(t *testing.T) {
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "postgresql",
-					driver:         supportdocker.NewPostgresql(database, username, password),
+					driver:         supportdocker.NewPostgres(database, username, password),
 					gormInitialize: mockGormInitialize,
 				}
 			},

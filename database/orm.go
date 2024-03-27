@@ -12,6 +12,7 @@ import (
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/database/seeder"
 )
 
 type OrmImpl struct {
@@ -77,7 +78,7 @@ func (r *OrmImpl) Query() ormcontract.Query {
 }
 
 func (r *OrmImpl) Factory() ormcontract.Factory {
-	return NewFactoryImpl(r.Query())
+	return seeder.NewFactoryImpl(r.Query())
 }
 
 func (r *OrmImpl) Observe(model any, observer ormcontract.Observer) {
