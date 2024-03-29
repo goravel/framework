@@ -826,22 +826,15 @@ func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func(string) error) *Bluepr
 	return _c
 }
 
-// DropSoftDeletes provides a mock function with given fields:
-func (_m *Blueprint) DropSoftDeletes() error {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropSoftDeletes")
+// DropSoftDeletes provides a mock function with given fields: column
+func (_m *Blueprint) DropSoftDeletes(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_DropSoftDeletes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropSoftDeletes'
@@ -850,23 +843,77 @@ type Blueprint_DropSoftDeletes_Call struct {
 }
 
 // DropSoftDeletes is a helper method to define mock.On call
-func (_e *Blueprint_Expecter) DropSoftDeletes() *Blueprint_DropSoftDeletes_Call {
-	return &Blueprint_DropSoftDeletes_Call{Call: _e.mock.On("DropSoftDeletes")}
+//   - column ...string
+func (_e *Blueprint_Expecter) DropSoftDeletes(column ...interface{}) *Blueprint_DropSoftDeletes_Call {
+	return &Blueprint_DropSoftDeletes_Call{Call: _e.mock.On("DropSoftDeletes",
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropSoftDeletes_Call) Run(run func()) *Blueprint_DropSoftDeletes_Call {
+func (_c *Blueprint_DropSoftDeletes_Call) Run(run func(column ...string)) *Blueprint_DropSoftDeletes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Blueprint_DropSoftDeletes_Call) Return(_a0 error) *Blueprint_DropSoftDeletes_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_DropSoftDeletes_Call) Return() *Blueprint_DropSoftDeletes_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_DropSoftDeletes_Call) RunAndReturn(run func() error) *Blueprint_DropSoftDeletes_Call {
+func (_c *Blueprint_DropSoftDeletes_Call) RunAndReturn(run func(...string)) *Blueprint_DropSoftDeletes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropSoftDeletesTz provides a mock function with given fields: column
+func (_m *Blueprint) DropSoftDeletesTz(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_DropSoftDeletesTz_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropSoftDeletesTz'
+type Blueprint_DropSoftDeletesTz_Call struct {
+	*mock.Call
+}
+
+// DropSoftDeletesTz is a helper method to define mock.On call
+//   - column ...string
+func (_e *Blueprint_Expecter) DropSoftDeletesTz(column ...interface{}) *Blueprint_DropSoftDeletesTz_Call {
+	return &Blueprint_DropSoftDeletesTz_Call{Call: _e.mock.On("DropSoftDeletesTz",
+		append([]interface{}{}, column...)...)}
+}
+
+func (_c *Blueprint_DropSoftDeletesTz_Call) Run(run func(column ...string)) *Blueprint_DropSoftDeletesTz_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropSoftDeletesTz_Call) Return() *Blueprint_DropSoftDeletesTz_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropSoftDeletesTz_Call) RunAndReturn(run func(...string)) *Blueprint_DropSoftDeletesTz_Call {
 	_c.Call.Return(run)
 	return _c
 }

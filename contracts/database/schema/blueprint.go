@@ -38,7 +38,9 @@ type Blueprint interface {
 	// DropIndex Indicate that the given index should be dropped.
 	DropIndex(index string) error
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
-	DropSoftDeletes() error
+	DropSoftDeletes(column ...string)
+	// DropSoftDeletesTz Indicate that the soft delete column should be dropped.
+	DropSoftDeletesTz(column ...string)
 	// DropTimestamps Indicate that the timestamp columns should be dropped.
 	DropTimestamps()
 	// DropTimestampsTz Indicate that the timestamp columns should be dropped.

@@ -182,15 +182,27 @@ func (r *Blueprint) DropIndex(index string) error {
 	panic("implement me")
 }
 
-func (r *Blueprint) DropSoftDeletes() error {
-	//TODO implement me
-	panic("implement me")
+// TODO Test this method
+func (r *Blueprint) DropSoftDeletes(column ...string) {
+	c := "deleted_at"
+	if len(column) > 0 {
+		c = column[0]
+	}
+
+	r.DropColumn(c)
 }
 
+// TODO Test this method
+func (r *Blueprint) DropSoftDeletesTz(column ...string) {
+	r.DropSoftDeletes(column...)
+}
+
+// TODO Test this method
 func (r *Blueprint) DropTimestamps() {
 	r.DropColumn("created_at", "updated_at")
 }
 
+// TODO Test this method
 func (r *Blueprint) DropTimestampsTz() {
 	r.DropTimestamps()
 }
