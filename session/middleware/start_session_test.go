@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"io"
 	nethttp "net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
@@ -38,43 +38,25 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 	mockConfig.On("GetBool", "session.secure").Return(false).Once()
 	mockConfig.On("GetBool", "session.http_only").Return(true).Once()
 	mockConfig.On("GetString", "session.same_site").Return("").Once()
-
 	mockConfig.On("Get", "session.lottery").Return([]int{100, 100}).Once()
 }
 
 func TestStartSession(t *testing.T) {
 	mockConfig := &configmocks.Config{}
 	mockConfigFacade(mockConfig)
-	nethttp.Handle("/test", testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		s := r.Context().Value("session").(contractsession.Session)
-		s.Put("name", "John Doe")
 
-		_, err := w.Write([]byte(s.GetName()))
-		if err != nil {
-			return
-		}
-	}), mockConfig))
-
-	go func() {
-		err := nethttp.ListenAndServe(":8080", nil)
-		require.NoError(t, err)
-
-		mockConfig.AssertExpectations(t)
-	}()
-
-	time.Sleep(1 * time.Second)
-
-	req, err := nethttp.NewRequest("GET", "http://127.0.0.1:8080/test", nil)
-	require.NoError(t, err)
+	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {}), mockConfig))
+	defer server.Close()
 
 	client := &nethttp.Client{}
+	req, err := nethttp.NewRequest("GET", server.URL+"/test", nil)
+	require.NoError(t, err)
+
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	assert.Equal(t, "goravel_session", string(body))
+	assert.Nil(t, err)
+	assert.Equal(t, "goravel_session", resp.Cookies()[0].Name)
 
 	assert.NoError(t, file.Remove("sessions"))
 }
@@ -228,7 +210,6 @@ func (r *TestRequest) QueryMap(string) map[string]string {
 }
 
 func (r *TestRequest) Queries() map[string]string {
-
 	panic("do not need to implement it")
 }
 
