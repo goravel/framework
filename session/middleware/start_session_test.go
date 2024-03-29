@@ -2,14 +2,13 @@ package middleware
 
 import (
 	"context"
-	"fmt"
-	"github.com/gookit/color"
 	"io"
 	nethttp "net/http"
 	"net/url"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/contracts/filesystem"
@@ -25,36 +24,38 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		session.ConfigFacade = mockConfig
 		session.Facade = session.NewManager(mockConfig)
-
-		mockConfig.On("GetString", "session.driver").Return("file").Once()
-		mockConfig.On("GetInt", "session.lifetime").Return(120).Twice()
-		mockConfig.On("GetString", "session.files").Return("sessions").Once()
-		mockConfig.On("GetString", "session.cookie").Return("goravel_session").Once()
-		mockConfig.On("Get", "session.lottery").Return([]int{2, 100}).Once()
-
-		mockConfig.On("GetString", "session.path").Return("/").Once()
-		mockConfig.On("GetString", "session.domain").Return("").Once()
-		mockConfig.On("GetBool", "session.secure").Return(false).Once()
-		mockConfig.On("GetBool", "session.http_only").Return(true).Once()
-		mockConfig.On("GetString", "session.same_site").Return("").Once()
-
-		StartSession()(NewTestContext(r.Context(), &next, w, r))
+		StartSession()(NewTestContext(r.Context(), next, w, r))
 	})
 }
 
+func mockConfigFacade(mockConfig *configmocks.Config) {
+	mockConfig.On("GetString", "session.driver").Return("file").Once()
+	mockConfig.On("GetInt", "session.lifetime").Return(60).Times(3)
+	mockConfig.On("GetString", "session.files").Return("sessions").Once()
+	mockConfig.On("GetString", "session.cookie").Return("goravel_session").Once()
+	mockConfig.On("GetString", "session.path").Return("/").Once()
+	mockConfig.On("GetString", "session.domain").Return("").Once()
+	mockConfig.On("GetBool", "session.secure").Return(false).Once()
+	mockConfig.On("GetBool", "session.http_only").Return(true).Once()
+	mockConfig.On("GetString", "session.same_site").Return("").Once()
+
+	mockConfig.On("Get", "session.lottery").Return([]int{100, 100}).Once()
+}
+
 func TestStartSession(t *testing.T) {
+	mockConfig := &configmocks.Config{}
+	mockConfigFacade(mockConfig)
+	nethttp.Handle("/test", testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		s := r.Context().Value("session").(contractsession.Session)
+		s.Put("name", "John Doe")
+
+		_, err := w.Write([]byte(s.GetName()))
+		if err != nil {
+			return
+		}
+	}), mockConfig))
+
 	go func() {
-		mockConfig := &configmocks.Config{}
-		nethttp.Handle("/test", testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-			fmt.Println("processing")
-
-			_, err := w.Write([]byte("Hello, World!"))
-			if err != nil {
-				return
-			}
-			color.Redln(r.Context().Value("session").(contractsession.Session).GetName())
-		}), mockConfig))
-
 		err := nethttp.ListenAndServe(":8080", nil)
 		require.NoError(t, err)
 
@@ -73,20 +74,19 @@ func TestStartSession(t *testing.T) {
 
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
+	assert.Equal(t, "goravel_session", string(body))
 
-	fmt.Println("Response:", string(body))
-
-	require.NoError(t, file.Remove("sessions"))
+	assert.NoError(t, file.Remove("sessions"))
 }
 
 type TestContext struct {
 	ctx     context.Context
-	next    *nethttp.Handler
+	next    nethttp.Handler
 	request *nethttp.Request
 	writer  nethttp.ResponseWriter
 }
 
-func NewTestContext(ctx context.Context, next *nethttp.Handler, w nethttp.ResponseWriter, r *nethttp.Request) *TestContext {
+func NewTestContext(ctx context.Context, next nethttp.Handler, w nethttp.ResponseWriter, r *nethttp.Request) *TestContext {
 	return &TestContext{
 		ctx:     ctx,
 		next:    next,
@@ -286,7 +286,7 @@ func (r *TestRequest) AbortWithStatusJson(int, any) {
 }
 
 func (r *TestRequest) Next() {
-	(*r.ctx.next).ServeHTTP(r.ctx.writer, r.ctx.request)
+	r.ctx.next.ServeHTTP(r.ctx.writer, r.ctx.request)
 }
 
 func (r *TestRequest) Origin() *nethttp.Request {

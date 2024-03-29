@@ -21,7 +21,7 @@ func StartSession() http.Middleware {
 		// Retrieve session driver
 		d, err := session.Facade.Driver()
 		if err != nil {
-			return
+			panic(err)
 		}
 
 		// Build session
@@ -39,7 +39,7 @@ func StartSession() http.Middleware {
 				lifetime := session.ConfigFacade.GetInt("session.lifetime") * 60
 				err := d.Gc(lifetime)
 				if err != nil {
-					return
+					panic(err)
 				}
 			}
 		}
@@ -66,7 +66,7 @@ func StartSession() http.Middleware {
 		// Save session
 		err = s.Save()
 		if err != nil {
-			return
+			panic(err)
 		}
 	}
 }
