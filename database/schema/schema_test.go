@@ -184,6 +184,8 @@ func (s *SchemaSuite) TestGetColumns() {
 				table.ID().Comment("This is a id column")
 				table.ID("aid").Comment("This is a id column, name is aid")
 				table.Integer("integer").Comment("This is a integer column")
+				table.SoftDeletes()
+				table.SoftDeletesTz("another_deleted_at")
 				table.String("string").Comment("This is a string column")
 				table.Json("json").Comment("This is a json column")
 				table.Jsonb("jsonb").Comment("This is a jsonb column")
@@ -201,7 +203,7 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(24, len(columnListing))
+			s.Equal(26, len(columnListing))
 			s.Contains(columnListing, "big_increments")
 			s.Contains(columnListing, "big_integer")
 			s.Contains(columnListing, "char")
@@ -214,6 +216,8 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.Contains(columnListing, "id")
 			s.Contains(columnListing, "aid")
 			s.Contains(columnListing, "integer")
+			s.Contains(columnListing, "deleted_at")
+			s.Contains(columnListing, "another_deleted_at")
 			s.Contains(columnListing, "string")
 			s.Contains(columnListing, "json")
 			s.Contains(columnListing, "jsonb")
@@ -345,6 +349,24 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.False(column.Nullable)
 					s.Equal("integer", column.Type)
 					s.Equal("int4", column.TypeName)
+				}
+				if column.Name == "deleted_at" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("timestamp(0) without time zone", column.Type)
+					s.Equal("timestamp", column.TypeName)
+				}
+				if column.Name == "another_deleted_at" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("timestamp(0) with time zone", column.Type)
+					s.Equal("timestamptz", column.TypeName)
 				}
 				if column.Name == "string" {
 					s.False(column.AutoIncrement)

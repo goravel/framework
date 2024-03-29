@@ -161,13 +161,13 @@ func (r *Blueprint) Double(column string) schemacontract.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) DropColumn(column string) {
-	r.DropColumns([]string{column})
-}
+func (r *Blueprint) DropColumn(column ...string) {
+	if len(column) == 0 {
+		panic("You must specify at least one column to drop.")
+	}
 
-func (r *Blueprint) DropColumns(columns []string) {
 	r.addCommand(&schemacontract.Command{
-		Columns: columns,
+		Columns: column,
 		Name:    "dropColumn",
 	})
 }
@@ -187,9 +187,12 @@ func (r *Blueprint) DropSoftDeletes() error {
 	panic("implement me")
 }
 
-func (r *Blueprint) DropTimestamps() error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) DropTimestamps() {
+	r.DropColumn("created_at", "updated_at")
+}
+
+func (r *Blueprint) DropTimestampsTz() {
+	r.DropTimestamps()
 }
 
 func (r *Blueprint) Enum(column string, allowed []string) schemacontract.ColumnDefinition {
@@ -313,13 +316,21 @@ func (r *Blueprint) RenameIndex(from, to string) error {
 }
 
 func (r *Blueprint) SoftDeletes(column ...string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	c := "deleted_at"
+	if len(column) > 0 {
+		c = column[0]
+	}
+
+	return r.Timestamp(c).Nullable()
 }
 
 func (r *Blueprint) SoftDeletesTz(column ...string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	c := "deleted_at"
+	if len(column) > 0 {
+		c = column[0]
+	}
+
+	return r.TimestampTz(c).Nullable()
 }
 
 func (r *Blueprint) String(column string, length ...int) schemacontract.ColumnDefinition {

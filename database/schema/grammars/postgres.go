@@ -278,39 +278,19 @@ func (r *Postgres) TypeText(column schemacontract.ColumnDefinition) string {
 }
 
 func (r *Postgres) TypeTime(column schemacontract.ColumnDefinition) string {
-	precision := column.GetPrecision()
-	if precision > 0 {
-		return fmt.Sprintf("time(%d) without time zone", precision)
-	}
-
-	return "time"
+	return fmt.Sprintf("time(%d) without time zone", column.GetPrecision())
 }
 
 func (r *Postgres) TypeTimeTz(column schemacontract.ColumnDefinition) string {
-	precision := column.GetPrecision()
-	if precision > 0 {
-		return fmt.Sprintf("time(%d) with time zone", precision)
-	}
-
-	return "time"
+	return fmt.Sprintf("time(%d) with time zone", column.GetPrecision())
 }
 
 func (r *Postgres) TypeTimestamp(column schemacontract.ColumnDefinition) string {
-	precision := column.GetPrecision()
-	if precision > 0 {
-		return fmt.Sprintf("timestamp(%d) without time zone", precision)
-	}
-
-	return "timestamp"
+	return fmt.Sprintf("timestamp(%d) without time zone", column.GetPrecision())
 }
 
 func (r *Postgres) TypeTimestampTz(column schemacontract.ColumnDefinition) string {
-	precision := column.GetPrecision()
-	if precision > 0 {
-		return fmt.Sprintf("timestamp(%d) with time zone", precision)
-	}
-
-	return "timestamp"
+	return fmt.Sprintf("timestamp(%d) with time zone", column.GetPrecision())
 }
 
 func (r *Postgres) addModify(sql string, blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {

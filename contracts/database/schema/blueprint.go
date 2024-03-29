@@ -32,9 +32,7 @@ type Blueprint interface {
 	// Double Create a new double column on the table.
 	Double(column string) ColumnDefinition
 	// DropColumn Indicate that the given column should be dropped.
-	DropColumn(column string)
-	// DropColumns Indicate that the given columns should be dropped.
-	DropColumns(columns []string)
+	DropColumn(column ...string)
 	// DropForeign Indicate that the given foreign key should be dropped.
 	DropForeign(index string) error
 	// DropIndex Indicate that the given index should be dropped.
@@ -42,7 +40,9 @@ type Blueprint interface {
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
 	DropSoftDeletes() error
 	// DropTimestamps Indicate that the timestamp columns should be dropped.
-	DropTimestamps() error
+	DropTimestamps()
+	// DropTimestampsTz Indicate that the timestamp columns should be dropped.
+	DropTimestampsTz()
 	// Enum Create a new enum column on the table.
 	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.

@@ -78,7 +78,7 @@ func (r *Schema) DropAllViews() error {
 
 func (r *Schema) DropColumns(table string, columns []string) error {
 	return r.Table(table, func(table schemacontract.Blueprint) {
-		table.DropColumns(columns)
+		table.DropColumn(columns...)
 	})
 }
 

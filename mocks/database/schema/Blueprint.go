@@ -689,8 +689,14 @@ func (_c *Blueprint_Double_Call) RunAndReturn(run func(string) schema.ColumnDefi
 }
 
 // DropColumn provides a mock function with given fields: column
-func (_m *Blueprint) DropColumn(column string) {
-	_m.Called(column)
+func (_m *Blueprint) DropColumn(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_DropColumn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropColumn'
@@ -699,14 +705,21 @@ type Blueprint_DropColumn_Call struct {
 }
 
 // DropColumn is a helper method to define mock.On call
-//   - column string
-func (_e *Blueprint_Expecter) DropColumn(column interface{}) *Blueprint_DropColumn_Call {
-	return &Blueprint_DropColumn_Call{Call: _e.mock.On("DropColumn", column)}
+//   - column ...string
+func (_e *Blueprint_Expecter) DropColumn(column ...interface{}) *Blueprint_DropColumn_Call {
+	return &Blueprint_DropColumn_Call{Call: _e.mock.On("DropColumn",
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropColumn_Call) Run(run func(column string)) *Blueprint_DropColumn_Call {
+func (_c *Blueprint_DropColumn_Call) Run(run func(column ...string)) *Blueprint_DropColumn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -716,40 +729,7 @@ func (_c *Blueprint_DropColumn_Call) Return() *Blueprint_DropColumn_Call {
 	return _c
 }
 
-func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(string)) *Blueprint_DropColumn_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DropColumns provides a mock function with given fields: columns
-func (_m *Blueprint) DropColumns(columns []string) {
-	_m.Called(columns)
-}
-
-// Blueprint_DropColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropColumns'
-type Blueprint_DropColumns_Call struct {
-	*mock.Call
-}
-
-// DropColumns is a helper method to define mock.On call
-//   - columns []string
-func (_e *Blueprint_Expecter) DropColumns(columns interface{}) *Blueprint_DropColumns_Call {
-	return &Blueprint_DropColumns_Call{Call: _e.mock.On("DropColumns", columns)}
-}
-
-func (_c *Blueprint_DropColumns_Call) Run(run func(columns []string)) *Blueprint_DropColumns_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string))
-	})
-	return _c
-}
-
-func (_c *Blueprint_DropColumns_Call) Return() *Blueprint_DropColumns_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Blueprint_DropColumns_Call) RunAndReturn(run func([]string)) *Blueprint_DropColumns_Call {
+func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(...string)) *Blueprint_DropColumn_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -892,21 +872,8 @@ func (_c *Blueprint_DropSoftDeletes_Call) RunAndReturn(run func() error) *Bluepr
 }
 
 // DropTimestamps provides a mock function with given fields:
-func (_m *Blueprint) DropTimestamps() error {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropTimestamps")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Blueprint) DropTimestamps() {
+	_m.Called()
 }
 
 // Blueprint_DropTimestamps_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropTimestamps'
@@ -926,12 +893,44 @@ func (_c *Blueprint_DropTimestamps_Call) Run(run func()) *Blueprint_DropTimestam
 	return _c
 }
 
-func (_c *Blueprint_DropTimestamps_Call) Return(_a0 error) *Blueprint_DropTimestamps_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_DropTimestamps_Call) Return() *Blueprint_DropTimestamps_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_DropTimestamps_Call) RunAndReturn(run func() error) *Blueprint_DropTimestamps_Call {
+func (_c *Blueprint_DropTimestamps_Call) RunAndReturn(run func()) *Blueprint_DropTimestamps_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropTimestampsTz provides a mock function with given fields:
+func (_m *Blueprint) DropTimestampsTz() {
+	_m.Called()
+}
+
+// Blueprint_DropTimestampsTz_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropTimestampsTz'
+type Blueprint_DropTimestampsTz_Call struct {
+	*mock.Call
+}
+
+// DropTimestampsTz is a helper method to define mock.On call
+func (_e *Blueprint_Expecter) DropTimestampsTz() *Blueprint_DropTimestampsTz_Call {
+	return &Blueprint_DropTimestampsTz_Call{Call: _e.mock.On("DropTimestampsTz")}
+}
+
+func (_c *Blueprint_DropTimestampsTz_Call) Run(run func()) *Blueprint_DropTimestampsTz_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropTimestampsTz_Call) Return() *Blueprint_DropTimestampsTz_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropTimestampsTz_Call) RunAndReturn(run func()) *Blueprint_DropTimestampsTz_Call {
 	_c.Call.Return(run)
 	return _c
 }
