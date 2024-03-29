@@ -98,6 +98,7 @@ func (r *TestContext) Context() context.Context {
 }
 
 func (r *TestContext) WithValue(key string, value any) {
+	//nolint:all
 	r.ctx = context.WithValue(r.ctx, key, value)
 }
 
