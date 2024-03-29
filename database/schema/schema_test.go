@@ -187,6 +187,7 @@ func (s *SchemaSuite) TestGetColumns() {
 				table.String("string").Comment("This is a string column")
 				table.Json("json").Comment("This is a json column")
 				table.Jsonb("jsonb").Comment("This is a jsonb column")
+				table.Text("text").Comment("This is a text column")
 				table.UnsignedBigInteger("unsigned_big_integer").Comment("This is a unsigned_big_integer column")
 			})
 
@@ -195,7 +196,7 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(17, len(columnListing))
+			s.Equal(18, len(columnListing))
 			s.Contains(columnListing, "big_increments")
 			s.Contains(columnListing, "big_integer")
 			s.Contains(columnListing, "char")
@@ -211,6 +212,7 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.Contains(columnListing, "string")
 			s.Contains(columnListing, "json")
 			s.Contains(columnListing, "jsonb")
+			s.Contains(columnListing, "text")
 			s.Contains(columnListing, "unsigned_big_integer")
 
 			columns, err := schema.schema.GetColumns(table)
@@ -359,6 +361,15 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.True(column.Nullable)
 					s.Equal("jsonb", column.Type)
 					s.Equal("jsonb", column.TypeName)
+				}
+				if column.Name == "text" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a text column", column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("text", column.Type)
+					s.Equal("text", column.TypeName)
 				}
 				if column.Name == "unsigned_big_integer" {
 					s.False(column.AutoIncrement)

@@ -339,8 +339,13 @@ func (r *Blueprint) String(column string, length ...int) schemacontract.ColumnDe
 }
 
 func (r *Blueprint) Text(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("text"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Time(column string) schemacontract.ColumnDefinition {
