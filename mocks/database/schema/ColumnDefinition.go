@@ -327,6 +327,51 @@ func (_c *ColumnDefinition_GetName_Call) RunAndReturn(run func() string) *Column
 	return _c
 }
 
+// GetNullable provides a mock function with given fields:
+func (_m *ColumnDefinition) GetNullable() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNullable")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetNullable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNullable'
+type ColumnDefinition_GetNullable_Call struct {
+	*mock.Call
+}
+
+// GetNullable is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetNullable() *ColumnDefinition_GetNullable_Call {
+	return &ColumnDefinition_GetNullable_Call{Call: _e.mock.On("GetNullable")}
+}
+
+func (_c *ColumnDefinition_GetNullable_Call) Run(run func()) *ColumnDefinition_GetNullable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetNullable_Call) Return(_a0 bool) *ColumnDefinition_GetNullable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetNullable_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetNullable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlaces provides a mock function with given fields:
 func (_m *ColumnDefinition) GetPlaces() int {
 	ret := _m.Called()
@@ -548,6 +593,53 @@ func (_c *ColumnDefinition_GetUnsigned_Call) Return(_a0 bool) *ColumnDefinition_
 }
 
 func (_c *ColumnDefinition_GetUnsigned_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetUnsigned_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Nullable provides a mock function with given fields:
+func (_m *ColumnDefinition) Nullable() schema.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Nullable")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Nullable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Nullable'
+type ColumnDefinition_Nullable_Call struct {
+	*mock.Call
+}
+
+// Nullable is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) Nullable() *ColumnDefinition_Nullable_Call {
+	return &ColumnDefinition_Nullable_Call{Call: _e.mock.On("Nullable")}
+}
+
+func (_c *ColumnDefinition_Nullable_Call) Run(run func()) *ColumnDefinition_Nullable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Nullable_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Nullable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_Nullable_Call {
 	_c.Call.Return(run)
 	return _c
 }

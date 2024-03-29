@@ -2,6 +2,7 @@ package schema
 
 import (
 	schemacontract "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/support/convert"
 )
 
 type ColumnDefinition struct {
@@ -66,6 +67,14 @@ func (r *ColumnDefinition) GetName() (name string) {
 	return
 }
 
+func (r *ColumnDefinition) GetNullable() bool {
+	if r.nullable != nil {
+		return *r.nullable
+	}
+
+	return false
+}
+
 func (r *ColumnDefinition) GetPlaces() (places int) {
 	if r.places != nil {
 		return *r.places
@@ -104,4 +113,10 @@ func (r *ColumnDefinition) GetUnsigned() (unsigned bool) {
 	}
 
 	return
+}
+
+func (r *ColumnDefinition) Nullable() schemacontract.ColumnDefinition {
+	r.nullable = convert.Pointer(true)
+
+	return r
 }

@@ -20,7 +20,7 @@ func NewPostgres() *Postgres {
 		attributeCommands: []string{"comment"},
 	}
 	postgres.modifiers = []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string{
-		//postgres.ModifyDefault,
+		postgres.ModifyNullable,
 	}
 
 	return postgres
@@ -177,9 +177,12 @@ func (r *Postgres) GetAttributeCommands() []string {
 	return r.attributeCommands
 }
 
-func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	if column.GetNullable() {
+		return " null"
+	} else {
+		return " not null"
+	}
 }
 
 func (r *Postgres) ModifyDefault(blueprint schemacontract.Blueprint, column string) string {

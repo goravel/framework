@@ -348,34 +348,66 @@ func (r *Blueprint) Text(column string) schemacontract.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Time(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Time(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("time"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
-func (r *Blueprint) TimeTz(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) TimeTz(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("timeTz"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
-func (r *Blueprint) Timestamp(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Timestamp(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("timestamp"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
-func (r *Blueprint) Timestamps() schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Timestamps(precision ...int) {
+	r.Timestamp("created_at", precision...).Nullable()
+	r.Timestamp("updated_at", precision...).Nullable()
 }
 
-func (r *Blueprint) TimestampsTz() schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) TimestampsTz(precision ...int) {
+	r.TimestampTz("created_at", precision...).Nullable()
+	r.TimestampTz("updated_at", precision...).Nullable()
 }
 
-func (r *Blueprint) TimestampTz(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) TimestampTz(column string, precision ...int) schemacontract.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("timestampTz"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Grammar) []string {

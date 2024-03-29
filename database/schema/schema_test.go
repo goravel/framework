@@ -188,6 +188,11 @@ func (s *SchemaSuite) TestGetColumns() {
 				table.Json("json").Comment("This is a json column")
 				table.Jsonb("jsonb").Comment("This is a jsonb column")
 				table.Text("text").Comment("This is a text column")
+				table.Time("time", 2).Comment("This is a time column")
+				table.TimeTz("time_tz", 2).Comment("This is a time with time zone column")
+				table.Timestamp("timestamp", 2).Comment("This is a timestamp without time zone column")
+				table.TimestampTz("timestamp_tz", 2).Comment("This is a timestamp with time zone column")
+				table.Timestamps(2)
 				table.UnsignedBigInteger("unsigned_big_integer").Comment("This is a unsigned_big_integer column")
 			})
 
@@ -196,7 +201,7 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(18, len(columnListing))
+			s.Equal(24, len(columnListing))
 			s.Contains(columnListing, "big_increments")
 			s.Contains(columnListing, "big_integer")
 			s.Contains(columnListing, "char")
@@ -213,6 +218,12 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.Contains(columnListing, "json")
 			s.Contains(columnListing, "jsonb")
 			s.Contains(columnListing, "text")
+			s.Contains(columnListing, "time")
+			s.Contains(columnListing, "time_tz")
+			s.Contains(columnListing, "timestamp")
+			s.Contains(columnListing, "timestamp_tz")
+			s.Contains(columnListing, "created_at")
+			s.Contains(columnListing, "updated_at")
 			s.Contains(columnListing, "unsigned_big_integer")
 
 			columns, err := schema.schema.GetColumns(table)
@@ -232,7 +243,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a big_integer column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("bigint", column.Type)
 					s.Equal("int8", column.TypeName)
 				}
@@ -241,7 +252,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a char column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("character(255)", column.Type)
 					s.Equal("bpchar", column.TypeName)
 				}
@@ -250,7 +261,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a date column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("date", column.Type)
 					s.Equal("date", column.TypeName)
 				}
@@ -259,7 +270,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a date time column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("timestamp(3) without time zone", column.Type)
 					s.Equal("timestamp", column.TypeName)
 				}
@@ -268,7 +279,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a date time with time zone column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("timestamp(3) with time zone", column.Type)
 					s.Equal("timestamptz", column.TypeName)
 				}
@@ -277,7 +288,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a decimal column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("numeric(4,1)", column.Type)
 					s.Equal("numeric", column.TypeName)
 				}
@@ -286,7 +297,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a double column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("double precision", column.Type)
 					s.Equal("float8", column.TypeName)
 				}
@@ -295,7 +306,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a enum column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("character varying(255)", column.Type)
 					s.Equal("varchar", column.TypeName)
 				}
@@ -304,7 +315,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a float column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("real", column.Type)
 					s.Equal("float4", column.TypeName)
 				}
@@ -331,7 +342,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a integer column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("integer", column.Type)
 					s.Equal("int4", column.TypeName)
 				}
@@ -340,7 +351,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a string column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("character varying(255)", column.Type)
 					s.Equal("varchar", column.TypeName)
 				}
@@ -349,7 +360,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a json column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("json", column.Type)
 					s.Equal("json", column.TypeName)
 				}
@@ -358,7 +369,7 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a jsonb column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("jsonb", column.Type)
 					s.Equal("jsonb", column.TypeName)
 				}
@@ -367,16 +378,70 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a text column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("text", column.Type)
 					s.Equal("text", column.TypeName)
+				}
+				if column.Name == "time" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a time column", column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("time(2) without time zone", column.Type)
+					s.Equal("time", column.TypeName)
+				}
+				if column.Name == "time_tz" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a time with time zone column", column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("time(2) with time zone", column.Type)
+					s.Equal("timetz", column.TypeName)
+				}
+				if column.Name == "timestamp" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a timestamp without time zone column", column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("timestamp(2) without time zone", column.Type)
+					s.Equal("timestamp", column.TypeName)
+				}
+				if column.Name == "timestamp_tz" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a timestamp with time zone column", column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("timestamp(2) with time zone", column.Type)
+					s.Equal("timestamptz", column.TypeName)
+				}
+				if column.Name == "created_at" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("timestamp(2) without time zone", column.Type)
+					s.Equal("timestamp", column.TypeName)
+				}
+				if column.Name == "updated_at" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.True(column.Nullable)
+					s.Equal("timestamp(2) without time zone", column.Type)
+					s.Equal("timestamp", column.TypeName)
 				}
 				if column.Name == "unsigned_big_integer" {
 					s.False(column.AutoIncrement)
 					s.Empty(column.Collation)
 					s.Equal("This is a unsigned_big_integer column", column.Comment)
 					s.Empty(column.Default)
-					s.True(column.Nullable)
+					s.False(column.Nullable)
 					s.Equal("bigint", column.Type)
 					s.Equal("int8", column.TypeName)
 				}

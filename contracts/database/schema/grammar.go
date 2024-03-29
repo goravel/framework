@@ -63,7 +63,7 @@ type Grammar interface {
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
 	// ModifyNullable Get the SQL for a nullable column modifier.
-	ModifyNullable(blueprint Blueprint, column string) string
+	ModifyNullable(blueprint Blueprint, column ColumnDefinition) string
 	// ModifyDefault Get the SQL for a default column modifier.
 	ModifyDefault(blueprint Blueprint, column string) string
 	// TypeBigInteger Create the column definition for a big integer type.

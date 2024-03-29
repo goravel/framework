@@ -80,17 +80,17 @@ type Blueprint interface {
 	// Text Create a new text column on the table.
 	Text(column string) ColumnDefinition
 	// Time Create a new time column on the table.
-	Time(column string) ColumnDefinition
+	Time(column string, precision ...int) ColumnDefinition
 	// TimeTz Create a new time column (with time zone) on the table.
-	TimeTz(column string) ColumnDefinition
+	TimeTz(column string, precision ...int) ColumnDefinition
 	// Timestamp Create a new time column on the table.
-	Timestamp(column string) ColumnDefinition
+	Timestamp(column string, precision ...int) ColumnDefinition
 	// Timestamps Add nullable creation and update timestamps to the table.
-	Timestamps() ColumnDefinition
+	Timestamps(precision ...int)
 	// TimestampsTz Add creation and update timestampTz columns to the table.
-	TimestampsTz() ColumnDefinition
+	TimestampsTz(precision ...int)
 	// TimestampTz Create a new time column (with time zone) on the table.
-	TimestampTz(column string) ColumnDefinition
+	TimestampTz(column string, precision ...int) ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(query ormcontract.Query, grammar Grammar) []string
 	// Unique Specify a unique index for the table.

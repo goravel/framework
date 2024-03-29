@@ -1889,17 +1889,24 @@ func (_c *Blueprint_Text_Call) RunAndReturn(run func(string) schema.ColumnDefini
 	return _c
 }
 
-// Time provides a mock function with given fields: column
-func (_m *Blueprint) Time(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// Time provides a mock function with given fields: column, precision
+func (_m *Blueprint) Time(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Time")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -1916,13 +1923,21 @@ type Blueprint_Time_Call struct {
 
 // Time is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) Time(column interface{}) *Blueprint_Time_Call {
-	return &Blueprint_Time_Call{Call: _e.mock.On("Time", column)}
+//   - precision ...int
+func (_e *Blueprint_Expecter) Time(column interface{}, precision ...interface{}) *Blueprint_Time_Call {
+	return &Blueprint_Time_Call{Call: _e.mock.On("Time",
+		append([]interface{}{column}, precision...)...)}
 }
 
-func (_c *Blueprint_Time_Call) Run(run func(column string)) *Blueprint_Time_Call {
+func (_c *Blueprint_Time_Call) Run(run func(column string, precision ...int)) *Blueprint_Time_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -1932,22 +1947,29 @@ func (_c *Blueprint_Time_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Ti
 	return _c
 }
 
-func (_c *Blueprint_Time_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Time_Call {
+func (_c *Blueprint_Time_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_Time_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// TimeTz provides a mock function with given fields: column
-func (_m *Blueprint) TimeTz(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// TimeTz provides a mock function with given fields: column, precision
+func (_m *Blueprint) TimeTz(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TimeTz")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -1964,13 +1986,21 @@ type Blueprint_TimeTz_Call struct {
 
 // TimeTz is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) TimeTz(column interface{}) *Blueprint_TimeTz_Call {
-	return &Blueprint_TimeTz_Call{Call: _e.mock.On("TimeTz", column)}
+//   - precision ...int
+func (_e *Blueprint_Expecter) TimeTz(column interface{}, precision ...interface{}) *Blueprint_TimeTz_Call {
+	return &Blueprint_TimeTz_Call{Call: _e.mock.On("TimeTz",
+		append([]interface{}{column}, precision...)...)}
 }
 
-func (_c *Blueprint_TimeTz_Call) Run(run func(column string)) *Blueprint_TimeTz_Call {
+func (_c *Blueprint_TimeTz_Call) Run(run func(column string, precision ...int)) *Blueprint_TimeTz_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -1980,22 +2010,29 @@ func (_c *Blueprint_TimeTz_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_
 	return _c
 }
 
-func (_c *Blueprint_TimeTz_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TimeTz_Call {
+func (_c *Blueprint_TimeTz_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_TimeTz_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Timestamp provides a mock function with given fields: column
-func (_m *Blueprint) Timestamp(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// Timestamp provides a mock function with given fields: column, precision
+func (_m *Blueprint) Timestamp(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Timestamp")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -2012,13 +2049,21 @@ type Blueprint_Timestamp_Call struct {
 
 // Timestamp is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) Timestamp(column interface{}) *Blueprint_Timestamp_Call {
-	return &Blueprint_Timestamp_Call{Call: _e.mock.On("Timestamp", column)}
+//   - precision ...int
+func (_e *Blueprint_Expecter) Timestamp(column interface{}, precision ...interface{}) *Blueprint_Timestamp_Call {
+	return &Blueprint_Timestamp_Call{Call: _e.mock.On("Timestamp",
+		append([]interface{}{column}, precision...)...)}
 }
 
-func (_c *Blueprint_Timestamp_Call) Run(run func(column string)) *Blueprint_Timestamp_Call {
+func (_c *Blueprint_Timestamp_Call) Run(run func(column string, precision ...int)) *Blueprint_Timestamp_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -2028,22 +2073,29 @@ func (_c *Blueprint_Timestamp_Call) Return(_a0 schema.ColumnDefinition) *Bluepri
 	return _c
 }
 
-func (_c *Blueprint_Timestamp_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Timestamp_Call {
+func (_c *Blueprint_Timestamp_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_Timestamp_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// TimestampTz provides a mock function with given fields: column
-func (_m *Blueprint) TimestampTz(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// TimestampTz provides a mock function with given fields: column, precision
+func (_m *Blueprint) TimestampTz(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TimestampTz")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -2060,13 +2112,21 @@ type Blueprint_TimestampTz_Call struct {
 
 // TimestampTz is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) TimestampTz(column interface{}) *Blueprint_TimestampTz_Call {
-	return &Blueprint_TimestampTz_Call{Call: _e.mock.On("TimestampTz", column)}
+//   - precision ...int
+func (_e *Blueprint_Expecter) TimestampTz(column interface{}, precision ...interface{}) *Blueprint_TimestampTz_Call {
+	return &Blueprint_TimestampTz_Call{Call: _e.mock.On("TimestampTz",
+		append([]interface{}{column}, precision...)...)}
 }
 
-func (_c *Blueprint_TimestampTz_Call) Run(run func(column string)) *Blueprint_TimestampTz_Call {
+func (_c *Blueprint_TimestampTz_Call) Run(run func(column string, precision ...int)) *Blueprint_TimestampTz_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -2076,29 +2136,20 @@ func (_c *Blueprint_TimestampTz_Call) Return(_a0 schema.ColumnDefinition) *Bluep
 	return _c
 }
 
-func (_c *Blueprint_TimestampTz_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TimestampTz_Call {
+func (_c *Blueprint_TimestampTz_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_TimestampTz_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Timestamps provides a mock function with given fields:
-func (_m *Blueprint) Timestamps() schema.ColumnDefinition {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Timestamps")
+// Timestamps provides a mock function with given fields: precision
+func (_m *Blueprint) Timestamps(precision ...int) {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
 	}
-
-	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.ColumnDefinition)
-		}
-	}
-
-	return r0
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_Timestamps_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Timestamps'
@@ -2107,45 +2158,44 @@ type Blueprint_Timestamps_Call struct {
 }
 
 // Timestamps is a helper method to define mock.On call
-func (_e *Blueprint_Expecter) Timestamps() *Blueprint_Timestamps_Call {
-	return &Blueprint_Timestamps_Call{Call: _e.mock.On("Timestamps")}
+//   - precision ...int
+func (_e *Blueprint_Expecter) Timestamps(precision ...interface{}) *Blueprint_Timestamps_Call {
+	return &Blueprint_Timestamps_Call{Call: _e.mock.On("Timestamps",
+		append([]interface{}{}, precision...)...)}
 }
 
-func (_c *Blueprint_Timestamps_Call) Run(run func()) *Blueprint_Timestamps_Call {
+func (_c *Blueprint_Timestamps_Call) Run(run func(precision ...int)) *Blueprint_Timestamps_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]int, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Blueprint_Timestamps_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Timestamps_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_Timestamps_Call) Return() *Blueprint_Timestamps_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_Timestamps_Call) RunAndReturn(run func() schema.ColumnDefinition) *Blueprint_Timestamps_Call {
+func (_c *Blueprint_Timestamps_Call) RunAndReturn(run func(...int)) *Blueprint_Timestamps_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// TimestampsTz provides a mock function with given fields:
-func (_m *Blueprint) TimestampsTz() schema.ColumnDefinition {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for TimestampsTz")
+// TimestampsTz provides a mock function with given fields: precision
+func (_m *Blueprint) TimestampsTz(precision ...int) {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
 	}
-
-	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.ColumnDefinition)
-		}
-	}
-
-	return r0
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_TimestampsTz_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TimestampsTz'
@@ -2154,23 +2204,31 @@ type Blueprint_TimestampsTz_Call struct {
 }
 
 // TimestampsTz is a helper method to define mock.On call
-func (_e *Blueprint_Expecter) TimestampsTz() *Blueprint_TimestampsTz_Call {
-	return &Blueprint_TimestampsTz_Call{Call: _e.mock.On("TimestampsTz")}
+//   - precision ...int
+func (_e *Blueprint_Expecter) TimestampsTz(precision ...interface{}) *Blueprint_TimestampsTz_Call {
+	return &Blueprint_TimestampsTz_Call{Call: _e.mock.On("TimestampsTz",
+		append([]interface{}{}, precision...)...)}
 }
 
-func (_c *Blueprint_TimestampsTz_Call) Run(run func()) *Blueprint_TimestampsTz_Call {
+func (_c *Blueprint_TimestampsTz_Call) Run(run func(precision ...int)) *Blueprint_TimestampsTz_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]int, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Blueprint_TimestampsTz_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_TimestampsTz_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_TimestampsTz_Call) Return() *Blueprint_TimestampsTz_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_TimestampsTz_Call) RunAndReturn(run func() schema.ColumnDefinition) *Blueprint_TimestampsTz_Call {
+func (_c *Blueprint_TimestampsTz_Call) RunAndReturn(run func(...int)) *Blueprint_TimestampsTz_Call {
 	_c.Call.Return(run)
 	return _c
 }

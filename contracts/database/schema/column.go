@@ -15,6 +15,8 @@ type ColumnDefinition interface {
 	GetLength() int
 	// GetName returns the name value
 	GetName() string
+	// GetNullable returns the nullable value
+	GetNullable() bool
 	// GetPlaces returns the places value
 	GetPlaces() int
 	// GetPrecision returns the precision value
@@ -25,6 +27,8 @@ type ColumnDefinition interface {
 	GetType() string
 	// GetUnsigned returns the unsigned value
 	GetUnsigned() bool
+	// Nullable allow NULL values to be inserted into the column
+	Nullable() ColumnDefinition
 }
 
 type Column struct {

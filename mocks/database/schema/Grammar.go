@@ -1387,7 +1387,7 @@ func (_c *Grammar_ModifyDefault_Call) RunAndReturn(run func(schema.Blueprint, st
 }
 
 // ModifyNullable provides a mock function with given fields: blueprint, column
-func (_m *Grammar) ModifyNullable(blueprint schema.Blueprint, column string) string {
+func (_m *Grammar) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
 	ret := _m.Called(blueprint, column)
 
 	if len(ret) == 0 {
@@ -1395,7 +1395,7 @@ func (_m *Grammar) ModifyNullable(blueprint schema.Blueprint, column string) str
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, schema.ColumnDefinition) string); ok {
 		r0 = rf(blueprint, column)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -1411,14 +1411,14 @@ type Grammar_ModifyNullable_Call struct {
 
 // ModifyNullable is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - column string
+//   - column schema.ColumnDefinition
 func (_e *Grammar_Expecter) ModifyNullable(blueprint interface{}, column interface{}) *Grammar_ModifyNullable_Call {
 	return &Grammar_ModifyNullable_Call{Call: _e.mock.On("ModifyNullable", blueprint, column)}
 }
 
-func (_c *Grammar_ModifyNullable_Call) Run(run func(blueprint schema.Blueprint, column string)) *Grammar_ModifyNullable_Call {
+func (_c *Grammar_ModifyNullable_Call) Run(run func(blueprint schema.Blueprint, column schema.ColumnDefinition)) *Grammar_ModifyNullable_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint), args[1].(schema.ColumnDefinition))
 	})
 	return _c
 }
@@ -1428,7 +1428,7 @@ func (_c *Grammar_ModifyNullable_Call) Return(_a0 string) *Grammar_ModifyNullabl
 	return _c
 }
 
-func (_c *Grammar_ModifyNullable_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_ModifyNullable_Call {
+func (_c *Grammar_ModifyNullable_Call) RunAndReturn(run func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_ModifyNullable_Call {
 	_c.Call.Return(run)
 	return _c
 }
