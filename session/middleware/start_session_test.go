@@ -38,8 +38,7 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 		mockConfig.On("GetBool", "session.http_only").Return(true).Once()
 		mockConfig.On("GetString", "session.same_site").Return("").Once()
 
-		ctx := NewTestContext(r.Context(), &next, w, r)
-		StartSession()(ctx)
+		StartSession()(NewTestContext(r.Context(), &next, w, r))
 	})
 }
 
