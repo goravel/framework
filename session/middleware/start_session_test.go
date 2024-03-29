@@ -80,11 +80,10 @@ func TestStartSession(t *testing.T) {
 }
 
 type TestContext struct {
-	ctx      context.Context
-	next     *nethttp.Handler
-	request  *nethttp.Request
-	response contractshttp.ContextResponse
-	writer   nethttp.ResponseWriter
+	ctx     context.Context
+	next    *nethttp.Handler
+	request *nethttp.Request
+	writer  nethttp.ResponseWriter
 }
 
 func NewTestContext(ctx context.Context, next *nethttp.Handler, w nethttp.ResponseWriter, r *nethttp.Request) *TestContext {
