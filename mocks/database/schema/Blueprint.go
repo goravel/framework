@@ -2438,17 +2438,24 @@ func (_c *Blueprint_UnsignedBigInteger_Call) RunAndReturn(run func(string, ...bo
 	return _c
 }
 
-// UnsignedInteger provides a mock function with given fields: column
-func (_m *Blueprint) UnsignedInteger(column string) schema.ColumnDefinition {
-	ret := _m.Called(column)
+// UnsignedInteger provides a mock function with given fields: column, autoIncrement
+func (_m *Blueprint) UnsignedInteger(column string, autoIncrement ...bool) schema.ColumnDefinition {
+	_va := make([]interface{}, len(autoIncrement))
+	for _i := range autoIncrement {
+		_va[_i] = autoIncrement[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UnsignedInteger")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
-		r0 = rf(column)
+	if rf, ok := ret.Get(0).(func(string, ...bool) schema.ColumnDefinition); ok {
+		r0 = rf(column, autoIncrement...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -2465,13 +2472,21 @@ type Blueprint_UnsignedInteger_Call struct {
 
 // UnsignedInteger is a helper method to define mock.On call
 //   - column string
-func (_e *Blueprint_Expecter) UnsignedInteger(column interface{}) *Blueprint_UnsignedInteger_Call {
-	return &Blueprint_UnsignedInteger_Call{Call: _e.mock.On("UnsignedInteger", column)}
+//   - autoIncrement ...bool
+func (_e *Blueprint_Expecter) UnsignedInteger(column interface{}, autoIncrement ...interface{}) *Blueprint_UnsignedInteger_Call {
+	return &Blueprint_UnsignedInteger_Call{Call: _e.mock.On("UnsignedInteger",
+		append([]interface{}{column}, autoIncrement...)...)}
 }
 
-func (_c *Blueprint_UnsignedInteger_Call) Run(run func(column string)) *Blueprint_UnsignedInteger_Call {
+func (_c *Blueprint_UnsignedInteger_Call) Run(run func(column string, autoIncrement ...bool)) *Blueprint_UnsignedInteger_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]bool, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(bool)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
 	})
 	return _c
 }
@@ -2481,7 +2496,7 @@ func (_c *Blueprint_UnsignedInteger_Call) Return(_a0 schema.ColumnDefinition) *B
 	return _c
 }
 
-func (_c *Blueprint_UnsignedInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedInteger_Call {
+func (_c *Blueprint_UnsignedInteger_Call) RunAndReturn(run func(string, ...bool) schema.ColumnDefinition) *Blueprint_UnsignedInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
