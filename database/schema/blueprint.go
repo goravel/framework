@@ -458,9 +458,11 @@ func (r *Blueprint) Unique(columns []string, name string) error {
 	panic("implement me")
 }
 
-func (r *Blueprint) UnsignedInteger(column string) schemacontract.ColumnDefinition {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) UnsignedInteger(column string, autoIncrement ...bool) schemacontract.ColumnDefinition {
+	return r.Integer(column, schemacontract.IntegerConfig{
+		AutoIncrement: len(autoIncrement) > 0 && autoIncrement[0],
+		Unsigned:      true,
+	})
 }
 
 func (r *Blueprint) UnsignedBigInteger(column string, autoIncrement ...bool) schemacontract.ColumnDefinition {

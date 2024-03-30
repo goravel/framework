@@ -195,6 +195,7 @@ func (s *SchemaSuite) TestGetColumns() {
 				table.Timestamp("timestamp", 2).Comment("This is a timestamp without time zone column")
 				table.TimestampTz("timestamp_tz", 2).Comment("This is a timestamp with time zone column")
 				table.Timestamps(2)
+				table.UnsignedInteger("unsigned_integer").Comment("This is a unsigned_integer column")
 				table.UnsignedBigInteger("unsigned_big_integer").Comment("This is a unsigned_big_integer column")
 			})
 
@@ -203,7 +204,7 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(26, len(columnListing))
+			s.Equal(27, len(columnListing))
 			s.Contains(columnListing, "big_increments")
 			s.Contains(columnListing, "big_integer")
 			s.Contains(columnListing, "char")
@@ -228,6 +229,7 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.Contains(columnListing, "timestamp_tz")
 			s.Contains(columnListing, "created_at")
 			s.Contains(columnListing, "updated_at")
+			s.Contains(columnListing, "unsigned_integer")
 			s.Contains(columnListing, "unsigned_big_integer")
 
 			columns, err := schema.schema.GetColumns(table)
@@ -457,6 +459,15 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.True(column.Nullable)
 					s.Equal("timestamp(2) without time zone", column.Type)
 					s.Equal("timestamp", column.TypeName)
+				}
+				if column.Name == "unsigned_integer" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a unsigned_integer column", column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("integer", column.Type)
+					s.Equal("int4", column.TypeName)
 				}
 				if column.Name == "unsigned_big_integer" {
 					s.False(column.AutoIncrement)

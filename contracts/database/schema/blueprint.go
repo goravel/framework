@@ -98,7 +98,7 @@ type Blueprint interface {
 	// Unique Specify a unique index for the table.
 	Unique(columns []string, name string) error
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.
-	UnsignedInteger(column string) ColumnDefinition
+	UnsignedInteger(column string, autoIncrement ...bool) ColumnDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
 	UnsignedBigInteger(column string, autoIncrement ...bool) ColumnDefinition
 }
