@@ -14,6 +14,7 @@ import (
 
 	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/http"
 	"github.com/goravel/framework/http/limit"
@@ -392,6 +393,18 @@ func (r *TestRequest) Form(key string, defaultValue ...string) string {
 
 func (r *TestRequest) Json(key string, defaultValue ...string) string {
 
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) HasSession() bool {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) Session() contractsession.Session {
+	panic("do not need to implement it")
+}
+
+func (r *TestRequest) SetSession(contractsession.Session) contractshttp.ContextRequest {
 	panic("do not need to implement it")
 }
 
