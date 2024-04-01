@@ -50,7 +50,7 @@ func TestStartSession(t *testing.T) {
 		case "/add":
 			s := r.Context().Value("session").(contractsession.Session)
 			s.Put("foo", "bar").Flash("baz", "qux")
-			context.WithValue(r.Context(), "session", s)
+			r.WithContext(context.WithValue(r.Context(), "session", s))
 		case "/get":
 			s := r.Context().Value("session").(contractsession.Session)
 			assert.Equal(t, "bar", s.Get("foo"))
