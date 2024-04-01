@@ -13,19 +13,19 @@ func StartSession() http.Middleware {
 		req := ctx.Request()
 
 		// Check if session exists
-		if req.HasSession() {
+		if req.HasSession() || session.ConfigFacade.GetString("session.driver") == "" {
 			req.Next()
 			return
 		}
 
 		// Retrieve session driver
-		d, err := session.Facade.Driver()
+		driver, err := session.SessionFacade.Driver()
 		if err != nil {
 			panic(err)
 		}
 
 		// Build session
-		s := session.Facade.BuildSession(d)
+		s := session.SessionFacade.BuildSession(driver)
 		s.SetID(req.Cookie(s.GetName()))
 
 		// Start session
@@ -37,7 +37,7 @@ func StartSession() http.Middleware {
 		if len(lottery) == 2 {
 			if rand.Intn(lottery[1])+1 <= lottery[0] {
 				lifetime := session.ConfigFacade.GetInt("session.lifetime") * 60
-				err := d.Gc(lifetime)
+				err := driver.Gc(lifetime)
 				if err != nil {
 					panic(err)
 				}

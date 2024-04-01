@@ -23,13 +23,14 @@ import (
 func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		session.ConfigFacade = mockConfig
-		session.Facade = session.NewManager(mockConfig)
+		session.SessionFacade = session.NewManager(mockConfig)
+		mockConfigFacade(mockConfig)
 		StartSession()(NewTestContext(r.Context(), next, w, r))
 	})
 }
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
-	mockConfig.On("GetString", "session.driver").Return("file").Once()
+	mockConfig.On("GetString", "session.driver").Return("file").Twice()
 	mockConfig.On("GetInt", "session.lifetime").Return(60).Times(3)
 	mockConfig.On("GetString", "session.files").Return("sessions").Once()
 	mockConfig.On("GetString", "session.cookie").Return("goravel_session").Once()
@@ -43,22 +44,39 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 
 func TestStartSession(t *testing.T) {
 	mockConfig := &configmocks.Config{}
-	mockConfigFacade(mockConfig)
 
-	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {}), mockConfig))
+	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		switch r.URL.Path {
+		case "/add":
+			s := r.Context().Value("session").(contractsession.Session)
+			s.Put("foo", "bar").Flash("baz", "qux")
+			context.WithValue(r.Context(), "session", s)
+		case "/get":
+			s := r.Context().Value("session").(contractsession.Session)
+			assert.Equal(t, "bar", s.Get("foo"))
+			assert.Equal(t, "qux", s.Get("baz"))
+		}
+	}), mockConfig))
 	defer server.Close()
 
 	client := &nethttp.Client{}
-	req, err := nethttp.NewRequest("GET", server.URL+"/test", nil)
-	require.NoError(t, err)
 
-	resp, err := client.Do(req)
+	resp, err := client.Get(server.URL + "/add")
 	require.NoError(t, err)
+	cookie := resp.Cookies()[0]
+	assert.Equal(t, "goravel_session", cookie.Name)
 
-	assert.Nil(t, err)
-	assert.Equal(t, "goravel_session", resp.Cookies()[0].Name)
+	req, err := nethttp.NewRequest("GET", server.URL+"/get", nil)
+	require.NoError(t, err)
+	req.Header.Set("Cookie", cookie.String())
+
+	resp, err = client.Do(req)
+	require.NoError(t, err)
+	assert.Equal(t, cookie.Name, resp.Cookies()[0].Name)
+	assert.Equal(t, cookie.Value, resp.Cookies()[0].Value)
 
 	assert.NoError(t, file.Remove("sessions"))
+	mockConfig.AssertExpectations(t)
 }
 
 type TestContext struct {

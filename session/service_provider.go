@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	Facade       session.Manager
-	ConfigFacade config.Config
+	SessionFacade session.Manager
+	ConfigFacade  config.Config
 )
 
 const Binding = "goravel.session"
@@ -24,6 +24,6 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) Boot(app foundation.Application) {
-	Facade = app.MakeSession()
+	SessionFacade = app.MakeSession()
 	ConfigFacade = app.MakeConfig()
 }
