@@ -36,6 +36,10 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 		driverName = m.getDefaultDriver()
 	}
 
+	if driverName == "" {
+		return nil, fmt.Errorf("driver is not set")
+	}
+
 	if m.drivers[driverName] == nil {
 		if m.customDrivers[driverName] == nil {
 			return nil, fmt.Errorf("driver [%s] not supported", driverName)

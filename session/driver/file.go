@@ -32,6 +32,10 @@ func (f *File) Destroy(id string) error {
 func (f *File) Gc(maxLifetime int) error {
 	cutoffTime := carbon.Now(carbon.UTC).SubSeconds(maxLifetime)
 
+	if !file.Exists(f.path) {
+		return nil
+	}
+
 	return filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
