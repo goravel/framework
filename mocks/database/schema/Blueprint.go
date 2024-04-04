@@ -1355,22 +1355,16 @@ func (_c *Blueprint_ID_Call) RunAndReturn(run func(...string) schema.ColumnDefin
 	return _c
 }
 
-// Index provides a mock function with given fields: columns, name
-func (_m *Blueprint) Index(columns []string, name string) error {
-	ret := _m.Called(columns, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Index")
+// Index provides a mock function with given fields: columns, config
+func (_m *Blueprint) Index(columns []string, config ...schema.IndexConfig) {
+	_va := make([]interface{}, len(config))
+	for _i := range config {
+		_va[_i] = config[_i]
 	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]string, string) error); ok {
-		r0 = rf(columns, name)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+	var _ca []interface{}
+	_ca = append(_ca, columns)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_Index_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Index'
@@ -1380,24 +1374,31 @@ type Blueprint_Index_Call struct {
 
 // Index is a helper method to define mock.On call
 //   - columns []string
-//   - name string
-func (_e *Blueprint_Expecter) Index(columns interface{}, name interface{}) *Blueprint_Index_Call {
-	return &Blueprint_Index_Call{Call: _e.mock.On("Index", columns, name)}
+//   - config ...schema.IndexConfig
+func (_e *Blueprint_Expecter) Index(columns interface{}, config ...interface{}) *Blueprint_Index_Call {
+	return &Blueprint_Index_Call{Call: _e.mock.On("Index",
+		append([]interface{}{columns}, config...)...)}
 }
 
-func (_c *Blueprint_Index_Call) Run(run func(columns []string, name string)) *Blueprint_Index_Call {
+func (_c *Blueprint_Index_Call) Run(run func(columns []string, config ...schema.IndexConfig)) *Blueprint_Index_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(string))
+		variadicArgs := make([]schema.IndexConfig, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(schema.IndexConfig)
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
 	})
 	return _c
 }
 
-func (_c *Blueprint_Index_Call) Return(_a0 error) *Blueprint_Index_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_Index_Call) Return() *Blueprint_Index_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_Index_Call) RunAndReturn(run func([]string, string) error) *Blueprint_Index_Call {
+func (_c *Blueprint_Index_Call) RunAndReturn(run func([]string, ...schema.IndexConfig)) *Blueprint_Index_Call {
 	_c.Call.Return(run)
 	return _c
 }

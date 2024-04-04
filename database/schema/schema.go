@@ -88,11 +88,11 @@ func (r *Schema) DropIfExists(table string) error {
 }
 
 func (r *Schema) GetColumns(table string) ([]schemacontract.Column, error) {
-	database, schema, table := r.parseDatabaseAndSchemaAndTable(table)
+	_, schema, table := r.parseDatabaseAndSchemaAndTable(table)
 	table = r.getTablePrefix() + table
 
 	var columns []schemacontract.Column
-	if err := r.query.Raw(r.grammar.CompileColumns(database, table, schema)).Scan(&columns); err != nil {
+	if err := r.query.Raw(r.grammar.CompileColumns(schema, table)).Scan(&columns); err != nil {
 		return nil, err
 	}
 
@@ -114,14 +114,50 @@ func (r *Schema) GetColumnListing(table string) []string {
 	return names
 }
 
-func (r *Schema) GetIndexes(table string) []schemacontract.Index {
-	//TODO implement me
-	panic("implement me")
+func (r *Schema) GetIndexes(table string) ([]schemacontract.Index, error) {
+	_, schema, table := r.parseDatabaseAndSchemaAndTable(table)
+	table = r.getTablePrefix() + table
+
+	type Index struct {
+		Columns string
+		Name    string
+		Primary bool
+		Type    string
+		Unique  bool
+	}
+
+	var tempIndexes []Index
+	if err := r.query.Raw(r.grammar.CompileIndexes(schema, table)).Scan(&tempIndexes); err != nil {
+		return nil, err
+	}
+
+	var indexes []schemacontract.Index
+	for _, tempIndex := range tempIndexes {
+		indexes = append(indexes, schemacontract.Index{
+			Columns: strings.Split(tempIndex.Columns, ","),
+			Name:    tempIndex.Name,
+			Primary: tempIndex.Primary,
+			Type:    tempIndex.Type,
+			Unique:  tempIndex.Unique,
+		})
+	}
+
+	return r.processor.ProcessIndexes(indexes), nil
 }
 
 func (r *Schema) GetIndexListing(table string) []string {
-	//TODO implement me
-	panic("implement me")
+	indexes, err := r.GetIndexes(table)
+	if err != nil {
+		r.log.Errorf("failed to get %s indexes: %v", table, err)
+		return nil
+	}
+
+	var names []string
+	for _, index := range indexes {
+		names = append(names, index.Name)
+	}
+
+	return names
 }
 
 func (r *Schema) GetTableListing() []string {
@@ -158,9 +194,10 @@ func (r *Schema) HasColumns(table string, columns []string) bool {
 	return true
 }
 
-func (r *Schema) HasIndex(table, index string) {
-	//TODO implement me
-	panic("implement me")
+func (r *Schema) HasIndex(table, index string) bool {
+	indexListing := r.GetIndexListing(table)
+
+	return slices.Contains(indexListing, index)
 }
 
 func (r *Schema) HasTable(name string) bool {

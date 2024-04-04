@@ -20,7 +20,7 @@ type Schema interface {
 	// GetColumnListing Get the column listing for a given table.
 	GetColumnListing(table string) []string
 	// GetIndexes Get the indexes for a given table.
-	GetIndexes(table string) []Index
+	GetIndexes(table string) ([]Index, error)
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
 	// GetTableListing Get the names of the tables that belong to the database.
@@ -34,7 +34,7 @@ type Schema interface {
 	// HasColumns Determine if the given table has given columns.
 	HasColumns(table string, columns []string) bool
 	// HasIndex Determine if the given table has a given index.
-	HasIndex(table, index string)
+	HasIndex(table, index string) bool
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
 	// HasView Determine if the given view exists.
@@ -48,10 +48,12 @@ type Schema interface {
 }
 
 type Command struct {
-	Column  ColumnDefinition
-	Columns []string
-	Value   string
-	Name    string
+	Algorithm string
+	Column    ColumnDefinition
+	Columns   []string
+	Value     string
+	Name      string
+	Index     string
 }
 
 type Index struct {

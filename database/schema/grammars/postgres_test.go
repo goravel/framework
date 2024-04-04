@@ -66,6 +66,28 @@ func (s *PostgresSuite) TestCompileDropColumn() {
 	s.Equal("alter table users drop column id,drop column name", sql)
 }
 
+func (s *PostgresSuite) TestCompileIndex() {
+	mockBlueprint := &mockschema.Blueprint{}
+	mockBlueprint.On("GetTableName").Return("users").Twice()
+
+	sql := s.grammar.CompileIndex(mockBlueprint, &schemacontract.Command{
+		Columns: []string{"id", "name"},
+		Index:   "id_name",
+	})
+
+	s.Equal("create index id_name on users (id, name)", sql)
+
+	sql = s.grammar.CompileIndex(mockBlueprint, &schemacontract.Command{
+		Algorithm: "btree",
+		Columns:   []string{"id", "name"},
+		Index:     "id_name",
+	})
+
+	s.Equal("create index id_name on users using btree (id, name)", sql)
+
+	mockBlueprint.AssertExpectations(s.T())
+}
+
 func (s *PostgresSuite) TestTypeBigInteger() {
 	mockColumn1 := &mockschema.ColumnDefinition{}
 	mockColumn1.On("GetAutoIncrement").Return(true).Once()

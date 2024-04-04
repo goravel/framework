@@ -1,12 +1,21 @@
 package schema
 
 import (
+	"strings"
+
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	schemacontract "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
-const defaultStringLength = 255
+const (
+	commandComment      = "comment"
+	commandCreate       = "create"
+	commandDropColumn   = "dropColumn"
+	commandIndex        = "index"
+	commandTableComment = "tableComment"
+	defaultStringLength = 255
+)
 
 type Blueprint struct {
 	columns  []*ColumnDefinition
@@ -91,13 +100,13 @@ func (r *Blueprint) Char(column string, length ...int) schemacontract.ColumnDefi
 func (r *Blueprint) Comment(comment string) {
 	r.addCommand(&schemacontract.Command{
 		Value: comment,
-		Name:  "tableComment",
+		Name:  commandTableComment,
 	})
 }
 
 func (r *Blueprint) Create() {
 	r.addCommand(&schemacontract.Command{
-		Name: "create",
+		Name: commandCreate,
 	})
 }
 
@@ -168,7 +177,7 @@ func (r *Blueprint) DropColumn(column ...string) {
 
 	r.addCommand(&schemacontract.Command{
 		Columns: column,
-		Name:    "dropColumn",
+		Name:    commandDropColumn,
 	})
 }
 
@@ -271,9 +280,8 @@ func (r *Blueprint) ID(column ...string) schemacontract.ColumnDefinition {
 	return r.BigIncrements("id")
 }
 
-func (r *Blueprint) Index(columns []string, name string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Index(columns []string, config ...schemacontract.IndexConfig) {
+	r.indexCommand(commandIndex, columns, config...)
 }
 
 func (r *Blueprint) Integer(column string, config ...schemacontract.IntegerConfig) schemacontract.ColumnDefinition {
@@ -439,13 +447,15 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 	var statements []string
 	for _, command := range r.commands {
 		switch command.Name {
-		case "comment":
+		case commandComment:
 			statements = append(statements, grammar.CompileComment(r, command))
-		case "create":
+		case commandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
-		case "dropColumn":
+		case commandDropColumn:
 			statements = append(statements, grammar.CompileDropColumn(r, command))
-		case "tableComment":
+		case commandIndex:
+			statements = append(statements, grammar.CompileIndex(r, command))
+		case commandTableComment:
 			statements = append(statements, grammar.CompileTableComment(r, command.Value))
 		}
 	}
@@ -487,7 +497,7 @@ func (r *Blueprint) addAttributeCommands(grammar schemacontract.Grammar) {
 			if command == "comment" && column.comment != nil {
 				r.addCommand(&schemacontract.Command{
 					Column: column,
-					Name:   "comment",
+					Name:   commandComment,
 				})
 			}
 		}
@@ -512,9 +522,33 @@ func (r *Blueprint) addImpliedCommands(grammar schemacontract.Grammar) {
 	r.addAttributeCommands(grammar)
 }
 
+func (r *Blueprint) createIndexName(ttype string, columns []string) string {
+	table := r.GetTableName()
+	index := strings.ToLower(table + "_" + strings.Join(columns, "_") + "_" + ttype)
+	index = strings.ReplaceAll(index, "-", "_")
+
+	return strings.ReplaceAll(index, ".", "_")
+}
+
+func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schemacontract.IndexConfig) {
+	command := &schemacontract.Command{
+		Columns: columns,
+		Name:    ttype,
+	}
+
+	if len(config) > 0 {
+		command.Algorithm = config[0].Algorithm
+		command.Index = config[0].Name
+	} else {
+		command.Index = r.createIndexName(ttype, columns)
+	}
+
+	r.addCommand(command)
+}
+
 func (r *Blueprint) isCreate() bool {
 	for _, command := range r.commands {
-		if command.Name == "create" {
+		if command.Name == commandCreate {
 			return true
 		}
 	}

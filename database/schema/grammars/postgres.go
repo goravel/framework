@@ -41,7 +41,7 @@ func (r *Postgres) CompileChange(blueprint schemacontract.Blueprint, command, co
 	panic("implement me")
 }
 
-func (r *Postgres) CompileColumns(database, table, schema string) string {
+func (r *Postgres) CompileColumns(schema, table string) string {
 	return fmt.Sprintf(
 		"select a.attname as name, t.typname as type_name, format_type(a.atttypid, a.atttypmod) as type, "+
 			"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
@@ -125,14 +125,36 @@ func (r *Postgres) CompilePrimary(blueprint schemacontract.Blueprint, command st
 	panic("implement me")
 }
 
-func (r *Postgres) CompileIndex(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileIndex(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
+	var algorithm string
+	if command.Algorithm != "" {
+		algorithm = " using " + command.Algorithm
+	}
+
+	return fmt.Sprintf("create index %s on %s%s (%s)",
+		command.Index,
+		blueprint.GetTableName(),
+		algorithm,
+		strings.Join(command.Columns, ", "),
+	)
 }
 
-func (r *Postgres) CompileIndexes(database, table string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileIndexes(schema, table string) string {
+	return fmt.Sprintf(
+		"select ic.relname as name, string_agg(a.attname, ',' order by indseq.ord) as columns, "+
+			`am.amname as "type", i.indisunique as "unique", i.indisprimary as "primary" `+
+			"from pg_index i "+
+			"join pg_class tc on tc.oid = i.indrelid "+
+			"join pg_namespace tn on tn.oid = tc.relnamespace "+
+			"join pg_class ic on ic.oid = i.indexrelid "+
+			"join pg_am am on am.oid = ic.relam "+
+			"join lateral unnest(i.indkey) with ordinality as indseq(num, ord) on true "+
+			"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
+			"where tc.relname = '%s' and tn.nspname = '%s' "+
+			"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
+		table,
+		schema,
+	)
 }
 
 func (r *Postgres) CompileRename(blueprint schemacontract.Blueprint, command string) string {

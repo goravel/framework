@@ -13,7 +13,7 @@ type Grammar interface {
 	CompileChange(blueprint Blueprint, command, connection string) string
 	// CompileColumns Compile the query to determine the columns.
 	// TODO check if the database is required
-	CompileColumns(database, table, schema string) string
+	CompileColumns(schema, table string) string
 	// CompileComment Compile a column comment command.
 	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
@@ -43,7 +43,7 @@ type Grammar interface {
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command string) string
 	// CompileIndex Compile a plain index key command.
-	CompileIndex(blueprint Blueprint, command string) string
+	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
 	CompileIndexes(database, table string) string
 	// CompileRename Compile a rename table command.
@@ -53,7 +53,7 @@ type Grammar interface {
 	// CompileRenameIndex Compile a rename index command.
 	CompileRenameIndex(blueprint Blueprint, command string) string
 	// CompileTableComment Compile a table comment command.
-	CompileTableComment(blueprint Blueprint, command string) string
+	CompileTableComment(blueprint Blueprint, comment string) string
 	// CompileTables Compile the query to determine the tables.
 	CompileTables(database string) string
 	// CompileUnique Compile a unique key command.

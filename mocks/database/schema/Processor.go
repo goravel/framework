@@ -68,6 +68,54 @@ func (_c *Processor_ProcessColumns_Call) RunAndReturn(run func([]schema.Column) 
 	return _c
 }
 
+// ProcessIndexes provides a mock function with given fields: indexes
+func (_m *Processor) ProcessIndexes(indexes []schema.Index) []schema.Index {
+	ret := _m.Called(indexes)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ProcessIndexes")
+	}
+
+	var r0 []schema.Index
+	if rf, ok := ret.Get(0).(func([]schema.Index) []schema.Index); ok {
+		r0 = rf(indexes)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.Index)
+		}
+	}
+
+	return r0
+}
+
+// Processor_ProcessIndexes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ProcessIndexes'
+type Processor_ProcessIndexes_Call struct {
+	*mock.Call
+}
+
+// ProcessIndexes is a helper method to define mock.On call
+//   - indexes []schema.Index
+func (_e *Processor_Expecter) ProcessIndexes(indexes interface{}) *Processor_ProcessIndexes_Call {
+	return &Processor_ProcessIndexes_Call{Call: _e.mock.On("ProcessIndexes", indexes)}
+}
+
+func (_c *Processor_ProcessIndexes_Call) Run(run func(indexes []schema.Index)) *Processor_ProcessIndexes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]schema.Index))
+	})
+	return _c
+}
+
+func (_c *Processor_ProcessIndexes_Call) Return(_a0 []schema.Index) *Processor_ProcessIndexes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Processor_ProcessIndexes_Call) RunAndReturn(run func([]schema.Index) []schema.Index) *Processor_ProcessIndexes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewProcessor creates a new instance of Processor. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewProcessor(t interface {

@@ -22,7 +22,7 @@ type ColumnDefinition struct {
 }
 
 func (r *ColumnDefinition) Change() {
-	*r.change = true
+	r.change = convert.Pointer(true)
 }
 
 func (r *ColumnDefinition) Comment(comment string) schemacontract.ColumnDefinition {

@@ -22,3 +22,12 @@ func (r *Postgres) ProcessColumns(columns []schemacontract.Column) []schemacontr
 
 	return columns
 }
+
+func (r *Postgres) ProcessIndexes(indexes []schemacontract.Index) []schemacontract.Index {
+	for i, index := range indexes {
+		indexes[i].Name = strings.ToLower(index.Name)
+		indexes[i].Type = strings.ToLower(index.Type)
+	}
+
+	return indexes
+}

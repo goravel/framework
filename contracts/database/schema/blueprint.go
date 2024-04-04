@@ -60,7 +60,7 @@ type Blueprint interface {
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
 	ID(column ...string) ColumnDefinition
 	// Index Specify an index for the table.
-	Index(columns []string, name string) error
+	Index(columns []string, config ...IndexConfig)
 	// Integer Create a new integer (4-byte) column on the table.
 	Integer(column string, config ...IntegerConfig) ColumnDefinition
 	// Json Create a new json column on the table.
@@ -101,4 +101,9 @@ type Blueprint interface {
 	UnsignedInteger(column string, autoIncrement ...bool) ColumnDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
 	UnsignedBigInteger(column string, autoIncrement ...bool) ColumnDefinition
+}
+
+type IndexConfig struct {
+	Algorithm string
+	Name      string
 }

@@ -488,6 +488,45 @@ func (s *SchemaSuite) TestGetColumns() {
 	}
 }
 
+func (s *SchemaSuite) TestGetIndexes() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "get_indexes"
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
+				Return(schema.dbConfig.Database).Times(3)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
+				Return("").Times(3)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
+				Return("").Times(4)
+
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Index([]string{"id", "name"})
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().Contains(schema.schema.GetIndexListing(table), "get_indexes_id_name_index")
+			s.Require().True(schema.schema.HasIndex(table, "get_indexes_id_name_index"))
+
+			indexes, err := schema.schema.GetIndexes(table)
+			s.Require().Nil(err)
+			s.Len(indexes, 1)
+			for _, index := range indexes {
+				if index.Name == "get_indexes_id_name_index" {
+					s.ElementsMatch(index.Columns, []string{"id", "name"})
+					s.False(index.Primary)
+					s.Equal("btree", index.Type)
+					s.False(index.Unique)
+				}
+			}
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestGetTables() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
@@ -570,3 +609,40 @@ func (s *SchemaSuite) TestParseDatabaseAndSchemaAndTable() {
 		})
 	}
 }
+
+//func (s *SchemaSuite) TestTable() {
+//	for _, schema := range s.schemas {
+//		s.Run(schema.driver.String(), func() {
+//			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
+//				Return("goravel_").Twice()
+//
+//			err := schema.schema.Create("table", func(table schemacontract.Blueprint) {
+//				table.String("name")
+//			})
+//			s.Nil(err)
+//			s.True(schema.schema.HasTable("goravel_table"))
+//
+//			columns, err := schema.schema.GetColumns("goravel_table")
+//			s.Require().Nil(err)
+//			for _, column := range columns {
+//				if column.Name == "name" {
+//					s.False(column.AutoIncrement)
+//					s.Empty(column.Collation)
+//					s.Empty(column.Comment)
+//					s.Empty(column.Default)
+//					s.False(column.Nullable)
+//					s.Equal("character varying(255)", column.Type)
+//					s.Equal("varchar", column.TypeName)
+//				}
+//			}
+//
+//			err = schema.schema.Table("table", func(table schemacontract.Blueprint) {
+//				table.String("name").Comment("This is a name column").Change()
+//			})
+//			s.Nil(err)
+//			s.True(schema.schema.HasTable("goravel_table"))
+//
+//			schema.mockConfig.AssertExpectations(s.T())
+//		})
+//	}
+//}
