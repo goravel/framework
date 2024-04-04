@@ -52,12 +52,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
 
-	return grpc.DialContext(
-		ctx,
-		host,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithChainUnaryInterceptor(clientInterceptors...),
-	)
+	return grpc.NewClient(host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithChainUnaryInterceptor(clientInterceptors...))
 }
 
 func (app *Application) Run(host ...string) error {
