@@ -681,9 +681,9 @@ func (_c *Grammar_CompileDropIfExists_Call) RunAndReturn(run func(schema.Bluepri
 	return _c
 }
 
-// CompileDropIndex provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileDropIndex(blueprint schema.Blueprint, command string) string {
-	ret := _m.Called(blueprint, command)
+// CompileDropIndex provides a mock function with given fields: blueprint, index
+func (_m *Grammar) CompileDropIndex(blueprint schema.Blueprint, index string) string {
+	ret := _m.Called(blueprint, index)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropIndex")
@@ -691,7 +691,7 @@ func (_m *Grammar) CompileDropIndex(blueprint schema.Blueprint, command string) 
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
-		r0 = rf(blueprint, command)
+		r0 = rf(blueprint, index)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -706,12 +706,12 @@ type Grammar_CompileDropIndex_Call struct {
 
 // CompileDropIndex is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-func (_e *Grammar_Expecter) CompileDropIndex(blueprint interface{}, command interface{}) *Grammar_CompileDropIndex_Call {
-	return &Grammar_CompileDropIndex_Call{Call: _e.mock.On("CompileDropIndex", blueprint, command)}
+//   - index string
+func (_e *Grammar_Expecter) CompileDropIndex(blueprint interface{}, index interface{}) *Grammar_CompileDropIndex_Call {
+	return &Grammar_CompileDropIndex_Call{Call: _e.mock.On("CompileDropIndex", blueprint, index)}
 }
 
-func (_c *Grammar_CompileDropIndex_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompileDropIndex_Call {
+func (_c *Grammar_CompileDropIndex_Call) Run(run func(blueprint schema.Blueprint, index string)) *Grammar_CompileDropIndex_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(schema.Blueprint), args[1].(string))
 	})

@@ -780,22 +780,9 @@ func (_c *Blueprint_DropForeign_Call) RunAndReturn(run func(string) error) *Blue
 	return _c
 }
 
-// DropIndex provides a mock function with given fields: index
-func (_m *Blueprint) DropIndex(index string) error {
-	ret := _m.Called(index)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropIndex")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(index)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+// DropIndex provides a mock function with given fields: columns
+func (_m *Blueprint) DropIndex(columns []string) {
+	_m.Called(columns)
 }
 
 // Blueprint_DropIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIndex'
@@ -804,24 +791,24 @@ type Blueprint_DropIndex_Call struct {
 }
 
 // DropIndex is a helper method to define mock.On call
-//   - index string
-func (_e *Blueprint_Expecter) DropIndex(index interface{}) *Blueprint_DropIndex_Call {
-	return &Blueprint_DropIndex_Call{Call: _e.mock.On("DropIndex", index)}
+//   - columns []string
+func (_e *Blueprint_Expecter) DropIndex(columns interface{}) *Blueprint_DropIndex_Call {
+	return &Blueprint_DropIndex_Call{Call: _e.mock.On("DropIndex", columns)}
 }
 
-func (_c *Blueprint_DropIndex_Call) Run(run func(index string)) *Blueprint_DropIndex_Call {
+func (_c *Blueprint_DropIndex_Call) Run(run func(columns []string)) *Blueprint_DropIndex_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].([]string))
 	})
 	return _c
 }
 
-func (_c *Blueprint_DropIndex_Call) Return(_a0 error) *Blueprint_DropIndex_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_DropIndex_Call) Return() *Blueprint_DropIndex_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func(string) error) *Blueprint_DropIndex_Call {
+func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func([]string)) *Blueprint_DropIndex_Call {
 	_c.Call.Return(run)
 	return _c
 }
