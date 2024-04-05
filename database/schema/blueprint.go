@@ -15,6 +15,7 @@ const (
 	commandDropIndex    = "dropIndex"
 	commandIndex        = "index"
 	commandPrimary      = "primary"
+	commandRenameIndex  = "renameIndex"
 	commandTableComment = "tableComment"
 	commandUnique       = "unique"
 	defaultStringLength = 255
@@ -335,9 +336,12 @@ func (r *Blueprint) RenameColumn(from, to string) error {
 	panic("implement me")
 }
 
-func (r *Blueprint) RenameIndex(from, to string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) RenameIndex(from, to string) {
+	r.addCommand(&schemacontract.Command{
+		From: from,
+		Name: commandRenameIndex,
+		To:   to,
+	})
 }
 
 func (r *Blueprint) SoftDeletes(column ...string) schemacontract.ColumnDefinition {
@@ -464,6 +468,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case commandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command.Columns))
+		case commandRenameIndex:
+			statements = append(statements, grammar.CompileRenameIndex(r, command.From, command.To))
 		case commandTableComment:
 			statements = append(statements, grammar.CompileTableComment(r, command.Value))
 		case commandUnique:

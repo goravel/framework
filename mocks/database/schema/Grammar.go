@@ -1058,17 +1058,17 @@ func (_c *Grammar_CompileRenameColumn_Call) RunAndReturn(run func(schema.Bluepri
 	return _c
 }
 
-// CompileRenameIndex provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileRenameIndex(blueprint schema.Blueprint, command string) string {
-	ret := _m.Called(blueprint, command)
+// CompileRenameIndex provides a mock function with given fields: blueprint, from, to
+func (_m *Grammar) CompileRenameIndex(blueprint schema.Blueprint, from string, to string) string {
+	ret := _m.Called(blueprint, from, to)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileRenameIndex")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
-		r0 = rf(blueprint, command)
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, string, string) string); ok {
+		r0 = rf(blueprint, from, to)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -1083,14 +1083,15 @@ type Grammar_CompileRenameIndex_Call struct {
 
 // CompileRenameIndex is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-func (_e *Grammar_Expecter) CompileRenameIndex(blueprint interface{}, command interface{}) *Grammar_CompileRenameIndex_Call {
-	return &Grammar_CompileRenameIndex_Call{Call: _e.mock.On("CompileRenameIndex", blueprint, command)}
+//   - from string
+//   - to string
+func (_e *Grammar_Expecter) CompileRenameIndex(blueprint interface{}, from interface{}, to interface{}) *Grammar_CompileRenameIndex_Call {
+	return &Grammar_CompileRenameIndex_Call{Call: _e.mock.On("CompileRenameIndex", blueprint, from, to)}
 }
 
-func (_c *Grammar_CompileRenameIndex_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompileRenameIndex_Call {
+func (_c *Grammar_CompileRenameIndex_Call) Run(run func(blueprint schema.Blueprint, from string, to string)) *Grammar_CompileRenameIndex_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -1100,7 +1101,7 @@ func (_c *Grammar_CompileRenameIndex_Call) Return(_a0 string) *Grammar_CompileRe
 	return _c
 }
 
-func (_c *Grammar_CompileRenameIndex_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_CompileRenameIndex_Call {
+func (_c *Grammar_CompileRenameIndex_Call) RunAndReturn(run func(schema.Blueprint, string, string) string) *Grammar_CompileRenameIndex_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -51,7 +51,7 @@ type Grammar interface {
 	// CompileRenameColumn Compile a rename column command.
 	CompileRenameColumn(blueprint Blueprint, command, connection string) string
 	// CompileRenameIndex Compile a rename index command.
-	CompileRenameIndex(blueprint Blueprint, command string) string
+	CompileRenameIndex(blueprint Blueprint, from, to string) string
 	// CompileTableComment Compile a table comment command.
 	CompileTableComment(blueprint Blueprint, comment string) string
 	// CompileTables Compile the query to determine the tables.

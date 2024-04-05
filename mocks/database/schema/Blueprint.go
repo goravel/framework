@@ -813,6 +813,39 @@ func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func([]string)) *Blueprint_
 	return _c
 }
 
+// DropIndexByName provides a mock function with given fields: name
+func (_m *Blueprint) DropIndexByName(name string) {
+	_m.Called(name)
+}
+
+// Blueprint_DropIndexByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIndexByName'
+type Blueprint_DropIndexByName_Call struct {
+	*mock.Call
+}
+
+// DropIndexByName is a helper method to define mock.On call
+//   - name string
+func (_e *Blueprint_Expecter) DropIndexByName(name interface{}) *Blueprint_DropIndexByName_Call {
+	return &Blueprint_DropIndexByName_Call{Call: _e.mock.On("DropIndexByName", name)}
+}
+
+func (_c *Blueprint_DropIndexByName_Call) Run(run func(name string)) *Blueprint_DropIndexByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropIndexByName_Call) Return() *Blueprint_DropIndexByName_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropIndexByName_Call) RunAndReturn(run func(string)) *Blueprint_DropIndexByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DropSoftDeletes provides a mock function with given fields: column
 func (_m *Blueprint) DropSoftDeletes(column ...string) {
 	_va := make([]interface{}, len(column))
@@ -1630,21 +1663,8 @@ func (_c *Blueprint_RenameColumn_Call) RunAndReturn(run func(string, string) err
 }
 
 // RenameIndex provides a mock function with given fields: from, to
-func (_m *Blueprint) RenameIndex(from string, to string) error {
-	ret := _m.Called(from, to)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RenameIndex")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(from, to)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Blueprint) RenameIndex(from string, to string) {
+	_m.Called(from, to)
 }
 
 // Blueprint_RenameIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameIndex'
@@ -1666,12 +1686,12 @@ func (_c *Blueprint_RenameIndex_Call) Run(run func(from string, to string)) *Blu
 	return _c
 }
 
-func (_c *Blueprint_RenameIndex_Call) Return(_a0 error) *Blueprint_RenameIndex_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_RenameIndex_Call) Return() *Blueprint_RenameIndex_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_RenameIndex_Call) RunAndReturn(run func(string, string) error) *Blueprint_RenameIndex_Call {
+func (_c *Blueprint_RenameIndex_Call) RunAndReturn(run func(string, string)) *Blueprint_RenameIndex_Call {
 	_c.Call.Return(run)
 	return _c
 }

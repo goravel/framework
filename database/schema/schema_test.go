@@ -704,6 +704,31 @@ func (s *SchemaSuite) TestPrimary() {
 	}
 }
 
+func (s *SchemaSuite) TestRenameIndex() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "rename_index"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Index([]string{"id", "name"})
+			})
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, "rename_index_id_name_index"))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.RenameIndex("rename_index_id_name_index", "rename_index_id_name_index1")
+			})
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasIndex(table, "rename_index_id_name_index"))
+			s.Require().True(schema.schema.HasIndex(table, "rename_index_id_name_index1"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestUnique() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {

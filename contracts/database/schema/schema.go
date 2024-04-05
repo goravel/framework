@@ -51,8 +51,10 @@ type Command struct {
 	Algorithm string
 	Column    ColumnDefinition
 	Columns   []string
-	Value     string
+	From      string
 	Name      string
+	To        string
+	Value     string
 }
 
 type Index struct {

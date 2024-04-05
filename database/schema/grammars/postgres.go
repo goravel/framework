@@ -168,9 +168,8 @@ func (r *Postgres) CompileRenameColumn(blueprint schemacontract.Blueprint, comma
 	panic("implement me")
 }
 
-func (r *Postgres) CompileRenameIndex(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileRenameIndex(blueprint schemacontract.Blueprint, from, to string) string {
+	return fmt.Sprintf("alter index %s rename to %s", from, to)
 }
 
 func (r *Postgres) CompileTableComment(blueprint schemacontract.Blueprint, comment string) string {

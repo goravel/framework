@@ -74,7 +74,7 @@ type Blueprint interface {
 	// RenameColumn Indicate that the given columns should be renamed.
 	RenameColumn(from, to string) error
 	// RenameIndex Indicate that the given indexes should be renamed.
-	RenameIndex(from, to string) error
+	RenameIndex(from, to string)
 	// SoftDeletes Add a "deleted at" timestamp for the table.
 	SoftDeletes(column ...string) ColumnDefinition
 	// SoftDeletesTz Add a "deleted at" timestampTz for the table.
