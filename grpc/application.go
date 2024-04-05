@@ -52,8 +52,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
 
-	return grpc.DialContext(
-		ctx,
+	return grpc.NewClient(
 		host,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(clientInterceptors...),
