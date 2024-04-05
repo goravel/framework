@@ -1549,22 +1549,9 @@ func (_c *Blueprint_Jsonb_Call) RunAndReturn(run func(string) schema.ColumnDefin
 	return _c
 }
 
-// Primary provides a mock function with given fields: columns, name
-func (_m *Blueprint) Primary(columns []string, name string) error {
-	ret := _m.Called(columns, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Primary")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]string, string) error); ok {
-		r0 = rf(columns, name)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+// Primary provides a mock function with given fields: columns
+func (_m *Blueprint) Primary(columns []string) {
+	_m.Called(columns)
 }
 
 // Blueprint_Primary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Primary'
@@ -1574,24 +1561,23 @@ type Blueprint_Primary_Call struct {
 
 // Primary is a helper method to define mock.On call
 //   - columns []string
-//   - name string
-func (_e *Blueprint_Expecter) Primary(columns interface{}, name interface{}) *Blueprint_Primary_Call {
-	return &Blueprint_Primary_Call{Call: _e.mock.On("Primary", columns, name)}
+func (_e *Blueprint_Expecter) Primary(columns interface{}) *Blueprint_Primary_Call {
+	return &Blueprint_Primary_Call{Call: _e.mock.On("Primary", columns)}
 }
 
-func (_c *Blueprint_Primary_Call) Run(run func(columns []string, name string)) *Blueprint_Primary_Call {
+func (_c *Blueprint_Primary_Call) Run(run func(columns []string)) *Blueprint_Primary_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(string))
+		run(args[0].([]string))
 	})
 	return _c
 }
 
-func (_c *Blueprint_Primary_Call) Return(_a0 error) *Blueprint_Primary_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_Primary_Call) Return() *Blueprint_Primary_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_Primary_Call) RunAndReturn(run func([]string, string) error) *Blueprint_Primary_Call {
+func (_c *Blueprint_Primary_Call) RunAndReturn(run func([]string)) *Blueprint_Primary_Call {
 	_c.Call.Return(run)
 	return _c
 }

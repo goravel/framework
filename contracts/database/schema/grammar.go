@@ -40,12 +40,12 @@ type Grammar interface {
 	CompileDropPrimary(blueprint Blueprint, command string) string
 	// CompileDropUnique Compile a drop unique key command.
 	CompileDropUnique(blueprint Blueprint, command string) string
-	// CompilePrimary Compile a primary key command.
-	CompilePrimary(blueprint Blueprint, command string) string
 	// CompileIndex Compile a plain index key command.
 	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
 	CompileIndexes(database, table string) string
+	// CompilePrimary Compile a primary key command.
+	CompilePrimary(blueprint Blueprint, columns []string) string
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, command string) string
 	// CompileRenameColumn Compile a rename column command.

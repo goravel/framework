@@ -81,32 +81,49 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
+	dbConfig := testDatabaseDocker.Postgres.Config()
 	mockConfig := &configmock.Config{}
 	mockOrm := &ormmock.Orm{}
 	//mockOrmOfConnection := &ormmock.Orm{}
 	mockLog := &logmock.Log{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
+	mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", "mysql")).
+		Return(dbConfig.Database).Once()
+	mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", "mysql")).
+		Return("").Once()
+	mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", "mysql")).
+		Return("").Once()
 	mockOrm.On("Connection", "mysql").Return(mockOrm).Once()
 	mockOrm.On("Query").Return(s.postgresQuery).Once()
 	postgresSchema, err := NewSchema("", mockConfig, mockOrm, mockLog)
 	s.Nil(err)
-	s.schemas = append(s.schemas, TestSchema{
-		dbConfig:   testDatabaseDocker.Postgres.Config(),
-		driver:     ormcontract.DriverPostgres,
-		mockConfig: mockConfig,
-		mockOrm:    mockOrm,
-		mockLog:    mockLog,
-		query:      s.postgresQuery,
-		schema:     postgresSchema,
-	})
+
+	s.schemas = []TestSchema{
+		{
+			dbConfig:   testDatabaseDocker.Postgres.Config(),
+			driver:     ormcontract.DriverPostgres,
+			mockConfig: mockConfig,
+			mockOrm:    mockOrm,
+			mockLog:    mockLog,
+			query:      s.postgresQuery,
+			schema:     postgresSchema,
+		},
+	}
 }
 
 func (s *SchemaSuite) TestConnection() {
 	for _, schema := range s.schemas {
 		schema.mockOrm.On("Connection", "postgres").Return(schema.mockOrm).Once()
 		schema.mockOrm.On("Query").Return(schema.query).Once()
+		schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", "postgres")).
+			Return(schema.dbConfig.Database).Once()
+		schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", "postgres")).
+			Return("").Once()
+		schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", "postgres")).
+			Return("").Once()
 		s.NotNil(schema.schema.Connection("postgres"))
 
+		schema.mockConfig.AssertExpectations(s.T())
 		schema.mockOrm.AssertExpectations(s.T())
 	}
 }
@@ -114,15 +131,12 @@ func (s *SchemaSuite) TestConnection() {
 func (s *SchemaSuite) TestCreate() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("goravel_").Once()
-
-			err := schema.schema.Create("create", func(table schemacontract.Blueprint) {
+			err := schema.schema.Create("creates", func(table schemacontract.Blueprint) {
 				table.String("name")
 				table.Comment("This is a test table")
 			})
 			s.Nil(err)
-			s.True(schema.schema.HasTable("goravel_create"))
+			s.True(schema.schema.HasTable("creates"))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})
@@ -132,27 +146,21 @@ func (s *SchemaSuite) TestCreate() {
 func (s *SchemaSuite) TestDropColumns() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Times(3)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Times(3)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Times(5)
-
-			err := schema.schema.Create("drop_columns", func(table schemacontract.Blueprint) {
+			table := "drop_columns"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.String("name")
 				table.String("summary")
 				table.Comment("This is a test table")
 			})
 			s.Nil(err)
-			s.True(schema.schema.HasTable("drop_columns"))
-			s.True(schema.schema.HasColumns("drop_columns", []string{"name", "summary"}))
+			s.True(schema.schema.HasTable(table))
+			s.True(schema.schema.HasColumns(table, []string{"name", "summary"}))
 
-			err = schema.schema.DropColumns("drop_columns", []string{"summary"})
+			err = schema.schema.DropColumns(table, []string{"summary"})
 
 			s.Nil(err)
-			s.True(schema.schema.HasColumn("drop_columns", "name"))
-			s.False(schema.schema.HasColumn("drop_columns", "summary"))
+			s.True(schema.schema.HasColumn(table, "name"))
+			s.False(schema.schema.HasColumn(table, "summary"))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})
@@ -162,14 +170,7 @@ func (s *SchemaSuite) TestDropColumns() {
 func (s *SchemaSuite) TestDropIndex() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
-			table := "get_indexes"
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Times(2)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Times(2)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Times(4)
-
+			table := "drop_indexes"
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.ID()
 				table.String("name")
@@ -178,13 +179,13 @@ func (s *SchemaSuite) TestDropIndex() {
 
 			s.Require().Nil(err)
 			s.Require().True(schema.schema.HasTable(table))
-			s.Require().True(schema.schema.HasIndex(table, "get_indexes_id_name_index"))
+			s.Require().True(schema.schema.HasIndex(table, "drop_indexes_id_name_index"))
 
 			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
 				table.DropIndex([]string{"id", "name"})
 			})
 			s.Require().Nil(err)
-			s.Require().False(schema.schema.HasIndex(table, "get_indexes_id_name_index"))
+			s.Require().False(schema.schema.HasIndex(table, "drop_indexes_id_name_index"))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})
@@ -195,13 +196,6 @@ func (s *SchemaSuite) TestDropSoftDeletes() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
 			table := "drop_soft_deletes"
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Times(2)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Times(2)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Times(4)
-
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.SoftDeletes()
 			})
@@ -224,14 +218,7 @@ func (s *SchemaSuite) TestDropSoftDeletes() {
 func (s *SchemaSuite) TestDropTimestamps() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
-			table := "drop_soft_deletes"
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Times(4)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Times(4)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Times(6)
-
+			table := "drop_timestamps"
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.Timestamps()
 			})
@@ -257,13 +244,6 @@ func (s *SchemaSuite) TestGetColumns() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
 			table := "get_columns"
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Times(4)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Times(4)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Times(5)
-
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.BigIncrements("big_increments").Comment("This is a big_increments column")
 				table.BigInteger("big_integer").Comment("This is a big_integer column")
@@ -586,13 +566,6 @@ func (s *SchemaSuite) TestGetIndexes() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
 			table := "get_indexes"
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Times(3)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Times(3)
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-				Return("").Times(4)
-
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.ID()
 				table.String("name")
@@ -615,6 +588,25 @@ func (s *SchemaSuite) TestGetIndexes() {
 					s.False(index.Unique)
 				}
 			}
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestPrimary() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "primaries"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Primary([]string{"name", "age"})
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, "primaries_pkey"))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})
@@ -672,28 +664,11 @@ func (s *SchemaSuite) TestInitGrammarAndProcess() {
 func (s *SchemaSuite) TestParseDatabaseAndSchemaAndTable() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Once()
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Once()
 			database, schemaName, table := schema.schema.parseDatabaseAndSchemaAndTable("users")
 			s.Equal(schema.dbConfig.Database, database)
 			s.Equal("public", schemaName)
 			s.Equal("users", table)
 
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Once()
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("").Once()
-			database, schemaName, table = schema.schema.parseDatabaseAndSchemaAndTable("goravel.users")
-			s.Equal(schema.dbConfig.Database, database)
-			s.Equal("goravel", schemaName)
-			s.Equal("users", table)
-
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
-				Return(schema.dbConfig.Database).Once()
-			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
-				Return("hello").Once()
 			database, schemaName, table = schema.schema.parseDatabaseAndSchemaAndTable("goravel.users")
 			s.Equal(schema.dbConfig.Database, database)
 			s.Equal("goravel", schemaName)

@@ -68,7 +68,7 @@ type Blueprint interface {
 	// Jsonb Create a new jsonb column on the table.
 	Jsonb(column string) ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
-	Primary(columns []string, name string) error
+	Primary(columns []string)
 	// RenameColumn Indicate that the given columns should be renamed.
 	RenameColumn(from, to string) error
 	// RenameIndex Indicate that the given indexes should be renamed.

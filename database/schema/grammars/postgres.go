@@ -119,11 +119,6 @@ func (r *Postgres) CompileDropUnique(blueprint schemacontract.Blueprint, command
 	panic("implement me")
 }
 
-func (r *Postgres) CompilePrimary(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Postgres) CompileIndex(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
 	var algorithm string
 	if command.Algorithm != "" {
@@ -153,6 +148,13 @@ func (r *Postgres) CompileIndexes(schema, table string) string {
 			"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
 		table,
 		schema,
+	)
+}
+
+func (r *Postgres) CompilePrimary(blueprint schemacontract.Blueprint, columns []string) string {
+	return fmt.Sprintf("alter table %s add primary key (%s)",
+		blueprint.GetTableName(),
+		strings.Join(columns, ", "),
 	)
 }
 

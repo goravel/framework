@@ -14,6 +14,7 @@ const (
 	commandDropColumn   = "dropColumn"
 	commandDropIndex    = "dropIndex"
 	commandIndex        = "index"
+	commandPrimary      = "primary"
 	commandTableComment = "tableComment"
 	defaultStringLength = 255
 )
@@ -318,9 +319,8 @@ func (r *Blueprint) Jsonb(column string) schemacontract.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Primary(columns []string, name string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Primary(columns []string) {
+	r.indexCommand(commandPrimary, columns)
 }
 
 func (r *Blueprint) RenameColumn(from, to string) error {
@@ -455,6 +455,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileDropIndex(r, command.Value))
 		case commandIndex:
 			statements = append(statements, grammar.CompileIndex(r, command))
+		case commandPrimary:
+			statements = append(statements, grammar.CompilePrimary(r, command.Columns))
 		case commandTableComment:
 			statements = append(statements, grammar.CompileTableComment(r, command.Value))
 		}

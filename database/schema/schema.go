@@ -13,9 +13,17 @@ import (
 	"github.com/goravel/framework/database/schema/processors"
 )
 
+type DB struct {
+	Connection string
+	Database   string
+	Prefix     string
+	Schema     string
+}
+
 type Schema struct {
 	config     configcontract.Config
 	connection string
+	db         DB
 	grammar    schemacontract.Grammar
 	log        logcontract.Log
 	migrations []schemacontract.Migration
@@ -32,9 +40,15 @@ func NewSchema(connection string, config configcontract.Config, orm ormcontract.
 	schema := &Schema{
 		config:     config,
 		connection: connection,
-		log:        log,
-		orm:        orm,
-		query:      orm.Connection(connection).Query(),
+		db: DB{
+			Connection: connection,
+			Database:   config.GetString(fmt.Sprintf("database.connections.%s.database", connection)),
+			Prefix:     config.GetString(fmt.Sprintf("database.connections.%s.prefix", connection)),
+			Schema:     config.GetString(fmt.Sprintf("database.connections.%s.schema", connection)),
+		},
+		log:   log,
+		orm:   orm,
+		query: orm.Connection(connection).Query(),
 	}
 
 	if err := schema.initGrammarAndProcess(); err != nil {
@@ -54,7 +68,7 @@ func (r *Schema) Connection(name string) schemacontract.Schema {
 }
 
 func (r *Schema) Create(table string, callback func(table schemacontract.Blueprint)) error {
-	blueprint := NewBlueprint(r.getTablePrefix(), table)
+	blueprint := NewBlueprint(r.db.Prefix, table)
 	blueprint.Create()
 	callback(blueprint)
 
@@ -89,7 +103,7 @@ func (r *Schema) DropIfExists(table string) error {
 
 func (r *Schema) GetColumns(table string) ([]schemacontract.Column, error) {
 	_, schema, table := r.parseDatabaseAndSchemaAndTable(table)
-	table = r.getTablePrefix() + table
+	table = r.db.Prefix + table
 
 	var columns []schemacontract.Column
 	if err := r.query.Raw(r.grammar.CompileColumns(schema, table)).Scan(&columns); err != nil {
@@ -116,7 +130,7 @@ func (r *Schema) GetColumnListing(table string) []string {
 
 func (r *Schema) GetIndexes(table string) ([]schemacontract.Index, error) {
 	_, schema, table := r.parseDatabaseAndSchemaAndTable(table)
-	table = r.getTablePrefix() + table
+	table = r.db.Prefix + table
 
 	type Index struct {
 		Columns string
@@ -231,7 +245,7 @@ func (r *Schema) Rename(from, to string) {
 }
 
 func (r *Schema) Table(table string, callback func(table schemacontract.Blueprint)) error {
-	blueprint := NewBlueprint(r.getTablePrefix(), table)
+	blueprint := NewBlueprint(r.db.Prefix, table)
 	callback(blueprint)
 
 	return blueprint.Build(r.query, r.grammar)
@@ -254,15 +268,11 @@ func (r *Schema) initGrammarAndProcess() error {
 	}
 }
 
-func (r *Schema) getTablePrefix() string {
-	return r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection))
-}
-
 // parseSchemaAndTable Parse the database object reference and extract the database, schema, and table.
 func (r *Schema) parseDatabaseAndSchemaAndTable(reference string) (database, schema, table string) {
 	parts := strings.Split(reference, ".")
-	database = r.config.GetString(fmt.Sprintf("database.connections.%s.database", r.connection))
-	schema = r.config.GetString(fmt.Sprintf("database.connections.%s.schema", r.connection))
+	database = r.db.Database
+	schema = r.db.Schema
 	if schema == "" {
 		schema = "public"
 	}

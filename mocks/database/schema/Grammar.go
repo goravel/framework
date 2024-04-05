@@ -916,17 +916,17 @@ func (_c *Grammar_CompileIndexes_Call) RunAndReturn(run func(string, string) str
 	return _c
 }
 
-// CompilePrimary provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompilePrimary(blueprint schema.Blueprint, command string) string {
-	ret := _m.Called(blueprint, command)
+// CompilePrimary provides a mock function with given fields: blueprint, columns
+func (_m *Grammar) CompilePrimary(blueprint schema.Blueprint, columns []string) string {
+	ret := _m.Called(blueprint, columns)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompilePrimary")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
-		r0 = rf(blueprint, command)
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, []string) string); ok {
+		r0 = rf(blueprint, columns)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -941,14 +941,14 @@ type Grammar_CompilePrimary_Call struct {
 
 // CompilePrimary is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-func (_e *Grammar_Expecter) CompilePrimary(blueprint interface{}, command interface{}) *Grammar_CompilePrimary_Call {
-	return &Grammar_CompilePrimary_Call{Call: _e.mock.On("CompilePrimary", blueprint, command)}
+//   - columns []string
+func (_e *Grammar_Expecter) CompilePrimary(blueprint interface{}, columns interface{}) *Grammar_CompilePrimary_Call {
+	return &Grammar_CompilePrimary_Call{Call: _e.mock.On("CompilePrimary", blueprint, columns)}
 }
 
-func (_c *Grammar_CompilePrimary_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompilePrimary_Call {
+func (_c *Grammar_CompilePrimary_Call) Run(run func(blueprint schema.Blueprint, columns []string)) *Grammar_CompilePrimary_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint), args[1].([]string))
 	})
 	return _c
 }
@@ -958,7 +958,7 @@ func (_c *Grammar_CompilePrimary_Call) Return(_a0 string) *Grammar_CompilePrimar
 	return _c
 }
 
-func (_c *Grammar_CompilePrimary_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_CompilePrimary_Call {
+func (_c *Grammar_CompilePrimary_Call) RunAndReturn(run func(schema.Blueprint, []string) string) *Grammar_CompilePrimary_Call {
 	_c.Call.Return(run)
 	return _c
 }
