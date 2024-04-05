@@ -36,7 +36,7 @@ type Blueprint interface {
 	// DropForeign Indicate that the given foreign key should be dropped.
 	DropForeign(index string) error
 	// DropIndex Indicate that the given index should be dropped.
-	DropIndex(index string) error
+	DropIndex(columns []string)
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
 	DropSoftDeletes(column ...string)
 	// DropSoftDeletesTz Indicate that the soft delete column should be dropped.

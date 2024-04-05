@@ -419,7 +419,7 @@ func (s *BlueprintTestSuite) TestIndexCommand() {
 	s.Contains(s.blueprint.commands, &schema.Command{
 		Columns: []string{"id", "name"},
 		Name:    "index",
-		Index:   "goravel_users_id_name_index",
+		Value:   "goravel_users_id_name_index",
 	})
 
 	s.blueprint.indexCommand("index", []string{"id", "name"}, schema.IndexConfig{
@@ -430,7 +430,7 @@ func (s *BlueprintTestSuite) TestIndexCommand() {
 		Algorithm: "custom_algorithm",
 		Columns:   []string{"id", "name"},
 		Name:      "index",
-		Index:     "custom_name",
+		Value:     "custom_name",
 	})
 }
 

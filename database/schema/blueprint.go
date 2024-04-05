@@ -12,6 +12,7 @@ const (
 	commandComment      = "comment"
 	commandCreate       = "create"
 	commandDropColumn   = "dropColumn"
+	commandDropIndex    = "dropIndex"
 	commandIndex        = "index"
 	commandTableComment = "tableComment"
 	defaultStringLength = 255
@@ -186,12 +187,12 @@ func (r *Blueprint) DropForeign(index string) error {
 	panic("implement me")
 }
 
-func (r *Blueprint) DropIndex(index string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) DropIndex(columns []string) {
+	r.indexCommand(commandDropIndex, columns, schemacontract.IndexConfig{
+		Name: r.createIndexName("index", columns),
+	})
 }
 
-// TODO Test this method
 func (r *Blueprint) DropSoftDeletes(column ...string) {
 	c := "deleted_at"
 	if len(column) > 0 {
@@ -201,17 +202,14 @@ func (r *Blueprint) DropSoftDeletes(column ...string) {
 	r.DropColumn(c)
 }
 
-// TODO Test this method
 func (r *Blueprint) DropSoftDeletesTz(column ...string) {
 	r.DropSoftDeletes(column...)
 }
 
-// TODO Test this method
 func (r *Blueprint) DropTimestamps() {
 	r.DropColumn("created_at", "updated_at")
 }
 
-// TODO Test this method
 func (r *Blueprint) DropTimestampsTz() {
 	r.DropTimestamps()
 }
@@ -453,6 +451,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case commandDropColumn:
 			statements = append(statements, grammar.CompileDropColumn(r, command))
+		case commandDropIndex:
+			statements = append(statements, grammar.CompileDropIndex(r, command.Value))
 		case commandIndex:
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case commandTableComment:
@@ -538,9 +538,9 @@ func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schem
 
 	if len(config) > 0 {
 		command.Algorithm = config[0].Algorithm
-		command.Index = config[0].Name
+		command.Value = config[0].Name
 	} else {
-		command.Index = r.createIndexName(ttype, columns)
+		command.Value = r.createIndexName(ttype, columns)
 	}
 
 	r.addCommand(command)

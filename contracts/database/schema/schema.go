@@ -53,7 +53,6 @@ type Command struct {
 	Columns   []string
 	Value     string
 	Name      string
-	Index     string
 }
 
 type Index struct {

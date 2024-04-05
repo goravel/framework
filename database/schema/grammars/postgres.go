@@ -105,9 +105,8 @@ func (r *Postgres) CompileDropIfExists(blueprint schemacontract.Blueprint, comma
 	panic("implement me")
 }
 
-func (r *Postgres) CompileDropIndex(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileDropIndex(blueprint schemacontract.Blueprint, index string) string {
+	return "drop index " + index
 }
 
 func (r *Postgres) CompileDropPrimary(blueprint schemacontract.Blueprint, command string) string {
@@ -132,7 +131,7 @@ func (r *Postgres) CompileIndex(blueprint schemacontract.Blueprint, command *sch
 	}
 
 	return fmt.Sprintf("create index %s on %s%s (%s)",
-		command.Index,
+		command.Value,
 		blueprint.GetTableName(),
 		algorithm,
 		strings.Join(command.Columns, ", "),

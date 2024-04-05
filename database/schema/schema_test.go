@@ -159,6 +159,100 @@ func (s *SchemaSuite) TestDropColumns() {
 	}
 }
 
+func (s *SchemaSuite) TestDropIndex() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "get_indexes"
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
+				Return(schema.dbConfig.Database).Times(2)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
+				Return("").Times(2)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
+				Return("").Times(4)
+
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Index([]string{"id", "name"})
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, "get_indexes_id_name_index"))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropIndex([]string{"id", "name"})
+			})
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasIndex(table, "get_indexes_id_name_index"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestDropSoftDeletes() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "drop_soft_deletes"
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
+				Return(schema.dbConfig.Database).Times(2)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
+				Return("").Times(2)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
+				Return("").Times(4)
+
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.SoftDeletes()
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasColumn(table, "deleted_at"))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropSoftDeletes()
+			})
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasColumn(table, "deleted_at"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestDropTimestamps() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "drop_soft_deletes"
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", schema.schema.connection)).
+				Return(schema.dbConfig.Database).Times(4)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", schema.schema.connection)).
+				Return("").Times(4)
+			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
+				Return("").Times(6)
+
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.Timestamps()
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasColumn(table, "created_at"))
+			s.Require().True(schema.schema.HasColumn(table, "updated_at"))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropTimestamps()
+			})
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasColumn(table, "created_at"))
+			s.Require().False(schema.schema.HasColumn(table, "updated_at"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestGetColumns() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {

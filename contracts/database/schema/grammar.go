@@ -35,7 +35,7 @@ type Grammar interface {
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint, command string) string
 	// CompileDropIndex Compile a drop index command.
-	CompileDropIndex(blueprint Blueprint, command string) string
+	CompileDropIndex(blueprint Blueprint, index string) string
 	// CompileDropPrimary Compile a drop primary key command.
 	CompileDropPrimary(blueprint Blueprint, command string) string
 	// CompileDropUnique Compile a drop unique key command.
