@@ -37,6 +37,8 @@ type Blueprint interface {
 	DropForeign(index string) error
 	// DropIndex Indicate that the given index should be dropped.
 	DropIndex(columns []string)
+	// DropIndexByName Indicate that the given index should be dropped.
+	DropIndexByName(name string)
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
 	DropSoftDeletes(column ...string)
 	// DropSoftDeletesTz Indicate that the soft delete column should be dropped.
@@ -96,7 +98,7 @@ type Blueprint interface {
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(query ormcontract.Query, grammar Grammar) []string
 	// Unique Specify a unique index for the table.
-	Unique(columns []string, name string) error
+	Unique(columns []string)
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.
 	UnsignedInteger(column string, autoIncrement ...bool) ColumnDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.

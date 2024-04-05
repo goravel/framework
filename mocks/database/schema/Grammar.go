@@ -1199,7 +1199,7 @@ func (_c *Grammar_CompileTables_Call) RunAndReturn(run func(string) string) *Gra
 }
 
 // CompileUnique provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileUnique(blueprint schema.Blueprint, command string) string {
+func (_m *Grammar) CompileUnique(blueprint schema.Blueprint, command *schema.Command) string {
 	ret := _m.Called(blueprint, command)
 
 	if len(ret) == 0 {
@@ -1207,7 +1207,7 @@ func (_m *Grammar) CompileUnique(blueprint schema.Blueprint, command string) str
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
 		r0 = rf(blueprint, command)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -1223,14 +1223,14 @@ type Grammar_CompileUnique_Call struct {
 
 // CompileUnique is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
+//   - command *schema.Command
 func (_e *Grammar_Expecter) CompileUnique(blueprint interface{}, command interface{}) *Grammar_CompileUnique_Call {
 	return &Grammar_CompileUnique_Call{Call: _e.mock.On("CompileUnique", blueprint, command)}
 }
 
-func (_c *Grammar_CompileUnique_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompileUnique_Call {
+func (_c *Grammar_CompileUnique_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileUnique_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
 	})
 	return _c
 }
@@ -1240,7 +1240,7 @@ func (_c *Grammar_CompileUnique_Call) Return(_a0 string) *Grammar_CompileUnique_
 	return _c
 }
 
-func (_c *Grammar_CompileUnique_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_CompileUnique_Call {
+func (_c *Grammar_CompileUnique_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileUnique_Call {
 	_c.Call.Return(run)
 	return _c
 }

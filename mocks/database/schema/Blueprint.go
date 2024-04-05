@@ -2302,22 +2302,9 @@ func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(orm.Query, schema.Grammar)
 	return _c
 }
 
-// Unique provides a mock function with given fields: columns, name
-func (_m *Blueprint) Unique(columns []string, name string) error {
-	ret := _m.Called(columns, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Unique")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]string, string) error); ok {
-		r0 = rf(columns, name)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+// Unique provides a mock function with given fields: columns
+func (_m *Blueprint) Unique(columns []string) {
+	_m.Called(columns)
 }
 
 // Blueprint_Unique_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Unique'
@@ -2327,24 +2314,23 @@ type Blueprint_Unique_Call struct {
 
 // Unique is a helper method to define mock.On call
 //   - columns []string
-//   - name string
-func (_e *Blueprint_Expecter) Unique(columns interface{}, name interface{}) *Blueprint_Unique_Call {
-	return &Blueprint_Unique_Call{Call: _e.mock.On("Unique", columns, name)}
+func (_e *Blueprint_Expecter) Unique(columns interface{}) *Blueprint_Unique_Call {
+	return &Blueprint_Unique_Call{Call: _e.mock.On("Unique", columns)}
 }
 
-func (_c *Blueprint_Unique_Call) Run(run func(columns []string, name string)) *Blueprint_Unique_Call {
+func (_c *Blueprint_Unique_Call) Run(run func(columns []string)) *Blueprint_Unique_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(string))
+		run(args[0].([]string))
 	})
 	return _c
 }
 
-func (_c *Blueprint_Unique_Call) Return(_a0 error) *Blueprint_Unique_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_Unique_Call) Return() *Blueprint_Unique_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_Unique_Call) RunAndReturn(run func([]string, string) error) *Blueprint_Unique_Call {
+func (_c *Blueprint_Unique_Call) RunAndReturn(run func([]string)) *Blueprint_Unique_Call {
 	_c.Call.Return(run)
 	return _c
 }

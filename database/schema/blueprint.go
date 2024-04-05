@@ -16,6 +16,7 @@ const (
 	commandIndex        = "index"
 	commandPrimary      = "primary"
 	commandTableComment = "tableComment"
+	commandUnique       = "unique"
 	defaultStringLength = 255
 )
 
@@ -191,6 +192,12 @@ func (r *Blueprint) DropForeign(index string) error {
 func (r *Blueprint) DropIndex(columns []string) {
 	r.indexCommand(commandDropIndex, columns, schemacontract.IndexConfig{
 		Name: r.createIndexName("index", columns),
+	})
+}
+
+func (r *Blueprint) DropIndexByName(name string) {
+	r.indexCommand(commandDropIndex, nil, schemacontract.IndexConfig{
+		Name: name,
 	})
 }
 
@@ -459,15 +466,16 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompilePrimary(r, command.Columns))
 		case commandTableComment:
 			statements = append(statements, grammar.CompileTableComment(r, command.Value))
+		case commandUnique:
+			statements = append(statements, grammar.CompileUnique(r, command))
 		}
 	}
 
 	return statements
 }
 
-func (r *Blueprint) Unique(columns []string, name string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Unique(columns []string) {
+	r.indexCommand(commandUnique, columns)
 }
 
 func (r *Blueprint) UnsignedInteger(column string, autoIncrement ...bool) schemacontract.ColumnDefinition {

@@ -192,6 +192,31 @@ func (s *SchemaSuite) TestDropIndex() {
 	}
 }
 
+func (s *SchemaSuite) TestDropIndexByName() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "drop_index_by_name"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Index([]string{"id", "name"})
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, "drop_index_by_name_id_name_index"))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropIndexByName("drop_index_by_name_id_name_index")
+			})
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasIndex(table, "drop_index_by_name_id_name_index"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestDropSoftDeletes() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
@@ -594,25 +619,6 @@ func (s *SchemaSuite) TestGetIndexes() {
 	}
 }
 
-func (s *SchemaSuite) TestPrimary() {
-	for _, schema := range s.schemas {
-		s.Run(schema.driver.String(), func() {
-			table := "primaries"
-			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
-				table.String("name")
-				table.String("age")
-				table.Primary([]string{"name", "age"})
-			})
-
-			s.Require().Nil(err)
-			s.Require().True(schema.schema.HasTable(table))
-			s.Require().True(schema.schema.HasIndex(table, "primaries_pkey"))
-
-			schema.mockConfig.AssertExpectations(s.T())
-		})
-	}
-}
-
 func (s *SchemaSuite) TestGetTables() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
@@ -673,6 +679,44 @@ func (s *SchemaSuite) TestParseDatabaseAndSchemaAndTable() {
 			s.Equal(schema.dbConfig.Database, database)
 			s.Equal("goravel", schemaName)
 			s.Equal("users", table)
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestPrimary() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "primaries"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Primary([]string{"name", "age"})
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, "primaries_pkey"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestUnique() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "uniques"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Unique([]string{"name", "age"})
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, "uniques_name_age_unique"))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})

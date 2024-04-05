@@ -186,9 +186,12 @@ func (r *Postgres) CompileTables(database string) string {
 		"order by c.relname"
 }
 
-func (r *Postgres) CompileUnique(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileUnique(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
+	return fmt.Sprintf("alter table %s add constraint %s unique (%s)",
+		blueprint.GetTableName(),
+		command.Value,
+		strings.Join(command.Columns, ", "),
+	)
 }
 
 func (r *Postgres) CompileViews(database string) string {
