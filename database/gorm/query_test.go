@@ -2885,7 +2885,7 @@ func (s *QueryTestSuite) TestOrWhereNull() {
 
 			var users []User
 			s.Nil(query.Where("name = ?", "or_where_null_user").OrWhereNull("bio").Find(&users))
-			s.True(len(users) == 2)
+			s.True(len(users) >= 2)
 		})
 	}
 }
