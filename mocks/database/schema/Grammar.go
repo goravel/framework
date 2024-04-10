@@ -1010,9 +1010,9 @@ func (_c *Grammar_CompileRename_Call) RunAndReturn(run func(schema.Blueprint, st
 	return _c
 }
 
-// CompileRenameColumn provides a mock function with given fields: blueprint, command, connection
-func (_m *Grammar) CompileRenameColumn(blueprint schema.Blueprint, command string, connection string) string {
-	ret := _m.Called(blueprint, command, connection)
+// CompileRenameColumn provides a mock function with given fields: blueprint, from, to
+func (_m *Grammar) CompileRenameColumn(blueprint schema.Blueprint, from string, to string) string {
+	ret := _m.Called(blueprint, from, to)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileRenameColumn")
@@ -1020,7 +1020,7 @@ func (_m *Grammar) CompileRenameColumn(blueprint schema.Blueprint, command strin
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(schema.Blueprint, string, string) string); ok {
-		r0 = rf(blueprint, command, connection)
+		r0 = rf(blueprint, from, to)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -1035,13 +1035,13 @@ type Grammar_CompileRenameColumn_Call struct {
 
 // CompileRenameColumn is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-//   - connection string
-func (_e *Grammar_Expecter) CompileRenameColumn(blueprint interface{}, command interface{}, connection interface{}) *Grammar_CompileRenameColumn_Call {
-	return &Grammar_CompileRenameColumn_Call{Call: _e.mock.On("CompileRenameColumn", blueprint, command, connection)}
+//   - from string
+//   - to string
+func (_e *Grammar_Expecter) CompileRenameColumn(blueprint interface{}, from interface{}, to interface{}) *Grammar_CompileRenameColumn_Call {
+	return &Grammar_CompileRenameColumn_Call{Call: _e.mock.On("CompileRenameColumn", blueprint, from, to)}
 }
 
-func (_c *Grammar_CompileRenameColumn_Call) Run(run func(blueprint schema.Blueprint, command string, connection string)) *Grammar_CompileRenameColumn_Call {
+func (_c *Grammar_CompileRenameColumn_Call) Run(run func(blueprint schema.Blueprint, from string, to string)) *Grammar_CompileRenameColumn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(schema.Blueprint), args[1].(string), args[2].(string))
 	})

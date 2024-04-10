@@ -1616,21 +1616,8 @@ func (_c *Blueprint_Primary_Call) RunAndReturn(run func([]string)) *Blueprint_Pr
 }
 
 // RenameColumn provides a mock function with given fields: from, to
-func (_m *Blueprint) RenameColumn(from string, to string) error {
-	ret := _m.Called(from, to)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RenameColumn")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(from, to)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Blueprint) RenameColumn(from string, to string) {
+	_m.Called(from, to)
 }
 
 // Blueprint_RenameColumn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameColumn'
@@ -1652,12 +1639,12 @@ func (_c *Blueprint_RenameColumn_Call) Run(run func(from string, to string)) *Bl
 	return _c
 }
 
-func (_c *Blueprint_RenameColumn_Call) Return(_a0 error) *Blueprint_RenameColumn_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_RenameColumn_Call) Return() *Blueprint_RenameColumn_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_RenameColumn_Call) RunAndReturn(run func(string, string) error) *Blueprint_RenameColumn_Call {
+func (_c *Blueprint_RenameColumn_Call) RunAndReturn(run func(string, string)) *Blueprint_RenameColumn_Call {
 	_c.Call.Return(run)
 	return _c
 }

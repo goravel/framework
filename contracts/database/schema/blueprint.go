@@ -72,7 +72,7 @@ type Blueprint interface {
 	// Primary Specify the primary key(s) for the table.
 	Primary(columns []string)
 	// RenameColumn Indicate that the given columns should be renamed.
-	RenameColumn(from, to string) error
+	RenameColumn(from, to string)
 	// RenameIndex Indicate that the given indexes should be renamed.
 	RenameIndex(from, to string)
 	// SoftDeletes Add a "deleted at" timestamp for the table.
