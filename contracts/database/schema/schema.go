@@ -48,13 +48,18 @@ type Schema interface {
 }
 
 type Command struct {
-	Algorithm string
-	Column    ColumnDefinition
-	Columns   []string
-	From      string
-	Name      string
-	To        string
-	Value     string
+	Algorithm  string
+	Column     ColumnDefinition
+	Columns    []string
+	From       string
+	Index      string
+	On         string
+	OnDelete   string
+	OnUpdate   string
+	Name       string
+	To         string
+	References []string
+	Value      string
 }
 
 type Index struct {

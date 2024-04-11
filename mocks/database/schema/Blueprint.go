@@ -1115,7 +1115,7 @@ func (_c *Blueprint_Float_Call) RunAndReturn(run func(string, ...int) schema.Col
 }
 
 // Foreign provides a mock function with given fields: columns, name
-func (_m *Blueprint) Foreign(columns []string, name ...string) error {
+func (_m *Blueprint) Foreign(columns []string, name ...string) schema.ForeignKeyDefinition {
 	_va := make([]interface{}, len(name))
 	for _i := range name {
 		_va[_i] = name[_i]
@@ -1129,11 +1129,13 @@ func (_m *Blueprint) Foreign(columns []string, name ...string) error {
 		panic("no return value specified for Foreign")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]string, ...string) error); ok {
+	var r0 schema.ForeignKeyDefinition
+	if rf, ok := ret.Get(0).(func([]string, ...string) schema.ForeignKeyDefinition); ok {
 		r0 = rf(columns, name...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ForeignKeyDefinition)
+		}
 	}
 
 	return r0
@@ -1165,12 +1167,12 @@ func (_c *Blueprint_Foreign_Call) Run(run func(columns []string, name ...string)
 	return _c
 }
 
-func (_c *Blueprint_Foreign_Call) Return(_a0 error) *Blueprint_Foreign_Call {
+func (_c *Blueprint_Foreign_Call) Return(_a0 schema.ForeignKeyDefinition) *Blueprint_Foreign_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Blueprint_Foreign_Call) RunAndReturn(run func([]string, ...string) error) *Blueprint_Foreign_Call {
+func (_c *Blueprint_Foreign_Call) RunAndReturn(run func([]string, ...string) schema.ForeignKeyDefinition) *Blueprint_Foreign_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1310,6 +1312,52 @@ func (_c *Blueprint_GetTableName_Call) Return(_a0 string) *Blueprint_GetTableNam
 }
 
 func (_c *Blueprint_GetTableName_Call) RunAndReturn(run func() string) *Blueprint_GetTableName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasCommand provides a mock function with given fields: command
+func (_m *Blueprint) HasCommand(command string) bool {
+	ret := _m.Called(command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasCommand")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(command)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Blueprint_HasCommand_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasCommand'
+type Blueprint_HasCommand_Call struct {
+	*mock.Call
+}
+
+// HasCommand is a helper method to define mock.On call
+//   - command string
+func (_e *Blueprint_Expecter) HasCommand(command interface{}) *Blueprint_HasCommand_Call {
+	return &Blueprint_HasCommand_Call{Call: _e.mock.On("HasCommand", command)}
+}
+
+func (_c *Blueprint_HasCommand_Call) Run(run func(command string)) *Blueprint_HasCommand_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_HasCommand_Call) Return(_a0 bool) *Blueprint_HasCommand_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_HasCommand_Call) RunAndReturn(run func(string) bool) *Blueprint_HasCommand_Call {
 	_c.Call.Return(run)
 	return _c
 }

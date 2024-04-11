@@ -192,6 +192,51 @@ func (_c *ColumnDefinition_GetAutoIncrement_Call) RunAndReturn(run func() bool) 
 	return _c
 }
 
+// GetChange provides a mock function with given fields:
+func (_m *ColumnDefinition) GetChange() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetChange")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetChange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetChange'
+type ColumnDefinition_GetChange_Call struct {
+	*mock.Call
+}
+
+// GetChange is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetChange() *ColumnDefinition_GetChange_Call {
+	return &ColumnDefinition_GetChange_Call{Call: _e.mock.On("GetChange")}
+}
+
+func (_c *ColumnDefinition_GetChange_Call) Run(run func()) *ColumnDefinition_GetChange_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetChange_Call) Return(_a0 bool) *ColumnDefinition_GetChange_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetChange_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetChange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetComment provides a mock function with given fields:
 func (_m *ColumnDefinition) GetComment() string {
 	ret := _m.Called()

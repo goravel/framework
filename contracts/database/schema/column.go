@@ -9,6 +9,8 @@ type ColumnDefinition interface {
 	GetAllowed() []string
 	// GetAutoIncrement returns the autoIncrement value
 	GetAutoIncrement() bool
+	// GetChange returns the change value
+	GetChange() bool
 	// GetComment returns the comment value
 	GetComment() (comment string)
 	// GetLength returns the length value

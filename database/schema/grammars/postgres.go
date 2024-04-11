@@ -3,6 +3,7 @@ package grammars
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -13,13 +14,17 @@ import (
 type Postgres struct {
 	attributeCommands []string
 	modifiers         []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string
+	serials           []string
 }
 
 func NewPostgres() *Postgres {
 	postgres := &Postgres{
 		attributeCommands: []string{"comment"},
+		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 	}
 	postgres.modifiers = []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string{
+		//postgres.ModifyDefault,
+		postgres.ModifyIncrement,
 		postgres.ModifyNullable,
 	}
 
@@ -119,6 +124,19 @@ func (r *Postgres) CompileDropUnique(blueprint schemacontract.Blueprint, command
 	panic("implement me")
 }
 
+func (r *Postgres) CompileForeign(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
+	sql := fmt.Sprintf("alter table %s add constraint %s foreign key (%s) references %s (%s)",
+		blueprint.GetTableName(), command.Index, strings.Join(command.Columns, ", "), command.On, strings.Join(command.References, ", "))
+	if command.OnDelete != "" {
+		sql += " on delete " + command.OnDelete
+	}
+	if command.OnUpdate != "" {
+		sql += " on update " + command.OnUpdate
+	}
+
+	return sql
+}
+
 func (r *Postgres) CompileIndex(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
 	var algorithm string
 	if command.Algorithm != "" {
@@ -126,7 +144,7 @@ func (r *Postgres) CompileIndex(blueprint schemacontract.Blueprint, command *sch
 	}
 
 	return fmt.Sprintf("create index %s on %s%s (%s)",
-		command.Value,
+		command.Index,
 		blueprint.GetTableName(),
 		algorithm,
 		strings.Join(command.Columns, ", "),
@@ -187,7 +205,7 @@ func (r *Postgres) CompileTables(database string) string {
 func (r *Postgres) CompileUnique(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
 	return fmt.Sprintf("alter table %s add constraint %s unique (%s)",
 		blueprint.GetTableName(),
-		command.Value,
+		command.Index,
 		strings.Join(command.Columns, ", "),
 	)
 }
@@ -202,6 +220,14 @@ func (r *Postgres) GetAttributeCommands() []string {
 }
 
 func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	if column.GetChange() {
+		if column.GetNullable() {
+			return "drop not null"
+		} else {
+			return "set not null"
+		}
+	}
+
 	if column.GetNullable() {
 		return " null"
 	} else {
@@ -209,9 +235,17 @@ func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column sch
 	}
 }
 
-func (r *Postgres) ModifyDefault(blueprint schemacontract.Blueprint, column string) string {
+func (r *Postgres) ModifyDefault(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (r *Postgres) ModifyIncrement(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	if !column.GetChange() && !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+		return " primary key"
+	}
+
+	return ""
 }
 
 func (r *Postgres) TypeBigInteger(column schemacontract.ColumnDefinition) string {

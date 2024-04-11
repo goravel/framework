@@ -52,13 +52,15 @@ type Blueprint interface {
 	// Float Create a new float column on the table.
 	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
-	Foreign(columns []string, name ...string) error
+	Foreign(columns []string, name ...string) ForeignKeyDefinition
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
 	// GetChangedColumns Get the changed columns.
 	GetChangedColumns() []ColumnDefinition
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
+	// HasCommand Determine if the blueprint has a specific command.
+	HasCommand(command string) bool
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
 	ID(column ...string) ColumnDefinition
 	// Index Specify an index for the table.

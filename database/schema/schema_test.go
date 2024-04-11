@@ -629,6 +629,35 @@ func (s *SchemaSuite) TestGetTables() {
 	}
 }
 
+func (s *SchemaSuite) TestForeign() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table1 := "foreign1"
+			err := schema.schema.Create(table1, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table1))
+
+			table2 := "foreign2"
+			err = schema.schema.Create(table2, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.UnsignedInteger("foreign1_id")
+				table.Foreign([]string{"foreign1_id"}).References("id").On(table1)
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table2))
+			s.Require().True(schema.schema.HasIndex(table2, "foreign2_pkey"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestHasTable() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {

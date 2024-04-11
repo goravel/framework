@@ -822,6 +822,53 @@ func (_c *Grammar_CompileDropUnique_Call) RunAndReturn(run func(schema.Blueprint
 	return _c
 }
 
+// CompileForeign provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileForeign")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileForeign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileForeign'
+type Grammar_CompileForeign_Call struct {
+	*mock.Call
+}
+
+// CompileForeign is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileForeign(blueprint interface{}, command interface{}) *Grammar_CompileForeign_Call {
+	return &Grammar_CompileForeign_Call{Call: _e.mock.On("CompileForeign", blueprint, command)}
+}
+
+func (_c *Grammar_CompileForeign_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileForeign_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileForeign_Call) Return(_a0 string) *Grammar_CompileForeign_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileForeign_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileForeign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileIndex provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
 	ret := _m.Called(blueprint, command)
@@ -1340,7 +1387,7 @@ func (_c *Grammar_GetAttributeCommands_Call) RunAndReturn(run func() []string) *
 }
 
 // ModifyDefault provides a mock function with given fields: blueprint, column
-func (_m *Grammar) ModifyDefault(blueprint schema.Blueprint, column string) string {
+func (_m *Grammar) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
 	ret := _m.Called(blueprint, column)
 
 	if len(ret) == 0 {
@@ -1348,7 +1395,7 @@ func (_m *Grammar) ModifyDefault(blueprint schema.Blueprint, column string) stri
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, schema.ColumnDefinition) string); ok {
 		r0 = rf(blueprint, column)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -1364,14 +1411,14 @@ type Grammar_ModifyDefault_Call struct {
 
 // ModifyDefault is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - column string
+//   - column schema.ColumnDefinition
 func (_e *Grammar_Expecter) ModifyDefault(blueprint interface{}, column interface{}) *Grammar_ModifyDefault_Call {
 	return &Grammar_ModifyDefault_Call{Call: _e.mock.On("ModifyDefault", blueprint, column)}
 }
 
-func (_c *Grammar_ModifyDefault_Call) Run(run func(blueprint schema.Blueprint, column string)) *Grammar_ModifyDefault_Call {
+func (_c *Grammar_ModifyDefault_Call) Run(run func(blueprint schema.Blueprint, column schema.ColumnDefinition)) *Grammar_ModifyDefault_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint), args[1].(schema.ColumnDefinition))
 	})
 	return _c
 }
@@ -1381,7 +1428,54 @@ func (_c *Grammar_ModifyDefault_Call) Return(_a0 string) *Grammar_ModifyDefault_
 	return _c
 }
 
-func (_c *Grammar_ModifyDefault_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_ModifyDefault_Call {
+func (_c *Grammar_ModifyDefault_Call) RunAndReturn(run func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_ModifyDefault_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ModifyIncrement provides a mock function with given fields: blueprint, column
+func (_m *Grammar) ModifyIncrement(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	ret := _m.Called(blueprint, column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ModifyIncrement")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, schema.ColumnDefinition) string); ok {
+		r0 = rf(blueprint, column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_ModifyIncrement_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ModifyIncrement'
+type Grammar_ModifyIncrement_Call struct {
+	*mock.Call
+}
+
+// ModifyIncrement is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) ModifyIncrement(blueprint interface{}, column interface{}) *Grammar_ModifyIncrement_Call {
+	return &Grammar_ModifyIncrement_Call{Call: _e.mock.On("ModifyIncrement", blueprint, column)}
+}
+
+func (_c *Grammar_ModifyIncrement_Call) Run(run func(blueprint schema.Blueprint, column schema.ColumnDefinition)) *Grammar_ModifyIncrement_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_ModifyIncrement_Call) Return(_a0 string) *Grammar_ModifyIncrement_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_ModifyIncrement_Call) RunAndReturn(run func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_ModifyIncrement_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -43,6 +43,14 @@ func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
 	return
 }
 
+func (r *ColumnDefinition) GetChange() (change bool) {
+	if r.change != nil {
+		return *r.change
+	}
+
+	return
+}
+
 func (r *ColumnDefinition) GetComment() (comment string) {
 	if r.comment != nil {
 		return *r.comment

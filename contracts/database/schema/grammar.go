@@ -40,6 +40,8 @@ type Grammar interface {
 	CompileDropPrimary(blueprint Blueprint, command string) string
 	// CompileDropUnique Compile a drop unique key command.
 	CompileDropUnique(blueprint Blueprint, command string) string
+	// CompileForeign Compile a foreign key command.
+	CompileForeign(blueprint Blueprint, command *Command) string
 	// CompileIndex Compile a plain index key command.
 	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
@@ -62,10 +64,12 @@ type Grammar interface {
 	CompileViews(database string) string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
+	// ModifyDefault Get the SQL for a default column modifier.
+	ModifyDefault(blueprint Blueprint, column ColumnDefinition) string
 	// ModifyNullable Get the SQL for a nullable column modifier.
 	ModifyNullable(blueprint Blueprint, column ColumnDefinition) string
-	// ModifyDefault Get the SQL for a default column modifier.
-	ModifyDefault(blueprint Blueprint, column string) string
+	// ModifyIncrement Get the SQL for an auto-increment column modifier.
+	ModifyIncrement(blueprint Blueprint, column ColumnDefinition) string
 	// TypeBigInteger Create the column definition for a big integer type.
 	TypeBigInteger(column ColumnDefinition) string
 	// TypeBinary Create the column definition for a binary type.

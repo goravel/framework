@@ -13,6 +13,7 @@ const (
 	commandCreate       = "create"
 	commandDropColumn   = "dropColumn"
 	commandDropIndex    = "dropIndex"
+	commandForeign      = "foreign"
 	commandIndex        = "index"
 	commandPrimary      = "primary"
 	commandRenameColumn = "renameColumn"
@@ -249,9 +250,17 @@ func (r *Blueprint) Float(column string, precision ...int) schemacontract.Column
 	return columnImpl
 }
 
-func (r *Blueprint) Foreign(columns []string, name ...string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) Foreign(columns []string, name ...string) schemacontract.ForeignKeyDefinition {
+	var command *schemacontract.Command
+	if len(name) == 0 {
+		command = r.indexCommand(commandForeign, columns)
+	} else {
+		command = r.indexCommand(commandForeign, columns, schemacontract.IndexConfig{
+			Name: name[0],
+		})
+	}
+
+	return NewForeignKeyDefinition(command)
 }
 
 func (r *Blueprint) GetAddedColumns() []schemacontract.ColumnDefinition {
@@ -278,6 +287,16 @@ func (r *Blueprint) GetChangedColumns() []schemacontract.ColumnDefinition {
 
 func (r *Blueprint) GetTableName() string {
 	return r.prefix + r.table
+}
+
+func (r *Blueprint) HasCommand(command string) bool {
+	for _, c := range r.commands {
+		if c.Name == command {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *Blueprint) ID(column ...string) schemacontract.ColumnDefinition {
@@ -467,7 +486,9 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 		case commandDropColumn:
 			statements = append(statements, grammar.CompileDropColumn(r, command))
 		case commandDropIndex:
-			statements = append(statements, grammar.CompileDropIndex(r, command.Value))
+			statements = append(statements, grammar.CompileDropIndex(r, command.Index))
+		case commandForeign:
+			statements = append(statements, grammar.CompileForeign(r, command))
 		case commandIndex:
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case commandPrimary:
@@ -552,7 +573,7 @@ func (r *Blueprint) createIndexName(ttype string, columns []string) string {
 	return strings.ReplaceAll(index, ".", "_")
 }
 
-func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schemacontract.IndexConfig) {
+func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schemacontract.IndexConfig) *schemacontract.Command {
 	command := &schemacontract.Command{
 		Columns: columns,
 		Name:    ttype,
@@ -560,12 +581,14 @@ func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schem
 
 	if len(config) > 0 {
 		command.Algorithm = config[0].Algorithm
-		command.Value = config[0].Name
+		command.Index = config[0].Name
 	} else {
-		command.Value = r.createIndexName(ttype, columns)
+		command.Index = r.createIndexName(ttype, columns)
 	}
 
 	r.addCommand(command)
+
+	return command
 }
 
 func (r *Blueprint) isCreate() bool {
