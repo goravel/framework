@@ -110,6 +110,8 @@ type Query interface {
 	OrWhereBetween(column string, x, y any) Query
 	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
 	OrWhereNotBetween(column string, x, y any) Query
+	// OrWhereNull adds a "or where column is null" clause to the query.
+	OrWhereNull(column string) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.

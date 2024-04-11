@@ -1926,6 +1926,54 @@ func (_c *Transaction_OrWhereNotIn_Call) RunAndReturn(run func(string, []interfa
 	return _c
 }
 
+// OrWhereNull provides a mock function with given fields: column
+func (_m *Transaction) OrWhereNull(column string) orm.Query {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrWhereNull")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Transaction_OrWhereNull_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrWhereNull'
+type Transaction_OrWhereNull_Call struct {
+	*mock.Call
+}
+
+// OrWhereNull is a helper method to define mock.On call
+//   - column string
+func (_e *Transaction_Expecter) OrWhereNull(column interface{}) *Transaction_OrWhereNull_Call {
+	return &Transaction_OrWhereNull_Call{Call: _e.mock.On("OrWhereNull", column)}
+}
+
+func (_c *Transaction_OrWhereNull_Call) Run(run func(column string)) *Transaction_OrWhereNull_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Transaction_OrWhereNull_Call) Return(_a0 orm.Query) *Transaction_OrWhereNull_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Transaction_OrWhereNull_Call) RunAndReturn(run func(string) orm.Query) *Transaction_OrWhereNull_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Order provides a mock function with given fields: value
 func (_m *Transaction) Order(value interface{}) orm.Query {
 	ret := _m.Called(value)
