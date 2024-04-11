@@ -65,8 +65,7 @@ func (r *Postgres) CompileCreate(blueprint schemacontract.Blueprint, query ormco
 }
 
 func (r *Postgres) CompileDrop(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+	return fmt.Sprintf("drop table %s", blueprint.GetTableName())
 }
 
 func (r *Postgres) CompileDropAllTables(tables []string) string {

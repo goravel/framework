@@ -76,8 +76,10 @@ func (r *Schema) Create(table string, callback func(table schemacontract.Bluepri
 }
 
 func (r *Schema) Drop(table string) error {
-	//TODO implement me
-	panic("implement me")
+	blueprint := NewBlueprint(r.db.Prefix, table)
+	blueprint.Drop()
+
+	return blueprint.Build(r.query, r.grammar)
 }
 
 func (r *Schema) DropAllTables() error {

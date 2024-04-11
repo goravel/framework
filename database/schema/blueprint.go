@@ -11,6 +11,7 @@ import (
 const (
 	commandComment      = "comment"
 	commandCreate       = "create"
+	commandDrop         = "drop"
 	commandDropColumn   = "dropColumn"
 	commandDropForeign  = "dropForeign"
 	commandDropIndex    = "dropIndex"
@@ -175,6 +176,12 @@ func (r *Blueprint) Double(column string) schemacontract.ColumnDefinition {
 	r.addColumn(columnImpl)
 
 	return columnImpl
+}
+
+func (r *Blueprint) Drop() {
+	r.addCommand(&schemacontract.Command{
+		Name: commandDrop,
+	})
 }
 
 func (r *Blueprint) DropColumn(column ...string) {
@@ -491,6 +498,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileComment(r, command))
 		case commandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
+		case commandDrop:
+			statements = append(statements, grammar.CompileDrop(r, r.GetTableName()))
 		case commandDropColumn:
 			statements = append(statements, grammar.CompileDropColumn(r, command))
 		case commandDropForeign:
