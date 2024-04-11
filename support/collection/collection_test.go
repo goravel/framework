@@ -3,7 +3,6 @@ package collection
 import (
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 )
@@ -20,6 +19,6 @@ func TestMap(t *testing.T) {
 }
 
 func TestUnique(t *testing.T) {
-	uniqValues := lo.Uniq([]int{1, 2, 2, 1})
+	uniqValues := Unique([]int{1, 2, 2, 1})
 	assert.Equal(t, []int{1, 2}, uniqValues)
 }
