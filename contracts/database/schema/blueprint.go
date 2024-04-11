@@ -34,7 +34,9 @@ type Blueprint interface {
 	// DropColumn Indicate that the given column should be dropped.
 	DropColumn(column ...string)
 	// DropForeign Indicate that the given foreign key should be dropped.
-	DropForeign(index string) error
+	DropForeign(columns []string)
+	// DropForeignByName Indicate that the given foreign key should be dropped.
+	DropForeignByName(name string)
 	// DropIndex Indicate that the given index should be dropped.
 	DropIndex(columns []string)
 	// DropIndexByName Indicate that the given index should be dropped.

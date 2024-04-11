@@ -734,22 +734,9 @@ func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(...string)) *Blueprin
 	return _c
 }
 
-// DropForeign provides a mock function with given fields: index
-func (_m *Blueprint) DropForeign(index string) error {
-	ret := _m.Called(index)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropForeign")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(index)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+// DropForeign provides a mock function with given fields: columns
+func (_m *Blueprint) DropForeign(columns []string) {
+	_m.Called(columns)
 }
 
 // Blueprint_DropForeign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropForeign'
@@ -758,24 +745,57 @@ type Blueprint_DropForeign_Call struct {
 }
 
 // DropForeign is a helper method to define mock.On call
-//   - index string
-func (_e *Blueprint_Expecter) DropForeign(index interface{}) *Blueprint_DropForeign_Call {
-	return &Blueprint_DropForeign_Call{Call: _e.mock.On("DropForeign", index)}
+//   - columns []string
+func (_e *Blueprint_Expecter) DropForeign(columns interface{}) *Blueprint_DropForeign_Call {
+	return &Blueprint_DropForeign_Call{Call: _e.mock.On("DropForeign", columns)}
 }
 
-func (_c *Blueprint_DropForeign_Call) Run(run func(index string)) *Blueprint_DropForeign_Call {
+func (_c *Blueprint_DropForeign_Call) Run(run func(columns []string)) *Blueprint_DropForeign_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropForeign_Call) Return() *Blueprint_DropForeign_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropForeign_Call) RunAndReturn(run func([]string)) *Blueprint_DropForeign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropForeignByName provides a mock function with given fields: name
+func (_m *Blueprint) DropForeignByName(name string) {
+	_m.Called(name)
+}
+
+// Blueprint_DropForeignByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropForeignByName'
+type Blueprint_DropForeignByName_Call struct {
+	*mock.Call
+}
+
+// DropForeignByName is a helper method to define mock.On call
+//   - name string
+func (_e *Blueprint_Expecter) DropForeignByName(name interface{}) *Blueprint_DropForeignByName_Call {
+	return &Blueprint_DropForeignByName_Call{Call: _e.mock.On("DropForeignByName", name)}
+}
+
+func (_c *Blueprint_DropForeignByName_Call) Run(run func(name string)) *Blueprint_DropForeignByName_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Blueprint_DropForeign_Call) Return(_a0 error) *Blueprint_DropForeign_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_DropForeignByName_Call) Return() *Blueprint_DropForeignByName_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Blueprint_DropForeign_Call) RunAndReturn(run func(string) error) *Blueprint_DropForeign_Call {
+func (_c *Blueprint_DropForeignByName_Call) RunAndReturn(run func(string)) *Blueprint_DropForeignByName_Call {
 	_c.Call.Return(run)
 	return _c
 }

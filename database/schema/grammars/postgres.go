@@ -36,11 +36,6 @@ func (r *Postgres) CompileAdd(blueprint schemacontract.Blueprint, command string
 	panic("implement me")
 }
 
-func (r *Postgres) CompileAutoIncrementStartingValues(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Postgres) CompileChange(blueprint schemacontract.Blueprint, command, connection string) string {
 	//TODO implement me
 	panic("implement me")
@@ -69,21 +64,6 @@ func (r *Postgres) CompileCreate(blueprint schemacontract.Blueprint, query ormco
 	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(r.getColumns(blueprint), ","))
 }
 
-func (r *Postgres) CompileCreateEncoding(sql, connection string, blueprint schemacontract.Blueprint) string {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (r *Postgres) CompileCreateEngine(sql, connection string, blueprint schemacontract.Blueprint) string {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (r *Postgres) CompileCreateTable(blueprint schemacontract.Blueprint, command, connection string) string {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Postgres) CompileDrop(blueprint schemacontract.Blueprint, command string) string {
 	//TODO implement me
 	panic("implement me")
@@ -103,6 +83,10 @@ func (r *Postgres) CompileDropColumn(blueprint schemacontract.Blueprint, command
 	columns := prefixArray("drop column", command.Columns)
 
 	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(columns, ","))
+}
+
+func (r *Postgres) CompileDropForeign(blueprint schemacontract.Blueprint, index string) string {
+	return fmt.Sprintf("alter table %s drop constraint %s", blueprint.GetTableName(), index)
 }
 
 func (r *Postgres) CompileDropIfExists(blueprint schemacontract.Blueprint, command string) string {

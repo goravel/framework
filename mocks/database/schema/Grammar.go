@@ -634,6 +634,53 @@ func (_c *Grammar_CompileDropColumn_Call) RunAndReturn(run func(schema.Blueprint
 	return _c
 }
 
+// CompileDropForeign provides a mock function with given fields: blueprint, index
+func (_m *Grammar) CompileDropForeign(blueprint schema.Blueprint, index string) string {
+	ret := _m.Called(blueprint, index)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileDropForeign")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
+		r0 = rf(blueprint, index)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileDropForeign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileDropForeign'
+type Grammar_CompileDropForeign_Call struct {
+	*mock.Call
+}
+
+// CompileDropForeign is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - index string
+func (_e *Grammar_Expecter) CompileDropForeign(blueprint interface{}, index interface{}) *Grammar_CompileDropForeign_Call {
+	return &Grammar_CompileDropForeign_Call{Call: _e.mock.On("CompileDropForeign", blueprint, index)}
+}
+
+func (_c *Grammar_CompileDropForeign_Call) Run(run func(blueprint schema.Blueprint, index string)) *Grammar_CompileDropForeign_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileDropForeign_Call) Return(_a0 string) *Grammar_CompileDropForeign_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileDropForeign_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_CompileDropForeign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileDropIfExists provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompileDropIfExists(blueprint schema.Blueprint, command string) string {
 	ret := _m.Called(blueprint, command)

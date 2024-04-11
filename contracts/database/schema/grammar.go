@@ -7,8 +7,6 @@ import (
 type Grammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command string) string
-	// CompileAutoIncrementStartingValues Compile the auto-incrementing column starting values.
-	CompileAutoIncrementStartingValues(blueprint Blueprint, command string) string
 	// CompileChange Compile a change column command into a series of SQL statements.
 	CompileChange(blueprint Blueprint, command, connection string) string
 	// CompileColumns Compile the query to determine the columns.
@@ -18,12 +16,6 @@ type Grammar interface {
 	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint, query ormcontract.Query) string
-	// CompileCreateEncoding Append the character set specifications to a command.
-	CompileCreateEncoding(sql, connection string, blueprint Blueprint) string
-	// CompileCreateEngine Append the engine specifications to a command.
-	CompileCreateEngine(sql, connection string, blueprint Blueprint) string
-	// CompileCreateTable Create the main create table clause.
-	CompileCreateTable(blueprint Blueprint, command, connection string) string
 	// CompileDrop Compile a drop table command.
 	CompileDrop(blueprint Blueprint, command string) string
 	// CompileDropAllTables Compile the SQL needed to drop all tables.
@@ -32,6 +24,8 @@ type Grammar interface {
 	CompileDropAllViews(views []string) string
 	// CompileDropColumn Compile a drop column command.
 	CompileDropColumn(blueprint Blueprint, command *Command) string
+	// CompileDropForeign Compile a drop foreign key command.
+	CompileDropForeign(blueprint Blueprint, index string) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint, command string) string
 	// CompileDropIndex Compile a drop index command.

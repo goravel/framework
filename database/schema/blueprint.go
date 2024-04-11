@@ -12,6 +12,7 @@ const (
 	commandComment      = "comment"
 	commandCreate       = "create"
 	commandDropColumn   = "dropColumn"
+	commandDropForeign  = "dropForeign"
 	commandDropIndex    = "dropIndex"
 	commandForeign      = "foreign"
 	commandIndex        = "index"
@@ -187,9 +188,16 @@ func (r *Blueprint) DropColumn(column ...string) {
 	})
 }
 
-func (r *Blueprint) DropForeign(index string) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Blueprint) DropForeign(columns []string) {
+	r.indexCommand(commandDropForeign, columns, schemacontract.IndexConfig{
+		Name: r.createIndexName("foreign", columns),
+	})
+}
+
+func (r *Blueprint) DropForeignByName(name string) {
+	r.indexCommand(commandDropForeign, nil, schemacontract.IndexConfig{
+		Name: name,
+	})
 }
 
 func (r *Blueprint) DropIndex(columns []string) {
@@ -485,6 +493,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case commandDropColumn:
 			statements = append(statements, grammar.CompileDropColumn(r, command))
+		case commandDropForeign:
+			statements = append(statements, grammar.CompileDropForeign(r, command.Index))
 		case commandDropIndex:
 			statements = append(statements, grammar.CompileDropIndex(r, command.Index))
 		case commandForeign:

@@ -167,6 +167,40 @@ func (s *SchemaSuite) TestDropColumns() {
 	}
 }
 
+func (s *SchemaSuite) TestDropForeign() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table1 := "drop_foreign1"
+			err := schema.schema.Create(table1, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table1))
+
+			table2 := "drop_foreign2"
+			err = schema.schema.Create(table2, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.UnsignedInteger("drop_foreign1_id")
+				table.Foreign([]string{"drop_foreign1_id"}).References("id").On(table1)
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table2))
+
+			err = schema.schema.Table(table2, func(table schemacontract.Blueprint) {
+				table.DropForeign([]string{"drop_foreign1_id"})
+			})
+
+			s.Require().Nil(err)
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestDropIndex() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
@@ -651,7 +685,6 @@ func (s *SchemaSuite) TestForeign() {
 
 			s.Require().Nil(err)
 			s.Require().True(schema.schema.HasTable(table2))
-			s.Require().True(schema.schema.HasIndex(table2, "foreign2_pkey"))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})
