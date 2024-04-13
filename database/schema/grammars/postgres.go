@@ -69,8 +69,7 @@ func (r *Postgres) CompileDrop(blueprint schemacontract.Blueprint, command strin
 }
 
 func (r *Postgres) CompileDropAllTables(tables []string) string {
-	//TODO implement me
-	panic("implement me")
+	return fmt.Sprintf("drop table %s cascade", strings.Join(tables, ","))
 }
 
 func (r *Postgres) CompileDropAllViews(views []string) string {

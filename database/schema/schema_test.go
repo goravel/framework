@@ -163,6 +163,33 @@ func (s *SchemaSuite) TestDrop() {
 	}
 }
 
+func (s *SchemaSuite) TestDropAllTables() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table1 := "drop_all_table1"
+			err := schema.schema.Create(table1, func(table schemacontract.Blueprint) {
+				table.ID()
+			})
+			s.Nil(err)
+			s.True(schema.schema.HasTable(table1))
+
+			table2 := "drop_all_table2"
+			err = schema.schema.Create(table2, func(table schemacontract.Blueprint) {
+				table.ID()
+			})
+			s.Nil(err)
+			s.True(schema.schema.HasTable(table2))
+
+			err = schema.schema.DropAllTables()
+			s.Nil(err)
+			s.False(schema.schema.HasTable(table1))
+			s.False(schema.schema.HasTable(table2))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestDropColumns() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {

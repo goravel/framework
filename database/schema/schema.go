@@ -83,8 +83,21 @@ func (r *Schema) Drop(table string) error {
 }
 
 func (r *Schema) DropAllTables() error {
-	//TODO implement me
-	panic("implement me")
+	tables, err := r.GetTables()
+	if err != nil {
+		return err
+	}
+
+	tablesStr := make([]string, len(tables))
+	for i, table := range tables {
+		tablesStr[i] = table.Name
+	}
+
+	if _, err := r.query.Exec(r.grammar.CompileDropAllTables(tablesStr)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Schema) DropAllViews() error {
