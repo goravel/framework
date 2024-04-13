@@ -100,11 +100,6 @@ func (r *Schema) DropAllTables() error {
 	return nil
 }
 
-func (r *Schema) DropAllViews() error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Schema) DropColumns(table string, columns []string) error {
 	return r.Table(table, func(table schemacontract.Blueprint) {
 		table.DropColumn(columns...)
@@ -112,8 +107,10 @@ func (r *Schema) DropColumns(table string, columns []string) error {
 }
 
 func (r *Schema) DropIfExists(table string) error {
-	//TODO implement me
-	panic("implement me")
+	blueprint := NewBlueprint(r.db.Prefix, table)
+	blueprint.DropIfExists()
+
+	return blueprint.Build(r.query, r.grammar)
 }
 
 func (r *Schema) GetColumns(table string) ([]schemacontract.Column, error) {
@@ -190,8 +187,18 @@ func (r *Schema) GetIndexListing(table string) []string {
 }
 
 func (r *Schema) GetTableListing() []string {
-	//TODO implement me
-	panic("implement me")
+	tables, err := r.GetTables()
+	if err != nil {
+		r.log.Errorf("failed to get table listing: %v", err)
+		return nil
+	}
+
+	var names []string
+	for _, table := range tables {
+		names = append(names, table.Name)
+	}
+
+	return names
 }
 
 func (r *Schema) GetTables() ([]schemacontract.Table, error) {

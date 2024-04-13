@@ -800,6 +800,38 @@ func (_c *Blueprint_DropForeignByName_Call) RunAndReturn(run func(string)) *Blue
 	return _c
 }
 
+// DropIfExists provides a mock function with given fields:
+func (_m *Blueprint) DropIfExists() {
+	_m.Called()
+}
+
+// Blueprint_DropIfExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIfExists'
+type Blueprint_DropIfExists_Call struct {
+	*mock.Call
+}
+
+// DropIfExists is a helper method to define mock.On call
+func (_e *Blueprint_Expecter) DropIfExists() *Blueprint_DropIfExists_Call {
+	return &Blueprint_DropIfExists_Call{Call: _e.mock.On("DropIfExists")}
+}
+
+func (_c *Blueprint_DropIfExists_Call) Run(run func()) *Blueprint_DropIfExists_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropIfExists_Call) Return() *Blueprint_DropIfExists_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropIfExists_Call) RunAndReturn(run func()) *Blueprint_DropIfExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DropIndex provides a mock function with given fields: columns
 func (_m *Blueprint) DropIndex(columns []string) {
 	_m.Called(columns)

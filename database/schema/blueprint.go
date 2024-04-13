@@ -14,6 +14,7 @@ const (
 	commandDrop         = "drop"
 	commandDropColumn   = "dropColumn"
 	commandDropForeign  = "dropForeign"
+	commandDropIfExists = "dropIfExists"
 	commandDropIndex    = "dropIndex"
 	commandForeign      = "foreign"
 	commandIndex        = "index"
@@ -204,6 +205,12 @@ func (r *Blueprint) DropForeign(columns []string) {
 func (r *Blueprint) DropForeignByName(name string) {
 	r.indexCommand(commandDropForeign, nil, schemacontract.IndexConfig{
 		Name: name,
+	})
+}
+
+func (r *Blueprint) DropIfExists() {
+	r.addCommand(&schemacontract.Command{
+		Name: commandDropIfExists,
 	})
 }
 
@@ -504,6 +511,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileDropColumn(r, command))
 		case commandDropForeign:
 			statements = append(statements, grammar.CompileDropForeign(r, command.Index))
+		case commandDropIfExists:
+			statements = append(statements, grammar.CompileDropIfExists(r))
 		case commandDropIndex:
 			statements = append(statements, grammar.CompileDropIndex(r, command.Index))
 		case commandForeign:

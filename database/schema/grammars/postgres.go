@@ -72,11 +72,6 @@ func (r *Postgres) CompileDropAllTables(tables []string) string {
 	return fmt.Sprintf("drop table %s cascade", strings.Join(tables, ","))
 }
 
-func (r *Postgres) CompileDropAllViews(views []string) string {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Postgres) CompileDropColumn(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
 	columns := prefixArray("drop column", command.Columns)
 
@@ -87,9 +82,8 @@ func (r *Postgres) CompileDropForeign(blueprint schemacontract.Blueprint, index 
 	return fmt.Sprintf("alter table %s drop constraint %s", blueprint.GetTableName(), index)
 }
 
-func (r *Postgres) CompileDropIfExists(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileDropIfExists(blueprint schemacontract.Blueprint) string {
+	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
 
 func (r *Postgres) CompileDropIndex(blueprint schemacontract.Blueprint, index string) string {

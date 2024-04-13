@@ -37,6 +37,8 @@ type Blueprint interface {
 	DropForeign(columns []string)
 	// DropForeignByName Indicate that the given foreign key should be dropped.
 	DropForeignByName(name string)
+	// DropIfExists Indicate that the table should be dropped if it exists.
+	DropIfExists()
 	// DropIndex Indicate that the given index should be dropped.
 	DropIndex(columns []string)
 	// DropIndexByName Indicate that the given index should be dropped.

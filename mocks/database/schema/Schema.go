@@ -206,51 +206,6 @@ func (_c *Schema_DropAllTables_Call) RunAndReturn(run func() error) *Schema_Drop
 	return _c
 }
 
-// DropAllViews provides a mock function with given fields:
-func (_m *Schema) DropAllViews() error {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropAllViews")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Schema_DropAllViews_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropAllViews'
-type Schema_DropAllViews_Call struct {
-	*mock.Call
-}
-
-// DropAllViews is a helper method to define mock.On call
-func (_e *Schema_Expecter) DropAllViews() *Schema_DropAllViews_Call {
-	return &Schema_DropAllViews_Call{Call: _e.mock.On("DropAllViews")}
-}
-
-func (_c *Schema_DropAllViews_Call) Run(run func()) *Schema_DropAllViews_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Schema_DropAllViews_Call) Return(_a0 error) *Schema_DropAllViews_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Schema_DropAllViews_Call) RunAndReturn(run func() error) *Schema_DropAllViews_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DropColumns provides a mock function with given fields: table, columns
 func (_m *Schema) DropColumns(table string, columns []string) error {
 	ret := _m.Called(table, columns)
@@ -890,52 +845,6 @@ func (_c *Schema_HasTable_Call) Return(_a0 bool) *Schema_HasTable_Call {
 }
 
 func (_c *Schema_HasTable_Call) RunAndReturn(run func(string) bool) *Schema_HasTable_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// HasView provides a mock function with given fields: view
-func (_m *Schema) HasView(view string) bool {
-	ret := _m.Called(view)
-
-	if len(ret) == 0 {
-		panic("no return value specified for HasView")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(view)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Schema_HasView_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasView'
-type Schema_HasView_Call struct {
-	*mock.Call
-}
-
-// HasView is a helper method to define mock.On call
-//   - view string
-func (_e *Schema_Expecter) HasView(view interface{}) *Schema_HasView_Call {
-	return &Schema_HasView_Call{Call: _e.mock.On("HasView", view)}
-}
-
-func (_c *Schema_HasView_Call) Run(run func(view string)) *Schema_HasView_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Schema_HasView_Call) Return(_a0 bool) *Schema_HasView_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Schema_HasView_Call) RunAndReturn(run func(string) bool) *Schema_HasView_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -9,8 +9,6 @@ type Schema interface {
 	Drop(table string) error
 	// DropAllTables Drop all tables from the database.
 	DropAllTables() error
-	// DropAllViews Drop all views from the database.
-	DropAllViews() error
 	// DropColumns Drop columns from a table schema.
 	DropColumns(table string, columns []string) error
 	// DropIfExists Drop a table from the schema if it exists.
@@ -37,8 +35,6 @@ type Schema interface {
 	HasIndex(table, index string) bool
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
-	// HasView Determine if the given view exists.
-	HasView(view string) bool
 	// Register migrations.
 	Register([]Migration)
 	// Rename a table on the schema.

@@ -20,14 +20,12 @@ type Grammar interface {
 	CompileDrop(blueprint Blueprint, command string) string
 	// CompileDropAllTables Compile the SQL needed to drop all tables.
 	CompileDropAllTables(tables []string) string
-	// CompileDropAllViews Compile the SQL needed to drop all views.
-	CompileDropAllViews(views []string) string
 	// CompileDropColumn Compile a drop column command.
 	CompileDropColumn(blueprint Blueprint, command *Command) string
 	// CompileDropForeign Compile a drop foreign key command.
 	CompileDropForeign(blueprint Blueprint, index string) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
-	CompileDropIfExists(blueprint Blueprint, command string) string
+	CompileDropIfExists(blueprint Blueprint) string
 	// CompileDropIndex Compile a drop index command.
 	CompileDropIndex(blueprint Blueprint, index string) string
 	// CompileDropPrimary Compile a drop primary key command.

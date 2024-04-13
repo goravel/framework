@@ -248,6 +248,30 @@ func (s *SchemaSuite) TestDropForeign() {
 	}
 }
 
+func (s *SchemaSuite) TestDropIfExists() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "drop_if_exists"
+
+			err := schema.schema.DropIfExists(table)
+			s.Nil(err)
+
+			err = schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+			})
+			s.Nil(err)
+			s.True(schema.schema.HasTable(table))
+
+			err = schema.schema.DropIfExists(table)
+			s.Nil(err)
+
+			s.False(schema.schema.HasTable(table))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestDropIndex() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
@@ -706,6 +730,15 @@ func (s *SchemaSuite) TestGetTables() {
 			tables, err := schema.schema.GetTables()
 			s.Greater(len(tables), 0)
 			s.Nil(err)
+		})
+	}
+}
+
+func (s *SchemaSuite) TestGetTableListing() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			tables := schema.schema.GetTableListing()
+			s.Greater(len(tables), 0)
 		})
 	}
 }
