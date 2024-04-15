@@ -29,3 +29,7 @@ func Sum[T constraints.Float | constraints.Integer | constraints.Complex](collec
 func Max[T constraints.Ordered](collection []T) T {
 	return lo.Max(collection)
 }
+
+func Split[T any](collection []T, size int) [][]T {
+	return lo.Chunk(collection, size)
+}
