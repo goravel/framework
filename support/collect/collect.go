@@ -44,3 +44,8 @@ func Reverse[T any](collection []T) []T {
 func Shuffle[T any](collection []T) []T {
 	return lo.Shuffle(collection)
 }
+
+// GroupBy returns an object composed of keys generated from the results of running each element of collection through iteratee.
+func GroupBy[T any, U comparable](collection []T, iteratee func(item T) U) map[U][]T {
+	return lo.GroupBy(collection, iteratee)
+}

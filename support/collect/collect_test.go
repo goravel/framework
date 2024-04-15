@@ -64,3 +64,10 @@ func TestShuffle(t *testing.T) {
 	randomOrder := Shuffle([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 	assert.NotEqual(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, randomOrder)
 }
+
+func TestGroupBy(t *testing.T) {
+	groups := GroupBy([]int{0, 1, 2, 3, 4, 5}, func(i int) int {
+		return i % 3
+	})
+	assert.Equal(t, map[int][]int{0: []int{0, 3}, 1: []int{1, 4}, 2: []int{2, 5}}, groups)
+}
