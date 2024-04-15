@@ -71,3 +71,15 @@ func TestGroupBy(t *testing.T) {
 	})
 	assert.Equal(t, map[int][]int{0: []int{0, 3}, 1: []int{1, 4}, 2: []int{2, 5}}, groups)
 }
+
+func TestCount(t *testing.T) {
+	count := Count([]int{1, 5, 1})
+	assert.Equal(t, 3, count)
+}
+
+func TestCountBy(t *testing.T) {
+	count := CountBy([]int{1, 5, 1}, func(i int) bool {
+		return i < 4
+	})
+	assert.Equal(t, 2, count)
+}

@@ -49,3 +49,13 @@ func Shuffle[T any](collection []T) []T {
 func GroupBy[T any, U comparable](collection []T, iteratee func(item T) U) map[U][]T {
 	return lo.GroupBy(collection, iteratee)
 }
+
+// Count counts the number of elements in the collection.
+func Count[T comparable](collection []T) (count int) {
+	return len(collection)
+}
+
+// CountBy counts the number of elements in the collection for which predicate is true.
+func CountBy[T any](collection []T, predicate func(item T) bool) (count int) {
+	return lo.CountBy(collection, predicate)
+}
