@@ -59,3 +59,8 @@ func TestReverse(t *testing.T) {
 	reverseOrder := Reverse([]int{0, 1, 2, 3, 4, 5})
 	assert.Equal(t, []int{5, 4, 3, 2, 1, 0}, reverseOrder)
 }
+
+func TestShuffle(t *testing.T) {
+	randomOrder := Shuffle([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	assert.NotEqual(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, randomOrder)
+}

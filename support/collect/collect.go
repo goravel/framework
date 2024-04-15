@@ -39,3 +39,8 @@ func Split[T any](collection []T, size int) [][]T {
 func Reverse[T any](collection []T) []T {
 	return lo.Reverse(collection)
 }
+
+// Shuffle returns an array of shuffled values. Uses the Fisher-Yates shuffle algorithm.
+func Shuffle[T any](collection []T) []T {
+	return lo.Shuffle(collection)
+}
