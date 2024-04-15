@@ -1,7 +1,6 @@
 package collect
 
 import (
-	"github.com/samber/lo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,13 +44,18 @@ func TestMax(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	result := lo.Chunk([]int{0, 1, 2, 3, 4, 5}, 2)
-	result1 := lo.Chunk([]int{0, 1, 2, 3, 4, 5, 6}, 2)
-	result2 := lo.Chunk([]int{}, 2)
-	result3 := lo.Chunk([]int{0}, 2)
+	result := Split([]int{0, 1, 2, 3, 4, 5}, 2)
+	result1 := Split([]int{0, 1, 2, 3, 4, 5, 6}, 2)
+	result2 := Split([]int{}, 2)
+	result3 := Split([]int{0}, 2)
 
 	assert.Equal(t, [][]int{{0, 1}, {2, 3}, {4, 5}}, result)
 	assert.Equal(t, [][]int{{0, 1}, {2, 3}, {4, 5}, {6}}, result1)
 	assert.Equal(t, [][]int{}, result2)
 	assert.Equal(t, [][]int{{0}}, result3)
+}
+
+func TestReverse(t *testing.T) {
+	reverseOrder := Reverse([]int{0, 1, 2, 3, 4, 5})
+	assert.Equal(t, []int{5, 4, 3, 2, 1, 0}, reverseOrder)
 }

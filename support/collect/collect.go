@@ -30,6 +30,12 @@ func Max[T constraints.Ordered](collection []T) T {
 	return lo.Max(collection)
 }
 
+// Split returns an array of elements split into groups the length of size. If array can't be split evenly,
 func Split[T any](collection []T, size int) [][]T {
 	return lo.Chunk(collection, size)
+}
+
+// Reverse reverses array so that the first element becomes the last, the second element becomes the second to last, and so on.
+func Reverse[T any](collection []T) []T {
+	return lo.Reverse(collection)
 }
