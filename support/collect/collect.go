@@ -24,3 +24,8 @@ func Filter[V any](collection []V, predicate func(item V, index int) bool) []V {
 func Sum[T constraints.Float | constraints.Integer | constraints.Complex](collection []T) T {
 	return lo.Sum(collection)
 }
+
+// Max searches the maximum value of a collection.
+func Max[T constraints.Ordered](collection []T) T {
+	return lo.Max(collection)
+}

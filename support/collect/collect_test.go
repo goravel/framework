@@ -35,3 +35,10 @@ func TestSum(t *testing.T) {
 	sum := Sum(list)
 	assert.Equal(t, 15, sum)
 }
+
+func TestMax(t *testing.T) {
+	max1 := Max([]int{1, 2, 3})
+	max2 := Max([]int{})
+	assert.Equal(t, 3, max1)
+	assert.Equal(t, 0, max2)
+}
