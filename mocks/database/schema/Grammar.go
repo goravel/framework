@@ -819,9 +819,9 @@ func (_c *Grammar_CompilePrimary_Call) RunAndReturn(run func(schema.Blueprint, [
 	return _c
 }
 
-// CompileRename provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileRename(blueprint schema.Blueprint, command string) string {
-	ret := _m.Called(blueprint, command)
+// CompileRename provides a mock function with given fields: blueprint, to
+func (_m *Grammar) CompileRename(blueprint schema.Blueprint, to string) string {
+	ret := _m.Called(blueprint, to)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileRename")
@@ -829,7 +829,7 @@ func (_m *Grammar) CompileRename(blueprint schema.Blueprint, command string) str
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
-		r0 = rf(blueprint, command)
+		r0 = rf(blueprint, to)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -844,12 +844,12 @@ type Grammar_CompileRename_Call struct {
 
 // CompileRename is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-func (_e *Grammar_Expecter) CompileRename(blueprint interface{}, command interface{}) *Grammar_CompileRename_Call {
-	return &Grammar_CompileRename_Call{Call: _e.mock.On("CompileRename", blueprint, command)}
+//   - to string
+func (_e *Grammar_Expecter) CompileRename(blueprint interface{}, to interface{}) *Grammar_CompileRename_Call {
+	return &Grammar_CompileRename_Call{Call: _e.mock.On("CompileRename", blueprint, to)}
 }
 
-func (_c *Grammar_CompileRename_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompileRename_Call {
+func (_c *Grammar_CompileRename_Call) Run(run func(blueprint schema.Blueprint, to string)) *Grammar_CompileRename_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(schema.Blueprint), args[1].(string))
 	})

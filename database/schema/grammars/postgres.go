@@ -152,9 +152,8 @@ func (r *Postgres) CompilePrimary(blueprint schemacontract.Blueprint, columns []
 	)
 }
 
-func (r *Postgres) CompileRename(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileRename(blueprint schemacontract.Blueprint, to string) string {
+	return fmt.Sprintf("alter table %s rename to %s", blueprint.GetTableName(), blueprint.GetPrefix()+to)
 }
 
 func (r *Postgres) CompileRenameColumn(blueprint schemacontract.Blueprint, from, to string) string {

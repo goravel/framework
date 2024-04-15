@@ -61,6 +61,8 @@ type Blueprint interface {
 	GetAddedColumns() []ColumnDefinition
 	// GetChangedColumns Get the changed columns.
 	GetChangedColumns() []ColumnDefinition
+	// GetPrefix Get the table prefix.
+	GetPrefix() string
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.
@@ -77,6 +79,8 @@ type Blueprint interface {
 	Jsonb(column string) ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
 	Primary(columns []string)
+	// Rename the table to a given name.
+	Rename(to string)
 	// RenameColumn Indicate that the given columns should be renamed.
 	RenameColumn(from, to string)
 	// RenameIndex Indicate that the given indexes should be renamed.

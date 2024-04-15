@@ -615,53 +615,6 @@ func (_c *Schema_GetTables_Call) RunAndReturn(run func() ([]schema.Table, error)
 	return _c
 }
 
-// GetViews provides a mock function with given fields:
-func (_m *Schema) GetViews() []schema.View {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetViews")
-	}
-
-	var r0 []schema.View
-	if rf, ok := ret.Get(0).(func() []schema.View); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]schema.View)
-		}
-	}
-
-	return r0
-}
-
-// Schema_GetViews_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetViews'
-type Schema_GetViews_Call struct {
-	*mock.Call
-}
-
-// GetViews is a helper method to define mock.On call
-func (_e *Schema_Expecter) GetViews() *Schema_GetViews_Call {
-	return &Schema_GetViews_Call{Call: _e.mock.On("GetViews")}
-}
-
-func (_c *Schema_GetViews_Call) Run(run func()) *Schema_GetViews_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Schema_GetViews_Call) Return(_a0 []schema.View) *Schema_GetViews_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Schema_GetViews_Call) RunAndReturn(run func() []schema.View) *Schema_GetViews_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // HasColumn provides a mock function with given fields: table, column
 func (_m *Schema) HasColumn(table string, column string) bool {
 	ret := _m.Called(table, column)
@@ -883,8 +836,21 @@ func (_c *Schema_Register_Call) RunAndReturn(run func([]schema.Migration)) *Sche
 }
 
 // Rename provides a mock function with given fields: from, to
-func (_m *Schema) Rename(from string, to string) {
-	_m.Called(from, to)
+func (_m *Schema) Rename(from string, to string) error {
+	ret := _m.Called(from, to)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rename")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string) error); ok {
+		r0 = rf(from, to)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Schema_Rename_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rename'
@@ -906,12 +872,12 @@ func (_c *Schema_Rename_Call) Run(run func(from string, to string)) *Schema_Rena
 	return _c
 }
 
-func (_c *Schema_Rename_Call) Return() *Schema_Rename_Call {
-	_c.Call.Return()
+func (_c *Schema_Rename_Call) Return(_a0 error) *Schema_Rename_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_Rename_Call) RunAndReturn(run func(string, string)) *Schema_Rename_Call {
+func (_c *Schema_Rename_Call) RunAndReturn(run func(string, string) error) *Schema_Rename_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -41,7 +41,7 @@ type Grammar interface {
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, columns []string) string
 	// CompileRename Compile a rename table command.
-	CompileRename(blueprint Blueprint, command string) string
+	CompileRename(blueprint Blueprint, to string) string
 	// CompileRenameColumn Compile a rename column command.
 	CompileRenameColumn(blueprint Blueprint, from, to string) string
 	// CompileRenameIndex Compile a rename index command.

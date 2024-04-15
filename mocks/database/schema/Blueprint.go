@@ -1323,6 +1323,51 @@ func (_c *Blueprint_GetChangedColumns_Call) RunAndReturn(run func() []schema.Col
 	return _c
 }
 
+// GetPrefix provides a mock function with given fields:
+func (_m *Blueprint) GetPrefix() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPrefix")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Blueprint_GetPrefix_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPrefix'
+type Blueprint_GetPrefix_Call struct {
+	*mock.Call
+}
+
+// GetPrefix is a helper method to define mock.On call
+func (_e *Blueprint_Expecter) GetPrefix() *Blueprint_GetPrefix_Call {
+	return &Blueprint_GetPrefix_Call{Call: _e.mock.On("GetPrefix")}
+}
+
+func (_c *Blueprint_GetPrefix_Call) Run(run func()) *Blueprint_GetPrefix_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Blueprint_GetPrefix_Call) Return(_a0 string) *Blueprint_GetPrefix_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_GetPrefix_Call) RunAndReturn(run func() string) *Blueprint_GetPrefix_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTableName provides a mock function with given fields:
 func (_m *Blueprint) GetTableName() string {
 	ret := _m.Called()
@@ -1711,6 +1756,39 @@ func (_c *Blueprint_Primary_Call) Return() *Blueprint_Primary_Call {
 }
 
 func (_c *Blueprint_Primary_Call) RunAndReturn(run func([]string)) *Blueprint_Primary_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Rename provides a mock function with given fields: to
+func (_m *Blueprint) Rename(to string) {
+	_m.Called(to)
+}
+
+// Blueprint_Rename_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rename'
+type Blueprint_Rename_Call struct {
+	*mock.Call
+}
+
+// Rename is a helper method to define mock.On call
+//   - to string
+func (_e *Blueprint_Expecter) Rename(to interface{}) *Blueprint_Rename_Call {
+	return &Blueprint_Rename_Call{Call: _e.mock.On("Rename", to)}
+}
+
+func (_c *Blueprint_Rename_Call) Run(run func(to string)) *Blueprint_Rename_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Rename_Call) Return() *Blueprint_Rename_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_Rename_Call) RunAndReturn(run func(string)) *Blueprint_Rename_Call {
 	_c.Call.Return(run)
 	return _c
 }

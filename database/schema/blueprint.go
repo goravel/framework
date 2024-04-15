@@ -19,6 +19,7 @@ const (
 	commandForeign      = "foreign"
 	commandIndex        = "index"
 	commandPrimary      = "primary"
+	commandRename       = "rename"
 	commandRenameColumn = "renameColumn"
 	commandRenameIndex  = "renameIndex"
 	commandTableComment = "tableComment"
@@ -307,6 +308,10 @@ func (r *Blueprint) GetChangedColumns() []schemacontract.ColumnDefinition {
 	return columns
 }
 
+func (r *Blueprint) GetPrefix() string {
+	return r.prefix
+}
+
 func (r *Blueprint) GetTableName() string {
 	return r.prefix + r.table
 }
@@ -371,6 +376,13 @@ func (r *Blueprint) Jsonb(column string) schemacontract.ColumnDefinition {
 
 func (r *Blueprint) Primary(columns []string) {
 	r.indexCommand(commandPrimary, columns)
+}
+
+func (r *Blueprint) Rename(to string) {
+	r.addCommand(&schemacontract.Command{
+		Name: commandRename,
+		To:   to,
+	})
 }
 
 func (r *Blueprint) RenameColumn(from, to string) {
@@ -521,6 +533,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case commandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command.Columns))
+		case commandRename:
+			statements = append(statements, grammar.CompileRename(r, command.To))
 		case commandRenameColumn:
 			statements = append(statements, grammar.CompileRenameColumn(r, command.From, command.To))
 		case commandRenameIndex:

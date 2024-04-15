@@ -25,8 +25,6 @@ type Schema interface {
 	GetTableListing() []string
 	// GetTables Get the tables that belong to the database.
 	GetTables() ([]Table, error)
-	// GetViews Get the views that belong to the database.
-	GetViews() []View
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -38,7 +36,7 @@ type Schema interface {
 	// Register migrations.
 	Register([]Migration)
 	// Rename a table on the schema.
-	Rename(from, to string)
+	Rename(from, to string) error
 	// Table Modify a table on the schema.
 	Table(table string, callback func(table Blueprint)) error
 }
@@ -70,9 +68,4 @@ type Table struct {
 	Comment string
 	Name    string
 	Size    int
-}
-
-type View struct {
-	Definition string
-	Name       string
 }

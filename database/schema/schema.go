@@ -210,11 +210,6 @@ func (r *Schema) GetTables() ([]schemacontract.Table, error) {
 	return tables, nil
 }
 
-func (r *Schema) GetViews() []schemacontract.View {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Schema) HasColumn(table, column string) bool {
 	return slices.Contains(r.GetColumnListing(table), column)
 }
@@ -252,18 +247,15 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
-func (r *Schema) HasView(view string) bool {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Schema) Register(migrations []schemacontract.Migration) {
 	r.migrations = append(r.migrations, migrations...)
 }
 
-func (r *Schema) Rename(from, to string) {
-	//TODO implement me
-	panic("implement me")
+func (r *Schema) Rename(from, to string) error {
+	blueprint := NewBlueprint(r.db.Prefix, from)
+	blueprint.Rename(to)
+
+	return blueprint.Build(r.query, r.grammar)
 }
 
 func (r *Schema) Table(table string, callback func(table schemacontract.Blueprint)) error {

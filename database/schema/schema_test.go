@@ -846,6 +846,27 @@ func (s *SchemaSuite) TestPrimary() {
 	}
 }
 
+func (s *SchemaSuite) TestRename() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table := "renames"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+			})
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+
+			table1 := "renames1"
+			err = schema.schema.Rename(table, table1)
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasTable(table1))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestRenameColumn() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
