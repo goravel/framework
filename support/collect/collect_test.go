@@ -1,6 +1,7 @@
 package collect
 
 import (
+	"github.com/samber/lo"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -95,4 +96,11 @@ func TestEach(t *testing.T) {
 	Each([]int{0, 1, 2, 3}, func(x int, i int) {
 		assert.Equal(t, i, x)
 	})
+}
+
+func TestMin(t *testing.T) {
+	min1 := lo.Min([]int{1, 2, 3})
+	min2 := lo.Min([]int{})
+	assert.Equal(t, 1, min1)
+	assert.Equal(t, 0, min2)
 }

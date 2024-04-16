@@ -64,3 +64,8 @@ func CountBy[T any](collection []T, predicate func(item T) bool) (count int) {
 func Each[T any](collection []T, iteratee func(item T, index int)) {
 	lo.ForEach(collection, iteratee)
 }
+
+// Min search the minimum value of a collection.
+func Min[T constraints.Ordered](collection []T) T {
+	return lo.Min(collection)
+}
