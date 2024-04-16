@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
-	github.com/bytedance/sonic v1.11.3
+	github.com/bytedance/sonic v1.11.4
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/glebarez/go-sqlite v1.22.0
@@ -45,6 +45,8 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/cloudwego/base64x v0.1.0 // indirect
+	github.com/cloudwego/iasm v0.0.9 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -71,8 +73,6 @@ require (
 	github.com/aws/aws-sdk-go v1.49.6 // indirect
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
-	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
