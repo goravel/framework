@@ -59,3 +59,8 @@ func Count[T comparable](collection []T) (count int) {
 func CountBy[T any](collection []T, predicate func(item T) bool) (count int) {
 	return lo.CountBy(collection, predicate)
 }
+
+// Each iterates over elements of collection and invokes iteratee for each element.
+func Each[T any](collection []T, iteratee func(item T, index int)) {
+	lo.ForEach(collection, iteratee)
+}

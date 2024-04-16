@@ -83,3 +83,16 @@ func TestCountBy(t *testing.T) {
 	})
 	assert.Equal(t, 2, count)
 }
+
+func TestEach(t *testing.T) {
+	Each([]string{"hello", "world"}, func(x string, i int) {
+		if i == 0 {
+			assert.Equal(t, "hello", x)
+		} else {
+			assert.Equal(t, "world", x)
+		}
+	})
+	Each([]int{0, 1, 2, 3}, func(x int, i int) {
+		assert.Equal(t, i, x)
+	})
+}
