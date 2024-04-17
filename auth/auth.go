@@ -229,9 +229,15 @@ func (a *Auth) Logout(ctx http.Context) error {
 }
 
 func (a *Auth) makeAuthContext(ctx http.Context, claims *Claims, token string) {
-	ctx.WithValue(ctxKey, Guards{
-		a.guard: {claims, token},
-	})
+	guards := ctx.Value(ctxKey)
+	if g, ok := guards.(Guards); ok {
+		g[a.guard] = &Guard{claims, token}
+		ctx.WithValue(ctxKey, g)
+	} else {
+		ctx.WithValue(ctxKey, Guards{
+			a.guard: {claims, token},
+		})
+	}
 }
 
 func (a *Auth) tokenIsDisabled(token string) bool {
