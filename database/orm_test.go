@@ -96,8 +96,8 @@ func TestOrmSuite(t *testing.T) {
 
 func (s *OrmSuite) SetupTest() {
 	s.orm = &OrmImpl{
-		ctx:        context.Background(),
 		connection: contractsorm.DriverMysql.String(),
+		ctx:        context.Background(),
 		query:      testMysqlQuery,
 		queries: map[string]contractsorm.Query{
 			contractsorm.DriverMysql.String():      testMysqlQuery,
