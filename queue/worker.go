@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
@@ -15,11 +16,11 @@ type Worker struct {
 	queue      string
 }
 
-func NewWorker(config *Config, concurrent int, connection string, jobs []queue.Job, queue string) *Worker {
+func NewWorker(config *Config, log log.Log, concurrent int, connection string, jobs []queue.Job, queue string) *Worker {
 	return &Worker{
 		concurrent: concurrent,
 		connection: connection,
-		machinery:  NewMachinery(config),
+		machinery:  NewMachinery(config, log),
 		jobs:       jobs,
 		queue:      queue,
 	}
