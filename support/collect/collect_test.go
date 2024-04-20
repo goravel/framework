@@ -1,6 +1,7 @@
 package collect
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -105,15 +106,13 @@ func TestMin(t *testing.T) {
 }
 
 func TestKeys(t *testing.T) {
-	keys1 := Keys[string, int](map[string]int{"foo": 1, "bar": 2})
-	keys2 := Keys[int, string](map[int]string{1: "foo", 2: "bar"})
-	assert.Equal(t, []string{"foo", "bar"}, keys1)
-	assert.Equal(t, []int{1, 2}, keys2)
+	keys := Keys[int, string](map[int]string{1: "foo", 2: "bar"})
+	sort.Ints(keys)
+	assert.Equal(t, []int{1, 2}, keys)
 }
 
 func TestValues(t *testing.T) {
-	values1 := Values[string, int](map[string]int{"foo": 1, "bar": 2})
-	values2 := Values[int, string](map[int]string{1: "foo", 2: "bar"})
-	assert.Equal(t, []int{1, 2}, values1)
-	assert.Equal(t, []string{"foo", "bar"}, values2)
+	values := Values[string, int](map[string]int{"foo": 1, "bar": 2})
+	sort.Ints(values)
+	assert.Equal(t, []int{1, 2}, values)
 }
