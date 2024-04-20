@@ -103,3 +103,10 @@ func TestMin(t *testing.T) {
 	assert.Equal(t, 1, min1)
 	assert.Equal(t, 0, min2)
 }
+
+func TestKeys(t *testing.T) {
+	keys1 := Keys[string, int](map[string]int{"foo": 1, "bar": 2})
+	keys2 := Keys[int, string](map[int]string{1: "foo", 2: "bar"})
+	assert.Equal(t, []string{"foo", "bar"}, keys1)
+	assert.Equal(t, []int{1, 2}, keys2)
+}

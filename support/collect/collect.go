@@ -69,3 +69,8 @@ func Each[T any](collection []T, iteratee func(item T, index int)) {
 func Min[T constraints.Ordered](collection []T) T {
 	return lo.Min(collection)
 }
+
+// Keys creates an array of the map keys.
+func Keys[K comparable, V any](in map[K]V) []K {
+	return lo.Keys(in)
+}
