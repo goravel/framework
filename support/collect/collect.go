@@ -74,3 +74,8 @@ func Min[T constraints.Ordered](collection []T) T {
 func Keys[K comparable, V any](in map[K]V) []K {
 	return lo.Keys(in)
 }
+
+// Values creates an array of the map values.
+func Values[K comparable, V any](in map[K]V) []V {
+	return lo.Values(in)
+}

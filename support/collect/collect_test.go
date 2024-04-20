@@ -110,3 +110,10 @@ func TestKeys(t *testing.T) {
 	assert.Equal(t, []string{"foo", "bar"}, keys1)
 	assert.Equal(t, []int{1, 2}, keys2)
 }
+
+func TestValues(t *testing.T) {
+	values1 := Values[string, int](map[string]int{"foo": 1, "bar": 2})
+	values2 := Values[int, string](map[int]string{1: "foo", 2: "bar"})
+	assert.Equal(t, []int{1, 2}, values1)
+	assert.Equal(t, []string{"foo", "bar"}, values2)
+}
