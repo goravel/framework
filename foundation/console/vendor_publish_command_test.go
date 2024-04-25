@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/support/file"
 )
 
 type VendorPublishCommandTestSuite struct {
@@ -18,6 +20,69 @@ func TestVendorPublishCommandTestSuite(t *testing.T) {
 
 func (s *VendorPublishCommandTestSuite) SetupTest() {
 
+}
+
+func (s *VendorPublishCommandTestSuite) TestGetSourceFiles() {
+	command := &VendorPublishCommand{}
+
+	sourceDir, err := os.MkdirTemp("", "source")
+	s.Require().Nil(err)
+	defer func(path string) {
+		if err := file.Remove(path); err != nil {
+			panic(err)
+		}
+	}(sourceDir)
+
+	sourceFile := filepath.Join(sourceDir, "test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+
+	files, err := command.getSourceFiles(filepath.Join(sourceDir, "test.txt"))
+	s.Require().NoError(err)
+	s.ElementsMatch(files, []string{
+		filepath.Join(sourceDir, "test.txt"),
+	})
+
+	files, err = command.getSourceFiles(sourceDir)
+	s.Require().NoError(err)
+	s.ElementsMatch(files, []string{
+		filepath.Join(sourceDir, "test.txt"),
+		filepath.Join(sourceDir, "dir1/test.txt"),
+	})
+}
+
+func (s *VendorPublishCommandTestSuite) TestGetSourceFilesForDir() {
+	command := &VendorPublishCommand{}
+
+	sourceDir, err := os.MkdirTemp("", "source")
+	s.Require().Nil(err)
+	defer func(path string) {
+		if err := file.Remove(path); err != nil {
+			panic(err)
+		}
+	}(sourceDir)
+
+	sourceFile := filepath.Join(sourceDir, "test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "test1.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "dir1/dir11/test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "dir2/test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+
+	files, err := command.getSourceFiles(sourceDir)
+	s.Require().NoError(err)
+	s.ElementsMatch(files, []string{
+		filepath.Join(sourceDir, "test.txt"),
+		filepath.Join(sourceDir, "test1.txt"),
+		filepath.Join(sourceDir, "dir1/test.txt"),
+		filepath.Join(sourceDir, "dir1/dir11/test.txt"),
+		filepath.Join(sourceDir, "dir2/test.txt"),
+	})
 }
 
 func (s *VendorPublishCommandTestSuite) TestPathsForPackageOrGroup() {
@@ -197,64 +262,71 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	command := &VendorPublishCommand{}
 
 	// Create temporary source and target directories for testing
-	sourceData := "test"
 	sourceDir, err := os.MkdirTemp("", "source")
-	s.Nil(err)
+	s.Require().Nil(err)
 	defer func(path string) {
-		err = os.RemoveAll(path)
-		if err != nil {
+		if err := file.Remove(path); err != nil {
 			panic(err)
 		}
 	}(sourceDir)
 
 	targetDir, err := os.MkdirTemp("", "target")
-	s.Nil(err)
-	defer func(path string) {
-		err = os.RemoveAll(path)
-		if err != nil {
-			panic(err)
-		}
-	}(targetDir)
+	s.Require().Nil(err)
+
+	sourceFile := filepath.Join(sourceDir, "test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "test1.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
+	sourceFile = filepath.Join(sourceDir, "dir2/test.txt")
+	s.Require().Nil(file.Create(sourceFile, "test"))
 
 	// source and target are directory
-	sourceFile := filepath.Join(sourceDir, "test.txt")
-	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
-	targetDir = filepath.Join(targetDir, "test")
-
 	result, err := command.publish(sourceDir, targetDir, false, false)
-	s.Nil(err)
-	s.Equal(1, len(result))
+	s.Require().Nil(err)
+	s.Require().Equal(4, len(result))
 
-	targetFile := filepath.Join(targetDir, "test.txt")
-	content, err := os.ReadFile(targetFile)
-	s.Nil(err)
-	s.Equal(sourceData, string(content))
+	content, err := os.ReadFile(filepath.Join(targetDir, "test.txt"))
+	s.Require().Nil(err)
+	s.Equal("test", string(content))
+	content, err = os.ReadFile(filepath.Join(targetDir, "test1.txt"))
+	s.Require().Nil(err)
+	s.Equal("test", string(content))
+	content, err = os.ReadFile(filepath.Join(targetDir, "dir1/test.txt"))
+	s.Require().Nil(err)
+	s.Equal("test", string(content))
+	content, err = os.ReadFile(filepath.Join(targetDir, "dir2/test.txt"))
+	s.Require().Nil(err)
+	s.Equal("test", string(content))
+
+	s.Require().Nil(file.Remove(targetDir))
 
 	// source is file and target is directory
-	sourceFile = filepath.Join(sourceDir, "test1.txt")
-	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
-
+	sourceFile = filepath.Join(sourceDir, "test.txt")
 	result, err = command.publish(sourceFile, targetDir, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
-	targetFile = filepath.Join(targetDir, "test1.txt")
-	content, err = os.ReadFile(targetFile)
-	s.Nil(err)
+	content, err = os.ReadFile(filepath.Join(targetDir, "test.txt"))
+	s.Require().Nil(err)
 	s.Equal("test", string(content))
 
+	s.Require().Nil(file.Remove(targetDir))
+
 	// source and target are file
-	sourceFile = filepath.Join(sourceDir, "test2.txt")
-	s.Nil(os.WriteFile(sourceFile, []byte(sourceData), 0644))
-	targetFile = filepath.Join(targetDir, "test3.txt")
+	sourceFile = filepath.Join(sourceDir, "test.txt")
+	targetFile := filepath.Join(targetDir, "test.txt")
 
 	result, err = command.publish(sourceFile, targetFile, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
 	content, err = os.ReadFile(targetFile)
-	s.Nil(err)
+	s.Require().Nil(err)
 	s.Equal("test", string(content))
+
+	s.Require().Nil(file.Remove(targetDir))
 }
 
 func (s *VendorPublishCommandTestSuite) TestPublishFile() {
