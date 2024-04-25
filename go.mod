@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
-	github.com/bytedance/sonic v1.11.5
+	github.com/bytedance/sonic v1.11.6
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/glebarez/go-sqlite v1.22.0
@@ -45,8 +45,8 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/bytedance/sonic/loader v0.1.0 // indirect
-	github.com/cloudwego/base64x v0.1.3 // indirect
+	github.com/bytedance/sonic/loader v0.1.1 // indirect
+	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
