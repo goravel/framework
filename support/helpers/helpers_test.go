@@ -97,6 +97,9 @@ func TestDefault(t *testing.T) {
 	// struct
 	assert.Equal(t, foo{Name: "foo"}, Default(foo{}, foo{Name: "foo"}))
 	assert.Equal(t, foo{Name: "bar"}, Default(foo{Name: "bar"}, foo{Name: "foo"}))
+
+	// zero
+	assert.Equal(t, 0, Default(0, 0))
 }
 
 func TestPtr(t *testing.T) {
