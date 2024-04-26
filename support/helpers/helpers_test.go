@@ -29,6 +29,7 @@ func TestTap(t *testing.T) {
 
 	// int
 	got2 := Tap(10, func(i int) {
+		assert.Equal(t, 10, i)
 		i = 20
 		assert.Equal(t, 20, i)
 	})
@@ -36,6 +37,7 @@ func TestTap(t *testing.T) {
 
 	// string
 	got3 := Tap("foo", func(s string) {
+		assert.Equal(t, "foo", s)
 		s = "bar"
 		assert.Equal(t, "bar", s)
 	})
