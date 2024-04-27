@@ -6,11 +6,13 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	configmock "github.com/goravel/framework/mocks/config"
+	logmock "github.com/goravel/framework/mocks/log"
 )
 
 type MachineryTestSuite struct {
 	suite.Suite
 	mockConfig *configmock.Config
+	mockLog    *logmock.Log
 	machinery  *Machinery
 }
 
@@ -20,7 +22,8 @@ func TestMachineryTestSuite(t *testing.T) {
 
 func (s *MachineryTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
-	s.machinery = NewMachinery(NewConfig(s.mockConfig))
+	s.mockLog = &logmock.Log{}
+	s.machinery = NewMachinery(NewConfig(s.mockConfig), s.mockLog)
 }
 
 func (s *MachineryTestSuite) TestServer() {
@@ -51,6 +54,7 @@ func (s *MachineryTestSuite) TestServer() {
 				s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
 				s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
 				s.mockConfig.On("GetString", "app.name").Return("goravel").Once()
+				s.mockConfig.On("GetBool", "app.debug").Return(true).Once()
 			},
 			expectServer: true,
 		},

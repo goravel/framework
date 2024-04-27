@@ -23,6 +23,10 @@ var connections = []contractsorm.Driver{
 	contractsorm.DriverSqlserver,
 }
 
+type contextKey int
+
+const testContextKey contextKey = 0
+
 type User struct {
 	orm.Model
 	orm.SoftDeletes
@@ -84,8 +88,9 @@ func TestOrmSuite(t *testing.T) {
 
 func (s *OrmSuite) SetupTest() {
 	s.orm = &OrmImpl{
-		ctx:   context.Background(),
-		query: s.mysqlQuery,
+		connection: contractsorm.DriverMysql.String(),
+		ctx:        context.Background(),
+		query:      s.mysqlQuery,
 		queries: map[string]contractsorm.Query{
 			contractsorm.DriverMysql.String():      s.mysqlQuery,
 			contractsorm.DriverPostgresql.String(): s.postgresqlQuery,
@@ -186,6 +191,38 @@ func (s *OrmSuite) TestTransactionError() {
 	}
 }
 
+func (s *OrmSuite) TestWithContext() {
+	s.orm.Observe(User{}, &UserObserver{})
+	ctx := context.WithValue(context.Background(), testContextKey, "with_context_goravel")
+	user := User{Name: "with_context_name"}
+
+	// Call Query directly
+	err := s.orm.WithContext(ctx).Query().Create(&user)
+	s.Nil(err)
+	s.Equal("with_context_name", user.Name)
+	s.Equal("with_context_goravel", user.Avatar)
+
+	// Call Connection, then call WithContext
+	for _, connection := range connections {
+		user.ID = 0
+		user.Avatar = ""
+		err := s.orm.Connection(connection.String()).WithContext(ctx).Query().Create(&user)
+		s.Nil(err)
+		s.Equal("with_context_name", user.Name)
+		s.Equal("with_context_goravel", user.Avatar)
+	}
+
+	// Call WithContext, then call Connection
+	for _, connection := range connections {
+		user.ID = 0
+		user.Avatar = ""
+		err := s.orm.WithContext(ctx).Connection(connection.String()).Query().Create(&user)
+		s.Nil(err)
+		s.Equal("with_context_name", user.Name)
+		s.Equal("with_context_goravel", user.Avatar)
+	}
+}
+
 type UserObserver struct{}
 
 func (u *UserObserver) Retrieved(event contractsorm.Event) error {
@@ -194,8 +231,15 @@ func (u *UserObserver) Retrieved(event contractsorm.Event) error {
 
 func (u *UserObserver) Creating(event contractsorm.Event) error {
 	name := event.GetAttribute("name")
-	if name != nil && name.(string) == "observer_name" {
-		return errors.New("error")
+	if name != nil {
+		if name.(string) == "observer_name" {
+			return errors.New("error")
+		}
+		if name.(string) == "with_context_name" {
+			if avatar := event.Context().Value(testContextKey); avatar != nil {
+				event.SetAttribute("avatar", avatar.(string))
+			}
+		}
 	}
 
 	return nil

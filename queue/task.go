@@ -7,6 +7,7 @@ import (
 	"github.com/RichardKnop/machinery/v2"
 	"github.com/RichardKnop/machinery/v2/tasks"
 
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
@@ -21,11 +22,11 @@ type Task struct {
 	server     *machinery.Server
 }
 
-func NewTask(config *Config, job queue.Job, args []queue.Arg) *Task {
+func NewTask(config *Config, log log.Log, job queue.Job, args []queue.Arg) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
-		machinery:  NewMachinery(config),
+		machinery:  NewMachinery(config, log),
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
@@ -35,12 +36,12 @@ func NewTask(config *Config, job queue.Job, args []queue.Arg) *Task {
 	}
 }
 
-func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
+func NewChainTask(config *Config, log log.Log, jobs []queue.Jobs) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
 		chain:      true,
-		machinery:  NewMachinery(config),
+		machinery:  NewMachinery(config, log),
 		jobs:       jobs,
 	}
 }
@@ -56,7 +57,7 @@ func (receiver *Task) Dispatch() error {
 	if driver == "" {
 		return errors.New("unknown queue driver")
 	}
-	if driver == DriverSync || driver == "" {
+	if driver == DriverSync {
 		return receiver.DispatchSync()
 	}
 
