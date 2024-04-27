@@ -102,9 +102,9 @@ func TestDefault(t *testing.T) {
 	assert.Equal(t, 0, Default(0, 0))
 }
 
-func TestPtr(t *testing.T) {
-	assert.Equal(t, "foo", *Ptr("foo"))
-	assert.Equal(t, 1, *Ptr(1))
-	assert.Equal(t, &foo{Name: "foo"}, *Ptr(&foo{Name: "foo"}))
-	assert.Equal(t, time.Time{}, *Ptr(time.Time{}))
+func TestPointer(t *testing.T) {
+	assert.Equal(t, "foo", *Pointer("foo"))
+	assert.Equal(t, 1, *Pointer(1))
+	assert.Equal(t, &foo{Name: "foo"}, *Pointer(&foo{Name: "foo"}))
+	assert.Equal(t, time.Time{}, *Pointer(time.Time{}))
 }

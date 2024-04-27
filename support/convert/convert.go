@@ -60,10 +60,10 @@ func Default[T comparable](values ...T) T {
 	return zero
 }
 
-// Ptr returns a pointer to the value.
+// Pointer returns a pointer to the value.
 //
-//	Ptr("foo") // *string("foo")
-//	Ptr(1) // *int(1)
-func Ptr[T any](value T) *T {
+//	Pointer("foo") // *string("foo")
+//	Pointer(1) // *int(1)
+func Pointer[T any](value T) *T {
 	return &value
 }
