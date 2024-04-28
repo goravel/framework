@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
+	logmock "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/queue"
 	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -85,8 +86,9 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 
 func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
+	mockLog := &logmock.Log{}
 
-	queueFacade := queue.NewApplication(mockConfig)
+	queueFacade := queue.NewApplication(mockConfig, mockLog)
 	queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})
@@ -115,6 +117,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
+	mockConfig.On("GetBool", "app.debug").Return(false)
 	mockConfig.On("GetString", "queue.default").Return("redis")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")

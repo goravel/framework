@@ -67,9 +67,9 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 }
 
 func (r *OrmImpl) DB() (*sql.DB, error) {
-	db := r.Query().(*databasegorm.QueryImpl)
+	query := r.Query().(*databasegorm.QueryImpl)
 
-	return db.Instance().DB()
+	return query.Instance().DB()
 }
 
 func (r *OrmImpl) Query() ormcontract.Query {
@@ -105,7 +105,19 @@ func (r *OrmImpl) Transaction(txFunc func(tx ormcontract.Transaction) error) err
 }
 
 func (r *OrmImpl) WithContext(ctx context.Context) ormcontract.Orm {
-	instance, _ := NewOrmImpl(ctx, r.config, r.connection, r.query)
+	for _, query := range r.queries {
+		query := query.(*databasegorm.QueryImpl)
+		query.SetContext(ctx)
+	}
 
-	return instance
+	query := r.query.(*databasegorm.QueryImpl)
+	query.SetContext(ctx)
+
+	return &OrmImpl{
+		ctx:        ctx,
+		config:     r.config,
+		connection: r.connection,
+		query:      query,
+		queries:    r.queries,
+	}
 }
