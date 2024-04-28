@@ -117,7 +117,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "app.debug").Return("goravel")
+	mockConfig.On("GetBool", "app.debug").Return(false)
 	mockConfig.On("GetString", "queue.default").Return("redis")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
