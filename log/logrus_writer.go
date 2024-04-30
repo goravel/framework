@@ -222,6 +222,8 @@ func (r *Writer) resetAll() {
 	r.tags = []string{}
 	r.trace = ""
 	r.user = nil
+	r.stacktrace = nil
+	r.stackEnabled = false
 }
 
 // toMap returns a map representation of the error.
