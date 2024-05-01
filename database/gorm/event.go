@@ -74,7 +74,7 @@ func (e *Event) ColumnNamesWithDbColumnNames() map[string]string {
 }
 
 func (e *Event) Context() context.Context {
-	return e.query.instance.Statement.Context
+	return e.query.ctx
 }
 
 func (e *Event) DestOfMap() map[string]any {

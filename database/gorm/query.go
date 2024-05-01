@@ -671,6 +671,11 @@ func (r *QueryImpl) Select(query any, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *QueryImpl) SetContext(ctx context.Context) {
+	r.ctx = ctx
+	r.instance.Statement.Context = ctx
+}
+
 func (r *QueryImpl) SharedLock() ormcontract.Query {
 	conditions := r.conditions
 	conditions.sharedLock = true
@@ -1185,9 +1190,9 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 			if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
 				return event(instance)
 			}
-		}
 
-		return nil
+			return nil
+		}
 	}
 
 	if observer := observer(dest); observer != nil {
