@@ -116,3 +116,11 @@ func TestValues(t *testing.T) {
 	sort.Ints(values)
 	assert.Equal(t, []int{1, 2}, values)
 }
+
+func TestMerge(t *testing.T) {
+	mergedMaps := Merge[string, int](
+		map[string]int{"a": 1, "b": 2},
+		map[string]int{"b": 3, "c": 4},
+	)
+	assert.Equal(t, map[string]int{"a": 1, "b": 3, "c": 4}, mergedMaps)
+}

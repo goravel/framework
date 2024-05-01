@@ -79,3 +79,8 @@ func Keys[K comparable, V any](in map[K]V) []K {
 func Values[K comparable, V any](in map[K]V) []V {
 	return lo.Values(in)
 }
+
+// Merge merges multiple maps from left to right.
+func Merge[K comparable, V any](maps ...map[K]V) map[K]V {
+	return lo.Assign(maps...)
+}
