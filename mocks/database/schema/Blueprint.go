@@ -940,39 +940,6 @@ func (_c *Blueprint_DropPrimary_Call) RunAndReturn(run func(...string)) *Bluepri
 	return _c
 }
 
-// DropPrimaryByName provides a mock function with given fields: name
-func (_m *Blueprint) DropPrimaryByName(name string) {
-	_m.Called(name)
-}
-
-// Blueprint_DropPrimaryByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropPrimaryByName'
-type Blueprint_DropPrimaryByName_Call struct {
-	*mock.Call
-}
-
-// DropPrimaryByName is a helper method to define mock.On call
-//   - name string
-func (_e *Blueprint_Expecter) DropPrimaryByName(name interface{}) *Blueprint_DropPrimaryByName_Call {
-	return &Blueprint_DropPrimaryByName_Call{Call: _e.mock.On("DropPrimaryByName", name)}
-}
-
-func (_c *Blueprint_DropPrimaryByName_Call) Run(run func(name string)) *Blueprint_DropPrimaryByName_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Blueprint_DropPrimaryByName_Call) Return() *Blueprint_DropPrimaryByName_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Blueprint_DropPrimaryByName_Call) RunAndReturn(run func(string)) *Blueprint_DropPrimaryByName_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DropSoftDeletes provides a mock function with given fields: column
 func (_m *Blueprint) DropSoftDeletes(column ...string) {
 	_va := make([]interface{}, len(column))
@@ -1171,39 +1138,6 @@ func (_c *Blueprint_DropUnique_Call) Return() *Blueprint_DropUnique_Call {
 }
 
 func (_c *Blueprint_DropUnique_Call) RunAndReturn(run func(...string)) *Blueprint_DropUnique_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DropUniqueByName provides a mock function with given fields: name
-func (_m *Blueprint) DropUniqueByName(name string) {
-	_m.Called(name)
-}
-
-// Blueprint_DropUniqueByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropUniqueByName'
-type Blueprint_DropUniqueByName_Call struct {
-	*mock.Call
-}
-
-// DropUniqueByName is a helper method to define mock.On call
-//   - name string
-func (_e *Blueprint_Expecter) DropUniqueByName(name interface{}) *Blueprint_DropUniqueByName_Call {
-	return &Blueprint_DropUniqueByName_Call{Call: _e.mock.On("DropUniqueByName", name)}
-}
-
-func (_c *Blueprint_DropUniqueByName_Call) Run(run func(name string)) *Blueprint_DropUniqueByName_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Blueprint_DropUniqueByName_Call) Return() *Blueprint_DropUniqueByName_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Blueprint_DropUniqueByName_Call) RunAndReturn(run func(string)) *Blueprint_DropUniqueByName_Call {
 	_c.Call.Return(run)
 	return _c
 }
