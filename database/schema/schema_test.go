@@ -1086,39 +1086,59 @@ func (s *SchemaSuite) TestUnique() {
 	}
 }
 
-//func (s *SchemaSuite) TestTable() {
-//	for _, schema := range s.schemas {
-//		s.Run(schema.driver.String(), func() {
-//			schema.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", schema.schema.connection)).
-//				Return("goravel_").Twice()
-//
-//			err := schema.schema.Create("table", func(table schemacontract.Blueprint) {
-//				table.String("name")
-//			})
-//			s.Nil(err)
-//			s.True(schema.schema.HasTable("goravel_table"))
-//
-//			columns, err := schema.schema.GetColumns("goravel_table")
-//			s.Require().Nil(err)
-//			for _, column := range columns {
-//				if column.Name == "name" {
-//					s.False(column.AutoIncrement)
-//					s.Empty(column.Collation)
-//					s.Empty(column.Comment)
-//					s.Empty(column.Default)
-//					s.False(column.Nullable)
-//					s.Equal("character varying(255)", column.Type)
-//					s.Equal("varchar", column.TypeName)
-//				}
-//			}
-//
-//			err = schema.schema.Table("table", func(table schemacontract.Blueprint) {
-//				table.String("name").Comment("This is a name column").Change()
-//			})
-//			s.Nil(err)
-//			s.True(schema.schema.HasTable("goravel_table"))
-//
-//			schema.mockConfig.AssertExpectations(s.T())
-//		})
-//	}
-//}
+func (s *SchemaSuite) TestTable() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			err := schema.schema.Create("changes", func(table schemacontract.Blueprint) {
+				table.String("name")
+			})
+			s.Nil(err)
+			s.True(schema.schema.HasTable("changes"))
+
+			s.Require().True(schema.schema.HasColumn("changes", "name"))
+			columns, err := schema.schema.GetColumns("changes")
+			s.Require().Nil(err)
+			for _, column := range columns {
+				if column.Name == "name" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("character varying(255)", column.Type)
+					s.Equal("varchar", column.TypeName)
+				}
+			}
+
+			err = schema.schema.Table("changes", func(table schemacontract.Blueprint) {
+				table.Integer("age")
+				table.String("name").Comment("This is a name column").Default("goravel").Change()
+			})
+			s.Nil(err)
+			s.True(schema.schema.HasTable("changes"))
+			s.Require().True(schema.schema.HasColumns("changes", []string{"name", "age"}))
+			columns, err = schema.schema.GetColumns("changes")
+			s.Require().Nil(err)
+			for _, column := range columns {
+				if column.Name == "name" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a name column", column.Comment)
+					s.Equal("'goravel'::character varying", column.Default)
+					s.False(column.Nullable)
+					s.Equal("character varying(255)", column.Type)
+					s.Equal("varchar", column.TypeName)
+				}
+				if column.Name == "age" {
+					s.False(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Empty(column.Comment)
+					s.Empty(column.Default)
+					s.False(column.Nullable)
+					s.Equal("integer", column.Type)
+					s.Equal("int4", column.TypeName)
+				}
+			}
+		})
+	}
+}

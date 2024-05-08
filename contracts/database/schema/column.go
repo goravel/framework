@@ -7,6 +7,8 @@ type ColumnDefinition interface {
 	Change()
 	// Comment sets the comment value
 	Comment(comment string) ColumnDefinition
+	// Default set the default value
+	Default(def any) ColumnDefinition
 	// GetAllowed returns the allowed value
 	GetAllowed() []string
 	// GetAutoIncrement returns the autoIncrement value
@@ -15,6 +17,8 @@ type ColumnDefinition interface {
 	GetChange() bool
 	// GetComment returns the comment value
 	GetComment() (comment string)
+	// GetDefault returns the default value
+	GetDefault() any
 	// GetLength returns the length value
 	GetLength() int
 	// GetName returns the name value

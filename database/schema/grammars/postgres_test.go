@@ -22,6 +22,76 @@ func (s *PostgresSuite) SetupTest() {
 	s.grammar = NewPostgres()
 }
 
+func (s *PostgresSuite) TestCompileChange() {
+	var (
+		mockBlueprint *mockschema.Blueprint
+		mockColumn1   *mockschema.ColumnDefinition
+		mockColumn2   *mockschema.ColumnDefinition
+	)
+
+	tests := []struct {
+		name      string
+		setup     func()
+		expectSql string
+	}{
+		{
+			name: "no changes",
+			setup: func() {
+				mockBlueprint.EXPECT().GetChangedColumns().Return([]schemacontract.ColumnDefinition{}).Once()
+			},
+		},
+		{
+			name: "single change",
+			setup: func() {
+				mockColumn1.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn1.EXPECT().GetDefault().Return("goravel").Twice()
+				mockColumn1.EXPECT().GetName().Return("name").Once()
+				mockColumn1.EXPECT().GetChange().Return(true).Times(3)
+				mockColumn1.EXPECT().GetNullable().Return(true).Once()
+				mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+				mockBlueprint.EXPECT().GetChangedColumns().Return([]schemacontract.ColumnDefinition{mockColumn1}).Once()
+			},
+			expectSql: "alter table users alter column name set default 'goravel', alter column name drop not null",
+		},
+		{
+			name: "multiple changes",
+			setup: func() {
+				mockColumn1.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn1.EXPECT().GetDefault().Return("goravel").Twice()
+				mockColumn1.EXPECT().GetName().Return("name").Once()
+				mockColumn1.EXPECT().GetChange().Return(true).Times(3)
+				mockColumn1.EXPECT().GetNullable().Return(true).Once()
+				mockColumn2.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn2.EXPECT().GetDefault().Return(1).Twice()
+				mockColumn2.EXPECT().GetName().Return("age").Once()
+				mockColumn2.EXPECT().GetChange().Return(true).Times(3)
+				mockColumn2.EXPECT().GetNullable().Return(false).Once()
+				mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+				mockBlueprint.EXPECT().GetChangedColumns().Return([]schemacontract.ColumnDefinition{mockColumn1, mockColumn2}).Once()
+			},
+			expectSql: "alter table users alter column name set default 'goravel', alter column name drop not null, alter column age set default '1', alter column age set not null",
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockBlueprint = &mockschema.Blueprint{}
+			mockColumn1 = &mockschema.ColumnDefinition{}
+			mockColumn2 = &mockschema.ColumnDefinition{}
+
+			test.setup()
+
+			sql := s.grammar.CompileChange(mockBlueprint)
+
+			s.Equal(test.expectSql, sql)
+
+			mockBlueprint.AssertExpectations(s.T())
+			mockColumn1.AssertExpectations(s.T())
+			mockColumn2.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *PostgresSuite) TestCompileComment() {
 	mockBlueprint := &mockschema.Blueprint{}
 	mockColumnDefinition := &mockschema.ColumnDefinition{}
@@ -86,6 +156,76 @@ func (s *PostgresSuite) TestCompileIndex() {
 	s.Equal("create index id_name on users using btree (id, name)", sql)
 
 	mockBlueprint.AssertExpectations(s.T())
+}
+
+func (s *PostgresSuite) TestModifyDefault() {
+	var (
+		mockBlueprint *mockschema.Blueprint
+		mockColumn    *mockschema.ColumnDefinition
+	)
+
+	tests := []struct {
+		name      string
+		setup     func()
+		expectSql string
+	}{
+		{
+			name: "with change and AutoIncrement",
+			setup: func() {
+				mockColumn.EXPECT().GetChange().Return(true).Once()
+				mockColumn.EXPECT().GetAutoIncrement().Return(true).Once()
+			},
+		},
+		{
+			name: "with change and not AutoIncrement, default is nil",
+			setup: func() {
+				mockColumn.EXPECT().GetChange().Return(true).Once()
+				mockColumn.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn.EXPECT().GetDefault().Return(nil).Once()
+			},
+			expectSql: "drop default",
+		},
+		{
+			name: "with change and not AutoIncrement, default is not nil",
+			setup: func() {
+				mockColumn.EXPECT().GetChange().Return(true).Once()
+				mockColumn.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
+			},
+			expectSql: "set default 'goravel'",
+		},
+		{
+			name: "without change and default is nil",
+			setup: func() {
+				mockColumn.EXPECT().GetChange().Return(false).Once()
+				mockColumn.EXPECT().GetDefault().Return(nil).Once()
+			},
+		},
+		{
+			name: "without change and default is not nil",
+			setup: func() {
+				mockColumn.EXPECT().GetChange().Return(false).Once()
+				mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
+			},
+			expectSql: " default 'goravel'",
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockBlueprint = &mockschema.Blueprint{}
+			mockColumn = &mockschema.ColumnDefinition{}
+
+			test.setup()
+
+			sql := s.grammar.ModifyDefault(mockBlueprint, mockColumn)
+
+			s.Equal(test.expectSql, sql)
+
+			mockBlueprint.AssertExpectations(s.T())
+			mockColumn.AssertExpectations(s.T())
+		})
+	}
 }
 
 func (s *PostgresSuite) TestTypeBigInteger() {

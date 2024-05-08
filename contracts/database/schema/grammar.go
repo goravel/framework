@@ -6,9 +6,9 @@ import (
 
 type Grammar interface {
 	// CompileAdd Compile an add column command.
-	CompileAdd(blueprint Blueprint, command string) string
+	CompileAdd(blueprint Blueprint) string
 	// CompileChange Compile a change column command into a series of SQL statements.
-	CompileChange(blueprint Blueprint, command, connection string) string
+	CompileChange(blueprint Blueprint) string
 	// CompileColumns Compile the query to determine the columns.
 	// TODO check if the database is required
 	CompileColumns(schema, table string) string

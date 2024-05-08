@@ -10,7 +10,7 @@ type ColumnDefinition struct {
 	autoIncrement *bool
 	change        *bool
 	comment       *string
-	def           *string
+	def           any
 	length        *int
 	name          *string
 	nullable      *bool
@@ -33,6 +33,12 @@ func (r *ColumnDefinition) Change() {
 
 func (r *ColumnDefinition) Comment(comment string) schemacontract.ColumnDefinition {
 	r.comment = &comment
+
+	return r
+}
+
+func (r *ColumnDefinition) Default(def any) schemacontract.ColumnDefinition {
+	r.def = def
 
 	return r
 }
@@ -63,6 +69,10 @@ func (r *ColumnDefinition) GetComment() (comment string) {
 	}
 
 	return
+}
+
+func (r *ColumnDefinition) GetDefault() any {
+	return r.def
 }
 
 func (r *ColumnDefinition) GetLength() (length int) {

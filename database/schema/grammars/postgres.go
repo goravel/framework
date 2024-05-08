@@ -23,7 +23,7 @@ func NewPostgres() *Postgres {
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 	}
 	postgres.modifiers = []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string{
-		//postgres.ModifyDefault,
+		postgres.ModifyDefault,
 		postgres.ModifyIncrement,
 		postgres.ModifyNullable,
 	}
@@ -31,14 +31,29 @@ func NewPostgres() *Postgres {
 	return postgres
 }
 
-func (r *Postgres) CompileAdd(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileAdd(blueprint schemacontract.Blueprint) string {
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(prefixArray("add column", r.getColumns(blueprint)), ","))
 }
 
-func (r *Postgres) CompileChange(blueprint schemacontract.Blueprint, command, connection string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Postgres) CompileChange(blueprint schemacontract.Blueprint) string {
+	var columns []string
+	for _, column := range blueprint.GetChangedColumns() {
+		var changes []string
+
+		for _, modifier := range r.modifiers {
+			if change := modifier(blueprint, column); change != "" {
+				changes = append(changes, change)
+			}
+		}
+
+		columns = append(columns, strings.Join(prefixArray("alter column "+column.GetName(), changes), ", "))
+	}
+
+	if len(columns) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(columns, ", "))
 }
 
 func (r *Postgres) CompileColumns(schema, table string) string {
@@ -206,8 +221,23 @@ func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column sch
 }
 
 func (r *Postgres) ModifyDefault(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
-	//TODO implement me
-	panic("implement me")
+	if column.GetChange() {
+		if !column.GetAutoIncrement() {
+			if column.GetDefault() == nil {
+				return "drop default"
+			} else {
+				return fmt.Sprintf("set default %s", getDefaultValue(column.GetDefault()))
+			}
+		}
+
+		return ""
+	}
+
+	if column.GetDefault() != nil {
+		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
+	}
+
+	return ""
 }
 
 func (r *Postgres) ModifyIncrement(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {

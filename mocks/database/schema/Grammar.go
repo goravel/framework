@@ -21,17 +21,17 @@ func (_m *Grammar) EXPECT() *Grammar_Expecter {
 	return &Grammar_Expecter{mock: &_m.Mock}
 }
 
-// CompileAdd provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileAdd(blueprint schema.Blueprint, command string) string {
-	ret := _m.Called(blueprint, command)
+// CompileAdd provides a mock function with given fields: blueprint
+func (_m *Grammar) CompileAdd(blueprint schema.Blueprint) string {
+	ret := _m.Called(blueprint)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileAdd")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string) string); ok {
-		r0 = rf(blueprint, command)
+	if rf, ok := ret.Get(0).(func(schema.Blueprint) string); ok {
+		r0 = rf(blueprint)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -46,14 +46,13 @@ type Grammar_CompileAdd_Call struct {
 
 // CompileAdd is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-func (_e *Grammar_Expecter) CompileAdd(blueprint interface{}, command interface{}) *Grammar_CompileAdd_Call {
-	return &Grammar_CompileAdd_Call{Call: _e.mock.On("CompileAdd", blueprint, command)}
+func (_e *Grammar_Expecter) CompileAdd(blueprint interface{}) *Grammar_CompileAdd_Call {
+	return &Grammar_CompileAdd_Call{Call: _e.mock.On("CompileAdd", blueprint)}
 }
 
-func (_c *Grammar_CompileAdd_Call) Run(run func(blueprint schema.Blueprint, command string)) *Grammar_CompileAdd_Call {
+func (_c *Grammar_CompileAdd_Call) Run(run func(blueprint schema.Blueprint)) *Grammar_CompileAdd_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string))
+		run(args[0].(schema.Blueprint))
 	})
 	return _c
 }
@@ -63,22 +62,22 @@ func (_c *Grammar_CompileAdd_Call) Return(_a0 string) *Grammar_CompileAdd_Call {
 	return _c
 }
 
-func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint, string) string) *Grammar_CompileAdd_Call {
+func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint) string) *Grammar_CompileAdd_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// CompileChange provides a mock function with given fields: blueprint, command, connection
-func (_m *Grammar) CompileChange(blueprint schema.Blueprint, command string, connection string) string {
-	ret := _m.Called(blueprint, command, connection)
+// CompileChange provides a mock function with given fields: blueprint
+func (_m *Grammar) CompileChange(blueprint schema.Blueprint) string {
+	ret := _m.Called(blueprint)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileChange")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, string, string) string); ok {
-		r0 = rf(blueprint, command, connection)
+	if rf, ok := ret.Get(0).(func(schema.Blueprint) string); ok {
+		r0 = rf(blueprint)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -93,15 +92,13 @@ type Grammar_CompileChange_Call struct {
 
 // CompileChange is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - command string
-//   - connection string
-func (_e *Grammar_Expecter) CompileChange(blueprint interface{}, command interface{}, connection interface{}) *Grammar_CompileChange_Call {
-	return &Grammar_CompileChange_Call{Call: _e.mock.On("CompileChange", blueprint, command, connection)}
+func (_e *Grammar_Expecter) CompileChange(blueprint interface{}) *Grammar_CompileChange_Call {
+	return &Grammar_CompileChange_Call{Call: _e.mock.On("CompileChange", blueprint)}
 }
 
-func (_c *Grammar_CompileChange_Call) Run(run func(blueprint schema.Blueprint, command string, connection string)) *Grammar_CompileChange_Call {
+func (_c *Grammar_CompileChange_Call) Run(run func(blueprint schema.Blueprint)) *Grammar_CompileChange_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(string), args[2].(string))
+		run(args[0].(schema.Blueprint))
 	})
 	return _c
 }
@@ -111,7 +108,7 @@ func (_c *Grammar_CompileChange_Call) Return(_a0 string) *Grammar_CompileChange_
 	return _c
 }
 
-func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(schema.Blueprint, string, string) string) *Grammar_CompileChange_Call {
+func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(schema.Blueprint) string) *Grammar_CompileChange_Call {
 	_c.Call.Return(run)
 	return _c
 }

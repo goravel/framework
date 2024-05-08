@@ -9,7 +9,9 @@ import (
 )
 
 const (
+	commandAdd          = "add"
 	commandComment      = "comment"
+	commandChange       = "change"
 	commandCreate       = "create"
 	commandDrop         = "drop"
 	commandDropColumn   = "dropColumn"
@@ -508,8 +510,12 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 	var statements []string
 	for _, command := range r.commands {
 		switch command.Name {
+		case commandAdd:
+			statements = append(statements, grammar.CompileAdd(r))
 		case commandComment:
 			statements = append(statements, grammar.CompileComment(r, command))
+		case commandChange:
+			statements = append(statements, grammar.CompileChange(r))
 		case commandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case commandDrop:
@@ -586,12 +592,12 @@ func (r *Blueprint) addImpliedCommands(grammar schemacontract.Grammar) {
 	var commands []*schemacontract.Command
 	if len(r.GetAddedColumns()) > 0 && !r.isCreate() {
 		commands = append(commands, &schemacontract.Command{
-			Name: "add",
+			Name: commandAdd,
 		})
 	}
 	if len(r.GetChangedColumns()) > 0 && !r.isCreate() {
 		commands = append(commands, &schemacontract.Command{
-			Name: "change",
+			Name: commandChange,
 		})
 	}
 	if len(commands) > 0 {

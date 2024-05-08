@@ -147,6 +147,54 @@ func (_c *ColumnDefinition_Comment_Call) RunAndReturn(run func(string) schema.Co
 	return _c
 }
 
+// Default provides a mock function with given fields: def
+func (_m *ColumnDefinition) Default(def interface{}) schema.ColumnDefinition {
+	ret := _m.Called(def)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Default")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(interface{}) schema.ColumnDefinition); ok {
+		r0 = rf(def)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Default_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Default'
+type ColumnDefinition_Default_Call struct {
+	*mock.Call
+}
+
+// Default is a helper method to define mock.On call
+//   - def interface{}
+func (_e *ColumnDefinition_Expecter) Default(def interface{}) *ColumnDefinition_Default_Call {
+	return &ColumnDefinition_Default_Call{Call: _e.mock.On("Default", def)}
+}
+
+func (_c *ColumnDefinition_Default_Call) Run(run func(def interface{})) *ColumnDefinition_Default_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Default_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Default_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(interface{}) schema.ColumnDefinition) *ColumnDefinition_Default_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAllowed provides a mock function with given fields:
 func (_m *ColumnDefinition) GetAllowed() []string {
 	ret := _m.Called()
@@ -325,6 +373,53 @@ func (_c *ColumnDefinition_GetComment_Call) Return(comment string) *ColumnDefini
 }
 
 func (_c *ColumnDefinition_GetComment_Call) RunAndReturn(run func() string) *ColumnDefinition_GetComment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetDefault provides a mock function with given fields:
+func (_m *ColumnDefinition) GetDefault() interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDefault")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetDefault_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDefault'
+type ColumnDefinition_GetDefault_Call struct {
+	*mock.Call
+}
+
+// GetDefault is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetDefault() *ColumnDefinition_GetDefault_Call {
+	return &ColumnDefinition_GetDefault_Call{Call: _e.mock.On("GetDefault")}
+}
+
+func (_c *ColumnDefinition_GetDefault_Call) Run(run func()) *ColumnDefinition_GetDefault_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetDefault_Call) Return(_a0 interface{}) *ColumnDefinition_GetDefault_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetDefault_Call) RunAndReturn(run func() interface{}) *ColumnDefinition_GetDefault_Call {
 	_c.Call.Return(run)
 	return _c
 }
