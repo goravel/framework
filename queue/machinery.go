@@ -8,15 +8,19 @@ import (
 	redisbroker "github.com/RichardKnop/machinery/v2/brokers/redis"
 	"github.com/RichardKnop/machinery/v2/config"
 	"github.com/RichardKnop/machinery/v2/locks/eager"
+	"github.com/RichardKnop/machinery/v2/log"
 	"github.com/gookit/color"
+
+	logcontract "github.com/goravel/framework/contracts/log"
 )
 
 type Machinery struct {
 	config *Config
+	log    logcontract.Log
 }
 
-func NewMachinery(config *Config) *Machinery {
-	return &Machinery{config: config}
+func NewMachinery(config *Config, log logcontract.Log) *Machinery {
+	return &Machinery{config: config, log: log}
 }
 
 func (m *Machinery) Server(connection string, queue string) (*machinery.Server, error) {
@@ -48,6 +52,13 @@ func (m *Machinery) redisServer(connection string, queue string) *machinery.Serv
 	broker := redisbroker.NewGR(cnf, []string{redisConfig}, database)
 	backend := redisbackend.NewGR(cnf, []string{redisConfig}, database)
 	lock := eager.New()
+
+	debug := m.config.config.GetBool("app.debug")
+	log.DEBUG = NewDebug(debug, m.log)
+	log.INFO = NewInfo(debug, m.log)
+	log.WARNING = NewWarning(debug, m.log)
+	log.ERROR = NewError(debug, m.log)
+	log.FATAL = NewFatal(debug, m.log)
 
 	return machinery.NewServer(cnf, broker, backend, lock)
 }

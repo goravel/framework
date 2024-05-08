@@ -76,7 +76,7 @@ func formatData(data logrus.Fields) (string, error) {
 					return "", err
 				}
 
-				builder.WriteString(fmt.Sprintf(`%s: %v\n"`, key, string(v)))
+				builder.WriteString(fmt.Sprintf("%s: %v\n", key, string(v)))
 			}
 		}
 

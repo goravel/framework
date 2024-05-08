@@ -60,6 +60,13 @@ func (m *ManagerTestSuite) TestDriver() {
 	m.NotNil(err)
 	m.Equal("driver [not_supported] not supported", err.Error())
 	m.Nil(driver)
+
+	// driver is not set
+	m.mockConfig.On("GetString", "session.driver").Return("").Once()
+	driver, err = m.manager.Driver()
+	m.NotNil(err)
+	m.Equal("driver is not set", err.Error())
+	m.Nil(driver)
 }
 
 func (m *ManagerTestSuite) TestExtend() {

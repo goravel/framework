@@ -61,6 +61,10 @@ func (f *FileTestSuite) TestGc() {
 	f.NotNil(err)
 	f.Equal("", value)
 	carbon.UnsetTestNow()
+
+	// file does not exist
+	driver = NewFile("foo", 300)
+	f.Nil(driver.Gc(300))
 }
 
 func (f *FileTestSuite) TestOpen() {
