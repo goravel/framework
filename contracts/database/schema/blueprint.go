@@ -10,7 +10,7 @@ type Blueprint interface {
 	// BigIncrements Create a new auto-incrementing big integer (8-byte) column on the table.
 	BigIncrements(column string) ColumnDefinition
 	// BigInteger Create a new big integer (8-byte) column on the table.
-	BigInteger(column string, config ...IntegerConfig) ColumnDefinition
+	BigInteger(column string) ColumnDefinition
 	// Binary Create a new binary column on the table.
 	Binary(column string) ColumnDefinition
 	// Build Execute the blueprint to build / modify the table.
@@ -28,19 +28,21 @@ type Blueprint interface {
 	// DateTimeTz Create a new date-time column (with time zone) on the table.
 	DateTimeTz(column string, precision ...int) ColumnDefinition
 	// Decimal Create a new decimal column on the table.
-	Decimal(column string, length ...DecimalConfig) ColumnDefinition
+	Decimal(column string) ColumnDefinition
 	// Double Create a new double column on the table.
 	Double(column string) ColumnDefinition
 	// DropColumn Indicate that the given column should be dropped.
 	DropColumn(column ...string)
 	// DropForeign Indicate that the given foreign key should be dropped.
-	DropForeign(columns []string)
+	DropForeign(column ...string)
 	// DropForeignByName Indicate that the given foreign key should be dropped.
 	DropForeignByName(name string)
+	// DropPrimary Indicate that the given primary key should be dropped.
+	DropPrimary(column ...string)
 	// DropIfExists Indicate that the table should be dropped if it exists.
 	DropIfExists()
 	// DropIndex Indicate that the given index should be dropped.
-	DropIndex(columns []string)
+	DropIndex(column ...string)
 	// DropIndexByName Indicate that the given index should be dropped.
 	DropIndexByName(name string)
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
@@ -51,12 +53,14 @@ type Blueprint interface {
 	DropTimestamps()
 	// DropTimestampsTz Indicate that the timestamp columns should be dropped.
 	DropTimestampsTz()
+	// DropUnique Indicate that the given unique key should be dropped.
+	DropUnique(column ...string)
 	// Enum Create a new enum column on the table.
 	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.
 	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
-	Foreign(columns []string, name ...string) ForeignKeyDefinition
+	Foreign(column ...string) ForeignKeyDefinition
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
 	// GetChangedColumns Get the changed columns.
@@ -70,15 +74,15 @@ type Blueprint interface {
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
 	ID(column ...string) ColumnDefinition
 	// Index Specify an index for the table.
-	Index(columns []string, config ...IndexConfig)
+	Index(column ...string) IndexDefinition
 	// Integer Create a new integer (4-byte) column on the table.
-	Integer(column string, config ...IntegerConfig) ColumnDefinition
+	Integer(column string) ColumnDefinition
 	// Json Create a new json column on the table.
 	Json(column string) ColumnDefinition
 	// Jsonb Create a new jsonb column on the table.
 	Jsonb(column string) ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
-	Primary(columns []string)
+	Primary(column ...string)
 	// Rename the table to a given name.
 	Rename(to string)
 	// RenameColumn Indicate that the given columns should be renamed.
@@ -108,11 +112,11 @@ type Blueprint interface {
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(query ormcontract.Query, grammar Grammar) []string
 	// Unique Specify a unique index for the table.
-	Unique(columns []string)
+	Unique(column ...string)
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.
-	UnsignedInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedInteger(column string) ColumnDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
-	UnsignedBigInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedBigInteger(column string) ColumnDefinition
 }
 
 type IndexConfig struct {

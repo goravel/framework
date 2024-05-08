@@ -114,6 +114,54 @@ func (_c *ForeignKeyDefinition_CascadeOnUpdate_Call) RunAndReturn(run func() sch
 	return _c
 }
 
+// Name provides a mock function with given fields: name
+func (_m *ForeignKeyDefinition) Name(name string) schema.ForeignKeyDefinition {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Name")
+	}
+
+	var r0 schema.ForeignKeyDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ForeignKeyDefinition); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ForeignKeyDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ForeignKeyDefinition_Name_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Name'
+type ForeignKeyDefinition_Name_Call struct {
+	*mock.Call
+}
+
+// Name is a helper method to define mock.On call
+//   - name string
+func (_e *ForeignKeyDefinition_Expecter) Name(name interface{}) *ForeignKeyDefinition_Name_Call {
+	return &ForeignKeyDefinition_Name_Call{Call: _e.mock.On("Name", name)}
+}
+
+func (_c *ForeignKeyDefinition_Name_Call) Run(run func(name string)) *ForeignKeyDefinition_Name_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *ForeignKeyDefinition_Name_Call) Return(_a0 schema.ForeignKeyDefinition) *ForeignKeyDefinition_Name_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ForeignKeyDefinition_Name_Call) RunAndReturn(run func(string) schema.ForeignKeyDefinition) *ForeignKeyDefinition_Name_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NoActionOnDelete provides a mock function with given fields:
 func (_m *ForeignKeyDefinition) NoActionOnDelete() schema.ForeignKeyDefinition {
 	ret := _m.Called()

@@ -52,8 +52,6 @@ type Grammar interface {
 	CompileTables(database string) string
 	// CompileUnique Compile a unique key command.
 	CompileUnique(blueprint Blueprint, command *Command) string
-	// CompileViews Compile the query to determine the views.
-	CompileViews(database string) string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
 	// ModifyDefault Get the SQL for a default column modifier.

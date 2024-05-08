@@ -82,6 +82,12 @@ func (r *Postgres) CompileDropForeign(blueprint schemacontract.Blueprint, index 
 	return fmt.Sprintf("alter table %s drop constraint %s", blueprint.GetTableName(), index)
 }
 
+func (r *Postgres) CompileDropPrimary(blueprint schemacontract.Blueprint, index string) string {
+	tableName := blueprint.GetTableName()
+
+	return fmt.Sprintf("alter table %s drop constraint %s", tableName, tableName+"_pkey")
+}
+
 func (r *Postgres) CompileDropIfExists(blueprint schemacontract.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
@@ -90,14 +96,8 @@ func (r *Postgres) CompileDropIndex(blueprint schemacontract.Blueprint, index st
 	return "drop index " + index
 }
 
-func (r *Postgres) CompileDropPrimary(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (r *Postgres) CompileDropUnique(blueprint schemacontract.Blueprint, command string) string {
-	//TODO implement me
-	panic("implement me")
+	return fmt.Sprintf("alter table %s drop constraint %s", blueprint.GetTableName(), command)
 }
 
 func (r *Postgres) CompileForeign(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
@@ -183,11 +183,6 @@ func (r *Postgres) CompileUnique(blueprint schemacontract.Blueprint, command *sc
 		command.Index,
 		strings.Join(command.Columns, ", "),
 	)
-}
-
-func (r *Postgres) CompileViews(database string) string {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (r *Postgres) GetAttributeCommands() []string {

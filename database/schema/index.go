@@ -32,6 +32,12 @@ func (f *ForeignKeyDefinition) On(table string) schemacontract.ForeignKeyDefinit
 	return f
 }
 
+func (f *ForeignKeyDefinition) Name(name string) schemacontract.ForeignKeyDefinition {
+	f.command.Index = name
+
+	return f
+}
+
 func (f *ForeignKeyDefinition) NoActionOnDelete() schemacontract.ForeignKeyDefinition {
 	f.command.OnDelete = "no action"
 
@@ -64,6 +70,28 @@ func (f *ForeignKeyDefinition) RestrictOnDelete() schemacontract.ForeignKeyDefin
 
 func (f *ForeignKeyDefinition) RestrictOnUpdate() schemacontract.ForeignKeyDefinition {
 	f.command.OnUpdate = "restrict"
+
+	return f
+}
+
+type IndexDefinition struct {
+	command *schemacontract.Command
+}
+
+func NewIndexDefinition(command *schemacontract.Command) schemacontract.IndexDefinition {
+	return &IndexDefinition{
+		command: command,
+	}
+}
+
+func (f *IndexDefinition) Algorithm(algorithm string) schemacontract.IndexDefinition {
+	f.command.Algorithm = algorithm
+
+	return f
+}
+
+func (f *IndexDefinition) Name(name string) schemacontract.IndexDefinition {
+	f.command.Index = name
 
 	return f
 }

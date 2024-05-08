@@ -21,6 +21,12 @@ type ColumnDefinition struct {
 	unsigned      *bool
 }
 
+func (r *ColumnDefinition) AutoIncrement() schemacontract.ColumnDefinition {
+	r.autoIncrement = convert.Pointer(true)
+
+	return r
+}
+
 func (r *ColumnDefinition) Change() {
 	r.change = convert.Pointer(true)
 }
@@ -125,6 +131,24 @@ func (r *ColumnDefinition) GetUnsigned() (unsigned bool) {
 
 func (r *ColumnDefinition) Nullable() schemacontract.ColumnDefinition {
 	r.nullable = convert.Pointer(true)
+
+	return r
+}
+
+func (r *ColumnDefinition) Places(places int) schemacontract.ColumnDefinition {
+	r.places = convert.Pointer(places)
+
+	return r
+}
+
+func (r *ColumnDefinition) Total(total int) schemacontract.ColumnDefinition {
+	r.total = convert.Pointer(total)
+
+	return r
+}
+
+func (r *ColumnDefinition) Unsigned() schemacontract.ColumnDefinition {
+	r.unsigned = convert.Pointer(true)
 
 	return r
 }

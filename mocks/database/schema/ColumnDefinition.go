@@ -20,6 +20,53 @@ func (_m *ColumnDefinition) EXPECT() *ColumnDefinition_Expecter {
 	return &ColumnDefinition_Expecter{mock: &_m.Mock}
 }
 
+// AutoIncrement provides a mock function with given fields:
+func (_m *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AutoIncrement")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_AutoIncrement_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AutoIncrement'
+type ColumnDefinition_AutoIncrement_Call struct {
+	*mock.Call
+}
+
+// AutoIncrement is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) AutoIncrement() *ColumnDefinition_AutoIncrement_Call {
+	return &ColumnDefinition_AutoIncrement_Call{Call: _e.mock.On("AutoIncrement")}
+}
+
+func (_c *ColumnDefinition_AutoIncrement_Call) Run(run func()) *ColumnDefinition_AutoIncrement_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_AutoIncrement_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_AutoIncrement_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_AutoIncrement_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_AutoIncrement_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Change provides a mock function with given fields:
 func (_m *ColumnDefinition) Change() {
 	_m.Called()
@@ -685,6 +732,149 @@ func (_c *ColumnDefinition_Nullable_Call) Return(_a0 schema.ColumnDefinition) *C
 }
 
 func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_Nullable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Places provides a mock function with given fields: places
+func (_m *ColumnDefinition) Places(places int) schema.ColumnDefinition {
+	ret := _m.Called(places)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Places")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(int) schema.ColumnDefinition); ok {
+		r0 = rf(places)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Places_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Places'
+type ColumnDefinition_Places_Call struct {
+	*mock.Call
+}
+
+// Places is a helper method to define mock.On call
+//   - places int
+func (_e *ColumnDefinition_Expecter) Places(places interface{}) *ColumnDefinition_Places_Call {
+	return &ColumnDefinition_Places_Call{Call: _e.mock.On("Places", places)}
+}
+
+func (_c *ColumnDefinition_Places_Call) Run(run func(places int)) *ColumnDefinition_Places_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Places_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Places_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Places_Call) RunAndReturn(run func(int) schema.ColumnDefinition) *ColumnDefinition_Places_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Total provides a mock function with given fields: total
+func (_m *ColumnDefinition) Total(total int) schema.ColumnDefinition {
+	ret := _m.Called(total)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Total")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(int) schema.ColumnDefinition); ok {
+		r0 = rf(total)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Total_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Total'
+type ColumnDefinition_Total_Call struct {
+	*mock.Call
+}
+
+// Total is a helper method to define mock.On call
+//   - total int
+func (_e *ColumnDefinition_Expecter) Total(total interface{}) *ColumnDefinition_Total_Call {
+	return &ColumnDefinition_Total_Call{Call: _e.mock.On("Total", total)}
+}
+
+func (_c *ColumnDefinition_Total_Call) Run(run func(total int)) *ColumnDefinition_Total_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Total_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Total_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Total_Call) RunAndReturn(run func(int) schema.ColumnDefinition) *ColumnDefinition_Total_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Unsigned provides a mock function with given fields:
+func (_m *ColumnDefinition) Unsigned() schema.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Unsigned")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Unsigned_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Unsigned'
+type ColumnDefinition_Unsigned_Call struct {
+	*mock.Call
+}
+
+// Unsigned is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) Unsigned() *ColumnDefinition_Unsigned_Call {
+	return &ColumnDefinition_Unsigned_Call{Call: _e.mock.On("Unsigned")}
+}
+
+func (_c *ColumnDefinition_Unsigned_Call) Run(run func()) *ColumnDefinition_Unsigned_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Unsigned_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Unsigned_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Unsigned_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_Unsigned_Call {
 	_c.Call.Return(run)
 	return _c
 }

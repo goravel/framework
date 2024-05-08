@@ -15,7 +15,9 @@ const (
 	commandDropColumn   = "dropColumn"
 	commandDropForeign  = "dropForeign"
 	commandDropIfExists = "dropIfExists"
+	commandDropPrimary  = "dropPrimary"
 	commandDropIndex    = "dropIndex"
+	commandDropUnique   = "dropUnique"
 	commandForeign      = "foreign"
 	commandIndex        = "index"
 	commandPrimary      = "primary"
@@ -52,18 +54,13 @@ func (r *Blueprint) Boolean(column string) schemacontract.ColumnDefinition {
 }
 
 func (r *Blueprint) BigIncrements(column string) schemacontract.ColumnDefinition {
-	return r.UnsignedBigInteger(column, true)
+	return r.UnsignedBigInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) BigInteger(column string, config ...schemacontract.IntegerConfig) schemacontract.ColumnDefinition {
+func (r *Blueprint) BigInteger(column string) schemacontract.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("bigInteger"),
-	}
-
-	if len(config) > 0 {
-		columnImpl.autoIncrement = &config[0].AutoIncrement
-		columnImpl.unsigned = &config[0].Unsigned
 	}
 
 	r.addColumn(columnImpl)
@@ -156,14 +153,10 @@ func (r *Blueprint) DateTimeTz(column string, precision ...int) schemacontract.C
 	return columnImpl
 }
 
-func (r *Blueprint) Decimal(column string, config ...schemacontract.DecimalConfig) schemacontract.ColumnDefinition {
+func (r *Blueprint) Decimal(column string) schemacontract.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("decimal"),
-	}
-	if len(config) > 0 {
-		columnImpl.total = &config[0].Total
-		columnImpl.places = &config[0].Places
 	}
 	r.addColumn(columnImpl)
 
@@ -197,9 +190,9 @@ func (r *Blueprint) DropColumn(column ...string) {
 	})
 }
 
-func (r *Blueprint) DropForeign(columns []string) {
-	r.indexCommand(commandDropForeign, columns, schemacontract.IndexConfig{
-		Name: r.createIndexName("foreign", columns),
+func (r *Blueprint) DropForeign(column ...string) {
+	r.indexCommand(commandDropForeign, column, schemacontract.IndexConfig{
+		Name: r.createIndexName("foreign", column),
 	})
 }
 
@@ -209,15 +202,21 @@ func (r *Blueprint) DropForeignByName(name string) {
 	})
 }
 
+func (r *Blueprint) DropPrimary(column ...string) {
+	r.indexCommand(commandDropPrimary, column, schemacontract.IndexConfig{
+		Name: r.createIndexName(commandPrimary, column),
+	})
+}
+
 func (r *Blueprint) DropIfExists() {
 	r.addCommand(&schemacontract.Command{
 		Name: commandDropIfExists,
 	})
 }
 
-func (r *Blueprint) DropIndex(columns []string) {
-	r.indexCommand(commandDropIndex, columns, schemacontract.IndexConfig{
-		Name: r.createIndexName("index", columns),
+func (r *Blueprint) DropIndex(column ...string) {
+	r.indexCommand(commandDropIndex, column, schemacontract.IndexConfig{
+		Name: r.createIndexName("index", column),
 	})
 }
 
@@ -248,6 +247,12 @@ func (r *Blueprint) DropTimestampsTz() {
 	r.DropTimestamps()
 }
 
+func (r *Blueprint) DropUnique(column ...string) {
+	r.indexCommand(commandDropUnique, column, schemacontract.IndexConfig{
+		Name: r.createIndexName(commandUnique, column),
+	})
+}
+
 func (r *Blueprint) Enum(column string, allowed []string) schemacontract.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		allowed: allowed,
@@ -273,15 +278,8 @@ func (r *Blueprint) Float(column string, precision ...int) schemacontract.Column
 	return columnImpl
 }
 
-func (r *Blueprint) Foreign(columns []string, name ...string) schemacontract.ForeignKeyDefinition {
-	var command *schemacontract.Command
-	if len(name) == 0 {
-		command = r.indexCommand(commandForeign, columns)
-	} else {
-		command = r.indexCommand(commandForeign, columns, schemacontract.IndexConfig{
-			Name: name[0],
-		})
-	}
+func (r *Blueprint) Foreign(column ...string) schemacontract.ForeignKeyDefinition {
+	command := r.indexCommand(commandForeign, column)
 
 	return NewForeignKeyDefinition(command)
 }
@@ -334,19 +332,16 @@ func (r *Blueprint) ID(column ...string) schemacontract.ColumnDefinition {
 	return r.BigIncrements("id")
 }
 
-func (r *Blueprint) Index(columns []string, config ...schemacontract.IndexConfig) {
-	r.indexCommand(commandIndex, columns, config...)
+func (r *Blueprint) Index(column ...string) schemacontract.IndexDefinition {
+	command := r.indexCommand(commandIndex, column)
+
+	return NewIndexDefinition(command)
 }
 
-func (r *Blueprint) Integer(column string, config ...schemacontract.IntegerConfig) schemacontract.ColumnDefinition {
+func (r *Blueprint) Integer(column string) schemacontract.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("integer"),
-	}
-
-	if len(config) > 0 {
-		columnImpl.autoIncrement = &config[0].AutoIncrement
-		columnImpl.unsigned = &config[0].Unsigned
 	}
 
 	r.addColumn(columnImpl)
@@ -374,8 +369,8 @@ func (r *Blueprint) Jsonb(column string) schemacontract.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Primary(columns []string) {
-	r.indexCommand(commandPrimary, columns)
+func (r *Blueprint) Primary(column ...string) {
+	r.indexCommand(commandPrimary, column)
 }
 
 func (r *Blueprint) Rename(to string) {
@@ -523,10 +518,14 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 			statements = append(statements, grammar.CompileDropColumn(r, command))
 		case commandDropForeign:
 			statements = append(statements, grammar.CompileDropForeign(r, command.Index))
+		case commandDropPrimary:
+			statements = append(statements, grammar.CompileDropPrimary(r, command.Index))
 		case commandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
 		case commandDropIndex:
 			statements = append(statements, grammar.CompileDropIndex(r, command.Index))
+		case commandDropUnique:
+			statements = append(statements, grammar.CompileDropUnique(r, command.Index))
 		case commandForeign:
 			statements = append(statements, grammar.CompileForeign(r, command))
 		case commandIndex:
@@ -549,22 +548,16 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 	return statements
 }
 
-func (r *Blueprint) Unique(columns []string) {
-	r.indexCommand(commandUnique, columns)
+func (r *Blueprint) Unique(column ...string) {
+	r.indexCommand(commandUnique, column)
 }
 
-func (r *Blueprint) UnsignedInteger(column string, autoIncrement ...bool) schemacontract.ColumnDefinition {
-	return r.Integer(column, schemacontract.IntegerConfig{
-		AutoIncrement: len(autoIncrement) > 0 && autoIncrement[0],
-		Unsigned:      true,
-	})
+func (r *Blueprint) UnsignedInteger(column string) schemacontract.ColumnDefinition {
+	return r.Integer(column).Unsigned()
 }
 
-func (r *Blueprint) UnsignedBigInteger(column string, autoIncrement ...bool) schemacontract.ColumnDefinition {
-	return r.BigInteger(column, schemacontract.IntegerConfig{
-		AutoIncrement: len(autoIncrement) > 0 && autoIncrement[0],
-		Unsigned:      true,
-	})
+func (r *Blueprint) UnsignedBigInteger(column string) schemacontract.ColumnDefinition {
+	return r.BigInteger(column).Unsigned()
 }
 
 func (r *Blueprint) addColumn(column *ColumnDefinition) {

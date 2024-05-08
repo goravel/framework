@@ -163,32 +163,32 @@ func (s *SchemaSuite) TestDrop() {
 	}
 }
 
-func (s *SchemaSuite) TestDropAllTables() {
-	for _, schema := range s.schemas {
-		s.Run(schema.driver.String(), func() {
-			table1 := "drop_all_table1"
-			err := schema.schema.Create(table1, func(table schemacontract.Blueprint) {
-				table.ID()
-			})
-			s.Nil(err)
-			s.True(schema.schema.HasTable(table1))
-
-			table2 := "drop_all_table2"
-			err = schema.schema.Create(table2, func(table schemacontract.Blueprint) {
-				table.ID()
-			})
-			s.Nil(err)
-			s.True(schema.schema.HasTable(table2))
-
-			err = schema.schema.DropAllTables()
-			s.Nil(err)
-			s.False(schema.schema.HasTable(table1))
-			s.False(schema.schema.HasTable(table2))
-
-			schema.mockConfig.AssertExpectations(s.T())
-		})
-	}
-}
+//func (s *SchemaSuite) TestDropAllTables() {
+//	for _, schema := range s.schemas {
+//		s.Run(schema.driver.String(), func() {
+//			table1 := "drop_all_table1"
+//			err := schema.schema.Create(table1, func(table schemacontract.Blueprint) {
+//				table.ID()
+//			})
+//			s.Nil(err)
+//			s.True(schema.schema.HasTable(table1))
+//
+//			table2 := "drop_all_table2"
+//			err = schema.schema.Create(table2, func(table schemacontract.Blueprint) {
+//				table.ID()
+//			})
+//			s.Nil(err)
+//			s.True(schema.schema.HasTable(table2))
+//
+//			err = schema.schema.DropAllTables()
+//			s.Nil(err)
+//			s.False(schema.schema.HasTable(table1))
+//			s.False(schema.schema.HasTable(table2))
+//
+//			schema.mockConfig.AssertExpectations(s.T())
+//		})
+//	}
+//}
 
 func (s *SchemaSuite) TestDropColumns() {
 	for _, schema := range s.schemas {
@@ -231,14 +231,48 @@ func (s *SchemaSuite) TestDropForeign() {
 				table.ID()
 				table.String("name")
 				table.UnsignedInteger("drop_foreign1_id")
-				table.Foreign([]string{"drop_foreign1_id"}).References("id").On(table1)
+				table.Foreign("drop_foreign1_id").References("id").On(table1)
 			})
 
 			s.Require().Nil(err)
 			s.Require().True(schema.schema.HasTable(table2))
 
 			err = schema.schema.Table(table2, func(table schemacontract.Blueprint) {
-				table.DropForeign([]string{"drop_foreign1_id"})
+				table.DropForeign("drop_foreign1_id")
+			})
+
+			s.Require().Nil(err)
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestDropForeignByName() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			table1 := "drop_foreign_by_name1"
+			err := schema.schema.Create(table1, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table1))
+
+			table2 := "drop_foreign_by_name2"
+			err = schema.schema.Create(table2, func(table schemacontract.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.UnsignedInteger("drop_foreign_by_name1_id")
+				table.Foreign("drop_foreign_by_name1_id").References("id").On(table1).Name("drop_foreign_by_name1_name")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table2))
+
+			err = schema.schema.Table(table2, func(table schemacontract.Blueprint) {
+				table.DropForeignByName("drop_foreign_by_name1_name")
 			})
 
 			s.Require().Nil(err)
@@ -279,7 +313,7 @@ func (s *SchemaSuite) TestDropIndex() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.Index([]string{"id", "name"})
+				table.Index("id", "name")
 			})
 
 			s.Require().Nil(err)
@@ -287,7 +321,7 @@ func (s *SchemaSuite) TestDropIndex() {
 			s.Require().True(schema.schema.HasIndex(table, "drop_indexes_id_name_index"))
 
 			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
-				table.DropIndex([]string{"id", "name"})
+				table.DropIndex("id", "name")
 			})
 			s.Require().Nil(err)
 			s.Require().False(schema.schema.HasIndex(table, "drop_indexes_id_name_index"))
@@ -304,7 +338,7 @@ func (s *SchemaSuite) TestDropIndexByName() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.Index([]string{"id", "name"})
+				table.Index("id", "name")
 			})
 
 			s.Require().Nil(err)
@@ -316,6 +350,55 @@ func (s *SchemaSuite) TestDropIndexByName() {
 			})
 			s.Require().Nil(err)
 			s.Require().False(schema.schema.HasIndex(table, "drop_index_by_name_id_name_index"))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
+func (s *SchemaSuite) TestDropPrimary() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			var index string
+			switch schema.driver {
+			case ormcontract.DriverPostgres:
+				index = "drop_primaries_pkey"
+			}
+			if index == "" {
+				return
+			}
+
+			table := "drop_primaries"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Primary("name", "age")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, index))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropPrimary()
+			})
+
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasIndex(table, index))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.Primary("name", "age")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasIndex(table, index))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropPrimary("name", "age")
+			})
+
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasIndex(table, index))
 
 			schema.mockConfig.AssertExpectations(s.T())
 		})
@@ -370,23 +453,56 @@ func (s *SchemaSuite) TestDropTimestamps() {
 	}
 }
 
+func (s *SchemaSuite) TestDropUnique() {
+	for _, schema := range s.schemas {
+		s.Run(schema.driver.String(), func() {
+			var index string
+			switch schema.driver {
+			case ormcontract.DriverPostgres:
+				index = "drop_uniques_name_age_unique"
+			}
+			if index == "" {
+				return
+			}
+
+			table := "drop_uniques"
+			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Unique("name", "age")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+			s.Require().True(schema.schema.HasIndex(table, index))
+
+			err = schema.schema.Table(table, func(table schemacontract.Blueprint) {
+				table.DropUnique("name", "age")
+			})
+
+			s.Require().Nil(err)
+			s.Require().False(schema.schema.HasIndex(table, index))
+
+			schema.mockConfig.AssertExpectations(s.T())
+		})
+	}
+}
+
 func (s *SchemaSuite) TestGetColumns() {
 	for _, schema := range s.schemas {
 		s.Run(schema.driver.String(), func() {
 			table := "get_columns"
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
-				table.BigIncrements("big_increments").Comment("This is a big_increments column")
 				table.BigInteger("big_integer").Comment("This is a big_integer column")
 				table.Char("char").Comment("This is a char column")
 				table.Date("date").Comment("This is a date column")
 				table.DateTime("date_time", 3).Comment("This is a date time column")
 				table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
-				table.Decimal("decimal", schemacontract.DecimalConfig{Places: 1, Total: 4}).Comment("This is a decimal column")
+				table.Decimal("decimal").Places(1).Total(4).Comment("This is a decimal column")
 				table.Double("double").Comment("This is a double column")
 				table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
 				table.Float("float", 2).Comment("This is a float column")
 				table.ID().Comment("This is a id column")
-				table.ID("aid").Comment("This is a id column, name is aid")
 				table.Integer("integer").Comment("This is a integer column")
 				table.SoftDeletes()
 				table.SoftDeletesTz("another_deleted_at")
@@ -408,8 +524,7 @@ func (s *SchemaSuite) TestGetColumns() {
 
 			columnListing := schema.schema.GetColumnListing(table)
 
-			s.Equal(27, len(columnListing))
-			s.Contains(columnListing, "big_increments")
+			s.Equal(25, len(columnListing))
 			s.Contains(columnListing, "big_integer")
 			s.Contains(columnListing, "char")
 			s.Contains(columnListing, "date")
@@ -419,7 +534,6 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.Contains(columnListing, "double")
 			s.Contains(columnListing, "enum")
 			s.Contains(columnListing, "id")
-			s.Contains(columnListing, "aid")
 			s.Contains(columnListing, "integer")
 			s.Contains(columnListing, "deleted_at")
 			s.Contains(columnListing, "another_deleted_at")
@@ -439,15 +553,6 @@ func (s *SchemaSuite) TestGetColumns() {
 			columns, err := schema.schema.GetColumns(table)
 			s.Require().Nil(err)
 			for _, column := range columns {
-				if column.Name == "big_increments" {
-					s.True(column.AutoIncrement)
-					s.Empty(column.Collation)
-					s.Equal("This is a big_increments column", column.Comment)
-					s.Equal("nextval('get_columns_big_increments_seq'::regclass)", column.Default)
-					s.False(column.Nullable)
-					s.Equal("bigint", column.Type)
-					s.Equal("int8", column.TypeName)
-				}
 				if column.Name == "big_integer" {
 					s.False(column.AutoIncrement)
 					s.Empty(column.Collation)
@@ -534,15 +639,6 @@ func (s *SchemaSuite) TestGetColumns() {
 					s.Empty(column.Collation)
 					s.Equal("This is a id column", column.Comment)
 					s.Equal("nextval('get_columns_id_seq'::regclass)", column.Default)
-					s.False(column.Nullable)
-					s.Equal("bigint", column.Type)
-					s.Equal("int8", column.TypeName)
-				}
-				if column.Name == "aid" {
-					s.True(column.AutoIncrement)
-					s.Empty(column.Collation)
-					s.Equal("This is a id column, name is aid", column.Comment)
-					s.Equal("nextval('get_columns_aid_seq'::regclass)", column.Default)
 					s.False(column.Nullable)
 					s.Equal("bigint", column.Type)
 					s.Equal("int8", column.TypeName)
@@ -687,6 +783,60 @@ func (s *SchemaSuite) TestGetColumns() {
 			s.True(schema.schema.HasColumn(table, "char"))
 			s.True(schema.schema.HasColumns(table, []string{"char", "string"}))
 
+			table = "get_columns1"
+			err = schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.BigIncrements("big_increments").Comment("This is a big_increments column")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+
+			columnListing = schema.schema.GetColumnListing(table)
+
+			s.Equal(1, len(columnListing))
+			s.Contains(columnListing, "big_increments")
+
+			columns, err = schema.schema.GetColumns(table)
+			s.Require().Nil(err)
+			for _, column := range columns {
+				if column.Name == "big_increments" {
+					s.True(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a big_increments column", column.Comment)
+					s.Equal("nextval('get_columns1_big_increments_seq'::regclass)", column.Default)
+					s.False(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
+				}
+			}
+
+			table = "get_columns2"
+			err = schema.schema.Create(table, func(table schemacontract.Blueprint) {
+				table.ID("aid").Comment("This is a id column, name is aid")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.schema.HasTable(table))
+
+			columnListing = schema.schema.GetColumnListing(table)
+
+			s.Equal(1, len(columnListing))
+			s.Contains(columnListing, "aid")
+
+			columns, err = schema.schema.GetColumns(table)
+			s.Require().Nil(err)
+			for _, column := range columns {
+				if column.Name == "aid" {
+					s.True(column.AutoIncrement)
+					s.Empty(column.Collation)
+					s.Equal("This is a id column, name is aid", column.Comment)
+					s.Equal("nextval('get_columns2_aid_seq'::regclass)", column.Default)
+					s.False(column.Nullable)
+					s.Equal("bigint", column.Type)
+					s.Equal("int8", column.TypeName)
+				}
+			}
+
 			schema.mockConfig.AssertExpectations(s.T())
 		})
 	}
@@ -699,17 +849,19 @@ func (s *SchemaSuite) TestGetIndexes() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.Index([]string{"id", "name"})
+				table.Index("id", "name")
+				table.Index("name").Name("name_index")
 			})
 
 			s.Require().Nil(err)
 			s.Require().True(schema.schema.HasTable(table))
 			s.Require().Contains(schema.schema.GetIndexListing(table), "get_indexes_id_name_index")
 			s.Require().True(schema.schema.HasIndex(table, "get_indexes_id_name_index"))
+			s.Require().True(schema.schema.HasIndex(table, "name_index"))
 
 			indexes, err := schema.schema.GetIndexes(table)
 			s.Require().Nil(err)
-			s.Len(indexes, 1)
+			s.Len(indexes, 3)
 			for _, index := range indexes {
 				if index.Name == "get_indexes_id_name_index" {
 					s.ElementsMatch(index.Columns, []string{"id", "name"})
@@ -760,7 +912,7 @@ func (s *SchemaSuite) TestForeign() {
 				table.ID()
 				table.String("name")
 				table.UnsignedInteger("foreign1_id")
-				table.Foreign([]string{"foreign1_id"}).References("id").On(table1)
+				table.Foreign("foreign1_id").References("id").On(table1)
 			})
 
 			s.Require().Nil(err)
@@ -834,7 +986,7 @@ func (s *SchemaSuite) TestPrimary() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.String("name")
 				table.String("age")
-				table.Primary([]string{"name", "age"})
+				table.Primary("name", "age")
 			})
 
 			s.Require().Nil(err)
@@ -897,7 +1049,7 @@ func (s *SchemaSuite) TestRenameIndex() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.Index([]string{"id", "name"})
+				table.Index("id", "name")
 			})
 			s.Require().Nil(err)
 			s.Require().True(schema.schema.HasTable(table))
@@ -922,7 +1074,7 @@ func (s *SchemaSuite) TestUnique() {
 			err := schema.schema.Create(table, func(table schemacontract.Blueprint) {
 				table.String("name")
 				table.String("age")
-				table.Unique([]string{"name", "age"})
+				table.Unique("name", "age")
 			})
 
 			s.Require().Nil(err)

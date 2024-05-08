@@ -1,6 +1,8 @@
 package schema
 
 type ColumnDefinition interface {
+	// AutoIncrement set the column as auto increment
+	AutoIncrement() ColumnDefinition
 	// Change the column
 	Change()
 	// Comment sets the comment value
@@ -31,6 +33,12 @@ type ColumnDefinition interface {
 	GetUnsigned() bool
 	// Nullable allow NULL values to be inserted into the column
 	Nullable() ColumnDefinition
+	// Places set the decimal places
+	Places(places int) ColumnDefinition
+	// Total set the decimal total
+	Total(total int) ColumnDefinition
+	// Unsigned set the column as unsigned
+	Unsigned() ColumnDefinition
 }
 
 type Column struct {
@@ -47,9 +55,4 @@ type Column struct {
 type DecimalConfig struct {
 	Places int
 	Total  int
-}
-
-type IntegerConfig struct {
-	AutoIncrement bool
-	Unsigned      bool
 }

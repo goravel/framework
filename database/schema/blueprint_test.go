@@ -47,8 +47,10 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 		expectCommands []*schema.Command
 	}{
 		{
-			name:  "Should not add command when columns is empty",
-			setup: func() {},
+			name: "Should not add command when columns is empty",
+			setup: func() {
+				mockGrammar.On("GetAttributeCommands").Return([]string{"test"}).Once()
+			},
 		},
 		{
 			name:    "Should not add command when columns is not empty but GetAttributeCommands does not contain a valid command",
@@ -208,10 +210,7 @@ func (s *BlueprintTestSuite) TestBigInteger() {
 		ttype: convert.Pointer("bigInteger"),
 	})
 
-	s.blueprint.BigInteger(name, schema.IntegerConfig{
-		AutoIncrement: true,
-		Unsigned:      true,
-	})
+	s.blueprint.BigInteger(name).AutoIncrement().Unsigned()
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
 		autoIncrement: convert.Pointer(true),
 		name:          &name,
@@ -268,14 +267,14 @@ func (s *BlueprintTestSuite) TestDecimal() {
 
 	tests := []struct {
 		name          string
-		decimalLength *schema.DecimalConfig
+		places        *int
+		total         *int
 		expectColumns []*ColumnDefinition
 		expectPlaces  int
 		expectTotal   int
 	}{
 		{
-			name:          "decimalLength is nil",
-			decimalLength: nil,
+			name: "decimalLength is nil",
 			expectColumns: []*ColumnDefinition{
 				{
 					name:  &column,
@@ -286,13 +285,12 @@ func (s *BlueprintTestSuite) TestDecimal() {
 			expectTotal:  8,
 		},
 		{
-			name:          "decimalLength only with places",
-			decimalLength: &schema.DecimalConfig{Places: 4},
+			name:   "decimalLength only with places",
+			places: convert.Pointer(4),
 			expectColumns: []*ColumnDefinition{
 				{
 					name:   &column,
 					places: convert.Pointer(4),
-					total:  convert.Pointer(0),
 					ttype:  &ttype,
 				},
 			},
@@ -300,22 +298,22 @@ func (s *BlueprintTestSuite) TestDecimal() {
 			expectTotal:  0,
 		},
 		{
-			name:          "decimalLength only with total",
-			decimalLength: &schema.DecimalConfig{Total: 10},
+			name:  "decimalLength only with total",
+			total: convert.Pointer(10),
 			expectColumns: []*ColumnDefinition{
 				{
-					name:   &column,
-					places: convert.Pointer(0),
-					total:  convert.Pointer(10),
-					ttype:  &ttype,
+					name:  &column,
+					total: convert.Pointer(10),
+					ttype: &ttype,
 				},
 			},
 			expectPlaces: 0,
 			expectTotal:  10,
 		},
 		{
-			name:          "decimalLength with total",
-			decimalLength: &schema.DecimalConfig{Places: 4, Total: 10},
+			name:   "decimalLength with total",
+			places: convert.Pointer(4),
+			total:  convert.Pointer(10),
 			expectColumns: []*ColumnDefinition{
 				{
 					name:   &column,
@@ -332,12 +330,14 @@ func (s *BlueprintTestSuite) TestDecimal() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			s.blueprint.columns = []*ColumnDefinition{}
-
-			if test.decimalLength != nil {
-				s.blueprint.Decimal(column, *test.decimalLength)
-			} else {
-				s.blueprint.Decimal(column)
+			decimal := s.blueprint.Decimal(column)
+			if test.places != nil {
+				decimal.Places(*test.places)
 			}
+			if test.total != nil {
+				decimal.Total(*test.total)
+			}
+
 			s.Equal(test.expectColumns, s.blueprint.columns)
 		})
 	}
@@ -419,7 +419,7 @@ func (s *BlueprintTestSuite) TestIndexCommand() {
 	s.Contains(s.blueprint.commands, &schema.Command{
 		Columns: []string{"id", "name"},
 		Name:    "index",
-		Value:   "goravel_users_id_name_index",
+		Index:   "goravel_users_id_name_index",
 	})
 
 	s.blueprint.indexCommand("index", []string{"id", "name"}, schema.IndexConfig{
@@ -430,7 +430,7 @@ func (s *BlueprintTestSuite) TestIndexCommand() {
 		Algorithm: "custom_algorithm",
 		Columns:   []string{"id", "name"},
 		Name:      "index",
-		Value:     "custom_name",
+		Index:     "custom_name",
 	})
 }
 
@@ -442,10 +442,7 @@ func (s *BlueprintTestSuite) TestInteger() {
 		ttype: convert.Pointer("integer"),
 	})
 
-	s.blueprint.Integer(name, schema.IntegerConfig{
-		AutoIncrement: true,
-		Unsigned:      true,
-	})
+	s.blueprint.Integer(name).AutoIncrement().Unsigned()
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
 		autoIncrement: convert.Pointer(true),
 		name:          &name,
