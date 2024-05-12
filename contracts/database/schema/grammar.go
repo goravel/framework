@@ -10,8 +10,7 @@ type Grammar interface {
 	// CompileChange Compile a change column command into a series of SQL statements.
 	CompileChange(blueprint Blueprint) string
 	// CompileColumns Compile the query to determine the columns.
-	// TODO check if the database is required
-	CompileColumns(schema, table string) string
+	CompileColumns(database, schema, table string) string
 	// CompileComment Compile a column comment command.
 	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
@@ -54,12 +53,8 @@ type Grammar interface {
 	CompileUnique(blueprint Blueprint, command *Command) string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
-	// ModifyDefault Get the SQL for a default column modifier.
-	ModifyDefault(blueprint Blueprint, column ColumnDefinition) string
-	// ModifyNullable Get the SQL for a nullable column modifier.
-	ModifyNullable(blueprint Blueprint, column ColumnDefinition) string
-	// ModifyIncrement Get the SQL for an auto-increment column modifier.
-	ModifyIncrement(blueprint Blueprint, column ColumnDefinition) string
+	// GetModifiers Get the column modifiers.
+	GetModifiers() []func(Blueprint, ColumnDefinition) string
 	// TypeBigInteger Create the column definition for a big integer type.
 	TypeBigInteger(column ColumnDefinition) string
 	// TypeBinary Create the column definition for a binary type.

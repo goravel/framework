@@ -114,11 +114,11 @@ func (r *Schema) DropIfExists(table string) error {
 }
 
 func (r *Schema) GetColumns(table string) ([]schemacontract.Column, error) {
-	_, schema, table := r.parseDatabaseAndSchemaAndTable(table)
+	database, schema, table := r.parseDatabaseAndSchemaAndTable(table)
 	table = r.db.Prefix + table
 
 	var columns []schemacontract.Column
-	if err := r.query.Raw(r.grammar.CompileColumns(schema, table)).Scan(&columns); err != nil {
+	if err := r.query.Raw(r.grammar.CompileColumns(database, schema, table)).Scan(&columns); err != nil {
 		return nil, err
 	}
 

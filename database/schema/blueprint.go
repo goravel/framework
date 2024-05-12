@@ -513,7 +513,9 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schemacontract.Gramma
 		case commandAdd:
 			statements = append(statements, grammar.CompileAdd(r))
 		case commandComment:
-			statements = append(statements, grammar.CompileComment(r, command))
+			if statement := grammar.CompileComment(r, command); statement != "" {
+				statements = append(statements, statement)
+			}
 		case commandChange:
 			statements = append(statements, grammar.CompileChange(r))
 		case commandCreate:

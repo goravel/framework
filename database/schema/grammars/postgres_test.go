@@ -351,30 +351,3 @@ func (s *PostgresSuite) TestTypeTimestampTz() {
 
 	s.Equal("timestamp", s.grammar.TypeTimestampTz(mockColumn2))
 }
-
-func (s *PostgresSuite) TestGetColumns() {
-	mockColumn1 := &mockschema.ColumnDefinition{}
-	mockColumn1.On("GetName").Return("id").Once()
-	mockColumn1.On("GetType").Return("string").Once()
-	mockColumn1.On("GetLength").Return(100).Once()
-	mockColumn2 := &mockschema.ColumnDefinition{}
-	mockColumn2.On("GetName").Return("name").Once()
-	mockColumn2.On("GetType").Return("string").Once()
-	mockColumn2.On("GetLength").Return(0).Once()
-	mockBlueprint := &mockschema.Blueprint{}
-	mockBlueprint.On("GetTableName").Return("users").Once()
-	mockBlueprint.On("GetAddedColumns").Return([]schemacontract.ColumnDefinition{
-		mockColumn1, mockColumn2,
-	}).Once()
-
-	s.Equal([]string{"id varchar(100)", "name varchar"}, s.grammar.getColumns(mockBlueprint))
-}
-
-func (s *PostgresSuite) TestGetType() {
-	mockColumn := &mockschema.ColumnDefinition{}
-	mockColumn.EXPECT().GetType().Return("text").Once()
-	s.Equal("text", s.grammar.getType(mockColumn))
-
-	mockColumn.EXPECT().GetType().Return("invalid").Once()
-	s.Empty(s.grammar.getType(mockColumn))
-}

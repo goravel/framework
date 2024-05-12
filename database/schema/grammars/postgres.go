@@ -2,10 +2,8 @@ package grammars
 
 import (
 	"fmt"
-	"reflect"
 	"slices"
 	"strings"
-	"unicode"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	schemacontract "github.com/goravel/framework/contracts/database/schema"
@@ -32,7 +30,7 @@ func NewPostgres() *Postgres {
 }
 
 func (r *Postgres) CompileAdd(blueprint schemacontract.Blueprint) string {
-	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(prefixArray("add column", r.getColumns(blueprint)), ","))
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(prefixArray("add column", getColumns(r, blueprint)), ","))
 }
 
 func (r *Postgres) CompileChange(blueprint schemacontract.Blueprint) string {
@@ -56,7 +54,7 @@ func (r *Postgres) CompileChange(blueprint schemacontract.Blueprint) string {
 	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(columns, ", "))
 }
 
-func (r *Postgres) CompileColumns(schema, table string) string {
+func (r *Postgres) CompileColumns(database, schema, table string) string {
 	return fmt.Sprintf(
 		"select a.attname as name, t.typname as type_name, format_type(a.atttypid, a.atttypmod) as type, "+
 			"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
@@ -76,7 +74,7 @@ func (r *Postgres) CompileComment(blueprint schemacontract.Blueprint, command *s
 }
 
 func (r *Postgres) CompileCreate(blueprint schemacontract.Blueprint, query ormcontract.Query) string {
-	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(r.getColumns(blueprint), ","))
+	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
 }
 
 func (r *Postgres) CompileDrop(blueprint schemacontract.Blueprint, command string) string {
@@ -202,6 +200,10 @@ func (r *Postgres) CompileUnique(blueprint schemacontract.Blueprint, command *sc
 
 func (r *Postgres) GetAttributeCommands() []string {
 	return r.attributeCommands
+}
+
+func (r *Postgres) GetModifiers() []func(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	return r.modifiers
 }
 
 func (r *Postgres) ModifyNullable(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
@@ -349,38 +351,4 @@ func (r *Postgres) TypeTimestamp(column schemacontract.ColumnDefinition) string 
 
 func (r *Postgres) TypeTimestampTz(column schemacontract.ColumnDefinition) string {
 	return fmt.Sprintf("timestamp(%d) with time zone", column.GetPrecision())
-}
-
-func (r *Postgres) addModify(sql string, blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
-	for _, modifier := range r.modifiers {
-		sql += modifier(blueprint, column)
-	}
-
-	return sql
-}
-
-func (r *Postgres) getColumns(blueprint schemacontract.Blueprint) []string {
-	var columns []string
-	for _, column := range blueprint.GetAddedColumns() {
-		sql := fmt.Sprintf("%s %s", column.GetName(), r.getType(column))
-
-		columns = append(columns, r.addModify(sql, blueprint, column))
-	}
-
-	return columns
-}
-
-func (r *Postgres) getType(column schemacontract.ColumnDefinition) string {
-	t := []rune(column.GetType())
-	t[0] = unicode.ToUpper(t[0])
-	methodName := fmt.Sprintf("Type%s", string(t))
-	methodValue := reflect.ValueOf(r).MethodByName(methodName)
-	if methodValue.IsValid() {
-		args := []reflect.Value{reflect.ValueOf(column)}
-		callResult := methodValue.Call(args)
-
-		return callResult[0].String()
-	}
-
-	return ""
 }

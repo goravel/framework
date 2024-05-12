@@ -113,17 +113,17 @@ func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(schema.Blueprint) st
 	return _c
 }
 
-// CompileColumns provides a mock function with given fields: _a0, table
-func (_m *Grammar) CompileColumns(_a0 string, table string) string {
-	ret := _m.Called(_a0, table)
+// CompileColumns provides a mock function with given fields: database, _a1, table
+func (_m *Grammar) CompileColumns(database string, _a1 string, table string) string {
+	ret := _m.Called(database, _a1, table)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileColumns")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(_a0, table)
+	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
+		r0 = rf(database, _a1, table)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -137,15 +137,16 @@ type Grammar_CompileColumns_Call struct {
 }
 
 // CompileColumns is a helper method to define mock.On call
-//   - _a0 string
+//   - database string
+//   - _a1 string
 //   - table string
-func (_e *Grammar_Expecter) CompileColumns(_a0 interface{}, table interface{}) *Grammar_CompileColumns_Call {
-	return &Grammar_CompileColumns_Call{Call: _e.mock.On("CompileColumns", _a0, table)}
+func (_e *Grammar_Expecter) CompileColumns(database interface{}, _a1 interface{}, table interface{}) *Grammar_CompileColumns_Call {
+	return &Grammar_CompileColumns_Call{Call: _e.mock.On("CompileColumns", database, _a1, table)}
 }
 
-func (_c *Grammar_CompileColumns_Call) Run(run func(_a0 string, table string)) *Grammar_CompileColumns_Call {
+func (_c *Grammar_CompileColumns_Call) Run(run func(database string, _a1 string, table string)) *Grammar_CompileColumns_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(string), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -155,7 +156,7 @@ func (_c *Grammar_CompileColumns_Call) Return(_a0 string) *Grammar_CompileColumn
 	return _c
 }
 
-func (_c *Grammar_CompileColumns_Call) RunAndReturn(run func(string, string) string) *Grammar_CompileColumns_Call {
+func (_c *Grammar_CompileColumns_Call) RunAndReturn(run func(string, string, string) string) *Grammar_CompileColumns_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1146,143 +1147,49 @@ func (_c *Grammar_GetAttributeCommands_Call) RunAndReturn(run func() []string) *
 	return _c
 }
 
-// ModifyDefault provides a mock function with given fields: blueprint, column
-func (_m *Grammar) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	ret := _m.Called(blueprint, column)
+// GetModifiers provides a mock function with given fields:
+func (_m *Grammar) GetModifiers() []func(schema.Blueprint, schema.ColumnDefinition) string {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for ModifyDefault")
+		panic("no return value specified for GetModifiers")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, schema.ColumnDefinition) string); ok {
-		r0 = rf(blueprint, column)
+	var r0 []func(schema.Blueprint, schema.ColumnDefinition) string
+	if rf, ok := ret.Get(0).(func() []func(schema.Blueprint, schema.ColumnDefinition) string); ok {
+		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]func(schema.Blueprint, schema.ColumnDefinition) string)
+		}
 	}
 
 	return r0
 }
 
-// Grammar_ModifyDefault_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ModifyDefault'
-type Grammar_ModifyDefault_Call struct {
+// Grammar_GetModifiers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetModifiers'
+type Grammar_GetModifiers_Call struct {
 	*mock.Call
 }
 
-// ModifyDefault is a helper method to define mock.On call
-//   - blueprint schema.Blueprint
-//   - column schema.ColumnDefinition
-func (_e *Grammar_Expecter) ModifyDefault(blueprint interface{}, column interface{}) *Grammar_ModifyDefault_Call {
-	return &Grammar_ModifyDefault_Call{Call: _e.mock.On("ModifyDefault", blueprint, column)}
+// GetModifiers is a helper method to define mock.On call
+func (_e *Grammar_Expecter) GetModifiers() *Grammar_GetModifiers_Call {
+	return &Grammar_GetModifiers_Call{Call: _e.mock.On("GetModifiers")}
 }
 
-func (_c *Grammar_ModifyDefault_Call) Run(run func(blueprint schema.Blueprint, column schema.ColumnDefinition)) *Grammar_ModifyDefault_Call {
+func (_c *Grammar_GetModifiers_Call) Run(run func()) *Grammar_GetModifiers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(schema.ColumnDefinition))
+		run()
 	})
 	return _c
 }
 
-func (_c *Grammar_ModifyDefault_Call) Return(_a0 string) *Grammar_ModifyDefault_Call {
+func (_c *Grammar_GetModifiers_Call) Return(_a0 []func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_GetModifiers_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Grammar_ModifyDefault_Call) RunAndReturn(run func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_ModifyDefault_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ModifyIncrement provides a mock function with given fields: blueprint, column
-func (_m *Grammar) ModifyIncrement(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	ret := _m.Called(blueprint, column)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ModifyIncrement")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, schema.ColumnDefinition) string); ok {
-		r0 = rf(blueprint, column)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Grammar_ModifyIncrement_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ModifyIncrement'
-type Grammar_ModifyIncrement_Call struct {
-	*mock.Call
-}
-
-// ModifyIncrement is a helper method to define mock.On call
-//   - blueprint schema.Blueprint
-//   - column schema.ColumnDefinition
-func (_e *Grammar_Expecter) ModifyIncrement(blueprint interface{}, column interface{}) *Grammar_ModifyIncrement_Call {
-	return &Grammar_ModifyIncrement_Call{Call: _e.mock.On("ModifyIncrement", blueprint, column)}
-}
-
-func (_c *Grammar_ModifyIncrement_Call) Run(run func(blueprint schema.Blueprint, column schema.ColumnDefinition)) *Grammar_ModifyIncrement_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(schema.ColumnDefinition))
-	})
-	return _c
-}
-
-func (_c *Grammar_ModifyIncrement_Call) Return(_a0 string) *Grammar_ModifyIncrement_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Grammar_ModifyIncrement_Call) RunAndReturn(run func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_ModifyIncrement_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ModifyNullable provides a mock function with given fields: blueprint, column
-func (_m *Grammar) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	ret := _m.Called(blueprint, column)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ModifyNullable")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, schema.ColumnDefinition) string); ok {
-		r0 = rf(blueprint, column)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Grammar_ModifyNullable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ModifyNullable'
-type Grammar_ModifyNullable_Call struct {
-	*mock.Call
-}
-
-// ModifyNullable is a helper method to define mock.On call
-//   - blueprint schema.Blueprint
-//   - column schema.ColumnDefinition
-func (_e *Grammar_Expecter) ModifyNullable(blueprint interface{}, column interface{}) *Grammar_ModifyNullable_Call {
-	return &Grammar_ModifyNullable_Call{Call: _e.mock.On("ModifyNullable", blueprint, column)}
-}
-
-func (_c *Grammar_ModifyNullable_Call) Run(run func(blueprint schema.Blueprint, column schema.ColumnDefinition)) *Grammar_ModifyNullable_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(schema.ColumnDefinition))
-	})
-	return _c
-}
-
-func (_c *Grammar_ModifyNullable_Call) Return(_a0 string) *Grammar_ModifyNullable_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Grammar_ModifyNullable_Call) RunAndReturn(run func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_ModifyNullable_Call {
+func (_c *Grammar_GetModifiers_Call) RunAndReturn(run func() []func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_GetModifiers_Call {
 	_c.Call.Return(run)
 	return _c
 }
