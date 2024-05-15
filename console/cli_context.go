@@ -2,6 +2,7 @@ package console
 
 import (
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 
@@ -213,4 +214,13 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 	}
 
 	return answer, nil
+}
+
+func (r *CliContext) Spinner(message string, option ...console.SpinnerOption) error {
+	spin := spinner.New().Title(message)
+	if len(option) > 0 {
+		spin.Context(option[0].Ctx).Action(option[0].Action)
+	}
+
+	return spin.Run()
 }

@@ -1,6 +1,8 @@
 package console
 
 import (
+	"context"
+
 	"github.com/goravel/framework/contracts/console/command"
 )
 
@@ -32,6 +34,8 @@ type Context interface {
 	Error(message string)
 	// Line writes a string to the console.
 	Line(message string)
+	// MultiSelect prompts the user to select multiple options from a list of options.
+	MultiSelect(question string, options []Choice, option ...MultiSelectOption) ([]string, error)
 	// NewLine writes a newline character to the console.
 	NewLine(times ...int)
 	// Option gets the value of a command option.
@@ -54,8 +58,8 @@ type Context interface {
 	OptionInt64Slice(key string) []int64
 	// Secret prompts the user for a password.
 	Secret(question string, option ...SecretOption) (string, error)
-	// MultiSelect prompts the user to select multiple options from a list of options.
-	MultiSelect(question string, options []Choice, option ...MultiSelectOption) ([]string, error)
+	// Spinner creates a new spinner instance.
+	Spinner(message string, option ...SpinnerOption) error
 }
 
 type Choice struct {
@@ -100,4 +104,9 @@ type MultiSelectOption struct {
 	Default     []string
 	Validate    func([]string) error
 	Description string
+}
+
+type SpinnerOption struct {
+	Ctx    context.Context
+	Action func()
 }
