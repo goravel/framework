@@ -1,77 +1,12 @@
 package collect
 
 import (
-	"sort"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+
+	"sort"
 	"strconv"
+	"testing"
 )
-
-func TestMap(t *testing.T) {
-	results1 := Map([]int64{1, 2, 3, 4}, func(x int64, _ int) string {
-		return strconv.FormatInt(x, 10)
-	})
-	results2 := Map([]int64{1, 2, 3, 4}, func(x int64, _ int) int64 {
-		return x + 1
-	})
-	assert.Equal(t, []string{"1", "2", "3", "4"}, results1)
-	assert.Equal(t, []int64{2, 3, 4, 5}, results2)
-}
-
-func TestUnique(t *testing.T) {
-	uniqValues := Unique([]int{1, 2, 2, 1})
-	assert.Equal(t, []int{1, 2}, uniqValues)
-}
-
-func TestFilter(t *testing.T) {
-	even := Filter([]int{1, 2, 3, 4}, func(x int, index int) bool {
-		return x%2 == 0
-	})
-	assert.Equal(t, []int{2, 4}, even)
-}
-
-func TestSum(t *testing.T) {
-	list := []int{1, 2, 3, 4, 5}
-	sum := Sum(list)
-	assert.Equal(t, 15, sum)
-}
-
-func TestMax(t *testing.T) {
-	max1 := Max([]int{1, 2, 3})
-	max2 := Max([]int{})
-	assert.Equal(t, 3, max1)
-	assert.Equal(t, 0, max2)
-}
-
-func TestSplit(t *testing.T) {
-	result := Split([]int{0, 1, 2, 3, 4, 5}, 2)
-	result1 := Split([]int{0, 1, 2, 3, 4, 5, 6}, 2)
-	result2 := Split([]int{}, 2)
-	result3 := Split([]int{0}, 2)
-
-	assert.Equal(t, [][]int{{0, 1}, {2, 3}, {4, 5}}, result)
-	assert.Equal(t, [][]int{{0, 1}, {2, 3}, {4, 5}, {6}}, result1)
-	assert.Equal(t, [][]int{}, result2)
-	assert.Equal(t, [][]int{{0}}, result3)
-}
-
-func TestReverse(t *testing.T) {
-	reverseOrder := Reverse([]int{0, 1, 2, 3, 4, 5})
-	assert.Equal(t, []int{5, 4, 3, 2, 1, 0}, reverseOrder)
-}
-
-func TestShuffle(t *testing.T) {
-	randomOrder := Shuffle([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
-	assert.NotEqual(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, randomOrder)
-}
-
-func TestGroupBy(t *testing.T) {
-	groups := GroupBy([]int{0, 1, 2, 3, 4, 5}, func(i int) int {
-		return i % 3
-	})
-	assert.Equal(t, map[int][]int{0: []int{0, 3}, 1: []int{1, 4}, 2: []int{2, 5}}, groups)
-}
 
 func TestCount(t *testing.T) {
 	count := Count([]int{1, 5, 1})
@@ -98,6 +33,60 @@ func TestEach(t *testing.T) {
 	})
 }
 
+func TestFilter(t *testing.T) {
+	even := Filter([]int{1, 2, 3, 4}, func(x int, index int) bool {
+		return x%2 == 0
+	})
+	assert.Equal(t, []int{2, 4}, even)
+}
+
+func TestGroupBy(t *testing.T) {
+	groups := GroupBy([]int{0, 1, 2, 3, 4, 5}, func(i int) int {
+		return i % 3
+	})
+	assert.Equal(t, map[int][]int{0: []int{0, 3}, 1: []int{1, 4}, 2: []int{2, 5}}, groups)
+}
+
+func TestKeys(t *testing.T) {
+	keys1 := Keys[int, string](map[int]string{1: "foo", 2: "bar"})
+	keys2 := Keys[string, int](map[string]int{"foo": 1, "bar": 2})
+	sort.Ints(keys1)
+	sort.Strings(keys2)
+	assert.Equal(t, []int{1, 2}, keys1)
+	assert.Equal(t, []string{"bar", "foo"}, keys2)
+}
+
+func TestMap(t *testing.T) {
+	results1 := Map([]int64{1, 2, 3, 4}, func(x int64, _ int) string {
+		return strconv.FormatInt(x, 10)
+	})
+	results2 := Map([]int64{1, 2, 3, 4}, func(x int64, _ int) int64 {
+		return x + 1
+	})
+	assert.Equal(t, []string{"1", "2", "3", "4"}, results1)
+	assert.Equal(t, []int64{2, 3, 4, 5}, results2)
+}
+
+func TestMax(t *testing.T) {
+	max1 := Max([]int{1, 2, 3})
+	max2 := Max([]int{})
+	assert.Equal(t, 3, max1)
+	assert.Equal(t, 0, max2)
+}
+
+func TestMerge(t *testing.T) {
+	mergedMaps1 := Merge[string, int](
+		map[string]int{"a": 1, "b": 2},
+		map[string]int{"b": 3, "c": 4},
+	)
+	mergedMaps2 := Merge[int, string](
+		map[int]string{1: "a", 2: "b"},
+		map[int]string{2: "b", 4: "c"},
+	)
+	assert.Equal(t, map[string]int{"a": 1, "b": 3, "c": 4}, mergedMaps1)
+	assert.Equal(t, map[int]string{1: "a", 2: "b", 4: "c"}, mergedMaps2)
+}
+
 func TestMin(t *testing.T) {
 	min1 := Min([]int{1, 2, 3})
 	min2 := Min([]int{})
@@ -105,22 +94,52 @@ func TestMin(t *testing.T) {
 	assert.Equal(t, 0, min2)
 }
 
-func TestKeys(t *testing.T) {
-	keys := Keys[int, string](map[int]string{1: "foo", 2: "bar"})
-	sort.Ints(keys)
-	assert.Equal(t, []int{1, 2}, keys)
+func TestReverse(t *testing.T) {
+	reverseOrder1 := Reverse([]int{0, 1, 2, 3, 4, 5})
+	reverseOrder2 := Reverse([]string{"a", "b", "c", "d"})
+	assert.Equal(t, []int{5, 4, 3, 2, 1, 0}, reverseOrder1)
+	assert.Equal(t, []string{"d", "c", "b", "a"}, reverseOrder2)
+}
+
+func TestShuffle(t *testing.T) {
+	randomOrder1 := Shuffle([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	randomOrder2 := Shuffle([]string{"a", "b", "c", "d"})
+	assert.NotEqual(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, randomOrder1)
+	assert.NotEqual(t, []string{"a", "b", "c", "d"}, randomOrder2)
+}
+
+func TestSplit(t *testing.T) {
+	result := Split([]int{0, 1, 2, 3, 4, 5}, 2)
+	result1 := Split([]int{0, 1, 2, 3, 4, 5, 6}, 2)
+	result2 := Split([]int{}, 2)
+	result3 := Split([]int{0}, 2)
+	result4 := Split([]string{"a", "b", "c", "d"}, 2)
+
+	assert.Equal(t, [][]int{{0, 1}, {2, 3}, {4, 5}}, result)
+	assert.Equal(t, [][]int{{0, 1}, {2, 3}, {4, 5}, {6}}, result1)
+	assert.Equal(t, [][]int{}, result2)
+	assert.Equal(t, [][]int{{0}}, result3)
+	assert.Equal(t, [][]string{{"a", "b"}, {"c", "d"}}, result4)
+}
+
+func TestSum(t *testing.T) {
+	list := []int{1, 2, 3, 4, 5}
+	sum := Sum(list)
+	assert.Equal(t, 15, sum)
+}
+
+func TestUnique(t *testing.T) {
+	uniqValues1 := Unique([]int{1, 2, 2, 1})
+	uniqValues2 := Unique([]string{"a", "b", "b", "a"})
+	assert.Equal(t, []int{1, 2}, uniqValues1)
+	assert.Equal(t, []string{"a", "b"}, uniqValues2)
 }
 
 func TestValues(t *testing.T) {
-	values := Values[string, int](map[string]int{"foo": 1, "bar": 2})
-	sort.Ints(values)
-	assert.Equal(t, []int{1, 2}, values)
-}
-
-func TestMerge(t *testing.T) {
-	mergedMaps := Merge[string, int](
-		map[string]int{"a": 1, "b": 2},
-		map[string]int{"b": 3, "c": 4},
-	)
-	assert.Equal(t, map[string]int{"a": 1, "b": 3, "c": 4}, mergedMaps)
+	values1 := Values[string, int](map[string]int{"foo": 1, "bar": 2})
+	values2 := Values[int, string](map[int]string{1: "foo", 2: "bar"})
+	sort.Ints(values1)
+	sort.Strings(values2)
+	assert.Equal(t, []int{1, 2}, values1)
+	assert.Equal(t, []string{"bar", "foo"}, values2)
 }
