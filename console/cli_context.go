@@ -1,11 +1,56 @@
 package console
 
 import (
+	"github.com/charmbracelet/huh"
+	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
+
+	"github.com/goravel/framework/contracts/console"
 )
 
 type CliContext struct {
 	instance *cli.Context
+}
+
+func (r *CliContext) Ask(question string, option ...console.AskOption) (string, error) {
+	var answer string
+	multiple := false
+
+	if len(option) > 0 {
+		multiple = option[0].Multiple
+		answer = option[0].Default
+	}
+
+	if multiple {
+		input := huh.NewText().Title(question)
+		if len(option) > 0 {
+			input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).Lines(option[0].Lines)
+			if option[0].Validate != nil {
+				input.Validate(option[0].Validate)
+			}
+		}
+
+		err := input.Value(&answer).Run()
+		if err != nil {
+			return "", err
+		}
+	} else {
+		input := huh.NewInput().Title(question)
+
+		if len(option) > 0 {
+			input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).Prompt(option[0].Prompt)
+			if option[0].Validate != nil {
+				input.Validate(option[0].Validate)
+			}
+		}
+
+		err := input.Value(&answer).Run()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return answer, nil
 }
 
 func (r *CliContext) Argument(index int) string {
@@ -14,6 +59,101 @@ func (r *CliContext) Argument(index int) string {
 
 func (r *CliContext) Arguments() []string {
 	return r.instance.Args().Slice()
+}
+
+func (r *CliContext) Choice(question string, choices []console.Choice, option ...console.ChoiceOption) (string, error) {
+	var answer string
+
+	if len(option) > 0 {
+		answer = option[0].Default
+	}
+
+	options := make([]huh.Option[string], len(choices))
+	for i, choice := range choices {
+		options[i] = huh.NewOption[string](choice.Key, choice.Value).Selected(choice.Selected)
+	}
+
+	input := huh.NewSelect[string]().Title(question).Options(options...)
+	if len(option) > 0 {
+		input.Description(option[0].Description)
+		if option[0].Validate != nil {
+			input.Validate(option[0].Validate)
+		}
+	}
+
+	err := input.Value(&answer).Run()
+	if err != nil {
+		return "", err
+	}
+	return answer, err
+}
+
+func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
+	var answer bool
+	if len(option) > 0 {
+		answer = option[0].Default
+	}
+
+	input := huh.NewConfirm().Title(question)
+	if len(option) > 0 {
+		input.Description(option[0].Description).Affirmative(option[0].Affirmative).Negative(option[0].Negative)
+	}
+	err := input.Value(&answer).Run()
+	if err != nil {
+		return false, err
+	}
+
+	return answer, nil
+}
+
+func (r *CliContext) Error(message string) {
+	color.Redln(message)
+}
+
+func (r *CliContext) Info(message string) {
+	color.Blueln(message)
+}
+
+func (r *CliContext) Line(message string) {
+	color.Println(message)
+}
+
+func (r *CliContext) MultiSelect(question string, choices []console.Choice, option ...console.MultiSelectOption) ([]string, error) {
+	var answer []string
+
+	if len(option) > 0 {
+		answer = option[0].Default
+	}
+
+	options := make([]huh.Option[string], len(choices))
+	for i, choice := range choices {
+		options[i] = huh.NewOption[string](choice.Key, choice.Value).Selected(choice.Selected)
+	}
+
+	input := huh.NewMultiSelect[string]().Title(question).Options(options...)
+	if len(option) > 0 {
+		input.Description(option[0].Description)
+		if option[0].Validate != nil {
+			input.Validate(option[0].Validate)
+		}
+	}
+
+	err := input.Value(&answer).Run()
+	if err != nil {
+		return nil, err
+	}
+
+	return answer, err
+}
+
+func (r *CliContext) NewLine(times ...int) {
+	numLines := 1
+	if len(times) > 0 && times[0] > 0 {
+		numLines = times[0]
+	}
+	for i := 0; i < numLines; i++ {
+		color.Println()
+	}
 }
 
 func (r *CliContext) Option(key string) string {
@@ -50,4 +190,27 @@ func (r *CliContext) OptionInt64(key string) int64 {
 
 func (r *CliContext) OptionInt64Slice(key string) []int64 {
 	return r.instance.Int64Slice(key)
+}
+
+func (r *CliContext) Secret(question string, option ...console.SecretOption) (string, error) {
+	var answer string
+	if len(option) > 0 {
+		answer = option[0].Default
+	}
+
+	input := huh.NewInput().Title(question)
+
+	if len(option) > 0 {
+		input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).Password(true)
+		if option[0].Validate != nil {
+			input.Validate(option[0].Validate)
+		}
+	}
+
+	err := input.Value(&answer).Run()
+	if err != nil {
+		return "", err
+	}
+
+	return answer, nil
 }
