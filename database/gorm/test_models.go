@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"errors"
+	"fmt"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
@@ -55,10 +56,12 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_created_name" {
-					event.SetAttribute("avatar", "event_created_avatar")
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_avatar_%d", id))
 				}
 				if name.(string) == "event_created_FirstOrCreate_name" {
-					event.SetAttribute("avatar", "event_created_FirstOrCreate_avatar")
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", id))
 				}
 			}
 
@@ -169,7 +172,8 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 					event.SetAttribute("avatar", "event_updating_save_avatar1")
 				}
 				if avatar.(string) == "event_updating_model_update_avatar" {
-					event.SetAttribute("avatar", "event_updating_model_update_avatar1")
+					id := event.GetOriginal("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_updating_model_update_avatar_%d", id))
 				}
 			}
 

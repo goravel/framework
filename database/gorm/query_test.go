@@ -728,7 +728,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 				setup: func() {
 					user := User{Name: "event_created_name", Avatar: "avatar"}
 					s.Nil(query.Create(&user))
-					s.Equal("event_created_avatar", user.Avatar)
+					s.Equal(fmt.Sprintf("event_created_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
 					s.Nil(query.Find(&user1, user.ID))
@@ -743,7 +743,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.Nil(query.FirstOrCreate(&user, User{Name: "event_created_FirstOrCreate_name"}))
 					s.True(user.ID > 0)
 					s.Equal("event_created_FirstOrCreate_name", user.Name)
-					s.Equal("event_created_FirstOrCreate_avatar", user.Avatar)
+					s.Equal(fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
 					s.Nil(query.Find(&user1, user.ID))
@@ -961,12 +961,12 @@ func (s *QueryTestSuite) TestEvent_Updating() {
 					})
 					s.Nil(err)
 					s.Equal(int64(1), res.RowsAffected)
-					s.Equal("event_updating_model_update_avatar1", user.Avatar)
+					s.Equal(fmt.Sprintf("event_updating_model_update_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_updating_model_update_name", user1.Name)
-					s.Equal("event_updating_model_update_avatar1", user1.Avatar)
+					s.Equal(fmt.Sprintf("event_updating_model_update_avatar_%d", user.ID), user1.Avatar)
 				},
 			},
 		}
