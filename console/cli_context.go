@@ -245,20 +245,25 @@ func (r *CliContext) Warn(message string) {
 	color.Yellowln(message)
 }
 
-func (r *CliContext) WithProgressBar(items []any, callback func(any) error) error {
+func (r *CliContext) WithProgressBar(items []any, callback func(any) error) ([]any, error) {
 	bar := r.CreateProgressBar(len(items))
 	err := bar.Start()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, item := range items {
 		err := callback(item)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		bar.Advance()
 	}
 
-	return bar.Finish()
+	err = bar.Finish()
+	if err != nil {
+		return nil, err
+	}
+
+	return items, nil
 }

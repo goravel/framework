@@ -69,7 +69,7 @@ type Context interface {
 	// Warn writes a warning message to the console.
 	Warn(message string)
 	// WithProgressBar executes a callback with a progress bar.
-	WithProgressBar(items []any, callback func(any) error) error
+	WithProgressBar(items []any, callback func(any) error) ([]any, error)
 }
 
 type Progress interface {
