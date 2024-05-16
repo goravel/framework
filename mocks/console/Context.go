@@ -256,6 +256,39 @@ func (_c *Context_Choice_Call) RunAndReturn(run func(string, []console.Choice, .
 	return _c
 }
 
+// Comment provides a mock function with given fields: message
+func (_m *Context) Comment(message string) {
+	_m.Called(message)
+}
+
+// Context_Comment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Comment'
+type Context_Comment_Call struct {
+	*mock.Call
+}
+
+// Comment is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Comment(message interface{}) *Context_Comment_Call {
+	return &Context_Comment_Call{Call: _e.mock.On("Comment", message)}
+}
+
+func (_c *Context_Comment_Call) Run(run func(message string)) *Context_Comment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Comment_Call) Return() *Context_Comment_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Comment_Call) RunAndReturn(run func(string)) *Context_Comment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Confirm provides a mock function with given fields: question, option
 func (_m *Context) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
 	_va := make([]interface{}, len(option))
@@ -323,6 +356,54 @@ func (_c *Context_Confirm_Call) Return(_a0 bool, _a1 error) *Context_Confirm_Cal
 }
 
 func (_c *Context_Confirm_Call) RunAndReturn(run func(string, ...console.ConfirmOption) (bool, error)) *Context_Confirm_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateProgressBar provides a mock function with given fields: total
+func (_m *Context) CreateProgressBar(total int) console.Progress {
+	ret := _m.Called(total)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateProgressBar")
+	}
+
+	var r0 console.Progress
+	if rf, ok := ret.Get(0).(func(int) console.Progress); ok {
+		r0 = rf(total)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(console.Progress)
+		}
+	}
+
+	return r0
+}
+
+// Context_CreateProgressBar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateProgressBar'
+type Context_CreateProgressBar_Call struct {
+	*mock.Call
+}
+
+// CreateProgressBar is a helper method to define mock.On call
+//   - total int
+func (_e *Context_Expecter) CreateProgressBar(total interface{}) *Context_CreateProgressBar_Call {
+	return &Context_CreateProgressBar_Call{Call: _e.mock.On("CreateProgressBar", total)}
+}
+
+func (_c *Context_CreateProgressBar_Call) Run(run func(total int)) *Context_CreateProgressBar_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *Context_CreateProgressBar_Call) Return(_a0 console.Progress) *Context_CreateProgressBar_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Context_CreateProgressBar_Call) RunAndReturn(run func(int) console.Progress) *Context_CreateProgressBar_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -968,6 +1049,39 @@ func (_c *Context_OptionSlice_Call) RunAndReturn(run func(string) []string) *Con
 	return _c
 }
 
+// Question provides a mock function with given fields: question
+func (_m *Context) Question(question string) {
+	_m.Called(question)
+}
+
+// Context_Question_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Question'
+type Context_Question_Call struct {
+	*mock.Call
+}
+
+// Question is a helper method to define mock.On call
+//   - question string
+func (_e *Context_Expecter) Question(question interface{}) *Context_Question_Call {
+	return &Context_Question_Call{Call: _e.mock.On("Question", question)}
+}
+
+func (_c *Context_Question_Call) Run(run func(question string)) *Context_Question_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Question_Call) Return() *Context_Question_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Question_Call) RunAndReturn(run func(string)) *Context_Question_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Secret provides a mock function with given fields: question, option
 func (_m *Context) Secret(question string, option ...console.SecretOption) (string, error) {
 	_va := make([]interface{}, len(option))
@@ -1096,6 +1210,98 @@ func (_c *Context_Spinner_Call) Return(_a0 error) *Context_Spinner_Call {
 }
 
 func (_c *Context_Spinner_Call) RunAndReturn(run func(string, ...console.SpinnerOption) error) *Context_Spinner_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Warn provides a mock function with given fields: message
+func (_m *Context) Warn(message string) {
+	_m.Called(message)
+}
+
+// Context_Warn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Warn'
+type Context_Warn_Call struct {
+	*mock.Call
+}
+
+// Warn is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Warn(message interface{}) *Context_Warn_Call {
+	return &Context_Warn_Call{Call: _e.mock.On("Warn", message)}
+}
+
+func (_c *Context_Warn_Call) Run(run func(message string)) *Context_Warn_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Warn_Call) Return() *Context_Warn_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Warn_Call) RunAndReturn(run func(string)) *Context_Warn_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithProgressBar provides a mock function with given fields: items, callback
+func (_m *Context) WithProgressBar(items []interface{}, callback func(interface{}) error) ([]interface{}, error) {
+	ret := _m.Called(items, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithProgressBar")
+	}
+
+	var r0 []interface{}
+	var r1 error
+	if rf, ok := ret.Get(0).(func([]interface{}, func(interface{}) error) ([]interface{}, error)); ok {
+		return rf(items, callback)
+	}
+	if rf, ok := ret.Get(0).(func([]interface{}, func(interface{}) error) []interface{}); ok {
+		r0 = rf(items, callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]interface{})
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func([]interface{}, func(interface{}) error) error); ok {
+		r1 = rf(items, callback)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Context_WithProgressBar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithProgressBar'
+type Context_WithProgressBar_Call struct {
+	*mock.Call
+}
+
+// WithProgressBar is a helper method to define mock.On call
+//   - items []interface{}
+//   - callback func(interface{}) error
+func (_e *Context_Expecter) WithProgressBar(items interface{}, callback interface{}) *Context_WithProgressBar_Call {
+	return &Context_WithProgressBar_Call{Call: _e.mock.On("WithProgressBar", items, callback)}
+}
+
+func (_c *Context_WithProgressBar_Call) Run(run func(items []interface{}, callback func(interface{}) error)) *Context_WithProgressBar_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]interface{}), args[1].(func(interface{}) error))
+	})
+	return _c
+}
+
+func (_c *Context_WithProgressBar_Call) Return(_a0 []interface{}, _a1 error) *Context_WithProgressBar_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Context_WithProgressBar_Call) RunAndReturn(run func([]interface{}, func(interface{}) error) ([]interface{}, error)) *Context_WithProgressBar_Call {
 	_c.Call.Return(run)
 	return _c
 }
