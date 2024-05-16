@@ -66,8 +66,8 @@ type Context interface {
 	Spinner(message string, option ...SpinnerOption) error
 	// Warn writes a warning message to the console.
 	Warn(message string)
-	// Progress creates a new progress bar instance.
-	Progress(total int) Progress
+	// CreateProgressBar creates a new progress bar instance.
+	CreateProgressBar(total int) Progress
 }
 
 type Progress interface {

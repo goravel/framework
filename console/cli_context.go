@@ -241,6 +241,6 @@ func (r *CliContext) Warn(message string) {
 	color.Yellowln(message)
 }
 
-func (r *CliContext) Progress(total int) console.Progress {
+func (r *CliContext) CreateProgressBar(total int) console.Progress {
 	return NewProgressBar(total)
 }
