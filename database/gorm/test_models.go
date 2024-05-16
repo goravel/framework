@@ -69,7 +69,8 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventSaving: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
+			switch name.(type) {
+			case string:
 				if name.(string) == "event_saving_create_name" {
 					event.SetAttribute("avatar", "event_saving_create_avatar")
 				}
@@ -101,7 +102,8 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventSaved: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
+			switch name.(type) {
+			case string:
 				if name.(string) == "event_saved_create_name" {
 					event.SetAttribute("avatar", "event_saved_create_avatar")
 				}
@@ -128,7 +130,8 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventUpdating: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
+			switch name.(type) {
+			case string:
 				if name.(string) == "event_updating_create_name" {
 					event.SetAttribute("avatar", "event_updating_create_avatar")
 				}
@@ -181,7 +184,8 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventUpdated: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
+			switch name.(type) {
+			case string:
 				if name.(string) == "event_updated_create_name" {
 					event.SetAttribute("avatar", "event_updated_create_avatar")
 				}
