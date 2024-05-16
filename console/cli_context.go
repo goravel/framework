@@ -145,9 +145,13 @@ func (r *CliContext) MultiSelect(question string, choices []console.Choice, opti
 
 	input := huh.NewMultiSelect[string]().Title(question).Options(options...)
 	if len(option) > 0 {
-		input.Description(option[0].Description)
+		input.Description(option[0].Description).Limit(option[0].Limit)
 		if option[0].Validate != nil {
 			input.Validate(option[0].Validate)
+		}
+
+		if option[0].Filterable != nil {
+			input.Filterable(*option[0].Filterable)
 		}
 	}
 

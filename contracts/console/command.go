@@ -88,50 +88,82 @@ type Progress interface {
 }
 
 type Choice struct {
-	Key      string
-	Value    string
+	// Key the choice key.
+	Key string
+	// Selected determines if the choice is selected.
 	Selected bool
+	// Value the choice value.
+	Value string
 }
 
 type AskOption struct {
-	Default     string
-	Prompt      string
-	Multiple    *bool
-	Validate    func(string) error
-	Limit       int
+	// Default the default value for the input.
+	Default string
+	// Description the input description.
 	Description string
+	// Lines the number of lines for the input.(use for multiple lines text)
+	Lines int
+	// Limit the character limit for the input.
+	Limit int
+	// Multiple determines if input is single line or multiple lines text
+	Multiple *bool
+	// Placeholder the input placeholder.
 	Placeholder string
-	Lines       int
+	// Prompt the prompt message.(use for single line input)
+	Prompt string
+	// Validate the input validation function.
+	Validate func(string) error
 }
 
 type ChoiceOption struct {
-	Default     string
-	Validate    func(string) error
+	// Default the default value for the input.
+	Default string
+	// Description the input description.
 	Description string
+	// Validate the input validation function.
+	Validate func(string) error
 }
 
 type ConfirmOption struct {
-	Default     *bool
-	Description string
+	// Affirmative label for the affirmative button.
 	Affirmative string
-	Negative    string
+	// Default the default value for the input.
+	Default *bool
+	// Description the input description.
+	Description string
+	// Negative label for the negative button.
+	Negative string
 }
 
 type SecretOption struct {
-	Default     string
-	Validate    func(string) error
-	Limit       int
+	// Default the default value for the input.
+	Default string
+	// Description the input description.
 	Description string
+	// Limit the character limit for the input.
+	Limit int
+	// Placeholder the input placeholder.
 	Placeholder string
+	// Validate the input validation function.
+	Validate func(string) error
 }
 
 type MultiSelectOption struct {
-	Default     []string
-	Validate    func([]string) error
+	// Default the default value for the input.
+	Default []string
+	// Description the input description.
 	Description string
+	// Filterable determines if the choices can be filtered.
+	Filterable *bool
+	// Limit the number of choices that can be selected.
+	Limit int
+	// Validate the input validation function.
+	Validate func([]string) error
 }
 
 type SpinnerOption struct {
-	Ctx    context.Context
+	// Ctx the context for the spinner.
+	Ctx context.Context
+	// Action the action to execute.
 	Action func()
 }
