@@ -1,11 +1,11 @@
 package collect
 
 import (
-	"github.com/stretchr/testify/assert"
-
 	"sort"
 	"strconv"
 	"testing"
+	
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCount(t *testing.T) {
