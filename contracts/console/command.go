@@ -22,6 +22,8 @@ type Context interface {
 	Ask(question string, option ...AskOption) (string, error)
 	// Choice prompts the user to select from a list of options.
 	Choice(question string, options []Choice, option ...ChoiceOption) (string, error)
+	// Comment writes a comment message to the console.
+	Comment(message string)
 	// Confirm prompts the user for a confirmation.
 	Confirm(question string, option ...ConfirmOption) (bool, error)
 	// Argument get the value of a command argument.
@@ -56,10 +58,14 @@ type Context interface {
 	OptionInt64(key string) int64
 	// OptionInt64Slice looks up the value of a local Int64SliceFlag, returns nil if not found
 	OptionInt64Slice(key string) []int64
+	// Question writes a question to the console.
+	Question(question string)
 	// Secret prompts the user for a password.
 	Secret(question string, option ...SecretOption) (string, error)
 	// Spinner creates a new spinner instance.
 	Spinner(message string, option ...SpinnerOption) error
+	// Warn writes a warning message to the console.
+	Warn(message string)
 }
 
 type Choice struct {

@@ -89,6 +89,10 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 	return answer, err
 }
 
+func (r *CliContext) Comment(message string) {
+	color.Grayln(message)
+}
+
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
 	var answer bool
 	if len(option) > 0 {
@@ -112,7 +116,7 @@ func (r *CliContext) Error(message string) {
 }
 
 func (r *CliContext) Info(message string) {
-	color.Blueln(message)
+	color.Greenln(message)
 }
 
 func (r *CliContext) Line(message string) {
@@ -193,6 +197,10 @@ func (r *CliContext) OptionInt64Slice(key string) []int64 {
 	return r.instance.Int64Slice(key)
 }
 
+func (r *CliContext) Question(question string) {
+	color.BgBlue.Println(question)
+}
+
 func (r *CliContext) Secret(question string, option ...console.SecretOption) (string, error) {
 	var answer string
 	if len(option) > 0 {
@@ -223,4 +231,8 @@ func (r *CliContext) Spinner(message string, option ...console.SpinnerOption) er
 	}
 
 	return spin.Run()
+}
+
+func (r *CliContext) Warn(message string) {
+	color.Yellowln(message)
 }
