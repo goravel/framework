@@ -66,6 +66,23 @@ type Context interface {
 	Spinner(message string, option ...SpinnerOption) error
 	// Warn writes a warning message to the console.
 	Warn(message string)
+	// Progress creates a new progress bar instance.
+	Progress(total int) Progress
+}
+
+type Progress interface {
+	// Advance advances the progress bar by a given step.
+	Advance(step ...int)
+	// Finish completes the progress bar.
+	Finish() error
+	// ShowElapsedTime sets if the elapsed time should be displayed in the progress bar.
+	ShowElapsedTime(b ...bool) Progress
+	// ShowTitle sets the title of the progress bar.
+	ShowTitle(b ...bool) Progress
+	// SetTitle sets the message of the progress bar.
+	SetTitle(message string)
+	// Start starts the progress bar.
+	Start() error
 }
 
 type Choice struct {
@@ -77,7 +94,7 @@ type Choice struct {
 type AskOption struct {
 	Default     string
 	Prompt      string
-	Multiple    bool
+	Multiple    *bool
 	Validate    func(string) error
 	Limit       int
 	Description string
@@ -92,7 +109,7 @@ type ChoiceOption struct {
 }
 
 type ConfirmOption struct {
-	Default     bool
+	Default     *bool
 	Description string
 	Affirmative string
 	Negative    string

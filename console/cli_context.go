@@ -18,7 +18,9 @@ func (r *CliContext) Ask(question string, option ...console.AskOption) (string, 
 	multiple := false
 
 	if len(option) > 0 {
-		multiple = option[0].Multiple
+		if option[0].Multiple != nil {
+			multiple = *option[0].Multiple
+		}
 		answer = option[0].Default
 	}
 
@@ -96,7 +98,9 @@ func (r *CliContext) Comment(message string) {
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
 	var answer bool
 	if len(option) > 0 {
-		answer = option[0].Default
+		if option[0].Default != nil {
+			answer = *option[0].Default
+		}
 	}
 
 	input := huh.NewConfirm().Title(question)
@@ -235,4 +239,8 @@ func (r *CliContext) Spinner(message string, option ...console.SpinnerOption) er
 
 func (r *CliContext) Warn(message string) {
 	color.Yellowln(message)
+}
+
+func (r *CliContext) Progress(total int) console.Progress {
+	return NewProgressBar(total)
 }
