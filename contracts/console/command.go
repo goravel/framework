@@ -20,6 +20,8 @@ type Command interface {
 type Context interface {
 	// Ask prompts the user for input.
 	Ask(question string, option ...AskOption) (string, error)
+	// CreateProgressBar creates a new progress bar instance.
+	CreateProgressBar(total int) Progress
 	// Choice prompts the user to select from a list of options.
 	Choice(question string, options []Choice, option ...ChoiceOption) (string, error)
 	// Comment writes a comment message to the console.
@@ -66,8 +68,8 @@ type Context interface {
 	Spinner(message string, option ...SpinnerOption) error
 	// Warn writes a warning message to the console.
 	Warn(message string)
-	// CreateProgressBar creates a new progress bar instance.
-	CreateProgressBar(total int) Progress
+	// WithProgressBar executes a callback with a progress bar.
+	WithProgressBar(items []any, callback func(any) error) error
 }
 
 type Progress interface {

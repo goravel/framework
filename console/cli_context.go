@@ -64,6 +64,10 @@ func (r *CliContext) Arguments() []string {
 	return r.instance.Args().Slice()
 }
 
+func (r *CliContext) CreateProgressBar(total int) console.Progress {
+	return NewProgressBar(total)
+}
+
 func (r *CliContext) Choice(question string, choices []console.Choice, option ...console.ChoiceOption) (string, error) {
 	var answer string
 
@@ -241,6 +245,20 @@ func (r *CliContext) Warn(message string) {
 	color.Yellowln(message)
 }
 
-func (r *CliContext) CreateProgressBar(total int) console.Progress {
-	return NewProgressBar(total)
+func (r *CliContext) WithProgressBar(items []any, callback func(any) error) error {
+	bar := r.CreateProgressBar(len(items))
+	err := bar.Start()
+	if err != nil {
+		return err
+	}
+
+	for _, item := range items {
+		err := callback(item)
+		if err != nil {
+			return err
+		}
+		bar.Advance()
+	}
+
+	return bar.Finish()
 }
