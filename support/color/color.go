@@ -26,6 +26,14 @@ var (
 	BgGray   = pterm.BgGray
 )
 
+var (
+	Info    = pterm.Info
+	Warn    = pterm.Warning
+	Error   = pterm.Error
+	Debug   = pterm.Debug
+	Success = pterm.Success
+)
+
 func BgBluef(format string, a ...any) { BgBlue.Printf(format, a...) }
 
 func BgBlueln(a ...any) { BgBlue.Println(a...) }
@@ -115,3 +123,35 @@ func Whitef(format string, a ...any) { White.Printf(format, a...) }
 func Whiteln(a ...any) { White.Println(a...) }
 
 func Whitep(a ...any) { White.Print(a...) }
+
+// Quick use color print message
+
+func Debugf(format string, a ...any) { Debug.Printf(format, a...) }
+
+func Debugln(a ...any) { Debug.Println(a...) }
+
+func Debugp(a ...any) { Debug.Print(a...) }
+
+func Errorf(format string, a ...any) { Error.Printf(format, a...) }
+
+func Errorln(a ...any) { Error.Println(a...) }
+
+func Errorp(a ...any) { Error.Print(a...) }
+
+func Infof(format string, a ...any) { Info.Printf(format, a...) }
+
+func Infoln(a ...any) { Info.Println(a...) }
+
+func Infop(a ...any) { Info.Print(a...) }
+
+func Successf(format string, a ...any) { Success.Printf(format, a...) }
+
+func Successln(a ...any) { Success.Println(a...) }
+
+func Successp(a ...any) { Success.Print(a...) }
+
+func Warnf(format string, a ...any) { Warn.Printf(format, a...) }
+
+func Warnln(a ...any) { Warn.Println(a...) }
+
+func Warnp(a ...any) { Warn.Print(a...) }
