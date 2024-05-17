@@ -35,6 +35,10 @@ type ColumnDefinition interface {
 	GetType() string
 	// GetUnsigned returns the unsigned value
 	GetUnsigned() bool
+	// GetUseCurrent returns the useCurrent value
+	GetUseCurrent() bool
+	// GetUseCurrentOnUpdate returns the useCurrentOnUpdate value
+	GetUseCurrentOnUpdate() bool
 	// Nullable allow NULL values to be inserted into the column
 	Nullable() ColumnDefinition
 	// Places set the decimal places
@@ -43,6 +47,10 @@ type ColumnDefinition interface {
 	Total(total int) ColumnDefinition
 	// Unsigned set the column as unsigned
 	Unsigned() ColumnDefinition
+	// UseCurrent set the column to use the current timestamp
+	UseCurrent() ColumnDefinition
+	// UseCurrentOnUpdate set the column to use the current timestamp on update
+	UseCurrentOnUpdate() ColumnDefinition
 }
 
 type Column struct {

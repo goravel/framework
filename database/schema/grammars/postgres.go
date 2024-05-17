@@ -158,10 +158,10 @@ func (r *Postgres) CompileIndexes(schema, table string) string {
 	)
 }
 
-func (r *Postgres) CompilePrimary(blueprint schemacontract.Blueprint, columns []string) string {
+func (r *Postgres) CompilePrimary(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
 	return fmt.Sprintf("alter table %s add primary key (%s)",
 		blueprint.GetTableName(),
-		strings.Join(columns, ", "),
+		strings.Join(command.Columns, ", "),
 	)
 }
 
@@ -346,9 +346,17 @@ func (r *Postgres) TypeTimeTz(column schemacontract.ColumnDefinition) string {
 }
 
 func (r *Postgres) TypeTimestamp(column schemacontract.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default("current_timestamp")
+	}
+
 	return fmt.Sprintf("timestamp(%d) without time zone", column.GetPrecision())
 }
 
 func (r *Postgres) TypeTimestampTz(column schemacontract.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default("current_timestamp")
+	}
+
 	return fmt.Sprintf("timestamp(%d) with time zone", column.GetPrecision())
 }

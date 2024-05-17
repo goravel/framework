@@ -2,6 +2,7 @@ package grammars
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -20,9 +21,9 @@ func NewMysql() *Mysql {
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 	}
 	mysql.modifiers = []func(schemacontract.Blueprint, schemacontract.ColumnDefinition) string{
-		mysql.ModifyCharset,
 		mysql.ModifyComment,
 		mysql.ModifyDefault,
+		mysql.ModifyOnUpdate,
 		mysql.ModifyIncrement,
 		mysql.ModifyNullable,
 		mysql.ModifyUnsigned,
@@ -131,9 +132,13 @@ func (r *Mysql) CompileIndexes(database, table string) string {
 	panic("implement me")
 }
 
-func (r *Mysql) CompilePrimary(blueprint schemacontract.Blueprint, columns []string) string {
-	//TODO implement me
-	panic("implement me")
+func (r *Mysql) CompilePrimary(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
+	var algorithm string
+	if command.Algorithm != "" {
+		algorithm = fmt.Sprintf(" using %s", command.Algorithm)
+	}
+
+	return fmt.Sprintf("alter table %s add primary key %s(%s)", blueprint.GetTableName(), algorithm, strings.Join(command.Columns, ", "))
 }
 
 func (r *Mysql) CompileRename(blueprint schemacontract.Blueprint, to string) string {
@@ -162,43 +167,66 @@ func (r *Mysql) CompileTables(database string) string {
 }
 
 func (r *Mysql) CompileUnique(blueprint schemacontract.Blueprint, command *schemacontract.Command) string {
-	//TODO implement me
-	panic("implement me")
+	return r.compileKey(blueprint, command, "unique")
 }
 
 func (r *Mysql) GetAttributeCommands() []string {
-	//TODO implement me
-	panic("implement me")
+	return r.attributeCommands
 }
 
 func (r *Mysql) GetModifiers() []func(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
 	return r.modifiers
 }
 
-func (r *Mysql) ModifyCharset(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
-	return ""
-}
-
 func (r *Mysql) ModifyComment(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	if column.GetComment() != "" {
+		return fmt.Sprintf(" comment '%s'", column.GetComment())
+	}
+
 	return ""
 }
 
 func (r *Mysql) ModifyDefault(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
-	//TODO implement me
-	panic("implement me")
+	if column.GetDefault() != nil {
+		return fmt.Sprintf("default %s", getDefaultValue(column.GetDefault()))
+	}
+
+	return ""
 }
 
 func (r *Mysql) ModifyNullable(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
-	//TODO implement me
-	panic("implement me")
+	if !column.GetNullable() {
+		return " not null"
+	}
+
+	return ""
+}
+
+func (r *Mysql) ModifyOnUpdate(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	if column.GetUseCurrentOnUpdate() {
+		return " on update CURRENT_TIMESTAMP"
+	}
+
+	return ""
 }
 
 func (r *Mysql) ModifyIncrement(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
-	//TODO implement me
-	panic("implement me")
+	if slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+		if blueprint.HasCommand("primary") || (column.GetChange() && column.GetAutoIncrement()) {
+			return " auto_increment"
+		} else {
+			return " auto_increment primary key"
+		}
+	}
+
+	return ""
 }
 
 func (r *Mysql) ModifyUnsigned(blueprint schemacontract.Blueprint, column schemacontract.ColumnDefinition) string {
+	if column.GetUnsigned() {
+		return " unsigned"
+	}
+
 	return ""
 }
 
@@ -223,8 +251,22 @@ func (r *Mysql) TypeDate(column schemacontract.ColumnDefinition) string {
 }
 
 func (r *Mysql) TypeDateTime(column schemacontract.ColumnDefinition) string {
-	//TODO implement me
-	panic("implement me")
+	var current string
+	if column.GetPrecision() > 0 {
+		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
+	} else {
+		current = "CURRENT_TIMESTAMP"
+	}
+
+	if column.GetUseCurrent() {
+		column.Default(current)
+	}
+
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("datetime(%d)", column.GetPrecision())
+	} else {
+		return "datetime"
+	}
 }
 
 func (r *Mysql) TypeDateTimeTz(column schemacontract.ColumnDefinition) string {
@@ -273,7 +315,6 @@ func (r *Mysql) TypeText(column schemacontract.ColumnDefinition) string {
 }
 
 func (r *Mysql) TypeTime(column schemacontract.ColumnDefinition) string {
-	//TODO implement me
 	if column.GetPrecision() > 0 {
 		return fmt.Sprintf("time(%d)", column.GetPrecision())
 	} else {
@@ -286,10 +327,34 @@ func (r *Mysql) TypeTimeTz(column schemacontract.ColumnDefinition) string {
 }
 
 func (r *Mysql) TypeTimestamp(column schemacontract.ColumnDefinition) string {
-	//TODO implement me
-	panic("implement me")
+	var current string
+	if column.GetPrecision() > 0 {
+		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
+	} else {
+		current = "CURRENT_TIMESTAMP"
+	}
+
+	if column.GetUseCurrent() {
+		column.Default(current)
+	}
+
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("timestamp(%d)", column.GetPrecision())
+	} else {
+		return "timestamp"
+	}
 }
 
 func (r *Mysql) TypeTimestampTz(column schemacontract.ColumnDefinition) string {
 	return r.TypeTimestamp(column)
+}
+
+func (r *Mysql) compileKey(blueprint schemacontract.Blueprint, command *schemacontract.Command, ttype string) string {
+	var algorithm string
+	if command.Algorithm != "" {
+		algorithm = fmt.Sprintf(" using %s", command.Algorithm)
+	}
+
+	return fmt.Sprintf("alter table %s add %s %s%s(%s)",
+		blueprint.GetTableName(), ttype, command.Index, algorithm, strings.Join(command.Columns, ", "))
 }

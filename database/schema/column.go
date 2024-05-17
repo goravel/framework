@@ -6,19 +6,21 @@ import (
 )
 
 type ColumnDefinition struct {
-	allowed       []string
-	autoIncrement *bool
-	change        *bool
-	comment       *string
-	def           any
-	length        *int
-	name          *string
-	nullable      *bool
-	places        *int
-	precision     *int
-	total         *int
-	ttype         *string
-	unsigned      *bool
+	allowed            []string
+	autoIncrement      *bool
+	change             *bool
+	comment            *string
+	def                any
+	length             *int
+	name               *string
+	nullable           *bool
+	places             *int
+	precision          *int
+	total              *int
+	ttype              *string
+	unsigned           *bool
+	useCurrent         *bool
+	useCurrentOnUpdate *bool
 }
 
 func (r *ColumnDefinition) AutoIncrement() schemacontract.ColumnDefinition {
@@ -139,6 +141,22 @@ func (r *ColumnDefinition) GetUnsigned() (unsigned bool) {
 	return
 }
 
+func (r *ColumnDefinition) GetUseCurrent() (useCurrent bool) {
+	if r.useCurrent != nil {
+		return *r.useCurrent
+	}
+
+	return
+}
+
+func (r *ColumnDefinition) GetUseCurrentOnUpdate() (useCurrentOnUpdate bool) {
+	if r.useCurrentOnUpdate != nil {
+		return *r.useCurrentOnUpdate
+	}
+
+	return
+}
+
 func (r *ColumnDefinition) Nullable() schemacontract.ColumnDefinition {
 	r.nullable = convert.Pointer(true)
 
@@ -159,6 +177,18 @@ func (r *ColumnDefinition) Total(total int) schemacontract.ColumnDefinition {
 
 func (r *ColumnDefinition) Unsigned() schemacontract.ColumnDefinition {
 	r.unsigned = convert.Pointer(true)
+
+	return r
+}
+
+func (r *ColumnDefinition) UseCurrent() schemacontract.ColumnDefinition {
+	r.useCurrent = convert.Pointer(true)
+
+	return r
+}
+
+func (r *ColumnDefinition) UseCurrentOnUpdate() schemacontract.ColumnDefinition {
+	r.useCurrentOnUpdate = convert.Pointer(true)
 
 	return r
 }

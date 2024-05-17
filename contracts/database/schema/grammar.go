@@ -38,7 +38,7 @@ type Grammar interface {
 	// CompileIndexes Compile the query to determine the indexes.
 	CompileIndexes(database, table string) string
 	// CompilePrimary Compile a primary key command.
-	CompilePrimary(blueprint Blueprint, columns []string) string
+	CompilePrimary(blueprint Blueprint, command *Command) string
 	// CompileRename Compile a rename table command.
 	CompileRename(blueprint Blueprint, to string) string
 	// CompileRenameColumn Compile a rename column command.
