@@ -8,10 +8,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/json"
 )
 

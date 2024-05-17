@@ -3,10 +3,9 @@ package route
 import (
 	"fmt"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/route"
+	"github.com/goravel/framework/support/color"
 )
 
 type Driver string

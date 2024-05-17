@@ -9,9 +9,9 @@ import (
 	"github.com/RichardKnop/machinery/v2/config"
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/RichardKnop/machinery/v2/log"
-	"github.com/gookit/color"
 
 	logcontract "github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/color"
 )
 
 type Machinery struct {

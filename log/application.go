@@ -3,11 +3,11 @@ package log
 import (
 	"context"
 
-	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/color"
 )
 
 type Application struct {

@@ -4,12 +4,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 )
 
 type Application struct {

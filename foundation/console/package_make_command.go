@@ -4,10 +4,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -76,7 +75,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	color.Green.Printf("Package created successfully: %s\n", root)
+	color.Greenf("Package created successfully: %s\n", root)
 
 	return nil
 }

@@ -1,11 +1,10 @@
 package console
 
 import (
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 )
 
 type MigrateMakeCommand struct {
@@ -56,7 +55,7 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green.Printf("Created Migration: %s\n", name)
+	color.Greenf("Created Migration: %s\n", name)
 
 	return nil
 }

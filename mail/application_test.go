@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -16,6 +15,7 @@ import (
 	configmock "github.com/goravel/framework/mocks/config"
 	logmock "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/queue"
+	"github.com/goravel/framework/support/color"
 	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"

@@ -5,12 +5,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -47,7 +46,7 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 		color.Yellowln("**************************************")
 		color.Yellowln("*     Application In Production!     *")
 		color.Yellowln("**************************************")
-		color.Println(color.New(color.Green).Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.New(color.Yellow).Sprintf("no") + "]" + ":")
+		color.Println(color.Sgreenf("Do you really wish to run this command? (yes/no) ") + "[" + color.Syellowf("no") + "]" + ":")
 
 		var result string
 		_, err := fmt.Scanln(&result)

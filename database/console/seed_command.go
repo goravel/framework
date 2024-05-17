@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/support/color"
 )
 
 type SeedCommand struct {

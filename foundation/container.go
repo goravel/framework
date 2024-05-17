@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
 	"github.com/goravel/framework/config"
@@ -47,6 +45,7 @@ import (
 	"github.com/goravel/framework/route"
 	"github.com/goravel/framework/schedule"
 	"github.com/goravel/framework/session"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/testing"
 	"github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"

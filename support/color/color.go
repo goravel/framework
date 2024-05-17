@@ -124,6 +124,54 @@ func Whiteln(a ...any) { White.Println(a...) }
 
 func Whitep(a ...any) { White.Print(a...) }
 
+func Sbluef(format string, a ...any) string { return Blue.Sprintf(format, a...) }
+
+func Sblueln(a ...any) string { return Blue.Sprintln(a...) }
+
+func Sbluep(a ...any) string { return Blue.Sprint(a...) }
+
+func Scyanf(format string, a ...any) string { return Cyan.Sprintf(format, a...) }
+
+func Scyanln(a ...any) string { return Cyan.Sprintln(a...) }
+
+func Scyanp(a ...any) string { return Cyan.Sprint(a...) }
+
+func Sgrayf(format string, a ...any) string { return Gray.Sprintf(format, a...) }
+
+func Sgrayln(a ...any) string { return Gray.Sprintln(a...) }
+
+func Sgrayp(a ...any) string { return Gray.Sprint(a...) }
+
+func Sgreenf(format string, a ...any) string { return Green.Sprintf(format, a...) }
+
+func Sgreenln(a ...any) string { return Green.Sprintln(a...) }
+
+func Sgreenp(a ...any) string { return Green.Sprint(a...) }
+
+func Sprintf(format string, a ...any) string { return fmt.Sprintf(format, a...) }
+
+func Sprintln(a ...any) string { return fmt.Sprintln(a...) }
+
+func Sprint(a ...any) string { return fmt.Sprint(a...) }
+
+func Sredf(format string, a ...any) string { return Red.Sprintf(format, a...) }
+
+func Sredln(a ...any) string { return Red.Sprintln(a...) }
+
+func Sredp(a ...any) string { return Red.Sprint(a...) }
+
+func Syellowf(format string, a ...any) string { return Yellow.Sprintf(format, a...) }
+
+func Syellowln(a ...any) string { return Yellow.Sprintln(a...) }
+
+func Syellowp(a ...any) string { return Yellow.Sprint(a...) }
+
+func Swhitef(format string, a ...any) string { return White.Sprintf(format, a...) }
+
+func Swhiteln(a ...any) string { return White.Sprintln(a...) }
+
+func Swhitep(a ...any) string { return White.Sprint(a...) }
+
 // Quick use color print message
 
 func Debugf(format string, a ...any) { Debug.Printf(format, a...) }
