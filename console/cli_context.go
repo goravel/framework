@@ -13,6 +13,10 @@ type CliContext struct {
 	instance *cli.Context
 }
 
+func NewCliContext(instance *cli.Context) *CliContext {
+	return &CliContext{instance}
+}
+
 func (r *CliContext) Ask(question string, option ...console.AskOption) (string, error) {
 	var answer string
 	multiple := false
