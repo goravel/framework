@@ -60,8 +60,6 @@ type Context interface {
 	OptionInt64(key string) int64
 	// OptionInt64Slice looks up the value of a local Int64SliceFlag, returns nil if not found
 	OptionInt64Slice(key string) []int64
-	// Question writes a question to the console.
-	Question(question string)
 	// Secret prompts the user for a password.
 	Secret(question string, option ...SecretOption) (string, error)
 	// Spinner creates a new spinner instance.
@@ -106,7 +104,7 @@ type AskOption struct {
 	// Limit the character limit for the input.
 	Limit int
 	// Multiple determines if input is single line or multiple lines text
-	Multiple *bool
+	Multiple bool
 	// Placeholder the input placeholder.
 	Placeholder string
 	// Prompt the prompt message.(use for single line input)
@@ -128,7 +126,7 @@ type ConfirmOption struct {
 	// Affirmative label for the affirmative button.
 	Affirmative string
 	// Default the default value for the input.
-	Default *bool
+	Default bool
 	// Description the input description.
 	Description string
 	// Negative label for the negative button.
@@ -154,7 +152,7 @@ type MultiSelectOption struct {
 	// Description the input description.
 	Description string
 	// Filterable determines if the choices can be filtered.
-	Filterable *bool
+	Filterable bool
 	// Limit the number of choices that can be selected.
 	Limit int
 	// Validate the input validation function.

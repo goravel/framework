@@ -6,49 +6,50 @@ import (
 
 func TestAsk(_ *testing.T) {
 	/*
-		ctx := &CliContext{}
-		// single line input text
-		question := "How are you feeling today?"
-		answer, err := ctx.Ask(question, console.AskOption{
-			Default:     "Good",
-			Description: "Please enter your feeling",
-			Limit:       10,
-			Placeholder: "Good",
-			Prompt:      ">",
-			Validate: func(s string) error {
-				if s == "" {
-					return fmt.Errorf("please enter your feeling")
-				}
-				return nil
-			},
-		})
-		if err != nil {
-			ctx.Error(err.Error())
-			return
-		}
-		ctx.Info(fmt.Sprintf("You said: %s", answer))
+			ctx := &CliContext{}
+			// single line input text
+			question := "How are you feeling today?"
+			answer, err := ctx.Ask(question, console.AskOption{
+				Default:     "Good",
+				Description: "Please enter your feeling",
+				Limit:       10,
+				Placeholder: "Good",
+				Prompt:      ">",
+				Validate: func(s string) error {
+					if s == "" {
+						return fmt.Errorf("please enter your feeling")
+					}
+					return nil
+				},
+			})
+			if err != nil {
+				ctx.Error(err.Error())
+				return
+			}
+			ctx.Info(fmt.Sprintf("You said: %s", answer))
 
-		// multiple lines input text
-		question = "tell me about yourself"
-		answer, err = ctx.Ask(question, console.AskOption{
-			Default:     "I am a software engineer",
-			Description: "Please enter your bio",
-			Lines:       5,
-			Placeholder: "Bio",
-			Validate: func(s string) error {
-				if s == "" {
-					return fmt.Errorf("please enter your bio")
-				}
-				return nil
-			},
-		})
+			// multiple lines input text
+			question = "tell me about yourself"
+			answer, err = ctx.Ask(question, console.AskOption{
+				Default:     "I am a software engineer",
+				Description: "Please enter your bio",
+		        Multiple:    true,
+				Lines:       5,
+				Placeholder: "Bio",
+				Validate: func(s string) error {
+					if s == "" {
+						return fmt.Errorf("please enter your bio")
+					}
+					return nil
+				},
+			})
 
-		if err != nil {
-			ctx.Error(err.Error())
-			return
-		}
+			if err != nil {
+				ctx.Error(err.Error())
+				return
+			}
 
-		ctx.Info(fmt.Sprintf("You said: %s", answer))
+			ctx.Info(fmt.Sprintf("You said: %s", answer))
 	*/
 }
 

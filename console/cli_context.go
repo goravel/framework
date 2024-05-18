@@ -22,9 +22,7 @@ func (r *CliContext) Ask(question string, option ...console.AskOption) (string, 
 	multiple := false
 
 	if len(option) > 0 {
-		if option[0].Multiple != nil {
-			multiple = *option[0].Multiple
-		}
+		multiple = option[0].Multiple
 		answer = option[0].Default
 	}
 
@@ -106,9 +104,7 @@ func (r *CliContext) Comment(message string) {
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
 	var answer bool
 	if len(option) > 0 {
-		if option[0].Default != nil {
-			answer = *option[0].Default
-		}
+		answer = option[0].Default
 	}
 
 	input := huh.NewConfirm().Title(question)
@@ -149,13 +145,9 @@ func (r *CliContext) MultiSelect(question string, choices []console.Choice, opti
 
 	input := huh.NewMultiSelect[string]().Title(question).Options(options...)
 	if len(option) > 0 {
-		input.Description(option[0].Description).Limit(option[0].Limit)
+		input.Description(option[0].Description).Limit(option[0].Limit).Filterable(option[0].Filterable)
 		if option[0].Validate != nil {
 			input.Validate(option[0].Validate)
-		}
-
-		if option[0].Filterable != nil {
-			input.Filterable(*option[0].Filterable)
 		}
 	}
 
@@ -211,10 +203,6 @@ func (r *CliContext) OptionInt64(key string) int64 {
 
 func (r *CliContext) OptionInt64Slice(key string) []int64 {
 	return r.instance.Int64Slice(key)
-}
-
-func (r *CliContext) Question(question string) {
-	color.BgBlue.Println(question)
 }
 
 func (r *CliContext) Secret(question string, option ...console.SecretOption) (string, error) {
