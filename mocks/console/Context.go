@@ -1049,39 +1049,6 @@ func (_c *Context_OptionSlice_Call) RunAndReturn(run func(string) []string) *Con
 	return _c
 }
 
-// Question provides a mock function with given fields: question
-func (_m *Context) Question(question string) {
-	_m.Called(question)
-}
-
-// Context_Question_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Question'
-type Context_Question_Call struct {
-	*mock.Call
-}
-
-// Question is a helper method to define mock.On call
-//   - question string
-func (_e *Context_Expecter) Question(question interface{}) *Context_Question_Call {
-	return &Context_Question_Call{Call: _e.mock.On("Question", question)}
-}
-
-func (_c *Context_Question_Call) Run(run func(question string)) *Context_Question_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Context_Question_Call) Return() *Context_Question_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *Context_Question_Call) RunAndReturn(run func(string)) *Context_Question_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Secret provides a mock function with given fields: question, option
 func (_m *Context) Secret(question string, option ...console.SecretOption) (string, error) {
 	_va := make([]interface{}, len(option))
