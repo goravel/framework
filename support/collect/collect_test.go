@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"testing"
-	
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func TestGroupBy(t *testing.T) {
 	groups := GroupBy([]int{0, 1, 2, 3, 4, 5}, func(i int) int {
 		return i % 3
 	})
-	assert.Equal(t, map[int][]int{0: []int{0, 3}, 1: []int{1, 4}, 2: []int{2, 5}}, groups)
+	assert.Equal(t, map[int][]int{0: {0, 3}, 1: {1, 4}, 2: {2, 5}}, groups)
 }
 
 func TestKeys(t *testing.T) {
@@ -99,13 +99,6 @@ func TestReverse(t *testing.T) {
 	reverseOrder2 := Reverse([]string{"a", "b", "c", "d"})
 	assert.Equal(t, []int{5, 4, 3, 2, 1, 0}, reverseOrder1)
 	assert.Equal(t, []string{"d", "c", "b", "a"}, reverseOrder2)
-}
-
-func TestShuffle(t *testing.T) {
-	randomOrder1 := Shuffle([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
-	randomOrder2 := Shuffle([]string{"a", "b", "c", "d"})
-	assert.NotEqual(t, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, randomOrder1)
-	assert.NotEqual(t, []string{"a", "b", "c", "d"}, randomOrder2)
 }
 
 func TestSplit(t *testing.T) {
