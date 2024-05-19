@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"errors"
+	"fmt"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
@@ -55,10 +56,12 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_created_name" {
-					event.SetAttribute("avatar", "event_created_avatar")
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_avatar_%d", id))
 				}
 				if name.(string) == "event_created_FirstOrCreate_name" {
-					event.SetAttribute("avatar", "event_created_FirstOrCreate_avatar")
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", id))
 				}
 			}
 
@@ -66,23 +69,24 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventSaving: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_saving_create_name" {
+			switch name.(type) {
+			case string:
+				if name == "event_saving_create_name" {
 					event.SetAttribute("avatar", "event_saving_create_avatar")
 				}
-				if name.(string) == "event_saving_save_name" {
+				if name == "event_saving_save_name" {
 					event.SetAttribute("avatar", "event_saving_save_avatar")
 				}
-				if name.(string) == "event_saving_FirstOrCreate_name" {
+				if name == "event_saving_FirstOrCreate_name" {
 					event.SetAttribute("avatar", "event_saving_FirstOrCreate_avatar")
 				}
-				if name.(string) == "event_save_without_name" {
+				if name == "event_save_without_name" {
 					event.SetAttribute("avatar", "event_save_without_avatar")
 				}
-				if name.(string) == "event_save_quietly_name" {
+				if name == "event_save_quietly_name" {
 					event.SetAttribute("avatar", "event_save_quietly_avatar")
 				}
-				if name.(string) == "event_saving_IsDirty_name" {
+				if name == "event_saving_IsDirty_name" {
 					if event.IsDirty("name") {
 						event.SetAttribute("avatar", "event_saving_IsDirty_avatar")
 					}
@@ -98,20 +102,21 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventSaved: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_saved_create_name" {
+			switch name.(type) {
+			case string:
+				if name == "event_saved_create_name" {
 					event.SetAttribute("avatar", "event_saved_create_avatar")
 				}
-				if name.(string) == "event_saved_save_name" {
+				if name == "event_saved_save_name" {
 					event.SetAttribute("avatar", "event_saved_save_avatar")
 				}
-				if name.(string) == "event_saved_FirstOrCreate_name" {
+				if name == "event_saved_FirstOrCreate_name" {
 					event.SetAttribute("avatar", "event_saved_FirstOrCreate_avatar")
 				}
-				if name.(string) == "event_save_without_name" {
+				if name == "event_save_without_name" {
 					event.SetAttribute("avatar", "event_saved_without_avatar")
 				}
-				if name.(string) == "event_save_quietly_name" {
+				if name == "event_save_quietly_name" {
 					event.SetAttribute("avatar", "event_saved_quietly_avatar")
 				}
 			}
@@ -125,14 +130,15 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventUpdating: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_updating_create_name" {
+			switch name.(type) {
+			case string:
+				if name == "event_updating_create_name" {
 					event.SetAttribute("avatar", "event_updating_create_avatar")
 				}
-				if name.(string) == "event_updating_save_name" {
+				if name == "event_updating_save_name" {
 					event.SetAttribute("avatar", "event_updating_save_avatar")
 				}
-				if name.(string) == "event_updating_single_update_IsDirty_name1" {
+				if name == "event_updating_single_update_IsDirty_name1" {
 					if event.IsDirty("name") {
 						name := event.GetAttribute("name")
 						if name != "event_updating_single_update_IsDirty_name1" {
@@ -142,7 +148,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 						event.SetAttribute("avatar", "event_updating_single_update_IsDirty_avatar")
 					}
 				}
-				if name.(string) == "event_updating_map_update_IsDirty_name1" {
+				if name == "event_updating_map_update_IsDirty_name1" {
 					if event.IsDirty("name") {
 						name := event.GetAttribute("name")
 						if name != "event_updating_map_update_IsDirty_name1" {
@@ -152,7 +158,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 						event.SetAttribute("avatar", "event_updating_map_update_IsDirty_avatar")
 					}
 				}
-				if name.(string) == "event_updating_model_update_IsDirty_name1" {
+				if name == "event_updating_model_update_IsDirty_name1" {
 					if event.IsDirty("name") {
 						name := event.GetAttribute("name")
 						if name != "event_updating_model_update_IsDirty_name1" {
@@ -169,7 +175,8 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 					event.SetAttribute("avatar", "event_updating_save_avatar1")
 				}
 				if avatar.(string) == "event_updating_model_update_avatar" {
-					event.SetAttribute("avatar", "event_updating_model_update_avatar1")
+					id := event.GetOriginal("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_updating_model_update_avatar_%d", id))
 				}
 			}
 
@@ -177,11 +184,12 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 		},
 		ormcontract.EventUpdated: func(event ormcontract.Event) error {
 			name := event.GetAttribute("name")
-			if name != nil {
-				if name.(string) == "event_updated_create_name" {
+			switch name.(type) {
+			case string:
+				if name == "event_updated_create_name" {
 					event.SetAttribute("avatar", "event_updated_create_avatar")
 				}
-				if name.(string) == "event_updated_save_name" {
+				if name == "event_updated_save_name" {
 					event.SetAttribute("avatar", "event_updated_save_avatar")
 				}
 			}
