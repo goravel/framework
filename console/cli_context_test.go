@@ -56,14 +56,14 @@ func TestAsk(_ *testing.T) {
 func TestCreateProgressBar(_ *testing.T) {
 	/*
 		ctx := &CliContext{}
-		bar := ctx.CreateProgressBar(10)
+		bar := ctx.CreateProgressBar(100)
 		err := bar.Start()
 		if err != nil {
 			ctx.Error(err.Error())
 			return
 		}
 
-		for i := 0; i < 100; i++ {
+		for i := 1; i < 100; i++ {
 			// performTask()
 			if i%2 == 0 {
 				bar.Advance(2)
