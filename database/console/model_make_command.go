@@ -34,6 +34,13 @@ func (receiver *ModelMakeCommand) Description() string {
 func (receiver *ModelMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the model even if it already exists",
+			},
+		},
 	}
 }
 
@@ -46,7 +53,16 @@ func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	force := ctx.OptionBool("force")
+	path := receiver.getPath(name)
+	if !force {
+		if file.Exists(path) {
+			color.Redln("The model already exists. Use the --force flag to overwrite")
+			return nil
+		}
+	}
+
+	if err := file.Create(path, receiver.populateStub(receiver.getStub(), name)); err != nil {
 		return err
 	}
 

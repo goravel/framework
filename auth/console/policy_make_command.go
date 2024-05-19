@@ -35,6 +35,13 @@ func (receiver *PolicyMakeCommand) Description() string {
 func (receiver *PolicyMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the policy even if it already exists",
+			},
+		},
 	}
 }
 
@@ -43,6 +50,15 @@ func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
 		return errors.New("Not enough arguments (missing: name) ")
+	}
+
+	force := ctx.OptionBool("force")
+	path := receiver.getPath(name)
+	if !force {
+		if file.Exists(path) {
+			color.Redln("The policy already exists. Use the --force flag to overwrite")
+			return nil
+		}
 	}
 
 	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {

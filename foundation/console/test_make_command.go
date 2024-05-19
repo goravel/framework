@@ -35,6 +35,13 @@ func (receiver *TestMakeCommand) Description() string {
 func (receiver *TestMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the test even if it already exists",
+			},
+		},
 	}
 }
 
@@ -45,9 +52,18 @@ func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 		return errors.New("Not enough arguments (missing: name) ")
 	}
 
+	force := ctx.OptionBool("force")
+	path := receiver.getPath(name)
+	if !force {
+		if file.Exists(path) {
+			color.Redln("The test already exists. Use the --force flag to overwrite")
+			return nil
+		}
+	}
+
 	stub := receiver.getStub()
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(stub, name)); err != nil {
+	if err := file.Create(path, receiver.populateStub(stub, name)); err != nil {
 		return err
 	}
 

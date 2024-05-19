@@ -37,6 +37,11 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 				Value: false,
 				Usage: "resourceful controller",
 			},
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the controller even if it already exists",
+			},
 		},
 	}
 }
@@ -53,7 +58,16 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 		stub = receiver.getResourceStub()
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(stub, name)); err != nil {
+	force := ctx.OptionBool("force")
+	path := receiver.getPath(name)
+	if !force {
+		if file.Exists(path) {
+			color.Redln("The controller already exists. Use the --force flag to overwrite")
+			return nil
+		}
+	}
+
+	if err := file.Create(path, receiver.populateStub(stub, name)); err != nil {
 		return err
 	}
 

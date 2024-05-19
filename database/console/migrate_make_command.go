@@ -30,6 +30,13 @@ func (receiver *MigrateMakeCommand) Description() string {
 func (receiver *MigrateMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the migration even if it already exists",
+			},
+		},
 	}
 }
 
