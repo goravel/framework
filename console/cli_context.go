@@ -3,10 +3,10 @@ package console
 import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
-	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/support/color"
 )
 
 type CliContext struct {
