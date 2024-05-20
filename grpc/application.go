@@ -81,7 +81,7 @@ func (app *Application) Run(host ...string) error {
 	if err != nil {
 		return err
 	}
-	color.Greenln("[GRPC] Listening and serving gRPC on " + host[0])
+	color.Green().Println("[GRPC] Listening and serving gRPC on " + host[0])
 	if err := app.server.Serve(listen); err != nil {
 		return err
 	}

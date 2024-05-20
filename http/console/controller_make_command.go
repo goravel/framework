@@ -56,7 +56,7 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Controller created successfully")
+	color.Green().Println("Controller created successfully")
 
 	return nil
 }

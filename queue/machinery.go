@@ -28,7 +28,7 @@ func (m *Machinery) Server(connection string, queue string) (*machinery.Server, 
 
 	switch driver {
 	case DriverSync:
-		color.Yellowln("Queue sync driver doesn't need to be run")
+		color.Yellow().Println("Queue sync driver doesn't need to be run")
 
 		return nil, nil
 	case DriverRedis:

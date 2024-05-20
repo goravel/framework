@@ -35,9 +35,9 @@ func (receiver *ClearCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *ClearCommand) Handle(ctx console.Context) error {
 	if receiver.cache.Flush() {
-		color.Greenln("Application cache cleared")
+		color.Green().Println("Application cache cleared")
 	} else {
-		color.Redln("Clear Application cache Failed")
+		color.Red().Println("Clear Application cache Failed")
 	}
 
 	return nil

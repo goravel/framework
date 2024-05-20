@@ -44,7 +44,7 @@ func (receiver *RequestMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Request created successfully")
+	color.Green().Println("Request created successfully")
 
 	return nil
 }

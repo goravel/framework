@@ -44,7 +44,7 @@ func (receiver *JobMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Job created successfully")
+	color.Green().Println("Job created successfully")
 
 	return nil
 }

@@ -44,7 +44,7 @@ func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Rule created successfully")
+	color.Green().Println("Rule created successfully")
 
 	return nil
 }

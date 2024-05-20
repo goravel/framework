@@ -177,8 +177,8 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 func printResult(command string) {
 	switch command {
 	case "make:command":
-		color.Greenln("Console command created successfully")
+		color.Green().Println("Console command created successfully")
 	case "-V", "--version":
-		color.Greenln("Goravel Framework " + support.Version)
+		color.Green().Println("Goravel Framework " + support.Version)
 	}
 }

@@ -50,7 +50,7 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 
 	queue, err := databasegorm.InitializeQuery(r.ctx, r.config, name)
 	if err != nil || queue == nil {
-		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
+		color.Red().Println(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
 
 		return nil
 	}

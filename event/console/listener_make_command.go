@@ -44,7 +44,7 @@ func (receiver *ListenerMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Listener created successfully")
+	color.Green().Println("Listener created successfully")
 
 	return nil
 }

@@ -40,7 +40,7 @@ func (receiver *ObserverMakeCommand) Extend() command.Extend {
 func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Redln("Not enough arguments (missing: name)")
+		color.Red().Println("Not enough arguments (missing: name)")
 
 		return nil
 	}
@@ -49,7 +49,7 @@ func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Observer created successfully")
+	color.Green().Println("Observer created successfully")
 
 	return nil
 }

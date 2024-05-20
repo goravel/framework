@@ -44,7 +44,7 @@ func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Event created successfully")
+	color.Green().Println("Event created successfully")
 
 	return nil
 }

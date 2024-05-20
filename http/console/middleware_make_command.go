@@ -44,7 +44,7 @@ func (receiver *MiddlewareMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Middleware created successfully")
+	color.Green().Println("Middleware created successfully")
 
 	return nil
 }

@@ -95,7 +95,7 @@ func NewLogger(log log.Log) *Logger {
 }
 
 func (log *Logger) Info(msg string, keysAndValues ...any) {
-	color.Greenf("%s %v\n", msg, keysAndValues)
+	color.Green().Printf("%s %v\n", msg, keysAndValues)
 }
 
 func (log *Logger) Error(err error, msg string, keysAndValues ...any) {

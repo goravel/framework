@@ -22,7 +22,7 @@ func NewApplication(config config.Config) *Application {
 	if config != nil {
 		if logging := config.GetString("logging.default"); logging != "" {
 			if err := registerHook(config, instance, logging); err != nil {
-				color.Redln("Init facades.Log error: " + err.Error())
+				color.Red().Println("Init facades.Log error: " + err.Error())
 
 				return nil
 			}

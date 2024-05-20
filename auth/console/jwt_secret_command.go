@@ -43,12 +43,12 @@ func (receiver *JwtSecretCommand) Handle(ctx console.Context) error {
 	key := receiver.generateRandomKey()
 
 	if err := receiver.setSecretInEnvironmentFile(key); err != nil {
-		color.Redln(err.Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}
 
-	color.Greenln("Jwt Secret set successfully")
+	color.Green().Println("Jwt Secret set successfully")
 
 	return nil
 }
@@ -63,7 +63,7 @@ func (receiver *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
 	currentKey := receiver.config.GetString("jwt.secret")
 
 	if currentKey != "" {
-		return errors.New("Exist jwt secret")
+		return errors.New("exist jwt secret")
 	}
 
 	err := receiver.writeNewEnvironmentFileWith(key)

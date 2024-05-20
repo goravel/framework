@@ -50,7 +50,7 @@ func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Test created successfully")
+	color.Green().Println("Test created successfully")
 
 	return nil
 }

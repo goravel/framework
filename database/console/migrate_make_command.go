@@ -39,7 +39,7 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// to be freshly created, so we can create the appropriate migrations.
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Redln("Not enough arguments (missing: name)")
+		color.Red().Printfln("Not enough arguments (missing: name)")
 
 		return nil
 	}
@@ -55,7 +55,7 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenf("Created Migration: %s\n", name)
+	color.Green().Printf("Created Migration: %s\n", name)
 
 	return nil
 }

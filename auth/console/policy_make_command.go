@@ -48,7 +48,7 @@ func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Policy created successfully")
+	color.Green().Println("Policy created successfully")
 
 	return nil
 }
