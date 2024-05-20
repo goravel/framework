@@ -139,12 +139,22 @@ func (c Color) Printfln(format string, a ...any) *Printer {
 
 // Quick use color print message
 
+func Debugf(format string, a ...any) { debug.Printf(format, a...) }
+
 func Debugln(a ...any) { debug.Println(a...) }
+
+func Errorf(format string, a ...any) { err.Printf(format, a...) }
 
 func Errorln(a ...any) { err.Println(a...) }
 
+func Infof(format string, a ...any) { info.Printf(format, a...) }
+
 func Infoln(a ...any) { info.Println(a...) }
 
+func Successf(format string, a ...any) { success.Printf(format, a...) }
+
 func Successln(a ...any) { success.Println(a...) }
+
+func Warnf(format string, a ...any) { warn.Printf(format, a...) }
 
 func Warnln(a ...any) { warn.Println(a...) }
