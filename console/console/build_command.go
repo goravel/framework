@@ -53,7 +53,7 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 		color.Yellow().Printfln("**************************************")
 		color.Yellow().Printfln("*     Application In Production!     *")
 		color.Yellow().Printfln("**************************************")
-		color.Normal().Println(color.Green().Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.Yellow().Sprintf("no") + "]" + ":")
+		color.Default().Println(color.Green().Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.Yellow().Sprintf("no") + "]" + ":")
 
 		var result string
 		_, err := fmt.Scanln(&result)

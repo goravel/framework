@@ -2,6 +2,8 @@ package color
 
 import (
 	"github.com/pterm/pterm"
+
+	"github.com/goravel/framework/contracts/support"
 )
 
 const (
@@ -39,59 +41,48 @@ var (
 	success = pterm.Success
 )
 
-type Printer interface {
-	Sprint(a ...any) string
-	Sprintln(a ...any) string
-	Sprintf(format string, a ...any) string
-	Sprintfln(format string, a ...any) string
-	Print(a ...any) *Printer
-	Println(a ...any) *Printer
-	Printf(format string, a ...any) *Printer
-	Printfln(format string, a ...any) *Printer
-}
-
 // New Functions to create Printer with specific color
-func New(color Color) Printer {
+func New(color Color) support.Printer {
 	return color
 }
 
-func Green() Printer {
+func Green() support.Printer {
 	return New(FgGreen)
 }
 
-func Red() Printer {
+func Red() support.Printer {
 	return New(FgRed)
 }
 
-func Blue() Printer {
+func Blue() support.Printer {
 	return New(FgBlue)
 }
 
-func Yellow() Printer {
+func Yellow() support.Printer {
 	return New(FgYellow)
 }
 
-func Cyan() Printer {
+func Cyan() support.Printer {
 	return New(FgCyan)
 }
 
-func White() Printer {
+func White() support.Printer {
 	return New(FgWhite)
 }
 
-func Gray() Printer {
+func Gray() support.Printer {
 	return New(FgGray)
 }
 
-func Normal() Printer {
+func Default() support.Printer {
 	return New(FgDefault)
 }
 
-func Black() Printer {
+func Black() support.Printer {
 	return New(FgBlack)
 }
 
-func Magenta() Printer {
+func Magenta() support.Printer {
 	return New(FgMagenta)
 }
 
@@ -113,27 +104,27 @@ func (c Color) Sprintfln(format string, a ...interface{}) string {
 	return pterm.Color(c).Sprintfln(format, a...)
 }
 
-func (c Color) Print(a ...any) *Printer {
+func (c Color) Print(a ...any) *support.Printer {
 	pterm.Color(c).Print(a...)
-	p := Printer(c)
+	p := support.Printer(c)
 	return &p
 }
 
-func (c Color) Println(a ...any) *Printer {
+func (c Color) Println(a ...any) *support.Printer {
 	pterm.Color(c).Println(a...)
-	p := Printer(c)
+	p := support.Printer(c)
 	return &p
 }
 
-func (c Color) Printf(format string, a ...any) *Printer {
+func (c Color) Printf(format string, a ...any) *support.Printer {
 	pterm.Color(c).Printf(format, a...)
-	p := Printer(c)
+	p := support.Printer(c)
 	return &p
 }
 
-func (c Color) Printfln(format string, a ...any) *Printer {
+func (c Color) Printfln(format string, a ...any) *support.Printer {
 	pterm.Color(c).Printfln(format, a...)
-	p := Printer(c)
+	p := support.Printer(c)
 	return &p
 }
 

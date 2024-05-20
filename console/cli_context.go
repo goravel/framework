@@ -128,7 +128,7 @@ func (r *CliContext) Info(message string) {
 }
 
 func (r *CliContext) Line(message string) {
-	color.Normal().Println(message)
+	color.Default().Println(message)
 }
 
 func (r *CliContext) MultiSelect(question string, choices []console.Choice, option ...console.MultiSelectOption) ([]string, error) {
@@ -165,7 +165,7 @@ func (r *CliContext) NewLine(times ...int) {
 		numLines = times[0]
 	}
 	for i := 0; i < numLines; i++ {
-		color.Normal().Println()
+		color.Default().Println()
 	}
 }
 

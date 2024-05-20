@@ -8,6 +8,8 @@ import (
 
 	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/contracts/support"
 )
 
 // captureStdout simulates capturing of os.stdout with a buffer and returns what was written to the screen
@@ -22,7 +24,7 @@ func captureOutput(f func(w io.Writer)) string {
 }
 
 func TestColors(t *testing.T) {
-	colors := map[string]Printer{
+	colors := map[string]support.Printer{
 		"FgBlack":        Black(),
 		"FgRed":          Red(),
 		"FgGreen":        Green(),
@@ -31,7 +33,7 @@ func TestColors(t *testing.T) {
 		"FgMagenta":      Magenta(),
 		"FgCyan":         Cyan(),
 		"FgWhite":        White(),
-		"FgDefault":      Normal(),
+		"FgDefault":      Default(),
 		"FgDarkGray":     FgDarkGray,
 		"FgLightRed":     FgLightRed,
 		"FgLightGreen":   FgLightGreen,
