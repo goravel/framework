@@ -1,14 +1,24 @@
 package color
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"testing"
 
+	"github.com/pterm/pterm"
 	"github.com/stretchr/testify/assert"
 )
 
-func captureOutput(f func()) string {
-	return ""
+// captureStdout simulates capturing of os.stdout with a buffer and returns what was written to the screen
+func captureOutput(f func(w io.Writer)) string {
+	var outBuf bytes.Buffer
+	pterm.SetDefaultOutput(&outBuf)
+	f(&outBuf)
+
+	content := outBuf.String()
+	outBuf.Reset()
+	return content
 }
 
 func TestColors(t *testing.T) {
@@ -45,10 +55,10 @@ func TestColors(t *testing.T) {
 			assert.Equal(t, expected, color.Sprintf(format, testString))
 			assert.Equal(t, expectedLn, color.Sprintfln(format, testString))
 
-			//assert.Equal(t, expected, captureOutput(func() { print(color.Print(testString)) }))
-			//assert.Equal(t, expectedLn, captureOutput(func() { println(color.Println(testString)) }))
-			//assert.Equal(t, expected, captureOutput(func() { print(color.Printf(format, testString)) }))
-			//assert.Equal(t, expectedLn, captureOutput(func() { println(color.Printfln(format, testString)) }))
+			assert.Equal(t, expected, captureOutput(func(w io.Writer) { color.Print(testString) }))
+			assert.Equal(t, expectedLn, captureOutput(func(w io.Writer) { color.Println(testString) }))
+			assert.Equal(t, expected, captureOutput(func(w io.Writer) { color.Printf(format, testString) }))
+			assert.Equal(t, expectedLn, captureOutput(func(w io.Writer) { color.Printfln(format, testString) }))
 		})
 	}
 }
