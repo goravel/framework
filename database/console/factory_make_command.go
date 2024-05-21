@@ -47,7 +47,7 @@ func (receiver *FactoryMakeCommand) Extend() command.Extend {
 func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Red().Printfln("Not enough arguments (missing: name)")
+		color.Red().Println("Not enough arguments (missing: name)")
 
 		return nil
 	}
@@ -56,7 +56,7 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	path := receiver.getPath(name)
 	if !force {
 		if file.Exists(path) {
-			color.Redln("The factory already exists. Use the --force flag to overwrite")
+			color.Red().Println("The factory already exists. Use the --force flag to overwrite")
 
 			return nil
 		}

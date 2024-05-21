@@ -51,7 +51,7 @@ func (receiver *ListenerMakeCommand) Handle(ctx console.Context) error {
 	path := receiver.getPath(name)
 	if !force {
 		if file.Exists(path) {
-			color.Redln("The listener already exists. Use the --force flag to overwrite")
+			color.Red().Println("The listener already exists. Use the --force flag to overwrite")
 			return nil
 		}
 	}

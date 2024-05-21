@@ -1,13 +1,15 @@
 package console
 
 import (
-	"os"
+	"errors"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/color"
 )
 
 func TestBuildCommand(t *testing.T) {
@@ -21,34 +23,16 @@ func TestBuildCommand(t *testing.T) {
 	assert.NotNil(t, newBuildCommand.Handle(mockContext))
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
-	mockContext.On("Option", "system").Return("linux").Once()
+	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, nil).Once()
 
-	reader, writer, err := os.Pipe()
-	assert.Nil(t, err)
-	originalStdin := os.Stdin
-	defer func() { os.Stdin = originalStdin }()
-	os.Stdin = reader
-	go func() {
-		defer writer.Close()
-		_, err = writer.Write([]byte("yes\n"))
-		assert.Nil(t, err)
-	}()
-
-	assert.Nil(t, newBuildCommand.Handle(mockContext))
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, newBuildCommand.Handle(mockContext))
+	}), "Command cancelled!")
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
-	mockContext.On("Option", "system").Return("linux").Once()
+	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, errors.New("error")).Once()
 
-	reader, writer, err = os.Pipe()
-	assert.Nil(t, err)
-	originalStdin = os.Stdin
-	defer func() { os.Stdin = originalStdin }()
-	os.Stdin = reader
-	go func() {
-		defer writer.Close()
-		_, err = writer.Write([]byte("no\n"))
-		assert.Nil(t, err)
-	}()
-
-	assert.Nil(t, newBuildCommand.Handle(mockContext))
+	assert.NotContains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.EqualError(t, newBuildCommand.Handle(mockContext), "error")
+	}), "Command cancelled!")
 }

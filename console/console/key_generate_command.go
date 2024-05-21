@@ -1,7 +1,6 @@
 package console
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -45,20 +44,15 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 	if receiver.config.GetString("app.env") == "production" {
 		color.Yellow().Println("**************************************")
 		color.Yellow().Println("*     Application In Production!     *")
-		color.Yellow().Printfln("**************************************")
-		color.Default().Println(color.Green().Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.Green().Sprintf("no") + "]" + ":")
+		color.Yellow().Println("**************************************")
 
-		var result string
-		_, err := fmt.Scanln(&result)
+		answer, err := ctx.Confirm("Do you really wish to run this command?")
 		if err != nil {
-			color.Red().Println(err.Error())
-
-			return nil
+			return err
 		}
 
-		if result != "yes" {
-			color.Yellow().Println("Command Canceled")
-
+		if !answer {
+			color.Yellow().Println("Command cancelled!")
 			return nil
 		}
 	}

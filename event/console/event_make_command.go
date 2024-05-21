@@ -51,7 +51,7 @@ func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 	path := receiver.getPath(name)
 	if !force {
 		if file.Exists(path) {
-			color.Redln("The event already exists. Use the --force flag to overwrite")
+			color.Red().Println("The event already exists. Use the --force flag to overwrite")
 			return nil
 		}
 	}

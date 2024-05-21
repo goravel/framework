@@ -55,7 +55,7 @@ func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 	path := receiver.getPath(name)
 	if !force {
 		if file.Exists(path) {
-			color.Redln("The test already exists. Use the --force flag to overwrite")
+			color.Red().Println("The test already exists. Use the --force flag to overwrite")
 			return nil
 		}
 	}

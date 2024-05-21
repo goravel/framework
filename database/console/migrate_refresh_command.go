@@ -4,9 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -83,14 +81,14 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 			switch err.(type) {
 			case migrate.ErrShortLimit:
 			default:
-				color.Red().Printfln("Migration refresh failed:", err.Error())
+				color.Red().Println("Migration refresh failed:", err.Error())
 
 				return nil
 			}
 		}
 	} else {
 		if err = m.Down(); err != nil && err != migrate.ErrNoChange {
-			color.Red().Printfln("Migration reset failed:", err.Error())
+			color.Red().Println("Migration reset failed:", err.Error())
 
 			return nil
 		}

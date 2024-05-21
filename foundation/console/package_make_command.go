@@ -60,7 +60,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	root := ctx.Option("root") + "/" + pkg
 
 	if !force && file.Exists(root) {
-		color.Redf("Package %s already exists\n", pkg)
+		color.Red().Printf("Package %s already exists\n", pkg)
 		return nil
 	}
 

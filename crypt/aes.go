@@ -29,7 +29,7 @@ func NewAES(config config.Config) *AES {
 
 	// check key length before using it
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		color.Red().Printfln("[Crypt] Empty or invalid APP_KEY, please reset it.\nExample command:\ngo run . artisan key:generate")
+		color.Red().Println("[Crypt] Empty or invalid APP_KEY, please reset it.\nExample command:\ngo run . artisan key:generate")
 		return nil
 	}
 	keyBytes := []byte(key)

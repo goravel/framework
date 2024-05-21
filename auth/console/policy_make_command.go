@@ -48,14 +48,26 @@ func (receiver *PolicyMakeCommand) Extend() command.Extend {
 func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+		var err error
+		name, err = ctx.Ask("Enter the policy name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the policy name cannot be empty")
+				}
+
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	force := ctx.OptionBool("force")
 	path := receiver.getPath(name)
 	if !force {
 		if file.Exists(path) {
-			color.Redln("The policy already exists. Use the --force flag to overwrite")
+			color.Red().Println("The policy already exists. Use the --force flag to overwrite")
 			return nil
 		}
 	}
