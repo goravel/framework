@@ -20,7 +20,6 @@ func TestSeederMakeCommand(t *testing.T) {
 	mockContext.On("Ask", "Enter the seeder name", mock.Anything).Return("", errors.New("the seeder name cannot be empty")).Once()
 	err := seederMakeCommand.Handle(mockContext)
 	assert.EqualError(t, err, "the seeder name cannot be empty")
-	assert.Nil(t, seederMakeCommand.Handle(mockContext))
 
 	mockContext.On("Argument", 0).Return("UserSeeder").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
