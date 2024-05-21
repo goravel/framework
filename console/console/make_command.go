@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -40,10 +41,31 @@ func (receiver *MakeCommand) Extend() command.Extend {
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+		var err error
+		name, err = ctx.Ask("Enter the command name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the command name cannot be empty")
+				}
+
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	return file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	force := ctx.OptionBool("force")
+	path := receiver.getPath(name)
+	if !force {
+		if file.Exists(path) {
+			color.Red().Println("The command already exists. Use the --force flag to overwrite")
+			return nil
+		}
+	}
+
+	return file.Create(path, receiver.populateStub(receiver.getStub(), name))
 }
 
 func (receiver *MakeCommand) getStub() string {
