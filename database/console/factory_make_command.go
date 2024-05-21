@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,19 +48,26 @@ func (receiver *FactoryMakeCommand) Extend() command.Extend {
 func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Red().Println("Not enough arguments (missing: name)")
+		var err error
+		name, err = ctx.Ask("Enter the factory name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the factory name cannot be empty")
+				}
 
-		return nil
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	force := ctx.OptionBool("force")
 	path := receiver.getPath(name)
-	if !force {
-		if file.Exists(path) {
-			color.Red().Println("The factory already exists. Use the --force flag to overwrite")
-
-			return nil
-		}
+	if !force && file.Exists(path) {
+		color.Red().Println("The factory already exists. Use the --force flag to overwrite")
+		return nil
 	}
 
 	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
