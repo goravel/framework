@@ -44,16 +44,26 @@ func (receiver *JobMakeCommand) Extend() command.Extend {
 func (receiver *JobMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+		var err error
+		name, err = ctx.Ask("Enter the job name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the job name cannot be empty")
+				}
+
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	force := ctx.OptionBool("force")
 	path := receiver.getPath(name)
-	if !force {
-		if file.Exists(path) {
-			color.Red().Println("The job already exists. Use the --force flag to overwrite")
-			return nil
-		}
+	if !force && file.Exists(path) {
+		color.Red().Println("The job already exists. Use the --force flag to overwrite")
+		return nil
 	}
 
 	if err := file.Create(path, receiver.populateStub(receiver.getStub(), name)); err != nil {
