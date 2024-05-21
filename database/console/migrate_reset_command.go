@@ -1,6 +1,8 @@
 package console
 
 import (
+	"errors"
+
 	"github.com/golang-migrate/migrate/v4"
 
 	"github.com/goravel/framework/contracts/config"
@@ -49,7 +51,7 @@ func (receiver *MigrateResetCommand) Handle(ctx console.Context) error {
 	}
 
 	// Rollback all migrations.
-	if err = m.Down(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		color.Red().Println("Migration reset failed:", err.Error())
 
 		return nil

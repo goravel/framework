@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -61,7 +62,7 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err = m.Drop(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Drop(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		color.Red().Println("Migration failed:", err.Error())
 		return nil
 	}
@@ -75,7 +76,7 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err2 = m2.Up(); err2 != nil && err2 != migrate.ErrNoChange {
+	if err2 = m2.Up(); err2 != nil && !errors.Is(err2, migrate.ErrNoChange) {
 		color.Red().Println("Migration failed:", err2.Error())
 		return nil
 	}

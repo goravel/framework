@@ -1,6 +1,8 @@
 package console
 
 import (
+	"errors"
+
 	"github.com/golang-migrate/migrate/v4"
 
 	"github.com/goravel/framework/contracts/config"
@@ -48,7 +50,7 @@ func (receiver *MigrateCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		color.Red().Println("Migration failed:", err.Error())
 
 		return nil
