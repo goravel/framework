@@ -1,11 +1,15 @@
 package console
 
 import (
+	"errors"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	consolemocks "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -13,17 +17,27 @@ func TestControllerMakeCommand(t *testing.T) {
 	controllerMakeCommand := &ControllerMakeCommand{}
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
+	mockContext.On("Ask", "Enter the controller name", mock.Anything).Return("", errors.New("the controller name cannot be empty")).Once()
 	err := controllerMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "Not enough arguments (missing: name) ")
+	assert.EqualError(t, err, "the controller name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("UsersController").Once()
 	mockContext.On("OptionBool", "resource").Return(false).Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
 	err = controllerMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/http/controllers/users_controller.go"))
 
+	mockContext.On("Argument", 0).Return("UsersController").Once()
+	mockContext.On("OptionBool", "resource").Return(false).Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, controllerMakeCommand.Handle(mockContext))
+	}), "The controller already exists. Use the --force flag to overwrite")
+
 	mockContext.On("Argument", 0).Return("User/AuthController").Once()
 	mockContext.On("OptionBool", "resource").Return(false).Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
 	err = controllerMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
@@ -37,6 +51,7 @@ func TestResourceControllerMakeCommand(t *testing.T) {
 	controllerMakeCommand := &ControllerMakeCommand{}
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("User/AuthController").Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
 	mockContext.On("OptionBool", "resource").Return(true).Once()
 	err := controllerMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)

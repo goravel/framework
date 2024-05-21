@@ -1,27 +1,40 @@
 package console
 
 import (
+	"errors"
+	"io"
 	"testing"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/file"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
+	consolemocks "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/file"
 )
 
 func TestRequestMakeCommand(t *testing.T) {
 	requestMakeCommand := &RequestMakeCommand{}
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
+	mockContext.On("Ask", "Enter the request name", mock.Anything).Return("", errors.New("the request name cannot be empty")).Once()
 	err := requestMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "Not enough arguments (missing: name) ")
+	assert.EqualError(t, err, "the request name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("CreateUser").Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
 	err = requestMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/http/requests/create_user.go"))
 
+	mockContext.On("Argument", 0).Return("CreateUser").Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, requestMakeCommand.Handle(mockContext))
+	}), "The request already exists. Use the --force flag to overwrite")
+
 	mockContext.On("Argument", 0).Return("User/Auth").Once()
+	mockContext.On("OptionBool", "force").Return(false).Once()
 	err = requestMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/http/requests/User/auth.go"))

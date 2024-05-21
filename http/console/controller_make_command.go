@@ -49,7 +49,19 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+		var err error
+		name, err = ctx.Ask("Enter the controller name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the controller name cannot be empty")
+				}
+
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	stub := receiver.getStub()
@@ -59,11 +71,9 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 
 	force := ctx.OptionBool("force")
 	path := receiver.getPath(name)
-	if !force {
-		if file.Exists(path) {
-			color.Red().Println("The controller already exists. Use the --force flag to overwrite")
-			return nil
-		}
+	if !force && file.Exists(path) {
+		color.Red().Println("The controller already exists. Use the --force flag to overwrite")
+		return nil
 	}
 
 	if err := file.Create(path, receiver.populateStub(stub, name)); err != nil {
