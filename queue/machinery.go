@@ -9,9 +9,9 @@ import (
 	"github.com/RichardKnop/machinery/v2/config"
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/RichardKnop/machinery/v2/log"
-	"github.com/gookit/color"
 
 	logcontract "github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/color"
 )
 
 type Machinery struct {
@@ -28,7 +28,7 @@ func (m *Machinery) Server(connection string, queue string) (*machinery.Server, 
 
 	switch driver {
 	case DriverSync:
-		color.Yellowln("Queue sync driver doesn't need to be run")
+		color.Yellow().Println("Queue sync driver doesn't need to be run")
 
 		return nil, nil
 	case DriverRedis:

@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -48,7 +47,7 @@ func (receiver *SeederMakeCommand) Extend() command.Extend {
 func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Redln("Not enough arguments (missing: name)")
+		color.Red().Println("Not enough arguments (missing: name)")
 
 		return nil
 	}
@@ -67,7 +66,7 @@ func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Seeder created successfully")
+	color.Green().Println("Seeder created successfully")
 
 	return nil
 }

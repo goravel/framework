@@ -3,10 +3,10 @@ package console
 import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
-	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/support/color"
 )
 
 type CliContext struct {
@@ -98,7 +98,7 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 }
 
 func (r *CliContext) Comment(message string) {
-	color.Grayln(message)
+	color.Gray().Printfln(message)
 }
 
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
@@ -120,15 +120,15 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (
 }
 
 func (r *CliContext) Error(message string) {
-	color.Redln(message)
+	color.Red().Println(message)
 }
 
 func (r *CliContext) Info(message string) {
-	color.Greenln(message)
+	color.Green().Println(message)
 }
 
 func (r *CliContext) Line(message string) {
-	color.Println(message)
+	color.Default().Println(message)
 }
 
 func (r *CliContext) MultiSelect(question string, choices []console.Choice, option ...console.MultiSelectOption) ([]string, error) {
@@ -165,7 +165,7 @@ func (r *CliContext) NewLine(times ...int) {
 		numLines = times[0]
 	}
 	for i := 0; i < numLines; i++ {
-		color.Println()
+		color.Default().Println()
 	}
 }
 
@@ -238,7 +238,7 @@ func (r *CliContext) Spinner(message string, option ...console.SpinnerOption) er
 }
 
 func (r *CliContext) Warn(message string) {
-	color.Yellowln(message)
+	color.Yellow().Println(message)
 }
 
 func (r *CliContext) WithProgressBar(items []any, callback func(any) error) ([]any, error) {

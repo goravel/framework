@@ -7,11 +7,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 )
 
 type MigrateRefreshCommand struct {
@@ -65,7 +65,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellowln("Please fill database config first")
+		color.Yellow().Println("Please fill database config first")
 
 		return nil
 	}
@@ -74,7 +74,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		stepString := "-" + step
 		s, err := strconv.Atoi(stepString)
 		if err != nil {
-			color.Redln("Migration refresh failed: invalid step", ctx.Option("step"))
+			color.Red().Println("Migration refresh failed: invalid step", ctx.Option("step"))
 
 			return nil
 		}
@@ -83,21 +83,21 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 			switch err.(type) {
 			case migrate.ErrShortLimit:
 			default:
-				color.Redln("Migration refresh failed:", err.Error())
+				color.Red().Printfln("Migration refresh failed:", err.Error())
 
 				return nil
 			}
 		}
 	} else {
 		if err = m.Down(); err != nil && err != migrate.ErrNoChange {
-			color.Redln("Migration reset failed:", err.Error())
+			color.Red().Printfln("Migration reset failed:", err.Error())
 
 			return nil
 		}
 	}
 
 	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration refresh failed:", err.Error())
+		color.Red().Println("Migration refresh failed:", err.Error())
 
 		return nil
 	}
@@ -111,7 +111,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		}
 		receiver.artisan.Call("db:seed" + seederFlag)
 	}
-	color.Greenln("Migration refresh success")
+	color.Green().Println("Migration refresh success")
 
 	return nil
 }

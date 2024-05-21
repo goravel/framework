@@ -7,10 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -89,15 +88,15 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 
 		if len(res) > 0 {
 			for sourceFile, targetFile := range res {
-				color.Greenp("Copied Directory ")
-				color.Yellowf("[%s]", sourceFile)
-				color.Greenp(" To ")
-				color.Yellowf("%s\n", targetFile)
+				color.Green().Print("Copied Directory ")
+				color.Yellow().Printf("[%s]", sourceFile)
+				color.Green().Print(" To ")
+				color.Yellow().Printf("%s\n", targetFile)
 			}
 		}
 	}
 
-	color.Greenln("Publishing complete")
+	color.Green().Println("Publishing complete")
 
 	return nil
 }
