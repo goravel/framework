@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -39,31 +39,19 @@ func (receiver *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		var err error
-		name, err = ctx.Ask("Enter the command name", console.AskOption{
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.New("the command name cannot be empty")
-				}
-
-				return nil
-			},
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	force := ctx.OptionBool("force")
-	path := receiver.getPath(name)
-	if !force && file.Exists(path) {
-		color.Red().Println("The command already exists. Use the --force flag to overwrite")
+	name, err := supportconsole.GetArgument(ctx, 0, supportconsole.Option{
+		Question: "Enter the command name",
+		Field:    "command name",
+		Required: true,
+		GetPath:  receiver.getPath,
+		Type:     "command",
+	})
+	if err != nil {
+		color.Red().Println(err)
 		return nil
 	}
 
-	return file.Create(path, receiver.populateStub(receiver.getStub(), name))
+	return file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
 }
 
 func (receiver *MakeCommand) getStub() string {
