@@ -1,9 +1,11 @@
 package console
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
@@ -27,15 +29,23 @@ func TestPackageMakeCommand(t *testing.T) {
 			name: "name is empty",
 			setup: func() {
 				mockContext.On("Argument", 0).Return("").Once()
+				mockContext.On("Ask", "Enter the package name", mock.Anything).Return("", errors.New("the package name cannot be empty")).Once()
+			},
+			assert: func() {
+				err := NewPackageMakeCommand().Handle(mockContext)
+				assert.EqualError(t, err, "the package name cannot be empty")
 			},
 		},
 		{
 			name: "name is sms and use default root",
 			setup: func() {
 				mockContext.On("Argument", 0).Return("sms").Once()
+				mockContext.On("OptionBool", "force").Return(false).Once()
 				mockContext.On("Option", "root").Return("packages").Once()
 			},
 			assert: func() {
+				err := NewPackageMakeCommand().Handle(mockContext)
+				assert.Nil(t, err)
 				assert.True(t, file.Exists("packages/sms/README.md"))
 				assert.True(t, file.Exists("packages/sms/service_provider.go"))
 				assert.True(t, file.Exists("packages/sms/sms.go"))
@@ -51,9 +61,11 @@ func TestPackageMakeCommand(t *testing.T) {
 			name: "name is github.com/goravel/sms and use other root",
 			setup: func() {
 				mockContext.On("Argument", 0).Return("github.com/goravel/sms-aws").Once()
+				mockContext.On("OptionBool", "force").Return(true).Once()
 				mockContext.On("Option", "root").Return("package").Once()
 			},
 			assert: func() {
+				_ = NewPackageMakeCommand().Handle(mockContext)
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/README.md"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/service_provider.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/github_com_goravel_sms_aws.go"))
@@ -68,7 +80,6 @@ func TestPackageMakeCommand(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			beforeEach()
 			test.setup()
-			_ = NewPackageMakeCommand().Handle(mockContext)
 			if test.assert != nil {
 				test.assert()
 			}

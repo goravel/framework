@@ -58,11 +58,9 @@ func (receiver *MakeCommand) Handle(ctx console.Context) error {
 
 	force := ctx.OptionBool("force")
 	path := receiver.getPath(name)
-	if !force {
-		if file.Exists(path) {
-			color.Red().Println("The command already exists. Use the --force flag to overwrite")
-			return nil
-		}
+	if !force && file.Exists(path) {
+		color.Red().Println("The command already exists. Use the --force flag to overwrite")
+		return nil
 	}
 
 	return file.Create(path, receiver.populateStub(receiver.getStub(), name))

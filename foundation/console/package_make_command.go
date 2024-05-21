@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 
@@ -50,9 +51,19 @@ func (receiver *PackageMakeCommand) Extend() command.Extend {
 func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	pkg := ctx.Argument(0)
 	if pkg == "" {
-		color.Red().Println("Not enough arguments (missing: name)")
+		var err error
+		pkg, err = ctx.Ask("Enter the package name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the package name cannot be empty")
+				}
 
-		return nil
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	force := ctx.OptionBool("force")
