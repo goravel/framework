@@ -6,11 +6,10 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 )
 
 type BuildCommand struct {
@@ -51,21 +50,21 @@ func (receiver *BuildCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	if receiver.config.GetString("app.env") == "production" {
-		color.Yellowln("**************************************")
-		color.Yellowln("*     Application In Production!     *")
-		color.Yellowln("**************************************")
-		color.Println(color.New(color.Green).Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.New(color.Yellow).Sprintf("no") + "]" + ":")
+		color.Yellow().Printfln("**************************************")
+		color.Yellow().Printfln("*     Application In Production!     *")
+		color.Yellow().Printfln("**************************************")
+		color.Default().Println(color.Green().Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.Yellow().Sprintf("no") + "]" + ":")
 
 		var result string
 		_, err := fmt.Scanln(&result)
 		if err != nil {
-			color.Redln(err.Error())
+			color.Red().Println(err.Error())
 
 			return nil
 		}
 
 		if result != "yes" {
-			color.Yellowln("Command Canceled")
+			color.Yellow().Printfln("Command Canceled")
 
 			return nil
 		}
@@ -83,17 +82,17 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	}
 	if !isValidOption(system) {
 		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
-		color.Redln(err)
+		color.Red().Printfln(err)
 		return errors.New(err)
 	}
 
 	if err := receiver.buildTheApplication(system); err != nil {
-		color.Redln(err.Error())
+		color.Red().Printfln(err.Error())
 
 		return nil
 	}
 
-	color.Greenln("Built successfully.")
+	color.Green().Printfln("Built successfully.")
 
 	return nil
 }

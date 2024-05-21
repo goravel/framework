@@ -3,7 +3,6 @@ package schedule
 import (
 	"time"
 
-	"github.com/gookit/color"
 	"github.com/robfig/cron/v3"
 
 	"github.com/goravel/framework/contracts/cache"
@@ -11,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/schedule"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 )
 
 type Application struct {
@@ -95,7 +95,7 @@ func NewLogger(log log.Log) *Logger {
 }
 
 func (log *Logger) Info(msg string, keysAndValues ...any) {
-	color.Green.Printf("%s %v\n", msg, keysAndValues)
+	color.Green().Printf("%s %v\n", msg, keysAndValues)
 }
 
 func (log *Logger) Error(err error, msg string, keysAndValues ...any) {

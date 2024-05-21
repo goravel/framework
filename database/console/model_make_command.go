@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -41,7 +40,7 @@ func (receiver *ModelMakeCommand) Extend() command.Extend {
 func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Redln("Not enough arguments (missing: name)")
+		color.Red().Println("Not enough arguments (missing: name)")
 
 		return nil
 	}
@@ -50,7 +49,7 @@ func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Model created successfully")
+	color.Green().Println("Model created successfully")
 
 	return nil
 }

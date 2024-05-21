@@ -1,8 +1,8 @@
 package database
 
 import (
-	"github.com/gookit/color"
 	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/support/color"
 )
 
 type SeederFacade struct {
@@ -21,7 +21,7 @@ func (s *SeederFacade) Register(seeders []seeder.Seeder) {
 		signature := seeder.Signature()
 
 		if existingSignatures[signature] {
-			color.Redf("Duplicate seeder signature: %s in %T\n", signature, seeder)
+			color.Red().Printf("Duplicate seeder signature: %s in %T\n", signature, seeder)
 		} else {
 			existingSignatures[signature] = true
 			s.Seeders = append(s.Seeders, seeder)

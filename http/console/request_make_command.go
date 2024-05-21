@@ -8,10 +8,9 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
-
-	"github.com/gookit/color"
 )
 
 type RequestMakeCommand struct {
@@ -45,7 +44,7 @@ func (receiver *RequestMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Request created successfully")
+	color.Green().Println("Request created successfully")
 
 	return nil
 }

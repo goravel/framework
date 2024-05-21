@@ -8,10 +8,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/json"
 )
 
@@ -30,7 +29,7 @@ func NewAES(config config.Config) *AES {
 
 	// check key length before using it
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		color.Redln("[Crypt] Empty or invalid APP_KEY, please reset it.\nExample command:\ngo run . artisan key:generate")
+		color.Red().Printfln("[Crypt] Empty or invalid APP_KEY, please reset it.\nExample command:\ngo run . artisan key:generate")
 		return nil
 	}
 	keyBytes := []byte(key)

@@ -4,11 +4,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 )
 
 type MigrateResetCommand struct {
@@ -45,19 +45,19 @@ func (receiver *MigrateResetCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellowln("Please fill database config first")
+		color.Yellow().Printfln("Please fill database config first")
 
 		return nil
 	}
 
 	// Rollback all migrations.
 	if err = m.Down(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration reset failed:", err.Error())
+		color.Red().Println("Migration reset failed:", err.Error())
 
 		return nil
 	}
 
-	color.Greenln("Migration reset success")
+	color.Green().Println("Migration reset success")
 
 	return nil
 }

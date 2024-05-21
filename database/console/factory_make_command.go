@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -41,7 +40,7 @@ func (receiver *FactoryMakeCommand) Extend() command.Extend {
 func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Redln("Not enough arguments (missing: name)")
+		color.Red().Printfln("Not enough arguments (missing: name)")
 
 		return nil
 	}
@@ -50,7 +49,7 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Factory created successfully")
+	color.Green().Println("Factory created successfully")
 
 	return nil
 }

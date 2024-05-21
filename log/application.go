@@ -3,11 +3,11 @@ package log
 import (
 	"context"
 
-	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/color"
 )
 
 type Application struct {
@@ -22,7 +22,7 @@ func NewApplication(config config.Config) *Application {
 	if config != nil {
 		if logging := config.GetString("logging.default"); logging != "" {
 			if err := registerHook(config, instance, logging); err != nil {
-				color.Redln("Init facades.Log error: " + err.Error())
+				color.Red().Println("Init facades.Log error: " + err.Error())
 
 				return nil
 			}

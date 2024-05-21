@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/gookit/color"
 	"github.com/pkg/errors"
 
 	"github.com/goravel/framework/contracts/config"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/color"
 )
 
 type OrmImpl struct {
@@ -50,7 +50,7 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 
 	queue, err := databasegorm.InitializeQuery(r.ctx, r.config, name)
 	if err != nil || queue == nil {
-		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
+		color.Red().Println(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
 
 		return nil
 	}

@@ -4,12 +4,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 )
 
 type Application struct {
@@ -177,8 +177,8 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 func printResult(command string) {
 	switch command {
 	case "make:command":
-		color.Greenln("Console command created successfully")
+		color.Green().Println("Console command created successfully")
 	case "-V", "--version":
-		color.Greenln("Goravel Framework " + support.Version)
+		color.Green().Println("Goravel Framework " + support.Version)
 	}
 }

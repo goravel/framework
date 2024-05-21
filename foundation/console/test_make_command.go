@@ -6,10 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -51,7 +50,7 @@ func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Test created successfully")
+	color.Green().Println("Test created successfully")
 
 	return nil
 }

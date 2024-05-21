@@ -3,10 +3,9 @@ package filesystem
 import (
 	"fmt"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/support/color"
 )
 
 type Driver string
@@ -25,14 +24,14 @@ type Storage struct {
 func NewStorage(config config.Config) *Storage {
 	defaultDisk := config.GetString("filesystems.default")
 	if defaultDisk == "" {
-		color.Redln("[filesystem] please set default disk")
+		color.Red().Println("[filesystem] please set default disk")
 
 		return nil
 	}
 
 	driver, err := NewDriver(config, defaultDisk)
 	if err != nil {
-		color.Redf("[filesystem] %s\n", err)
+		color.Red().Printf("[filesystem] %s\n", err)
 
 		return nil
 	}

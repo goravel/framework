@@ -8,10 +8,9 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
-
-	"github.com/gookit/color"
 )
 
 type RuleMakeCommand struct {
@@ -45,7 +44,7 @@ func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Rule created successfully")
+	color.Green().Println("Rule created successfully")
 
 	return nil
 }
