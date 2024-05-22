@@ -1,7 +1,7 @@
 package console
 
 import (
-	"errors"
+	supportconsole "github.com/goravel/framework/support/console"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,31 +42,13 @@ func (receiver *RuleMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		var err error
-		name, err = ctx.Ask("Enter the rule name", console.AskOption{
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.New("the rule name cannot be empty")
-				}
-
-				return nil
-			},
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	force := ctx.OptionBool("force")
-	path := receiver.getPath(name)
-	if !force && file.Exists(path) {
-		color.Red().Println("The rule already exists. Use the --force flag to overwrite")
+	name, err := supportconsole.GetName(ctx, "rule", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(path, receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
 		return err
 	}
 

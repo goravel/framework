@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -46,30 +46,10 @@ func (receiver *PolicyMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		var err error
-		name, err = ctx.Ask("Enter the policy name", console.AskOption{
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.New("the policy name cannot be empty")
-				}
-
-				return nil
-			},
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	force := ctx.OptionBool("force")
-	path := receiver.getPath(name)
-	if !force {
-		if file.Exists(path) {
-			color.Red().Println("The policy already exists. Use the --force flag to overwrite")
-			return nil
-		}
+	name, err := supportconsole.GetName(ctx, "policy", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
+		return nil
 	}
 
 	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {

@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -47,21 +47,10 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		var err error
-		name, err = ctx.Ask("Enter the controller name", console.AskOption{
-			Validate: func(s string) error {
-				if s == "" {
-					return errors.New("the controller name cannot be empty")
-				}
-
-				return nil
-			},
-		})
-		if err != nil {
-			return err
-		}
+	name, err := supportconsole.GetName(ctx, "controller", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
+		return nil
 	}
 
 	stub := receiver.getStub()
@@ -69,14 +58,7 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 		stub = receiver.getResourceStub()
 	}
 
-	force := ctx.OptionBool("force")
-	path := receiver.getPath(name)
-	if !force && file.Exists(path) {
-		color.Red().Println("The controller already exists. Use the --force flag to overwrite")
-		return nil
-	}
-
-	if err := file.Create(path, receiver.populateStub(stub, name)); err != nil {
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(stub, name)); err != nil {
 		return err
 	}
 

@@ -18,8 +18,9 @@ func TestSeederMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	mockContext.On("Ask", "Enter the seeder name", mock.Anything).Return("", errors.New("the seeder name cannot be empty")).Once()
-	err := seederMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "the seeder name cannot be empty")
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, seederMakeCommand.Handle(mockContext))
+	}), "the seeder name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("UserSeeder").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
@@ -32,7 +33,7 @@ func TestSeederMakeCommand(t *testing.T) {
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, seederMakeCommand.Handle(mockContext))
-	}), "The seeder already exists. Use the --force flag to overwrite")
+	}), "the seeder already exists. Use the --force or -f flag to overwrite")
 	assert.Nil(t, file.Remove("database"))
 
 	mockContext.On("Argument", 0).Return("subdir/DemoSeeder").Once()

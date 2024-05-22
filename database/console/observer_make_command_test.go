@@ -18,8 +18,9 @@ func TestObserverMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	mockContext.On("Ask", "Enter the observer name", mock.Anything).Return("", errors.New("the observer name cannot be empty")).Once()
-	err := observerMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "the observer name cannot be empty")
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, observerMakeCommand.Handle(mockContext))
+	}), "the observer name cannot be empty")
 	assert.False(t, file.Exists("app/observers/user_observer.go"))
 
 	mockContext.On("Argument", 0).Return("UserObserver").Once()
@@ -31,7 +32,7 @@ func TestObserverMakeCommand(t *testing.T) {
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, observerMakeCommand.Handle(mockContext))
-	}), "The observer already exists. Use the --force flag to overwrite")
+	}), "the observer already exists. Use the --force or -f flag to overwrite")
 
 	mockContext.On("Argument", 0).Return("User/PhoneObserver").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()

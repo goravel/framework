@@ -18,26 +18,24 @@ func TestPolicyMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	mockContext.On("Ask", "Enter the policy name", mock.Anything).Return("", errors.New("the policy name cannot be empty")).Once()
-	err := policyMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "the policy name cannot be empty")
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, policyMakeCommand.Handle(mockContext))
+	}), "the policy name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("UserPolicy").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
-	err = policyMakeCommand.Handle(mockContext)
-	assert.Nil(t, err)
+	assert.Nil(t, policyMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/policies/user_policy.go"))
 
 	mockContext.On("Argument", 0).Return("UserPolicy").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		err = policyMakeCommand.Handle(mockContext)
-	}), "The policy already exists. Use the --force flag to overwrite")
-	assert.Nil(t, err)
+		assert.Nil(t, policyMakeCommand.Handle(mockContext))
+	}), "the policy already exists. Use the --force or -f flag to overwrite")
 
 	mockContext.On("Argument", 0).Return("User/AuthPolicy").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
-	err = policyMakeCommand.Handle(mockContext)
-	assert.Nil(t, err)
+	assert.Nil(t, policyMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/policies/User/auth_policy.go"))
 	assert.True(t, file.Contain("app/policies/User/auth_policy.go", "package User"))
 	assert.True(t, file.Contain("app/policies/User/auth_policy.go", "type AuthPolicy struct {"))

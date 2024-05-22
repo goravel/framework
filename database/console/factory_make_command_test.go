@@ -18,8 +18,9 @@ func TestFactoryMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	mockContext.On("Ask", "Enter the factory name", mock.Anything).Return("", errors.New("the factory name cannot be empty")).Once()
-	err := factoryMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "the factory name cannot be empty")
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, factoryMakeCommand.Handle(mockContext))
+	}), "the factory name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("UserFactory").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
@@ -32,7 +33,7 @@ func TestFactoryMakeCommand(t *testing.T) {
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, factoryMakeCommand.Handle(mockContext))
-	}), "The factory already exists. Use the --force flag to overwrite")
+	}), "the factory already exists. Use the --force or -f flag to overwrite")
 	assert.Nil(t, file.Remove("database"))
 
 	mockContext.On("Argument", 0).Return("subdir/DemoFactory").Once()

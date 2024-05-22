@@ -18,25 +18,24 @@ func TestEventMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	mockContext.On("Ask", "Enter the event name", mock.Anything).Return("", errors.New("the event name cannot be empty")).Once()
-	err := eventMakeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "the event name cannot be empty")
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, eventMakeCommand.Handle(mockContext))
+	}), "the event name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("GoravelEvent").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
-	err = eventMakeCommand.Handle(mockContext)
-	assert.Nil(t, err)
+	assert.Nil(t, eventMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/events/goravel_event.go"))
 
 	mockContext.On("Argument", 0).Return("GoravelEvent").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, eventMakeCommand.Handle(mockContext))
-	}), "The event already exists. Use the --force flag to overwrite")
+	}), "the event already exists. Use the --force or -f flag to overwrite")
 
 	mockContext.On("Argument", 0).Return("Goravel/Event").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
-	err = eventMakeCommand.Handle(mockContext)
-	assert.Nil(t, err)
+	assert.Nil(t, eventMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/events/Goravel/event.go"))
 	assert.True(t, file.Contain("app/events/Goravel/event.go", "package Goravel"))
 	assert.True(t, file.Contain("app/events/Goravel/event.go", "type Event struct {"))

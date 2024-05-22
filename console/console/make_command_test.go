@@ -18,8 +18,9 @@ func TestMakeCommand(t *testing.T) {
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	mockContext.On("Ask", "Enter the command name", mock.Anything).Return("", errors.New("the command name cannot be empty")).Once()
-	err := makeCommand.Handle(mockContext)
-	assert.EqualError(t, err, "the command name cannot be empty")
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, makeCommand.Handle(mockContext))
+	}), "the command name cannot be empty")
 
 	mockContext.On("Argument", 0).Return("CleanCache").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
@@ -30,7 +31,7 @@ func TestMakeCommand(t *testing.T) {
 	mockContext.On("OptionBool", "force").Return(false).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, makeCommand.Handle(mockContext))
-	}), "The command already exists. Use the --force flag to overwrite")
+	}), "the command already exists. Use the --force or -f flag to overwrite")
 
 	mockContext.On("Argument", 0).Return("Goravel/CleanCache").Once()
 	mockContext.On("OptionBool", "force").Return(false).Once()
