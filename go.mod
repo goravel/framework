@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
-	github.com/bytedance/sonic v1.11.6
+	github.com/bytedance/sonic v1.11.7
 	github.com/charmbracelet/huh v0.3.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20240508140610-13957916abf0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
