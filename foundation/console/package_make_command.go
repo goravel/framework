@@ -38,11 +38,6 @@ func (receiver *PackageMakeCommand) Extend() command.Extend {
 				Usage:   "The root path of package, default: packages",
 				Value:   "packages",
 			},
-			&command.BoolFlag{
-				Name:    "force",
-				Aliases: []string{"f"},
-				Usage:   "Create the package even if it already exists",
-			},
 		},
 	}
 }
@@ -66,11 +61,10 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	force := ctx.OptionBool("force")
 	pkg = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(pkg, "/", "_"), "-", "_"), ".", "_")
 	root := ctx.Option("root") + "/" + pkg
 
-	if !force && file.Exists(root) {
+	if file.Exists(root) {
 		color.Red().Printf("Package %s already exists\n", pkg)
 		return nil
 	}
