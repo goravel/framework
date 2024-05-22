@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -33,15 +34,21 @@ func (receiver *FactoryMakeCommand) Description() string {
 func (receiver *FactoryMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the factory even if it already exists",
+			},
+		},
 	}
 }
 
 // Handle Execute the console command.
 func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		color.Red().Printfln("Not enough arguments (missing: name)")
-
+	name, err := supportconsole.GetName(ctx, "factory", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
 		return nil
 	}
 

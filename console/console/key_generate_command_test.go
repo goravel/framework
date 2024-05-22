@@ -1,6 +1,8 @@
 package console
 
 import (
+	"errors"
+	"io"
 	"os"
 	"testing"
 
@@ -9,6 +11,7 @@ import (
 	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -34,19 +37,17 @@ func TestKeyGenerateCommand(t *testing.T) {
 	assert.True(t, len(env) > 10)
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
+	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, nil).Once()
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, keyGenerateCommand.Handle(mockContext))
+	}), "Command cancelled!")
 
-	reader, writer, err := os.Pipe()
-	assert.Nil(t, err)
-	originalStdin := os.Stdin
-	defer func() { os.Stdin = originalStdin }()
-	os.Stdin = reader
-	go func() {
-		defer writer.Close()
-		_, err = writer.Write([]byte("no\n"))
-		assert.Nil(t, err)
-	}()
+	mockConfig.On("GetString", "app.env").Return("production").Once()
+	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, errors.New("error")).Once()
+	assert.NotContains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.EqualError(t, keyGenerateCommand.Handle(mockContext), "error")
+	}), "Command cancelled!")
 
-	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 	env, err = os.ReadFile(".env")
 	assert.Nil(t, err)
 	assert.True(t, len(env) > 10)
@@ -79,19 +80,11 @@ func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
 	assert.True(t, len(env) > 10)
 
 	mockConfig.On("GetString", "app.env").Return("production").Once()
+	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, nil).Once()
+	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
+		assert.Nil(t, keyGenerateCommand.Handle(mockContext))
+	}), "Command cancelled!")
 
-	reader, writer, err := os.Pipe()
-	assert.Nil(t, err)
-	originalStdin := os.Stdin
-	defer func() { os.Stdin = originalStdin }()
-	os.Stdin = reader
-	go func() {
-		defer writer.Close()
-		_, err = writer.Write([]byte("no\n"))
-		assert.Nil(t, err)
-	}()
-
-	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 	env, err = os.ReadFile("config.conf")
 	assert.Nil(t, err)
 	assert.True(t, len(env) > 10)

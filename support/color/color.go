@@ -1,6 +1,9 @@
 package color
 
 import (
+	"bytes"
+	"io"
+
 	"github.com/pterm/pterm"
 
 	"github.com/goravel/framework/contracts/support"
@@ -149,3 +152,14 @@ func Successln(a ...any) { success.Println(a...) }
 func Warnf(format string, a ...any) { warn.Printf(format, a...) }
 
 func Warnln(a ...any) { warn.Println(a...) }
+
+// CaptureOutput simulates capturing of os.stdout with a buffer and returns what was written to the screen
+func CaptureOutput(f func(w io.Writer)) string {
+	var outBuf bytes.Buffer
+	pterm.SetDefaultOutput(&outBuf)
+	f(&outBuf)
+
+	content := outBuf.String()
+	outBuf.Reset()
+	return content
+}

@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -67,9 +68,10 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err = m.Steps(step); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
-		switch err.(type) {
-		case migrate.ErrShortLimit:
+	if err = m.Steps(step); err != nil && !errors.Is(err, migrate.ErrNoChange) && !errors.Is(err, migrate.ErrNilVersion) {
+		var errShortLimit migrate.ErrShortLimit
+		switch {
+		case errors.As(err, &errShortLimit):
 		default:
 			color.Red().Println("Migration rollback failed:", err.Error())
 

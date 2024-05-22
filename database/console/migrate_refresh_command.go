@@ -1,12 +1,11 @@
 package console
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -79,24 +78,25 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 
-		if err = m.Steps(s); err != nil && err != migrate.ErrNoChange && err != migrate.ErrNilVersion {
-			switch err.(type) {
-			case migrate.ErrShortLimit:
+		if err = m.Steps(s); err != nil && !errors.Is(err, migrate.ErrNoChange) && !errors.Is(err, migrate.ErrNilVersion) {
+			var errShortLimit migrate.ErrShortLimit
+			switch {
+			case errors.As(err, &errShortLimit):
 			default:
-				color.Red().Printfln("Migration refresh failed:", err.Error())
+				color.Red().Println("Migration refresh failed:", err.Error())
 
 				return nil
 			}
 		}
 	} else {
-		if err = m.Down(); err != nil && err != migrate.ErrNoChange {
-			color.Red().Printfln("Migration reset failed:", err.Error())
+		if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+			color.Red().Println("Migration reset failed:", err.Error())
 
 			return nil
 		}
 	}
 
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		color.Red().Println("Migration refresh failed:", err.Error())
 
 		return nil

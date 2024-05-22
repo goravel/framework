@@ -1,6 +1,8 @@
 package console
 
 import (
+	"errors"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -39,9 +41,19 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// to be freshly created, so we can create the appropriate migrations.
 	name := ctx.Argument(0)
 	if name == "" {
-		color.Red().Printfln("Not enough arguments (missing: name)")
+		var err error
+		name, err = ctx.Ask("Enter the migration name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the migration name cannot be empty")
+				}
 
-		return nil
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// We will attempt to guess the table name if this the migration has

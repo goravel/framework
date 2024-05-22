@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -34,14 +34,22 @@ func (receiver *TestMakeCommand) Description() string {
 func (receiver *TestMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the test even if it already exists",
+			},
+		},
 	}
 }
 
 // Handle Execute the console command.
 func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+	name, err := supportconsole.GetName(ctx, "test", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
+		return nil
 	}
 
 	stub := receiver.getStub()

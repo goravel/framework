@@ -1,9 +1,9 @@
 package console
 
 import (
-	_ "github.com/go-sql-driver/mysql"
+	"errors"
+
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -45,13 +45,13 @@ func (receiver *MigrateResetCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellow().Printfln("Please fill database config first")
+		color.Yellow().Println("Please fill database config first")
 
 		return nil
 	}
 
 	// Rollback all migrations.
-	if err = m.Down(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		color.Red().Println("Migration reset failed:", err.Error())
 
 		return nil

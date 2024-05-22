@@ -50,22 +50,17 @@ func (receiver *BuildCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	if receiver.config.GetString("app.env") == "production" {
-		color.Yellow().Printfln("**************************************")
-		color.Yellow().Printfln("*     Application In Production!     *")
-		color.Yellow().Printfln("**************************************")
-		color.Default().Println(color.Green().Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.Yellow().Sprintf("no") + "]" + ":")
+		color.Yellow().Println("**************************************")
+		color.Yellow().Println("*     Application In Production!     *")
+		color.Yellow().Println("**************************************")
 
-		var result string
-		_, err := fmt.Scanln(&result)
+		answer, err := ctx.Confirm("Do you really wish to run this command?")
 		if err != nil {
-			color.Red().Println(err.Error())
-
-			return nil
+			return err
 		}
 
-		if result != "yes" {
-			color.Yellow().Printfln("Command Canceled")
-
+		if !answer {
+			color.Yellow().Println("Command cancelled!")
 			return nil
 		}
 	}
@@ -82,17 +77,17 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	}
 	if !isValidOption(system) {
 		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
-		color.Red().Printfln(err)
+		color.Red().Println(err)
 		return errors.New(err)
 	}
 
 	if err := receiver.buildTheApplication(system); err != nil {
-		color.Red().Printfln(err.Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}
 
-	color.Green().Printfln("Built successfully.")
+	color.Green().Println("Built successfully.")
 
 	return nil
 }

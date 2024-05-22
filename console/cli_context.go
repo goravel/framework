@@ -98,7 +98,7 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 }
 
 func (r *CliContext) Comment(message string) {
-	color.Gray().Printfln(message)
+	color.Gray().Println(message)
 }
 
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
