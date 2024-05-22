@@ -39,13 +39,7 @@ func (receiver *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetArgument(ctx, 0, supportconsole.Option{
-		Question: "Enter the command name",
-		Field:    "command name",
-		Required: true,
-		GetPath:  receiver.getPath,
-		Type:     "command",
-	})
+	name, err := supportconsole.GetName(ctx, "command", ctx.Argument(0), receiver.getPath)
 	if err != nil {
 		color.Red().Println(err)
 		return nil
