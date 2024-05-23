@@ -26,12 +26,7 @@ func NewApplication(config config.Config) *Application {
 }
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
-	switch r.Writer.(type) {
-	case *Writer:
-		return NewWriter(r.instance.WithContext(ctx))
-	default:
-		return r.Writer
-	}
+	return NewWriter(r.instance.WithContext(ctx))
 }
 
 func (r *Application) Channel(channel string) log.Writer {
