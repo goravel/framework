@@ -24,6 +24,54 @@ func (_m *Log) EXPECT() *Log_Expecter {
 	return &Log_Expecter{mock: &_m.Mock}
 }
 
+// Channel provides a mock function with given fields: channel
+func (_m *Log) Channel(channel string) log.Writer {
+	ret := _m.Called(channel)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Channel")
+	}
+
+	var r0 log.Writer
+	if rf, ok := ret.Get(0).(func(string) log.Writer); ok {
+		r0 = rf(channel)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Writer)
+		}
+	}
+
+	return r0
+}
+
+// Log_Channel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Channel'
+type Log_Channel_Call struct {
+	*mock.Call
+}
+
+// Channel is a helper method to define mock.On call
+//   - channel string
+func (_e *Log_Expecter) Channel(channel interface{}) *Log_Channel_Call {
+	return &Log_Channel_Call{Call: _e.mock.On("Channel", channel)}
+}
+
+func (_c *Log_Channel_Call) Run(run func(channel string)) *Log_Channel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Log_Channel_Call) Return(_a0 log.Writer) *Log_Channel_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Log_Channel_Call) RunAndReturn(run func(string) log.Writer) *Log_Channel_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Code provides a mock function with given fields: code
 func (_m *Log) Code(code string) log.Writer {
 	ret := _m.Called(code)
@@ -738,6 +786,54 @@ func (_c *Log_Response_Call) Return(_a0 log.Writer) *Log_Response_Call {
 }
 
 func (_c *Log_Response_Call) RunAndReturn(run func(http.ContextResponse) log.Writer) *Log_Response_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Stack provides a mock function with given fields: channels
+func (_m *Log) Stack(channels []string) log.Writer {
+	ret := _m.Called(channels)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stack")
+	}
+
+	var r0 log.Writer
+	if rf, ok := ret.Get(0).(func([]string) log.Writer); ok {
+		r0 = rf(channels)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Writer)
+		}
+	}
+
+	return r0
+}
+
+// Log_Stack_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stack'
+type Log_Stack_Call struct {
+	*mock.Call
+}
+
+// Stack is a helper method to define mock.On call
+//   - channels []string
+func (_e *Log_Expecter) Stack(channels interface{}) *Log_Stack_Call {
+	return &Log_Stack_Call{Call: _e.mock.On("Stack", channels)}
+}
+
+func (_c *Log_Stack_Call) Run(run func(channels []string)) *Log_Stack_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([]string))
+	})
+	return _c
+}
+
+func (_c *Log_Stack_Call) Return(_a0 log.Writer) *Log_Stack_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Log_Stack_Call) RunAndReturn(run func([]string) log.Writer) *Log_Stack_Call {
 	_c.Call.Return(run)
 	return _c
 }
