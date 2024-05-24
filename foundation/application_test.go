@@ -254,17 +254,6 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 }
 
 func (s *ApplicationTestSuite) TestMakeLog() {
-	mockConfig := &configmocks.Config{}
-	mockConfig.On("GetString", "logging.default").Return("single").Once()
-	mockConfig.On("GetString", "logging.channels.single.driver").Return("single").Once()
-	mockConfig.On("GetBool", "logging.channels.single.print").Return(true).Once()
-	mockConfig.On("GetString", "logging.channels.single.path").Return("logs/goravel.log").Once()
-	mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
-
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
-		return mockConfig, nil
-	})
-
 	serviceProvider := &frameworklog.ServiceProvider{}
 	serviceProvider.Register(s.app)
 

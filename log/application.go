@@ -17,7 +17,18 @@ type Application struct {
 }
 
 func NewApplication(config config.Config) *Application {
-	instance := newLogger(config, config.GetString("logging.default"))
+	instance := logrus.New()
+	instance.SetLevel(logrus.DebugLevel)
+
+	if config != nil {
+		if channel := config.GetString("logging.default"); channel != "" {
+			if err := registerHook(config, instance, channel); err != nil {
+				color.Red().Println("Init facades.Log error: " + err.Error())
+				return nil
+			}
+		}
+	}
+
 	return &Application{
 		instance: instance,
 		Writer:   NewWriter(instance.WithContext(context.Background())),
@@ -34,7 +45,14 @@ func (r *Application) Channel(channel string) log.Writer {
 		return r.Writer
 	}
 
-	instance := newLogger(r.config, channel)
+	instance := logrus.New()
+	instance.SetLevel(logrus.DebugLevel)
+
+	if err := registerHook(r.config, instance, channel); err != nil {
+		color.Red().Println("Init facades.Log error: " + err.Error())
+		return nil
+	}
+
 	return NewWriter(instance.WithContext(context.Background()))
 }
 
@@ -66,18 +84,4 @@ func (r *Application) Stack(channels []string) log.Writer {
 	}
 
 	return NewWriter(instance.WithContext(context.Background()))
-}
-
-func newLogger(config config.Config, channel string) *logrus.Logger {
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
-	if channel != "" && config != nil {
-		if err := registerHook(config, instance, channel); err != nil {
-			color.Red().Println("Init facades.Log error: " + err.Error())
-			return nil
-		}
-	}
-
-	return instance
 }
