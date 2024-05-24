@@ -45,7 +45,13 @@ func (receiver *MakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	return file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+		return err
+	}
+
+	color.Green().Println("Console command created successfully")
+
+	return nil
 }
 
 func (receiver *MakeCommand) getStub() string {

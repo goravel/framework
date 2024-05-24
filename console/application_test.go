@@ -13,7 +13,7 @@ import (
 var testCommand = 0
 
 func TestRun(t *testing.T) {
-	cli := NewApplication()
+	cli := NewApplication("test", "test", "test", "test", true)
 	cli.Register([]console.Command{
 		&TestCommand{},
 	})
