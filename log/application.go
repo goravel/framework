@@ -57,7 +57,7 @@ func (r *Application) Channel(channel string) log.Writer {
 }
 
 func (r *Application) Stack(channels []string) log.Writer {
-	if r.config == nil {
+	if r.config == nil || len(channels) == 0 {
 		return r.Writer
 	}
 
