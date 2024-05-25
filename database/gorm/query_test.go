@@ -2404,6 +2404,36 @@ func (s *QueryTestSuite) TestSum() {
 	}
 }
 
+func (s *QueryTestSuite) TestToSql() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			switch driver {
+			case ormcontract.DriverPostgresql:
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
+			case ormcontract.DriverSqlserver:
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
+			default:
+				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Where("id", 1).ToSql().Find(User{}))
+			}
+		})
+	}
+}
+
+func (s *QueryTestSuite) TestToRawSql() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			switch driver {
+			case ormcontract.DriverPostgresql:
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
+			case ormcontract.DriverSqlserver:
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
+			default:
+				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
+			}
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestTransactionSuccess() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
