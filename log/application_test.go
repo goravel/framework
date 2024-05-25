@@ -67,11 +67,6 @@ func TestApplication_Stack(t *testing.T) {
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Stack([]string{}))
 
-	mockConfig.On("GetString", "logging.channels.stack.driver").Return("stack")
-	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, app.Stack([]string{"stack", "daily"}))
-	}), "stack driver can't include self channel")
-
 	mockConfig.On("GetString", "logging.channels.test2.driver").Return("test2")
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, app.Stack([]string{"", "test2", "daily"}))

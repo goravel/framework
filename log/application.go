@@ -69,14 +69,6 @@ func (r *Application) Stack(channels []string) log.Writer {
 			continue
 		}
 
-		channelPath := "logging.channels." + channel
-		driver := r.config.GetString(channelPath + ".driver")
-
-		if driver == log.StackDriver {
-			color.Red().Println("stack driver can't include self channel")
-			return nil
-		}
-
 		if err := registerHook(r.config, instance, channel); err != nil {
 			color.Red().Println("Init facades.Log error: " + err.Error())
 			return nil
