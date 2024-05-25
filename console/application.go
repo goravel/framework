@@ -8,7 +8,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 )
 
 type Application struct {
@@ -84,14 +83,10 @@ func (c *Application) Run(args []string, exitIfArtisan bool) {
 			args = append(args, "--help")
 		}
 
-		if args[artisanIndex+1] != "-V" && args[artisanIndex+1] != "--version" {
-			cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-			if err := c.instance.Run(cliArgs); err != nil {
-				panic(err.Error())
-			}
+		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
+		if err := c.instance.Run(cliArgs); err != nil {
+			panic(err.Error())
 		}
-
-		c.printVersion(args[artisanIndex+1])
 
 		if exitIfArtisan {
 			os.Exit(0)
@@ -188,10 +183,4 @@ func flagsToCliFlags(flags []command.Flag) []cli.Flag {
 	}
 
 	return cliFlags
-}
-
-func (c *Application) printVersion(command string) {
-	if command == "-V" || command == "--version" {
-		color.Green().Println(c.instance.Name, c.instance.Version)
-	}
 }
