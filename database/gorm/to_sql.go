@@ -20,7 +20,7 @@ func (r *ToSql) Count() string {
 	query := r.query.buildConditions()
 	var count int64
 
-	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Create(&count))
+	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Count(&count))
 }
 
 func (r *ToSql) Create(value any) string {

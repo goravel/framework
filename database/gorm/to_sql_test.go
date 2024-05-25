@@ -103,7 +103,7 @@ func (s *ToSqlTestSuite) TestFind() {
 
 func (s *ToSqlTestSuite) TestFirst() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT ?", toSql.First(User{}))
+	s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1", toSql.First(User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
 	s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1", toSql.First(User{}))
