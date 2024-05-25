@@ -2,6 +2,7 @@ package translation
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
+	"github.com/goravel/framework/support/path"
 )
 
 type FileLoaderTestSuite struct {
@@ -33,7 +35,10 @@ func (f *FileLoaderTestSuite) SetupTest() {
 }
 
 func (f *FileLoaderTestSuite) TestLoad() {
-	paths := []string{"./lang"}
+	executable, err := path.Executable()
+	assert.NoError(f.T(), err)
+
+	paths := []string{filepath.Join(executable, "lang")}
 	loader := NewFileLoader(paths)
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
@@ -47,21 +52,21 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	f.Equal("bar", translations["foo"])
 	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
 
-	paths = []string{"./lang/another", "./lang"}
+	paths = []string{filepath.Join(executable, "lang", "another"), filepath.Join(executable, "lang")}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["foo"])
 
-	paths = []string{"./lang"}
+	paths = []string{filepath.Join(executable, "lang")}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("en", "another/test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["foo"])
 
-	paths = []string{"./lang"}
+	paths = []string{filepath.Join(executable, "lang")}
 	loader = NewFileLoader(paths)
 	translations, err = loader.Load("en", "restricted/test")
 	if env.IsWindows() {
@@ -75,7 +80,10 @@ func (f *FileLoaderTestSuite) TestLoad() {
 }
 
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
-	paths := []string{"./lang"}
+	executable, err := path.Executable()
+	assert.NoError(f.T(), err)
+
+	paths := []string{filepath.Join(executable, "lang")}
 	loader := NewFileLoader(paths)
 	translations, err := loader.Load("hi", "test")
 
@@ -85,7 +93,10 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 }
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
-	paths := []string{"./lang"}
+	executable, err := path.Executable()
+	assert.NoError(f.T(), err)
+
+	paths := []string{filepath.Join(executable, "lang")}
 	loader := NewFileLoader(paths)
 	translations, err := loader.Load("en", "invalid/test")
 
