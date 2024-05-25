@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/support/path"
 )
 
 const Binding = "goravel.translation"
@@ -15,7 +14,7 @@ type ServiceProvider struct {
 
 func (translation *ServiceProvider) Register(app foundation.Application) {
 	app.BindWith(Binding, func(app foundation.Application, parameters map[string]any) (any, error) {
-		executable, err := path.Executable()
+		executable, err := app.ExecutablePath()
 		if err != nil {
 			return nil, err
 		}
