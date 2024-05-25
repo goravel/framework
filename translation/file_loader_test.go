@@ -19,13 +19,16 @@ type FileLoaderTestSuite struct {
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
-	assert.Nil(t, file.Create("lang/en/test.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
-	assert.Nil(t, file.Create("lang/en/another/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
-	assert.Nil(t, file.Create("lang/another/en/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
-	assert.Nil(t, file.Create("lang/en/invalid/test.json", `{"foo": "bar",}`))
+	executable, err := executablePath()
+	assert.NoError(t, err)
+
+	assert.Nil(t, file.Create(filepath.Join(executable, "lang/en/test.json"), `{"foo": "bar", "baz": {"foo": "bar"}}`))
+	assert.Nil(t, file.Create(filepath.Join(executable, "lang/en/another/test.json"), `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(t, file.Create(filepath.Join(executable, "lang/another/en/test.json"), `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(t, file.Create(filepath.Join(executable, "lang/en/invalid/test.json"), `{"foo": "bar",}`))
 	// We should adapt this situation.
-	assert.Nil(t, file.Create("lang/cn.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
-	restrictedFilePath := "lang/en/restricted/test.json"
+	assert.Nil(t, file.Create(filepath.Join(executable, "lang/cn.json"), `{"foo": "bar", "baz": {"foo": "bar"}}`))
+	restrictedFilePath := filepath.Join(executable, "lang/en/restricted/test.json")
 	assert.Nil(t, file.Create(restrictedFilePath, `{"foo": "restricted"}`))
 	assert.Nil(t, os.Chmod(restrictedFilePath, 0000))
 	suite.Run(t, &FileLoaderTestSuite{})
@@ -37,7 +40,7 @@ func (f *FileLoaderTestSuite) SetupTest() {
 }
 
 func (f *FileLoaderTestSuite) TestLoad() {
-	f.app.On("ExecutablePath").Return("./", nil)
+	f.app.On("ExecutablePath").Return(executablePath())
 	executable, err := f.app.ExecutablePath()
 	assert.NoError(f.T(), err)
 
@@ -84,7 +87,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 }
 
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
-	f.app.On("ExecutablePath").Return("./", nil)
+	f.app.On("ExecutablePath").Return(executablePath())
 	executable, err := f.app.ExecutablePath()
 	assert.NoError(f.T(), err)
 
@@ -99,7 +102,7 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 }
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
-	f.app.On("ExecutablePath").Return("./", nil)
+	f.app.On("ExecutablePath").Return(executablePath())
 	executable, err := f.app.ExecutablePath()
 	assert.NoError(f.T(), err)
 
@@ -110,4 +113,13 @@ func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 	f.Error(err)
 	f.Nil(translations)
 	f.app.AssertExpectations(f.T())
+}
+
+func executablePath() (string, error) {
+	executable, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Dir(executable), nil
 }
