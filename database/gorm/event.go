@@ -12,12 +12,12 @@ import (
 )
 
 type Event struct {
-	columnNamesWithDbColumnNames map[string]string
-	dest                         any
-	destOfMap                    map[string]any
-	model                        any
-	modelOfMap                   map[string]any
-	query                        *QueryImpl
+	columnNames map[string]string
+	dest        any
+	destOfMap   map[string]any
+	model       any
+	modelOfMap  map[string]any
+	query       *QueryImpl
 }
 
 func NewEvent(query *QueryImpl, model, dest any) *Event {
@@ -28,49 +28,16 @@ func NewEvent(query *QueryImpl, model, dest any) *Event {
 	}
 }
 
-func (e *Event) ColumnNamesWithDbColumnNames() map[string]string {
-	if e.columnNamesWithDbColumnNames != nil {
-		return e.columnNamesWithDbColumnNames
+func (e *Event) ColumnNames() map[string]string {
+	if e.columnNames != nil {
+		return e.columnNames
 	}
-
-	res := make(map[string]string)
-	var modelType reflect.Type
-	var modelValue reflect.Value
 
 	if e.model != nil {
-		modelType = reflect.TypeOf(e.model)
-		modelValue = reflect.ValueOf(e.model)
+		return fetchColumnNames(e.model)
 	} else {
-		modelType = reflect.TypeOf(e.dest)
-		modelValue = reflect.ValueOf(e.dest)
+		return fetchColumnNames(e.dest)
 	}
-	if modelType.Kind() == reflect.Pointer {
-		modelType = modelType.Elem()
-		modelValue = modelValue.Elem()
-	}
-
-	for i := 0; i < modelType.NumField(); i++ {
-		if !modelType.Field(i).IsExported() {
-			continue
-		}
-		if modelType.Field(i).Name == "Model" && modelValue.Field(i).Type().Kind() == reflect.Struct {
-			structField := modelValue.Field(i).Type()
-			for j := 0; j < structField.NumField(); j++ {
-				if !structField.Field(i).IsExported() {
-					continue
-				}
-				dbColumn := structNameToDbColumnName(structField.Field(j).Name, structField.Field(j).Tag.Get("gorm"))
-				res[structField.Field(j).Name] = dbColumn
-				res[dbColumn] = dbColumn
-			}
-		}
-
-		dbColumn := structNameToDbColumnName(modelType.Field(i).Name, modelType.Field(i).Tag.Get("gorm"))
-		res[modelType.Field(i).Name] = dbColumn
-		res[dbColumn] = dbColumn
-	}
-
-	return res
 }
 
 func (e *Event) Context() context.Context {
@@ -82,9 +49,12 @@ func (e *Event) DestOfMap() map[string]any {
 		return e.destOfMap
 	}
 
-	var destOfMap map[string]any
+	destOfMap := make(map[string]any)
 	if destMap, ok := e.dest.(map[string]any); ok {
-		destOfMap = destMap
+		for key, value := range destMap {
+			destOfMap[key] = value
+			destOfMap[str.Camel2Case(key)] = value
+		}
 	} else {
 		destType := reflect.TypeOf(e.dest)
 		if destType.Kind() == reflect.Pointer {
@@ -239,7 +209,7 @@ func (e *Event) equalColumnName(origin, source string) bool {
 }
 
 func (e *Event) toDBColumnName(name string) string {
-	dbColumnName, exist := e.ColumnNamesWithDbColumnNames()[name]
+	dbColumnName, exist := e.ColumnNames()[name]
 	if exist {
 		return dbColumnName
 	}
@@ -317,20 +287,35 @@ func structToMap(data any) map[string]any {
 		modelValue = modelValue.Elem()
 	}
 
+	if modelType.Kind() != reflect.Struct {
+		return res
+	}
+
 	for i := 0; i < modelType.NumField(); i++ {
-		if !modelType.Field(i).IsExported() {
+		fieldType := modelType.Field(i)
+		fieldValue := modelValue.Field(i)
+
+		if !fieldType.IsExported() {
 			continue
 		}
 
-		dbColumn := structNameToDbColumnName(modelType.Field(i).Name, modelType.Field(i).Tag.Get("gorm"))
-		if modelValue.Field(i).Kind() == reflect.Pointer {
-			if modelValue.Field(i).IsNil() {
+		dbColumn := structNameToDbColumnName(fieldType.Name, fieldType.Tag.Get("gorm"))
+		if fieldValue.Kind() == reflect.Pointer {
+			if fieldValue.IsNil() {
 				res[dbColumn] = nil
-			} else {
-				res[dbColumn] = modelValue.Field(i).Elem().Interface()
+				continue
+			}
+
+			fieldValue = fieldValue.Elem()
+		}
+
+		if fieldValue.Kind() == reflect.Struct && fieldType.Anonymous {
+			subStructMap := structToMap(fieldValue.Interface())
+			for key, value := range subStructMap {
+				res[key] = value
 			}
 		} else {
-			res[dbColumn] = modelValue.Field(i).Interface()
+			res[dbColumn] = fieldValue.Interface()
 		}
 	}
 
@@ -348,4 +333,35 @@ func structNameToDbColumnName(structName, tag string) string {
 	}
 
 	return str.Camel2Case(structName)
+}
+
+func fetchColumnNames(model any) map[string]string {
+	res := make(map[string]string)
+	modelType := reflect.TypeOf(model)
+	modelValue := reflect.ValueOf(model)
+	if modelType.Kind() == reflect.Pointer {
+		modelType = modelType.Elem()
+		modelValue = modelValue.Elem()
+	}
+
+	for i := 0; i < modelType.NumField(); i++ {
+		if !modelType.Field(i).IsExported() {
+			continue
+		}
+		fieldType := modelType.Field(i)
+		fieldValue := modelValue.Field(i)
+		if fieldValue.Kind() == reflect.Struct && fieldType.Anonymous {
+			subStructMap := fetchColumnNames(fieldValue.Interface())
+			for key, value := range subStructMap {
+				res[key] = value
+			}
+			continue
+		}
+
+		dbColumn := structNameToDbColumnName(modelType.Field(i).Name, modelType.Field(i).Tag.Get("gorm"))
+		res[modelType.Field(i).Name] = dbColumn
+		res[dbColumn] = dbColumn
+	}
+
+	return res
 }

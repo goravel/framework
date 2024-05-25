@@ -134,6 +134,10 @@ type Query interface {
 	Sum(column string, dest any) error
 	// Table specifies the table for the query.
 	Table(name string, args ...any) Query
+	// ToSql returns the query as a SQL string.
+	ToSql() ToSql
+	// ToRawSql returns the query as a raw SQL string.
+	ToRawSql() ToSql
 	// Update updates records with the given column and values
 	Update(column any, value ...any) (*Result, error)
 	// UpdateOrCreate finds the first record that matches the given attributes
@@ -188,4 +192,17 @@ type Cursor interface {
 
 type Result struct {
 	RowsAffected int64
+}
+
+type ToSql interface {
+	Count() string
+	Create(value any) string
+	Delete(value any, conds ...any) string
+	Find(dest any, conds ...any) string
+	First(dest any) string
+	Get(dest any) string
+	Pluck(column string, dest any) string
+	Save(value any) string
+	Sum(column string, dest any) string
+	Update(column any, value ...any) string
 }
