@@ -2744,6 +2744,100 @@ func (_c *Transaction_Table_Call) RunAndReturn(run func(string, ...interface{}) 
 	return _c
 }
 
+// ToRawSql provides a mock function with given fields:
+func (_m *Transaction) ToRawSql() orm.ToSql {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ToRawSql")
+	}
+
+	var r0 orm.ToSql
+	if rf, ok := ret.Get(0).(func() orm.ToSql); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.ToSql)
+		}
+	}
+
+	return r0
+}
+
+// Transaction_ToRawSql_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ToRawSql'
+type Transaction_ToRawSql_Call struct {
+	*mock.Call
+}
+
+// ToRawSql is a helper method to define mock.On call
+func (_e *Transaction_Expecter) ToRawSql() *Transaction_ToRawSql_Call {
+	return &Transaction_ToRawSql_Call{Call: _e.mock.On("ToRawSql")}
+}
+
+func (_c *Transaction_ToRawSql_Call) Run(run func()) *Transaction_ToRawSql_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Transaction_ToRawSql_Call) Return(_a0 orm.ToSql) *Transaction_ToRawSql_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Transaction_ToRawSql_Call) RunAndReturn(run func() orm.ToSql) *Transaction_ToRawSql_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ToSql provides a mock function with given fields:
+func (_m *Transaction) ToSql() orm.ToSql {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ToSql")
+	}
+
+	var r0 orm.ToSql
+	if rf, ok := ret.Get(0).(func() orm.ToSql); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.ToSql)
+		}
+	}
+
+	return r0
+}
+
+// Transaction_ToSql_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ToSql'
+type Transaction_ToSql_Call struct {
+	*mock.Call
+}
+
+// ToSql is a helper method to define mock.On call
+func (_e *Transaction_Expecter) ToSql() *Transaction_ToSql_Call {
+	return &Transaction_ToSql_Call{Call: _e.mock.On("ToSql")}
+}
+
+func (_c *Transaction_ToSql_Call) Run(run func()) *Transaction_ToSql_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Transaction_ToSql_Call) Return(_a0 orm.ToSql) *Transaction_ToSql_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Transaction_ToSql_Call) RunAndReturn(run func() orm.ToSql) *Transaction_ToSql_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: column, value
 func (_m *Transaction) Update(column interface{}, value ...interface{}) (*orm.Result, error) {
 	var _ca []interface{}

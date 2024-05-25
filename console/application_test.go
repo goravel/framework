@@ -13,12 +13,12 @@ import (
 var testCommand = 0
 
 func TestRun(t *testing.T) {
-	cli := NewApplication()
-	cli.Register([]console.Command{
+	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp.Register([]console.Command{
 		&TestCommand{},
 	})
 
-	cli.Call("test")
+	cliApp.Call("test")
 	assert.Equal(t, 1, testCommand)
 }
 
