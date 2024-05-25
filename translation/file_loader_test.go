@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/path"
 )
 
 type FileLoaderTestSuite struct {
 	suite.Suite
+	app *foundation.Application
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
@@ -32,10 +33,12 @@ func TestFileLoaderTestSuite(t *testing.T) {
 }
 
 func (f *FileLoaderTestSuite) SetupTest() {
+	f.app = &foundation.Application{}
 }
 
 func (f *FileLoaderTestSuite) TestLoad() {
-	executable, err := path.Executable()
+	f.app.On("ExecutablePath").Return("./", nil)
+	executable, err := f.app.ExecutablePath()
 	assert.NoError(f.T(), err)
 
 	paths := []string{filepath.Join(executable, "lang")}
@@ -77,10 +80,12 @@ func (f *FileLoaderTestSuite) TestLoad() {
 		f.Error(err)
 		f.Nil(translations)
 	}
+	f.app.AssertExpectations(f.T())
 }
 
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
-	executable, err := path.Executable()
+	f.app.On("ExecutablePath").Return("./", nil)
+	executable, err := f.app.ExecutablePath()
 	assert.NoError(f.T(), err)
 
 	paths := []string{filepath.Join(executable, "lang")}
@@ -90,10 +95,12 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 	f.Error(err)
 	f.Nil(translations)
 	f.Equal(ErrFileNotExist, err)
+	f.app.AssertExpectations(f.T())
 }
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
-	executable, err := path.Executable()
+	f.app.On("ExecutablePath").Return("./", nil)
+	executable, err := f.app.ExecutablePath()
 	assert.NoError(f.T(), err)
 
 	paths := []string{filepath.Join(executable, "lang")}
@@ -102,4 +109,5 @@ func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 
 	f.Error(err)
 	f.Nil(translations)
+	f.app.AssertExpectations(f.T())
 }
