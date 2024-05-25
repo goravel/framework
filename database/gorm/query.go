@@ -699,6 +699,14 @@ func (r *QueryImpl) Table(name string, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *QueryImpl) ToSql() ormcontract.ToSql {
+	return NewToSql(r.setConditions(r.conditions), false)
+}
+
+func (r *QueryImpl) ToRawSql() ormcontract.ToSql {
+	return NewToSql(r.setConditions(r.conditions), true)
+}
+
 func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error) {
 	query := r.buildConditions()
 

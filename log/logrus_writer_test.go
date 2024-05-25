@@ -356,6 +356,24 @@ func TestLogrus(t *testing.T) {
 				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ntrace:"))
 			},
 		},
+		{
+			name: "No traces when calling Info after Error",
+			setup: func() {
+				mockDriverConfig(mockConfig)
+
+				log = NewApplication(mockConfig)
+				log.Error("test error")
+				log.Info("test info")
+			},
+			assert: func() {
+				assert.True(t, file.Contain(singleLog, "test.error: test error\ntrace:"))
+				assert.True(t, file.Contain(singleLog, "test.info: test info"))
+				assert.False(t, file.Contain(dailyLog, "test.info: test info\ntrace:"))
+				assert.True(t, file.Contain(dailyLog, "test.error: test error"))
+				assert.True(t, file.Contain(dailyLog, "test.info: test info"))
+				assert.False(t, file.Contain(singleLog, "test.info: test info\ntrace:"))
+			},
+		},
 	}
 
 	for _, test := range tests {
