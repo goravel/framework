@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -24,18 +25,21 @@ type DriverSyncTestSuite struct {
 }
 
 func TestDriverSyncTestSuite(t *testing.T) {
-	suite.Run(t, &DriverSyncTestSuite{})
+	mockConfig := &configmock.Config{}
+	mockQueue := &queuemock.Queue{}
+	app := NewApplication(mockConfig)
+
+	assert.Nil(t, app.Register([]queue.Job{&TestSyncJob{}, &TestChainSyncJob{}}))
+	suite.Run(t, &DriverSyncTestSuite{
+		app:        app,
+		mockConfig: mockConfig,
+		mockQueue:  mockQueue,
+	})
 }
 
 func (s *DriverSyncTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
-	s.mockQueue = &queuemock.Queue{}
-	s.app = NewApplication(s.mockConfig)
-
 	testSyncJob = 0
 	testChainSyncJob = 0
-
-	s.Nil(s.app.Register([]queue.Job{&TestSyncJob{}, &TestChainSyncJob{}}))
 }
 
 func (s *DriverSyncTestSuite) TestSyncQueue() {
