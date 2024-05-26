@@ -4,7 +4,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/foundation"
-	queueConsole "github.com/goravel/framework/queue/console"
+	queueconsole "github.com/goravel/framework/queue/console"
 )
 
 const Binding = "goravel.queue"
@@ -33,6 +33,6 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
-		&queueConsole.JobMakeCommand{},
+		&queueconsole.JobMakeCommand{},
 	})
 }
