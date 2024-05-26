@@ -72,7 +72,7 @@ func (receiver *Task) Dispatch() error {
 func (receiver *Task) DispatchSync() error {
 	if receiver.chain {
 		for _, job := range receiver.jobs {
-			if err := Call(job.Job.Signature(), job.Args); err != nil {
+			if err := job.Job.Handle(job.Args...); err != nil {
 				return err
 			}
 		}
@@ -81,7 +81,7 @@ func (receiver *Task) DispatchSync() error {
 	} else {
 		job := receiver.jobs[0]
 
-		return Call(job.Job.Signature(), job.Args)
+		return job.Job.Handle(job.Args...)
 	}
 }
 

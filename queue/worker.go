@@ -15,6 +15,7 @@ import (
 type Worker struct {
 	concurrent    int
 	driver        *DriverImpl
+	job           *JobImpl
 	failedJobs    orm.Query
 	queue         string
 	failedJobChan chan FailedJob
@@ -22,10 +23,11 @@ type Worker struct {
 	quitChan      chan struct{}
 }
 
-func NewWorker(config *Config, concurrent int, connection string, queue string) *Worker {
+func NewWorker(config *Config, concurrent int, connection string, queue string, job *JobImpl) *Worker {
 	return &Worker{
 		concurrent:    concurrent,
 		driver:        NewDriverImpl(connection, config),
+		job:           job,
 		failedJobs:    config.FailedJobsQuery(),
 		queue:         queue,
 		failedJobChan: make(chan FailedJob),
@@ -63,7 +65,7 @@ func (r *Worker) Run() error {
 						continue
 					}
 
-					err = Call(job.Signature(), args)
+					err = r.job.Call(job.Signature(), args)
 					if err != nil {
 						r.failedJobChan <- FailedJob{
 							Queue:     r.queue,

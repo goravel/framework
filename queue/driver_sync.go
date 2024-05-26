@@ -25,7 +25,7 @@ func (r *Sync) Driver() string {
 }
 
 func (r *Sync) Push(job queue.Job, args []any, _ string) error {
-	return Call(job.Signature(), args)
+	return job.Handle(args...)
 }
 
 func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
@@ -33,7 +33,7 @@ func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 		if job.Delay > 0 {
 			time.Sleep(time.Duration(job.Delay) * time.Second)
 		}
-		if err := Call(job.Job.Signature(), job.Args); err != nil {
+		if err := job.Job.Handle(job.Args...); err != nil {
 			return err
 		}
 	}
@@ -43,7 +43,7 @@ func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 
 func (r *Sync) Later(delay uint, job queue.Job, args []any, _ string) error {
 	time.Sleep(time.Duration(delay) * time.Second)
-	return Call(job.Signature(), args)
+	return job.Handle(args...)
 }
 
 func (r *Sync) Pop(_ string) (queue.Job, []any, error) {

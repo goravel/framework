@@ -7,11 +7,13 @@ import (
 
 type Application struct {
 	config *Config
+	job    *JobImpl
 }
 
 func NewApplication(config configcontract.Config) *Application {
 	return &Application{
 		config: NewConfig(config),
+		job:    NewJobImpl(),
 	}
 }
 
@@ -19,7 +21,7 @@ func (app *Application) Worker(payloads ...*queue.Args) queue.Worker {
 	defaultConnection := app.config.DefaultConnection()
 
 	if len(payloads) == 0 || payloads[0] == nil {
-		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""))
+		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""), app.job)
 	}
 	if payloads[0].Connection == "" {
 		payloads[0].Connection = defaultConnection
@@ -28,11 +30,11 @@ func (app *Application) Worker(payloads ...*queue.Args) queue.Worker {
 		payloads[0].Concurrent = 1
 	}
 
-	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue))
+	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue), app.job)
 }
 
 func (app *Application) Register(jobs []queue.Job) error {
-	if err := Register(jobs); err != nil {
+	if err := app.job.Register(jobs); err != nil {
 		return err
 	}
 
@@ -40,13 +42,7 @@ func (app *Application) Register(jobs []queue.Job) error {
 }
 
 func (app *Application) GetJobs() []queue.Job {
-	var jobs []queue.Job
-	/*JobRegistry.Range(func(key, value any) bool {
-		jobs = append(jobs, value.(queue.Job))
-		return true
-	})*/
-
-	return jobs
+	return app.job.GetJobs()
 }
 
 func (app *Application) Job(job queue.Job, args []any) queue.Task {
