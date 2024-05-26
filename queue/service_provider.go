@@ -32,7 +32,9 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
+	config := app.MakeConfig()
 	app.MakeArtisan().Register([]console.Command{
 		&queueconsole.JobMakeCommand{},
+		queueconsole.NewMigrateMakeCommand(config),
 	})
 }
