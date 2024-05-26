@@ -35,8 +35,7 @@ type Writer struct {
 	stackEnabled bool
 	stacktrace   map[string]any
 
-	tags  []string
-	trace string
+	tags []string
 
 	// user
 	user any
@@ -63,8 +62,7 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 		stackEnabled: false,
 		stacktrace:   nil,
 
-		tags:  []string{},
-		trace: "",
+		tags: []string{},
 
 		// user
 		user: nil,
@@ -199,6 +197,10 @@ func (r *Writer) WithTrace() log.Writer {
 
 func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
+	if erisNew == nil {
+		return
+	}
+
 	r.message = erisNew.Error()
 	format := eris.NewDefaultJSONFormat(eris.FormatOptions{
 		InvertOutput: true,
@@ -220,8 +222,9 @@ func (r *Writer) resetAll() {
 	r.request = nil
 	r.response = nil
 	r.tags = []string{}
-	r.trace = ""
 	r.user = nil
+	r.stacktrace = nil
+	r.stackEnabled = false
 }
 
 // toMap returns a map representation of the error.
@@ -246,10 +249,6 @@ func (r *Writer) toMap() map[string]any {
 
 	if context := r.context; len(context) > 0 {
 		payload["context"] = context
-	}
-
-	if trace := r.trace; trace != "" {
-		payload["trace"] = trace
 	}
 
 	if hint := r.hint; hint != "" {
@@ -302,7 +301,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 	case log.StackDriver:
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
-				return errors.New("stack drive can't include self channel")
+				return errors.New("stack driver can't include self channel")
 			}
 
 			if err := registerHook(config, instance, stackChannel); err != nil {

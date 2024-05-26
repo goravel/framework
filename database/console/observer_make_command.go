@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -34,15 +34,21 @@ func (receiver *ObserverMakeCommand) Description() string {
 func (receiver *ObserverMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
+		Flags: []command.Flag{
+			&command.BoolFlag{
+				Name:    "force",
+				Aliases: []string{"f"},
+				Usage:   "Create the observer even if it already exists",
+			},
+		},
 	}
 }
 
 // Handle Execute the console command.
 func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		color.Redln("Not enough arguments (missing: name)")
-
+	name, err := supportconsole.GetName(ctx, "observer", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
 		return nil
 	}
 
@@ -50,7 +56,7 @@ func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Greenln("Observer created successfully")
+	color.Green().Println("Observer created successfully")
 
 	return nil
 }

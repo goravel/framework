@@ -123,7 +123,7 @@ func (r *GormImpl) init(dialector gormio.Dialector) error {
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger.LogMode(logLevel),
 		NowFunc: func() time.Time {
-			return carbon.Now().ToStdTime()
+			return carbon.Now().StdTime()
 		},
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)),

@@ -89,7 +89,7 @@ func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (any, error) {
 		return []byte(jwtSecret), nil
 	}, jwt.WithTimeFunc(func() time.Time {
-		return carbon.Now().ToStdTime()
+		return carbon.Now().StdTime()
 	}))
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
@@ -150,7 +150,7 @@ func (a *Auth) LoginUsingID(id any) (token string, err error) {
 		// 100 years
 		ttl = 60 * 24 * 365 * 100
 	}
-	expireTime := nowTime.AddMinutes(ttl).ToStdTime()
+	expireTime := nowTime.AddMinutes(ttl).StdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", ErrorInvalidKey
@@ -159,7 +159,7 @@ func (a *Auth) LoginUsingID(id any) (token string, err error) {
 		key,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
-			IssuedAt:  jwt.NewNumericDate(nowTime.ToStdTime()),
+			IssuedAt:  jwt.NewNumericDate(nowTime.StdTime()),
 			Subject:   a.guard,
 		},
 	}
@@ -231,9 +231,12 @@ func (a *Auth) Logout() error {
 }
 
 func (a *Auth) makeAuthContext(claims *Claims, token string) {
-	a.ctx.WithValue(ctxKey, Guards{
-		a.guard: {claims, token},
-	})
+	guards, ok := a.ctx.Value(ctxKey).(Guards)
+	if !ok {
+		guards = make(Guards)
+	}
+	guards[a.guard] = &Guard{claims, token}
+	a.ctx.WithValue(ctxKey, guards)
 }
 
 func (a *Auth) tokenIsDisabled(token string) bool {

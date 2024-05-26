@@ -3,11 +3,11 @@ package console
 import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 )
 
 type MigrateStatusCommand struct {
@@ -44,26 +44,26 @@ func (receiver *MigrateStatusCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellowln("Please fill database config first")
+		color.Yellow().Println("Please fill database config first")
 		return nil
 	}
 
 	version, dirty, err := m.Version()
 	if err != nil {
-		color.Redln("Migration status failed:", err.Error())
+		color.Red().Println("Migration status failed:", err.Error())
 
 		return nil
 	}
 
 	if dirty {
-		color.Yellowln("Migration status: dirty")
-		color.Greenln("Migration version:", version)
+		color.Yellow().Println("Migration status: dirty")
+		color.Green().Println("Migration version:", version)
 
 		return nil
 	}
 
-	color.Greenln("Migration status: clean")
-	color.Greenln("Migration version:", version)
+	color.Green().Println("Migration status: clean")
+	color.Green().Println("Migration version:", version)
 
 	return nil
 }

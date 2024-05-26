@@ -49,6 +49,8 @@ type Query interface {
 	Distinct(args ...any) Query
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*Result, error)
+	// Exists returns true if matching records exist; otherwise, it returns false.
+	Exists(exists *bool) error
 	// Find finds records that match given conditions.
 	Find(dest any, conds ...any) error
 	// FindOrFail finds records that match given conditions or throws an error.
@@ -74,6 +76,8 @@ type Query interface {
 	Group(name string) Query
 	// Having specifying HAVING conditions for the query.
 	Having(query any, args ...any) Query
+	// InRandomOrder specifies the order randomly.
+	InRandomOrder() Query
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Limit the number of records returned.
@@ -92,8 +96,22 @@ type Query interface {
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
 	Order(value any) Query
+	// OrderBy specifies the order should be ascending.
+	OrderBy(column string, direction ...string) Query
+	// OrderByDesc specifies the order should be descending.
+	OrderByDesc(column string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
+	// OrWhereIn adds an "or where column in" clause to the query.
+	OrWhereIn(column string, values []any) Query
+	// OrWhereNotIn adds an "or where column not in" clause to the query.
+	OrWhereNotIn(column string, values []any) Query
+	// OrWhereBetween adds an "or where column between x and y" clause to the query.
+	OrWhereBetween(column string, x, y any) Query
+	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
+	OrWhereNotBetween(column string, x, y any) Query
+	// OrWhereNull adds a "or where column is null" clause to the query.
+	OrWhereNull(column string) Query
 	// Paginate the given query into a simple paginator.
 	Paginate(page, limit int, dest any, total *int64) error
 	// Pluck retrieves a single column from the database.
@@ -116,6 +134,10 @@ type Query interface {
 	Sum(column string, dest any) error
 	// Table specifies the table for the query.
 	Table(name string, args ...any) Query
+	// ToSql returns the query as a SQL string.
+	ToSql() ToSql
+	// ToRawSql returns the query as a raw SQL string.
+	ToRawSql() ToSql
 	// Update updates records with the given column and values
 	Update(column any, value ...any) (*Result, error)
 	// UpdateOrCreate finds the first record that matches the given attributes
@@ -123,6 +145,18 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
+	// WhereIn adds a "where column in" clause to the query.
+	WhereIn(column string, values []any) Query
+	// WhereNotIn adds a "where column not in" clause to the query.
+	WhereNotIn(column string, values []any) Query
+	// WhereBetween adds a "where column between x and y" clause to the query.
+	WhereBetween(column string, x, y any) Query
+	// WhereNotBetween adds a "where column not between x and y" clause to the query.
+	WhereNotBetween(column string, x, y any) Query
+	// WhereNull adds a "where column is null" clause to the query.
+	WhereNull(column string) Query
+	// WhereNotNull adds a "where column is not null" clause to the query.
+	WhereNotNull(column string) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.
@@ -158,4 +192,17 @@ type Cursor interface {
 
 type Result struct {
 	RowsAffected int64
+}
+
+type ToSql interface {
+	Count() string
+	Create(value any) string
+	Delete(value any, conds ...any) string
+	Find(dest any, conds ...any) string
+	First(dest any) string
+	Get(dest any) string
+	Pluck(column string, dest any) string
+	Save(value any) string
+	Sum(column string, dest any) string
+	Update(column any, value ...any) string
 }

@@ -16,14 +16,14 @@ jobs:
           go-version: 'stable'
           cache: false
       - name: go mod pakcage cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('go.mod') }}
       - name: Install dependencies
         run: go mod tidy
       - name: Lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
           skip-cache: true
           skip-pkg-cache: true

@@ -1,16 +1,15 @@
 package console
 
 import (
+	"errors"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 )
 
 type MigrateFreshCommand struct {
@@ -59,12 +58,12 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellowln("Please fill database config first")
+		color.Yellow().Println("Please fill database config first")
 		return nil
 	}
 
-	if err = m.Drop(); err != nil && err != migrate.ErrNoChange {
-		color.Redln("Migration failed:", err.Error())
+	if err = m.Drop(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		color.Red().Println("Migration failed:", err.Error())
 		return nil
 	}
 
@@ -73,12 +72,12 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		return err2
 	}
 	if m2 == nil {
-		color.Yellowln("Please fill database config first")
+		color.Yellow().Println("Please fill database config first")
 		return nil
 	}
 
-	if err2 = m2.Up(); err2 != nil && err2 != migrate.ErrNoChange {
-		color.Redln("Migration failed:", err2.Error())
+	if err2 = m2.Up(); err2 != nil && !errors.Is(err2, migrate.ErrNoChange) {
+		color.Red().Println("Migration failed:", err2.Error())
 		return nil
 	}
 
@@ -92,7 +91,7 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		receiver.artisan.Call("db:seed" + seederFlag)
 	}
 
-	color.Greenln("Migration fresh success")
+	color.Green().Println("Migration fresh success")
 
 	return nil
 }

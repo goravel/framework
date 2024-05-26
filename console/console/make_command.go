@@ -1,13 +1,14 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
+	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -38,12 +39,19 @@ func (receiver *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
-	name := ctx.Argument(0)
-	if name == "" {
-		return errors.New("Not enough arguments (missing: name) ")
+	name, err := supportconsole.GetName(ctx, "command", ctx.Argument(0), receiver.getPath)
+	if err != nil {
+		color.Red().Println(err)
+		return nil
 	}
 
-	return file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+		return err
+	}
+
+	color.Green().Println("Console command created successfully")
+
+	return nil
 }
 
 func (receiver *MakeCommand) getStub() string {

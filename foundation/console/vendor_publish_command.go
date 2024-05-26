@@ -7,10 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -89,15 +88,15 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 
 		if len(res) > 0 {
 			for sourceFile, targetFile := range res {
-				color.Greenp("Copied Directory ")
-				color.Yellowf("[%s]", sourceFile)
-				color.Greenp(" To ")
-				color.Yellowf("%s\n", targetFile)
+				color.Green().Print("Copied Directory ")
+				color.Yellow().Printf("[%s]", sourceFile)
+				color.Green().Print(" To ")
+				color.Yellow().Printf("%s\n", targetFile)
 			}
 		}
 	}
 
-	color.Greenln("Publishing complete")
+	color.Green().Println("Publishing complete")
 
 	return nil
 }
@@ -155,28 +154,28 @@ func (receiver *VendorPublishCommand) packageDir(packageName string) (string, er
 
 func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, existing, force bool) (map[string]string, error) {
 	result := make(map[string]string)
-	sourcePathStat, err := os.Stat(sourcePath)
+	isTargetPathDir := filepath.Ext(targetPath) == ""
+	isSourcePathDir := filepath.Ext(sourcePath) == ""
+
+	sourceFiles, err := receiver.getSourceFiles(sourcePath)
 	if err != nil {
 		return nil, err
 	}
 
-	var sourceFiles []string
-	if sourcePathStat.IsDir() {
-		fileInfos, err := os.ReadDir(sourcePath)
-		if err != nil {
-			return nil, err
-		}
-		for _, fileInfo := range fileInfos {
-			sourceFiles = append(sourceFiles, filepath.Join(sourcePath, fileInfo.Name()))
-		}
-	} else {
-		sourceFiles = append(sourceFiles, sourcePath)
-	}
-
 	for _, sourceFile := range sourceFiles {
+		relativePath := ""
+		if isSourcePathDir {
+			relativePath, err = filepath.Rel(sourcePath, sourceFile)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			relativePath = filepath.Base(sourcePath)
+		}
+
 		targetFile := targetPath
-		if filepath.Ext(targetFile) == "" {
-			targetFile = filepath.Join(targetFile, filepath.Base(sourceFile))
+		if isTargetPathDir {
+			targetFile = filepath.Join(targetPath, relativePath)
 		}
 
 		success, err := receiver.publishFile(sourceFile, targetFile, existing, force)
@@ -191,6 +190,40 @@ func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, exi
 	return result, nil
 }
 
+func (receiver *VendorPublishCommand) getSourceFiles(sourcePath string) ([]string, error) {
+	sourcePathStat, err := os.Stat(sourcePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if sourcePathStat.IsDir() {
+		return receiver.getSourceFilesForDir(sourcePath)
+	} else {
+		return []string{sourcePath}, nil
+	}
+}
+
+func (receiver *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([]string, error) {
+	dirEntries, err := os.ReadDir(sourcePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var sourceFiles []string
+	for _, dirEntry := range dirEntries {
+		if dirEntry.IsDir() {
+			sourcePaths, err := receiver.getSourceFilesForDir(filepath.Join(sourcePath, dirEntry.Name()))
+			if err != nil {
+				return nil, err
+			}
+			sourceFiles = append(sourceFiles, sourcePaths...)
+		} else {
+			sourceFiles = append(sourceFiles, filepath.Join(sourcePath, dirEntry.Name()))
+		}
+	}
+
+	return sourceFiles, nil
+}
 func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
 	content, err := os.ReadFile(sourceFile)
 	if err != nil {

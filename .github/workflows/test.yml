@@ -9,7 +9,6 @@ jobs:
     strategy:
       matrix:
         go:
-          - "1.20"
           - "1.21"
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +17,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: go mod pakcage cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('go.mod') }}
@@ -30,7 +29,6 @@ jobs:
     strategy:
       matrix:
         go:
-          - "1.20"
           - "1.21"
     runs-on: windows-latest
     steps:
@@ -39,7 +37,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: go mod pakcage cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('go.mod') }}

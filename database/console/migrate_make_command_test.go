@@ -1,10 +1,12 @@
 package console
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
@@ -25,7 +27,9 @@ func TestMigrateMakeCommand(t *testing.T) {
 	migrateMakeCommand := NewMigrateMakeCommand(mockConfig)
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
-	assert.Nil(t, migrateMakeCommand.Handle(mockContext))
+	mockContext.On("Ask", "Enter the migration name", mock.Anything).Return("", errors.New("the migration name cannot be empty")).Once()
+	err := migrateMakeCommand.Handle(mockContext)
+	assert.EqualError(t, err, "the migration name cannot be empty")
 	assert.False(t, file.Exists(up))
 	assert.False(t, file.Exists(down))
 

@@ -1,13 +1,13 @@
 package console
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -46,16 +46,26 @@ func (receiver *PackageMakeCommand) Extend() command.Extend {
 func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	pkg := ctx.Argument(0)
 	if pkg == "" {
-		color.Redln("Not enough arguments (missing: name)")
+		var err error
+		pkg, err = ctx.Ask("Enter the package name", console.AskOption{
+			Validate: func(s string) error {
+				if s == "" {
+					return errors.New("the package name cannot be empty")
+				}
 
-		return nil
+				return nil
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	pkg = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(pkg, "/", "_"), "-", "_"), ".", "_")
 	root := ctx.Option("root") + "/" + pkg
-	if file.Exists(root) {
-		color.Redf("Package %s already exists\n", pkg)
 
+	if file.Exists(root) {
+		color.Red().Printf("Package %s already exists\n", pkg)
 		return nil
 	}
 
@@ -76,7 +86,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	color.Green.Printf("Package created successfully: %s\n", root)
+	color.Green().Printf("Package created successfully: %s\n", root)
 
 	return nil
 }

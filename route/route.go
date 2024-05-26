@@ -3,10 +3,9 @@ package route
 import (
 	"fmt"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/route"
+	"github.com/goravel/framework/support/color"
 )
 
 type Driver string
@@ -19,14 +18,14 @@ type Route struct {
 func NewRoute(config config.Config) *Route {
 	defaultDriver := config.GetString("http.default")
 	if defaultDriver == "" {
-		color.Redln("[http] please set default driver")
+		color.Red().Println("[http] please set default driver")
 
 		return nil
 	}
 
 	driver, err := NewDriver(config, defaultDriver)
 	if err != nil {
-		color.Redf("[http] %s\n", err)
+		color.Red().Printf("[http] %s\n", err)
 
 		return nil
 	}

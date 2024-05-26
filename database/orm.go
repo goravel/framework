@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/gookit/color"
 	"github.com/pkg/errors"
 
 	"github.com/goravel/framework/contracts/config"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	databasegorm "github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/color"
 )
 
 type OrmImpl struct {
@@ -40,15 +40,17 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 	}
 	if instance, exist := r.queries[name]; exist {
 		return &OrmImpl{
-			ctx:     r.ctx,
-			query:   instance,
-			queries: r.queries,
+			ctx:        r.ctx,
+			config:     r.config,
+			connection: name,
+			query:      instance,
+			queries:    r.queries,
 		}
 	}
 
 	queue, err := databasegorm.InitializeQuery(r.ctx, r.config, name)
 	if err != nil || queue == nil {
-		color.Redln(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
+		color.Red().Println(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
 
 		return nil
 	}
@@ -56,16 +58,18 @@ func (r *OrmImpl) Connection(name string) ormcontract.Orm {
 	r.queries[name] = queue
 
 	return &OrmImpl{
-		ctx:     r.ctx,
-		query:   queue,
-		queries: r.queries,
+		ctx:        r.ctx,
+		config:     r.config,
+		connection: name,
+		query:      queue,
+		queries:    r.queries,
 	}
 }
 
 func (r *OrmImpl) DB() (*sql.DB, error) {
-	db := r.Query().(*databasegorm.QueryImpl)
+	query := r.Query().(*databasegorm.QueryImpl)
 
-	return db.Instance().DB()
+	return query.Instance().DB()
 }
 
 func (r *OrmImpl) Query() ormcontract.Query {
@@ -101,7 +105,19 @@ func (r *OrmImpl) Transaction(txFunc func(tx ormcontract.Transaction) error) err
 }
 
 func (r *OrmImpl) WithContext(ctx context.Context) ormcontract.Orm {
-	instance, _ := NewOrmImpl(ctx, r.config, r.connection, r.query)
+	for _, query := range r.queries {
+		query := query.(*databasegorm.QueryImpl)
+		query.SetContext(ctx)
+	}
 
-	return instance
+	query := r.query.(*databasegorm.QueryImpl)
+	query.SetContext(ctx)
+
+	return &OrmImpl{
+		ctx:        ctx,
+		config:     r.config,
+		connection: r.connection,
+		query:      query,
+		queries:    r.queries,
+	}
 }

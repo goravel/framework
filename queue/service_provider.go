@@ -21,7 +21,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	App = app
 
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeConfig()), nil
+		return NewApplication(app.MakeConfig(), app.MakeLog()), nil
 	})
 }
 

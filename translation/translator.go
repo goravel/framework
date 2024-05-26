@@ -4,11 +4,14 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/spf13/cast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
 	"github.com/goravel/framework/contracts/http"
+	logcontract "github.com/goravel/framework/contracts/log"
 	translationcontract "github.com/goravel/framework/contracts/translation"
 )
 
@@ -17,10 +20,19 @@ type Translator struct {
 	loader   translationcontract.Loader
 	locale   string
 	fallback string
-	loaded   map[string]map[string]map[string]string
 	selector *MessageSelector
 	key      string
+	logger   logcontract.Log
+	mu       sync.Mutex
 }
+
+// loaded is a map structure used to store loaded translation data.
+// It is organized as follows:
+//   - First map (map[string]): Maps from locale to...
+//   - Second map (map[string]): Maps from folder(group) to...
+//   - Third map (map[string]): Maps from key to...
+//   - Value (any): The translation line corresponding to the key in the specified locale, folder(group), and key hierarchy.
+var loaded = make(map[string]map[string]map[string]any)
 
 // contextKey is an unexported type for keys defined in this package.
 type contextKey string
@@ -28,22 +40,19 @@ type contextKey string
 const fallbackLocaleKey = contextKey("fallback_locale")
 const localeKey = contextKey("locale")
 
-func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string) *Translator {
+func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string, logger logcontract.Log) *Translator {
 	return &Translator{
 		ctx:      ctx,
 		loader:   loader,
 		locale:   locale,
 		fallback: fallback,
-		loaded:   make(map[string]map[string]map[string]string),
 		selector: NewMessageSelector(),
+		logger:   logger,
 	}
 }
 
-func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) (string, error) {
-	line, err := t.Get(key, options...)
-	if err != nil {
-		return "", err
-	}
+func (t *Translator) Choice(key string, number int, options ...translationcontract.Option) string {
+	line := t.Get(key, options...)
 
 	replace := map[string]string{
 		"count": strconv.Itoa(number),
@@ -54,10 +63,10 @@ func (t *Translator) Choice(key string, number int, options ...translationcontra
 		locale = options[0].Locale
 	}
 
-	return makeReplacements(t.selector.Choose(line, number, locale), replace), nil
+	return makeReplacements(t.selector.Choose(line, number, locale), replace)
 }
 
-func (t *Translator) Get(key string, options ...translationcontract.Option) (string, error) {
+func (t *Translator) Get(key string, options ...translationcontract.Option) string {
 	if t.key == "" {
 		t.key = key
 	}
@@ -74,45 +83,37 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) (str
 		fallback = *options[0].Fallback
 	}
 
-	// Parse the key into folder and key parts.
-	folder, keyPart := parseKey(key)
-
-	// For JSON translations, there is only one file per locale, so we will
-	// simply load the file and return the line if it exists.
-	// If the file doesn't exist, we will return fallback if it is enabled.
-	// Otherwise, we will return the key as the line.
-	if err := t.load(folder, locale); err != nil && err != ErrFileNotExist {
-		return "", err
+	// For JSON translations({locale}.json), we can simply load the JSON file
+	// and pull the translation line from the JSON structure.We do not need
+	// to do any extra processing.
+	line := t.getLine(locale, "*", key, options...)
+	if line != "" {
+		return line
 	}
 
-	line := t.loaded[folder][locale][keyPart]
-	if line == "" {
-		fallbackFolder, fallbackLocale := parseKey(t.GetFallback())
-		// If the fallback locale is different from the current locale, we will
-		// load in the lines for the fallback locale and try to retrieve the
-		// translation for the given key.If it is translated, we will return it.
-		// Otherwise, we can finally return the key as that will be the final
-		// fallback.
-		if (folder+locale != fallbackFolder+fallbackLocale) && fallback {
-			var fallbackOptions translationcontract.Option
-			if len(options) > 0 {
-				fallbackOptions = options[0]
-			}
-			fallbackOptions.Fallback = translationcontract.Bool(false)
-			fallbackOptions.Locale = fallbackLocale
-			return t.Get(fallbackFolder+"."+keyPart, fallbackOptions)
+	// If the key is not found in the JSON translation file, we will attempt
+	// to load the key from the `{locale}/{group}.json` file.
+	group, item := parseKey(key)
+	line = t.getLine(locale, group, item, options...)
+	if line != "" {
+		return line
+	}
+
+	// If the key is not found in the current locale and fallback is enabled,
+	// try to load from fallback locale
+	fallbackLocale := t.GetFallback()
+	if (locale != fallbackLocale) && fallback && fallbackLocale != "" {
+		var fallbackOptions translationcontract.Option
+		if len(options) > 0 {
+			fallbackOptions = options[0]
 		}
-		return t.key, nil
+		fallbackOptions.Fallback = translationcontract.Bool(false)
+		fallbackOptions.Locale = fallbackLocale
+		return t.Get(key, fallbackOptions)
 	}
 
-	// If the line doesn't contain any placeholders, we can return it right
-	// away.Otherwise, we will make the replacements on the line and return
-	// the result.
-	if len(options) > 0 {
-		return makeReplacements(line, options[0].Replace), nil
-	}
-
-	return line, nil
+	// Return the original key if no translation is found.
+	return t.key
 }
 
 func (t *Translator) GetFallback() string {
@@ -130,8 +131,8 @@ func (t *Translator) GetLocale() string {
 }
 
 func (t *Translator) Has(key string, options ...translationcontract.Option) bool {
-	line, err := t.Get(key, options...)
-	return err == nil && line != key
+	line := t.Get(key, options...)
+	return line != key
 }
 
 func (t *Translator) SetFallback(locale string) context.Context {
@@ -154,25 +155,55 @@ func (t *Translator) SetLocale(locale string) context.Context {
 	return t.ctx
 }
 
-func (t *Translator) load(folder string, locale string) error {
-	if t.isLoaded(folder, locale) {
+func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
+	if err := t.load(locale, group); err != nil && err != ErrFileNotExist {
+		t.logger.Panic(err)
+		return t.key
+	}
+
+	keyValue := getValue(loaded[locale][group], key)
+	// If the key doesn't exist, return empty string.
+	if keyValue == nil {
+		return ""
+	}
+
+	line := cast.ToString(keyValue)
+	// If the line doesn't contain any placeholders, we can return it right
+	// away.Otherwise, we will make the replacements on the line and return
+	// the result.
+	if len(options) > 0 {
+		return makeReplacements(line, options[0].Replace)
+	}
+
+	return line
+}
+
+func (t *Translator) load(locale string, group string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.isLoaded(locale, group) {
 		return nil
 	}
 
-	translations, err := t.loader.Load(folder, locale)
+	translations, err := t.loader.Load(locale, group)
 	if err != nil {
 		return err
 	}
-	t.loaded[folder] = translations
+
+	if loaded[locale] == nil {
+		loaded[locale] = make(map[string]map[string]any)
+	}
+	loaded[locale][group] = translations
 	return nil
 }
 
-func (t *Translator) isLoaded(folder string, locale string) bool {
-	if _, ok := t.loaded[folder]; !ok {
+func (t *Translator) isLoaded(locale string, group string) bool {
+	if _, ok := loaded[locale]; !ok {
 		return false
 	}
 
-	if _, ok := t.loaded[folder][locale]; !ok {
+	if _, ok := loaded[locale][group]; !ok {
 		return false
 	}
 
@@ -195,13 +226,40 @@ func makeReplacements(line string, replace map[string]string) string {
 	return strings.NewReplacer(shouldReplace...).Replace(line)
 }
 
-func parseKey(key string) (folder, keyPart string) {
-	parts := strings.Split(key, ".")
-	folder = "*"
-	keyPart = key
-	if len(parts) > 1 {
-		folder = strings.Join(parts[:len(parts)-1], ".")
-		keyPart = parts[len(parts)-1]
+// parseKey parses a key into group and item.
+func parseKey(key string) (group, item string) {
+	segments := strings.Split(key, ".")
+
+	group = segments[0]
+
+	if len(segments) == 1 {
+		item = ""
+	} else {
+		item = strings.Join(segments[1:], ".")
 	}
-	return folder, keyPart
+
+	return group, item
+}
+
+// getValue an item from an object using "dot" notation.
+func getValue(obj any, key string) any {
+	keys := strings.Split(key, ".")
+
+	var currentObj any
+	currentObj = obj
+
+	for _, k := range keys {
+		switch v := currentObj.(type) {
+		case map[string]any:
+			if val, found := v[k]; found {
+				currentObj = val
+			} else {
+				return nil
+			}
+		default:
+			return nil
+		}
+	}
+
+	return currentObj
 }

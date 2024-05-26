@@ -38,8 +38,12 @@ func (c *CursorImpl) Scan(value any) error {
 		return err
 	}
 
-	for relation, args := range c.query.with {
-		if err := c.query.origin.Load(value, relation, args...); err != nil {
+	for _, item := range c.query.conditions.with {
+		// Need to new a query, avoid to clear the conditions
+		query := c.query.new(c.query.instance)
+		// The new query must be cleared
+		query.clearConditions()
+		if err := query.Load(value, item.query, item.args...); err != nil {
 			return err
 		}
 	}
@@ -140,7 +144,7 @@ func ToDeletedAtHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		if f.Kind() == reflect.String {
-			return gorm.DeletedAt{Time: carbon.Parse(data.(string)).ToStdTime(), Valid: true}, nil
+			return gorm.DeletedAt{Time: carbon.Parse(data.(string)).StdTime(), Valid: true}, nil
 		}
 
 		return data, nil

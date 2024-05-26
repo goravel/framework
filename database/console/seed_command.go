@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gookit/color"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/support/color"
 )
 
 type SeedCommand struct {
@@ -57,25 +56,25 @@ func (receiver *SeedCommand) Extend() command.Extend {
 func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	force := ctx.OptionBool("force")
 	if err := receiver.ConfirmToProceed(force); err != nil {
-		color.Redln(err)
+		color.Red().Println(err)
 		return nil
 	}
 
 	names := ctx.OptionSlice("seeder")
 	seeders, err := receiver.GetSeeders(names)
 	if err != nil {
-		color.Redln(err)
+		color.Red().Println(err)
 		return nil
 	}
 	if len(seeders) == 0 {
-		color.Redln("no seeders found")
+		color.Red().Println("no seeders found")
 		return nil
 	}
 
 	if err := receiver.seeder.Call(seeders); err != nil {
-		color.Redf("error running seeder: %v\n", err)
+		color.Red().Printf("error running seeder: %v\n", err)
 	}
-	color.Greenln("Database seeding completed successfully.")
+	color.Green().Println("Database seeding completed successfully.")
 
 	return nil
 }

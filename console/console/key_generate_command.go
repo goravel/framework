@@ -1,16 +1,14 @@
 package console
 
 import (
-	"fmt"
 	"os"
 	"strings"
-
-	"github.com/gookit/color"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -44,34 +42,29 @@ func (receiver *KeyGenerateCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 	if receiver.config.GetString("app.env") == "production" {
-		color.Yellowln("**************************************")
-		color.Yellowln("*     Application In Production!     *")
-		color.Yellowln("**************************************")
-		color.Println(color.New(color.Green).Sprintf("Do you really wish to run this command? (yes/no) ") + "[" + color.New(color.Yellow).Sprintf("no") + "]" + ":")
+		color.Yellow().Println("**************************************")
+		color.Yellow().Println("*     Application In Production!     *")
+		color.Yellow().Println("**************************************")
 
-		var result string
-		_, err := fmt.Scanln(&result)
+		answer, err := ctx.Confirm("Do you really wish to run this command?")
 		if err != nil {
-			color.Redln(err.Error())
-
-			return nil
+			return err
 		}
 
-		if result != "yes" {
-			color.Yellowln("Command Canceled")
-
+		if !answer {
+			color.Yellow().Println("Command cancelled!")
 			return nil
 		}
 	}
 
 	key := receiver.generateRandomKey()
 	if err := receiver.writeNewEnvironmentFileWith(key); err != nil {
-		color.Redln(err.Error())
+		color.Red().Println(err.Error())
 
 		return nil
 	}
 
-	color.Greenln("Application key set successfully")
+	color.Green().Println("Application key set successfully")
 
 	return nil
 }
