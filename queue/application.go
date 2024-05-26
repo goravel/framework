@@ -45,6 +45,10 @@ func (app *Application) GetJobs() []queue.Job {
 	return app.job.GetJobs()
 }
 
+func (app *Application) GetJob(signature string) (queue.Job, error) {
+	return app.job.Get(signature)
+}
+
 func (app *Application) Job(job queue.Job, args []any) queue.Task {
 	return NewTask(app.config, job, args)
 }
