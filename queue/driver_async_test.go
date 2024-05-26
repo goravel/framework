@@ -74,7 +74,6 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 
 		<-ctx.Done()
 		s.Nil(worker.Shutdown())
-		return
 	}(ctx)
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Arg{
@@ -106,7 +105,6 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 
 		<-ctx.Done()
 		s.Nil(worker.Shutdown())
-		return
 	}(ctx)
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
@@ -142,7 +140,6 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 
 		<-ctx.Done()
 		s.Nil(worker.Shutdown())
-		return
 	}(ctx)
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Arg{

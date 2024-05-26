@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -9,7 +8,6 @@ import (
 
 type Sync struct {
 	connection string
-	mu         sync.Mutex
 }
 
 func NewSync(connection string) *Sync {
