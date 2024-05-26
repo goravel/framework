@@ -41,7 +41,7 @@ func TestApplicationTestSuite(t *testing.T) {
 func (s *ApplicationTestSuite) SetupTest() {}
 
 func (s *ApplicationTestSuite) TestSendMailBy465Port() {
-	mockConfig := mockConfig(465)
+	mockConfig := getMockConfig(465)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -52,7 +52,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailBy587Port() {
-	mockConfig := mockConfig(587)
+	mockConfig := getMockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -63,7 +63,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
-	mockConfig := mockConfig(587)
+	mockConfig := getMockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.From(mail.From{Address: testFromAddress, Name: testFromName}).
 		To([]string{testTo}).
@@ -75,7 +75,7 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMail() {
-	mockConfig := mockConfig(587)
+	mockConfig := getMockConfig(587)
 
 	mockOrm := &ormmock.Orm{}
 	mockQuery := &ormmock.Query{}
@@ -98,11 +98,10 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	go func(ctx context.Context) {
 		s.Nil(queueFacade.Worker().Run())
 
-		for range ctx.Done() {
-			return
-		}
+		<-ctx.Done()
+		s.Nil(queueFacade.Worker().Shutdown())
 	}(ctx)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
@@ -112,11 +111,11 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	time.Sleep(3 * time.Second)
 }
 
-func mockConfig(mailPort int) *configmock.Config {
+func getMockConfig(mailPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
 	mockConfig.On("GetString", "queue.default").Return("async")
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
+	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
 	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(3)
 	mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()

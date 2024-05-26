@@ -24,7 +24,6 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.79
-	github.com/redis/go-redis/v9 v9.5.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
@@ -61,7 +60,6 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/catppuccin/go v0.2.0 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/charmbracelet/bubbles v0.18.0 // indirect
 	github.com/charmbracelet/bubbletea v0.26.1 // indirect
 	github.com/charmbracelet/lipgloss v0.10.1-0.20240506202754-3ee5dcab73cb // indirect
@@ -70,7 +68,6 @@ require (
 	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
