@@ -25,6 +25,14 @@ func (r *TestLog) WithContext(ctx context.Context) log.Writer {
 	return NewTestLogWriter()
 }
 
+func (r *TestLog) Channel(channel string) log.Writer {
+	return NewTestLogWriter()
+}
+
+func (r *TestLog) Stack(channels []string) log.Writer {
+	return NewTestLogWriter()
+}
+
 type TestLogWriter struct {
 	data map[string]any
 }

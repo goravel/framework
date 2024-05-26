@@ -26,6 +26,10 @@ const (
 type Log interface {
 	// WithContext adds a context to the logger.
 	WithContext(ctx context.Context) Writer
+	// Channel return a writer for a specific channel.
+	Channel(channel string) Writer
+	// Stack return a writer for multiple channels.
+	Stack(channels []string) Writer
 	Writer
 }
 
