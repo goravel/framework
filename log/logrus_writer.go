@@ -197,6 +197,10 @@ func (r *Writer) WithTrace() log.Writer {
 
 func (r *Writer) withStackTrace(message string) {
 	erisNew := eris.New(message)
+	if erisNew == nil {
+		return
+	}
+
 	r.message = erisNew.Error()
 	format := eris.NewDefaultJSONFormat(eris.FormatOptions{
 		InvertOutput: true,
@@ -297,7 +301,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 	case log.StackDriver:
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
-				return errors.New("stack drive can't include self channel")
+				return errors.New("stack driver can't include self channel")
 			}
 
 			if err := registerHook(config, instance, stackChannel); err != nil {
