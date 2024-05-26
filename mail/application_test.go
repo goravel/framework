@@ -116,7 +116,7 @@ func getMockConfig(mailPort int) *configmock.Config {
 	mockConfig.On("GetString", "app.name").Return("goravel")
 	mockConfig.On("GetString", "queue.default").Return("async")
 	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(3)
+	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(5)
 	mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
