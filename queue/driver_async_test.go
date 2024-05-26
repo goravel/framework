@@ -52,10 +52,6 @@ func TestDriverAsyncTestSuite(t *testing.T) {
 
 func (s *DriverAsyncTestSuite) SetupTest() {
 	testAsyncJob = 0
-	testDelayAsyncJob = 0
-	testCustomAsyncJob = 0
-	testErrorAsyncJob = 0
-	testChainAsyncJob = 0
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
