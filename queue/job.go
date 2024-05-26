@@ -8,12 +8,12 @@ import (
 )
 
 type FailedJob struct {
-	ID        uint                 `gorm:"primaryKey"`               // The unique ID of the job.
-	Queue     string               `gorm:"not null"`                 // The name of the queue the job belongs to.
-	Signature string               `gorm:"not null"`                 // The signature of the handler for this job.
-	Payloads  []contractsqueue.Arg `gorm:"not null;serializer:json"` // The arguments passed to the job.
-	Exception string               `gorm:"not null"`                 // The exception that caused the job to fail.
-	FailedAt  carbon.DateTime      `gorm:"not null"`                 // The timestamp when the job failed.
+	ID        uint            `gorm:"primaryKey"`               // The unique ID of the job.
+	Queue     string          `gorm:"not null"`                 // The name of the queue the job belongs to.
+	Signature string          `gorm:"not null"`                 // The signature of the handler for this job.
+	Payloads  []any           `gorm:"not null;serializer:json"` // The arguments passed to the job.
+	Exception string          `gorm:"not null"`                 // The exception that caused the job to fail.
+	FailedAt  carbon.DateTime `gorm:"not null"`                 // The timestamp when the job failed.
 }
 
 var injector = do.New()
@@ -30,13 +30,13 @@ func Register(jobs []contractsqueue.Job) error {
 
 // Call calls a registered job using its signature.
 // Call 使用其签名调用已注册的作业。
-func Call(signature string, args []contractsqueue.Arg) error {
+func Call(signature string, args []any) error {
 	job, err := do.InvokeNamed[contractsqueue.Job](injector, signature)
 	if err != nil {
 		return err
 	}
 
-	return job.Handle(args)
+	return job.Handle(args...)
 }
 
 // Get gets a registered job using its signature.

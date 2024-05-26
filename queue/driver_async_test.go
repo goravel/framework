@@ -76,10 +76,7 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 		s.Nil(worker.Shutdown())
 	}(ctx)
 	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Arg{
-		{Type: "string", Value: "TestDefaultAsyncQueue"},
-		{Type: "int", Value: 1},
-	}).Dispatch())
+	s.Nil(s.app.Job(&TestAsyncJob{}, []any{"TestDefaultAsyncQueue", 1}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testAsyncJob)
 
@@ -107,10 +104,7 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 		s.Nil(worker.Shutdown())
 	}(ctx)
 	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
-		{Type: "string", Value: "TestDelayAsyncQueue"},
-		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(3).Dispatch())
+	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []any{"TestDelayAsyncQueue", 1}).OnQueue("delay").Delay(3).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(2 * time.Second)
@@ -142,10 +136,7 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 		s.Nil(worker.Shutdown())
 	}(ctx)
 	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Arg{
-		{Type: "string", Value: "TestCustomAsyncQueue"},
-		{Type: "int", Value: 1},
-	}).OnConnection("custom").OnQueue("custom1").Dispatch())
+	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []any{"TestCustomAsyncQueue", 1}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomAsyncJob)
 
@@ -174,10 +165,7 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 		s.Nil(worker.Shutdown())
 	}(ctx)
 	time.Sleep(1 * time.Second)
-	s.Error(s.app.Job(&TestErrorAsyncJob{}, []queue.Arg{
-		{Type: "string", Value: "TestErrorAsyncQueue"},
-		{Type: "int", Value: 1},
-	}).OnConnection("redis").OnQueue("error1").Dispatch())
+	s.Error(s.app.Job(&TestErrorAsyncJob{}, []any{"TestErrorAsyncQueue", 1}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorAsyncJob)
 
@@ -208,18 +196,12 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job: &TestChainAsyncJob{},
-			Args: []queue.Arg{
-				{Type: "string", Value: "TestChainAsyncJob"},
-				{Type: "int", Value: 1},
-			},
+			Job:  &TestChainAsyncJob{},
+			Args: []any{"TestChainAsyncJob", 1},
 		},
 		{
-			Job: &TestAsyncJob{},
-			Args: []queue.Arg{
-				{Type: "string", Value: "TestAsyncJob"},
-				{Type: "int", Value: 1},
-			},
+			Job:  &TestAsyncJob{},
+			Args: []any{"TestAsyncJob", 1},
 		},
 	}).OnQueue("chain").Dispatch())
 

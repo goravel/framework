@@ -32,7 +32,7 @@ func (r *ASync) Driver() string {
 	return DriverASync
 }
 
-func (r *ASync) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (r *ASync) Push(job contractsqueue.Job, args []any, queue string) error {
 	asyncMu.Lock()
 	defer asyncMu.Unlock()
 
@@ -61,7 +61,7 @@ func (r *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return nil
 }
 
-func (r *ASync) Later(delay uint, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
+func (r *ASync) Later(delay uint, job contractsqueue.Job, args []any, queue string) error {
 	time.AfterFunc(time.Duration(delay)*time.Second, func() {
 		asyncMu.Lock()
 		defer asyncMu.Unlock()
@@ -72,7 +72,7 @@ func (r *ASync) Later(delay uint, job contractsqueue.Job, args []contractsqueue.
 	return nil
 }
 
-func (r *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, error) {
+func (r *ASync) Pop(queue string) (contractsqueue.Job, []any, error) {
 	asyncMu.Lock()
 	defer asyncMu.Unlock()
 

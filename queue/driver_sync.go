@@ -24,7 +24,7 @@ func (r *Sync) Driver() string {
 	return DriverSync
 }
 
-func (r *Sync) Push(job queue.Job, args []queue.Arg, _ string) error {
+func (r *Sync) Push(job queue.Job, args []any, _ string) error {
 	return Call(job.Signature(), args)
 }
 
@@ -41,11 +41,11 @@ func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 	return nil
 }
 
-func (r *Sync) Later(delay uint, job queue.Job, args []queue.Arg, _ string) error {
+func (r *Sync) Later(delay uint, job queue.Job, args []any, _ string) error {
 	time.Sleep(time.Duration(delay) * time.Second)
 	return Call(job.Signature(), args)
 }
 
-func (r *Sync) Pop(_ string) (queue.Job, []queue.Arg, error) {
+func (r *Sync) Pop(_ string) (queue.Job, []any, error) {
 	return nil, nil, nil
 }

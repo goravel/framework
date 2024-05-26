@@ -44,10 +44,7 @@ func (s *DriverSyncTestSuite) TestSyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Once()
 
-	s.Nil(s.app.Job(&TestSyncJob{}, []queue.Arg{
-		{Type: "string", Value: "TestSyncQueue"},
-		{Type: "int", Value: 1},
-	}).DispatchSync())
+	s.Nil(s.app.Job(&TestSyncJob{}, []any{"TestSyncQueue", 1}).DispatchSync())
 	s.Equal(1, testSyncJob)
 
 	s.mockConfig.AssertExpectations(s.T())
@@ -61,18 +58,12 @@ func (s *DriverSyncTestSuite) TestChainSyncQueue() {
 
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
-			Job: &TestChainSyncJob{},
-			Args: []queue.Arg{
-				{Type: "string", Value: "TestChainSyncJob"},
-				{Type: "int", Value: 1},
-			},
+			Job:  &TestChainSyncJob{},
+			Args: []any{"TestChainSyncJob", 1},
 		},
 		{
-			Job: &TestSyncJob{},
-			Args: []queue.Arg{
-				{Type: "string", Value: "TestSyncJob"},
-				{Type: "int", Value: 1},
-			},
+			Job:  &TestSyncJob{},
+			Args: []any{"TestSyncJob", 1},
 		},
 	}).OnQueue("chain").Dispatch())
 

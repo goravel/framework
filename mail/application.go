@@ -76,16 +76,7 @@ func (r *Application) Send() error {
 }
 
 func (r *Application) Queue(queue ...mail.Queue) error {
-	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
-		{Value: r.content.Subject, Type: "string"},
-		{Value: r.content.Html, Type: "string"},
-		{Value: r.from.Address, Type: "string"},
-		{Value: r.from.Name, Type: "string"},
-		{Value: r.to, Type: "[]string"},
-		{Value: r.cc, Type: "[]string"},
-		{Value: r.bcc, Type: "[]string"},
-		{Value: r.attaches, Type: "[]string"},
-	})
+	job := r.queue.Job(NewSendMailJob(r.config), []any{r.config, r.content.Subject, r.content.Html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches})
 
 	if len(queue) > 0 {
 		if queue[0].Connection != "" {

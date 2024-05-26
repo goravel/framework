@@ -24,7 +24,7 @@ func (r *Custom) Driver() string {
 	return DriverCustom
 }
 
-func (r *Custom) Push(job queue.Job, args []queue.Arg, _ string) error {
+func (r *Custom) Push(job queue.Job, args []any, _ string) error {
 	return Call(job.Signature(), args)
 }
 
@@ -41,11 +41,11 @@ func (r *Custom) Bulk(jobs []queue.Jobs, _ string) error {
 	return nil
 }
 
-func (r *Custom) Later(delay uint, job queue.Job, args []queue.Arg, _ string) error {
+func (r *Custom) Later(delay uint, job queue.Job, args []any, _ string) error {
 	time.Sleep(time.Duration(delay) * time.Second)
 	return Call(job.Signature(), args)
 }
 
-func (r *Custom) Pop(_ string) (queue.Job, []queue.Arg, error) {
+func (r *Custom) Pop(_ string) (queue.Job, []any, error) {
 	return nil, nil, nil
 }

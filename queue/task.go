@@ -16,7 +16,7 @@ type Task struct {
 	queue      string
 }
 
-func NewTask(config *Config, job queue.Job, args []queue.Arg) *Task {
+func NewTask(config *Config, job queue.Job, args []any) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
