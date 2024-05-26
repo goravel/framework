@@ -62,6 +62,36 @@ func (s *ConfigTestSuite) TestQueue() {
 	}
 }
 
+func (s *ConfigTestSuite) TestDriverReturnsExpectedValue() {
+	s.mockConfig.On("GetString", "queue.default").Return("async").Once()
+	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("driver").Once()
+	driver := s.config.Driver("")
+	s.Equal("driver", driver)
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *ConfigTestSuite) TestDriverReturnsExpectedValueWhenConnectionIsProvided() {
+	s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("driver").Once()
+	driver := s.config.Driver("sync")
+	s.Equal("driver", driver)
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *ConfigTestSuite) TestViaReturnsExpectedValue() {
+	s.mockConfig.On("GetString", "queue.default").Return("async").Once()
+	s.mockConfig.On("Get", "queue.connections.async.via").Return("via").Once()
+	via := s.config.Via("")
+	s.Equal("via", via)
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *ConfigTestSuite) TestViaReturnsExpectedValueWhenConnectionIsProvided() {
+	s.mockConfig.On("Get", "queue.connections.sync.via").Return("via").Once()
+	via := s.config.Via("sync")
+	s.Equal("via", via)
+	s.mockConfig.AssertExpectations(s.T())
+}
+
 func (s *ConfigTestSuite) TestFailedJobsQuery() {
 	mockOrm := &ormmock.Orm{}
 	mockQuery := &ormmock.Query{}

@@ -59,10 +59,10 @@ func (s *DriverAsyncTestSuite) SetupTest() {
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(6)
+	s.mockConfig.On("GetString", "queue.default").Return("async").Times(4)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(2)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(2)
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
@@ -85,10 +85,10 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(6)
+	s.mockConfig.On("GetString", "queue.default").Return("async").Times(4)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(2)
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
@@ -115,10 +115,10 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("custom").Times(7)
+	s.mockConfig.On("GetString", "queue.default").Return("custom").Times(4)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("async").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("async").Times(2)
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
@@ -145,10 +145,10 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(7)
+	s.mockConfig.On("GetString", "queue.default").Return("async").Times(4)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Once()
 	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("").Once()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
@@ -174,10 +174,10 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(6)
+	s.mockConfig.On("GetString", "queue.default").Return("async").Times(4)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Times(2)
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 

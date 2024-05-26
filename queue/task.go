@@ -1,8 +1,6 @@
 package queue
 
 import (
-	"errors"
-
 	"github.com/goravel/framework/contracts/queue"
 )
 
@@ -11,7 +9,7 @@ type Task struct {
 	connection string
 	chain      bool
 	delay      uint
-	driver     queue.Driver
+	driver     *DriverImpl
 	jobs       []queue.Jobs
 	queue      string
 }
@@ -20,7 +18,7 @@ func NewTask(config *Config, job queue.Job, args []any) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
-		driver:     NewDriver(config.DefaultConnection(), config),
+		driver:     NewDriverImpl(config.DefaultConnection(), config),
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
@@ -36,7 +34,7 @@ func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
 		config:     config,
 		connection: config.DefaultConnection(),
 		chain:      true,
-		driver:     NewDriver(config.DefaultConnection(), config),
+		driver:     NewDriverImpl(config.DefaultConnection(), config),
 		jobs:       jobs,
 		queue:      config.Queue(config.DefaultConnection(), ""),
 	}
@@ -53,19 +51,19 @@ func (receiver *Task) Delay(delay uint) queue.Task {
 // Dispatch dispatches the task.
 // Dispatch 调度任务。
 func (receiver *Task) Dispatch() error {
-	driver := receiver.config.Driver(receiver.connection)
-	if len(driver) == 0 {
-		return errors.New("unknown queue driver")
+	driver, err := receiver.driver.New()
+	if err != nil {
+		return err
 	}
 
 	if receiver.chain {
-		return receiver.driver.Bulk(receiver.jobs, receiver.queue)
+		return driver.Bulk(receiver.jobs, receiver.queue)
 	} else {
 		job := receiver.jobs[0]
 		if receiver.delay > 0 {
-			return receiver.driver.Later(receiver.delay, job.Job, job.Args, receiver.queue)
+			return driver.Later(receiver.delay, job.Job, job.Args, receiver.queue)
 		}
-		return receiver.driver.Push(job.Job, job.Args, receiver.queue)
+		return driver.Push(job.Job, job.Args, receiver.queue)
 	}
 }
 
@@ -91,7 +89,7 @@ func (receiver *Task) DispatchSync() error {
 // OnConnection 设置连接名称。
 func (receiver *Task) OnConnection(connection string) queue.Task {
 	receiver.connection = connection
-	receiver.driver = NewDriver(connection, receiver.config)
+	receiver.driver = NewDriverImpl(connection, receiver.config)
 
 	return receiver
 }

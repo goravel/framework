@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type Worker struct {
 	concurrent    int
-	driver        queue.Driver
+	driver        *DriverImpl
 	failedJobs    orm.Query
 	queue         string
 	failedJobChan chan FailedJob
@@ -26,7 +25,7 @@ type Worker struct {
 func NewWorker(config *Config, concurrent int, connection string, queue string) *Worker {
 	return &Worker{
 		concurrent:    concurrent,
-		driver:        NewDriver(connection, config),
+		driver:        NewDriverImpl(connection, config),
 		failedJobs:    config.FailedJobsQuery(),
 		queue:         queue,
 		failedJobChan: make(chan FailedJob),
@@ -36,7 +35,11 @@ func NewWorker(config *Config, concurrent int, connection string, queue string) 
 }
 
 func (r *Worker) Run() error {
-	if r.driver.Driver() == DriverSync {
+	driver, err := r.driver.New()
+	if err != nil {
+		return err
+	}
+	if driver.Driver() == DriverSync {
 		return fmt.Errorf("queue %s driver not need run", r.queue)
 	}
 
@@ -52,7 +55,7 @@ func (r *Worker) Run() error {
 				case <-r.quitChan:
 					return
 				default:
-					job, args, err := r.driver.Pop(r.queue)
+					job, args, err := driver.Pop(r.queue)
 					if err != nil {
 						// This error not need to be reported.
 						// It is usually caused by the queue being empty.

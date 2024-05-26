@@ -43,10 +43,9 @@ func (s *DriverSyncTestSuite) SetupTest() {
 }
 
 func (s *DriverSyncTestSuite) TestSyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("sync").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("sync").Times(3)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Once()
 	s.mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Once()
 
 	s.Nil(s.app.Job(&TestSyncJob{}, []any{"TestSyncQueue", 1}).DispatchSync())
 	s.Equal(1, testSyncJob)
@@ -55,10 +54,10 @@ func (s *DriverSyncTestSuite) TestSyncQueue() {
 }
 
 func (s *DriverSyncTestSuite) TestChainSyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("sync").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("sync").Times(3)
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Twice()
 	s.mockConfig.On("GetString", "queue.connections.sync.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Twice()
+	s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Once()
 
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{

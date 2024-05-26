@@ -44,6 +44,14 @@ func (r *Config) Driver(connection string) string {
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
+func (r *Config) Via(connection string) any {
+	if len(connection) == 0 {
+		connection = r.DefaultConnection()
+	}
+
+	return r.config.Get(fmt.Sprintf("queue.connections.%s.via", connection))
+}
+
 func (r *Config) FailedJobsQuery() orm.Query {
 	connection := r.config.GetString("queue.failed.database")
 	table := r.config.GetString("queue.failed.table")
