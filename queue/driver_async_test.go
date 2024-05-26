@@ -172,7 +172,6 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 
 		<-ctx.Done()
 		s.Nil(worker.Shutdown())
-		return
 	}(ctx)
 	time.Sleep(1 * time.Second)
 	s.Error(s.app.Job(&TestErrorAsyncJob{}, []queue.Arg{
@@ -204,7 +203,6 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 
 		<-ctx.Done()
 		s.Nil(worker.Shutdown())
-		return
 	}(ctx)
 
 	time.Sleep(1 * time.Second)

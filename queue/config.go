@@ -3,8 +3,6 @@ package queue
 import (
 	"fmt"
 
-	"github.com/redis/go-redis/v9"
-
 	configcontract "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 )
@@ -44,26 +42,6 @@ func (r *Config) Driver(connection string) string {
 	}
 
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
-}
-
-func (r *Config) Redis(queueConnection string) *redis.Client {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.database", queueConnection))
-	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
-	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
-	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
-	database := r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
-
-	return redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", host, port),
-		Password: password,
-		DB:       database,
-	})
-}
-
-func (r *Config) Database(queueConnection string) orm.Query {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.database", queueConnection))
-	table := r.config.GetString(fmt.Sprintf("queue.connections.%s.table", queueConnection))
-	return OrmFacade.Connection(connection).Query().Table(table)
 }
 
 func (r *Config) FailedJobsQuery() orm.Query {

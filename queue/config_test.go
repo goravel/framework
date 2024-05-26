@@ -46,7 +46,7 @@ func (s *ConfigTestSuite) TestQueue() {
 			setup: func() {
 				s.mockConfig.On("GetString", "app.name").Return("app").Once()
 			},
-			connection:      "redis",
+			connection:      "async",
 			queue:           "queue",
 			expectQueueName: "app_queues:queue",
 		},
@@ -60,37 +60,6 @@ func (s *ConfigTestSuite) TestQueue() {
 			s.mockConfig.AssertExpectations(s.T())
 		})
 	}
-}
-
-func (s *ConfigTestSuite) TestRedis() {
-	s.mockConfig.On("GetString", "queue.connections.redis.database").Return("default").Once()
-	s.mockConfig.On("GetString", "database.redis.default.host").Return("127.0.0.1").Once()
-	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(6379).Once()
-	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-
-	redisClient := s.config.Redis("redis")
-
-	s.NotNil(redisClient)
-	s.mockConfig.AssertExpectations(s.T())
-}
-
-func (s *ConfigTestSuite) TestDatabase() {
-	mockOrm := &ormmock.Orm{}
-	mockQuery := &ormmock.Query{}
-	mockOrm.On("Connection", "database").Return(mockOrm)
-	mockOrm.On("Query").Return(mockQuery)
-	mockQuery.On("Table", "jobs").Return(mockQuery)
-
-	OrmFacade = mockOrm
-
-	s.mockConfig.On("GetString", "queue.connections.database.database").Return("database").Once()
-	s.mockConfig.On("GetString", "queue.connections.database.table").Return("jobs").Once()
-
-	orm := s.config.Database("database")
-
-	s.NotNil(orm)
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ConfigTestSuite) TestFailedJobsQuery() {
