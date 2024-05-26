@@ -158,7 +158,7 @@ func (_c *Driver_Driver_Call) RunAndReturn(run func() string) *Driver_Driver_Cal
 }
 
 // Later provides a mock function with given fields: delay, job, args, _a3
-func (_m *Driver) Later(delay uint, job queue.Job, args []queue.Arg, _a3 string) error {
+func (_m *Driver) Later(delay uint, job queue.Job, args []interface{}, _a3 string) error {
 	ret := _m.Called(delay, job, args, _a3)
 
 	if len(ret) == 0 {
@@ -166,7 +166,7 @@ func (_m *Driver) Later(delay uint, job queue.Job, args []queue.Arg, _a3 string)
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(uint, queue.Job, []queue.Arg, string) error); ok {
+	if rf, ok := ret.Get(0).(func(uint, queue.Job, []interface{}, string) error); ok {
 		r0 = rf(delay, job, args, _a3)
 	} else {
 		r0 = ret.Error(0)
@@ -183,15 +183,15 @@ type Driver_Later_Call struct {
 // Later is a helper method to define mock.On call
 //   - delay uint
 //   - job queue.Job
-//   - args []queue.Arg
+//   - args []interface{}
 //   - _a3 string
 func (_e *Driver_Expecter) Later(delay interface{}, job interface{}, args interface{}, _a3 interface{}) *Driver_Later_Call {
 	return &Driver_Later_Call{Call: _e.mock.On("Later", delay, job, args, _a3)}
 }
 
-func (_c *Driver_Later_Call) Run(run func(delay uint, job queue.Job, args []queue.Arg, _a3 string)) *Driver_Later_Call {
+func (_c *Driver_Later_Call) Run(run func(delay uint, job queue.Job, args []interface{}, _a3 string)) *Driver_Later_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint), args[1].(queue.Job), args[2].([]queue.Arg), args[3].(string))
+		run(args[0].(uint), args[1].(queue.Job), args[2].([]interface{}), args[3].(string))
 	})
 	return _c
 }
@@ -201,13 +201,13 @@ func (_c *Driver_Later_Call) Return(_a0 error) *Driver_Later_Call {
 	return _c
 }
 
-func (_c *Driver_Later_Call) RunAndReturn(run func(uint, queue.Job, []queue.Arg, string) error) *Driver_Later_Call {
+func (_c *Driver_Later_Call) RunAndReturn(run func(uint, queue.Job, []interface{}, string) error) *Driver_Later_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Pop provides a mock function with given fields: _a0
-func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Arg, error) {
+func (_m *Driver) Pop(_a0 string) (queue.Job, []interface{}, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -215,9 +215,9 @@ func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Arg, error) {
 	}
 
 	var r0 queue.Job
-	var r1 []queue.Arg
+	var r1 []interface{}
 	var r2 error
-	if rf, ok := ret.Get(0).(func(string) (queue.Job, []queue.Arg, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (queue.Job, []interface{}, error)); ok {
 		return rf(_a0)
 	}
 	if rf, ok := ret.Get(0).(func(string) queue.Job); ok {
@@ -228,11 +228,11 @@ func (_m *Driver) Pop(_a0 string) (queue.Job, []queue.Arg, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) []queue.Arg); ok {
+	if rf, ok := ret.Get(1).(func(string) []interface{}); ok {
 		r1 = rf(_a0)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]queue.Arg)
+			r1 = ret.Get(1).([]interface{})
 		}
 	}
 
@@ -263,18 +263,18 @@ func (_c *Driver_Pop_Call) Run(run func(_a0 string)) *Driver_Pop_Call {
 	return _c
 }
 
-func (_c *Driver_Pop_Call) Return(_a0 queue.Job, _a1 []queue.Arg, _a2 error) *Driver_Pop_Call {
+func (_c *Driver_Pop_Call) Return(_a0 queue.Job, _a1 []interface{}, _a2 error) *Driver_Pop_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *Driver_Pop_Call) RunAndReturn(run func(string) (queue.Job, []queue.Arg, error)) *Driver_Pop_Call {
+func (_c *Driver_Pop_Call) RunAndReturn(run func(string) (queue.Job, []interface{}, error)) *Driver_Pop_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Push provides a mock function with given fields: job, args, _a2
-func (_m *Driver) Push(job queue.Job, args []queue.Arg, _a2 string) error {
+func (_m *Driver) Push(job queue.Job, args []interface{}, _a2 string) error {
 	ret := _m.Called(job, args, _a2)
 
 	if len(ret) == 0 {
@@ -282,7 +282,7 @@ func (_m *Driver) Push(job queue.Job, args []queue.Arg, _a2 string) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(queue.Job, []queue.Arg, string) error); ok {
+	if rf, ok := ret.Get(0).(func(queue.Job, []interface{}, string) error); ok {
 		r0 = rf(job, args, _a2)
 	} else {
 		r0 = ret.Error(0)
@@ -298,15 +298,15 @@ type Driver_Push_Call struct {
 
 // Push is a helper method to define mock.On call
 //   - job queue.Job
-//   - args []queue.Arg
+//   - args []interface{}
 //   - _a2 string
 func (_e *Driver_Expecter) Push(job interface{}, args interface{}, _a2 interface{}) *Driver_Push_Call {
 	return &Driver_Push_Call{Call: _e.mock.On("Push", job, args, _a2)}
 }
 
-func (_c *Driver_Push_Call) Run(run func(job queue.Job, args []queue.Arg, _a2 string)) *Driver_Push_Call {
+func (_c *Driver_Push_Call) Run(run func(job queue.Job, args []interface{}, _a2 string)) *Driver_Push_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(queue.Job), args[1].([]queue.Arg), args[2].(string))
+		run(args[0].(queue.Job), args[1].([]interface{}), args[2].(string))
 	})
 	return _c
 }
@@ -316,7 +316,7 @@ func (_c *Driver_Push_Call) Return(_a0 error) *Driver_Push_Call {
 	return _c
 }
 
-func (_c *Driver_Push_Call) RunAndReturn(run func(queue.Job, []queue.Arg, string) error) *Driver_Push_Call {
+func (_c *Driver_Push_Call) RunAndReturn(run func(queue.Job, []interface{}, string) error) *Driver_Push_Call {
 	_c.Call.Return(run)
 	return _c
 }
