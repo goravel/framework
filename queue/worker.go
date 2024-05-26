@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/queue"
@@ -13,18 +14,24 @@ import (
 )
 
 type Worker struct {
-	concurrent int
-	driver     queue.Driver
-	failedJobs orm.Query
-	queue      string
+	concurrent    int
+	driver        queue.Driver
+	failedJobs    orm.Query
+	queue         string
+	failedJobChan chan FailedJob
+	sigChan       chan os.Signal
+	quitChan      chan struct{}
 }
 
 func NewWorker(config *Config, concurrent int, connection string, queue string) *Worker {
 	return &Worker{
-		concurrent: concurrent,
-		driver:     NewDriver(connection, config),
-		failedJobs: config.FailedJobsQuery(),
-		queue:      queue,
+		concurrent:    concurrent,
+		driver:        NewDriver(connection, config),
+		failedJobs:    config.FailedJobsQuery(),
+		queue:         queue,
+		failedJobChan: make(chan FailedJob),
+		sigChan:       make(chan os.Signal, 1),
+		quitChan:      make(chan struct{}),
 	}
 }
 
@@ -33,11 +40,8 @@ func (r *Worker) Run() error {
 		return fmt.Errorf("queue %s driver not need run", r.queue)
 	}
 
-	failedJobChan := make(chan FailedJob)
-	sigChan := make(chan os.Signal, 1)
-	quitChan := make(chan struct{})
 	var wg sync.WaitGroup
-	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	signal.Notify(r.sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
 	for i := 0; i < r.concurrent; i++ {
 		wg.Add(1)
@@ -45,18 +49,20 @@ func (r *Worker) Run() error {
 			defer wg.Done()
 			for {
 				select {
-				case <-quitChan:
+				case <-r.quitChan:
 					return
 				default:
 					job, args, err := r.driver.Pop(r.queue)
 					if err != nil {
 						// This error not need to be reported.
 						// It is usually caused by the queue being empty.
+						time.Sleep(1 * time.Second)
 						continue
 					}
+
 					err = Call(job.Signature(), args)
 					if err != nil {
-						failedJobChan <- FailedJob{
+						r.failedJobChan <- FailedJob{
 							Queue:     r.queue,
 							Signature: job.Signature(),
 							Payloads:  args,
@@ -70,16 +76,23 @@ func (r *Worker) Run() error {
 	}
 
 	go func() {
-		sig := <-sigChan
+		sig := <-r.sigChan
 		fmt.Printf("Received signal: %s, shutting down queue %s...\n", sig, r.queue)
-		close(quitChan)
+		close(r.quitChan)
 		wg.Wait()
-		close(failedJobChan)
+		close(r.failedJobChan)
 	}()
 
-	for job := range failedJobChan {
-		_ = r.failedJobs.Create(&job)
-	}
+	go func() {
+		for job := range r.failedJobChan {
+			_ = r.failedJobs.Create(&job)
+		}
+	}()
 
+	return nil
+}
+
+func (r *Worker) Shutdown() error {
+	r.sigChan <- syscall.SIGTERM
 	return nil
 }

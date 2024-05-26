@@ -2,10 +2,10 @@ package queue
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -31,20 +31,9 @@ type DriverAsyncTestSuite struct {
 }
 
 func TestDriverAsyncTestSuite(t *testing.T) {
-	suite.Run(t, &DriverAsyncTestSuite{})
-}
-
-func (s *DriverAsyncTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
-	s.mockQueue = &queuemock.Queue{}
-	s.app = NewApplication(s.mockConfig)
-
-	JobRegistry = new(sync.Map)
-	testAsyncJob = 0
-	testDelayAsyncJob = 0
-	testCustomAsyncJob = 0
-	testErrorAsyncJob = 0
-	testChainAsyncJob = 0
+	mockConfig := &configmock.Config{}
+	mockQueue := &queuemock.Queue{}
+	app := NewApplication(mockConfig)
 
 	mockOrm := &ormmock.Orm{}
 	mockQuery := &ormmock.Query{}
@@ -54,7 +43,20 @@ func (s *DriverAsyncTestSuite) SetupTest() {
 
 	OrmFacade = mockOrm
 
-	s.Nil(s.app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}}))
+	assert.Nil(t, app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}}))
+	suite.Run(t, &DriverAsyncTestSuite{
+		app:        app,
+		mockConfig: mockConfig,
+		mockQueue:  mockQueue,
+	})
+}
+
+func (s *DriverAsyncTestSuite) SetupTest() {
+	testAsyncJob = 0
+	testDelayAsyncJob = 0
+	testCustomAsyncJob = 0
+	testErrorAsyncJob = 0
+	testChainAsyncJob = 0
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
@@ -65,16 +67,17 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(nil).Run())
+		worker := s.app.Worker(nil)
+		s.Nil(worker.Run())
 
-		for range ctx.Done() {
-			return
-		}
+		<-ctx.Done()
+		s.Nil(worker.Shutdown())
+		return
 	}(ctx)
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDefaultAsyncQueue"},
 		{Type: "int", Value: 1},
@@ -97,22 +100,23 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		worker := s.app.Worker(&queue.Args{
 			Queue: "delay",
-		}).Run())
+		})
+		s.Nil(worker.Run())
 
-		for range ctx.Done() {
-			return
-		}
+		<-ctx.Done()
+		s.Nil(worker.Shutdown())
+		return
 	}(ctx)
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
 	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Equal(1, testDelayAsyncJob)
 
 	s.mockConfig.AssertExpectations(s.T())
@@ -127,20 +131,21 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		worker := s.app.Worker(&queue.Args{
 			Connection: "custom",
 			Queue:      "custom1",
 			Concurrent: 2,
-		}).Run())
+		})
+		s.Nil(worker.Run())
 
-		for range ctx.Done() {
-			return
-		}
+		<-ctx.Done()
+		s.Nil(worker.Shutdown())
+		return
 	}(ctx)
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestCustomAsyncQueue"},
 		{Type: "int", Value: 1},
@@ -161,18 +166,19 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		worker := s.app.Worker(&queue.Args{
 			Queue: "error",
-		}).Run())
+		})
+		s.Nil(worker.Run())
 
-		for range ctx.Done() {
-			return
-		}
+		<-ctx.Done()
+		s.Nil(worker.Shutdown())
+		return
 	}(ctx)
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	s.Error(s.app.Job(&TestErrorAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestErrorAsyncQueue"},
 		{Type: "int", Value: 1},
@@ -192,19 +198,20 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		worker := s.app.Worker(&queue.Args{
 			Queue: "chain",
-		}).Run())
+		})
+		s.Nil(worker.Run())
 
-		for range ctx.Done() {
-			return
-		}
+		<-ctx.Done()
+		s.Nil(worker.Shutdown())
+		return
 	}(ctx)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
 		{
 			Job: &TestChainAsyncJob{},

@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"sync"
 	"testing"
 	"time"
 
@@ -33,7 +32,6 @@ func (s *DriverSyncTestSuite) SetupTest() {
 	s.mockQueue = &queuemock.Queue{}
 	s.app = NewApplication(s.mockConfig)
 
-	JobRegistry = new(sync.Map)
 	testSyncJob = 0
 	testChainSyncJob = 0
 

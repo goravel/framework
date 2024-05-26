@@ -14,6 +14,7 @@ type Queue interface {
 
 type Worker interface {
 	Run() error
+	Shutdown() error
 }
 
 type Args struct {

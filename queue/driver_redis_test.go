@@ -2,7 +2,6 @@ package queue
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -54,7 +53,6 @@ func (s *DriverRedisTestSuite) SetupTest() {
 	s.mockQueue = &queuemock.Queue{}
 	s.app = NewApplication(s.mockConfig)
 
-	JobRegistry = new(sync.Map)
 	testRedisJob = 0
 	testDelayRedisJob = 0
 	testCustomRedisJob = 0

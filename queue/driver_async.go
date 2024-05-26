@@ -13,11 +13,13 @@ import (
 type ASync struct {
 	connection string
 	size       uint64
-	mu         sync.Mutex
 }
 
 // asyncJobs is a map to store all registered jobs.
 var asyncJobs = make(map[string][]contractsqueue.Jobs)
+
+// asyncMu is a mutex
+var asyncMu sync.Mutex
 
 func NewASync(connection string) *ASync {
 	return &ASync{
@@ -35,8 +37,8 @@ func (r *ASync) Driver() string {
 }
 
 func (r *ASync) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	r.size++
 	asyncJobs[queue] = append(asyncJobs[queue], contractsqueue.Jobs{Job: job, Args: args})
@@ -45,8 +47,8 @@ func (r *ASync) Push(job contractsqueue.Job, args []contractsqueue.Arg, queue st
 }
 
 func (r *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	r.size += uint64(len(jobs))
 	asyncJobs[queue] = append(asyncJobs[queue], jobs...)
@@ -56,8 +58,8 @@ func (r *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 
 func (r *ASync) Later(delay uint, job contractsqueue.Job, args []contractsqueue.Arg, queue string) error {
 	time.AfterFunc(time.Duration(delay)*time.Second, func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
+		asyncMu.Lock()
+		defer asyncMu.Unlock()
 
 		r.size++
 		asyncJobs[queue] = append(asyncJobs[queue], contractsqueue.Jobs{Job: job, Args: args})
@@ -67,12 +69,11 @@ func (r *ASync) Later(delay uint, job contractsqueue.Job, args []contractsqueue.
 }
 
 func (r *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	if len(asyncJobs[queue]) == 0 {
 		delete(asyncJobs, queue)
-		time.Sleep(1 * time.Second)
 		return nil, nil, fmt.Errorf("no job found in %s queue", queue)
 	}
 
@@ -88,8 +89,8 @@ func (r *ASync) Pop(queue string) (contractsqueue.Job, []contractsqueue.Arg, err
 }
 
 func (r *ASync) Delete(queue string, job contractsqueue.Jobs) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	if _, exists := asyncJobs[queue]; !exists {
 		return fmt.Errorf("no job found in %s queue", queue)
@@ -107,8 +108,8 @@ func (r *ASync) Delete(queue string, job contractsqueue.Jobs) error {
 }
 
 func (r *ASync) Release(queue string, job contractsqueue.Jobs, delay uint) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	if _, exists := asyncJobs[queue]; !exists {
 		return fmt.Errorf("no job found in %s queue", queue)
@@ -122,8 +123,8 @@ func (r *ASync) Release(queue string, job contractsqueue.Jobs, delay uint) error
 }
 
 func (r *ASync) Clear(queue string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	delete(asyncJobs, queue)
 	if _, exists := asyncJobs[queue]; exists {
@@ -134,8 +135,8 @@ func (r *ASync) Clear(queue string) error {
 }
 
 func (r *ASync) Size(queue string) (uint64, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	asyncMu.Lock()
+	defer asyncMu.Unlock()
 
 	return uint64(len(asyncJobs[queue])), nil
 }

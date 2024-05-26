@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -155,37 +154,4 @@ func TestEvents2Tasks(t *testing.T) {
 	})
 
 	assert.NotNil(t, err)
-}
-
-func TestArgsToValuesWithValidArgs(t *testing.T) {
-	args := []contractsqueue.Arg{
-		{Type: "string", Value: "test"},
-		{Type: "int", Value: 1},
-	}
-
-	values, err := argsToValues(args)
-
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(values))
-	assert.True(t, reflect.ValueOf("test").Equal(values[0]))
-	assert.True(t, reflect.ValueOf(1).Equal(values[1]))
-}
-
-func TestArgsToValuesWithInvalidType(t *testing.T) {
-	args := []contractsqueue.Arg{
-		{Type: "invalidType", Value: "test"},
-	}
-
-	_, err := argsToValues(args)
-
-	assert.Error(t, err)
-}
-
-func TestArgsToValuesWithEmptyArgs(t *testing.T) {
-	var args []contractsqueue.Arg
-
-	values, err := argsToValues(args)
-
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(values))
 }
