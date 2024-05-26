@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/carbon"
 )
 
 type Task struct {
@@ -45,8 +44,8 @@ func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
 
 // Delay sets a delay time for the task.
 // Delay 设置任务的延迟时间。
-func (receiver *Task) Delay(delay carbon.Carbon) queue.Task {
-	receiver.delay = uint(delay.Timestamp() - carbon.Now().Timestamp())
+func (receiver *Task) Delay(delay uint) queue.Task {
+	receiver.delay = delay
 
 	return receiver
 }
@@ -63,7 +62,7 @@ func (receiver *Task) Dispatch() error {
 		return receiver.driver.Bulk(receiver.jobs, receiver.queue)
 	} else {
 		job := receiver.jobs[0]
-		if receiver.delay != 0 {
+		if receiver.delay > 0 {
 			return receiver.driver.Later(receiver.delay, job.Job, job.Args, receiver.queue)
 		}
 		return receiver.driver.Push(job.Job, job.Args, receiver.queue)

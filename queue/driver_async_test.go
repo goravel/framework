@@ -12,7 +12,6 @@ import (
 	configmock "github.com/goravel/framework/mocks/config"
 	ormmock "github.com/goravel/framework/mocks/database/orm"
 	queuemock "github.com/goravel/framework/mocks/queue"
-	"github.com/goravel/framework/support/carbon"
 )
 
 var (
@@ -113,7 +112,7 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []queue.Arg{
 		{Type: "string", Value: "TestDelayAsyncQueue"},
 		{Type: "int", Value: 1},
-	}).OnQueue("delay").Delay(carbon.Now().AddSeconds(3)).Dispatch())
+	}).OnQueue("delay").Delay(3).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(2 * time.Second)

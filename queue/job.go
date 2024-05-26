@@ -1,9 +1,20 @@
 package queue
 
 import (
-	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/samber/do/v2"
+
+	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/support/carbon"
 )
+
+type FailedJob struct {
+	ID        uint                 `gorm:"primaryKey"`               // The unique ID of the job.
+	Queue     string               `gorm:"not null"`                 // The name of the queue the job belongs to.
+	Signature string               `gorm:"not null"`                 // The signature of the handler for this job.
+	Payloads  []contractsqueue.Arg `gorm:"not null;serializer:json"` // The arguments passed to the job.
+	Exception string               `gorm:"not null"`                 // The exception that caused the job to fail.
+	FailedAt  carbon.DateTime      `gorm:"not null"`                 // The timestamp when the job failed.
+}
 
 var injector = do.New()
 
