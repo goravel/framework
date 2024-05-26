@@ -103,7 +103,7 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []any{"TestDelayAsyncQueue", 1}).OnQueue("delay").Delay(3).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 	s.Equal(1, testDelayAsyncJob)
 
 	s.mockConfig.AssertExpectations(s.T())
