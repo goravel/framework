@@ -3,7 +3,7 @@ package event
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
-	eventConsole "github.com/goravel/framework/event/console"
+	eventconsole "github.com/goravel/framework/event/console"
 )
 
 const Binding = "goravel.event"
@@ -23,7 +23,7 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]console.Command{
-		&eventConsole.EventMakeCommand{},
-		&eventConsole.ListenerMakeCommand{},
+		&eventconsole.EventMakeCommand{},
+		&eventconsole.ListenerMakeCommand{},
 	})
 }
