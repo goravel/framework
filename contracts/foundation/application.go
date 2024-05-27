@@ -38,5 +38,7 @@ type Application interface {
 	// IsLocale get the current application locale.
 	IsLocale(ctx context.Context, locale string) bool
 	// SetJSON set the JSON implementation.
-	SetJSON(json support.Json) Application
+	SetJSON(json support.Json)
+	// GetJSON get the JSON implementation.
+	GetJSON() support.Json
 }

@@ -36,10 +36,7 @@ func init() {
 	app.bootBaseServiceProviders()
 	App = app
 
-	Json = &JSON{
-		marshal:   json.Marshal,
-		unmarshal: json.Unmarshal,
-	}
+	Json = NewJSON()
 }
 
 type Application struct {
@@ -122,9 +119,14 @@ func (app *Application) SetLocale(ctx context.Context, locale string) context.Co
 	return app.MakeLang(ctx).SetLocale(locale)
 }
 
-func (app *Application) SetJSON(json supportcontract.Json) foundation.Application {
-	Json = json
-	return app
+func (app *Application) SetJSON(j supportcontract.Json) {
+	if j != nil {
+		Json = j
+	}
+}
+
+func (app *Application) GetJSON() supportcontract.Json {
+	return NewJSON()
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
@@ -212,6 +214,13 @@ type JSON struct {
 }
 
 func NewJSON() supportcontract.Json {
+	if Json == nil {
+		Json = &JSON{
+			marshal:   json.Marshal,
+			unmarshal: json.Unmarshal,
+		}
+	}
+
 	return Json
 }
 
