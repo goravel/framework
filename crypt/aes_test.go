@@ -5,15 +5,13 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
 )
 
 type AesTestSuite struct {
 	suite.Suite
-	aes  *AES
-	json foundation.Json
+	aes *AES
 }
 
 func TestAesTestSuite(t *testing.T) {
