@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/support"
 )
 
 type Application interface {
@@ -36,4 +37,6 @@ type Application interface {
 	Version() string
 	// IsLocale get the current application locale.
 	IsLocale(ctx context.Context, locale string) bool
+	// SetJSON set the JSON implementation.
+	SetJSON(json support.Json) Application
 }

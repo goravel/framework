@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"os"
 	"path/filepath"
@@ -10,13 +11,15 @@ import (
 	"github.com/goravel/framework/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	supportcontract "github.com/goravel/framework/contracts/support"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
 
 var (
-	App foundation.Application
+	App  foundation.Application
+	Json supportcontract.Json
 )
 
 var _ = flag.String("env", ".env", "custom .env path")
@@ -32,6 +35,11 @@ func init() {
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
 	App = app
+
+	Json = &JSON{
+		marshal:   json.Marshal,
+		unmarshal: json.Unmarshal,
+	}
 }
 
 type Application struct {
@@ -114,6 +122,11 @@ func (app *Application) SetLocale(ctx context.Context, locale string) context.Co
 	return app.MakeLang(ctx).SetLocale(locale)
 }
 
+func (app *Application) SetJSON(json supportcontract.Json) foundation.Application {
+	Json = json
+	return app
+}
+
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
 	return app.GetLocale(ctx) == locale
 }
@@ -191,6 +204,32 @@ func (app *Application) registerCommands(commands []consolecontract.Command) {
 
 func (app *Application) setTimezone() {
 	carbon.SetTimezone(app.MakeConfig().GetString("app.timezone", carbon.UTC))
+}
+
+type JSON struct {
+	marshal   func(any) ([]byte, error)
+	unmarshal func([]byte, any) error
+}
+
+func NewJSON() supportcontract.Json {
+	return Json
+}
+
+func (j *JSON) Marshal(v any) ([]byte, error) {
+	return j.marshal(v)
+}
+
+func (j *JSON) MarshalString(v any) (string, error) {
+	s, err := j.marshal(v)
+	return string(s), err
+}
+
+func (j *JSON) Unmarshal(data []byte, v any) error {
+	return j.unmarshal(data, v)
+}
+
+func (j *JSON) UnmarshalString(data string, v any) error {
+	return j.unmarshal([]byte(data), v)
 }
 
 func setEnv() {
