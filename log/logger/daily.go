@@ -11,17 +11,20 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
 )
 
 type Daily struct {
 	config config.Config
+	json   foundation.Json
 }
 
-func NewDaily(config config.Config) *Daily {
+func NewDaily(config config.Config, json foundation.Json) *Daily {
 	return &Daily{
 		config: config,
+		json:   json,
 	}
 }
 
@@ -53,6 +56,6 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		writerMap,
-		formatter.NewGeneral(daily.config),
+		formatter.NewGeneral(daily.config, daily.json),
 	), nil
 }

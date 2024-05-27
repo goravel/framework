@@ -18,7 +18,7 @@ func (translation *ServiceProvider) Register(app foundation.Application) {
 		logger := app.MakeLog()
 		locale := config.GetString("app.locale")
 		fallback := config.GetString("app.fallback_locale")
-		loader := NewFileLoader([]string{filepath.Join("lang")})
+		loader := NewFileLoader([]string{filepath.Join("lang")}, app.GetJson())
 		trans := NewTranslator(parameters["ctx"].(context.Context), loader, locale, fallback, logger)
 		trans.SetLocale(locale)
 		return trans, nil
