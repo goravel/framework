@@ -3,7 +3,7 @@ package foundation
 import (
 	"encoding/json"
 
-	supportcontract "github.com/goravel/framework/contracts/support"
+	foundationcontract "github.com/goravel/framework/contracts/foundation"
 )
 
 type Json struct {
@@ -11,7 +11,7 @@ type Json struct {
 	unmarshal func([]byte, any) error
 }
 
-func NewJson() supportcontract.Json {
+func NewJson() foundationcontract.Json {
 	return &Json{
 		marshal:   json.Marshal,
 		unmarshal: json.Unmarshal,

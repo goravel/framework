@@ -1,4 +1,4 @@
-package support
+package foundation
 
 type Json interface {
 	// Marshal serializes the given value to a JSON-encoded byte slice.

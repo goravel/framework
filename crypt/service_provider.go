@@ -11,7 +11,7 @@ type ServiceProvider struct {
 
 func (crypt *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		return NewAES(app.MakeConfig()), nil
+		return NewAES(app.MakeConfig(), app.GetJson()), nil
 	})
 }
 
