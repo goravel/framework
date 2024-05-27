@@ -17,8 +17,7 @@ import (
 )
 
 var (
-	App  foundation.Application
-	Json supportcontract.Json
+	App foundation.Application
 )
 
 var _ = flag.String("env", ".env", "custom .env path")
@@ -33,15 +32,15 @@ func init() {
 	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
+	app.SetJSON(NewJSON())
 	App = app
-
-	Json = NewJSON()
 }
 
 type Application struct {
 	foundation.Container
 	publishes     map[string]map[string]string
 	publishGroups map[string]map[string]string
+	json          supportcontract.Json
 }
 
 func NewApplication() foundation.Application {
@@ -120,12 +119,12 @@ func (app *Application) SetLocale(ctx context.Context, locale string) context.Co
 
 func (app *Application) SetJSON(j supportcontract.Json) {
 	if j != nil {
-		Json = j
+		app.json = j
 	}
 }
 
 func (app *Application) GetJSON() supportcontract.Json {
-	return NewJSON()
+	return app.json
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
