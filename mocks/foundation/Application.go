@@ -339,6 +339,53 @@ func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *
 	return _c
 }
 
+// GetJSON provides a mock function with given fields:
+func (_m *Application) GetJSON() support.Json {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJSON")
+	}
+
+	var r0 support.Json
+	if rf, ok := ret.Get(0).(func() support.Json); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(support.Json)
+		}
+	}
+
+	return r0
+}
+
+// Application_GetJSON_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJSON'
+type Application_GetJSON_Call struct {
+	*mock.Call
+}
+
+// GetJSON is a helper method to define mock.On call
+func (_e *Application_Expecter) GetJSON() *Application_GetJSON_Call {
+	return &Application_GetJSON_Call{Call: _e.mock.On("GetJSON")}
+}
+
+func (_c *Application_GetJSON_Call) Run(run func()) *Application_GetJSON_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_GetJSON_Call) Return(_a0 support.Json) *Application_GetJSON_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_GetJSON_Call) RunAndReturn(run func() support.Json) *Application_GetJSON_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLocale provides a mock function with given fields: ctx
 func (_m *Application) GetLocale(ctx context.Context) string {
 	ret := _m.Called(ctx)
@@ -1854,23 +1901,8 @@ func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]s
 }
 
 // SetJSON provides a mock function with given fields: json
-func (_m *Application) SetJSON(json support.Json) foundation.Application {
-	ret := _m.Called(json)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SetJSON")
-	}
-
-	var r0 foundation.Application
-	if rf, ok := ret.Get(0).(func(support.Json) foundation.Application); ok {
-		r0 = rf(json)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(foundation.Application)
-		}
-	}
-
-	return r0
+func (_m *Application) SetJSON(json support.Json) {
+	_m.Called(json)
 }
 
 // Application_SetJSON_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetJSON'
@@ -1891,12 +1923,12 @@ func (_c *Application_SetJSON_Call) Run(run func(json support.Json)) *Applicatio
 	return _c
 }
 
-func (_c *Application_SetJSON_Call) Return(_a0 foundation.Application) *Application_SetJSON_Call {
-	_c.Call.Return(_a0)
+func (_c *Application_SetJSON_Call) Return() *Application_SetJSON_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Application_SetJSON_Call) RunAndReturn(run func(support.Json) foundation.Application) *Application_SetJSON_Call {
+func (_c *Application_SetJSON_Call) RunAndReturn(run func(support.Json)) *Application_SetJSON_Call {
 	_c.Call.Return(run)
 	return _c
 }
