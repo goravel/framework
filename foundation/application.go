@@ -32,7 +32,7 @@ func init() {
 	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
-	app.SetJSON(NewJSON())
+	app.SetJson(NewJson())
 	App = app
 }
 
@@ -117,13 +117,13 @@ func (app *Application) SetLocale(ctx context.Context, locale string) context.Co
 	return app.MakeLang(ctx).SetLocale(locale)
 }
 
-func (app *Application) SetJSON(j supportcontract.Json) {
+func (app *Application) SetJson(j supportcontract.Json) {
 	if j != nil {
 		app.json = j
 	}
 }
 
-func (app *Application) GetJSON() supportcontract.Json {
+func (app *Application) GetJson() supportcontract.Json {
 	return app.json
 }
 
