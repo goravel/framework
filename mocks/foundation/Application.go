@@ -46,6 +46,8 @@ import (
 
 	session "github.com/goravel/framework/contracts/session"
 
+	support "github.com/goravel/framework/contracts/support"
+
 	testing "github.com/goravel/framework/contracts/testing"
 
 	translation "github.com/goravel/framework/contracts/translation"
@@ -1847,6 +1849,54 @@ func (_c *Application_Publishes_Call) Return() *Application_Publishes_Call {
 }
 
 func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]string, ...string)) *Application_Publishes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetJSON provides a mock function with given fields: json
+func (_m *Application) SetJSON(json support.Json) foundation.Application {
+	ret := _m.Called(json)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetJSON")
+	}
+
+	var r0 foundation.Application
+	if rf, ok := ret.Get(0).(func(support.Json) foundation.Application); ok {
+		r0 = rf(json)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Application)
+		}
+	}
+
+	return r0
+}
+
+// Application_SetJSON_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetJSON'
+type Application_SetJSON_Call struct {
+	*mock.Call
+}
+
+// SetJSON is a helper method to define mock.On call
+//   - json support.Json
+func (_e *Application_Expecter) SetJSON(json interface{}) *Application_SetJSON_Call {
+	return &Application_SetJSON_Call{Call: _e.mock.On("SetJSON", json)}
+}
+
+func (_c *Application_SetJSON_Call) Run(run func(json support.Json)) *Application_SetJSON_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(support.Json))
+	})
+	return _c
+}
+
+func (_c *Application_SetJSON_Call) Return(_a0 foundation.Application) *Application_SetJSON_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_SetJSON_Call) RunAndReturn(run func(support.Json) foundation.Application) *Application_SetJSON_Call {
 	_c.Call.Return(run)
 	return _c
 }
