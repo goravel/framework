@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation/json"
 	mocksession "github.com/goravel/framework/mocks/session"
-	"github.com/goravel/framework/support/json"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -17,6 +18,7 @@ type SessionTestSuite struct {
 	suite.Suite
 	driver  *mocksession.Driver
 	session *Session
+	json    foundation.Json
 }
 
 func TestSessionTestSuite(t *testing.T) {
@@ -25,6 +27,7 @@ func TestSessionTestSuite(t *testing.T) {
 
 func (s *SessionTestSuite) SetupTest() {
 	s.driver = mocksession.NewDriver(s.T())
+	s.json = json.NewJson()
 	s.session = s.getSession()
 }
 
@@ -253,7 +256,7 @@ func (s *SessionTestSuite) TestSave() {
 	s.session.Put("key1", "value1").
 		Flash("baz", "boom")
 
-	data, _ := json.MarshalString(map[string]any{
+	data, _ := s.json.Marshal(map[string]any{
 		"key1":       "value1",
 		"baz":        "boom",
 		"_token":     s.session.Token(),
@@ -261,7 +264,7 @@ func (s *SessionTestSuite) TestSave() {
 		"_flash.old": []any{"baz"},
 	})
 	s.driver.On("Write", s.getSessionID(), mock.MatchedBy(func(v string) bool {
-		for _, key := range str.Of(data).LTrim("{").RTrim("}").Split(",") {
+		for _, key := range str.Of(string(data)).LTrim("{").RTrim("}").Split(",") {
 			if !strings.Contains(v, key) {
 				return false
 			}
@@ -277,14 +280,14 @@ func (s *SessionTestSuite) TestSave() {
 	s.session.Start()
 	s.session.Put("key1", "value1")
 
-	data, _ = json.MarshalString(map[string]any{
+	data, _ = s.json.Marshal(map[string]any{
 		"key1":       "value1",
 		"_token":     s.session.Token(),
 		"_flash.new": []any{},
 		"_flash.old": []any{},
 	})
 	s.driver.On("Write", s.getSessionID(), mock.MatchedBy(func(v string) bool {
-		for _, key := range str.Of(data).LTrim("{").RTrim("}").Split(",") {
+		for _, key := range str.Of(string(data)).LTrim("{").RTrim("}").Split(",") {
 			if !strings.Contains(v, key) {
 				return false
 			}
@@ -303,7 +306,7 @@ func (s *SessionTestSuite) TestSetID() {
 	s.NotEqual("wrongId", s.session.GetID())
 	s.True(s.session.isValidID(s.session.GetID()))
 
-	session := NewSession(s.getSessionName(), s.driver)
+	session := NewSession(s.getSessionName(), s.driver, s.json)
 	s.True(session.isValidID(session.GetID()))
 }
 
@@ -364,7 +367,7 @@ func (s *SessionTestSuite) TestToStringSlice() {
 }
 
 func (s *SessionTestSuite) getSession() *Session {
-	return NewSession(s.getSessionName(), s.driver, s.getSessionID())
+	return NewSession(s.getSessionName(), s.driver, s.json, s.getSessionID())
 }
 
 func (s *SessionTestSuite) getSessionName() string {

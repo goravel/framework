@@ -12,7 +12,7 @@ import (
 	"github.com/gookit/validate"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/support/json"
+	"github.com/goravel/framework/foundation/json"
 )
 
 func TestBind(t *testing.T) {
@@ -288,7 +288,7 @@ func TestCastValue(t *testing.T) {
 					O: []string{"1"},
 					P: map[string]string{"a": "aa"},
 				}
-				jsonStr, err := json.Marshal(body)
+				jsonStr, err := json.NewJson().Marshal(body)
 				assert.Nil(t, err)
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
 				request.Header.Set("Content-Type", "application/json")
@@ -355,7 +355,7 @@ func TestCastValue(t *testing.T) {
 					"o": []int{1},
 					"p": map[string]string{"a": "aa"},
 				}
-				jsonStr, err := json.Marshal(body)
+				jsonStr, err := json.NewJson().Marshal(body)
 				assert.Nil(t, err)
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonStr))
 				request.Header.Set("Content-Type", "application/json")

@@ -6,7 +6,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/foundation/json"
 	mockconfig "github.com/goravel/framework/mocks/config"
 )
 
@@ -14,6 +16,7 @@ type ManagerTestSuite struct {
 	suite.Suite
 	mockConfig *mockconfig.Config
 	manager    *Manager
+	json       foundation.Json
 }
 
 func TestManagerTestSuite(t *testing.T) {
@@ -23,6 +26,7 @@ func TestManagerTestSuite(t *testing.T) {
 func (m *ManagerTestSuite) SetupTest() {
 	m.mockConfig = mockconfig.NewConfig(m.T())
 	m.manager = m.getManager()
+	m.json = json.NewJson()
 }
 
 func (m *ManagerTestSuite) TestDriver() {
@@ -92,7 +96,7 @@ func (m *ManagerTestSuite) TestGetDefaultDriver() {
 }
 
 func (m *ManagerTestSuite) getManager() *Manager {
-	return NewManager(m.mockConfig)
+	return NewManager(m.mockConfig, m.json)
 }
 
 type CustomDriver struct{}

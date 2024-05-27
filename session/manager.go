@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/session/driver"
 )
@@ -12,20 +13,22 @@ type Manager struct {
 	config        config.Config
 	customDrivers map[string]func() sessioncontract.Driver
 	drivers       map[string]func() sessioncontract.Driver
+	json          foundation.Json
 }
 
-func NewManager(config config.Config) *Manager {
+func NewManager(config config.Config, json foundation.Json) *Manager {
 	manager := &Manager{
 		config:        config,
 		customDrivers: make(map[string]func() sessioncontract.Driver),
 		drivers:       make(map[string]func() sessioncontract.Driver),
+		json:          json,
 	}
 	manager.registerDrivers()
 	return manager
 }
 
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) sessioncontract.Session {
-	return NewSession(m.config.GetString("session.cookie"), handler, sessionID...)
+	return NewSession(m.config.GetString("session.cookie"), handler, m.json, sessionID...)
 }
 
 func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {

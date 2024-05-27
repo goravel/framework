@@ -5,19 +5,22 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
 )
 
 type AesTestSuite struct {
 	suite.Suite
-	aes *AES
+	aes  *AES
+	json foundation.Json
 }
 
 func TestAesTestSuite(t *testing.T) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
 	suite.Run(t, &AesTestSuite{
-		aes: NewAES(mockConfig),
+		aes: NewAES(mockConfig, json.NewJson()),
 	})
 	mockConfig.AssertExpectations(t)
 }

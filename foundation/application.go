@@ -11,6 +11,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation/console"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -31,7 +32,7 @@ func init() {
 	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
-	app.SetJson(NewJson())
+	app.SetJson(json.NewJson())
 	App = app
 }
 
