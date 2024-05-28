@@ -337,6 +337,53 @@ func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *
 	return _c
 }
 
+// GetJson provides a mock function with given fields:
+func (_m *Application) GetJson() foundation.Json {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJson")
+	}
+
+	var r0 foundation.Json
+	if rf, ok := ret.Get(0).(func() foundation.Json); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Json)
+		}
+	}
+
+	return r0
+}
+
+// Application_GetJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJson'
+type Application_GetJson_Call struct {
+	*mock.Call
+}
+
+// GetJson is a helper method to define mock.On call
+func (_e *Application_Expecter) GetJson() *Application_GetJson_Call {
+	return &Application_GetJson_Call{Call: _e.mock.On("GetJson")}
+}
+
+func (_c *Application_GetJson_Call) Run(run func()) *Application_GetJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_GetJson_Call) Return(_a0 foundation.Json) *Application_GetJson_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_GetJson_Call) RunAndReturn(run func() foundation.Json) *Application_GetJson_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLocale provides a mock function with given fields: ctx
 func (_m *Application) GetLocale(ctx context.Context) string {
 	ret := _m.Called(ctx)
@@ -1847,6 +1894,39 @@ func (_c *Application_Publishes_Call) Return() *Application_Publishes_Call {
 }
 
 func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]string, ...string)) *Application_Publishes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetJson provides a mock function with given fields: json
+func (_m *Application) SetJson(json foundation.Json) {
+	_m.Called(json)
+}
+
+// Application_SetJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetJson'
+type Application_SetJson_Call struct {
+	*mock.Call
+}
+
+// SetJson is a helper method to define mock.On call
+//   - json foundation.Json
+func (_e *Application_Expecter) SetJson(json interface{}) *Application_SetJson_Call {
+	return &Application_SetJson_Call{Call: _e.mock.On("SetJson", json)}
+}
+
+func (_c *Application_SetJson_Call) Run(run func(json foundation.Json)) *Application_SetJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(foundation.Json))
+	})
+	return _c
+}
+
+func (_c *Application_SetJson_Call) Return() *Application_SetJson_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_SetJson_Call) RunAndReturn(run func(foundation.Json)) *Application_SetJson_Call {
 	_c.Call.Return(run)
 	return _c
 }

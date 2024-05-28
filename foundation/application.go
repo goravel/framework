@@ -11,6 +11,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation/console"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -31,6 +32,7 @@ func init() {
 	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
+	app.SetJson(json.NewJson())
 	App = app
 }
 
@@ -38,6 +40,7 @@ type Application struct {
 	foundation.Container
 	publishes     map[string]map[string]string
 	publishGroups map[string]map[string]string
+	json          foundation.Json
 }
 
 func NewApplication() foundation.Application {
@@ -112,6 +115,16 @@ func (app *Application) GetLocale(ctx context.Context) string {
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
 	return app.MakeLang(ctx).SetLocale(locale)
+}
+
+func (app *Application) SetJson(j foundation.Json) {
+	if j != nil {
+		app.json = j
+	}
+}
+
+func (app *Application) GetJson() foundation.Json {
+	return app.json
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
