@@ -236,12 +236,12 @@ func (t *TranslatorTestSuite) TestGetLocale() {
 	translator := NewTranslator(t.ctx, t.mockLoader, "en", "en", t.mockLog)
 
 	// Case: Get locale initially set
-	locale := translator.GetLocale()
+	locale := translator.CurrentLocale()
 	t.Equal("en", locale)
 
 	// Case: Set locale using SetLocale and then get it
 	translator.SetLocale("fr")
-	locale = translator.GetLocale()
+	locale = translator.CurrentLocale()
 	t.Equal("fr", locale)
 }
 
