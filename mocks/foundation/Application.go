@@ -376,9 +376,19 @@ func (_e *Application_Expecter) ExecutablePath() *Application_ExecutablePath_Cal
 }
 
 func (_c *Application_ExecutablePath_Call) Run(run func()) *Application_ExecutablePath_Call {
-  _c.Call.Run(func(args mock.Arguments) {
+	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
+	return _c
+}
+
+func (_c *Application_ExecutablePath_Call) Return(_a0 string, _a1 error) *Application_ExecutablePath_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() (string, error)) *Application_ExecutablePath_Call {
+	_c.Call.Return(run)
 	return _c
 }
 
@@ -417,16 +427,6 @@ func (_c *Application_GetJson_Call) Run(run func()) *Application_GetJson_Call {
 		run()
 	})
 	return _c
-}
-
-func (_c *Application_ExecutablePath_Call) Return(_a0 string, _a1 error) *Application_ExecutablePath_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() (string, error)) *Application_ExecutablePath_Call {
-  	_c.Call.Return(run)
-	  return _c
 }
 
 func (_c *Application_GetJson_Call) Return(_a0 foundation.Json) *Application_GetJson_Call {
