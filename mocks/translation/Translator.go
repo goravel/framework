@@ -84,6 +84,51 @@ func (_c *Translator_Choice_Call) RunAndReturn(run func(string, int, ...translat
 	return _c
 }
 
+// CurrentLocale provides a mock function with given fields:
+func (_m *Translator) CurrentLocale() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CurrentLocale")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Translator_CurrentLocale_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CurrentLocale'
+type Translator_CurrentLocale_Call struct {
+	*mock.Call
+}
+
+// CurrentLocale is a helper method to define mock.On call
+func (_e *Translator_Expecter) CurrentLocale() *Translator_CurrentLocale_Call {
+	return &Translator_CurrentLocale_Call{Call: _e.mock.On("CurrentLocale")}
+}
+
+func (_c *Translator_CurrentLocale_Call) Run(run func()) *Translator_CurrentLocale_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Translator_CurrentLocale_Call) Return(_a0 string) *Translator_CurrentLocale_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Translator_CurrentLocale_Call) RunAndReturn(run func() string) *Translator_CurrentLocale_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: key, options
 func (_m *Translator) Get(key string, options ...translation.Option) string {
 	_va := make([]interface{}, len(options))
@@ -186,51 +231,6 @@ func (_c *Translator_GetFallback_Call) Return(_a0 string) *Translator_GetFallbac
 }
 
 func (_c *Translator_GetFallback_Call) RunAndReturn(run func() string) *Translator_GetFallback_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetLocale provides a mock function with given fields:
-func (_m *Translator) GetLocale() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetLocale")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Translator_GetLocale_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLocale'
-type Translator_GetLocale_Call struct {
-	*mock.Call
-}
-
-// GetLocale is a helper method to define mock.On call
-func (_e *Translator_Expecter) GetLocale() *Translator_GetLocale_Call {
-	return &Translator_GetLocale_Call{Call: _e.mock.On("GetLocale")}
-}
-
-func (_c *Translator_GetLocale_Call) Run(run func()) *Translator_GetLocale_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Translator_GetLocale_Call) Return(_a0 string) *Translator_GetLocale_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Translator_GetLocale_Call) RunAndReturn(run func() string) *Translator_GetLocale_Call {
 	_c.Call.Return(run)
 	return _c
 }
