@@ -8,15 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
 type FileLoaderTestSuite struct {
 	suite.Suite
-	app        *foundation.Application
 	executable string
+	json foundation.Json
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
@@ -47,12 +48,12 @@ func TestFileLoaderTestSuite(t *testing.T) {
 }
 
 func (f *FileLoaderTestSuite) SetupTest() {
-	f.app = &foundation.Application{}
+	f.json = json.NewJson()
 }
 
 func (f *FileLoaderTestSuite) TestLoad() {
 	paths := []string{"./lang"}
-	loader := NewFileLoader(paths)
+	loader := NewFileLoader(paths, f.json)
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
@@ -66,21 +67,21 @@ func (f *FileLoaderTestSuite) TestLoad() {
 	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
 
 	paths = []string{"./lang/another", "./lang"}
-	loader = NewFileLoader(paths)
+	loader = NewFileLoader(paths, f.json)
 	translations, err = loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["foo"])
 
 	paths = []string{"./lang"}
-	loader = NewFileLoader(paths)
+	loader = NewFileLoader(paths, f.json)
 	translations, err = loader.Load("en", "another/test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["foo"])
 
 	paths = []string{"./lang"}
-	loader = NewFileLoader(paths)
+	loader = NewFileLoader(paths, f.json)
 	translations, err = loader.Load("en", "restricted/test")
 	if env.IsWindows() {
 		f.NoError(err)
@@ -94,7 +95,7 @@ func (f *FileLoaderTestSuite) TestLoad() {
 
 func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 	paths := []string{"./lang"}
-	loader := NewFileLoader(paths)
+	loader := NewFileLoader(paths, f.json)
 	translations, err := loader.Load("hi", "test")
 
 	f.Error(err)
@@ -104,7 +105,7 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 	paths := []string{"./lang"}
-	loader := NewFileLoader(paths)
+	loader := NewFileLoader(paths, f.json)
 	translations, err := loader.Load("en", "invalid/test")
 
 	f.Error(err)

@@ -8,17 +8,20 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
 )
 
 type Single struct {
 	config config.Config
+	json   foundation.Json
 }
 
-func NewSingle(config config.Config) *Single {
+func NewSingle(config config.Config, json foundation.Json) *Single {
 	return &Single{
 		config: config,
+		json:   json,
 	}
 }
 
@@ -37,7 +40,7 @@ func (single *Single) Handle(channel string) (logrus.Hook, error) {
 
 	return lfshook.NewHook(
 		pathMap,
-		formatter.NewGeneral(single.config),
+		formatter.NewGeneral(single.config, single.json),
 	), nil
 }
 

@@ -16,6 +16,7 @@ import (
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
@@ -28,6 +29,7 @@ func TestLogrus(t *testing.T) {
 	var (
 		mockConfig *configmock.Config
 		log        *Application
+		j          = json.NewJson()
 	)
 
 	beforeEach := func() {
@@ -45,7 +47,7 @@ func TestLogrus(t *testing.T) {
 				mockConfig.On("GetString", "logging.channels.daily.level").Return("debug").Once()
 				mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 			},
 			assert: func() {
 				writer := log.WithContext(context.Background())
@@ -57,7 +59,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Debug("Debug Goravel")
 			},
 			assert: func() {
@@ -72,7 +74,7 @@ func TestLogrus(t *testing.T) {
 				mockConfig.On("GetString", "logging.channels.single.level").Return("info").Once()
 				mockConfig.On("GetString", "app.timezone").Return("UTC").Once()
 				mockConfig.On("GetString", "app.env").Return("test").Once()
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Debug("No Debug Goravel")
 			},
 			assert: func() {
@@ -85,7 +87,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Debugf("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -98,7 +100,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Info("Goravel")
 			},
 			assert: func() {
@@ -111,7 +113,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Infof("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -124,7 +126,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Warning("Goravel")
 			},
 			assert: func() {
@@ -137,7 +139,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Warningf("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -150,7 +152,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Error("Goravel")
 			},
 			assert: func() {
@@ -163,7 +165,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Errorf("Goravel: %s", "World")
 			},
 			assert: func() {
@@ -176,7 +178,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 			},
 			assert: func() {
 				assert.Panics(t, func() {
@@ -191,7 +193,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 			},
 			assert: func() {
 				assert.Panics(t, func() {
@@ -206,7 +208,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
@@ -219,7 +221,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
@@ -232,7 +234,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
@@ -245,7 +247,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
@@ -258,7 +260,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Request(&TestRequest{}).Info("Goravel")
 			},
 			assert: func() {
@@ -285,7 +287,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Response(&TestResponse{}).Info("Goravel")
 			},
 			assert: func() {
@@ -309,7 +311,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
@@ -322,7 +324,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
 			},
 			assert: func() {
@@ -335,7 +337,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
@@ -348,7 +350,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.WithTrace().Info("Goravel")
 			},
 			assert: func() {
@@ -361,7 +363,7 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockDriverConfig(mockConfig)
 
-				log = NewApplication(mockConfig)
+				log = NewApplication(mockConfig, j)
 				log.Error("test error")
 				log.Info("test info")
 			},
@@ -392,7 +394,7 @@ func TestLogrus(t *testing.T) {
 func TestLogrus_Fatal(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log := NewApplication(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
 
 	if os.Getenv("FATAL") == "1" {
 		log.Fatal("Goravel")
@@ -412,7 +414,7 @@ func TestLogrus_Fatal(t *testing.T) {
 func TestLogrus_Fatalf(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
-	log := NewApplication(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
 
 	if os.Getenv("FATAL") == "1" {
 		log.Fatalf("Goravel")

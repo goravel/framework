@@ -9,17 +9,18 @@ import (
 	"io"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/support/json"
 )
 
 type AES struct {
-	key []byte
+	key  []byte
+	json foundation.Json
 }
 
 // NewAES returns a new AES hasher.
-func NewAES(config config.Config) *AES {
+func NewAES(config config.Config, json foundation.Json) *AES {
 	key := config.GetString("app.key")
 
 	// Don't use AES in artisan when the key is empty.
@@ -34,7 +35,8 @@ func NewAES(config config.Config) *AES {
 	}
 	keyBytes := []byte(key)
 	return &AES{
-		key: keyBytes,
+		key:  keyBytes,
+		json: json,
 	}
 }
 
@@ -60,7 +62,7 @@ func (b *AES) EncryptString(value string) (string, error) {
 	ciphertext := aesgcm.Seal(nil, iv, plaintext, nil)
 
 	var jsonEncoded []byte
-	jsonEncoded, err = json.Marshal(map[string][]byte{
+	jsonEncoded, err = b.json.Marshal(map[string][]byte{
 		"iv":    iv,
 		"value": ciphertext,
 	})
@@ -80,7 +82,7 @@ func (b *AES) DecryptString(payload string) (string, error) {
 	}
 
 	decodeJson := make(map[string][]byte)
-	err = json.Unmarshal(decodePayload, &decodeJson)
+	err = b.json.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
 		return "", err
 	}

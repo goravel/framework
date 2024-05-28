@@ -6,12 +6,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/foundation/json"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/color"
 )
 
 func TestNewApplication(t *testing.T) {
-	app := NewApplication(nil)
+	j := json.NewJson()
+	app := NewApplication(nil, j)
 	assert.NotNil(t, app)
 
 	mockConfig := &mocksconfig.Config{}
@@ -20,14 +22,14 @@ func TestNewApplication(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
 	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
 	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
-	app = NewApplication(mockConfig)
+	app = NewApplication(mockConfig, j)
 	assert.NotNil(t, app)
 
 	mockConfig = &mocksconfig.Config{}
 	mockConfig.On("GetString", "logging.default").Return("test")
 	mockConfig.On("GetString", "logging.channels.test.driver").Return("test")
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, NewApplication(mockConfig))
+		assert.Nil(t, NewApplication(mockConfig, j))
 	}), "Init facades.Log error: Error logging channel: test")
 }
 
@@ -38,7 +40,7 @@ func TestApplication_Channel(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
 	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
 	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
-	app := NewApplication(mockConfig)
+	app := NewApplication(mockConfig, json.NewJson())
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Channel(""))
 
@@ -63,7 +65,7 @@ func TestApplication_Stack(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test.path").Return("test")
 	mockConfig.On("GetString", "logging.channels.test.level").Return("debug")
 	mockConfig.On("GetBool", "logging.channels.test.print").Return(true)
-	app := NewApplication(mockConfig)
+	app := NewApplication(mockConfig, json.NewJson())
 	assert.NotNil(t, app)
 	assert.NotNil(t, app.Stack([]string{}))
 

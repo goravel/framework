@@ -12,18 +12,20 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/contracts/foundation"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/foundation/json"
 	configmocks "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/file"
 )
 
-func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
+func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config, json foundation.Json) nethttp.Handler {
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		session.ConfigFacade = mockConfig
-		session.SessionFacade = session.NewManager(mockConfig)
+		session.SessionFacade = session.NewManager(mockConfig, json)
 		mockConfigFacade(mockConfig)
 		StartSession()(NewTestContext(r.Context(), next, w, r))
 	})
@@ -44,7 +46,7 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 
 func TestStartSession(t *testing.T) {
 	mockConfig := &configmocks.Config{}
-
+	j := json.NewJson()
 	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		switch r.URL.Path {
 		case "/add":
@@ -57,7 +59,7 @@ func TestStartSession(t *testing.T) {
 			assert.Equal(t, "bar", s.Get("foo"))
 			assert.Equal(t, "qux", s.Get("baz"))
 		}
-	}), mockConfig))
+	}), mockConfig, j))
 	defer server.Close()
 
 	client := &nethttp.Client{}

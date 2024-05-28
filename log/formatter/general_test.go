@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation/json"
 	configmock "github.com/goravel/framework/mocks/config"
 )
 
@@ -15,6 +17,7 @@ type GeneralTestSuite struct {
 	suite.Suite
 	mockConfig *configmock.Config
 	entry      *logrus.Entry
+	json       foundation.Json
 }
 
 func TestGeneralTestSuite(t *testing.T) {
@@ -27,13 +30,14 @@ func (s *GeneralTestSuite) SetupTest() {
 		Level:   logrus.InfoLevel,
 		Message: "Test Message",
 	}
+	s.json = json.NewJson()
 }
 
 func (s *GeneralTestSuite) TestFormat() {
 	s.mockConfig.On("GetString", "app.timezone").Return("UTC")
 	s.mockConfig.On("GetString", "app.env").Return("test")
 
-	general := NewGeneral(s.mockConfig)
+	general := NewGeneral(s.mockConfig, s.json)
 	tests := []struct {
 		name   string
 		setup  func()
@@ -84,8 +88,9 @@ func (s *GeneralTestSuite) TestFormat() {
 	}
 }
 
-func TestFormatData(t *testing.T) {
+func (s *GeneralTestSuite) TestFormatData() {
 	var data logrus.Fields
+	general := NewGeneral(s.mockConfig, s.json)
 	tests := []struct {
 		name   string
 		setup  func()
@@ -97,9 +102,9 @@ func TestFormatData(t *testing.T) {
 				data = logrus.Fields{}
 			},
 			assert: func() {
-				formattedData, err := formatData(data)
-				assert.Nil(t, err)
-				assert.Empty(t, formattedData)
+				formattedData, err := general.formatData(data)
+				s.Nil(err)
+				s.Empty(formattedData)
 			},
 		},
 		{
@@ -110,9 +115,9 @@ func TestFormatData(t *testing.T) {
 				}
 			},
 			assert: func() {
-				formattedData, err := formatData(data)
-				assert.NotNil(t, err)
-				assert.Empty(t, formattedData)
+				formattedData, err := general.formatData(data)
+				s.NotNil(err)
+				s.Empty(formattedData)
 			},
 		},
 		{
@@ -133,9 +138,9 @@ func TestFormatData(t *testing.T) {
 				}
 			},
 			assert: func() {
-				formattedData, err := formatData(data)
-				assert.NotNil(t, err)
-				assert.Empty(t, formattedData)
+				formattedData, err := general.formatData(data)
+				s.NotNil(err)
+				s.Empty(formattedData)
 			},
 		},
 		{
@@ -151,18 +156,82 @@ func TestFormatData(t *testing.T) {
 				}
 			},
 			assert: func() {
-				formattedData, err := formatData(data)
-				assert.Nil(t, err)
-				assert.Contains(t, formattedData, "code: \"200\"")
-				assert.Contains(t, formattedData, "domain: \"example.com\"")
-				assert.Contains(t, formattedData, "owner: \"owner\"")
-				assert.Contains(t, formattedData, "user: \"user1\"")
+				formattedData, err := general.formatData(data)
+				s.Nil(err)
+				s.Contains(formattedData, "code: \"200\"")
+				s.Contains(formattedData, "domain: \"example.com\"")
+				s.Contains(formattedData, "owner: \"owner\"")
+				s.Contains(formattedData, "user: \"user1\"")
 			},
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		s.Run(test.name, func() {
+			test.setup()
+			test.assert()
+		})
+	}
+}
+
+func (s *GeneralTestSuite) TestFormatStackTraces() {
+	var stackTraces any
+	general := NewGeneral(s.mockConfig, s.json)
+	tests := []struct {
+		name   string
+		setup  func()
+		assert func()
+	}{
+		{
+			name: "StackTraces is nil",
+			setup: func() {
+				stackTraces = nil
+			},
+			assert: func() {
+				traces, err := general.formatStackTraces(stackTraces)
+				s.Nil(err)
+				s.Equal("trace:\n", traces)
+			},
+		},
+		{
+			name: "StackTraces is not nil",
+			setup: func() {
+				stackTraces = map[string]any{
+					"root": map[string]any{
+						"message": "error bad request", // root cause
+						"stack": []string{
+							"main.main:/dummy/examples/logging/example.go:143", // original calling method
+							"main.ProcessResource:/dummy/examples/logging/example.go:71",
+							"main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
+							"main.(*Request).Validate:/dummy/examples/logging/example.go:28", // location of the root
+						},
+					},
+					"wrap": []map[string]any{
+						{
+							"message": "received a request with no ID",                                  // additional context
+							"stack":   "main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
+						},
+					},
+				}
+			},
+			assert: func() {
+				traces, err := general.formatStackTraces(stackTraces)
+				s.Nil(err)
+				stackTraces := []string{
+					"main.main:/dummy/examples/logging/example.go:143",
+					"main.ProcessResource:/dummy/examples/logging/example.go:71",
+					"main.(*Request).Validate:/dummy/examples/logging/example.go:29",
+					"main.(*Request).Validate:/dummy/examples/logging/example.go:28",
+				}
+				formattedStackTraces := "trace:\n\t" + strings.Join(stackTraces, "\n\t") + "\n"
+
+				s.Equal(formattedStackTraces, traces)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
 			test.setup()
 			test.assert()
 		})
@@ -208,69 +277,6 @@ func TestDeleteKey(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.assert()
-		})
-	}
-}
-
-func TestFormatStackTraces(t *testing.T) {
-	var stackTraces any
-	tests := []struct {
-		name   string
-		setup  func()
-		assert func()
-	}{
-		{
-			name: "StackTraces is nil",
-			setup: func() {
-				stackTraces = nil
-			},
-			assert: func() {
-				traces, err := formatStackTraces(stackTraces)
-				assert.Nil(t, err)
-				assert.Equal(t, "trace:\n", traces)
-			},
-		},
-		{
-			name: "StackTraces is not nil",
-			setup: func() {
-				stackTraces = map[string]any{
-					"root": map[string]any{
-						"message": "error bad request", // root cause
-						"stack": []string{
-							"main.main:/dummy/examples/logging/example.go:143", // original calling method
-							"main.ProcessResource:/dummy/examples/logging/example.go:71",
-							"main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
-							"main.(*Request).Validate:/dummy/examples/logging/example.go:28", // location of the root
-						},
-					},
-					"wrap": []map[string]any{
-						{
-							"message": "received a request with no ID",                                  // additional context
-							"stack":   "main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
-						},
-					},
-				}
-			},
-			assert: func() {
-				traces, err := formatStackTraces(stackTraces)
-				assert.Nil(t, err)
-				stackTraces := []string{
-					"main.main:/dummy/examples/logging/example.go:143",
-					"main.ProcessResource:/dummy/examples/logging/example.go:71",
-					"main.(*Request).Validate:/dummy/examples/logging/example.go:29",
-					"main.(*Request).Validate:/dummy/examples/logging/example.go:28",
-				}
-				formattedStackTraces := "trace:\n\t" + strings.Join(stackTraces, "\n\t") + "\n"
-
-				assert.Equal(t, formattedStackTraces, traces)
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			test.setup()
 			test.assert()
 		})
 	}
