@@ -383,6 +383,61 @@ func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *
 	return _c
 }
 
+// ExecutablePath provides a mock function with given fields:
+func (_m *Application) ExecutablePath() (string, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ExecutablePath")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Application_ExecutablePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecutablePath'
+type Application_ExecutablePath_Call struct {
+	*mock.Call
+}
+
+// ExecutablePath is a helper method to define mock.On call
+func (_e *Application_Expecter) ExecutablePath() *Application_ExecutablePath_Call {
+	return &Application_ExecutablePath_Call{Call: _e.mock.On("ExecutablePath")}
+}
+
+func (_c *Application_ExecutablePath_Call) Run(run func()) *Application_ExecutablePath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_ExecutablePath_Call) Return(_a0 string, _a1 error) *Application_ExecutablePath_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() (string, error)) *Application_ExecutablePath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetJson provides a mock function with given fields:
 func (_m *Application) GetJson() foundation.Json {
 	ret := _m.Called()

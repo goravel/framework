@@ -87,6 +87,12 @@ func (s *ApplicationTestSuite) TestPublicPath() {
 	s.Equal(filepath.Join("public", "goravel.go"), s.app.PublicPath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestExecutablePath() {
+	executable, err := s.app.ExecutablePath()
+	s.NoError(err)
+	s.NotEmpty(executable)
+}
+
 func (s *ApplicationTestSuite) TestPublishes() {
 	s.app.Publishes("github.com/goravel/sms", map[string]string{
 		"config.go": "config.go",

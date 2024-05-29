@@ -26,6 +26,8 @@ type Application interface {
 	LangPath(path string) string
 	// PublicPath get the path to the public directory.
 	PublicPath(path string) string
+	// ExecutablePath get the path to the executable of the running Goravel application.
+	ExecutablePath() (string, error)
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
 	// CurrentLocale get the current application locale.
