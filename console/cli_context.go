@@ -3,6 +3,7 @@ package console
 import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
@@ -214,7 +215,7 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 	input := huh.NewInput().Title(question)
 
 	if len(option) > 0 {
-		input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).Password(true)
+		input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).EchoMode(huh.EchoModePassword)
 		if option[0].Validate != nil {
 			input.Validate(option[0].Validate)
 		}
@@ -229,7 +230,8 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 }
 
 func (r *CliContext) Spinner(message string, option ...console.SpinnerOption) error {
-	spin := spinner.New().Title(message)
+	spinnerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#6BD7E4"))
+	spin := spinner.New().Style(spinnerStyle).Title(message)
 	if len(option) > 0 {
 		spin.Context(option[0].Ctx).Action(option[0].Action)
 	}

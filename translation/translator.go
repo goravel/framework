@@ -58,7 +58,7 @@ func (t *Translator) Choice(key string, number int, options ...translationcontra
 		"count": strconv.Itoa(number),
 	}
 
-	locale := t.GetLocale()
+	locale := t.CurrentLocale()
 	if len(options) > 0 && options[0].Locale != "" {
 		locale = options[0].Locale
 	}
@@ -71,7 +71,7 @@ func (t *Translator) Get(key string, options ...translationcontract.Option) stri
 		t.key = key
 	}
 
-	locale := t.GetLocale()
+	locale := t.CurrentLocale()
 	// Check if a custom locale is provided in options.
 	if len(options) > 0 && options[0].Locale != "" {
 		locale = options[0].Locale
@@ -123,7 +123,7 @@ func (t *Translator) GetFallback() string {
 	return t.fallback
 }
 
-func (t *Translator) GetLocale() string {
+func (t *Translator) CurrentLocale() string {
 	if locale, ok := t.ctx.Value(string(localeKey)).(string); ok {
 		return locale
 	}
