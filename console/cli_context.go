@@ -214,7 +214,7 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 	input := huh.NewInput().Title(question)
 
 	if len(option) > 0 {
-		input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).Password(true)
+		input.CharLimit(option[0].Limit).Description(option[0].Description).Placeholder(option[0].Placeholder).EchoMode(huh.EchoModePassword)
 		if option[0].Validate != nil {
 			input.Validate(option[0].Validate)
 		}
