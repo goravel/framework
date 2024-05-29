@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/log/formatter"
@@ -291,7 +292,7 @@ func (r *Writer) toMap() map[string]any {
 	return payload
 }
 
-func registerHook(config config.Config, instance *logrus.Logger, channel string) error {
+func registerHook(config config.Config, json foundation.Json, instance *logrus.Logger, channel string) error {
 	channelPath := "logging.channels." + channel
 	driver := config.GetString(channelPath + ".driver")
 
@@ -304,7 +305,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 				return errors.New("stack driver can't include self channel")
 			}
 
-			if err := registerHook(config, instance, stackChannel); err != nil {
+			if err := registerHook(config, json, instance, stackChannel); err != nil {
 				return err
 			}
 		}
@@ -315,7 +316,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 			instance.SetOutput(io.Discard)
 		}
 
-		logLogger := logger.NewSingle(config)
+		logLogger := logger.NewSingle(config, json)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
@@ -325,7 +326,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 			instance.SetOutput(io.Discard)
 		}
 
-		logLogger := logger.NewDaily(config)
+		logLogger := logger.NewDaily(config, json)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
@@ -342,7 +343,7 @@ func registerHook(config config.Config, instance *logrus.Logger, channel string)
 		return errors.New("Error logging channel: " + channel)
 	}
 
-	instance.SetFormatter(formatter.NewGeneral(config))
+	instance.SetFormatter(formatter.NewGeneral(config, json))
 
 	instance.AddHook(hook)
 

@@ -10,16 +10,29 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/support/json"
+	"github.com/goravel/framework/contracts/foundation"
 )
 
 type General struct {
 	config config.Config
+	json   foundation.Json
 }
 
-func NewGeneral(config config.Config) *General {
+type StackTrace struct {
+	Root struct {
+		Message string   `json:"message"`
+		Stack   []string `json:"stack"`
+	} `json:"root"`
+	Wrap []struct {
+		Message string `json:"message"`
+		Stack   string `json:"stack"`
+	} `json:"wrap"`
+}
+
+func NewGeneral(config config.Config, json foundation.Json) *General {
 	return &General{
 		config: config,
+		json:   json,
 	}
 }
 
@@ -40,7 +53,7 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 	b.WriteString(fmt.Sprintf("[%s] %s.%s: %s\n", timestamp, general.config.GetString("app.env"), entry.Level, entry.Message))
 	data := entry.Data
 	if len(data) > 0 {
-		formattedData, err := formatData(data)
+		formattedData, err := general.formatData(data)
 		if err != nil {
 			return nil, err
 		}
@@ -50,13 +63,13 @@ func (general *General) Format(entry *logrus.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func formatData(data logrus.Fields) (string, error) {
+func (general *General) formatData(data logrus.Fields) (string, error) {
 	var builder strings.Builder
 
 	if len(data) > 0 {
 		removedData := deleteKey(data, "root")
 		if len(removedData) > 0 {
-			removedDataBytes, err := json.Marshal(removedData)
+			removedDataBytes, err := general.json.Marshal(removedData)
 			if err != nil {
 				return "", err
 			}
@@ -71,7 +84,7 @@ func formatData(data logrus.Fields) (string, error) {
 
 		for _, key := range []string{"code", "context", "domain", "hint", "owner", "request", "response", "tags", "user"} {
 			if value, exists := root[key]; exists && value != nil {
-				v, err := json.Marshal(value)
+				v, err := general.json.Marshal(value)
 				if err != nil {
 					return "", err
 				}
@@ -81,7 +94,7 @@ func formatData(data logrus.Fields) (string, error) {
 		}
 
 		if stackTraceValue, exists := root["stacktrace"]; exists && stackTraceValue != nil {
-			traces, err := formatStackTraces(stackTraceValue)
+			traces, err := general.formatStackTraces(stackTraceValue)
 			if err != nil {
 				return "", err
 			}
@@ -93,37 +106,15 @@ func formatData(data logrus.Fields) (string, error) {
 	return builder.String(), nil
 }
 
-func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
-	dataCopy := make(logrus.Fields)
-	for key, value := range data {
-		if key != keyToDelete {
-			dataCopy[key] = value
-		}
-	}
-
-	return dataCopy
-}
-
-type StackTrace struct {
-	Root struct {
-		Message string   `json:"message"`
-		Stack   []string `json:"stack"`
-	} `json:"root"`
-	Wrap []struct {
-		Message string `json:"message"`
-		Stack   string `json:"stack"`
-	} `json:"wrap"`
-}
-
-func formatStackTraces(stackTraces any) (string, error) {
+func (general *General) formatStackTraces(stackTraces any) (string, error) {
 	var formattedTraces strings.Builder
-	data, err := json.Marshal(stackTraces)
+	data, err := general.json.Marshal(stackTraces)
 
 	if err != nil {
 		return "", err
 	}
 	var traces StackTrace
-	err = json.Unmarshal(data, &traces)
+	err = general.json.Unmarshal(data, &traces)
 	if err != nil {
 		return "", err
 	}
@@ -136,4 +127,15 @@ func formatStackTraces(stackTraces any) (string, error) {
 	}
 
 	return formattedTraces.String(), nil
+}
+
+func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
+	dataCopy := make(logrus.Fields)
+	for key, value := range data {
+		if key != keyToDelete {
+			dataCopy[key] = value
+		}
+	}
+
+	return dataCopy
 }

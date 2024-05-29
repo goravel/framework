@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cast"
 
+	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
-	"github.com/goravel/framework/support/json"
 	supportmaps "github.com/goravel/framework/support/maps"
 	"github.com/goravel/framework/support/str"
 )
@@ -18,14 +18,16 @@ type Session struct {
 	attributes map[string]any
 	driver     sessioncontract.Driver
 	started    bool
+	json       foundation.Json
 }
 
-func NewSession(name string, driver sessioncontract.Driver, id ...string) *Session {
+func NewSession(name string, driver sessioncontract.Driver, json foundation.Json, id ...string) *Session {
 	store := &Session{
 		name:       name,
 		driver:     driver,
 		started:    false,
 		attributes: make(map[string]any),
+		json:       json,
 	}
 	if len(id) > 0 {
 		store.SetID(id[0])
@@ -148,12 +150,12 @@ func (s *Session) Remove(key string) any {
 func (s *Session) Save() error {
 	s.ageFlashData()
 
-	data, err := json.MarshalString(s.attributes)
+	data, err := s.json.Marshal(s.attributes)
 	if err != nil {
 		return err
 	}
 
-	if err = s.driver.Write(s.GetID(), data); err != nil {
+	if err = s.driver.Write(s.GetID(), string(data)); err != nil {
 		return err
 	}
 
@@ -232,7 +234,7 @@ func (s *Session) readFromHandler() map[string]any {
 		return nil
 	}
 	var data map[string]any
-	if err := json.Unmarshal([]byte(value), &data); err != nil {
+	if err := s.json.Unmarshal([]byte(value), &data); err != nil {
 		return nil
 	}
 	return data

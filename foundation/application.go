@@ -11,6 +11,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation/console"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -31,6 +32,7 @@ func init() {
 	}
 	app.registerBaseServiceProviders()
 	app.bootBaseServiceProviders()
+	app.SetJson(json.NewJson())
 	App = app
 }
 
@@ -38,6 +40,7 @@ type Application struct {
 	foundation.Container
 	publishes     map[string]map[string]string
 	publishGroups map[string]map[string]string
+	json          foundation.Json
 }
 
 func NewApplication() foundation.Application {
@@ -90,6 +93,15 @@ func (app *Application) PublicPath(path string) string {
 	return filepath.Join("public", path)
 }
 
+func (app *Application) ExecutablePath() (string, error) {
+	executable, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Dir(executable), nil
+}
+
 func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
 	app.ensurePublishArrayInitialized(packageName)
 
@@ -106,16 +118,26 @@ func (app *Application) Version() string {
 	return support.Version
 }
 
-func (app *Application) GetLocale(ctx context.Context) string {
-	return app.MakeLang(ctx).GetLocale()
+func (app *Application) CurrentLocale(ctx context.Context) string {
+	return app.MakeLang(ctx).CurrentLocale()
 }
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
 	return app.MakeLang(ctx).SetLocale(locale)
 }
 
+func (app *Application) SetJson(j foundation.Json) {
+	if j != nil {
+		app.json = j
+	}
+}
+
+func (app *Application) GetJson() foundation.Json {
+	return app.json
+}
+
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
-	return app.GetLocale(ctx) == locale
+	return app.CurrentLocale(ctx) == locale
 }
 
 func (app *Application) ensurePublishArrayInitialized(packageName string) {

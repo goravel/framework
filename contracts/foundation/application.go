@@ -26,14 +26,20 @@ type Application interface {
 	LangPath(path string) string
 	// PublicPath get the path to the public directory.
 	PublicPath(path string) string
+	// ExecutablePath get the path to the executable of the running Goravel application.
+	ExecutablePath() (string, error)
 	// Publishes register the given paths to be published by the "vendor:publish" command.
 	Publishes(packageName string, paths map[string]string, groups ...string)
-	// GetLocale get the current application locale.
-	GetLocale(ctx context.Context) string
+	// CurrentLocale get the current application locale.
+	CurrentLocale(ctx context.Context) string
 	// SetLocale set the current application locale.
 	SetLocale(ctx context.Context, locale string) context.Context
 	// Version gets the version number of the application.
 	Version() string
 	// IsLocale get the current application locale.
 	IsLocale(ctx context.Context, locale string) bool
+	// SetJson set the JSON implementation.
+	SetJson(json Json)
+	// GetJson get the JSON implementation.
+	GetJson() Json
 }

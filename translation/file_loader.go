@@ -4,17 +4,19 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/json"
 )
 
 type FileLoader struct {
 	paths []string
+	json  foundation.Json
 }
 
-func NewFileLoader(paths []string) *FileLoader {
+func NewFileLoader(paths []string, json foundation.Json) *FileLoader {
 	return &FileLoader{
 		paths: paths,
+		json:  json,
 	}
 }
 
@@ -31,7 +33,7 @@ func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err := json.Unmarshal(data, &val); err != nil {
+			if err := f.json.Unmarshal(data, &val); err != nil {
 				return nil, err
 			}
 			return val, nil

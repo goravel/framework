@@ -11,8 +11,8 @@ type Translator interface {
 	Get(key string, options ...Option) string
 	// GetFallback get the current application/context fallback locale.
 	GetFallback() string
-	// GetLocale get the current application/context locale.
-	GetLocale() string
+	// CurrentLocale get the current application/context locale.
+	CurrentLocale() string
 	// Has checks if a translation exists for a given key.
 	Has(key string, options ...Option) bool
 	// SetFallback set the current application/context fallback locale.

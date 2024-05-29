@@ -291,6 +291,52 @@ func (_c *Application_ConfigPath_Call) RunAndReturn(run func(string) string) *Ap
 	return _c
 }
 
+// CurrentLocale provides a mock function with given fields: ctx
+func (_m *Application) CurrentLocale(ctx context.Context) string {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CurrentLocale")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Application_CurrentLocale_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CurrentLocale'
+type Application_CurrentLocale_Call struct {
+	*mock.Call
+}
+
+// CurrentLocale is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Application_Expecter) CurrentLocale(ctx interface{}) *Application_CurrentLocale_Call {
+	return &Application_CurrentLocale_Call{Call: _e.mock.On("CurrentLocale", ctx)}
+}
+
+func (_c *Application_CurrentLocale_Call) Run(run func(ctx context.Context)) *Application_CurrentLocale_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Application_CurrentLocale_Call) Return(_a0 string) *Application_CurrentLocale_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_CurrentLocale_Call) RunAndReturn(run func(context.Context) string) *Application_CurrentLocale_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DatabasePath provides a mock function with given fields: path
 func (_m *Application) DatabasePath(path string) string {
 	ret := _m.Called(path)
@@ -337,48 +383,104 @@ func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *
 	return _c
 }
 
-// GetLocale provides a mock function with given fields: ctx
-func (_m *Application) GetLocale(ctx context.Context) string {
-	ret := _m.Called(ctx)
+// ExecutablePath provides a mock function with given fields:
+func (_m *Application) ExecutablePath() (string, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetLocale")
+		panic("no return value specified for ExecutablePath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
-		r0 = rf(ctx)
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Application_ExecutablePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecutablePath'
+type Application_ExecutablePath_Call struct {
+	*mock.Call
+}
+
+// ExecutablePath is a helper method to define mock.On call
+func (_e *Application_Expecter) ExecutablePath() *Application_ExecutablePath_Call {
+	return &Application_ExecutablePath_Call{Call: _e.mock.On("ExecutablePath")}
+}
+
+func (_c *Application_ExecutablePath_Call) Run(run func()) *Application_ExecutablePath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_ExecutablePath_Call) Return(_a0 string, _a1 error) *Application_ExecutablePath_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() (string, error)) *Application_ExecutablePath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetJson provides a mock function with given fields:
+func (_m *Application) GetJson() foundation.Json {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJson")
+	}
+
+	var r0 foundation.Json
+	if rf, ok := ret.Get(0).(func() foundation.Json); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(foundation.Json)
+		}
 	}
 
 	return r0
 }
 
-// Application_GetLocale_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLocale'
-type Application_GetLocale_Call struct {
+// Application_GetJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJson'
+type Application_GetJson_Call struct {
 	*mock.Call
 }
 
-// GetLocale is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Application_Expecter) GetLocale(ctx interface{}) *Application_GetLocale_Call {
-	return &Application_GetLocale_Call{Call: _e.mock.On("GetLocale", ctx)}
+// GetJson is a helper method to define mock.On call
+func (_e *Application_Expecter) GetJson() *Application_GetJson_Call {
+	return &Application_GetJson_Call{Call: _e.mock.On("GetJson")}
 }
 
-func (_c *Application_GetLocale_Call) Run(run func(ctx context.Context)) *Application_GetLocale_Call {
+func (_c *Application_GetJson_Call) Run(run func()) *Application_GetJson_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run()
 	})
 	return _c
 }
 
-func (_c *Application_GetLocale_Call) Return(_a0 string) *Application_GetLocale_Call {
+func (_c *Application_GetJson_Call) Return(_a0 foundation.Json) *Application_GetJson_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_GetLocale_Call) RunAndReturn(run func(context.Context) string) *Application_GetLocale_Call {
+func (_c *Application_GetJson_Call) RunAndReturn(run func() foundation.Json) *Application_GetJson_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1847,6 +1949,39 @@ func (_c *Application_Publishes_Call) Return() *Application_Publishes_Call {
 }
 
 func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]string, ...string)) *Application_Publishes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetJson provides a mock function with given fields: json
+func (_m *Application) SetJson(json foundation.Json) {
+	_m.Called(json)
+}
+
+// Application_SetJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetJson'
+type Application_SetJson_Call struct {
+	*mock.Call
+}
+
+// SetJson is a helper method to define mock.On call
+//   - json foundation.Json
+func (_e *Application_Expecter) SetJson(json interface{}) *Application_SetJson_Call {
+	return &Application_SetJson_Call{Call: _e.mock.On("SetJson", json)}
+}
+
+func (_c *Application_SetJson_Call) Run(run func(json foundation.Json)) *Application_SetJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(foundation.Json))
+	})
+	return _c
+}
+
+func (_c *Application_SetJson_Call) Return() *Application_SetJson_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_SetJson_Call) RunAndReturn(run func(foundation.Json)) *Application_SetJson_Call {
 	_c.Call.Return(run)
 	return _c
 }
