@@ -17,7 +17,7 @@ import (
 type FileLoaderTestSuite struct {
 	suite.Suite
 	executable string
-	json foundation.Json
+	json       foundation.Json
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
@@ -112,9 +112,9 @@ func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {
 	f.Nil(translations)
 }
 
-func (f *FileLoaderTestSuite) TestLoad2() {
+func (f *FileLoaderTestSuite) TestLoadByExecutable() {
 	paths := []string{filepath.Join(f.executable, "lang")}
-	loader := NewFileLoader(paths)
+	loader := NewFileLoader(paths, f.json)
 	translations, err := loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
@@ -128,21 +128,21 @@ func (f *FileLoaderTestSuite) TestLoad2() {
 	f.Equal("bar", translations["baz"].(map[string]any)["foo"])
 
 	paths = []string{filepath.Join(f.executable, "lang", "another"), filepath.Join(f.executable, "lang")}
-	loader = NewFileLoader(paths)
+	loader = NewFileLoader(paths, f.json)
 	translations, err = loader.Load("en", "test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["foo"])
 
 	paths = []string{filepath.Join(f.executable, "lang")}
-	loader = NewFileLoader(paths)
+	loader = NewFileLoader(paths, f.json)
 	translations, err = loader.Load("en", "another/test")
 	f.NoError(err)
 	f.NotNil(translations)
 	f.Equal("backagebar", translations["foo"])
 
 	paths = []string{filepath.Join(f.executable, "lang")}
-	loader = NewFileLoader(paths)
+	loader = NewFileLoader(paths, f.json)
 	translations, err = loader.Load("en", "restricted/test")
 	if env.IsWindows() {
 		f.NoError(err)
@@ -152,28 +152,25 @@ func (f *FileLoaderTestSuite) TestLoad2() {
 		f.Error(err)
 		f.Nil(translations)
 	}
-	f.app.AssertExpectations(f.T())
 }
 
-func (f *FileLoaderTestSuite) TestLoadNonExistentFile2() {
+func (f *FileLoaderTestSuite) TestLoadNonExistentFileByExecutable() {
 	paths := []string{filepath.Join(f.executable, "lang")}
-	loader := NewFileLoader(paths)
+	loader := NewFileLoader(paths, f.json)
 	translations, err := loader.Load("hi", "test")
 
 	f.Error(err)
 	f.Nil(translations)
 	f.Equal(ErrFileNotExist, err)
-	f.app.AssertExpectations(f.T())
 }
 
-func (f *FileLoaderTestSuite) TestLoadInvalidJSON2() {
+func (f *FileLoaderTestSuite) TestLoadInvalidJSONByExecutable() {
 	paths := []string{filepath.Join(f.executable, "lang")}
-	loader := NewFileLoader(paths)
+	loader := NewFileLoader(paths, f.json)
 	translations, err := loader.Load("en", "invalid/test")
 
 	f.Error(err)
 	f.Nil(translations)
-	f.app.AssertExpectations(f.T())
 }
 
 func executablePath() (string, error) {
