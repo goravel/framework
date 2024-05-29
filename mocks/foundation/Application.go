@@ -291,6 +291,52 @@ func (_c *Application_ConfigPath_Call) RunAndReturn(run func(string) string) *Ap
 	return _c
 }
 
+// CurrentLocale provides a mock function with given fields: ctx
+func (_m *Application) CurrentLocale(ctx context.Context) string {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CurrentLocale")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Application_CurrentLocale_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CurrentLocale'
+type Application_CurrentLocale_Call struct {
+	*mock.Call
+}
+
+// CurrentLocale is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Application_Expecter) CurrentLocale(ctx interface{}) *Application_CurrentLocale_Call {
+	return &Application_CurrentLocale_Call{Call: _e.mock.On("CurrentLocale", ctx)}
+}
+
+func (_c *Application_CurrentLocale_Call) Run(run func(ctx context.Context)) *Application_CurrentLocale_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Application_CurrentLocale_Call) Return(_a0 string) *Application_CurrentLocale_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_CurrentLocale_Call) RunAndReturn(run func(context.Context) string) *Application_CurrentLocale_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DatabasePath provides a mock function with given fields: path
 func (_m *Application) DatabasePath(path string) string {
 	ret := _m.Called(path)
@@ -380,52 +426,6 @@ func (_c *Application_GetJson_Call) Return(_a0 foundation.Json) *Application_Get
 }
 
 func (_c *Application_GetJson_Call) RunAndReturn(run func() foundation.Json) *Application_GetJson_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetLocale provides a mock function with given fields: ctx
-func (_m *Application) GetLocale(ctx context.Context) string {
-	ret := _m.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetLocale")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Application_GetLocale_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLocale'
-type Application_GetLocale_Call struct {
-	*mock.Call
-}
-
-// GetLocale is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Application_Expecter) GetLocale(ctx interface{}) *Application_GetLocale_Call {
-	return &Application_GetLocale_Call{Call: _e.mock.On("GetLocale", ctx)}
-}
-
-func (_c *Application_GetLocale_Call) Run(run func(ctx context.Context)) *Application_GetLocale_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *Application_GetLocale_Call) Return(_a0 string) *Application_GetLocale_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Application_GetLocale_Call) RunAndReturn(run func(context.Context) string) *Application_GetLocale_Call {
 	_c.Call.Return(run)
 	return _c
 }

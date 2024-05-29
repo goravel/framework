@@ -109,8 +109,8 @@ func (app *Application) Version() string {
 	return support.Version
 }
 
-func (app *Application) GetLocale(ctx context.Context) string {
-	return app.MakeLang(ctx).GetLocale()
+func (app *Application) CurrentLocale(ctx context.Context) string {
+	return app.MakeLang(ctx).CurrentLocale()
 }
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
@@ -128,7 +128,7 @@ func (app *Application) GetJson() foundation.Json {
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
-	return app.GetLocale(ctx) == locale
+	return app.CurrentLocale(ctx) == locale
 }
 
 func (app *Application) ensurePublishArrayInitialized(packageName string) {
