@@ -1121,23 +1121,16 @@ func (_c *Context_Secret_Call) RunAndReturn(run func(string, ...console.SecretOp
 }
 
 // Spinner provides a mock function with given fields: message, option
-func (_m *Context) Spinner(message string, option ...console.SpinnerOption) error {
-	_va := make([]interface{}, len(option))
-	for _i := range option {
-		_va[_i] = option[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, message)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+func (_m *Context) Spinner(message string, option console.SpinnerOption) error {
+	ret := _m.Called(message, option)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Spinner")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, ...console.SpinnerOption) error); ok {
-		r0 = rf(message, option...)
+	if rf, ok := ret.Get(0).(func(string, console.SpinnerOption) error); ok {
+		r0 = rf(message, option)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1152,21 +1145,14 @@ type Context_Spinner_Call struct {
 
 // Spinner is a helper method to define mock.On call
 //   - message string
-//   - option ...console.SpinnerOption
-func (_e *Context_Expecter) Spinner(message interface{}, option ...interface{}) *Context_Spinner_Call {
-	return &Context_Spinner_Call{Call: _e.mock.On("Spinner",
-		append([]interface{}{message}, option...)...)}
+//   - option console.SpinnerOption
+func (_e *Context_Expecter) Spinner(message interface{}, option interface{}) *Context_Spinner_Call {
+	return &Context_Spinner_Call{Call: _e.mock.On("Spinner", message, option)}
 }
 
-func (_c *Context_Spinner_Call) Run(run func(message string, option ...console.SpinnerOption)) *Context_Spinner_Call {
+func (_c *Context_Spinner_Call) Run(run func(message string, option console.SpinnerOption)) *Context_Spinner_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]console.SpinnerOption, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(console.SpinnerOption)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string), args[1].(console.SpinnerOption))
 	})
 	return _c
 }
@@ -1176,7 +1162,7 @@ func (_c *Context_Spinner_Call) Return(_a0 error) *Context_Spinner_Call {
 	return _c
 }
 
-func (_c *Context_Spinner_Call) RunAndReturn(run func(string, ...console.SpinnerOption) error) *Context_Spinner_Call {
+func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOption) error) *Context_Spinner_Call {
 	_c.Call.Return(run)
 	return _c
 }
