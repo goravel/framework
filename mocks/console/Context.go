@@ -1121,21 +1121,8 @@ func (_c *Context_Secret_Call) RunAndReturn(run func(string, ...console.SecretOp
 }
 
 // Spinner provides a mock function with given fields: message, option
-func (_m *Context) Spinner(message string, option console.SpinnerOption) error {
-	ret := _m.Called(message, option)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Spinner")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, console.SpinnerOption) error); ok {
-		r0 = rf(message, option)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Context) Spinner(message string, option console.SpinnerOption) {
+	_m.Called(message, option)
 }
 
 // Context_Spinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Spinner'
@@ -1157,45 +1144,45 @@ func (_c *Context_Spinner_Call) Run(run func(message string, option console.Spin
 	return _c
 }
 
-func (_c *Context_Spinner_Call) Return(_a0 error) *Context_Spinner_Call {
-	_c.Call.Return(_a0)
+func (_c *Context_Spinner_Call) Return() *Context_Spinner_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOption) error) *Context_Spinner_Call {
+func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOption)) *Context_Spinner_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Warn provides a mock function with given fields: message
-func (_m *Context) Warn(message string) {
+// Warning provides a mock function with given fields: message
+func (_m *Context) Warning(message string) {
 	_m.Called(message)
 }
 
-// Context_Warn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Warn'
-type Context_Warn_Call struct {
+// Context_Warning_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Warning'
+type Context_Warning_Call struct {
 	*mock.Call
 }
 
-// Warn is a helper method to define mock.On call
+// Warning is a helper method to define mock.On call
 //   - message string
-func (_e *Context_Expecter) Warn(message interface{}) *Context_Warn_Call {
-	return &Context_Warn_Call{Call: _e.mock.On("Warn", message)}
+func (_e *Context_Expecter) Warning(message interface{}) *Context_Warning_Call {
+	return &Context_Warning_Call{Call: _e.mock.On("Warning", message)}
 }
 
-func (_c *Context_Warn_Call) Run(run func(message string)) *Context_Warn_Call {
+func (_c *Context_Warning_Call) Run(run func(message string)) *Context_Warning_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Context_Warn_Call) Return() *Context_Warn_Call {
+func (_c *Context_Warning_Call) Return() *Context_Warning_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *Context_Warn_Call) RunAndReturn(run func(string)) *Context_Warn_Call {
+func (_c *Context_Warning_Call) RunAndReturn(run func(string)) *Context_Warning_Call {
 	_c.Call.Return(run)
 	return _c
 }
