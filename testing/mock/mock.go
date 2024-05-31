@@ -38,6 +38,10 @@ type factory struct {
 	app *foundationmocks.Application
 }
 
+func (r *factory) App() *foundationmocks.Application {
+	return r.app
+}
+
 func (r *factory) Artisan() *consolemocks.Artisan {
 	mockArtisan := &consolemocks.Artisan{}
 	r.app.On("MakeArtisan").Return(mockArtisan)
