@@ -35,4 +35,49 @@ func TestBuildCommand(t *testing.T) {
 	assert.NotContains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.EqualError(t, newBuildCommand.Handle(mockContext), "error")
 	}), "Command cancelled!")
+
+	mockConfig.AssertExpectations(t)
+	mockContext.AssertExpectations(t)
+}
+
+func TestGenerateCommand(t *testing.T) {
+	tests := []struct {
+		description string
+		name        string
+		static      bool
+		expected    string
+	}{
+		{
+			description: "Generate command with static and name",
+			name:        "test",
+			static:      true,
+			expected:    "go build -ldflags -extldflags -static -o test .",
+		},
+		{
+			description: "Generate command with static without name",
+			name:        "",
+			static:      true,
+			expected:    "go build -ldflags -extldflags -static .",
+		},
+		{
+			description: "Generate command without static with name",
+			name:        "test",
+			static:      false,
+			expected:    "go build -o test .",
+		},
+		{
+			description: "Generate command without static and name",
+			name:        "",
+			static:      false,
+			expected:    "go build .",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			result := generateCommand(test.name, test.static)
+
+			assert.Equal(t, test.expected, result)
+		})
+	}
 }

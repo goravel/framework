@@ -1,10 +1,11 @@
 package console
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
+	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
@@ -43,6 +44,17 @@ func (receiver *BuildCommand) Extend() command.Extend {
 				Value:   "",
 				Usage:   "target system os",
 			},
+			&command.BoolFlag{
+				Name:  "static",
+				Value: false,
+				Usage: "Static compilation",
+			},
+			&command.StringFlag{
+				Name:    "name",
+				Aliases: []string{"n"},
+				Value:   "",
+				Usage:   "output binary name",
+			},
 		},
 	}
 }
@@ -66,22 +78,27 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	}
 
 	system := ctx.Option("system")
-	validSystems := []string{"linux", "windows", "darwin"}
-	isValidOption := func(option string) bool {
-		for _, validOption := range validSystems {
-			if option == validOption {
-				return true
-			}
+	if system == "" {
+		var err error
+		system, err = ctx.Choice("Select the target system os", []console.Choice{
+			{Key: "Linux", Value: "linux"},
+			{Key: "Darwin", Value: "windows"},
+			{Key: "Windows", Value: "darwin"},
+		})
+		if err != nil {
+			color.Red().Println(err)
+			return nil
 		}
-		return false
-	}
-	if !isValidOption(system) {
-		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
-		color.Red().Println(err)
-		return errors.New(err)
 	}
 
-	if err := receiver.buildTheApplication(system); err != nil {
+	validSystems := []string{"linux", "windows", "darwin"}
+	if !slices.Contains(validSystems, system) {
+		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
+		color.Red().Println(err)
+		return nil
+	}
+
+	if err := receiver.build(system, generateCommand(ctx.Option("name"), ctx.OptionBool("static"))); err != nil {
 		color.Red().Println(err.Error())
 
 		return nil
@@ -92,16 +109,28 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-// buildTheApplication Build the application executable.
-func (receiver *BuildCommand) buildTheApplication(system string) error {
+func (receiver *BuildCommand) build(system, command string) error {
 	os.Setenv("CGO_ENABLED", "0")
 	os.Setenv("GOOS", system)
 	os.Setenv("GOARCH", "amd64")
-	cmd := exec.Command(
-		"go",
-		"build",
-		".",
-	)
+
+	commandArr := strings.Split(command, " ")
+
+	cmd := exec.Command(commandArr[0], commandArr[1:]...)
 	_, err := cmd.Output()
 	return err
+}
+
+func generateCommand(name string, static bool) string {
+	command := "go build"
+
+	if static {
+		command += " -ldflags -extldflags -static"
+	}
+
+	if name != "" {
+		command += " -o " + name
+	}
+
+	return command + " ."
 }
