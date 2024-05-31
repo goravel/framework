@@ -63,9 +63,9 @@ type Context interface {
 	// Secret prompts the user for a password.
 	Secret(question string, option ...SecretOption) (string, error)
 	// Spinner creates a new spinner instance.
-	Spinner(message string, option SpinnerOption) error
-	// Warn writes a warning message to the console.
-	Warn(message string)
+	Spinner(message string, option SpinnerOption)
+	// Warning writes a warning message to the console.
+	Warning(message string)
 	// WithProgressBar executes a callback with a progress bar.
 	WithProgressBar(items []any, callback func(any) error) ([]any, error)
 }

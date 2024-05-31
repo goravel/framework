@@ -229,15 +229,14 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 	return answer, nil
 }
 
-func (r *CliContext) Spinner(message string, option console.SpinnerOption) error {
-	spinnerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#6BD7E4"))
-	spin := spinner.New().Style(spinnerStyle).Title(message)
+func (r *CliContext) Spinner(message string, option console.SpinnerOption) {
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#6BD7E4"))
+	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
 	spin.Context(option.Ctx).Action(option.Action)
-
-	return spin.Run()
+	spin.Run()
 }
 
-func (r *CliContext) Warn(message string) {
+func (r *CliContext) Warning(message string) {
 	color.Yellow().Println(message)
 }
 
