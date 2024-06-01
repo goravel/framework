@@ -30,7 +30,16 @@ func TestBuildCommand(t *testing.T) {
 		setup func()
 	}{
 		{
-			name: "env is prod and confirm error",
+			name: "Happy path",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
+				mockContext.EXPECT().Option("system").Return("linux").Once()
+				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(nil).Once()
+				mockContext.EXPECT().Info("Built successfully.").Once()
+			},
+		},
+		{
+			name: "Sad path - env is prod and confirm error",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 				mockContext.EXPECT().Warning("**************************************").Once()
@@ -41,7 +50,7 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "env is prod and confirm false",
+			name: "Sad path - env is prod and confirm false",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 				mockContext.EXPECT().Warning("**************************************").Once()
@@ -52,7 +61,7 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "system is empty and choice error",
+			name: "Sad path - system is empty and choice error",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("system").Return("").Once()
@@ -65,7 +74,7 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "system is invalid",
+			name: "Sad path - system is invalid",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("system").Return("invalid").Once()
@@ -73,12 +82,12 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "system is valid",
+			name: "Sad path - spinner returns error",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
 				mockContext.EXPECT().Option("system").Return("linux").Once()
-				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return().Once()
-				mockContext.EXPECT().Info("Built successfully.").Once()
+				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(errors.New("error")).Once()
+				mockContext.EXPECT().Error("Build error: error").Once()
 			},
 		},
 	}
