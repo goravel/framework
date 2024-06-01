@@ -1121,8 +1121,21 @@ func (_c *Context_Secret_Call) RunAndReturn(run func(string, ...console.SecretOp
 }
 
 // Spinner provides a mock function with given fields: message, option
-func (_m *Context) Spinner(message string, option console.SpinnerOption) {
-	_m.Called(message, option)
+func (_m *Context) Spinner(message string, option console.SpinnerOption) error {
+	ret := _m.Called(message, option)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Spinner")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, console.SpinnerOption) error); ok {
+		r0 = rf(message, option)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Context_Spinner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Spinner'
@@ -1144,12 +1157,12 @@ func (_c *Context_Spinner_Call) Run(run func(message string, option console.Spin
 	return _c
 }
 
-func (_c *Context_Spinner_Call) Return() *Context_Spinner_Call {
-	_c.Call.Return()
+func (_c *Context_Spinner_Call) Return(_a0 error) *Context_Spinner_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOption)) *Context_Spinner_Call {
+func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOption) error) *Context_Spinner_Call {
 	_c.Call.Return(run)
 	return _c
 }
