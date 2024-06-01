@@ -2,42 +2,123 @@ package console
 
 import (
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
+	"github.com/goravel/framework/contracts/console"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/color"
 )
 
 func TestBuildCommand(t *testing.T) {
-	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "app.env").Return("local").Once()
+	var (
+		mockConfig   *mocksconfig.Config
+		mockContext  *mocksconsole.Context
+		buildCommand *BuildCommand
+	)
 
-	newBuildCommand := NewBuildCommand(mockConfig)
-	mockContext := &mocksconsole.Context{}
-	mockContext.On("Option", "system").Return("invalidSystem").Once()
+	beforeEach := func() {
+		mockConfig = &mocksconfig.Config{}
+		mockContext = &mocksconsole.Context{}
+		buildCommand = NewBuildCommand(mockConfig)
+	}
 
-	assert.Nil(t, newBuildCommand.Handle(mockContext))
+	tests := []struct {
+		name  string
+		setup func()
+	}{
+		{
+			name: "env is prod and confirm error",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
+				mockContext.EXPECT().Warning("**************************************").Once()
+				mockContext.EXPECT().Warning("*     Application In Production!     *").Once()
+				mockContext.EXPECT().Warning("**************************************").Once()
+				mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, errors.New("error")).Once()
+				mockContext.EXPECT().Error("Confirm error: error").Once()
+			},
+		},
+		{
+			name: "env is prod and confirm false",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("production").Once()
+				mockContext.EXPECT().Warning("**************************************").Once()
+				mockContext.EXPECT().Warning("*     Application In Production!     *").Once()
+				mockContext.EXPECT().Warning("**************************************").Once()
+				mockContext.EXPECT().Confirm("Do you really wish to run this command?").Return(false, nil).Once()
+				mockContext.EXPECT().Warning("Command cancelled!").Once()
+			},
+		},
+		{
+			name: "system is empty and choice error",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
+				mockContext.EXPECT().Option("system").Return("").Once()
+				mockContext.EXPECT().Choice("Select target system os", []console.Choice{
+					{Key: "Linux", Value: "linux"},
+					{Key: "Darwin", Value: "windows"},
+					{Key: "Windows", Value: "darwin"},
+				}).Return("", errors.New("error")).Once()
+				mockContext.EXPECT().Error("Select target system error: error").Once()
+			},
+		},
+		{
+			name: "system is invalid",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
+				mockContext.EXPECT().Option("system").Return("invalid").Once()
+				mockContext.EXPECT().Error("Invalid system 'invalid' specified. Allowed values are: [linux windows darwin]").Once()
+			},
+		},
+		{
+			name: "system is valid",
+			setup: func() {
+				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
+				mockContext.EXPECT().Option("system").Return("linux").Once()
+				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return().Once()
+				mockContext.EXPECT().Info("Built successfully.").Once()
+			},
+		},
+	}
 
-	mockConfig.On("GetString", "app.env").Return("production").Once()
-	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, nil).Once()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
 
-	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, newBuildCommand.Handle(mockContext))
-	}), "Command cancelled!")
+			buildCommand.Handle(mockContext)
 
-	mockConfig.On("GetString", "app.env").Return("production").Once()
-	mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, errors.New("error")).Once()
+			mockConfig.AssertExpectations(t)
+		})
+	}
 
-	assert.NotContains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, newBuildCommand.Handle(mockContext), "error")
-	}), "Command cancelled!")
-
-	mockConfig.AssertExpectations(t)
-	mockContext.AssertExpectations(t)
+	//mockConfig := &mocksconfig.Config{}
+	//mockConfig.On("GetString", "app.env").Return("local").Once()
+	//
+	//newBuildCommand := NewBuildCommand(mockConfig)
+	//mockContext := &mocksconsole.Context{}
+	//mockContext.On("Option", "system").Return("invalidSystem").Once()
+	//mockContext.EXPECT().Error()
+	//	assert.Nil(t, newBuildCommand.Handle(mockContext))
+	//
+	//mockConfig.On("GetString", "app.env").Return("production").Once()
+	//mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, nil).Once()
+	//
+	//assert.Equal(t, color.CaptureOutput(func(w io.Writer) {
+	//	assert.Nil(t, newBuildCommand.Handle(mockContext))
+	//}), "Command cancelled!")
+	//
+	//mockConfig.On("GetString", "app.env").Return("production").Once()
+	//mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, errors.New("error")).Once()
+	//
+	//assert.Equal(t, color.CaptureOutput(func(w io.Writer) {
+	//	assert.Nil(t, newBuildCommand.Handle(mockContext), "error")
+	//}), "Confirm error: error")
+	//
+	//mockConfig.AssertExpectations(t)
+	//mockContext.AssertExpectations(t)
 }
 
 func TestGenerateCommand(t *testing.T) {

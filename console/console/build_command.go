@@ -79,21 +79,20 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 
 	system := ctx.Option("system")
 	if system == "" {
-		system, err = ctx.Choice("Select the target system os", []console.Choice{
+		system, err = ctx.Choice("Select target system os", []console.Choice{
 			{Key: "Linux", Value: "linux"},
 			{Key: "Darwin", Value: "windows"},
 			{Key: "Windows", Value: "darwin"},
 		})
 		if err != nil {
-			ctx.Error(fmt.Sprintf("Select the target system error: %v", err))
+			ctx.Error(fmt.Sprintf("Select target system error: %v", err))
 			return nil
 		}
 	}
 
 	validSystems := []string{"linux", "windows", "darwin"}
 	if !slices.Contains(validSystems, system) {
-		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
-		ctx.Error(err)
+		ctx.Error(fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems))
 		return nil
 	}
 
