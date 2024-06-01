@@ -93,32 +93,6 @@ func TestBuildCommand(t *testing.T) {
 			mockConfig.AssertExpectations(t)
 		})
 	}
-
-	//mockConfig := &mocksconfig.Config{}
-	//mockConfig.On("GetString", "app.env").Return("local").Once()
-	//
-	//newBuildCommand := NewBuildCommand(mockConfig)
-	//mockContext := &mocksconsole.Context{}
-	//mockContext.On("Option", "system").Return("invalidSystem").Once()
-	//mockContext.EXPECT().Error()
-	//	assert.Nil(t, newBuildCommand.Handle(mockContext))
-	//
-	//mockConfig.On("GetString", "app.env").Return("production").Once()
-	//mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, nil).Once()
-	//
-	//assert.Equal(t, color.CaptureOutput(func(w io.Writer) {
-	//	assert.Nil(t, newBuildCommand.Handle(mockContext))
-	//}), "Command cancelled!")
-	//
-	//mockConfig.On("GetString", "app.env").Return("production").Once()
-	//mockContext.On("Confirm", "Do you really wish to run this command?").Return(false, errors.New("error")).Once()
-	//
-	//assert.Equal(t, color.CaptureOutput(func(w io.Writer) {
-	//	assert.Nil(t, newBuildCommand.Handle(mockContext), "error")
-	//}), "Confirm error: error")
-	//
-	//mockConfig.AssertExpectations(t)
-	//mockContext.AssertExpectations(t)
 }
 
 func TestGenerateCommand(t *testing.T) {
