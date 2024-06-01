@@ -97,7 +97,7 @@ func TestBuildCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 
-			buildCommand.Handle(mockContext)
+			assert.Nil(t, buildCommand.Handle(mockContext))
 
 			mockConfig.AssertExpectations(t)
 		})
