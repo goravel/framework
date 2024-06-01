@@ -233,7 +233,7 @@ func (r *CliContext) Spinner(message string, option console.SpinnerOption) {
 	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#6BD7E4"))
 	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
 	spin.Context(option.Ctx).Action(option.Action)
-	spin.Run()
+	_ = spin.Run()
 }
 
 func (r *CliContext) Warning(message string) {
