@@ -96,13 +96,11 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Spinner("Building...", console.SpinnerOption{
-		Action: func() {
-			err = receiver.build(system, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
+	if err := ctx.Spinner("Building...", console.SpinnerOption{
+		Action: func() error {
+			return receiver.build(system, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
 		},
-	})
-
-	if err != nil {
+	}); err != nil {
 		ctx.Error(fmt.Sprintf("Build error: %v", err))
 	} else {
 		ctx.Info("Built successfully.")

@@ -63,7 +63,7 @@ type Context interface {
 	// Secret prompts the user for a password.
 	Secret(question string, option ...SecretOption) (string, error)
 	// Spinner creates a new spinner instance.
-	Spinner(message string, option SpinnerOption)
+	Spinner(message string, option SpinnerOption) error
 	// Warning writes a warning message to the console.
 	Warning(message string)
 	// WithProgressBar executes a callback with a progress bar.
@@ -163,5 +163,5 @@ type SpinnerOption struct {
 	// Ctx the context for the spinner.
 	Ctx context.Context
 	// Action the action to execute.
-	Action func()
+	Action func() error
 }
