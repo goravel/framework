@@ -33,7 +33,7 @@ func TestBuildCommand(t *testing.T) {
 			name: "Happy path",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
-				mockContext.EXPECT().Option("system").Return("linux").Once()
+				mockContext.EXPECT().Option("os").Return("linux").Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(nil).Once()
 				mockContext.EXPECT().Info("Built successfully.").Once()
 			},
@@ -61,31 +61,31 @@ func TestBuildCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "Sad path - system is empty and choice error",
+			name: "Sad path - os is empty and choice error",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
-				mockContext.EXPECT().Option("system").Return("").Once()
-				mockContext.EXPECT().Choice("Select target system os", []console.Choice{
+				mockContext.EXPECT().Option("os").Return("").Once()
+				mockContext.EXPECT().Choice("Select target os", []console.Choice{
 					{Key: "Linux", Value: "linux"},
 					{Key: "Darwin", Value: "windows"},
 					{Key: "Windows", Value: "darwin"},
 				}).Return("", errors.New("error")).Once()
-				mockContext.EXPECT().Error("Select target system error: error").Once()
+				mockContext.EXPECT().Error("Select target os error: error").Once()
 			},
 		},
 		{
-			name: "Sad path - system is invalid",
+			name: "Sad path - os is invalid",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
-				mockContext.EXPECT().Option("system").Return("invalid").Once()
-				mockContext.EXPECT().Error("Invalid system 'invalid' specified. Allowed values are: [linux windows darwin]").Once()
+				mockContext.EXPECT().Option("os").Return("invalid").Once()
+				mockContext.EXPECT().Error("Invalid os 'invalid' specified. Allowed values are: [linux windows darwin]").Once()
 			},
 		},
 		{
 			name: "Sad path - spinner returns error",
 			setup: func() {
 				mockConfig.EXPECT().GetString("app.env").Return("local").Once()
-				mockContext.EXPECT().Option("system").Return("linux").Once()
+				mockContext.EXPECT().Option("os").Return("linux").Once()
 				mockContext.EXPECT().Spinner("Building...", mock.Anything).Return(errors.New("error")).Once()
 				mockContext.EXPECT().Error("Build error: error").Once()
 			},

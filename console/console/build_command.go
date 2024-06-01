@@ -37,21 +37,22 @@ func (receiver *BuildCommand) Extend() command.Extend {
 		Category: "build",
 		Flags: []command.Flag{
 			&command.StringFlag{
-				Name:    "system",
-				Aliases: []string{"s"},
+				Name:    "os",
+				Aliases: []string{"o"},
 				Value:   "",
-				Usage:   "target system os",
+				Usage:   "Target os",
 			},
 			&command.BoolFlag{
-				Name:  "static",
-				Value: false,
-				Usage: "Static compilation",
+				Name:    "static",
+				Aliases: []string{"s"},
+				Value:   false,
+				Usage:   "Static compilation",
 			},
 			&command.StringFlag{
 				Name:    "name",
 				Aliases: []string{"n"},
 				Value:   "",
-				Usage:   "output binary name",
+				Usage:   "Output binary name",
 			},
 		},
 	}
@@ -77,28 +78,28 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	system := ctx.Option("system")
-	if system == "" {
-		system, err = ctx.Choice("Select target system os", []console.Choice{
+	os := ctx.Option("os")
+	if os == "" {
+		os, err = ctx.Choice("Select target os", []console.Choice{
 			{Key: "Linux", Value: "linux"},
 			{Key: "Darwin", Value: "windows"},
 			{Key: "Windows", Value: "darwin"},
 		})
 		if err != nil {
-			ctx.Error(fmt.Sprintf("Select target system error: %v", err))
+			ctx.Error(fmt.Sprintf("Select target os error: %v", err))
 			return nil
 		}
 	}
 
-	validSystems := []string{"linux", "windows", "darwin"}
-	if !slices.Contains(validSystems, system) {
-		ctx.Error(fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems))
+	validOs := []string{"linux", "windows", "darwin"}
+	if !slices.Contains(validOs, os) {
+		ctx.Error(fmt.Sprintf("Invalid os '%s' specified. Allowed values are: %v", os, validOs))
 		return nil
 	}
 
 	if err := ctx.Spinner("Building...", console.SpinnerOption{
 		Action: func() error {
-			return receiver.build(system, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
+			return receiver.build(os, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
 		},
 	}); err != nil {
 		ctx.Error(fmt.Sprintf("Build error: %v", err))
