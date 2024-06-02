@@ -7,10 +7,6 @@ import (
 
 type Json map[string]any
 
-type Response interface {
-	Render() error
-}
-
 type ContextResponse interface {
 	// Cookie adds a cookie to the response.
 	Cookie(cookie Cookie) ContextResponse
@@ -43,6 +39,10 @@ type ContextResponse interface {
 	WithoutCookie(name string) ContextResponse
 	// Flush flushes any buffered data to the client.
 	Flush()
+}
+
+type Response interface {
+	Render() error
 }
 
 type ResponseStatus interface {
