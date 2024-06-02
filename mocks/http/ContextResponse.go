@@ -552,19 +552,19 @@ func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...int
 }
 
 // Success provides a mock function with given fields:
-func (_m *ContextResponse) Success() http.ResponseSuccess {
+func (_m *ContextResponse) Success() http.ResponseStatus {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Success")
 	}
 
-	var r0 http.ResponseSuccess
-	if rf, ok := ret.Get(0).(func() http.ResponseSuccess); ok {
+	var r0 http.ResponseStatus
+	if rf, ok := ret.Get(0).(func() http.ResponseStatus); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.ResponseSuccess)
+			r0 = ret.Get(0).(http.ResponseStatus)
 		}
 	}
 
@@ -588,12 +588,12 @@ func (_c *ContextResponse_Success_Call) Run(run func()) *ContextResponse_Success
 	return _c
 }
 
-func (_c *ContextResponse_Success_Call) Return(_a0 http.ResponseSuccess) *ContextResponse_Success_Call {
+func (_c *ContextResponse_Success_Call) Return(_a0 http.ResponseStatus) *ContextResponse_Success_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_Success_Call) RunAndReturn(run func() http.ResponseSuccess) *ContextResponse_Success_Call {
+func (_c *ContextResponse_Success_Call) RunAndReturn(run func() http.ResponseStatus) *ContextResponse_Success_Call {
 	_c.Call.Return(run)
 	return _c
 }
