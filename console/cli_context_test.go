@@ -217,9 +217,10 @@ func TestSpinner(_ *testing.T) {
 	/*
 		ctx := &CliContext{}
 		err := ctx.Spinner("Loading...", console.SpinnerOption{
-			Action: func() {
+			Action: func() error {
 				// when to stop the spinner
 				time.Sleep(2 * time.Second)
+				return nil
 			},
 		})
 		if err != nil {

@@ -82,8 +82,8 @@ func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	if os == "" {
 		os, err = ctx.Choice("Select target os", []console.Choice{
 			{Key: "Linux", Value: "linux"},
-			{Key: "Darwin", Value: "windows"},
-			{Key: "Windows", Value: "darwin"},
+			{Key: "Windows", Value: "windows"},
+			{Key: "Darwin", Value: "darwin"},
 		})
 		if err != nil {
 			ctx.Error(fmt.Sprintf("Select target os error: %v", err))
