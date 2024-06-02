@@ -67,8 +67,8 @@ func TestBuildCommand(t *testing.T) {
 				mockContext.EXPECT().Option("os").Return("").Once()
 				mockContext.EXPECT().Choice("Select target os", []console.Choice{
 					{Key: "Linux", Value: "linux"},
-					{Key: "Darwin", Value: "windows"},
-					{Key: "Windows", Value: "darwin"},
+					{Key: "Windows", Value: "windows"},
+					{Key: "Darwin", Value: "darwin"},
 				}).Return("", errors.New("error")).Once()
 				mockContext.EXPECT().Error("Select target os error: error").Once()
 			},
