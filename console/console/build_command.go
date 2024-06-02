@@ -1,15 +1,14 @@
 package console
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 )
 
 type BuildCommand struct {
@@ -38,10 +37,22 @@ func (receiver *BuildCommand) Extend() command.Extend {
 		Category: "build",
 		Flags: []command.Flag{
 			&command.StringFlag{
-				Name:    "system",
-				Aliases: []string{"s"},
+				Name:    "os",
+				Aliases: []string{"o"},
 				Value:   "",
-				Usage:   "target system os",
+				Usage:   "Target os",
+			},
+			&command.BoolFlag{
+				Name:    "static",
+				Aliases: []string{"s"},
+				Value:   false,
+				Usage:   "Static compilation",
+			},
+			&command.StringFlag{
+				Name:    "name",
+				Aliases: []string{"n"},
+				Value:   "",
+				Usage:   "Output binary name",
 			},
 		},
 	}
@@ -49,59 +60,76 @@ func (receiver *BuildCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *BuildCommand) Handle(ctx console.Context) error {
+	var err error
 	if receiver.config.GetString("app.env") == "production" {
-		color.Yellow().Println("**************************************")
-		color.Yellow().Println("*     Application In Production!     *")
-		color.Yellow().Println("**************************************")
+		ctx.Warning("**************************************")
+		ctx.Warning("*     Application In Production!     *")
+		ctx.Warning("**************************************")
 
 		answer, err := ctx.Confirm("Do you really wish to run this command?")
 		if err != nil {
-			return err
+			ctx.Error(fmt.Sprintf("Confirm error: %v", err))
+			return nil
 		}
 
 		if !answer {
-			color.Yellow().Println("Command cancelled!")
+			ctx.Warning("Command cancelled!")
 			return nil
 		}
 	}
 
-	system := ctx.Option("system")
-	validSystems := []string{"linux", "windows", "darwin"}
-	isValidOption := func(option string) bool {
-		for _, validOption := range validSystems {
-			if option == validOption {
-				return true
-			}
+	os := ctx.Option("os")
+	if os == "" {
+		os, err = ctx.Choice("Select target os", []console.Choice{
+			{Key: "Linux", Value: "linux"},
+			{Key: "Windows", Value: "windows"},
+			{Key: "Darwin", Value: "darwin"},
+		})
+		if err != nil {
+			ctx.Error(fmt.Sprintf("Select target os error: %v", err))
+			return nil
 		}
-		return false
-	}
-	if !isValidOption(system) {
-		err := fmt.Sprintf("Invalid system '%s' specified. Allowed values are: %v", system, validSystems)
-		color.Red().Println(err)
-		return errors.New(err)
 	}
 
-	if err := receiver.buildTheApplication(system); err != nil {
-		color.Red().Println(err.Error())
-
+	validOs := []string{"linux", "windows", "darwin"}
+	if !slices.Contains(validOs, os) {
+		ctx.Error(fmt.Sprintf("Invalid os '%s' specified. Allowed values are: %v", os, validOs))
 		return nil
 	}
 
-	color.Green().Println("Built successfully.")
+	if err := ctx.Spinner("Building...", console.SpinnerOption{
+		Action: func() error {
+			return receiver.build(os, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
+		},
+	}); err != nil {
+		ctx.Error(fmt.Sprintf("Build error: %v", err))
+	} else {
+		ctx.Info("Built successfully.")
+	}
 
 	return nil
 }
 
-// buildTheApplication Build the application executable.
-func (receiver *BuildCommand) buildTheApplication(system string) error {
+func (receiver *BuildCommand) build(system string, command []string) error {
 	os.Setenv("CGO_ENABLED", "0")
 	os.Setenv("GOOS", system)
 	os.Setenv("GOARCH", "amd64")
-	cmd := exec.Command(
-		"go",
-		"build",
-		".",
-	)
+
+	cmd := exec.Command(command[0], command[1:]...)
 	_, err := cmd.Output()
 	return err
+}
+
+func generateCommand(name string, static bool) []string {
+	command := []string{"go", "build"}
+
+	if static {
+		command = append(command, "-ldflags", "-extldflags -static")
+	}
+
+	if name != "" {
+		command = append(command, "-o", name)
+	}
+
+	return append(command, ".")
 }
