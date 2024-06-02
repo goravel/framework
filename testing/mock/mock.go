@@ -3,30 +3,30 @@ package mock
 import (
 	"context"
 
-	contractshttp "github.com/goravel/framework/contracts/http"
+	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/foundation"
-	authmocks "github.com/goravel/framework/mocks/auth"
-	accessmocks "github.com/goravel/framework/mocks/auth/access"
-	cachemocks "github.com/goravel/framework/mocks/cache"
-	configmocks "github.com/goravel/framework/mocks/config"
-	consolemocks "github.com/goravel/framework/mocks/console"
-	cryptmocks "github.com/goravel/framework/mocks/crypt"
-	ormmocks "github.com/goravel/framework/mocks/database/orm"
-	seedermocks "github.com/goravel/framework/mocks/database/seeder"
-	eventmocks "github.com/goravel/framework/mocks/event"
-	filesystemmocks "github.com/goravel/framework/mocks/filesystem"
-	foundationmocks "github.com/goravel/framework/mocks/foundation"
-	grpcmocks "github.com/goravel/framework/mocks/grpc"
-	hashmocks "github.com/goravel/framework/mocks/hash"
-	httpmocks "github.com/goravel/framework/mocks/http"
-	mailmocks "github.com/goravel/framework/mocks/mail"
-	queuemocks "github.com/goravel/framework/mocks/queue"
-	translationmocks "github.com/goravel/framework/mocks/translation"
-	validatemocks "github.com/goravel/framework/mocks/validation"
+	authmock "github.com/goravel/framework/mocks/auth"
+	accessmock "github.com/goravel/framework/mocks/auth/access"
+	cachemock "github.com/goravel/framework/mocks/cache"
+	configmock "github.com/goravel/framework/mocks/config"
+	consolemock "github.com/goravel/framework/mocks/console"
+	cryptmock "github.com/goravel/framework/mocks/crypt"
+	ormmock "github.com/goravel/framework/mocks/database/orm"
+	seedermock "github.com/goravel/framework/mocks/database/seeder"
+	eventmock "github.com/goravel/framework/mocks/event"
+	filesystemmock "github.com/goravel/framework/mocks/filesystem"
+	foundationmock "github.com/goravel/framework/mocks/foundation"
+	grpcmock "github.com/goravel/framework/mocks/grpc"
+	hashmock "github.com/goravel/framework/mocks/hash"
+	httpmock "github.com/goravel/framework/mocks/http"
+	mailmock "github.com/goravel/framework/mocks/mail"
+	queuemock "github.com/goravel/framework/mocks/queue"
+	translationmock "github.com/goravel/framework/mocks/translation"
+	validatemock "github.com/goravel/framework/mocks/validation"
 )
 
 func Factory() *factory {
-	app := &foundationmocks.Application{}
+	app := &foundationmock.Application{}
 	foundation.App = app
 
 	return &factory{
@@ -35,90 +35,94 @@ func Factory() *factory {
 }
 
 type factory struct {
-	app *foundationmocks.Application
+	app *foundationmock.Application
 }
 
-func (r *factory) App() *foundationmocks.Application {
+func (r *factory) App() *foundationmock.Application {
 	return r.app
 }
 
-func (r *factory) Artisan() *consolemocks.Artisan {
-	mockArtisan := &consolemocks.Artisan{}
+func (r *factory) Artisan() *consolemock.Artisan {
+	mockArtisan := &consolemock.Artisan{}
 	r.app.On("MakeArtisan").Return(mockArtisan)
 
 	return mockArtisan
 }
 
-func (r *factory) Auth(ctx contractshttp.Context) *authmocks.Auth {
-	mockAuth := &authmocks.Auth{}
+func (r *factory) Auth(ctx httpcontract.Context) *authmock.Auth {
+	mockAuth := &authmock.Auth{}
 	r.app.On("MakeAuth", ctx).Return(mockAuth)
 
 	return mockAuth
 }
 
-func (r *factory) Cache() *cachemocks.Cache {
-	mockCache := &cachemocks.Cache{}
+func (r *factory) Cache() *cachemock.Cache {
+	mockCache := &cachemock.Cache{}
 	r.app.On("MakeCache").Return(mockCache)
 
 	return mockCache
 }
 
-func (r *factory) CacheDriver() *cachemocks.Driver {
-	return &cachemocks.Driver{}
+func (r *factory) CacheDriver() *cachemock.Driver {
+	return &cachemock.Driver{}
 }
 
-func (r *factory) CacheLock() *cachemocks.Lock {
-	return &cachemocks.Lock{}
+func (r *factory) CacheLock() *cachemock.Lock {
+	return &cachemock.Lock{}
 }
 
-func (r *factory) Config() *configmocks.Config {
-	mockConfig := &configmocks.Config{}
+func (r *factory) Context() *httpmock.Context {
+	return &httpmock.Context{}
+}
+
+func (r *factory) Config() *configmock.Config {
+	mockConfig := &configmock.Config{}
 	r.app.On("MakeConfig").Return(mockConfig)
 
 	return mockConfig
 }
 
-func (r *factory) Crypt() *cryptmocks.Crypt {
-	mockCrypt := &cryptmocks.Crypt{}
+func (r *factory) Crypt() *cryptmock.Crypt {
+	mockCrypt := &cryptmock.Crypt{}
 	r.app.On("MakeCrypt").Return(mockCrypt)
 
 	return mockCrypt
 }
 
-func (r *factory) Event() *eventmocks.Instance {
-	mockEvent := &eventmocks.Instance{}
+func (r *factory) Event() *eventmock.Instance {
+	mockEvent := &eventmock.Instance{}
 	r.app.On("MakeEvent").Return(mockEvent)
 
 	return mockEvent
 }
 
-func (r *factory) EventTask() *eventmocks.Task {
-	return &eventmocks.Task{}
+func (r *factory) EventTask() *eventmock.Task {
+	return &eventmock.Task{}
 }
 
-func (r *factory) Gate() *accessmocks.Gate {
-	mockGate := &accessmocks.Gate{}
+func (r *factory) Gate() *accessmock.Gate {
+	mockGate := &accessmock.Gate{}
 	r.app.On("MakeGate").Return(mockGate)
 
 	return mockGate
 }
 
-func (r *factory) Grpc() *grpcmocks.Grpc {
-	mockGrpc := &grpcmocks.Grpc{}
+func (r *factory) Grpc() *grpcmock.Grpc {
+	mockGrpc := &grpcmock.Grpc{}
 	r.app.On("MakeGrpc").Return(mockGrpc)
 
 	return mockGrpc
 }
 
-func (r *factory) Hash() *hashmocks.Hash {
-	mockHash := &hashmocks.Hash{}
+func (r *factory) Hash() *hashmock.Hash {
+	mockHash := &hashmock.Hash{}
 	r.app.On("MakeHash").Return(mockHash)
 
 	return mockHash
 }
 
-func (r *factory) Lang(ctx context.Context) *translationmocks.Translator {
-	mockTranslator := &translationmocks.Translator{}
+func (r *factory) Lang(ctx context.Context) *translationmock.Translator {
+	mockTranslator := &translationmock.Translator{}
 	r.app.On("MakeLang", ctx).Return(mockTranslator)
 
 	return mockTranslator
@@ -128,89 +132,97 @@ func (r *factory) Log() {
 	r.app.On("MakeLog").Return(NewTestLog())
 }
 
-func (r *factory) Mail() *mailmocks.Mail {
-	mockMail := &mailmocks.Mail{}
+func (r *factory) Mail() *mailmock.Mail {
+	mockMail := &mailmock.Mail{}
 	r.app.On("MakeMail").Return(mockMail)
 
 	return mockMail
 }
 
-func (r *factory) Orm() *ormmocks.Orm {
-	mockOrm := &ormmocks.Orm{}
+func (r *factory) Orm() *ormmock.Orm {
+	mockOrm := &ormmock.Orm{}
 	r.app.On("MakeOrm").Return(mockOrm)
 
 	return mockOrm
 }
 
-func (r *factory) OrmAssociation() *ormmocks.Association {
-	return &ormmocks.Association{}
+func (r *factory) OrmAssociation() *ormmock.Association {
+	return &ormmock.Association{}
 }
 
-func (r *factory) OrmQuery() *ormmocks.Query {
-	return &ormmocks.Query{}
+func (r *factory) OrmQuery() *ormmock.Query {
+	return &ormmock.Query{}
 }
 
-func (r *factory) OrmTransaction() *ormmocks.Transaction {
-	return &ormmocks.Transaction{}
+func (r *factory) OrmTransaction() *ormmock.Transaction {
+	return &ormmock.Transaction{}
 }
 
-func (r *factory) Queue() *queuemocks.Queue {
-	mockQueue := &queuemocks.Queue{}
+func (r *factory) Queue() *queuemock.Queue {
+	mockQueue := &queuemock.Queue{}
 	r.app.On("MakeQueue").Return(mockQueue)
 
 	return mockQueue
 }
 
-func (r *factory) QueueTask() *queuemocks.Task {
-	return &queuemocks.Task{}
+func (r *factory) QueueTask() *queuemock.Task {
+	return &queuemock.Task{}
 }
 
-func (r *factory) RateLimiter() *httpmocks.RateLimiter {
-	mockRateLimiter := &httpmocks.RateLimiter{}
+func (r *factory) RateLimiter() *httpmock.RateLimiter {
+	mockRateLimiter := &httpmock.RateLimiter{}
 	r.app.On("MakeRateLimiter").Return(mockRateLimiter)
 
 	return mockRateLimiter
 }
 
-func (r *factory) Seeder() *seedermocks.Facade {
-	mockSeeder := &seedermocks.Facade{}
+func (r *factory) Request() *httpmock.ContextRequest {
+	return &httpmock.ContextRequest{}
+}
+
+func (r *factory) Response() *httpmock.ContextResponse {
+	return &httpmock.ContextResponse{}
+}
+
+func (r *factory) Seeder() *seedermock.Facade {
+	mockSeeder := &seedermock.Facade{}
 	r.app.On("MakeSeeder").Return(mockSeeder)
 
 	return mockSeeder
 }
 
-func (r *factory) Storage() *filesystemmocks.Storage {
-	mockStorage := &filesystemmocks.Storage{}
+func (r *factory) Storage() *filesystemmock.Storage {
+	mockStorage := &filesystemmock.Storage{}
 	r.app.On("MakeStorage").Return(mockStorage)
 
 	return mockStorage
 }
 
-func (r *factory) StorageDriver() *filesystemmocks.Driver {
-	return &filesystemmocks.Driver{}
+func (r *factory) StorageDriver() *filesystemmock.Driver {
+	return &filesystemmock.Driver{}
 }
 
-func (r *factory) StorageFile() *filesystemmocks.File {
-	return &filesystemmocks.File{}
+func (r *factory) StorageFile() *filesystemmock.File {
+	return &filesystemmock.File{}
 }
 
-func (r *factory) Validation() *validatemocks.Validation {
-	mockValidation := &validatemocks.Validation{}
+func (r *factory) Validation() *validatemock.Validation {
+	mockValidation := &validatemock.Validation{}
 	r.app.On("MakeValidation").Return(mockValidation)
 
 	return mockValidation
 }
 
-func (r *factory) ValidationValidator() *validatemocks.Validator {
-	return &validatemocks.Validator{}
+func (r *factory) ValidationValidator() *validatemock.Validator {
+	return &validatemock.Validator{}
 }
 
-func (r *factory) ValidationErrors() *validatemocks.Errors {
-	return &validatemocks.Errors{}
+func (r *factory) ValidationErrors() *validatemock.Errors {
+	return &validatemock.Errors{}
 }
 
-func (r *factory) View() *httpmocks.View {
-	mockView := &httpmocks.View{}
+func (r *factory) View() *httpmock.View {
+	mockView := &httpmock.View{}
 	r.app.On("MakeView").Return(mockView)
 
 	return mockView
