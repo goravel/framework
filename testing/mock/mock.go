@@ -162,6 +162,10 @@ func (r *factory) OrmQuery() *ormmock.Query {
 	return &ormmock.Query{}
 }
 
+func (r *factory) OrmToSql() *ormmock.ToSql {
+	return &ormmock.ToSql{}
+}
+
 func (r *factory) OrmTransaction() *ormmock.Transaction {
 	return &ormmock.Transaction{}
 }
