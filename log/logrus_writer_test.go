@@ -654,7 +654,7 @@ func (r *TestResponse) String(code int, format string, values ...any) contractsh
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Success() contractshttp.ResponseSuccess {
+func (r *TestResponse) Success() contractshttp.ResponseStatus {
 	panic("do not need to implement it")
 }
 

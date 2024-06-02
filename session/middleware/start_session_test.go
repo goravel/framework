@@ -364,7 +364,7 @@ func (r *TestResponse) String(int, string, ...any) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Success() contractshttp.ResponseSuccess {
+func (r *TestResponse) Success() contractshttp.ResponseStatus {
 	panic("do not need to implement it")
 }
 
