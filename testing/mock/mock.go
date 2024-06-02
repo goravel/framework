@@ -75,6 +75,14 @@ func (r *factory) Context() *httpmock.Context {
 	return &httpmock.Context{}
 }
 
+func (r *factory) ContextRequest() *httpmock.ContextRequest {
+	return &httpmock.ContextRequest{}
+}
+
+func (r *factory) ContextResponse() *httpmock.ContextResponse {
+	return &httpmock.ContextResponse{}
+}
+
 func (r *factory) Config() *configmock.Config {
 	mockConfig := &configmock.Config{}
 	r.app.On("MakeConfig").Return(mockConfig)
@@ -154,6 +162,10 @@ func (r *factory) OrmQuery() *ormmock.Query {
 	return &ormmock.Query{}
 }
 
+func (r *factory) OrmToSql() *ormmock.ToSql {
+	return &ormmock.ToSql{}
+}
+
 func (r *factory) OrmTransaction() *ormmock.Transaction {
 	return &ormmock.Transaction{}
 }
@@ -176,12 +188,20 @@ func (r *factory) RateLimiter() *httpmock.RateLimiter {
 	return mockRateLimiter
 }
 
-func (r *factory) Request() *httpmock.ContextRequest {
-	return &httpmock.ContextRequest{}
+func (r *factory) Response() *httpmock.Response {
+	return &httpmock.Response{}
 }
 
-func (r *factory) Response() *httpmock.ContextResponse {
-	return &httpmock.ContextResponse{}
+func (r *factory) ResponseStatus() *httpmock.ResponseStatus {
+	return &httpmock.ResponseStatus{}
+}
+
+func (r *factory) ResponseOrigin() *httpmock.ResponseOrigin {
+	return &httpmock.ResponseOrigin{}
+}
+
+func (r *factory) ResponseView() *httpmock.ResponseView {
+	return &httpmock.ResponseView{}
 }
 
 func (r *factory) Seeder() *seedermock.Facade {
