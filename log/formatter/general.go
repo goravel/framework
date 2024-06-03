@@ -82,7 +82,7 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 			return "", err
 		}
 
-		for _, key := range []string{"code", "context", "domain", "hint", "owner", "request", "response", "tags", "user"} {
+		for _, key := range []string{"code", "with", "domain", "hint", "owner", "request", "response", "tags", "user"} {
 			if value, exists := root[key]; exists && value != nil {
 				v, err := general.json.Marshal(value)
 				if err != nil {

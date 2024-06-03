@@ -20,8 +20,8 @@ type Writer struct {
 	code string
 
 	// context
-	context map[string]any
-	domain  string
+	with   map[string]any
+	domain string
 
 	hint     string
 	instance *logrus.Entry
@@ -47,8 +47,8 @@ func NewWriter(instance *logrus.Entry) log.Writer {
 		code: "",
 
 		// context
-		context: map[string]any{},
-		domain:  "",
+		with:   map[string]any{},
+		domain: "",
 
 		hint:     "",
 		instance: instance,
@@ -181,10 +181,10 @@ func (r *Writer) User(user any) log.Writer {
 	return r
 }
 
-// With adds key-value pairs to the context of the log entry
+// With adds key-value pairs to the log entry.
 func (r *Writer) With(data map[string]any) log.Writer {
 	for k, v := range data {
-		r.context[k] = v
+		r.with[k] = v
 	}
 
 	return r
@@ -215,7 +215,7 @@ func (r *Writer) withStackTrace(message string) {
 // resetAll resets all properties of the log.Writer for a new log entry.
 func (r *Writer) resetAll() {
 	r.code = ""
-	r.context = map[string]any{}
+	r.with = map[string]any{}
 	r.domain = ""
 	r.hint = ""
 	r.message = ""
@@ -248,8 +248,8 @@ func (r *Writer) toMap() map[string]any {
 		payload["tags"] = tags
 	}
 
-	if context := r.context; len(context) > 0 {
-		payload["context"] = context
+	if with := r.with; len(with) > 0 {
+		payload["with"] = with
 	}
 
 	if hint := r.hint; hint != "" {

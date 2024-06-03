@@ -341,8 +341,8 @@ func TestLogrus(t *testing.T) {
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\ncontext: {\"key\":\"value\"}"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nwith: {\"key\":\"value\"}"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nwith: {\"key\":\"value\"}"))
 			},
 		},
 		{
