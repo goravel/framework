@@ -20,6 +20,8 @@ type ContextResponse interface {
 	Header(key, value string) ContextResponse
 	// Json sends a JSON response with the specified status code and data object.
 	Json(code int, obj any) Response
+	// NoContent sends a response with no-body and the specified status code.
+	NoContent(code ...int) Response
 	// Origin returns the ResponseOrigin
 	Origin() ResponseOrigin
 	// Redirect performs an HTTP redirect to the specified location with the given status code.

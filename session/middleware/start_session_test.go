@@ -352,6 +352,10 @@ func (r *TestResponse) Json(int, any) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
+func (r *TestResponse) NoContent(...int) contractshttp.Response {
+	panic("do not need to implement it")
+}
+
 func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
 	panic("do not need to implement it")
 }
