@@ -348,16 +348,22 @@ func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, interface{}) htt
 }
 
 // NoContent provides a mock function with given fields: code
-func (_m *ContextResponse) NoContent(code int) http.Response {
-	ret := _m.Called(code)
+func (_m *ContextResponse) NoContent(code ...int) http.Response {
+	_va := make([]interface{}, len(code))
+	for _i := range code {
+		_va[_i] = code[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for NoContent")
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int) http.Response); ok {
-		r0 = rf(code)
+	if rf, ok := ret.Get(0).(func(...int) http.Response); ok {
+		r0 = rf(code...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Response)
@@ -373,14 +379,21 @@ type ContextResponse_NoContent_Call struct {
 }
 
 // NoContent is a helper method to define mock.On call
-//   - code int
-func (_e *ContextResponse_Expecter) NoContent(code interface{}) *ContextResponse_NoContent_Call {
-	return &ContextResponse_NoContent_Call{Call: _e.mock.On("NoContent", code)}
+//   - code ...int
+func (_e *ContextResponse_Expecter) NoContent(code ...interface{}) *ContextResponse_NoContent_Call {
+	return &ContextResponse_NoContent_Call{Call: _e.mock.On("NoContent",
+		append([]interface{}{}, code...)...)}
 }
 
-func (_c *ContextResponse_NoContent_Call) Run(run func(code int)) *ContextResponse_NoContent_Call {
+func (_c *ContextResponse_NoContent_Call) Run(run func(code ...int)) *ContextResponse_NoContent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int))
+		variadicArgs := make([]int, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -390,7 +403,7 @@ func (_c *ContextResponse_NoContent_Call) Return(_a0 http.Response) *ContextResp
 	return _c
 }
 
-func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(int) http.Response) *ContextResponse_NoContent_Call {
+func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(...int) http.Response) *ContextResponse_NoContent_Call {
 	_c.Call.Return(run)
 	return _c
 }
