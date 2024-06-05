@@ -91,7 +91,7 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 		}
 	}
 
-	err := input.Value(&answer).Run()
+	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).Run()
 	if err != nil {
 		return "", err
 	}
@@ -152,7 +152,7 @@ func (r *CliContext) MultiSelect(question string, choices []console.Choice, opti
 		}
 	}
 
-	err := input.Value(&answer).Run()
+	err := huh.NewForm(huh.NewGroup(input.Value(&answer))).Run()
 	if err != nil {
 		return nil, err
 	}
