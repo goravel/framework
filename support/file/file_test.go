@@ -61,5 +61,5 @@ func TestRemove(t *testing.T) {
 func TestSize(t *testing.T) {
 	size, err := Size("../../logo.png")
 	assert.Nil(t, err)
-	assert.Equal(t, int64(16438), size)
+	assert.Equal(t, int64(10853), size)
 }
