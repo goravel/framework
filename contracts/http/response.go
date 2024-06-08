@@ -7,10 +7,6 @@ import (
 
 type Json map[string]any
 
-type Response interface {
-	Render() error
-}
-
 type ContextResponse interface {
 	// Cookie adds a cookie to the response.
 	Cookie(cookie Cookie) ContextResponse
@@ -24,6 +20,8 @@ type ContextResponse interface {
 	Header(key, value string) ContextResponse
 	// Json sends a JSON response with the specified status code and data object.
 	Json(code int, obj any) Response
+	// NoContent sends a response with no-body and the specified status code.
+	NoContent(code ...int) Response
 	// Origin returns the ResponseOrigin
 	Origin() ResponseOrigin
 	// Redirect performs an HTTP redirect to the specified location with the given status code.
@@ -31,8 +29,8 @@ type ContextResponse interface {
 	// String writes a string response with the specified status code and format.
 	// The 'values' parameter can be used to replace placeholders in the format string.
 	String(code int, format string, values ...any) Response
-	// Success returns ResponseSuccess
-	Success() ResponseSuccess
+	// Success returns ResponseStatus with a 200 status code.
+	Success() ResponseStatus
 	// Status sets the HTTP response status code and returns the ResponseStatus.
 	Status(code int) ResponseStatus
 	// View returns ResponseView
@@ -45,16 +43,11 @@ type ContextResponse interface {
 	Flush()
 }
 
-type ResponseStatus interface {
-	// Data write the given data to the Response.
-	Data(contentType string, data []byte) Response
-	// Json sends a JSON Response with the specified data object.
-	Json(obj any) Response
-	// String writes a string Response with the specified format and values.
-	String(format string, values ...any) Response
+type Response interface {
+	Render() error
 }
 
-type ResponseSuccess interface {
+type ResponseStatus interface {
 	// Data write the given data to the Response.
 	Data(contentType string, data []byte) Response
 	// Json sends a JSON Response with the specified data object.

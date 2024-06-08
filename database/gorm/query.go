@@ -1017,9 +1017,10 @@ func (r *QueryImpl) buildScopes(db *gormio.DB) *gormio.DB {
 
 	var gormFuncs []func(*gormio.DB) *gormio.DB
 	for _, scope := range r.conditions.scopes {
+		currentScope := scope
 		gormFuncs = append(gormFuncs, func(tx *gormio.DB) *gormio.DB {
 			queryImpl := r.new(tx)
-			query := scope(queryImpl)
+			query := currentScope(queryImpl)
 			queryImpl = query.(*QueryImpl)
 			queryImpl = queryImpl.buildConditions()
 
