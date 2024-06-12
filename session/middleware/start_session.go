@@ -37,18 +37,11 @@ func StartSession() http.Middleware {
 		if len(lottery) == 2 {
 			if rand.Intn(lottery[1])+1 <= lottery[0] {
 				lifetime := session.ConfigFacade.GetInt("session.lifetime") * 60
-				err := driver.Gc(lifetime)
-				if err != nil {
+				if err := driver.Gc(lifetime); err != nil {
 					panic(err)
 				}
 			}
 		}
-
-		// Continue processing request
-		req.Next()
-
-		// Retrieve updated session
-		s = req.Session()
 
 		// Set session cookie in response
 		config := session.ConfigFacade
@@ -63,9 +56,11 @@ func StartSession() http.Middleware {
 			SameSite: config.GetString("session.same_site"),
 		})
 
+		// Continue processing request
+		req.Next()
+
 		// Save session
-		err = s.Save()
-		if err != nil {
+		if err := s.Save(); err != nil {
 			panic(err)
 		}
 	}
