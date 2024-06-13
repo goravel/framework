@@ -15,8 +15,7 @@ import (
 
 type FileLoaderTestSuite struct {
 	suite.Suite
-	executable string
-	json       foundation.Json
+	json foundation.Json
 }
 
 func TestFileLoaderTestSuite(t *testing.T) {
