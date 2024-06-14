@@ -93,13 +93,8 @@ func (app *Application) PublicPath(path string) string {
 	return filepath.Join("public", path)
 }
 
-func (app *Application) ExecutablePath() (string, error) {
-	executable, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Dir(executable), nil
+func (app *Application) ExecutablePath() string {
+	return support.RootPath
 }
 
 func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {

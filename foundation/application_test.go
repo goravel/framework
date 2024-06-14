@@ -88,8 +88,7 @@ func (s *ApplicationTestSuite) TestPublicPath() {
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
-	executable, err := s.app.ExecutablePath()
-	s.NoError(err)
+	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
 }
 
