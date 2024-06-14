@@ -262,15 +262,7 @@ func setEnv() {
 }
 
 func setRootPath() {
-	rootPath := getCurrentAbsolutePath()
-
-	// Hack the air path
-	airPath := "/storage/temp"
-	if strings.HasSuffix(rootPath, airPath) {
-		rootPath = strings.ReplaceAll(rootPath, airPath, "")
-	}
-
-	support.RootPath = rootPath
+	support.RootPath = getCurrentAbsolutePath()
 }
 
 func getEnvPath() string {
