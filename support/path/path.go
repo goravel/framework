@@ -58,6 +58,6 @@ func Public(paths ...string) string {
 	return facades.App().PublicPath(finalPath)
 }
 
-func Executable() (string, error) {
+func Executable() string {
 	return facades.App().ExecutablePath()
 }

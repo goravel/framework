@@ -176,7 +176,6 @@ func TestPublic(t *testing.T) {
 }
 
 func TestExecutable(t *testing.T) {
-	path, err := Executable()
-	assert.NoError(t, err)
+	path := Executable()
 	assert.NotEmpty(t, path)
 }
