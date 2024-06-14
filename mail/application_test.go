@@ -124,6 +124,31 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	time.Sleep(3 * time.Second)
 }
 
+func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
+	mockConfig := mockConfig(587, s.redisPort)
+	mockLog := &logmock.Log{}
+
+	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade.Register([]queuecontract.Job{
+		NewSendMailJob(mockConfig),
+	})
+
+	app := NewApplication(mockConfig, queueFacade)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	go func(ctx context.Context) {
+		s.Nil(queueFacade.Worker(nil).Run())
+
+		for range ctx.Done() {
+			return
+		}
+	}(ctx)
+	time.Sleep(3 * time.Second)
+	s.Nil(app.Queue(NewTestMailable()))
+	time.Sleep(3 * time.Second)
+}
+
 func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
@@ -205,4 +230,8 @@ func (m *TestMailable) Envelope() *mail.Envelope {
 		Subject: "Goravel Test 587 With Mailable",
 		To:      []string{testTo},
 	}
+}
+
+func (m *TestMailable) Queue() *mail.Queue {
+	return &mail.Queue{}
 }
