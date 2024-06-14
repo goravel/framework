@@ -383,17 +383,23 @@ func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *
 	return _c
 }
 
-// ExecutablePath provides a mock function with given fields:
-func (_m *Application) ExecutablePath() string {
-	ret := _m.Called()
+// ExecutablePath provides a mock function with given fields: path
+func (_m *Application) ExecutablePath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ExecutablePath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -407,13 +413,21 @@ type Application_ExecutablePath_Call struct {
 }
 
 // ExecutablePath is a helper method to define mock.On call
-func (_e *Application_Expecter) ExecutablePath() *Application_ExecutablePath_Call {
-	return &Application_ExecutablePath_Call{Call: _e.mock.On("ExecutablePath")}
+//   - path ...string
+func (_e *Application_Expecter) ExecutablePath(path ...interface{}) *Application_ExecutablePath_Call {
+	return &Application_ExecutablePath_Call{Call: _e.mock.On("ExecutablePath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_ExecutablePath_Call) Run(run func()) *Application_ExecutablePath_Call {
+func (_c *Application_ExecutablePath_Call) Run(run func(path ...string)) *Application_ExecutablePath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -423,7 +437,7 @@ func (_c *Application_ExecutablePath_Call) Return(_a0 string) *Application_Execu
 	return _c
 }
 
-func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() string) *Application_ExecutablePath_Call {
+func (_c *Application_ExecutablePath_Call) RunAndReturn(run func(...string) string) *Application_ExecutablePath_Call {
 	_c.Call.Return(run)
 	return _c
 }
