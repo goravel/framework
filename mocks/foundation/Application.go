@@ -384,7 +384,7 @@ func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *
 }
 
 // ExecutablePath provides a mock function with given fields:
-func (_m *Application) ExecutablePath() (string, error) {
+func (_m *Application) ExecutablePath() string {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -392,23 +392,13 @@ func (_m *Application) ExecutablePath() (string, error) {
 	}
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (string, error)); ok {
-		return rf()
-	}
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Application_ExecutablePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecutablePath'
@@ -428,12 +418,12 @@ func (_c *Application_ExecutablePath_Call) Run(run func()) *Application_Executab
 	return _c
 }
 
-func (_c *Application_ExecutablePath_Call) Return(_a0 string, _a1 error) *Application_ExecutablePath_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Application_ExecutablePath_Call) Return(_a0 string) *Application_ExecutablePath_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() (string, error)) *Application_ExecutablePath_Call {
+func (_c *Application_ExecutablePath_Call) RunAndReturn(run func() string) *Application_ExecutablePath_Call {
 	_c.Call.Return(run)
 	return _c
 }
