@@ -87,6 +87,12 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 		Send())
 }
 
+func (s *ApplicationTestSuite) TestSendMailWithMailable() {
+	mockConfig := mockConfig(587, s.redisPort)
+	app := NewApplication(mockConfig, nil)
+	s.Nil(app.Send(NewTestMailable()))
+}
+
 func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
 	mockLog := &logmock.Log{}
@@ -174,4 +180,29 @@ func mockConfig(mailPort, redisPort int) *configmock.Config {
 	}
 
 	return mockConfig
+}
+
+type TestMailable struct {
+}
+
+func NewTestMailable() *TestMailable {
+	return &TestMailable{}
+}
+
+func (m *TestMailable) Attachments() []string {
+	return []string{"../logo.png"}
+}
+
+func (m *TestMailable) Content() *mail.Content {
+	return &mail.Content{Html: "<h1>Hello Goravel</h1>"}
+}
+
+func (m *TestMailable) Envelope() *mail.Envelope {
+	return &mail.Envelope{
+		Bcc:     []string{testBcc},
+		Cc:      []string{testCc},
+		From:    mail.From{Address: testFromAddress, Name: testFromName},
+		Subject: "Goravel Test 587 With Mailable",
+		To:      []string{testTo},
+	}
 }

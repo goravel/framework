@@ -13,19 +13,19 @@ import (
 type DummyMail struct {
 }
 
-// Envelope 
-func (receiver *DummyMail) Envelope() *mail.Envelope {
-    return &mail.Envelope{}
-}
-
-// Attachments
+// Attachments attach files to the mail
 func (receiver *DummyMail) Attachments() []string{
 	return []string{}
 }
 
-// Content
-func (receiver *DummyMail) Content() *Content {
+// Content set the content of the mail
+func (receiver *DummyMail) Content() *mail.Content {
 	return &mail.Content{}
+}
+
+// Envelope set the envelope of the mail
+func (receiver *DummyMail) Envelope() *mail.Envelope {
+    return &mail.Envelope{}
 }
 `
 }
