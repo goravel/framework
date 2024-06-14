@@ -57,7 +57,8 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test 465", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test 465").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Send())
 }
 
@@ -68,7 +69,8 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test 587", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test 587").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Send())
 }
 
@@ -80,7 +82,8 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test 587 With From", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test 587 With From").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Send())
 }
 
@@ -109,7 +112,8 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test Queue", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test Queue").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Queue())
 	time.Sleep(3 * time.Second)
 }
