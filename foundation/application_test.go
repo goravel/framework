@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -88,13 +89,15 @@ func (s *ApplicationTestSuite) TestPublicPath() {
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
-	setRootPath()
+	path, err := os.Getwd()
+	s.NoError(err)
+
 	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
 	executable2 := s.app.ExecutablePath("test")
-	s.Equal(filepath.Join(executable, "test"), executable2)
+	s.Equal(filepath.Join(path, "test"), executable2)
 	executable3 := s.app.ExecutablePath("test", "test2/test3")
-	s.Equal(filepath.Join(executable, "test", "test2/test3"), executable3)
+	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {

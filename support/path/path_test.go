@@ -1,6 +1,7 @@
 package path
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -176,21 +177,24 @@ func TestPublic(t *testing.T) {
 }
 
 func TestExecutable(t *testing.T) {
+	path, err := os.Getwd()
+	assert.NoError(t, err)
+
 	tests := map[string]struct {
 		a        []string
 		expected string
 	}{
 		"no args": {
 			a:        []string{},
-			expected: Executable(),
+			expected: path,
 		},
 		"single arg": {
 			a:        []string{"test"},
-			expected: filepath.Join(Executable(), "test"),
+			expected: filepath.Join(path, "test"),
 		},
 		"multi arg": {
 			a:        []string{"test", ".gitignore"},
-			expected: filepath.Join(Executable(), "test", ".gitignore"),
+			expected: filepath.Join(path, "test", ".gitignore"),
 		},
 	}
 

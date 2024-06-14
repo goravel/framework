@@ -24,6 +24,7 @@ var _ = flag.String("env", ".env", "custom .env path")
 
 func init() {
 	setEnv()
+	setRootPath()
 
 	app := &Application{
 		Container:     NewContainer(),
@@ -58,7 +59,6 @@ func (app *Application) Boot() {
 	})
 	app.bootArtisan()
 	app.setTimezone()
-	setRootPath()
 }
 
 func (app *Application) Commands(commands []consolecontract.Command) {
