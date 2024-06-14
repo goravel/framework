@@ -67,16 +67,22 @@ func (_m *Application) EXPECT() *Application_Expecter {
 }
 
 // BasePath provides a mock function with given fields: path
-func (_m *Application) BasePath(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) BasePath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BasePath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -90,14 +96,21 @@ type Application_BasePath_Call struct {
 }
 
 // BasePath is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) BasePath(path interface{}) *Application_BasePath_Call {
-	return &Application_BasePath_Call{Call: _e.mock.On("BasePath", path)}
+//   - path ...string
+func (_e *Application_Expecter) BasePath(path ...interface{}) *Application_BasePath_Call {
+	return &Application_BasePath_Call{Call: _e.mock.On("BasePath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_BasePath_Call) Run(run func(path string)) *Application_BasePath_Call {
+func (_c *Application_BasePath_Call) Run(run func(path ...string)) *Application_BasePath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -107,7 +120,7 @@ func (_c *Application_BasePath_Call) Return(_a0 string) *Application_BasePath_Ca
 	return _c
 }
 
-func (_c *Application_BasePath_Call) RunAndReturn(run func(string) string) *Application_BasePath_Call {
+func (_c *Application_BasePath_Call) RunAndReturn(run func(...string) string) *Application_BasePath_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -246,16 +259,22 @@ func (_c *Application_Commands_Call) RunAndReturn(run func([]console.Command)) *
 }
 
 // ConfigPath provides a mock function with given fields: path
-func (_m *Application) ConfigPath(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) ConfigPath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ConfigPath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -269,14 +288,21 @@ type Application_ConfigPath_Call struct {
 }
 
 // ConfigPath is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) ConfigPath(path interface{}) *Application_ConfigPath_Call {
-	return &Application_ConfigPath_Call{Call: _e.mock.On("ConfigPath", path)}
+//   - path ...string
+func (_e *Application_Expecter) ConfigPath(path ...interface{}) *Application_ConfigPath_Call {
+	return &Application_ConfigPath_Call{Call: _e.mock.On("ConfigPath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_ConfigPath_Call) Run(run func(path string)) *Application_ConfigPath_Call {
+func (_c *Application_ConfigPath_Call) Run(run func(path ...string)) *Application_ConfigPath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -286,7 +312,7 @@ func (_c *Application_ConfigPath_Call) Return(_a0 string) *Application_ConfigPat
 	return _c
 }
 
-func (_c *Application_ConfigPath_Call) RunAndReturn(run func(string) string) *Application_ConfigPath_Call {
+func (_c *Application_ConfigPath_Call) RunAndReturn(run func(...string) string) *Application_ConfigPath_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -338,16 +364,22 @@ func (_c *Application_CurrentLocale_Call) RunAndReturn(run func(context.Context)
 }
 
 // DatabasePath provides a mock function with given fields: path
-func (_m *Application) DatabasePath(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) DatabasePath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DatabasePath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -361,14 +393,21 @@ type Application_DatabasePath_Call struct {
 }
 
 // DatabasePath is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) DatabasePath(path interface{}) *Application_DatabasePath_Call {
-	return &Application_DatabasePath_Call{Call: _e.mock.On("DatabasePath", path)}
+//   - path ...string
+func (_e *Application_Expecter) DatabasePath(path ...interface{}) *Application_DatabasePath_Call {
+	return &Application_DatabasePath_Call{Call: _e.mock.On("DatabasePath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_DatabasePath_Call) Run(run func(path string)) *Application_DatabasePath_Call {
+func (_c *Application_DatabasePath_Call) Run(run func(path ...string)) *Application_DatabasePath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -378,7 +417,7 @@ func (_c *Application_DatabasePath_Call) Return(_a0 string) *Application_Databas
 	return _c
 }
 
-func (_c *Application_DatabasePath_Call) RunAndReturn(run func(string) string) *Application_DatabasePath_Call {
+func (_c *Application_DatabasePath_Call) RunAndReturn(run func(...string) string) *Application_DatabasePath_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -571,16 +610,22 @@ func (_c *Application_IsLocale_Call) RunAndReturn(run func(context.Context, stri
 }
 
 // LangPath provides a mock function with given fields: path
-func (_m *Application) LangPath(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) LangPath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LangPath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -594,14 +639,21 @@ type Application_LangPath_Call struct {
 }
 
 // LangPath is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) LangPath(path interface{}) *Application_LangPath_Call {
-	return &Application_LangPath_Call{Call: _e.mock.On("LangPath", path)}
+//   - path ...string
+func (_e *Application_Expecter) LangPath(path ...interface{}) *Application_LangPath_Call {
+	return &Application_LangPath_Call{Call: _e.mock.On("LangPath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_LangPath_Call) Run(run func(path string)) *Application_LangPath_Call {
+func (_c *Application_LangPath_Call) Run(run func(path ...string)) *Application_LangPath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -611,7 +663,7 @@ func (_c *Application_LangPath_Call) Return(_a0 string) *Application_LangPath_Ca
 	return _c
 }
 
-func (_c *Application_LangPath_Call) RunAndReturn(run func(string) string) *Application_LangPath_Call {
+func (_c *Application_LangPath_Call) RunAndReturn(run func(...string) string) *Application_LangPath_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1817,16 +1869,22 @@ func (_c *Application_MakeWith_Call) RunAndReturn(run func(interface{}, map[stri
 }
 
 // Path provides a mock function with given fields: path
-func (_m *Application) Path(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) Path(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Path")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -1840,14 +1898,21 @@ type Application_Path_Call struct {
 }
 
 // Path is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) Path(path interface{}) *Application_Path_Call {
-	return &Application_Path_Call{Call: _e.mock.On("Path", path)}
+//   - path ...string
+func (_e *Application_Expecter) Path(path ...interface{}) *Application_Path_Call {
+	return &Application_Path_Call{Call: _e.mock.On("Path",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_Path_Call) Run(run func(path string)) *Application_Path_Call {
+func (_c *Application_Path_Call) Run(run func(path ...string)) *Application_Path_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -1857,22 +1922,28 @@ func (_c *Application_Path_Call) Return(_a0 string) *Application_Path_Call {
 	return _c
 }
 
-func (_c *Application_Path_Call) RunAndReturn(run func(string) string) *Application_Path_Call {
+func (_c *Application_Path_Call) RunAndReturn(run func(...string) string) *Application_Path_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // PublicPath provides a mock function with given fields: path
-func (_m *Application) PublicPath(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) PublicPath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PublicPath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -1886,14 +1957,21 @@ type Application_PublicPath_Call struct {
 }
 
 // PublicPath is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) PublicPath(path interface{}) *Application_PublicPath_Call {
-	return &Application_PublicPath_Call{Call: _e.mock.On("PublicPath", path)}
+//   - path ...string
+func (_e *Application_Expecter) PublicPath(path ...interface{}) *Application_PublicPath_Call {
+	return &Application_PublicPath_Call{Call: _e.mock.On("PublicPath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_PublicPath_Call) Run(run func(path string)) *Application_PublicPath_Call {
+func (_c *Application_PublicPath_Call) Run(run func(path ...string)) *Application_PublicPath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -1903,7 +1981,7 @@ func (_c *Application_PublicPath_Call) Return(_a0 string) *Application_PublicPat
 	return _c
 }
 
-func (_c *Application_PublicPath_Call) RunAndReturn(run func(string) string) *Application_PublicPath_Call {
+func (_c *Application_PublicPath_Call) RunAndReturn(run func(...string) string) *Application_PublicPath_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2074,16 +2152,22 @@ func (_c *Application_Singleton_Call) RunAndReturn(run func(interface{}, func(fo
 }
 
 // StoragePath provides a mock function with given fields: path
-func (_m *Application) StoragePath(path string) string {
-	ret := _m.Called(path)
+func (_m *Application) StoragePath(path ...string) string {
+	_va := make([]interface{}, len(path))
+	for _i := range path {
+		_va[_i] = path[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for StoragePath")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(path)
+	if rf, ok := ret.Get(0).(func(...string) string); ok {
+		r0 = rf(path...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -2097,14 +2181,21 @@ type Application_StoragePath_Call struct {
 }
 
 // StoragePath is a helper method to define mock.On call
-//   - path string
-func (_e *Application_Expecter) StoragePath(path interface{}) *Application_StoragePath_Call {
-	return &Application_StoragePath_Call{Call: _e.mock.On("StoragePath", path)}
+//   - path ...string
+func (_e *Application_Expecter) StoragePath(path ...interface{}) *Application_StoragePath_Call {
+	return &Application_StoragePath_Call{Call: _e.mock.On("StoragePath",
+		append([]interface{}{}, path...)...)}
 }
 
-func (_c *Application_StoragePath_Call) Run(run func(path string)) *Application_StoragePath_Call {
+func (_c *Application_StoragePath_Call) Run(run func(path ...string)) *Application_StoragePath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -2114,7 +2205,7 @@ func (_c *Application_StoragePath_Call) Return(_a0 string) *Application_StorageP
 	return _c
 }
 
-func (_c *Application_StoragePath_Call) RunAndReturn(run func(string) string) *Application_StoragePath_Call {
+func (_c *Application_StoragePath_Call) RunAndReturn(run func(...string) string) *Application_StoragePath_Call {
 	_c.Call.Return(run)
 	return _c
 }
