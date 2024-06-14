@@ -176,6 +176,29 @@ func TestPublic(t *testing.T) {
 }
 
 func TestExecutable(t *testing.T) {
-	path := Executable()
-	assert.NotEmpty(t, path)
+	tests := map[string]struct {
+		a        []string
+		expected string
+	}{
+		"no args": {
+			a:        []string{},
+			expected: Executable(),
+		},
+		"single arg": {
+			a:        []string{"test"},
+			expected: filepath.Join(Executable(), "test"),
+		},
+		"multi arg": {
+			a:        []string{"test", ".gitignore"},
+			expected: filepath.Join(Executable(), "test", ".gitignore"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := Executable(test.a...)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
 }
