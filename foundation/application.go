@@ -93,8 +93,9 @@ func (app *Application) PublicPath(path string) string {
 	return filepath.Join("public", path)
 }
 
-func (app *Application) ExecutablePath() string {
-	return support.RootPath
+func (app *Application) ExecutablePath(path ...string) string {
+	path = append([]string{support.RootPath}, path...)
+	return filepath.Join(path...)
 }
 
 func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {

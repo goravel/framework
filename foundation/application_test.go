@@ -88,8 +88,13 @@ func (s *ApplicationTestSuite) TestPublicPath() {
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
+	setRootPath()
 	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
+	executable2 := s.app.ExecutablePath("test")
+	s.Equal(filepath.Join(executable, "test"), executable2)
+	executable3 := s.app.ExecutablePath("test", "test2/test3")
+	s.Equal(filepath.Join(executable, "test", "test2/test3"), executable3)
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
