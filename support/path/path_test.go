@@ -22,7 +22,7 @@ func TestApp(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"config/goravel.go", "database/migrations"},
-			expected: filepath.Join("app", "config", "goravel.go"),
+			expected: filepath.Join("app", "config", "goravel.go", "database", "migrations"),
 		},
 	}
 
@@ -50,7 +50,7 @@ func TestBase(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"config/goravel.go", "database/migrations"},
-			expected: filepath.Join("config", "goravel.go"),
+			expected: filepath.Join("config", "goravel.go", "database", "migrations"),
 		},
 	}
 
@@ -78,7 +78,7 @@ func TestConfig(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"goravel.go", "database/migrations"},
-			expected: filepath.Join("config", "goravel.go"),
+			expected: filepath.Join("config", "goravel.go", "database", "migrations"),
 		},
 	}
 
@@ -106,7 +106,7 @@ func TestDatabase(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"migrations", ".gitignore"},
-			expected: filepath.Join("database", "migrations"),
+			expected: filepath.Join("database", "migrations", ".gitignore"),
 		},
 	}
 
@@ -134,7 +134,7 @@ func TestStorage(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"test", ".gitignore"},
-			expected: filepath.Join("storage", "test"),
+			expected: filepath.Join("storage", "test", ".gitignore"),
 		},
 	}
 
@@ -162,7 +162,7 @@ func TestPublic(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"test", ".gitignore"},
-			expected: filepath.Join("public", "test"),
+			expected: filepath.Join("public", "test", ".gitignore"),
 		},
 	}
 
