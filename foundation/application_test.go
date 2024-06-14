@@ -1,8 +1,6 @@
 package foundation
 
 import (
-	"fmt"
-	"github.com/goravel/framework/support"
 	"log"
 	"path/filepath"
 	"testing"
@@ -91,8 +89,6 @@ func (s *ApplicationTestSuite) TestPublicPath() {
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
 	setRootPath()
-	fmt.Println(getCurrentAbsolutePath())
-	fmt.Println(support.RootPath)
 	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
 	executable2 := s.app.ExecutablePath("test")
