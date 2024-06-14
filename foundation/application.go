@@ -65,32 +65,38 @@ func (app *Application) Commands(commands []consolecontract.Command) {
 	app.registerCommands(commands)
 }
 
-func (app *Application) Path(path string) string {
-	return filepath.Join("app", path)
+func (app *Application) Path(path ...string) string {
+	path = append([]string{"app"}, path...)
+	return filepath.Join(path...)
 }
 
-func (app *Application) BasePath(path string) string {
-	return filepath.Join("", path)
+func (app *Application) BasePath(path ...string) string {
+	return filepath.Join(path...)
 }
 
-func (app *Application) ConfigPath(path string) string {
-	return filepath.Join("config", path)
+func (app *Application) ConfigPath(path ...string) string {
+	path = append([]string{"config"}, path...)
+	return filepath.Join(path...)
 }
 
-func (app *Application) DatabasePath(path string) string {
-	return filepath.Join("database", path)
+func (app *Application) DatabasePath(path ...string) string {
+	path = append([]string{"database"}, path...)
+	return filepath.Join(path...)
 }
 
-func (app *Application) StoragePath(path string) string {
-	return filepath.Join("storage", path)
+func (app *Application) StoragePath(path ...string) string {
+	path = append([]string{"storage"}, path...)
+	return filepath.Join(path...)
 }
 
-func (app *Application) LangPath(path string) string {
-	return filepath.Join("lang", path)
+func (app *Application) LangPath(path ...string) string {
+	path = append([]string{"lang"}, path...)
+	return filepath.Join(path...)
 }
 
-func (app *Application) PublicPath(path string) string {
-	return filepath.Join("public", path)
+func (app *Application) PublicPath(path ...string) string {
+	path = append([]string{"public"}, path...)
+	return filepath.Join(path...)
 }
 
 func (app *Application) ExecutablePath(path ...string) string {
