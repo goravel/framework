@@ -161,6 +161,53 @@ func (_c *Mailable_Envelope_Call) RunAndReturn(run func() *mail.Envelope) *Maila
 	return _c
 }
 
+// Queue provides a mock function with given fields:
+func (_m *Mailable) Queue() *mail.Queue {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Queue")
+	}
+
+	var r0 *mail.Queue
+	if rf, ok := ret.Get(0).(func() *mail.Queue); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*mail.Queue)
+		}
+	}
+
+	return r0
+}
+
+// Mailable_Queue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Queue'
+type Mailable_Queue_Call struct {
+	*mock.Call
+}
+
+// Queue is a helper method to define mock.On call
+func (_e *Mailable_Expecter) Queue() *Mailable_Queue_Call {
+	return &Mailable_Queue_Call{Call: _e.mock.On("Queue")}
+}
+
+func (_c *Mailable_Queue_Call) Run(run func()) *Mailable_Queue_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Mailable_Queue_Call) Return(_a0 *mail.Queue) *Mailable_Queue_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Mailable_Queue_Call) RunAndReturn(run func() *mail.Queue) *Mailable_Queue_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMailable creates a new instance of Mailable. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMailable(t interface {
