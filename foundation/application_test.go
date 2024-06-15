@@ -84,6 +84,10 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Equal(filepath.Join("storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestLangPath() {
+	s.Equal(filepath.Join("lang", "goravel.go"), s.app.LangPath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestPublicPath() {
 	s.Equal(filepath.Join("public", "goravel.go"), s.app.PublicPath("goravel.go"))
 }
