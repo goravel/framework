@@ -12,7 +12,7 @@ type Mail interface {
 	// From set the sender of Mail.
 	From(address From) Mail
 	// Queue a given Mail
-	Queue(queue ...ShouldQueue) error
+	Queue(mailable ...Mailable) error
 	// Send the Mail
 	Send(mailable ...Mailable) error
 	// Subject set the subject of Mail.
@@ -28,10 +28,6 @@ type Mailable interface {
 	Content() *Content
 	// Envelope set the envelope of Mailable.
 	Envelope() *Envelope
-}
-
-type ShouldQueue interface {
-	Mailable
 	// Queue set the queue of Mailable.
 	Queue() *Queue
 }

@@ -65,10 +65,10 @@ func (r *Application) From(from mail.From) mail.Mail {
 	return instance
 }
 
-func (r *Application) Queue(queueMail ...mail.ShouldQueue) error {
+func (r *Application) Queue(mailable ...mail.Mailable) error {
 
-	if len(queueMail) > 0 {
-		r.setUsingMailable(queueMail[0])
+	if len(mailable) > 0 {
+		r.setUsingMailable(mailable[0])
 	}
 
 	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
@@ -82,8 +82,8 @@ func (r *Application) Queue(queueMail ...mail.ShouldQueue) error {
 		{Value: r.attaches, Type: "[]string"},
 	})
 
-	if len(queueMail) > 0 {
-		if queue := queueMail[0].Queue(); queue != nil {
+	if len(mailable) > 0 {
+		if queue := mailable[0].Queue(); queue != nil {
 			if queue.Connection != "" {
 				job.OnConnection(queue.Connection)
 			}
@@ -131,10 +131,8 @@ func (r *Application) instance() *Application {
 
 func (r *Application) setUsingMailable(mailable mail.Mailable) {
 	content := mailable.Content()
-	if content != nil {
-		if content.Html != "" {
-			r.html = content.Html
-		}
+	if content != nil && content.Html != "" {
+		r.html = content.Html
 	}
 
 	envelope := mailable.Envelope()
@@ -213,7 +211,7 @@ func LoginAuth(username, password string) smtp.Auth {
 	return &loginAuth{username, password}
 }
 
-func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+func (a *loginAuth) Start(*smtp.ServerInfo) (string, []byte, error) {
 	return "LOGIN", []byte(a.username), nil
 }
 

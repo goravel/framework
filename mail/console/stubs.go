@@ -27,5 +27,10 @@ func (receiver *DummyMail) Content() *mail.Content {
 func (receiver *DummyMail) Envelope() *mail.Envelope {
     return &mail.Envelope{}
 }
+
+// Queue set the queue of the mail
+func (receiver *DummyMail) Queue() *mail.Queue {
+    return &mail.Queue{}
+}
 `
 }
