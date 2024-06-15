@@ -33,7 +33,7 @@ func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err := f.json.Unmarshal(data, &val); err != nil {
+			if err = f.json.Unmarshal(data, &val); err != nil {
 				return nil, err
 			}
 			return val, nil
