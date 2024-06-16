@@ -246,6 +246,7 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "app.locale").Return("en").Once()
 	mockConfig.On("GetString", "app.fallback_locale").Return("en").Once()
+	mockConfig.On("GetString", "app.lang_path", "lang").Return("lang").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
