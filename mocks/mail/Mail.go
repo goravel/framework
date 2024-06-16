@@ -260,11 +260,11 @@ func (_c *Mail_From_Call) RunAndReturn(run func(mail.From) mail.Mail) *Mail_From
 	return _c
 }
 
-// Queue provides a mock function with given fields: queue
-func (_m *Mail) Queue(queue ...mail.Queue) error {
-	_va := make([]interface{}, len(queue))
-	for _i := range queue {
-		_va[_i] = queue[_i]
+// Queue provides a mock function with given fields: mailable
+func (_m *Mail) Queue(mailable ...mail.Mailable) error {
+	_va := make([]interface{}, len(mailable))
+	for _i := range mailable {
+		_va[_i] = mailable[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -275,8 +275,8 @@ func (_m *Mail) Queue(queue ...mail.Queue) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...mail.Queue) error); ok {
-		r0 = rf(queue...)
+	if rf, ok := ret.Get(0).(func(...mail.Mailable) error); ok {
+		r0 = rf(mailable...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -290,18 +290,18 @@ type Mail_Queue_Call struct {
 }
 
 // Queue is a helper method to define mock.On call
-//   - queue ...mail.Queue
-func (_e *Mail_Expecter) Queue(queue ...interface{}) *Mail_Queue_Call {
+//   - mailable ...mail.Mailable
+func (_e *Mail_Expecter) Queue(mailable ...interface{}) *Mail_Queue_Call {
 	return &Mail_Queue_Call{Call: _e.mock.On("Queue",
-		append([]interface{}{}, queue...)...)}
+		append([]interface{}{}, mailable...)...)}
 }
 
-func (_c *Mail_Queue_Call) Run(run func(queue ...mail.Queue)) *Mail_Queue_Call {
+func (_c *Mail_Queue_Call) Run(run func(mailable ...mail.Mailable)) *Mail_Queue_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]mail.Queue, len(args)-0)
+		variadicArgs := make([]mail.Mailable, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(mail.Queue)
+				variadicArgs[i] = a.(mail.Mailable)
 			}
 		}
 		run(variadicArgs...)
@@ -314,22 +314,28 @@ func (_c *Mail_Queue_Call) Return(_a0 error) *Mail_Queue_Call {
 	return _c
 }
 
-func (_c *Mail_Queue_Call) RunAndReturn(run func(...mail.Queue) error) *Mail_Queue_Call {
+func (_c *Mail_Queue_Call) RunAndReturn(run func(...mail.Mailable) error) *Mail_Queue_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Send provides a mock function with given fields:
-func (_m *Mail) Send() error {
-	ret := _m.Called()
+// Send provides a mock function with given fields: mailable
+func (_m *Mail) Send(mailable ...mail.Mailable) error {
+	_va := make([]interface{}, len(mailable))
+	for _i := range mailable {
+		_va[_i] = mailable[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Send")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(...mail.Mailable) error); ok {
+		r0 = rf(mailable...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -343,13 +349,21 @@ type Mail_Send_Call struct {
 }
 
 // Send is a helper method to define mock.On call
-func (_e *Mail_Expecter) Send() *Mail_Send_Call {
-	return &Mail_Send_Call{Call: _e.mock.On("Send")}
+//   - mailable ...mail.Mailable
+func (_e *Mail_Expecter) Send(mailable ...interface{}) *Mail_Send_Call {
+	return &Mail_Send_Call{Call: _e.mock.On("Send",
+		append([]interface{}{}, mailable...)...)}
 }
 
-func (_c *Mail_Send_Call) Run(run func()) *Mail_Send_Call {
+func (_c *Mail_Send_Call) Run(run func(mailable ...mail.Mailable)) *Mail_Send_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]mail.Mailable, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(mail.Mailable)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -359,7 +373,55 @@ func (_c *Mail_Send_Call) Return(_a0 error) *Mail_Send_Call {
 	return _c
 }
 
-func (_c *Mail_Send_Call) RunAndReturn(run func() error) *Mail_Send_Call {
+func (_c *Mail_Send_Call) RunAndReturn(run func(...mail.Mailable) error) *Mail_Send_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Subject provides a mock function with given fields: subject
+func (_m *Mail) Subject(subject string) mail.Mail {
+	ret := _m.Called(subject)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Subject")
+	}
+
+	var r0 mail.Mail
+	if rf, ok := ret.Get(0).(func(string) mail.Mail); ok {
+		r0 = rf(subject)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(mail.Mail)
+		}
+	}
+
+	return r0
+}
+
+// Mail_Subject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Subject'
+type Mail_Subject_Call struct {
+	*mock.Call
+}
+
+// Subject is a helper method to define mock.On call
+//   - subject string
+func (_e *Mail_Expecter) Subject(subject interface{}) *Mail_Subject_Call {
+	return &Mail_Subject_Call{Call: _e.mock.On("Subject", subject)}
+}
+
+func (_c *Mail_Subject_Call) Run(run func(subject string)) *Mail_Subject_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Mail_Subject_Call) Return(_a0 mail.Mail) *Mail_Subject_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Mail_Subject_Call) RunAndReturn(run func(string) mail.Mail) *Mail_Subject_Call {
 	_c.Call.Return(run)
 	return _c
 }

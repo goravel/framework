@@ -11,14 +11,15 @@ import (
 )
 
 type Application struct {
-	clone    int
-	config   config.Config
-	content  mail.Content
-	from     mail.From
-	queue    queuecontract.Queue
 	attaches []string
 	bcc      []string
 	cc       []string
+	clone    int
+	config   config.Config
+	from     mail.From
+	html     string
+	queue    queuecontract.Queue
+	subject  string
 	to       []string
 }
 
@@ -29,30 +30,9 @@ func NewApplication(config config.Config, queue queuecontract.Queue) *Applicatio
 	}
 }
 
-func (r *Application) Content(content mail.Content) mail.Mail {
+func (r *Application) Attach(files []string) mail.Mail {
 	instance := r.instance()
-	instance.content = content
-
-	return instance
-}
-
-func (r *Application) From(from mail.From) mail.Mail {
-	instance := r.instance()
-	instance.from = from
-
-	return instance
-}
-
-func (r *Application) To(to []string) mail.Mail {
-	instance := r.instance()
-	instance.to = to
-
-	return instance
-}
-
-func (r *Application) Cc(cc []string) mail.Mail {
-	instance := r.instance()
-	instance.cc = cc
+	instance.attaches = files
 
 	return instance
 }
@@ -64,21 +44,36 @@ func (r *Application) Bcc(bcc []string) mail.Mail {
 	return instance
 }
 
-func (r *Application) Attach(files []string) mail.Mail {
+func (r *Application) Cc(cc []string) mail.Mail {
 	instance := r.instance()
-	instance.attaches = files
+	instance.cc = cc
 
 	return instance
 }
 
-func (r *Application) Send() error {
-	return SendMail(r.config, r.content.Subject, r.content.Html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
+func (r *Application) Content(content mail.Content) mail.Mail {
+	instance := r.instance()
+	instance.html = content.Html
+
+	return instance
 }
 
-func (r *Application) Queue(queue ...mail.Queue) error {
+func (r *Application) From(from mail.From) mail.Mail {
+	instance := r.instance()
+	instance.from = from
+
+	return instance
+}
+
+func (r *Application) Queue(mailable ...mail.Mailable) error {
+
+	if len(mailable) > 0 {
+		r.setUsingMailable(mailable[0])
+	}
+
 	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
-		{Value: r.content.Subject, Type: "string"},
-		{Value: r.content.Html, Type: "string"},
+		{Value: r.subject, Type: "string"},
+		{Value: r.html, Type: "string"},
 		{Value: r.from.Address, Type: "string"},
 		{Value: r.from.Name, Type: "string"},
 		{Value: r.to, Type: "[]string"},
@@ -87,16 +82,39 @@ func (r *Application) Queue(queue ...mail.Queue) error {
 		{Value: r.attaches, Type: "[]string"},
 	})
 
-	if len(queue) > 0 {
-		if queue[0].Connection != "" {
-			job.OnConnection(queue[0].Connection)
-		}
-		if queue[0].Queue != "" {
-			job.OnQueue(queue[0].Queue)
+	if len(mailable) > 0 {
+		if queue := mailable[0].Queue(); queue != nil {
+			if queue.Connection != "" {
+				job.OnConnection(queue.Connection)
+			}
+			if queue.Queue != "" {
+				job.OnQueue(queue.Queue)
+			}
 		}
 	}
 
 	return job.Dispatch()
+}
+
+func (r *Application) Send(mailable ...mail.Mailable) error {
+	if len(mailable) > 0 {
+		r.setUsingMailable(mailable[0])
+	}
+	return SendMail(r.config, r.subject, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
+}
+
+func (r *Application) Subject(subject string) mail.Mail {
+	instance := r.instance()
+	instance.subject = subject
+
+	return instance
+}
+
+func (r *Application) To(to []string) mail.Mail {
+	instance := r.instance()
+	instance.to = to
+
+	return instance
 }
 
 func (r *Application) instance() *Application {
@@ -111,7 +129,41 @@ func (r *Application) instance() *Application {
 	return r
 }
 
-func SendMail(config config.Config, subject, html string, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
+func (r *Application) setUsingMailable(mailable mail.Mailable) {
+	content := mailable.Content()
+	if content != nil && content.Html != "" {
+		r.html = content.Html
+	}
+
+	envelope := mailable.Envelope()
+	if envelope != nil {
+		if envelope.From != (mail.From{}) {
+			r.from = envelope.From
+		}
+
+		if len(envelope.To) > 0 {
+			r.to = envelope.To
+		}
+
+		if len(envelope.Cc) > 0 {
+			r.cc = envelope.Cc
+		}
+
+		if len(envelope.Bcc) > 0 {
+			r.bcc = envelope.Bcc
+		}
+
+		if len(mailable.Attachments()) > 0 {
+			r.attaches = mailable.Attachments()
+		}
+
+		if envelope.Subject != "" {
+			r.subject = envelope.Subject
+		}
+	}
+}
+
+func SendMail(config config.Config, subject, html, fromAddress, fromName string, to, cc, bcc, attaches []string) error {
 	e := NewEmail()
 	if fromAddress == "" {
 		e.From = fmt.Sprintf("%s <%s>", config.GetString("mail.from.name"), config.GetString("mail.from.address"))
@@ -159,7 +211,7 @@ func LoginAuth(username, password string) smtp.Auth {
 	return &loginAuth{username, password}
 }
 
-func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+func (a *loginAuth) Start(*smtp.ServerInfo) (string, []byte, error) {
 	return "LOGIN", []byte(a.username), nil
 }
 

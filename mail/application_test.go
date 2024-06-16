@@ -57,7 +57,8 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test 465", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test 465").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Send())
 }
 
@@ -68,7 +69,8 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test 587", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test 587").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Send())
 }
 
@@ -80,8 +82,15 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test 587 With From", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test 587 With From").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Send())
+}
+
+func (s *ApplicationTestSuite) TestSendMailWithMailable() {
+	mockConfig := mockConfig(587, s.redisPort)
+	app := NewApplication(mockConfig, nil)
+	s.Nil(app.Send(NewTestMailable()))
 }
 
 func (s *ApplicationTestSuite) TestQueueMail() {
@@ -109,8 +118,34 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
-		Content(mail.Content{Subject: "Goravel Test Queue", Html: "<h1>Hello Goravel</h1>"}).
+		Subject("Goravel Test Queue").
+		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
 		Queue())
+	time.Sleep(3 * time.Second)
+}
+
+func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
+	mockConfig := mockConfig(587, s.redisPort)
+	mockLog := &logmock.Log{}
+
+	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade.Register([]queuecontract.Job{
+		NewSendMailJob(mockConfig),
+	})
+
+	app := NewApplication(mockConfig, queueFacade)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	go func(ctx context.Context) {
+		s.Nil(queueFacade.Worker(nil).Run())
+
+		for range ctx.Done() {
+			return
+		}
+	}(ctx)
+	time.Sleep(3 * time.Second)
+	s.Nil(app.Queue(NewTestMailable()))
 	time.Sleep(3 * time.Second)
 }
 
@@ -170,4 +205,33 @@ func mockConfig(mailPort, redisPort int) *configmock.Config {
 	}
 
 	return mockConfig
+}
+
+type TestMailable struct {
+}
+
+func NewTestMailable() *TestMailable {
+	return &TestMailable{}
+}
+
+func (m *TestMailable) Attachments() []string {
+	return []string{"../logo.png"}
+}
+
+func (m *TestMailable) Content() *mail.Content {
+	return &mail.Content{Html: "<h1>Hello Goravel</h1>"}
+}
+
+func (m *TestMailable) Envelope() *mail.Envelope {
+	return &mail.Envelope{
+		Bcc:     []string{testBcc},
+		Cc:      []string{testCc},
+		From:    mail.From{Address: testFromAddress, Name: testFromName},
+		Subject: "Goravel Test 587 With Mailable",
+		To:      []string{testTo},
+	}
+}
+
+func (m *TestMailable) Queue() *mail.Queue {
+	return &mail.Queue{}
 }
