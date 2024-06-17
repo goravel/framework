@@ -11,7 +11,7 @@ import (
 var testDatabaseDocker *supportdocker.Database
 
 func TestMain(m *testing.M) {
-	if !env.IsWindows() {
+	if env.IsLinux() {
 		var err error
 		testDatabaseDocker, err = supportdocker.InitDatabase()
 		if err != nil {
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 
 	m.Run()
 
-	if !env.IsWindows() {
+	if env.IsLinux() {
 		defer func() {
 			if err := testDatabaseDocker.Stop(); err != nil {
 				log.Fatalf("Stop docker error: %s", err)
