@@ -61,8 +61,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-      - name: Setup Docker on macOS
-        uses: douglascamata/setup-docker-macos-action@v1-alpha
+      - name: Setup docker on macOS
+        run: |
+          brew install docker
+          colima start
       - name: Go mod cache
         uses: actions/cache@v4
         with:
