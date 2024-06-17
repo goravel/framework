@@ -10,7 +10,7 @@ import (
 )
 
 func TestMysqlDocker(t *testing.T) {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -26,7 +26,7 @@ func TestMysqlDocker(t *testing.T) {
 }
 
 func TestPostgresqlDocker(t *testing.T) {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -42,7 +42,7 @@ func TestPostgresqlDocker(t *testing.T) {
 }
 
 func TestSqliteDocker(t *testing.T) {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -55,7 +55,7 @@ func TestSqliteDocker(t *testing.T) {
 }
 
 func TestSqlserverDocker(t *testing.T) {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

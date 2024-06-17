@@ -44,7 +44,7 @@ type OrmSuite struct {
 }
 
 func TestOrmSuite(t *testing.T) {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

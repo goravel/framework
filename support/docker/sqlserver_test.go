@@ -18,7 +18,7 @@ type SqlserverTestSuite struct {
 }
 
 func TestSqlserverTestSuite(t *testing.T) {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 

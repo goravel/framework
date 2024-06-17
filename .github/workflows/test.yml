@@ -55,7 +55,7 @@ jobs:
     strategy:
       matrix:
         go: [ "1.21", "1.22" ]
-    runs-on: macos-13
+    runs-on: macos-latest-large
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
