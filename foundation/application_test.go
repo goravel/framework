@@ -293,7 +293,7 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 }
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
-	if env.IsWindows() {
+	if !env.IsLinux() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 

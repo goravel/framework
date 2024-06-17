@@ -34,7 +34,7 @@ type QueryTestSuite struct {
 }
 
 func TestQueryTestSuite(t *testing.T) {
-	if env.IsWindows() {
+	if !env.IsLinux() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -3079,7 +3079,7 @@ func (s *QueryTestSuite) mockDummyConnection(driver ormcontract.Driver) {
 }
 
 func TestCustomConnection(t *testing.T) {
-	if env.IsWindows() {
+	if !env.IsLinux() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -3250,7 +3250,7 @@ func TestObserverEvent(t *testing.T) {
 }
 
 func TestReadWriteSeparate(t *testing.T) {
-	if env.IsWindows() {
+	if !env.IsLinux() {
 		t.Skip("Skipping tests of using docker")
 	}
 
@@ -3382,7 +3382,7 @@ func TestReadWriteSeparate(t *testing.T) {
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
-	if env.IsWindows() {
+	if !env.IsLinux() {
 		t.Skip("Skipping tests of using docker")
 	}
 

@@ -13,7 +13,7 @@ import (
 )
 
 func TestMigrateRefreshCommand(t *testing.T) {
-	if env.IsWindows() {
+	if !env.IsLinux() {
 		t.Skip("Skipping tests of using docker")
 	}
 
