@@ -137,7 +137,7 @@ func (r *Application) setUsingMailable(mailable mail.Mailable) {
 
 	envelope := mailable.Envelope()
 	if envelope != nil {
-		if envelope.From != (mail.From{}) {
+		if envelope.From.Address != "" {
 			r.from = envelope.From
 		}
 
