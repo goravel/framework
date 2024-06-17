@@ -202,7 +202,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 }
 
 func (s *DatabaseTestSuite) TestBuild() {
-	if !env.IsLinux() {
+	if env.IsWindows() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
