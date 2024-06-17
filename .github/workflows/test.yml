@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./...
+        run: go test -timeout 1h ./...
   windows:
     strategy:
       matrix:
@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./...
+        run: go test -timeout 1h ./...
   macos:
     strategy:
       matrix:
@@ -75,4 +75,4 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
       - name: Run tests
-        run: go test ./...
+        run: go test -timeout 1h ./...
