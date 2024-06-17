@@ -51,28 +51,3 @@ jobs:
         run: go mod tidy
       - name: Run tests
         run: go test -timeout 1h ./...
-  macos:
-    strategy:
-      matrix:
-        go: [ "1.21", "1.22" ]
-    runs-on: macos-12
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Setup docker on macOS
-        uses: douglascamata/setup-docker-macos-action@v1-alpha
-      - name: Go mod cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Run tests
-        run: go test -timeout 1h ./...
