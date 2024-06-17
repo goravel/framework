@@ -46,5 +46,6 @@ func isAir() bool {
 // isDirectlyRun checks if the application is running using go run.
 func isDirectlyRun() bool {
 	executable, _ := os.Executable()
-	return strings.Contains(filepath.Base(executable), os.TempDir())
+	return strings.Contains(filepath.Base(executable), os.TempDir()) ||
+		(strings.Contains(executable, "/var/folders") && strings.Contains(executable, "/T/go-build")) // macOS
 }
