@@ -5,59 +5,29 @@ import (
 )
 
 func App(paths ...string) string {
-	finalPath := ""
-	if len(paths) >= 1 {
-		finalPath = paths[0]
-	}
-
-	return facades.App().Path(finalPath)
+	return facades.App().Path(paths...)
 }
 
 func Base(paths ...string) string {
-	finalPath := ""
-	if len(paths) >= 1 {
-		finalPath = paths[0]
-	}
-
-	return facades.App().BasePath(finalPath)
+	return facades.App().BasePath(paths...)
 }
 
 func Config(paths ...string) string {
-	finalPath := ""
-	if len(paths) >= 1 {
-		finalPath = paths[0]
-	}
-
-	return facades.App().ConfigPath(finalPath)
+	return facades.App().ConfigPath(paths...)
 }
 
 func Database(paths ...string) string {
-	finalPath := ""
-	if len(paths) >= 1 {
-		finalPath = paths[0]
-	}
-
-	return facades.App().DatabasePath(finalPath)
+	return facades.App().DatabasePath(paths...)
 }
 
 func Storage(paths ...string) string {
-	finalPath := ""
-	if len(paths) >= 1 {
-		finalPath = paths[0]
-	}
-
-	return facades.App().StoragePath(finalPath)
+	return facades.App().StoragePath(paths...)
 }
 
 func Public(paths ...string) string {
-	finalPath := ""
-	if len(paths) >= 1 {
-		finalPath = paths[0]
-	}
-
-	return facades.App().PublicPath(finalPath)
+	return facades.App().PublicPath(paths...)
 }
 
-func Executable() (string, error) {
-	return facades.App().ExecutablePath()
+func Executable(paths ...string) string {
+	return facades.App().ExecutablePath(paths...)
 }

@@ -1,6 +1,7 @@
 package path
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -22,7 +23,7 @@ func TestApp(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"config/goravel.go", "database/migrations"},
-			expected: filepath.Join("app", "config", "goravel.go"),
+			expected: filepath.Join("app", "config", "goravel.go", "database", "migrations"),
 		},
 	}
 
@@ -50,7 +51,7 @@ func TestBase(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"config/goravel.go", "database/migrations"},
-			expected: filepath.Join("config", "goravel.go"),
+			expected: filepath.Join("config", "goravel.go", "database", "migrations"),
 		},
 	}
 
@@ -78,7 +79,7 @@ func TestConfig(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"goravel.go", "database/migrations"},
-			expected: filepath.Join("config", "goravel.go"),
+			expected: filepath.Join("config", "goravel.go", "database", "migrations"),
 		},
 	}
 
@@ -106,7 +107,7 @@ func TestDatabase(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"migrations", ".gitignore"},
-			expected: filepath.Join("database", "migrations"),
+			expected: filepath.Join("database", "migrations", ".gitignore"),
 		},
 	}
 
@@ -134,7 +135,7 @@ func TestStorage(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"test", ".gitignore"},
-			expected: filepath.Join("storage", "test"),
+			expected: filepath.Join("storage", "test", ".gitignore"),
 		},
 	}
 
@@ -162,7 +163,7 @@ func TestPublic(t *testing.T) {
 		},
 		"multi arg": {
 			a:        []string{"test", ".gitignore"},
-			expected: filepath.Join("public", "test"),
+			expected: filepath.Join("public", "test", ".gitignore"),
 		},
 	}
 
@@ -176,7 +177,32 @@ func TestPublic(t *testing.T) {
 }
 
 func TestExecutable(t *testing.T) {
-	path, err := Executable()
+	path, err := os.Getwd()
 	assert.NoError(t, err)
-	assert.NotEmpty(t, path)
+
+	tests := map[string]struct {
+		a        []string
+		expected string
+	}{
+		"no args": {
+			a:        []string{},
+			expected: path,
+		},
+		"single arg": {
+			a:        []string{"test"},
+			expected: filepath.Join(path, "test"),
+		},
+		"multi arg": {
+			a:        []string{"test", ".gitignore"},
+			expected: filepath.Join(path, "test", ".gitignore"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := Executable(test.a...)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
 }
