@@ -71,16 +71,7 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 		r.setUsingMailable(mailable[0])
 	}
 
-	job := r.queue.Job(NewSendMailJob(r.config), []queuecontract.Arg{
-		{Value: r.subject, Type: "string"},
-		{Value: r.html, Type: "string"},
-		{Value: r.from.Address, Type: "string"},
-		{Value: r.from.Name, Type: "string"},
-		{Value: r.to, Type: "[]string"},
-		{Value: r.cc, Type: "[]string"},
-		{Value: r.bcc, Type: "[]string"},
-		{Value: r.attaches, Type: "[]string"},
-	})
+	job := r.queue.Job(NewSendMailJob(r.config), []any{r.subject, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches})
 
 	if len(mailable) > 0 {
 		if queue := mailable[0].Queue(); queue != nil {
