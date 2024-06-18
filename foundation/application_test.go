@@ -2,6 +2,7 @@ package foundation
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -83,14 +84,24 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 	s.Equal(filepath.Join("storage", "goravel.go"), s.app.StoragePath("goravel.go"))
 }
 
+func (s *ApplicationTestSuite) TestLangPath() {
+	s.Equal(filepath.Join("lang", "goravel.go"), s.app.LangPath("goravel.go"))
+}
+
 func (s *ApplicationTestSuite) TestPublicPath() {
 	s.Equal(filepath.Join("public", "goravel.go"), s.app.PublicPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestExecutablePath() {
-	executable, err := s.app.ExecutablePath()
+	path, err := os.Getwd()
 	s.NoError(err)
+
+	executable := s.app.ExecutablePath()
 	s.NotEmpty(executable)
+	executable2 := s.app.ExecutablePath("test")
+	s.Equal(filepath.Join(path, "test"), executable2)
+	executable3 := s.app.ExecutablePath("test", "test2/test3")
+	s.Equal(filepath.Join(path, "test", "test2/test3"), executable3)
 }
 
 func (s *ApplicationTestSuite) TestPublishes() {
@@ -246,6 +257,7 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "app.locale").Return("en").Once()
 	mockConfig.On("GetString", "app.fallback_locale").Return("en").Once()
+	mockConfig.On("GetString", "app.lang_path", "lang").Return("lang").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil

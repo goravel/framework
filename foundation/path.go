@@ -4,39 +4,48 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
 func getCurrentAbsolutePath() string {
-	dir := getCurrentAbsolutePathByExecutable()
-	tmpDir, _ := filepath.EvalSymlinks(os.TempDir())
-	if strings.Contains(dir, tmpDir) {
-		return getCurrentAbsolutePathByCaller()
-	}
-
-	return dir
-}
-
-func getCurrentAbsolutePathByExecutable() string {
-	exePath, err := os.Executable()
+	executable, err := os.Executable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	res, _ := filepath.EvalSymlinks(filepath.Dir(exePath))
+	res, _ := filepath.EvalSymlinks(filepath.Dir(executable))
+
+	if isTesting() || isAir() || isDirectlyRun() {
+		res, _ = os.Getwd()
+	}
 
 	return res
 }
 
-func getCurrentAbsolutePathByCaller() string {
-	var abPath string
-	for i := 0; i < 15; i++ {
-		_, filename, _, ok := runtime.Caller(i)
-		if ok && strings.HasSuffix(filename, "main.go") {
-			abPath = filepath.Dir(filename)
-			break
+// isTesting checks if the application is running in testing mode.
+func isTesting() bool {
+	for _, arg := range os.Args {
+		if strings.Contains(arg, "-test.") {
+			return true
 		}
 	}
 
-	return abPath
+	return false
+}
+
+// isAir checks if the application is running using Air.
+func isAir() bool {
+	for _, arg := range os.Args {
+		if strings.Contains(arg, "/storage/temp") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isDirectlyRun checks if the application is running using go run.
+func isDirectlyRun() bool {
+	executable, _ := os.Executable()
+	return strings.Contains(filepath.Base(executable), os.TempDir()) ||
+		(strings.Contains(executable, "/var/folders") && strings.Contains(executable, "/T/go-build")) // macOS
 }

@@ -168,7 +168,7 @@ func (s *StringTestSuite) TestEndsWith() {
 	s.False(Of("bowen").EndsWith())
 	s.False(Of("bowen").EndsWith("N"))
 	s.True(Of("a7.12").EndsWith("7.12"))
-	// Test for  muti-byte string
+	// Test for muti-byte string
 	s.True(Of("你好").EndsWith("好"))
 	s.True(Of("你好").EndsWith("你好"))
 	s.True(Of("你好").EndsWith("好", "xyz"))

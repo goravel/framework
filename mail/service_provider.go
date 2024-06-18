@@ -1,8 +1,10 @@
 package mail
 
 import (
+	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/mail/console"
 )
 
 const Binding = "goravel.mail"
@@ -17,10 +19,11 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (route *ServiceProvider) Boot(app foundation.Application) {
-	err := app.MakeQueue().Register([]queue.Job{
+	app.MakeQueue().Register([]queue.Job{
 		NewSendMailJob(app.MakeConfig()),
 	})
-	if err != nil {
-		panic(err.Error())
-	}
+
+	app.MakeArtisan().Register([]consolecontract.Command{
+		console.NewMailMakeCommand(),
+	})
 }
