@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sethvargo/go-limiter"
-
 	"github.com/goravel/framework/contracts/http"
 )
 
@@ -37,7 +35,7 @@ type Limit struct {
 	// The rate limit signature key.
 	Key string
 	// The store instance.
-	Store limiter.Store
+	Store Store
 	// The response generator callback.
 	ResponseCallback func(ctx http.Context)
 }
