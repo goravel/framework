@@ -14,7 +14,7 @@ type Driver interface {
 	// Add an item in the cache if the key does not exist.
 	Add(key string, value any, t time.Duration) bool
 	// Decrement decrements the value of an item in the cache.
-	Decrement(key string, value ...int) (int, error)
+	Decrement(key string, value ...int64) (int64, error)
 	// Forever add an item in the cache indefinitely.
 	Forever(key string, value any) bool
 	// Forget removes an item from the cache.
@@ -34,7 +34,7 @@ type Driver interface {
 	// Has check an item exists in the cache.
 	Has(key string) bool
 	// Increment increments the value of an item in the cache.
-	Increment(key string, value ...int) (int, error)
+	Increment(key string, value ...int64) (int64, error)
 	// Lock get a lock instance.
 	Lock(key string, t ...time.Duration) Lock
 	// Put Driver an item in the cache for a given time.

@@ -2,9 +2,11 @@ package cache
 
 import (
 	"context"
+	"fmt"
+	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/patrickmn/go-cache"
 	"github.com/spf13/cast"
 
 	contractscache "github.com/goravel/framework/contracts/cache"
@@ -14,64 +16,74 @@ import (
 type Memory struct {
 	ctx      context.Context
 	prefix   string
-	instance *cache.Cache
+	instance sync.Map
 }
 
 func NewMemory(config config.Config) (*Memory, error) {
-	memory := cache.New(5*time.Minute, 10*time.Minute)
-
 	return &Memory{
-		prefix:   prefix(config),
-		instance: memory,
+		prefix: prefix(config),
 	}, nil
 }
 
-//Add Driver an item in the cache if the key does not exist.
+// Add Driver an item in the cache if the key does not exist.
 func (r *Memory) Add(key string, value any, t time.Duration) bool {
-	if t == NoExpiration {
-		t = cache.NoExpiration
+	if t != NoExpiration {
+		time.AfterFunc(t, func() {
+			r.Forget(key)
+		})
 	}
 
-	err := r.instance.Add(r.key(key), value, t)
-
-	return err == nil
+	_, loaded := r.instance.LoadOrStore(r.key(key), value)
+	return !loaded
 }
 
-func (r *Memory) Decrement(key string, value ...int) (int, error) {
+// Decrement Decrement the value of an item in the cache.
+func (r *Memory) Decrement(key string, value ...int64) (int64, error) {
 	if len(value) == 0 {
 		value = append(value, 1)
 	}
-	r.Add(key, 0, cache.NoExpiration)
 
-	return r.instance.DecrementInt(r.key(key), value[0])
+	r.Add(key, new(int64), NoExpiration)
+	pv := r.Get(key)
+	switch nv := pv.(type) {
+	case *atomic.Int64:
+		return nv.Add(-value[0]), nil
+	case *atomic.Int32:
+		return int64(nv.Add(int32(-value[0]))), nil
+	case *int64:
+		return atomic.AddInt64(nv, -value[0]), nil
+	case *int32:
+		return int64(atomic.AddInt32(nv, int32(-value[0]))), nil
+	default:
+		return 0, fmt.Errorf("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32", key)
+	}
 }
 
-//Forever Driver an item in the cache indefinitely.
+// Forever Driver an item in the cache indefinitely.
 func (r *Memory) Forever(key string, value any) bool {
-	if err := r.Put(key, value, cache.NoExpiration); err != nil {
+	if err := r.Put(key, value, NoExpiration); err != nil {
 		return false
 	}
 
 	return true
 }
 
-//Forget Remove an item from the cache.
+// Forget Remove an item from the cache.
 func (r *Memory) Forget(key string) bool {
 	r.instance.Delete(r.key(key))
 
 	return true
 }
 
-//Flush Remove all items from the cache.
+// Flush Remove all items from the cache.
 func (r *Memory) Flush() bool {
-	r.instance.Flush()
-
+	r.instance = sync.Map{}
 	return true
 }
 
-//Get Retrieve an item from the cache by key.
+// Get Retrieve an item from the cache by key.
 func (r *Memory) Get(key string, def ...any) any {
-	val, exist := r.instance.Get(r.key(key))
+	val, exist := r.instance.Load(r.key(key))
 	if exist {
 		return val
 	}
@@ -120,27 +132,38 @@ func (r *Memory) GetString(key string, def ...string) string {
 	return cast.ToString(r.Get(key, def[0]))
 }
 
-//Has Check an item exists in the cache.
+// Has Check an item exists in the cache.
 func (r *Memory) Has(key string) bool {
-	_, exist := r.instance.Get(r.key(key))
-
+	_, exist := r.instance.Load(r.key(key))
 	return exist
 }
 
-func (r *Memory) Increment(key string, value ...int) (int, error) {
+func (r *Memory) Increment(key string, value ...int64) (int64, error) {
 	if len(value) == 0 {
 		value = append(value, 1)
 	}
-	r.Add(key, 0, cache.NoExpiration)
 
-	return r.instance.IncrementInt(r.key(key), value[0])
+	r.Add(key, new(int64), NoExpiration)
+	pv := r.Get(key)
+	switch nv := pv.(type) {
+	case *atomic.Int64:
+		return nv.Add(value[0]), nil
+	case *atomic.Int32:
+		return int64(nv.Add(int32(value[0]))), nil
+	case *int64:
+		return atomic.AddInt64(nv, value[0]), nil
+	case *int32:
+		return int64(atomic.AddInt32(nv, int32(value[0]))), nil
+	default:
+		return 0, fmt.Errorf("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32", key)
+	}
 }
 
 func (r *Memory) Lock(key string, t ...time.Duration) contractscache.Lock {
 	return NewLock(r, key, t...)
 }
 
-//Pull Retrieve an item from the cache and delete it.
+// Pull Retrieve an item from the cache and delete it.
 func (r *Memory) Pull(key string, def ...any) any {
 	var res any
 	if len(def) == 0 {
@@ -153,14 +176,19 @@ func (r *Memory) Pull(key string, def ...any) any {
 	return res
 }
 
-//Put Driver an item in the cache for a given number of seconds.
+// Put Driver an item in the cache for a given number of seconds.
 func (r *Memory) Put(key string, value any, t time.Duration) error {
-	r.instance.Set(r.key(key), value, t)
+	if t != NoExpiration {
+		time.AfterFunc(t, func() {
+			r.Forget(key)
+		})
+	}
 
+	r.instance.Store(r.key(key), value)
 	return nil
 }
 
-//Remember Get an item from the cache, or execute the given Closure and store the result.
+// Remember Get an item from the cache, or execute the given Closure and store the result.
 func (r *Memory) Remember(key string, seconds time.Duration, callback func() (any, error)) (any, error) {
 	val := r.Get(key, nil)
 	if val != nil {
@@ -180,7 +208,7 @@ func (r *Memory) Remember(key string, seconds time.Duration, callback func() (an
 	return val, nil
 }
 
-//RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
+// RememberForever Get an item from the cache, or execute the given Closure and store the result forever.
 func (r *Memory) RememberForever(key string, callback func() (any, error)) (any, error) {
 	val := r.Get(key, nil)
 	if val != nil {
@@ -193,7 +221,7 @@ func (r *Memory) RememberForever(key string, callback func() (any, error)) (any,
 		return nil, err
 	}
 
-	if err := r.Put(key, val, cache.NoExpiration); err != nil {
+	if err = r.Put(key, val, NoExpiration); err != nil {
 		return nil, err
 	}
 

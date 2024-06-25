@@ -22,7 +22,6 @@ require (
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.79
 	github.com/redis/go-redis/v9 v9.5.3
