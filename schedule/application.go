@@ -17,7 +17,7 @@ type Application struct {
 	cache   cache.Cache
 	cron    *cron.Cron
 	log     log.Log
-	logInfo bool
+	debug   bool
 }
 
 func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, debug bool) *Application {
@@ -25,7 +25,7 @@ func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, deb
 		artisan: artisan,
 		cache:   cache,
 		log:     log,
-		logInfo: debug,
+		debug:   debug,
 	}
 }
 

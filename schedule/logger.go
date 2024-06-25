@@ -6,19 +6,19 @@ import (
 )
 
 type Logger struct {
-	log     log.Log
-	logInfo bool
+	log   log.Log
+	debug bool
 }
 
-func NewLogger(log log.Log, logInfo bool) *Logger {
+func NewLogger(log log.Log, debug bool) *Logger {
 	return &Logger{
-		logInfo: logInfo,
-		log:     log,
+		debug: debug,
+		log:   log,
 	}
 }
 
 func (log *Logger) Info(msg string, keysAndValues ...any) {
-	if !log.logInfo {
+	if !log.debug {
 		return
 	}
 	color.Green().Printf("%s %v\n", msg, keysAndValues)
