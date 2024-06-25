@@ -27,13 +27,9 @@ func Throttle(name string) httpcontract.Middleware {
 	return func(ctx httpcontract.Context) {
 		if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
 			if limits := limiter(ctx); len(limits) > 0 {
-				for _, limit := range limits {
+				for index, limit := range limits {
 					if instance, exist := limit.(*httplimit.Limit); exist {
-						tokens, remaining, reset, ok, err := instance.Store.Take(ctx, key(ctx, instance))
-						if err != nil {
-							response(ctx, instance)
-							return
-						}
+						tokens, remaining, reset, ok, _ := instance.Store.Take(ctx, key(ctx, instance, name, index))
 
 						resetTime := time.Unix(0, int64(reset)).UTC()
 						retryAfter := resetTime.Sub(time.Now().UTC()).Seconds()
@@ -55,13 +51,13 @@ func Throttle(name string) httpcontract.Middleware {
 	}
 }
 
-func key(ctx httpcontract.Context, limit *httplimit.Limit) string {
+func key(ctx httpcontract.Context, limit *httplimit.Limit, name string, index int) string {
 	// if no key is set, use the path and ip address as the default key
 	if len(limit.Key) == 0 {
-		limit.Key = fmt.Sprintf("%s:%s", ctx.Request().Ip(), ctx.Request().Path())
+		return fmt.Sprintf("throttle:%s:%d:%s:%s", name, index, ctx.Request().Ip(), ctx.Request().Path())
 	}
 
-	return limit.Key
+	return fmt.Sprintf("throttle:%s:%d:%s", name, index, limit.Key)
 }
 
 func response(ctx httpcontract.Context, limit *httplimit.Limit) {

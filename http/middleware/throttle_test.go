@@ -3,11 +3,13 @@ package middleware
 import (
 	"context"
 	nethttp "net/http"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -15,6 +17,7 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/http"
 	"github.com/goravel/framework/http/limit"
+	cachemocks "github.com/goravel/framework/mocks/cache"
 	httpmocks "github.com/goravel/framework/mocks/http"
 )
 
@@ -22,6 +25,7 @@ func TestThrottle(t *testing.T) {
 	var (
 		ctx                   *TestContext
 		mockRateLimiterFacade *httpmocks.RateLimiter
+		mockCache             *cachemocks.Cache
 	)
 
 	tests := []struct {
@@ -76,6 +80,10 @@ func TestThrottle(t *testing.T) {
 					}
 				}).Once()
 
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:0:")
+				})).Return(limit.NewBucket(1, time.Minute)).Once()
+
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
 				})
@@ -95,6 +103,10 @@ func TestThrottle(t *testing.T) {
 						limit.PerMinute(2),
 					}
 				}).Once()
+
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:0:")
+				})).Return(limit.NewBucket(2, time.Minute)).Once()
 
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
@@ -116,6 +128,11 @@ func TestThrottle(t *testing.T) {
 						limiter,
 					}
 				}).Twice()
+
+				bucket := limit.NewBucket(1, time.Minute)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:0:")
+				})).Return(bucket).Twice()
 
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
@@ -144,6 +161,15 @@ func TestThrottle(t *testing.T) {
 					}
 				}).Twice()
 
+				bucket1 := limit.NewBucket(10, 24*time.Hour)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:0:")
+				})).Return(bucket1).Twice()
+				bucket2 := limit.NewBucket(5, time.Minute)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:1:")
+				})).Return(bucket2).Twice()
+
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
 				})
@@ -169,6 +195,15 @@ func TestThrottle(t *testing.T) {
 						limiter1, limiter2,
 					}
 				}).Twice()
+
+				bucket1 := limit.NewBucket(10, 24*time.Hour)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:0:")
+				})).Return(bucket1).Twice()
+				bucket2 := limit.NewBucket(1, time.Minute)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:1:")
+				})).Return(bucket2).Twice()
 
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
@@ -198,6 +233,15 @@ func TestThrottle(t *testing.T) {
 					}
 				}).Times(10)
 
+				bucket1 := limit.NewBucket(5, 24*time.Hour)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:0:")
+				})).Return(bucket1).Times(10)
+				bucket2 := limit.NewBucket(1, time.Minute)
+				mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+					return strings.HasPrefix(key, "throttle:test:1:")
+				})).Return(bucket2).Times(5)
+
 				for i := 0; i < 10; i++ {
 					assert.NotPanics(t, func() {
 						Throttle("test")(ctx)
@@ -218,11 +262,14 @@ func TestThrottle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx = new(TestContext)
+			mockCache = &cachemocks.Cache{}
 			mockRateLimiterFacade = &httpmocks.RateLimiter{}
+			http.CacheFacade = mockCache
 			http.RateLimiterFacade = mockRateLimiterFacade
 			test.setup()
 			test.assert()
 
+			mockCache.AssertExpectations(t)
 			mockRateLimiterFacade.AssertExpectations(t)
 		})
 	}

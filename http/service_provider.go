@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/goravel/framework/contracts/cache"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
@@ -14,6 +15,7 @@ type ServiceProvider struct{}
 
 var (
 	RateLimiterFacade http.RateLimiter
+	CacheFacade       cache.Cache
 )
 
 func (http *ServiceProvider) Register(app foundation.Application) {
@@ -27,6 +29,7 @@ func (http *ServiceProvider) Register(app foundation.Application) {
 
 func (http *ServiceProvider) Boot(app foundation.Application) {
 	RateLimiterFacade = app.MakeRateLimiter()
+	CacheFacade = app.MakeCache()
 
 	http.registerCommands(app)
 }

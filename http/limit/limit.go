@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sethvargo/go-limiter"
-	"github.com/sethvargo/go-limiter/memorystore"
 
 	"github.com/goravel/framework/contracts/http"
 )
@@ -44,16 +43,13 @@ type Limit struct {
 }
 
 func NewLimit(maxAttempts, decayMinutes int) *Limit {
-	store, err := memorystore.New(&memorystore.Config{
-		Tokens:   uint64(maxAttempts),
-		Interval: time.Duration(decayMinutes) * time.Minute,
-	})
+	instance, err := NewStore(uint64(maxAttempts), time.Duration(decayMinutes)*time.Minute)
 	if err != nil {
 		panic(fmt.Sprintf("failed to load rate limiter store: %v", err))
 	}
 
 	return &Limit{
-		Store: store,
+		Store: instance,
 		ResponseCallback: func(ctx http.Context) {
 			ctx.Request().AbortWithStatus(http.StatusTooManyRequests)
 		},
