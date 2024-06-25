@@ -79,7 +79,7 @@ func (r *Store) Add(key string, value any, seconds time.Duration) bool {
 	return true
 }
 
-func (r *Store) Decrement(key string, value ...int) (int, error) {
+func (r *Store) Decrement(key string, value ...int64) (int64, error) {
 	return 1, nil
 }
 
@@ -128,7 +128,7 @@ func (r *Store) Has(key string) bool {
 	return true
 }
 
-func (r *Store) Increment(key string, value ...int) (int, error) {
+func (r *Store) Increment(key string, value ...int64) (int64, error) {
 	return 1, nil
 }
 
