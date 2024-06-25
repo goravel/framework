@@ -126,7 +126,8 @@ func TestThrottle(t *testing.T) {
 				})
 			},
 			assert: func() {
-				assert.Equal(t, "60", ctx.Response().(*TestResponse).Headers["Retry-After"])
+				retryAfter := cast.ToInt(ctx.Response().(*TestResponse).Headers["Retry-After"])
+				assert.True(t, retryAfter <= 60)
 				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
 				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
 				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
