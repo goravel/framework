@@ -10,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/contracts/schedule"
 	cachemocks "github.com/goravel/framework/mocks/cache"
+	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	logmocks "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/carbon"
@@ -27,6 +28,9 @@ func (s *ApplicationTestSuite) SetupTest() {
 }
 
 func (s *ApplicationTestSuite) TestCallAndCommand() {
+	mockConfig := &configmock.Config{}
+	mockConfig.On("GetBool", "app.debug").Return(false).Once()
+
 	mockArtisan := &consolemocks.Artisan{}
 	mockArtisan.On("Call", "test --name Goravel argument0 argument1").Return().Times(3)
 
@@ -37,7 +41,7 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 	delayIfStillRunningCall := 0
 	skipIfStillRunningCall := 0
 
-	app := NewApplication(mockArtisan, nil, mockLog)
+	app := NewApplication(mockConfig, mockArtisan, nil, mockLog)
 	app.Register([]schedule.Event{
 		app.Call(func() {
 			panic(1)
@@ -79,6 +83,9 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 }
 
 func (s *ApplicationTestSuite) TestOnOneServer() {
+	mockConfig := &configmock.Config{}
+	mockConfig.On("GetBool", "app.debug").Return(false).Twice()
+
 	mockArtisan := &consolemocks.Artisan{}
 	mockArtisan.On("Call", "test --name Goravel argument0 argument1").Return().Twice()
 
@@ -113,7 +120,7 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 
 	immediatelyCall := 0
 
-	app := NewApplication(mockArtisan, mockCache, nil)
+	app := NewApplication(mockConfig, mockArtisan, mockCache, nil)
 	app.Register([]schedule.Event{
 		app.Call(func() {
 			immediatelyCall++
@@ -121,7 +128,7 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 		app.Command("test --name Goravel argument0 argument1").EveryMinute().OnOneServer(),
 	})
 
-	app1 := NewApplication(nil, mockCache1, nil)
+	app1 := NewApplication(mockConfig, nil, mockCache1, nil)
 	app1.Register([]schedule.Event{
 		app.Call(func() {
 			immediatelyCall++
