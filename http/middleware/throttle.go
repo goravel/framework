@@ -20,7 +20,7 @@ func Throttle(name string) httpcontract.Middleware {
 				for _, limit := range limits {
 					if instance, ok := limit.(*httplimit.Limit); ok {
 						key, timer := key(ctx, name, instance)
-						currentTimes := 1
+						currentTimes := int64(1)
 
 						if http.CacheFacade.Has(timer) {
 							value := http.CacheFacade.GetInt(key, 0)
@@ -57,7 +57,7 @@ func Throttle(name string) httpcontract.Middleware {
 
 						// add the headers for the passed request
 						ctx.Response().Header("X-RateLimit-Limit", strconv.Itoa(instance.MaxAttempts))
-						ctx.Response().Header("X-RateLimit-Remaining", strconv.Itoa(instance.MaxAttempts-currentTimes))
+						ctx.Response().Header("X-RateLimit-Remaining", strconv.Itoa(instance.MaxAttempts-int(currentTimes)))
 					}
 				}
 			}
