@@ -6,7 +6,6 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/schedule"
@@ -21,12 +20,12 @@ type Application struct {
 	logInfo bool
 }
 
-func NewApplication(config config.Config, artisan console.Artisan, cache cache.Cache, log log.Log) *Application {
+func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, debug bool) *Application {
 	return &Application{
 		artisan: artisan,
 		cache:   cache,
 		log:     log,
-		logInfo: config.GetBool("app.debug"),
+		logInfo: debug,
 	}
 }
 

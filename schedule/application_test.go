@@ -41,7 +41,7 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 	delayIfStillRunningCall := 0
 	skipIfStillRunningCall := 0
 
-	app := NewApplication(mockConfig, mockArtisan, nil, mockLog)
+	app := NewApplication(mockArtisan, nil, mockLog, mockConfig.GetBool("app.debug"))
 	app.Register([]schedule.Event{
 		app.Call(func() {
 			panic(1)
@@ -120,7 +120,7 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 
 	immediatelyCall := 0
 
-	app := NewApplication(mockConfig, mockArtisan, mockCache, nil)
+	app := NewApplication(mockArtisan, mockCache, nil, mockConfig.GetBool("app.debug"))
 	app.Register([]schedule.Event{
 		app.Call(func() {
 			immediatelyCall++
@@ -128,7 +128,7 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 		app.Command("test --name Goravel argument0 argument1").EveryMinute().OnOneServer(),
 	})
 
-	app1 := NewApplication(mockConfig, nil, mockCache1, nil)
+	app1 := NewApplication(nil, mockCache1, nil, mockConfig.GetBool("app.debug"))
 	app1.Register([]schedule.Event{
 		app.Call(func() {
 			immediatelyCall++
