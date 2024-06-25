@@ -14,8 +14,8 @@ const BindingView = "goravel.view"
 type ServiceProvider struct{}
 
 var (
-	RateLimiterFacade http.RateLimiter
 	CacheFacade       cache.Cache
+	RateLimiterFacade http.RateLimiter
 )
 
 func (http *ServiceProvider) Register(app foundation.Application) {
@@ -28,8 +28,8 @@ func (http *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (http *ServiceProvider) Boot(app foundation.Application) {
-	RateLimiterFacade = app.MakeRateLimiter()
 	CacheFacade = app.MakeCache()
+	RateLimiterFacade = app.MakeRateLimiter()
 
 	http.registerCommands(app)
 }
