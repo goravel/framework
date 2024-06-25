@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.21
+go 1.22
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
@@ -30,6 +30,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
 	github.com/samber/lo v1.39.0
+	github.com/sethvargo/go-limiter v1.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/viper v1.19.0

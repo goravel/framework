@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"strconv"
 	"time"
@@ -10,7 +8,19 @@ import (
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/http"
 	httplimit "github.com/goravel/framework/http/limit"
-	"github.com/goravel/framework/support/carbon"
+)
+
+const (
+	// HeaderRateLimitLimit, HeaderRateLimitRemaining, and HeaderRateLimitReset
+	// are the recommended return header values from IETF on rate limiting. Reset
+	// is in UTC time.
+	HeaderRateLimitLimit     = "X-RateLimit-Limit"
+	HeaderRateLimitRemaining = "X-RateLimit-Remaining"
+	HeaderRateLimitReset     = "X-RateLimit-Reset"
+
+	// HeaderRetryAfter is the header used to indicate when a client should retry
+	// requests (when the rate limit expires), in UTC time.
+	HeaderRetryAfter = "Retry-After"
 )
 
 func Throttle(name string) httpcontract.Middleware {
@@ -18,46 +28,24 @@ func Throttle(name string) httpcontract.Middleware {
 		if limiter := http.RateLimiterFacade.Limiter(name); limiter != nil {
 			if limits := limiter(ctx); len(limits) > 0 {
 				for _, limit := range limits {
-					if instance, ok := limit.(*httplimit.Limit); ok {
-						key, timer := key(ctx, name, instance)
-						currentTimes := 1
-
-						if http.CacheFacade.Has(timer) {
-							value := http.CacheFacade.GetInt(key, 0)
-							if value >= instance.MaxAttempts {
-								expireSecond := http.CacheFacade.GetInt(timer, 0) + instance.DecayMinutes*60
-								ctx.Response().Header("X-RateLimit-Reset", strconv.Itoa(expireSecond))
-								ctx.Response().Header("Retry-After", strconv.Itoa(expireSecond-int(carbon.Now().Timestamp())))
-								if instance.ResponseCallback != nil {
-									instance.ResponseCallback(ctx)
-									return
-								} else {
-									ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests)
-									return
-								}
-							} else {
-								var err error
-								if currentTimes, err = http.CacheFacade.Increment(key); err != nil {
-									panic(err)
-								}
-							}
-						} else {
-							expireMinute := time.Duration(instance.DecayMinutes) * time.Minute
-
-							err := http.CacheFacade.Put(timer, carbon.Now().Timestamp(), expireMinute)
-							if err != nil {
-								panic(err)
-							}
-
-							err = http.CacheFacade.Put(key, currentTimes, expireMinute)
-							if err != nil {
-								panic(err)
-							}
+					if instance, exist := limit.(*httplimit.Limit); exist {
+						tokens, remaining, reset, ok, err := instance.Store.Take(ctx, key(ctx, instance))
+						if err != nil {
+							response(ctx, instance)
+							return
 						}
 
-						// add the headers for the passed request
-						ctx.Response().Header("X-RateLimit-Limit", strconv.Itoa(instance.MaxAttempts))
-						ctx.Response().Header("X-RateLimit-Remaining", strconv.Itoa(instance.MaxAttempts-currentTimes))
+						resetTime := time.Unix(0, int64(reset)).UTC()
+						retryAfter := resetTime.Sub(time.Now().UTC()).Seconds()
+						ctx.Response().Header(HeaderRateLimitLimit, strconv.FormatUint(tokens, 10))
+						ctx.Response().Header(HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
+
+						if !ok {
+							ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Unix())))
+							ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
+							response(ctx, instance)
+							break
+						}
 					}
 				}
 			}
@@ -67,18 +55,19 @@ func Throttle(name string) httpcontract.Middleware {
 	}
 }
 
-func key(ctx httpcontract.Context, limiter string, limit *httplimit.Limit) (string, string) {
+func key(ctx httpcontract.Context, limit *httplimit.Limit) string {
 	// if no key is set, use the path and ip address as the default key
-	var key, timer string
-	prefix := http.ConfigFacade.GetString("cache.prefix")
 	if len(limit.Key) == 0 {
-		hash := md5.Sum([]byte(ctx.Request().Path()))
-		key = fmt.Sprintf("%s:throttle:%s:%s:%s", prefix, limiter, hex.EncodeToString(hash[:]), ctx.Request().Ip())
-	} else {
-		hash := md5.Sum([]byte(limit.Key))
-		key = fmt.Sprintf("%s:throttle:%s:%s", prefix, limiter, hex.EncodeToString(hash[:]))
+		limit.Key = fmt.Sprintf("%s:%s", ctx.Request().Ip(), ctx.Request().Path())
 	}
-	timer = key + ":timer"
 
-	return key, timer
+	return limit.Key
+}
+
+func response(ctx httpcontract.Context, limit *httplimit.Limit) {
+	if limit.ResponseCallback != nil {
+		limit.ResponseCallback(ctx)
+	} else {
+		ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests)
+	}
 }

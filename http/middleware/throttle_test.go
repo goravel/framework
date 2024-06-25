@@ -2,15 +2,12 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	nethttp "net/http"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -18,22 +15,14 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/http"
 	"github.com/goravel/framework/http/limit"
-	cachemocks "github.com/goravel/framework/mocks/cache"
-	configmocks "github.com/goravel/framework/mocks/config"
 	httpmocks "github.com/goravel/framework/mocks/http"
-	"github.com/goravel/framework/support/carbon"
 )
 
 func TestThrottle(t *testing.T) {
 	var (
 		ctx                   *TestContext
-		mockCache             *cachemocks.Cache
-		mockConfig            *configmocks.Config
 		mockRateLimiterFacade *httpmocks.RateLimiter
 	)
-
-	now := carbon.Now()
-	carbon.SetTestNow(now)
 
 	tests := []struct {
 		name   string
@@ -86,74 +75,17 @@ func TestThrottle(t *testing.T) {
 						limit.PerMinute(1),
 					}
 				}).Once()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
-				mockCache.On("Has", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				})).Return(false).Once()
-				mockCache.On("Put", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				}), now.Timestamp(), time.Duration(1)*time.Minute).Return(nil).Once()
-				mockCache.On("Put", mock.MatchedBy(func(key string) bool {
-					return strings.HasPrefix(key, "goravel:throttle:test:")
-				}), 1, time.Duration(1)*time.Minute).Return(nil).Once()
 
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
 				})
 			},
 			assert: func() {
-				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
 				assert.Empty(t, ctx.Response().(*TestResponse).Headers["Retry-After"])
+				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
 				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
 				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
 			},
-		},
-		{
-			name: "error when put timer fail in first request",
-			setup: func() {
-				mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
-					return []contractshttp.Limit{
-						limit.PerMinute(1),
-					}
-				}).Once()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
-				mockCache.On("Has", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				})).Return(false).Once()
-				mockCache.On("Put", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				}), now.Timestamp(), time.Duration(1)*time.Minute).Return(errors.New("error")).Once()
-
-				assert.Panics(t, func() {
-					Throttle("test")(ctx)
-				})
-			},
-			assert: func() {},
-		},
-		{
-			name: "error when put key fail in first request",
-			setup: func() {
-				mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
-					return []contractshttp.Limit{
-						limit.PerMinute(1),
-					}
-				}).Once()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
-				mockCache.On("Has", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				})).Return(false).Once()
-				mockCache.On("Put", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				}), now.Timestamp(), time.Duration(1)*time.Minute).Return(nil).Once()
-				mockCache.On("Put", mock.MatchedBy(func(key string) bool {
-					return strings.HasPrefix(key, "goravel:throttle:test:")
-				}), 1, time.Duration(1)*time.Minute).Return(errors.New("error")).Once()
-
-				assert.Panics(t, func() {
-					Throttle("test")(ctx)
-				})
-			},
-			assert: func() {},
 		},
 		{
 			name: "success when not over MaxAttempts",
@@ -163,56 +95,121 @@ func TestThrottle(t *testing.T) {
 						limit.PerMinute(2),
 					}
 				}).Once()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
-				mockCache.On("Has", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				})).Return(true).Once()
-				mockCache.On("GetInt", mock.MatchedBy(func(key string) bool {
-					return strings.HasPrefix(key, "goravel:throttle:test:")
-				}), 0).Return(1).Once()
-				mockCache.On("Increment", mock.MatchedBy(func(key string) bool {
-					return strings.HasPrefix(key, "goravel:throttle:test:")
-				})).Return(2, nil).Once()
 
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
 				})
 			},
 			assert: func() {
-				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
 				assert.Empty(t, ctx.Response().(*TestResponse).Headers["Retry-After"])
+				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
 				assert.Equal(t, "2", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
-				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
+				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
 			},
 		},
 		{
 			name: "success when over MaxAttempts",
 			setup: func() {
+				limiter := limit.PerMinute(1)
 				mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
 					return []contractshttp.Limit{
-						limit.PerMinute(2),
+						limiter,
 					}
-				}).Once()
-				mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
-				mockCache.On("Has", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				})).Return(true).Once()
-				mockCache.On("GetInt", mock.MatchedBy(func(key string) bool {
-					return strings.HasPrefix(key, "goravel:throttle:test:")
-				}), 0).Return(2).Once()
-				mockCache.On("GetInt", mock.MatchedBy(func(timer string) bool {
-					return strings.HasSuffix(timer, ":timer")
-				}), 0).Return(int(now.Timestamp())).Once()
+				}).Twice()
+
+				assert.NotPanics(t, func() {
+					Throttle("test")(ctx)
+				})
 
 				assert.NotPanics(t, func() {
 					Throttle("test")(ctx)
 				})
 			},
 			assert: func() {
-				assert.Equal(t, strconv.FormatInt(now.Timestamp()+60, 10), ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
 				assert.Equal(t, "60", ctx.Response().(*TestResponse).Headers["Retry-After"])
-				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
-				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
+				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
+				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
+			},
+		},
+		{
+			name: "success when multiple limiters case 1",
+			setup: func() {
+				limiter1 := limit.PerDay(10)
+				limiter2 := limit.PerMinute(5)
+				mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+					return []contractshttp.Limit{
+						limiter1, limiter2,
+					}
+				}).Twice()
+
+				assert.NotPanics(t, func() {
+					Throttle("test")(ctx)
+				})
+
+				assert.NotPanics(t, func() {
+					Throttle("test")(ctx)
+				})
+			},
+			assert: func() {
+				assert.Empty(t, ctx.Response().(*TestResponse).Headers["Retry-After"])
+				assert.Empty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "5", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
+				assert.Equal(t, "3", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
+			},
+		},
+		{
+			name: "success when multiple limiters case 2",
+			setup: func() {
+				limiter1 := limit.PerDay(10)
+				limiter2 := limit.PerMinute(1)
+				mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+					return []contractshttp.Limit{
+						limiter1, limiter2,
+					}
+				}).Twice()
+
+				assert.NotPanics(t, func() {
+					Throttle("test")(ctx)
+				})
+
+				assert.NotPanics(t, func() {
+					Throttle("test")(ctx)
+				})
+			},
+			assert: func() {
+				// should return last limiter's reset time (limiter configured to 1 per minute)
+				retryAfter := cast.ToInt(ctx.Response().(*TestResponse).Headers["Retry-After"])
+				assert.True(t, retryAfter <= 60)
+				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
+				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
+			},
+		},
+		{
+			name: "success when multiple limiters case 3",
+			setup: func() {
+				limiter1 := limit.PerDay(5)
+				limiter2 := limit.PerMinute(1)
+				mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+					return []contractshttp.Limit{
+						limiter1, limiter2,
+					}
+				}).Times(10)
+
+				for i := 0; i < 10; i++ {
+					assert.NotPanics(t, func() {
+						Throttle("test")(ctx)
+					})
+				}
+			},
+			assert: func() {
+				// should > 86000 seconds (limiter configured to 5 per day)
+				retryAfter := cast.ToInt(ctx.Response().(*TestResponse).Headers["Retry-After"])
+				assert.True(t, retryAfter > 86000)
+				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "5", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
+				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
 			},
 		},
 	}
@@ -220,17 +217,11 @@ func TestThrottle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx = new(TestContext)
-			mockCache = &cachemocks.Cache{}
-			mockConfig = &configmocks.Config{}
 			mockRateLimiterFacade = &httpmocks.RateLimiter{}
-			http.CacheFacade = mockCache
-			http.ConfigFacade = mockConfig
 			http.RateLimiterFacade = mockRateLimiterFacade
 			test.setup()
 			test.assert()
 
-			mockCache.AssertExpectations(t)
-			mockConfig.AssertExpectations(t)
 			mockRateLimiterFacade.AssertExpectations(t)
 		})
 	}
