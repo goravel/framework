@@ -2627,6 +2627,71 @@ func TestAddRule(t *testing.T) {
 	assert.EqualError(t, err, "duplicate rule name: required")
 }
 
+func TestAddFilter(t *testing.T) {
+	validation := NewValidation()
+	validation.AddFilter("default", defaultFilter)
+	filters := validation.Filters()
+	filterFunc := filters["default"].(func(string, ...string) string)
+	assert.Equal(t, "default", filterFunc("", "default"))
+	assert.Equal(t, "a", filterFunc("a"))
+}
+
+func TestAddFilters(t *testing.T) {
+	validation := NewValidation()
+	validation.AddFilters(map[string]any{
+		"default": defaultFilter,
+	}).AddFilters(map[string]any{
+		"add": func(val string) string {
+			return val + " add"
+		},
+	})
+	filters := validation.Filters()
+	defaultFilterFunc := filters["default"].(func(string, ...string) string)
+	addFilterFunc := filters["add"].(func(string) string)
+	assert.Equal(t, "default", defaultFilterFunc("", "default"))
+	assert.Equal(t, "a", defaultFilterFunc("a"))
+	assert.Equal(t, "a add", addFilterFunc("a"))
+}
+
+func TestFilters(t *testing.T) {
+	mp := map[string]any{
+		"name":      "krishan ",
+		"age":       " 22 ",
+		"empty":     "",
+		"languages": "cpp, go",
+	}
+
+	validation := NewValidation()
+	validation.AddFilter("default", defaultFilter)
+	validator, err := validation.Make(mp, map[string]string{
+		"name, age, empty, languages": "required",
+	}, Filters(map[string]string{
+		"empty":          "default:emptyDefault",
+		"name":           "trim|upper",
+		"age, not-exist": "trim|int",
+		"languages":      "str2arr:,",
+	}))
+
+	assert.Nil(t, err)
+	var newMp map[string]any
+	assert.Nil(t, validator.Bind(&newMp))
+
+	assert.Equal(t, "KRISHAN", newMp["name"])
+	assert.Equal(t, 22, newMp["age"])
+	assert.Equal(t, "emptyDefault", newMp["empty"])
+	assert.Equal(t, []string{"cpp", "go"}, newMp["languages"])
+}
+
+func defaultFilter(val string, def ...string) string {
+	if val == "" {
+		if len(def) > 0 {
+			return def[0]
+		}
+	}
+
+	return val
+}
+
 func TestCustomRule(t *testing.T) {
 	validation := NewValidation()
 	err := validation.AddRules([]httpvalidate.Rule{&Uppercase{}, &Lowercase{}})
@@ -2722,7 +2787,7 @@ func (receiver *Duplicate) Signature() string {
 }
 
 // Passes Determine if the validation rule passes.
-func (receiver *Duplicate) Passes(data httpvalidate.Data, val any, options ...any) bool {
+func (receiver *Duplicate) Passes(httpvalidate.Data, any, ...any) bool {
 	return true
 }
 

@@ -17,6 +17,14 @@ func Rules(rules map[string]string) httpvalidate.Option {
 	}
 }
 
+func Filters(filters map[string]string) httpvalidate.Option {
+	return func(options map[string]any) {
+		if len(filters) > 0 {
+			options["filters"] = filters
+		}
+	}
+}
+
 func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
 	return func(options map[string]any) {
 		if len(rules) > 0 {
@@ -63,6 +71,13 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 		rules := options["rules"].(map[string]string)
 		for key, value := range rules {
 			validator.StringRule(key, value)
+		}
+	}
+
+	if options["filters"] != nil {
+		filters, ok := options["filters"].(map[string]string)
+		if ok {
+			validator.FilterRules(filters)
 		}
 	}
 

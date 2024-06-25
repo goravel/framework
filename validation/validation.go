@@ -8,15 +8,18 @@ import (
 
 	"github.com/goravel/framework/contracts/http"
 	validatecontract "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/support/collect"
 )
 
 type Validation struct {
-	rules []validatecontract.Rule
+	rules   []validatecontract.Rule
+	filters map[string]any
 }
 
 func NewValidation() *Validation {
 	return &Validation{
-		rules: make([]validatecontract.Rule, 0),
+		rules:   make([]validatecontract.Rule, 0),
+		filters: map[string]any{},
 	}
 }
 
@@ -58,9 +61,22 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	}
 
 	v := dataFace.Create()
+	v.AddFilters(r.filters)
 	AppendOptions(v, generateOptions)
 
 	return NewValidator(v), nil
+}
+
+func (r *Validation) AddFilter(name string, filterFunc any) validatecontract.Validation {
+	r.filters[name] = filterFunc
+
+	return r
+}
+
+func (r *Validation) AddFilters(m map[string]any) validatecontract.Validation {
+	r.filters = collect.Merge(r.filters, m)
+
+	return r
 }
 
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
@@ -80,6 +96,10 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 
 func (r *Validation) Rules() []validatecontract.Rule {
 	return r.rules
+}
+
+func (r *Validation) Filters() map[string]any {
+	return r.filters
 }
 
 func (r *Validation) existRuleNames() []string {

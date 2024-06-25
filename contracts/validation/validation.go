@@ -5,10 +5,16 @@ type Option func(map[string]any)
 type Validation interface {
 	// Make create a new validator instance.
 	Make(data any, rules map[string]string, options ...Option) (Validator, error)
+	// AddFilter add the custom filter.
+	AddFilter(name string, filterFunc any) Validation
+	// AddFilters add the custom filters.
+	AddFilters(m map[string]any) Validation
 	// AddRules add the custom rules.
 	AddRules([]Rule) error
 	// Rules get the custom rules.
 	Rules() []Rule
+	// Filters get the custom filters.
+	Filters() map[string]any
 }
 
 type Validator interface {
