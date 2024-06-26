@@ -11,7 +11,8 @@ type ServiceProvider struct {
 
 func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeArtisan(), app.MakeCache(), app.MakeLog()), nil
+		config := app.MakeConfig()
+		return NewApplication(app.MakeArtisan(), app.MakeCache(), app.MakeLog(), config.GetBool("app.debug")), nil
 	})
 }
 
