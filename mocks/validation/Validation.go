@@ -20,17 +20,17 @@ func (_m *Validation) EXPECT() *Validation_Expecter {
 	return &Validation_Expecter{mock: &_m.Mock}
 }
 
-// AddFilter provides a mock function with given fields: name, filterFunc
-func (_m *Validation) AddFilter(name string, filterFunc interface{}) validation.Validation {
-	ret := _m.Called(name, filterFunc)
+// AddFilter provides a mock function with given fields: _a0
+func (_m *Validation) AddFilter(_a0 validation.Filter) validation.Validation {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddFilter")
 	}
 
 	var r0 validation.Validation
-	if rf, ok := ret.Get(0).(func(string, interface{}) validation.Validation); ok {
-		r0 = rf(name, filterFunc)
+	if rf, ok := ret.Get(0).(func(validation.Filter) validation.Validation); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(validation.Validation)
@@ -46,15 +46,14 @@ type Validation_AddFilter_Call struct {
 }
 
 // AddFilter is a helper method to define mock.On call
-//   - name string
-//   - filterFunc interface{}
-func (_e *Validation_Expecter) AddFilter(name interface{}, filterFunc interface{}) *Validation_AddFilter_Call {
-	return &Validation_AddFilter_Call{Call: _e.mock.On("AddFilter", name, filterFunc)}
+//   - _a0 validation.Filter
+func (_e *Validation_Expecter) AddFilter(_a0 interface{}) *Validation_AddFilter_Call {
+	return &Validation_AddFilter_Call{Call: _e.mock.On("AddFilter", _a0)}
 }
 
-func (_c *Validation_AddFilter_Call) Run(run func(name string, filterFunc interface{})) *Validation_AddFilter_Call {
+func (_c *Validation_AddFilter_Call) Run(run func(_a0 validation.Filter)) *Validation_AddFilter_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(validation.Filter))
 	})
 	return _c
 }
@@ -64,22 +63,22 @@ func (_c *Validation_AddFilter_Call) Return(_a0 validation.Validation) *Validati
 	return _c
 }
 
-func (_c *Validation_AddFilter_Call) RunAndReturn(run func(string, interface{}) validation.Validation) *Validation_AddFilter_Call {
+func (_c *Validation_AddFilter_Call) RunAndReturn(run func(validation.Filter) validation.Validation) *Validation_AddFilter_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// AddFilters provides a mock function with given fields: m
-func (_m *Validation) AddFilters(m map[string]interface{}) validation.Validation {
-	ret := _m.Called(m)
+// AddFilters provides a mock function with given fields: _a0
+func (_m *Validation) AddFilters(_a0 []validation.Filter) validation.Validation {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddFilters")
 	}
 
 	var r0 validation.Validation
-	if rf, ok := ret.Get(0).(func(map[string]interface{}) validation.Validation); ok {
-		r0 = rf(m)
+	if rf, ok := ret.Get(0).(func([]validation.Filter) validation.Validation); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(validation.Validation)
@@ -95,14 +94,14 @@ type Validation_AddFilters_Call struct {
 }
 
 // AddFilters is a helper method to define mock.On call
-//   - m map[string]interface{}
-func (_e *Validation_Expecter) AddFilters(m interface{}) *Validation_AddFilters_Call {
-	return &Validation_AddFilters_Call{Call: _e.mock.On("AddFilters", m)}
+//   - _a0 []validation.Filter
+func (_e *Validation_Expecter) AddFilters(_a0 interface{}) *Validation_AddFilters_Call {
+	return &Validation_AddFilters_Call{Call: _e.mock.On("AddFilters", _a0)}
 }
 
-func (_c *Validation_AddFilters_Call) Run(run func(m map[string]interface{})) *Validation_AddFilters_Call {
+func (_c *Validation_AddFilters_Call) Run(run func(_a0 []validation.Filter)) *Validation_AddFilters_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]interface{}))
+		run(args[0].([]validation.Filter))
 	})
 	return _c
 }
@@ -112,7 +111,7 @@ func (_c *Validation_AddFilters_Call) Return(_a0 validation.Validation) *Validat
 	return _c
 }
 
-func (_c *Validation_AddFilters_Call) RunAndReturn(run func(map[string]interface{}) validation.Validation) *Validation_AddFilters_Call {
+func (_c *Validation_AddFilters_Call) RunAndReturn(run func([]validation.Filter) validation.Validation) *Validation_AddFilters_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -164,19 +163,19 @@ func (_c *Validation_AddRules_Call) RunAndReturn(run func([]validation.Rule) err
 }
 
 // Filters provides a mock function with given fields:
-func (_m *Validation) Filters() map[string]interface{} {
+func (_m *Validation) Filters() []validation.Filter {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Filters")
 	}
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+	var r0 []validation.Filter
+	if rf, ok := ret.Get(0).(func() []validation.Filter); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).([]validation.Filter)
 		}
 	}
 
@@ -200,12 +199,12 @@ func (_c *Validation_Filters_Call) Run(run func()) *Validation_Filters_Call {
 	return _c
 }
 
-func (_c *Validation_Filters_Call) Return(_a0 map[string]interface{}) *Validation_Filters_Call {
+func (_c *Validation_Filters_Call) Return(_a0 []validation.Filter) *Validation_Filters_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Validation_Filters_Call) RunAndReturn(run func() map[string]interface{}) *Validation_Filters_Call {
+func (_c *Validation_Filters_Call) RunAndReturn(run func() []validation.Filter) *Validation_Filters_Call {
 	_c.Call.Return(run)
 	return _c
 }
