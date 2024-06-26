@@ -3,11 +3,11 @@ package middleware
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/http"
 	httplimit "github.com/goravel/framework/http/limit"
+	"github.com/goravel/framework/support/carbon"
 )
 
 const (
@@ -31,13 +31,13 @@ func Throttle(name string) httpcontract.Middleware {
 					if instance, exist := limit.(*httplimit.Limit); exist {
 						tokens, remaining, reset, ok, _ := instance.Store.Take(ctx, key(ctx, instance, name, index))
 
-						resetTime := time.Unix(0, int64(reset)).UTC()
-						retryAfter := resetTime.Sub(time.Now().UTC()).Seconds()
+						resetTime := carbon.FromTimestampNano(int64(reset)).SetTimezone(carbon.UTC)
+						retryAfter := carbon.Now().DiffInSeconds(resetTime)
 						ctx.Response().Header(HeaderRateLimitLimit, strconv.FormatUint(tokens, 10))
 						ctx.Response().Header(HeaderRateLimitRemaining, strconv.FormatUint(remaining, 10))
 
 						if !ok {
-							ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Unix())))
+							ctx.Response().Header(HeaderRateLimitReset, strconv.Itoa(int(resetTime.Timestamp())))
 							ctx.Response().Header(HeaderRetryAfter, strconv.Itoa(int(retryAfter)))
 							response(ctx, instance)
 							break

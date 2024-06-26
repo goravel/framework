@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/goravel/framework/http"
+	"github.com/goravel/framework/support/carbon"
 )
 
 // Code from https://github.com/sethvargo/go-limiter
@@ -158,7 +159,7 @@ type Bucket struct {
 // NewBucket creates a new Bucket from the given tokens and interval.
 func NewBucket(tokens uint64, interval time.Duration) *Bucket {
 	b := &Bucket{
-		startTime:       uint64(time.Now().UnixNano()),
+		startTime:       uint64(carbon.Now().TimestampNano()),
 		maxTokens:       tokens,
 		availableTokens: tokens,
 		interval:        interval,
@@ -183,7 +184,7 @@ func (b *Bucket) get() (tokens uint64, remaining uint64, retErr error) {
 func (b *Bucket) take() (tokens uint64, remaining uint64, reset uint64, ok bool, retErr error) {
 	// Capture the current request time, current tick, and amount of time until
 	// the Bucket resets.
-	now := uint64(time.Now().UnixNano())
+	now := uint64(carbon.Now().TimestampNano())
 
 	b.lock.Lock()
 	defer b.lock.Unlock()
