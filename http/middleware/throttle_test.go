@@ -3,11 +3,11 @@ package middleware
 import (
 	"context"
 	nethttp "net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -19,6 +19,7 @@ import (
 	"github.com/goravel/framework/http/limit"
 	cachemocks "github.com/goravel/framework/mocks/cache"
 	httpmocks "github.com/goravel/framework/mocks/http"
+	"github.com/goravel/framework/support/carbon"
 )
 
 func TestThrottle(t *testing.T) {
@@ -27,6 +28,10 @@ func TestThrottle(t *testing.T) {
 		mockRateLimiterFacade *httpmocks.RateLimiter
 		mockCache             *cachemocks.Cache
 	)
+
+	now := carbon.Now()
+	carbon.SetTestNow(now)
+	defer carbon.UnsetTestNow()
 
 	tests := []struct {
 		name   string
@@ -143,9 +148,8 @@ func TestThrottle(t *testing.T) {
 				})
 			},
 			assert: func() {
-				retryAfter := cast.ToInt(ctx.Response().(*TestResponse).Headers["Retry-After"])
-				assert.True(t, retryAfter <= 60)
-				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, strconv.FormatInt(now.Timestamp()+60, 10), ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "60", ctx.Response().(*TestResponse).Headers["Retry-After"])
 				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
 				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
 			},
@@ -215,9 +219,8 @@ func TestThrottle(t *testing.T) {
 			},
 			assert: func() {
 				// should return last limiter's reset time (limiter configured to 1 per minute)
-				retryAfter := cast.ToInt(ctx.Response().(*TestResponse).Headers["Retry-After"])
-				assert.True(t, retryAfter <= 60)
-				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, strconv.FormatInt(now.Timestamp()+60, 10), ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "60", ctx.Response().(*TestResponse).Headers["Retry-After"])
 				assert.Equal(t, "1", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
 				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
 			},
@@ -249,10 +252,8 @@ func TestThrottle(t *testing.T) {
 				}
 			},
 			assert: func() {
-				// should > 86000 seconds (limiter configured to 5 per day)
-				retryAfter := cast.ToInt(ctx.Response().(*TestResponse).Headers["Retry-After"])
-				assert.True(t, retryAfter > 86000)
-				assert.NotEmpty(t, ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, strconv.FormatInt(now.Timestamp()+86400, 10), ctx.Response().(*TestResponse).Headers["X-RateLimit-Reset"])
+				assert.Equal(t, "86400", ctx.Response().(*TestResponse).Headers["Retry-After"])
 				assert.Equal(t, "5", ctx.Response().(*TestResponse).Headers["X-RateLimit-Limit"])
 				assert.Equal(t, "0", ctx.Response().(*TestResponse).Headers["X-RateLimit-Remaining"])
 			},
