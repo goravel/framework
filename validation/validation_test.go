@@ -2629,28 +2629,22 @@ func TestAddRule(t *testing.T) {
 
 func TestAddFilter(t *testing.T) {
 	validation := NewValidation()
-	validation.AddFilter("default", defaultFilter)
+	validation.AddFilter(&DefaultFilter{})
 	filters := validation.Filters()
-	filterFunc := filters["default"].(func(string, ...string) string)
+	filterFunc := filters[0].Handle().(func(string, ...string) string)
 	assert.Equal(t, "default", filterFunc("", "default"))
 	assert.Equal(t, "a", filterFunc("a"))
 }
 
 func TestAddFilters(t *testing.T) {
 	validation := NewValidation()
-	validation.AddFilters(map[string]any{
-		"default": defaultFilter,
-	}).AddFilters(map[string]any{
-		"add": func(val string) string {
-			return val + " add"
-		},
-	})
+	validation.AddFilters([]httpvalidate.Filter{&DefaultFilter{}, &Arr2Str{}})
 	filters := validation.Filters()
-	defaultFilterFunc := filters["default"].(func(string, ...string) string)
-	addFilterFunc := filters["add"].(func(string) string)
+	defaultFilterFunc := filters[0].Handle().(func(string, ...string) string)
+	arr2StrFilterFunc := filters[1].Handle().(func(any, string) string)
 	assert.Equal(t, "default", defaultFilterFunc("", "default"))
 	assert.Equal(t, "a", defaultFilterFunc("a"))
-	assert.Equal(t, "a add", addFilterFunc("a"))
+	assert.Equal(t, "a,b", arr2StrFilterFunc([]string{"a", "b"}, ","))
 }
 
 func TestFilters(t *testing.T) {
@@ -2659,17 +2653,19 @@ func TestFilters(t *testing.T) {
 		"age":       " 22 ",
 		"empty":     "",
 		"languages": "cpp, go",
+		"numbers":   []int{1, 2, 3},
 	}
 
 	validation := NewValidation()
-	validation.AddFilter("default", defaultFilter)
+	validation.AddFilter(&DefaultFilter{}).AddFilter(&Arr2Str{})
 	validator, err := validation.Make(mp, map[string]string{
-		"name, age, empty, languages": "required",
+		"name, age, empty, languages, numbers": "required",
 	}, Filters(map[string]string{
 		"empty":          "default:emptyDefault",
 		"name":           "trim|upper",
 		"age, not-exist": "trim|int",
 		"languages":      "str2arr:,",
+		"numbers":        "arr2str:,",
 	}))
 
 	assert.Nil(t, err)
@@ -2680,16 +2676,39 @@ func TestFilters(t *testing.T) {
 	assert.Equal(t, 22, newMp["age"])
 	assert.Equal(t, "emptyDefault", newMp["empty"])
 	assert.Equal(t, []string{"cpp", "go"}, newMp["languages"])
+	assert.Equal(t, "1,2,3", newMp["numbers"])
 }
 
-func defaultFilter(val string, def ...string) string {
-	if val == "" {
-		if len(def) > 0 {
-			return def[0]
-		}
-	}
+type DefaultFilter struct {
+}
 
-	return val
+func (receiver *DefaultFilter) Signature() string {
+	return "default"
+}
+
+func (receiver *DefaultFilter) Handle() any {
+	return func(val string, def ...string) string {
+		if val == "" {
+			if len(def) > 0 {
+				return def[0]
+			}
+		}
+
+		return val
+	}
+}
+
+type Arr2Str struct {
+}
+
+func (receiver *Arr2Str) Signature() string {
+	return "arr2str"
+}
+
+func (receiver *Arr2Str) Handle() any {
+	return func(val any, sep string) string {
+		return strings.Join(cast.ToStringSlice(val), sep)
+	}
 }
 
 func TestCustomRule(t *testing.T) {

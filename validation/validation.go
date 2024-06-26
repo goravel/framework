@@ -8,18 +8,17 @@ import (
 
 	"github.com/goravel/framework/contracts/http"
 	validatecontract "github.com/goravel/framework/contracts/validation"
-	"github.com/goravel/framework/support/collect"
 )
 
 type Validation struct {
 	rules   []validatecontract.Rule
-	filters map[string]any
+	filters []validatecontract.Filter
 }
 
 func NewValidation() *Validation {
 	return &Validation{
 		rules:   make([]validatecontract.Rule, 0),
-		filters: map[string]any{},
+		filters: make([]validatecontract.Filter, 0),
 	}
 }
 
@@ -52,7 +51,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 		}
 	}
 
-	options = append(options, Rules(rules), CustomRules(r.rules))
+	options = append(options, Rules(rules), CustomRules(r.rules), CustomFilters(r.filters))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
 		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(nil, NewData(dataFace)); err != nil {
@@ -61,20 +60,20 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	}
 
 	v := dataFace.Create()
-	v.AddFilters(r.filters)
+
 	AppendOptions(v, generateOptions)
 
 	return NewValidator(v), nil
 }
 
-func (r *Validation) AddFilter(name string, filterFunc any) validatecontract.Validation {
-	r.filters[name] = filterFunc
+func (r *Validation) AddFilter(filter validatecontract.Filter) validatecontract.Validation {
+	r.filters = append(r.filters, filter)
 
 	return r
 }
 
-func (r *Validation) AddFilters(m map[string]any) validatecontract.Validation {
-	r.filters = collect.Merge(r.filters, m)
+func (r *Validation) AddFilters(filters []validatecontract.Filter) validatecontract.Validation {
+	r.filters = append(r.filters, filters...)
 
 	return r
 }
@@ -98,7 +97,7 @@ func (r *Validation) Rules() []validatecontract.Rule {
 	return r.rules
 }
 
-func (r *Validation) Filters() map[string]any {
+func (r *Validation) Filters() []validatecontract.Filter {
 	return r.filters
 }
 

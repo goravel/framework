@@ -25,6 +25,14 @@ func Filters(filters map[string]string) httpvalidate.Option {
 	}
 }
 
+func CustomFilters(filters []httpvalidate.Filter) httpvalidate.Option {
+	return func(options map[string]any) {
+		if len(filters) > 0 {
+			options["customFilters"] = filters
+		}
+	}
+}
+
 func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
 	return func(options map[string]any) {
 		if len(rules) > 0 {
@@ -103,6 +111,13 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 			validator.AddValidator(customRule.Signature(), func(val any, options ...any) bool {
 				return customRule.Passes(validator, val, options...)
 			})
+		}
+	}
+
+	if options["customFilters"] != nil {
+		customFilters := options["customFilters"].([]httpvalidate.Filter)
+		for _, customFilter := range customFilters {
+			validator.AddFilter(customFilter.Signature(), customFilter.Handle())
 		}
 	}
 
