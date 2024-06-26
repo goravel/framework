@@ -77,6 +77,8 @@ require (
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rabbitmq/amqp091-go v1.9.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/samber/do/v2 v2.0.0-beta.7 // indirect
+	github.com/samber/go-type-to-string v1.7.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
