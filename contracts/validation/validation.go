@@ -75,7 +75,7 @@ type Filter interface {
 	//    }
 	//
 	// 2. Return the transformed value and an error:
-	//    func (val any) (int, error) {
+	//    func (val int) (int, error) {
 	//        // conversion logic with error handling
 	//        return 1, nil
 	//    }
