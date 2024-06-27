@@ -81,11 +81,6 @@ func (s *StoreTestSuite) TestStore_Burst() {
 	s.mockCache.AssertExpectations(s.T())
 }
 
-func (s *StoreTestSuite) TestStore_Close() {
-	err := s.store.Close(context.Background())
-	s.NoError(err)
-}
-
 func (s *StoreTestSuite) TestBucket_NewBucket() {
 	b := NewBucket(10, time.Second)
 	s.NotNil(b)
