@@ -116,6 +116,54 @@ func (_c *FormRequest_Authorize_Call) RunAndReturn(run func(http.Context) error)
 	return _c
 }
 
+// Filters provides a mock function with given fields: ctx
+func (_m *FormRequest) Filters(ctx http.Context) map[string]string {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Filters")
+	}
+
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func(http.Context) map[string]string); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+
+	return r0
+}
+
+// FormRequest_Filters_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Filters'
+type FormRequest_Filters_Call struct {
+	*mock.Call
+}
+
+// Filters is a helper method to define mock.On call
+//   - ctx http.Context
+func (_e *FormRequest_Expecter) Filters(ctx interface{}) *FormRequest_Filters_Call {
+	return &FormRequest_Filters_Call{Call: _e.mock.On("Filters", ctx)}
+}
+
+func (_c *FormRequest_Filters_Call) Run(run func(ctx http.Context)) *FormRequest_Filters_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(http.Context))
+	})
+	return _c
+}
+
+func (_c *FormRequest_Filters_Call) Return(_a0 map[string]string) *FormRequest_Filters_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *FormRequest_Filters_Call) RunAndReturn(run func(http.Context) map[string]string) *FormRequest_Filters_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Messages provides a mock function with given fields: ctx
 func (_m *FormRequest) Messages(ctx http.Context) map[string]string {
 	ret := _m.Called(ctx)

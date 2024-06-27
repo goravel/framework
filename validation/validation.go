@@ -11,12 +11,14 @@ import (
 )
 
 type Validation struct {
-	rules []validatecontract.Rule
+	rules   []validatecontract.Rule
+	filters []validatecontract.Filter
 }
 
 func NewValidation() *Validation {
 	return &Validation{
-		rules: make([]validatecontract.Rule, 0),
+		rules:   make([]validatecontract.Rule, 0),
+		filters: make([]validatecontract.Filter, 0),
 	}
 }
 
@@ -49,7 +51,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 		}
 	}
 
-	options = append(options, Rules(rules), CustomRules(r.rules))
+	options = append(options, Rules(rules), CustomRules(r.rules), CustomFilters(r.filters))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
 		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(nil, NewData(dataFace)); err != nil {
@@ -58,9 +60,22 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	}
 
 	v := dataFace.Create()
+
 	AppendOptions(v, generateOptions)
 
 	return NewValidator(v), nil
+}
+
+func (r *Validation) AddFilter(filter validatecontract.Filter) validatecontract.Validation {
+	r.filters = append(r.filters, filter)
+
+	return r
+}
+
+func (r *Validation) AddFilters(filters []validatecontract.Filter) validatecontract.Validation {
+	r.filters = append(r.filters, filters...)
+
+	return r
 }
 
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
@@ -80,6 +95,10 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 
 func (r *Validation) Rules() []validatecontract.Rule {
 	return r.rules
+}
+
+func (r *Validation) Filters() []validatecontract.Filter {
+	return r.filters
 }
 
 func (r *Validation) existRuleNames() []string {
