@@ -69,7 +69,7 @@ type Filter interface {
 	// Example usages:
 	//
 	// 1. Return only the transformed value:
-	//    func (val any) int {
+	//    func (val string) int {
 	//        // conversion logic
 	//        return 1
 	//    }
