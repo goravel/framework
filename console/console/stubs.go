@@ -14,22 +14,22 @@ import (
 type DummyCommand struct {
 }
 
-//Signature The name and signature of the console command.
+// Signature The name and signature of the console command.
 func (receiver *DummyCommand) Signature() string {
 	return "command:name"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *DummyCommand) Description() string {
 	return "Command description"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *DummyCommand) Extend() command.Extend {
 	return command.Extend{}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *DummyCommand) Handle(ctx console.Context) error {
 	
 	return nil
