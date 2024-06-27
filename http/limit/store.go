@@ -51,11 +51,6 @@ type Store interface {
 	// tick. This will allow the current bucket tick to exceed the maximum number
 	// maximum ticks until the next interval.
 	Burst(ctx context.Context, key string, tokens uint64) error
-
-	// Close terminates the store and cleans up any data structures or connections
-	// that may remain open. After a store is stopped, Take() should always return
-	// zero values.
-	Close(ctx context.Context) error
 }
 
 type store struct {
@@ -125,11 +120,6 @@ func (s *store) Burst(_ context.Context, key string, tokens uint64) error {
 
 	nb := NewBucket(s.tokens+tokens, s.interval)
 	return http.CacheFacade.Put(key, nb, s.interval)
-}
-
-// Close stops the memory limiter and cleans up any outstanding sessions.
-func (s *store) Close(_ context.Context) error {
-	return nil
 }
 
 // Bucket is an internal wrapper around a taker.
