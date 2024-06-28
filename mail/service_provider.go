@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"fmt"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
@@ -19,9 +20,12 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (route *ServiceProvider) Boot(app foundation.Application) {
-	app.MakeQueue().Register([]queue.Job{
+	err := app.MakeQueue().Register([]queue.Job{
 		NewSendMailJob(app.MakeConfig()),
 	})
+	if err != nil {
+		panic(fmt.Sprintf("Failed to register mail job: %v", err))
+	}
 
 	app.MakeArtisan().Register([]consolecontract.Command{
 		console.NewMailMakeCommand(),

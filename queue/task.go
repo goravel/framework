@@ -1,13 +1,6 @@
 package queue
 
 import (
-	"errors"
-	"time"
-
-	"github.com/RichardKnop/machinery/v2"
-	"github.com/RichardKnop/machinery/v2/tasks"
-
-	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
@@ -15,72 +8,71 @@ type Task struct {
 	config     *Config
 	connection string
 	chain      bool
-	delay      *time.Time
-	machinery  *Machinery
+	delay      uint
+	driver     *DriverImpl
 	jobs       []queue.Jobs
 	queue      string
-	server     *machinery.Server
 }
 
-func NewTask(config *Config, log log.Log, job queue.Job, args []queue.Arg) *Task {
+func NewTask(config *Config, job queue.Job, args []any) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
-		machinery:  NewMachinery(config, log),
+		driver:     NewDriverImpl(config.DefaultConnection(), config),
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
 				Args: args,
 			},
 		},
+		queue: config.Queue(config.DefaultConnection(), ""),
 	}
 }
 
-func NewChainTask(config *Config, log log.Log, jobs []queue.Jobs) *Task {
+func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
 		chain:      true,
-		machinery:  NewMachinery(config, log),
+		driver:     NewDriverImpl(config.DefaultConnection(), config),
 		jobs:       jobs,
+		queue:      config.Queue(config.DefaultConnection(), ""),
 	}
 }
 
-func (receiver *Task) Delay(delay time.Time) queue.Task {
-	receiver.delay = &delay
+// Delay sets a delay time for the task.
+// Delay 设置任务的延迟时间。
+func (receiver *Task) Delay(delay uint) queue.Task {
+	receiver.delay = delay
 
 	return receiver
 }
 
+// Dispatch dispatches the task.
+// Dispatch 调度任务。
 func (receiver *Task) Dispatch() error {
-	driver := receiver.config.Driver(receiver.connection)
-	if driver == "" {
-		return errors.New("unknown queue driver")
-	}
-	if driver == DriverSync {
-		return receiver.DispatchSync()
-	}
-
-	server, err := receiver.machinery.Server(receiver.connection, receiver.queue)
+	driver, err := receiver.driver.New()
 	if err != nil {
 		return err
 	}
 
-	receiver.server = server
-
 	if receiver.chain {
-		return receiver.handleChain(receiver.jobs)
+		return driver.Bulk(receiver.jobs, receiver.queue)
 	} else {
 		job := receiver.jobs[0]
-
-		return receiver.handleAsync(job.Job, job.Args)
+		if receiver.delay > 0 {
+			return driver.Later(receiver.delay, job.Job, job.Args, receiver.queue)
+		}
+		return driver.Push(job.Job, job.Args, receiver.queue)
 	}
 }
 
+// DispatchSync dispatches the task synchronously.
+// DispatchSync 同步调度任务。
 func (receiver *Task) DispatchSync() error {
 	if receiver.chain {
 		for _, job := range receiver.jobs {
-			if err := receiver.handleSync(job.Job, job.Args); err != nil {
+			if err := job.Job.Handle(job.Args...); err != nil {
 				return err
 			}
 		}
@@ -89,76 +81,23 @@ func (receiver *Task) DispatchSync() error {
 	} else {
 		job := receiver.jobs[0]
 
-		return receiver.handleSync(job.Job, job.Args)
+		return job.Job.Handle(job.Args...)
 	}
 }
 
+// OnConnection sets the connection name.
+// OnConnection 设置连接名称。
 func (receiver *Task) OnConnection(connection string) queue.Task {
 	receiver.connection = connection
+	receiver.driver = NewDriverImpl(connection, receiver.config)
 
 	return receiver
 }
 
+// OnQueue sets the queue name.
+// OnQueue 设置队列名称。
 func (receiver *Task) OnQueue(queue string) queue.Task {
 	receiver.queue = receiver.config.Queue(receiver.connection, queue)
 
 	return receiver
-}
-
-func (receiver *Task) handleChain(jobs []queue.Jobs) error {
-	var signatures []*tasks.Signature
-	for _, job := range jobs {
-		var realArgs []tasks.Arg
-		for _, arg := range job.Args {
-			realArgs = append(realArgs, tasks.Arg{
-				Type:  arg.Type,
-				Value: arg.Value,
-			})
-		}
-
-		signatures = append(signatures, &tasks.Signature{
-			Name: job.Job.Signature(),
-			Args: realArgs,
-			ETA:  receiver.delay,
-		})
-	}
-
-	chain, err := tasks.NewChain(signatures...)
-	if err != nil {
-		return err
-	}
-
-	_, err = receiver.server.SendChain(chain)
-
-	return err
-}
-
-func (receiver *Task) handleAsync(job queue.Job, args []queue.Arg) error {
-	var realArgs []tasks.Arg
-	for _, arg := range args {
-		realArgs = append(realArgs, tasks.Arg{
-			Type:  arg.Type,
-			Value: arg.Value,
-		})
-	}
-
-	_, err := receiver.server.SendTask(&tasks.Signature{
-		Name: job.Signature(),
-		Args: realArgs,
-		ETA:  receiver.delay,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (receiver *Task) handleSync(job queue.Job, args []queue.Arg) error {
-	var realArgs []any
-	for _, arg := range args {
-		realArgs = append(realArgs, arg.Value)
-	}
-
-	return job.Handle(realArgs...)
 }

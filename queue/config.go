@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	configcontract "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/orm"
 )
 
 type Config struct {
@@ -22,13 +23,13 @@ func (r *Config) DefaultConnection() string {
 
 func (r *Config) Queue(connection, queue string) string {
 	appName := r.config.GetString("app.name")
-	if appName == "" {
+	if len(appName) == 0 {
 		appName = "goravel"
 	}
-	if connection == "" {
+	if len(connection) == 0 {
 		connection = r.DefaultConnection()
 	}
-	if queue == "" {
+	if len(queue) == 0 {
 		queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
 	}
 
@@ -36,26 +37,23 @@ func (r *Config) Queue(connection, queue string) string {
 }
 
 func (r *Config) Driver(connection string) string {
-	if connection == "" {
-		connection = r.config.GetString("queue.default")
+	if len(connection) == 0 {
+		connection = r.DefaultConnection()
 	}
 
 	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
 }
 
-func (r *Config) Redis(queueConnection string) (dsn string, database int, queue string) {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	queue = r.Queue(queueConnection, "")
-	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
-	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
-	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
-	database = r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
-
-	if password == "" {
-		dsn = fmt.Sprintf("%s:%d", host, port)
-	} else {
-		dsn = fmt.Sprintf("%s@%s:%d", password, host, port)
+func (r *Config) Via(connection string) any {
+	if len(connection) == 0 {
+		connection = r.DefaultConnection()
 	}
 
-	return
+	return r.config.Get(fmt.Sprintf("queue.connections.%s.via", connection))
+}
+
+func (r *Config) FailedJobsQuery() orm.Query {
+	connection := r.config.GetString("queue.failed.database")
+	table := r.config.GetString("queue.failed.table")
+	return OrmFacade.Connection(connection).Query().Table(table)
 }
