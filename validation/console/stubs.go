@@ -13,17 +13,17 @@ import (
 type DummyRule struct {
 }
 
-//Signature The name of the rule.
+// Signature The name of the rule.
 func (receiver *DummyRule) Signature() string {
 	return "DummyName"
 }
 
-//Passes Determine if the validation rule passes.
+// Passes Determine if the validation rule passes.
 func (receiver *DummyRule) Passes(data validation.Data, val any, options ...any) bool {
 	return true
 }
 
-//Message Get the validation error message.
+// Message Get the validation error message.
 func (receiver *DummyRule) Message() string {
 	return ""
 }
