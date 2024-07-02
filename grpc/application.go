@@ -7,7 +7,6 @@ import (
 	"net"
 	"strings"
 
-	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -90,9 +89,7 @@ func (app *Application) Run(host ...string) error {
 }
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {
-	app.server = grpc.NewServer(grpc.UnaryInterceptor(
-		grpcmiddleware.ChainUnaryServer(unaryServerInterceptors...),
-	))
+	app.server = grpc.NewServer(grpc.ChainUnaryInterceptor(unaryServerInterceptors...))
 }
 
 func (app *Application) UnaryClientInterceptorGroups(unaryClientInterceptorGroups map[string][]grpc.UnaryClientInterceptor) {

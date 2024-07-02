@@ -6,7 +6,7 @@ toolchain go1.22.4
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
-	github.com/brianvoe/gofakeit/v6 v6.28.0
+	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/charmbracelet/huh v0.4.2
 	github.com/charmbracelet/huh/spinner v0.0.0-20240702124906-34ae8b72b63e
 	github.com/charmbracelet/lipgloss v0.11.0
@@ -23,9 +23,7 @@ require (
 	github.com/google/wire v0.6.0
 	github.com/gookit/validate v1.5.2
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.79
 	github.com/redis/go-redis/v9 v9.5.3
