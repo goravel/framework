@@ -25,51 +25,50 @@ func TestBind(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		data       validate.DataFace
-		rules      map[string]string
-		expectData Data
-		expectErr  error
+		name   string
+		data   validate.DataFace
+		rules  map[string]string
+		assert func(data Data)
 	}{
 		{
 			name:  "success when data is map and key is lowercase",
 			data:  validate.FromMap(map[string]any{"a": "aa"}),
 			rules: map[string]string{"a": "required"},
-			expectData: Data{
-				A: "aa",
+			assert: func(data Data) {
+				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
 			name:  "success when data is map and key is int",
 			data:  validate.FromMap(map[string]any{"b": 1}),
 			rules: map[string]string{"b": "required"},
-			expectData: Data{
-				B: 1,
+			assert: func(data Data) {
+				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
 			name:  "success when data is map and cast key",
 			data:  validate.FromMap(map[string]any{"b": "1"}),
 			rules: map[string]string{"b": "required"},
-			expectData: Data{
-				B: 1,
+			assert: func(data Data) {
+				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
 			name:  "success when data is map, key is lowercase and has errors",
 			data:  validate.FromMap(map[string]any{"a": "aa", "c": "cc"}),
 			rules: map[string]string{"a": "required", "b": "required"},
-			expectData: Data{
-				A: "",
-				C: "",
+			assert: func(data Data) {
+				assert.Equal(t, "", data.A)
+				assert.Equal(t, "", data.C)
 			},
 		},
 		{
 			name:  "success when data is map and key is uppercase",
 			data:  validate.FromMap(map[string]any{"A": "aa"}),
 			rules: map[string]string{"A": "required"},
-			expectData: Data{
-				A: "aa",
+			assert: func(data Data) {
+				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
@@ -85,8 +84,8 @@ func TestBind(t *testing.T) {
 				return data
 			}(),
 			rules: map[string]string{"A": "required"},
-			expectData: Data{
-				A: "aa",
+			assert: func(data Data) {
+				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
@@ -101,8 +100,10 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules:      map[string]string{"a": "required"},
-			expectData: Data{},
+			rules: map[string]string{"a": "required"},
+			assert: func(data Data) {
+				assert.Equal(t, "", data.A)
+			},
 		},
 		{
 			name: "empty when data is struct and key is struct",
@@ -118,8 +119,10 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules:      map[string]string{"d.a": "required"},
-			expectData: Data{},
+			rules: map[string]string{"d.a": "required"},
+			assert: func(data Data) {
+				assert.Equal(t, "", data.A)
+			},
 		},
 		{
 			name: "success when data is get request",
@@ -132,8 +135,8 @@ func TestBind(t *testing.T) {
 				return data
 			}(),
 			rules: map[string]string{"a": "required"},
-			expectData: Data{
-				A: "aa",
+			assert: func(data Data) {
+				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
@@ -147,8 +150,8 @@ func TestBind(t *testing.T) {
 				return data
 			}(),
 			rules: map[string]string{"b": "required"},
-			expectData: Data{
-				B: 1,
+			assert: func(data Data) {
+				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
@@ -163,8 +166,8 @@ func TestBind(t *testing.T) {
 				return data
 			}(),
 			rules: map[string]string{"a": "required"},
-			expectData: Data{
-				A: "aa",
+			assert: func(data Data) {
+				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
@@ -177,16 +180,14 @@ func TestBind(t *testing.T) {
 				return data
 			}(),
 			rules: map[string]string{"a": "required", "file": "required"},
-			expectData: func() Data {
+			assert: func(data Data) {
 				request := buildRequest(t)
-				_, fileHeader, _ := request.FormFile("file")
-				data := Data{
-					A:    "aa",
-					File: fileHeader,
-				}
+				_, file, _ := request.FormFile("file")
 
-				return data
-			}(),
+				assert.Equal(t, "aa", data.A)
+				assert.NotNil(t, data.File)
+				assert.Equal(t, file.Filename, data.File.Filename)
+			},
 		},
 	}
 
@@ -198,12 +199,9 @@ func TestBind(t *testing.T) {
 
 			var data Data
 			err = validator.Bind(&data)
-			assert.Nil(t, test.expectErr, err)
-			assert.Equal(t, test.expectData.A, data.A)
-			assert.Equal(t, test.expectData.B, data.B)
-			assert.Equal(t, test.expectData.C, data.C)
-			assert.Equal(t, test.expectData.D, data.D)
-			assert.Equal(t, test.expectData.File == nil, data.File == nil)
+			assert.Nil(t, err)
+
+			test.assert(data)
 		})
 	}
 }
