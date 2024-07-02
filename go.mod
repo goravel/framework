@@ -7,6 +7,7 @@ toolchain go1.22.4
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v6 v6.28.0
+	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/charmbracelet/huh v0.4.2
 	github.com/charmbracelet/huh/spinner v0.0.0-20240702124906-34ae8b72b63e
 	github.com/charmbracelet/lipgloss v0.11.0
