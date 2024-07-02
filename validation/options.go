@@ -17,6 +17,22 @@ func Rules(rules map[string]string) httpvalidate.Option {
 	}
 }
 
+func Filters(filters map[string]string) httpvalidate.Option {
+	return func(options map[string]any) {
+		if len(filters) > 0 {
+			options["filters"] = filters
+		}
+	}
+}
+
+func CustomFilters(filters []httpvalidate.Filter) httpvalidate.Option {
+	return func(options map[string]any) {
+		if len(filters) > 0 {
+			options["customFilters"] = filters
+		}
+	}
+}
+
 func CustomRules(rules []httpvalidate.Rule) httpvalidate.Option {
 	return func(options map[string]any) {
 		if len(rules) > 0 {
@@ -66,6 +82,13 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 		}
 	}
 
+	if options["filters"] != nil {
+		filters, ok := options["filters"].(map[string]string)
+		if ok {
+			validator.FilterRules(filters)
+		}
+	}
+
 	if options["messages"] != nil {
 		messages := options["messages"].(map[string]string)
 		for key, value := range messages {
@@ -88,6 +111,13 @@ func AppendOptions(validator *validate.Validation, options map[string]any) {
 			validator.AddValidator(customRule.Signature(), func(val any, options ...any) bool {
 				return customRule.Passes(validator, val, options...)
 			})
+		}
+	}
+
+	if options["customFilters"] != nil {
+		customFilters := options["customFilters"].([]httpvalidate.Filter)
+		for _, customFilter := range customFilters {
+			validator.AddFilter(customFilter.Signature(), customFilter.Handle())
 		}
 	}
 

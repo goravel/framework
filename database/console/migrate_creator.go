@@ -28,12 +28,12 @@ func (receiver MigrateCreator) Create(name string, table string, create bool) er
 	// various place-holders, save the file, and run the post create event.
 	upStub, downStub := receiver.getStub(table, create)
 
-	//Create the up.sql file.
+	// Create the up.sql file.
 	if err := file.Create(receiver.getPath(name, "up"), receiver.populateStub(upStub, table)); err != nil {
 		return err
 	}
 
-	//Create the down.sql file.
+	// Create the down.sql file.
 	if err := file.Create(receiver.getPath(name, "down"), receiver.populateStub(downStub, table)); err != nil {
 		return err
 	}

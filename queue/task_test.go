@@ -13,12 +13,12 @@ import (
 type Test struct {
 }
 
-//Signature The name and signature of the job.
+// Signature The name and signature of the job.
 func (receiver *Test) Signature() string {
 	return "test"
 }
 
-//Handle Execute the job.
+// Handle Execute the job.
 func (receiver *Test) Handle(args ...any) error {
 	return file.Create("test.txt", args[0].(string))
 }

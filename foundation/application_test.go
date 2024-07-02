@@ -374,6 +374,12 @@ func (s *ApplicationTestSuite) TestMakeRoute() {
 }
 
 func (s *ApplicationTestSuite) TestMakeSchedule() {
+	mockConfig := &configmocks.Config{}
+	mockConfig.On("GetBool", "app.debug").Return(false).Once()
+
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
 	s.app.Singleton(console.Binding, func(app foundation.Application) (any, error) {
 		return &consolemocks.Artisan{}, nil
 	})
@@ -385,6 +391,7 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeSchedule())
+	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeSession() {
