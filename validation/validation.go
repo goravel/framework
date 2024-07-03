@@ -60,7 +60,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	v := dataFace.Create()
 	AppendOptions(v, generateOptions)
 
-	return NewValidator(v), nil
+	return NewValidator(v, dataFace), nil
 }
 
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
