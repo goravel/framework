@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"mime/multipart"
 	"reflect"
 
 	"github.com/gookit/validate"
@@ -39,7 +40,29 @@ func (v *Validator) Bind(ptr any) error {
 		return err
 	}
 
-	return decoder.Decode(data)
+	if err := decoder.Decode(data); err != nil {
+		return err
+	}
+
+	ptrValue := reflect.Indirect(reflect.ValueOf(ptr))
+	if ptrValue.Type().Kind() == reflect.Struct {
+		for i := 0; i < ptrValue.Type().NumField(); i++ {
+			if !ptrValue.Type().Field(i).IsExported() {
+				continue
+			}
+			formTag := ptrValue.Type().Field(i).Tag.Get("form")
+			if formTag != "" && ptrValue.Type().Field(i).Type == reflect.TypeOf(new(multipart.FileHeader)) {
+				if raw, exist := v.instance.Raw(formTag); exist {
+					rawType := reflect.TypeOf(raw)
+					if rawType == reflect.TypeOf(new(multipart.FileHeader)) {
+						ptrValue.Field(i).Set(reflect.ValueOf(raw))
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (v *Validator) Errors() httpvalidate.Errors {
