@@ -128,6 +128,7 @@ func TestBind(t *testing.T) {
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
 
 				age, exist := data.Get("ages")
 				assert.True(t, exist)
