@@ -32,7 +32,7 @@ func NewValidator(instance *validate.Validation, data validate.DataFace) *Valida
 
 func (v *Validator) Bind(ptr any) error {
 	// Don't bind if there are errors
-	if v.Errors() != nil {
+	if v.Fails() {
 		return nil
 	}
 
