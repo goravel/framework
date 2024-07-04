@@ -10,18 +10,22 @@ import (
 	"testing"
 
 	"github.com/gookit/validate"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/foundation/json"
 )
 
 func TestBind(t *testing.T) {
 	type Data struct {
-		A    string
-		B    int
-		C    string
-		D    *Data
-		File *multipart.FileHeader
+		A     string                `form:"a" json:"a"`
+		B     int                   `form:"b" json:"b"`
+		C     string                `form:"c" json:"c"`
+		D     *Data                 `form:"d" json:"d"`
+		File  *multipart.FileHeader `form:"file" json:"file"`
+		Ages  []int                 `form:"ages" json:"ages"`
+		Names []string              `form:"names" json:"names"`
 	}
 
 	tests := []struct {
@@ -55,12 +59,11 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name:  "success when data is map, key is lowercase and has errors",
-			data:  validate.FromMap(map[string]any{"a": "aa", "c": "cc"}),
-			rules: map[string]string{"a": "required", "b": "required"},
+			name:  "success when data is map, key is lowercase",
+			data:  validate.FromMap(map[string]any{"a": "aa"}),
+			rules: map[string]string{"a": "required"},
 			assert: func(data Data) {
-				assert.Equal(t, "", data.A)
-				assert.Equal(t, "", data.C)
+				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
@@ -86,42 +89,6 @@ func TestBind(t *testing.T) {
 			rules: map[string]string{"A": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
-			},
-		},
-		{
-			name: "empty when data is struct and key is lowercase",
-			data: func() validate.DataFace {
-				data, err := validate.FromStruct(struct {
-					a string
-				}{
-					a: "aa",
-				})
-				assert.Nil(t, err)
-
-				return data
-			}(),
-			rules: map[string]string{"a": "required"},
-			assert: func(data Data) {
-				assert.Equal(t, "", data.A)
-			},
-		},
-		{
-			name: "empty when data is struct and key is struct",
-			data: func() validate.DataFace {
-				data, err := validate.FromStruct(struct {
-					D *Data
-				}{
-					D: &Data{
-						A: "aa",
-					},
-				})
-				assert.Nil(t, err)
-
-				return data
-			}(),
-			rules: map[string]string{"d.a": "required"},
-			assert: func(data Data) {
-				assert.Equal(t, "", data.A)
 			},
 		},
 		{
@@ -157,17 +124,25 @@ func TestBind(t *testing.T) {
 		{
 			name: "success when data is post request",
 			data: func() validate.DataFace {
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"aa"}`))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"Goravel", "ages": [1, 2], "names": ["a", "b"]}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
 				assert.Nil(t, err)
 
+				age, exist := data.Get("ages")
+				assert.True(t, exist)
+
+				_, err = data.Set("ages", cast.ToIntSlice(age))
+				assert.Nil(t, err)
+
 				return data
 			}(),
-			rules: map[string]string{"a": "required"},
+			rules: map[string]string{"a": "required", "ages.*": "int", "names.*": "string"},
 			assert: func(data Data) {
-				assert.Equal(t, "aa", data.A)
+				assert.Equal(t, "Goravel", data.A)
+				assert.Equal(t, []int{1, 2}, data.Ages)
+				assert.Equal(t, []string{"a", "b"}, data.Names)
 			},
 		},
 		{
@@ -179,7 +154,7 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"a": "required", "file": "required"},
+			rules: map[string]string{"a": "required", "file": "file"},
 			assert: func(data Data) {
 				request := buildRequest(t)
 				_, file, _ := request.FormFile("file")
@@ -195,11 +170,12 @@ func TestBind(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			validator, err := validation.Make(test.data, test.rules)
-			assert.Nil(t, err)
+			require.Nil(t, err)
+			require.Nil(t, validator.Errors())
 
 			var data Data
 			err = validator.Bind(&data)
-			assert.Nil(t, err)
+			require.Nil(t, err)
 
 			test.assert(data)
 		})

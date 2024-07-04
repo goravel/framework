@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"mime/multipart"
+	"net/url"
 	"reflect"
 
 	"github.com/gookit/validate"
@@ -21,16 +21,37 @@ func init() {
 
 type Validator struct {
 	instance *validate.Validation
+	data     validate.DataFace
 }
 
-func NewValidator(instance *validate.Validation) *Validator {
+func NewValidator(instance *validate.Validation, data validate.DataFace) *Validator {
 	instance.Validate()
 
-	return &Validator{instance: instance}
+	return &Validator{instance: instance, data: data}
 }
 
 func (v *Validator) Bind(ptr any) error {
-	data := v.instance.SafeData()
+	// Don't bind if there are errors
+	if v.Fails() {
+		return nil
+	}
+
+	var data any
+	if formData, ok := v.data.(*validate.FormData); ok {
+		values := make(map[string]any)
+		for key, value := range v.data.Src().(url.Values) {
+			values[key] = value[0]
+		}
+
+		for key, value := range formData.Files {
+			values[key] = value
+		}
+
+		data = values
+	} else {
+		data = v.data.Src()
+	}
+
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:    "form",
 		Result:     &ptr,
@@ -42,24 +63,6 @@ func (v *Validator) Bind(ptr any) error {
 
 	if err := decoder.Decode(data); err != nil {
 		return err
-	}
-
-	ptrValue := reflect.Indirect(reflect.ValueOf(ptr))
-	if ptrValue.Type().Kind() == reflect.Struct {
-		for i := 0; i < ptrValue.Type().NumField(); i++ {
-			if !ptrValue.Type().Field(i).IsExported() {
-				continue
-			}
-			formTag := ptrValue.Type().Field(i).Tag.Get("form")
-			if formTag != "" && ptrValue.Type().Field(i).Type == reflect.TypeOf(new(multipart.FileHeader)) {
-				if raw, exist := v.instance.Raw(formTag); exist {
-					rawType := reflect.TypeOf(raw)
-					if rawType == reflect.TypeOf(new(multipart.FileHeader)) {
-						ptrValue.Field(i).Set(reflect.ValueOf(raw))
-					}
-				}
-			}
-		}
 	}
 
 	return nil
