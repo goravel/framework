@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cast"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/support/carbon"
 )
 
 func init() {
@@ -18,6 +19,23 @@ func init() {
 		opt.FieldTag = "form"
 	})
 }
+
+var (
+	carbonToTransform = map[carbon.Json]func(carbon carbon.Carbon) carbon.Json{
+		&carbon.DateTime{}:       carbon.NewDateTime,
+		&carbon.DateTimeMilli{}:  carbon.NewDateTimeMilli,
+		&carbon.DateTimeMicro{}:  carbon.NewDateTimeMicro,
+		&carbon.DateTimeNano{}:   carbon.NewDateTimeNano,
+		&carbon.Date{}:           carbon.NewDate,
+		&carbon.DateMilli{}:      carbon.NewDateMilli,
+		&carbon.DateMicro{}:      carbon.NewDateMicro,
+		&carbon.DateNano{}:       carbon.NewDateNano,
+		&carbon.Timestamp{}:      carbon.NewTimestamp,
+		&carbon.TimestampMilli{}: carbon.NewTimestampMilli,
+		&carbon.TimestampMicro{}: carbon.NewTimestampMicro,
+		&carbon.TimestampNano{}:  carbon.NewTimestampNano,
+	}
+)
 
 type Validator struct {
 	instance *validate.Validation
@@ -82,8 +100,11 @@ func (v *Validator) Fails() bool {
 
 func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 	return func(from reflect.Value, to reflect.Value) (any, error) {
-		var castedValue any
-		var err error
+		var (
+			err error
+
+			castedValue = from.Interface()
+		)
 
 		switch to.Kind() {
 		case reflect.String:
@@ -138,6 +159,12 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 			default:
 				castedValue, err = cast.ToStringMapE(from.Interface())
 			}
+		case reflect.Struct:
+			for carbonType, transfrom := range carbonToTransform {
+				if to.Type() == reflect.TypeOf(carbonType).Elem() {
+					castedValue = castCarbon(from, transfrom)
+				}
+			}
 		default:
 			castedValue = from.Interface()
 		}
@@ -149,4 +176,46 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 
 		return from.Interface(), nil
 	}
+}
+
+func castCarbon(from reflect.Value, transfrom func(carbon carbon.Carbon) carbon.Json) any {
+	switch len(cast.ToString(from.Interface())) {
+	case 10:
+		fromInt64, err := cast.ToInt64E(from.Interface())
+		if err != nil {
+			return transfrom(carbon.Parse(cast.ToString(from.Interface())))
+		}
+		if fromInt64 > 0 {
+			return transfrom(carbon.FromTimestamp(fromInt64))
+		}
+	case 13:
+		fromInt64, err := cast.ToInt64E(from.Interface())
+		if err != nil {
+			return transfrom(carbon.ParseByFormat(cast.ToString(from.Interface()), "Y-m-d H"))
+		}
+		if fromInt64 > 0 {
+			return transfrom(carbon.FromTimestampMilli(fromInt64))
+		}
+	case 16:
+		fromInt64, err := cast.ToInt64E(from.Interface())
+		if err != nil {
+			return transfrom(carbon.ParseByFormat(cast.ToString(from.Interface()), "Y-m-d H:i"))
+		}
+		if fromInt64 > 0 {
+			return transfrom(carbon.FromTimestampMicro(fromInt64))
+		}
+	case 19:
+		fromInt64, err := cast.ToInt64E(from.Interface())
+		if err != nil {
+			return transfrom(carbon.Parse(cast.ToString(from.Interface())))
+		}
+
+		if fromInt64 > 0 {
+			return transfrom(carbon.FromTimestampNano(fromInt64))
+		}
+	default:
+		return transfrom(carbon.Parse(cast.ToString(from.Interface())))
+	}
+
+	return from.Interface()
 }
