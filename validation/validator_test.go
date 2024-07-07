@@ -26,6 +26,7 @@ func TestBind(t *testing.T) {
 		File           *multipart.FileHeader  `form:"file" json:"file"`
 		Ages           []int                  `form:"ages" json:"ages"`
 		Names          []string               `form:"names" json:"names"`
+		Carbon         *carbon.Carbon         `form:"carbon" json:"carbon"`
 		DateTime       *carbon.DateTime       `form:"date_time" json:"date_time"`
 		DateTimeMilli  *carbon.DateTimeMilli  `form:"date_time_milli" json:"date_time_milli"`
 		DateTimeMicro  *carbon.DateTimeMicro  `form:"date_time_micro" json:"date_time_micro"`
@@ -127,6 +128,23 @@ func TestBind(t *testing.T) {
 				assert.Equal(t, "Goravel", data.A)
 				assert.Equal(t, []int{1, 2}, data.Ages)
 				assert.Equal(t, []string{"a", "b"}, data.Names)
+			},
+		},
+		{
+			name: "success when data is post request with Carbon",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"carbon": "2024-07-04 10:00:52"}`))
+				request.Header.Set("Content-Type", "application/json")
+				assert.Nil(t, err)
+
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules: map[string]string{"carbon": "string"},
+			assert: func(data Data) {
+				assert.Equal(t, "2024-07-04 10:00:52", data.Carbon.ToDateTimeString())
 			},
 		},
 		{
@@ -812,114 +830,138 @@ func TestCastCarbon(t *testing.T) {
 	tests := []struct {
 		name      string
 		from      reflect.Value
-		transform func(carbon carbon.Carbon) carbon.Json
+		transform func(carbon carbon.Carbon) any
 		assert    func(result any)
 	}{
 		{
-			name:      "Happy path - length 10 string",
-			from:      reflect.ValueOf("2024-07-04"),
-			transform: carbon.NewDate,
+			name: "Happy path - length 10 string",
+			from: reflect.ValueOf("2024-07-04"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewDate(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.Date{}, result)
-				assert.Equal(t, "2024-07-04", result.(*carbon.Date).ToDateString())
+				assert.IsType(t, carbon.Date{}, result)
+				assert.Equal(t, "2024-07-04", result.(carbon.Date).ToDateString())
 			},
 		},
 		{
-			name:      "Happy path - length 10 int",
-			from:      reflect.ValueOf(1720087252),
-			transform: carbon.NewTimestamp,
+			name: "Happy path - length 10 int",
+			from: reflect.ValueOf(1720087252),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestamp(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.Timestamp{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52", result.(*carbon.Timestamp).ToDateTimeString())
+				assert.IsType(t, carbon.Timestamp{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52", result.(carbon.Timestamp).ToDateTimeString())
 			},
 		},
 		{
-			name:      "Happy path - length 13 int",
-			from:      reflect.ValueOf(1720087252123),
-			transform: carbon.NewTimestampMilli,
+			name: "Happy path - length 13 int",
+			from: reflect.ValueOf(1720087252123),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampMilli(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.TimestampMilli{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.TimestampMilli).ToDateTimeMilliString())
+				assert.IsType(t, carbon.TimestampMilli{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123", result.(carbon.TimestampMilli).ToDateTimeMilliString())
 			},
 		},
 		{
-			name:      "Sad path - length 13 string",
-			from:      reflect.ValueOf("1720087252123"),
-			transform: carbon.NewTimestampMilli,
+			name: "Sad path - length 13 string",
+			from: reflect.ValueOf("1720087252123"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampMilli(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.TimestampMilli{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.TimestampMilli).ToDateTimeMilliString())
+				assert.IsType(t, carbon.TimestampMilli{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123", result.(carbon.TimestampMilli).ToDateTimeMilliString())
 			},
 		},
 		{
-			name:      "Happy path - length 13 Y-m-d H",
-			from:      reflect.ValueOf("2024-07-04 10"),
-			transform: carbon.NewTimestampMilli,
+			name: "Happy path - length 13 Y-m-d H",
+			from: reflect.ValueOf("2024-07-04 10"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampMilli(c)
+			},
 			assert: func(result any) {
-				assert.Equal(t, "2024-07-04 10:00:00", result.(*carbon.TimestampMilli).ToDateTimeString())
+				assert.Equal(t, "2024-07-04 10:00:00", result.(carbon.TimestampMilli).ToDateTimeString())
 			},
 		},
 		{
-			name:      "Happy path - length 16 int",
-			from:      reflect.ValueOf(1720087252123456),
-			transform: carbon.NewTimestampMicro,
+			name: "Happy path - length 16 int",
+			from: reflect.ValueOf(1720087252123456),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampMicro(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.TimestampMicro{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(*carbon.TimestampMicro).ToDateTimeMicroString())
+				assert.IsType(t, carbon.TimestampMicro{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(carbon.TimestampMicro).ToDateTimeMicroString())
 			},
 		},
 		{
-			name:      "Happy path - length 16 string",
-			from:      reflect.ValueOf("1720087252123456"),
-			transform: carbon.NewTimestampMicro,
+			name: "Happy path - length 16 string",
+			from: reflect.ValueOf("1720087252123456"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampMicro(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.TimestampMicro{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(*carbon.TimestampMicro).ToDateTimeMicroString())
+				assert.IsType(t, carbon.TimestampMicro{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456", result.(carbon.TimestampMicro).ToDateTimeMicroString())
 			},
 		},
 		{
-			name:      "Happy path - length 16 Y-m-d H:i",
-			from:      reflect.ValueOf("2024-07-04 10:00"),
-			transform: carbon.NewDateTime,
+			name: "Happy path - length 16 Y-m-d H:i",
+			from: reflect.ValueOf("2024-07-04 10:00"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewDateTime(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.DateTime{}, result)
-				assert.Equal(t, "2024-07-04 10:00:00", result.(*carbon.DateTime).ToDateTimeString())
+				assert.IsType(t, carbon.DateTime{}, result)
+				assert.Equal(t, "2024-07-04 10:00:00", result.(carbon.DateTime).ToDateTimeString())
 			},
 		},
 		{
-			name:      "Happy path - length 19 int",
-			from:      reflect.ValueOf(1720087252123456789),
-			transform: carbon.NewTimestampNano,
+			name: "Happy path - length 19 int",
+			from: reflect.ValueOf(1720087252123456789),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampNano(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.TimestampNano{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(*carbon.TimestampNano).ToDateTimeNanoString())
+				assert.IsType(t, carbon.TimestampNano{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(carbon.TimestampNano).ToDateTimeNanoString())
 			},
 		},
 		{
-			name:      "Happy path - length 19 int",
-			from:      reflect.ValueOf("1720087252123456789"),
-			transform: carbon.NewTimestampNano,
+			name: "Happy path - length 19 int",
+			from: reflect.ValueOf("1720087252123456789"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewTimestampNano(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.TimestampNano{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(*carbon.TimestampNano).ToDateTimeNanoString())
+				assert.IsType(t, carbon.TimestampNano{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123456789", result.(carbon.TimestampNano).ToDateTimeNanoString())
 			},
 		},
 		{
-			name:      "Happy path - length 19 Y-m-d H:i:s",
-			from:      reflect.ValueOf("2024-07-04 10:00:52"),
-			transform: carbon.NewDateTime,
+			name: "Happy path - length 19 Y-m-d H:i:s",
+			from: reflect.ValueOf("2024-07-04 10:00:52"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewDateTime(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.DateTime{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52", result.(*carbon.DateTime).ToDateTimeString())
+				assert.IsType(t, carbon.DateTime{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52", result.(carbon.DateTime).ToDateTimeString())
 			},
 		},
 		{
-			name:      "Happy path - length other",
-			from:      reflect.ValueOf("2024-07-04 10:00:52.123"),
-			transform: carbon.NewDateTimeMilli,
+			name: "Happy path - length other",
+			from: reflect.ValueOf("2024-07-04 10:00:52.123"),
+			transform: func(c carbon.Carbon) any {
+				return carbon.NewDateTimeMilli(c)
+			},
 			assert: func(result any) {
-				assert.IsType(t, &carbon.DateTimeMilli{}, result)
-				assert.Equal(t, "2024-07-04 10:00:52.123", result.(*carbon.DateTimeMilli).ToDateTimeMilliString())
+				assert.IsType(t, carbon.DateTimeMilli{}, result)
+				assert.Equal(t, "2024-07-04 10:00:52.123", result.(carbon.DateTimeMilli).ToDateTimeMilliString())
 			},
 		},
 	}
