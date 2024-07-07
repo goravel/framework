@@ -55,7 +55,7 @@ func (v *Validator) Bind(ptr any) error {
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		TagName:    "form",
-		Result:     ptr,
+		Result:     &ptr,
 		DecodeHook: v.castValue(),
 	})
 	if err != nil {
