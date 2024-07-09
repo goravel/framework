@@ -8,5 +8,5 @@ permissions:
   contents: read
 jobs:
   lint:
-    uses: goravel/.github/tree/master/workflow-templates/lint.yml
+    uses: goravel/.github/.github/workflows/lint.yml@master
     secrets: inherit
