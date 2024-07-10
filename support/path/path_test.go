@@ -148,6 +148,34 @@ func TestStorage(t *testing.T) {
 	}
 }
 
+func TestLang(t *testing.T) {
+	tests := map[string]struct {
+		a        []string
+		expected string
+	}{
+		"no args": {
+			a:        []string{},
+			expected: "lang",
+		},
+		"single arg": {
+			a:        []string{"test"},
+			expected: filepath.Join("lang", "test"),
+		},
+		"multi arg": {
+			a:        []string{"test", ".gitignore"},
+			expected: filepath.Join("lang", "test", ".gitignore"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := Lang(test.a...)
+
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
 func TestPublic(t *testing.T) {
 	tests := map[string]struct {
 		a        []string
