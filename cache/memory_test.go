@@ -67,7 +67,7 @@ func (s *MemoryTestSuite) TestDecrement() {
 }
 
 func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
-	res, err := s.memory.Decrement("decrement")
+	res, err := s.memory.Decrement("decrement_concurrent")
 	s.Equal(int64(-1), res)
 	s.Nil(err)
 
@@ -75,7 +75,7 @@ func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
-			_, err = s.memory.Decrement("decrement", 1)
+			_, err = s.memory.Decrement("decrement_concurrent", 1)
 			s.Nil(err)
 			wg.Done()
 		}()
@@ -83,7 +83,7 @@ func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
 
 	wg.Wait()
 
-	res = s.memory.GetInt64("decrement")
+	res = s.memory.GetInt64("decrement_concurrent")
 	s.Equal(int64(-1001), res)
 	s.Nil(err)
 }
@@ -175,7 +175,7 @@ func (s *MemoryTestSuite) TestIncrement() {
 }
 
 func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
-	res, err := s.memory.Increment("increment")
+	res, err := s.memory.Increment("increment_concurrent")
 	s.Equal(int64(1), res)
 	s.Nil(err)
 
@@ -183,7 +183,7 @@ func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
-			_, err = s.memory.Increment("increment", 1)
+			_, err = s.memory.Increment("increment_concurrent", 1)
 			s.Nil(err)
 			wg.Done()
 		}()
@@ -191,7 +191,7 @@ func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
 
 	wg.Wait()
 
-	res = s.memory.GetInt64("increment")
+	res = s.memory.GetInt64("increment_concurrent")
 	s.Equal(int64(1001), res)
 	s.Nil(err)
 }
