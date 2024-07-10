@@ -5,49 +5,6 @@ on:
       - master
   pull_request:
 jobs:
-  ubuntu:
-    strategy:
-      matrix:
-        go: [ "1.21", "1.22" ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Go mod cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Run tests
-        run: go test -timeout 1h ./...
-  windows:
-    strategy:
-      matrix:
-        go: [ "1.21", "1.22" ]
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Go mod cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~\AppData\Local\go-build
-            ~\go\pkg\mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Run tests
-        run: go test -timeout 1h ./...
+  test:
+    uses: goravel/.github/.github/workflows/test.yml@master
+    secrets: inherit

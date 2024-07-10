@@ -74,7 +74,7 @@ func (_c *Driver_Add_Call) RunAndReturn(run func(string, interface{}, time.Durat
 }
 
 // Decrement provides a mock function with given fields: key, value
-func (_m *Driver) Decrement(key string, value ...int) (int, error) {
+func (_m *Driver) Decrement(key string, value ...int64) (int64, error) {
 	_va := make([]interface{}, len(value))
 	for _i := range value {
 		_va[_i] = value[_i]
@@ -88,18 +88,18 @@ func (_m *Driver) Decrement(key string, value ...int) (int, error) {
 		panic("no return value specified for Decrement")
 	}
 
-	var r0 int
+	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...int) (int, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, ...int64) (int64, error)); ok {
 		return rf(key, value...)
 	}
-	if rf, ok := ret.Get(0).(func(string, ...int) int); ok {
+	if rf, ok := ret.Get(0).(func(string, ...int64) int64); ok {
 		r0 = rf(key, value...)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...int) error); ok {
+	if rf, ok := ret.Get(1).(func(string, ...int64) error); ok {
 		r1 = rf(key, value...)
 	} else {
 		r1 = ret.Error(1)
@@ -115,18 +115,18 @@ type Driver_Decrement_Call struct {
 
 // Decrement is a helper method to define mock.On call
 //   - key string
-//   - value ...int
+//   - value ...int64
 func (_e *Driver_Expecter) Decrement(key interface{}, value ...interface{}) *Driver_Decrement_Call {
 	return &Driver_Decrement_Call{Call: _e.mock.On("Decrement",
 		append([]interface{}{key}, value...)...)}
 }
 
-func (_c *Driver_Decrement_Call) Run(run func(key string, value ...int)) *Driver_Decrement_Call {
+func (_c *Driver_Decrement_Call) Run(run func(key string, value ...int64)) *Driver_Decrement_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]int, len(args)-1)
+		variadicArgs := make([]int64, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(int)
+				variadicArgs[i] = a.(int64)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -134,12 +134,12 @@ func (_c *Driver_Decrement_Call) Run(run func(key string, value ...int)) *Driver
 	return _c
 }
 
-func (_c *Driver_Decrement_Call) Return(_a0 int, _a1 error) *Driver_Decrement_Call {
+func (_c *Driver_Decrement_Call) Return(_a0 int64, _a1 error) *Driver_Decrement_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Driver_Decrement_Call) RunAndReturn(run func(string, ...int) (int, error)) *Driver_Decrement_Call {
+func (_c *Driver_Decrement_Call) RunAndReturn(run func(string, ...int64) (int64, error)) *Driver_Decrement_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -632,7 +632,7 @@ func (_c *Driver_Has_Call) RunAndReturn(run func(string) bool) *Driver_Has_Call 
 }
 
 // Increment provides a mock function with given fields: key, value
-func (_m *Driver) Increment(key string, value ...int) (int, error) {
+func (_m *Driver) Increment(key string, value ...int64) (int64, error) {
 	_va := make([]interface{}, len(value))
 	for _i := range value {
 		_va[_i] = value[_i]
@@ -646,18 +646,18 @@ func (_m *Driver) Increment(key string, value ...int) (int, error) {
 		panic("no return value specified for Increment")
 	}
 
-	var r0 int
+	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, ...int) (int, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, ...int64) (int64, error)); ok {
 		return rf(key, value...)
 	}
-	if rf, ok := ret.Get(0).(func(string, ...int) int); ok {
+	if rf, ok := ret.Get(0).(func(string, ...int64) int64); ok {
 		r0 = rf(key, value...)
 	} else {
-		r0 = ret.Get(0).(int)
+		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, ...int) error); ok {
+	if rf, ok := ret.Get(1).(func(string, ...int64) error); ok {
 		r1 = rf(key, value...)
 	} else {
 		r1 = ret.Error(1)
@@ -673,18 +673,18 @@ type Driver_Increment_Call struct {
 
 // Increment is a helper method to define mock.On call
 //   - key string
-//   - value ...int
+//   - value ...int64
 func (_e *Driver_Expecter) Increment(key interface{}, value ...interface{}) *Driver_Increment_Call {
 	return &Driver_Increment_Call{Call: _e.mock.On("Increment",
 		append([]interface{}{key}, value...)...)}
 }
 
-func (_c *Driver_Increment_Call) Run(run func(key string, value ...int)) *Driver_Increment_Call {
+func (_c *Driver_Increment_Call) Run(run func(key string, value ...int64)) *Driver_Increment_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]int, len(args)-1)
+		variadicArgs := make([]int64, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(int)
+				variadicArgs[i] = a.(int64)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -692,12 +692,12 @@ func (_c *Driver_Increment_Call) Run(run func(key string, value ...int)) *Driver
 	return _c
 }
 
-func (_c *Driver_Increment_Call) Return(_a0 int, _a1 error) *Driver_Increment_Call {
+func (_c *Driver_Increment_Call) Return(_a0 int64, _a1 error) *Driver_Increment_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Driver_Increment_Call) RunAndReturn(run func(string, ...int) (int, error)) *Driver_Increment_Call {
+func (_c *Driver_Increment_Call) RunAndReturn(run func(string, ...int64) (int64, error)) *Driver_Increment_Call {
 	_c.Call.Return(run)
 	return _c
 }

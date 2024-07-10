@@ -45,12 +45,12 @@ import (
 )
 
 type DummyController struct {
-	//Dependent services
+	// Dependent services
 }
 
 func NewDummyController() *DummyController {
 	return &DummyController{
-		//Inject services
+		// Inject services
 	}
 }
 

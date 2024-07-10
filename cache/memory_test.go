@@ -2,6 +2,7 @@ package cache
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,28 +40,51 @@ func (s *MemoryTestSuite) TestAdd() {
 
 func (s *MemoryTestSuite) TestDecrement() {
 	res, err := s.memory.Decrement("decrement")
-	s.Equal(-1, res)
+	s.Equal(int64(-1), res)
 	s.Nil(err)
 
-	s.Equal(-1, s.memory.GetInt("decrement"))
+	s.Equal(int64(-1), s.memory.GetInt64("decrement"))
 
 	res, err = s.memory.Decrement("decrement", 2)
-	s.Equal(-3, res)
+	s.Equal(int64(-3), res)
 	s.Nil(err)
 
 	res, err = s.memory.Decrement("decrement1", 2)
-	s.Equal(-2, res)
+	s.Equal(int64(-2), res)
 	s.Nil(err)
 
-	s.Equal(-2, s.memory.GetInt("decrement1"))
+	s.Equal(int64(-2), s.memory.GetInt64("decrement1"))
 
-	s.True(s.memory.Add("decrement2", 4, 2*time.Second))
+	decrement2 := int64(4)
+	s.True(s.memory.Add("decrement2", &decrement2, 2*time.Second))
 	res, err = s.memory.Decrement("decrement2")
-	s.Equal(3, res)
+	s.Equal(int64(3), res)
 	s.Nil(err)
 
 	res, err = s.memory.Decrement("decrement2", 2)
-	s.Equal(1, res)
+	s.Equal(int64(1), res)
+	s.Nil(err)
+}
+
+func (s *MemoryTestSuite) TestDecrementWithConcurrent() {
+	res, err := s.memory.Decrement("decrement")
+	s.Equal(int64(-1), res)
+	s.Nil(err)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			_, err = s.memory.Decrement("decrement", 1)
+			s.Nil(err)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	res = s.memory.GetInt64("decrement")
+	s.Equal(int64(-1001), res)
 	s.Nil(err)
 }
 
@@ -124,28 +148,51 @@ func (s *MemoryTestSuite) TestHas() {
 
 func (s *MemoryTestSuite) TestIncrement() {
 	res, err := s.memory.Increment("Increment")
-	s.Equal(1, res)
+	s.Equal(int64(1), res)
 	s.Nil(err)
 
-	s.Equal(1, s.memory.GetInt("Increment"))
+	s.Equal(int64(1), s.memory.GetInt64("Increment"))
 
 	res, err = s.memory.Increment("Increment", 2)
-	s.Equal(3, res)
+	s.Equal(int64(3), res)
 	s.Nil(err)
 
 	res, err = s.memory.Increment("Increment1", 2)
-	s.Equal(2, res)
+	s.Equal(int64(2), res)
 	s.Nil(err)
 
-	s.Equal(2, s.memory.GetInt("Increment1"))
+	s.Equal(int64(2), s.memory.GetInt64("Increment1"))
 
-	s.True(s.memory.Add("Increment2", 1, 2*time.Second))
+	increment2 := int64(1)
+	s.True(s.memory.Add("Increment2", &increment2, 2*time.Second))
 	res, err = s.memory.Increment("Increment2")
-	s.Equal(2, res)
+	s.Equal(int64(2), res)
 	s.Nil(err)
 
 	res, err = s.memory.Increment("Increment2", 2)
-	s.Equal(4, res)
+	s.Equal(int64(4), res)
+	s.Nil(err)
+}
+
+func (s *MemoryTestSuite) TestIncrementWithConcurrent() {
+	res, err := s.memory.Increment("increment")
+	s.Equal(int64(1), res)
+	s.Nil(err)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			_, err = s.memory.Increment("increment", 1)
+			s.Nil(err)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	res = s.memory.GetInt64("increment")
+	s.Equal(int64(1001), res)
 	s.Nil(err)
 }
 
