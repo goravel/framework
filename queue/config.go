@@ -23,21 +23,21 @@ func (r *Config) DefaultConnection() string {
 
 func (r *Config) Queue(connection, queue string) string {
 	appName := r.config.GetString("app.name")
-	if len(appName) == 0 {
+	if appName == "" {
 		appName = "goravel"
 	}
-	if len(connection) == 0 {
+	if connection == "" {
 		connection = r.DefaultConnection()
 	}
-	if len(queue) == 0 {
+	if queue == "" {
 		queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
 	}
 
-	return fmt.Sprintf("%s_%s:%s", appName, "queues", queue)
+	return fmt.Sprintf("%s_queues:%s", appName, queue)
 }
 
 func (r *Config) Driver(connection string) string {
-	if len(connection) == 0 {
+	if connection == "" {
 		connection = r.DefaultConnection()
 	}
 
@@ -45,7 +45,7 @@ func (r *Config) Driver(connection string) string {
 }
 
 func (r *Config) Via(connection string) any {
-	if len(connection) == 0 {
+	if connection == "" {
 		connection = r.DefaultConnection()
 	}
 
