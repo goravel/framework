@@ -81,7 +81,7 @@ type ContextRequest interface {
 	Origin() *http.Request
 
 	// Validate performs request data validation using specified rules and options.
-	Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error)
+	Validate(rules, filters map[string]string, options ...validation.Option) (validation.Validator, error)
 	// ValidateRequest validates the request data against a pre-defined FormRequest structure
 	// and returns validation errors, if any.
 	ValidateRequest(request FormRequest) (validation.Errors, error)
@@ -90,10 +90,10 @@ type ContextRequest interface {
 type FormRequest interface {
 	// Authorize determine if the user is authorized to make this request.
 	Authorize(ctx Context) error
-	// Filters get the custom filters that apply to the request.
-	Filters(ctx Context) map[string]string
 	// Rules get the validation rules that apply to the request.
 	Rules(ctx Context) map[string]string
+	// Filters get the custom filters that apply to the request.
+	Filters(ctx Context) map[string]string
 	// Messages get the validation messages that apply to the request.
 	Messages(ctx Context) map[string]string
 	// Attributes get custom attributes for validator errors.
