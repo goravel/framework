@@ -607,7 +607,7 @@ func (r *TestRequest) Origin() *nethttp.Request {
 	panic("do not need to implement it")
 }
 
-func (r *TestRequest) Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error) {
+func (r *TestRequest) Validate(rules, filters map[string]string, options ...validation.Option) (validation.Validator, error) {
 	panic("do not need to implement it")
 }
 
