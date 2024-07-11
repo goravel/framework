@@ -55,13 +55,13 @@ func TestBind(t *testing.T) {
 			filters: map[string]string{"a": "trim", "b": "int"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
+				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name:    "success when data is map and cast key",
-			data:    validate.FromMap(map[string]any{"b": "1"}),
-			rules:   map[string]string{"b": "required"},
-			filters: map[string]string{},
+			name:  "success when data is map and cast key",
+			data:  validate.FromMap(map[string]any{"b": "1"}),
+			rules: map[string]string{"b": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, 1, data.B)
 			},
