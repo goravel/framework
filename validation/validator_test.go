@@ -207,7 +207,7 @@ func TestBind(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules, test.filters)
+			validator, err := validation.Make(test.data, test.rules, Filters(test.filters))
 			assert.Nil(t, err)
 
 			var data Data
@@ -248,7 +248,7 @@ func TestFails(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
-			test.filters,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err)
 		assert.Equal(t, test.expectRes, validator.Fails(), test.describe)
@@ -425,7 +425,7 @@ func TestCastValue(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules, test.filters)
+			validator, err := validation.Make(test.data, test.rules, Filters(test.filters))
 			assert.Nil(t, err)
 
 			var data Data

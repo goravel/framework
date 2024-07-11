@@ -14,7 +14,6 @@ func TestOne(t *testing.T) {
 		describe  string
 		data      any
 		rules     map[string]string
-		filters   map[string]string
 		options   []httpvalidate.Option
 		expectRes string
 	}{
@@ -22,21 +21,25 @@ func TestOne(t *testing.T) {
 			describe: "errors is empty",
 			data:     map[string]any{"a": "aa"},
 			rules:    map[string]string{"a": "required"},
-			filters:  map[string]string{"a": "trim"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
 		},
 		{
-			describe:  "errors isn't empty",
-			data:      map[string]any{"a": ""},
-			rules:     map[string]string{"a": "required"},
-			filters:   map[string]string{"a": "trim"},
+			describe: "errors isn't empty",
+			data:     map[string]any{"a": ""},
+			rules:    map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
 			expectRes: "a is required to not be empty",
 		},
 		{
 			describe: "errors isn't empty when setting messages option",
 			data:     map[string]any{"a": ""},
 			rules:    map[string]string{"a": "required"},
-			filters:  map[string]string{"a": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				Messages(map[string]string{"a.required": "a can't be empty"}),
 			},
 			expectRes: "a can't be empty",
@@ -45,8 +48,8 @@ func TestOne(t *testing.T) {
 			describe: "errors isn't empty when setting attributes option",
 			data:     map[string]any{"a": ""},
 			rules:    map[string]string{"a": "required"},
-			filters:  map[string]string{"a": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				Attributes(map[string]string{"a": "aa"}),
 			},
 			expectRes: "aa is required to not be empty",
@@ -55,8 +58,8 @@ func TestOne(t *testing.T) {
 			describe: "errors isn't empty when setting messages and attributes option",
 			data:     map[string]any{"a": ""},
 			rules:    map[string]string{"a": "required"},
-			filters:  map[string]string{"a": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				Messages(map[string]string{"a.required": ":attribute can't be empty"}),
 				Attributes(map[string]string{"a": "aa"}),
 			},
@@ -69,7 +72,6 @@ func TestOne(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
-			test.filters,
 			test.options...,
 		)
 		assert.Nil(t, err, test.describe)
@@ -110,7 +112,7 @@ func TestGet(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
-			test.filters,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err, test.describe)
 		if len(test.expectA) > 0 {
@@ -155,7 +157,7 @@ func TestAll(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
-			test.filters,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err, test.describe)
 		if len(test.expectRes) > 0 {
@@ -193,7 +195,7 @@ func TestHas(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
-			test.filters,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err, test.describe)
 		if test.expectRes {

@@ -22,7 +22,7 @@ func NewValidation() *Validation {
 	}
 }
 
-func (r *Validation) Make(data any, rules, filters map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
+func (r *Validation) Make(data any, rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if data == nil {
 		return nil, errors.New("data can't be empty")
 	}
@@ -51,7 +51,7 @@ func (r *Validation) Make(data any, rules, filters map[string]string, options ..
 		}
 	}
 
-	options = append(options, Rules(rules), Filters(filters), CustomRules(r.rules), CustomFilters(r.filters))
+	options = append(options, Rules(rules), CustomRules(r.rules), CustomFilters(r.filters))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
 		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(nil, NewData(dataFace)); err != nil {

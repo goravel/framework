@@ -20,7 +20,6 @@ func TestMake(t *testing.T) {
 		description        string
 		data               any
 		rules              map[string]string
-		filters            map[string]string
 		options            []httpvalidate.Option
 		expectValidator    bool
 		expectErr          error
@@ -29,18 +28,22 @@ func TestMake(t *testing.T) {
 		expectErrorMessage string
 	}{
 		{
-			description:     "success when data is map[string]any",
-			data:            map[string]any{"a": " b "},
-			rules:           map[string]string{"a": "required"},
-			filters:         map[string]string{"a": "trim"},
+			description: "success when data is map[string]any",
+			data:        map[string]any{"a": " b "},
+			rules:       map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
 			expectValidator: true,
 			expectData:      Data{A: "b"},
 		},
 		{
-			description:     "success when data is struct",
-			data:            &Data{A: "  b"},
-			rules:           map[string]string{"A": "required"},
-			filters:         map[string]string{"A": "trim"},
+			description: "success when data is struct",
+			data:        &Data{A: "  b"},
+			rules:       map[string]string{"A": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"A": "trim"}),
+			},
 			expectValidator: true,
 			expectData:      Data{A: "b"},
 		},
@@ -48,29 +51,32 @@ func TestMake(t *testing.T) {
 			description: "error when data isn't map[string]any or map[string][]string or struct",
 			data:        "1   ",
 			rules:       map[string]string{"a": "required"},
-			filters:     map[string]string{"a": "trim"},
-			expectErr:   errors.New("data must be map[string]any or map[string][]string or struct"),
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
+			expectErr: errors.New("data must be map[string]any or map[string][]string or struct"),
 		},
 		{
 			description: "error when data is empty map",
 			data:        map[string]any{},
 			rules:       map[string]string{"a": "required"},
-			filters:     map[string]string{"a": "trim"},
-			expectErr:   errors.New("data can't be empty"),
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
+			expectErr: errors.New("data can't be empty"),
 		},
 		{
 			description: "error when rule is empty map",
 			data:        map[string]any{"a": "b"},
 			rules:       map[string]string{},
-			filters:     map[string]string{},
 			expectErr:   errors.New("rules can't be empty"),
 		},
 		{
 			description: "error when PrepareForValidation returns error",
 			data:        map[string]any{"a": "   b   "},
 			rules:       map[string]string{"a": "required"},
-			filters:     map[string]string{"a": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
 					return errors.New("error")
 				}),
@@ -81,8 +87,8 @@ func TestMake(t *testing.T) {
 			description: "success when data is map[string]any and with PrepareForValidation",
 			data:        map[string]any{"a": "   b  "},
 			rules:       map[string]string{"a": "required"},
-			filters:     map[string]string{"a": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
@@ -98,8 +104,8 @@ func TestMake(t *testing.T) {
 			description: "contain errors when data is map[string]any and with Messages, Attributes, PrepareForValidation",
 			data:        map[string]any{"a": "aa   "},
 			rules:       map[string]string{"a": "required", "b": "required"},
-			filters:     map[string]string{"a": "trim", "b": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim", "b": "trim"}),
 				Messages(map[string]string{
 					"b.required": ":attribute can't be empty",
 				}),
@@ -123,8 +129,8 @@ func TestMake(t *testing.T) {
 			description: "success when data is struct and with PrepareForValidation",
 			data:        &Data{A: "b"},
 			rules:       map[string]string{"A": "required"},
-			filters:     map[string]string{"A": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"A": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
 						return data.Set("A", "c")
@@ -140,8 +146,8 @@ func TestMake(t *testing.T) {
 			description: "contain errors when data is struct and with Messages, Attributes, PrepareForValidation",
 			data:        &Data{A: "b"},
 			rules:       map[string]string{"A": "required", "B": "required"},
-			filters:     map[string]string{"A": "trim", "B": "trim"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"A": "trim", "B": "trim"}),
 				Messages(map[string]string{
 					"B.required": ":attribute can't be empty",
 				}),
@@ -166,7 +172,7 @@ func TestMake(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			validation := NewValidation()
-			validator, err := validation.Make(test.data, test.rules, test.filters, test.options...)
+			validator, err := validation.Make(test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
 			assert.Equal(t, test.expectErr, err, test.description)
 
@@ -199,7 +205,7 @@ func TestRule_Required(t *testing.T) {
 					"name": "goravel",
 				}, map[string]string{
 					"name": "required",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -214,7 +220,7 @@ func TestRule_Required(t *testing.T) {
 					},
 				}, map[string]string{
 					"name.first": "required",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -227,7 +233,7 @@ func TestRule_Required(t *testing.T) {
 					"name": "",
 				}, map[string]string{
 					"name": "required",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -243,7 +249,7 @@ func TestRule_Required(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -260,7 +266,7 @@ func TestRule_Required(t *testing.T) {
 					},
 				}, map[string]string{
 					"name.first": "required",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -289,7 +295,7 @@ func TestRule_RequiredIf(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_if:name,goravel,goravel1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -303,7 +309,7 @@ func TestRule_RequiredIf(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_if:name,goravel,goravel1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -318,7 +324,7 @@ func TestRule_RequiredIf(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_if:name,goravel,goravel1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -334,7 +340,7 @@ func TestRule_RequiredIf(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_if:name,goravel,goravel1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -363,7 +369,7 @@ func TestRule_RequiredUnless(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_unless:name,hello,hello1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -377,7 +383,7 @@ func TestRule_RequiredUnless(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_unless:name,goravel,goravel1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -392,7 +398,7 @@ func TestRule_RequiredUnless(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_unless:name,hello,hello1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -408,7 +414,7 @@ func TestRule_RequiredUnless(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required_unless:name,hello,hello1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -437,7 +443,7 @@ func TestRule_RequiredWith(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name2": "required_with:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -450,7 +456,7 @@ func TestRule_RequiredWith(t *testing.T) {
 					"name": "",
 				}, map[string]string{
 					"name": "required_with:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -467,7 +473,7 @@ func TestRule_RequiredWith(t *testing.T) {
 					"name":  "required",
 					"name1": "required",
 					"name2": "required_with:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -485,7 +491,7 @@ func TestRule_RequiredWith(t *testing.T) {
 					"name":  "required",
 					"name1": "required",
 					"name2": "required_with:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -516,7 +522,7 @@ func TestRule_RequiredWithAll(t *testing.T) {
 					"name":  "required",
 					"name1": "required",
 					"name2": "required_with_all:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -532,7 +538,7 @@ func TestRule_RequiredWithAll(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name2": "required_with_all:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -545,7 +551,7 @@ func TestRule_RequiredWithAll(t *testing.T) {
 					"name": "",
 				}, map[string]string{
 					"name": "required_with_all:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -562,7 +568,7 @@ func TestRule_RequiredWithAll(t *testing.T) {
 					"name":  "required",
 					"name1": "required",
 					"name2": "required_with_all:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -580,7 +586,7 @@ func TestRule_RequiredWithAll(t *testing.T) {
 					"name":  "required",
 					"name1": "required",
 					"name2": "required_with_all:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -609,7 +615,7 @@ func TestRule_RequiredWithout(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name2": "required_without:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -624,7 +630,7 @@ func TestRule_RequiredWithout(t *testing.T) {
 					"name2": "",
 				}, map[string]string{
 					"name": "required_without:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -639,7 +645,7 @@ func TestRule_RequiredWithout(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name2": "required_without:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -655,7 +661,7 @@ func TestRule_RequiredWithout(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name2": "required_without:name,name1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -682,7 +688,7 @@ func TestRule_RequiredWithoutAll(t *testing.T) {
 					"name": "goravel",
 				}, map[string]string{
 					"name": "required_without_all:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -697,7 +703,7 @@ func TestRule_RequiredWithoutAll(t *testing.T) {
 					"name2": "",
 				}, map[string]string{
 					"name": "required_without_all:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -710,7 +716,7 @@ func TestRule_RequiredWithoutAll(t *testing.T) {
 					"name": "",
 				}, map[string]string{
 					"name": "required_without_all:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -725,7 +731,7 @@ func TestRule_RequiredWithoutAll(t *testing.T) {
 					"name3": "goravel3",
 				}, map[string]string{
 					"name": "required_without_all:name1,name2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -752,7 +758,7 @@ func TestRule_Int(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|int",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -765,7 +771,7 @@ func TestRule_Int(t *testing.T) {
 					"name": 3,
 				}, map[string]string{
 					"name": "required|int:2,4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -778,7 +784,7 @@ func TestRule_Int(t *testing.T) {
 					"name": "1",
 				}, map[string]string{
 					"name": "required|int",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -793,7 +799,7 @@ func TestRule_Int(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|int:2,4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -820,7 +826,7 @@ func TestRule_Uint(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|uint",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -833,7 +839,7 @@ func TestRule_Uint(t *testing.T) {
 					"name": "s",
 				}, map[string]string{
 					"name": "required|uint",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -878,7 +884,7 @@ func TestRule_Bool(t *testing.T) {
 					"name8":  "bool",
 					"name9":  "bool",
 					"name10": "bool",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -895,7 +901,7 @@ func TestRule_Bool(t *testing.T) {
 					"name1": "bool",
 					"name2": "bool",
 					"name3": "bool",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"bool": "name1 value must be a bool"}, validator.Errors().Get("name1"))
@@ -922,7 +928,7 @@ func TestRule_String(t *testing.T) {
 					"name": "1",
 				}, map[string]string{
 					"name": "required|string",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -935,7 +941,7 @@ func TestRule_String(t *testing.T) {
 					"name": "abc",
 				}, map[string]string{
 					"name": "required|string:2,4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -948,7 +954,7 @@ func TestRule_String(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|string",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -963,7 +969,7 @@ func TestRule_String(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|string:2,4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -990,7 +996,7 @@ func TestRule_Float(t *testing.T) {
 					"name": 1.1,
 				}, map[string]string{
 					"name": "required|float",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1003,7 +1009,7 @@ func TestRule_Float(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|float",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{
@@ -1034,7 +1040,7 @@ func TestRule_Slice(t *testing.T) {
 					"name1": "required|slice",
 					"name2": "required|slice",
 					"name3": "required|slice",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1051,7 +1057,7 @@ func TestRule_Slice(t *testing.T) {
 					"name1": "required|slice",
 					"name2": "required|slice",
 					"name3": "required|slice",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"slice": "name1 value must be a slice"}, validator.Errors().Get("name1"))
@@ -1080,7 +1086,7 @@ func TestRule_In(t *testing.T) {
 				}, map[string]string{
 					"name1": "required|in:1,2",
 					"name2": "required|in:a,b",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1095,7 +1101,7 @@ func TestRule_In(t *testing.T) {
 				}, map[string]string{
 					"name1": "required|in:1,2",
 					"name2": "required|in:a,b",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"in": "name1 value must be in the enum [1 2]"}, validator.Errors().Get("name1"))
@@ -1123,7 +1129,7 @@ func TestRule_NotIn(t *testing.T) {
 				}, map[string]string{
 					"name1": "required|not_in:1,2",
 					"name2": "required|not_in:a,b",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1138,7 +1144,7 @@ func TestRule_NotIn(t *testing.T) {
 				}, map[string]string{
 					"name1": "required|not_in:1,2",
 					"name2": "required|not_in:a,b",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"not_in": "name1 value must not be in the given enum list [%!d(string=1) %!d(string=2)]"}, validator.Errors().Get("name1"))
@@ -1164,7 +1170,7 @@ func TestRule_StartsWith(t *testing.T) {
 					"name": "abc",
 				}, map[string]string{
 					"name": "required|starts_with:ab",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1177,7 +1183,7 @@ func TestRule_StartsWith(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|starts_with:ab",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"starts_with": "name value does not start with ab"}, validator.Errors().Get("name"))
@@ -1202,7 +1208,7 @@ func TestRule_EndsWith(t *testing.T) {
 					"name": "cab",
 				}, map[string]string{
 					"name": "required|ends_with:ab",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1215,7 +1221,7 @@ func TestRule_EndsWith(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|ends_with:ab",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"ends_with": "name value does not end with ab"}, validator.Errors().Get("name"))
@@ -1240,7 +1246,7 @@ func TestRule_Between(t *testing.T) {
 					"name": 2,
 				}, map[string]string{
 					"name": "required|between:1,3",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1253,7 +1259,7 @@ func TestRule_Between(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|between:2,4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"between": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -1278,7 +1284,7 @@ func TestRule_Max(t *testing.T) {
 					"name": 2,
 				}, map[string]string{
 					"name": "required|max:3",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1291,7 +1297,7 @@ func TestRule_Max(t *testing.T) {
 					"name": 4,
 				}, map[string]string{
 					"name": "required|max:3",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"max": "name max value is 3"}, validator.Errors().Get("name"))
@@ -1316,7 +1322,7 @@ func TestRule_Min(t *testing.T) {
 					"name": 3,
 				}, map[string]string{
 					"name": "required|min:3",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1329,7 +1335,7 @@ func TestRule_Min(t *testing.T) {
 					"name": 2,
 				}, map[string]string{
 					"name": "required|min:3",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"min": "name min value is 3"}, validator.Errors().Get("name"))
@@ -1354,7 +1360,7 @@ func TestRule_Eq(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|eq:a",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1367,7 +1373,7 @@ func TestRule_Eq(t *testing.T) {
 					"name": "b",
 				}, map[string]string{
 					"name": "required|eq:a",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"eq": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -1392,7 +1398,7 @@ func TestRule_Ne(t *testing.T) {
 					"name": "b",
 				}, map[string]string{
 					"name": "required|ne:a",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1405,7 +1411,7 @@ func TestRule_Ne(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|ne:a",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"ne": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -1430,7 +1436,7 @@ func TestRule_Lt(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|lt:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1443,7 +1449,7 @@ func TestRule_Lt(t *testing.T) {
 					"name": 2,
 				}, map[string]string{
 					"name": "required|lt:1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"lt": "name value should be less than 1"}, validator.Errors().Get("name"))
@@ -1468,7 +1474,7 @@ func TestRule_Gt(t *testing.T) {
 					"name": 2,
 				}, map[string]string{
 					"name": "required|gt:1",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1481,7 +1487,7 @@ func TestRule_Gt(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|gt:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"gt": "name value should be greater than 2"}, validator.Errors().Get("name"))
@@ -1516,7 +1522,7 @@ func TestRule_Len(t *testing.T) {
 					"name1": "required|len:3",
 					"name2": "required|len:3",
 					"name3": "required|len:3",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1539,7 +1545,7 @@ func TestRule_Len(t *testing.T) {
 					"name1": "required|len:2",
 					"name2": "required|len:2",
 					"name3": "required|len:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"len": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -1577,7 +1583,7 @@ func TestRule_MinLen(t *testing.T) {
 					"name1": "required|min_len:2",
 					"name2": "required|min_len:2",
 					"name3": "required|min_len:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1600,7 +1606,7 @@ func TestRule_MinLen(t *testing.T) {
 					"name1": "required|min_len:4",
 					"name2": "required|min_len:4",
 					"name3": "required|min_len:4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"min_len": "name min length is 4"}, validator.Errors().Get("name"))
@@ -1638,7 +1644,7 @@ func TestRule_MaxLen(t *testing.T) {
 					"name1": "required|max_len:4",
 					"name2": "required|max_len:4",
 					"name3": "required|max_len:4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1661,7 +1667,7 @@ func TestRule_MaxLen(t *testing.T) {
 					"name1": "required|max_len:2",
 					"name2": "required|max_len:2",
 					"name3": "required|max_len:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"max_len": "name max length is 2"}, validator.Errors().Get("name"))
@@ -1689,7 +1695,7 @@ func TestRule_Email(t *testing.T) {
 					"name": "hello@goravel.com",
 				}, map[string]string{
 					"name": "required|email",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1702,7 +1708,7 @@ func TestRule_Email(t *testing.T) {
 					"name": "abc",
 				}, map[string]string{
 					"name": "required|email",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"email": "name value is an invalid email address"}, validator.Errors().Get("name"))
@@ -1729,7 +1735,7 @@ func TestRule_Array(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|array",
 					"name1": "required|array",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1746,7 +1752,7 @@ func TestRule_Array(t *testing.T) {
 					"name":  "required|array",
 					"name1": "required|array",
 					"name2": "required|array",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"array": "name value must be an array"}, validator.Errors().Get("name"))
@@ -1773,7 +1779,7 @@ func TestRule_Map(t *testing.T) {
 					"name": map[string]string{"a": "a1"},
 				}, map[string]string{
 					"name": "required|map",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1792,7 +1798,7 @@ func TestRule_Map(t *testing.T) {
 					"name1": "required|map",
 					"name2": "required|map",
 					"name3": "required|map",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"map": "name value must be a map"}, validator.Errors().Get("name"))
@@ -1822,7 +1828,7 @@ func TestRule_EqField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|eq_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1837,7 +1843,7 @@ func TestRule_EqField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|eq_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"eq_field": "name1 value must be equal the field name"}, validator.Errors().Get("name1"))
@@ -1864,7 +1870,7 @@ func TestRule_NeField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|ne_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1879,7 +1885,7 @@ func TestRule_NeField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|ne_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"ne_field": "name1 value cannot be equal to the field name"}, validator.Errors().Get("name1"))
@@ -1906,7 +1912,7 @@ func TestRule_GtField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|gt_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1921,7 +1927,7 @@ func TestRule_GtField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|gt_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"gt_field": "name1 value must be greater than the field name"}, validator.Errors().Get("name1"))
@@ -1950,7 +1956,7 @@ func TestRule_GteField(t *testing.T) {
 					"name":  "required",
 					"name1": "required|gte_field:name",
 					"name2": "required|gte_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -1965,7 +1971,7 @@ func TestRule_GteField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|gte_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"gte_field": "name1 value should be greater or equal to the field name"}, validator.Errors().Get("name1"))
@@ -1992,7 +1998,7 @@ func TestRule_LtField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|lt_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2007,7 +2013,7 @@ func TestRule_LtField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|lt_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"lt_field": "name1 value should be less than the field name"}, validator.Errors().Get("name1"))
@@ -2036,7 +2042,7 @@ func TestRule_LteField(t *testing.T) {
 					"name":  "required",
 					"name1": "required|lte_field:name",
 					"name2": "required|lte_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2051,7 +2057,7 @@ func TestRule_LteField(t *testing.T) {
 				}, map[string]string{
 					"name":  "required",
 					"name1": "required|lte_field:name",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"lte_field": "name1 value should be less than or equal to the field name"}, validator.Errors().Get("name1"))
@@ -2081,7 +2087,7 @@ func TestRule_Date(t *testing.T) {
 					"name1": "required|date",
 					"name2": "date",
 					"name3": "date",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2096,7 +2102,7 @@ func TestRule_Date(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|date",
 					"name1": "required|date",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"date": "name value should be a date string"}, validator.Errors().Get("name"))
@@ -2122,7 +2128,7 @@ func TestRule_GtDate(t *testing.T) {
 					"name": "2022-12-25",
 				}, map[string]string{
 					"name": "required|gt_date:2022-12-24",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2135,7 +2141,7 @@ func TestRule_GtDate(t *testing.T) {
 					"name": "2022-12-25",
 				}, map[string]string{
 					"name": "required|gt_date:2022-12-26",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"gt_date": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2160,7 +2166,7 @@ func TestRule_LtDate(t *testing.T) {
 					"name": "2022-12-25",
 				}, map[string]string{
 					"name": "required|lt_date:2022-12-26",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2173,7 +2179,7 @@ func TestRule_LtDate(t *testing.T) {
 					"name": "2022-12-25",
 				}, map[string]string{
 					"name": "required|lt_date:2022-12-24",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"lt_date": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2200,7 +2206,7 @@ func TestRule_GteDate(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|gte_date:2022-12-25",
 					"name1": "required|gte_date:2022-12-24",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2213,7 +2219,7 @@ func TestRule_GteDate(t *testing.T) {
 					"name": "2022-12-25",
 				}, map[string]string{
 					"name": "required|gte_date:2022-12-26",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"gte_date": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2240,7 +2246,7 @@ func TestRule_lteDate(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|lte_date:2022-12-25",
 					"name1": "required|lte_date:2022-12-26",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2253,7 +2259,7 @@ func TestRule_lteDate(t *testing.T) {
 					"name": "2022-12-25",
 				}, map[string]string{
 					"name": "required|lte_date:2022-12-24",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"lte_date": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2278,7 +2284,7 @@ func TestRule_Alpha(t *testing.T) {
 					"name": "abcABC",
 				}, map[string]string{
 					"name": "required|alpha",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2293,7 +2299,7 @@ func TestRule_Alpha(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|alpha",
 					"name1": "required|alpha",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"alpha": "name value contains only alpha char"}, validator.Errors().Get("name"))
@@ -2319,7 +2325,7 @@ func TestRule_AlphaNum(t *testing.T) {
 					"name": "abcABC123",
 				}, map[string]string{
 					"name": "required|alpha_num",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2332,7 +2338,7 @@ func TestRule_AlphaNum(t *testing.T) {
 					"name": "abcABC123.",
 				}, map[string]string{
 					"name": "required|alpha_num",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"alpha_num": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2357,7 +2363,7 @@ func TestRule_AlphaDash(t *testing.T) {
 					"name": "abcABC123-_",
 				}, map[string]string{
 					"name": "required|alpha_dash",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2370,7 +2376,7 @@ func TestRule_AlphaDash(t *testing.T) {
 					"name": "abcABC123-_.",
 				}, map[string]string{
 					"name": "required|alpha_dash",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"alpha_dash": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2395,7 +2401,7 @@ func TestRule_Json(t *testing.T) {
 					"name": "{\"a\":1}",
 				}, map[string]string{
 					"name": "required|json",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2408,7 +2414,7 @@ func TestRule_Json(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|json",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"json": "name value should be a json string"}, validator.Errors().Get("name"))
@@ -2433,7 +2439,7 @@ func TestRule_Number(t *testing.T) {
 					"name": 1,
 				}, map[string]string{
 					"name": "required|number",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2446,7 +2452,7 @@ func TestRule_Number(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|number",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"number": "name field did not pass validation"}, validator.Errors().Get("name"))
@@ -2473,7 +2479,7 @@ func TestRule_FullUrl(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|full_url",
 					"name1": "required|full_url",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2486,7 +2492,7 @@ func TestRule_FullUrl(t *testing.T) {
 					"name": "a",
 				}, map[string]string{
 					"name": "required|full_url",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"full_url": "name must be a valid full URL address"}, validator.Errors().Get("name"))
@@ -2513,7 +2519,7 @@ func TestRule_Ip(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|ip",
 					"name1": "required|ip",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2528,7 +2534,7 @@ func TestRule_Ip(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|ip",
 					"name1": "required|ip",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"ip": "name value should be an IP (v4 or v6) string"}, validator.Errors().Get("name"))
@@ -2554,7 +2560,7 @@ func TestRule_Ipv4(t *testing.T) {
 					"name": "192.168.1.1",
 				}, map[string]string{
 					"name": "required|ipv4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2571,7 +2577,7 @@ func TestRule_Ipv4(t *testing.T) {
 					"name":  "required|ipv4",
 					"name1": "required|ipv4",
 					"name2": "required|ipv4",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"ipv4": "name value should be an IPv4 string"}, validator.Errors().Get("name"))
@@ -2598,7 +2604,7 @@ func TestRule_Ipv6(t *testing.T) {
 					"name": "FE80:CD00:0000:0CDE:1257:0000:211E:729C",
 				}, map[string]string{
 					"name": "required|ipv6",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2613,7 +2619,7 @@ func TestRule_Ipv6(t *testing.T) {
 				}, map[string]string{
 					"name":  "required|ipv6",
 					"name1": "required|ipv6",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"ipv6": "name value should be an IPv6 string"}, validator.Errors().Get("name"))
@@ -2671,13 +2677,13 @@ func TestFilters(t *testing.T) {
 	validation.AddFilter(&DefaultFilter{}).AddFilter(&Arr2Str{})
 	validator, err := validation.Make(mp, map[string]string{
 		"name, age, empty, languages, numbers": "required",
-	}, map[string]string{
+	}, Filters(map[string]string{
 		"empty":          "default:emptyDefault",
 		"name":           "trim|upper",
 		"age, not-exist": "trim|int",
 		"languages":      "str2arr:,",
 		"numbers":        "arr2str:,",
-	})
+	}))
 
 	assert.Nil(t, err)
 	var newMp map[string]any
@@ -2737,7 +2743,7 @@ func TestCustomRule(t *testing.T) {
 				}, map[string]string{
 					"name":    "required|uppercase:3",
 					"address": "required|lowercase:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.False(t, validator.Fails(), c.description)
@@ -2752,7 +2758,7 @@ func TestCustomRule(t *testing.T) {
 				}, map[string]string{
 					"name":    "required|uppercase:3",
 					"address": "required|lowercase:2",
-				}, map[string]string{})
+				})
 				assert.Nil(t, err, c.description)
 				assert.NotNil(t, validator, c.description)
 				assert.Equal(t, map[string]string{"uppercase": "name must be upper"}, validator.Errors().Get("name"))

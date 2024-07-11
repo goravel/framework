@@ -81,7 +81,7 @@ type ContextRequest interface {
 	Origin() *http.Request
 
 	// Validate performs request data validation using specified rules and options.
-	Validate(rules, filters map[string]string, options ...validation.Option) (validation.Validator, error)
+	Validate(rules map[string]string, options ...validation.Option) (validation.Validator, error)
 	// ValidateRequest validates the request data against a pre-defined FormRequest structure
 	// and returns validation errors, if any.
 	ValidateRequest(request FormRequest) (validation.Errors, error)
