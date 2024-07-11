@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
-	github.com/brianvoe/gofakeit/v7 v7.0.4
+	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/charmbracelet/huh v0.5.1
 	github.com/charmbracelet/huh/spinner v0.0.0-20240709222038-80fcf53648bd
 	github.com/charmbracelet/lipgloss v0.11.1
