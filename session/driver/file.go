@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
@@ -12,6 +13,7 @@ import (
 type File struct {
 	path    string
 	minutes int
+	mu      sync.Mutex
 }
 
 func NewFile(path string, minutes int) *File {
@@ -26,10 +28,16 @@ func (f *File) Close() error {
 }
 
 func (f *File) Destroy(id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	return file.Remove(f.getFilePath(id))
 }
 
 func (f *File) Gc(maxLifetime int) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	cutoffTime := carbon.Now(carbon.UTC).SubSeconds(maxLifetime)
 
 	if !file.Exists(f.path) {
@@ -54,6 +62,9 @@ func (f *File) Open(string, string) error {
 }
 
 func (f *File) Read(id string) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	path := f.getFilePath(id)
 	if file.Exists(path) {
 		modified, err := file.LastModified(path, carbon.UTC)
@@ -73,9 +84,12 @@ func (f *File) Read(id string) (string, error) {
 }
 
 func (f *File) Write(id string, data string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	return file.Create(f.getFilePath(id), data)
 }
 
 func (f *File) getFilePath(id string) string {
-	return f.path + "/" + id
+	return filepath.Join(f.path, id)
 }
