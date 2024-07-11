@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.22
+go 1.21
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
@@ -44,8 +44,6 @@ require (
 	gorm.io/gorm v1.25.10
 	gorm.io/plugin/dbresolver v1.5.2
 )
-
-require github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
@@ -118,6 +116,7 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/microsoft/go-mssqldb v1.6.0 // indirect
+	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
