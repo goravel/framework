@@ -25,48 +25,54 @@ func TestBind(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		data   validate.DataFace
-		rules  map[string]string
-		assert func(data Data)
+		name    string
+		data    validate.DataFace
+		rules   map[string]string
+		filters map[string]string
+		assert  func(data Data)
 	}{
 		{
-			name:  "success when data is map and key is lowercase",
-			data:  validate.FromMap(map[string]any{"a": "aa"}),
-			rules: map[string]string{"a": "required"},
+			name:    "success when data is map and key is lowercase",
+			data:    validate.FromMap(map[string]any{"a": "aa  "}),
+			rules:   map[string]string{"a": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
-			name:  "success when data is map and key is int",
-			data:  validate.FromMap(map[string]any{"b": 1}),
-			rules: map[string]string{"b": "required"},
+			name:    "success when data is map and key is int",
+			data:    validate.FromMap(map[string]any{"b": 1}),
+			rules:   map[string]string{"b": "required"},
+			filters: map[string]string{"b": "int"},
 			assert: func(data Data) {
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name:  "success when data is map and cast key",
-			data:  validate.FromMap(map[string]any{"b": "1"}),
-			rules: map[string]string{"b": "required"},
+			name:    "success when data is map and cast key",
+			data:    validate.FromMap(map[string]any{"b": "1"}),
+			rules:   map[string]string{"b": "required"},
+			filters: map[string]string{},
 			assert: func(data Data) {
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name:  "success when data is map, key is lowercase and has errors",
-			data:  validate.FromMap(map[string]any{"a": "aa", "c": "cc"}),
-			rules: map[string]string{"a": "required", "b": "required"},
+			name:    "success when data is map, key is lowercase and has errors",
+			data:    validate.FromMap(map[string]any{"a": "aa  ", "c": "cc"}),
+			rules:   map[string]string{"a": "required", "b": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "", data.A)
 				assert.Equal(t, "", data.C)
 			},
 		},
 		{
-			name:  "success when data is map and key is uppercase",
-			data:  validate.FromMap(map[string]any{"A": "aa"}),
-			rules: map[string]string{"A": "required"},
+			name:    "success when data is map and key is uppercase",
+			data:    validate.FromMap(map[string]any{"A": "aa  "}),
+			rules:   map[string]string{"A": "required"},
+			filters: map[string]string{"A": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
@@ -74,7 +80,7 @@ func TestBind(t *testing.T) {
 		{
 			name: "success when data is struct and key is uppercase",
 			data: func() validate.DataFace {
-				data, err := validate.FromStruct(struct {
+				data, err := validate.FromStruct(&struct {
 					A string
 				}{
 					A: "aa",
@@ -83,7 +89,8 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"A": "required"},
+			rules:   map[string]string{"A": "required"},
+			filters: map[string]string{"A": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
@@ -94,13 +101,14 @@ func TestBind(t *testing.T) {
 				data, err := validate.FromStruct(struct {
 					a string
 				}{
-					a: "aa",
+					a: "aa ",
 				})
 				assert.Nil(t, err)
 
 				return data
 			}(),
-			rules: map[string]string{"a": "required"},
+			rules:   map[string]string{"a": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "", data.A)
 			},
@@ -112,14 +120,15 @@ func TestBind(t *testing.T) {
 					D *Data
 				}{
 					D: &Data{
-						A: "aa",
+						A: "aa ",
 					},
 				})
 				assert.Nil(t, err)
 
 				return data
 			}(),
-			rules: map[string]string{"d.a": "required"},
+			rules:   map[string]string{"d.a": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "", data.A)
 			},
@@ -127,14 +136,15 @@ func TestBind(t *testing.T) {
 		{
 			name: "success when data is get request",
 			data: func() validate.DataFace {
-				request, err := http.NewRequest(http.MethodGet, "/?a=aa", nil)
+				request, err := http.NewRequest(http.MethodGet, "/?a=aa ", nil)
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
 				assert.Nil(t, err)
 
 				return data
 			}(),
-			rules: map[string]string{"a": "required"},
+			rules:   map[string]string{"a": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
@@ -149,7 +159,8 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"b": "required"},
+			rules:   map[string]string{"b": "required"},
+			filters: map[string]string{"b": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, 1, data.B)
 			},
@@ -157,7 +168,7 @@ func TestBind(t *testing.T) {
 		{
 			name: "success when data is post request",
 			data: func() validate.DataFace {
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"aa"}`))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"aa  "}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
@@ -165,7 +176,8 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"a": "required"},
+			rules:   map[string]string{"a": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
@@ -179,7 +191,8 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules: map[string]string{"a": "required", "file": "required"},
+			rules:   map[string]string{"a": "required", "file": "required"},
+			filters: map[string]string{"a": "trim"},
 			assert: func(data Data) {
 				request := buildRequest(t)
 				_, file, _ := request.FormFile("file")
@@ -194,7 +207,7 @@ func TestBind(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules)
+			validator, err := validation.Make(test.data, test.rules, Filters(test.filters))
 			assert.Nil(t, err)
 
 			var data Data
@@ -212,17 +225,20 @@ func TestFails(t *testing.T) {
 		describe  string
 		data      any
 		rules     map[string]string
+		filters   map[string]string
 		expectRes bool
 	}{
 		{
 			describe: "false",
 			data:     map[string]any{"a": "aa"},
 			rules:    map[string]string{"a": "required"},
+			filters:  map[string]string{},
 		},
 		{
 			describe:  "true",
 			data:      map[string]any{"b": "bb"},
 			rules:     map[string]string{"a": "required"},
+			filters:   map[string]string{},
 			expectRes: true,
 		},
 	}
@@ -232,6 +248,7 @@ func TestFails(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err)
 		assert.Equal(t, test.expectRes, validator.Fails(), test.describe)
@@ -262,6 +279,7 @@ func TestCastValue(t *testing.T) {
 		name       string
 		data       validate.DataFace
 		rules      map[string]string
+		filters    map[string]string
 		expectData Data
 		expectErr  error
 	}{
@@ -314,6 +332,7 @@ func TestCastValue(t *testing.T) {
 				"o": "required",
 				"p": "required",
 			},
+			filters: map[string]string{},
 			expectData: Data{
 				A: "1",
 				B: 1,
@@ -381,6 +400,7 @@ func TestCastValue(t *testing.T) {
 				"o": "required",
 				"p": "required",
 			},
+			filters: map[string]string{},
 			expectData: Data{
 				A: "1",
 				B: 1,
@@ -405,7 +425,7 @@ func TestCastValue(t *testing.T) {
 	validation := NewValidation()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validator, err := validation.Make(test.data, test.rules)
+			validator, err := validation.Make(test.data, test.rules, Filters(test.filters))
 			assert.Nil(t, err)
 
 			var data Data

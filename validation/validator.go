@@ -39,7 +39,7 @@ func (v *Validator) Bind(ptr any) error {
 		return err
 	}
 
-	if err := decoder.Decode(data); err != nil {
+	if err = decoder.Decode(data); err != nil {
 		return err
 	}
 

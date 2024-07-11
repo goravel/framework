@@ -60,7 +60,6 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	}
 
 	v := dataFace.Create()
-
 	AppendOptions(v, generateOptions)
 
 	return NewValidator(v), nil
@@ -73,8 +72,16 @@ func (r *Validation) AddFilter(filter validatecontract.Filter) validatecontract.
 }
 
 func (r *Validation) AddFilters(filters []validatecontract.Filter) validatecontract.Validation {
-	r.filters = append(r.filters, filters...)
+	existFilterNames := r.existFilterNames()
+	for _, filter := range filters {
+		for _, existFilterName := range existFilterNames {
+			if existFilterName == filter.Signature() {
+				panic("duplicate filter name: " + filter.Signature())
+			}
+		}
+	}
 
+	r.filters = append(r.filters, filters...)
 	return r
 }
 
@@ -89,7 +96,6 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 	}
 
 	r.rules = append(r.rules, rules...)
-
 	return nil
 }
 
@@ -316,4 +322,57 @@ func (r *Validation) existRuleNames() []string {
 	}
 
 	return rules
+}
+
+func (r *Validation) existFilterNames() []string {
+	filters := []string{
+		"int",
+		"toInt",
+		"uint",
+		"toUint",
+		"int64",
+		"toInt64",
+		"float",
+		"toFloat",
+		"bool",
+		"toBool",
+		"trim",
+		"trimSpace",
+		"ltrim",
+		"trimLeft",
+		"rtrim",
+		"trimRight",
+		"int",
+		"integer",
+		"lower",
+		"lowercase",
+		"upper",
+		"uppercase",
+		"lcFirst",
+		"lowerFirst",
+		"ucFirst",
+		"upperFirst",
+		"ucWord",
+		"upperWord",
+		"camel",
+		"camelCase",
+		"snake",
+		"snakeCase",
+		"escapeJs",
+		"escapeJS",
+		"escapeHtml",
+		"escapeHTML",
+		"str2ints",
+		"strToInts",
+		"str2time",
+		"strToTime",
+		"str2arr",
+		"str2array",
+		"strToArray",
+	}
+	for _, filter := range r.filters {
+		filters = append(filters, filter.Signature())
+	}
+
+	return filters
 }
