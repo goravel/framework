@@ -21,5 +21,7 @@
       "automerge": true
     }
   ],
-  "ignoreDeps": []
+  "ignoreDeps": [
+    "github.com/brianvoe/gofakeit/v6"
+  ]
 }
