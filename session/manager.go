@@ -11,16 +11,16 @@ import (
 
 type Manager struct {
 	config        config.Config
-	customDrivers map[string]func() sessioncontract.Driver
-	drivers       map[string]func() sessioncontract.Driver
+	customDrivers map[string]sessioncontract.Driver
+	drivers       map[string]sessioncontract.Driver
 	json          foundation.Json
 }
 
 func NewManager(config config.Config, json foundation.Json) *Manager {
 	manager := &Manager{
 		config:        config,
-		customDrivers: make(map[string]func() sessioncontract.Driver),
-		drivers:       make(map[string]func() sessioncontract.Driver),
+		customDrivers: make(map[string]sessioncontract.Driver),
+		drivers:       make(map[string]sessioncontract.Driver),
 		json:          json,
 	}
 	manager.registerDrivers()
@@ -51,11 +51,11 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 		m.drivers[driverName] = m.customDrivers[driverName]
 	}
 
-	return m.drivers[driverName](), nil
+	return m.drivers[driverName], nil
 }
 
 func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) sessioncontract.Manager {
-	m.customDrivers[driver] = handler
+	m.customDrivers[driver] = handler()
 	return m
 }
 
@@ -69,5 +69,5 @@ func (m *Manager) createFileDriver() sessioncontract.Driver {
 }
 
 func (m *Manager) registerDrivers() {
-	m.drivers["file"] = m.createFileDriver
+	m.drivers["file"] = m.createFileDriver()
 }
