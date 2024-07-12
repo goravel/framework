@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/contracts/foundation"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
@@ -22,10 +21,8 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config, json foundation.Json) nethttp.Handler {
+func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Config) nethttp.Handler {
 	return nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		session.ConfigFacade = mockConfig
-		session.SessionFacade = session.NewManager(mockConfig, json)
 		mockConfigFacade(mockConfig)
 		StartSession()(NewTestContext(r.Context(), next, w, r))
 	})
@@ -33,8 +30,7 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
 	mockConfig.On("GetString", "session.driver").Return("file").Twice()
-	mockConfig.On("GetInt", "session.lifetime").Return(60).Times(3)
-	mockConfig.On("GetString", "session.files").Return("sessions").Once()
+	mockConfig.On("GetInt", "session.lifetime").Return(60).Twice()
 	mockConfig.On("GetString", "session.cookie").Return("goravel_session").Once()
 	mockConfig.On("GetString", "session.path").Return("/").Once()
 	mockConfig.On("GetString", "session.domain").Return("").Once()
@@ -46,7 +42,10 @@ func mockConfigFacade(mockConfig *configmocks.Config) {
 
 func TestStartSession(t *testing.T) {
 	mockConfig := &configmocks.Config{}
-	j := json.NewJson()
+	session.ConfigFacade = mockConfig
+	mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
+	session.SessionFacade = session.NewManager(mockConfig, json.NewJson())
 	server := httptest.NewServer(testHttpSessionMiddleware(nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		switch r.URL.Path {
 		case "/add":
@@ -59,7 +58,7 @@ func TestStartSession(t *testing.T) {
 			assert.Equal(t, "bar", s.Get("foo"))
 			assert.Equal(t, "qux", s.Get("baz"))
 		}
-	}), mockConfig, j))
+	}), mockConfig))
 	defer server.Close()
 
 	client := &nethttp.Client{}
