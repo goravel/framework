@@ -21,11 +21,17 @@ func TestOne(t *testing.T) {
 			describe: "errors is empty",
 			data:     map[string]any{"a": "aa"},
 			rules:    map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
 		},
 		{
-			describe:  "errors isn't empty",
-			data:      map[string]any{"a": ""},
-			rules:     map[string]string{"a": "required"},
+			describe: "errors isn't empty",
+			data:     map[string]any{"a": ""},
+			rules:    map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
 			expectRes: "a is required to not be empty",
 		},
 		{
@@ -33,6 +39,7 @@ func TestOne(t *testing.T) {
 			data:     map[string]any{"a": ""},
 			rules:    map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				Messages(map[string]string{"a.required": "a can't be empty"}),
 			},
 			expectRes: "a can't be empty",
@@ -42,6 +49,7 @@ func TestOne(t *testing.T) {
 			data:     map[string]any{"a": ""},
 			rules:    map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				Attributes(map[string]string{"a": "aa"}),
 			},
 			expectRes: "aa is required to not be empty",
@@ -51,6 +59,7 @@ func TestOne(t *testing.T) {
 			data:     map[string]any{"a": ""},
 			rules:    map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				Messages(map[string]string{"a.required": ":attribute can't be empty"}),
 				Attributes(map[string]string{"a": "aa"}),
 			},
@@ -78,6 +87,7 @@ func TestGet(t *testing.T) {
 		describe string
 		data     any
 		rules    map[string]string
+		filters  map[string]string
 		expectA  map[string]string
 		expectB  map[string]string
 	}{
@@ -85,11 +95,13 @@ func TestGet(t *testing.T) {
 			describe: "errors is empty",
 			data:     map[string]any{"a": "aa", "b": "bb"},
 			rules:    map[string]string{"a": "required", "b": "required"},
+			filters:  map[string]string{"a": "trim", "b": "trim"},
 		},
 		{
 			describe: "errors isn't empty",
 			data:     map[string]any{"c": "cc"},
 			rules:    map[string]string{"a": "required", "b": "required"},
+			filters:  map[string]string{"a": "trim", "b": "trim"},
 			expectA:  map[string]string{"required": "a is required to not be empty"},
 			expectB:  map[string]string{"required": "b is required to not be empty"},
 		},
@@ -100,6 +112,7 @@ func TestGet(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err, test.describe)
 		if len(test.expectA) > 0 {
@@ -117,18 +130,21 @@ func TestAll(t *testing.T) {
 		describe  string
 		data      any
 		rules     map[string]string
+		filters   map[string]string
 		expectRes map[string]map[string]string
 	}{
 		{
 			describe:  "errors is empty",
 			data:      map[string]any{"a": "aa", "b": "bb"},
 			rules:     map[string]string{"a": "required", "b": "required"},
+			filters:   map[string]string{"a": "trim", "b": "trim"},
 			expectRes: map[string]map[string]string{},
 		},
 		{
 			describe: "errors isn't empty",
 			data:     map[string]any{"c": "cc"},
 			rules:    map[string]string{"a": "required", "b": "required"},
+			filters:  map[string]string{"a": "trim", "b": "trim"},
 			expectRes: map[string]map[string]string{
 				"a": {"required": "a is required to not be empty"},
 				"b": {"required": "b is required to not be empty"},
@@ -141,6 +157,7 @@ func TestAll(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err, test.describe)
 		if len(test.expectRes) > 0 {
@@ -155,17 +172,20 @@ func TestHas(t *testing.T) {
 		describe  string
 		data      any
 		rules     map[string]string
+		filters   map[string]string
 		expectRes bool
 	}{
 		{
 			describe: "errors is empty",
 			data:     map[string]any{"a": "aa", "b": "bb"},
 			rules:    map[string]string{"a": "required", "b": "required"},
+			filters:  map[string]string{"a": "trim", "b": "trim"},
 		},
 		{
 			describe:  "errors isn't empty",
 			data:      map[string]any{"c": "cc"},
 			rules:     map[string]string{"a": "required", "b": "required"},
+			filters:   map[string]string{"a": "trim", "b": "trim"},
 			expectRes: true,
 		},
 	}
@@ -175,6 +195,7 @@ func TestHas(t *testing.T) {
 		validator, err := maker.Make(
 			test.data,
 			test.rules,
+			Filters(test.filters),
 		)
 		assert.Nil(t, err, test.describe)
 		if test.expectRes {

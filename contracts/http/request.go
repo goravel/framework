@@ -90,10 +90,10 @@ type ContextRequest interface {
 type FormRequest interface {
 	// Authorize determine if the user is authorized to make this request.
 	Authorize(ctx Context) error
-	// Filters get the custom filters that apply to the request.
-	Filters(ctx Context) map[string]string
 	// Rules get the validation rules that apply to the request.
 	Rules(ctx Context) map[string]string
+	// Filters get the custom filters that apply to the request.
+	Filters(ctx Context) map[string]string
 	// Messages get the validation messages that apply to the request.
 	Messages(ctx Context) map[string]string
 	// Attributes get custom attributes for validator errors.

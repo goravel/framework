@@ -28,30 +28,42 @@ func TestMake(t *testing.T) {
 		expectErrorMessage string
 	}{
 		{
-			description:     "success when data is map[string]any",
-			data:            map[string]any{"a": "b"},
-			rules:           map[string]string{"a": "required"},
+			description: "success when data is map[string]any",
+			data:        map[string]any{"a": " b "},
+			rules:       map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
 			expectValidator: true,
 			expectData:      Data{A: "b"},
 		},
 		{
-			description:     "success when data is struct",
-			data:            &Data{A: "b"},
-			rules:           map[string]string{"A": "required"},
+			description: "success when data is struct",
+			data:        &Data{A: "  b"},
+			rules:       map[string]string{"A": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"A": "trim"}),
+			},
 			expectValidator: true,
 			expectData:      Data{A: "b"},
 		},
 		{
 			description: "error when data isn't map[string]any or map[string][]string or struct",
-			data:        "1",
+			data:        "1   ",
 			rules:       map[string]string{"a": "required"},
-			expectErr:   errors.New("data must be map[string]any or map[string][]string or struct"),
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
+			expectErr: errors.New("data must be map[string]any or map[string][]string or struct"),
 		},
 		{
 			description: "error when data is empty map",
 			data:        map[string]any{},
 			rules:       map[string]string{"a": "required"},
-			expectErr:   errors.New("data can't be empty"),
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+			},
+			expectErr: errors.New("data can't be empty"),
 		},
 		{
 			description: "error when rule is empty map",
@@ -61,9 +73,10 @@ func TestMake(t *testing.T) {
 		},
 		{
 			description: "error when PrepareForValidation returns error",
-			data:        map[string]any{"a": "b"},
+			data:        map[string]any{"a": "   b   "},
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
 					return errors.New("error")
 				}),
@@ -72,9 +85,10 @@ func TestMake(t *testing.T) {
 		},
 		{
 			description: "success when data is map[string]any and with PrepareForValidation",
-			data:        map[string]any{"a": "b"},
+			data:        map[string]any{"a": "   b  "},
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
@@ -88,9 +102,10 @@ func TestMake(t *testing.T) {
 		},
 		{
 			description: "contain errors when data is map[string]any and with Messages, Attributes, PrepareForValidation",
-			data:        map[string]any{"a": "aa"},
+			data:        map[string]any{"a": "aa   "},
 			rules:       map[string]string{"a": "required", "b": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim", "b": "trim"}),
 				Messages(map[string]string{
 					"b.required": ":attribute can't be empty",
 				}),
@@ -115,6 +130,7 @@ func TestMake(t *testing.T) {
 			data:        &Data{A: "b"},
 			rules:       map[string]string{"A": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"A": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
 						return data.Set("A", "c")
@@ -131,6 +147,7 @@ func TestMake(t *testing.T) {
 			data:        &Data{A: "b"},
 			rules:       map[string]string{"A": "required", "B": "required"},
 			options: []httpvalidate.Option{
+				Filters(map[string]string{"A": "trim", "B": "trim"}),
 				Messages(map[string]string{
 					"B.required": ":attribute can't be empty",
 				}),

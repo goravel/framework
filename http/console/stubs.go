@@ -19,6 +19,10 @@ func (r *DummyRequest) Authorize(ctx http.Context) error {
 	return nil
 }
 
+func (r *DummyRequest) Filters(ctx http.Context) map[string]string {
+	return map[string]string{}
+}
+
 func (r *DummyRequest) Rules(ctx http.Context) map[string]string {
 	return map[string]string{}
 }
