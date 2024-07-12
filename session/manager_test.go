@@ -25,14 +25,13 @@ func TestManagerTestSuite(t *testing.T) {
 
 func (m *ManagerTestSuite) SetupTest() {
 	m.mockConfig = mockconfig.NewConfig(m.T())
+	m.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	m.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
 	m.manager = m.getManager()
 	m.json = json.NewJson()
 }
 
 func (m *ManagerTestSuite) TestDriver() {
-	m.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
-	m.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
-
 	// provide driver name
 	driver, err := m.manager.Driver("file")
 	m.Nil(err)
@@ -41,8 +40,6 @@ func (m *ManagerTestSuite) TestDriver() {
 
 	// provide no driver name
 	m.mockConfig.On("GetString", "session.driver").Return("file").Once()
-	m.mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
-	m.mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
 
 	driver, err = m.manager.Driver()
 	m.Nil(err)
