@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -90,6 +91,37 @@ func (m *ManagerTestSuite) TestBuildSession() {
 func (m *ManagerTestSuite) TestGetDefaultDriver() {
 	m.mockConfig.On("GetString", "session.driver").Return("file")
 	m.Equal("file", m.manager.getDefaultDriver())
+}
+
+func (m *ManagerTestSuite) TestConcurrentReadWrite() {
+	// provide driver name
+	driver, err := m.manager.Driver("file")
+	m.Nil(err)
+	m.NotNil(driver)
+	m.Equal("*driver.File", fmt.Sprintf("%T", driver))
+
+	// provide no driver name
+	m.mockConfig.On("GetString", "session.driver").Return("file").Once()
+
+	driver, err = m.manager.Driver()
+	m.Nil(err)
+	m.NotNil(driver)
+	m.Equal("*driver.File", fmt.Sprintf("%T", driver))
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			m.Nil(driver.Write("test", "test_data"))
+			data, err := driver.Read("test")
+			m.Nil(err)
+			m.Equal("test_data", data)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	m.Nil(driver.Destroy("test"))
 }
 
 func (m *ManagerTestSuite) getManager() *Manager {
