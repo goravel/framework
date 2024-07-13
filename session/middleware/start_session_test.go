@@ -194,6 +194,10 @@ func (r *TestRequest) Bind(any) error {
 	panic("do not need to implement it")
 }
 
+func (r *TestRequest) BindQuery(any) error {
+	panic("do not need to implement it")
+}
+
 func (r *TestRequest) Route(string) string {
 	panic("do not need to implement it")
 }
