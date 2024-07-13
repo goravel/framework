@@ -32,6 +32,8 @@ type ContextRequest interface {
 	All() map[string]any
 	// Bind retrieve json and bind to obj
 	Bind(obj any) error
+	// BindQuery bind query parameters to obj
+	BindQuery(obj any) error
 	// Route retrieves a route parameter from the request path (e.g., /users/{id}).
 	Route(key string) string
 	// RouteInt retrieves a route parameter from the request path and attempts to parse it as an integer.
