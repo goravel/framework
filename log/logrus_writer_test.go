@@ -507,6 +507,10 @@ func (r *TestRequest) Bind(obj any) error {
 	panic("do not need to implement it")
 }
 
+func (r *TestRequest) BindQuery(any) error {
+	panic("do not need to implement it")
+}
+
 func (r *TestRequest) Route(key string) string {
 	panic("do not need to implement it")
 }
@@ -544,10 +548,6 @@ func (r *TestRequest) QueryMap(key string) map[string]string {
 }
 
 func (r *TestRequest) Queries() map[string]string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) BindQuery(any) error {
 	panic("do not need to implement it")
 }
 

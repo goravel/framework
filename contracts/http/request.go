@@ -32,6 +32,8 @@ type ContextRequest interface {
 	All() map[string]any
 	// Bind retrieve json and bind to obj
 	Bind(obj any) error
+	// BindQuery bind query parameters to obj
+	BindQuery(obj any) error
 	// Route retrieves a route parameter from the request path (e.g., /users/{id}).
 	Route(key string) string
 	// RouteInt retrieves a route parameter from the request path and attempts to parse it as an integer.
@@ -52,8 +54,6 @@ type ContextRequest interface {
 	QueryMap(key string) map[string]string
 	// Queries returns all the query string parameters from the request as a map of key-value pairs.
 	Queries() map[string]string
-	// BindQuery bind query to obj
-	BindQuery(obj any) error
 
 	// HasSession checks if the request has a session.
 	HasSession() bool
