@@ -11,6 +11,7 @@ import (
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/foundation/json"
 	mockconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/str"
 )
 
 type ManagerTestSuite struct {
@@ -112,10 +113,12 @@ func (m *ManagerTestSuite) TestConcurrentReadWrite() {
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
-			m.Nil(driver.Write("test", "test_data"))
-			data, err := driver.Read("test")
+			id := str.Random(32)
+			s := str.Random(32)
+			m.Nil(driver.Write(id, s))
+			data, err := driver.Read(id)
 			m.Nil(err)
-			m.Equal("test_data", data)
+			m.Equal(s, data)
 			wg.Done()
 		}()
 	}
