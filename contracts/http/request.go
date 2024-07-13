@@ -52,6 +52,8 @@ type ContextRequest interface {
 	QueryMap(key string) map[string]string
 	// Queries returns all the query string parameters from the request as a map of key-value pairs.
 	Queries() map[string]string
+	// BindQuery bind query to obj
+	BindQuery(obj any) error
 
 	// HasSession checks if the request has a session.
 	HasSession() bool
