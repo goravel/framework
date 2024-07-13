@@ -234,6 +234,10 @@ func (r *TestRequest) Queries() map[string]string {
 	panic("do not need to implement it")
 }
 
+func (r *TestRequest) BindQuery(any) error {
+	panic("do not need to implement it")
+}
+
 func (r *TestRequest) HasSession() bool {
 	_, ok := r.ctx.Value("session").(contractsession.Session)
 	return ok
