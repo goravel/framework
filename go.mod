@@ -6,7 +6,7 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/charmbracelet/huh v0.5.1
-	github.com/charmbracelet/huh/spinner v0.0.0-20240712195021-ccca06d54254
+	github.com/charmbracelet/huh/spinner v0.0.0-20240714135825-43e9eb5aeab6
 	github.com/charmbracelet/lipgloss v0.12.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.4
