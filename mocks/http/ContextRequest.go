@@ -188,6 +188,52 @@ func (_c *ContextRequest_Bind_Call) RunAndReturn(run func(interface{}) error) *C
 	return _c
 }
 
+// BindQuery provides a mock function with given fields: obj
+func (_m *ContextRequest) BindQuery(obj interface{}) error {
+	ret := _m.Called(obj)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BindQuery")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(obj)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ContextRequest_BindQuery_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BindQuery'
+type ContextRequest_BindQuery_Call struct {
+	*mock.Call
+}
+
+// BindQuery is a helper method to define mock.On call
+//   - obj interface{}
+func (_e *ContextRequest_Expecter) BindQuery(obj interface{}) *ContextRequest_BindQuery_Call {
+	return &ContextRequest_BindQuery_Call{Call: _e.mock.On("BindQuery", obj)}
+}
+
+func (_c *ContextRequest_BindQuery_Call) Run(run func(obj interface{})) *ContextRequest_BindQuery_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *ContextRequest_BindQuery_Call) Return(_a0 error) *ContextRequest_BindQuery_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ContextRequest_BindQuery_Call) RunAndReturn(run func(interface{}) error) *ContextRequest_BindQuery_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Cookie provides a mock function with given fields: key, defaultValue
 func (_m *ContextRequest) Cookie(key string, defaultValue ...string) string {
 	_va := make([]interface{}, len(defaultValue))

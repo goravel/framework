@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -10,6 +11,7 @@ import (
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/foundation/json"
 	mockconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/str"
 )
 
 type ManagerTestSuite struct {
@@ -90,6 +92,39 @@ func (m *ManagerTestSuite) TestBuildSession() {
 func (m *ManagerTestSuite) TestGetDefaultDriver() {
 	m.mockConfig.On("GetString", "session.driver").Return("file")
 	m.Equal("file", m.manager.getDefaultDriver())
+}
+
+func (m *ManagerTestSuite) TestConcurrentReadWrite() {
+	// provide driver name
+	driver, err := m.manager.Driver("file")
+	m.Nil(err)
+	m.NotNil(driver)
+	m.Equal("*driver.File", fmt.Sprintf("%T", driver))
+
+	// provide no driver name
+	m.mockConfig.On("GetString", "session.driver").Return("file").Once()
+
+	driver, err = m.manager.Driver()
+	m.Nil(err)
+	m.NotNil(driver)
+	m.Equal("*driver.File", fmt.Sprintf("%T", driver))
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			id := str.Random(32)
+			s := str.Random(32)
+			m.Nil(driver.Write(id, s))
+			data, err := driver.Read(id)
+			m.Nil(err)
+			m.Equal(s, data)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	m.Nil(driver.Destroy("test"))
 }
 
 func (m *ManagerTestSuite) getManager() *Manager {
