@@ -552,6 +552,56 @@ func (_c *ContextResponse_Status_Call) RunAndReturn(run func(int) http.ResponseS
 	return _c
 }
 
+// Stream provides a mock function with given fields: step, code, contentType
+func (_m *ContextResponse) Stream(step func(http.StreamWriter) error, code int, contentType string) http.Response {
+	ret := _m.Called(step, code, contentType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stream")
+	}
+
+	var r0 http.Response
+	if rf, ok := ret.Get(0).(func(func(http.StreamWriter) error, int, string) http.Response); ok {
+		r0 = rf(step, code, contentType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Response)
+		}
+	}
+
+	return r0
+}
+
+// ContextResponse_Stream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stream'
+type ContextResponse_Stream_Call struct {
+	*mock.Call
+}
+
+// Stream is a helper method to define mock.On call
+//   - step func(http.StreamWriter) error
+//   - code int
+//   - contentType string
+func (_e *ContextResponse_Expecter) Stream(step interface{}, code interface{}, contentType interface{}) *ContextResponse_Stream_Call {
+	return &ContextResponse_Stream_Call{Call: _e.mock.On("Stream", step, code, contentType)}
+}
+
+func (_c *ContextResponse_Stream_Call) Run(run func(step func(http.StreamWriter) error, code int, contentType string)) *ContextResponse_Stream_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(http.StreamWriter) error), args[1].(int), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ContextResponse_Stream_Call) Return(_a0 http.Response) *ContextResponse_Stream_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(func(http.StreamWriter) error, int, string) http.Response) *ContextResponse_Stream_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // String provides a mock function with given fields: code, format, values
 func (_m *ContextResponse) String(code int, format string, values ...interface{}) http.Response {
 	var _ca []interface{}

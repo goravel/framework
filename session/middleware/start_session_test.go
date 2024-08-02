@@ -379,6 +379,10 @@ func (r *TestResponse) Status(int) contractshttp.ResponseStatus {
 	panic("do not need to implement it")
 }
 
+func (r *TestResponse) Stream(func(contractshttp.StreamWriter) error, int, string) contractshttp.Response {
+	panic("do not need to implement it")
+}
+
 func (r *TestResponse) WithoutCookie(string) contractshttp.ContextResponse {
 	panic("do not need to implement it")
 }

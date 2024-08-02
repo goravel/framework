@@ -563,14 +563,6 @@ func (r *TestRequest) Session() contractsession.Session {
 	panic("do not need to implement it")
 }
 
-func (r *TestRequest) Form(key string, defaultValue ...string) string {
-	panic("do not need to implement it")
-}
-
-func (r *TestRequest) Json(key string, defaultValue ...string) string {
-	panic("do not need to implement it")
-}
-
 func (r *TestRequest) Input(key string, defaultValue ...string) string {
 	panic("do not need to implement it")
 }
@@ -667,6 +659,10 @@ func (r *TestResponse) Success() contractshttp.ResponseStatus {
 }
 
 func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
+	panic("do not need to implement it")
+}
+
+func (r *TestResponse) Stream(func(w contractshttp.StreamWriter) error, int, string) contractshttp.Response {
 	panic("do not need to implement it")
 }
 

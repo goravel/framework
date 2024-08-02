@@ -33,6 +33,8 @@ type ContextResponse interface {
 	Success() ResponseStatus
 	// Status sets the HTTP response status code and returns the ResponseStatus.
 	Status(code int) ResponseStatus
+	// Stream sends a streaming response with the specified status code and the given reader.
+	Stream(step func(w StreamWriter) error, code int, contentType string) Response
 	// View returns ResponseView
 	View() ResponseView
 	// Writer returns the underlying http.ResponseWriter associated with the response.
@@ -45,6 +47,17 @@ type ContextResponse interface {
 
 type Response interface {
 	Render() error
+}
+
+type StreamWriter interface {
+	// Write writes the specified data to the response.
+	Write(data []byte) (int, error)
+
+	// WriteString writes the specified string to the response.
+	WriteString(data string) (int, error)
+
+	// Flush flushes any buffered data to the client.
+	Flush() error
 }
 
 type ResponseStatus interface {
