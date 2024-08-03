@@ -552,17 +552,17 @@ func (_c *ContextResponse_Status_Call) RunAndReturn(run func(int) http.ResponseS
 	return _c
 }
 
-// Stream provides a mock function with given fields: step, code, contentType
-func (_m *ContextResponse) Stream(step func(http.StreamWriter) error, code int, contentType string) http.Response {
-	ret := _m.Called(step, code, contentType)
+// Stream provides a mock function with given fields: step, code
+func (_m *ContextResponse) Stream(step func(http.StreamWriter) error, code int) http.Response {
+	ret := _m.Called(step, code)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Stream")
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(func(http.StreamWriter) error, int, string) http.Response); ok {
-		r0 = rf(step, code, contentType)
+	if rf, ok := ret.Get(0).(func(func(http.StreamWriter) error, int) http.Response); ok {
+		r0 = rf(step, code)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(http.Response)
@@ -580,14 +580,13 @@ type ContextResponse_Stream_Call struct {
 // Stream is a helper method to define mock.On call
 //   - step func(http.StreamWriter) error
 //   - code int
-//   - contentType string
-func (_e *ContextResponse_Expecter) Stream(step interface{}, code interface{}, contentType interface{}) *ContextResponse_Stream_Call {
-	return &ContextResponse_Stream_Call{Call: _e.mock.On("Stream", step, code, contentType)}
+func (_e *ContextResponse_Expecter) Stream(step interface{}, code interface{}) *ContextResponse_Stream_Call {
+	return &ContextResponse_Stream_Call{Call: _e.mock.On("Stream", step, code)}
 }
 
-func (_c *ContextResponse_Stream_Call) Run(run func(step func(http.StreamWriter) error, code int, contentType string)) *ContextResponse_Stream_Call {
+func (_c *ContextResponse_Stream_Call) Run(run func(step func(http.StreamWriter) error, code int)) *ContextResponse_Stream_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(http.StreamWriter) error), args[1].(int), args[2].(string))
+		run(args[0].(func(http.StreamWriter) error), args[1].(int))
 	})
 	return _c
 }
@@ -597,7 +596,7 @@ func (_c *ContextResponse_Stream_Call) Return(_a0 http.Response) *ContextRespons
 	return _c
 }
 
-func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(func(http.StreamWriter) error, int, string) http.Response) *ContextResponse_Stream_Call {
+func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(func(http.StreamWriter) error, int) http.Response) *ContextResponse_Stream_Call {
 	_c.Call.Return(run)
 	return _c
 }
