@@ -117,6 +117,54 @@ func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) http.Resp
 	return _c
 }
 
+// Stream provides a mock function with given fields: step
+func (_m *ResponseStatus) Stream(step func(http.StreamWriter) error) http.Response {
+	ret := _m.Called(step)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stream")
+	}
+
+	var r0 http.Response
+	if rf, ok := ret.Get(0).(func(func(http.StreamWriter) error) http.Response); ok {
+		r0 = rf(step)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Response)
+		}
+	}
+
+	return r0
+}
+
+// ResponseStatus_Stream_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stream'
+type ResponseStatus_Stream_Call struct {
+	*mock.Call
+}
+
+// Stream is a helper method to define mock.On call
+//   - step func(http.StreamWriter) error
+func (_e *ResponseStatus_Expecter) Stream(step interface{}) *ResponseStatus_Stream_Call {
+	return &ResponseStatus_Stream_Call{Call: _e.mock.On("Stream", step)}
+}
+
+func (_c *ResponseStatus_Stream_Call) Run(run func(step func(http.StreamWriter) error)) *ResponseStatus_Stream_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(http.StreamWriter) error))
+	})
+	return _c
+}
+
+func (_c *ResponseStatus_Stream_Call) Return(_a0 http.Response) *ResponseStatus_Stream_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWriter) error) http.Response) *ResponseStatus_Stream_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // String provides a mock function with given fields: format, values
 func (_m *ResponseStatus) String(format string, values ...interface{}) http.Response {
 	var _ca []interface{}
