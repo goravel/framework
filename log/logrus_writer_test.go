@@ -662,7 +662,7 @@ func (r *TestResponse) Status(code int) contractshttp.ResponseStatus {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Stream(func(w contractshttp.StreamWriter) error, int, string) contractshttp.Response {
+func (r *TestResponse) Stream(int, func(w contractshttp.StreamWriter) error) contractshttp.Response {
 	panic("do not need to implement it")
 }
 
