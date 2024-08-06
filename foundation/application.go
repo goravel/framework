@@ -90,7 +90,7 @@ func (app *Application) StoragePath(path ...string) string {
 }
 
 func (app *Application) LangPath(path ...string) string {
-	path = append([]string{"lang"}, path...)
+	path = append([]string{app.MakeConfig().GetString("app.lang_path", "lang")}, path...)
 	return filepath.Join(path...)
 }
 
