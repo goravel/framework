@@ -85,7 +85,14 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
-	s.Equal(filepath.Join("lang", "goravel.go"), s.app.LangPath("goravel.go"))
+	mockConfig := &configmocks.Config{}
+	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("test").Once()
+
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	s.Equal(filepath.Join("test", "goravel.go"), s.app.LangPath("goravel.go"))
 }
 
 func (s *ApplicationTestSuite) TestPublicPath() {
@@ -261,6 +268,9 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
+	})
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+		return &logmocks.Log{}, nil
 	})
 
 	serviceProvider := &frameworktranslation.ServiceProvider{}
