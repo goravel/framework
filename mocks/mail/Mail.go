@@ -238,7 +238,7 @@ type Mail_From_Call struct {
 }
 
 // From is a helper method to define mock.On call
-//   - address mail.From
+//   - address mail.Address
 func (_e *Mail_Expecter) From(address interface{}) *Mail_From_Call {
 	return &Mail_From_Call{Call: _e.mock.On("From", address)}
 }
