@@ -77,7 +77,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 	mockConfig := mockConfig(587, s.redisPort)
 	app := NewApplication(mockConfig, nil)
-	s.Nil(app.From(mail.From{Address: testFromAddress, Name: testFromName}).
+	s.Nil(app.From(Address(testFromAddress, testFromName)).
 		To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
@@ -226,7 +226,7 @@ func (m *TestMailable) Envelope() *mail.Envelope {
 	return &mail.Envelope{
 		Bcc:     []string{testBcc},
 		Cc:      []string{testCc},
-		From:    mail.From{Address: testFromAddress, Name: testFromName},
+		From:    Address(testFromAddress, testFromName),
 		Subject: "Goravel Test 587 With Mailable",
 		To:      []string{testTo},
 	}
