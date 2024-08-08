@@ -13,36 +13,36 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-type RuleMakeCommand struct {
+type FilterMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *RuleMakeCommand) Signature() string {
-	return "make:rule"
+func (receiver *FilterMakeCommand) Signature() string {
+	return "make:filter"
 }
 
 // Description The console command description.
-func (receiver *RuleMakeCommand) Description() string {
-	return "Create a new rule class"
+func (receiver *FilterMakeCommand) Description() string {
+	return "Create a new filter class"
 }
 
 // Extend The console command extend.
-func (receiver *RuleMakeCommand) Extend() command.Extend {
+func (receiver *FilterMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
 			&command.BoolFlag{
 				Name:    "force",
 				Aliases: []string{"f"},
-				Usage:   "Create the rule even if it already exists",
+				Usage:   "Create the filter even if it already exists",
 			},
 		},
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "rule", ctx.Argument(0), receiver.getPath)
+func (receiver *FilterMakeCommand) Handle(ctx console.Context) error {
+	name, err := supportconsole.GetName(ctx, "filter", ctx.Argument(0), receiver.getPath)
 	if err != nil {
 		color.Red().Println(err)
 		return nil
@@ -52,20 +52,20 @@ func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Rule created successfully")
+	color.Green().Println("Filter created successfully")
 
 	return nil
 }
 
-func (receiver *RuleMakeCommand) getStub() string {
-	return Stubs{}.Rule()
+func (receiver *FilterMakeCommand) getStub() string {
+	return Stubs{}.Filter()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *RuleMakeCommand) populateStub(stub string, name string) string {
+func (receiver *FilterMakeCommand) populateStub(stub string, name string) string {
 	ruleName, packageName, _ := receiver.parseName(name)
 
-	stub = strings.ReplaceAll(stub, "DummyRule", str.Case2Camel(ruleName))
+	stub = strings.ReplaceAll(stub, "DummyFilter", str.Case2Camel(ruleName))
 	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(ruleName))
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
@@ -73,23 +73,23 @@ func (receiver *RuleMakeCommand) populateStub(stub string, name string) string {
 }
 
 // getPath Get the full path to the command.
-func (receiver *RuleMakeCommand) getPath(name string) string {
+func (receiver *FilterMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
 	ruleName, _, folderPath := receiver.parseName(name)
 
-	return filepath.Join(pwd, "app", "rules", folderPath, str.Camel2Case(ruleName)+".go")
+	return filepath.Join(pwd, "app", "filters", folderPath, str.Camel2Case(ruleName)+".go")
 }
 
-// parseName Parse the name to get the rule name, package name and folder path.
-func (receiver *RuleMakeCommand) parseName(name string) (string, string, string) {
+// parseName Parse the name to get the filter name, package name and folder path.
+func (receiver *FilterMakeCommand) parseName(name string) (string, string, string) {
 	name = strings.TrimSuffix(name, ".go")
 
 	segments := strings.Split(name, "/")
 
 	ruleName := segments[len(segments)-1]
 
-	packageName := "rules"
+	packageName := "filters"
 	folderPath := ""
 
 	if len(segments) > 1 {
