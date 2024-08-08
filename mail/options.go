@@ -21,7 +21,7 @@ type QueueMail struct {
 	queue *mail.Queue
 }
 
-func Query() *QueueMail {
+func Queue() *QueueMail {
 	return &QueueMail{
 		queue: &mail.Queue{},
 	}

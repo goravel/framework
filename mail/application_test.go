@@ -154,7 +154,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test Queue with connection").
 		Content(Html("<h1>Hello Goravel</h1>")).
-		Queue(Query().OnConnection("redis").OnQueue("test")))
+		Queue(Queue().OnConnection("redis").OnQueue("test")))
 	time.Sleep(3 * time.Second)
 }
 
