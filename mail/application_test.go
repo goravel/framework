@@ -2,6 +2,7 @@ package mail
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -10,11 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
 	logmock "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/queue"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	testingdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -58,7 +62,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 465").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Send())
 }
 
@@ -70,7 +74,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 587").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Send())
 }
 
@@ -83,7 +87,7 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 587 With From").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Send())
 }
 
@@ -104,7 +108,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 
 	app := NewApplication(mockConfig, queueFacade)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
 		s.Nil(queueFacade.Worker(nil).Run())
@@ -119,8 +123,42 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test Queue").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Queue())
+	time.Sleep(3 * time.Second)
+}
+
+func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
+	mockConfig := mockConfig(587, s.redisPort)
+	mockLog := NewTestLog()
+
+	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade.Register([]queuecontract.Job{
+		NewSendMailJob(mockConfig),
+	})
+
+	app := NewApplication(mockConfig, queueFacade)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	go func(ctx context.Context) {
+		s.Nil(queueFacade.Worker(&queuecontract.Args{
+			Connection: "redis",
+			Queue:      "test",
+		}).Run())
+
+		for range ctx.Done() {
+			return
+		}
+	}(ctx)
+	time.Sleep(3 * time.Second)
+	s.Nil(app.To([]string{testTo}).
+		Cc([]string{testCc}).
+		Bcc([]string{testBcc}).
+		Attach([]string{"../logo.png"}).
+		Subject("Goravel Test Queue with connection").
+		Content(Html("<h1>Hello Goravel</h1>")).
+		Queue(Query().OnConnection("redis").OnQueue("test")))
 	time.Sleep(3 * time.Second)
 }
 
@@ -135,7 +173,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 
 	app := NewApplication(mockConfig, queueFacade)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
 		s.Nil(queueFacade.Worker(nil).Run())
@@ -152,7 +190,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetBool", "app.debug").Return(false)
+	mockConfig.On("GetBool", "app.debug").Return(true)
 	mockConfig.On("GetString", "queue.default").Return("redis")
 	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
 	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
@@ -219,7 +257,9 @@ func (m *TestMailable) Attachments() []string {
 }
 
 func (m *TestMailable) Content() *mail.Content {
-	return &mail.Content{Html: "<h1>Hello Goravel</h1>"}
+	html := Html("<h1>Hello Goravel</h1>")
+
+	return &html
 }
 
 func (m *TestMailable) Envelope() *mail.Envelope {
@@ -234,4 +274,178 @@ func (m *TestMailable) Envelope() *mail.Envelope {
 
 func (m *TestMailable) Queue() *mail.Queue {
 	return &mail.Queue{}
+}
+
+type TestLog struct {
+	*TestLogWriter
+}
+
+func NewTestLog() log.Log {
+	return &TestLog{
+		TestLogWriter: NewTestLogWriter(),
+	}
+}
+
+func (r *TestLog) WithContext(ctx context.Context) log.Writer {
+	return NewTestLogWriter()
+}
+
+func (r *TestLog) Channel(channel string) log.Writer {
+	return NewTestLogWriter()
+}
+
+func (r *TestLog) Stack(channels []string) log.Writer {
+	return NewTestLogWriter()
+}
+
+type TestLogWriter struct {
+	data map[string]any
+}
+
+func NewTestLogWriter() *TestLogWriter {
+	return &TestLogWriter{
+		data: make(map[string]any),
+	}
+}
+
+func (r *TestLogWriter) Debug(args ...any) {
+	fmt.Print(prefix("debug"))
+	fmt.Println(args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Debugf(format string, args ...any) {
+	fmt.Print(prefix("debug"))
+	fmt.Printf(format+"\n", args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Info(args ...any) {
+	fmt.Print(prefix("info"))
+	fmt.Println(args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Infof(format string, args ...any) {
+	fmt.Print(prefix("info"))
+	fmt.Printf(format+"\n", args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Warning(args ...any) {
+	fmt.Print(prefix("warning"))
+	fmt.Println(args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Warningf(format string, args ...any) {
+	fmt.Print(prefix("warning"))
+	fmt.Printf(format+"\n", args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Error(args ...any) {
+	fmt.Print(prefix("error"))
+	fmt.Println(args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Errorf(format string, args ...any) {
+	fmt.Print(prefix("error"))
+	fmt.Printf(format+"\n", args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Fatal(args ...any) {
+	fmt.Print(prefix("fatal"))
+	fmt.Println(args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Fatalf(format string, args ...any) {
+	fmt.Print(prefix("fatal"))
+	fmt.Printf(format+"\n", args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Panic(args ...any) {
+	fmt.Print(prefix("panic"))
+	fmt.Println(args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) Panicf(format string, args ...any) {
+	fmt.Print(prefix("panic"))
+	fmt.Printf(format+"\n", args...)
+	r.printData()
+}
+
+func (r *TestLogWriter) User(user any) log.Writer {
+	r.data["user"] = user
+
+	return r
+}
+
+func (r *TestLogWriter) Owner(owner any) log.Writer {
+	r.data["owner"] = owner
+
+	return r
+}
+
+func (r *TestLogWriter) Hint(hint string) log.Writer {
+	r.data["hint"] = hint
+
+	return r
+}
+
+func (r *TestLogWriter) Code(code string) log.Writer {
+	r.data["code"] = code
+
+	return r
+}
+
+func (r *TestLogWriter) With(data map[string]any) log.Writer {
+	r.data["with"] = data
+
+	return r
+}
+
+func (r *TestLogWriter) Tags(tags ...string) log.Writer {
+	r.data["tags"] = tags
+
+	return r
+}
+
+func (r *TestLogWriter) WithTrace() log.Writer {
+	return r
+}
+
+func (r *TestLogWriter) Request(req http.ContextRequest) log.Writer {
+	r.data["request"] = req
+
+	return r
+}
+
+func (r *TestLogWriter) Response(res http.ContextResponse) log.Writer {
+	r.data["response"] = res
+
+	return r
+}
+
+func (r *TestLogWriter) In(domain string) log.Writer {
+	r.data["in"] = domain
+
+	return r
+}
+
+func (r *TestLogWriter) printData() {
+	if len(r.data) > 0 {
+		fmt.Println(r.data)
+	}
+}
+
+func prefix(model string) string {
+	timestamp := carbon.Now().ToDateTimeString()
+
+	return fmt.Sprintf("[%s] %s.%s: ", timestamp, "test", model)
 }

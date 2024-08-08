@@ -58,9 +58,9 @@ func (r *Application) Content(content mail.Content) mail.Mail {
 	return instance
 }
 
-func (r *Application) From(from mail.Address) mail.Mail {
+func (r *Application) From(address mail.Address) mail.Mail {
 	instance := r.instance()
-	instance.from = from
+	instance.from = address
 
 	return instance
 }

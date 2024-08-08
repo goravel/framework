@@ -22,7 +22,9 @@ type QueueMail struct {
 }
 
 func Query() *QueueMail {
-	return &QueueMail{}
+	return &QueueMail{
+		queue: &mail.Queue{},
+	}
 }
 
 // Attachments attach files to the mail
