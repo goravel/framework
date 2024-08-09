@@ -877,6 +877,32 @@ func (s *String) Words(limit int, end ...string) *String {
 	return s
 }
 
+// ChopEnd remove the given string(s) if it exists at the end of the haystack.
+func (s *String) ChopEnd(needle string, more ...string) *String {
+	more = append([]string{needle}, more...)
+
+	for _, v := range more {
+		if s.EndsWith(v) {
+			s.value = strings.TrimRight(s.value, v)
+			return s
+		}
+	}
+	return s
+}
+
+// ChopStart remove the given string(s) if it exists at the start of the haystack.
+func (s *String) ChopStart(needle string, more ...string) *String {
+	more = append([]string{needle}, more...)
+
+	for _, v := range more {
+		if s.StartsWith(v) {
+			s.value = strings.TrimLeft(s.value, v)
+			return s
+		}
+	}
+	return s
+}
+
 // Substr returns a substring of a given string, starting at the specified index
 // and with a specified length.
 // It handles UTF-8 encoded strings.

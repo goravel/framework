@@ -1030,6 +1030,22 @@ func (s *StringTestSuite) TestWords() {
 	s.Equal("Perfectly balanced, as all things should be.", Of("Perfectly balanced, as all things should be.").Words(100).String())
 }
 
+func (s *StringTestSuite) TestChopStart() {
+	s.Equal("Framework", Of("GoravelFramework").ChopStart("Goravel").String())
+	s.Equal("goravel.dev", Of("https://goravel.dev").ChopStart("https://").String())
+	s.Equal("goravel.dev", Of("https://goravel.dev").ChopStart("https://", "http://").String())
+	s.Equal("goravel.dev", Of("http://goravel.dev").ChopStart("https://", "http://").String())
+	s.Equal("goravel", "go"+Of("laravel").ChopStart("la").String())
+}
+
+func (s *StringTestSuite) TestChopEnd() {
+	s.Equal("Goravel", Of("GoravelFramework").ChopEnd("Framework").String())
+	s.Equal("https://goravel", Of("https://goravel.dev").ChopEnd(".dev").String())
+	s.Equal("https://goravel", Of("https://goravel.dev").ChopEnd(".dev", ".com").String())
+	s.Equal("https://goravel", Of("https://goravel.com").ChopEnd(".dev", ".com").String())
+	s.Equal("go", Of("golaravel").ChopEnd("laravel").String())
+}
+
 func TestFieldsFunc(t *testing.T) {
 	tests := []struct {
 		input          string
