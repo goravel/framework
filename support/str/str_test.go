@@ -112,6 +112,22 @@ func (s *StringTestSuite) TestCharAt() {
 	s.Equal("", Of("こんにちは、世界！").CharAt(-200))
 }
 
+func (s *StringTestSuite) TestChopEnd() {
+	s.Equal("Goravel", Of("GoravelFramework").ChopEnd("Framework").String())
+	s.Equal("https://goravel", Of("https://goravel.dev").ChopEnd(".dev").String())
+	s.Equal("https://goravel", Of("https://goravel.dev").ChopEnd(".dev", ".com").String())
+	s.Equal("https://goravel", Of("https://goravel.com").ChopEnd(".dev", ".com").String())
+	s.Equal("go", Of("golaravel").ChopEnd("laravel").String())
+}
+
+func (s *StringTestSuite) TestChopStart() {
+	s.Equal("Framework", Of("GoravelFramework").ChopStart("Goravel").String())
+	s.Equal("goravel.dev", Of("https://goravel.dev").ChopStart("https://").String())
+	s.Equal("goravel.dev", Of("https://goravel.dev").ChopStart("https://", "http://").String())
+	s.Equal("goravel.dev", Of("http://goravel.dev").ChopStart("https://", "http://").String())
+	s.Equal("goravel", "go"+Of("laravel").ChopStart("la").String())
+}
+
 func (s *StringTestSuite) TestContains() {
 	s.True(Of("kkumar").Contains("uma"))
 	s.True(Of("kkumar").Contains("kumar"))
