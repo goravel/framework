@@ -24,5 +24,6 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 func (database *ServiceProvider) registerCommands(app foundation.Application) {
 	app.MakeArtisan().Register([]consolecontract.Command{
 		&console.RuleMakeCommand{},
+		&console.FilterMakeCommand{},
 	})
 }

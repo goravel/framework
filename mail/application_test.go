@@ -58,7 +58,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 465").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Send())
 }
 
@@ -70,20 +70,20 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 587").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Send())
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 	mockConfig := mockConfig(587, s.redisPort)
 	app := NewApplication(mockConfig, nil)
-	s.Nil(app.From(mail.From{Address: testFromAddress, Name: testFromName}).
+	s.Nil(app.From(Address(testFromAddress, testFromName)).
 		To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test 587 With From").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Send())
 }
 
@@ -104,7 +104,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 
 	app := NewApplication(mockConfig, queueFacade)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
 		s.Nil(queueFacade.Worker(nil).Run())
@@ -119,8 +119,42 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 		Bcc([]string{testBcc}).
 		Attach([]string{"../logo.png"}).
 		Subject("Goravel Test Queue").
-		Content(mail.Content{Html: "<h1>Hello Goravel</h1>"}).
+		Content(Html("<h1>Hello Goravel</h1>")).
 		Queue())
+	time.Sleep(3 * time.Second)
+}
+
+func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
+	mockConfig := mockConfig(587, s.redisPort)
+	mockLog := &logmock.Log{}
+
+	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade.Register([]queuecontract.Job{
+		NewSendMailJob(mockConfig),
+	})
+
+	app := NewApplication(mockConfig, queueFacade)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	go func(ctx context.Context) {
+		s.Nil(queueFacade.Worker(&queuecontract.Args{
+			Connection: "redis",
+			Queue:      "test",
+		}).Run())
+
+		for range ctx.Done() {
+			return
+		}
+	}(ctx)
+	time.Sleep(3 * time.Second)
+	s.Nil(app.To([]string{testTo}).
+		Cc([]string{testCc}).
+		Bcc([]string{testBcc}).
+		Attach([]string{"../logo.png"}).
+		Subject("Goravel Test Queue with connection").
+		Content(Html("<h1>Hello Goravel</h1>")).
+		Queue(Queue().OnConnection("redis").OnQueue("test")))
 	time.Sleep(3 * time.Second)
 }
 
@@ -135,7 +169,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 
 	app := NewApplication(mockConfig, queueFacade)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
 		s.Nil(queueFacade.Worker(nil).Run())
@@ -219,14 +253,16 @@ func (m *TestMailable) Attachments() []string {
 }
 
 func (m *TestMailable) Content() *mail.Content {
-	return &mail.Content{Html: "<h1>Hello Goravel</h1>"}
+	html := Html("<h1>Hello Goravel</h1>")
+
+	return &html
 }
 
 func (m *TestMailable) Envelope() *mail.Envelope {
 	return &mail.Envelope{
 		Bcc:     []string{testBcc},
 		Cc:      []string{testCc},
-		From:    mail.From{Address: testFromAddress, Name: testFromName},
+		From:    Address(testFromAddress, testFromName),
 		Subject: "Goravel Test 587 With Mailable",
 		To:      []string{testTo},
 	}
