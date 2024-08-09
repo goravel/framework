@@ -20,69 +20,19 @@ func (_m *Validation) EXPECT() *Validation_Expecter {
 	return &Validation_Expecter{mock: &_m.Mock}
 }
 
-// AddFilter provides a mock function with given fields: _a0
-func (_m *Validation) AddFilter(_a0 validation.Filter) validation.Validation {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for AddFilter")
-	}
-
-	var r0 validation.Validation
-	if rf, ok := ret.Get(0).(func(validation.Filter) validation.Validation); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(validation.Validation)
-		}
-	}
-
-	return r0
-}
-
-// Validation_AddFilter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddFilter'
-type Validation_AddFilter_Call struct {
-	*mock.Call
-}
-
-// AddFilter is a helper method to define mock.On call
-//   - _a0 validation.Filter
-func (_e *Validation_Expecter) AddFilter(_a0 interface{}) *Validation_AddFilter_Call {
-	return &Validation_AddFilter_Call{Call: _e.mock.On("AddFilter", _a0)}
-}
-
-func (_c *Validation_AddFilter_Call) Run(run func(_a0 validation.Filter)) *Validation_AddFilter_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(validation.Filter))
-	})
-	return _c
-}
-
-func (_c *Validation_AddFilter_Call) Return(_a0 validation.Validation) *Validation_AddFilter_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Validation_AddFilter_Call) RunAndReturn(run func(validation.Filter) validation.Validation) *Validation_AddFilter_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // AddFilters provides a mock function with given fields: _a0
-func (_m *Validation) AddFilters(_a0 []validation.Filter) validation.Validation {
+func (_m *Validation) AddFilters(_a0 []validation.Filter) error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddFilters")
 	}
 
-	var r0 validation.Validation
-	if rf, ok := ret.Get(0).(func([]validation.Filter) validation.Validation); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]validation.Filter) error); ok {
 		r0 = rf(_a0)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(validation.Validation)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -106,12 +56,12 @@ func (_c *Validation_AddFilters_Call) Run(run func(_a0 []validation.Filter)) *Va
 	return _c
 }
 
-func (_c *Validation_AddFilters_Call) Return(_a0 validation.Validation) *Validation_AddFilters_Call {
+func (_c *Validation_AddFilters_Call) Return(_a0 error) *Validation_AddFilters_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Validation_AddFilters_Call) RunAndReturn(run func([]validation.Filter) validation.Validation) *Validation_AddFilters_Call {
+func (_c *Validation_AddFilters_Call) RunAndReturn(run func([]validation.Filter) error) *Validation_AddFilters_Call {
 	_c.Call.Return(run)
 	return _c
 }
