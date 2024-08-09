@@ -65,24 +65,18 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	return NewValidator(v, dataFace), nil
 }
 
-func (r *Validation) AddFilter(filter validatecontract.Filter) validatecontract.Validation {
-	r.filters = append(r.filters, filter)
-
-	return r
-}
-
-func (r *Validation) AddFilters(filters []validatecontract.Filter) validatecontract.Validation {
+func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
 	existFilterNames := r.existFilterNames()
 	for _, filter := range filters {
 		for _, existFilterName := range existFilterNames {
 			if existFilterName == filter.Signature() {
-				panic("duplicate filter name: " + filter.Signature())
+				return errors.New("duplicate filter name: " + filter.Signature())
 			}
 		}
 	}
 
 	r.filters = append(r.filters, filters...)
-	return r
+	return nil
 }
 
 func (r *Validation) AddRules(rules []validatecontract.Rule) error {
