@@ -884,7 +884,7 @@ func (s *String) ChopEnd(needle string, more ...string) *String {
 	for _, v := range more {
 		if s.EndsWith(v) {
 			s.value = strings.TrimRight(s.value, v)
-			return s
+			break
 		}
 	}
 	return s
@@ -897,7 +897,7 @@ func (s *String) ChopStart(needle string, more ...string) *String {
 	for _, v := range more {
 		if s.StartsWith(v) {
 			s.value = strings.TrimLeft(s.value, v)
-			return s
+			break
 		}
 	}
 	return s
