@@ -213,7 +213,7 @@ func (_c *Mail_Content_Call) RunAndReturn(run func(mail.Content) mail.Mail) *Mai
 }
 
 // From provides a mock function with given fields: address
-func (_m *Mail) From(address mail.From) mail.Mail {
+func (_m *Mail) From(address mail.Address) mail.Mail {
 	ret := _m.Called(address)
 
 	if len(ret) == 0 {
@@ -221,7 +221,7 @@ func (_m *Mail) From(address mail.From) mail.Mail {
 	}
 
 	var r0 mail.Mail
-	if rf, ok := ret.Get(0).(func(mail.From) mail.Mail); ok {
+	if rf, ok := ret.Get(0).(func(mail.Address) mail.Mail); ok {
 		r0 = rf(address)
 	} else {
 		if ret.Get(0) != nil {
@@ -238,14 +238,14 @@ type Mail_From_Call struct {
 }
 
 // From is a helper method to define mock.On call
-//   - address mail.From
+//   - address mail.Address
 func (_e *Mail_Expecter) From(address interface{}) *Mail_From_Call {
 	return &Mail_From_Call{Call: _e.mock.On("From", address)}
 }
 
-func (_c *Mail_From_Call) Run(run func(address mail.From)) *Mail_From_Call {
+func (_c *Mail_From_Call) Run(run func(address mail.Address)) *Mail_From_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(mail.From))
+		run(args[0].(mail.Address))
 	})
 	return _c
 }
@@ -255,7 +255,7 @@ func (_c *Mail_From_Call) Return(_a0 mail.Mail) *Mail_From_Call {
 	return _c
 }
 
-func (_c *Mail_From_Call) RunAndReturn(run func(mail.From) mail.Mail) *Mail_From_Call {
+func (_c *Mail_From_Call) RunAndReturn(run func(mail.Address) mail.Mail) *Mail_From_Call {
 	_c.Call.Return(run)
 	return _c
 }

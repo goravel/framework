@@ -10,7 +10,7 @@ type Mail interface {
 	// Content set the content of Mail.
 	Content(content Content) Mail
 	// From set the sender of Mail.
-	From(address From) Mail
+	From(address Address) Mail
 	// Queue a given Mail
 	Queue(mailable ...Mailable) error
 	// Send the Mail
@@ -41,7 +41,7 @@ type Queue struct {
 	Queue      string
 }
 
-type From struct {
+type Address struct {
 	Address string
 	Name    string
 }
@@ -49,7 +49,7 @@ type From struct {
 type Envelope struct {
 	Bcc     []string
 	Cc      []string
-	From    From
+	From    Address
 	Subject string
 	To      []string
 }

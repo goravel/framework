@@ -11,16 +11,16 @@ import (
 )
 
 type Application struct {
-	attaches []string
-	bcc      []string
-	cc       []string
-	clone    int
-	config   config.Config
-	from     mail.From
-	html     string
-	queue    queuecontract.Queue
-	subject  string
-	to       []string
+	attachments []string
+	bcc         []string
+	cc          []string
+	clone       int
+	config      config.Config
+	from        mail.Address
+	html        string
+	queue       queuecontract.Queue
+	subject     string
+	to          []string
 }
 
 func NewApplication(config config.Config, queue queuecontract.Queue) *Application {
@@ -30,9 +30,9 @@ func NewApplication(config config.Config, queue queuecontract.Queue) *Applicatio
 	}
 }
 
-func (r *Application) Attach(files []string) mail.Mail {
+func (r *Application) Attach(attachments []string) mail.Mail {
 	instance := r.instance()
-	instance.attaches = files
+	instance.attachments = attachments
 
 	return instance
 }
@@ -58,15 +58,14 @@ func (r *Application) Content(content mail.Content) mail.Mail {
 	return instance
 }
 
-func (r *Application) From(from mail.From) mail.Mail {
+func (r *Application) From(address mail.Address) mail.Mail {
 	instance := r.instance()
-	instance.from = from
+	instance.from = address
 
 	return instance
 }
 
 func (r *Application) Queue(mailable ...mail.Mailable) error {
-
 	if len(mailable) > 0 {
 		r.setUsingMailable(mailable[0])
 	}
@@ -79,7 +78,7 @@ func (r *Application) Queue(mailable ...mail.Mailable) error {
 		{Value: r.to, Type: "[]string"},
 		{Value: r.cc, Type: "[]string"},
 		{Value: r.bcc, Type: "[]string"},
-		{Value: r.attaches, Type: "[]string"},
+		{Value: r.attachments, Type: "[]string"},
 	})
 
 	if len(mailable) > 0 {
@@ -100,7 +99,7 @@ func (r *Application) Send(mailable ...mail.Mailable) error {
 	if len(mailable) > 0 {
 		r.setUsingMailable(mailable[0])
 	}
-	return SendMail(r.config, r.subject, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attaches)
+	return SendMail(r.config, r.subject, r.html, r.from.Address, r.from.Name, r.to, r.cc, r.bcc, r.attachments)
 }
 
 func (r *Application) Subject(subject string) mail.Mail {
@@ -130,33 +129,25 @@ func (r *Application) instance() *Application {
 }
 
 func (r *Application) setUsingMailable(mailable mail.Mailable) {
-	content := mailable.Content()
-	if content != nil && content.Html != "" {
+	if content := mailable.Content(); content != nil && content.Html != "" {
 		r.html = content.Html
 	}
-
-	envelope := mailable.Envelope()
-	if envelope != nil {
+	if len(mailable.Attachments()) > 0 {
+		r.attachments = mailable.Attachments()
+	}
+	if envelope := mailable.Envelope(); envelope != nil {
 		if envelope.From.Address != "" {
 			r.from = envelope.From
 		}
-
 		if len(envelope.To) > 0 {
 			r.to = envelope.To
 		}
-
 		if len(envelope.Cc) > 0 {
 			r.cc = envelope.Cc
 		}
-
 		if len(envelope.Bcc) > 0 {
 			r.bcc = envelope.Bcc
 		}
-
-		if len(mailable.Attachments()) > 0 {
-			r.attaches = mailable.Attachments()
-		}
-
 		if envelope.Subject != "" {
 			r.subject = envelope.Subject
 		}
