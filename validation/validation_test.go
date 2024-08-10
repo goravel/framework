@@ -2644,18 +2644,11 @@ func TestAddRule(t *testing.T) {
 	assert.EqualError(t, err, "duplicate rule name: required")
 }
 
-func TestAddFilter(t *testing.T) {
-	validation := NewValidation()
-	validation.AddFilter(&DefaultFilter{})
-	filters := validation.Filters()
-	filterFunc := filters[0].Handle().(func(string, ...string) string)
-	assert.Equal(t, "default", filterFunc("", "default"))
-	assert.Equal(t, "a", filterFunc("a"))
-}
-
 func TestAddFilters(t *testing.T) {
 	validation := NewValidation()
-	validation.AddFilters([]httpvalidate.Filter{&DefaultFilter{}, &Arr2Str{}})
+	err := validation.AddFilters([]httpvalidate.Filter{&DefaultFilter{}, &Arr2Str{}})
+	assert.Nil(t, err)
+
 	filters := validation.Filters()
 	defaultFilterFunc := filters[0].Handle().(func(string, ...string) string)
 	arr2StrFilterFunc := filters[1].Handle().(func(any, string) string)
@@ -2674,7 +2667,9 @@ func TestFilters(t *testing.T) {
 	}
 
 	validation := NewValidation()
-	validation.AddFilter(&DefaultFilter{}).AddFilter(&Arr2Str{})
+	err := validation.AddFilters([]httpvalidate.Filter{&DefaultFilter{}, &Arr2Str{}})
+	assert.Nil(t, err)
+
 	validator, err := validation.Make(mp, map[string]string{
 		"name, age, empty, languages, numbers": "required",
 	}, Filters(map[string]string{

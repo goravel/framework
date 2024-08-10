@@ -36,7 +36,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.3
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.26.0
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	google.golang.org/grpc v1.65.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.9
@@ -107,7 +107,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
