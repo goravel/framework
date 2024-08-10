@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/goravel/framework/support/debug"
 )
 
 func TestAdd(t *testing.T) {
@@ -116,13 +114,16 @@ func TestFromStruct(t *testing.T) {
 			Name: "One",
 			Age:  18,
 		},
+		age: 1,
 	}
 
 	res := FromStruct(data)
-	debug.Dump(res)
+
 	assert.Equal(t, "Three", res["Name"])
 	assert.Equal(t, 1, res["Height"])
+
 	one, ok := res["One"].(map[string]any)
+
 	assert.True(t, ok)
 	assert.Equal(t, "One", one["Name"])
 	assert.Equal(t, 18, one["Age"])
