@@ -107,7 +107,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker(nil).Run())
+		s.Nil(queueFacade.Worker().Run())
 
 		for range ctx.Done() {
 			return
@@ -138,7 +138,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker(&queuecontract.Args{
+		s.Nil(queueFacade.Worker(queuecontract.Args{
 			Connection: "redis",
 			Queue:      "test",
 		}).Run())
@@ -172,7 +172,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(queueFacade.Worker(nil).Run())
+		s.Nil(queueFacade.Worker().Run())
 
 		for range ctx.Done() {
 			return
