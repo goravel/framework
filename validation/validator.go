@@ -38,8 +38,8 @@ func (v *Validator) Bind(ptr any) error {
 		return nil
 	}
 
-	// SafeData only contains the data that defined in the rules,
-	// we want user can get the original data that not defined in the rules,
+	// SafeData only contains the data that is defined in the rules,
+	// we want user can the original data that is not defined in the rules,
 	// so that user doesn't need to define rules for all fields.
 	data := v.instance.SafeData()
 
