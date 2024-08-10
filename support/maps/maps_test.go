@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/support/debug"
 )
 
 func TestAdd(t *testing.T) {
@@ -89,6 +91,41 @@ func TestForget(t *testing.T) {
 	assert.Equal(t, map[int]string{
 		2: "two",
 	}, gMp)
+}
+
+func TestFromStruct(t *testing.T) {
+	type One struct {
+		Name string
+		Age  int
+	}
+	type Two struct {
+		Height int
+	}
+	type Three struct {
+		Two
+		One  One
+		Name string
+		age  int
+	}
+	data := Three{
+		Name: "Three",
+		Two: Two{
+			Height: 1,
+		},
+		One: One{
+			Name: "One",
+			Age:  18,
+		},
+	}
+
+	res := FromStruct(data)
+	debug.Dump(res)
+	assert.Equal(t, "Three", res["Name"])
+	assert.Equal(t, 1, res["Height"])
+	one, ok := res["One"].(map[string]any)
+	assert.True(t, ok)
+	assert.Equal(t, "One", one["Name"])
+	assert.Equal(t, 18, one["Age"])
 }
 
 func TestGet(t *testing.T) {

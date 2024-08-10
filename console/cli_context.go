@@ -230,7 +230,7 @@ func (r *CliContext) Secret(question string, option ...console.SecretOption) (st
 }
 
 func (r *CliContext) Spinner(message string, option console.SpinnerOption) error {
-	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#8ED3F9"))
+	style := lipgloss.NewStyle().Foreground(lipgloss.CompleteColor{TrueColor: "#3D8C8D", ANSI256: "30", ANSI: "6"})
 	spin := spinner.New().Title(message).Style(style).TitleStyle(style)
 
 	var err error
