@@ -1,7 +1,7 @@
 package queue
 
 type Queue interface {
-	Worker(args *Args) Worker
+	Worker(args ...Args) Worker
 	// Register register jobs
 	Register(jobs []Job)
 	// GetJobs get all jobs

@@ -198,16 +198,22 @@ func (_c *Queue_Register_Call) RunAndReturn(run func([]queue.Job)) *Queue_Regist
 }
 
 // Worker provides a mock function with given fields: args
-func (_m *Queue) Worker(args *queue.Args) queue.Worker {
-	ret := _m.Called(args)
+func (_m *Queue) Worker(args ...queue.Args) queue.Worker {
+	_va := make([]interface{}, len(args))
+	for _i := range args {
+		_va[_i] = args[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Worker")
 	}
 
 	var r0 queue.Worker
-	if rf, ok := ret.Get(0).(func(*queue.Args) queue.Worker); ok {
-		r0 = rf(args)
+	if rf, ok := ret.Get(0).(func(...queue.Args) queue.Worker); ok {
+		r0 = rf(args...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(queue.Worker)
@@ -223,14 +229,21 @@ type Queue_Worker_Call struct {
 }
 
 // Worker is a helper method to define mock.On call
-//   - args *queue.Args
-func (_e *Queue_Expecter) Worker(args interface{}) *Queue_Worker_Call {
-	return &Queue_Worker_Call{Call: _e.mock.On("Worker", args)}
+//   - args ...queue.Args
+func (_e *Queue_Expecter) Worker(args ...interface{}) *Queue_Worker_Call {
+	return &Queue_Worker_Call{Call: _e.mock.On("Worker",
+		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Queue_Worker_Call) Run(run func(args *queue.Args)) *Queue_Worker_Call {
+func (_c *Queue_Worker_Call) Run(run func(args ...queue.Args)) *Queue_Worker_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*queue.Args))
+		variadicArgs := make([]queue.Args, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(queue.Args)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -240,7 +253,7 @@ func (_c *Queue_Worker_Call) Return(_a0 queue.Worker) *Queue_Worker_Call {
 	return _c
 }
 
-func (_c *Queue_Worker_Call) RunAndReturn(run func(*queue.Args) queue.Worker) *Queue_Worker_Call {
+func (_c *Queue_Worker_Call) RunAndReturn(run func(...queue.Args) queue.Worker) *Queue_Worker_Call {
 	_c.Call.Return(run)
 	return _c
 }

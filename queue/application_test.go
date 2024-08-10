@@ -93,7 +93,7 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue_EnableDebug() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		s.Nil(s.app.Worker(queue.Args{
 			Queue: "debug",
 		}).Run())
 
@@ -129,7 +129,7 @@ func (s *QueueTestSuite) TestDefaultAsyncQueue_DisableDebug() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(nil).Run())
+		s.Nil(s.app.Worker().Run())
 
 		for range ctx.Done() {
 			return
@@ -163,7 +163,7 @@ func (s *QueueTestSuite) TestDelayAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		s.Nil(s.app.Worker(queue.Args{
 			Queue: "delay",
 		}).Run())
 
@@ -200,7 +200,7 @@ func (s *QueueTestSuite) TestCustomAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		s.Nil(s.app.Worker(queue.Args{
 			Connection: "custom",
 			Queue:      "custom1",
 			Concurrent: 2,
@@ -237,7 +237,7 @@ func (s *QueueTestSuite) TestErrorAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		s.Nil(s.app.Worker(queue.Args{
 			Queue: "error",
 		}).Run())
 
@@ -272,7 +272,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		s.Nil(s.app.Worker(queue.Args{
 			Queue: "chain",
 		}).Run())
 
@@ -323,7 +323,7 @@ func (s *QueueTestSuite) TestChainAsyncQueue_Error() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(&queue.Args{
+		s.Nil(s.app.Worker(queue.Args{
 			Queue: "chain",
 		}).Run())
 
