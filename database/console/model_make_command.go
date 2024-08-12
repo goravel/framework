@@ -44,13 +44,13 @@ func (receiver *ModelMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
-	make, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), filepath.Join("app", "models"))
+	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), filepath.Join("app", "models"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(make.GetFilePath(), receiver.populateStub(receiver.getStub(), make.GetPackageName(), make.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 

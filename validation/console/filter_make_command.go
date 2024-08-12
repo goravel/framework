@@ -41,7 +41,7 @@ func (receiver *FilterMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *FilterMakeCommand) Handle(ctx console.Context) error {
-	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), filepath.Join("app", "filters"))
+	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), filepath.Join("app", "filters"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
