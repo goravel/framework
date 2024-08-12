@@ -1,8 +1,8 @@
 package validation
 
 import (
+	"net/url"
 	"reflect"
-	"strings"
 
 	"github.com/gookit/validate"
 	"github.com/mitchellh/mapstructure"
@@ -10,7 +10,7 @@ import (
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/str"
+	"github.com/goravel/framework/support/maps"
 )
 
 func init() {
@@ -38,21 +38,39 @@ func (v *Validator) Bind(ptr any) error {
 		return nil
 	}
 
+	// SafeData only contains the data that is defined in the rules,
+	// we want user can the original data that is not defined in the rules,
+	// so that user doesn't need to define rules for all fields.
 	data := v.instance.SafeData()
 
-	// When rules check slice: "field.*", SafeData will only have the "field.*" key, doesn't have the field key.
-	for key, value := range data {
-		if str.Of(key).EndsWith(".*") {
-			realKey := strings.ReplaceAll(key, ".*", "")
-			if _, exist := data[realKey]; !exist {
-				data[realKey] = value
+	if formData, ok := v.data.(*validate.FormData); ok {
+		if values, ok := v.data.Src().(url.Values); ok {
+			for key, value := range values {
+				if _, exist := data[key]; !exist {
+					data[key] = value[0]
+				}
+			}
+
+			for key, value := range formData.Files {
+				if _, exist := data[key]; !exist {
+					data[key] = value
+				}
 			}
 		}
-	}
-
-	if formData, ok := v.data.(*validate.FormData); ok {
-		for key, value := range formData.Files {
-			data[key] = value
+	} else if _, ok := v.data.(*validate.MapData); ok {
+		values := v.data.Src().(map[string]any)
+		for key, value := range values {
+			if _, exist := data[key]; !exist {
+				data[key] = value
+			}
+		}
+	} else {
+		if srcMap := maps.FromStruct(v.data.Src()); len(srcMap) > 0 {
+			for key, value := range srcMap {
+				if _, exist := data[key]; !exist {
+					data[key] = value
+				}
+			}
 		}
 	}
 
@@ -65,11 +83,7 @@ func (v *Validator) Bind(ptr any) error {
 		return err
 	}
 
-	if err = decoder.Decode(data); err != nil {
-		return err
-	}
-
-	return nil
+	return decoder.Decode(data)
 }
 
 func (v *Validator) Errors() httpvalidate.Errors {

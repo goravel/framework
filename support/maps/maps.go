@@ -1,5 +1,9 @@
 package maps
 
+import (
+	"reflect"
+)
+
 // Add an element to a map if it doesn't exist.
 func Add[K comparable, V any](mp map[K]V, k K, v V) {
 	if Exists(mp, k) {
@@ -23,6 +27,54 @@ func Forget[K comparable, V any](mp map[K]V, keys ...K) {
 			continue
 		}
 	}
+}
+
+func FromStruct(data any) map[string]any {
+	res := make(map[string]any)
+	dataType := reflect.TypeOf(data)
+	dataValue := reflect.ValueOf(data)
+
+	if dataType.Kind() == reflect.Pointer {
+		dataType = dataType.Elem()
+		dataValue = dataValue.Elem()
+	}
+
+	if dataType.Kind() != reflect.Struct {
+		return res
+	}
+
+	for i := 0; i < dataType.NumField(); i++ {
+		fieldType := dataType.Field(i)
+		fieldValue := dataValue.Field(i)
+
+		if !fieldType.IsExported() {
+			continue
+		}
+
+		if fieldValue.Kind() == reflect.Pointer {
+			if fieldValue.IsNil() {
+				res[fieldType.Name] = nil
+				continue
+			}
+
+			fieldValue = fieldValue.Elem()
+		}
+
+		if fieldValue.Kind() == reflect.Struct {
+			subStructMap := FromStruct(fieldValue.Interface())
+			if fieldType.Anonymous {
+				for key, value := range subStructMap {
+					res[key] = value
+				}
+			} else {
+				res[fieldType.Name] = subStructMap
+			}
+		} else {
+			res[fieldType.Name] = fieldValue.Interface()
+		}
+	}
+
+	return res
 }
 
 // Get an element from a map
