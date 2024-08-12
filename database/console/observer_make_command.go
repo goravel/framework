@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 type ObserverMakeCommand struct {
@@ -46,13 +44,13 @@ func (receiver *ObserverMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "observer", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "observer", ctx.Argument(0), filepath.Join("app", "observers"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -66,39 +64,9 @@ func (receiver *ObserverMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *ObserverMakeCommand) populateStub(stub string, name string) string {
-	observerName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyObserver", str.Case2Camel(observerName))
+func (receiver *ObserverMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyObserver", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *ObserverMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	observerName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "observers", folderPath, str.Camel2Case(observerName)+".go")
-}
-
-// parseName Parse the name to get the observer name, package name and folder path.
-func (receiver *ObserverMakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	observerName := segments[len(segments)-1]
-
-	packageName := "observers"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return observerName, packageName, folderPath
 }

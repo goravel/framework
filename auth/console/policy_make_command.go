@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 type PolicyMakeCommand struct {
@@ -46,13 +44,13 @@ func (receiver *PolicyMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "policy", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), filepath.Join("app", "policies"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -66,39 +64,9 @@ func (receiver *PolicyMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *PolicyMakeCommand) populateStub(stub string, name string) string {
-	policyName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyPolicy", str.Case2Camel(policyName))
+func (receiver *PolicyMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyPolicy", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *PolicyMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	policyName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "policies", folderPath, str.Camel2Case(policyName)+".go")
-}
-
-// parseName Parse the name to get the policy name, package name and folder path.
-func (receiver *PolicyMakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	policyName := segments[len(segments)-1]
-
-	packageName := "policies"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return policyName, packageName, folderPath
 }
