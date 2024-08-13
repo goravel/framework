@@ -53,15 +53,15 @@ func (m *Make) GetFilePath() string {
 
 func (m *Make) GetStructName() string {
 	name := strings.TrimSuffix(m.name, ".go")
-	segments := strings.Split(name, "/")
+	segments := strings.Split(name, string(filepath.Separator))
 
 	return str.Case2Camel(segments[len(segments)-1])
 }
 
 func (m *Make) GetPackageName() string {
 	name := strings.TrimSuffix(m.name, ".go")
-	segments := strings.Split(name, "/")
-	packageName := str.Of(m.root).Trim("/").AfterLast("/").String()
+	segments := strings.Split(name, string(filepath.Separator))
+	packageName := str.Of(m.root).Trim(string(filepath.Separator)).AfterLast(string(filepath.Separator)).String()
 
 	if len(segments) > 1 {
 		packageName = segments[len(segments)-2]
@@ -72,7 +72,7 @@ func (m *Make) GetPackageName() string {
 
 func (m *Make) GetFolderPath() string {
 	name := strings.TrimSuffix(m.name, ".go")
-	segments := strings.Split(name, "/")
+	segments := strings.Split(name, string(filepath.Separator))
 
 	var folderPath string
 	if len(segments) > 1 {
