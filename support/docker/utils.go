@@ -80,7 +80,7 @@ func run(command string) (string, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf(fmt.Sprint(err) + ": " + stderr.String())
+		return "", fmt.Errorf("%s: %s", err, stderr.String())
 	}
 
 	return out.String(), nil
