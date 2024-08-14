@@ -87,7 +87,7 @@ func (v *Validator) Bind(ptr any) error {
 }
 
 func (v *Validator) Errors() httpvalidate.Errors {
-	if v.instance.Errors == nil || len(v.instance.Errors) == 0 {
+	if len(v.instance.Errors) == 0 {
 		return nil
 	}
 
