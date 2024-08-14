@@ -63,7 +63,7 @@ type DummyCamelName struct {}
 `
 
 	content = strings.ReplaceAll(content, "DummyName", r.name)
-	content = strings.ReplaceAll(content, "DummyCamelName", str.Case2Camel(r.name))
+	content = strings.ReplaceAll(content, "DummyCamelName", str.Of(r.name).Studly().String())
 
 	return content
 }
@@ -92,7 +92,7 @@ func (r PackageMakeCommandStubs) Contracts() string {
 type DummyCamelName interface {}
 `
 
-	return strings.ReplaceAll(content, "DummyCamelName", str.Case2Camel(r.name))
+	return strings.ReplaceAll(content, "DummyCamelName", str.Of(r.name).Studly().String())
 }
 
 func (r PackageMakeCommandStubs) Facades() string {
@@ -118,7 +118,7 @@ func DummyCamelName() contracts.DummyCamelName {
 
 	content = strings.ReplaceAll(content, "DummyRoot", r.root)
 	content = strings.ReplaceAll(content, "DummyName", r.name)
-	content = strings.ReplaceAll(content, "DummyCamelName", str.Case2Camel(r.name))
+	content = strings.ReplaceAll(content, "DummyCamelName", str.Of(r.name).Studly().String())
 
 	return content
 }

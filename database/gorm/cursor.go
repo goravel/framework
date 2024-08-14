@@ -25,7 +25,7 @@ func (c *CursorImpl) Scan(value any) error {
 		Squash: true,
 		Result: value,
 		MatchName: func(mapKey, fieldName string) bool {
-			return str.Case2Camel(mapKey) == fieldName || strings.EqualFold(mapKey, fieldName)
+			return str.Of(mapKey).Studly().String() == fieldName || strings.EqualFold(mapKey, fieldName)
 		},
 	}
 
