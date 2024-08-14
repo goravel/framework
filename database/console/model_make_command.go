@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 type ModelMakeCommand struct {
@@ -46,13 +44,13 @@ func (receiver *ModelMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "model", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), filepath.Join("app", "models"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -66,39 +64,9 @@ func (receiver *ModelMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *ModelMakeCommand) populateStub(stub string, name string) string {
-	modelName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyModel", str.Case2Camel(modelName))
+func (receiver *ModelMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyModel", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *ModelMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	modelName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "models", folderPath, str.Camel2Case(modelName)+".go")
-}
-
-// parseName Parse the name to get the model name, package name and folder path.
-func (receiver *ModelMakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	modelName := segments[len(segments)-1]
-
-	packageName := "models"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return modelName, packageName, folderPath
 }

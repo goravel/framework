@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 type ControllerMakeCommand struct {
@@ -47,7 +45,7 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "controller", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), filepath.Join("app", "http", "controllers"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
@@ -58,7 +56,7 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 		stub = receiver.getResourceStub()
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(stub, name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -76,39 +74,9 @@ func (receiver *ControllerMakeCommand) getResourceStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *ControllerMakeCommand) populateStub(stub string, name string) string {
-	controllerName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyController", str.Case2Camel(controllerName))
+func (receiver *ControllerMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyController", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *ControllerMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	controllerName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "http", "controllers", folderPath, str.Camel2Case(controllerName)+".go")
-}
-
-// parseName Parse the name to get the controller name, package name and folder path.
-func (receiver *ControllerMakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	controllerName := segments[len(segments)-1]
-
-	packageName := "controllers"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return controllerName, packageName, folderPath
 }

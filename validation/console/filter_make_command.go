@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -42,13 +41,13 @@ func (receiver *FilterMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *FilterMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "filter", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), filepath.Join("app", "filters"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -62,40 +61,10 @@ func (receiver *FilterMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *FilterMakeCommand) populateStub(stub string, name string) string {
-	ruleName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyFilter", str.Case2Camel(ruleName))
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(ruleName))
+func (receiver *FilterMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyFilter", structName)
+	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(structName))
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *FilterMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	ruleName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "filters", folderPath, str.Camel2Case(ruleName)+".go")
-}
-
-// parseName Parse the name to get the filter name, package name and folder path.
-func (receiver *FilterMakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	ruleName := segments[len(segments)-1]
-
-	packageName := "filters"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return ruleName, packageName, folderPath
 }

@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 type FactoryMakeCommand struct {
@@ -46,13 +44,13 @@ func (receiver *FactoryMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "factory", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "factory", ctx.Argument(0), filepath.Join("database", "factories"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -66,38 +64,9 @@ func (receiver *FactoryMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *FactoryMakeCommand) populateStub(stub string, name string) string {
-	modelName, packageName, _ := parseName(name, "factories")
-
-	stub = strings.ReplaceAll(stub, "DummyFactory", str.Case2Camel(modelName))
+func (receiver *FactoryMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyFactory", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *FactoryMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	modelName, _, folderPath := parseName(name, "factories")
-
-	return filepath.Join(pwd, "database", "factories", folderPath, str.Camel2Case(modelName)+".go")
-}
-
-// parseName Parse the name to get the model name, package name and folder path.
-func parseName(name string, packageName string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	modelName := segments[len(segments)-1]
-
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return modelName, packageName, folderPath
 }

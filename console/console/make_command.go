@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 type MakeCommand struct {
@@ -39,13 +37,13 @@ func (receiver *MakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "command", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), filepath.Join("app", "console", "commands"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -59,39 +57,9 @@ func (receiver *MakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *MakeCommand) populateStub(stub string, name string) string {
-	commandName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyCommand", str.Case2Camel(commandName))
+func (receiver *MakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyCommand", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *MakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	commandName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "console", "commands", folderPath, str.Camel2Case(commandName)+".go")
-}
-
-// parseName Parse the name to get the command name, package name and folder path.
-func (receiver *MakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	commandName := segments[len(segments)-1]
-
-	packageName := "commands"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return commandName, packageName, folderPath
 }
