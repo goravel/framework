@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/huh v0.5.2
 	github.com/charmbracelet/huh/spinner v0.0.0-20240813141447-57c1e0379197
 	github.com/charmbracelet/lipgloss v0.12.1
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
+	github.com/davecgh/go-spew 8991bc29aa16
 	github.com/gabriel-vasile/mimetype v1.4.5
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
