@@ -2,70 +2,134 @@ package console
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
 	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
-func TestGetName(t *testing.T) {
+type MakeTestSuite struct {
+	suite.Suite
+	make *Make
+}
+
+func TestMakeTestSuite(t *testing.T) {
+	suite.Run(t, new(MakeTestSuite))
+}
+
+func (s *MakeTestSuite) SetupTest() {
+	s.make = &Make{
+		name: "Lowercase",
+		root: filepath.Join("app", "rules"),
+	}
+}
+
+func (s *MakeTestSuite) TestGetFilePath() {
+	pwd, _ := os.Getwd()
+	s.Equal(filepath.Join(pwd, s.make.root, "lowercase.go"), s.make.GetFilePath())
+
+	s.make.name = "user/Lowercase"
+	s.Equal(filepath.Join(pwd, s.make.root, "user", "lowercase.go"), s.make.GetFilePath())
+}
+
+func (s *MakeTestSuite) TestGetStructName() {
+	s.Equal("Lowercase", s.make.GetStructName())
+
+	s.make.name = "lowercase"
+	s.Equal("Lowercase", s.make.GetStructName())
+
+	s.make.name = "user/Lowercase"
+	s.Equal("Lowercase", s.make.GetStructName())
+}
+
+func (s *MakeTestSuite) TestGetPackageName() {
+	s.Equal("rules", s.make.GetPackageName())
+
+	s.make.name = "user/Lowercase"
+	s.Equal("user", s.make.GetPackageName())
+}
+
+func (s *MakeTestSuite) TestGetFolderPath() {
+	s.Empty(s.make.GetFolderPath())
+
+	s.make.name = "user/Lowercase"
+	s.Equal("user", s.make.GetFolderPath())
+}
+
+func TestNewMake(t *testing.T) {
 	var (
-		ctx     = &consolemocks.Context{}
+		name string
+
+		mockCtx = &consolemocks.Context{}
 		ttype   = "rule"
-		name    = "Lowercase"
-		getPath = func(name string) string {
-			return "app/rules/" + name + ".go"
-		}
+		root    = filepath.Join("app", "rules")
 	)
 
 	tests := []struct {
-		name    string
-		setup   func()
-		want    string
-		wantErr error
+		name        string
+		setup       func()
+		expectMake  *Make
+		expectError error
 	}{
 		{
-			name: "should return error when name is empty",
+			name: "Sad path - name is empty",
 			setup: func() {
 				name = ""
-				ctx.On("Ask", "Enter the rule name", mock.Anything).Return("", errors.New("the rule name cannot be empty")).Once()
+				mockCtx.EXPECT().Ask("Enter the rule name", mock.Anything).Return("", errors.New("the rule name cannot be empty")).Once()
 			},
-			want:    "",
-			wantErr: errors.New("the rule name cannot be empty"),
+			expectMake:  nil,
+			expectError: errors.New("the rule name cannot be empty"),
 		},
 		{
-			name: "should return error when name already exists",
+			name: "Sad path - name already exists",
 			setup: func() {
 				name = "Uppercase"
-				assert.Nil(t, file.Create(getPath(name), ""))
-				ctx.On("OptionBool", "force").Return(false).Once()
+				assert.Nil(t, file.Create(filepath.Join(root, "uppercase.go"), ""))
+				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
 			},
-			want:    "",
-			wantErr: errors.New("the rule already exists. Use the --force or -f flag to overwrite"),
+			expectMake:  nil,
+			expectError: errors.New("the rule already exists. Use the --force or -f flag to overwrite"),
 		},
 		{
-			name: "should return name when name is not empty",
+			name: "Happy path - name already exists, but force is true",
+			setup: func() {
+				name = "Uppercase"
+				assert.Nil(t, file.Create(filepath.Join(root, "uppercase.go"), ""))
+				mockCtx.EXPECT().OptionBool("force").Return(true).Once()
+			},
+			expectMake:  &Make{name: "Lowercase", root: root},
+			expectError: nil,
+		},
+		{
+			name: "Happy path - name is not empty",
 			setup: func() {
 				name = "Lowercase"
-				ctx.On("OptionBool", "force").Return(false).Once()
+				mockCtx.On("OptionBool", "force").Return(false).Once()
 			},
-			want:    name,
-			wantErr: nil,
+			expectMake:  &Make{name: "Lowercase", root: root},
+			expectError: nil,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			test.setup()
-			got, err := GetName(ctx, ttype, name, getPath)
-			assert.Equal(t, test.want, got)
-			assert.Equal(t, test.wantErr, err)
+			m, err := NewMake(mockCtx, ttype, name, root)
+			if test.expectError != nil {
+				assert.Equal(t, test.expectError, err)
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, m)
+				assert.Nil(t, file.Remove("app"))
+			}
 
-			assert.Nil(t, file.Remove(getPath(name)))
-			ctx.AssertExpectations(t)
+			mockCtx.AssertExpectations(t)
 		})
 	}
 }

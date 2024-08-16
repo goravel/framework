@@ -6,7 +6,7 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/charmbracelet/huh v0.5.2
-	github.com/charmbracelet/huh/spinner v0.0.0-20240807175152-d8d2851dbc1a
+	github.com/charmbracelet/huh/spinner v0.0.0-20240813141447-57c1e0379197
 	github.com/charmbracelet/lipgloss v0.12.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.5
@@ -28,12 +28,12 @@ require (
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
-	github.com/samber/lo v1.46.0
+	github.com/samber/lo v1.47.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cast v1.7.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
-	github.com/urfave/cli/v2 v2.27.3
+	github.com/urfave/cli/v2 v2.27.4
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.26.0
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa

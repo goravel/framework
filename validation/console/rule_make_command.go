@@ -1,7 +1,6 @@
 package console
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -42,13 +41,13 @@ func (receiver *RuleMakeCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
-	name, err := supportconsole.GetName(ctx, "rule", ctx.Argument(0), receiver.getPath)
+	m, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), filepath.Join("app", "rules"))
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -62,40 +61,10 @@ func (receiver *RuleMakeCommand) getStub() string {
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *RuleMakeCommand) populateStub(stub string, name string) string {
-	ruleName, packageName, _ := receiver.parseName(name)
-
-	stub = strings.ReplaceAll(stub, "DummyRule", str.Case2Camel(ruleName))
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(ruleName))
+func (receiver *RuleMakeCommand) populateStub(stub string, packageName, structName string) string {
+	stub = strings.ReplaceAll(stub, "DummyRule", structName)
+	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(structName))
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
-}
-
-// getPath Get the full path to the command.
-func (receiver *RuleMakeCommand) getPath(name string) string {
-	pwd, _ := os.Getwd()
-
-	ruleName, _, folderPath := receiver.parseName(name)
-
-	return filepath.Join(pwd, "app", "rules", folderPath, str.Camel2Case(ruleName)+".go")
-}
-
-// parseName Parse the name to get the rule name, package name and folder path.
-func (receiver *RuleMakeCommand) parseName(name string) (string, string, string) {
-	name = strings.TrimSuffix(name, ".go")
-
-	segments := strings.Split(name, "/")
-
-	ruleName := segments[len(segments)-1]
-
-	packageName := "rules"
-	folderPath := ""
-
-	if len(segments) > 1 {
-		folderPath = filepath.Join(segments[:len(segments)-1]...)
-		packageName = segments[len(segments)-2]
-	}
-
-	return ruleName, packageName, folderPath
 }

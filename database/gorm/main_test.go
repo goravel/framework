@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"log"
+	"os"
 	"testing"
 
 	supportdocker "github.com/goravel/framework/support/docker"
@@ -19,7 +20,7 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	m.Run()
+	exit := m.Run()
 
 	if !env.IsWindows() {
 		defer func() {
@@ -28,4 +29,6 @@ func TestMain(m *testing.M) {
 			}
 		}()
 	}
+
+	os.Exit(exit)
 }

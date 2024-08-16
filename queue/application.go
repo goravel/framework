@@ -19,17 +19,18 @@ func NewApplication(config configcontract.Config, log log.Log) *Application {
 	}
 }
 
-func (app *Application) Worker(args *queue.Args) queue.Worker {
+func (app *Application) Worker(args ...queue.Args) queue.Worker {
 	defaultConnection := app.config.DefaultConnection()
 
-	if args == nil {
+	if len(args) == 0 {
 		return NewWorker(app.config, app.log, 1, defaultConnection, app.jobs, app.config.Queue(defaultConnection, ""))
 	}
-	if args.Connection == "" {
-		args.Connection = defaultConnection
+
+	if args[0].Connection == "" {
+		args[0].Connection = defaultConnection
 	}
 
-	return NewWorker(app.config, app.log, args.Concurrent, args.Connection, app.jobs, app.config.Queue(args.Connection, args.Queue))
+	return NewWorker(app.config, app.log, args[0].Concurrent, args[0].Connection, app.jobs, app.config.Queue(args[0].Connection, args[0].Queue))
 }
 
 func (app *Application) Register(jobs []queue.Job) {

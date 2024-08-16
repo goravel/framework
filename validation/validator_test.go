@@ -19,7 +19,7 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
-func TestBind(t *testing.T) {
+func TestBind_Rule(t *testing.T) {
 	type Data struct {
 		A              string                 `form:"a" json:"a"`
 		B              int                    `form:"b" json:"b"`
@@ -42,24 +42,22 @@ func TestBind(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		data    validate.DataFace
-		rules   map[string]string
-		filters map[string]string
-		assert  func(data Data)
+		name   string
+		data   validate.DataFace
+		rules  map[string]string
+		assert func(data Data)
 	}{
 		{
-			name:    "success when data is map and key is lowercase",
-			data:    validate.FromMap(map[string]any{"a": "aa  ", "b": "1"}),
-			rules:   map[string]string{"a": "required", "b": "required"},
-			filters: map[string]string{"a": "trim", "b": "int"},
+			name:  "data is map and key is lowercase",
+			data:  validate.FromMap(map[string]any{"a": "aa", "b": "1"}),
+			rules: map[string]string{"a": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name:  "success when data is map and cast key",
+			name:  "data is map and cast key",
 			data:  validate.FromMap(map[string]any{"b": "1"}),
 			rules: map[string]string{"b": "required"},
 			assert: func(data Data) {
@@ -67,53 +65,53 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name:    "success when data is map and key is uppercase",
-			data:    validate.FromMap(map[string]any{"A": "aa  "}),
-			rules:   map[string]string{"A": "required"},
-			filters: map[string]string{"A": "trim"},
+			name:  "data is map and key is uppercase",
+			data:  validate.FromMap(map[string]any{"A": "aa"}),
+			rules: map[string]string{"A": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 			},
 		},
 		{
-			name: "success when data is struct",
+			name: "data is struct",
 			data: func() validate.DataFace {
 				data, err := validate.FromStruct(&struct {
 					A string
+					B int
 				}{
-					A: "aa",
+					A: "a",
+					B: 1,
 				})
 				assert.Nil(t, err)
 
 				return data
 			}(),
-			rules:   map[string]string{"A": "required"},
-			filters: map[string]string{"A": "trim"},
+			rules: map[string]string{"A": "required"},
 			assert: func(data Data) {
-				assert.Equal(t, "aa", data.A)
+				assert.Equal(t, "a", data.A)
+				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name: "success when data is get request",
+			name: "data is get request",
 			data: func() validate.DataFace {
-				request, err := http.NewRequest(http.MethodGet, "/?a=aa &&b=1", nil)
+				request, err := http.NewRequest(http.MethodGet, "/?a=aa&&b=1", nil)
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
 				assert.Nil(t, err)
 
 				return data
 			}(),
-			rules:   map[string]string{"a": "required", "b": "required"},
-			filters: map[string]string{"a": "trim"},
+			rules: map[string]string{"a": "required"},
 			assert: func(data Data) {
 				assert.Equal(t, "aa", data.A)
 				assert.Equal(t, 1, data.B)
 			},
 		},
 		{
-			name: "success when data is post request",
+			name: "data is post request",
 			data: func() validate.DataFace {
-				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"Goravel", "ages": [1, 2], "names": ["a", "b"]}`))
+				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"a":"Goravel", "b": 1, "ages": [1, 2], "names": ["a", "b"]}`))
 				request.Header.Set("Content-Type", "application/json")
 				assert.Nil(t, err)
 				data, err := validate.FromRequest(request)
@@ -130,12 +128,13 @@ func TestBind(t *testing.T) {
 			rules: map[string]string{"a": "required", "ages.*": "int", "names.*": "string"},
 			assert: func(data Data) {
 				assert.Equal(t, "Goravel", data.A)
+				assert.Equal(t, 1, data.B)
 				assert.Equal(t, []int{1, 2}, data.Ages)
 				assert.Equal(t, []string{"a", "b"}, data.Names)
 			},
 		},
 		{
-			name: "success when data is post request with Carbon",
+			name: "data is post request with Carbon",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"carbon": "2024-07-04 10:00:52"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -152,7 +151,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTime",
+			name: "data is post request with DateTime",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": "2024-07-04 10:00:52"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -169,7 +168,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTime(string)",
+			name: "data is post request with DateTime(string)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": "1720087252"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -186,7 +185,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTime(int)",
+			name: "data is post request with DateTime(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -203,7 +202,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTime(milli)",
+			name: "data is post request with DateTime(milli)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252000}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -220,7 +219,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTime(micro)",
+			name: "data is post request with DateTime(micro)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252000000}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -237,7 +236,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTime(nano)",
+			name: "data is post request with DateTime(nano)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time": 1720087252000000000}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -254,7 +253,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTimeMilli",
+			name: "data is post request with DateTimeMilli",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_milli": "2024-07-04 10:00:52.123"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -271,7 +270,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTimeMilli(int)",
+			name: "data is post request with DateTimeMilli(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_milli": 1720087252123}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -288,7 +287,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTimeMicro",
+			name: "data is post request with DateTimeMicro",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_micro": "2024-07-04 10:00:52.123456"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -305,7 +304,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTimeNano",
+			name: "data is post request with DateTimeNano",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_nano": "2024-07-04 10:00:52.123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -322,7 +321,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateTimeNano(int)",
+			name: "data is post request with DateTimeNano(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_time_nano": "1720087252123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -339,7 +338,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with Date",
+			name: "data is post request with Date",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date": "2024-07-04"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -356,7 +355,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with Date(int)",
+			name: "data is post request with Date(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date": 1720087252}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -373,7 +372,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateMilli",
+			name: "data is post request with DateMilli",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_milli": "2024-07-04.123"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -390,7 +389,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateMilli(int)",
+			name: "data is post request with DateMilli(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_milli": 1720087252123}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -407,7 +406,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateMicro",
+			name: "data is post request with DateMicro",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_micro": "2024-07-04.123456"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -424,7 +423,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateMicro(int)",
+			name: "data is post request with DateMicro(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_micro": 1720087252123456}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -441,7 +440,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateNano",
+			name: "data is post request with DateNano",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_nano": "2024-07-04.123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -458,7 +457,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with DateNano(int)",
+			name: "data is post request with DateNano(int)",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"date_nano": "1720087252123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -475,7 +474,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with Timestamp",
+			name: "data is post request with Timestamp",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp": 1720087252}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -492,7 +491,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with TimestampMilli",
+			name: "data is post request with TimestampMilli",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp_milli": 1720087252123}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -509,7 +508,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with TimestampMicro",
+			name: "data is post request with TimestampMicro",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp_micro": 1720087252123456}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -526,7 +525,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with TimestampNano",
+			name: "data is post request with TimestampNano",
 			data: func() validate.DataFace {
 				request, err := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"timestamp_nano": "1720087252123456789"}`))
 				request.Header.Set("Content-Type", "application/json")
@@ -543,7 +542,7 @@ func TestBind(t *testing.T) {
 			},
 		},
 		{
-			name: "success when data is post request with body",
+			name: "data is post request with body",
 			data: func() validate.DataFace {
 				request := buildRequest(t)
 				data, err := validate.FromRequest(request, 1)
@@ -551,8 +550,7 @@ func TestBind(t *testing.T) {
 
 				return data
 			}(),
-			rules:   map[string]string{"a": "required", "file": "file"},
-			filters: map[string]string{"a": "trim"},
+			rules: map[string]string{"a": "required", "file": "file"},
 			assert: func(data Data) {
 				request := buildRequest(t)
 				_, file, err := request.FormFile("file")
@@ -561,6 +559,117 @@ func TestBind(t *testing.T) {
 				assert.Equal(t, "aa", data.A)
 				assert.NotNil(t, data.File)
 				assert.Equal(t, file.Filename, data.File.Filename)
+			},
+		},
+	}
+
+	validation := NewValidation()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			validator, err := validation.Make(test.data, test.rules)
+			require.Nil(t, err)
+			require.Nil(t, validator.Errors())
+
+			var data Data
+			err = validator.Bind(&data)
+			require.Nil(t, err)
+
+			test.assert(data)
+		})
+	}
+}
+
+func TestBind_Filter(t *testing.T) {
+	type Data struct {
+		A string `form:"a" json:"a"`
+		B int    `form:"b" json:"b"`
+	}
+
+	tests := []struct {
+		name    string
+		data    validate.DataFace
+		rules   map[string]string
+		filters map[string]string
+		assert  func(data Data)
+	}{
+		{
+			name:    "data is map and key is lowercase",
+			data:    validate.FromMap(map[string]any{"a": " a ", "b": "1"}),
+			rules:   map[string]string{"a": "required", "b": "required"},
+			filters: map[string]string{"a": "trim", "b": "int"},
+			assert: func(data Data) {
+				assert.Equal(t, "a", data.A)
+				assert.Equal(t, 1, data.B)
+			},
+		},
+		{
+			name:    "data is map and key is lowercase, a no rule but has filter, a should keep the original value.",
+			data:    validate.FromMap(map[string]any{"a": "a", "b": " 1"}),
+			rules:   map[string]string{"b": "required"},
+			filters: map[string]string{"a": "upper", "b": "trim|int"},
+			assert: func(data Data) {
+				assert.Equal(t, "a", data.A)
+				assert.Equal(t, 1, data.B)
+			},
+		},
+		{
+			name: "data is struct",
+			data: func() validate.DataFace {
+				data, err := validate.FromStruct(&struct {
+					A string
+				}{
+					A: " a ",
+				})
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules:   map[string]string{"A": "required"},
+			filters: map[string]string{"A": "trim"},
+			assert: func(data Data) {
+				assert.Equal(t, "a", data.A)
+			},
+		},
+		{
+			name: "data is get request",
+			data: func() validate.DataFace {
+				request, err := http.NewRequest(http.MethodGet, "/?a= a &&b=1", nil)
+				assert.Nil(t, err)
+				data, err := validate.FromRequest(request)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules:   map[string]string{"a": "required", "b": "required"},
+			filters: map[string]string{"a": "trim"},
+			assert: func(data Data) {
+				assert.Equal(t, "a", data.A)
+				assert.Equal(t, 1, data.B)
+			},
+		},
+		{
+			name: "data is post request with body",
+			data: func() validate.DataFace {
+				payload := &bytes.Buffer{}
+				writer := multipart.NewWriter(payload)
+
+				err := writer.WriteField("a", " a ")
+				assert.Nil(t, err)
+				assert.Nil(t, writer.Close())
+
+				request, err := http.NewRequest(http.MethodPost, "/", payload)
+				assert.Nil(t, err)
+				request.Header.Set("Content-Type", writer.FormDataContentType())
+
+				data, err := validate.FromRequest(request, 1)
+				assert.Nil(t, err)
+
+				return data
+			}(),
+			rules:   map[string]string{"a": "required", "file": "file"},
+			filters: map[string]string{"a": "trim"},
+			assert: func(data Data) {
+				assert.Equal(t, "a", data.A)
 			},
 		},
 	}
@@ -813,31 +922,6 @@ func TestCastValue(t *testing.T) {
 	}
 }
 
-func buildRequest(t *testing.T) *http.Request {
-	payload := &bytes.Buffer{}
-	writer := multipart.NewWriter(payload)
-
-	err := writer.WriteField("a", "aa")
-	assert.Nil(t, err)
-
-	logo, err := os.Open("../logo.png")
-	assert.Nil(t, err)
-
-	defer logo.Close()
-	part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
-	assert.Nil(t, err)
-
-	_, err = io.Copy(part1, logo)
-	assert.Nil(t, err)
-	assert.Nil(t, writer.Close())
-
-	request, err := http.NewRequest(http.MethodPost, "/", payload)
-	assert.Nil(t, err)
-	request.Header.Set("Content-Type", writer.FormDataContentType())
-
-	return request
-}
-
 func TestCastCarbon(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -983,4 +1067,29 @@ func TestCastCarbon(t *testing.T) {
 			test.assert(castCarbon(test.from, test.transform))
 		})
 	}
+}
+
+func buildRequest(t *testing.T) *http.Request {
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+
+	err := writer.WriteField("a", "aa")
+	assert.Nil(t, err)
+
+	logo, err := os.Open("../logo.png")
+	assert.Nil(t, err)
+
+	defer logo.Close()
+	part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
+	assert.Nil(t, err)
+
+	_, err = io.Copy(part1, logo)
+	assert.Nil(t, err)
+	assert.Nil(t, writer.Close())
+
+	request, err := http.NewRequest(http.MethodPost, "/", payload)
+	assert.Nil(t, err)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+
+	return request
 }

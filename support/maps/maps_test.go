@@ -91,6 +91,44 @@ func TestForget(t *testing.T) {
 	}, gMp)
 }
 
+func TestFromStruct(t *testing.T) {
+	type One struct {
+		Name string
+		Age  int
+	}
+	type Two struct {
+		Height int
+	}
+	type Three struct {
+		Two
+		One  One
+		Name string
+		age  int
+	}
+	data := Three{
+		Name: "Three",
+		Two: Two{
+			Height: 1,
+		},
+		One: One{
+			Name: "One",
+			Age:  18,
+		},
+		age: 1,
+	}
+
+	res := FromStruct(data)
+
+	assert.Equal(t, "Three", res["Name"])
+	assert.Equal(t, 1, res["Height"])
+
+	one, ok := res["One"].(map[string]any)
+
+	assert.True(t, ok)
+	assert.Equal(t, "One", one["Name"])
+	assert.Equal(t, 18, one["Age"])
+}
+
 func TestGet(t *testing.T) {
 	mp := map[string]any{
 		"name": "Krishan",
