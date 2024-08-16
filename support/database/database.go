@@ -81,6 +81,31 @@ func GetForeignKeyFieldByReflect(t reflect.Type, relation string) string {
 	return inflection.Singular(relation) + "ID"
 }
 
+func GetPrimaryKeyFieldByReflect(t reflect.Type) string {
+
+	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
+		if t.Field(i).Name == "Model" && t.Field(i).Type.Kind() == reflect.Struct {
+			structField := t.Field(i).Type
+			for j := 0; j < structField.NumField(); j++ {
+				if !structField.Field(j).IsExported() {
+					continue
+				}
+				if strings.Contains(structField.Field(j).Tag.Get("gorm"), "primaryKey") {
+					return structField.Field(j).Name
+				}
+			}
+		}
+		if strings.Contains(t.Field(i).Tag.Get("gorm"), "primaryKey") {
+			return t.Field(i).Name
+		}
+	}
+
+	return ""
+}
+
 func GetPivotTableByReflect(t reflect.Type, relation string) string {
 	field, ok := t.FieldByName(relation)
 	if !ok {

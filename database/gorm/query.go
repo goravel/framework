@@ -800,9 +800,11 @@ func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Qu
 	}
 
 	fk := database.GetForeignKeyFieldByReflect(modelType, relation)
-	subquery := modifiedQuery.(*QueryImpl).Select(fk).ToRawSql().Get(r.conditions.model)
+	subquery := modifiedQuery.(*QueryImpl).Select(fk)
 
-	return r.Where("EXISTS (?)", subquery)
+	pk := database.GetPrimaryKeyFieldByReflect(modelType)
+
+	return r.Where("EXISTS ("+pk+" in (?))", subquery)
 
 }
 
