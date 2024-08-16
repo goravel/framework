@@ -780,6 +780,32 @@ func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Query) (ormcontract.Query, error), args ...any) ormcontract.Query {
+	relationQuery := NewQueryImpl(r.ctx, r.config, r.connection, r.instance, nil)
+	modifiedQuery, err := callback(relationQuery)
+	if err != nil {
+		//todo: handle error
+		return nil
+	}
+
+	if r.conditions.model == nil {
+		//todo: handle error
+		return r
+	}
+
+	modelType := reflect.TypeOf(r.conditions.model)
+
+	if database.IsMany2ManyByReflect(modelType, relation) {
+
+	}
+
+	fk := database.GetForeignKeyFieldByReflect(modelType, relation)
+	subquery := modifiedQuery.(*QueryImpl).Select(fk).ToRawSql().Get(r.conditions.model)
+
+	return r.Where("EXISTS (?)", subquery)
+
+}
+
 func (r *QueryImpl) WhereIn(column string, values []any) ormcontract.Query {
 	return r.Where(fmt.Sprintf("%s IN ?", column), values)
 }
