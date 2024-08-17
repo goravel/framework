@@ -63,7 +63,7 @@ func (receiver *ListenerMakeCommand) getStub() string {
 // populateStub Populate the place-holders in the command stub.
 func (receiver *ListenerMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyListener", structName)
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(structName))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub

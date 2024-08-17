@@ -964,6 +964,8 @@ func Random(length int) string {
 	return string(b)
 }
 
+// Case2Camel
+// DEPRECATED: Use str.Of(name).Studly().String() instead
 func Case2Camel(name string) string {
 	names := strings.Split(name, "_")
 
@@ -984,6 +986,8 @@ func Case2Camel(name string) string {
 	return newName
 }
 
+// Camel2Case
+// DEPRECATED: Use str.Of(name).Snake().String() instead
 func Camel2Case(name string) string {
 	buffer := NewBuffer()
 	for i, r := range name {

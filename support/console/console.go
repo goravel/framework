@@ -48,14 +48,14 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 func (m *Make) GetFilePath() string {
 	pwd, _ := os.Getwd()
 
-	return filepath.Join(pwd, m.root, m.GetFolderPath(), str.Camel2Case(m.GetStructName())+".go")
+	return filepath.Join(pwd, m.root, m.GetFolderPath(), str.Of(m.GetStructName()).Snake().String()+".go")
 }
 
 func (m *Make) GetStructName() string {
 	name := strings.TrimSuffix(m.name, ".go")
 	segments := strings.Split(name, "/")
 
-	return str.Case2Camel(segments[len(segments)-1])
+	return str.Of(segments[len(segments)-1]).Studly().String()
 }
 
 func (m *Make) GetPackageName() string {

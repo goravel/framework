@@ -63,7 +63,7 @@ func (receiver *RuleMakeCommand) getStub() string {
 // populateStub Populate the place-holders in the command stub.
 func (receiver *RuleMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyRule", structName)
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(structName))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
