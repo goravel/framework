@@ -63,7 +63,7 @@ func (receiver *JobMakeCommand) getStub() string {
 // populateStub Populate the place-holders in the command stub.
 func (receiver *JobMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyJob", structName)
-	stub = strings.ReplaceAll(stub, "DummyName", str.Camel2Case(structName))
+	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub

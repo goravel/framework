@@ -53,7 +53,7 @@ func (e *Event) DestOfMap() map[string]any {
 	if destMap, ok := e.dest.(map[string]any); ok {
 		for key, value := range destMap {
 			destOfMap[key] = value
-			destOfMap[str.Camel2Case(key)] = value
+			destOfMap[str.Of(key).Snake().String()] = value
 		}
 	} else {
 		destType := reflect.TypeOf(e.dest)
@@ -332,7 +332,7 @@ func structNameToDbColumnName(structName, tag string) string {
 		}
 	}
 
-	return str.Camel2Case(structName)
+	return str.Of(structName).Snake().String()
 }
 
 func fetchColumnNames(model any) map[string]string {
