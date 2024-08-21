@@ -18,6 +18,8 @@ type Schema interface {
 type Migration interface {
 	// Signature Get the migration signature.
 	Signature() string
+	// Connection Get the connection for the migration.
+	Connection() string
 	// Up Run the migrations.
 	Up()
 	// Down Reverse the migrations.
