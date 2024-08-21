@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/migration"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -22,7 +23,7 @@ func NewMigrateCreator(config config.Config) *MigrateCreator {
 }
 
 // Create a new migration
-func (receiver MigrateCreator) Create(name string, table string, create bool) error {
+func (receiver *MigrateCreator) Create(name string, table string, create bool) error {
 	// First we will get the stub file for the migration, which serves as a type
 	// of template for the migration. Once we have those we will populate the
 	// various place-holders, save the file, and run the post create event.
@@ -42,7 +43,7 @@ func (receiver MigrateCreator) Create(name string, table string, create bool) er
 }
 
 // getStub Get the migration stub file.
-func (receiver MigrateCreator) getStub(table string, create bool) (string, string) {
+func (receiver *MigrateCreator) getStub(table string, create bool) (string, string) {
 	if table == "" {
 		return "", ""
 	}
@@ -51,33 +52,33 @@ func (receiver MigrateCreator) getStub(table string, create bool) (string, strin
 	switch orm.Driver(driver) {
 	case orm.DriverPostgresql:
 		if create {
-			return PostgresqlStubs{}.CreateUp(), PostgresqlStubs{}.CreateDown()
+			return migration.PostgresqlStubs{}.CreateUp(), migration.PostgresqlStubs{}.CreateDown()
 		}
 
-		return PostgresqlStubs{}.UpdateUp(), PostgresqlStubs{}.UpdateDown()
+		return migration.PostgresqlStubs{}.UpdateUp(), migration.PostgresqlStubs{}.UpdateDown()
 	case orm.DriverSqlite:
 		if create {
-			return SqliteStubs{}.CreateUp(), SqliteStubs{}.CreateDown()
+			return migration.SqliteStubs{}.CreateUp(), migration.SqliteStubs{}.CreateDown()
 		}
 
-		return SqliteStubs{}.UpdateUp(), SqliteStubs{}.UpdateDown()
+		return migration.SqliteStubs{}.UpdateUp(), migration.SqliteStubs{}.UpdateDown()
 	case orm.DriverSqlserver:
 		if create {
-			return SqlserverStubs{}.CreateUp(), SqlserverStubs{}.CreateDown()
+			return migration.SqlserverStubs{}.CreateUp(), migration.SqlserverStubs{}.CreateDown()
 		}
 
-		return SqlserverStubs{}.UpdateUp(), SqlserverStubs{}.UpdateDown()
+		return migration.SqlserverStubs{}.UpdateUp(), migration.SqlserverStubs{}.UpdateDown()
 	default:
 		if create {
-			return MysqlStubs{}.CreateUp(), MysqlStubs{}.CreateDown()
+			return migration.MysqlStubs{}.CreateUp(), migration.MysqlStubs{}.CreateDown()
 		}
 
-		return MysqlStubs{}.UpdateUp(), MysqlStubs{}.UpdateDown()
+		return migration.MysqlStubs{}.UpdateUp(), migration.MysqlStubs{}.UpdateDown()
 	}
 }
 
 // populateStub Populate the place-holders in the migration stub.
-func (receiver MigrateCreator) populateStub(stub string, table string) string {
+func (receiver *MigrateCreator) populateStub(stub string, table string) string {
 	stub = strings.ReplaceAll(stub, "DummyDatabaseCharset", receiver.config.GetString("database.connections."+receiver.config.GetString("database.default")+".charset"))
 
 	if table != "" {
@@ -88,7 +89,7 @@ func (receiver MigrateCreator) populateStub(stub string, table string) string {
 }
 
 // getPath Get the full path to the migration.
-func (receiver MigrateCreator) getPath(name string, category string) string {
+func (receiver *MigrateCreator) getPath(name string, category string) string {
 	pwd, _ := os.Getwd()
 
 	return fmt.Sprintf("%s/database/migrations/%s_%s.%s.sql", pwd, carbon.Now().ToShortDateTimeString(), name, category)

@@ -1,4 +1,93 @@
-package console
+package migration
+
+type Stubs struct {
+}
+
+func (receiver Stubs) Empty() string {
+	return `package migrations
+
+type DummyMigration struct {
+}
+
+// Signature The unique signature for the migration.
+func (r *DummyMigration) Signature() string {
+	return "DummyName"
+}
+
+// Connection The database connection that should be used by the migration.
+func (r *DummyMigration) Connection() string {
+	return ""
+}
+
+// Up Run the migrations.
+func (r *DummyMigration) Up() {
+
+}
+
+// Down Reverse the migrations.
+func (r *DummyMigration) Down() {
+
+}
+`
+}
+
+// TODO add the facades.Schema().Create() method
+func (receiver Stubs) Create() string {
+	return `package migrations
+
+type DummyMigration struct {
+}
+
+// Signature The unique signature for the migration.
+func (r *DummyMigration) Signature() string {
+	return "DummyName"
+}
+
+// Connection The database connection that should be used by the migration.
+func (r *DummyMigration) Connection() string {
+	return ""
+}
+
+// Up Run the migrations.
+func (r *DummyMigration) Up() {
+
+}
+
+// Down Reverse the migrations.
+func (r *DummyMigration) Down() {
+
+}
+`
+}
+
+// TODO add the facades.Schema().Table() method
+func (receiver Stubs) Update() string {
+	return `package migrations
+
+type DummyMigration struct {
+}
+
+// Signature The unique signature for the migration.
+func (r *DummyMigration) Signature() string {
+	return "DummyName"
+}
+
+// Connection The database connection that should be used by the migration.
+func (r *DummyMigration) Connection() string {
+	return ""
+}
+
+// Up Run the migrations.
+func (r *DummyMigration) Up() {
+
+}
+
+// Down Reverse the migrations.
+func (r *DummyMigration) Down() {
+
+}
+`
+}
 
 type MysqlStubs struct {
 }
