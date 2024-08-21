@@ -7,9 +7,11 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
+	"github.com/goravel/framework/database/migration"
 )
 
 const BindingOrm = "goravel.orm"
+const BindingSchema = "goravel.schema"
 const BindingSeeder = "goravel.seeder"
 
 type ServiceProvider struct {
@@ -26,6 +28,9 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		return orm, nil
+	})
+	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
+		return migration.NewSchema(), nil
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
