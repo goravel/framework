@@ -7,7 +7,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/charmbracelet/huh v0.5.2
 	github.com/charmbracelet/huh/spinner v0.0.0-20240819144924-03b9fb7b7e9b
-	github.com/charmbracelet/lipgloss v0.12.1
+	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.5
 	github.com/glebarez/go-sqlite v1.22.0
