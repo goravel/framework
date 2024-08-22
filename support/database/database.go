@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/jinzhu/inflection"
 	"reflect"
 	"strings"
 
@@ -57,84 +56,10 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 	return nil
 }
 
-func GetForeignKeyField(model any, relation string) string {
-	modelType := reflect.TypeOf(model) //get type
-	return GetForeignKeyFieldByReflect(modelType, relation)
+func Quote(name string) string {
+	return "`" + name + "`"
 }
 
-func GetForeignKeyFieldByReflect(t reflect.Type, relation string) string {
-	field, ok := t.FieldByName(relation)
-	if !ok {
-		return ""
-	}
-
-	gormTag := field.Tag.Get("gorm")
-	if strings.Contains(gormTag, "foreignKey") {
-		parts := strings.Split(gormTag, ";")
-		for _, part := range parts {
-			if strings.HasPrefix(part, "foreignKey") {
-				return strings.TrimPrefix(part, "foreignKey:")
-			}
-		}
-	}
-
-	return inflection.Singular(relation) + "ID"
-}
-
-func GetPrimaryKeyFieldByReflect(t reflect.Type) string {
-
-	for i := 0; i < t.NumField(); i++ {
-		if !t.Field(i).IsExported() {
-			continue
-		}
-		if t.Field(i).Name == "Model" && t.Field(i).Type.Kind() == reflect.Struct {
-			structField := t.Field(i).Type
-			for j := 0; j < structField.NumField(); j++ {
-				if !structField.Field(j).IsExported() {
-					continue
-				}
-				if strings.Contains(structField.Field(j).Tag.Get("gorm"), "primaryKey") {
-					return structField.Field(j).Name
-				}
-			}
-		}
-		if strings.Contains(t.Field(i).Tag.Get("gorm"), "primaryKey") {
-			return t.Field(i).Name
-		}
-	}
-
-	return ""
-}
-
-func GetPivotTableByReflect(t reflect.Type, relation string) string {
-	field, ok := t.FieldByName(relation)
-	if !ok {
-		return ""
-	}
-
-	gormTag := field.Tag.Get("gorm")
-	if strings.Contains(gormTag, "many2many") {
-		parts := strings.Split(gormTag, ";")
-		for _, part := range parts {
-			if strings.HasPrefix(part, "many2may") {
-				return strings.TrimPrefix(part, "many2many:")
-			}
-		}
-	}
-
-	return ""
-}
-
-func IsMany2ManyByReflect(t reflect.Type, relation string) bool {
-	field, ok := t.FieldByName(relation)
-	if !ok {
-		return false
-	}
-
-	gormTag := field.Tag.Get("gorm")
-	if !strings.Contains(gormTag, "many2many") {
-		return false
-	}
-
-	return true
+func QuoteConcat(table string, col string) string {
+	return Quote(table) + "." + Quote(col)
 }

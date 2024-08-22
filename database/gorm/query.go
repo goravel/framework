@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"gorm.io/gorm/schema"
 	"reflect"
 
 	"github.com/google/wire"
@@ -781,31 +782,53 @@ func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Query) (ormcontract.Query, error), args ...any) ormcontract.Query {
-	relationQuery := NewQueryImpl(r.ctx, r.config, r.connection, r.instance, nil)
+	stmt := gormio.Statement{DB: r.instance}
+	err := stmt.Parse(r.conditions.model)
+	if err != nil {
+		//todo handle error
+	}
+	Mschema := stmt.Schema
+
+	relationQuery := r.new(r.instance)
 	modifiedQuery, err := callback(relationQuery)
 	if err != nil {
-		//todo: handle error
 		return nil
 	}
-
-	if r.conditions.model == nil {
-		//todo: handle error
-		return r
-	}
-
-	modelType := reflect.TypeOf(r.conditions.model)
-
-	if database.IsMany2ManyByReflect(modelType, relation) {
+	rel, ok := Mschema.Relationships.Relations[relation]
+	if !ok {
 
 	}
+	var fk, ft, pk, table string
+	switch rel.Type {
+	case schema.BelongsTo:
+		fk = Mschema.PrioritizedPrimaryField.DBName
+		ft = rel.FieldSchema.Table
+		table = Mschema.Table
+		pk = rel.References[0].ForeignKey.DBName
+		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
+	case schema.HasOne, schema.HasMany:
+		fk = rel.References[0].ForeignKey.DBName
+		ft = rel.FieldSchema.Table
+		table = Mschema.Table
+		pk = Mschema.PrioritizedPrimaryField.DBName
+		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
+	case schema.Many2Many:
+		joinTable := rel.JoinTable.Table
+		fk = rel.References[0].ForeignKey.DBName
+		ft = rel.FieldSchema.Table
+		table = ft
+		pk = Mschema.PrioritizedPrimaryField.DBName
+		modifiedQuery = modifiedQuery.
+			Join("inner join " +
+				database.Quote(joinTable) +
+				" on " +
+				database.QuoteConcat(Mschema.Table, Mschema.PrioritizedPrimaryField.DBName) +
+				" = " + database.QuoteConcat(joinTable, fk))
+	}
 
-	fk := database.GetForeignKeyFieldByReflect(modelType, relation)
-	subquery := modifiedQuery.(*QueryImpl).Select(fk)
-
-	pk := database.GetPrimaryKeyFieldByReflect(modelType)
-
-	return r.Where("EXISTS ("+pk+" in (?))", subquery)
-
+	modifiedQueryImpl := modifiedQuery.
+		Table(table).(*QueryImpl)
+	return r.Where("EXISTS (?)", modifiedQueryImpl.buildConditions().instance)
 }
 
 func (r *QueryImpl) WhereIn(column string, values []any) ormcontract.Query {
