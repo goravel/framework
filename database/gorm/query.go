@@ -35,6 +35,7 @@ type QueryImpl struct {
 	ctx        context.Context
 	instance   *gormio.DB
 	queries    map[string]*QueryImpl
+	errors     []error
 }
 
 func NewQueryImpl(ctx context.Context, config config.Config, connection string, db *gormio.DB, conditions *Conditions) *QueryImpl {
@@ -88,6 +89,9 @@ func (r *QueryImpl) Count(count *int64) error {
 }
 
 func (r *QueryImpl) Create(value any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
 	query, err := r.refreshConnection(value)
 	if err != nil {
 		return err
@@ -110,6 +114,10 @@ func (r *QueryImpl) Create(value any) error {
 }
 
 func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
+	if len(r.errors) > 0 {
+		return nil, r.errors[0]
+	}
+
 	with := r.conditions.with
 	query := r.buildConditions()
 	r.conditions.with = with
@@ -138,6 +146,10 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 }
 
 func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
+	if len(r.errors) > 0 {
+		return nil, r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return nil, err
@@ -179,12 +191,20 @@ func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error)
 }
 
 func (r *QueryImpl) Exists(exists *bool) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query := r.buildConditions()
 
 	return query.instance.Select("1").Limit(1).Find(exists).Error
 }
 
 func (r *QueryImpl) Find(dest any, conds ...any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -203,6 +223,10 @@ func (r *QueryImpl) Find(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -227,6 +251,10 @@ func (r *QueryImpl) FindOrFail(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) First(dest any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -247,6 +275,10 @@ func (r *QueryImpl) First(dest any) error {
 }
 
 func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -266,6 +298,10 @@ func (r *QueryImpl) FirstOr(dest any, callback func() error) error {
 }
 
 func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -295,6 +331,10 @@ func (r *QueryImpl) FirstOrCreate(dest any, conds ...any) error {
 }
 
 func (r *QueryImpl) FirstOrFail(dest any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -314,6 +354,10 @@ func (r *QueryImpl) FirstOrFail(dest any) error {
 }
 
 func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -339,6 +383,10 @@ func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
 }
 
 func (r *QueryImpl) ForceDelete(value any, conds ...any) (*ormcontract.Result, error) {
+	if len(r.errors) > 0 {
+		return nil, r.errors[0]
+	}
+
 	query, err := r.refreshConnection(value)
 	if err != nil {
 		return nil, err
@@ -409,6 +457,10 @@ func (r *QueryImpl) Limit(limit int) ormcontract.Query {
 }
 
 func (r *QueryImpl) Load(model any, relation string, args ...any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	if relation == "" {
 		return errors.New("relation cannot be empty")
 	}
@@ -440,6 +492,10 @@ func (r *QueryImpl) Load(model any, relation string, args ...any) error {
 }
 
 func (r *QueryImpl) LoadMissing(model any, relation string, args ...any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	destType := reflect.TypeOf(model)
 	if destType.Kind() != reflect.Pointer {
 		return errors.New("model must be pointer")
@@ -549,6 +605,10 @@ func (r *QueryImpl) OrWhere(query any, args ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) Paginate(page, limit int, dest any, total *int64) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -573,6 +633,10 @@ func (r *QueryImpl) Paginate(page, limit int, dest any, total *int64) error {
 }
 
 func (r *QueryImpl) Pluck(column string, dest any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query := r.buildConditions()
 
 	return query.instance.Pluck(column, dest).Error
@@ -583,6 +647,10 @@ func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) Save(value any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(value)
 	if err != nil {
 		return err
@@ -646,6 +714,10 @@ func (r *QueryImpl) SaveQuietly(value any) error {
 }
 
 func (r *QueryImpl) Scan(dest any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -686,6 +758,10 @@ func (r *QueryImpl) SharedLock() ormcontract.Query {
 }
 
 func (r *QueryImpl) Sum(column string, dest any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query := r.buildConditions()
 
 	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
@@ -710,6 +786,10 @@ func (r *QueryImpl) ToRawSql() ormcontract.ToSql {
 }
 
 func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error) {
+	if len(r.errors) > 0 {
+		return nil, r.errors[0]
+	}
+
 	query := r.buildConditions()
 
 	if _, ok := column.(string); !ok && len(value) > 0 {
@@ -754,6 +834,10 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 }
 
 func (r *QueryImpl) UpdateOrCreate(dest any, attributes any, values any) error {
+	if len(r.errors) > 0 {
+		return r.errors[0]
+	}
+
 	query, err := r.refreshConnection(dest)
 	if err != nil {
 		return err
@@ -799,57 +883,57 @@ func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Qu
 	if argsLen := len(args); argsLen > 0 && argsLen != 1 {
 		o, ok := args[0].(string)
 		if !ok {
-
+			return r.setError(errors.New("the first argument should be string, it uses as operator"))
 		}
 
 		c, err := cast.ToInt64E(args[1])
 		if err != nil {
-			//error
+			return r.setError(errors.New("the second argument should be int64, it uses as count"))
 		}
 
 		op = o
 		count = c
 	}
 
-	Mschema, err := getModelSchema(r.conditions.model, r.instance)
+	mSchema, err := getModelSchema(r.conditions.model, r.instance)
 	if err != nil {
-		//todo handle error
+		return r.setError(fmt.Errorf("faild to get model schema, the model should be set before using this method. %w", err))
 	}
 
 	modifiedQuery, err := callback(r.new(r.instance))
 	if err != nil {
-		return nil
+		return r.setError(err)
 	}
-	rel, ok := Mschema.Relationships.Relations[relation]
+	rel, ok := mSchema.Relationships.Relations[relation]
 	if !ok {
-
+		r.setError(errors.New("the relation not found"))
 	}
 	relModel := getZeroValueFromReflectType(rel.Field.FieldType)
 
 	var ft string
 	switch rel.Type {
 	case schema.BelongsTo:
-		fk := Mschema.PrioritizedPrimaryField.DBName
+		fk := mSchema.PrioritizedPrimaryField.DBName
 		ft = rel.FieldSchema.Table
-		table := Mschema.Table
+		table := mSchema.Table
 		pk := rel.References[0].ForeignKey.DBName
 		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
 	case schema.HasOne, schema.HasMany:
 		fk := rel.References[0].ForeignKey.DBName
 		ft = rel.FieldSchema.Table
-		table := Mschema.Table
-		pk := Mschema.PrioritizedPrimaryField.DBName
+		table := mSchema.Table
+		pk := mSchema.PrioritizedPrimaryField.DBName
 		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
 	case schema.Many2Many:
 		joinTable := rel.JoinTable.Table
 		fk := rel.References[0].ForeignKey.DBName
 		ft = rel.FieldSchema.Table
-		pk := Mschema.PrioritizedPrimaryField.DBName
+		pk := mSchema.PrioritizedPrimaryField.DBName
 		modifiedQuery = modifiedQuery.
 			Join("inner join " +
 				database.Quote(joinTable) +
 				" on " +
-				database.QuoteConcat(Mschema.Table, pk) +
+				database.QuoteConcat(mSchema.Table, pk) +
 				" = " + database.QuoteConcat(joinTable, fk))
 	}
 	needCountQuery := !((count == 0 && slices.Contains([]string{lt, lte, gt, gte}, op)) || op == "")
@@ -1454,6 +1538,13 @@ func (r *QueryImpl) selectSave(value any) error {
 	}
 
 	return nil
+}
+
+func (r *QueryImpl) setError(err error) *QueryImpl {
+	query := r.new(r.instance)
+	query.errors = append(r.errors, err)
+
+	return query
 }
 
 func (r *QueryImpl) setConditions(conditions Conditions) *QueryImpl {
