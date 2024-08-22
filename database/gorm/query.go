@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"gorm.io/gorm/schema"
 	"reflect"
+	"slices"
 
 	"github.com/google/wire"
 	"github.com/spf13/cast"
@@ -782,15 +783,40 @@ func (r *QueryImpl) Where(query any, args ...any) ormcontract.Query {
 }
 
 func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Query) (ormcontract.Query, error), args ...any) ormcontract.Query {
-	stmt := gormio.Statement{DB: r.instance}
-	err := stmt.Parse(r.conditions.model)
+
+	const (
+		gt  = ">"
+		gte = ">="
+		lte = ">="
+		lt  = "<"
+	)
+
+	var (
+		op    string
+		count int64
+	)
+
+	if argsLen := len(args); argsLen > 0 && argsLen != 1 {
+		o, ok := args[0].(string)
+		if !ok {
+
+		}
+
+		c, err := cast.ToInt64E(args[1])
+		if err != nil {
+			//error
+		}
+
+		op = o
+		count = c
+	}
+
+	Mschema, err := getModelSchema(r.conditions.model, r.instance)
 	if err != nil {
 		//todo handle error
 	}
-	Mschema := stmt.Schema
 
-	relationQuery := r.new(r.instance)
-	modifiedQuery, err := callback(relationQuery)
+	modifiedQuery, err := callback(r.new(r.instance))
 	if err != nil {
 		return nil
 	}
@@ -798,37 +824,43 @@ func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Qu
 	if !ok {
 
 	}
-	var fk, ft, pk, table string
+	relModel := getZeroValueFromReflectType(rel.Field.FieldType)
+
+	var ft string
 	switch rel.Type {
 	case schema.BelongsTo:
-		fk = Mschema.PrioritizedPrimaryField.DBName
+		fk := Mschema.PrioritizedPrimaryField.DBName
 		ft = rel.FieldSchema.Table
-		table = Mschema.Table
-		pk = rel.References[0].ForeignKey.DBName
+		table := Mschema.Table
+		pk := rel.References[0].ForeignKey.DBName
 		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
 	case schema.HasOne, schema.HasMany:
-		fk = rel.References[0].ForeignKey.DBName
+		fk := rel.References[0].ForeignKey.DBName
 		ft = rel.FieldSchema.Table
-		table = Mschema.Table
-		pk = Mschema.PrioritizedPrimaryField.DBName
+		table := Mschema.Table
+		pk := Mschema.PrioritizedPrimaryField.DBName
 		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
 	case schema.Many2Many:
 		joinTable := rel.JoinTable.Table
-		fk = rel.References[0].ForeignKey.DBName
+		fk := rel.References[0].ForeignKey.DBName
 		ft = rel.FieldSchema.Table
-		table = ft
-		pk = Mschema.PrioritizedPrimaryField.DBName
+		pk := Mschema.PrioritizedPrimaryField.DBName
 		modifiedQuery = modifiedQuery.
 			Join("inner join " +
 				database.Quote(joinTable) +
 				" on " +
-				database.QuoteConcat(Mschema.Table, Mschema.PrioritizedPrimaryField.DBName) +
+				database.QuoteConcat(Mschema.Table, pk) +
 				" = " + database.QuoteConcat(joinTable, fk))
 	}
+	needCountQuery := !((count == 0 && slices.Contains([]string{lt, lte, gt, gte}, op)) || op == "")
+	if !needCountQuery {
+		modifiedQueryImpl := modifiedQuery.Model(relModel).(*QueryImpl)
+		return r.Where("EXISTS (?)", modifiedQueryImpl.buildConditions().instance)
+	}
 
-	modifiedQueryImpl := modifiedQuery.
-		Table(table).(*QueryImpl)
-	return r.Where("EXISTS (?)", modifiedQueryImpl.buildConditions().instance)
+	modifiedQueryImpl := modifiedQuery.Model(relModel).Select("count(*)").(*QueryImpl)
+	return r.Where("(?) "+op+" ?", modifiedQueryImpl.buildConditions().instance, count)
+
 }
 
 func (r *QueryImpl) WhereIn(column string, values []any) ormcontract.Query {
