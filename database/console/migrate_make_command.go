@@ -2,10 +2,13 @@ package console
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/database/migration"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -56,14 +59,20 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	// We will attempt to guess the table name if this the migration has
-	// "create" in the name. This will allow us to provide a convenient way
-	// of creating migrations that create new tables for the application.
-	table, create := TableGuesser{}.Guess(name)
+	var migrationDriver contractsmigration.Driver
+	driver := receiver.config.GetString("database.migration.driver")
+
+	switch driver {
+	case contractsmigration.DriverDefault:
+		migrationDriver = migration.NewDefaultDriver()
+	case contractsmigration.DriverSql:
+		migrationDriver = migration.NewSqlDriver(receiver.config)
+	default:
+		return fmt.Errorf("unsupported migration driver: %s", driver)
+	}
 
 	// Write the migration file to disk.
-	migrateCreator := NewMigrateCreator(receiver.config)
-	if err := migrateCreator.Create(name, table, create); err != nil {
+	if err := migrationDriver.Create(name); err != nil {
 		return err
 	}
 
