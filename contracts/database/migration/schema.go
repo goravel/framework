@@ -1,16 +1,16 @@
-package schema
+package migration
 
 type Schema interface {
 	// Create a new table on the schema.
 	//Create(table string, callback func(table Blueprint))
 	// Connection Get the connection for the schema.
-	Connection() Schema
+	Connection(name string) Schema
 	// DropIfExists Drop a table from the schema if exists.
 	//DropIfExists(table string)
 	// Register migrations.
 	Register([]Migration)
 	// Sql Execute a sql directly.
-	Sql(callback func(table Blueprint))
+	Sql(sql string)
 	// Table Modify a table on the schema.
 	//Table(table string, callback func(table Blueprint))
 }

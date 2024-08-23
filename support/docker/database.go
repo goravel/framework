@@ -1,5 +1,9 @@
 package docker
 
+import (
+	"github.com/goravel/framework/contracts/testing"
+)
+
 const (
 	password = "Goravel123"
 	username = "goravel"
@@ -7,11 +11,11 @@ const (
 )
 
 type Database struct {
-	Mysql      *Mysql
-	Mysql1     *Mysql
-	Postgresql *Postgresql
-	Sqlserver  *Sqlserver
-	Sqlite     *Sqlite
+	Mysql      testing.DatabaseDriver
+	Mysql1     testing.DatabaseDriver
+	Postgresql testing.DatabaseDriver
+	Sqlserver  testing.DatabaseDriver
+	Sqlite     testing.DatabaseDriver
 }
 
 func InitDatabase() (*Database, error) {
@@ -25,7 +29,7 @@ func InitDatabase() (*Database, error) {
 		return nil, err
 	}
 
-	postgresqlDocker := NewPostgresql(database, username, password)
+	postgresqlDocker := NewPostgres(database, username, password)
 	if err := postgresqlDocker.Build(); err != nil {
 		return nil, err
 	}

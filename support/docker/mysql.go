@@ -21,7 +21,7 @@ type Mysql struct {
 	port        int
 }
 
-func NewMysql(database, username, password string) *Mysql {
+func NewMysql(database, username, password string) testing.DatabaseDriver {
 	env := []string{
 		"MYSQL_ROOT_PASSWORD=" + password,
 		"MYSQL_DATABASE=" + database,

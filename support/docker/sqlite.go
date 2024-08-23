@@ -16,7 +16,7 @@ type Sqlite struct {
 	image    *testing.Image
 }
 
-func NewSqlite(database string) *Sqlite {
+func NewSqlite(database string) testing.DatabaseDriver {
 	return &Sqlite{
 		database: database,
 	}

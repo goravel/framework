@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -14,11 +15,7 @@ func TestMysqlDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	if err := testDatabaseDocker.Fresh(); err != nil {
-		t.Fatal(err)
-	}
-
-	docker := NewMysqlDocker(testDatabaseDocker)
+	docker := NewMysqlDocker(docker.Mysql1())
 	query, err := docker.New()
 
 	assert.NotNil(t, query)
@@ -30,11 +27,7 @@ func TestPostgresqlDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	if err := testDatabaseDocker.Fresh(); err != nil {
-		t.Fatal(err)
-	}
-
-	docker := NewPostgresqlDocker(testDatabaseDocker)
+	docker := NewPostgresDocker(docker.Postgres1())
 	query, err := docker.New()
 
 	assert.NotNil(t, query)
@@ -46,7 +39,7 @@ func TestSqliteDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewSqliteDocker(dbDatabase)
+	docker := NewSqliteDocker(docker.Sqlite1())
 	db, err := docker.New()
 
 	assert.NotNil(t, db)
@@ -59,11 +52,7 @@ func TestSqlserverDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	if err := testDatabaseDocker.Fresh(); err != nil {
-		t.Fatal(err)
-	}
-
-	docker := NewSqlserverDocker(testDatabaseDocker)
+	docker := NewSqlserverDocker(docker.Sqlserver1())
 	db, err := docker.New()
 
 	assert.NotNil(t, db)

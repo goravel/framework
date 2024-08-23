@@ -21,7 +21,7 @@ type Sqlserver struct {
 	port        int
 }
 
-func NewSqlserver(database, username, password string) *Sqlserver {
+func NewSqlserver(database, username, password string) testing.DatabaseDriver {
 	return &Sqlserver{
 		database: database,
 		host:     "127.0.0.1",

@@ -21,7 +21,7 @@ type Postgresql struct {
 	port        int
 }
 
-func NewPostgresql(database, username, password string) *Postgresql {
+func NewPostgres(database, username, password string) testing.DatabaseDriver {
 	return &Postgresql{
 		database: database,
 		host:     "127.0.0.1",

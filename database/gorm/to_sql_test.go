@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -20,11 +21,7 @@ func TestToSqlTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	if err := testDatabaseDocker.Fresh(); err != nil {
-		t.Fatal(err)
-	}
-
-	mysqlDocker := NewMysqlDocker(testDatabaseDocker)
+	mysqlDocker := NewMysqlDocker(docker.Mysql1())
 	query, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)

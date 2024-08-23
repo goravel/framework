@@ -1,7 +1,6 @@
 package foundation
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -307,16 +306,12 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
-	databaseDocker, err := supportdocker.InitDatabase()
-	if err != nil {
-		log.Fatalf("Init docker error: %s", err)
-	}
-
-	mysqlDocker := gorm.NewMysqlDocker(databaseDocker)
-	_, err = mysqlDocker.New()
+	mysql := supportdocker.Mysql1()
+	mysqlDocker := gorm.NewMysqlDocker(mysql)
+	_, err := mysqlDocker.New()
 	s.Nil(err)
 
-	config := databaseDocker.Mysql.Config()
+	config := mysql.Config()
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
 	mockConfig.On("Get", "database.connections.mysql.read").Return(nil).Once()
@@ -345,8 +340,9 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeOrm())
-	s.Nil(databaseDocker.Stop())
 	mockConfig.AssertExpectations(s.T())
+
+	s.Nil(supportdocker.Stop())
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {

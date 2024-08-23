@@ -12,7 +12,18 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/support/str"
 )
+
+func autoClose(containerID string) {
+	//go func() {
+	//	debug.Dump(containerID)
+	//	//cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("sleep 20 && docker stop %s", containerID))
+	//	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("curl --unix-socket /var/run/docker.sock -X POST http://localhost/containers/%s/stop?t=20", containerID))
+	//	err := cmd.Start()
+	//	color.Red().Println("autoClose", containerID, err)
+	//}()
+}
 
 func getExposedPort(exposedPorts []string, port int) int {
 	for _, exposedPort := range exposedPorts {
@@ -83,5 +94,5 @@ func run(command string) (string, error) {
 		return "", fmt.Errorf("%s: %s", err, stderr.String())
 	}
 
-	return out.String(), nil
+	return str.Of(out.String()).Squish().String(), nil
 }
