@@ -910,24 +910,19 @@ func (r *QueryImpl) WhereHas(relation string, callback func(query ormcontract.Qu
 	}
 	relModel := getZeroValueFromReflectType(rel.Field.FieldType)
 
-	var ft string
+	fk := rel.References[0].ForeignKey.DBName
+	ft := rel.FieldSchema.Table
+	table := mSchema.Table
+
 	switch rel.Type {
 	case schema.BelongsTo:
-		fk := mSchema.PrioritizedPrimaryField.DBName
-		ft = rel.FieldSchema.Table
-		table := mSchema.Table
-		pk := rel.References[0].ForeignKey.DBName
-		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
+		pk := rel.FieldSchema.PrioritizedPrimaryField.DBName
+		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, pk) + " = " + database.QuoteConcat(table, fk))
 	case schema.HasOne, schema.HasMany:
-		fk := rel.References[0].ForeignKey.DBName
-		ft = rel.FieldSchema.Table
-		table := mSchema.Table
 		pk := mSchema.PrioritizedPrimaryField.DBName
 		modifiedQuery = modifiedQuery.Where(database.QuoteConcat(ft, fk) + " = " + database.QuoteConcat(table, pk))
 	case schema.Many2Many:
 		joinTable := rel.JoinTable.Table
-		fk := rel.References[0].ForeignKey.DBName
-		ft = rel.FieldSchema.Table
 		pk := mSchema.PrioritizedPrimaryField.DBName
 		modifiedQuery = modifiedQuery.
 			Join("inner join " +
