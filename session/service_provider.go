@@ -45,13 +45,10 @@ func startGcTimer(driver session.Driver) {
 	ticker := time.NewTicker(time.Duration(ConfigFacade.GetInt("session.gc_interval")) * time.Second)
 
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				lifetime := ConfigFacade.GetInt("session.lifetime") * 60
-				if err := driver.Gc(lifetime); err != nil {
-					color.Red().Printf("Error performing garbage collection: %s\n", err)
-				}
+		for range ticker.C {
+			lifetime := ConfigFacade.GetInt("session.lifetime") * 60
+			if err := driver.Gc(lifetime); err != nil {
+				color.Red().Printf("Error performing garbage collection: %s\n", err)
 			}
 		}
 	}()
