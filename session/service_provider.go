@@ -42,7 +42,7 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 
 // startGcTimer starts a garbage collection timer for the session driver.
 func startGcTimer(driver session.Driver) {
-	interval := ConfigFacade.GetInt("session.gc_interval")
+	interval := ConfigFacade.GetInt("session.gc_interval", 30)
 	if interval <= 0 {
 		// No need to start the timer if the interval is zero or negative
 		return
