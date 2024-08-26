@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
@@ -44,7 +43,6 @@ func TestQueryTestSuite(t *testing.T) {
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
 	mysqls := supportdocker.Mysqls(2)
-	require.Len(t, mysqls, 2)
 
 	mysqlDocker := NewMysqlDocker(mysqls[0])
 	mysqlQuery, err := mysqlDocker.New()

@@ -62,7 +62,8 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 		drivers = containers[containerType]
 	}
 
-	for i := 0; i < num-len(drivers); i++ {
+	surplus := num - len(drivers)
+	for i := 0; i < surplus; i++ {
 		var db testing.DatabaseDriver
 
 		switch containerType {

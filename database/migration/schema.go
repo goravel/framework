@@ -31,5 +31,5 @@ func (r *Schema) Register(migrations []migration.Migration) {
 
 func (r *Schema) Sql(sql string) {
 	// TODO catch error and rollback
-	r.orm.Connection(r.connection).Query().Exec(sql)
+	_, _ = r.orm.Connection(r.connection).Query().Exec(sql)
 }
