@@ -21,7 +21,7 @@ type PostgresImpl struct {
 	port        int
 }
 
-func NewPostgres(database, username, password string) *PostgresImpl {
+func NewPostgresImpl(database, username, password string) *PostgresImpl {
 	return &PostgresImpl{
 		database: database,
 		host:     "127.0.0.1",

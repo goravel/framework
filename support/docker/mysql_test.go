@@ -28,7 +28,7 @@ func TestMysqlTestSuite(t *testing.T) {
 
 func (s *MysqlTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.mysql = NewMysql("goravel", "goravel", "goravel")
+	s.mysql = NewMysqlImpl("goravel", "goravel", "goravel")
 }
 
 func (s *MysqlTestSuite) TestBuild() {

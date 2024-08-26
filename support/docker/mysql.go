@@ -21,7 +21,7 @@ type MysqlImpl struct {
 	port        int
 }
 
-func NewMysql(database, username, password string) *MysqlImpl {
+func NewMysqlImpl(database, username, password string) *MysqlImpl {
 	env := []string{
 		"MYSQL_ROOT_PASSWORD=" + password,
 		"MYSQL_DATABASE=" + database,

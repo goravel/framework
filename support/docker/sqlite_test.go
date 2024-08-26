@@ -27,7 +27,7 @@ func TestSqliteTestSuite(t *testing.T) {
 
 func (s *SqliteTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.sqlite = NewSqlite("goravel")
+	s.sqlite = NewSqliteImpl("goravel")
 }
 
 func (s *SqliteTestSuite) TestBuild() {

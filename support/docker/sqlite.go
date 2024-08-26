@@ -16,7 +16,7 @@ type SqliteImpl struct {
 	image    *testing.Image
 }
 
-func NewSqlite(database string) *SqliteImpl {
+func NewSqliteImpl(database string) *SqliteImpl {
 	return &SqliteImpl{
 		database: database,
 	}

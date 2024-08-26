@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"fmt"
+
 	"github.com/goravel/framework/contracts/testing"
 )
 
@@ -65,13 +67,13 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 
 		switch containerType {
 		case ContainerTypeMysql:
-			db = NewMysql(database, username, password)
+			db = NewMysqlImpl(database, username, password)
 		case ContainerTypePostgres:
-			db = NewPostgres(database, username, password)
+			db = NewPostgresImpl(database, username, password)
 		case ContainerTypeSqlserver:
-			db = NewSqlserver(database, username, password)
+			db = NewSqlserverImpl(database, username, password)
 		case ContainerTypeSqlite:
-			db = NewSqlite(database)
+			db = NewSqliteImpl(fmt.Sprintf("%s%d", database, i))
 		}
 
 		if err := db.Build(); err != nil {

@@ -59,7 +59,7 @@ func TestNewDatabase(t *testing.T) {
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "mysql",
-					driver:         supportdocker.NewMysql(database, username, password),
+					driver:         supportdocker.NewMysqlImpl(database, username, password),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -78,7 +78,7 @@ func TestNewDatabase(t *testing.T) {
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "mysql",
-					driver:         supportdocker.NewMysql(database, username, password),
+					driver:         supportdocker.NewMysqlImpl(database, username, password),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -97,7 +97,7 @@ func TestNewDatabase(t *testing.T) {
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "postgresql",
-					driver:         supportdocker.NewPostgres(database, username, password),
+					driver:         supportdocker.NewPostgresImpl(database, username, password),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -116,7 +116,7 @@ func TestNewDatabase(t *testing.T) {
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "sqlserver",
-					driver:         supportdocker.NewSqlserver(database, username, password),
+					driver:         supportdocker.NewSqlserverImpl(database, username, password),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -135,7 +135,7 @@ func TestNewDatabase(t *testing.T) {
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "sqlite",
-					driver:         supportdocker.NewSqlite(database),
+					driver:         supportdocker.NewSqliteImpl(database),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -196,7 +196,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 		app:            s.mockApp,
 		config:         s.mockConfig,
 		connection:     "mysql",
-		driver:         supportdocker.NewMysql(database, username, password),
+		driver:         supportdocker.NewMysqlImpl(database, username, password),
 		gormInitialize: s.mockGormInitialize,
 	}
 }

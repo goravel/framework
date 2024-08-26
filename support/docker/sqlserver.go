@@ -21,7 +21,7 @@ type SqlserverImpl struct {
 	port        int
 }
 
-func NewSqlserver(database, username, password string) *SqlserverImpl {
+func NewSqlserverImpl(database, username, password string) *SqlserverImpl {
 	return &SqlserverImpl{
 		database: database,
 		host:     "127.0.0.1",
