@@ -15,7 +15,7 @@ import (
 type MysqlTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
-	mysql      *Mysql
+	mysql      *MysqlImpl
 }
 
 func TestMysqlTestSuite(t *testing.T) {

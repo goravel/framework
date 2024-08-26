@@ -14,7 +14,7 @@ import (
 type SqlserverTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
-	sqlserver  *Sqlserver
+	sqlserver  *SqlserverImpl
 }
 
 func TestSqlserverTestSuite(t *testing.T) {

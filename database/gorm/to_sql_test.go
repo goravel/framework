@@ -21,7 +21,7 @@ func TestToSqlTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker(docker.Mysql1())
+	mysqlDocker := NewMysqlDocker(docker.Mysql())
 	query, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)

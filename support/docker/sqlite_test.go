@@ -14,7 +14,7 @@ import (
 type SqliteTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
-	sqlite     *Sqlite
+	sqlite     *SqliteImpl
 }
 
 func TestSqliteTestSuite(t *testing.T) {

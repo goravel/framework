@@ -49,25 +49,25 @@ func TestOrmSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql1())
+	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql())
 	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql docker error: %v", err)
 	}
 
-	postgresqlDocker := gorm.NewPostgresDocker(docker.Postgres1())
+	postgresqlDocker := gorm.NewPostgresDocker(docker.Postgres())
 	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql docker error: %v", err)
 	}
 
-	sqliteDocker := gorm.NewSqliteDocker(docker.Sqlite1())
+	sqliteDocker := gorm.NewSqliteDocker(docker.Sqlite())
 	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlite error: %s", err)
 	}
 
-	sqlserverDocker := gorm.NewSqlserverDocker(docker.Sqlserver1())
+	sqlserverDocker := gorm.NewSqlserverDocker(docker.Sqlserver())
 	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlserver docker error: %v", err)

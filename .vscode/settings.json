@@ -1,0 +1,14 @@
+{
+    "cSpell.words": [
+        "configmocks",
+        "contractstesting",
+        "goravel",
+        "Mysqls",
+        "postgreses",
+        "Sqlites",
+        "Sqlserver",
+        "Sqlservers",
+        "supportdocker"
+    ],
+    "go.testFlags": []
+}

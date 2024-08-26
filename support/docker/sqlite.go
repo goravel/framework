@@ -11,18 +11,18 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-type Sqlite struct {
+type SqliteImpl struct {
 	database string
 	image    *testing.Image
 }
 
-func NewSqlite(database string) testing.DatabaseDriver {
-	return &Sqlite{
+func NewSqlite(database string) *SqliteImpl {
+	return &SqliteImpl{
 		database: database,
 	}
 }
 
-func (receiver *Sqlite) Build() error {
+func (receiver *SqliteImpl) Build() error {
 	if _, err := receiver.connect(); err != nil {
 		return fmt.Errorf("connect Sqlite error: %v", err)
 	}
@@ -30,13 +30,13 @@ func (receiver *Sqlite) Build() error {
 	return nil
 }
 
-func (receiver *Sqlite) Config() testing.DatabaseConfig {
+func (receiver *SqliteImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
 		Database: receiver.database,
 	}
 }
 
-func (receiver *Sqlite) Fresh() error {
+func (receiver *SqliteImpl) Fresh() error {
 	if err := receiver.Stop(); err != nil {
 		return err
 	}
@@ -48,15 +48,15 @@ func (receiver *Sqlite) Fresh() error {
 	return nil
 }
 
-func (receiver *Sqlite) Image(image testing.Image) {
+func (receiver *SqliteImpl) Image(image testing.Image) {
 	receiver.image = &image
 }
 
-func (receiver *Sqlite) Name() orm.Driver {
+func (receiver *SqliteImpl) Name() orm.Driver {
 	return orm.DriverSqlite
 }
 
-func (receiver *Sqlite) Stop() error {
+func (receiver *SqliteImpl) Stop() error {
 	if err := file.Remove(receiver.database); err != nil {
 		return fmt.Errorf("stop Sqlite error: %v", err)
 	}
@@ -64,6 +64,6 @@ func (receiver *Sqlite) Stop() error {
 	return nil
 }
 
-func (receiver *Sqlite) connect() (*gormio.DB, error) {
+func (receiver *SqliteImpl) connect() (*gormio.DB, error) {
 	return gormio.Open(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", receiver.database)))
 }

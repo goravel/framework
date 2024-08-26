@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 )
 
-type Sqlserver struct {
+type SqlserverImpl struct {
 	containerID string
 	database    string
 	host        string
@@ -21,8 +21,8 @@ type Sqlserver struct {
 	port        int
 }
 
-func NewSqlserver(database, username, password string) testing.DatabaseDriver {
-	return &Sqlserver{
+func NewSqlserver(database, username, password string) *SqlserverImpl {
+	return &SqlserverImpl{
 		database: database,
 		host:     "127.0.0.1",
 		username: username,
@@ -42,7 +42,7 @@ func NewSqlserver(database, username, password string) testing.DatabaseDriver {
 	}
 }
 
-func (receiver *Sqlserver) Build() error {
+func (receiver *SqlserverImpl) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
 	containerID, err := run(command)
 	if err != nil {
@@ -62,7 +62,7 @@ func (receiver *Sqlserver) Build() error {
 	return nil
 }
 
-func (receiver *Sqlserver) Config() testing.DatabaseConfig {
+func (receiver *SqlserverImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
 		Host:     receiver.host,
 		Port:     receiver.port,
@@ -72,7 +72,7 @@ func (receiver *Sqlserver) Config() testing.DatabaseConfig {
 	}
 }
 
-func (receiver *Sqlserver) Fresh() error {
+func (receiver *SqlserverImpl) Fresh() error {
 	instance, err := receiver.connect()
 	if err != nil {
 		return fmt.Errorf("connect Sqlserver error when clearing: %v", err)
@@ -99,15 +99,15 @@ func (receiver *Sqlserver) Fresh() error {
 	return nil
 }
 
-func (receiver *Sqlserver) Image(image testing.Image) {
+func (receiver *SqlserverImpl) Image(image testing.Image) {
 	receiver.image = &image
 }
 
-func (receiver *Sqlserver) Name() orm.Driver {
+func (receiver *SqlserverImpl) Name() orm.Driver {
 	return orm.DriverSqlserver
 }
 
-func (receiver *Sqlserver) Stop() error {
+func (receiver *SqlserverImpl) Stop() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Sqlserver error: %v", err)
 	}
@@ -115,7 +115,7 @@ func (receiver *Sqlserver) Stop() error {
 	return nil
 }
 
-func (receiver *Sqlserver) connect() (*gormio.DB, error) {
+func (receiver *SqlserverImpl) connect() (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error

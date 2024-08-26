@@ -7,6 +7,10 @@ import (
 type ContainerType string
 
 const (
+	password = "Goravel123"
+	username = "goravel"
+	database = "goravel"
+
 	ContainerTypeMysql     ContainerType = "mysql"
 	ContainerTypePostgres  ContainerType = "postgres"
 	ContainerTypeSqlite    ContainerType = "sqlite"
@@ -16,23 +20,39 @@ const (
 
 var containers = make(map[ContainerType][]testing.DatabaseDriver)
 
-func Mysql1() testing.DatabaseDriver {
-	return Database1(ContainerTypeMysql, 1)[0]
+func Mysql() testing.DatabaseDriver {
+	return Mysqls(1)[0]
 }
 
-func Postgres1() testing.DatabaseDriver {
-	return Database1(ContainerTypePostgres, 1)[0]
+func Mysqls(num int) []testing.DatabaseDriver {
+	return Database(ContainerTypeMysql, num)
 }
 
-func Sqlserver1() testing.DatabaseDriver {
-	return Database1(ContainerTypeSqlserver, 1)[0]
+func Postgres() testing.DatabaseDriver {
+	return Postgreses(1)[0]
 }
 
-func Sqlite1() testing.DatabaseDriver {
-	return Database1(ContainerTypeSqlite, 1)[0]
+func Postgreses(num int) []testing.DatabaseDriver {
+	return Database(ContainerTypePostgres, num)
 }
 
-func Database1(containerType ContainerType, num int) []testing.DatabaseDriver {
+func Sqlserver() testing.DatabaseDriver {
+	return Sqlservers(1)[0]
+}
+
+func Sqlservers(num int) []testing.DatabaseDriver {
+	return Database(ContainerTypeSqlserver, num)
+}
+
+func Sqlite() testing.DatabaseDriver {
+	return Sqlites(1)[0]
+}
+
+func Sqlites(num int) []testing.DatabaseDriver {
+	return Database(ContainerTypeSqlite, num)
+}
+
+func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 	var drivers []testing.DatabaseDriver
 	if len(containers[containerType]) >= num {
 		drivers = containers[containerType][:num]

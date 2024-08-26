@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 )
 
-type Mysql struct {
+type MysqlImpl struct {
 	containerID string
 	database    string
 	host        string
@@ -21,7 +21,7 @@ type Mysql struct {
 	port        int
 }
 
-func NewMysql(database, username, password string) testing.DatabaseDriver {
+func NewMysql(database, username, password string) *MysqlImpl {
 	env := []string{
 		"MYSQL_ROOT_PASSWORD=" + password,
 		"MYSQL_DATABASE=" + database,
@@ -31,7 +31,7 @@ func NewMysql(database, username, password string) testing.DatabaseDriver {
 		env = append(env, "MYSQL_PASSWORD="+password)
 	}
 
-	return &Mysql{
+	return &MysqlImpl{
 		database: database,
 		host:     "127.0.0.1",
 		username: username,
@@ -45,7 +45,7 @@ func NewMysql(database, username, password string) testing.DatabaseDriver {
 	}
 }
 
-func (receiver *Mysql) Build() error {
+func (receiver *MysqlImpl) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
 	containerID, err := run(command)
 	if err != nil {
@@ -65,7 +65,7 @@ func (receiver *Mysql) Build() error {
 	return nil
 }
 
-func (receiver *Mysql) Config() testing.DatabaseConfig {
+func (receiver *MysqlImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
 		Host:     receiver.host,
 		Port:     receiver.port,
@@ -75,7 +75,7 @@ func (receiver *Mysql) Config() testing.DatabaseConfig {
 	}
 }
 
-func (receiver *Mysql) Fresh() error {
+func (receiver *MysqlImpl) Fresh() error {
 	instance, err := receiver.connect()
 	if err != nil {
 		return fmt.Errorf("connect Mysql error when clearing: %v", err)
@@ -102,15 +102,15 @@ func (receiver *Mysql) Fresh() error {
 	return nil
 }
 
-func (receiver *Mysql) Image(image testing.Image) {
+func (receiver *MysqlImpl) Image(image testing.Image) {
 	receiver.image = &image
 }
 
-func (receiver *Mysql) Name() orm.Driver {
+func (receiver *MysqlImpl) Name() orm.Driver {
 	return orm.DriverMysql
 }
 
-func (receiver *Mysql) Stop() error {
+func (receiver *MysqlImpl) Stop() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Mysql error: %v", err)
 	}
@@ -118,7 +118,7 @@ func (receiver *Mysql) Stop() error {
 	return nil
 }
 
-func (receiver *Mysql) connect() (*gormio.DB, error) {
+func (receiver *MysqlImpl) connect() (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error

@@ -15,16 +15,6 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-func autoClose(containerID string) {
-	//go func() {
-	//	debug.Dump(containerID)
-	//	//cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("sleep 20 && docker stop %s", containerID))
-	//	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("curl --unix-socket /var/run/docker.sock -X POST http://localhost/containers/%s/stop?t=20", containerID))
-	//	err := cmd.Start()
-	//	color.Red().Println("autoClose", containerID, err)
-	//}()
-}
-
 func getExposedPort(exposedPorts []string, port int) int {
 	for _, exposedPort := range exposedPorts {
 		if !strings.Contains(exposedPort, cast.ToString(port)) {

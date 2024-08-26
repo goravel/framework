@@ -14,7 +14,7 @@ import (
 type PostgresqlTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
-	postgresql *Postgresql
+	postgresql *PostgresImpl
 }
 
 func TestPostgresqlTestSuite(t *testing.T) {

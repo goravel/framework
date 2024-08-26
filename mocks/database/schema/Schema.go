@@ -3,7 +3,7 @@
 package schema
 
 import (
-	schema "github.com/goravel/framework/contracts/database/schema"
+	migration "github.com/goravel/framework/contracts/database/migration"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,19 +21,19 @@ func (_m *Schema) EXPECT() *Schema_Expecter {
 }
 
 // Connection provides a mock function with given fields:
-func (_m *Schema) Connection() schema.Schema {
+func (_m *Schema) Connection() migration.Schema {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Connection")
 	}
 
-	var r0 schema.Schema
-	if rf, ok := ret.Get(0).(func() schema.Schema); ok {
+	var r0 migration.Schema
+	if rf, ok := ret.Get(0).(func() migration.Schema); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.Schema)
+			r0 = ret.Get(0).(migration.Schema)
 		}
 	}
 
@@ -57,18 +57,18 @@ func (_c *Schema_Connection_Call) Run(run func()) *Schema_Connection_Call {
 	return _c
 }
 
-func (_c *Schema_Connection_Call) Return(_a0 schema.Schema) *Schema_Connection_Call {
+func (_c *Schema_Connection_Call) Return(_a0 migration.Schema) *Schema_Connection_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_Connection_Call) RunAndReturn(run func() schema.Schema) *Schema_Connection_Call {
+func (_c *Schema_Connection_Call) RunAndReturn(run func() migration.Schema) *Schema_Connection_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Register provides a mock function with given fields: _a0
-func (_m *Schema) Register(_a0 []schema.Migration) {
+func (_m *Schema) Register(_a0 []migration.Migration) {
 	_m.Called(_a0)
 }
 
@@ -78,14 +78,14 @@ type Schema_Register_Call struct {
 }
 
 // Register is a helper method to define mock.On call
-//   - _a0 []schema.Migration
+//   - _a0 []migration.Migration
 func (_e *Schema_Expecter) Register(_a0 interface{}) *Schema_Register_Call {
 	return &Schema_Register_Call{Call: _e.mock.On("Register", _a0)}
 }
 
-func (_c *Schema_Register_Call) Run(run func(_a0 []schema.Migration)) *Schema_Register_Call {
+func (_c *Schema_Register_Call) Run(run func(_a0 []migration.Migration)) *Schema_Register_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]schema.Migration))
+		run(args[0].([]migration.Migration))
 	})
 	return _c
 }
@@ -95,13 +95,13 @@ func (_c *Schema_Register_Call) Return() *Schema_Register_Call {
 	return _c
 }
 
-func (_c *Schema_Register_Call) RunAndReturn(run func([]schema.Migration)) *Schema_Register_Call {
+func (_c *Schema_Register_Call) RunAndReturn(run func([]migration.Migration)) *Schema_Register_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Sql provides a mock function with given fields: callback
-func (_m *Schema) Sql(callback func(schema.Blueprint)) {
+func (_m *Schema) Sql(callback func(migration.Blueprint)) {
 	_m.Called(callback)
 }
 
@@ -111,14 +111,14 @@ type Schema_Sql_Call struct {
 }
 
 // Sql is a helper method to define mock.On call
-//   - callback func(schema.Blueprint)
+//   - callback func(migration.Blueprint)
 func (_e *Schema_Expecter) Sql(callback interface{}) *Schema_Sql_Call {
 	return &Schema_Sql_Call{Call: _e.mock.On("Sql", callback)}
 }
 
-func (_c *Schema_Sql_Call) Run(run func(callback func(schema.Blueprint))) *Schema_Sql_Call {
+func (_c *Schema_Sql_Call) Run(run func(callback func(migration.Blueprint))) *Schema_Sql_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(schema.Blueprint)))
+		run(args[0].(func(migration.Blueprint)))
 	})
 	return _c
 }
@@ -128,12 +128,12 @@ func (_c *Schema_Sql_Call) Return() *Schema_Sql_Call {
 	return _c
 }
 
-func (_c *Schema_Sql_Call) RunAndReturn(run func(func(schema.Blueprint))) *Schema_Sql_Call {
+func (_c *Schema_Sql_Call) RunAndReturn(run func(func(migration.Blueprint))) *Schema_Sql_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// NewSchema creates a new instance of Schema. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewSchema creates a new instance of migration. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewSchema(t interface {
 	mock.TestingT

@@ -10,14 +10,15 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
-	configmocks "github.com/goravel/framework/mocks/config"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -25,9 +26,8 @@ import (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries          map[ormcontract.Driver]ormcontract.Query
+	queries          map[contractsorm.Driver]contractsorm.Query
 	mysqlDocker      *MysqlDocker
-	mysqlDocker1     *MysqlDocker
 	mysql1           contractstesting.DatabaseDriver
 	postgres         contractstesting.DatabaseDriver
 	postgresqlDocker *PostgresqlDocker
@@ -43,47 +43,42 @@ func TestQueryTestSuite(t *testing.T) {
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	mysqlDocker := NewMysqlDocker(supportdocker.Mysql1())
+	mysqls := supportdocker.Mysqls(2)
+	require.Len(t, mysqls, 2)
+
+	mysqlDocker := NewMysqlDocker(mysqls[0])
 	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	mysql1 := supportdocker.Mysql1()
-	mysqlDocker1 := NewMysqlDocker(mysql1)
-	_, err = mysqlDocker1.New()
-	if err != nil {
-		log.Fatalf("Init mysql1 error: %s", err)
-	}
-
-	postgresqlDocker := NewPostgresDocker(supportdocker.Postgres1())
+	postgresqlDocker := NewPostgresDocker(supportdocker.Postgres())
 	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
 
-	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite1())
+	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
 	sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver1())
+	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver())
 	sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
 	suite.Run(t, &QueryTestSuite{
-		queries: map[ormcontract.Driver]ormcontract.Query{
-			ormcontract.DriverMysql:      mysqlQuery,
-			ormcontract.DriverPostgresql: postgresqlQuery,
-			ormcontract.DriverSqlite:     sqliteQuery,
-			ormcontract.DriverSqlserver:  sqlserverQuery,
+		queries: map[contractsorm.Driver]contractsorm.Query{
+			contractsorm.DriverMysql:      mysqlQuery,
+			contractsorm.DriverPostgresql: postgresqlQuery,
+			contractsorm.DriverSqlite:     sqliteQuery,
+			contractsorm.DriverSqlserver:  sqlserverQuery,
 		},
 		mysqlDocker:      mysqlDocker,
-		mysqlDocker1:     mysqlDocker1,
-		mysql1:           mysql1,
+		mysql1:           mysqls[1],
 		postgresqlDocker: postgresqlDocker,
 		sqliteDocker:     sqliteDocker,
 		sqlserverDocker:  sqlserverDocker,
@@ -544,7 +539,7 @@ func (s *QueryTestSuite) TestDBRaw() {
 			s.Nil(query.Create(&user))
 			s.True(user.ID > 0)
 			switch driver {
-			case ormcontract.DriverSqlserver, ormcontract.DriverMysql:
+			case contractsorm.DriverSqlserver, contractsorm.DriverMysql:
 				res, err := query.Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver.String()))
 				s.Nil(err)
 				s.Equal(int64(1), res.RowsAffected)
@@ -1684,7 +1679,7 @@ func (s *QueryTestSuite) TestJoin() {
 
 func (s *QueryTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
-		if driver != ormcontract.DriverSqlite {
+		if driver != contractsorm.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "lock_for_update_user"}
 				s.Nil(query.Create(&user))
@@ -2090,7 +2085,7 @@ func (s *QueryTestSuite) TestLoad() {
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.Nil(query.Load(&user1, "Books", func(query ormcontract.Query) ormcontract.Query {
+					s.Nil(query.Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
 						return query.Where("name = ?", "load_book0")
 					}))
 					s.True(user1.ID > 0)
@@ -2286,7 +2281,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			test.setup()
-			queryImpl := s.queries[ormcontract.DriverMysql].(*QueryImpl)
+			queryImpl := s.queries[contractsorm.DriverMysql].(*QueryImpl)
 			query, err := queryImpl.refreshConnection(test.model)
 			if test.expectErr != "" {
 				s.EqualError(err, test.expectErr)
@@ -2415,7 +2410,7 @@ func (s *QueryTestSuite) TestSelect() {
 
 func (s *QueryTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
-		if driver != ormcontract.DriverSqlite {
+		if driver != contractsorm.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "shared_lock_user"}
 				s.Nil(query.Create(&user))
@@ -2497,9 +2492,9 @@ func (s *QueryTestSuite) TestToSql() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			switch driver {
-			case ormcontract.DriverPostgresql:
+			case contractsorm.DriverPostgresql:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
-			case ormcontract.DriverSqlserver:
+			case contractsorm.DriverSqlserver:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Where("id", 1).ToSql().Find(User{}))
@@ -2512,9 +2507,9 @@ func (s *QueryTestSuite) TestToRawSql() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			switch driver {
-			case ormcontract.DriverPostgresql:
+			case contractsorm.DriverPostgresql:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
-			case ormcontract.DriverSqlserver:
+			case contractsorm.DriverSqlserver:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
@@ -3015,7 +3010,7 @@ func (s *QueryTestSuite) TestWith() {
 					description: "with func conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", func(query ormcontract.Query) ormcontract.Query {
+						s.Nil(query.With("Books", func(query contractsorm.Query) contractsorm.Query {
 							return query.Where("name = ?", "with_book0")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
@@ -3065,15 +3060,15 @@ func (s *QueryTestSuite) TestWithNesting() {
 	}
 }
 
-func (s *QueryTestSuite) mockDummyConnection(driver ormcontract.Driver) {
+func (s *QueryTestSuite) mockDummyConnection(driver contractsorm.Driver) {
 	switch driver {
-	case ormcontract.DriverMysql:
+	case contractsorm.DriverMysql:
 		mockDummyConnection(s.mysqlDocker.MockConfig, s.mysql1.Config())
-	case ormcontract.DriverPostgresql:
+	case contractsorm.DriverPostgresql:
 		mockDummyConnection(s.postgresqlDocker.MockConfig, s.mysql1.Config())
-	case ormcontract.DriverSqlite:
+	case contractsorm.DriverSqlite:
 		mockDummyConnection(s.sqliteDocker.MockConfig, s.mysql1.Config())
-	case ormcontract.DriverSqlserver:
+	case contractsorm.DriverSqlserver:
 		mockDummyConnection(s.sqlserverDocker.MockConfig, s.mysql1.Config())
 	}
 }
@@ -3083,14 +3078,14 @@ func TestCustomConnection(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysql := supportdocker.Mysql1()
+	mysql := supportdocker.Mysql()
 	mysqlDocker := NewMysqlDocker(mysql)
 	query, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgres := supportdocker.Postgres1()
+	postgres := supportdocker.Postgres()
 	postgresqlDocker := NewPostgresDocker(postgres)
 	_, err = postgresqlDocker.New()
 	if err != nil {
@@ -3234,17 +3229,17 @@ func TestObserver(t *testing.T) {
 }
 
 func TestObserverEvent(t *testing.T) {
-	assert.EqualError(t, observerEvent(ormcontract.EventRetrieved, &UserObserver{})(nil), "retrieved")
-	assert.EqualError(t, observerEvent(ormcontract.EventCreating, &UserObserver{})(nil), "creating")
-	assert.EqualError(t, observerEvent(ormcontract.EventCreated, &UserObserver{})(nil), "created")
-	assert.EqualError(t, observerEvent(ormcontract.EventUpdating, &UserObserver{})(nil), "updating")
-	assert.EqualError(t, observerEvent(ormcontract.EventUpdated, &UserObserver{})(nil), "updated")
-	assert.EqualError(t, observerEvent(ormcontract.EventSaving, &UserObserver{})(nil), "saving")
-	assert.EqualError(t, observerEvent(ormcontract.EventSaved, &UserObserver{})(nil), "saved")
-	assert.EqualError(t, observerEvent(ormcontract.EventDeleting, &UserObserver{})(nil), "deleting")
-	assert.EqualError(t, observerEvent(ormcontract.EventDeleted, &UserObserver{})(nil), "deleted")
-	assert.EqualError(t, observerEvent(ormcontract.EventForceDeleting, &UserObserver{})(nil), "forceDeleting")
-	assert.EqualError(t, observerEvent(ormcontract.EventForceDeleted, &UserObserver{})(nil), "forceDeleted")
+	assert.EqualError(t, observerEvent(contractsorm.EventRetrieved, &UserObserver{})(nil), "retrieved")
+	assert.EqualError(t, observerEvent(contractsorm.EventCreating, &UserObserver{})(nil), "creating")
+	assert.EqualError(t, observerEvent(contractsorm.EventCreated, &UserObserver{})(nil), "created")
+	assert.EqualError(t, observerEvent(contractsorm.EventUpdating, &UserObserver{})(nil), "updating")
+	assert.EqualError(t, observerEvent(contractsorm.EventUpdated, &UserObserver{})(nil), "updated")
+	assert.EqualError(t, observerEvent(contractsorm.EventSaving, &UserObserver{})(nil), "saving")
+	assert.EqualError(t, observerEvent(contractsorm.EventSaved, &UserObserver{})(nil), "saved")
+	assert.EqualError(t, observerEvent(contractsorm.EventDeleting, &UserObserver{})(nil), "deleting")
+	assert.EqualError(t, observerEvent(contractsorm.EventDeleted, &UserObserver{})(nil), "deleted")
+	assert.EqualError(t, observerEvent(contractsorm.EventForceDeleting, &UserObserver{})(nil), "forceDeleting")
+	assert.EqualError(t, observerEvent(contractsorm.EventForceDeleted, &UserObserver{})(nil), "forceDeleted")
 	assert.Nil(t, observerEvent("error", &UserObserver{}))
 }
 
@@ -3253,13 +3248,14 @@ func TestReadWriteSeparate(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	readMysqlDocker := NewMysqlDocker(supportdocker.Mysql1())
+	mysqls := supportdocker.Mysqls(2)
+	readMysqlDocker := NewMysqlDocker(mysqls[0])
 	readMysqlQuery, err := readMysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get read mysql error: %s", err)
 	}
 
-	writeMysqlDocker := NewMysqlDocker(supportdocker.Mysql1())
+	writeMysqlDocker := NewMysqlDocker(mysqls[1])
 	writeMysqlQuery, err := writeMysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get write mysql error: %s", err)
@@ -3271,13 +3267,14 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get mysql gorm error: %s", err)
 	}
 
-	readPostgresqlDocker := NewPostgresDocker(supportdocker.Postgres1())
+	postgreses := supportdocker.Postgreses(2)
+	readPostgresqlDocker := NewPostgresDocker(postgreses[0])
 	readPostgresqlQuery, err := readPostgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get read postgresql error: %s", err)
 	}
 
-	writePostgresqlDocker := NewPostgresDocker(supportdocker.Postgres1())
+	writePostgresqlDocker := NewPostgresDocker(postgreses[1])
 	writePostgresqlQuery, err := writePostgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get write postgresql error: %s", err)
@@ -3289,13 +3286,14 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get postgresql gorm error: %s", err)
 	}
 
-	readSqliteDocker := NewSqliteDocker(supportdocker.Sqlite1())
+	sqlites := supportdocker.Sqlites(2)
+	readSqliteDocker := NewSqliteDocker(sqlites[0])
 	readSqliteQuery, err := readSqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get read sqlite error: %s", err)
 	}
 
-	writeSqliteDocker := NewSqliteDocker(supportdocker.Sqlite1())
+	writeSqliteDocker := NewSqliteDocker(sqlites[1])
 	writeSqliteQuery, err := writeSqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get write sqlite error: %s", err)
@@ -3307,13 +3305,14 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlite gorm error: %s", err)
 	}
 
-	readSqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver1())
+	sqlservers := supportdocker.Sqlservers(2)
+	readSqlserverDocker := NewSqlserverDocker(sqlservers[0])
 	readSqlserverQuery, err := readSqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get read sqlserver error: %s", err)
 	}
 
-	writeSqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver1())
+	writeSqlserverDocker := NewSqlserverDocker(sqlservers[1])
 	writeSqlserverQuery, err := writeSqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get write sqlserver error: %s", err)
@@ -3324,23 +3323,23 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlserver gorm error: %s", err)
 	}
 
-	dbs := map[ormcontract.Driver]map[string]ormcontract.Query{
-		ormcontract.DriverMysql: {
+	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
+		contractsorm.DriverMysql: {
 			"mix":   mysqlQuery,
 			"read":  readMysqlQuery,
 			"write": writeMysqlQuery,
 		},
-		ormcontract.DriverPostgresql: {
+		contractsorm.DriverPostgresql: {
 			"mix":   postgresqlQuery,
 			"read":  readPostgresqlQuery,
 			"write": writePostgresqlQuery,
 		},
-		ormcontract.DriverSqlite: {
+		contractsorm.DriverSqlite: {
 			"mix":   sqliteDB,
 			"read":  readSqliteQuery,
 			"write": writeSqliteQuery,
 		},
-		ormcontract.DriverSqlserver: {
+		contractsorm.DriverSqlserver: {
 			"mix":   sqlserverDB,
 			"read":  readSqlserverQuery,
 			"write": writeSqlserverQuery,
@@ -3375,35 +3374,35 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker(supportdocker.Mysql1())
+	mysqlDocker := NewMysqlDocker(supportdocker.Mysql())
 	mysqlQuery, err := mysqlDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresDocker(supportdocker.Postgres1())
+	postgresqlDocker := NewPostgresDocker(supportdocker.Postgres())
 	postgresqlQuery, err := postgresqlDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
 	}
 
-	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite1())
+	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
 	sqliteDB, err := sqliteDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlite error: %s", err)
 	}
 
-	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver1())
+	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver())
 	sqlserverDB, err := sqlserverDocker.NewWithPrefixAndSingular()
 	if err != nil {
 		log.Fatalf("Init sqlserver error: %s", err)
 	}
 
-	dbs := map[ormcontract.Driver]ormcontract.Query{
-		ormcontract.DriverMysql:      mysqlQuery,
-		ormcontract.DriverPostgresql: postgresqlQuery,
-		ormcontract.DriverSqlite:     sqliteDB,
-		ormcontract.DriverSqlserver:  sqlserverDB,
+	dbs := map[contractsorm.Driver]contractsorm.Query{
+		contractsorm.DriverMysql:      mysqlQuery,
+		contractsorm.DriverPostgresql: postgresqlQuery,
+		contractsorm.DriverSqlite:     sqliteDB,
+		contractsorm.DriverSqlserver:  sqlserverDB,
 	}
 
 	for drive, db := range dbs {
@@ -3419,8 +3418,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 }
 
-func paginator(page string, limit string) func(methods ormcontract.Query) ormcontract.Query {
-	return func(query ormcontract.Query) ormcontract.Query {
+func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
+	return func(query contractsorm.Query) contractsorm.Query {
 		page, _ := strconv.Atoi(page)
 		limit, _ := strconv.Atoi(limit)
 		offset := (page - 1) * limit
@@ -3429,7 +3428,7 @@ func paginator(page string, limit string) func(methods ormcontract.Query) ormcon
 	}
 }
 
-func mockDummyConnection(mockConfig *configmocks.Config, databaseConfig contractstesting.DatabaseConfig) {
+func mockDummyConnection(mockConfig *mocksconfig.Config, databaseConfig contractstesting.DatabaseConfig) {
 	mockConfig.On("GetString", "database.connections.dummy.prefix").Return("")
 	mockConfig.On("GetBool", "database.connections.dummy.singular").Return(false)
 	mockConfig.On("Get", "database.connections.dummy.read").Return(nil)
@@ -3438,13 +3437,13 @@ func mockDummyConnection(mockConfig *configmocks.Config, databaseConfig contract
 	mockConfig.On("GetString", "database.connections.dummy.username").Return(databaseConfig.Username)
 	mockConfig.On("GetString", "database.connections.dummy.password").Return(databaseConfig.Password)
 	mockConfig.On("GetInt", "database.connections.dummy.port").Return(databaseConfig.Port)
-	mockConfig.On("GetString", "database.connections.dummy.driver").Return(ormcontract.DriverMysql.String())
+	mockConfig.On("GetString", "database.connections.dummy.driver").Return(contractsorm.DriverMysql.String())
 	mockConfig.On("GetString", "database.connections.dummy.charset").Return("utf8mb4")
 	mockConfig.On("GetString", "database.connections.dummy.loc").Return("Local")
 	mockConfig.On("GetString", "database.connections.dummy.database").Return(databaseConfig.Database)
 }
 
-func mockPostgresqlConnection(mockConfig *configmocks.Config, databaseConfig contractstesting.DatabaseConfig) {
+func mockPostgresqlConnection(mockConfig *mocksconfig.Config, databaseConfig contractstesting.DatabaseConfig) {
 	mockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
 	mockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
 	mockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
@@ -3453,7 +3452,7 @@ func mockPostgresqlConnection(mockConfig *configmocks.Config, databaseConfig con
 	mockConfig.On("GetString", "database.connections.postgresql.username").Return(databaseConfig.Username)
 	mockConfig.On("GetString", "database.connections.postgresql.password").Return(databaseConfig.Password)
 	mockConfig.On("GetInt", "database.connections.postgresql.port").Return(databaseConfig.Port)
-	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(ormcontract.DriverPostgresql.String())
+	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(contractsorm.DriverPostgresql.String())
 	mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
 	mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
 	mockConfig.On("GetString", "database.connections.postgresql.database").Return(databaseConfig.Database)
@@ -3461,46 +3460,46 @@ func mockPostgresqlConnection(mockConfig *configmocks.Config, databaseConfig con
 
 type UserObserver struct{}
 
-func (u *UserObserver) Retrieved(event ormcontract.Event) error {
+func (u *UserObserver) Retrieved(event contractsorm.Event) error {
 	return errors.New("retrieved")
 }
 
-func (u *UserObserver) Creating(event ormcontract.Event) error {
+func (u *UserObserver) Creating(event contractsorm.Event) error {
 	return errors.New("creating")
 }
 
-func (u *UserObserver) Created(event ormcontract.Event) error {
+func (u *UserObserver) Created(event contractsorm.Event) error {
 	return errors.New("created")
 }
 
-func (u *UserObserver) Updating(event ormcontract.Event) error {
+func (u *UserObserver) Updating(event contractsorm.Event) error {
 	return errors.New("updating")
 }
 
-func (u *UserObserver) Updated(event ormcontract.Event) error {
+func (u *UserObserver) Updated(event contractsorm.Event) error {
 	return errors.New("updated")
 }
 
-func (u *UserObserver) Saving(event ormcontract.Event) error {
+func (u *UserObserver) Saving(event contractsorm.Event) error {
 	return errors.New("saving")
 }
 
-func (u *UserObserver) Saved(event ormcontract.Event) error {
+func (u *UserObserver) Saved(event contractsorm.Event) error {
 	return errors.New("saved")
 }
 
-func (u *UserObserver) Deleting(event ormcontract.Event) error {
+func (u *UserObserver) Deleting(event contractsorm.Event) error {
 	return errors.New("deleting")
 }
 
-func (u *UserObserver) Deleted(event ormcontract.Event) error {
+func (u *UserObserver) Deleted(event contractsorm.Event) error {
 	return errors.New("deleted")
 }
 
-func (u *UserObserver) ForceDeleting(event ormcontract.Event) error {
+func (u *UserObserver) ForceDeleting(event contractsorm.Event) error {
 	return errors.New("forceDeleting")
 }
 
-func (u *UserObserver) ForceDeleted(event ormcontract.Event) error {
+func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
 	return errors.New("forceDeleted")
 }

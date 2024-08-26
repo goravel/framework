@@ -306,7 +306,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
-	mysql := supportdocker.Mysql1()
+	mysql := supportdocker.Mysql()
 	mysqlDocker := gorm.NewMysqlDocker(mysql)
 	_, err := mysqlDocker.New()
 	s.Nil(err)
