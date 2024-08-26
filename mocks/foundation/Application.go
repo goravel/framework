@@ -32,6 +32,8 @@ import (
 
 	mail "github.com/goravel/framework/contracts/mail"
 
+	migration "github.com/goravel/framework/contracts/database/migration"
+
 	mock "github.com/stretchr/testify/mock"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
@@ -41,8 +43,6 @@ import (
 	route "github.com/goravel/framework/contracts/route"
 
 	schedule "github.com/goravel/framework/contracts/schedule"
-
-	migration "github.com/goravel/framework/contracts/database/migration"
 
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
