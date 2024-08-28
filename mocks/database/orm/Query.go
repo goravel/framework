@@ -2974,6 +2974,66 @@ func (_c *Query_WhereBetween_Call) RunAndReturn(run func(string, interface{}, in
 	return _c
 }
 
+// WhereHas provides a mock function with given fields: relation, callback, args
+func (_m *Query) WhereHas(relation string, callback func(orm.Query) (orm.Query, error), args ...interface{}) orm.Query {
+	var _ca []interface{}
+	_ca = append(_ca, relation, callback)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WhereHas")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string, func(orm.Query) (orm.Query, error), ...interface{}) orm.Query); ok {
+		r0 = rf(relation, callback, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_WhereHas_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WhereHas'
+type Query_WhereHas_Call struct {
+	*mock.Call
+}
+
+// WhereHas is a helper method to define mock.On call
+//   - relation string
+//   - callback func(orm.Query)(orm.Query , error)
+//   - args ...interface{}
+func (_e *Query_Expecter) WhereHas(relation interface{}, callback interface{}, args ...interface{}) *Query_WhereHas_Call {
+	return &Query_WhereHas_Call{Call: _e.mock.On("WhereHas",
+		append([]interface{}{relation, callback}, args...)...)}
+}
+
+func (_c *Query_WhereHas_Call) Run(run func(relation string, callback func(orm.Query) (orm.Query, error), args ...interface{})) *Query_WhereHas_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), args[1].(func(orm.Query) (orm.Query, error)), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_WhereHas_Call) Return(_a0 orm.Query) *Query_WhereHas_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_WhereHas_Call) RunAndReturn(run func(string, func(orm.Query) (orm.Query, error), ...interface{}) orm.Query) *Query_WhereHas_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WhereIn provides a mock function with given fields: column, values
 func (_m *Query) WhereIn(column string, values []interface{}) orm.Query {
 	ret := _m.Called(column, values)
