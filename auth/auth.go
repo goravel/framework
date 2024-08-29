@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -74,6 +75,29 @@ func (a *Auth) User(user any) error {
 	}
 
 	return nil
+}
+
+func (a *Auth) Id() (int, error) {
+	auth, ok := a.ctx.Value(ctxKey).(Guards)
+	if !ok || auth[a.guard] == nil {
+		return 0, ErrorParseTokenFirst
+	}
+	if auth[a.guard].Claims == nil {
+		return 0, ErrorParseTokenFirst
+	}
+	if auth[a.guard].Claims.Key == "" {
+		return 0, ErrorInvalidKey
+	}
+	if auth[a.guard].Token == "" {
+		return 0, ErrorTokenExpired
+	}
+	//err := a.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[a.guard].Claims.Key});
+	//if err != nil {
+	//	return 0, err
+	//}
+	id, _ := strconv.Atoi(auth[a.guard].Claims.Key)
+
+	return id, nil
 }
 
 func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {

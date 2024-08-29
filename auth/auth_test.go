@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -335,6 +336,14 @@ func (s *AuthTestSuite) TestUser_NoParse() {
 	var user User
 	err := s.auth.User(user)
 	s.EqualError(err, "parse token first")
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
+func (s *AuthTestSuite) TestUser_ID() {
+	id, _ := s.auth.Id()
+
+	fmt.Println(id)
 
 	s.mockConfig.AssertExpectations(s.T())
 }
