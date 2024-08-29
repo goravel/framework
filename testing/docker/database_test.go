@@ -28,7 +28,7 @@ func TestNewDatabase(t *testing.T) {
 		mockGormInitialize *gormmocks.Initialize
 		database           = "goravel"
 		username           = "goravel"
-		password           = "goravel"
+		password           = "Goravel123"
 	)
 
 	beforeEach := func() {
@@ -186,7 +186,7 @@ func TestDatabaseTestSuite(t *testing.T) {
 func (s *DatabaseTestSuite) SetupTest() {
 	database := "goravel"
 	username := "goravel"
-	password := "goravel"
+	password := "Goravel123"
 
 	s.mockApp = &foundationmocks.Application{}
 	s.mockArtisan = &consolemocks.Artisan{}

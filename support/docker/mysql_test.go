@@ -28,7 +28,7 @@ func TestMysqlTestSuite(t *testing.T) {
 
 func (s *MysqlTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.mysql = NewMysqlImpl("goravel", "goravel", "goravel")
+	s.mysql = NewMysqlImpl(database, username, password)
 }
 
 func (s *MysqlTestSuite) TestBuild() {
@@ -38,9 +38,9 @@ func (s *MysqlTestSuite) TestBuild() {
 	s.NotNil(instance)
 
 	s.Equal("127.0.0.1", s.mysql.Config().Host)
-	s.Equal("goravel", s.mysql.Config().Database)
-	s.Equal("goravel", s.mysql.Config().Username)
-	s.Equal("goravel", s.mysql.Config().Password)
+	s.Equal(database, s.mysql.Config().Database)
+	s.Equal(username, s.mysql.Config().Username)
+	s.Equal(password, s.mysql.Config().Password)
 	s.True(s.mysql.Config().Port > 0)
 
 	res := instance.Exec(`

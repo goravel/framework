@@ -27,7 +27,7 @@ func TestSqlserverTestSuite(t *testing.T) {
 
 func (s *SqlserverTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.sqlserver = NewSqlserverImpl("goravel", "goravel", "Goravel123")
+	s.sqlserver = NewSqlserverImpl(database, username, password)
 }
 
 func (s *SqlserverTestSuite) TestBuild() {
