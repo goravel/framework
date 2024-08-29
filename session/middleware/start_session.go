@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"math/rand"
-
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/session"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 )
 
 func StartSession() http.Middleware {
@@ -21,7 +20,9 @@ func StartSession() http.Middleware {
 		// Retrieve session driver
 		driver, err := session.SessionFacade.Driver()
 		if err != nil {
-			panic(err)
+			color.Red().Println(err)
+			req.Next()
+			return
 		}
 
 		// Build session
@@ -31,17 +32,6 @@ func StartSession() http.Middleware {
 		// Start session
 		s.Start()
 		req.SetSession(s)
-
-		// Perform garbage collection based on lottery
-		lottery := session.ConfigFacade.Get("session.lottery").([]int)
-		if len(lottery) == 2 {
-			if rand.Intn(lottery[1])+1 <= lottery[0] {
-				lifetime := session.ConfigFacade.GetInt("session.lifetime") * 60
-				if err := driver.Gc(lifetime); err != nil {
-					panic(err)
-				}
-			}
-		}
 
 		// Set session cookie in response
 		config := session.ConfigFacade
@@ -61,7 +51,7 @@ func StartSession() http.Middleware {
 
 		// Save session
 		if err := s.Save(); err != nil {
-			panic(err)
+			color.Red().Printf("Error saving session: %s\n", err)
 		}
 	}
 }
