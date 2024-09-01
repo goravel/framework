@@ -21,6 +21,12 @@ import (
 	"github.com/goravel/framework/support/env"
 )
 
+var (
+	testDatabase = "goravel"
+	testUsername = "goravel"
+	testPassword = "Goravel123"
+)
+
 func TestNewDatabase(t *testing.T) {
 	var (
 		mockApp            *foundationmocks.Application
@@ -184,10 +190,6 @@ func TestDatabaseTestSuite(t *testing.T) {
 }
 
 func (s *DatabaseTestSuite) SetupTest() {
-	database := "goravel"
-	username := "goravel"
-	password := "Goravel123"
-
 	s.mockApp = &foundationmocks.Application{}
 	s.mockArtisan = &consolemocks.Artisan{}
 	s.mockConfig = &configmocks.Config{}
@@ -196,7 +198,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 		app:            s.mockApp,
 		config:         s.mockConfig,
 		connection:     "mysql",
-		driver:         supportdocker.NewMysqlImpl(database, username, password),
+		driver:         supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
 		gormInitialize: s.mockGormInitialize,
 	}
 }
@@ -225,9 +227,9 @@ func (s *DatabaseTestSuite) TestBuild() {
 func (s *DatabaseTestSuite) TestConfig() {
 	config := s.database.Config()
 	s.Equal("127.0.0.1", config.Host)
-	s.Equal("goravel", config.Database)
-	s.Equal("goravel", config.Username)
-	s.Equal("goravel", config.Password)
+	s.Equal(testDatabase, config.Database)
+	s.Equal(testUsername, config.Username)
+	s.Equal(testPassword, config.Password)
 }
 
 func (s *DatabaseTestSuite) TestImage() {

@@ -62,7 +62,8 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 		drivers = containers[containerType]
 	}
 
-	surplus := num - len(drivers)
+	driverLength := len(drivers)
+	surplus := num - driverLength
 	for i := 0; i < surplus; i++ {
 		var db testing.DatabaseDriver
 
@@ -74,7 +75,9 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 		case ContainerTypeSqlserver:
 			db = NewSqlserverImpl(database, username, password)
 		case ContainerTypeSqlite:
-			db = NewSqliteImpl(fmt.Sprintf("%s%d", database, i))
+			db = NewSqliteImpl(fmt.Sprintf("%s%d", database, driverLength+i))
+		default:
+			panic("unknown container type")
 		}
 
 		if err := db.Build(); err != nil {

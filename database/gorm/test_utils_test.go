@@ -15,8 +15,8 @@ func TestMysqlDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewMysqlDocker(docker.Mysql())
-	query, err := docker.New()
+	mysqlDocker := NewMysqlDocker(docker.Mysql())
+	query, err := mysqlDocker.New()
 
 	assert.NotNil(t, query)
 	assert.Nil(t, err)
@@ -27,8 +27,8 @@ func TestPostgresqlDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewPostgresDocker(docker.Postgres())
-	query, err := docker.New()
+	postgresDocker := NewPostgresDocker(docker.Postgres())
+	query, err := postgresDocker.New()
 
 	assert.NotNil(t, query)
 	assert.Nil(t, err)
@@ -39,8 +39,8 @@ func TestSqliteDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewSqliteDocker(docker.Sqlite())
-	db, err := docker.New()
+	sqliteDocker := NewSqliteDocker(docker.Sqlite())
+	db, err := sqliteDocker.New()
 
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
@@ -52,8 +52,8 @@ func TestSqlserverDocker(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	docker := NewSqlserverDocker(docker.Sqlserver())
-	db, err := docker.New()
+	sqlserverDocker := NewSqlserverDocker(docker.Sqlserver())
+	db, err := sqlserverDocker.New()
 
 	assert.NotNil(t, db)
 	assert.Nil(t, err)

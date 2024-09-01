@@ -3,16 +3,12 @@ package gorm
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-)
-
-const (
-	dbDatabase  = "goravel"
-	dbDatabase1 = "goravel1"
 )
 
 var testContext context.Context
@@ -252,6 +248,7 @@ type SqliteDocker struct {
 }
 
 func NewSqliteDocker(driver testing.DatabaseDriver) *SqliteDocker {
+	fmt.Println("driver.Config().Database", driver.Config().Database)
 	return &SqliteDocker{MockConfig: &mocksconfig.Config{}, name: driver.Config().Database}
 }
 
@@ -307,13 +304,13 @@ func (r *SqliteDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *SqliteDocker) MockReadWrite() {
+func (r *SqliteDocker) MockReadWrite(readDatabase string) {
 	r.MockConfig = &mocksconfig.Config{}
 	r.MockConfig.On("Get", "database.connections.sqlite.read").Return([]database.Config{
-		{Database: dbDatabase},
+		{Database: readDatabase},
 	})
 	r.MockConfig.On("Get", "database.connections.sqlite.write").Return([]database.Config{
-		{Database: dbDatabase1},
+		{Database: r.name},
 	})
 	r.MockConfig.On("GetString", "database.connections.sqlite.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.sqlite.singular").Return(false)
