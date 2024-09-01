@@ -49,7 +49,14 @@ func TestQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresDocker(supportdocker.Postgres())
+	mysql1Docker := NewMysqlDocker(mysqls[1])
+	_, err = mysql1Docker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	postgres := supportdocker.Postgres()
+	postgresqlDocker := NewPostgresDocker(postgres)
 	postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgresql error: %s", err)
@@ -76,6 +83,7 @@ func TestQueryTestSuite(t *testing.T) {
 		},
 		mysqlDocker:      mysqlDocker,
 		mysql1:           mysqls[1],
+		postgres:         postgres,
 		postgresqlDocker: postgresqlDocker,
 		sqliteDocker:     sqliteDocker,
 		sqlserverDocker:  sqlserverDocker,
