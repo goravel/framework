@@ -87,6 +87,9 @@ func (a *Auth) Id() (string, error) {
 	if auth[a.guard].Claims.Key == "" {
 		return "", ErrorInvalidKey
 	}
+	if auth[a.guard].Token == "" {
+		return "", ErrorTokenExpired
+	}
 
 	return auth[a.guard].Claims.Key, nil
 }
