@@ -81,12 +81,6 @@ func (a *Auth) Id() (string, error) {
 	if !ok || auth[a.guard] == nil {
 		return "", ErrorParseTokenFirst
 	}
-	if auth[a.guard].Claims == nil {
-		return "", ErrorParseTokenFirst
-	}
-	if auth[a.guard].Claims.Key == "" {
-		return "", ErrorInvalidKey
-	}
 	if auth[a.guard].Token == "" {
 		return "", ErrorTokenExpired
 	}
