@@ -30,14 +30,13 @@ func testHttpSessionMiddleware(next nethttp.Handler, mockConfig *configmocks.Con
 
 func mockConfigFacade(mockConfig *configmocks.Config) {
 	mockConfig.On("GetString", "session.driver").Return("file").Twice()
-	mockConfig.On("GetInt", "session.lifetime").Return(60).Twice()
+	mockConfig.On("GetInt", "session.lifetime").Return(60).Once()
 	mockConfig.On("GetString", "session.cookie").Return("goravel_session").Once()
 	mockConfig.On("GetString", "session.path").Return("/").Once()
 	mockConfig.On("GetString", "session.domain").Return("").Once()
 	mockConfig.On("GetBool", "session.secure").Return(false).Once()
 	mockConfig.On("GetBool", "session.http_only").Return(true).Once()
 	mockConfig.On("GetString", "session.same_site").Return("").Once()
-	mockConfig.On("Get", "session.lottery").Return([]int{100, 100}).Once()
 }
 
 func TestStartSession(t *testing.T) {
@@ -77,7 +76,7 @@ func TestStartSession(t *testing.T) {
 	assert.Equal(t, cookie.Name, resp.Cookies()[0].Name)
 	assert.Equal(t, cookie.Value, resp.Cookies()[0].Value)
 
-	assert.NoError(t, file.Remove("sessions"))
+	assert.NoError(t, file.Remove("storage"))
 	mockConfig.AssertExpectations(t)
 }
 
