@@ -341,8 +341,6 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 
 	s.NotNil(s.app.MakeOrm())
 	mockConfig.AssertExpectations(s.T())
-
-	s.Nil(supportdocker.Stop())
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {

@@ -3,7 +3,6 @@ package gorm
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
@@ -248,7 +247,6 @@ type SqliteDocker struct {
 }
 
 func NewSqliteDocker(driver testing.DatabaseDriver) *SqliteDocker {
-	fmt.Println("driver.Config().Database", driver.Config().Database)
 	return &SqliteDocker{MockConfig: &mocksconfig.Config{}, name: driver.Config().Database}
 }
 

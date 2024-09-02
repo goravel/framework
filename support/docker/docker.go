@@ -55,6 +55,10 @@ func Sqlites(num int) []testing.DatabaseDriver {
 }
 
 func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
+	if num <= 0 {
+		return nil
+	}
+
 	var drivers []testing.DatabaseDriver
 	if len(containers[containerType]) >= num {
 		drivers = containers[containerType][:num]

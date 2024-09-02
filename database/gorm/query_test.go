@@ -3253,43 +3253,43 @@ func TestReadWriteSeparate(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	//mysqls := supportdocker.Mysqls(2)
-	//readMysqlDocker := NewMysqlDocker(mysqls[0])
-	//readMysqlQuery, err := readMysqlDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get read mysql error: %s", err)
-	//}
-	//
-	//writeMysqlDocker := NewMysqlDocker(mysqls[1])
-	//writeMysqlQuery, err := writeMysqlDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get write mysql error: %s", err)
-	//}
-	//
-	//writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
-	//mysqlQuery, err := writeMysqlDocker.Query(false)
-	//if err != nil {
-	//	log.Fatalf("Get mysql gorm error: %s", err)
-	//}
-	//
-	//postgreses := supportdocker.Postgreses(2)
-	//readPostgresqlDocker := NewPostgresDocker(postgreses[0])
-	//readPostgresqlQuery, err := readPostgresqlDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get read postgresql error: %s", err)
-	//}
-	//
-	//writePostgresqlDocker := NewPostgresDocker(postgreses[1])
-	//writePostgresqlQuery, err := writePostgresqlDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get write postgresql error: %s", err)
-	//}
-	//
-	//writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
-	//postgresqlQuery, err := writePostgresqlDocker.Query(false)
-	//if err != nil {
-	//	log.Fatalf("Get postgresql gorm error: %s", err)
-	//}
+	mysqls := supportdocker.Mysqls(2)
+	readMysqlDocker := NewMysqlDocker(mysqls[0])
+	readMysqlQuery, err := readMysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Get read mysql error: %s", err)
+	}
+
+	writeMysqlDocker := NewMysqlDocker(mysqls[1])
+	writeMysqlQuery, err := writeMysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Get write mysql error: %s", err)
+	}
+
+	writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
+	mysqlQuery, err := writeMysqlDocker.Query(false)
+	if err != nil {
+		log.Fatalf("Get mysql gorm error: %s", err)
+	}
+
+	postgreses := supportdocker.Postgreses(2)
+	readPostgresqlDocker := NewPostgresDocker(postgreses[0])
+	readPostgresqlQuery, err := readPostgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Get read postgresql error: %s", err)
+	}
+
+	writePostgresqlDocker := NewPostgresDocker(postgreses[1])
+	writePostgresqlQuery, err := writePostgresqlDocker.New()
+	if err != nil {
+		log.Fatalf("Get write postgresql error: %s", err)
+	}
+
+	writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
+	postgresqlQuery, err := writePostgresqlDocker.Query(false)
+	if err != nil {
+		log.Fatalf("Get postgresql gorm error: %s", err)
+	}
 
 	sqlites := supportdocker.Sqlites(2)
 	readSqliteDocker := NewSqliteDocker(sqlites[0])
@@ -3310,45 +3310,45 @@ func TestReadWriteSeparate(t *testing.T) {
 		log.Fatalf("Get sqlite gorm error: %s", err)
 	}
 
-	//sqlservers := supportdocker.Sqlservers(2)
-	//readSqlserverDocker := NewSqlserverDocker(sqlservers[0])
-	//readSqlserverQuery, err := readSqlserverDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get read sqlserver error: %s", err)
-	//}
-	//
-	//writeSqlserverDocker := NewSqlserverDocker(sqlservers[1])
-	//writeSqlserverQuery, err := writeSqlserverDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Get write sqlserver error: %s", err)
-	//}
-	//writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
-	//sqlserverDB, err := writeSqlserverDocker.Query(false)
-	//if err != nil {
-	//	log.Fatalf("Get sqlserver gorm error: %s", err)
-	//}
+	sqlservers := supportdocker.Sqlservers(2)
+	readSqlserverDocker := NewSqlserverDocker(sqlservers[0])
+	readSqlserverQuery, err := readSqlserverDocker.New()
+	if err != nil {
+		log.Fatalf("Get read sqlserver error: %s", err)
+	}
+
+	writeSqlserverDocker := NewSqlserverDocker(sqlservers[1])
+	writeSqlserverQuery, err := writeSqlserverDocker.New()
+	if err != nil {
+		log.Fatalf("Get write sqlserver error: %s", err)
+	}
+	writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
+	sqlserverDB, err := writeSqlserverDocker.Query(false)
+	if err != nil {
+		log.Fatalf("Get sqlserver gorm error: %s", err)
+	}
 
 	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
-		//contractsorm.DriverMysql: {
-		//	"mix":   mysqlQuery,
-		//	"read":  readMysqlQuery,
-		//	"write": writeMysqlQuery,
-		//},
-		//contractsorm.DriverPostgresql: {
-		//	"mix":   postgresqlQuery,
-		//	"read":  readPostgresqlQuery,
-		//	"write": writePostgresqlQuery,
-		//},
+		contractsorm.DriverMysql: {
+			"mix":   mysqlQuery,
+			"read":  readMysqlQuery,
+			"write": writeMysqlQuery,
+		},
+		contractsorm.DriverPostgresql: {
+			"mix":   postgresqlQuery,
+			"read":  readPostgresqlQuery,
+			"write": writePostgresqlQuery,
+		},
 		contractsorm.DriverSqlite: {
 			"mix":   sqliteDB,
 			"read":  readSqliteQuery,
 			"write": writeSqliteQuery,
 		},
-		//contractsorm.DriverSqlserver: {
-		//	"mix":   sqlserverDB,
-		//	"read":  readSqlserverQuery,
-		//	"write": writeSqlserverQuery,
-		//},
+		contractsorm.DriverSqlserver: {
+			"mix":   sqlserverDB,
+			"read":  readSqlserverQuery,
+			"write": writeSqlserverQuery,
+		},
 	}
 
 	for drive, db := range dbs {
