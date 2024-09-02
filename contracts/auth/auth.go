@@ -11,6 +11,8 @@ type Auth interface {
 	Parse(token string) (*Payload, error)
 	// User returns the current authenticated user.
 	User(user any) error
+	// Id returns the current user id.
+	Id() (string, error)
 	// Login logs a user into the application.
 	Login(user any) (token string, err error)
 	// LoginUsingID logs the given user ID into the application.
