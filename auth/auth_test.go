@@ -345,6 +345,17 @@ func (s *AuthTestSuite) TestID_NoParse() {
 	s.Empty(id)
 }
 
+func (s *AuthTestSuite) TestID_InvalidKey() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
+
+	id, err := s.auth.Id()
+	s.Empty(id)
+	s.ErrorIs(err, ErrorInvalidKey)
+
+	s.mockConfig.AssertExpectations(s.T())
+}
+
 func (s *AuthTestSuite) TestID_Success() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
