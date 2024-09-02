@@ -56,9 +56,9 @@ func (app *Application) Boot() {
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
 	})
-	app.bootArtisan()
 	app.setTimezone()
 	setRootPath()
+	app.bootArtisan()
 }
 
 func (app *Application) Commands(commands []consolecontract.Command) {
