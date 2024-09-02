@@ -340,7 +340,7 @@ func (s *AuthTestSuite) TestUser_NoParse() {
 
 func (s *AuthTestSuite) TestID_NoParse() {
 	// Attempt to get the ID without parsing the token first
-	id := s.auth.id()
+	id, _ := s.auth.Id()
 	s.Empty(id)
 }
 
@@ -360,7 +360,7 @@ func (s *AuthTestSuite) TestID_Success() {
 	s.NotNil(payload)
 
 	// Now, call the ID method and expect it to return the correct ID
-	id := s.auth.id()
+	id, _ := s.auth.Id()
 	s.Equal("1", id)
 }
 
@@ -382,7 +382,7 @@ func (s *AuthTestSuite) TestID_TokenExpired() {
 	s.ErrorIs(err, ErrorTokenExpired)
 
 	// Now, call the ID method and expect it to return an empty value
-	id := s.auth.id()
+	id, _ := s.auth.Id()
 	s.Empty(id)
 
 	carbon.UnsetTestNow()
@@ -398,7 +398,7 @@ func (s *AuthTestSuite) TestID_TokenInvalid() {
 	_, err := s.auth.Parse(token)
 	s.ErrorIs(err, ErrorInvalidToken)
 
-	id := s.auth.id()
+	id, _ := s.auth.Id()
 	s.Empty(id)
 }
 
