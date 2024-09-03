@@ -1,9 +1,9 @@
 package facades
 
 import (
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/migration"
 )
 
-func Schema() schema.Schema {
+func Schema() migration.Schema {
 	return App().MakeSchema()
 }

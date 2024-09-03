@@ -38,13 +38,13 @@ func NewDatabase(app foundation.Application, connection string, gormInitialize g
 	var databaseDriver testing.DatabaseDriver
 	switch contractsorm.Driver(driver) {
 	case contractsorm.DriverMysql:
-		databaseDriver = supportdocker.NewMysql(database, username, password)
+		databaseDriver = supportdocker.NewMysqlImpl(database, username, password)
 	case contractsorm.DriverPostgresql:
-		databaseDriver = supportdocker.NewPostgresql(database, username, password)
+		databaseDriver = supportdocker.NewPostgresImpl(database, username, password)
 	case contractsorm.DriverSqlserver:
-		databaseDriver = supportdocker.NewSqlserver(database, username, password)
+		databaseDriver = supportdocker.NewSqlserverImpl(database, username, password)
 	case contractsorm.DriverSqlite:
-		databaseDriver = supportdocker.NewSqlite(database)
+		databaseDriver = supportdocker.NewSqliteImpl(database)
 	default:
 		return nil, fmt.Errorf("not found database connection: %s", connection)
 	}

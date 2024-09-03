@@ -32,6 +32,8 @@ import (
 
 	mail "github.com/goravel/framework/contracts/mail"
 
+	migration "github.com/goravel/framework/contracts/database/migration"
+
 	mock "github.com/stretchr/testify/mock"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
@@ -41,8 +43,6 @@ import (
 	route "github.com/goravel/framework/contracts/route"
 
 	schedule "github.com/goravel/framework/contracts/schedule"
-
-	schema "github.com/goravel/framework/contracts/database/schema"
 
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
@@ -1530,19 +1530,19 @@ func (_c *Application_MakeSchedule_Call) RunAndReturn(run func() schedule.Schedu
 }
 
 // MakeSchema provides a mock function with given fields:
-func (_m *Application) MakeSchema() schema.Schema {
+func (_m *Application) MakeSchema() migration.Schema {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeSchema")
 	}
 
-	var r0 schema.Schema
-	if rf, ok := ret.Get(0).(func() schema.Schema); ok {
+	var r0 migration.Schema
+	if rf, ok := ret.Get(0).(func() migration.Schema); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.Schema)
+			r0 = ret.Get(0).(migration.Schema)
 		}
 	}
 
@@ -1566,12 +1566,12 @@ func (_c *Application_MakeSchema_Call) Run(run func()) *Application_MakeSchema_C
 	return _c
 }
 
-func (_c *Application_MakeSchema_Call) Return(_a0 schema.Schema) *Application_MakeSchema_Call {
+func (_c *Application_MakeSchema_Call) Return(_a0 migration.Schema) *Application_MakeSchema_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_MakeSchema_Call) RunAndReturn(run func() schema.Schema) *Application_MakeSchema_Call {
+func (_c *Application_MakeSchema_Call) RunAndReturn(run func() migration.Schema) *Application_MakeSchema_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -5,6 +5,8 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
+var _ seeder.Facade = (*SeederFacade)(nil)
+
 type SeederFacade struct {
 	Seeders []seeder.Seeder
 	Called  []string

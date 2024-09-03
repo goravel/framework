@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -78,11 +79,7 @@ func TestFactoryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	if err := testDatabaseDocker.Fresh(); err != nil {
-		t.Fatal(err)
-	}
-
-	mysqlDocker := gorm.NewMysqlDocker(testDatabaseDocker)
+	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql())
 	mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
