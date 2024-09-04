@@ -31,7 +31,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 		},
 		},
 	}
-	manager.createDefaultDriver()
+	manager.extendDefaultDriver()
 	return manager
 }
 
@@ -68,11 +68,11 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 	return m.drivers[driverName], nil
 }
 
-func (m *Manager) Extend(driver string, handler sessioncontract.Driver) (sessioncontract.Manager, error) {
+func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) (sessioncontract.Manager, error) {
 	if m.drivers[driver] != nil {
 		return nil, fmt.Errorf("driver [%s] already exists", driver)
 	}
-	m.drivers[driver] = handler
+	m.drivers[driver] = handler()
 	m.startGcTimer(m.drivers[driver])
 	return m, nil
 }
@@ -91,11 +91,15 @@ func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
 
-func (m *Manager) createDefaultDriver() {
-	lifetime := m.config.GetInt("session.lifetime")
-	if _, err := m.Extend("file", driver.NewFile(m.config.GetString("session.files"), lifetime)); err != nil {
+func (m *Manager) extendDefaultDriver() {
+	if _, err := m.Extend("file", m.createFileDriver); err != nil {
 		panic(fmt.Sprintf("failed to extend session manager: %v", err))
 	}
+}
+
+func (m *Manager) createFileDriver() sessioncontract.Driver {
+	lifetime := m.config.GetInt("session.lifetime")
+	return driver.NewFile(m.config.GetString("session.files"), lifetime)
 }
 
 // startGcTimer starts a garbage collection timer for the session driver.
