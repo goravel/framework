@@ -155,7 +155,7 @@ func (_c *Manager_Driver_Call) RunAndReturn(run func(...string) (session.Driver,
 }
 
 // Extend provides a mock function with given fields: driver, handler
-func (_m *Manager) Extend(driver string, handler session.Driver) (session.Manager, error) {
+func (_m *Manager) Extend(driver string, handler func() session.Driver) (session.Manager, error) {
 	ret := _m.Called(driver, handler)
 
 	if len(ret) == 0 {
@@ -164,10 +164,10 @@ func (_m *Manager) Extend(driver string, handler session.Driver) (session.Manage
 
 	var r0 session.Manager
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, session.Driver) (session.Manager, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, func() session.Driver) (session.Manager, error)); ok {
 		return rf(driver, handler)
 	}
-	if rf, ok := ret.Get(0).(func(string, session.Driver) session.Manager); ok {
+	if rf, ok := ret.Get(0).(func(string, func() session.Driver) session.Manager); ok {
 		r0 = rf(driver, handler)
 	} else {
 		if ret.Get(0) != nil {
@@ -175,7 +175,7 @@ func (_m *Manager) Extend(driver string, handler session.Driver) (session.Manage
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, session.Driver) error); ok {
+	if rf, ok := ret.Get(1).(func(string, func() session.Driver) error); ok {
 		r1 = rf(driver, handler)
 	} else {
 		r1 = ret.Error(1)
@@ -191,14 +191,14 @@ type Manager_Extend_Call struct {
 
 // Extend is a helper method to define mock.On call
 //   - driver string
-//   - handler session.Driver
+//   - handler func() session.Driver
 func (_e *Manager_Expecter) Extend(driver interface{}, handler interface{}) *Manager_Extend_Call {
 	return &Manager_Extend_Call{Call: _e.mock.On("Extend", driver, handler)}
 }
 
-func (_c *Manager_Extend_Call) Run(run func(driver string, handler session.Driver)) *Manager_Extend_Call {
+func (_c *Manager_Extend_Call) Run(run func(driver string, handler func() session.Driver)) *Manager_Extend_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(session.Driver))
+		run(args[0].(string), args[1].(func() session.Driver))
 	})
 	return _c
 }
@@ -208,7 +208,7 @@ func (_c *Manager_Extend_Call) Return(_a0 session.Manager, _a1 error) *Manager_E
 	return _c
 }
 
-func (_c *Manager_Extend_Call) RunAndReturn(run func(string, session.Driver) (session.Manager, error)) *Manager_Extend_Call {
+func (_c *Manager_Extend_Call) RunAndReturn(run func(string, func() session.Driver) (session.Manager, error)) *Manager_Extend_Call {
 	_c.Call.Return(run)
 	return _c
 }
