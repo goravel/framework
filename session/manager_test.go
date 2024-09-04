@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"github.com/goravel/framework/support/str"
 	"os"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	sessioncontract "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/foundation/json"
 	mockconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/str"
 )
 
 type ManagerTestSuite struct {
@@ -55,7 +55,7 @@ func (s *ManagerTestSuite) TestDriver() {
 
 	// provide custom driver
 	s.mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
-	manager, err := s.manager.Extend("test", NewCustomDriver())
+	manager, err := s.manager.Extend("test", NewCustomDriver)
 	s.Nil(err)
 	s.NotNil(manager)
 	driver, err = s.manager.Driver("test")
@@ -80,7 +80,7 @@ func (s *ManagerTestSuite) TestDriver() {
 
 func (s *ManagerTestSuite) TestExtend() {
 	s.mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
-	manager, err := s.manager.Extend("test", NewCustomDriver())
+	manager, err := s.manager.Extend("test", NewCustomDriver)
 	s.Nil(err)
 	s.NotNil(manager)
 	driver, err := s.manager.Driver("test")

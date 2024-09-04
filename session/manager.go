@@ -31,7 +31,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 		},
 		},
 	}
-	manager.extendDefaultDriver()
+	manager.extendDefaultDrivers()
 	return manager
 }
 
@@ -91,9 +91,9 @@ func (m *Manager) getDefaultDriver() string {
 	return m.config.GetString("session.driver")
 }
 
-func (m *Manager) extendDefaultDriver() {
+func (m *Manager) extendDefaultDrivers() {
 	if _, err := m.Extend("file", m.createFileDriver); err != nil {
-		panic(fmt.Sprintf("failed to extend session manager: %v", err))
+		panic(fmt.Sprintf("failed to extend session file driver: %v", err))
 	}
 }
 

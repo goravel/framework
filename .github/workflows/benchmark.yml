@@ -9,9 +9,7 @@ on:
     paths-ignore:
       - "**/*.md"
 permissions:
-  # contents permission to update benchmark data
   contents: write
-  # allow posting comments to pull request
   pull-requests: write
 jobs:
   benchmark:
