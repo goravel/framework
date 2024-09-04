@@ -24,8 +24,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          # NOTE: Keep this in sync with the version from go.mod
-          go-version: "1.22.x"
+          go-version: "stable"
 
       - name: Run Benchmark
         run: set -o pipefail; go test ./... -benchmem -run=^$ -bench . | tee output.txt
