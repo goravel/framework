@@ -339,6 +339,70 @@ func (s *AuthTestSuite) TestUser_NoParse() {
 	s.mockConfig.AssertExpectations(s.T())
 }
 
+func (s *AuthTestSuite) TestID_NoParse() {
+	// Attempt to get the ID without parsing the token first
+	id, _ := s.auth.Id()
+	s.Empty(id)
+}
+
+func (s *AuthTestSuite) TestID_Success() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
+
+	// Log in to get a token
+	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
+
+	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
+
+	// Parse the token
+	payload, err := s.auth.Parse(token)
+	s.Nil(err)
+	s.NotNil(payload)
+
+	// Now, call the ID method and expect it to return the correct ID
+	id, _ := s.auth.Id()
+	s.Equal("1", id)
+}
+
+func (s *AuthTestSuite) TestID_TokenExpired() {
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
+	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()
+
+	// Log in to get a token
+	token, err := s.auth.LoginUsingID(1)
+	s.Nil(err)
+
+	// Set the token as expired
+	carbon.SetTestNow(carbon.Now().AddMinutes(3))
+
+	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
+
+	// Parse the token
+	_, err = s.auth.Parse(token)
+	s.ErrorIs(err, ErrorTokenExpired)
+
+	// Now, call the ID method and expect it to return an empty value
+	id, _ := s.auth.Id()
+	s.Empty(id)
+
+	carbon.UnsetTestNow()
+}
+
+func (s *AuthTestSuite) TestID_TokenInvalid() {
+	// Simulate an invalid token scenario
+	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Once()
+
+	token := "invalidToken"
+	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
+
+	_, err := s.auth.Parse(token)
+	s.ErrorIs(err, ErrorInvalidToken)
+
+	id, _ := s.auth.Id()
+	s.Empty(id)
+}
+
 func (s *AuthTestSuite) TestUser_DBError() {
 	s.mockConfig.On("GetString", "jwt.secret").Return("Goravel").Twice()
 	s.mockConfig.On("GetInt", "jwt.ttl").Return(2).Once()

@@ -76,6 +76,18 @@ func (a *Auth) User(user any) error {
 	return nil
 }
 
+func (a *Auth) Id() (string, error) {
+	auth, ok := a.ctx.Value(ctxKey).(Guards)
+	if !ok || auth[a.guard] == nil {
+		return "", ErrorParseTokenFirst
+	}
+	if auth[a.guard].Token == "" {
+		return "", ErrorTokenExpired
+	}
+
+	return auth[a.guard].Claims.Key, nil
+}
+
 func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if a.cache == nil {
