@@ -55,9 +55,8 @@ func (s *ManagerTestSuite) TestDriver() {
 
 	// provide custom driver
 	s.mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
-	manager, err := s.manager.Extend("test", NewCustomDriver)
+	err = s.manager.Extend("test", NewCustomDriver)
 	s.Nil(err)
-	s.NotNil(manager)
 	driver, err = s.manager.Driver("test")
 	s.Nil(err)
 	s.NotNil(driver)
@@ -80,9 +79,8 @@ func (s *ManagerTestSuite) TestDriver() {
 
 func (s *ManagerTestSuite) TestExtend() {
 	s.mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
-	manager, err := s.manager.Extend("test", NewCustomDriver)
+	err := s.manager.Extend("test", NewCustomDriver)
 	s.Nil(err)
-	s.NotNil(manager)
 	driver, err := s.manager.Driver("test")
 	s.Nil(err)
 	s.NotNil(driver)

@@ -68,13 +68,13 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 	return m.drivers[driverName], nil
 }
 
-func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) (sessioncontract.Manager, error) {
+func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) error {
 	if m.drivers[driver] != nil {
-		return nil, fmt.Errorf("driver [%s] already exists", driver)
+		return fmt.Errorf("driver [%s] already exists", driver)
 	}
 	m.drivers[driver] = handler()
 	m.startGcTimer(m.drivers[driver])
-	return m, nil
+	return nil
 }
 
 func (m *Manager) AcquireSession() *Session {
@@ -92,7 +92,7 @@ func (m *Manager) getDefaultDriver() string {
 }
 
 func (m *Manager) extendDefaultDrivers() {
-	if _, err := m.Extend("file", m.createFileDriver); err != nil {
+	if err := m.Extend("file", m.createFileDriver); err != nil {
 		panic(fmt.Sprintf("failed to extend session file driver: %v", err))
 	}
 }
