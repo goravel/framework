@@ -19,7 +19,7 @@ import (
 
 var connections = []contractsorm.Driver{
 	contractsorm.DriverMysql,
-	contractsorm.DriverPostgresql,
+	contractsorm.DriverPostgres,
 	contractsorm.DriverSqlite,
 	contractsorm.DriverSqlserver,
 }
@@ -37,11 +37,11 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm             *OrmImpl
-	mysqlQuery      contractsorm.Query
-	postgresqlQuery contractsorm.Query
-	sqliteQuery     contractsorm.Query
-	sqlserverDB     contractsorm.Query
+	orm           *OrmImpl
+	mysqlQuery    contractsorm.Query
+	postgresQuery contractsorm.Query
+	sqliteQuery   contractsorm.Query
+	sqlserverDB   contractsorm.Query
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -55,10 +55,10 @@ func TestOrmSuite(t *testing.T) {
 		log.Fatalf("Init mysql docker error: %v", err)
 	}
 
-	postgresqlDocker := gorm.NewPostgresDocker(docker.Postgres())
-	postgresqlQuery, err := postgresqlDocker.New()
+	postgresDocker := gorm.NewPostgresDocker(docker.Postgres())
+	postgresQuery, err := postgresDocker.New()
 	if err != nil {
-		log.Fatalf("Init postgresql docker error: %v", err)
+		log.Fatalf("Init postgres docker error: %v", err)
 	}
 
 	sqliteDocker := gorm.NewSqliteDocker(docker.Sqlite())
@@ -74,10 +74,10 @@ func TestOrmSuite(t *testing.T) {
 	}
 
 	suite.Run(t, &OrmSuite{
-		mysqlQuery:      mysqlQuery,
-		postgresqlQuery: postgresqlQuery,
-		sqliteQuery:     sqliteQuery,
-		sqlserverDB:     sqlserverQuery,
+		mysqlQuery:    mysqlQuery,
+		postgresQuery: postgresQuery,
+		sqliteQuery:   sqliteQuery,
+		sqlserverDB:   sqlserverQuery,
 	})
 
 	assert.Nil(t, file.Remove("goravel"))
@@ -89,10 +89,10 @@ func (s *OrmSuite) SetupTest() {
 		ctx:        context.Background(),
 		query:      s.mysqlQuery,
 		queries: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String():      s.mysqlQuery,
-			contractsorm.DriverPostgresql.String(): s.postgresqlQuery,
-			contractsorm.DriverSqlite.String():     s.sqliteQuery,
-			contractsorm.DriverSqlserver.String():  s.sqlserverDB,
+			contractsorm.DriverMysql.String():     s.mysqlQuery,
+			contractsorm.DriverPostgres.String():  s.postgresQuery,
+			contractsorm.DriverSqlite.String():    s.sqliteQuery,
+			contractsorm.DriverSqlserver.String(): s.sqlserverDB,
 		},
 	}
 }

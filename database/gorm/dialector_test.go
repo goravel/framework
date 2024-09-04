@@ -53,13 +53,13 @@ func (s *DialectorTestSuite) TestMysql() {
 	s.Nil(err)
 }
 
-func (s *DialectorTestSuite) TestPostgresql() {
-	dialector := NewDialectorImpl(s.mockConfig, orm.DriverPostgresql.String())
-	s.mockConfig.On("GetString", "database.connections.postgresql.driver").
-		Return(orm.DriverPostgresql.String()).Once()
-	s.mockConfig.On("GetString", "database.connections.postgresql.sslmode").
+func (s *DialectorTestSuite) TestPostgres() {
+	dialector := NewDialectorImpl(s.mockConfig, orm.DriverPostgres.String())
+	s.mockConfig.On("GetString", "database.connections.postgres.driver").
+		Return(orm.DriverPostgres.String()).Once()
+	s.mockConfig.On("GetString", "database.connections.postgres.sslmode").
 		Return("disable").Once()
-	s.mockConfig.On("GetString", "database.connections.postgresql.timezone").
+	s.mockConfig.On("GetString", "database.connections.postgres.timezone").
 		Return("UTC").Once()
 	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
 	s.Equal(postgres.New(postgres.Config{

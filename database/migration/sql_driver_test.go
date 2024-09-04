@@ -80,8 +80,8 @@ func TestSqlDriverCreate(t *testing.T) {
 			upContent:   ``,
 			downContent: ``,
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.default").Return("postgresql").Twice()
-				mockConfig.EXPECT().GetString("database.connections.postgresql.charset").Return("utf8mb4").Twice()
+				mockConfig.EXPECT().GetString("database.default").Return("postgres").Twice()
+				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Twice()
 			},
 		},
 		{
@@ -95,9 +95,9 @@ func TestSqlDriverCreate(t *testing.T) {
 `,
 			downContent: `DROP TABLE IF EXISTS users;`,
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.default").Return("postgresql").Times(3)
-				mockConfig.EXPECT().GetString("database.connections.postgresql.driver").Return("postgresql").Once()
-				mockConfig.EXPECT().GetString("database.connections.postgresql.charset").Return("utf8mb4").Twice()
+				mockConfig.EXPECT().GetString("database.default").Return("postgres").Times(3)
+				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
+				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Twice()
 			},
 		},
 		{
@@ -106,9 +106,9 @@ func TestSqlDriverCreate(t *testing.T) {
 			upContent:   `ALTER TABLE users ADD column varchar(255) NOT NULL;`,
 			downContent: `ALTER TABLE users DROP COLUMN column;`,
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.default").Return("postgresql").Times(3)
-				mockConfig.EXPECT().GetString("database.connections.postgresql.driver").Return("postgresql").Once()
-				mockConfig.EXPECT().GetString("database.connections.postgresql.charset").Return("utf8mb4").Twice()
+				mockConfig.EXPECT().GetString("database.default").Return("postgres").Times(3)
+				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
+				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Twice()
 			},
 		},
 		{

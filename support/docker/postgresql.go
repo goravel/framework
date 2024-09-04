@@ -44,17 +44,17 @@ func (receiver *PostgresImpl) Build() error {
 	command, exposedPorts := imageToCommand(receiver.image)
 	containerID, err := run(command)
 	if err != nil {
-		return fmt.Errorf("init Postgresql error: %v", err)
+		return fmt.Errorf("init Postgres error: %v", err)
 	}
 	if containerID == "" {
-		return fmt.Errorf("no container id return when creating Postgresql docker")
+		return fmt.Errorf("no container id return when creating Postgres docker")
 	}
 
 	receiver.containerID = containerID
 	receiver.port = getExposedPort(exposedPorts, 5432)
 
 	if _, err := receiver.connect(); err != nil {
-		return fmt.Errorf("connect Postgresql error: %v", err)
+		return fmt.Errorf("connect Postgres error: %v", err)
 	}
 
 	return nil
@@ -92,12 +92,12 @@ func (receiver *PostgresImpl) Image(image testing.Image) {
 }
 
 func (receiver *PostgresImpl) Name() orm.Driver {
-	return orm.DriverPostgresql
+	return orm.DriverPostgres
 }
 
 func (receiver *PostgresImpl) Stop() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
-		return fmt.Errorf("stop Postgresql error: %v", err)
+		return fmt.Errorf("stop Postgres error: %v", err)
 	}
 
 	return nil

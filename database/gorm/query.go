@@ -936,10 +936,10 @@ func (r *QueryImpl) buildLockForUpdate(db *gormio.DB) *gormio.DB {
 
 	driver := r.instance.Name()
 	mysqlDialector := mysql.Dialector{}
-	postgresqlDialector := postgres.Dialector{}
+	postgresDialector := postgres.Dialector{}
 	sqlserverDialector := sqlserver.Dialector{}
 
-	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
+	if driver == mysqlDialector.Name() || driver == postgresDialector.Name() {
 		return db.Clauses(clause.Locking{Strength: "UPDATE"})
 	} else if driver == sqlserverDialector.Name() {
 		return db.Clauses(hints.With("rowlock", "updlock", "holdlock"))
@@ -1041,10 +1041,10 @@ func (r *QueryImpl) buildSharedLock(db *gormio.DB) *gormio.DB {
 
 	driver := r.instance.Name()
 	mysqlDialector := mysql.Dialector{}
-	postgresqlDialector := postgres.Dialector{}
+	postgresDialector := postgres.Dialector{}
 	sqlserverDialector := sqlserver.Dialector{}
 
-	if driver == mysqlDialector.Name() || driver == postgresqlDialector.Name() {
+	if driver == mysqlDialector.Name() || driver == postgresDialector.Name() {
 		return db.Clauses(clause.Locking{Strength: "SHARE"})
 	} else if driver == sqlserverDialector.Name() {
 		return db.Clauses(hints.With("rowlock", "holdlock"))

@@ -24,13 +24,13 @@ import (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries          map[contractsorm.Driver]contractsorm.Query
-	mysqlDocker      *MysqlDocker
-	mysql1           contractstesting.DatabaseDriver
-	postgres         contractstesting.DatabaseDriver
-	postgresqlDocker *PostgresqlDocker
-	sqliteDocker     *SqliteDocker
-	sqlserverDocker  *SqlserverDocker
+	queries         map[contractsorm.Driver]contractsorm.Query
+	mysqlDocker     *MysqlDocker
+	mysql1          contractstesting.DatabaseDriver
+	postgres        contractstesting.DatabaseDriver
+	postgresDocker  *PostgresDocker
+	sqliteDocker    *SqliteDocker
+	sqlserverDocker *SqlserverDocker
 }
 
 func TestQueryTestSuite(t *testing.T) {
@@ -56,10 +56,10 @@ func TestQueryTestSuite(t *testing.T) {
 	}
 
 	postgres := supportdocker.Postgres()
-	postgresqlDocker := NewPostgresDocker(postgres)
-	postgresqlQuery, err := postgresqlDocker.New()
+	postgresDocker := NewPostgresDocker(postgres)
+	postgresQuery, err := postgresDocker.New()
 	if err != nil {
-		log.Fatalf("Init postgresql error: %s", err)
+		log.Fatalf("Init postgres error: %s", err)
 	}
 
 	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
@@ -76,17 +76,17 @@ func TestQueryTestSuite(t *testing.T) {
 
 	suite.Run(t, &QueryTestSuite{
 		queries: map[contractsorm.Driver]contractsorm.Query{
-			contractsorm.DriverMysql:      mysqlQuery,
-			contractsorm.DriverPostgresql: postgresqlQuery,
-			contractsorm.DriverSqlite:     sqliteQuery,
-			contractsorm.DriverSqlserver:  sqlserverQuery,
+			contractsorm.DriverMysql:     mysqlQuery,
+			contractsorm.DriverPostgres:  postgresQuery,
+			contractsorm.DriverSqlite:    sqliteQuery,
+			contractsorm.DriverSqlserver: sqlserverQuery,
 		},
-		mysqlDocker:      mysqlDocker,
-		mysql1:           mysqls[1],
-		postgres:         postgres,
-		postgresqlDocker: postgresqlDocker,
-		sqliteDocker:     sqliteDocker,
-		sqlserverDocker:  sqlserverDocker,
+		mysqlDocker:     mysqlDocker,
+		mysql1:          mysqls[1],
+		postgres:        postgres,
+		postgresDocker:  postgresDocker,
+		sqliteDocker:    sqliteDocker,
+		sqlserverDocker: sqlserverDocker,
 	})
 }
 
@@ -2277,9 +2277,9 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup: func() {
-				mockPostgresqlConnection(s.mysqlDocker.MockConfig, s.postgres.Config())
+				mockPostgresConnection(s.mysqlDocker.MockConfig, s.postgres.Config())
 			},
-			expectConnection: "postgresql",
+			expectConnection: "postgres",
 		},
 	}
 
@@ -2497,7 +2497,7 @@ func (s *QueryTestSuite) TestToSql() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			switch driver {
-			case contractsorm.DriverPostgresql:
+			case contractsorm.DriverPostgres:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
 			case contractsorm.DriverSqlserver:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
@@ -2512,7 +2512,7 @@ func (s *QueryTestSuite) TestToRawSql() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			switch driver {
-			case contractsorm.DriverPostgresql:
+			case contractsorm.DriverPostgres:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
 			case contractsorm.DriverSqlserver:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
@@ -3069,8 +3069,8 @@ func (s *QueryTestSuite) mockDummyConnection(driver contractsorm.Driver) {
 	switch driver {
 	case contractsorm.DriverMysql:
 		mockDummyConnection(s.mysqlDocker.MockConfig, s.mysql1.Config())
-	case contractsorm.DriverPostgresql:
-		mockDummyConnection(s.postgresqlDocker.MockConfig, s.mysql1.Config())
+	case contractsorm.DriverPostgres:
+		mockDummyConnection(s.postgresDocker.MockConfig, s.mysql1.Config())
 	case contractsorm.DriverSqlite:
 		mockDummyConnection(s.sqliteDocker.MockConfig, s.mysql1.Config())
 	case contractsorm.DriverSqlserver:
@@ -3091,8 +3091,8 @@ func TestCustomConnection(t *testing.T) {
 	}
 
 	postgres := supportdocker.Postgres()
-	postgresqlDocker := NewPostgresDocker(postgres)
-	_, err = postgresqlDocker.New()
+	postgresDocker := NewPostgresDocker(postgres)
+	_, err = postgresDocker.New()
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
@@ -3105,7 +3105,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockPostgresqlConnection(mysqlDocker.MockConfig, postgres.Config())
+	mockPostgresConnection(mysqlDocker.MockConfig, postgres.Config())
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3198,7 +3198,7 @@ func TestGetModelConnection(t *testing.T) {
 				var product Product
 				return product
 			}(),
-			expectConnection: "postgresql",
+			expectConnection: "postgres",
 		},
 		{
 			name: "the connection of model is not empty and model is slice",
@@ -3206,7 +3206,7 @@ func TestGetModelConnection(t *testing.T) {
 				var products []Product
 				return products
 			}(),
-			expectConnection: "postgresql",
+			expectConnection: "postgres",
 		},
 	}
 
@@ -3273,22 +3273,22 @@ func TestReadWriteSeparate(t *testing.T) {
 	}
 
 	postgreses := supportdocker.Postgreses(2)
-	readPostgresqlDocker := NewPostgresDocker(postgreses[0])
-	readPostgresqlQuery, err := readPostgresqlDocker.New()
+	readPostgresDocker := NewPostgresDocker(postgreses[0])
+	readPostgresQuery, err := readPostgresDocker.New()
 	if err != nil {
-		log.Fatalf("Get read postgresql error: %s", err)
+		log.Fatalf("Get read postgres error: %s", err)
 	}
 
-	writePostgresqlDocker := NewPostgresDocker(postgreses[1])
-	writePostgresqlQuery, err := writePostgresqlDocker.New()
+	writePostgresDocker := NewPostgresDocker(postgreses[1])
+	writePostgresQuery, err := writePostgresDocker.New()
 	if err != nil {
-		log.Fatalf("Get write postgresql error: %s", err)
+		log.Fatalf("Get write postgres error: %s", err)
 	}
 
-	writePostgresqlDocker.MockReadWrite(readPostgresqlDocker.Port, writePostgresqlDocker.Port)
-	postgresqlQuery, err := writePostgresqlDocker.Query(false)
+	writePostgresDocker.MockReadWrite(readPostgresDocker.Port, writePostgresDocker.Port)
+	postgresQuery, err := writePostgresDocker.Query(false)
 	if err != nil {
-		log.Fatalf("Get postgresql gorm error: %s", err)
+		log.Fatalf("Get postgres gorm error: %s", err)
 	}
 
 	sqlites := supportdocker.Sqlites(2)
@@ -3334,10 +3334,10 @@ func TestReadWriteSeparate(t *testing.T) {
 			"read":  readMysqlQuery,
 			"write": writeMysqlQuery,
 		},
-		contractsorm.DriverPostgresql: {
-			"mix":   postgresqlQuery,
-			"read":  readPostgresqlQuery,
-			"write": writePostgresqlQuery,
+		contractsorm.DriverPostgres: {
+			"mix":   postgresQuery,
+			"read":  readPostgresQuery,
+			"write": writePostgresQuery,
 		},
 		contractsorm.DriverSqlite: {
 			"mix":   sqliteDB,
@@ -3383,10 +3383,10 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		log.Fatalf("Init mysql error: %s", err)
 	}
 
-	postgresqlDocker := NewPostgresDocker(supportdocker.Postgres())
-	postgresqlQuery, err := postgresqlDocker.NewWithPrefixAndSingular()
+	postgresDocker := NewPostgresDocker(supportdocker.Postgres())
+	postgresQuery, err := postgresDocker.NewWithPrefixAndSingular()
 	if err != nil {
-		log.Fatalf("Init postgresql error: %s", err)
+		log.Fatalf("Init postgres error: %s", err)
 	}
 
 	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
@@ -3402,10 +3402,10 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 
 	dbs := map[contractsorm.Driver]contractsorm.Query{
-		contractsorm.DriverMysql:      mysqlQuery,
-		contractsorm.DriverPostgresql: postgresqlQuery,
-		contractsorm.DriverSqlite:     sqliteDB,
-		contractsorm.DriverSqlserver:  sqlserverDB,
+		contractsorm.DriverMysql:     mysqlQuery,
+		contractsorm.DriverPostgres:  postgresQuery,
+		contractsorm.DriverSqlite:    sqliteDB,
+		contractsorm.DriverSqlserver: sqlserverDB,
 	}
 
 	for drive, db := range dbs {
@@ -3446,19 +3446,19 @@ func mockDummyConnection(mockConfig *mocksconfig.Config, databaseConfig contract
 	mockConfig.On("GetString", "database.connections.dummy.database").Return(databaseConfig.Database)
 }
 
-func mockPostgresqlConnection(mockConfig *mocksconfig.Config, databaseConfig contractstesting.DatabaseConfig) {
-	mockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
-	mockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
-	mockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
-	mockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
-	mockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
-	mockConfig.On("GetString", "database.connections.postgresql.username").Return(databaseConfig.Username)
-	mockConfig.On("GetString", "database.connections.postgresql.password").Return(databaseConfig.Password)
-	mockConfig.On("GetInt", "database.connections.postgresql.port").Return(databaseConfig.Port)
-	mockConfig.On("GetString", "database.connections.postgresql.driver").Return(contractsorm.DriverPostgresql.String())
-	mockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
-	mockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
-	mockConfig.On("GetString", "database.connections.postgresql.database").Return(databaseConfig.Database)
+func mockPostgresConnection(mockConfig *mocksconfig.Config, databaseConfig contractstesting.DatabaseConfig) {
+	mockConfig.On("GetString", "database.connections.postgres.prefix").Return("")
+	mockConfig.On("GetBool", "database.connections.postgres.singular").Return(false)
+	mockConfig.On("Get", "database.connections.postgres.read").Return(nil)
+	mockConfig.On("Get", "database.connections.postgres.write").Return(nil)
+	mockConfig.On("GetString", "database.connections.postgres.host").Return("127.0.0.1")
+	mockConfig.On("GetString", "database.connections.postgres.username").Return(databaseConfig.Username)
+	mockConfig.On("GetString", "database.connections.postgres.password").Return(databaseConfig.Password)
+	mockConfig.On("GetInt", "database.connections.postgres.port").Return(databaseConfig.Port)
+	mockConfig.On("GetString", "database.connections.postgres.driver").Return(contractsorm.DriverPostgres.String())
+	mockConfig.On("GetString", "database.connections.postgres.sslmode").Return("disable")
+	mockConfig.On("GetString", "database.connections.postgres.timezone").Return("UTC")
+	mockConfig.On("GetString", "database.connections.postgres.database").Return(databaseConfig.Database)
 }
 
 type UserObserver struct{}
