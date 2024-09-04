@@ -16,37 +16,29 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # to be able to retrieve the last commit
-
-      - name: Install Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: "stable"
-
       - name: Run Benchmark
         run: set -o pipefail; go test ./... -benchmem -run=^$ -bench . | tee output.txt
-
       # NOTE: Benchmarks could change with different CPU types
       - name: Get GitHub Runner System Information
         uses: kenchan0130/actions-system-info@v1.3.0
         id: system-info
-
-      - name: Get Main branch SHA
+      - name: Get master branch SHA
         id: get-master-branch-sha
         run: |
           SHA="$(git rev-parse origin/master)"
           echo "sha=$SHA" >> $GITHUB_OUTPUT
-
       - name: Get Benchmark Results from master branch
         id: cache
         uses: actions/cache/restore@v4
         with:
           path: ./cache
           key: ${{ steps.get-master-branch-sha.outputs.sha }}-${{ runner.os }}-${{ steps.system-info.outputs.cpu-model }}-benchmark
-
       # This will only run if we have Benchmark Results from master branch
       - name: Compare PR Benchmark Results with master branch
         uses: benchmark-action/github-action-benchmark@v1.20.3
@@ -63,7 +55,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           summary-always: true
           alert-threshold: "150%"
-
       - name: Store Benchmark Results for master branch
         uses: benchmark-action/github-action-benchmark@v1.20.3
         if: ${{ github.ref_name == 'master' }}
@@ -77,7 +68,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           summary-always: true
           alert-threshold: "150%"
-
       - name: Publish Benchmark Results to GitHub Pages
         uses: benchmark-action/github-action-benchmark@v1
         if: ${{ github.ref_name == 'master' }}
@@ -93,7 +83,6 @@ jobs:
           save-data-file: true
           alert-threshold: "150%"
           auto-push: true
-
       - name: Update Benchmark Results cache
         uses: actions/cache/save@v4
         if: ${{ github.ref_name == 'master' }}
