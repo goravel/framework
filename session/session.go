@@ -180,6 +180,14 @@ func (s *Session) SetName(name string) sessioncontract.Session {
 	return s
 }
 
+func (s *Session) setDriver(driver sessioncontract.Driver) {
+	s.driver = driver
+}
+
+func (s *Session) setJson(json foundation.Json) {
+	s.json = json
+}
+
 func (s *Session) Start() bool {
 	s.loadSession()
 
