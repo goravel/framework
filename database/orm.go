@@ -14,6 +14,8 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
+var _ ormcontract.Orm = (*OrmImpl)(nil)
+
 type OrmImpl struct {
 	ctx        context.Context
 	config     config.Config

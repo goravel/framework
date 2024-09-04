@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/support/str"
 )
 
 func getExposedPort(exposedPorts []string, port int) int {
@@ -83,5 +84,5 @@ func run(command string) (string, error) {
 		return "", fmt.Errorf("%s: %s", err, stderr.String())
 	}
 
-	return out.String(), nil
+	return str.Of(out.String()).Squish().String(), nil
 }

@@ -14,7 +14,7 @@ import (
 type PostgresqlTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
-	postgresql *Postgresql
+	postgresql *PostgresImpl
 }
 
 func TestPostgresqlTestSuite(t *testing.T) {
@@ -27,7 +27,7 @@ func TestPostgresqlTestSuite(t *testing.T) {
 
 func (s *PostgresqlTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.postgresql = NewPostgresql("goravel", "goravel", "goravel")
+	s.postgresql = NewPostgresImpl("goravel", "goravel", "goravel")
 }
 
 func (s *PostgresqlTestSuite) TestBuild() {

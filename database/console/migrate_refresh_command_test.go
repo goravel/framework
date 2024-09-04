@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -22,10 +23,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		query      ormcontract.Query
 	)
 
-	if err := testDatabaseDocker.Fresh(); err != nil {
-		t.Fatal(err)
-	}
-
 	beforeEach := func() {
 		mockConfig = &configmock.Config{}
 	}
@@ -38,7 +35,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			name: "sqlite",
 			setup: func() {
 				var err error
-				docker := gorm.NewSqliteDocker("goravel")
+				docker := gorm.NewSqliteDocker(docker.Sqlite())
 				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
@@ -49,7 +46,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			name: "mysql",
 			setup: func() {
 				var err error
-				docker := gorm.NewMysqlDocker(testDatabaseDocker)
+				docker := gorm.NewMysqlDocker(docker.Mysql())
 				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
@@ -60,7 +57,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			name: "postgresql",
 			setup: func() {
 				var err error
-				docker := gorm.NewPostgresqlDocker(testDatabaseDocker)
+				docker := gorm.NewPostgresDocker(docker.Postgres())
 				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
@@ -71,7 +68,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 			name: "sqlserver",
 			setup: func() {
 				var err error
-				docker := gorm.NewSqlserverDocker(testDatabaseDocker)
+				docker := gorm.NewSqlserverDocker(docker.Sqlserver())
 				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig

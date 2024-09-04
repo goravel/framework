@@ -9,8 +9,8 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/crypt"
+	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/filesystem"
@@ -72,7 +72,7 @@ type Container interface {
 	// MakeSchedule resolves the schedule instance.
 	MakeSchedule() schedule.Schedule
 	// MakeSchema resolves the schema instance.
-	MakeSchema() schema.Schema
+	MakeSchema() migration.Schema
 	// MakeSession resolves the session instance.
 	MakeSession() session.Manager
 	// MakeStorage resolves the storage instance.

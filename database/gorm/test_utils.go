@@ -6,13 +6,8 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/testing"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	supportdocker "github.com/goravel/framework/support/docker"
-)
-
-const (
-	dbDatabase  = "goravel"
-	dbDatabase1 = "goravel1"
 )
 
 var testContext context.Context
@@ -25,14 +20,8 @@ type MysqlDocker struct {
 	database   string
 }
 
-func NewMysqlDocker(database *supportdocker.Database) *MysqlDocker {
-	config := database.Mysql.Config()
-
-	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
-}
-
-func NewMysql1Docker(database *supportdocker.Database) *MysqlDocker {
-	config := database.Mysql1.Config()
+func NewMysqlDocker(driver testing.DatabaseDriver) *MysqlDocker {
+	config := driver.Config()
 
 	return &MysqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
@@ -146,8 +135,8 @@ type PostgresqlDocker struct {
 	password   string
 }
 
-func NewPostgresqlDocker(database *supportdocker.Database) *PostgresqlDocker {
-	config := database.Postgresql.Config()
+func NewPostgresDocker(driver testing.DatabaseDriver) *PostgresqlDocker {
+	config := driver.Config()
 
 	return &PostgresqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
@@ -257,8 +246,8 @@ type SqliteDocker struct {
 	MockConfig *mocksconfig.Config
 }
 
-func NewSqliteDocker(dbName string) *SqliteDocker {
-	return &SqliteDocker{MockConfig: &mocksconfig.Config{}, name: dbName}
+func NewSqliteDocker(driver testing.DatabaseDriver) *SqliteDocker {
+	return &SqliteDocker{MockConfig: &mocksconfig.Config{}, name: driver.Config().Database}
 }
 
 func (r *SqliteDocker) New() (orm.Query, error) {
@@ -313,13 +302,13 @@ func (r *SqliteDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *SqliteDocker) MockReadWrite() {
+func (r *SqliteDocker) MockReadWrite(readDatabase string) {
 	r.MockConfig = &mocksconfig.Config{}
 	r.MockConfig.On("Get", "database.connections.sqlite.read").Return([]database.Config{
-		{Database: dbDatabase},
+		{Database: readDatabase},
 	})
 	r.MockConfig.On("Get", "database.connections.sqlite.write").Return([]database.Config{
-		{Database: dbDatabase1},
+		{Database: r.name},
 	})
 	r.MockConfig.On("GetString", "database.connections.sqlite.prefix").Return("")
 	r.MockConfig.On("GetBool", "database.connections.sqlite.singular").Return(false)
@@ -362,8 +351,8 @@ type SqlserverDocker struct {
 	password   string
 }
 
-func NewSqlserverDocker(database *supportdocker.Database) *SqlserverDocker {
-	config := database.Sqlserver.Config()
+func NewSqlserverDocker(driver testing.DatabaseDriver) *SqlserverDocker {
+	config := driver.Config()
 
 	return &SqlserverDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }

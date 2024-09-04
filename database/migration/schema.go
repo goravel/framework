@@ -1,31 +1,35 @@
 package migration
 
 import (
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/database/migration"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 )
 
-type Schema struct{}
+var _ migration.Schema = (*Schema)(nil)
 
-func NewSchema() *Schema {
-	return &Schema{}
+type Schema struct {
+	connection string
+	orm        contractsorm.Orm
+	migrations []migration.Migration
 }
 
-func (r *Schema) Create(table string, callback func(table schema.Blueprint)) error {
-	//TODO implement me
-	panic("implement me")
+func NewSchema(orm contractsorm.Orm) *Schema {
+	return &Schema{
+		orm: orm,
+	}
 }
 
-func (r *Schema) Connection() schema.Schema {
-	//TODO implement me
-	panic("implement me")
+func (r *Schema) Connection(name string) migration.Schema {
+	r.connection = name
+
+	return r
 }
 
-func (r *Schema) Register(migrations []schema.Migration) {
-	//TODO implement me
-	panic("implement me")
+func (r *Schema) Register(migrations []migration.Migration) {
+	r.migrations = migrations
 }
 
-func (r *Schema) Table(table string, callback func(table schema.Blueprint)) error {
-	//TODO implement me
-	panic("implement me")
+func (r *Schema) Sql(sql string) {
+	// TODO catch error and rollback
+	_, _ = r.orm.Connection(r.connection).Query().Exec(sql)
 }

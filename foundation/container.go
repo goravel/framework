@@ -15,8 +15,8 @@ import (
 	configcontract "github.com/goravel/framework/contracts/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	cryptcontract "github.com/goravel/framework/contracts/crypt"
+	migrationcontract "github.com/goravel/framework/contracts/database/migration"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
-	schemacontract "github.com/goravel/framework/contracts/database/schema"
 	seerdercontract "github.com/goravel/framework/contracts/database/seeder"
 	eventcontract "github.com/goravel/framework/contracts/event"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
@@ -256,14 +256,14 @@ func (c *Container) MakeSchedule() schedulecontract.Schedule {
 	return instance.(schedulecontract.Schedule)
 }
 
-func (c *Container) MakeSchema() schemacontract.Schema {
+func (c *Container) MakeSchema() migrationcontract.Schema {
 	instance, err := c.Make(database.BindingSchema)
 	if err != nil {
 		color.Red().Println(err)
 		return nil
 	}
 
-	return instance.(schemacontract.Schema)
+	return instance.(migrationcontract.Schema)
 }
 
 func (c *Container) MakeSession() sessioncontract.Manager {
