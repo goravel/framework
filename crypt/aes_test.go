@@ -57,3 +57,35 @@ func (s *AesTestSuite) TestDecryptString() {
 	_, err = s.aes.DecryptString("eyJpdiI6IjEyMzQ1IiwidmFsdWUiOiIxMjM0NSJ9")
 	s.Error(err)
 }
+
+func Benchmark_EncryptString(b *testing.B) {
+	mockConfig := &configmock.Config{}
+	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
+	aes := NewAES(mockConfig, json.NewJson())
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := aes.EncryptString("Goravel")
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func Benchmark_DecryptString(b *testing.B) {
+	mockConfig := &configmock.Config{}
+	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
+	aes := NewAES(mockConfig, json.NewJson())
+	payload, err := aes.EncryptString("Goravel")
+	if err != nil {
+		b.Error(err)
+	}
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := aes.DecryptString(payload)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}

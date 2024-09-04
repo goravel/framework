@@ -431,6 +431,69 @@ func TestLogrus_Fatalf(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
+func Benchmark_Debug(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Debug("Debug Goravel")
+	}
+}
+
+func Benchmark_Info(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Info("Goravel")
+	}
+}
+
+func Benchmark_Warning(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Warning("Goravel")
+	}
+}
+
+func Benchmark_Error(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Error("Goravel")
+	}
+}
+
+func Benchmark_Fatal(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Fatal("Goravel")
+	}
+}
+
+func Benchmark_Panic(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		defer func() {
+			recover()
+		}()
+		log.Panic("Goravel")
+	}
+}
+
 func initMockConfig() *configmock.Config {
 	mockConfig := &configmock.Config{}
 

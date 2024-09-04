@@ -100,7 +100,7 @@ func (m *Manager) createDefaultDriver() {
 
 // startGcTimer starts a garbage collection timer for the session driver.
 func (m *Manager) startGcTimer(driver sessioncontract.Driver) {
-	interval := ConfigFacade.GetInt("session.gc_interval", 30)
+	interval := m.config.GetInt("session.gc_interval", 30)
 	if interval <= 0 {
 		// No need to start the timer if the interval is zero or negative
 		return
