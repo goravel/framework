@@ -1,9 +1,9 @@
-name: Run govulncheck
+name: Govulncheck
 on:
   schedule:
     - cron: "0 */6 * * *" # Run every 6 hours
 jobs:
-  govulncheck-check:
+  govulncheck:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
