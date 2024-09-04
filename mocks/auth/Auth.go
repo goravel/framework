@@ -68,6 +68,61 @@ func (_c *Auth_Guard_Call) RunAndReturn(run func(string) auth.Auth) *Auth_Guard_
 	return _c
 }
 
+// Id provides a mock function with given fields:
+func (_m *Auth) Id() (string, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Id")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Auth_Id_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Id'
+type Auth_Id_Call struct {
+	*mock.Call
+}
+
+// Id is a helper method to define mock.On call
+func (_e *Auth_Expecter) Id() *Auth_Id_Call {
+	return &Auth_Id_Call{Call: _e.mock.On("Id")}
+}
+
+func (_c *Auth_Id_Call) Run(run func()) *Auth_Id_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Auth_Id_Call) Return(_a0 string, _a1 error) *Auth_Id_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Auth_Id_Call) RunAndReturn(run func() (string, error)) *Auth_Id_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Login provides a mock function with given fields: user
 func (_m *Auth) Login(user interface{}) (string, error) {
 	ret := _m.Called(user)
