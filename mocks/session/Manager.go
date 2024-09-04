@@ -155,33 +155,21 @@ func (_c *Manager_Driver_Call) RunAndReturn(run func(...string) (session.Driver,
 }
 
 // Extend provides a mock function with given fields: driver, handler
-func (_m *Manager) Extend(driver string, handler func() session.Driver) (session.Manager, error) {
+func (_m *Manager) Extend(driver string, handler func() session.Driver) error {
 	ret := _m.Called(driver, handler)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Extend")
 	}
 
-	var r0 session.Manager
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, func() session.Driver) (session.Manager, error)); ok {
-		return rf(driver, handler)
-	}
-	if rf, ok := ret.Get(0).(func(string, func() session.Driver) session.Manager); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, func() session.Driver) error); ok {
 		r0 = rf(driver, handler)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(session.Manager)
-		}
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, func() session.Driver) error); ok {
-		r1 = rf(driver, handler)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Manager_Extend_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Extend'
@@ -203,12 +191,12 @@ func (_c *Manager_Extend_Call) Run(run func(driver string, handler func() sessio
 	return _c
 }
 
-func (_c *Manager_Extend_Call) Return(_a0 session.Manager, _a1 error) *Manager_Extend_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Manager_Extend_Call) Return(_a0 error) *Manager_Extend_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Manager_Extend_Call) RunAndReturn(run func(string, func() session.Driver) (session.Manager, error)) *Manager_Extend_Call {
+func (_c *Manager_Extend_Call) RunAndReturn(run func(string, func() session.Driver) error) *Manager_Extend_Call {
 	_c.Call.Return(run)
 	return _c
 }
