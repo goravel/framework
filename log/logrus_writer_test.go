@@ -387,7 +387,6 @@ func TestLogrus(t *testing.T) {
 			mockConfig.AssertExpectations(t)
 		})
 	}
-
 	_ = file.Remove("storage")
 }
 
@@ -439,6 +438,8 @@ func Benchmark_Debug(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		log.Debug("Debug Goravel")
 	}
+
+	_ = file.Remove("storage")
 }
 
 func Benchmark_Info(b *testing.B) {
@@ -449,6 +450,8 @@ func Benchmark_Info(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		log.Info("Goravel")
 	}
+
+	_ = file.Remove("storage")
 }
 
 func Benchmark_Warning(b *testing.B) {
@@ -459,6 +462,8 @@ func Benchmark_Warning(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		log.Warning("Goravel")
 	}
+
+	_ = file.Remove("storage")
 }
 
 func Benchmark_Error(b *testing.B) {
@@ -469,16 +474,12 @@ func Benchmark_Error(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		log.Error("Goravel")
 	}
+
+	_ = file.Remove("storage")
 }
 
 func Benchmark_Fatal(b *testing.B) {
-	mockConfig := initMockConfig()
-	mockDriverConfig(mockConfig)
-	log := NewApplication(mockConfig, json.NewJson())
-
-	for i := 0; i < b.N; i++ {
-		log.Fatal("Goravel")
-	}
+	// This test is not suitable for benchmarking because it will exit the program
 }
 
 func Benchmark_Panic(b *testing.B) {
@@ -488,10 +489,12 @@ func Benchmark_Panic(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		defer func() {
-			recover()
+			recover() //nolint:errcheck
 		}()
 		log.Panic("Goravel")
 	}
+
+	_ = file.Remove("storage")
 }
 
 func initMockConfig() *configmock.Config {

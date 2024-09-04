@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type Daily struct {
@@ -43,6 +44,7 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 		logPath+"-%Y-%m-%d"+ext,
 		rotatelogs.WithRotationTime(time.Duration(24)*time.Hour),
 		rotatelogs.WithRotationCount(uint(daily.config.GetInt(channel+".days"))),
+		rotatelogs.WithClock(rotatelogs.NewClock(carbon.Now().StdTime())),
 	)
 	if err != nil {
 		return hook, errors.New("Config local file system for logger error: " + err.Error())
