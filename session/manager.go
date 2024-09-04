@@ -37,9 +37,9 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) sessioncontract.Session {
 	session := m.AcquireSession()
-	session.name = m.config.GetString("session.cookie")
 	session.driver = handler
 	session.json = m.json
+	session.SetName(m.config.GetString("session.cookie"))
 	if len(sessionID) > 0 {
 		session.SetID(sessionID[0])
 	} else {

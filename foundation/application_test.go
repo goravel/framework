@@ -401,6 +401,7 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig := &configmocks.Config{}
 	mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
+	mockConfig.On("GetInt", "session.gc_interval").Return(30).Once()
 	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
