@@ -13,7 +13,7 @@ type Bcrypt struct {
 // NewBcrypt returns a new Bcrypt hasher.
 func NewBcrypt(config config.Config) *Bcrypt {
 	return &Bcrypt{
-		rounds: config.GetInt("hashing.bcrypt.rounds", 10),
+		rounds: config.GetInt("hashing.bcrypt.rounds", 12),
 	}
 }
 

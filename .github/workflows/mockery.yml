@@ -1,6 +1,7 @@
 name: Mockery
 on:
   pull_request:
+permissions: write-all
 jobs:
   mockery:
     runs-on: ubuntu-latest
