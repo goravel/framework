@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  deployments: write
 jobs:
   benchmark:
     runs-on: ubuntu-latest
@@ -79,7 +80,7 @@ jobs:
           alert-threshold: "150%"
 
       - name: Publish Benchmark Results to GitHub Pages
-        uses: benchmark-action/github-action-benchmark@v1.20.3
+        uses: benchmark-action/github-action-benchmark@v1
         if: ${{ github.ref_name == 'master' }}
         with:
           tool: 'go'
@@ -92,7 +93,7 @@ jobs:
           # Save the data to external file (GitHub Pages)
           save-data-file: true
           alert-threshold: "150%"
-          auto-push: false
+          auto-push: true
 
       - name: Update Benchmark Results cache
         uses: actions/cache/save@v4
