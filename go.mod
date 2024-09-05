@@ -36,7 +36,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.4
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.26.0
-	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
+	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	google.golang.org/grpc v1.66.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.9
