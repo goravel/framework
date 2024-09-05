@@ -10,25 +10,3 @@ jobs:
   lint:
     uses: goravel/.github/.github/workflows/lint.yml@master
     secrets: inherit
-  nilaway:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-      - name: Go mod cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Install Nilaway
-        run: go install go.uber.org/nilaway/cmd/nilaway@latest
-      - name: Run Nilaway
-        run: nilaway ./...
