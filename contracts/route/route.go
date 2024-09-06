@@ -1,6 +1,7 @@
 package route
 
 import (
+	"context"
 	"net/http"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -23,7 +24,7 @@ type Route interface {
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	// Shutdown gracefully shuts down the serve.
-	Shutdown() error
+	Shutdown(ctx ...context.Context) error
 }
 
 type Router interface {
