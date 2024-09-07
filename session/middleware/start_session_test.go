@@ -116,7 +116,7 @@ func (r *TestContext) Context() context.Context {
 	return r.ctx
 }
 
-func (r *TestContext) WithValue(key string, value any) {
+func (r *TestContext) WithValue(key any, value any) {
 	//nolint:all
 	r.ctx = context.WithValue(r.ctx, key, value)
 }
