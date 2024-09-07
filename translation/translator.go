@@ -146,7 +146,7 @@ func (t *Translator) SetFallback(locale string) context.Context {
 func (t *Translator) SetLocale(locale string) context.Context {
 	t.locale = locale
 	if ctx, ok := t.ctx.(http.Context); ok {
-		ctx.WithValue(string(localeKey), locale)
+		ctx.WithValue(localeKey, locale)
 		t.ctx = ctx
 	} else {
 		//nolint:all
