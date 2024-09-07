@@ -29,6 +29,13 @@ func (s *ContextTestSuite) TestWithValue() {
 	s.Equal("world", s.ctx.Value("Hello"))
 }
 
+func (s *ContextTestSuite) TestWithValueUsingCustomKey() {
+	var myKey struct{}
+	s.ctx.WithValue(myKey, "hola")
+	s.Equal("hola", s.ctx.Value(myKey))
+	s.NotEqual("hola", s.ctx.Value("myKey"))
+}
+
 func (s *ContextTestSuite) TestRequest() {
 	s.Nil(s.ctx.Request())
 }
