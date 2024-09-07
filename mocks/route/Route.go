@@ -720,16 +720,22 @@ func (_c *Route_ServeHTTP_Call) RunAndReturn(run func(nethttp.ResponseWriter, *n
 }
 
 // Shutdown provides a mock function with given fields: ctx
-func (_m *Route) Shutdown(ctx context.Context) error {
-	ret := _m.Called(ctx)
+func (_m *Route) Shutdown(ctx ...context.Context) error {
+	_va := make([]interface{}, len(ctx))
+	for _i := range ctx {
+		_va[_i] = ctx[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Shutdown")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(...context.Context) error); ok {
+		r0 = rf(ctx...)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -743,14 +749,21 @@ type Route_Shutdown_Call struct {
 }
 
 // Shutdown is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Route_Expecter) Shutdown(ctx interface{}) *Route_Shutdown_Call {
-	return &Route_Shutdown_Call{Call: _e.mock.On("Shutdown", ctx)}
+//   - ctx ...context.Context
+func (_e *Route_Expecter) Shutdown(ctx ...interface{}) *Route_Shutdown_Call {
+	return &Route_Shutdown_Call{Call: _e.mock.On("Shutdown",
+		append([]interface{}{}, ctx...)...)}
 }
 
-func (_c *Route_Shutdown_Call) Run(run func(ctx context.Context)) *Route_Shutdown_Call {
+func (_c *Route_Shutdown_Call) Run(run func(ctx ...context.Context)) *Route_Shutdown_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		variadicArgs := make([]context.Context, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(context.Context)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -760,7 +773,7 @@ func (_c *Route_Shutdown_Call) Return(_a0 error) *Route_Shutdown_Call {
 	return _c
 }
 
-func (_c *Route_Shutdown_Call) RunAndReturn(run func(context.Context) error) *Route_Shutdown_Call {
+func (_c *Route_Shutdown_Call) RunAndReturn(run func(...context.Context) error) *Route_Shutdown_Call {
 	_c.Call.Return(run)
 	return _c
 }
