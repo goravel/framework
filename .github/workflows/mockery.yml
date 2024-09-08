@@ -1,10 +1,11 @@
 name: Mockery
 on:
-  pull_request:
+  pull_request_target:
 jobs:
   mockery:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
