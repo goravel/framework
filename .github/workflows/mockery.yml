@@ -1,6 +1,6 @@
 name: Mockery
 on:
-  pull_request_target:
+  pull_request:
 jobs:
   mockery:
     runs-on: ubuntu-latest
