@@ -17,3 +17,4 @@ jobs:
         name: Commit changes
         with:
           commit_message: "chore: update mocks"
+          branch: ${{ github.head_ref }}
