@@ -1,6 +1,6 @@
 name: Mockery
 on:
-  pull_request:
+  pull_request_target:
 jobs:
   mockery:
     runs-on: ubuntu-latest
@@ -17,4 +17,3 @@ jobs:
         name: Commit changes
         with:
           commit_message: "chore: update mocks"
-          branch: ${{ github.head_ref }}
