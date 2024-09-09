@@ -180,14 +180,6 @@ func (s *Session) SetName(name string) sessioncontract.Session {
 	return s
 }
 
-func (s *Session) setDriver(driver sessioncontract.Driver) {
-	s.driver = driver
-}
-
-func (s *Session) setJson(json foundation.Json) {
-	s.json = json
-}
-
 func (s *Session) Start() bool {
 	s.loadSession()
 
@@ -286,6 +278,14 @@ func (s *Session) reset() {
 	s.attributes = make(map[string]any)
 	s.driver = nil
 	s.started = false
+}
+
+func (s *Session) setDriver(driver sessioncontract.Driver) {
+	s.driver = driver
+}
+
+func (s *Session) setJson(json foundation.Json) {
+	s.json = json
 }
 
 // toStringSlice converts an interface slice to a string slice.

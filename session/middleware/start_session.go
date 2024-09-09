@@ -55,7 +55,6 @@ func StartSession() http.Middleware {
 		}
 
 		// Release session
-		// TODO - any better way to release the session?
-		session.SessionFacade.(*session.Manager).ReleaseSession(s.(*session.Session))
+		session.SessionFacade.ReleaseSession(s)
 	}
 }

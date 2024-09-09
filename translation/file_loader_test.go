@@ -34,7 +34,7 @@ func (f *FileLoaderTestSuite) SetupSuite() {
 }
 
 func (f *FileLoaderTestSuite) TearDownSuite() {
-	assert.Nil(f.T(), file.Remove("lang"))
+	f.Nil(file.Remove("lang"))
 }
 
 func (f *FileLoaderTestSuite) SetupTest() {

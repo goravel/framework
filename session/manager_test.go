@@ -88,8 +88,13 @@ func (s *ManagerTestSuite) TestExtend() {
 }
 
 func (s *ManagerTestSuite) TestBuildSession() {
+	driver, err := s.manager.Driver("file")
+	s.Nil(err)
+	s.NotNil(driver)
+	s.Equal("*driver.File", fmt.Sprintf("%T", driver))
+
 	s.mockConfig.On("GetString", "session.cookie").Return("test_cookie").Once()
-	session := s.manager.BuildSession(nil)
+	session := s.manager.BuildSession(driver)
 	s.NotNil(session)
 	s.Equal("test_cookie", session.GetName())
 }

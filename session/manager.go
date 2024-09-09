@@ -36,6 +36,9 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 }
 
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) sessioncontract.Session {
+	if handler == nil {
+		panic("session driver cannot be nil")
+	}
 	session := m.AcquireSession()
 	session.setDriver(handler)
 	session.setJson(m.json)
@@ -82,9 +85,10 @@ func (m *Manager) AcquireSession() *Session {
 	return session
 }
 
-func (m *Manager) ReleaseSession(session *Session) {
-	session.reset()
-	m.sessionPool.Put(session)
+func (m *Manager) ReleaseSession(session sessioncontract.Session) {
+	s := session.(*Session)
+	s.reset()
+	m.sessionPool.Put(s)
 }
 
 func (m *Manager) getDefaultDriver() string {

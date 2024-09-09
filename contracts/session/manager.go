@@ -7,4 +7,6 @@ type Manager interface {
 	Driver(name ...string) (Driver, error)
 	// Extend extends the session manager with a custom driver.
 	Extend(driver string, handler func() Driver) error
+	// ReleaseSession releases the session back to the pool.
+	ReleaseSession(session Session)
 }
