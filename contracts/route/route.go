@@ -1,6 +1,7 @@
 package route
 
 import (
+	"context"
 	"net/http"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -22,6 +23,8 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
+	// Shutdown gracefully shuts down the serve.
+	Shutdown(ctx ...context.Context) error
 }
 
 type Router interface {
