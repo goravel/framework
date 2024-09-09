@@ -201,6 +201,39 @@ func (_c *Manager_Extend_Call) RunAndReturn(run func(string, func() session.Driv
 	return _c
 }
 
+// ReleaseSession provides a mock function with given fields: _a0
+func (_m *Manager) ReleaseSession(_a0 session.Session) {
+	_m.Called(_a0)
+}
+
+// Manager_ReleaseSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReleaseSession'
+type Manager_ReleaseSession_Call struct {
+	*mock.Call
+}
+
+// ReleaseSession is a helper method to define mock.On call
+//   - _a0 session.Session
+func (_e *Manager_Expecter) ReleaseSession(_a0 interface{}) *Manager_ReleaseSession_Call {
+	return &Manager_ReleaseSession_Call{Call: _e.mock.On("ReleaseSession", _a0)}
+}
+
+func (_c *Manager_ReleaseSession_Call) Run(run func(_a0 session.Session)) *Manager_ReleaseSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(session.Session))
+	})
+	return _c
+}
+
+func (_c *Manager_ReleaseSession_Call) Return() *Manager_ReleaseSession_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Manager_ReleaseSession_Call) RunAndReturn(run func(session.Session)) *Manager_ReleaseSession_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewManager(t interface {
