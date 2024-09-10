@@ -4,22 +4,5 @@ on:
     - cron: "0 */6 * * *" # Run every 6 hours
 jobs:
   govulncheck:
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-    steps:
-      - name: Fetch Repository
-        uses: actions/checkout@v4
-
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-          check-latest: true
-          cache: false
-
-      - name: Install Govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run Govulncheck
-        run: govulncheck ./...
+    uses: goravel/.github/.github/workflows/govulncheck.yml@master
+    secrets: inherit
