@@ -40,15 +40,15 @@ func (s *DockerTestSuite) TestDatabase() {
 	s.Equal("mysql", databaseImpl.connection)
 
 	mockConfig = &configmocks.Config{}
-	mockConfig.On("GetString", "database.connections.postgresql.driver").Return("postgresql").Once()
-	mockConfig.On("GetString", "database.connections.postgresql.database").Return("goravel").Once()
-	mockConfig.On("GetString", "database.connections.postgresql.username").Return("goravel").Once()
-	mockConfig.On("GetString", "database.connections.postgresql.password").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.postgres.driver").Return("postgres").Once()
+	mockConfig.On("GetString", "database.connections.postgres.database").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.postgres.username").Return("goravel").Once()
+	mockConfig.On("GetString", "database.connections.postgres.password").Return("goravel").Once()
 	s.mockApp.On("MakeConfig").Return(mockConfig).Once()
 
-	database, err = s.docker.Database("postgresql")
+	database, err = s.docker.Database("postgres")
 	s.Nil(err)
 	s.NotNil(database)
 	databaseImpl = database.(*Database)
-	s.Equal("postgresql", databaseImpl.connection)
+	s.Equal("postgres", databaseImpl.connection)
 }

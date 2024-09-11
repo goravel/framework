@@ -50,8 +50,11 @@ func StartSession() http.Middleware {
 		req.Next()
 
 		// Save session
-		if err := s.Save(); err != nil {
+		if err = s.Save(); err != nil {
 			color.Red().Printf("Error saving session: %s\n", err)
 		}
+
+		// Release session
+		session.SessionFacade.ReleaseSession(s)
 	}
 }

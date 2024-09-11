@@ -52,8 +52,8 @@ func (s *DsnTestSuite) TestMysql() {
 		testUsername, testPassword, testHost, testPort, testDatabase, charset, true, loc), dsn.Mysql(testConfig))
 }
 
-func (s *DsnTestSuite) TestPostgresql() {
-	connection := orm.DriverPostgresql.String()
+func (s *DsnTestSuite) TestPostgres() {
+	connection := orm.DriverPostgres.String()
 	dsn := NewDsnImpl(s.mockConfig, connection)
 	sslmode := "disable"
 	timezone := "UTC"
@@ -61,7 +61,7 @@ func (s *DsnTestSuite) TestPostgresql() {
 	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", connection)).Return(timezone).Once()
 
 	s.Equal(fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
-		testUsername, testPassword, testHost, testPort, testDatabase, sslmode, timezone), dsn.Postgresql(testConfig))
+		testUsername, testPassword, testHost, testPort, testDatabase, sslmode, timezone), dsn.Postgres(testConfig))
 }
 
 func (s *DsnTestSuite) TestSqlite() {

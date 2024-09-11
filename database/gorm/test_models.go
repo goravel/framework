@@ -301,7 +301,7 @@ type Product struct {
 }
 
 func (p *Product) Connection() string {
-	return "postgresql"
+	return "postgres"
 }
 
 type Review struct {

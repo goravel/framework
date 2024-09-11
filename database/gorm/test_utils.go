@@ -127,7 +127,7 @@ func (r *MysqlDocker) mockOfCommon() {
 	mockPool(r.MockConfig)
 }
 
-type PostgresqlDocker struct {
+type PostgresDocker struct {
 	MockConfig *mocksconfig.Config
 	Port       int
 	user       string
@@ -135,13 +135,13 @@ type PostgresqlDocker struct {
 	password   string
 }
 
-func NewPostgresDocker(driver testing.DatabaseDriver) *PostgresqlDocker {
+func NewPostgresDocker(driver testing.DatabaseDriver) *PostgresDocker {
 	config := driver.Config()
 
-	return &PostgresqlDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
+	return &PostgresDocker{MockConfig: &mocksconfig.Config{}, Port: config.Port, user: config.Username, password: config.Password, database: config.Database}
 }
 
-func (r *PostgresqlDocker) New() (orm.Query, error) {
+func (r *PostgresDocker) New() (orm.Query, error) {
 	r.mock()
 
 	db, err := r.Query(true)
@@ -152,7 +152,7 @@ func (r *PostgresqlDocker) New() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *PostgresqlDocker) NewWithPrefixAndSingular() (orm.Query, error) {
+func (r *PostgresDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 	r.mockWithPrefixAndSingular()
 
 	db, err := r.QueryWithPrefixAndSingular()
@@ -163,14 +163,14 @@ func (r *PostgresqlDocker) NewWithPrefixAndSingular() (orm.Query, error) {
 	return db, nil
 }
 
-func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
-	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
+func (r *PostgresDocker) Query(createTable bool) (orm.Query, error) {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgres.String())
 	if err != nil {
-		return nil, errors.New("connect to postgresql failed")
+		return nil, errors.New("connect to postgres failed")
 	}
 
 	if createTable {
-		err := Tables{}.Create(orm.DriverPostgresql, query)
+		err := Tables{}.Create(orm.DriverPostgres, query)
 		if err != nil {
 			return nil, err
 		}
@@ -179,13 +179,13 @@ func (r *PostgresqlDocker) Query(createTable bool) (orm.Query, error) {
 	return query, nil
 }
 
-func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
-	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgresql.String())
+func (r *PostgresDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
+	query, err := InitializeQuery(testContext, r.MockConfig, orm.DriverPostgres.String())
 	if err != nil {
-		return nil, errors.New("connect to postgresql failed")
+		return nil, errors.New("connect to postgres failed")
 	}
 
-	err = Tables{}.CreateWithPrefixAndSingular(orm.DriverPostgresql, query)
+	err = Tables{}.CreateWithPrefixAndSingular(orm.DriverPostgres, query)
 	if err != nil {
 		return nil, err
 	}
@@ -193,50 +193,50 @@ func (r *PostgresqlDocker) QueryWithPrefixAndSingular() (orm.Query, error) {
 	return query, nil
 }
 
-func (r *PostgresqlDocker) MockReadWrite(readPort, writePort int) {
+func (r *PostgresDocker) MockReadWrite(readPort, writePort int) {
 	r.MockConfig = &mocksconfig.Config{}
-	r.MockConfig.On("Get", "database.connections.postgresql.read").Return([]database.Config{
+	r.MockConfig.On("Get", "database.connections.postgres.read").Return([]database.Config{
 		{Host: "127.0.0.1", Port: readPort, Username: r.user, Password: r.password},
 	})
-	r.MockConfig.On("Get", "database.connections.postgresql.write").Return([]database.Config{
+	r.MockConfig.On("Get", "database.connections.postgres.write").Return([]database.Config{
 		{Host: "127.0.0.1", Port: writePort, Username: r.user, Password: r.password},
 	})
-	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
-	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
+	r.MockConfig.On("GetString", "database.connections.postgres.prefix").Return("")
+	r.MockConfig.On("GetBool", "database.connections.postgres.singular").Return(false)
 	r.mockOfCommon()
 }
 
-func (r *PostgresqlDocker) mock() {
-	r.MockConfig.On("GetString", "database.default").Return("postgresql")
+func (r *PostgresDocker) mock() {
+	r.MockConfig.On("GetString", "database.default").Return("postgres")
 	r.MockConfig.On("GetString", "database.migrations").Return("migrations")
-	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("")
-	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(false)
+	r.MockConfig.On("GetString", "database.connections.postgres.prefix").Return("")
+	r.MockConfig.On("GetBool", "database.connections.postgres.singular").Return(false)
 	r.mockSingleOfCommon()
 	r.mockOfCommon()
 }
 
-func (r *PostgresqlDocker) mockWithPrefixAndSingular() {
-	r.MockConfig.On("GetString", "database.connections.postgresql.prefix").Return("goravel_")
-	r.MockConfig.On("GetBool", "database.connections.postgresql.singular").Return(true)
+func (r *PostgresDocker) mockWithPrefixAndSingular() {
+	r.MockConfig.On("GetString", "database.connections.postgres.prefix").Return("goravel_")
+	r.MockConfig.On("GetBool", "database.connections.postgres.singular").Return(true)
 	r.mockSingleOfCommon()
 	r.mockOfCommon()
 }
 
-func (r *PostgresqlDocker) mockSingleOfCommon() {
-	r.MockConfig.On("Get", "database.connections.postgresql.read").Return(nil)
-	r.MockConfig.On("Get", "database.connections.postgresql.write").Return(nil)
-	r.MockConfig.On("GetString", "database.connections.postgresql.host").Return("127.0.0.1")
-	r.MockConfig.On("GetString", "database.connections.postgresql.username").Return(r.user)
-	r.MockConfig.On("GetString", "database.connections.postgresql.password").Return(r.password)
-	r.MockConfig.On("GetInt", "database.connections.postgresql.port").Return(r.Port)
+func (r *PostgresDocker) mockSingleOfCommon() {
+	r.MockConfig.On("Get", "database.connections.postgres.read").Return(nil)
+	r.MockConfig.On("Get", "database.connections.postgres.write").Return(nil)
+	r.MockConfig.On("GetString", "database.connections.postgres.host").Return("127.0.0.1")
+	r.MockConfig.On("GetString", "database.connections.postgres.username").Return(r.user)
+	r.MockConfig.On("GetString", "database.connections.postgres.password").Return(r.password)
+	r.MockConfig.On("GetInt", "database.connections.postgres.port").Return(r.Port)
 }
 
-func (r *PostgresqlDocker) mockOfCommon() {
+func (r *PostgresDocker) mockOfCommon() {
 	r.MockConfig.On("GetBool", "app.debug").Return(true)
-	r.MockConfig.On("GetString", "database.connections.postgresql.driver").Return(orm.DriverPostgresql.String())
-	r.MockConfig.On("GetString", "database.connections.postgresql.sslmode").Return("disable")
-	r.MockConfig.On("GetString", "database.connections.postgresql.timezone").Return("UTC")
-	r.MockConfig.On("GetString", "database.connections.postgresql.database").Return(r.database)
+	r.MockConfig.On("GetString", "database.connections.postgres.driver").Return(orm.DriverPostgres.String())
+	r.MockConfig.On("GetString", "database.connections.postgres.sslmode").Return("disable")
+	r.MockConfig.On("GetString", "database.connections.postgres.timezone").Return("UTC")
+	r.MockConfig.On("GetString", "database.connections.postgres.database").Return(r.database)
 
 	mockPool(r.MockConfig)
 }
@@ -531,7 +531,7 @@ CREATE TABLE peoples (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE peoples (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -582,7 +582,7 @@ CREATE TABLE reviews (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE reviews (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -633,7 +633,7 @@ CREATE TABLE products (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE products (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -686,7 +686,7 @@ CREATE TABLE users (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -745,7 +745,7 @@ CREATE TABLE goravel_user (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -803,7 +803,7 @@ CREATE TABLE addresses (
   KEY idx_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -857,7 +857,7 @@ CREATE TABLE books (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE books (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -908,7 +908,7 @@ CREATE TABLE authors (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE authors (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -958,7 +958,7 @@ CREATE TABLE roles (
   KEY idx_roles_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1007,7 +1007,7 @@ CREATE TABLE houses (
   KEY idx_houses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE houses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1062,7 +1062,7 @@ CREATE TABLE phones (
   KEY idx_phones_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE phones (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -1112,7 +1112,7 @@ CREATE TABLE role_user (
   PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		return `
 CREATE TABLE role_user (
   id SERIAL PRIMARY KEY NOT NULL,
