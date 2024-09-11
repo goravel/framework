@@ -35,6 +35,11 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 	return manager
 }
 
+func (m *Manager) AcquireSession() *Session {
+	session := m.sessionPool.Get().(*Session)
+	return session
+}
+
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) sessioncontract.Session {
 	if handler == nil {
 		panic("session driver cannot be nil")
@@ -78,11 +83,6 @@ func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) e
 	m.drivers[driver] = handler()
 	m.startGcTimer(m.drivers[driver])
 	return nil
-}
-
-func (m *Manager) AcquireSession() *Session {
-	session := m.sessionPool.Get().(*Session)
-	return session
 }
 
 func (m *Manager) ReleaseSession(session sessioncontract.Session) {
