@@ -44,14 +44,14 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "postgresql",
+			name: "postgres",
 			setup: func() {
 				var err error
 				docker := gorm.NewPostgresDocker(docker.Postgres())
 				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
-				createPostgresqlMigrations()
+				createPostgresMigrations()
 			},
 		},
 		{

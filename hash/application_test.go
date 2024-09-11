@@ -11,25 +11,24 @@ import (
 
 type ApplicationTestSuite struct {
 	suite.Suite
+	config  *configmock.Config
 	hashers map[string]hash.Hash
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	mockConfig := &configmock.Config{}
-	argon2idHasher := getArgon2idHasher(mockConfig)
-	bcryptHasher := getBcryptHasher(mockConfig)
-
-	suite.Run(t, &ApplicationTestSuite{
-		hashers: map[string]hash.Hash{
-			"argon2id": argon2idHasher,
-			"bcrypt":   bcryptHasher,
-		},
-	})
-	mockConfig.AssertExpectations(t)
+	suite.Run(t, &ApplicationTestSuite{})
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
+	s.config = &configmock.Config{}
+	s.hashers = map[string]hash.Hash{
+		"argon2id": getArgon2idHasher(s.config),
+		"bcrypt":   getBcryptHasher(s.config),
+	}
+}
 
+func (s *ApplicationTestSuite) TearDownSuite() {
+	s.config.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeHash() {
@@ -78,6 +77,67 @@ func (s *ApplicationTestSuite) TestNeedsRehash() {
 	}
 }
 
+func BenchmarkMakeHash(b *testing.B) {
+	s := new(ApplicationTestSuite)
+	s.SetT(&testing.T{})
+	s.SetupTest()
+	b.StartTimer()
+	b.ResetTimer()
+	for name, hasher := range s.hashers {
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_, err := hasher.Make("password")
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+	b.StopTimer()
+}
+
+func BenchmarkCheckHash(b *testing.B) {
+	s := new(ApplicationTestSuite)
+	s.SetT(&testing.T{})
+	s.SetupTest()
+	b.StartTimer()
+	b.ResetTimer()
+	for name, hasher := range s.hashers {
+		b.Run(name, func(b *testing.B) {
+			value, err := hasher.Make("password")
+			if err != nil {
+				b.Fatal(err)
+			}
+			for i := 0; i < b.N; i++ {
+				if !hasher.Check("password", value) {
+					b.Fatal("hash check failed")
+				}
+			}
+		})
+	}
+	b.StopTimer()
+}
+
+func BenchmarkNeedsRehash(b *testing.B) {
+	s := new(ApplicationTestSuite)
+	s.SetT(&testing.T{})
+	s.SetupTest()
+	b.StartTimer()
+	b.ResetTimer()
+	for name, hasher := range s.hashers {
+		b.Run(name, func(b *testing.B) {
+			value, err := hasher.Make("password")
+			if err != nil {
+				b.Fatal(err)
+			}
+			for i := 0; i < b.N; i++ {
+				hasher.NeedsRehash(value)
+			}
+		})
+	}
+	b.StopTimer()
+}
+
 func getArgon2idHasher(mockConfig *configmock.Config) *Argon2id {
 	mockConfig.On("GetInt", "hashing.argon2id.memory", 65536).Return(65536).Once()
 	mockConfig.On("GetInt", "hashing.argon2id.time", 4).Return(4).Once()
@@ -87,7 +147,7 @@ func getArgon2idHasher(mockConfig *configmock.Config) *Argon2id {
 }
 
 func getBcryptHasher(mockConfig *configmock.Config) *Bcrypt {
-	mockConfig.On("GetInt", "hashing.bcrypt.rounds", 10).Return(10).Once()
+	mockConfig.On("GetInt", "hashing.bcrypt.rounds", 12).Return(10).Once()
 
 	return NewBcrypt(mockConfig)
 }

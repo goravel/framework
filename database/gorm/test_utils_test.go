@@ -22,7 +22,7 @@ func TestMysqlDocker(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestPostgresqlDocker(t *testing.T) {
+func TestPostgresDocker(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}

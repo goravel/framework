@@ -50,12 +50,12 @@ func (receiver *MigrateCreator) getStub(table string, create bool) (string, stri
 
 	driver := receiver.config.GetString("database.connections." + receiver.config.GetString("database.default") + ".driver")
 	switch orm.Driver(driver) {
-	case orm.DriverPostgresql:
+	case orm.DriverPostgres:
 		if create {
-			return migration.PostgresqlStubs{}.CreateUp(), migration.PostgresqlStubs{}.CreateDown()
+			return migration.PostgresStubs{}.CreateUp(), migration.PostgresStubs{}.CreateDown()
 		}
 
-		return migration.PostgresqlStubs{}.UpdateUp(), migration.PostgresqlStubs{}.UpdateDown()
+		return migration.PostgresStubs{}.UpdateUp(), migration.PostgresStubs{}.UpdateDown()
 	case orm.DriverSqlite:
 		if create {
 			return migration.SqliteStubs{}.CreateUp(), migration.SqliteStubs{}.CreateDown()

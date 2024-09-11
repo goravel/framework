@@ -1,0 +1,8 @@
+name: Govulncheck
+on:
+  schedule:
+    - cron: "0 */6 * * *" # Run every 6 hours
+jobs:
+  govulncheck:
+    uses: goravel/.github/.github/workflows/govulncheck.yml@master
+    secrets: inherit

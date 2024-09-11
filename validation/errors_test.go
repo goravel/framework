@@ -3,9 +3,9 @@ package validation
 import (
 	"testing"
 
-	httpvalidate "github.com/goravel/framework/contracts/validation"
-
 	"github.com/stretchr/testify/assert"
+
+	httpvalidate "github.com/goravel/framework/contracts/validation"
 )
 
 func TestOne(t *testing.T) {
