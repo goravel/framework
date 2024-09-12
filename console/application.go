@@ -47,7 +47,7 @@ func (c *Application) Register(commands []console.Command) {
 
 // Call Run an Artisan console command by name.
 func (c *Application) Call(command string) {
-	if os.Args != nil && len(os.Args) > 0 {
+	if len(os.Args) > 0 {
 		commands := []string{os.Args[0]}
 
 		if c.isArtisan {
@@ -60,7 +60,7 @@ func (c *Application) Call(command string) {
 
 // CallAndExit Run an Artisan console command by name and exit.
 func (c *Application) CallAndExit(command string) {
-	if os.Args != nil && len(os.Args) > 0 {
+	if len(os.Args) > 0 {
 		commands := []string{os.Args[0]}
 
 		if c.isArtisan {
