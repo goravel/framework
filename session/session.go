@@ -184,11 +184,6 @@ func (s *Session) SetID(id string) sessioncontract.Session {
 	return s
 }
 
-func (s *Session) SetJson(json foundation.Json) sessioncontract.Session {
-	s.json = json
-	return s
-}
-
 func (s *Session) SetName(name string) sessioncontract.Session {
 	s.name = name
 

@@ -39,7 +39,6 @@ func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...stri
 	}
 	session := m.acquireSession()
 	session.SetDriver(handler).
-		SetJson(m.json).
 		SetName(m.config.GetString("session.cookie"))
 
 	if len(sessionID) > 0 {
