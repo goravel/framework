@@ -1,5 +1,7 @@
 package session
 
+import "github.com/goravel/framework/contracts/foundation"
+
 // Session is the interface that defines the methods that should be implemented by a session.
 type Session interface {
 	// All returns all attributes of the session.
@@ -42,8 +44,12 @@ type Session interface {
 	Remove(key string) any
 	// Save saves the session.
 	Save() error
+	// SetDriver sets the session driver
+	SetDriver(driver Driver) Session
 	// SetID sets the ID of the session.
 	SetID(id string) Session
+	// SetJson sets the JSON parser for the session, which is used to marshal and unmarshal data.
+	SetJson(json foundation.Json) Session
 	// SetName sets the name of the session.
 	SetName(name string) Session
 	// Start initiates the session.

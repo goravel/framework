@@ -25,9 +25,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 		drivers: make(map[string]sessioncontract.Driver),
 		json:    json,
 		sessionPool: sync.Pool{New: func() any {
-			return &Session{
-				attributes: make(map[string]any),
-			}
+			return NewSession("", nil, json)
 		},
 		},
 	}
@@ -40,9 +38,10 @@ func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...stri
 		panic("session driver cannot be nil")
 	}
 	session := m.acquireSession()
-	session.setDriver(handler)
-	session.setJson(m.json)
-	session.SetName(m.config.GetString("session.cookie"))
+	session.SetDriver(handler).
+		SetJson(m.json).
+		SetName(m.config.GetString("session.cookie"))
+
 	if len(sessionID) > 0 {
 		session.SetID(sessionID[0])
 	} else {
@@ -81,13 +80,12 @@ func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) e
 }
 
 func (m *Manager) ReleaseSession(session sessioncontract.Session) {
-	s := session.(*Session)
-	s.reset()
-	m.sessionPool.Put(s)
+	session.Flush()
+	m.sessionPool.Put(session)
 }
 
-func (m *Manager) acquireSession() *Session {
-	session := m.sessionPool.Get().(*Session)
+func (m *Manager) acquireSession() sessioncontract.Session {
+	session := m.sessionPool.Get().(sessioncontract.Session)
 	return session
 }
 

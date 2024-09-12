@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/support/color"
 	supportmaps "github.com/goravel/framework/support/maps"
 	"github.com/goravel/framework/support/str"
 )
@@ -155,6 +156,10 @@ func (s *Session) Save() error {
 		return err
 	}
 
+	if err = s.validateDriver(); err != nil {
+		return err
+	}
+
 	if err = s.driver.Write(s.GetID(), string(data)); err != nil {
 		return err
 	}
@@ -164,6 +169,11 @@ func (s *Session) Save() error {
 	return nil
 }
 
+func (s *Session) SetDriver(driver sessioncontract.Driver) sessioncontract.Session {
+	s.driver = driver
+	return s
+}
+
 func (s *Session) SetID(id string) sessioncontract.Session {
 	if s.isValidID(id) {
 		s.id = id
@@ -171,6 +181,11 @@ func (s *Session) SetID(id string) sessioncontract.Session {
 		s.id = s.generateSessionID()
 	}
 
+	return s
+}
+
+func (s *Session) SetJson(json foundation.Json) sessioncontract.Session {
+	s.json = json
 	return s
 }
 
@@ -210,6 +225,13 @@ func (s *Session) loadSession() {
 	}
 }
 
+func (s *Session) validateDriver() error {
+	if s.driver == nil {
+		return ErrDriverNotSet
+	}
+	return nil
+}
+
 func (s *Session) migrate(destroy ...bool) error {
 	shouldDestroy := false
 	if len(destroy) > 0 {
@@ -217,8 +239,11 @@ func (s *Session) migrate(destroy ...bool) error {
 	}
 
 	if shouldDestroy {
-		err := s.driver.Destroy(s.GetID())
-		if err != nil {
+		if err := s.validateDriver(); err != nil {
+			return err
+		}
+
+		if err := s.driver.Destroy(s.GetID()); err != nil {
 			return err
 		}
 	}
@@ -229,12 +254,19 @@ func (s *Session) migrate(destroy ...bool) error {
 }
 
 func (s *Session) readFromHandler() map[string]any {
+	if err := s.validateDriver(); err != nil {
+		color.Red().Println(err)
+		return nil
+	}
+
 	value, err := s.driver.Read(s.GetID())
 	if err != nil {
+		color.Red().Println(err)
 		return nil
 	}
 	var data map[string]any
 	if err := s.json.Unmarshal([]byte(value), &data); err != nil {
+		color.Red().Println(err)
 		return nil
 	}
 	return data
@@ -278,14 +310,6 @@ func (s *Session) reset() {
 	s.attributes = make(map[string]any)
 	s.driver = nil
 	s.started = false
-}
-
-func (s *Session) setDriver(driver sessioncontract.Driver) {
-	s.driver = driver
-}
-
-func (s *Session) setJson(json foundation.Json) {
-	s.json = json
 }
 
 // toStringSlice converts an interface slice to a string slice.
