@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 	"flag"
+	"github.com/goravel/framework/support/carbon"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -132,7 +132,13 @@ func (app *Application) CurrentLocale(ctx context.Context) string {
 }
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
-	return app.MakeLang(ctx).SetLocale(locale)
+	lang := app.MakeLang(ctx)
+	if lang == nil {
+		color.Red().Println("Error: Lang facade not initialized.")
+		return ctx
+	}
+
+	return lang.SetLocale(locale)
 }
 
 func (app *Application) SetJson(j foundation.Json) {
@@ -167,7 +173,9 @@ func (app *Application) addPublishGroup(group string, paths map[string]string) {
 
 // bootArtisan Boot artisan command.
 func (app *Application) bootArtisan() {
-	app.MakeArtisan().Run(os.Args, true)
+	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
+		artisanFacade.Run(os.Args, true)
+	}
 }
 
 // getBaseServiceProviders Get base service providers.
@@ -179,7 +187,11 @@ func (app *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 
 // getConfiguredServiceProviders Get configured service providers.
 func (app *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
-	return app.MakeConfig().Get("app.providers").([]foundation.ServiceProvider)
+	if configFacade := app.MakeConfig(); configFacade != nil {
+		return configFacade.Get("app.providers").([]foundation.ServiceProvider)
+	}
+
+	return []foundation.ServiceProvider{}
 }
 
 // registerBaseServiceProviders Register base service providers.
@@ -217,11 +229,15 @@ func (app *Application) bootServiceProviders(serviceProviders []foundation.Servi
 }
 
 func (app *Application) registerCommands(commands []consolecontract.Command) {
-	app.MakeArtisan().Register(commands)
+	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
+		artisanFacade.Register(commands)
+	}
 }
 
 func (app *Application) setTimezone() {
-	carbon.SetTimezone(app.MakeConfig().GetString("app.timezone", carbon.UTC))
+	if configFacade := app.MakeConfig(); configFacade != nil {
+		carbon.SetTimezone(configFacade.GetString("app.timezone", carbon.UTC))
+	}
 }
 
 func setEnv() {
