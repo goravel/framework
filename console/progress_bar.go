@@ -19,10 +19,16 @@ func NewProgressBar(total int) *ProgressBar {
 }
 
 func (r *ProgressBar) Advance(step ...int) {
+	var instance *pterm.ProgressbarPrinter
+
 	if len(step) > 0 {
-		r.instance = r.instance.Add(step[0])
+		instance = r.instance.Add(step[0])
 	} else {
-		r.instance = r.instance.Increment()
+		instance = r.instance.Increment()
+	}
+
+	if instance != nil {
+		r.instance = instance
 	}
 }
 
