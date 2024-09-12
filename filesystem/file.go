@@ -25,10 +25,6 @@ type File struct {
 }
 
 func NewFile(file string) (*File, error) {
-	if err := checkFacades(); err != nil {
-		return nil, err
-	}
-
 	if !supportfile.Exists(file) {
 		return nil, errors.New("file doesn't exist")
 	}
@@ -43,10 +39,6 @@ func NewFile(file string) (*File, error) {
 }
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
-	if err := checkFacades(); err != nil {
-		return nil, err
-	}
-
 	src, err := fileHeader.Open()
 	if err != nil {
 		return nil, err
@@ -119,6 +111,10 @@ func (f *File) HashName(path ...string) string {
 }
 
 func (f *File) LastModified() (time.Time, error) {
+	if f.config == nil {
+		return time.Time{}, errors.New("config facade is not initialized")
+	}
+
 	return supportfile.LastModified(f.path, f.config.GetString("app.timezone"))
 }
 
@@ -136,17 +132,4 @@ func (f *File) Store(path string) (string, error) {
 
 func (f *File) StoreAs(path string, name string) (string, error) {
 	return f.storage.Disk(f.disk).PutFileAs(path, f, name)
-}
-
-// CheckFacades ensures that ConfigFacade and StorageFacade are properly initialized.
-func checkFacades() error {
-	if ConfigFacade == nil {
-		return errors.New("config facade is not initialized")
-	}
-
-	if StorageFacade == nil {
-		return errors.New("storage facade is not initialized")
-	}
-
-	return nil
 }
