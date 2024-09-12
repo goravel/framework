@@ -2894,7 +2894,11 @@ func (receiver *Uppercase) Signature() string {
 func (receiver *Uppercase) Passes(data httpvalidate.Data, val any, options ...any) bool {
 	name, exist := data.Get("name")
 
-	return strings.ToUpper(val.(string)) == val.(string) && len(val.(string)) == cast.ToInt(options[0]) && name == val && exist
+	if len(options) > 0 {
+		return strings.ToUpper(val.(string)) == val.(string) && len(val.(string)) == cast.ToInt(options[0]) && name == val && exist
+	}
+
+	return false
 }
 
 // Message Get the validation error message.
@@ -2914,7 +2918,11 @@ func (receiver *Lowercase) Signature() string {
 func (receiver *Lowercase) Passes(data httpvalidate.Data, val any, options ...any) bool {
 	address, exist := data.Get("address")
 
-	return strings.ToLower(val.(string)) == val.(string) && len(val.(string)) == cast.ToInt(options[0]) && address == val && exist
+	if len(options) > 0 {
+		return strings.ToLower(val.(string)) == val.(string) && len(val.(string)) == cast.ToInt(options[0]) && address == val && exist
+	}
+
+	return false
 }
 
 // Message Get the validation error message.

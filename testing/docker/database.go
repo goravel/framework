@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,6 +27,10 @@ type Database struct {
 
 func NewDatabase(app foundation.Application, connection string, gormInitialize gorm.Initialize) (*Database, error) {
 	config := app.MakeConfig()
+
+	if config == nil {
+		return nil, errors.New("config facade is not set")
+	}
 
 	if connection == "" {
 		connection = config.GetString("database.default")

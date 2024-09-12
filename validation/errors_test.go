@@ -74,7 +74,10 @@ func TestOne(t *testing.T) {
 			test.rules,
 			test.options...,
 		)
+
 		assert.Nil(t, err, test.describe)
+		assert.NotNil(t, validator, test.describe)
+
 		if test.expectRes != "" {
 			assert.Equal(t, test.expectRes, validator.Errors().One(), test.describe)
 		}
