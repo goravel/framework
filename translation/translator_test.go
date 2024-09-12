@@ -446,3 +446,66 @@ func TestGetValue(t *testing.T) {
 	result = getValue(obj, "x.y.z")
 	assert.Equal(t, nil, result)
 }
+
+func Benchmark_Choice(b *testing.B) {
+	s := new(TranslatorTestSuite)
+	s.SetT(&testing.T{})
+	s.SetupTest()
+	b.StartTimer()
+	b.ResetTimer()
+
+	translator := NewTranslator(s.ctx, s.mockLoader, "en", "en", s.mockLog)
+	s.mockLoader.On("Load", "en", "*").Return(map[string]any{
+		"test": map[string]any{
+			"foo": "{0} first|{1}second",
+		},
+	}, nil)
+
+	for i := 0; i < b.N; i++ {
+		translator.Choice("test.foo", 1)
+	}
+
+	b.StopTimer()
+}
+
+func Benchmark_Get(b *testing.B) {
+	s := new(TranslatorTestSuite)
+	s.SetT(&testing.T{})
+	s.SetupTest()
+	b.StartTimer()
+	b.ResetTimer()
+
+	translator := NewTranslator(s.ctx, s.mockLoader, "en", "en", s.mockLog)
+	s.mockLoader.On("Load", "en", "*").Return(map[string]any{
+		"test": map[string]any{
+			"foo": "bar",
+		},
+	}, nil)
+
+	for i := 0; i < b.N; i++ {
+		translator.Get("test.foo")
+	}
+
+	b.StopTimer()
+}
+
+func Benchmark_Has(b *testing.B) {
+	s := new(TranslatorTestSuite)
+	s.SetT(&testing.T{})
+	s.SetupTest()
+	b.StartTimer()
+	b.ResetTimer()
+
+	translator := NewTranslator(s.ctx, s.mockLoader, "en", "en", s.mockLog)
+	s.mockLoader.On("Load", "en", "*").Return(map[string]any{
+		"test": map[string]any{
+			"foo": "bar",
+		},
+	}, nil)
+
+	for i := 0; i < b.N; i++ {
+		translator.Has("test.foo")
+	}
+
+	b.StopTimer()
+}

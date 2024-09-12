@@ -272,6 +272,22 @@ func (s *Session) removeFromOldFlashData(keys ...string) {
 	s.Put("_flash.old", old)
 }
 
+func (s *Session) reset() {
+	s.id = ""
+	s.name = ""
+	s.attributes = make(map[string]any)
+	s.driver = nil
+	s.started = false
+}
+
+func (s *Session) setDriver(driver sessioncontract.Driver) {
+	s.driver = driver
+}
+
+func (s *Session) setJson(json foundation.Json) {
+	s.json = json
+}
+
 // toStringSlice converts an interface slice to a string slice.
 func toStringSlice(anySlice []any) []string {
 	strSlice := make([]string, len(anySlice))

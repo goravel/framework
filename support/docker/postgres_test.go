@@ -11,36 +11,36 @@ import (
 	"github.com/goravel/framework/support/env"
 )
 
-type PostgresqlTestSuite struct {
+type PostgresTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
-	postgresql *PostgresImpl
+	postgres   *PostgresImpl
 }
 
-func TestPostgresqlTestSuite(t *testing.T) {
+func TestPostgresTestSuite(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	suite.Run(t, new(PostgresqlTestSuite))
+	suite.Run(t, new(PostgresTestSuite))
 }
 
-func (s *PostgresqlTestSuite) SetupTest() {
+func (s *PostgresTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.postgresql = NewPostgresImpl("goravel", "goravel", "goravel")
+	s.postgres = NewPostgresImpl("goravel", "goravel", "goravel")
 }
 
-func (s *PostgresqlTestSuite) TestBuild() {
-	s.Nil(s.postgresql.Build())
-	instance, err := s.postgresql.connect()
+func (s *PostgresTestSuite) TestBuild() {
+	s.Nil(s.postgres.Build())
+	instance, err := s.postgres.connect()
 	s.Nil(err)
 	s.NotNil(instance)
 
-	s.Equal("127.0.0.1", s.postgresql.Config().Host)
-	s.Equal("goravel", s.postgresql.Config().Database)
-	s.Equal("goravel", s.postgresql.Config().Username)
-	s.Equal("goravel", s.postgresql.Config().Password)
-	s.True(s.postgresql.Config().Port > 0)
+	s.Equal("127.0.0.1", s.postgres.Config().Host)
+	s.Equal("goravel", s.postgres.Config().Database)
+	s.Equal("goravel", s.postgres.Config().Username)
+	s.Equal("goravel", s.postgres.Config().Password)
+	s.True(s.postgres.Config().Port > 0)
 
 	res := instance.Exec(`
 	CREATE TABLE users (
@@ -63,7 +63,7 @@ func (s *PostgresqlTestSuite) TestBuild() {
 	s.Nil(res.Error)
 	s.Equal(int64(1), count)
 
-	s.Nil(s.postgresql.Fresh())
+	s.Nil(s.postgres.Fresh())
 
 	res = instance.Raw(`
 		SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' and table_name = 'users';
@@ -71,17 +71,17 @@ func (s *PostgresqlTestSuite) TestBuild() {
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
 
-	s.Nil(s.postgresql.Stop())
+	s.Nil(s.postgres.Stop())
 }
 
-func (s *PostgresqlTestSuite) TestImage() {
+func (s *PostgresTestSuite) TestImage() {
 	image := contractstesting.Image{
-		Repository: "postgresql",
+		Repository: "postgres",
 	}
-	s.postgresql.Image(image)
-	s.Equal(&image, s.postgresql.image)
+	s.postgres.Image(image)
+	s.Equal(&image, s.postgres.image)
 }
 
-func (s *PostgresqlTestSuite) TestName() {
-	s.Equal(orm.DriverPostgresql, s.postgresql.Name())
+func (s *PostgresTestSuite) TestName() {
+	s.Equal(orm.DriverPostgres, s.postgres.Name())
 }

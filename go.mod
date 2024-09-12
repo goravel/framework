@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.21
+go 1.22
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
@@ -37,12 +37,12 @@ require (
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.27.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
-	google.golang.org/grpc v1.66.0
+	google.golang.org/grpc v1.66.2
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/driver/sqlserver v1.5.3
-	gorm.io/gorm v1.25.11
-	gorm.io/plugin/dbresolver v1.5.2
+	gorm.io/gorm v1.25.12
+	gorm.io/plugin/dbresolver v1.5.3
 )
 
 require (

@@ -195,6 +195,119 @@ type Case struct {
 	setup       func(Case)
 }
 
+func TestRule_Regex(t *testing.T) {
+	validation := NewValidation()
+	tests := []Case{
+		{
+			description: "success with valid regex match",
+			setup: func(c Case) {
+				validator, err := validation.Make(map[string]any{
+					"email": "test@example.com",
+				}, map[string]string{
+					"email": "regex:^\\S+@\\S+\\.\\S+$",
+				})
+				assert.Nil(t, err, c.description)
+				assert.NotNil(t, validator, c.description)
+				assert.False(t, validator.Fails(), c.description)
+			},
+		},
+		{
+			description: "error with invalid regex match",
+			setup: func(c Case) {
+				validator, err := validation.Make(map[string]any{
+					"email": "testexample.com",
+				}, map[string]string{
+					"email": "regex:^\\S+@\\S+\\.\\S+$",
+				})
+				assert.Nil(t, err, c.description)
+				assert.NotNil(t, validator, c.description)
+				assert.Equal(t, map[string]string{
+					"regex": "email value does not pass the regex check",
+				}, validator.Errors().Get("email"))
+			},
+		},
+		{
+			description: "success with regex and nested structure",
+			setup: func(c Case) {
+				validator, err := validation.Make(map[string]any{
+					"user": map[string]string{
+						"email": "test@example.com",
+					},
+				}, map[string]string{
+					"user.email": "regex:^\\S+@\\S+\\.\\S+$",
+				})
+				assert.Nil(t, err, c.description)
+				assert.NotNil(t, validator, c.description)
+				assert.False(t, validator.Fails(), c.description)
+			},
+		},
+		{
+			description: "error with regex and nested structure",
+			setup: func(c Case) {
+				validator, err := validation.Make(map[string]any{
+					"user": map[string]string{
+						"email": "testexample.com",
+					},
+				}, map[string]string{
+					"user.email": "regex:^\\S+@\\S+\\.\\S+$",
+				})
+				assert.Nil(t, err, c.description)
+				assert.NotNil(t, validator, c.description)
+				assert.Equal(t, map[string]string{
+					"regex": "user.email value does not pass the regex check",
+				}, validator.Errors().Get("user.email"))
+			},
+		},
+		{
+			description: "panic when regex pattern is missing",
+			setup: func(c Case) {
+				assert.Panics(t, func() {
+					_, err := validation.Make(map[string]any{
+						"email": "test@example.com",
+					}, map[string]string{
+						"email": "regex:",
+					})
+					assert.NotNil(t, err, c.description)
+				}, c.description)
+			},
+		},
+		{
+			description: "success with valid regexp match",
+			setup: func(c Case) {
+				validator, err := validation.Make(map[string]any{
+					"phone": "+1-800-555-5555",
+				}, map[string]string{
+					"phone": "regexp:^\\+\\d{1,3}-\\d{3}-\\d{3}-\\d{4}$",
+				})
+				assert.Nil(t, err, c.description)
+				assert.NotNil(t, validator, c.description)
+				assert.False(t, validator.Fails(), c.description)
+			},
+		},
+		{
+			description: "error with invalid regexp match",
+			setup: func(c Case) {
+				validator, err := validation.Make(map[string]any{
+					"phone": "18005555555",
+				}, map[string]string{
+					"phone": "regexp:^\\+\\d{1,3}-\\d{3}-\\d{3}-\\d{4}$",
+				})
+				assert.Nil(t, err, c.description)
+				assert.NotNil(t, validator, c.description)
+				assert.Equal(t, map[string]string{
+					"regexp": "phone must match pattern ^\\+\\d{1,3}-\\d{3}-\\d{3}-\\d{4}$",
+				}, validator.Errors().Get("phone"))
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			test.setup(test)
+		})
+	}
+}
+
 func TestRule_Required(t *testing.T) {
 	validation := NewValidation()
 	tests := []Case{

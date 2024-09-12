@@ -387,7 +387,6 @@ func TestLogrus(t *testing.T) {
 			mockConfig.AssertExpectations(t)
 		})
 	}
-
 	_ = file.Remove("storage")
 }
 
@@ -427,6 +426,73 @@ func TestLogrus_Fatalf(t *testing.T) {
 	assert.EqualError(t, err, "exit status 1")
 	assert.True(t, file.Contain(singleLog, "test.fatal: Goravel"))
 	assert.True(t, file.Contain(dailyLog, "test.fatal: Goravel"))
+
+	_ = file.Remove("storage")
+}
+
+func Benchmark_Debug(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Debug("Debug Goravel")
+	}
+
+	_ = file.Remove("storage")
+}
+
+func Benchmark_Info(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Info("Goravel")
+	}
+
+	_ = file.Remove("storage")
+}
+
+func Benchmark_Warning(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Warning("Goravel")
+	}
+
+	_ = file.Remove("storage")
+}
+
+func Benchmark_Error(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		log.Error("Goravel")
+	}
+
+	_ = file.Remove("storage")
+}
+
+func Benchmark_Fatal(b *testing.B) {
+	// This test is not suitable for benchmarking because it will exit the program
+}
+
+func Benchmark_Panic(b *testing.B) {
+	mockConfig := initMockConfig()
+	mockDriverConfig(mockConfig)
+	log := NewApplication(mockConfig, json.NewJson())
+
+	for i := 0; i < b.N; i++ {
+		defer func() {
+			recover() //nolint:errcheck
+		}()
+		log.Panic("Goravel")
+	}
 
 	_ = file.Remove("storage")
 }

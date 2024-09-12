@@ -47,14 +47,14 @@ func (d *DialectorImpl) Make(configs []databasecontract.Config) ([]gorm.Dialecto
 		switch orm.Driver(driver) {
 		case orm.DriverMysql:
 			dialector = d.mysql(item)
-		case orm.DriverPostgresql:
-			dialector = d.postgresql(item)
+		case orm.DriverPostgres:
+			dialector = d.postgres(item)
 		case orm.DriverSqlite:
 			dialector = d.sqlite(item)
 		case orm.DriverSqlserver:
 			dialector = d.sqlserver(item)
 		default:
-			err = fmt.Errorf("err database driver: %s, only support mysql, postgresql, sqlite and sqlserver", driver)
+			err = fmt.Errorf("err database driver: %s, only support mysql, postgres, sqlite and sqlserver", driver)
 		}
 
 		if err != nil {
@@ -78,8 +78,8 @@ func (d *DialectorImpl) mysql(config databasecontract.Config) gorm.Dialector {
 	})
 }
 
-func (d *DialectorImpl) postgresql(config databasecontract.Config) gorm.Dialector {
-	dsn := d.dsn.Postgresql(config)
+func (d *DialectorImpl) postgres(config databasecontract.Config) gorm.Dialector {
+	dsn := d.dsn.Postgres(config)
 	if dsn == "" {
 		return nil
 	}

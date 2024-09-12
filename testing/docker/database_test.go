@@ -90,19 +90,19 @@ func TestNewDatabase(t *testing.T) {
 			},
 		},
 		{
-			name:       "success when connection is postgresql",
-			connection: "postgresql",
+			name:       "success when connection is postgres",
+			connection: "postgres",
 			setup: func() {
-				mockConfig.On("GetString", "database.connections.postgresql.driver").Return(contractsorm.DriverPostgresql.String()).Once()
-				mockConfig.On("GetString", "database.connections.postgresql.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.postgresql.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.postgresql.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.postgres.driver").Return(contractsorm.DriverPostgres.String()).Once()
+				mockConfig.On("GetString", "database.connections.postgres.database").Return(database).Once()
+				mockConfig.On("GetString", "database.connections.postgres.username").Return(username).Once()
+				mockConfig.On("GetString", "database.connections.postgres.password").Return(password).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
 					app:            mockApp,
 					config:         mockConfig,
-					connection:     "postgresql",
+					connection:     "postgres",
 					driver:         supportdocker.NewPostgresImpl(database, username, password),
 					gormInitialize: mockGormInitialize,
 				}

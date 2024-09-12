@@ -9,7 +9,7 @@ import (
 
 type Dsn interface {
 	Mysql(config databasecontract.Config) string
-	Postgresql(config databasecontract.Config) string
+	Postgres(config databasecontract.Config) string
 	Sqlite(config databasecontract.Config) string
 	Sqlserver(config databasecontract.Config) string
 }
@@ -39,7 +39,7 @@ func (d *DsnImpl) Mysql(config databasecontract.Config) string {
 		config.Username, config.Password, host, config.Port, config.Database, charset, true, loc)
 }
 
-func (d *DsnImpl) Postgresql(config databasecontract.Config) string {
+func (d *DsnImpl) Postgres(config databasecontract.Config) string {
 	host := config.Host
 	if host == "" {
 		return ""

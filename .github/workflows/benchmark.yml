@@ -1,0 +1,17 @@
+name: Benchmark
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  benchmark:
+    uses: goravel/.github/.github/workflows/benchmark.yml@master
+    secrets: inherit

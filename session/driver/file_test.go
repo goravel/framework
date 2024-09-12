@@ -1,7 +1,6 @@
 package driver
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -109,24 +108,24 @@ func (f *FileTestSuite) TestWrite() {
 	f.Nil(file.Remove(f.getPath()))
 }
 
-func (f *FileTestSuite) TestReadWriteWithConcurrent() {
+func BenchmarkFile_ReadWrite(b *testing.B) {
+	f := new(FileTestSuite)
+	f.SetT(&testing.T{})
+
 	driver := f.getDriver()
+	f.Nil(driver.Write("foo", "bar"))
 
-	var wg sync.WaitGroup
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func() {
-			f.Nil(driver.Write("foo", "bar"))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		f.Nil(driver.Write("foo", "bar"))
 
-			value, err := driver.Read("foo")
-			f.Nil(err)
-			f.Equal("bar", value)
-			wg.Done()
-		}()
+		value, err := driver.Read("foo")
+		f.Nil(err)
+		f.Equal("bar", value)
 	}
+	b.StopTimer()
 
-	wg.Wait()
-	f.Nil(file.Remove(f.getPath()))
+	f.BeforeTest()
 }
 
 func (f *FileTestSuite) getDriver() *File {

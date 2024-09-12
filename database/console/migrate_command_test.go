@@ -61,14 +61,14 @@ func TestMigrateCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "postgresql",
+			name: "postgres",
 			setup: func() {
 				var err error
 				docker := gorm.NewPostgresDocker(docker.Postgres())
 				query, err = docker.New()
 				assert.Nil(t, err)
 				mockConfig = docker.MockConfig
-				createPostgresqlMigrations()
+				createPostgresMigrations()
 			},
 		},
 		{
@@ -120,7 +120,7 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 `)
 }
 
-func createPostgresqlMigrations() {
+func createPostgresMigrations() {
 	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id SERIAL PRIMARY KEY NOT NULL,

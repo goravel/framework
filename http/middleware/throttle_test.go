@@ -276,6 +276,88 @@ func TestThrottle(t *testing.T) {
 	}
 }
 
+func Benchmark_Throttle(b *testing.B) {
+	var (
+		ctx                   *TestContext
+		mockRateLimiterFacade *httpmocks.RateLimiter
+		mockCache             *cachemocks.Cache
+	)
+
+	now := carbon.Now()
+	carbon.SetTestNow(now)
+	defer carbon.UnsetTestNow()
+
+	ctx = new(TestContext)
+	mockCache = &cachemocks.Cache{}
+	mockRateLimiterFacade = &httpmocks.RateLimiter{}
+	http.CacheFacade = mockCache
+	http.RateLimiterFacade = mockRateLimiterFacade
+
+	b.Run("WithOneLimiter", func(b *testing.B) {
+		mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+			return []contractshttp.Limit{
+				limit.PerDay(10),
+			}
+		}).Times(b.N)
+		mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "throttle:test:0:")
+		})).Return(limit.NewBucket(1, time.Minute)).Times(b.N)
+
+		for i := 0; i < b.N; i++ {
+			Throttle("test")(ctx)
+		}
+
+		mockCache.AssertExpectations(b)
+		mockRateLimiterFacade.AssertExpectations(b)
+	})
+
+	b.Run("WithTwoLimiters", func(b *testing.B) {
+		mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+			return []contractshttp.Limit{
+				limit.PerDay(10),
+				limit.PerMinute(5),
+			}
+		}).Times(b.N)
+		mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "throttle:test:0:")
+		})).Return(limit.NewBucket(10, 24*time.Hour))
+		mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "throttle:test:1:")
+		})).Return(limit.NewBucket(5, time.Minute))
+
+		for i := 0; i < b.N; i++ {
+			Throttle("test")(ctx)
+		}
+
+		mockRateLimiterFacade.AssertExpectations(b)
+	})
+
+	b.Run("WithThreeLimiters", func(b *testing.B) {
+		mockRateLimiterFacade.On("Limiter", "test").Return(func(ctx contractshttp.Context) []contractshttp.Limit {
+			return []contractshttp.Limit{
+				limit.PerMinute(5),
+				limit.PerHour(10),
+				limit.PerDay(100),
+			}
+		}).Times(b.N)
+		mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "throttle:test:0:")
+		})).Return(limit.NewBucket(10, 24*time.Hour))
+		mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "throttle:test:1:")
+		})).Return(limit.NewBucket(5, time.Minute))
+		mockCache.On("Get", mock.MatchedBy(func(key string) bool {
+			return strings.HasPrefix(key, "throttle:test:2:")
+		})).Return(limit.NewBucket(1, time.Second))
+
+		for i := 0; i < b.N; i++ {
+			Throttle("test")(ctx)
+		}
+
+		mockRateLimiterFacade.AssertExpectations(b)
+	})
+}
+
 type TestContext struct {
 	response contractshttp.ContextResponse
 }
