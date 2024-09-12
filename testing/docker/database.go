@@ -89,7 +89,12 @@ func (receiver *Database) Build() error {
 		return fmt.Errorf("connect to %s failed", receiver.driver.Name().String())
 	}
 
-	receiver.app.MakeArtisan().Call("migrate")
+	artisan := receiver.app.MakeArtisan()
+	if artisan == nil {
+		return errors.New("artisan instance is not available")
+	}
+
+	artisan.Call("migrate")
 	receiver.app.Singleton(frameworkdatabase.BindingOrm, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		defaultConnection := config.GetString("database.default")
