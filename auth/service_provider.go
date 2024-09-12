@@ -32,9 +32,8 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (database *ServiceProvider) registerCommands(app foundation.Application) {
-	artisan := app.MakeArtisan()
-	if artisan != nil {
-		artisan.Register([]contractconsole.Command{
+	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
+		artisanFacade.Register([]contractconsole.Command{
 			console.NewJwtSecretCommand(app.MakeConfig()),
 			console.NewPolicyMakeCommand(),
 		})

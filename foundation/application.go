@@ -3,7 +3,6 @@ package foundation
 import (
 	"context"
 	"flag"
-	"github.com/goravel/framework/support/carbon"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 )
 
