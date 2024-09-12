@@ -361,7 +361,7 @@ func (_c *Context_Value_Call) RunAndReturn(run func(interface{}) interface{}) *C
 }
 
 // WithValue provides a mock function with given fields: key, value
-func (_m *Context) WithValue(key string, value interface{}) {
+func (_m *Context) WithValue(key interface{}, value interface{}) {
 	_m.Called(key, value)
 }
 
@@ -371,15 +371,15 @@ type Context_WithValue_Call struct {
 }
 
 // WithValue is a helper method to define mock.On call
-//   - key string
+//   - key interface{}
 //   - value interface{}
 func (_e *Context_Expecter) WithValue(key interface{}, value interface{}) *Context_WithValue_Call {
 	return &Context_WithValue_Call{Call: _e.mock.On("WithValue", key, value)}
 }
 
-func (_c *Context_WithValue_Call) Run(run func(key string, value interface{})) *Context_WithValue_Call {
+func (_c *Context_WithValue_Call) Run(run func(key interface{}, value interface{})) *Context_WithValue_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(interface{}), args[1].(interface{}))
 	})
 	return _c
 }
@@ -389,7 +389,7 @@ func (_c *Context_WithValue_Call) Return() *Context_WithValue_Call {
 	return _c
 }
 
-func (_c *Context_WithValue_Call) RunAndReturn(run func(string, interface{})) *Context_WithValue_Call {
+func (_c *Context_WithValue_Call) RunAndReturn(run func(interface{}, interface{})) *Context_WithValue_Call {
 	_c.Call.Return(run)
 	return _c
 }
