@@ -79,7 +79,10 @@ func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) e
 }
 
 func (m *Manager) ReleaseSession(session sessioncontract.Session) {
-	session.Flush()
+	session.Flush().
+		SetDriver(nil).
+		SetName("").
+		SetID("")
 	m.sessionPool.Put(session)
 }
 
