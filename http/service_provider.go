@@ -35,9 +35,12 @@ func (http *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (http *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]consolecontract.Command{
-		&console.RequestMakeCommand{},
-		&console.ControllerMakeCommand{},
-		&console.MiddlewareMakeCommand{},
-	})
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade != nil {
+		app.MakeArtisan().Register([]consolecontract.Command{
+			&console.RequestMakeCommand{},
+			&console.ControllerMakeCommand{},
+			&console.MiddlewareMakeCommand{},
+		})
+	}
 }

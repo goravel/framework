@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
 	frameworkdatabase "github.com/goravel/framework/database"
+	"github.com/goravel/framework/support/color"
 	supportdocker "github.com/goravel/framework/support/docker"
 )
 
@@ -132,7 +133,13 @@ func (receiver *Database) Seed(seeds ...seeder.Seeder) {
 		}
 	}
 
-	receiver.app.MakeArtisan().Call(command)
+	artisan := receiver.app.MakeArtisan()
+	if artisan == nil {
+		color.Red().Println("artisan instance is not available")
+		return
+	}
+
+	artisan.Call(command)
 }
 
 func (receiver *Database) Stop() error {

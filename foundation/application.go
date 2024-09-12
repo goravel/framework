@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 )
 
 var (
@@ -121,7 +122,13 @@ func (app *Application) Version() string {
 }
 
 func (app *Application) CurrentLocale(ctx context.Context) string {
-	return app.MakeLang(ctx).CurrentLocale()
+	lang := app.MakeLang(ctx)
+	if lang == nil {
+		color.Red().Println("Error: Lang facade not initialized.")
+		return ""
+	}
+
+	return lang.CurrentLocale()
 }
 
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {

@@ -19,11 +19,18 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (route *ServiceProvider) Boot(app foundation.Application) {
-	app.MakeQueue().Register([]queue.Job{
-		NewSendMailJob(app.MakeConfig()),
-	})
+	queueFacade := app.MakeQueue()
+	artisanFacade := app.MakeArtisan()
 
-	app.MakeArtisan().Register([]consolecontract.Command{
-		console.NewMailMakeCommand(),
-	})
+	if queueFacade != nil {
+		app.MakeQueue().Register([]queue.Job{
+			NewSendMailJob(app.MakeConfig()),
+		})
+	}
+
+	if artisanFacade != nil {
+		app.MakeArtisan().Register([]consolecontract.Command{
+			console.NewMailMakeCommand(),
+		})
+	}
 }

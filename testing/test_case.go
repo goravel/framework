@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/support/color"
 )
 
 type TestCase struct {
@@ -17,10 +18,18 @@ func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
 			command += fmt.Sprintf(" %s", seed.Signature())
 		}
 	}
+	if artisanFacade == nil {
+		color.Red().Println("Error: Artisan facade is not initialized. Cannot seed the database.")
+		return
+	}
 
-	artisanFacades.Call(command)
+	artisanFacade.Call(command)
 }
 
 func (receiver *TestCase) RefreshDatabase(seeds ...seeder.Seeder) {
-	artisanFacades.Call("migrate:refresh")
+	if artisanFacade == nil {
+		color.Red().Println("Error: Artisan facade is not initialized. Cannot refresh the database.")
+		return
+	}
+	artisanFacade.Call("migrate:refresh")
 }
