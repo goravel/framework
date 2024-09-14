@@ -8,12 +8,15 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/filesystem"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	logcontracts "github.com/goravel/framework/contracts/log"
 	contractsession "github.com/goravel/framework/contracts/session"
 	"github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/foundation/json"
@@ -390,6 +393,30 @@ func TestLogrus(t *testing.T) {
 	_ = file.Remove("storage")
 }
 
+func TestLogrusWithCustomLogger(t *testing.T) {
+	mockConfig := &configmock.Config{}
+	mockConfig.On("GetString", "logging.default").Return("customLogger").Once()
+	mockConfig.On("GetString", "logging.channels.customLogger.driver").Return("custom").Twice()
+	mockConfig.On("Get", "logging.channels.customLogger.via").Return(&CustomLogger{}).Twice()
+	mockConfig.On("GetString", "app.timezone").Return("UTC")
+	mockConfig.On("GetString", "app.env").Return("test")
+
+	filename := "custom.log"
+
+	logger := NewApplication(mockConfig, json.NewJson())
+	logger.Channel("customLogger").
+		WithTrace().
+		With(map[string]any{"filename": filename}).
+		User(map[string]any{"name": "kkumar-gcc"}).
+		Owner("team@goravel.dev").
+		Code("code").Info("Goravel")
+
+	expectedContent := "info: Goravel\ncustom_code: code\ncustom_user: map[name:kkumar-gcc]\n"
+	assert.True(t, file.Contain(filename, expectedContent), "Log file content does not match expected output")
+
+	assert.Nil(t, file.Remove(filename))
+}
+
 func TestLogrus_Fatal(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
@@ -519,6 +546,50 @@ func mockDriverConfig(mockConfig *configmock.Config) {
 	mockConfig.On("GetString", "logging.channels.single.level").Return("debug").Once()
 	mockConfig.On("GetString", "app.timezone").Return("UTC")
 	mockConfig.On("GetString", "app.env").Return("test")
+}
+
+type CustomLogger struct {
+}
+
+func (logger *CustomLogger) Handle(channel string) (logcontracts.Hook, error) {
+	return &CustomHook{}, nil
+}
+
+type CustomHook struct {
+}
+
+func (h *CustomHook) Levels() []logcontracts.Level {
+	return []logcontracts.Level{
+		logcontracts.InfoLevel,
+	}
+}
+
+func (h *CustomHook) Fire(entry logcontracts.Entry) error {
+	with := entry.With()
+	filename, ok := with["filename"]
+	if ok {
+		var builder strings.Builder
+		message := entry.Message()
+		if len(message) > 0 {
+			builder.WriteString(fmt.Sprintf("%s: %v\n", entry.Level(), message))
+		}
+
+		code := entry.Code()
+		if len(code) > 0 {
+			builder.WriteString(fmt.Sprintf("custom_code: %v\n", code))
+		}
+
+		user := entry.User()
+		if user != nil {
+			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
+		}
+
+		err := file.Create(cast.ToString(filename), builder.String())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type TestRequest struct{}

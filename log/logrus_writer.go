@@ -7,6 +7,7 @@ import (
 
 	"github.com/rotisserie/eris"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
@@ -365,10 +366,48 @@ func (h *Hook) Levels() []logrus.Level {
 }
 
 func (h *Hook) Fire(entry *logrus.Entry) error {
-	return h.instance.Fire(&Entry{
+	e := &Entry{
 		ctx:     entry.Context,
 		level:   log.Level(entry.Level),
 		time:    entry.Time,
 		message: entry.Message,
-	})
+	}
+
+	data := entry.Data
+	if len(data) > 0 {
+		root, err := cast.ToStringMapE(data["root"])
+		if err != nil {
+			return err
+		}
+
+		if code, ok := cast.ToStringE(root["code"]); ok == nil {
+			e.code = code
+		}
+
+		e.user = root["user"]
+
+		if tags, ok := cast.ToStringSliceE(root["tags"]); ok == nil {
+			e.tags = tags
+		}
+
+		e.owner = root["owner"]
+
+		if req, err := cast.ToStringMapE(root["tags"]); err == nil {
+			e.request = req
+		}
+
+		if res, err := cast.ToStringMapE(root["tags"]); err == nil {
+			e.response = res
+		}
+
+		if context, ok := cast.ToStringMapE(root["context"]); ok == nil {
+			e.with = context
+		}
+
+		if stacktrace, ok := cast.ToStringMapE(root["stacktrace"]); ok == nil {
+			e.stacktrace = stacktrace
+		}
+	}
+
+	return h.instance.Fire(e)
 }

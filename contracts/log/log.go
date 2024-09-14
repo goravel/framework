@@ -104,4 +104,20 @@ type Entry interface {
 	Time() time.Time
 	// Message returns the message of the entry.
 	Message() string
+	// Code returns the associated code.
+	Code() string
+	// With returns additional context data.
+	With() map[string]any
+	// User returns the user information.
+	User() any
+	// Tags returns the list of tags.
+	Tags() []string
+	// Owner returns the log's owner.
+	Owner() any
+	// Request returns the request data.
+	Request() map[string]any
+	// Response returns the response data.
+	Response() map[string]any
+	// Trace returns the stack trace or trace data.
+	Trace() map[string]any
 }
