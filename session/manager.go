@@ -33,10 +33,11 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 	return manager
 }
 
-func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) sessioncontract.Session {
+func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) (sessioncontract.Session, error) {
 	if handler == nil {
-		panic("session driver cannot be nil")
+		return nil, ErrDriverIsNil
 	}
+
 	session := m.acquireSession()
 	session.SetDriver(handler).
 		SetName(m.config.GetString("session.cookie"))
@@ -47,7 +48,7 @@ func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...stri
 		session.SetID("")
 	}
 
-	return session
+	return session, nil
 }
 
 func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
