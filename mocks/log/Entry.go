@@ -24,6 +24,51 @@ func (_m *Entry) EXPECT() *Entry_Expecter {
 	return &Entry_Expecter{mock: &_m.Mock}
 }
 
+// Code provides a mock function with given fields:
+func (_m *Entry) Code() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Code")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Entry_Code_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Code'
+type Entry_Code_Call struct {
+	*mock.Call
+}
+
+// Code is a helper method to define mock.On call
+func (_e *Entry_Expecter) Code() *Entry_Code_Call {
+	return &Entry_Code_Call{Call: _e.mock.On("Code")}
+}
+
+func (_c *Entry_Code_Call) Run(run func()) *Entry_Code_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Code_Call) Return(_a0 string) *Entry_Code_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Code_Call) RunAndReturn(run func() string) *Entry_Code_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Context provides a mock function with given fields:
 func (_m *Entry) Context() context.Context {
 	ret := _m.Called()
@@ -161,6 +206,194 @@ func (_c *Entry_Message_Call) RunAndReturn(run func() string) *Entry_Message_Cal
 	return _c
 }
 
+// Owner provides a mock function with given fields:
+func (_m *Entry) Owner() interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Owner")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// Entry_Owner_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Owner'
+type Entry_Owner_Call struct {
+	*mock.Call
+}
+
+// Owner is a helper method to define mock.On call
+func (_e *Entry_Expecter) Owner() *Entry_Owner_Call {
+	return &Entry_Owner_Call{Call: _e.mock.On("Owner")}
+}
+
+func (_c *Entry_Owner_Call) Run(run func()) *Entry_Owner_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Owner_Call) Return(_a0 interface{}) *Entry_Owner_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Owner_Call) RunAndReturn(run func() interface{}) *Entry_Owner_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Request provides a mock function with given fields:
+func (_m *Entry) Request() map[string]interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Request")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Entry_Request_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Request'
+type Entry_Request_Call struct {
+	*mock.Call
+}
+
+// Request is a helper method to define mock.On call
+func (_e *Entry_Expecter) Request() *Entry_Request_Call {
+	return &Entry_Request_Call{Call: _e.mock.On("Request")}
+}
+
+func (_c *Entry_Request_Call) Run(run func()) *Entry_Request_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Request_Call) Return(_a0 map[string]interface{}) *Entry_Request_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Request_Call) RunAndReturn(run func() map[string]interface{}) *Entry_Request_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Response provides a mock function with given fields:
+func (_m *Entry) Response() map[string]interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Response")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Entry_Response_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Response'
+type Entry_Response_Call struct {
+	*mock.Call
+}
+
+// Response is a helper method to define mock.On call
+func (_e *Entry_Expecter) Response() *Entry_Response_Call {
+	return &Entry_Response_Call{Call: _e.mock.On("Response")}
+}
+
+func (_c *Entry_Response_Call) Run(run func()) *Entry_Response_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Response_Call) Return(_a0 map[string]interface{}) *Entry_Response_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Response_Call) RunAndReturn(run func() map[string]interface{}) *Entry_Response_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Tags provides a mock function with given fields:
+func (_m *Entry) Tags() []string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Tags")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func() []string); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Entry_Tags_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Tags'
+type Entry_Tags_Call struct {
+	*mock.Call
+}
+
+// Tags is a helper method to define mock.On call
+func (_e *Entry_Expecter) Tags() *Entry_Tags_Call {
+	return &Entry_Tags_Call{Call: _e.mock.On("Tags")}
+}
+
+func (_c *Entry_Tags_Call) Run(run func()) *Entry_Tags_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Tags_Call) Return(_a0 []string) *Entry_Tags_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Tags_Call) RunAndReturn(run func() []string) *Entry_Tags_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Time provides a mock function with given fields:
 func (_m *Entry) Time() time.Time {
 	ret := _m.Called()
@@ -202,6 +435,147 @@ func (_c *Entry_Time_Call) Return(_a0 time.Time) *Entry_Time_Call {
 }
 
 func (_c *Entry_Time_Call) RunAndReturn(run func() time.Time) *Entry_Time_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Trace provides a mock function with given fields:
+func (_m *Entry) Trace() map[string]interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Trace")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Entry_Trace_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Trace'
+type Entry_Trace_Call struct {
+	*mock.Call
+}
+
+// Trace is a helper method to define mock.On call
+func (_e *Entry_Expecter) Trace() *Entry_Trace_Call {
+	return &Entry_Trace_Call{Call: _e.mock.On("Trace")}
+}
+
+func (_c *Entry_Trace_Call) Run(run func()) *Entry_Trace_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Trace_Call) Return(_a0 map[string]interface{}) *Entry_Trace_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Trace_Call) RunAndReturn(run func() map[string]interface{}) *Entry_Trace_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// User provides a mock function with given fields:
+func (_m *Entry) User() interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for User")
+	}
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	return r0
+}
+
+// Entry_User_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'User'
+type Entry_User_Call struct {
+	*mock.Call
+}
+
+// User is a helper method to define mock.On call
+func (_e *Entry_Expecter) User() *Entry_User_Call {
+	return &Entry_User_Call{Call: _e.mock.On("User")}
+}
+
+func (_c *Entry_User_Call) Run(run func()) *Entry_User_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_User_Call) Return(_a0 interface{}) *Entry_User_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_User_Call) RunAndReturn(run func() interface{}) *Entry_User_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// With provides a mock function with given fields:
+func (_m *Entry) With() map[string]interface{} {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for With")
+	}
+
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]interface{})
+		}
+	}
+
+	return r0
+}
+
+// Entry_With_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'With'
+type Entry_With_Call struct {
+	*mock.Call
+}
+
+// With is a helper method to define mock.On call
+func (_e *Entry_Expecter) With() *Entry_With_Call {
+	return &Entry_With_Call{Call: _e.mock.On("With")}
+}
+
+func (_c *Entry_With_Call) Run(run func()) *Entry_With_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_With_Call) Return(_a0 map[string]interface{}) *Entry_With_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_With_Call) RunAndReturn(run func() map[string]interface{}) *Entry_With_Call {
 	_c.Call.Return(run)
 	return _c
 }
