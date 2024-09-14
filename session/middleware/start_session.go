@@ -26,7 +26,13 @@ func StartSession() http.Middleware {
 		}
 
 		// Build session
-		s := session.SessionFacade.BuildSession(driver)
+		s, err := session.SessionFacade.BuildSession(driver)
+		if err != nil {
+			color.Red().Println(err)
+			req.Next()
+			return
+		}
+
 		s.SetID(req.Cookie(s.GetName()))
 
 		// Start session
