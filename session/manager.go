@@ -35,7 +35,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) (sessioncontract.Session, error) {
 	if handler == nil {
-		return nil, ErrDriverIsNil
+		return nil, ErrDriverNotSet
 	}
 
 	session := m.acquireSession()
