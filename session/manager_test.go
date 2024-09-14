@@ -112,7 +112,7 @@ func (s *ManagerTestSuite) TestBuildSession() {
 
 	// driver is nil
 	session, err = s.manager.BuildSession(nil)
-	s.Error(ErrDriverIsNil)
+	s.ErrorIs(err, ErrDriverIsNil)
 	s.Nil(session)
 }
 
