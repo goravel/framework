@@ -1,0 +1,86 @@
+package grammars
+
+import (
+	"fmt"
+	"slices"
+	"strings"
+
+	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/orm"
+)
+
+type Postgres struct {
+	attributeCommands []string
+	modifiers         []func(migration.Blueprint, migration.ColumnDefinition) string
+	serials           []string
+}
+
+func NewPostgres() *Postgres {
+	postgres := &Postgres{
+		attributeCommands: []string{"comment"},
+		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
+	}
+	postgres.modifiers = []func(migration.Blueprint, migration.ColumnDefinition) string{
+		postgres.ModifyDefault,
+		postgres.ModifyIncrement,
+		postgres.ModifyNullable,
+	}
+
+	return postgres
+}
+
+func (r *Postgres) CompileCreate(blueprint migration.Blueprint, query orm.Query) string {
+	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
+}
+
+func (r *Postgres) GetAttributeCommands() []string {
+	return r.attributeCommands
+}
+
+func (r *Postgres) GetModifiers() []func(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+	return r.modifiers
+}
+
+func (r *Postgres) ModifyNullable(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+	if column.GetChange() {
+		if column.GetNullable() {
+			return "drop not null"
+		} else {
+			return "set not null"
+		}
+	}
+
+	if column.GetNullable() {
+		return " null"
+	} else {
+		return " not null"
+	}
+}
+
+func (r *Postgres) ModifyDefault(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+	if column.GetChange() {
+		if !column.GetAutoIncrement() {
+			if column.GetDefault() == nil {
+				return "drop default"
+			} else {
+				return fmt.Sprintf("set default %s", getDefaultValue(column.GetDefault()))
+			}
+		}
+
+		return ""
+	}
+
+	if column.GetDefault() != nil {
+		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
+	}
+
+	return ""
+}
+
+func (r *Postgres) ModifyIncrement(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+	if !column.GetChange() && !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+		return " primary key"
+	}
+
+	return ""
+}

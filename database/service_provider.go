@@ -31,8 +31,10 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 	})
 	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
 		orm := app.MakeOrm()
+		config := app.MakeConfig()
+		log := app.MakeLog()
 
-		return migration.NewSchema(orm), nil
+		return migration.NewSchema(config, "", log, orm)
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
