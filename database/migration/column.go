@@ -51,6 +51,14 @@ func (r *ColumnDefinition) GetName() (name string) {
 	return
 }
 
+func (r *ColumnDefinition) GetLength() (length int) {
+	if r.length != nil {
+		return *r.length
+	}
+
+	return
+}
+
 func (r *ColumnDefinition) GetNullable() bool {
 	if r.nullable != nil {
 		return *r.nullable

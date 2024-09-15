@@ -9,6 +9,8 @@ type ColumnDefinition interface {
 	GetChange() bool
 	// GetDefault returns the default value
 	GetDefault() any
+	// GetLength returns the length value
+	GetLength() int
 	// GetName returns the name value
 	GetName() string
 	// GetNullable returns the nullable value

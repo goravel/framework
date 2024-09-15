@@ -33,6 +33,10 @@ func (r *Postgres) CompileCreate(blueprint migration.Blueprint, query orm.Query)
 	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
 }
 
+func (r *Postgres) CompileDropIfExists(blueprint migration.Blueprint) string {
+	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
+}
+
 func (r *Postgres) GetAttributeCommands() []string {
 	return r.attributeCommands
 }
@@ -83,4 +87,29 @@ func (r *Postgres) ModifyIncrement(blueprint migration.Blueprint, column migrati
 	}
 
 	return ""
+}
+
+func (r *Postgres) TypeBigInteger(column migration.ColumnDefinition) string {
+	if column.GetAutoIncrement() {
+		return "bigserial"
+	}
+
+	return "bigint"
+}
+
+func (r *Postgres) TypeInteger(column migration.ColumnDefinition) string {
+	if column.GetAutoIncrement() {
+		return "serial"
+	}
+
+	return "integer"
+}
+
+func (r *Postgres) TypeString(column migration.ColumnDefinition) string {
+	length := column.GetLength()
+	if length > 0 {
+		return fmt.Sprintf("varchar(%d)", length)
+	}
+
+	return "varchar"
 }

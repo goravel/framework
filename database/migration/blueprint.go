@@ -49,10 +49,11 @@ func (r *Blueprint) BigInteger(column string) migration.ColumnDefinition {
 
 func (r *Blueprint) Build(query ormcontract.Query, grammar migration.Grammar) error {
 	for _, sql := range r.ToSql(query, grammar) {
+		// TODO remove
 		fmt.Println("sql:", sql)
-		//if _, err := query.Exec(sql); err != nil {
-		//	return err
-		//}
+		if _, err := query.Exec(sql); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -153,6 +154,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar migration.Grammar) []
 		switch command.Name {
 		case commandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
+		case commandDropIfExists:
+			statements = append(statements, grammar.CompileDropIfExists(r))
 		}
 	}
 
