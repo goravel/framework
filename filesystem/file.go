@@ -25,6 +25,14 @@ type File struct {
 }
 
 func NewFile(file string) (*File, error) {
+	if ConfigFacade == nil {
+		return nil, errors.New("config facade not set")
+	}
+
+	if StorageFacade == nil {
+		return nil, errors.New("storage facade not set")
+	}
+
 	if !supportfile.Exists(file) {
 		return nil, errors.New("file doesn't exist")
 	}
@@ -39,6 +47,14 @@ func NewFile(file string) (*File, error) {
 }
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
+	if ConfigFacade == nil {
+		return nil, errors.New("config facade not set")
+	}
+
+	if StorageFacade == nil {
+		return nil, errors.New("storage facade not set")
+	}
+
 	src, err := fileHeader.Open()
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package console
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -41,6 +42,10 @@ func (receiver *KeyGenerateCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
+	if receiver.config == nil {
+		return errors.New("config facade not set")
+	}
+
 	if receiver.config.GetString("app.env") == "production" {
 		color.Yellow().Println("**************************************")
 		color.Yellow().Println("*     Application In Production!     *")

@@ -25,12 +25,13 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	artisan := app.MakeArtisan()
-	config := app.MakeConfig()
-	artisan.Register([]consolecontract.Command{
-		console.NewListCommand(artisan),
-		console.NewKeyGenerateCommand(config),
-		console.NewMakeCommand(),
-		console.NewBuildCommand(config),
-	})
+	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
+		config := app.MakeConfig()
+		artisanFacade.Register([]consolecontract.Command{
+			console.NewListCommand(artisanFacade),
+			console.NewKeyGenerateCommand(config),
+			console.NewMakeCommand(),
+			console.NewBuildCommand(config),
+		})
+	}
 }
