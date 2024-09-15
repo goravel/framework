@@ -18,11 +18,9 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) Boot(app foundation.Application) {
-	receiver.registerCommands(app)
-}
-
-func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]console.Command{
-		&queueConsole.JobMakeCommand{},
-	})
+	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
+		artisanFacade.Register([]console.Command{
+			&queueConsole.JobMakeCommand{},
+		})
+	}
 }

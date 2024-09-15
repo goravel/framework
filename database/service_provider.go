@@ -44,10 +44,9 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (database *ServiceProvider) registerCommands(app foundation.Application) {
-	config := app.MakeConfig()
-	seeder := app.MakeSeeder()
-
 	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
+		config := app.MakeConfig()
+		seeder := app.MakeSeeder()
 		artisanFacade.Register([]consolecontract.Command{
 			console.NewMigrateMakeCommand(config),
 			console.NewMigrateCommand(config),
