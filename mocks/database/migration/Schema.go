@@ -68,6 +68,73 @@ func (_c *Schema_Connection_Call) RunAndReturn(run func(string) migration.Schema
 	return _c
 }
 
+// Create provides a mock function with given fields: table, callback
+func (_m *Schema) Create(table string, callback func(migration.Blueprint)) {
+	_m.Called(table, callback)
+}
+
+// Schema_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
+type Schema_Create_Call struct {
+	*mock.Call
+}
+
+// Create is a helper method to define mock.On call
+//   - table string
+//   - callback func(migration.Blueprint)
+func (_e *Schema_Expecter) Create(table interface{}, callback interface{}) *Schema_Create_Call {
+	return &Schema_Create_Call{Call: _e.mock.On("Create", table, callback)}
+}
+
+func (_c *Schema_Create_Call) Run(run func(table string, callback func(migration.Blueprint))) *Schema_Create_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(func(migration.Blueprint)))
+	})
+	return _c
+}
+
+func (_c *Schema_Create_Call) Return() *Schema_Create_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Schema_Create_Call) RunAndReturn(run func(string, func(migration.Blueprint))) *Schema_Create_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropIfExists provides a mock function with given fields: table
+func (_m *Schema) DropIfExists(table string) {
+	_m.Called(table)
+}
+
+// Schema_DropIfExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIfExists'
+type Schema_DropIfExists_Call struct {
+	*mock.Call
+}
+
+// DropIfExists is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) DropIfExists(table interface{}) *Schema_DropIfExists_Call {
+	return &Schema_DropIfExists_Call{Call: _e.mock.On("DropIfExists", table)}
+}
+
+func (_c *Schema_DropIfExists_Call) Run(run func(table string)) *Schema_DropIfExists_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_DropIfExists_Call) Return() *Schema_DropIfExists_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string)) *Schema_DropIfExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Register provides a mock function with given fields: _a0
 func (_m *Schema) Register(_a0 []migration.Migration) {
 	_m.Called(_a0)
