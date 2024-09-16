@@ -1021,6 +1021,54 @@ func (_c *Session_Save_Call) RunAndReturn(run func() error) *Session_Save_Call {
 	return _c
 }
 
+// SetDriver provides a mock function with given fields: driver
+func (_m *Session) SetDriver(driver session.Driver) session.Session {
+	ret := _m.Called(driver)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetDriver")
+	}
+
+	var r0 session.Session
+	if rf, ok := ret.Get(0).(func(session.Driver) session.Session); ok {
+		r0 = rf(driver)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(session.Session)
+		}
+	}
+
+	return r0
+}
+
+// Session_SetDriver_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetDriver'
+type Session_SetDriver_Call struct {
+	*mock.Call
+}
+
+// SetDriver is a helper method to define mock.On call
+//   - driver session.Driver
+func (_e *Session_Expecter) SetDriver(driver interface{}) *Session_SetDriver_Call {
+	return &Session_SetDriver_Call{Call: _e.mock.On("SetDriver", driver)}
+}
+
+func (_c *Session_SetDriver_Call) Run(run func(driver session.Driver)) *Session_SetDriver_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(session.Driver))
+	})
+	return _c
+}
+
+func (_c *Session_SetDriver_Call) Return(_a0 session.Session) *Session_SetDriver_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Session_SetDriver_Call) RunAndReturn(run func(session.Driver) session.Session) *Session_SetDriver_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetID provides a mock function with given fields: id
 func (_m *Session) SetID(id string) session.Session {
 	ret := _m.Called(id)
