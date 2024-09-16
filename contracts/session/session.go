@@ -42,6 +42,8 @@ type Session interface {
 	Remove(key string) any
 	// Save saves the session.
 	Save() error
+	// SetDriver sets the session driver
+	SetDriver(driver Driver) Session
 	// SetID sets the ID of the session.
 	SetID(id string) Session
 	// SetName sets the name of the session.
