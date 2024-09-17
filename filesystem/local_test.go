@@ -46,13 +46,17 @@ func (s *LocalTestSuite) SetupTest() {
 	s.mockConfig.On("GetString", "filesystems.disks.local.url").Return("https://goravel.dev").Once()
 	ConfigFacade = s.mockConfig
 
-	s.local, err = NewLocal(s.mockConfig, "local")
+	l, err := NewLocal(s.mockConfig, "local")
 	s.Nil(err)
-	s.NotNil(s.local)
+	s.NotNil(l)
 
-	s.file, err = NewFile("./file.go")
+	s.local = l
+
+	f, err := NewFile("./file.go")
 	s.Nil(err)
-	s.NotNil(s.file)
+	s.NotNil(f)
+
+	s.file = f
 
 	s.mockConfig.AssertExpectations(s.T())
 }
