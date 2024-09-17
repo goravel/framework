@@ -29,10 +29,6 @@ func NewFile(file string) (*File, error) {
 		return nil, errors.New("config facade not set")
 	}
 
-	if StorageFacade == nil {
-		return nil, errors.New("storage facade not set")
-	}
-
 	if !supportfile.Exists(file) {
 		return nil, errors.New("file doesn't exist")
 	}
@@ -49,10 +45,6 @@ func NewFile(file string) (*File, error) {
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	if ConfigFacade == nil {
 		return nil, errors.New("config facade not set")
-	}
-
-	if StorageFacade == nil {
-		return nil, errors.New("storage facade not set")
 	}
 
 	src, err := fileHeader.Open()
@@ -143,9 +135,33 @@ func (f *File) Size() (int64, error) {
 }
 
 func (f *File) Store(path string) (string, error) {
+	if err := f.validateStorageFacade(); err != nil {
+		return "", err
+	}
+
 	return f.storage.Disk(f.disk).PutFile(path, f)
 }
 
 func (f *File) StoreAs(path string, name string) (string, error) {
+	if err := f.validateStorageFacade(); err != nil {
+		return "", err
+	}
+
 	return f.storage.Disk(f.disk).PutFileAs(path, f, name)
+}
+
+func (f *File) validateConfigFacade() error {
+	if f.config == nil {
+		return ErrConfigFacadeNotSet
+	}
+
+	return nil
+}
+
+func (f *File) validateStorageFacade() error {
+	if f.storage == nil {
+		return ErrStorageFacadeNotSet
+	}
+
+	return nil
 }
