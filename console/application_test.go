@@ -40,6 +40,8 @@ func TestFlagsToCliFlags(t *testing.T) {
 	// Convert command flags to CLI flags
 	cliFlags := flagsToCliFlags(flags)
 
+	assert.NotEmpty(t, cliFlags, "cliFlags should not be empty")
+
 	// Assert that the number of CLI flags matches the number of command flags
 	assert.Equal(t, len(cliFlags), len(flags))
 
