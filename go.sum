@@ -139,8 +139,8 @@ github.com/charmbracelet/bubbletea v1.1.1 h1:KJ2/DnmpfqFtDNVTvYZ6zpPFL9iRCRr0qqK
 github.com/charmbracelet/bubbletea v1.1.1/go.mod h1:9Ogk0HrdbHolIKHdjfFpyXJmiCzGwy+FesYkZr7hYU4=
 github.com/charmbracelet/huh v0.6.0 h1:mZM8VvZGuE0hoDXq6XLxRtgfWyTI3b2jZNKh0xWmax8=
 github.com/charmbracelet/huh v0.6.0/go.mod h1:GGNKeWCeNzKpEOh/OJD8WBwTQjV3prFAtQPpLv+AVwU=
-github.com/charmbracelet/huh/spinner v0.0.0-20240912161303-b56e9290a68e h1:7j2L0HkIzFSdzDmP2Dl97Q8ttWzlwubIgiNrutMd5Lc=
-github.com/charmbracelet/huh/spinner v0.0.0-20240912161303-b56e9290a68e/go.mod h1:Cxhgl8N0sX9A+EQxedzzGZAalaF8fUVL+JP/pSOW8cI=
+github.com/charmbracelet/huh/spinner v0.0.0-20240917123815-c9b2c9cdb7b6 h1:qRk1YMgaWNSJmj2n0ZOiIpqGTXrP42vOrp8fCFVh3qs=
+github.com/charmbracelet/huh/spinner v0.0.0-20240917123815-c9b2c9cdb7b6/go.mod h1:Cxhgl8N0sX9A+EQxedzzGZAalaF8fUVL+JP/pSOW8cI=
 github.com/charmbracelet/lipgloss v0.13.0 h1:4X3PPeoWEDCMvzDvGmTajSyYPcZM4+y8sCA/SsA3cjw=
 github.com/charmbracelet/lipgloss v0.13.0/go.mod h1:nw4zy0SBX/F/eAO1cWdcvy6qnkDUxr8Lw7dvFrAIbbY=
 github.com/charmbracelet/x/ansi v0.2.3 h1:VfFN0NUpcjBRd4DnKfRaIRo53KRgey/nhOoEqosGDEY=
