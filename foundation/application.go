@@ -91,7 +91,12 @@ func (app *Application) StoragePath(path ...string) string {
 }
 
 func (app *Application) LangPath(path ...string) string {
-	path = append([]string{app.MakeConfig().GetString("app.lang_path", "lang")}, path...)
+	defaultPath := "lang"
+	if configFacade := app.MakeConfig(); configFacade != nil {
+		defaultPath = configFacade.GetString("app.lang_path", defaultPath)
+	}
+
+	path = append([]string{defaultPath}, path...)
 	return filepath.Join(path...)
 }
 

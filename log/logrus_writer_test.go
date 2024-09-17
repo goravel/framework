@@ -407,8 +407,11 @@ func TestLogrusWithCustomLogger(t *testing.T) {
 
 	assert.NotNil(t, logger)
 
-	logger.Channel("customLogger").
-		WithTrace().
+	channel := logger.Channel("customLogger")
+
+	assert.NotNil(t, channel)
+
+	channel.WithTrace().
 		With(map[string]any{"filename": filename}).
 		User(map[string]any{"name": "kkumar-gcc"}).
 		Owner("team@goravel.dev").
