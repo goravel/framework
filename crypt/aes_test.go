@@ -3,6 +3,7 @@ package crypt
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/foundation/json"
@@ -17,8 +18,12 @@ type AesTestSuite struct {
 func TestAesTestSuite(t *testing.T) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
+	aes, err := NewAES(mockConfig, json.NewJson())
+
+	assert.NoError(t, err)
+
 	suite.Run(t, &AesTestSuite{
-		aes: NewAES(mockConfig, json.NewJson()),
+		aes: aes,
 	})
 	mockConfig.AssertExpectations(t)
 }
@@ -61,7 +66,11 @@ func (s *AesTestSuite) TestDecryptString() {
 func Benchmark_EncryptString(b *testing.B) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
-	aes := NewAES(mockConfig, json.NewJson())
+	aes, err := NewAES(mockConfig, json.NewJson())
+	if err != nil {
+		b.Fatal(err)
+	}
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -75,7 +84,11 @@ func Benchmark_EncryptString(b *testing.B) {
 func Benchmark_DecryptString(b *testing.B) {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.key").Return("11111111111111111111111111111111").Once()
-	aes := NewAES(mockConfig, json.NewJson())
+	aes, err := NewAES(mockConfig, json.NewJson())
+	if err != nil {
+		b.Fatal(err)
+	}
+
 	payload, err := aes.EncryptString("Goravel")
 	if err != nil {
 		b.Error(err)
