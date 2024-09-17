@@ -156,7 +156,7 @@ func (s *Session) Save() error {
 		return err
 	}
 
-	if err := s.validateDriver(); err != nil {
+	if err = s.validateDriver(); err != nil {
 		return err
 	}
 
