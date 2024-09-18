@@ -19,6 +19,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/grpc"
 	"github.com/goravel/framework/hash"
 	"github.com/goravel/framework/http"
@@ -204,6 +205,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
+	s.app.SetJson(json.NewJson())
 
 	serviceProvider := &crypt.ServiceProvider{}
 	serviceProvider.Register(s.app)
