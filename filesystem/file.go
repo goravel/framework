@@ -150,14 +150,6 @@ func (f *File) StoreAs(path string, name string) (string, error) {
 	return f.storage.Disk(f.disk).PutFileAs(path, f, name)
 }
 
-func (f *File) validateConfigFacade() error {
-	if f.config == nil {
-		return ErrConfigFacadeNotSet
-	}
-
-	return nil
-}
-
 func (f *File) validateStorageFacade() error {
 	if f.storage == nil {
 		return ErrStorageFacadeNotSet
