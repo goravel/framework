@@ -22,16 +22,9 @@ type Schema struct {
 	orm        contractsorm.Orm
 }
 
-func NewSchema(config config.Config, connection string, log log.Log, orm contractsorm.Orm) (*Schema, error) {
-	if connection == "" {
-		connection = config.GetString("database.default")
-	}
-
-	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", connection))
-	dbSchema := config.GetString(fmt.Sprintf("database.connections.%s.schema", connection))
-
+func NewSchema(blueprint migration.Blueprint, config config.Config, connection string, log log.Log, orm contractsorm.Orm) (*Schema, error) {
 	schema := &Schema{
-		blueprint:  NewBlueprint(prefix, dbSchema),
+		blueprint:  blueprint,
 		config:     config,
 		connection: connection,
 		log:        log,
@@ -46,7 +39,11 @@ func NewSchema(config config.Config, connection string, log log.Log, orm contrac
 }
 
 func (r *Schema) Connection(name string) migration.Schema {
-	schema, err := NewSchema(r.config, name, r.log, r.orm)
+	prefix := r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", name))
+	dbSchema := r.config.GetString(fmt.Sprintf("database.connections.%s.schema", name))
+	blueprint := NewBlueprint(prefix, dbSchema)
+
+	schema, err := NewSchema(blueprint, r.config, name, r.log, r.orm)
 	if err != nil {
 		r.log.Panic(err)
 	}
@@ -84,8 +81,9 @@ func (r *Schema) initGrammar() error {
 	driver := r.config.GetString(fmt.Sprintf("database.connections.%s.driver", r.connection))
 
 	switch driver {
-	//case ormcontract.DriverMysql:
-	//	grammar = grammars.NewMysql()
+	case contractsorm.DriverMysql.String():
+		// TODO Optimize here when implementing Mysql driver
+		return nil
 	case contractsorm.DriverPostgres.String():
 		r.grammar = grammars.NewPostgres()
 		return nil

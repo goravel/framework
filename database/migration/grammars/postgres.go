@@ -45,22 +45,6 @@ func (r *Postgres) GetModifiers() []func(blueprint migration.Blueprint, column m
 	return r.modifiers
 }
 
-func (r *Postgres) ModifyNullable(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
-	if column.GetChange() {
-		if column.GetNullable() {
-			return "drop not null"
-		} else {
-			return "set not null"
-		}
-	}
-
-	if column.GetNullable() {
-		return " null"
-	} else {
-		return " not null"
-	}
-}
-
 func (r *Postgres) ModifyDefault(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
 	if column.GetChange() {
 		if !column.GetAutoIncrement() {
@@ -79,6 +63,22 @@ func (r *Postgres) ModifyDefault(blueprint migration.Blueprint, column migration
 	}
 
 	return ""
+}
+
+func (r *Postgres) ModifyNullable(blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+	if column.GetChange() {
+		if column.GetNullable() {
+			return "drop not null"
+		} else {
+			return "set not null"
+		}
+	}
+
+	if column.GetNullable() {
+		return " null"
+	} else {
+		return " not null"
+	}
 }
 
 func (r *Postgres) ModifyIncrement(blueprint migration.Blueprint, column migration.ColumnDefinition) string {

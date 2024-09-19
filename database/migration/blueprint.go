@@ -94,6 +94,7 @@ func (r *Blueprint) GetChangedColumns() []migration.ColumnDefinition {
 }
 
 func (r *Blueprint) GetTableName() string {
+	// TODO Add schema for Postgres
 	return r.prefix + r.table
 }
 
