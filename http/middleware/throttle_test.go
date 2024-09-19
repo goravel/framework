@@ -387,8 +387,7 @@ func (r *TestContext) Context() context.Context {
 	panic("do not need to implement it")
 }
 
-func (r *TestContext) WithValue(key string, value any) {
-
+func (r *TestContext) WithValue(key any, value any) {
 	panic("do not need to implement it")
 }
 
