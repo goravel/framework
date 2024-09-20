@@ -88,6 +88,36 @@ func Get[K comparable, V any](mp map[K]V, key K, defaults ...V) V {
 	return val
 }
 
+func GetDeep(mp any, keys []any, defaults ...any) any {
+	if len(keys) == 0 {
+		return *new(any)
+	}
+
+	defaultValue := *new(any)
+
+	if len(defaults) > 0 {
+		defaultValue = defaults[0]
+	}
+
+	mpValue := reflect.ValueOf(mp)
+	if mpValue.Kind() != reflect.Map {
+		return defaultValue
+	}
+
+	keyValue := reflect.ValueOf(keys[0])
+	mpValue = mpValue.MapIndex(keyValue)
+
+	if !mpValue.IsValid() {
+		return defaultValue
+	}
+
+	if len(keys) == 1 {
+		return mpValue.Interface()
+	}
+
+	return GetDeep(mpValue.Interface(), keys[1:], defaults...)
+}
+
 // Has checks if the given key or keys exist in the provided map.
 func Has[K comparable, V any](mp map[K]V, keys ...K) bool {
 	if len(keys) == 0 || len(mp) == 0 {

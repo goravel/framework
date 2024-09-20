@@ -171,6 +171,34 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, 10, Get(mp1, "qux", 10))
 }
 
+func TestGetDeep(t *testing.T) {
+	mp := map[string]any{
+		"name": "Krishan",
+		"framework": map[string]any{
+			"name": "Goravel",
+			"lang": "Golang",
+			"dev": map[string]any{
+				"name": "Bowen",
+			},
+		},
+	}
+
+	assert.Equal(t, "Krishan", GetDeep(mp, []any{"name"}), "test")
+	assert.Equal(t, "Goravel", GetDeep(mp, []any{"framework", "name"}, "dev"))
+	assert.Equal(t, "Goravel", GetDeep(mp, []any{"framework", "name"}))
+	assert.Nil(t, GetDeep(mp, []any{"foo", "bar", "baz"}))
+
+	mp1 := map[int]any{
+		1: "one",
+		2: "two",
+		3: map[string]any{
+			"foo": "bar",
+		},
+	}
+
+	assert.Equal(t, "bar", GetDeep(mp1, []any{3, "foo"}))
+}
+
 func TestHas(t *testing.T) {
 	mp := map[string]any{
 		"framework": map[string]any{
