@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/support/env"
 )
 
 type ContainerType string
@@ -56,6 +57,10 @@ func Sqlites(num int) []testing.DatabaseDriver {
 
 func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 	if num <= 0 {
+		return nil
+	}
+
+	if containerType == ContainerTypeSqlserver && env.IsGithub() {
 		return nil
 	}
 
