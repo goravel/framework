@@ -28,21 +28,21 @@ func NewSqlserverImpl(database, username, password string) *SqlserverImpl {
 		username: username,
 		password: password,
 		image: &testing.Image{
-			//Repository: "mcmoe/mssqldocker",
-			//Tag:        "latest",
-			//Env: []string{
-			//	"ACCEPT_EULA=Y",
-			//	"MSSQL_DB=" + database,
-			//	"MSSQL_USER=" + username,
-			//	"MSSQL_PASSWORD=" + password,
-			//	"SA_PASSWORD=" + password,
-			//},
-			Repository: "mcr.microsoft.com/mssql/server",
+			Repository: "mcmoe/mssqldocker",
 			Tag:        "latest",
 			Env: []string{
 				"ACCEPT_EULA=Y",
-				"MSSQL_SA_PASSWORD=" + password,
+				"MSSQL_DB=" + database,
+				"MSSQL_USER=" + username,
+				"MSSQL_PASSWORD=" + password,
+				"SA_PASSWORD=" + password,
 			},
+			//Repository: "mcr.microsoft.com/mssql/server",
+			//Tag:        "latest",
+			//Env: []string{
+			//	"ACCEPT_EULA=Y",
+			//	"MSSQL_SA_PASSWORD=" + password,
+			//},
 			ExposedPorts: []string{"1433"},
 		},
 	}

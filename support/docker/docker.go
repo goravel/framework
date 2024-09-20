@@ -9,7 +9,7 @@ import (
 type ContainerType string
 
 const (
-	password = "Goravel123"
+	password = "Goravel123!"
 	username = "goravel"
 	database = "goravel"
 
@@ -81,8 +81,7 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 		case ContainerTypePostgres:
 			db = NewPostgresImpl(database, username, password)
 		case ContainerTypeSqlserver:
-			//db = NewSqlserverImpl(database, username, password)
-			db = NewSqlserverImpl("msdb", "sa", password)
+			db = NewSqlserverImpl(database, username, password)
 		case ContainerTypeSqlite:
 			db = NewSqliteImpl(fmt.Sprintf("%s%d", database, driverLength+i))
 		default:
