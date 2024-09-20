@@ -27,7 +27,7 @@ func TestPostgresTestSuite(t *testing.T) {
 
 func (s *PostgresTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.postgres = NewPostgresImpl("goravel", "goravel", "goravel")
+	s.postgres = NewPostgresImpl(database, username, password)
 }
 
 func (s *PostgresTestSuite) TestBuild() {
