@@ -37,9 +37,9 @@ func (s *PostgresTestSuite) TestBuild() {
 	s.NotNil(instance)
 
 	s.Equal("127.0.0.1", s.postgres.Config().Host)
-	s.Equal("goravel", s.postgres.Config().Database)
-	s.Equal("goravel", s.postgres.Config().Username)
-	s.Equal("goravel", s.postgres.Config().Password)
+	s.Equal(database, s.postgres.Config().Database)
+	s.Equal(username, s.postgres.Config().Username)
+	s.Equal(password, s.postgres.Config().Password)
 	s.True(s.postgres.Config().Port > 0)
 
 	res := instance.Exec(`

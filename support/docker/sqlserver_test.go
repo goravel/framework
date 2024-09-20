@@ -37,9 +37,9 @@ func (s *SqlserverTestSuite) TestBuild() {
 	s.NotNil(instance)
 
 	s.Equal("127.0.0.1", s.sqlserver.Config().Host)
-	s.Equal("goravel", s.sqlserver.Config().Database)
-	s.Equal("goravel", s.sqlserver.Config().Username)
-	s.Equal("Goravel123!", s.sqlserver.Config().Password)
+	s.Equal(database, s.sqlserver.Config().Database)
+	s.Equal(username, s.sqlserver.Config().Username)
+	s.Equal(password, s.sqlserver.Config().Password)
 	s.True(s.sqlserver.Config().Port > 0)
 
 	res := instance.Exec(`
