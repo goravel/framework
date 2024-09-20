@@ -27,7 +27,8 @@ func TestSqlserverTestSuite(t *testing.T) {
 
 func (s *SqlserverTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.sqlserver = NewSqlserverImpl(database, username, password)
+	//s.sqlserver = NewSqlserverImpl(database, username, password)
+	s.sqlserver = NewSqlserverImpl("msdb", "sa", password)
 }
 
 func (s *SqlserverTestSuite) TestBuild() {
