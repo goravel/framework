@@ -59,10 +59,6 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 		return nil
 	}
 
-	//if containerType == ContainerTypeSqlserver && env.IsGithub() {
-	//	return nil
-	//}
-
 	var drivers []testing.DatabaseDriver
 	if len(containers[containerType]) >= num {
 		drivers = containers[containerType][:num]
