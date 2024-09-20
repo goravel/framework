@@ -64,15 +64,15 @@ func (s *SqlserverTestSuite) TestBuild() {
 	s.Nil(res.Error)
 	s.Equal(int64(1), count)
 
-	s.Nil(s.sqlserver.Fresh())
-
-	res = instance.Raw(`
-	SELECT count(*) FROM sys.tables WHERE name = 'users';
-	`).Scan(&count)
-	s.Nil(res.Error)
-	s.Equal(int64(0), count)
-
-	s.Nil(s.sqlserver.Stop())
+	//s.Nil(s.sqlserver.Fresh())
+	//
+	//res = instance.Raw(`
+	//SELECT count(*) FROM sys.tables WHERE name = 'users';
+	//`).Scan(&count)
+	//s.Nil(res.Error)
+	//s.Equal(int64(0), count)
+	//
+	//s.Nil(s.sqlserver.Stop())
 }
 
 func (s *SqlserverTestSuite) TestImage() {

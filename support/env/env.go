@@ -44,7 +44,7 @@ func Is64Bit() bool {
 // IsGithub returns whether the current environment is github action.
 // IsGithub 返回当前系统环境是否为 github action。
 func IsGithub() bool {
-	_, exist := os.LookupEnv("GITHUB_ACTION")
+	_, exists := os.LookupEnv("GITHUB_ACTION")
 
-	return exist
+	return exists
 }
