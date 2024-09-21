@@ -45,21 +45,21 @@ func (r *Schema) Connection(name string) migration.Schema {
 	return schema
 }
 
-func (r *Schema) Create(table string, callback func(table migration.Blueprint)) {
+func (r *Schema) Create(table string, callback func(table migration.Blueprint)) error {
 	r.blueprint.SetTable(table)
 	r.blueprint.Create()
 	callback(r.blueprint)
 
 	// TODO catch error and rollback
-	_ = r.blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
+	return r.blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
 }
 
-func (r *Schema) DropIfExists(table string) {
+func (r *Schema) DropIfExists(table string) error {
 	r.blueprint.SetTable(table)
 	r.blueprint.DropIfExists()
 
-	// TODO catch error
-	_ = r.blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
+	// TODO catch error when run migrate command
+	return r.blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
 }
 
 func (r *Schema) Register(migrations []migration.Migration) {

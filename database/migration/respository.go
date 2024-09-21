@@ -6,70 +6,94 @@ import (
 )
 
 type Repository struct {
-	orm    orm.Orm
+	query  orm.Query
 	schema migration.Schema
 	table  string
 }
 
-func NewRepository(orm orm.Orm, schema migration.Schema, table string) *Repository {
+func NewRepository(query orm.Query, schema migration.Schema, table string) *Repository {
 	return &Repository{
-		orm:    orm,
+		query:  query,
 		schema: schema,
 		table:  table,
 	}
 }
 
-func (r *Repository) CreateRepository() {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) CreateRepository() error {
+	return r.schema.Create(r.table, func(table migration.Blueprint) {
+		table.ID()
+		table.String("migration")
+		table.Integer("batch")
+	})
 }
 
-func (r *Repository) Delete(migration string) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) Delete(migration string) error {
+	_, err := r.query.Exec("DELETE FROM ? WHERE migration = ?", r.table, migration)
+
+	return err
 }
 
-func (r *Repository) DeleteRepository() {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) DeleteRepository() error {
+	return r.schema.DropIfExists(r.table)
 }
 
-func (r *Repository) GetLast() {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetLast() ([]migration.File, error) {
+	var files []migration.File
+	if err := r.query.Table(r.table).Where("batch", r.getLastBatchNumber()).OrderByDesc("migration").Get(&files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
-func (r *Repository) GetMigrationBatches() {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetMigrations(steps int) ([]migration.File, error) {
+	var files []migration.File
+	if err := r.query.Table(r.table).Where("batch >= 1").OrderByDesc("batch").OrderByDesc("migration").Limit(steps).Get(&files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
-func (r *Repository) GetMigrations(steps int) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetMigrationsByBatch(batch int) ([]migration.File, error) {
+	var files []migration.File
+	if err := r.query.Table(r.table).Where("batch", batch).OrderByDesc("migration").Get(&files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }
 
-func (r *Repository) GetMigrationsByBatch(batch int) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetNextBatchNumber() int {
+	return r.getLastBatchNumber() + 1
 }
 
-func (r *Repository) GetNextBatchNumber() {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) GetRan() ([]string, error) {
+	var migrations []string
+	if err := r.query.Table(r.table).OrderBy("batch").OrderBy("migration").Pluck("migration", &migrations); err != nil {
+		return nil, err
+	}
+
+	return migrations, nil
 }
 
-func (r *Repository) GetRan() {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (r *Repository) Log(file, batch string) {
-	//TODO implement me
-	panic("implement me")
+func (r *Repository) Log(file string, batch int) error {
+	return r.query.Table(r.table).Create(map[string]any{
+		"migration": file,
+		"batch":     batch,
+	})
 }
 
 func (r *Repository) RepositoryExists() {
-	//TODO implement me
+	//TODO implement me when schema.HasTable is implemented
 	panic("implement me")
+}
+
+func (r *Repository) getLastBatchNumber() int {
+	var batch int
+	if err := r.query.Table(r.table).OrderBy("batch", "desc").Pluck("batch", &batch); err != nil {
+		return 0
+	}
+
+	return batch
 }
