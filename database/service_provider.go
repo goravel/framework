@@ -39,7 +39,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 		schema := config.GetString(fmt.Sprintf("database.connections.%s.schema", connection))
 		blueprint := migration.NewBlueprint(prefix, schema)
 
-		return migration.NewSchema(blueprint, config, "", log, orm)
+		return migration.NewSchema(blueprint, config, "", log, orm), nil
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
