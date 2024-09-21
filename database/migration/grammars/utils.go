@@ -40,6 +40,10 @@ func getDefaultValue(def any) string {
 
 func getType(grammar migration.Grammar, column migration.ColumnDefinition) string {
 	t := []rune(column.GetType())
+	if len(t) == 0 {
+		return ""
+	}
+
 	t[0] = unicode.ToUpper(t[0])
 	methodName := fmt.Sprintf("Type%s", string(t))
 	methodValue := reflect.ValueOf(grammar).MethodByName(methodName)

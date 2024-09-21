@@ -279,7 +279,7 @@ func (s *BlueprintTestSuite) TestIsCreate() {
 	s.False(s.blueprint.isCreate())
 	s.blueprint.commands = []*migration.Command{
 		{
-			Name: "create",
+			Name: commandCreate,
 		},
 	}
 	s.True(s.blueprint.isCreate())
@@ -352,7 +352,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 		if driver == orm.DriverPostgres {
 			s.Len(s.blueprint.ToSql(mockQuery, grammar), 1)
 		} else {
-			s.Empty(s.blueprint.ToSql(mockQuery, grammar), 1)
+			s.Empty(s.blueprint.ToSql(mockQuery, grammar))
 		}
 	}
 }
