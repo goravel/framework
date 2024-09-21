@@ -21,7 +21,7 @@ func (_m *Manager) EXPECT() *Manager_Expecter {
 }
 
 // BuildSession provides a mock function with given fields: handler, sessionID
-func (_m *Manager) BuildSession(handler session.Driver, sessionID ...string) session.Session {
+func (_m *Manager) BuildSession(handler session.Driver, sessionID ...string) (session.Session, error) {
 	_va := make([]interface{}, len(sessionID))
 	for _i := range sessionID {
 		_va[_i] = sessionID[_i]
@@ -36,6 +36,10 @@ func (_m *Manager) BuildSession(handler session.Driver, sessionID ...string) ses
 	}
 
 	var r0 session.Session
+	var r1 error
+	if rf, ok := ret.Get(0).(func(session.Driver, ...string) (session.Session, error)); ok {
+		return rf(handler, sessionID...)
+	}
 	if rf, ok := ret.Get(0).(func(session.Driver, ...string) session.Session); ok {
 		r0 = rf(handler, sessionID...)
 	} else {
@@ -44,7 +48,13 @@ func (_m *Manager) BuildSession(handler session.Driver, sessionID ...string) ses
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(session.Driver, ...string) error); ok {
+		r1 = rf(handler, sessionID...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Manager_BuildSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildSession'
@@ -73,12 +83,12 @@ func (_c *Manager_BuildSession_Call) Run(run func(handler session.Driver, sessio
 	return _c
 }
 
-func (_c *Manager_BuildSession_Call) Return(_a0 session.Session) *Manager_BuildSession_Call {
-	_c.Call.Return(_a0)
+func (_c *Manager_BuildSession_Call) Return(_a0 session.Session, _a1 error) *Manager_BuildSession_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Manager_BuildSession_Call) RunAndReturn(run func(session.Driver, ...string) session.Session) *Manager_BuildSession_Call {
+func (_c *Manager_BuildSession_Call) RunAndReturn(run func(session.Driver, ...string) (session.Session, error)) *Manager_BuildSession_Call {
 	_c.Call.Return(run)
 	return _c
 }

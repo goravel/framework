@@ -85,6 +85,10 @@ func (s *ManagerTestSuite) TestExtend() {
 	s.Nil(err)
 	s.NotNil(driver)
 	s.Equal("*session.CustomDriver", fmt.Sprintf("%T", driver))
+
+	// driver already exists
+	err = s.manager.Extend("test", NewCustomDriver)
+	s.Errorf(err, "driver [%s] already exists", "test")
 }
 
 func (s *ManagerTestSuite) TestBuildSession() {
@@ -94,9 +98,22 @@ func (s *ManagerTestSuite) TestBuildSession() {
 	s.Equal("*driver.File", fmt.Sprintf("%T", driver))
 
 	s.mockConfig.On("GetString", "session.cookie").Return("test_cookie").Once()
-	session := s.manager.BuildSession(driver)
+	session, err := s.manager.BuildSession(driver)
+	session.Put("name", "goravel")
+
+	s.Nil(err)
 	s.NotNil(session)
 	s.Equal("test_cookie", session.GetName())
+	s.Equal("goravel", session.Get("name"))
+
+	s.manager.ReleaseSession(session)
+	s.Empty(session.GetName())
+	s.Empty(session.All())
+
+	// driver is nil
+	session, err = s.manager.BuildSession(nil)
+	s.ErrorIs(err, ErrDriverNotSet)
+	s.Nil(session)
 }
 
 func (s *ManagerTestSuite) TestGetDefaultDriver() {
