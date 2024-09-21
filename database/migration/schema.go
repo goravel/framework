@@ -23,16 +23,16 @@ type Schema struct {
 }
 
 func NewSchema(blueprint migration.Blueprint, config config.Config, connection string, log log.Log, orm contractsorm.Orm) (*Schema, error) {
+	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
+	grammar := getGrammar(driver)
+
 	schema := &Schema{
 		blueprint:  blueprint,
 		config:     config,
 		connection: connection,
+		grammar:    grammar,
 		log:        log,
 		orm:        orm,
-	}
-
-	if err := schema.initGrammar(); err != nil {
-		return nil, err
 	}
 
 	return schema, nil
@@ -73,25 +73,24 @@ func (r *Schema) Register(migrations []migration.Migration) {
 }
 
 func (r *Schema) Sql(sql string) {
-	// TODO catch error and rollback
+	// TODO catch error and rollback, optimize test
 	_, _ = r.orm.Connection(r.connection).Query().Exec(sql)
 }
 
-func (r *Schema) initGrammar() error {
-	driver := r.config.GetString(fmt.Sprintf("database.connections.%s.driver", r.connection))
-
+func getGrammar(driver string) migration.Grammar {
 	switch driver {
 	case contractsorm.DriverMysql.String():
 		// TODO Optimize here when implementing Mysql driver
 		return nil
 	case contractsorm.DriverPostgres.String():
-		r.grammar = grammars.NewPostgres()
+		return grammars.NewPostgres()
+	case contractsorm.DriverSqlserver.String():
+		// TODO Optimize here when implementing Mysql driver
 		return nil
-	//case ormcontract.DriverSqlserver:
-	//	grammar = grammars.NewSqlserver()
-	//case ormcontract.DriverSqlite:
-	//	grammar = grammars.NewSqlite()
+	case contractsorm.DriverSqlite.String():
+		// TODO Optimize here when implementing Mysql driver
+		return nil
 	default:
-		return fmt.Errorf("unsupported database driver: %s", driver)
+		panic(fmt.Sprintf("unsupported database driver: %s", driver))
 	}
 }

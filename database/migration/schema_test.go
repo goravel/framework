@@ -13,7 +13,6 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/migration/grammars"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -119,7 +118,7 @@ func (s *SchemaSuite) TestCreate() {
 			mockBlueprint.EXPECT().Create().Once()
 			mockBlueprint.EXPECT().String("name").Return(mockColumnDefinition).Once()
 			mockBlueprint.EXPECT().Build(testDB.query, mock.MatchedBy(func(grammar migration.Grammar) bool {
-				return s.Equal(reflect.TypeOf(getGrammar(driver)).Elem(), reflect.TypeOf(grammar).Elem())
+				return s.Equal(reflect.TypeOf(getGrammar(driver.String())).Elem(), reflect.TypeOf(grammar).Elem())
 			})).Return(nil).Once()
 
 			schema := s.schema.Connection(driver.String()).(*Schema)
@@ -157,51 +156,5 @@ func (s *SchemaSuite) TestDropIfExists() {
 			// TODO Open below when implementing HasTable
 			//s.False(schema.schema.HasTable(table))
 		})
-	}
-}
-
-func (s *SchemaSuite) TestInitGrammarAndProcess() {
-	for driver, _ := range s.driverToTestDB {
-		s.Run(driver.String(), func() {
-			s.Nil(s.schema.initGrammar())
-			grammarType := reflect.TypeOf(s.schema.grammar)
-			grammarName := grammarType.Elem().Name()
-
-			// TODO Open below when implementing Processor
-			//processorType := reflect.TypeOf(schema.schema.processor)
-			//processorName := processorType.Elem().Name()
-
-			switch driver {
-			case contractsorm.DriverMysql:
-				s.Equal("Mysql", grammarName)
-				//s.Equal("Mysql", processorName)
-			case contractsorm.DriverPostgres:
-				s.Equal("Postgres", grammarName)
-				//s.Equal("Postgres", processorName)
-			case contractsorm.DriverSqlserver:
-				s.Equal("Sqlserver", grammarName)
-				//s.Equal("Sqlserver", processorName)
-			case contractsorm.DriverSqlite:
-				s.Equal("Sqlite", grammarName)
-				//s.Equal("Sqlite", processorName)
-			default:
-				s.Fail("unsupported database driver")
-			}
-		})
-	}
-}
-
-func getGrammar(driver contractsorm.Driver) migration.Grammar {
-	switch driver {
-	case contractsorm.DriverMysql:
-		return nil
-	case contractsorm.DriverPostgres:
-		return grammars.NewPostgres()
-	case contractsorm.DriverSqlserver:
-		return nil
-	case contractsorm.DriverSqlite:
-		return nil
-	default:
-		return nil
 	}
 }

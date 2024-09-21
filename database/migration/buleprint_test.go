@@ -264,6 +264,17 @@ func (s *BlueprintTestSuite) TestGetChangedColumns() {
 	s.Equal(changedColumn, s.blueprint.GetChangedColumns()[0])
 }
 
+func (s *BlueprintTestSuite) TestGetTableName() {
+	s.blueprint.SetTable("users")
+	s.Equal("goravel_users", s.blueprint.GetTableName())
+}
+
+func (s *BlueprintTestSuite) TestHasCommand() {
+	s.False(s.blueprint.HasCommand(commandCreate))
+	s.blueprint.Create()
+	s.True(s.blueprint.HasCommand(commandCreate))
+}
+
 func (s *BlueprintTestSuite) TestIsCreate() {
 	s.False(s.blueprint.isCreate())
 	s.blueprint.commands = []*migration.Command{
@@ -344,4 +355,14 @@ func (s *BlueprintTestSuite) TestToSql() {
 			s.Empty(s.blueprint.ToSql(mockQuery, grammar), 1)
 		}
 	}
+}
+
+func (s *BlueprintTestSuite) TestUnsignedBigInteger() {
+	name := "name"
+	s.blueprint.UnsignedBigInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
 }
