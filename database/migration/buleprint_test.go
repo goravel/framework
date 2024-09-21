@@ -49,21 +49,21 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 		{
 			name: "Should not add command when columns is empty",
 			setup: func() {
-				mockGrammar.On("GetAttributeCommands").Return([]string{"test"}).Once()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"test"}).Once()
 			},
 		},
 		{
 			name:    "Should not add command when columns is not empty but GetAttributeCommands does not contain a valid command",
 			columns: []*ColumnDefinition{columnDefinition},
 			setup: func() {
-				mockGrammar.On("GetAttributeCommands").Return([]string{"test"}).Once()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"test"}).Once()
 			},
 		},
 		{
 			name:    "Should add comment command when columns is not empty and GetAttributeCommands contains a comment command",
 			columns: []*ColumnDefinition{columnDefinition},
 			setup: func() {
-				mockGrammar.On("GetAttributeCommands").Return([]string{"comment"}).Once()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
 			},
 			expectCommands: []*migration.Command{
 				{
@@ -111,7 +111,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 				},
 			},
 			setup: func() {
-				mockGrammar.On("GetAttributeCommands").Return([]string{}).Once()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
 			},
 			expectCommands: []*migration.Command{
 				{
@@ -133,7 +133,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 				},
 			},
 			setup: func() {
-				mockGrammar.On("GetAttributeCommands").Return([]string{}).Once()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
 			},
 			expectCommands: []*migration.Command{
 				{
@@ -154,7 +154,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 				},
 			},
 			setup: func() {
-				mockGrammar.On("GetAttributeCommands").Return([]string{"comment"}).Once()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
 			},
 			expectCommands: []*migration.Command{
 				{
@@ -222,10 +222,10 @@ func (s *BlueprintTestSuite) TestBuild() {
 		s.blueprint.Create()
 		s.blueprint.String("name")
 
-		mockQuery.On("Exec", s.blueprint.ToSql(mockQuery, grammar)[0]).Return(nil, nil).Once()
+		mockQuery.EXPECT().Exec(s.blueprint.ToSql(mockQuery, grammar)[0]).Return(nil, nil).Once()
 		s.Nil(s.blueprint.Build(mockQuery, grammar))
 
-		mockQuery.On("Exec", s.blueprint.ToSql(mockQuery, grammar)[0]).Return(nil, errors.New("error")).Once()
+		mockQuery.EXPECT().Exec(s.blueprint.ToSql(mockQuery, grammar)[0]).Return(nil, errors.New("error")).Once()
 		s.EqualError(s.blueprint.Build(mockQuery, grammar), "error")
 	}
 }

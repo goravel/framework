@@ -12,7 +12,6 @@ import (
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mockslog "github.com/goravel/framework/mocks/log"
 	supportdocker "github.com/goravel/framework/support/docker"
@@ -27,15 +26,6 @@ type TestDB struct {
 type SchemaSuite struct {
 	suite.Suite
 	driverToTestDB map[contractsorm.Driver]TestDB
-
-	postgresDriver contractstesting.DatabaseDriver
-	postgresQuery  contractsorm.Query
-
-	mockBlueprint *mocksmigration.Blueprint
-	mockConfig    *mocksconfig.Config
-	mockOrm       *mocksorm.Orm
-	mockLog       *mockslog.Log
-	schema        *Schema
 }
 
 func TestSchemaSuite(t *testing.T) {
