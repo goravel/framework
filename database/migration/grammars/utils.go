@@ -10,8 +10,8 @@ import (
 	"github.com/goravel/framework/contracts/database/migration"
 )
 
-func addModify(grammar migration.Grammar, sql string, blueprint migration.Blueprint, column migration.ColumnDefinition) string {
-	for _, modifier := range grammar.GetModifiers() {
+func addModify(modifiers []func(migration.Blueprint, migration.ColumnDefinition) string, sql string, blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+	for _, modifier := range modifiers {
 		sql += modifier(blueprint, column)
 	}
 
@@ -23,7 +23,7 @@ func getColumns(grammar migration.Grammar, blueprint migration.Blueprint) []stri
 	for _, column := range blueprint.GetAddedColumns() {
 		sql := fmt.Sprintf("%s %s", column.GetName(), getType(grammar, column))
 
-		columns = append(columns, addModify(grammar, sql, blueprint, column))
+		columns = append(columns, addModify(grammar.GetModifiers(), sql, blueprint, column))
 	}
 
 	return columns

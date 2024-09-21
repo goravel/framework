@@ -22,11 +22,11 @@ type Schema struct {
 	orm        contractsorm.Orm
 }
 
-func NewSchema(blueprint migration.Blueprint, config config.Config, connection string, log log.Log, orm contractsorm.Orm) (*Schema, error) {
+func NewSchema(blueprint migration.Blueprint, config config.Config, connection string, log log.Log, orm contractsorm.Orm) *Schema {
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
 	grammar := getGrammar(driver)
 
-	schema := &Schema{
+	return &Schema{
 		blueprint:  blueprint,
 		config:     config,
 		connection: connection,
@@ -34,19 +34,13 @@ func NewSchema(blueprint migration.Blueprint, config config.Config, connection s
 		log:        log,
 		orm:        orm,
 	}
-
-	return schema, nil
 }
 
 func (r *Schema) Connection(name string) migration.Schema {
 	prefix := r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", name))
 	dbSchema := r.config.GetString(fmt.Sprintf("database.connections.%s.schema", name))
 	blueprint := NewBlueprint(prefix, dbSchema)
-
-	schema, err := NewSchema(blueprint, r.config, name, r.log, r.orm)
-	if err != nil {
-		r.log.Panic(err)
-	}
+	schema := NewSchema(blueprint, r.config, name, r.log, r.orm)
 
 	return schema
 }

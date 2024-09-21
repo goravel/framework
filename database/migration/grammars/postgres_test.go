@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	schemacontract "github.com/goravel/framework/contracts/database/migration"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	mockschema "github.com/goravel/framework/mocks/database/migration"
 )
 
@@ -19,25 +19,39 @@ func TestPostgresSuite(t *testing.T) {
 }
 
 func (s *PostgresSuite) SetupTest() {
-	s.grammar = NewPostgres()
+	postgres := &Postgres{
+		attributeCommands: []string{"comment"},
+		serials:           []string{"bigInteger"},
+	}
+	postgres.modifiers = []func(contractsmigration.Blueprint, contractsmigration.ColumnDefinition) string{
+		postgres.ModifyDefault,
+	}
+
+	s.grammar = postgres
 }
 
 func (s *PostgresSuite) TestCompileCreate() {
-	mockColumn1 := &mockschema.ColumnDefinition{}
-	mockColumn1.On("GetName").Return("id").Once()
-	mockColumn1.On("GetType").Return("string").Once()
-	mockColumn1.On("GetLength").Return(100).Once()
-	mockColumn2 := &mockschema.ColumnDefinition{}
-	mockColumn2.On("GetName").Return("name").Once()
-	mockColumn2.On("GetType").Return("string").Once()
-	mockColumn2.On("GetLength").Return(0).Once()
-	mockBlueprint := &mockschema.Blueprint{}
+	mockColumn1 := mockschema.NewColumnDefinition(s.T())
+	mockColumn1.EXPECT().GetName().Return("id").Once()
+	mockColumn1.EXPECT().GetType().Return("integer").Once()
+	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
+	mockColumn1.EXPECT().GetChange().Return(false).Once()
+	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
+
+	mockColumn2 := mockschema.NewColumnDefinition(s.T())
+	mockColumn2.EXPECT().GetName().Return("name").Once()
+	mockColumn2.EXPECT().GetType().Return("string").Once()
+	mockColumn2.EXPECT().GetLength().Return(100).Once()
+	mockColumn2.EXPECT().GetChange().Return(false).Once()
+	mockColumn2.EXPECT().GetDefault().Return(nil).Once()
+
+	mockBlueprint := mockschema.NewBlueprint(s.T())
 	mockBlueprint.On("GetTableName").Return("users").Once()
-	mockBlueprint.On("GetAddedColumns").Return([]schemacontract.ColumnDefinition{
+	mockBlueprint.On("GetAddedColumns").Return([]contractsmigration.ColumnDefinition{
 		mockColumn1, mockColumn2,
 	}).Once()
 
-	s.Equal("create table users (id varchar(100),name varchar)",
+	s.Equal("create table users (id serial,name varchar(100))",
 		s.grammar.CompileCreate(mockBlueprint, nil))
 }
 

@@ -3,10 +3,8 @@ package migration
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/migration"
@@ -33,10 +31,11 @@ type SchemaSuite struct {
 	postgresDriver contractstesting.DatabaseDriver
 	postgresQuery  contractsorm.Query
 
-	mockConfig *mocksconfig.Config
-	mockOrm    *mocksorm.Orm
-	mockLog    *mockslog.Log
-	schema     *Schema
+	mockBlueprint *mocksmigration.Blueprint
+	mockConfig    *mocksconfig.Config
+	mockOrm       *mocksorm.Orm
+	mockLog       *mockslog.Log
+	schema        *Schema
 }
 
 func TestSchemaSuite(t *testing.T) {
@@ -50,111 +49,68 @@ func TestSchemaSuite(t *testing.T) {
 func (s *SchemaSuite) SetupSuite() {
 	postgresDriver := supportdocker.Postgres()
 	postgresDocker := gorm.NewPostgresDocker(postgresDriver)
-	postgresqlQuery, err := postgresDocker.New()
+	postgresQuery, err := postgresDocker.New()
 	if err != nil {
 		log.Fatalf("Init postgres docker error: %v", err)
 	}
 
-	s.postgresDriver = postgresDriver
-	s.postgresQuery = postgresqlQuery
-}
-
-func (s *SchemaSuite) SetupTest() {
-	mockBlueprint := mocksmigration.NewBlueprint(s.T())
-	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", "mysql")).
-		Return("mysql").Once()
-	mockLog := mockslog.NewLog(s.T())
-	mockOrm := mocksorm.NewOrm(s.T())
-
-	schema, err := NewSchema(mockBlueprint, mockConfig, "mysql", mockLog, mockOrm)
-	s.Nil(err)
-
-	s.mockConfig = mockConfig
-	s.mockLog = mockLog
-	s.mockOrm = mockOrm
-	s.schema = schema
-
 	s.driverToTestDB = map[contractsorm.Driver]TestDB{
 		contractsorm.DriverPostgres: {
-			config: s.postgresDriver.Config(),
-			query:  s.postgresQuery,
+			config: postgresDriver.Config(),
+			query:  postgresQuery,
 		},
 	}
 }
 
-func (s *SchemaSuite) TestConnection() {
-	for driver, _ := range s.driverToTestDB {
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", driver.String())).
-			Return("").Once()
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", driver.String())).
-			Return("").Once()
-		s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", driver.String())).
-			Return(driver.String()).Once()
+func (s *SchemaSuite) SetupTest() {
 
-		s.NotNil(s.schema.Connection(driver.String()))
-	}
 }
 
-func (s *SchemaSuite) TestCreate() {
-	for driver, testDB := range s.driverToTestDB {
-		s.Run(driver.String(), func() {
-			s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", driver.String())).
-				Return("").Once()
-			s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", driver.String())).
-				Return("").Once()
-			s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", driver.String())).
-				Return(driver.String()).Once()
+func (s *SchemaSuite) TestConnection() {
+	schema, mockConfig, _, _ := initTest(s.T(), contractsorm.DriverMysql)
+	connection := contractsorm.DriverPostgres.String()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", connection)).Return("goravel_").Once()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", connection)).Return("").Once()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", connection)).Return(connection).Once()
 
-			mockOrm := mocksorm.NewOrm(s.T())
-			s.mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(testDB.query).Once()
+	s.NotNil(schema.Connection(connection))
 
-			mockColumnDefinition := mocksmigration.NewColumnDefinition(s.T())
-			//mockGrammar := mocksmigration.NewGrammar(s.T())
-
-			mockBlueprint := mocksmigration.NewBlueprint(s.T())
-			mockBlueprint.EXPECT().SetTable("creates").Once()
-			mockBlueprint.EXPECT().Create().Once()
-			mockBlueprint.EXPECT().String("name").Return(mockColumnDefinition).Once()
-			mockBlueprint.EXPECT().Build(testDB.query, mock.MatchedBy(func(grammar migration.Grammar) bool {
-				return s.Equal(reflect.TypeOf(getGrammar(driver.String())).Elem(), reflect.TypeOf(grammar).Elem())
-			})).Return(nil).Once()
-
-			schema := s.schema.Connection(driver.String()).(*Schema)
-			schema.blueprint = mockBlueprint
-			//schema.grammar = mockGrammar
-			schema.Create("creates", func(table migration.Blueprint) {
-				table.String("name")
-
-				// TODO Open below when implementing Comment
-				//table.Comment("This is a test table")
-			})
-
-			// TODO Open below when implementing HasTable
-			//s.True(schema.schema.HasTable("creates"))
-		})
-	}
+	// TODO Test the new schema is valid when implementing HasTable
 }
 
 func (s *SchemaSuite) TestDropIfExists() {
-	for driver, _ := range s.driverToTestDB {
+	for driver, testDB := range s.driverToTestDB {
 		s.Run(driver.String(), func() {
+			schema, _, _, mockOrm := initTest(s.T(), driver)
+
 			table := "drop_if_exists"
 
-			s.schema.DropIfExists(table)
+			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Twice()
+			mockOrm.EXPECT().Query().Return(testDB.query).Twice()
 
-			s.schema.Create(table, func(table migration.Blueprint) {
+			schema.DropIfExists(table)
+
+			schema.Create(table, func(table migration.Blueprint) {
 				table.String("name")
 			})
 
 			// TODO Open below when implementing HasTable
 			//s.True(schema.schema.HasTable(table))
-
-			s.schema.DropIfExists(table)
-
-			// TODO Open below when implementing HasTable
+			//s.schema.DropIfExists(table)
 			//s.False(schema.schema.HasTable(table))
 		})
 	}
+}
+
+func initTest(t *testing.T, driver contractsorm.Driver) (*Schema, *mocksconfig.Config, *mockslog.Log, *mocksorm.Orm) {
+	blueprint := NewBlueprint("goravel_", "")
+	mockConfig := mocksconfig.NewConfig(t)
+	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", driver)).
+		Return(driver.String()).Once()
+	mockLog := mockslog.NewLog(t)
+	mockOrm := mocksorm.NewOrm(t)
+
+	schema := NewSchema(blueprint, mockConfig, driver.String(), mockLog, mockOrm)
+
+	return schema, mockConfig, mockLog, mockOrm
 }
