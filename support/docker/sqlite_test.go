@@ -36,7 +36,7 @@ func (s *SqliteTestSuite) TestBuild() {
 	s.Nil(err)
 	s.NotNil(instance)
 
-	s.Equal("goravel", s.sqlite.Config().Database)
+	s.Equal(database, s.sqlite.Config().Database)
 
 	res := instance.Exec(`
 CREATE TABLE users (
