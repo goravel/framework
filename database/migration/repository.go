@@ -84,9 +84,8 @@ func (r *Repository) Log(file string, batch int) error {
 	})
 }
 
-func (r *Repository) RepositoryExists() {
-	//TODO implement me when schema.HasTable is implemented
-	panic("implement me")
+func (r *Repository) RepositoryExists() bool {
+	return r.schema.HasTable(r.table)
 }
 
 func (r *Repository) getLastBatchNumber() int {

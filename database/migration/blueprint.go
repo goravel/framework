@@ -21,15 +21,16 @@ type Blueprint struct {
 	columns  []*ColumnDefinition
 	commands []*migration.Command
 	prefix   string
-	schema   string
 	table    string
 }
 
-func NewBlueprint(prefix, schema string) *Blueprint {
-	return &Blueprint{
+func NewBlueprint(table, prefix string) *Blueprint {
+	blueprint := &Blueprint{
 		prefix: prefix,
-		schema: schema,
+		table:  table,
 	}
+
+	return blueprint
 }
 
 func (r *Blueprint) BigIncrements(column string) migration.ColumnDefinition {

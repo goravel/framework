@@ -7,6 +7,10 @@ type Schema interface {
 	Connection(name string) Schema
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
+	// GetTables Get the tables that belong to the database.
+	GetTables() ([]Table, error)
+	// HasTable Determine if the given table exists.
+	HasTable(table string) bool
 	// Register migrations.
 	Register([]Migration)
 	// Sql Execute a sql directly.
@@ -39,4 +43,10 @@ type Command struct {
 	To         string
 	References []string
 	Value      string
+}
+
+type Table struct {
+	Comment string
+	Name    string
+	Size    int
 }

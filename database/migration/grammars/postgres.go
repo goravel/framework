@@ -37,6 +37,13 @@ func (r *Postgres) CompileDropIfExists(blueprint migration.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
 
+func (r *Postgres) CompileTables(database string) string {
+	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
+		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
+		"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
+		"order by c.relname"
+}
+
 func (r *Postgres) GetAttributeCommands() []string {
 	return r.attributeCommands
 }

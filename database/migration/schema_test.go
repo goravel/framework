@@ -9,7 +9,6 @@ import (
 
 	"github.com/goravel/framework/contracts/database/migration"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -18,14 +17,9 @@ import (
 	"github.com/goravel/framework/support/env"
 )
 
-type TestDB struct {
-	config contractstesting.DatabaseConfig
-	query  contractsorm.Query
-}
-
 type SchemaSuite struct {
 	suite.Suite
-	driverToTestDB map[contractsorm.Driver]TestDB
+	driverToTestDB map[contractsorm.Driver]contractsorm.Query
 }
 
 func TestSchemaSuite(t *testing.T) {
@@ -36,7 +30,7 @@ func TestSchemaSuite(t *testing.T) {
 	suite.Run(t, &SchemaSuite{})
 }
 
-func (s *SchemaSuite) SetupSuite() {
+func (s *SchemaSuite) SetupTest() {
 	postgresDriver := supportdocker.Postgres()
 	postgresDocker := gorm.NewPostgresDocker(postgresDriver)
 	postgresQuery, err := postgresDocker.New()
@@ -44,63 +38,46 @@ func (s *SchemaSuite) SetupSuite() {
 		log.Fatalf("Init postgres docker error: %v", err)
 	}
 
-	s.driverToTestDB = map[contractsorm.Driver]TestDB{
-		contractsorm.DriverPostgres: {
-			config: postgresDriver.Config(),
-			query:  postgresQuery,
-		},
+	s.driverToTestDB = map[contractsorm.Driver]contractsorm.Query{
+		contractsorm.DriverPostgres: postgresQuery,
 	}
 }
 
-func (s *SchemaSuite) SetupTest() {
-
-}
-
-func (s *SchemaSuite) TestConnection() {
-	schema, mockConfig, _, _ := initTest(s.T(), contractsorm.DriverMysql)
-	connection := contractsorm.DriverPostgres.String()
-	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", connection)).Return("goravel_").Once()
-	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", connection)).Return("").Once()
-	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", connection)).Return(connection).Once()
-
-	s.NotNil(schema.Connection(connection))
-
-	// TODO Test the new schema is valid when implementing HasTable
-}
-
 func (s *SchemaSuite) TestDropIfExists() {
-	for driver, testDB := range s.driverToTestDB {
+	for driver, query := range s.driverToTestDB {
 		s.Run(driver.String(), func() {
-			schema, _, _, mockOrm := initTest(s.T(), driver)
+			schema, _, _, mockOrm := initSchema(s.T(), driver)
 
 			table := "drop_if_exists"
 
 			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Twice()
-			mockOrm.EXPECT().Query().Return(testDB.query).Twice()
-
+			mockOrm.EXPECT().Query().Return(query).Twice()
 			schema.DropIfExists(table)
-
 			schema.Create(table, func(table migration.Blueprint) {
 				table.String("name")
 			})
 
-			// TODO Open below when implementing HasTable
-			//s.True(schema.schema.HasTable(table))
-			//s.schema.DropIfExists(table)
-			//s.False(schema.schema.HasTable(table))
+			mockOrm.EXPECT().Query().Return(query).Once()
+			s.True(schema.HasTable(table))
+
+			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Once()
+			mockOrm.EXPECT().Query().Return(query).Once()
+			schema.DropIfExists(table)
+
+			mockOrm.EXPECT().Query().Return(query).Once()
+			s.False(schema.HasTable(table))
 		})
 	}
 }
 
-func initTest(t *testing.T, driver contractsorm.Driver) (*Schema, *mocksconfig.Config, *mockslog.Log, *mocksorm.Orm) {
-	blueprint := NewBlueprint("goravel_", "")
+func initSchema(t *testing.T, driver contractsorm.Driver) (*Schema, *mocksconfig.Config, *mockslog.Log, *mocksorm.Orm) {
 	mockConfig := mocksconfig.NewConfig(t)
-	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", driver)).
-		Return(driver.String()).Once()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", driver)).Return(driver.String()).Once()
+	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", driver)).Return("goravel_").Once()
 	mockLog := mockslog.NewLog(t)
 	mockOrm := mocksorm.NewOrm(t)
 
-	schema := NewSchema(blueprint, mockConfig, driver.String(), mockLog, mockOrm)
+	schema := NewSchema(mockConfig, driver.String(), mockLog, mockOrm)
 
 	return schema, mockConfig, mockLog, mockOrm
 }

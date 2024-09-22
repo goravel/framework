@@ -26,5 +26,5 @@ type Repository interface {
 	// Log that a migration was run.
 	Log(file string, batch int) error
 	// RepositoryExists Determine if the migration repository exists.
-	RepositoryExists()
+	RepositoryExists() bool
 }
