@@ -222,10 +222,16 @@ func (s *BlueprintTestSuite) TestBuild() {
 		s.blueprint.Create()
 		s.blueprint.String("name")
 
-		mockQuery.EXPECT().Exec(s.blueprint.ToSql(mockQuery, grammar)[0]).Return(nil, nil).Once()
+		sqlStatements := s.blueprint.ToSql(mockQuery, grammar)
+		s.NotEmpty(sqlStatements)
+
+		mockQuery.EXPECT().Exec(sqlStatements[0]).Return(nil, nil).Once()
 		s.Nil(s.blueprint.Build(mockQuery, grammar))
 
-		mockQuery.EXPECT().Exec(s.blueprint.ToSql(mockQuery, grammar)[0]).Return(nil, errors.New("error")).Once()
+		sqlStatements = s.blueprint.ToSql(mockQuery, grammar)
+		s.NotEmpty(sqlStatements)
+
+		mockQuery.EXPECT().Exec(sqlStatements[0]).Return(nil, errors.New("error")).Once()
 		s.EqualError(s.blueprint.Build(mockQuery, grammar), "error")
 	}
 }
