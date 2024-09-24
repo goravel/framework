@@ -108,11 +108,10 @@ func (_c *ToSql_Create_Call) RunAndReturn(run func(interface{}) string) *ToSql_C
 	return _c
 }
 
-// Delete provides a mock function with given fields: value, conds
-func (_m *ToSql) Delete(value interface{}, conds ...interface{}) string {
+// Delete provides a mock function with given fields: value
+func (_m *ToSql) Delete(value ...interface{}) string {
 	var _ca []interface{}
-	_ca = append(_ca, value)
-	_ca = append(_ca, conds...)
+	_ca = append(_ca, value...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -120,8 +119,8 @@ func (_m *ToSql) Delete(value interface{}, conds ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) string); ok {
-		r0 = rf(value, conds...)
+	if rf, ok := ret.Get(0).(func(...interface{}) string); ok {
+		r0 = rf(value...)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -135,22 +134,21 @@ type ToSql_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - value interface{}
-//   - conds ...interface{}
-func (_e *ToSql_Expecter) Delete(value interface{}, conds ...interface{}) *ToSql_Delete_Call {
+//   - value ...interface{}
+func (_e *ToSql_Expecter) Delete(value ...interface{}) *ToSql_Delete_Call {
 	return &ToSql_Delete_Call{Call: _e.mock.On("Delete",
-		append([]interface{}{value}, conds...)...)}
+		append([]interface{}{}, value...)...)}
 }
 
-func (_c *ToSql_Delete_Call) Run(run func(value interface{}, conds ...interface{})) *ToSql_Delete_Call {
+func (_c *ToSql_Delete_Call) Run(run func(value ...interface{})) *ToSql_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
 				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -160,7 +158,7 @@ func (_c *ToSql_Delete_Call) Return(_a0 string) *ToSql_Delete_Call {
 	return _c
 }
 
-func (_c *ToSql_Delete_Call) RunAndReturn(run func(interface{}, ...interface{}) string) *ToSql_Delete_Call {
+func (_c *ToSql_Delete_Call) RunAndReturn(run func(...interface{}) string) *ToSql_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -264,6 +262,61 @@ func (_c *ToSql_First_Call) Return(_a0 string) *ToSql_First_Call {
 }
 
 func (_c *ToSql_First_Call) RunAndReturn(run func(interface{}) string) *ToSql_First_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ForceDelete provides a mock function with given fields: value
+func (_m *ToSql) ForceDelete(value ...interface{}) string {
+	var _ca []interface{}
+	_ca = append(_ca, value...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ForceDelete")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(...interface{}) string); ok {
+		r0 = rf(value...)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ToSql_ForceDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ForceDelete'
+type ToSql_ForceDelete_Call struct {
+	*mock.Call
+}
+
+// ForceDelete is a helper method to define mock.On call
+//   - value ...interface{}
+func (_e *ToSql_Expecter) ForceDelete(value ...interface{}) *ToSql_ForceDelete_Call {
+	return &ToSql_ForceDelete_Call{Call: _e.mock.On("ForceDelete",
+		append([]interface{}{}, value...)...)}
+}
+
+func (_c *ToSql_ForceDelete_Call) Run(run func(value ...interface{})) *ToSql_ForceDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *ToSql_ForceDelete_Call) Return(_a0 string) *ToSql_ForceDelete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ToSql_ForceDelete_Call) RunAndReturn(run func(...interface{}) string) *ToSql_ForceDelete_Call {
 	_c.Call.Return(run)
 	return _c
 }

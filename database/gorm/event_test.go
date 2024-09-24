@@ -333,7 +333,7 @@ func (s *EventTestSuite) TestColumnNames() {
 			"admin_at":   "admin_at",
 			"ManageAt":   "manage_at",
 			"manage_at":  "manage_at",
-		}, event.ColumnNames())
+		}, event.getColumnNames())
 	}
 }
 
