@@ -1206,8 +1206,8 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 	}
 	if model != nil {
 		if dispatchesEvents, exist := model.(ormcontract.DispatchesEvents); exist {
-			if e, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
-				return e(instance)
+			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
+				return dispatchesEvent(instance)
 			}
 
 			return nil
@@ -1215,17 +1215,17 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 	}
 
 	if observer := getObserver(dest); observer != nil {
-		if e := observerEvent(event, observer); e != nil {
-			return e(instance)
+		if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
+			return observerEvent(instance)
 		}
 
 		return nil
 	}
 
 	if model != nil {
-		if o := getObserver(model); o != nil {
-			if e := observerEvent(event, o); e != nil {
-				return e(instance)
+		if observer := getObserver(model); observer != nil {
+			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
+				return observerEvent(instance)
 			}
 
 			return nil
@@ -1519,7 +1519,7 @@ func getObserver(dest any) ormcontract.Observer {
 	return nil
 }
 
-func observerEvent(event ormcontract.EventType, observer ormcontract.Observer) func(ormcontract.Event) error {
+func getObserverEvent(event ormcontract.EventType, observer ormcontract.Observer) func(ormcontract.Event) error {
 	switch event {
 	case ormcontract.EventRetrieved:
 		return observer.Retrieved

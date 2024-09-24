@@ -3564,18 +3564,18 @@ func TestObserver(t *testing.T) {
 }
 
 func TestObserverEvent(t *testing.T) {
-	assert.EqualError(t, observerEvent(contractsorm.EventRetrieved, &UserObserver{})(nil), "retrieved")
-	assert.EqualError(t, observerEvent(contractsorm.EventCreating, &UserObserver{})(nil), "creating")
-	assert.EqualError(t, observerEvent(contractsorm.EventCreated, &UserObserver{})(nil), "created")
-	assert.EqualError(t, observerEvent(contractsorm.EventUpdating, &UserObserver{})(nil), "updating")
-	assert.EqualError(t, observerEvent(contractsorm.EventUpdated, &UserObserver{})(nil), "updated")
-	assert.EqualError(t, observerEvent(contractsorm.EventSaving, &UserObserver{})(nil), "saving")
-	assert.EqualError(t, observerEvent(contractsorm.EventSaved, &UserObserver{})(nil), "saved")
-	assert.EqualError(t, observerEvent(contractsorm.EventDeleting, &UserObserver{})(nil), "deleting")
-	assert.EqualError(t, observerEvent(contractsorm.EventDeleted, &UserObserver{})(nil), "deleted")
-	assert.EqualError(t, observerEvent(contractsorm.EventForceDeleting, &UserObserver{})(nil), "forceDeleting")
-	assert.EqualError(t, observerEvent(contractsorm.EventForceDeleted, &UserObserver{})(nil), "forceDeleted")
-	assert.Nil(t, observerEvent("error", &UserObserver{}))
+	assert.EqualError(t, getObserverEvent(contractsorm.EventRetrieved, &UserObserver{})(nil), "retrieved")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventCreating, &UserObserver{})(nil), "creating")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventCreated, &UserObserver{})(nil), "created")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventUpdating, &UserObserver{})(nil), "updating")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventUpdated, &UserObserver{})(nil), "updated")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventSaving, &UserObserver{})(nil), "saving")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventSaved, &UserObserver{})(nil), "saved")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventDeleting, &UserObserver{})(nil), "deleting")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventDeleted, &UserObserver{})(nil), "deleted")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventForceDeleting, &UserObserver{})(nil), "forceDeleting")
+	assert.EqualError(t, getObserverEvent(contractsorm.EventForceDeleted, &UserObserver{})(nil), "forceDeleted")
+	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
 }
 
 func TestReadWriteSeparate(t *testing.T) {
