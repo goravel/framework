@@ -73,7 +73,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 					event.SetAttribute("avatar", fmt.Sprintf("event_created_avatar_%d", id))
 				}
 				if name.(string) == "event_created_by_map_name" {
-					event.SetAttribute("avatar", fmt.Sprintf("event_created_by_map_avatar1"))
+					event.SetAttribute("avatar", "event_created_by_map_avatar1")
 				}
 				if name.(string) == "event_created_FirstOrCreate_name" {
 					id := event.GetAttribute("ID")
