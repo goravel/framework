@@ -42,19 +42,19 @@ func TestQueryTestSuite(t *testing.T) {
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	//mysqls := supportdocker.Mysqls(2)
-	//
-	//mysqlDocker := NewMysqlDocker(mysqls[0])
-	//mysqlQuery, err := mysqlDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Init mysql error: %s", err)
-	//}
-	//
-	//mysql1Docker := NewMysqlDocker(mysqls[1])
-	//_, err = mysql1Docker.New()
-	//if err != nil {
-	//	log.Fatalf("Init mysql error: %s", err)
-	//}
+	mysqls := supportdocker.Mysqls(2)
+
+	mysqlDocker := NewMysqlDocker(mysqls[0])
+	mysqlQuery, err := mysqlDocker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
+
+	mysql1Docker := NewMysqlDocker(mysqls[1])
+	_, err = mysql1Docker.New()
+	if err != nil {
+		log.Fatalf("Init mysql error: %s", err)
+	}
 
 	postgres := supportdocker.Postgres()
 	postgresDocker := NewPostgresDocker(postgres)
@@ -63,31 +63,31 @@ func TestQueryTestSuite(t *testing.T) {
 		log.Fatalf("Init postgres error: %s", err)
 	}
 
-	//sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
-	//sqliteQuery, err := sqliteDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Init sqlite error: %s", err)
-	//}
-	//
-	//sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver())
-	//sqlserverQuery, err := sqlserverDocker.New()
-	//if err != nil {
-	//	log.Fatalf("Init sqlserver error: %s", err)
-	//}
+	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
+	sqliteQuery, err := sqliteDocker.New()
+	if err != nil {
+		log.Fatalf("Init sqlite error: %s", err)
+	}
+
+	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver())
+	sqlserverQuery, err := sqlserverDocker.New()
+	if err != nil {
+		log.Fatalf("Init sqlserver error: %s", err)
+	}
 
 	suite.Run(t, &QueryTestSuite{
 		queries: map[contractsorm.Driver]contractsorm.Query{
-			//contractsorm.DriverMysql:     mysqlQuery,
-			contractsorm.DriverPostgres: postgresQuery,
-			//contractsorm.DriverSqlite:    sqliteQuery,
-			//contractsorm.DriverSqlserver: sqlserverQuery,
+			contractsorm.DriverMysql:     mysqlQuery,
+			contractsorm.DriverPostgres:  postgresQuery,
+			contractsorm.DriverSqlite:    sqliteQuery,
+			contractsorm.DriverSqlserver: sqlserverQuery,
 		},
-		//mysqlDocker:     mysqlDocker,
-		//mysql1:          mysqls[1],
-		postgres:       postgres,
-		postgresDocker: postgresDocker,
-		//sqliteDocker:    sqliteDocker,
-		//sqlserverDocker: sqlserverDocker,
+		mysqlDocker:     mysqlDocker,
+		mysql1:          mysqls[1],
+		postgres:        postgres,
+		postgresDocker:  postgresDocker,
+		sqliteDocker:    sqliteDocker,
+		sqlserverDocker: sqlserverDocker,
 	})
 }
 
@@ -659,7 +659,7 @@ func (s *QueryTestSuite) TestDBRaw() {
 }
 
 func (s *QueryTestSuite) TestDelete() {
-	for _, query := range s.queries {
+	for driver, query := range s.queries {
 		tests := []struct {
 			name  string
 			setup func()
@@ -1964,7 +1964,7 @@ func (s *QueryTestSuite) TestForceDelete() {
 					s.True(user.ID > 0)
 					s.Equal("force_delete_name", user.Name)
 
-					res, err := query.Where("name = ?", "force_delete_name").ForceDelete(&User{})
+					res, err := query.Where("name", "force_delete_name").ForceDelete(&User{})
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name", user.Name)
@@ -1982,7 +1982,7 @@ func (s *QueryTestSuite) TestForceDelete() {
 					s.True(user.ID > 0)
 					s.Equal("force_delete_name_by_table", user.Name)
 
-					res, err := query.Table("users").Where("name = ?", "force_delete_name_by_table").ForceDelete()
+					res, err := query.Table("users").Where("name", "force_delete_name_by_table").ForceDelete()
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name_by_table", user.Name)
@@ -2000,7 +2000,7 @@ func (s *QueryTestSuite) TestForceDelete() {
 					s.True(user.ID > 0)
 					s.Equal("force_delete_name_by_model", user.Name)
 
-					res, err := query.Model(&User{}).Where("name = ?", "force_delete_name_by_model").ForceDelete()
+					res, err := query.Model(&User{}).Where("name", "force_delete_name_by_model").ForceDelete()
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name_by_model", user.Name)

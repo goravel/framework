@@ -362,7 +362,7 @@ func (r *QueryImpl) ForceDelete(dest ...any) (*ormcontract.Result, error) {
 
 	if len(dest) > 0 {
 		realDest = dest[0]
-		query, err = r.refreshConnection(realDest)
+		query, err = query.refreshConnection(realDest)
 		if err != nil {
 			return nil, err
 		}
