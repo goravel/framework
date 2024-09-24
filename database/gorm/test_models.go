@@ -34,8 +34,20 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 				if name.(string) == "event_creating_name" {
 					event.SetAttribute("avatar", "event_creating_avatar")
 				}
+				if name.(string) == "event_creating_by_map_name" {
+					event.SetAttribute("avatar", "event_creating_by_map_avatar1")
+				}
 				if name.(string) == "event_creating_FirstOrCreate_name" {
 					event.SetAttribute("avatar", "event_creating_FirstOrCreate_avatar")
+				}
+				if name.(string) == "event_creating_omit_create_name" {
+					event.SetAttribute("avatar", "event_creating_omit_create_avatar")
+				}
+				if name.(string) == "event_creating_select_create_name" {
+					event.SetAttribute("avatar", "event_creating_select_create_avatar")
+				}
+				if name.(string) == "event_creating_save_name" {
+					event.SetAttribute("avatar", "event_creating_save_avatar")
 				}
 				if name.(string) == "event_creating_IsDirty_name" {
 					if event.IsDirty("name") {
@@ -60,9 +72,24 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 					id := event.GetAttribute("ID")
 					event.SetAttribute("avatar", fmt.Sprintf("event_created_avatar_%d", id))
 				}
+				if name.(string) == "event_created_by_map_name" {
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_by_map_avatar1"))
+				}
 				if name.(string) == "event_created_FirstOrCreate_name" {
 					id := event.GetAttribute("ID")
 					event.SetAttribute("avatar", fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", id))
+				}
+				if name.(string) == "event_created_omit_create_name" {
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_omit_create_avatar_%d", id))
+				}
+				if name.(string) == "event_created_select_create_name" {
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_select_create_avatar_%d", id))
+				}
+				if name.(string) == "event_created_save_name" {
+					id := event.GetAttribute("ID")
+					event.SetAttribute("avatar", fmt.Sprintf("event_created_save_avatar_%d", id))
 				}
 			}
 
@@ -75,11 +102,20 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 				if name == "event_saving_create_name" {
 					event.SetAttribute("avatar", "event_saving_create_avatar")
 				}
+				if name == "event_saving_create_by_map_name" {
+					event.SetAttribute("avatar", "event_saving_create_by_map_avatar1")
+				}
 				if name == "event_saving_save_name" {
 					event.SetAttribute("avatar", "event_saving_save_avatar")
 				}
 				if name == "event_saving_FirstOrCreate_name" {
 					event.SetAttribute("avatar", "event_saving_FirstOrCreate_avatar")
+				}
+				if name == "event_saving_omit_create_name" {
+					event.SetAttribute("avatar", "event_saving_omit_create_avatar")
+				}
+				if name == "event_saving_select_create_name" {
+					event.SetAttribute("avatar", "event_saving_select_create_avatar")
 				}
 				if name == "event_save_without_name" {
 					event.SetAttribute("avatar", "event_save_without_avatar")
@@ -107,6 +143,15 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 			case string:
 				if name == "event_saved_create_name" {
 					event.SetAttribute("avatar", "event_saved_create_avatar")
+				}
+				if name == "event_saved_create_by_map_name" {
+					event.SetAttribute("avatar", "event_saved_create_by_map_avatar1")
+				}
+				if name == "event_saved_omit_create_name" {
+					event.SetAttribute("avatar", "event_saved_omit_create_avatar")
+				}
+				if name == "event_saved_select_create_name" {
+					event.SetAttribute("avatar", "event_saved_select_create_avatar")
 				}
 				if name == "event_saved_save_name" {
 					event.SetAttribute("avatar", "event_saved_save_avatar")

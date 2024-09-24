@@ -18,6 +18,7 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/support/carbon"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
@@ -366,6 +367,101 @@ func (s *QueryTestSuite) TestCreate() {
 			setup func()
 		}{
 			{
+				name: "success by struct",
+				setup: func() {
+					user := User{Name: "create_user"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+				},
+			},
+			{
+				name: "batch create success by struct",
+				setup: func() {
+					users := []User{
+						{Name: "batch_create_user_by_struct_1"},
+						{Name: "batch_create_user_by_struct_2"},
+					}
+					s.Nil(query.Create(&users))
+					s.True(users[0].ID > 0)
+					s.True(users[1].ID > 0)
+				},
+			},
+			{
+				name: "success by map",
+				setup: func() {
+					s.Nil(query.Table("users").Create(map[string]any{
+						"name":       "create_by_map_name1",
+						"avatar":     "create_by_map_avatar1",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}))
+
+					var user1 User
+					err := query.Where("name", "create_by_map_name1").
+						Where("avatar", "create_by_map_avatar1").First(&user1)
+					s.NoError(err)
+					s.True(user1.ID > 0)
+
+					s.Nil(query.Model(User{}).Create(map[string]any{
+						"Name":      "create_by_map_name2",
+						"Avatar":    "create_by_map_avatar2",
+						"CreatedAt": carbon.Now(),
+						"UpdatedAt": carbon.Now(),
+					}))
+
+					var user2 User
+					err = query.Where("name", "create_by_map_name2").
+						Where("avatar", "create_by_map_avatar2").First(&user2)
+					s.NoError(err)
+					s.True(user2.ID > 0)
+				},
+			},
+			{
+				name: "batch create success by map",
+				setup: func() {
+					s.Nil(query.Table("users").Create([]map[string]any{
+						{
+							"name":       "batch_create_by_map_name1",
+							"avatar":     "batch_create_by_map_avatar1",
+							"created_at": carbon.Now(),
+							"updated_at": carbon.Now(),
+						},
+						{
+							"name":       "batch_create_by_map_name2",
+							"avatar":     "batch_create_by_map_avatar2",
+							"created_at": carbon.Now(),
+							"updated_at": carbon.Now(),
+						},
+					}))
+
+					var users1 []User
+					err := query.Where("name", "batch_create_by_map_name1").OrWhere("name", "batch_create_by_map_name2").Find(&users1)
+					s.NoError(err)
+					s.Len(users1, 2)
+
+					// The []map should be a pointer, otherwise gorm will throw an error
+					s.Nil(query.Model(User{}).Create(&[]map[string]any{
+						{
+							"Name":      "batch_create_by_map_name3",
+							"Avatar":    "batch_create_by_map_avatar3",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+						{
+							"Name":      "batch_create_by_map_name4",
+							"Avatar":    "batch_create_by_map_avatar4",
+							"CreatedAt": carbon.Now(),
+							"UpdatedAt": carbon.Now(),
+						},
+					}))
+
+					var users2 []User
+					err = query.Where("name", "batch_create_by_map_name3").OrWhere("name", "batch_create_by_map_name4").Find(&users2)
+					s.NoError(err)
+					s.Len(users2, 2)
+				},
+			},
+			{
 				name: "success when refresh connection",
 				setup: func() {
 					s.mockDummyConnection(driver)
@@ -382,7 +478,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when create with no relationships",
 				setup: func() {
-					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -396,7 +492,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when create with select orm.Associations",
 				setup: func() {
-					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -410,7 +506,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when create with select fields",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -424,7 +520,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when create with omit fields",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -438,7 +534,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success create with omit orm.Associations",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -452,7 +548,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "error when set select and omit at the same time",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -462,7 +558,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "error when select that set fields and orm.Associations at the same time",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -472,7 +568,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "error when omit that set fields and orm.Associations at the same time",
 				setup: func() {
-					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
@@ -682,7 +778,7 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 			setup func()
 		}{
 			{
-				name: "trigger when create",
+				name: "trigger when create by struct",
 				setup: func() {
 					user := User{Name: "event_creating_name"}
 					s.Nil(query.Create(&user))
@@ -692,6 +788,21 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_creating_name", user1.Name)
 					s.Equal("event_creating_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create by map",
+				setup: func() {
+					s.Nil(query.Model(&User{}).Create(map[string]any{
+						"name":       "event_creating_by_map_name",
+						"avatar":     "event_creating_by_map_avatar",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}))
+
+					var user User
+					s.Nil(query.Where("name", "event_creating_by_map_name").Find(&user))
+					s.Equal("event_creating_by_map_avatar1", user.Avatar)
 				},
 			},
 			{
@@ -707,6 +818,45 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_creating_FirstOrCreate_name", user1.Name)
 					s.Equal("event_creating_FirstOrCreate_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with omit",
+				setup: func() {
+					user := User{Name: "event_creating_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_creating_omit_create_address"
+					user.Books[0].Name = "event_creating_omit_create_book0"
+					user.Books[1].Name = "event_creating_omit_create_book1"
+					s.Nil(query.Omit("Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_creating_omit_create_avatar", user.Avatar)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
+				},
+			},
+			{
+				name: "trigger when create with select",
+				setup: func() {
+					user := User{Name: "event_creating_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_creating_select_create_address"
+					user.Books[0].Name = "event_creating_select_create_book0"
+					user.Books[1].Name = "event_creating_select_create_book1"
+					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_creating_select_create_avatar", user.Avatar)
+					s.True(user.Address.ID > 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
+				},
+			},
+			{
+				name: "trigger when save",
+				setup: func() {
+					user := User{Name: "event_creating_save_name"}
+					s.Nil(query.Save(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_creating_save_avatar", user.Avatar)
 				},
 			},
 		}
@@ -725,7 +875,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 			setup func()
 		}{
 			{
-				name: "trigger when create",
+				name: "trigger when create by struct",
 				setup: func() {
 					user := User{Name: "event_created_name", Avatar: "avatar"}
 					s.Nil(query.Create(&user))
@@ -735,6 +885,24 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_created_name", user1.Name)
 					s.Equal("avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create by map",
+				setup: func() {
+					userMap := map[string]any{
+						"name":       "event_created_by_map_name",
+						"avatar":     "event_created_by_map_avatar",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}
+					s.Nil(query.Model(&User{}).Create(userMap))
+
+					s.Equal("event_created_by_map_avatar1", userMap["avatar"])
+
+					var user User
+					s.Nil(query.Where("name", "event_created_by_map_name").Find(&user))
+					s.Equal("event_created_by_map_avatar", user.Avatar)
 				},
 			},
 			{
@@ -749,7 +917,61 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					var user1 User
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_created_FirstOrCreate_name", user1.Name)
-					s.Equal("", user1.Avatar)
+					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with omit",
+				setup: func() {
+					user := User{Name: "event_created_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_created_omit_create_address"
+					user.Books[0].Name = "event_created_omit_create_book0"
+					user.Books[1].Name = "event_created_omit_create_book1"
+					s.Nil(query.Omit("Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal(fmt.Sprintf("event_created_omit_create_avatar_%d", user.ID), user.Avatar)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_created_omit_create_name", user1.Name)
+					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with select",
+				setup: func() {
+					user := User{Name: "event_created_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_created_select_create_address"
+					user.Books[0].Name = "event_created_select_create_book0"
+					user.Books[1].Name = "event_created_select_create_book1"
+					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal(fmt.Sprintf("event_created_select_create_avatar_%d", user.ID), user.Avatar)
+					s.True(user.Address.ID > 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_created_select_create_name", user1.Name)
+					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when save",
+				setup: func() {
+					user := User{Name: "event_created_save_name"}
+					s.Nil(query.Save(&user))
+					s.True(user.ID > 0)
+					s.Equal(fmt.Sprintf("event_created_save_avatar_%d", user.ID), user.Avatar)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal("event_created_save_name", user1.Name)
+					s.Empty(user1.Avatar)
 				},
 			},
 		}
@@ -768,7 +990,7 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 			setup func()
 		}{
 			{
-				name: "trigger when create",
+				name: "trigger when create by struct",
 				setup: func() {
 					user := User{Name: "event_saving_create_name"}
 					s.Nil(query.Create(&user))
@@ -778,6 +1000,53 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_saving_create_name", user1.Name)
 					s.Equal("event_saving_create_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create by map",
+				setup: func() {
+					userMap := map[string]any{
+						"name":       "event_saving_create_by_map_name",
+						"avatar":     "event_saving_create_by_map_avatar",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}
+					s.Nil(query.Model(&User{}).Create(userMap))
+					s.Equal("event_saving_create_by_map_avatar1", userMap["avatar"])
+
+					var user1 User
+					s.Nil(query.Where("name", "event_saving_create_by_map_name").Find(&user1))
+					s.Equal("event_saving_create_by_map_avatar1", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with omit",
+				setup: func() {
+					user := User{Name: "event_saving_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_saving_omit_create_address"
+					user.Books[0].Name = "event_saving_omit_create_book0"
+					user.Books[1].Name = "event_saving_omit_create_book1"
+					s.Nil(query.Omit("Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_saving_omit_create_avatar", user.Avatar)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
+				},
+			},
+			{
+				name: "trigger when create with select",
+				setup: func() {
+					user := User{Name: "event_saving_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_saving_select_create_address"
+					user.Books[0].Name = "event_saving_select_create_book0"
+					user.Books[1].Name = "event_saving_select_create_book1"
+					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_saving_select_create_avatar", user.Avatar)
+					s.True(user.Address.ID > 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
 				},
 			},
 			{
@@ -855,6 +1124,61 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 				},
 			},
 			{
+				name: "trigger when create by map",
+				setup: func() {
+					userMap := map[string]any{
+						"name":       "event_saved_create_by_map_name",
+						"avatar":     "event_saved_create_by_map_avatar",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}
+					s.Nil(query.Model(&User{}).Create(userMap))
+					s.Equal("event_saved_create_by_map_avatar1", userMap["avatar"])
+
+					var user1 User
+					s.Nil(query.Where("name", "event_saved_create_by_map_name").Find(&user1))
+					s.Equal("event_saved_create_by_map_avatar", user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with omit",
+				setup: func() {
+					user := User{Name: "event_saved_omit_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_saved_omit_create_address"
+					user.Books[0].Name = "event_saved_omit_create_book0"
+					user.Books[1].Name = "event_saved_omit_create_book1"
+					s.Nil(query.Omit("Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_saved_omit_create_avatar", user.Avatar)
+					s.True(user.Address.ID == 0)
+					s.True(user.Books[0].ID > 0)
+					s.True(user.Books[1].ID > 0)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Empty(user1.Avatar)
+				},
+			},
+			{
+				name: "trigger when create with select",
+				setup: func() {
+					user := User{Name: "event_saved_select_create_name", Address: &Address{}, Books: []*Book{{}, {}}}
+					user.Address.Name = "event_saved_select_create_address"
+					user.Books[0].Name = "event_saved_select_create_book0"
+					user.Books[1].Name = "event_saved_select_create_book1"
+					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("event_saved_select_create_avatar", user.Avatar)
+					s.True(user.Address.ID > 0)
+					s.True(user.Books[0].ID == 0)
+					s.True(user.Books[1].ID == 0)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Empty(user1.Avatar)
+				},
+			},
+			{
 				name: "trigger when FirstOrCreate",
 				setup: func() {
 					var user User
@@ -866,7 +1190,7 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					var user1 User
 					s.Nil(query.Find(&user1, user.ID))
 					s.Equal("event_saved_FirstOrCreate_name", user1.Name)
-					s.Equal("", user1.Avatar)
+					s.Empty(user1.Avatar)
 				},
 			},
 			{
@@ -1133,7 +1457,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 					var user2 User
 					s.Nil(query.Where("name", "event_retrieved_name1").First(&user2))
 					s.True(user2.ID == 0)
-					s.Equal("", user2.Name)
+					s.Empty(user2.Name)
 				},
 			},
 			{
@@ -1562,7 +1886,7 @@ func (s *QueryTestSuite) TestFirstOrNew() {
 					s.Nil(query.FirstOrNew(&user, User{Name: "first_or_new_name"}))
 					s.Equal(uint(0), user.ID)
 					s.Equal("first_or_new_name", user.Name)
-					s.Equal("", user.Avatar)
+					s.Empty(user.Avatar)
 
 					var user1 User
 					s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}, User{Avatar: "first_or_new_avatar"}))
@@ -2037,7 +2361,7 @@ func (s *QueryTestSuite) TestLimit() {
 
 func (s *QueryTestSuite) TestLoad() {
 	for _, query := range s.queries {
-		user := User{Name: "load_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+		user := User{Name: "load_user", Address: &Address{}, Books: []*Book{{}, {}}}
 		user.Address.Name = "load_address"
 		user.Books[0].Name = "load_book0"
 		user.Books[1].Name = "load_book1"
@@ -2133,7 +2457,7 @@ func (s *QueryTestSuite) TestLoad() {
 func (s *QueryTestSuite) TestLoadMissing() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
-			user := User{Name: "load_missing_user", Address: &Address{}, Books: []*Book{&Book{}, &Book{}}}
+			user := User{Name: "load_missing_user", Address: &Address{}, Books: []*Book{{}, {}}}
 			user.Address.Name = "load_missing_address"
 			user.Books[0].Name = "load_missing_book0"
 			user.Books[1].Name = "load_missing_book1"
@@ -2196,7 +2520,7 @@ func (s *QueryTestSuite) TestRaw() {
 			s.Nil(query.Raw("SELECT id, name FROM users WHERE name = ?", "raw_user").Scan(&user1))
 			s.True(user1.ID > 0)
 			s.Equal("raw_user", user1.Name)
-			s.Equal("", user1.Avatar)
+			s.Empty(user1.Avatar)
 		})
 	}
 }
@@ -3190,6 +3514,12 @@ func TestGetModelConnection(t *testing.T) {
 			model: func() any {
 				var review Review
 				return review
+			}(),
+		},
+		{
+			name: "model is map",
+			model: func() any {
+				return map[string]any{}
 			}(),
 		},
 		{

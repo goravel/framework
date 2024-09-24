@@ -603,15 +603,14 @@ func (r *QueryImpl) Save(value any) error {
 		return errors.New("cannot set Select and Omits at the same time")
 	}
 
-	model := query.instance.Statement.Model
 	id := database.GetID(value)
 	update := id != nil
 
-	if err := query.saving(model, value); err != nil {
+	if err := query.saving(value); err != nil {
 		return err
 	}
 	if update {
-		if err := query.updating(model, value); err != nil {
+		if err := query.updating(value); err != nil {
 			return err
 		}
 	} else {
@@ -635,7 +634,7 @@ func (r *QueryImpl) Save(value any) error {
 	}
 
 	if update {
-		if err := query.updated(model, value); err != nil {
+		if err := query.updated(value); err != nil {
 			return err
 		}
 	} else {
@@ -643,7 +642,7 @@ func (r *QueryImpl) Save(value any) error {
 			return err
 		}
 	}
-	if err := query.saved(model, value); err != nil {
+	if err := query.saved(value); err != nil {
 		return err
 	}
 
@@ -740,10 +739,10 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 	}
 
 	if singleUpdate {
-		if err := query.saving(model, query.instance.Statement.Dest); err != nil {
+		if err := query.saving(query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
-		if err := query.updating(model, query.instance.Statement.Dest); err != nil {
+		if err := query.updating(query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
 	}
@@ -751,10 +750,10 @@ func (r *QueryImpl) Update(column any, value ...any) (*ormcontract.Result, error
 	res, err := query.updates(query.instance.Statement.Dest)
 
 	if singleUpdate && err == nil {
-		if err := query.updated(model, query.instance.Statement.Dest); err != nil {
+		if err := query.updated(query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
-		if err := query.saved(model, query.instance.Statement.Dest); err != nil {
+		if err := query.saved(query.instance.Statement.Dest); err != nil {
 			return nil, err
 		}
 	}
@@ -1145,22 +1144,22 @@ func (r *QueryImpl) clearConditions() {
 	r.conditions = Conditions{}
 }
 
-func (r *QueryImpl) create(value any) error {
-	if err := r.saving(nil, value); err != nil {
+func (r *QueryImpl) create(dest any) error {
+	if err := r.saving(dest); err != nil {
 		return err
 	}
-	if err := r.creating(value); err != nil {
-		return err
-	}
-
-	if err := r.instance.Omit(orm.Associations).Create(value).Error; err != nil {
+	if err := r.creating(dest); err != nil {
 		return err
 	}
 
-	if err := r.created(value); err != nil {
+	if err := r.instance.Omit(orm.Associations).Create(dest).Error; err != nil {
 		return err
 	}
-	if err := r.saved(nil, value); err != nil {
+
+	if err := r.created(dest); err != nil {
+		return err
+	}
+	if err := r.saved(dest); err != nil {
 		return err
 	}
 
@@ -1168,11 +1167,11 @@ func (r *QueryImpl) create(value any) error {
 }
 
 func (r *QueryImpl) created(dest any) error {
-	return r.event(ormcontract.EventCreated, nil, dest)
+	return r.event(ormcontract.EventCreated, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) creating(dest any) error {
-	return r.event(ormcontract.EventCreating, nil, dest)
+	return r.event(ormcontract.EventCreating, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) deleting(dest any) error {
@@ -1199,34 +1198,34 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 	instance := NewEvent(r, model, dest)
 
 	if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
-		if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
-			return event(instance)
+		if e, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
+			return e(instance)
 		}
 
 		return nil
 	}
 	if model != nil {
 		if dispatchesEvents, exist := model.(ormcontract.DispatchesEvents); exist {
-			if event, exist := dispatchesEvents.DispatchesEvents()[event]; exist {
-				return event(instance)
+			if e, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
+				return e(instance)
 			}
 
 			return nil
 		}
 	}
 
-	if observer := observer(dest); observer != nil {
-		if observerEvent := observerEvent(event, observer); observerEvent != nil {
-			return observerEvent(instance)
+	if o := observer(dest); o != nil {
+		if e := observerEvent(event, o); e != nil {
+			return e(instance)
 		}
 
 		return nil
 	}
 
 	if model != nil {
-		if observer := observer(model); observer != nil {
-			if observerEvent := observerEvent(event, observer); observerEvent != nil {
-				return observerEvent(instance)
+		if o := observer(model); o != nil {
+			if e := observerEvent(event, o); e != nil {
+				return e(instance)
 			}
 
 			return nil
@@ -1255,7 +1254,7 @@ func (r *QueryImpl) omitCreate(value any) error {
 		r.instance.Statement.Selects = []string{}
 	}
 
-	if err := r.saving(nil, value); err != nil {
+	if err := r.saving(value); err != nil {
 		return err
 	}
 	if err := r.creating(value); err != nil {
@@ -1275,7 +1274,7 @@ func (r *QueryImpl) omitCreate(value any) error {
 	if err := r.created(value); err != nil {
 		return err
 	}
-	if err := r.saved(nil, value); err != nil {
+	if err := r.saved(value); err != nil {
 		return err
 	}
 
@@ -1328,12 +1327,12 @@ func (r *QueryImpl) save(value any) error {
 	return r.instance.Omit(orm.Associations).Save(value).Error
 }
 
-func (r *QueryImpl) saved(model, dest any) error {
-	return r.event(ormcontract.EventSaved, model, dest)
+func (r *QueryImpl) saved(dest any) error {
+	return r.event(ormcontract.EventSaved, r.instance.Statement.Model, dest)
 }
 
-func (r *QueryImpl) saving(model, dest any) error {
-	return r.event(ormcontract.EventSaving, model, dest)
+func (r *QueryImpl) saving(dest any) error {
+	return r.event(ormcontract.EventSaving, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) selectCreate(value any) error {
@@ -1349,7 +1348,7 @@ func (r *QueryImpl) selectCreate(value any) error {
 		r.instance.Statement.Selects = []string{}
 	}
 
-	if err := r.saving(nil, value); err != nil {
+	if err := r.saving(value); err != nil {
 		return err
 	}
 	if err := r.creating(value); err != nil {
@@ -1363,7 +1362,7 @@ func (r *QueryImpl) selectCreate(value any) error {
 	if err := r.created(value); err != nil {
 		return err
 	}
-	if err := r.saved(nil, value); err != nil {
+	if err := r.saved(value); err != nil {
 		return err
 	}
 
@@ -1391,12 +1390,12 @@ func (r *QueryImpl) setConditions(conditions Conditions) *QueryImpl {
 	return query
 }
 
-func (r *QueryImpl) updating(model, dest any) error {
-	return r.event(ormcontract.EventUpdating, model, dest)
+func (r *QueryImpl) updating(dest any) error {
+	return r.event(ormcontract.EventUpdating, r.instance.Statement.Model, dest)
 }
 
-func (r *QueryImpl) updated(model, dest any) error {
-	return r.event(ormcontract.EventUpdated, model, dest)
+func (r *QueryImpl) updated(dest any) error {
+	return r.event(ormcontract.EventUpdated, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) updates(values any) (*ormcontract.Result, error) {
@@ -1466,18 +1465,23 @@ func filterFindConditions(conds ...any) error {
 }
 
 func getModelConnection(model any) (string, error) {
-	value1 := reflect.ValueOf(model)
-	if value1.Kind() == reflect.Ptr && value1.IsNil() {
-		value1 = reflect.New(value1.Type().Elem())
+	modelValue := reflect.ValueOf(model)
+	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
+		// If the model is a pointer and is nil, we will create a new instance of the model
+		modelValue = reflect.New(modelValue.Type().Elem())
 	}
-	modelType := reflect.Indirect(value1).Type()
+	modelType := reflect.Indirect(modelValue).Type()
 
 	if modelType.Kind() == reflect.Interface {
-		modelType = reflect.Indirect(reflect.ValueOf(model)).Elem().Type()
+		modelType = reflect.Indirect(modelValue).Elem().Type()
 	}
 
 	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
 		modelType = modelType.Elem()
+	}
+
+	if modelType.Kind() == reflect.Map {
+		return "", nil
 	}
 
 	if modelType.Kind() != reflect.Struct {
@@ -1487,8 +1491,8 @@ func getModelConnection(model any) (string, error) {
 		return "", fmt.Errorf("%s: %s.%s", "invalid model", modelType.PkgPath(), modelType.Name())
 	}
 
-	modelValue := reflect.New(modelType)
-	connectionModel, ok := modelValue.Interface().(ormcontract.ConnectionModel)
+	newModel := reflect.New(modelType)
+	connectionModel, ok := newModel.Interface().(ormcontract.ConnectionModel)
 	if !ok {
 		return "", nil
 	}
