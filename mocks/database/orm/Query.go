@@ -319,11 +319,10 @@ func (_c *Query_Cursor_Call) RunAndReturn(run func() (chan orm.Cursor, error)) *
 	return _c
 }
 
-// Delete provides a mock function with given fields: value, conds
-func (_m *Query) Delete(value interface{}, conds ...interface{}) (*orm.Result, error) {
+// Delete provides a mock function with given fields: value
+func (_m *Query) Delete(value ...interface{}) (*orm.Result, error) {
 	var _ca []interface{}
-	_ca = append(_ca, value)
-	_ca = append(_ca, conds...)
+	_ca = append(_ca, value...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -332,19 +331,19 @@ func (_m *Query) Delete(value interface{}, conds ...interface{}) (*orm.Result, e
 
 	var r0 *orm.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) (*orm.Result, error)); ok {
-		return rf(value, conds...)
+	if rf, ok := ret.Get(0).(func(...interface{}) (*orm.Result, error)); ok {
+		return rf(value...)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) *orm.Result); ok {
-		r0 = rf(value, conds...)
+	if rf, ok := ret.Get(0).(func(...interface{}) *orm.Result); ok {
+		r0 = rf(value...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*orm.Result)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}, ...interface{}) error); ok {
-		r1 = rf(value, conds...)
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
+		r1 = rf(value...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -358,22 +357,21 @@ type Query_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - value interface{}
-//   - conds ...interface{}
-func (_e *Query_Expecter) Delete(value interface{}, conds ...interface{}) *Query_Delete_Call {
+//   - value ...interface{}
+func (_e *Query_Expecter) Delete(value ...interface{}) *Query_Delete_Call {
 	return &Query_Delete_Call{Call: _e.mock.On("Delete",
-		append([]interface{}{value}, conds...)...)}
+		append([]interface{}{}, value...)...)}
 }
 
-func (_c *Query_Delete_Call) Run(run func(value interface{}, conds ...interface{})) *Query_Delete_Call {
+func (_c *Query_Delete_Call) Run(run func(value ...interface{})) *Query_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
 				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -383,7 +381,7 @@ func (_c *Query_Delete_Call) Return(_a0 *orm.Result, _a1 error) *Query_Delete_Ca
 	return _c
 }
 
-func (_c *Query_Delete_Call) RunAndReturn(run func(interface{}, ...interface{}) (*orm.Result, error)) *Query_Delete_Call {
+func (_c *Query_Delete_Call) RunAndReturn(run func(...interface{}) (*orm.Result, error)) *Query_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -973,11 +971,10 @@ func (_c *Query_FirstOrNew_Call) RunAndReturn(run func(interface{}, interface{},
 	return _c
 }
 
-// ForceDelete provides a mock function with given fields: value, conds
-func (_m *Query) ForceDelete(value interface{}, conds ...interface{}) (*orm.Result, error) {
+// ForceDelete provides a mock function with given fields: value
+func (_m *Query) ForceDelete(value ...interface{}) (*orm.Result, error) {
 	var _ca []interface{}
-	_ca = append(_ca, value)
-	_ca = append(_ca, conds...)
+	_ca = append(_ca, value...)
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
@@ -986,19 +983,19 @@ func (_m *Query) ForceDelete(value interface{}, conds ...interface{}) (*orm.Resu
 
 	var r0 *orm.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) (*orm.Result, error)); ok {
-		return rf(value, conds...)
+	if rf, ok := ret.Get(0).(func(...interface{}) (*orm.Result, error)); ok {
+		return rf(value...)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) *orm.Result); ok {
-		r0 = rf(value, conds...)
+	if rf, ok := ret.Get(0).(func(...interface{}) *orm.Result); ok {
+		r0 = rf(value...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*orm.Result)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}, ...interface{}) error); ok {
-		r1 = rf(value, conds...)
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
+		r1 = rf(value...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1012,22 +1009,21 @@ type Query_ForceDelete_Call struct {
 }
 
 // ForceDelete is a helper method to define mock.On call
-//   - value interface{}
-//   - conds ...interface{}
-func (_e *Query_Expecter) ForceDelete(value interface{}, conds ...interface{}) *Query_ForceDelete_Call {
+//   - value ...interface{}
+func (_e *Query_Expecter) ForceDelete(value ...interface{}) *Query_ForceDelete_Call {
 	return &Query_ForceDelete_Call{Call: _e.mock.On("ForceDelete",
-		append([]interface{}{value}, conds...)...)}
+		append([]interface{}{}, value...)...)}
 }
 
-func (_c *Query_ForceDelete_Call) Run(run func(value interface{}, conds ...interface{})) *Query_ForceDelete_Call {
+func (_c *Query_ForceDelete_Call) Run(run func(value ...interface{})) *Query_ForceDelete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
 				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -1037,7 +1033,7 @@ func (_c *Query_ForceDelete_Call) Return(_a0 *orm.Result, _a1 error) *Query_Forc
 	return _c
 }
 
-func (_c *Query_ForceDelete_Call) RunAndReturn(run func(interface{}, ...interface{}) (*orm.Result, error)) *Query_ForceDelete_Call {
+func (_c *Query_ForceDelete_Call) RunAndReturn(run func(...interface{}) (*orm.Result, error)) *Query_ForceDelete_Call {
 	_c.Call.Return(run)
 	return _c
 }
