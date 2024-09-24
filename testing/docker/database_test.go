@@ -24,7 +24,7 @@ import (
 var (
 	testDatabase = "goravel"
 	testUsername = "goravel"
-	testPassword = "Goravel123"
+	testPassword = "Framework!123"
 )
 
 func TestNewDatabase(t *testing.T) {
@@ -32,9 +32,6 @@ func TestNewDatabase(t *testing.T) {
 		mockApp            *foundationmocks.Application
 		mockConfig         *configmocks.Config
 		mockGormInitialize *gormmocks.Initialize
-		database           = "goravel"
-		username           = "goravel"
-		password           = "Goravel123"
 	)
 
 	beforeEach := func() {
@@ -56,16 +53,16 @@ func TestNewDatabase(t *testing.T) {
 			setup: func() {
 				mockConfig.On("GetString", "database.default").Return("mysql").Once()
 				mockConfig.On("GetString", "database.connections.mysql.driver").Return(contractsorm.DriverMysql.String()).Once()
-				mockConfig.On("GetString", "database.connections.mysql.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.mysql.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.mysql.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.mysql.database").Return(testDatabase).Once()
+				mockConfig.On("GetString", "database.connections.mysql.username").Return(testUsername).Once()
+				mockConfig.On("GetString", "database.connections.mysql.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "mysql",
-					driver:         supportdocker.NewMysqlImpl(database, username, password),
+					driver:         supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -75,16 +72,16 @@ func TestNewDatabase(t *testing.T) {
 			connection: "mysql",
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.mysql.driver").Return(contractsorm.DriverMysql.String()).Once()
-				mockConfig.On("GetString", "database.connections.mysql.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.mysql.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.mysql.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.mysql.database").Return(testDatabase).Once()
+				mockConfig.On("GetString", "database.connections.mysql.username").Return(testUsername).Once()
+				mockConfig.On("GetString", "database.connections.mysql.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "mysql",
-					driver:         supportdocker.NewMysqlImpl(database, username, password),
+					driver:         supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -94,16 +91,16 @@ func TestNewDatabase(t *testing.T) {
 			connection: "postgres",
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.postgres.driver").Return(contractsorm.DriverPostgres.String()).Once()
-				mockConfig.On("GetString", "database.connections.postgres.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.postgres.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.postgres.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.postgres.database").Return(testDatabase).Once()
+				mockConfig.On("GetString", "database.connections.postgres.username").Return(testUsername).Once()
+				mockConfig.On("GetString", "database.connections.postgres.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "postgres",
-					driver:         supportdocker.NewPostgresImpl(database, username, password),
+					driver:         supportdocker.NewPostgresImpl(testDatabase, testUsername, testPassword),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -113,16 +110,16 @@ func TestNewDatabase(t *testing.T) {
 			connection: "sqlserver",
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(contractsorm.DriverSqlserver.String()).Once()
-				mockConfig.On("GetString", "database.connections.sqlserver.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.sqlserver.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.sqlserver.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.sqlserver.database").Return(testDatabase).Once()
+				mockConfig.On("GetString", "database.connections.sqlserver.username").Return(testUsername).Once()
+				mockConfig.On("GetString", "database.connections.sqlserver.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "sqlserver",
-					driver:         supportdocker.NewSqlserverImpl(database, username, password),
+					driver:         supportdocker.NewSqlserverImpl(testDatabase, testUsername, testPassword),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -132,16 +129,16 @@ func TestNewDatabase(t *testing.T) {
 			connection: "sqlite",
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.sqlite.driver").Return(contractsorm.DriverSqlite.String()).Once()
-				mockConfig.On("GetString", "database.connections.sqlite.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.sqlite.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.sqlite.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.sqlite.database").Return(testDatabase).Once()
+				mockConfig.On("GetString", "database.connections.sqlite.username").Return(testUsername).Once()
+				mockConfig.On("GetString", "database.connections.sqlite.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
 					app:            mockApp,
 					config:         mockConfig,
 					connection:     "sqlite",
-					driver:         supportdocker.NewSqliteImpl(database),
+					driver:         supportdocker.NewSqliteImpl(testDatabase),
 					gormInitialize: mockGormInitialize,
 				}
 			},
@@ -151,9 +148,9 @@ func TestNewDatabase(t *testing.T) {
 			connection: "mysql",
 			setup: func() {
 				mockConfig.On("GetString", "database.connections.mysql.driver").Return("").Once()
-				mockConfig.On("GetString", "database.connections.mysql.database").Return(database).Once()
-				mockConfig.On("GetString", "database.connections.mysql.username").Return(username).Once()
-				mockConfig.On("GetString", "database.connections.mysql.password").Return(password).Once()
+				mockConfig.On("GetString", "database.connections.mysql.database").Return(testDatabase).Once()
+				mockConfig.On("GetString", "database.connections.mysql.username").Return(testUsername).Once()
+				mockConfig.On("GetString", "database.connections.mysql.password").Return(testPassword).Once()
 			},
 			wantErr: fmt.Errorf("not found database connection: %s", "mysql"),
 		},

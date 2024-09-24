@@ -157,7 +157,7 @@ func (s *OrmSuite) TestTransactionSuccess() {
 	for _, connection := range connections {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 		user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-		s.Nil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
+		s.Nil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Query) error {
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 
@@ -172,7 +172,7 @@ func (s *OrmSuite) TestTransactionSuccess() {
 
 func (s *OrmSuite) TestTransactionError() {
 	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
+		s.NotNil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Query) error {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			s.Nil(tx.Create(&user))
 

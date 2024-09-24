@@ -166,10 +166,6 @@ func (r *factory) OrmToSql() *ormmock.ToSql {
 	return &ormmock.ToSql{}
 }
 
-func (r *factory) OrmTransaction() *ormmock.Transaction {
-	return &ormmock.Transaction{}
-}
-
 func (r *factory) Queue() *queuemock.Queue {
 	mockQueue := &queuemock.Queue{}
 	r.app.On("MakeQueue").Return(mockQueue)

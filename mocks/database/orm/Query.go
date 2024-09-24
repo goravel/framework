@@ -69,23 +69,23 @@ func (_c *Query_Association_Call) RunAndReturn(run func(string) orm.Association)
 }
 
 // Begin provides a mock function with given fields:
-func (_m *Query) Begin() (orm.Transaction, error) {
+func (_m *Query) Begin() (orm.Query, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Begin")
 	}
 
-	var r0 orm.Transaction
+	var r0 orm.Query
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (orm.Transaction, error)); ok {
+	if rf, ok := ret.Get(0).(func() (orm.Query, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() orm.Transaction); ok {
+	if rf, ok := ret.Get(0).(func() orm.Query); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(orm.Transaction)
+			r0 = ret.Get(0).(orm.Query)
 		}
 	}
 
@@ -115,12 +115,57 @@ func (_c *Query_Begin_Call) Run(run func()) *Query_Begin_Call {
 	return _c
 }
 
-func (_c *Query_Begin_Call) Return(_a0 orm.Transaction, _a1 error) *Query_Begin_Call {
+func (_c *Query_Begin_Call) Return(_a0 orm.Query, _a1 error) *Query_Begin_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Begin_Call) RunAndReturn(run func() (orm.Transaction, error)) *Query_Begin_Call {
+func (_c *Query_Begin_Call) RunAndReturn(run func() (orm.Query, error)) *Query_Begin_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Commit provides a mock function with given fields:
+func (_m *Query) Commit() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Commit")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Commit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Commit'
+type Query_Commit_Call struct {
+	*mock.Call
+}
+
+// Commit is a helper method to define mock.On call
+func (_e *Query_Expecter) Commit() *Query_Commit_Call {
+	return &Query_Commit_Call{Call: _e.mock.On("Commit")}
+}
+
+func (_c *Query_Commit_Call) Run(run func()) *Query_Commit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_Commit_Call) Return(_a0 error) *Query_Commit_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Commit_Call) RunAndReturn(run func() error) *Query_Commit_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2239,6 +2284,51 @@ func (_c *Query_Raw_Call) Return(_a0 orm.Query) *Query_Raw_Call {
 }
 
 func (_c *Query_Raw_Call) RunAndReturn(run func(string, ...interface{}) orm.Query) *Query_Raw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Rollback provides a mock function with given fields:
+func (_m *Query) Rollback() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rollback")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Rollback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rollback'
+type Query_Rollback_Call struct {
+	*mock.Call
+}
+
+// Rollback is a helper method to define mock.On call
+func (_e *Query_Expecter) Rollback() *Query_Rollback_Call {
+	return &Query_Rollback_Call{Call: _e.mock.On("Rollback")}
+}
+
+func (_c *Query_Rollback_Call) Run(run func()) *Query_Rollback_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_Rollback_Call) Return(_a0 error) *Query_Rollback_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Rollback_Call) RunAndReturn(run func() error) *Query_Rollback_Call {
 	_c.Call.Return(run)
 	return _c
 }

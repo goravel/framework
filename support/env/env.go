@@ -1,6 +1,9 @@
 package env
 
-import "runtime"
+import (
+	"os"
+	"runtime"
+)
 
 // IsWindows returns whether the current operating system is Windows.
 // IsWindows 返回当前操作系统是否为 Windows。
@@ -36,4 +39,12 @@ func IsX86() bool {
 // Is64Bit 返回当前 CPU 架构是否为 64 位。
 func Is64Bit() bool {
 	return runtime.GOARCH == "amd64" || runtime.GOARCH == "arm64"
+}
+
+// IsGithub returns whether the current environment is github action.
+// IsGithub 返回当前系统环境是否为 github action。
+func IsGithub() bool {
+	_, exists := os.LookupEnv("GITHUB_ACTION")
+
+	return exists
 }

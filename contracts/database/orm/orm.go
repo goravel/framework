@@ -17,26 +17,18 @@ type Orm interface {
 	// Observe registers an observer with the Orm.
 	Observe(model any, observer Observer)
 	// Transaction runs a callback wrapped in a database transaction.
-	Transaction(txFunc func(tx Transaction) error) error
+	Transaction(txFunc func(tx Query) error) error
 	// WithContext sets the context to be used by the Orm.
 	WithContext(ctx context.Context) Orm
-}
-
-type Transaction interface {
-	Query
-	// Commit commits the changes in a transaction.
-	Commit() error
-	// Rollback rolls back the changes in a transaction.
-	Rollback() error
 }
 
 type Query interface {
 	// Association gets an association instance by name.
 	Association(association string) Association
 	// Begin begins a new transaction
-	Begin() (Transaction, error)
-	// Driver gets the driver for the query.
-	Driver() Driver
+	Begin() (Query, error)
+	// Commit commits the changes in a transaction.
+	Commit() error
 	// Count retrieve the "count" result of the query.
 	Count(count *int64) error
 	// Create inserts new record into the database.
@@ -47,6 +39,8 @@ type Query interface {
 	Delete(value any, conds ...any) (*Result, error)
 	// Distinct specifies distinct fields to query.
 	Distinct(args ...any) Query
+	// Driver gets the driver for the query.
+	Driver() Driver
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.
@@ -118,6 +112,8 @@ type Query interface {
 	Pluck(column string, dest any) error
 	// Raw creates a raw query.
 	Raw(sql string, values ...any) Query
+	// Rollback rolls back the changes in a transaction.
+	Rollback() error
 	// Save updates value in a database
 	Save(value any) error
 	// SaveQuietly updates value in a database without firing events

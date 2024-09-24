@@ -32,7 +32,7 @@ type Context struct {
 	ctx      context.Context
 	request  http.ContextRequest
 	response http.ContextResponse
-	values   map[string]any
+	values   map[any]any
 	mu       sync.RWMutex
 }
 
@@ -66,7 +66,7 @@ func (mc *Context) Context() context.Context {
 	return mc.ctx
 }
 
-func (mc *Context) WithValue(key string, value any) {
+func (mc *Context) WithValue(key any, value any) {
 	mc.mu.Lock()
 	mc.values[key] = value
 	mc.mu.Unlock()
@@ -85,7 +85,7 @@ func Background() http.Context {
 		ctx:      context.Background(),
 		request:  nil,
 		response: nil,
-		values:   make(map[string]any),
+		values:   make(map[any]any),
 	}
 }
 

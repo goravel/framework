@@ -69,14 +69,17 @@ func (r *QueryImpl) Association(association string) ormcontract.Association {
 	return query.instance.Association(association)
 }
 
-func (r *QueryImpl) Begin() (ormcontract.Transaction, error) {
+func (r *QueryImpl) Begin() (ormcontract.Query, error) {
 	tx := r.instance.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
 
-	return NewTransaction(tx, r.config, r.connection), tx.Error
+	return r.new(tx), nil
 }
 
-func (r *QueryImpl) Driver() ormcontract.Driver {
-	return ormcontract.Driver(r.instance.Dialector.Name())
+func (r *QueryImpl) Commit() error {
+	return r.instance.Commit().Error
 }
 
 func (r *QueryImpl) Count(count *int64) error {
@@ -165,6 +168,10 @@ func (r *QueryImpl) Distinct(args ...any) ormcontract.Query {
 	conditions.distinct = append(conditions.distinct, args...)
 
 	return r.setConditions(conditions)
+}
+
+func (r *QueryImpl) Driver() ormcontract.Driver {
+	return ormcontract.Driver(r.instance.Dialector.Name())
 }
 
 func (r *QueryImpl) Exec(sql string, values ...any) (*ormcontract.Result, error) {
@@ -578,6 +585,10 @@ func (r *QueryImpl) Pluck(column string, dest any) error {
 
 func (r *QueryImpl) Raw(sql string, values ...any) ormcontract.Query {
 	return r.new(r.instance.Raw(sql, values...))
+}
+
+func (r *QueryImpl) Rollback() error {
+	return r.instance.Rollback().Error
 }
 
 func (r *QueryImpl) Save(value any) error {

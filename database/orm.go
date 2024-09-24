@@ -89,7 +89,7 @@ func (r *OrmImpl) Observe(model any, observer ormcontract.Observer) {
 	})
 }
 
-func (r *OrmImpl) Transaction(txFunc func(tx ormcontract.Transaction) error) error {
+func (r *OrmImpl) Transaction(txFunc func(tx ormcontract.Query) error) error {
 	tx, err := r.Query().Begin()
 	if err != nil {
 		return err
