@@ -45,6 +45,9 @@ func (e *Event) Context() context.Context {
 }
 
 func (e *Event) DestOfMap() map[string]any {
+	if e.dest == nil {
+		return nil
+	}
 	if e.destOfMap != nil {
 		return e.destOfMap
 	}
@@ -148,6 +151,10 @@ func (e *Event) Query() orm.Query {
 }
 
 func (e *Event) SetAttribute(key string, value any) {
+	if e.dest == nil {
+		return
+	}
+
 	destOfMap := e.DestOfMap()
 	destOfMap[e.toDBColumnName(key)] = value
 	e.destOfMap = destOfMap

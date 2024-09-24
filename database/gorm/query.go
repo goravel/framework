@@ -138,23 +138,32 @@ func (r *QueryImpl) Cursor() (chan ormcontract.Cursor, error) {
 	return cursorChan, err
 }
 
-func (r *QueryImpl) Delete(dest any, conds ...any) (*ormcontract.Result, error) {
-	query, err := r.refreshConnection(dest)
-	if err != nil {
+func (r *QueryImpl) Delete(dest ...any) (*ormcontract.Result, error) {
+	var (
+		realDest any
+		err      error
+	)
+
+	query := r.buildConditions()
+
+	if len(dest) > 0 {
+		realDest = dest[0]
+		query, err = query.refreshConnection(realDest)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := query.deleting(realDest); err != nil {
 		return nil, err
 	}
-	query = query.buildConditions()
 
-	if err := query.deleting(dest); err != nil {
-		return nil, err
-	}
-
-	res := query.instance.Delete(dest, conds...)
+	res := query.instance.Delete(realDest)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
-	if err := query.deleted(dest); err != nil {
+	if err := query.deleted(realDest); err != nil {
 		return nil, err
 	}
 
@@ -343,25 +352,33 @@ func (r *QueryImpl) FirstOrNew(dest any, attributes any, values ...any) error {
 	return nil
 }
 
-func (r *QueryImpl) ForceDelete(value any, conds ...any) (*ormcontract.Result, error) {
-	query, err := r.refreshConnection(value)
-	if err != nil {
+func (r *QueryImpl) ForceDelete(dest ...any) (*ormcontract.Result, error) {
+	var (
+		realDest any
+		err      error
+	)
+
+	query := r.buildConditions()
+
+	if len(dest) > 0 {
+		realDest = dest[0]
+		query, err = r.refreshConnection(realDest)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := query.forceDeleting(realDest); err != nil {
 		return nil, err
 	}
 
-	query = query.buildConditions()
-
-	if err := query.forceDeleting(value); err != nil {
-		return nil, err
-	}
-
-	res := query.instance.Unscoped().Delete(value, conds...)
+	res := query.instance.Unscoped().Delete(realDest)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 
 	if res.RowsAffected > 0 {
-		if err := query.forceDeleted(value); err != nil {
+		if err := query.forceDeleted(realDest); err != nil {
 			return nil, err
 		}
 	}
@@ -1175,19 +1192,19 @@ func (r *QueryImpl) creating(dest any) error {
 }
 
 func (r *QueryImpl) deleting(dest any) error {
-	return r.event(ormcontract.EventDeleting, nil, dest)
+	return r.event(ormcontract.EventDeleting, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) deleted(dest any) error {
-	return r.event(ormcontract.EventDeleted, nil, dest)
+	return r.event(ormcontract.EventDeleted, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) forceDeleting(dest any) error {
-	return r.event(ormcontract.EventForceDeleting, nil, dest)
+	return r.event(ormcontract.EventForceDeleting, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) forceDeleted(dest any) error {
-	return r.event(ormcontract.EventForceDeleted, nil, dest)
+	return r.event(ormcontract.EventForceDeleted, r.instance.Statement.Model, dest)
 }
 
 func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
@@ -1197,13 +1214,15 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 
 	instance := NewEvent(r, model, dest)
 
-	if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
-		if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
-			return dispatchesEvent(instance)
+	if dest != nil {
+		if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
+			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
+				return dispatchesEvent(instance)
+			}
+			return nil
 		}
-
-		return nil
 	}
+
 	if model != nil {
 		if dispatchesEvents, exist := model.(ormcontract.DispatchesEvents); exist {
 			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
@@ -1214,12 +1233,13 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 		}
 	}
 
-	if observer := getObserver(dest); observer != nil {
-		if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
-			return observerEvent(instance)
+	if dest != nil {
+		if observer := getObserver(dest); observer != nil {
+			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
+				return observerEvent(instance)
+			}
+			return nil
 		}
-
-		return nil
 	}
 
 	if model != nil {

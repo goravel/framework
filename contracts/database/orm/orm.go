@@ -36,7 +36,7 @@ type Query interface {
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	Cursor() (chan Cursor, error)
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
-	Delete(value any, conds ...any) (*Result, error)
+	Delete(value ...any) (*Result, error)
 	// Distinct specifies distinct fields to query.
 	Distinct(args ...any) Query
 	// Driver gets the driver for the query.
@@ -63,7 +63,7 @@ type Query interface {
 	// return a new instance of the model initialized with those attributes.
 	FirstOrNew(dest any, attributes any, values ...any) error
 	// ForceDelete forces delete records matching given conditions.
-	ForceDelete(value any, conds ...any) (*Result, error)
+	ForceDelete(value ...any) (*Result, error)
 	// Get retrieves all rows from the database.
 	Get(dest any) error
 	// Group specifies the group method on the query.

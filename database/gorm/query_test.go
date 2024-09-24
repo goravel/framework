@@ -681,6 +681,38 @@ func (s *QueryTestSuite) TestDelete() {
 				},
 			},
 			{
+				name: "success by table",
+				setup: func() {
+					user := User{Name: "delete_user_by_table", Avatar: "delete_avatar_by_table"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					res, err := query.Table("users").Where("name", "delete_user_by_table").Delete()
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
+				name: "success by model",
+				setup: func() {
+					user := User{Name: "delete_user_by_model", Avatar: "delete_avatar_by_model"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+
+					res, err := query.Model(&User{}).Where("name", "delete_user_by_model").Delete()
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+
+					var user1 User
+					s.Nil(query.Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
 				name: "success when refresh connection",
 				setup: func() {
 					user := User{Name: "delete_user", Avatar: "delete_avatar"}
@@ -1936,6 +1968,42 @@ func (s *QueryTestSuite) TestForceDelete() {
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name", user.Name)
+
+					var user1 User
+					s.Nil(query.WithTrashed().Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
+				name: "success by table",
+				setup: func() {
+					user := User{Name: "force_delete_name_by_table"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("force_delete_name_by_table", user.Name)
+
+					res, err := query.Table("users").Where("name = ?", "force_delete_name_by_table").ForceDelete()
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+					s.Equal("force_delete_name_by_table", user.Name)
+
+					var user1 User
+					s.Nil(query.WithTrashed().Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
+				},
+			},
+			{
+				name: "success by model",
+				setup: func() {
+					user := User{Name: "force_delete_name_by_model"}
+					s.Nil(query.Create(&user))
+					s.True(user.ID > 0)
+					s.Equal("force_delete_name_by_model", user.Name)
+
+					res, err := query.Model(&User{}).Where("name = ?", "force_delete_name_by_model").ForceDelete()
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
+					s.Equal("force_delete_name_by_model", user.Name)
 
 					var user1 User
 					s.Nil(query.WithTrashed().Find(&user1, user.ID))
