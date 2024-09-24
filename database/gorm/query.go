@@ -1198,8 +1198,8 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 	instance := NewEvent(r, model, dest)
 
 	if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
-		if e, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
-			return e(instance)
+		if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
+			return dispatchesEvent(instance)
 		}
 
 		return nil
@@ -1214,8 +1214,8 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 		}
 	}
 
-	if o := observer(dest); o != nil {
-		if e := observerEvent(event, o); e != nil {
+	if observer := getObserver(dest); observer != nil {
+		if e := observerEvent(event, observer); e != nil {
 			return e(instance)
 		}
 
@@ -1223,7 +1223,7 @@ func (r *QueryImpl) event(event ormcontract.EventType, model, dest any) error {
 	}
 
 	if model != nil {
-		if o := observer(model); o != nil {
+		if o := getObserver(model); o != nil {
 			if e := observerEvent(event, o); e != nil {
 				return e(instance)
 			}
@@ -1500,7 +1500,7 @@ func getModelConnection(model any) (string, error) {
 	return connectionModel.Connection(), nil
 }
 
-func observer(dest any) ormcontract.Observer {
+func getObserver(dest any) ormcontract.Observer {
 	destType := reflect.TypeOf(dest)
 	if destType.Kind() == reflect.Pointer {
 		destType = destType.Elem()

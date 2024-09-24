@@ -3559,8 +3559,8 @@ func TestObserver(t *testing.T) {
 		Observer: &UserObserver{},
 	})
 
-	assert.Nil(t, observer(Product{}))
-	assert.Equal(t, &UserObserver{}, observer(User{}))
+	assert.Nil(t, getObserver(Product{}))
+	assert.Equal(t, &UserObserver{}, getObserver(User{}))
 }
 
 func TestObserverEvent(t *testing.T) {
