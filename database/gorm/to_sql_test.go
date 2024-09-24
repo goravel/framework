@@ -60,30 +60,16 @@ func (s *ToSqlTestSuite) TestDelete() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
 	s.Equal("UPDATE `users` SET `deleted_at`=? WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Delete(&User{}))
 
-	toSql = NewToSql(s.query.(*QueryImpl), false)
-	s.Equal("UPDATE `users` SET `deleted_at`=? WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL", toSql.Delete(&User{}, 1))
-
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
 	s.Equal("DELETE FROM `roles` WHERE `id` = ?", toSql.Delete(&Role{}))
-
-	toSql = NewToSql(s.query.(*QueryImpl), false)
-	s.Equal("DELETE FROM `roles` WHERE `roles`.`id` = ?", toSql.Delete(&Role{}, 1))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
 	sql := toSql.Delete(&User{})
 	s.Contains(sql, "UPDATE `users` SET `deleted_at`=")
 	s.Contains(sql, "WHERE `id` = 1 AND `users`.`deleted_at` IS NULL")
 
-	toSql = NewToSql(s.query.(*QueryImpl), true)
-	sql = toSql.Delete(&User{}, 1)
-	s.Contains(sql, "UPDATE `users` SET `deleted_at`=")
-	s.Contains(sql, "WHERE `users`.`id` = 1 AND `users`.`deleted_at` IS NULL")
-
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
 	s.Equal("DELETE FROM `roles` WHERE `id` = 1", toSql.Delete(&Role{}))
-
-	toSql = NewToSql(s.query.(*QueryImpl), true)
-	s.Equal("DELETE FROM `roles` WHERE `roles`.`id` = 1", toSql.Delete(&Role{}, 1))
 }
 
 func (s *ToSqlTestSuite) TestFind() {
@@ -106,6 +92,20 @@ func (s *ToSqlTestSuite) TestFirst() {
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
 	s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1", toSql.First(&User{}))
+}
+
+func (s *ToSqlTestSuite) TestForceDelete() {
+	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
+	s.Equal("DELETE FROM `users` WHERE `id` = ?", toSql.ForceDelete(&User{}))
+
+	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
+	s.Equal("DELETE FROM `roles` WHERE `id` = ?", toSql.ForceDelete(&Role{}))
+
+	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
+	s.Equal("DELETE FROM `users` WHERE `id` = 1", toSql.ForceDelete(&User{}))
+
+	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
+	s.Equal("DELETE FROM `roles` WHERE `id` = 1", toSql.ForceDelete(&Role{}))
 }
 
 func (s *ToSqlTestSuite) TestGet() {

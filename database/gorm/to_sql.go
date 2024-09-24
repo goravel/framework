@@ -29,10 +29,15 @@ func (r *ToSql) Create(value any) string {
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Create(value))
 }
 
-func (r *ToSql) Delete(value any, conds ...any) string {
+func (r *ToSql) Delete(value ...any) string {
 	query := r.query.buildConditions()
 
-	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Delete(value, conds...))
+	var dest any
+	if len(value) > 0 {
+		dest = value[0]
+	}
+
+	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Delete(dest))
 }
 
 func (r *ToSql) Find(dest any, conds ...any) string {
@@ -45,6 +50,17 @@ func (r *ToSql) First(dest any) string {
 	query := r.query.buildConditions()
 
 	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).First(dest))
+}
+
+func (r *ToSql) ForceDelete(value ...any) string {
+	query := r.query.buildConditions()
+
+	var dest any
+	if len(value) > 0 {
+		dest = value[0]
+	}
+
+	return r.sql(query.instance.Session(&gorm.Session{DryRun: true}).Unscoped().Delete(dest))
 }
 
 func (r *ToSql) Get(dest any) string {

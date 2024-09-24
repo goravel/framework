@@ -193,9 +193,10 @@ type Result struct {
 type ToSql interface {
 	Count() string
 	Create(value any) string
-	Delete(value any, conds ...any) string
+	Delete(value ...any) string
 	Find(dest any, conds ...any) string
 	First(dest any) string
+	ForceDelete(value ...any) string
 	Get(dest any) string
 	Pluck(column string, dest any) string
 	Save(value any) string
