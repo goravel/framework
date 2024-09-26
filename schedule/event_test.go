@@ -16,7 +16,7 @@ func TestEventTestSuite(t *testing.T) {
 }
 
 func (s *EventTestSuite) SetupTest() {
-	s.event = &Event{}
+	s.event = &Event{cron: "* * * * *"}
 }
 
 func (s *EventTestSuite) TestAt() {
