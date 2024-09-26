@@ -880,6 +880,65 @@ func (_c *Route_StaticFile_Call) RunAndReturn(run func(string, string)) *Route_S
 	return _c
 }
 
+// Stop provides a mock function with given fields: ctx
+func (_m *Route) Stop(ctx ...context.Context) error {
+	_va := make([]interface{}, len(ctx))
+	for _i := range ctx {
+		_va[_i] = ctx[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Stop")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(...context.Context) error); ok {
+		r0 = rf(ctx...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_Stop_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stop'
+type Route_Stop_Call struct {
+	*mock.Call
+}
+
+// Stop is a helper method to define mock.On call
+//   - ctx ...context.Context
+func (_e *Route_Expecter) Stop(ctx ...interface{}) *Route_Stop_Call {
+	return &Route_Stop_Call{Call: _e.mock.On("Stop",
+		append([]interface{}{}, ctx...)...)}
+}
+
+func (_c *Route_Stop_Call) Run(run func(ctx ...context.Context)) *Route_Stop_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]context.Context, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(context.Context)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Route_Stop_Call) Return(_a0 error) *Route_Stop_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_Stop_Call) RunAndReturn(run func(...context.Context) error) *Route_Stop_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewRoute creates a new instance of Route. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewRoute(t interface {

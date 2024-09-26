@@ -23,8 +23,10 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
-	// Shutdown gracefully shuts down the serve.
+	// DEPRECATED use Stop instead.
 	Shutdown(ctx ...context.Context) error
+	// Stop gracefully stop the serve.
+	Stop(ctx ...context.Context) error
 }
 
 type Router interface {
