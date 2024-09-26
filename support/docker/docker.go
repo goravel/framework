@@ -9,9 +9,9 @@ import (
 type ContainerType string
 
 const (
-	password = "Framework!123"
-	username = "goravel"
-	database = "goravel"
+	testDatabase = "goravel"
+	testUsername = "goravel"
+	testPassword = "Framework!123"
 
 	ContainerTypeMysql     ContainerType = "mysql"
 	ContainerTypePostgres  ContainerType = "postgres"
@@ -27,7 +27,7 @@ func Mysql() testing.DatabaseDriver {
 }
 
 func Mysqls(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeMysql, num)
+	return Database(ContainerTypeMysql, testDatabase, testUsername, testPassword, num)
 }
 
 func Postgres() testing.DatabaseDriver {
@@ -35,7 +35,7 @@ func Postgres() testing.DatabaseDriver {
 }
 
 func Postgreses(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypePostgres, num)
+	return Database(ContainerTypePostgres, testDatabase, testUsername, testPassword, num)
 }
 
 func Sqlserver() testing.DatabaseDriver {
@@ -43,7 +43,7 @@ func Sqlserver() testing.DatabaseDriver {
 }
 
 func Sqlservers(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeSqlserver, num)
+	return Database(ContainerTypeSqlserver, testDatabase, testUsername, testPassword, num)
 }
 
 func Sqlite() testing.DatabaseDriver {
@@ -51,10 +51,10 @@ func Sqlite() testing.DatabaseDriver {
 }
 
 func Sqlites(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeSqlite, num)
+	return Database(ContainerTypeSqlite, testDatabase, testUsername, testPassword, num)
 }
 
-func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
+func Database(containerType ContainerType, database, username, password string, num int) []testing.DatabaseDriver {
 	if num <= 0 {
 		return nil
 	}
@@ -69,27 +69,17 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 	driverLength := len(drivers)
 	surplus := num - driverLength
 	for i := 0; i < surplus; i++ {
-		var db testing.DatabaseDriver
-
-		switch containerType {
-		case ContainerTypeMysql:
-			db = NewMysqlImpl(database, username, password)
-		case ContainerTypePostgres:
-			db = NewPostgresImpl(database, username, password)
-		case ContainerTypeSqlserver:
-			db = NewSqlserverImpl(database, username, password)
-		case ContainerTypeSqlite:
-			db = NewSqliteImpl(fmt.Sprintf("%s%d", database, driverLength+i))
-		default:
-			panic("unknown container type")
+		if containerType == ContainerTypeSqlite {
+			database = fmt.Sprintf("%s%d", database, driverLength+i)
 		}
+		databaseDriver := DatabaseDriver(containerType, database, username, password)
 
-		if err := db.Build(); err != nil {
+		if err := databaseDriver.Build(); err != nil {
 			panic(err)
 		}
 
-		containers[containerType] = append(containers[containerType], db)
-		drivers = append(drivers, db)
+		containers[containerType] = append(containers[containerType], databaseDriver)
+		drivers = append(drivers, databaseDriver)
 	}
 
 	for _, driver := range drivers {
@@ -99,6 +89,21 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 	}
 
 	return drivers
+}
+
+func DatabaseDriver(containerType ContainerType, database, username, password string) testing.DatabaseDriver {
+	switch containerType {
+	case ContainerTypeMysql:
+		return NewMysqlImpl(database, username, password)
+	case ContainerTypePostgres:
+		return NewPostgresImpl(database, username, password)
+	case ContainerTypeSqlserver:
+		return NewSqlserverImpl(database, username, password)
+	case ContainerTypeSqlite:
+		return NewSqliteImpl(database)
+	default:
+		panic("unknown container type")
+	}
 }
 
 func Stop() error {
