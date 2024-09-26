@@ -28,7 +28,7 @@ func TestMysqlTestSuite(t *testing.T) {
 
 func (s *MysqlTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.mysql = NewMysqlImpl(database, username, password)
+	s.mysql = NewMysqlImpl(testDatabase, testUsername, testPassword)
 }
 
 func (s *MysqlTestSuite) TestBuild() {
@@ -38,9 +38,9 @@ func (s *MysqlTestSuite) TestBuild() {
 	s.NotNil(instance)
 
 	s.Equal("127.0.0.1", s.mysql.Config().Host)
-	s.Equal(database, s.mysql.Config().Database)
-	s.Equal(username, s.mysql.Config().Username)
-	s.Equal(password, s.mysql.Config().Password)
+	s.Equal(testDatabase, s.mysql.Config().Database)
+	s.Equal(testUsername, s.mysql.Config().Username)
+	s.Equal(testPassword, s.mysql.Config().Password)
 	s.True(s.mysql.Config().Port > 0)
 
 	res := instance.Exec(`
@@ -72,14 +72,14 @@ INSERT INTO users (name) VALUES ('goravel');
 	s.Nil(s.mysql.Stop())
 }
 
+func (s *MysqlTestSuite) TestDriver() {
+	s.Equal(orm.DriverMysql, s.mysql.Driver())
+}
+
 func (s *MysqlTestSuite) TestImage() {
 	image := contractstesting.Image{
 		Repository: "mysql",
 	}
 	s.mysql.Image(image)
 	s.Equal(&image, s.mysql.image)
-}
-
-func (s *MysqlTestSuite) TestName() {
-	s.Equal(orm.DriverMysql, s.mysql.Name())
 }

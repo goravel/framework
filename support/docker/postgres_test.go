@@ -27,7 +27,7 @@ func TestPostgresTestSuite(t *testing.T) {
 
 func (s *PostgresTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.postgres = NewPostgresImpl(database, username, password)
+	s.postgres = NewPostgresImpl(testDatabase, testUsername, testPassword)
 }
 
 func (s *PostgresTestSuite) TestBuild() {
@@ -37,9 +37,9 @@ func (s *PostgresTestSuite) TestBuild() {
 	s.NotNil(instance)
 
 	s.Equal("127.0.0.1", s.postgres.Config().Host)
-	s.Equal(database, s.postgres.Config().Database)
-	s.Equal(username, s.postgres.Config().Username)
-	s.Equal(password, s.postgres.Config().Password)
+	s.Equal(testDatabase, s.postgres.Config().Database)
+	s.Equal(testUsername, s.postgres.Config().Username)
+	s.Equal(testPassword, s.postgres.Config().Password)
 	s.True(s.postgres.Config().Port > 0)
 
 	res := instance.Exec(`
@@ -74,14 +74,14 @@ func (s *PostgresTestSuite) TestBuild() {
 	s.Nil(s.postgres.Stop())
 }
 
+func (s *PostgresTestSuite) TestDriver() {
+	s.Equal(orm.DriverPostgres, s.postgres.Driver())
+}
+
 func (s *PostgresTestSuite) TestImage() {
 	image := contractstesting.Image{
 		Repository: "postgres",
 	}
 	s.postgres.Image(image)
 	s.Equal(&image, s.postgres.image)
-}
-
-func (s *PostgresTestSuite) TestName() {
-	s.Equal(orm.DriverPostgres, s.postgres.Name())
 }

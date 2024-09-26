@@ -69,6 +69,10 @@ func (receiver *SqlserverImpl) Config() testing.DatabaseConfig {
 	}
 }
 
+func (receiver *SqlserverImpl) Driver() orm.Driver {
+	return orm.DriverSqlserver
+}
+
 func (receiver *SqlserverImpl) Fresh() error {
 	instance, err := receiver.connect()
 	if err != nil {
@@ -98,10 +102,6 @@ func (receiver *SqlserverImpl) Fresh() error {
 
 func (receiver *SqlserverImpl) Image(image testing.Image) {
 	receiver.image = &image
-}
-
-func (receiver *SqlserverImpl) Name() orm.Driver {
-	return orm.DriverSqlserver
 }
 
 func (receiver *SqlserverImpl) Stop() error {

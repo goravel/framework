@@ -70,6 +70,10 @@ func (receiver *PostgresImpl) Config() testing.DatabaseConfig {
 	}
 }
 
+func (receiver *PostgresImpl) Driver() orm.Driver {
+	return orm.DriverPostgres
+}
+
 func (receiver *PostgresImpl) Fresh() error {
 	instance, err := receiver.connect()
 	if err != nil {
@@ -89,10 +93,6 @@ func (receiver *PostgresImpl) Fresh() error {
 
 func (receiver *PostgresImpl) Image(image testing.Image) {
 	receiver.image = &image
-}
-
-func (receiver *PostgresImpl) Name() orm.Driver {
-	return orm.DriverPostgres
 }
 
 func (receiver *PostgresImpl) Stop() error {

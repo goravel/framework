@@ -69,7 +69,7 @@ func TestDatabase(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(string(test.name), func(t *testing.T) {
-			drivers := Database(test.containerType, test.num)
+			drivers := Database(test.containerType, testDatabase, testUsername, testPassword, test.num)
 
 			assert.Len(t, drivers, test.num)
 			assert.Len(t, containers[test.containerType], test.num)

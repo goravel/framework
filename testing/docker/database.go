@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/gorm"
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
@@ -18,15 +16,14 @@ import (
 )
 
 type Database struct {
-	app            foundation.Application
-	config         contractsconfig.Config
-	connection     string
-	driver         testing.DatabaseDriver
-	gormInitialize gorm.Initialize
-	image          *testing.Image
+	testing.DatabaseDriver
+	app        foundation.Application
+	artisan    contractsconsole.Artisan
+	config     contractsconfig.Config
+	connection string
 }
 
-func NewDatabase(app foundation.Application, connection string, gormInitialize gorm.Initialize) (*Database, error) {
+func NewDatabase(app foundation.Application, connection string) *Database {
 	config := app.MakeConfig()
 
 	if config == nil {
@@ -36,66 +33,36 @@ func NewDatabase(app foundation.Application, connection string, gormInitialize g
 	if connection == "" {
 		connection = config.GetString("database.default")
 	}
+
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
 	database := config.GetString(fmt.Sprintf("database.connections.%s.database", connection))
 	username := config.GetString(fmt.Sprintf("database.connections.%s.username", connection))
 	password := config.GetString(fmt.Sprintf("database.connections.%s.password", connection))
-
-	var databaseDriver testing.DatabaseDriver
-	switch contractsorm.Driver(driver) {
-	case contractsorm.DriverMysql:
-		databaseDriver = supportdocker.NewMysqlImpl(database, username, password)
-	case contractsorm.DriverPostgres:
-		databaseDriver = supportdocker.NewPostgresImpl(database, username, password)
-	case contractsorm.DriverSqlserver:
-		databaseDriver = supportdocker.NewSqlserverImpl(database, username, password)
-	case contractsorm.DriverSqlite:
-		databaseDriver = supportdocker.NewSqliteImpl(database)
-	default:
-		return nil, fmt.Errorf("not found database connection: %s", connection)
-	}
+	databaseDriver := supportdocker.DatabaseDriver(supportdocker.ContainerType(driver), database, username, password)
 
 	return &Database{
 		app:            app,
+		artisan:        app.MakeArtisan(),
 		config:         config,
 		connection:     connection,
-		driver:         databaseDriver,
-		gormInitialize: gormInitialize,
-	}, nil
+		DatabaseDriver: databaseDriver,
+	}
 }
 
 func (receiver *Database) Build() error {
-	if receiver.image != nil {
-		receiver.driver.Image(*receiver.image)
-	}
-
-	if err := receiver.driver.Build(); err != nil {
+	if err := receiver.DatabaseDriver.Build(); err != nil {
 		return err
 	}
 
-	config := receiver.driver.Config()
-	receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), config.Port)
-
-	var query contractsorm.Query
-	for i := 0; i < 60; i++ {
-		query1, err := receiver.gormInitialize.InitializeQuery(context.Background(), receiver.config, receiver.driver.Name().String())
-		if err == nil {
-			query = query1
-			break
-		}
-
-		time.Sleep(2 * time.Second)
-	}
-	if query == nil {
-		return fmt.Errorf("connect to %s failed", receiver.driver.Name().String())
-	}
-
+	receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), receiver.DatabaseDriver.Config().Port)
 	artisan := receiver.app.MakeArtisan()
 	if artisan == nil {
 		return errors.New("artisan instance is not available")
 	}
 
 	artisan.Call("migrate")
+
+	// TODO Find a better way to refresh the database connection
 	receiver.app.Singleton(frameworkdatabase.BindingOrm, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		defaultConnection := config.GetString("database.default")
@@ -109,19 +76,6 @@ func (receiver *Database) Build() error {
 	})
 
 	return nil
-}
-
-func (receiver *Database) Config() testing.DatabaseConfig {
-	return receiver.driver.Config()
-}
-
-// Deprecated: Use Stop instead.
-func (receiver *Database) Clear() error {
-	return receiver.Stop()
-}
-
-func (receiver *Database) Image(image testing.Image) {
-	receiver.image = &image
 }
 
 func (receiver *Database) Seed(seeds ...seeder.Seeder) {
@@ -140,8 +94,4 @@ func (receiver *Database) Seed(seeds ...seeder.Seeder) {
 	}
 
 	artisan.Call(command)
-}
-
-func (receiver *Database) Stop() error {
-	return receiver.driver.Stop()
 }
