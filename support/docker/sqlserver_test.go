@@ -27,7 +27,7 @@ func TestSqlserverTestSuite(t *testing.T) {
 
 func (s *SqlserverTestSuite) SetupTest() {
 	s.mockConfig = &configmocks.Config{}
-	s.sqlserver = NewSqlserverImpl(database, username, password)
+	s.sqlserver = NewSqlserverImpl(testDatabase, testUsername, testPassword)
 }
 
 func (s *SqlserverTestSuite) TestBuild() {
@@ -37,9 +37,9 @@ func (s *SqlserverTestSuite) TestBuild() {
 	s.NotNil(instance)
 
 	s.Equal("127.0.0.1", s.sqlserver.Config().Host)
-	s.Equal(database, s.sqlserver.Config().Database)
-	s.Equal(username, s.sqlserver.Config().Username)
-	s.Equal(password, s.sqlserver.Config().Password)
+	s.Equal(testDatabase, s.sqlserver.Config().Database)
+	s.Equal(testUsername, s.sqlserver.Config().Username)
+	s.Equal(testPassword, s.sqlserver.Config().Password)
 	s.True(s.sqlserver.Config().Port > 0)
 
 	res := instance.Exec(`
@@ -75,14 +75,14 @@ func (s *SqlserverTestSuite) TestBuild() {
 	s.Nil(s.sqlserver.Stop())
 }
 
+func (s *SqlserverTestSuite) TestDriver() {
+	s.Equal(orm.DriverSqlserver, s.sqlserver.Driver())
+}
+
 func (s *SqlserverTestSuite) TestImage() {
 	image := contractstesting.Image{
 		Repository: "sqlserver",
 	}
 	s.sqlserver.Image(image)
 	s.Equal(&image, s.sqlserver.image)
-}
-
-func (s *SqlserverTestSuite) TestName() {
-	s.Equal(orm.DriverSqlserver, s.sqlserver.Name())
 }
