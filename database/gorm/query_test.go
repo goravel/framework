@@ -3698,6 +3698,7 @@ func TestReadWriteSeparate(t *testing.T) {
 		ReadPort:  readSqlserverQuery.Docker().Config().Port,
 		WritePort: writeSqlserverQuery.Docker().Config().Port,
 	})
+	require.NoError(t, err)
 
 	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
 		contractsorm.DriverMysql: {
@@ -3760,7 +3761,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, sqliteQuery.CreateTable(TestTableGoravelUser))
 
-	sqlserverQuery, err := NewTestQuery(supportdocker.Sqlserver())
+	sqlserverQuery, err := NewTestQuery(supportdocker.Sqlserver(), true)
 	require.NoError(t, err)
 	require.NoError(t, sqlserverQuery.CreateTable(TestTableGoravelUser))
 
