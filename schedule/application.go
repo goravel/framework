@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"context"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -24,8 +25,11 @@ func NewApplication(artisan console.Artisan, cache cache.Cache, log log.Log, deb
 	return &Application{
 		artisan: artisan,
 		cache:   cache,
-		log:     log,
-		debug:   debug,
+		cron: cron.New(cron.WithParser(cron.NewParser(
+			cron.SecondOptional|cron.Minute|cron.Hour|cron.Dom|cron.Month|cron.Dow|cron.Descriptor,
+		)), cron.WithLogger(NewLogger(log, debug))),
+		log:   log,
+		debug: debug,
 	}
 }
 
@@ -38,15 +42,28 @@ func (app *Application) Command(command string) schedule.Event {
 }
 
 func (app *Application) Register(events []schedule.Event) {
-	if app.cron == nil {
-		app.cron = cron.New(cron.WithLogger(NewLogger(app.log, app.debug)))
-	}
-
 	app.addEvents(events)
 }
 
 func (app *Application) Run() {
 	app.cron.Run()
+}
+
+func (app *Application) Stop(ctx ...context.Context) error {
+	if len(ctx) == 0 {
+		ctx = append(ctx, context.Background())
+	}
+
+	cronCtx := app.cron.Stop()
+
+	for {
+		select {
+		case <-cronCtx.Done():
+			return nil
+		case <-ctx[0].Done():
+			return ctx[0].Err()
+		}
+	}
 }
 
 func (app *Application) addEvents(events []schedule.Event) {

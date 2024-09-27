@@ -17,11 +17,18 @@ type Event struct {
 }
 
 func NewCallbackEvent(callback func()) *Event {
-	return &Event{callback: callback}
+	return &Event{
+		callback: callback,
+		cron:     "* * * * *",
+	}
 }
 
 func NewCommandEvent(command string) *Event {
-	return &Event{command: command, name: command}
+	return &Event{
+		command: command,
+		name:    command,
+		cron:    "* * * * *",
+	}
 }
 
 // At Schedule the command at a given time.
@@ -131,10 +138,6 @@ func (receiver *Event) EverySixHours() schedule.Event {
 }
 
 func (receiver *Event) GetCron() string {
-	if receiver.cron == "" {
-		receiver.cron = "* * * * *"
-	}
-
 	return receiver.cron
 }
 
