@@ -71,6 +71,7 @@ func TestNewFileFromRequest(t *testing.T) {
 	buf := new(bytes.Buffer)
 	mw := multipart.NewWriter(buf)
 	w, err := mw.CreateFormFile("file", "test.txt")
+	assert.NotNil(t, w)
 	if assert.NoError(t, err) {
 		_, err = w.Write([]byte("test"))
 		assert.NoError(t, err)

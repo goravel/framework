@@ -46,11 +46,12 @@ func (s *DialectorTestSuite) TestMysql() {
 	s.mockConfig.On("GetString", "database.connections.mysql.loc").
 		Return("Local").Once()
 	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Nil(err)
+	s.NotEmpty(dialectors)
 	s.Equal(mysql.New(mysql.Config{
 		DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
 			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "utf8mb4", true, "Local"),
 	}), dialectors[0])
-	s.Nil(err)
 }
 
 func (s *DialectorTestSuite) TestPostgres() {
@@ -62,11 +63,12 @@ func (s *DialectorTestSuite) TestPostgres() {
 	s.mockConfig.On("GetString", "database.connections.postgres.timezone").
 		Return("UTC").Once()
 	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Nil(err)
+	s.NotEmpty(dialectors)
 	s.Equal(postgres.New(postgres.Config{
 		DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
 			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "disable", "UTC"),
 	}), dialectors[0])
-	s.Nil(err)
 }
 
 func (s *DialectorTestSuite) TestSqlite() {
@@ -74,8 +76,9 @@ func (s *DialectorTestSuite) TestSqlite() {
 	s.mockConfig.On("GetString", "database.connections.sqlite.driver").
 		Return(orm.DriverSqlite.String()).Once()
 	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
-	s.Equal(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", s.config.Database)), dialectors[0])
 	s.Nil(err)
+	s.NotEmpty(dialectors)
+	s.Equal(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", s.config.Database)), dialectors[0])
 }
 
 func (s *DialectorTestSuite) TestSqlserver() {
@@ -85,9 +88,10 @@ func (s *DialectorTestSuite) TestSqlserver() {
 	s.mockConfig.On("GetString", "database.connections.sqlserver.charset").
 		Return("utf8mb4").Once()
 	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
+	s.Nil(err)
+	s.NotEmpty(dialectors)
 	s.Equal(sqlserver.New(sqlserver.Config{
 		DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
 			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "utf8mb4"),
 	}), dialectors[0])
-	s.Nil(err)
 }
