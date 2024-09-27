@@ -43,11 +43,11 @@ func TestMigrateCommand(t *testing.T) {
 			name: "sqlite",
 			setup: func() {
 				var err error
-				mysqlQuery, err := gorm.NewTestQuery(docker.Sqlite())
+				sqliteQuery, err := gorm.NewTestQuery(docker.Sqlite())
 				require.NoError(t, err)
 
-				query = mysqlQuery.Query()
-				mockConfig = mysqlQuery.MockConfig()
+				query = sqliteQuery.Query()
+				mockConfig = sqliteQuery.MockConfig()
 				createSqliteMigrations()
 			},
 		},
