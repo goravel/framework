@@ -17,8 +17,8 @@ func NewDocker(app foundation.Application) *Docker {
 
 func (receiver *Docker) Database(connection ...string) (testing.Database, error) {
 	if len(connection) == 0 {
-		return NewDatabase(receiver.app, ""), nil
+		return NewDatabase(receiver.app, "")
 	} else {
-		return NewDatabase(receiver.app, connection[0]), nil
+		return NewDatabase(receiver.app, connection[0])
 	}
 }

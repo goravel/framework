@@ -409,6 +409,7 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
+	s.app.SetJson(json.NewJson())
 
 	serviceProvider := &frameworksession.ServiceProvider{}
 	// error

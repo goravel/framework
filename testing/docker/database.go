@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
@@ -11,7 +10,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
 	frameworkdatabase "github.com/goravel/framework/database"
-	"github.com/goravel/framework/support/color"
 	supportdocker "github.com/goravel/framework/support/docker"
 )
 
@@ -23,15 +21,19 @@ type Database struct {
 	connection string
 }
 
-func NewDatabase(app foundation.Application, connection string) *Database {
+func NewDatabase(app foundation.Application, connection string) (*Database, error) {
 	config := app.MakeConfig()
-
 	if config == nil {
-		return nil, errors.New("config facade is not set")
+		return nil, ErrConfigNotSet
 	}
 
 	if connection == "" {
 		connection = config.GetString("database.default")
+	}
+
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade == nil {
+		return nil, ErrArtisanNotSet
 	}
 
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
@@ -42,11 +44,11 @@ func NewDatabase(app foundation.Application, connection string) *Database {
 
 	return &Database{
 		app:            app,
-		artisan:        app.MakeArtisan(),
+		artisan:        artisanFacade,
 		config:         config,
 		connection:     connection,
 		DatabaseDriver: databaseDriver,
-	}
+	}, nil
 }
 
 func (receiver *Database) Build() error {
@@ -55,12 +57,7 @@ func (receiver *Database) Build() error {
 	}
 
 	receiver.config.Add(fmt.Sprintf("database.connections.%s.port", receiver.connection), receiver.DatabaseDriver.Config().Port)
-	artisan := receiver.app.MakeArtisan()
-	if artisan == nil {
-		return errors.New("artisan instance is not available")
-	}
-
-	artisan.Call("migrate")
+	receiver.artisan.Call("migrate")
 
 	// TODO Find a better way to refresh the database connection
 	receiver.app.Singleton(frameworkdatabase.BindingOrm, func(app foundation.Application) (any, error) {
@@ -87,11 +84,5 @@ func (receiver *Database) Seed(seeds ...seeder.Seeder) {
 		}
 	}
 
-	artisan := receiver.app.MakeArtisan()
-	if artisan == nil {
-		color.Red().Println("artisan instance is not available")
-		return
-	}
-
-	artisan.Call(command)
+	receiver.artisan.Call(command)
 }

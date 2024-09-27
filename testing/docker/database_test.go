@@ -145,8 +145,9 @@ func TestNewDatabase(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			beforeEach()
 			tt.setup()
-			gotDatabase := NewDatabase(mockApp, tt.connection)
+			gotDatabase, err := NewDatabase(mockApp, tt.connection)
 
+			assert.Nil(t, err)
 			assert.Equal(t, tt.wantDatabase(), gotDatabase)
 		})
 	}
