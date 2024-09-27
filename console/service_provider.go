@@ -4,6 +4,7 @@ import (
 	"github.com/goravel/framework/console/console"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/support/color"
 )
 
 const Binding = "goravel.console"
@@ -25,13 +26,21 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		config := app.MakeConfig()
-		artisanFacade.Register([]consolecontract.Command{
-			console.NewListCommand(artisanFacade),
-			console.NewKeyGenerateCommand(config),
-			console.NewMakeCommand(),
-			console.NewBuildCommand(config),
-		})
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade == nil {
+		color.Yellow().Println("Warning: Artisan Facade is not initialized. Skipping command registration.")
+		return
 	}
+
+	configFacade := app.MakeConfig()
+	if configFacade == nil {
+		color.Yellow().Println("Warning: Config Facade is not initialized. Skipping certain command registrations.")
+	}
+
+	artisanFacade.Register([]consolecontract.Command{
+		console.NewListCommand(artisanFacade),
+		console.NewKeyGenerateCommand(configFacade),
+		console.NewMakeCommand(),
+		console.NewBuildCommand(configFacade),
+	})
 }

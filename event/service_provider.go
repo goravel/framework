@@ -22,10 +22,8 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		artisanFacade.Register([]console.Command{
-			&eventConsole.EventMakeCommand{},
-			&eventConsole.ListenerMakeCommand{},
-		})
-	}
+	app.Commands([]console.Command{
+		&eventConsole.EventMakeCommand{},
+		&eventConsole.ListenerMakeCommand{},
+	})
 }

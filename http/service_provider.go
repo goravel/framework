@@ -31,11 +31,13 @@ func (http *ServiceProvider) Boot(app foundation.Application) {
 	CacheFacade = app.MakeCache()
 	RateLimiterFacade = app.MakeRateLimiter()
 
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		artisanFacade.Register([]consolecontract.Command{
-			&console.RequestMakeCommand{},
-			&console.ControllerMakeCommand{},
-			&console.MiddlewareMakeCommand{},
-		})
-	}
+	http.registerCommands(app)
+}
+
+func (http *ServiceProvider) registerCommands(app foundation.Application) {
+	app.Commands([]consolecontract.Command{
+		&console.RequestMakeCommand{},
+		&console.ControllerMakeCommand{},
+		&console.MiddlewareMakeCommand{},
+	})
 }

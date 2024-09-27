@@ -22,14 +22,6 @@ type AES struct {
 
 // NewAES returns a new AES hasher.
 func NewAES(config config.Config, json foundation.Json) (*AES, error) {
-	if config == nil {
-		return nil, ErrConfigNotSet
-	}
-
-	if json == nil {
-		return nil, ErrJsonParserNotSet
-	}
-
 	key := config.GetString("app.key")
 
 	// Don't use AES in artisan when the key is empty.

@@ -26,9 +26,7 @@ func (database *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (database *ServiceProvider) registerCommands(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		artisanFacade.Register([]contractsconsole.Command{
-			console.NewClearCommand(app.MakeCache()),
-		})
-	}
+	app.Commands([]contractsconsole.Command{
+		console.NewClearCommand(app.MakeCache()),
+	})
 }

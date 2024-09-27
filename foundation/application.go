@@ -178,9 +178,13 @@ func (app *Application) addPublishGroup(group string, paths map[string]string) {
 
 // bootArtisan Boot artisan command.
 func (app *Application) bootArtisan() {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		artisanFacade.Run(os.Args, true)
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade == nil {
+		color.Yellow().Println("Warning: Artisan Facade is not initialized. Skipping artisan command execution.")
+		return
 	}
+
+	artisanFacade.Run(os.Args, true)
 }
 
 // getBaseServiceProviders Get base service providers.
@@ -234,9 +238,13 @@ func (app *Application) bootServiceProviders(serviceProviders []foundation.Servi
 }
 
 func (app *Application) registerCommands(commands []consolecontract.Command) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		artisanFacade.Register(commands)
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade == nil {
+		color.Yellow().Println("Warning: Artisan Facade is not initialized. Skipping command registration.")
+		return
 	}
+
+	artisanFacade.Register(commands)
 }
 
 func (app *Application) setTimezone() {
