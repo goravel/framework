@@ -79,14 +79,18 @@ func TestFactoryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql())
-	mysqlQuery, err := mysqlDocker.New()
+	suite.Run(t, &FactoryTestSuite{})
+}
+
+func (s *FactoryTestSuite) SetupSuite() {
+	mysqlQuery, err := gorm.NewTestQuery(docker.Mysql())
 	if err != nil {
 		log.Fatalf("Init mysql error: %s", err)
 	}
-	suite.Run(t, &FactoryTestSuite{
-		query: mysqlQuery,
-	})
+
+	s.Require().NoError(mysqlQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers))
+
+	s.query = mysqlQuery.Query()
 }
 
 func (s *FactoryTestSuite) SetupTest() {

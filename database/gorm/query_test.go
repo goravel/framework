@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
@@ -25,13 +25,13 @@ import (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries         map[contractsorm.Driver]contractsorm.Query
-	mysqlDocker     *MysqlDocker
-	mysql1          contractstesting.DatabaseDriver
-	postgres        contractstesting.DatabaseDriver
-	postgresDocker  *PostgresDocker
-	sqliteDocker    *SqliteDocker
-	sqlserverDocker *SqlserverDocker
+	queries        map[contractsorm.Driver]contractsorm.Query
+	mysqlQuery     *TestQuery
+	mysql1Docker   contractstesting.DatabaseDriver
+	postgresDocker contractstesting.DatabaseDriver
+	postgresQuery  *TestQuery
+	sqliteQuery    *TestQuery
+	sqlserverQuery *TestQuery
 }
 
 func TestQueryTestSuite(t *testing.T) {
@@ -39,56 +39,48 @@ func TestQueryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
+	suite.Run(t, &QueryTestSuite{})
+}
+
+func (s *QueryTestSuite) SetupSuite() {
 	testContext = context.Background()
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	mysqls := supportdocker.Mysqls(2)
+	mysqlDockers := supportdocker.Mysqls(2)
 
-	mysqlDocker := NewMysqlDocker(mysqls[0])
-	mysqlQuery, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
+	mysqlQuery, err := NewTestQuery(mysqlDockers[0])
+	s.Require().NoError(err)
+	s.Require().NoError(mysqlQuery.CreateTable())
+
+	mysql1Query, err := NewTestQuery(mysqlDockers[1])
+	s.Require().NoError(err)
+	s.Require().NoError(mysql1Query.CreateTable())
+
+	postgresDocker := supportdocker.Postgres()
+	postgresQuery, err := NewTestQuery(postgresDocker)
+	s.Require().NoError(err)
+	s.Require().NoError(postgresQuery.CreateTable())
+
+	sqliteQuery, err := NewTestQuery(supportdocker.Sqlite())
+	s.Require().NoError(err)
+	s.Require().NoError(sqliteQuery.CreateTable())
+
+	sqlserverQuery, err := NewTestQuery(supportdocker.Sqlserver())
+	s.Require().NoError(err)
+	s.Require().NoError(sqlserverQuery.CreateTable())
+
+	s.queries = map[contractsorm.Driver]contractsorm.Query{
+		contractsorm.DriverMysql:     mysqlQuery.Query(),
+		contractsorm.DriverPostgres:  postgresQuery.Query(),
+		contractsorm.DriverSqlite:    sqliteQuery.Query(),
+		contractsorm.DriverSqlserver: sqlserverQuery.Query(),
 	}
-
-	mysql1Docker := NewMysqlDocker(mysqls[1])
-	_, err = mysql1Docker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
-
-	postgres := supportdocker.Postgres()
-	postgresDocker := NewPostgresDocker(postgres)
-	postgresQuery, err := postgresDocker.New()
-	if err != nil {
-		log.Fatalf("Init postgres error: %s", err)
-	}
-
-	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
-	sqliteQuery, err := sqliteDocker.New()
-	if err != nil {
-		log.Fatalf("Init sqlite error: %s", err)
-	}
-
-	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver())
-	sqlserverQuery, err := sqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Init sqlserver error: %s", err)
-	}
-
-	suite.Run(t, &QueryTestSuite{
-		queries: map[contractsorm.Driver]contractsorm.Query{
-			contractsorm.DriverMysql:     mysqlQuery,
-			contractsorm.DriverPostgres:  postgresQuery,
-			contractsorm.DriverSqlite:    sqliteQuery,
-			contractsorm.DriverSqlserver: sqlserverQuery,
-		},
-		mysqlDocker:     mysqlDocker,
-		mysql1:          mysqls[1],
-		postgres:        postgres,
-		postgresDocker:  postgresDocker,
-		sqliteDocker:    sqliteDocker,
-		sqlserverDocker: sqlserverDocker,
-	})
+	s.mysqlQuery = mysqlQuery
+	s.mysql1Docker = mysqlDockers[1]
+	s.postgresDocker = postgresDocker
+	s.postgresQuery = postgresQuery
+	s.sqliteQuery = sqliteQuery
+	s.sqlserverQuery = sqlserverQuery
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -2658,7 +2650,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return people
 			}(),
 			setup: func() {
-				mockDummyConnection(s.mysqlDocker.MockConfig, s.mysql1.Config())
+				mockDummyConnection(s.mysqlQuery.MockConfig(), s.mysql1Docker.Config())
 			},
 			expectConnection: "dummy",
 		},
@@ -2669,7 +2661,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup: func() {
-				mockPostgresConnection(s.mysqlDocker.MockConfig, s.postgres.Config())
+				mockPostgresConnection(s.mysqlQuery.MockConfig(), s.postgresDocker.Config())
 			},
 			expectConnection: "postgres",
 		},
@@ -3460,13 +3452,13 @@ func (s *QueryTestSuite) TestWithNesting() {
 func (s *QueryTestSuite) mockDummyConnection(driver contractsorm.Driver) {
 	switch driver {
 	case contractsorm.DriverMysql:
-		mockDummyConnection(s.mysqlDocker.MockConfig, s.mysql1.Config())
+		mockDummyConnection(s.mysqlQuery.MockConfig(), s.mysql1Docker.Config())
 	case contractsorm.DriverPostgres:
-		mockDummyConnection(s.postgresDocker.MockConfig, s.mysql1.Config())
+		mockDummyConnection(s.postgresQuery.MockConfig(), s.mysql1Docker.Config())
 	case contractsorm.DriverSqlite:
-		mockDummyConnection(s.sqliteDocker.MockConfig, s.mysql1.Config())
+		mockDummyConnection(s.sqliteQuery.MockConfig(), s.mysql1Docker.Config())
 	case contractsorm.DriverSqlserver:
-		mockDummyConnection(s.sqlserverDocker.MockConfig, s.mysql1.Config())
+		mockDummyConnection(s.sqlserverQuery.MockConfig(), s.mysql1Docker.Config())
 	}
 }
 
@@ -3475,19 +3467,17 @@ func TestCustomConnection(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysql := supportdocker.Mysql()
-	mysqlDocker := NewMysqlDocker(mysql)
-	query, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
+	mysqlDocker := supportdocker.Mysql()
+	mysqlQuery, err := NewTestQuery(mysqlDocker)
+	require.NoError(t, err)
 
-	postgres := supportdocker.Postgres()
-	postgresDocker := NewPostgresDocker(postgres)
-	_, err = postgresDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
+	query := mysqlQuery.Query()
+	require.NoError(t, mysqlQuery.CreateTable(TestTableReviews, TestTableProducts))
+
+	postgresDocker := supportdocker.Postgres()
+	postgresQuery, err := NewTestQuery(postgresDocker)
+	require.NoError(t, err)
+	require.NoError(t, postgresQuery.CreateTable(TestTableReviews, TestTableProducts))
 
 	review := Review{Body: "create_review"}
 	assert.Nil(t, query.Create(&review))
@@ -3497,7 +3487,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockPostgresConnection(mysqlDocker.MockConfig, postgres.Config())
+	mockPostgresConnection(mysqlQuery.MockConfig(), postgresDocker.Config())
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3511,7 +3501,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
 	assert.True(t, product2.ID == 0)
 
-	mockDummyConnection(mysqlDocker.MockConfig, mysql.Config())
+	mockDummyConnection(mysqlQuery.MockConfig(), mysqlDocker.Config())
 
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
@@ -3651,101 +3641,84 @@ func TestReadWriteSeparate(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqls := supportdocker.Mysqls(2)
-	readMysqlDocker := NewMysqlDocker(mysqls[0])
-	readMysqlQuery, err := readMysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get read mysql error: %s", err)
-	}
+	mysqlDockers := supportdocker.Mysqls(2)
+	readMysqlQuery, err := NewTestQuery(mysqlDockers[0])
+	require.NoError(t, err)
+	require.NoError(t, readMysqlQuery.CreateTable(TestTableUsers))
 
-	writeMysqlDocker := NewMysqlDocker(mysqls[1])
-	writeMysqlQuery, err := writeMysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Get write mysql error: %s", err)
-	}
+	writeMysqlQuery, err := NewTestQuery(mysqlDockers[1])
+	require.NoError(t, err)
+	require.NoError(t, writeMysqlQuery.CreateTable(TestTableUsers))
 
-	writeMysqlDocker.MockReadWrite(readMysqlDocker.Port, writeMysqlDocker.Port)
-	mysqlQuery, err := writeMysqlDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get mysql gorm error: %s", err)
-	}
+	mysqlQuery, err := writeMysqlQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadPort:  readMysqlQuery.Docker().Config().Port,
+		WritePort: writeMysqlQuery.Docker().Config().Port,
+	})
+	require.NoError(t, err)
 
-	postgreses := supportdocker.Postgreses(2)
-	readPostgresDocker := NewPostgresDocker(postgreses[0])
-	readPostgresQuery, err := readPostgresDocker.New()
-	if err != nil {
-		log.Fatalf("Get read postgres error: %s", err)
-	}
+	postgresDockers := supportdocker.Postgreses(2)
+	readPostgresQuery, err := NewTestQuery(postgresDockers[0])
+	require.NoError(t, err)
+	require.NoError(t, readPostgresQuery.CreateTable(TestTableUsers))
 
-	writePostgresDocker := NewPostgresDocker(postgreses[1])
-	writePostgresQuery, err := writePostgresDocker.New()
-	if err != nil {
-		log.Fatalf("Get write postgres error: %s", err)
-	}
+	writePostgresQuery, err := NewTestQuery(postgresDockers[1])
+	require.NoError(t, err)
+	require.NoError(t, writePostgresQuery.CreateTable(TestTableUsers))
 
-	writePostgresDocker.MockReadWrite(readPostgresDocker.Port, writePostgresDocker.Port)
-	postgresQuery, err := writePostgresDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get postgres gorm error: %s", err)
-	}
+	postgresQuery, err := writePostgresQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadPort:  readPostgresQuery.Docker().Config().Port,
+		WritePort: writePostgresQuery.Docker().Config().Port,
+	})
+	require.NoError(t, err)
 
-	sqlites := supportdocker.Sqlites(2)
-	readSqliteDocker := NewSqliteDocker(sqlites[0])
-	readSqliteQuery, err := readSqliteDocker.New()
-	if err != nil {
-		log.Fatalf("Get read sqlite error: %s", err)
-	}
+	sqliteDockers := supportdocker.Sqlites(2)
+	readSqliteQuery, err := NewTestQuery(sqliteDockers[0])
+	require.NoError(t, err)
+	require.NoError(t, readSqliteQuery.CreateTable(TestTableUsers))
 
-	writeSqliteDocker := NewSqliteDocker(sqlites[1])
-	writeSqliteQuery, err := writeSqliteDocker.New()
-	if err != nil {
-		log.Fatalf("Get write sqlite error: %s", err)
-	}
+	writeSqliteDocker, err := NewTestQuery(sqliteDockers[1])
+	require.NoError(t, err)
+	require.NoError(t, writeSqliteDocker.CreateTable(TestTableUsers))
 
-	writeSqliteDocker.MockReadWrite(readSqliteDocker.name)
-	sqliteDB, err := writeSqliteDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get sqlite gorm error: %s", err)
-	}
+	sqliteQuery, err := writeSqliteDocker.QueryOfReadWrite(TestReadWriteConfig{
+		ReadDatabase: readSqliteQuery.Docker().Config().Database,
+	})
+	require.NoError(t, err)
 
-	sqlservers := supportdocker.Sqlservers(2)
-	readSqlserverDocker := NewSqlserverDocker(sqlservers[0])
-	readSqlserverQuery, err := readSqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Get read sqlserver error: %s", err)
-	}
+	sqlserverDockers := supportdocker.Sqlservers(2)
+	readSqlserverQuery, err := NewTestQuery(sqlserverDockers[0])
+	require.NoError(t, err)
+	require.NoError(t, readSqlserverQuery.CreateTable(TestTableUsers))
 
-	writeSqlserverDocker := NewSqlserverDocker(sqlservers[1])
-	writeSqlserverQuery, err := writeSqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Get write sqlserver error: %s", err)
-	}
-	writeSqlserverDocker.MockReadWrite(readSqlserverDocker.Port, writeSqlserverDocker.Port)
-	sqlserverDB, err := writeSqlserverDocker.Query(false)
-	if err != nil {
-		log.Fatalf("Get sqlserver gorm error: %s", err)
-	}
+	writeSqlserverQuery, err := NewTestQuery(sqlserverDockers[1])
+	require.NoError(t, err)
+	require.NoError(t, writeSqlserverQuery.CreateTable(TestTableUsers))
+
+	sqlserverDB, err := writeSqlserverQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadPort:  readSqlserverQuery.Docker().Config().Port,
+		WritePort: writeSqlserverQuery.Docker().Config().Port,
+	})
 
 	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
 		contractsorm.DriverMysql: {
 			"mix":   mysqlQuery,
-			"read":  readMysqlQuery,
-			"write": writeMysqlQuery,
+			"read":  readMysqlQuery.Query(),
+			"write": writeMysqlQuery.Query(),
 		},
 		contractsorm.DriverPostgres: {
 			"mix":   postgresQuery,
-			"read":  readPostgresQuery,
-			"write": writePostgresQuery,
+			"read":  readPostgresQuery.Query(),
+			"write": writePostgresQuery.Query(),
 		},
 		contractsorm.DriverSqlite: {
-			"mix":   sqliteDB,
-			"read":  readSqliteQuery,
-			"write": writeSqliteQuery,
+			"mix":   sqliteQuery,
+			"read":  readSqliteQuery.Query(),
+			"write": writeSqliteDocker.Query(),
 		},
 		contractsorm.DriverSqlserver: {
 			"mix":   sqlserverDB,
-			"read":  readSqlserverQuery,
-			"write": writeSqlserverQuery,
+			"read":  readSqlserverQuery.Query(),
+			"write": writeSqlserverQuery.Query(),
 		},
 	}
 
@@ -3775,35 +3748,27 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker(supportdocker.Mysql())
-	mysqlQuery, err := mysqlDocker.NewWithPrefixAndSingular()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
+	mysqlQuery, err := NewTestQuery(supportdocker.Mysql(), true)
+	require.NoError(t, err)
+	require.NoError(t, mysqlQuery.CreateTable(TestTableGoravelUser))
 
-	postgresDocker := NewPostgresDocker(supportdocker.Postgres())
-	postgresQuery, err := postgresDocker.NewWithPrefixAndSingular()
-	if err != nil {
-		log.Fatalf("Init postgres error: %s", err)
-	}
+	postgresQuery, err := NewTestQuery(supportdocker.Postgres(), true)
+	require.NoError(t, err)
+	require.NoError(t, postgresQuery.CreateTable(TestTableGoravelUser))
 
-	sqliteDocker := NewSqliteDocker(supportdocker.Sqlite())
-	sqliteDB, err := sqliteDocker.NewWithPrefixAndSingular()
-	if err != nil {
-		log.Fatalf("Init sqlite error: %s", err)
-	}
+	sqliteQuery, err := NewTestQuery(supportdocker.Sqlite(), true)
+	require.NoError(t, err)
+	require.NoError(t, sqliteQuery.CreateTable(TestTableGoravelUser))
 
-	sqlserverDocker := NewSqlserverDocker(supportdocker.Sqlserver())
-	sqlserverDB, err := sqlserverDocker.NewWithPrefixAndSingular()
-	if err != nil {
-		log.Fatalf("Init sqlserver error: %s", err)
-	}
+	sqlserverQuery, err := NewTestQuery(supportdocker.Sqlserver())
+	require.NoError(t, err)
+	require.NoError(t, sqlserverQuery.CreateTable(TestTableGoravelUser))
 
 	dbs := map[contractsorm.Driver]contractsorm.Query{
-		contractsorm.DriverMysql:     mysqlQuery,
-		contractsorm.DriverPostgres:  postgresQuery,
-		contractsorm.DriverSqlite:    sqliteDB,
-		contractsorm.DriverSqlserver: sqlserverDB,
+		contractsorm.DriverMysql:     mysqlQuery.Query(),
+		contractsorm.DriverPostgres:  postgresQuery.Query(),
+		contractsorm.DriverSqlite:    sqliteQuery.Query(),
+		contractsorm.DriverSqlserver: sqlserverQuery.Query(),
 	}
 
 	for drive, db := range dbs {

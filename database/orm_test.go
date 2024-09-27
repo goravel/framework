@@ -3,10 +3,8 @@ package database
 import (
 	"context"
 	"errors"
-	"log"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -37,11 +35,11 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm           *OrmImpl
-	mysqlQuery    contractsorm.Query
-	postgresQuery contractsorm.Query
-	sqliteQuery   contractsorm.Query
-	sqlserverDB   contractsorm.Query
+	orm            *OrmImpl
+	mysqlQuery     contractsorm.Query
+	postgresQuery  contractsorm.Query
+	sqliteQuery    contractsorm.Query
+	sqlserverQuery contractsorm.Query
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -49,38 +47,30 @@ func TestOrmSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql())
-	mysqlQuery, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql docker error: %v", err)
-	}
+	suite.Run(t, &OrmSuite{})
+}
 
-	postgresDocker := gorm.NewPostgresDocker(docker.Postgres())
-	postgresQuery, err := postgresDocker.New()
-	if err != nil {
-		log.Fatalf("Init postgres docker error: %v", err)
-	}
+func (s *OrmSuite) SetupSuite() {
+	mysqlQuery, err := gorm.NewTestQuery(docker.Mysql())
+	s.Require().NoError(err)
+	s.Require().NoError(mysqlQuery.CreateTable(gorm.TestTableUsers))
 
-	sqliteDocker := gorm.NewSqliteDocker(docker.Sqlite())
-	sqliteQuery, err := sqliteDocker.New()
-	if err != nil {
-		log.Fatalf("Get sqlite error: %s", err)
-	}
+	postgresQuery, err := gorm.NewTestQuery(docker.Postgres())
+	s.Require().NoError(err)
+	s.Require().NoError(postgresQuery.CreateTable(gorm.TestTableUsers))
 
-	sqlserverDocker := gorm.NewSqlserverDocker(docker.Sqlserver())
-	sqlserverQuery, err := sqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Init sqlserver docker error: %v", err)
-	}
+	sqliteQuery, err := gorm.NewTestQuery(docker.Sqlite())
+	s.Require().NoError(err)
+	s.Require().NoError(sqliteQuery.CreateTable(gorm.TestTableUsers))
 
-	suite.Run(t, &OrmSuite{
-		mysqlQuery:    mysqlQuery,
-		postgresQuery: postgresQuery,
-		sqliteQuery:   sqliteQuery,
-		sqlserverDB:   sqlserverQuery,
-	})
+	sqlserverQuery, err := gorm.NewTestQuery(docker.Sqlserver())
+	s.Require().NoError(err)
+	s.Require().NoError(sqlserverQuery.CreateTable(gorm.TestTableUsers))
 
-	assert.Nil(t, file.Remove("goravel"))
+	s.mysqlQuery = mysqlQuery.Query()
+	s.postgresQuery = postgresQuery.Query()
+	s.sqliteQuery = sqliteQuery.Query()
+	s.sqlserverQuery = sqlserverQuery.Query()
 }
 
 func (s *OrmSuite) SetupTest() {
@@ -92,9 +82,13 @@ func (s *OrmSuite) SetupTest() {
 			contractsorm.DriverMysql.String():     s.mysqlQuery,
 			contractsorm.DriverPostgres.String():  s.postgresQuery,
 			contractsorm.DriverSqlite.String():    s.sqliteQuery,
-			contractsorm.DriverSqlserver.String(): s.sqlserverDB,
+			contractsorm.DriverSqlserver.String(): s.sqlserverQuery,
 		},
 	}
+}
+
+func (s *OrmSuite) TearDownSuite() {
+	s.Nil(file.Remove("goravel"))
 }
 
 func (s *OrmSuite) TestConnection() {

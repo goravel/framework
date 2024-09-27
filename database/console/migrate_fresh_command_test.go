@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
@@ -35,10 +36,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 			name: "sqlite",
 			setup: func() {
 				var err error
-				docker := gorm.NewSqliteDocker(docker.Sqlite())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
+				sqliteQuery, err := gorm.NewTestQuery(docker.Sqlite())
+				require.NoError(t, err)
+
+				query = sqliteQuery.Query()
+				mockConfig = sqliteQuery.MockConfig()
 				createSqliteMigrations()
 			},
 		},
@@ -46,10 +48,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 			name: "mysql",
 			setup: func() {
 				var err error
-				docker := gorm.NewMysqlDocker(docker.Mysql())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
+				mysqlQuery, err := gorm.NewTestQuery(docker.Mysql())
+				require.Nil(t, err)
+
+				query = mysqlQuery.Query()
+				mockConfig = mysqlQuery.MockConfig()
 				createMysqlMigrations()
 			},
 		},
@@ -57,10 +60,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 			name: "postgres",
 			setup: func() {
 				var err error
-				docker := gorm.NewPostgresDocker(docker.Postgres())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
+				postgresQuery, err := gorm.NewTestQuery(docker.Postgres())
+				require.NoError(t, err)
+
+				query = postgresQuery.Query()
+				mockConfig = postgresQuery.MockConfig()
 				createPostgresMigrations()
 			},
 		},
@@ -68,10 +72,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 			name: "sqlserver",
 			setup: func() {
 				var err error
-				docker := gorm.NewSqlserverDocker(docker.Sqlserver())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
+				sqlserverQuery, err := gorm.NewTestQuery(docker.Sqlserver())
+				require.NoError(t, err)
+
+				query = sqlserverQuery.Query()
+				mockConfig = sqlserverQuery.MockConfig()
 				createSqlserverMigrations()
 			},
 		},

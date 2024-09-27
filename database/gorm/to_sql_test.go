@@ -1,7 +1,6 @@
 package gorm
 
 import (
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -21,15 +20,14 @@ func TestToSqlTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := NewMysqlDocker(docker.Mysql())
-	query, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
+	suite.Run(t, &ToSqlTestSuite{})
+}
 
-	suite.Run(t, &ToSqlTestSuite{
-		query: query,
-	})
+func (s *ToSqlTestSuite) SetupSuite() {
+	mysqlQuery, err := NewTestQuery(docker.Mysql())
+	s.Require().NoError(err)
+
+	s.query = mysqlQuery.Query()
 }
 
 func (s *ToSqlTestSuite) SetupTest() {}
