@@ -1,7 +1,6 @@
 package database
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -83,12 +82,8 @@ func TestFactoryTestSuite(t *testing.T) {
 }
 
 func (s *FactoryTestSuite) SetupSuite() {
-	mysqlQuery, err := gorm.NewTestQuery(docker.Mysql())
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
-
-	s.Require().NoError(mysqlQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers))
+	mysqlQuery := gorm.NewTestQuery(docker.Mysql())
+	mysqlQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers)
 
 	s.query = mysqlQuery.Query()
 }

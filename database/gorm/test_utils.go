@@ -9,6 +9,18 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	supportdocker "github.com/goravel/framework/support/docker"
+)
+
+// Define different test model, improve the testing speed.
+// The minimum model only initial one Sqlite and two Postgres,
+// and the normal model initial one Mysql, two Postgres, one Sqlite and one Sqlserver.
+const (
+	TestModelMinimum = iota
+	TestModelNormal
+
+	// Switch this value to control the test model.
+	TestModel = TestModelMinimum
 )
 
 type TestTable int
@@ -28,7 +40,7 @@ const (
 	TestTableGoravelUser
 )
 
-var testContext context.Context
+var testContext = context.Background()
 
 type TestReadWriteConfig struct {
 	ReadPort  int
@@ -39,9 +51,170 @@ type TestReadWriteConfig struct {
 }
 
 type testMockDriver interface {
-	Common() *mocksconfig.Config
-	ReadWrite(config TestReadWriteConfig) *mocksconfig.Config
-	WithPrefixAndSingular() *mocksconfig.Config
+	Common()
+	ReadWrite(config TestReadWriteConfig)
+	WithPrefixAndSingular()
+}
+
+type TestQueries struct {
+	mysqlDockers     []testing.DatabaseDriver
+	postgresDockers  []testing.DatabaseDriver
+	sqliteDockers    []testing.DatabaseDriver
+	sqlserverDockers []testing.DatabaseDriver
+}
+
+func NewTestQueries() *TestQueries {
+	if TestModel == TestModelMinimum {
+		return &TestQueries{
+			sqliteDockers:   supportdocker.Sqlites(2),
+			postgresDockers: supportdocker.Postgreses(2),
+		}
+	}
+
+	return &TestQueries{
+		mysqlDockers:     supportdocker.Mysqls(2),
+		postgresDockers:  supportdocker.Postgreses(2),
+		sqliteDockers:    supportdocker.Sqlites(2),
+		sqlserverDockers: supportdocker.Sqlservers(2),
+	}
+}
+
+func (r *TestQueries) Queries() map[orm.Driver]*TestQuery {
+	return r.queries(false)
+}
+
+func (r *TestQueries) QueriesOfReadWrite() map[orm.Driver]map[string]orm.Query {
+	readPostgresQuery := NewTestQuery(r.postgresDockers[0])
+	readPostgresQuery.CreateTable(TestTableUsers)
+
+	writePostgresQuery := NewTestQuery(r.postgresDockers[1])
+	writePostgresQuery.CreateTable(TestTableUsers)
+
+	postgresQuery, err := writePostgresQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadPort:  readPostgresQuery.Docker().Config().Port,
+		WritePort: writePostgresQuery.Docker().Config().Port,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	readSqliteQuery := NewTestQuery(r.sqliteDockers[0])
+	readSqliteQuery.CreateTable(TestTableUsers)
+
+	writeSqliteQuery := NewTestQuery(r.sqliteDockers[1])
+	writeSqliteQuery.CreateTable(TestTableUsers)
+
+	sqliteQuery, err := writeSqliteQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadDatabase: readSqliteQuery.Docker().Config().Database,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	if TestModel == TestModelMinimum {
+		return map[orm.Driver]map[string]orm.Query{
+			orm.DriverPostgres: {
+				"mix":   postgresQuery,
+				"read":  readPostgresQuery.Query(),
+				"write": writePostgresQuery.Query(),
+			},
+			orm.DriverSqlite: {
+				"mix":   sqliteQuery,
+				"read":  readSqliteQuery.Query(),
+				"write": writeSqliteQuery.Query(),
+			},
+		}
+	}
+
+	readMysqlQuery := NewTestQuery(r.mysqlDockers[0])
+	readMysqlQuery.CreateTable(TestTableUsers)
+
+	writeMysqlQuery := NewTestQuery(r.mysqlDockers[1])
+	writeMysqlQuery.CreateTable(TestTableUsers)
+
+	mysqlQuery, err := writeMysqlQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadPort:  readMysqlQuery.Docker().Config().Port,
+		WritePort: writeMysqlQuery.Docker().Config().Port,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	readSqlserverQuery := NewTestQuery(r.sqlserverDockers[0])
+	readSqlserverQuery.CreateTable(TestTableUsers)
+
+	writeSqlserverQuery := NewTestQuery(r.sqlserverDockers[1])
+	writeSqlserverQuery.CreateTable(TestTableUsers)
+
+	sqlserverQuery, err := writeSqlserverQuery.QueryOfReadWrite(TestReadWriteConfig{
+		ReadPort:  readSqlserverQuery.Docker().Config().Port,
+		WritePort: writeSqlserverQuery.Docker().Config().Port,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return map[orm.Driver]map[string]orm.Query{
+		orm.DriverMysql: {
+			"mix":   mysqlQuery,
+			"read":  readMysqlQuery.Query(),
+			"write": writeMysqlQuery.Query(),
+		},
+		orm.DriverPostgres: {
+			"mix":   postgresQuery,
+			"read":  readPostgresQuery.Query(),
+			"write": writePostgresQuery.Query(),
+		},
+		orm.DriverSqlite: {
+			"mix":   sqliteQuery,
+			"read":  readSqliteQuery.Query(),
+			"write": writeSqliteQuery.Query(),
+		},
+		orm.DriverSqlserver: {
+			"mix":   sqlserverQuery,
+			"read":  readSqlserverQuery.Query(),
+			"write": writeSqlserverQuery.Query(),
+		},
+	}
+}
+
+func (r *TestQueries) QueriesWithPrefixAndSingular() map[orm.Driver]*TestQuery {
+	return r.queries(true)
+}
+
+func (r *TestQueries) QueryOfAdditional() *TestQuery {
+	postgresQuery := NewTestQuery(r.postgresDockers[1])
+	postgresQuery.CreateTable()
+
+	return postgresQuery
+}
+
+func (r *TestQueries) queries(withPrefixAndSingular bool) map[orm.Driver]*TestQuery {
+	postgresQuery := NewTestQuery(r.postgresDockers[0], withPrefixAndSingular)
+	postgresQuery.CreateTable()
+
+	sqliteQuery := NewTestQuery(r.sqliteDockers[0], withPrefixAndSingular)
+	sqliteQuery.CreateTable()
+
+	if TestModel == TestModelMinimum {
+		return map[orm.Driver]*TestQuery{
+			orm.DriverPostgres: postgresQuery,
+			orm.DriverSqlite:   sqliteQuery,
+		}
+	}
+
+	mysqlQuery := NewTestQuery(r.mysqlDockers[0], withPrefixAndSingular)
+	mysqlQuery.CreateTable()
+
+	sqlserverQuery := NewTestQuery(r.sqlserverDockers[0], withPrefixAndSingular)
+	sqlserverQuery.CreateTable()
+
+	return map[orm.Driver]*TestQuery{
+		orm.DriverMysql:     mysqlQuery,
+		orm.DriverPostgres:  postgresQuery,
+		orm.DriverSqlite:    sqliteQuery,
+		orm.DriverSqlserver: sqlserverQuery,
+	}
 }
 
 type TestQuery struct {
@@ -51,61 +224,45 @@ type TestQuery struct {
 	query      orm.Query
 }
 
-func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) (*TestQuery, error) {
-	config := docker.Config()
-
-	var mockDriver testMockDriver
-	switch docker.Driver() {
-	case orm.DriverMysql:
-		mockDriver = NewMockMysql(config.Database, config.Username, config.Password, config.Port)
-	case orm.DriverPostgres:
-		mockDriver = NewMockPostgres(config.Database, config.Username, config.Password, config.Port)
-	case orm.DriverSqlite:
-		mockDriver = NewMockSqlite(config.Database)
-	case orm.DriverSqlserver:
-		mockDriver = NewMockSqlserver(config.Database, config.Username, config.Password, config.Port)
-	default:
-		return nil, fmt.Errorf("unsupported driver %s", docker.Driver())
-	}
+func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) *TestQuery {
+	mockConfig := &mocksconfig.Config{}
+	mockDriver := GetMockDriver(docker, mockConfig, docker.Driver().String())
 
 	testQuery := &TestQuery{
 		docker:     docker,
+		mockConfig: mockConfig,
 		mockDriver: mockDriver,
 	}
 
 	var (
-		mockConfig *mocksconfig.Config
-		query      *QueryImpl
-		err        error
+		query *QueryImpl
+		err   error
 	)
 	if len(withPrefixAndSingular) > 0 && withPrefixAndSingular[0] {
-		mockConfig = mockDriver.WithPrefixAndSingular()
+		mockDriver.WithPrefixAndSingular()
 		query, err = InitializeQuery(testContext, mockConfig, docker.Driver().String())
 	} else {
-		mockConfig = mockDriver.Common()
+		mockDriver.Common()
 		query, err = InitializeQuery(testContext, mockConfig, docker.Driver().String())
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("connect to %s failed", docker.Driver().String())
+		panic(fmt.Sprintf("connect to %s failed", docker.Driver().String()))
 	}
 
-	testQuery.mockConfig = mockConfig
 	testQuery.query = query
 
-	return testQuery, nil
+	return testQuery
 }
 
-func (r *TestQuery) CreateTable(testTables ...TestTable) error {
+func (r *TestQuery) CreateTable(testTables ...TestTable) {
 	for table, sql := range newTestTables(r.docker.Driver()).All() {
 		if len(testTables) == 0 || slices.Contains(testTables, table) {
 			if _, err := r.query.Exec(sql()); err != nil {
-				return err
+				panic(fmt.Sprintf("create table %v failed: %v", table, err))
 			}
 		}
 	}
-
-	return nil
 }
 
 func (r *TestQuery) Docker() testing.DatabaseDriver {
@@ -121,303 +278,294 @@ func (r *TestQuery) Query() orm.Query {
 }
 
 func (r *TestQuery) QueryOfReadWrite(config TestReadWriteConfig) (orm.Query, error) {
-	r.mockConfig = r.mockDriver.ReadWrite(config)
+	mockConfig := &mocksconfig.Config{}
+	mockDriver := GetMockDriver(r.Docker(), mockConfig, r.Docker().Driver().String())
+	mockDriver.ReadWrite(config)
 
-	return InitializeQuery(testContext, r.mockConfig, r.docker.Driver().String())
+	return InitializeQuery(testContext, mockConfig, r.docker.Driver().String())
+}
+
+func GetMockDriver(docker testing.DatabaseDriver, mockConfig *mocksconfig.Config, connection string) testMockDriver {
+	config := docker.Config()
+
+	switch docker.Driver() {
+	case orm.DriverMysql:
+		return NewMockMysql(mockConfig, connection, config.Database, config.Username, config.Password, config.Port)
+	case orm.DriverPostgres:
+		return NewMockPostgres(mockConfig, connection, config.Database, config.Username, config.Password, config.Port)
+	case orm.DriverSqlite:
+		return NewMockSqlite(mockConfig, connection, config.Database)
+	case orm.DriverSqlserver:
+		return NewMockSqlserver(mockConfig, connection, config.Database, config.Username, config.Password, config.Port)
+	default:
+		panic("unsupported driver")
+	}
 }
 
 type MockMysql struct {
 	driver     orm.Driver
 	mockConfig *mocksconfig.Config
 
-	database string
-	password string
-	user     string
-	port     int
+	connection string
+	database   string
+	password   string
+	user       string
+	port       int
 }
 
-func NewMockMysql(database, username, password string, port int) *MockMysql {
+func NewMockMysql(mockConfig *mocksconfig.Config, connection, database, username, password string, port int) *MockMysql {
 	return &MockMysql{
-		driver:   orm.DriverMysql,
-		database: database,
-		user:     username,
-		password: password,
-		port:     port,
+		driver:     orm.DriverMysql,
+		mockConfig: mockConfig,
+		connection: connection,
+		database:   database,
+		user:       username,
+		password:   password,
+		port:       port,
 	}
 }
 
-func (r *MockMysql) Common() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
+func (r *MockMysql) Common() {
 	r.mockConfig.On("GetString", "database.default").Return("mysql")
 	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
-	r.mockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockMysql) ReadWrite(config TestReadWriteConfig) *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("Get", "database.connections.mysql.read").Return([]database.Config{
+func (r *MockMysql) ReadWrite(config TestReadWriteConfig) {
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]database.Config{
 		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", "database.connections.mysql.write").Return([]database.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]database.Config{
 		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", "database.connections.mysql.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.mysql.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockMysql) WithPrefixAndSingular() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("GetString", "database.connections.mysql.prefix").Return("goravel_")
-	r.mockConfig.On("GetBool", "database.connections.mysql.singular").Return(true)
+func (r *MockMysql) WithPrefixAndSingular() {
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
 func (r *MockMysql) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", "database.connections.mysql.driver").Return(r.driver.String())
-	r.mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4")
-	r.mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local")
-	r.mockConfig.On("GetString", "database.connections.mysql.database").Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("Local")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 
 	mockPool(r.mockConfig)
 }
 
 func (r *MockMysql) single() {
-	r.mockConfig.On("Get", "database.connections.mysql.read").Return(nil)
-	r.mockConfig.On("Get", "database.connections.mysql.write").Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", "database.connections.mysql.host").Return("127.0.0.1")
-	r.mockConfig.On("GetString", "database.connections.mysql.username").Return(r.user)
-	r.mockConfig.On("GetString", "database.connections.mysql.password").Return(r.password)
-	r.mockConfig.On("GetInt", "database.connections.mysql.port").Return(r.port)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockPostgres struct {
 	driver     orm.Driver
 	mockConfig *mocksconfig.Config
 
-	database string
-	password string
-	user     string
-	port     int
+	connection string
+	database   string
+	password   string
+	user       string
+	port       int
 }
 
-func NewMockPostgres(database, username, password string, port int) *MockPostgres {
+func NewMockPostgres(mockConfig *mocksconfig.Config, connection, database, username, password string, port int) *MockPostgres {
 	return &MockPostgres{
-		driver: orm.DriverPostgres,
-
-		database: database,
-		user:     username,
-		password: password,
-		port:     port,
+		driver:     orm.DriverPostgres,
+		mockConfig: mockConfig,
+		connection: connection,
+		database:   database,
+		user:       username,
+		password:   password,
+		port:       port,
 	}
 }
 
-func (r *MockPostgres) Common() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
+func (r *MockPostgres) Common() {
 	r.mockConfig.On("GetString", "database.default").Return("postgres")
 	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
-	r.mockConfig.On("GetString", "database.connections.postgres.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.postgres.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockPostgres) ReadWrite(config TestReadWriteConfig) *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("Get", "database.connections.postgres.read").Return([]database.Config{
+func (r *MockPostgres) ReadWrite(config TestReadWriteConfig) {
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]database.Config{
 		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", "database.connections.postgres.write").Return([]database.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]database.Config{
 		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", "database.connections.postgres.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.postgres.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockPostgres) WithPrefixAndSingular() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("GetString", "database.connections.postgres.prefix").Return("goravel_")
-	r.mockConfig.On("GetBool", "database.connections.postgres.singular").Return(true)
+func (r *MockPostgres) WithPrefixAndSingular() {
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
 func (r *MockPostgres) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", "database.connections.postgres.driver").Return(r.driver.String())
-	r.mockConfig.On("GetString", "database.connections.postgres.sslmode").Return("disable")
-	r.mockConfig.On("GetString", "database.connections.postgres.timezone").Return("UTC")
-	r.mockConfig.On("GetString", "database.connections.postgres.database").Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 
 	mockPool(r.mockConfig)
 }
 
 func (r *MockPostgres) single() {
-	r.mockConfig.On("Get", "database.connections.postgres.read").Return(nil)
-	r.mockConfig.On("Get", "database.connections.postgres.write").Return(nil)
-	r.mockConfig.On("GetString", "database.connections.postgres.host").Return("127.0.0.1")
-	r.mockConfig.On("GetString", "database.connections.postgres.username").Return(r.user)
-	r.mockConfig.On("GetString", "database.connections.postgres.password").Return(r.password)
-	r.mockConfig.On("GetInt", "database.connections.postgres.port").Return(r.port)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockSqlite struct {
 	driver     orm.Driver
 	mockConfig *mocksconfig.Config
 
-	database string
+	connection string
+	database   string
 }
 
-func NewMockSqlite(database string) *MockSqlite {
+func NewMockSqlite(mockConfig *mocksconfig.Config, connection, database string) *MockSqlite {
 	return &MockSqlite{
-		driver: orm.DriverSqlite,
-
-		database: database,
+		driver:     orm.DriverSqlite,
+		mockConfig: mockConfig,
+		connection: connection,
+		database:   database,
 	}
 }
 
-func (r *MockSqlite) Common() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
+func (r *MockSqlite) Common() {
 	r.mockConfig.On("GetString", "database.default").Return("sqlite")
 	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
-	r.mockConfig.On("GetString", "database.connections.sqlite.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.sqlite.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockSqlite) ReadWrite(config TestReadWriteConfig) *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("Get", "database.connections.sqlite.read").Return([]database.Config{
+func (r *MockSqlite) ReadWrite(config TestReadWriteConfig) {
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]database.Config{
 		{Database: config.ReadDatabase},
 	})
-	r.mockConfig.On("Get", "database.connections.sqlite.write").Return([]database.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]database.Config{
 		{Database: r.database},
 	})
-	r.mockConfig.On("GetString", "database.connections.sqlite.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.sqlite.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockSqlite) WithPrefixAndSingular() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("GetString", "database.connections.sqlite.prefix").Return("goravel_")
-	r.mockConfig.On("GetBool", "database.connections.sqlite.singular").Return(true)
+func (r *MockSqlite) WithPrefixAndSingular() {
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
 func (r *MockSqlite) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", "database.connections.sqlite.driver").Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlite) single() {
-	r.mockConfig.On("Get", "database.connections.sqlite.read").Return(nil)
-	r.mockConfig.On("Get", "database.connections.sqlite.write").Return(nil)
-	r.mockConfig.On("GetString", "database.connections.sqlite.database").Return(r.database)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 }
 
 type MockSqlserver struct {
 	driver     orm.Driver
 	mockConfig *mocksconfig.Config
 
-	database string
-	password string
-	user     string
-	port     int
+	connection string
+	database   string
+	password   string
+	user       string
+	port       int
 }
 
-func NewMockSqlserver(database, username, password string, port int) *MockSqlserver {
+func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, username, password string, port int) *MockSqlserver {
 	return &MockSqlserver{
-		driver: orm.DriverSqlserver,
-
-		database: database,
-		user:     username,
-		password: password,
-		port:     port,
+		driver:     orm.DriverSqlserver,
+		mockConfig: mockConfig,
+		connection: connection,
+		database:   database,
+		user:       username,
+		password:   password,
+		port:       port,
 	}
 }
 
-func (r *MockSqlserver) Common() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
+func (r *MockSqlserver) Common() {
 	r.mockConfig.On("GetString", "database.default").Return("sqlserver")
 	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
-	r.mockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockSqlserver) ReadWrite(config TestReadWriteConfig) *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("Get", "database.connections.sqlserver.read").Return([]database.Config{
+func (r *MockSqlserver) ReadWrite(config TestReadWriteConfig) {
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]database.Config{
 		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", "database.connections.sqlserver.write").Return([]database.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]database.Config{
 		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("")
-	r.mockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
-
-	return r.mockConfig
 }
 
-func (r *MockSqlserver) WithPrefixAndSingular() *mocksconfig.Config {
-	r.mockConfig = &mocksconfig.Config{}
-	r.mockConfig.On("GetString", "database.connections.sqlserver.prefix").Return("goravel_")
-	r.mockConfig.On("GetBool", "database.connections.sqlserver.singular").Return(true)
+func (r *MockSqlserver) WithPrefixAndSingular() {
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
-
-	return r.mockConfig
 }
 
 func (r *MockSqlserver) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", "database.connections.sqlserver.driver").Return(r.driver.String())
-	r.mockConfig.On("GetString", "database.connections.sqlserver.database").Return(r.database)
-	r.mockConfig.On("GetString", "database.connections.sqlserver.charset").Return("utf8mb4")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlserver) single() {
-	r.mockConfig.On("Get", "database.connections.sqlserver.read").Return(nil)
-	r.mockConfig.On("Get", "database.connections.sqlserver.write").Return(nil)
-	r.mockConfig.On("GetString", "database.connections.sqlserver.host").Return("127.0.0.1")
-	r.mockConfig.On("GetString", "database.connections.sqlserver.username").Return(r.user)
-	r.mockConfig.On("GetString", "database.connections.sqlserver.password").Return(r.password)
-	r.mockConfig.On("GetInt", "database.connections.sqlserver.port").Return(r.port)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type testTables struct {

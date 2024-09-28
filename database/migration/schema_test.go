@@ -37,9 +37,7 @@ func TestSchemaSuite(t *testing.T) {
 
 func (s *SchemaSuite) SetupSuite() {
 	postgresDocker := supportdocker.Postgres()
-	postgresQuery, err := gorm.NewTestQuery(postgresDocker)
-	s.Require().NoError(err)
-
+	postgresQuery := gorm.NewTestQuery(postgresDocker)
 	s.driverToTestDB = map[contractsorm.Driver]TestDB{
 		contractsorm.DriverPostgres: {
 			config: postgresDocker.Config(),

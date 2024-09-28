@@ -9,12 +9,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	contractstesting "github.com/goravel/framework/contracts/testing"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
@@ -25,13 +23,8 @@ import (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries        map[contractsorm.Driver]contractsorm.Query
-	mysqlQuery     *TestQuery
-	mysql1Docker   contractstesting.DatabaseDriver
-	postgresDocker contractstesting.DatabaseDriver
-	postgresQuery  *TestQuery
-	sqliteQuery    *TestQuery
-	sqlserverQuery *TestQuery
+	queries         map[contractsorm.Driver]*TestQuery
+	additionalQuery *TestQuery
 }
 
 func TestQueryTestSuite(t *testing.T) {
@@ -43,44 +36,12 @@ func TestQueryTestSuite(t *testing.T) {
 }
 
 func (s *QueryTestSuite) SetupSuite() {
-	testContext = context.Background()
+	// Test the event context case
 	testContext = context.WithValue(testContext, testContextKey, "goravel")
 
-	mysqlDockers := supportdocker.Mysqls(2)
-
-	mysqlQuery, err := NewTestQuery(mysqlDockers[0])
-	s.Require().NoError(err)
-	s.Require().NoError(mysqlQuery.CreateTable())
-
-	mysql1Query, err := NewTestQuery(mysqlDockers[1])
-	s.Require().NoError(err)
-	s.Require().NoError(mysql1Query.CreateTable())
-
-	postgresDocker := supportdocker.Postgres()
-	postgresQuery, err := NewTestQuery(postgresDocker)
-	s.Require().NoError(err)
-	s.Require().NoError(postgresQuery.CreateTable())
-
-	sqliteQuery, err := NewTestQuery(supportdocker.Sqlite())
-	s.Require().NoError(err)
-	s.Require().NoError(sqliteQuery.CreateTable())
-
-	sqlserverQuery, err := NewTestQuery(supportdocker.Sqlserver())
-	s.Require().NoError(err)
-	s.Require().NoError(sqlserverQuery.CreateTable())
-
-	s.queries = map[contractsorm.Driver]contractsorm.Query{
-		contractsorm.DriverMysql:     mysqlQuery.Query(),
-		contractsorm.DriverPostgres:  postgresQuery.Query(),
-		contractsorm.DriverSqlite:    sqliteQuery.Query(),
-		contractsorm.DriverSqlserver: sqlserverQuery.Query(),
-	}
-	s.mysqlQuery = mysqlQuery
-	s.mysql1Docker = mysqlDockers[1]
-	s.postgresDocker = postgresDocker
-	s.postgresQuery = postgresQuery
-	s.sqliteQuery = sqliteQuery
-	s.sqlserverQuery = sqlserverQuery
+	testQueries := NewTestQueries()
+	s.queries = testQueries.Queries()
+	s.additionalQuery = testQueries.QueryOfAdditional()
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -102,16 +63,16 @@ func (s *QueryTestSuite) TestAssociation() {
 						age: 1,
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
 
 					var userAddress Address
-					s.Nil(query.Model(&user1).Association("Address").Find(&userAddress))
+					s.Nil(query.Query().Model(&user1).Association("Address").Find(&userAddress))
 					s.True(userAddress.ID > 0)
 					s.Equal("association_find_address", userAddress.Name)
 				},
@@ -126,16 +87,16 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID), driver)
+					s.Nil(query.Query().Find(&user1, user.ID), driver)
 					s.True(user1.ID > 0, driver)
-					s.Nil(query.Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}), driver)
+					s.Nil(query.Query().Model(&user1).Association("Address").Append(&Address{Name: "association_has_one_append_address1"}), driver)
 
-					s.Nil(query.Load(&user1, "Address"), driver)
+					s.Nil(query.Query().Load(&user1, "Address"), driver)
 					s.True(user1.Address.ID > 0, driver)
 					s.Equal("association_has_one_append_address1", user1.Address.Name, driver)
 				},
@@ -151,17 +112,17 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
+					s.Nil(query.Query().Model(&user1).Association("Books").Append(&Book{Name: "association_has_many_append_address3"}))
 
-					s.Nil(query.Load(&user1, "Books"))
+					s.Nil(query.Query().Load(&user1, "Books"))
 					s.Equal(3, len(user1.Books))
 					s.Equal("association_has_many_append_address3", user1.Books[2].Name)
 				},
@@ -176,16 +137,16 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
+					s.Nil(query.Query().Model(&user1).Association("Address").Replace(&Address{Name: "association_has_one_append_address1"}))
 
-					s.Nil(query.Load(&user1, "Address"))
+					s.Nil(query.Query().Load(&user1, "Address"))
 					s.True(user1.Address.ID > 0)
 					s.Equal("association_has_one_append_address1", user1.Address.Name)
 				},
@@ -201,17 +162,17 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
+					s.Nil(query.Query().Model(&user1).Association("Books").Replace(&Book{Name: "association_has_many_replace_address3"}))
 
-					s.Nil(query.Load(&user1, "Books"))
+					s.Nil(query.Query().Load(&user1, "Books"))
 					s.Equal(1, len(user1.Books))
 					s.Equal("association_has_many_replace_address3", user1.Books[0].Name)
 				},
@@ -226,29 +187,29 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
 					// No ID when Delete
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
+					s.Nil(query.Query().Model(&user1).Association("Address").Delete(&Address{Name: "association_delete_address"}))
 
-					s.Nil(query.Load(&user1, "Address"))
+					s.Nil(query.Query().Load(&user1, "Address"))
 					s.True(user1.Address.ID > 0)
 					s.Equal("association_delete_address", user1.Address.Name)
 
 					// Has ID when Delete
 					var user2 User
-					s.Nil(query.Find(&user2, user.ID))
+					s.Nil(query.Query().Find(&user2, user.ID))
 					s.True(user2.ID > 0)
 					var userAddress Address
 					userAddress.ID = user1.Address.ID
-					s.Nil(query.Model(&user2).Association("Address").Delete(&userAddress))
+					s.Nil(query.Query().Model(&user2).Association("Address").Delete(&userAddress))
 
-					s.Nil(query.Load(&user2, "Address"))
+					s.Nil(query.Query().Load(&user2, "Address"))
 					s.Nil(user2.Address)
 				},
 			},
@@ -262,17 +223,17 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
 					// No ID when Delete
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Nil(query.Model(&user1).Association("Address").Clear())
+					s.Nil(query.Query().Model(&user1).Association("Address").Clear())
 
-					s.Nil(query.Load(&user1, "Address"))
+					s.Nil(query.Query().Load(&user1, "Address"))
 					s.Nil(user1.Address)
 				},
 			},
@@ -287,15 +248,15 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
-					s.Equal(int64(2), query.Model(&user1).Association("Books").Count())
+					s.Equal(int64(2), query.Query().Model(&user1).Association("Books").Count())
 				},
 			},
 		}
@@ -318,12 +279,12 @@ func (s *QueryTestSuite) TestBelongsTo() {
 				},
 			}
 
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 
 			var userAddress Address
-			s.Nil(query.With("User").Where("name = ?", "belongs_to_address").First(&userAddress))
+			s.Nil(query.Query().With("User").Where("name = ?", "belongs_to_address").First(&userAddress))
 			s.True(userAddress.ID > 0)
 			s.True(userAddress.User.ID > 0)
 		})
@@ -334,26 +295,26 @@ func (s *QueryTestSuite) TestCount() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "count_user", Avatar: "count_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "count_user", Avatar: "count_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var count int64
-			s.Nil(query.Model(&User{}).Where("name = ?", "count_user").Count(&count))
+			s.Nil(query.Query().Model(&User{}).Where("name = ?", "count_user").Count(&count))
 			s.True(count > 0)
 
 			var count1 int64
-			s.Nil(query.Table("users").Where("name = ?", "count_user").Count(&count1))
+			s.Nil(query.Query().Table("users").Where("name = ?", "count_user").Count(&count1))
 			s.True(count1 > 0)
 		})
 	}
 }
 
 func (s *QueryTestSuite) TestCreate() {
-	for driver, query := range s.queries {
+	for _, query := range s.queries {
 		tests := []struct {
 			name  string
 			setup func()
@@ -362,7 +323,7 @@ func (s *QueryTestSuite) TestCreate() {
 				name: "success by struct",
 				setup: func() {
 					user := User{Name: "create_user"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 				},
 			},
@@ -373,7 +334,7 @@ func (s *QueryTestSuite) TestCreate() {
 						{Name: "batch_create_user_by_struct_1"},
 						{Name: "batch_create_user_by_struct_2"},
 					}
-					s.Nil(query.Create(&users))
+					s.Nil(query.Query().Create(&users))
 					s.True(users[0].ID > 0)
 					s.True(users[1].ID > 0)
 				},
@@ -381,7 +342,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success by map",
 				setup: func() {
-					s.Nil(query.Table("users").Create(map[string]any{
+					s.Nil(query.Query().Table("users").Create(map[string]any{
 						"name":       "create_by_map_name1",
 						"avatar":     "create_by_map_avatar1",
 						"created_at": carbon.Now(),
@@ -389,12 +350,12 @@ func (s *QueryTestSuite) TestCreate() {
 					}))
 
 					var user1 User
-					err := query.Where("name", "create_by_map_name1").
+					err := query.Query().Where("name", "create_by_map_name1").
 						Where("avatar", "create_by_map_avatar1").First(&user1)
 					s.NoError(err)
 					s.True(user1.ID > 0)
 
-					s.Nil(query.Model(User{}).Create(map[string]any{
+					s.Nil(query.Query().Model(User{}).Create(map[string]any{
 						"Name":      "create_by_map_name2",
 						"Avatar":    "create_by_map_avatar2",
 						"CreatedAt": carbon.Now(),
@@ -402,7 +363,7 @@ func (s *QueryTestSuite) TestCreate() {
 					}))
 
 					var user2 User
-					err = query.Where("name", "create_by_map_name2").
+					err = query.Query().Where("name", "create_by_map_name2").
 						Where("avatar", "create_by_map_avatar2").First(&user2)
 					s.NoError(err)
 					s.True(user2.ID > 0)
@@ -411,7 +372,7 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "batch create success by map",
 				setup: func() {
-					s.Nil(query.Table("users").Create([]map[string]any{
+					s.Nil(query.Query().Table("users").Create([]map[string]any{
 						{
 							"name":       "batch_create_by_map_name1",
 							"avatar":     "batch_create_by_map_avatar1",
@@ -427,12 +388,12 @@ func (s *QueryTestSuite) TestCreate() {
 					}))
 
 					var users1 []User
-					err := query.Where("name", "batch_create_by_map_name1").OrWhere("name", "batch_create_by_map_name2").Find(&users1)
+					err := query.Query().Where("name", "batch_create_by_map_name1").OrWhere("name", "batch_create_by_map_name2").Find(&users1)
 					s.NoError(err)
 					s.Len(users1, 2)
 
 					// The []map should be a pointer, otherwise gorm will throw an error
-					s.Nil(query.Model(User{}).Create(&[]map[string]any{
+					s.Nil(query.Query().Model(User{}).Create(&[]map[string]any{
 						{
 							"Name":      "batch_create_by_map_name3",
 							"Avatar":    "batch_create_by_map_avatar3",
@@ -448,7 +409,7 @@ func (s *QueryTestSuite) TestCreate() {
 					}))
 
 					var users2 []User
-					err = query.Where("name", "batch_create_by_map_name3").OrWhere("name", "batch_create_by_map_name4").Find(&users2)
+					err = query.Query().Where("name", "batch_create_by_map_name3").OrWhere("name", "batch_create_by_map_name4").Find(&users2)
 					s.NoError(err)
 					s.Len(users2, 2)
 				},
@@ -456,15 +417,30 @@ func (s *QueryTestSuite) TestCreate() {
 			{
 				name: "success when refresh connection",
 				setup: func() {
-					s.mockDummyConnection(driver)
+					mockCommonConnection(query.MockConfig(), s.additionalQuery, "dummy")
 
 					people := People{Body: "create_people"}
-					s.Nil(query.Create(&people))
+					s.Nil(query.Query().Create(&people))
 					s.True(people.ID > 0)
 
-					people1 := People{Body: "create_people1"}
-					s.Nil(query.Model(&People{}).Create(&people1))
+					var count int64
+					err := query.Query().Table("peoples").Where("body", "create_people").Count(&count)
+					s.NoError(err)
+					s.True(count == 0)
+
+					s.Nil(query.Query().Model(&People{}).Create(map[string]any{
+						"body":       "create_people1",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}))
+
+					var people1 People
+					s.Nil(query.Query().Where("body", "create_people1").First(&people1))
 					s.True(people1.ID > 0)
+
+					err = query.Query().Table("peoples").Where("body", "create_people1").Count(&count)
+					s.NoError(err)
+					s.True(count == 0)
 				},
 			},
 			{
@@ -474,7 +450,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID == 0)
 					s.True(user.Books[0].ID == 0)
@@ -488,7 +464,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 					s.True(user.Books[0].ID > 0)
@@ -502,7 +478,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 					s.True(user.Books[0].ID == 0)
@@ -516,7 +492,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Omit("Address").Create(&user))
+					s.Nil(query.Query().Omit("Address").Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID == 0)
 					s.True(user.Books[0].ID > 0)
@@ -530,7 +506,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Omit(orm.Associations).Create(&user))
+					s.Nil(query.Query().Omit(orm.Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID == 0)
 					s.True(user.Books[0].ID == 0)
@@ -544,7 +520,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Omit(orm.Associations).Select("Name").Create(&user), "cannot set Select and Omits at the same time")
+					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), "cannot set Select and Omits at the same time")
 				},
 			},
 			{
@@ -554,7 +530,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Select("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
+					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
 				},
 			},
 			{
@@ -564,7 +540,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Omit("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
+					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
 				},
 			},
 		}
@@ -582,21 +558,21 @@ func (s *QueryTestSuite) TestCursor() {
 			user := User{Name: "cursor_user", Avatar: "cursor_avatar", Address: &Address{Name: "cursor_address"}, Books: []*Book{
 				{Name: "cursor_book"},
 			}}
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "cursor_user", Avatar: "cursor_avatar2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
-			res, err := query.Delete(&user2)
+			res, err := query.Query().Delete(&user2)
 			s.Nil(err)
 			s.Equal(int64(1), res.RowsAffected)
 
-			users, err := query.Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
+			users, err := query.Query().Model(&User{}).Where("name = ?", "cursor_user").WithTrashed().With("Address").With("Books").Cursor()
 			s.Nil(err)
 			var size int
 			var addressNum int
@@ -629,21 +605,21 @@ func (s *QueryTestSuite) TestDBRaw() {
 		s.Run(driver.String(), func() {
 			user := User{Name: userName}
 
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 			switch driver {
 			case contractsorm.DriverSqlserver, contractsorm.DriverMysql:
-				res, err := query.Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver.String()))
+				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver.String()))
 				s.Nil(err)
 				s.Equal(int64(1), res.RowsAffected)
 			default:
-				res, err := query.Model(&user).Update("Name", databasedb.Raw("name || ?", driver.String()))
+				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver.String()))
 				s.Nil(err)
 				s.Equal(int64(1), res.RowsAffected)
 			}
 
 			var user1 User
-			s.Nil(query.Find(&user1, user.ID))
+			s.Nil(query.Query().Find(&user1, user.ID))
 			s.True(user1.ID > 0)
 			s.True(user1.Name == userName+driver.String())
 		})
@@ -651,7 +627,7 @@ func (s *QueryTestSuite) TestDBRaw() {
 }
 
 func (s *QueryTestSuite) TestDelete() {
-	for driver, query := range s.queries {
+	for _, query := range s.queries {
 		tests := []struct {
 			name  string
 			setup func()
@@ -660,15 +636,15 @@ func (s *QueryTestSuite) TestDelete() {
 				name: "success",
 				setup: func() {
 					user := User{Name: "delete_user", Avatar: "delete_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Delete(&user)
+					res, err := query.Query().Delete(&user)
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -676,15 +652,15 @@ func (s *QueryTestSuite) TestDelete() {
 				name: "success by table",
 				setup: func() {
 					user := User{Name: "delete_user_by_table", Avatar: "delete_avatar_by_table"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Table("users").Where("name", "delete_user_by_table").Delete()
+					res, err := query.Query().Table("users").Where("name", "delete_user_by_table").Delete()
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -692,15 +668,15 @@ func (s *QueryTestSuite) TestDelete() {
 				name: "success by model",
 				setup: func() {
 					user := User{Name: "delete_user_by_model", Avatar: "delete_avatar_by_model"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Model(&User{}).Where("name", "delete_user_by_model").Delete()
+					res, err := query.Query().Model(&User{}).Where("name", "delete_user_by_model").Delete()
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -708,30 +684,30 @@ func (s *QueryTestSuite) TestDelete() {
 				name: "success when refresh connection",
 				setup: func() {
 					user := User{Name: "delete_user", Avatar: "delete_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Delete(&user)
+					res, err := query.Query().Delete(&user)
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 
 					// refresh connection
-					s.mockDummyConnection(driver)
+					mockCommonConnection(query.MockConfig(), query, "dummy")
 
 					people := People{Body: "delete_people"}
-					s.Nil(query.Create(&people))
+					s.Nil(query.Query().Create(&people))
 					s.True(people.ID > 0)
 
-					res, err = query.Delete(&people)
+					res, err = query.Query().Delete(&people)
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 
 					var people1 People
-					s.Nil(query.Find(&people1, people.ID))
+					s.Nil(query.Query().Find(&people1, people.ID))
 					s.Equal(uint(0), people1.ID)
 				},
 			},
@@ -739,15 +715,15 @@ func (s *QueryTestSuite) TestDelete() {
 				name: "success by id",
 				setup: func() {
 					user := User{Name: "delete_user", Avatar: "delete_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Where("id", user.ID).Delete(&User{})
+					res, err := query.Query().Where("id", user.ID).Delete(&User{})
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -755,16 +731,16 @@ func (s *QueryTestSuite) TestDelete() {
 				name: "success by multiple",
 				setup: func() {
 					users := []User{{Name: "delete_user", Avatar: "delete_avatar"}, {Name: "delete_user1", Avatar: "delete_avatar1"}}
-					s.Nil(query.Create(&users))
+					s.Nil(query.Query().Create(&users))
 					s.True(users[0].ID > 0)
 					s.True(users[1].ID > 0)
 
-					res, err := query.WhereIn("id", []any{users[0].ID, users[1].ID}).Delete(&User{})
+					res, err := query.Query().WhereIn("id", []any{users[0].ID, users[1].ID}).Delete(&User{})
 					s.Equal(int64(2), res.RowsAffected)
 					s.Nil(err)
 
 					var count int64
-					s.Nil(query.Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count(&count))
+					s.Nil(query.Query().Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count(&count))
 					s.True(count == 0)
 				},
 			},
@@ -781,15 +757,15 @@ func (s *QueryTestSuite) TestDistinct() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "distinct_user", Avatar: "distinct_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "distinct_user", Avatar: "distinct_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.Distinct("name").Find(&users, []uint{user.ID, user1.ID}))
+			s.Nil(query.Query().Distinct("name").Find(&users, []uint{user.ID, user1.ID}))
 			s.Equal(1, len(users))
 		})
 	}
@@ -805,11 +781,11 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 				name: "trigger when create by struct",
 				setup: func() {
 					user := User{Name: "event_creating_name"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.Equal("event_creating_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_creating_name", user1.Name)
 					s.Equal("event_creating_avatar", user1.Avatar)
 				},
@@ -817,7 +793,7 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 			{
 				name: "trigger when create by map",
 				setup: func() {
-					s.Nil(query.Model(&User{}).Create(map[string]any{
+					s.Nil(query.Query().Model(&User{}).Create(map[string]any{
 						"name":       "event_creating_by_map_name",
 						"avatar":     "event_creating_by_map_avatar",
 						"created_at": carbon.Now(),
@@ -825,7 +801,7 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					}))
 
 					var user User
-					s.Nil(query.Where("name", "event_creating_by_map_name").Find(&user))
+					s.Nil(query.Query().Where("name", "event_creating_by_map_name").Find(&user))
 					s.Equal("event_creating_by_map_avatar1", user.Avatar)
 				},
 			},
@@ -833,13 +809,13 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 				name: "trigger when FirstOrCreate",
 				setup: func() {
 					var user User
-					s.Nil(query.FirstOrCreate(&user, User{Name: "event_creating_FirstOrCreate_name"}))
+					s.Nil(query.Query().FirstOrCreate(&user, User{Name: "event_creating_FirstOrCreate_name"}))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_FirstOrCreate_name", user.Name)
 					s.Equal("event_creating_FirstOrCreate_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_creating_FirstOrCreate_name", user1.Name)
 					s.Equal("event_creating_FirstOrCreate_avatar", user1.Avatar)
 				},
@@ -851,7 +827,7 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					user.Address.Name = "event_creating_omit_create_address"
 					user.Books[0].Name = "event_creating_omit_create_book0"
 					user.Books[1].Name = "event_creating_omit_create_book1"
-					s.Nil(query.Omit("Address").Create(&user))
+					s.Nil(query.Query().Omit("Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_omit_create_avatar", user.Avatar)
 					s.True(user.Address.ID == 0)
@@ -866,7 +842,7 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 					user.Address.Name = "event_creating_select_create_address"
 					user.Books[0].Name = "event_creating_select_create_book0"
 					user.Books[1].Name = "event_creating_select_create_book1"
-					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_select_create_avatar", user.Avatar)
 					s.True(user.Address.ID > 0)
@@ -878,7 +854,7 @@ func (s *QueryTestSuite) TestEvent_Creating() {
 				name: "trigger when save",
 				setup: func() {
 					user := User{Name: "event_creating_save_name"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_save_avatar", user.Avatar)
 				},
@@ -902,11 +878,11 @@ func (s *QueryTestSuite) TestEvent_Created() {
 				name: "trigger when create by struct",
 				setup: func() {
 					user := User{Name: "event_created_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.Equal(fmt.Sprintf("event_created_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_name", user1.Name)
 					s.Equal("avatar", user1.Avatar)
 				},
@@ -920,12 +896,12 @@ func (s *QueryTestSuite) TestEvent_Created() {
 						"created_at": carbon.Now(),
 						"updated_at": carbon.Now(),
 					}
-					s.Nil(query.Model(&User{}).Create(userMap))
+					s.Nil(query.Query().Model(&User{}).Create(userMap))
 
 					s.Equal("event_created_by_map_avatar1", userMap["avatar"])
 
 					var user User
-					s.Nil(query.Where("name", "event_created_by_map_name").Find(&user))
+					s.Nil(query.Query().Where("name", "event_created_by_map_name").Find(&user))
 					s.Equal("event_created_by_map_avatar", user.Avatar)
 				},
 			},
@@ -933,13 +909,13 @@ func (s *QueryTestSuite) TestEvent_Created() {
 				name: "trigger when FirstOrCreate",
 				setup: func() {
 					var user User
-					s.Nil(query.FirstOrCreate(&user, User{Name: "event_created_FirstOrCreate_name"}))
+					s.Nil(query.Query().FirstOrCreate(&user, User{Name: "event_created_FirstOrCreate_name"}))
 					s.True(user.ID > 0)
 					s.Equal("event_created_FirstOrCreate_name", user.Name)
 					s.Equal(fmt.Sprintf("event_created_FirstOrCreate_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_FirstOrCreate_name", user1.Name)
 					s.Empty(user1.Avatar)
 				},
@@ -951,7 +927,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					user.Address.Name = "event_created_omit_create_address"
 					user.Books[0].Name = "event_created_omit_create_book0"
 					user.Books[1].Name = "event_created_omit_create_book1"
-					s.Nil(query.Omit("Address").Create(&user))
+					s.Nil(query.Query().Omit("Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_omit_create_avatar_%d", user.ID), user.Avatar)
 					s.True(user.Address.ID == 0)
@@ -959,7 +935,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_omit_create_name", user1.Name)
 					s.Empty(user1.Avatar)
 				},
@@ -971,7 +947,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					user.Address.Name = "event_created_select_create_address"
 					user.Books[0].Name = "event_created_select_create_book0"
 					user.Books[1].Name = "event_created_select_create_book1"
-					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_select_create_avatar_%d", user.ID), user.Avatar)
 					s.True(user.Address.ID > 0)
@@ -979,7 +955,7 @@ func (s *QueryTestSuite) TestEvent_Created() {
 					s.True(user.Books[1].ID == 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_select_create_name", user1.Name)
 					s.Empty(user1.Avatar)
 				},
@@ -988,12 +964,12 @@ func (s *QueryTestSuite) TestEvent_Created() {
 				name: "trigger when save",
 				setup: func() {
 					user := User{Name: "event_created_save_name"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal(fmt.Sprintf("event_created_save_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_created_save_name", user1.Name)
 					s.Empty(user1.Avatar)
 				},
@@ -1017,11 +993,11 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 				name: "trigger when create by struct",
 				setup: func() {
 					user := User{Name: "event_saving_create_name"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.Equal("event_saving_create_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saving_create_name", user1.Name)
 					s.Equal("event_saving_create_avatar", user1.Avatar)
 				},
@@ -1035,11 +1011,11 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 						"created_at": carbon.Now(),
 						"updated_at": carbon.Now(),
 					}
-					s.Nil(query.Model(&User{}).Create(userMap))
+					s.Nil(query.Query().Model(&User{}).Create(userMap))
 					s.Equal("event_saving_create_by_map_avatar1", userMap["avatar"])
 
 					var user1 User
-					s.Nil(query.Where("name", "event_saving_create_by_map_name").Find(&user1))
+					s.Nil(query.Query().Where("name", "event_saving_create_by_map_name").Find(&user1))
 					s.Equal("event_saving_create_by_map_avatar1", user1.Avatar)
 				},
 			},
@@ -1050,7 +1026,7 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 					user.Address.Name = "event_saving_omit_create_address"
 					user.Books[0].Name = "event_saving_omit_create_book0"
 					user.Books[1].Name = "event_saving_omit_create_book1"
-					s.Nil(query.Omit("Address").Create(&user))
+					s.Nil(query.Query().Omit("Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_omit_create_avatar", user.Avatar)
 					s.True(user.Address.ID == 0)
@@ -1065,7 +1041,7 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 					user.Address.Name = "event_saving_select_create_address"
 					user.Books[0].Name = "event_saving_select_create_book0"
 					user.Books[1].Name = "event_saving_select_create_book1"
-					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_select_create_avatar", user.Avatar)
 					s.True(user.Address.ID > 0)
@@ -1077,13 +1053,13 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 				name: "trigger when FirstOrCreate",
 				setup: func() {
 					var user User
-					s.Nil(query.FirstOrCreate(&user, User{Name: "event_saving_FirstOrCreate_name"}))
+					s.Nil(query.Query().FirstOrCreate(&user, User{Name: "event_saving_FirstOrCreate_name"}))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_FirstOrCreate_name", user.Name)
 					s.Equal("event_saving_FirstOrCreate_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saving_FirstOrCreate_name", user1.Name)
 					s.Equal("event_saving_FirstOrCreate_avatar", user1.Avatar)
 				},
@@ -1092,12 +1068,12 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 				name: "trigger when save",
 				setup: func() {
 					user := User{Name: "event_saving_save_name"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_save_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saving_save_name", user1.Name)
 					s.Equal("event_saving_save_avatar", user1.Avatar)
 				},
@@ -1106,15 +1082,15 @@ func (s *QueryTestSuite) TestEvent_Saving() {
 				name: "trigger when update by single column",
 				setup: func() {
 					user := User{Name: "event_saving_single_update_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 
-					res, err := query.Model(&user).Update("avatar", "event_saving_single_update_avatar")
+					res, err := query.Query().Model(&user).Update("avatar", "event_saving_single_update_avatar")
 					s.Nil(err)
 					s.Equal(int64(1), res.RowsAffected)
 					s.Equal("event_saving_single_update_avatar1", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saving_single_update_name", user1.Name)
 					s.Equal("event_saving_single_update_avatar1", user1.Avatar)
 				},
@@ -1138,11 +1114,11 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 				name: "trigger when create",
 				setup: func() {
 					user := User{Name: "event_saved_create_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.Equal("event_saved_create_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saved_create_name", user1.Name)
 					s.Equal("avatar", user1.Avatar)
 				},
@@ -1156,11 +1132,11 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 						"created_at": carbon.Now(),
 						"updated_at": carbon.Now(),
 					}
-					s.Nil(query.Model(&User{}).Create(userMap))
+					s.Nil(query.Query().Model(&User{}).Create(userMap))
 					s.Equal("event_saved_create_by_map_avatar1", userMap["avatar"])
 
 					var user1 User
-					s.Nil(query.Where("name", "event_saved_create_by_map_name").Find(&user1))
+					s.Nil(query.Query().Where("name", "event_saved_create_by_map_name").Find(&user1))
 					s.Equal("event_saved_create_by_map_avatar", user1.Avatar)
 				},
 			},
@@ -1171,7 +1147,7 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					user.Address.Name = "event_saved_omit_create_address"
 					user.Books[0].Name = "event_saved_omit_create_book0"
 					user.Books[1].Name = "event_saved_omit_create_book1"
-					s.Nil(query.Omit("Address").Create(&user))
+					s.Nil(query.Query().Omit("Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saved_omit_create_avatar", user.Avatar)
 					s.True(user.Address.ID == 0)
@@ -1179,7 +1155,7 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					s.True(user.Books[1].ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Empty(user1.Avatar)
 				},
 			},
@@ -1190,7 +1166,7 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					user.Address.Name = "event_saved_select_create_address"
 					user.Books[0].Name = "event_saved_select_create_book0"
 					user.Books[1].Name = "event_saved_select_create_book1"
-					s.Nil(query.Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saved_select_create_avatar", user.Avatar)
 					s.True(user.Address.ID > 0)
@@ -1198,7 +1174,7 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					s.True(user.Books[1].ID == 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Empty(user1.Avatar)
 				},
 			},
@@ -1206,13 +1182,13 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 				name: "trigger when FirstOrCreate",
 				setup: func() {
 					var user User
-					s.Nil(query.FirstOrCreate(&user, User{Name: "event_saved_FirstOrCreate_name"}))
+					s.Nil(query.Query().FirstOrCreate(&user, User{Name: "event_saved_FirstOrCreate_name"}))
 					s.True(user.ID > 0)
 					s.Equal("event_saved_FirstOrCreate_name", user.Name)
 					s.Equal("event_saved_FirstOrCreate_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saved_FirstOrCreate_name", user1.Name)
 					s.Empty(user1.Avatar)
 				},
@@ -1221,12 +1197,12 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 				name: "trigger when save",
 				setup: func() {
 					user := User{Name: "event_saved_save_name", Avatar: "avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saved_save_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saved_save_name", user1.Name)
 					s.Equal("avatar", user1.Avatar)
 				},
@@ -1235,9 +1211,9 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 				name: "trigger when update by map",
 				setup: func() {
 					user := User{Name: "event_saved_map_update_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 
-					res, err := query.Model(&user).Update(map[string]any{
+					res, err := query.Query().Model(&user).Update(map[string]any{
 						"avatar": "event_saved_map_update_avatar",
 					})
 					s.Nil(err)
@@ -1245,7 +1221,7 @@ func (s *QueryTestSuite) TestEvent_Saved() {
 					s.Equal("event_saved_map_update_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_saved_map_update_name", user1.Name)
 					s.Equal("event_saved_map_update_avatar", user1.Avatar)
 				},
@@ -1269,7 +1245,7 @@ func (s *QueryTestSuite) TestEvent_Updating() {
 				name: "not trigger when create",
 				setup: func() {
 					user := User{Name: "event_updating_create_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("avatar", user.Avatar)
 				},
@@ -1278,7 +1254,7 @@ func (s *QueryTestSuite) TestEvent_Updating() {
 				name: "not trigger when create by save",
 				setup: func() {
 					user := User{Name: "event_updating_save_name", Avatar: "avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("avatar", user.Avatar)
 				},
@@ -1287,14 +1263,14 @@ func (s *QueryTestSuite) TestEvent_Updating() {
 				name: "trigger when save",
 				setup: func() {
 					user := User{Name: "event_updating_save_name", Avatar: "avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 
 					user.Avatar = "event_updating_save_avatar"
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.Equal("event_updating_save_avatar1", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updating_save_name", user1.Name)
 					s.Equal("event_updating_save_avatar1", user1.Avatar)
 				},
@@ -1303,9 +1279,9 @@ func (s *QueryTestSuite) TestEvent_Updating() {
 				name: "trigger when update by model",
 				setup: func() {
 					user := User{Name: "event_updating_model_update_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 
-					res, err := query.Model(&user).Update(User{
+					res, err := query.Query().Model(&user).Update(User{
 						Avatar: "event_updating_model_update_avatar",
 					})
 					s.Nil(err)
@@ -1313,7 +1289,7 @@ func (s *QueryTestSuite) TestEvent_Updating() {
 					s.Equal(fmt.Sprintf("event_updating_model_update_avatar_%d", user.ID), user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updating_model_update_name", user1.Name)
 					s.Equal(fmt.Sprintf("event_updating_model_update_avatar_%d", user.ID), user1.Avatar)
 				},
@@ -1337,7 +1313,7 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 				name: "not trigger when create",
 				setup: func() {
 					user := User{Name: "event_updated_create_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("avatar", user.Avatar)
 				},
@@ -1346,7 +1322,7 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 				name: "not trigger when create by save",
 				setup: func() {
 					user := User{Name: "event_updated_save_name", Avatar: "avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("avatar", user.Avatar)
 				},
@@ -1355,14 +1331,14 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 				name: "trigger when save",
 				setup: func() {
 					user := User{Name: "event_updated_save_name", Avatar: "avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 
 					user.Avatar = "event_updated_save_avatar"
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.Equal("event_updated_save_avatar1", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updated_save_name", user1.Name)
 					s.Equal("event_updated_save_avatar", user1.Avatar)
 				},
@@ -1371,9 +1347,9 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 				name: "trigger when update by model",
 				setup: func() {
 					user := User{Name: "event_updated_model_update_name", Avatar: "avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 
-					res, err := query.Model(&user).Update(User{
+					res, err := query.Query().Model(&user).Update(User{
 						Avatar: "event_updated_model_update_avatar",
 					})
 					s.Nil(err)
@@ -1381,7 +1357,7 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 					s.Equal("event_updated_model_update_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updated_model_update_name", user1.Name)
 					s.Equal("event_updated_model_update_avatar", user1.Avatar)
 				},
@@ -1398,14 +1374,14 @@ func (s *QueryTestSuite) TestEvent_Updated() {
 func (s *QueryTestSuite) TestEvent_Deleting() {
 	for _, query := range s.queries {
 		user := User{Name: "event_deleting_name", Avatar: "event_deleting_avatar"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 
-		res, err := query.Delete(&user)
+		res, err := query.Query().Delete(&user)
 		s.EqualError(err, "deleting error")
 		s.Nil(res)
 
 		var user1 User
-		s.Nil(query.Find(&user1, user.ID))
+		s.Nil(query.Query().Find(&user1, user.ID))
 		s.True(user1.ID > 0)
 	}
 }
@@ -1413,14 +1389,14 @@ func (s *QueryTestSuite) TestEvent_Deleting() {
 func (s *QueryTestSuite) TestEvent_Deleted() {
 	for _, query := range s.queries {
 		user := User{Name: "event_deleted_name", Avatar: "event_deleted_avatar"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 
-		res, err := query.Delete(&user)
+		res, err := query.Query().Delete(&user)
 		s.EqualError(err, "deleted error")
 		s.Nil(res)
 
 		var user1 User
-		s.Nil(query.Find(&user1, user.ID))
+		s.Nil(query.Query().Find(&user1, user.ID))
 		s.True(user1.ID == 0)
 	}
 }
@@ -1428,14 +1404,14 @@ func (s *QueryTestSuite) TestEvent_Deleted() {
 func (s *QueryTestSuite) TestEvent_ForceDeleting() {
 	for _, query := range s.queries {
 		user := User{Name: "event_force_deleting_name", Avatar: "event_force_deleting_avatar"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 
-		res, err := query.ForceDelete(&user)
+		res, err := query.Query().ForceDelete(&user)
 		s.EqualError(err, "force deleting error")
 		s.Nil(res)
 
 		var user1 User
-		s.Nil(query.Find(&user1, user.ID))
+		s.Nil(query.Query().Find(&user1, user.ID))
 		s.True(user1.ID > 0)
 	}
 }
@@ -1443,14 +1419,14 @@ func (s *QueryTestSuite) TestEvent_ForceDeleting() {
 func (s *QueryTestSuite) TestEvent_ForceDeleted() {
 	for _, query := range s.queries {
 		user := User{Name: "event_force_deleted_name", Avatar: "event_force_deleted_avatar"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 
-		res, err := query.ForceDelete(&user)
+		res, err := query.Query().ForceDelete(&user)
 		s.EqualError(err, "force deleted error")
 		s.Nil(res)
 
 		var user1 User
-		s.Nil(query.Find(&user1, user.ID))
+		s.Nil(query.Query().Find(&user1, user.ID))
 		s.True(user1.ID == 0)
 	}
 }
@@ -1465,7 +1441,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when Find",
 				setup: func() {
 					var user1 User
-					s.Nil(query.Where("name", "event_retrieved_name").Find(&user1))
+					s.Nil(query.Query().Where("name", "event_retrieved_name").Find(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 				},
@@ -1474,12 +1450,12 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when First",
 				setup: func() {
 					var user1 User
-					s.Nil(query.Where("name", "event_retrieved_name").First(&user1))
+					s.Nil(query.Query().Where("name", "event_retrieved_name").First(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 
 					var user2 User
-					s.Nil(query.Where("name", "event_retrieved_name1").First(&user2))
+					s.Nil(query.Query().Where("name", "event_retrieved_name1").First(&user2))
 					s.True(user2.ID == 0)
 					s.Empty(user2.Name)
 				},
@@ -1488,7 +1464,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when FirstOr",
 				setup: func() {
 					var user1 User
-					s.Nil(query.Where("name", "event_retrieved_name").Find(&user1))
+					s.Nil(query.Query().Where("name", "event_retrieved_name").Find(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 				},
@@ -1497,7 +1473,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when FirstOrCreate",
 				setup: func() {
 					var user1 User
-					s.Nil(query.FirstOrCreate(&user1, User{Name: "event_retrieved_name"}))
+					s.Nil(query.Query().FirstOrCreate(&user1, User{Name: "event_retrieved_name"}))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 				},
@@ -1506,7 +1482,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when FirstOrFail",
 				setup: func() {
 					var user1 User
-					s.Nil(query.Where("name", "event_retrieved_name").FirstOrFail(&user1))
+					s.Nil(query.Query().Where("name", "event_retrieved_name").FirstOrFail(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 				},
@@ -1515,7 +1491,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when FirstOrNew",
 				setup: func() {
 					var user1 User
-					s.Nil(query.FirstOrNew(&user1, User{Name: "event_retrieved_name"}))
+					s.Nil(query.Query().FirstOrNew(&user1, User{Name: "event_retrieved_name"}))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 				},
@@ -1524,7 +1500,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 				name: "trigger when FirstOrFail",
 				setup: func() {
 					var user1 User
-					s.Nil(query.Where("name", "event_retrieved_name").FirstOrFail(&user1))
+					s.Nil(query.Query().Where("name", "event_retrieved_name").FirstOrFail(&user1))
 					s.True(user1.ID > 0)
 					s.Equal("event_retrieved_name1", user1.Name)
 				},
@@ -1533,7 +1509,7 @@ func (s *QueryTestSuite) TestEvent_Retrieved() {
 		for _, test := range tests {
 			s.Run(test.name, func() {
 				user := User{Name: "event_retrieved_name"}
-				s.Nil(query.Create(&user))
+				s.Nil(query.Query().Create(&user))
 				s.True(user.ID > 0)
 
 				test.setup()
@@ -1552,7 +1528,7 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 				name: "create",
 				setup: func() {
 					user := User{Name: "event_creating_IsDirty_name", Avatar: "is_dirty_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_creating_IsDirty_avatar", user.Avatar)
 				},
@@ -1561,7 +1537,7 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 				name: "save",
 				setup: func() {
 					user := User{Name: "event_saving_IsDirty_name", Avatar: "is_dirty_avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("event_saving_IsDirty_avatar", user.Avatar)
 				},
@@ -1570,17 +1546,17 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 				name: "update by single column",
 				setup: func() {
 					user := User{Name: "event_updating_single_update_IsDirty_name", Avatar: "is_dirty_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Model(&user).Update("name", "event_updating_single_update_IsDirty_name1")
+					res, err := query.Query().Model(&user).Update("name", "event_updating_single_update_IsDirty_name1")
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("event_updating_single_update_IsDirty_name1", user.Name)
 					s.Equal("event_updating_single_update_IsDirty_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updating_single_update_IsDirty_name1", user.Name)
 					s.Equal("event_updating_single_update_IsDirty_avatar", user.Avatar)
 				},
@@ -1589,10 +1565,10 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 				name: "update by map",
 				setup: func() {
 					user := User{Name: "event_updating_map_update_IsDirty_name", Avatar: "is_dirty_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Model(&user).Update(map[string]any{
+					res, err := query.Query().Model(&user).Update(map[string]any{
 						"name": "event_updating_map_update_IsDirty_name1",
 					})
 					s.Nil(err)
@@ -1601,7 +1577,7 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 					s.Equal("event_updating_map_update_IsDirty_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updating_map_update_IsDirty_name1", user.Name)
 					s.Equal("event_updating_map_update_IsDirty_avatar", user.Avatar)
 				},
@@ -1610,10 +1586,10 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 				name: "update by model",
 				setup: func() {
 					user := User{Name: "event_updating_model_update_IsDirty_name", Avatar: "is_dirty_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
-					res, err := query.Model(&user).Update(User{
+					res, err := query.Query().Model(&user).Update(User{
 						Name: "event_updating_model_update_IsDirty_name1",
 					})
 					s.Equal(int64(1), res.RowsAffected)
@@ -1622,7 +1598,7 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 					s.Equal("event_updating_model_update_IsDirty_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_updating_model_update_IsDirty_name1", user.Name)
 					s.Equal("event_updating_model_update_IsDirty_avatar", user.Avatar)
 				},
@@ -1639,7 +1615,7 @@ func (s *QueryTestSuite) TestEvent_IsDirty() {
 func (s *QueryTestSuite) TestEvent_Context() {
 	for _, query := range s.queries {
 		user := User{Name: "event_context"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 		s.Equal("goravel", user.Avatar)
 	}
 }
@@ -1647,12 +1623,12 @@ func (s *QueryTestSuite) TestEvent_Context() {
 func (s *QueryTestSuite) TestEvent_Query() {
 	for _, query := range s.queries {
 		user := User{Name: "event_query"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 		s.True(user.ID > 0)
 		s.Equal("event_query", user.Name)
 
 		var user1 User
-		s.Nil(query.Where("name", "event_query1").Find(&user1))
+		s.Nil(query.Query().Where("name", "event_query1").Find(&user1))
 		s.True(user1.ID > 0)
 	}
 }
@@ -1660,20 +1636,20 @@ func (s *QueryTestSuite) TestEvent_Query() {
 func (s *QueryTestSuite) TestExec() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
-			res, err := query.Exec("INSERT INTO users (name, avatar, created_at, updated_at) VALUES ('exec_user', 'exec_avatar', '2023-03-09 18:56:33', '2023-03-09 18:56:35');")
+			res, err := query.Query().Exec("INSERT INTO users (name, avatar, created_at, updated_at) VALUES ('exec_user', 'exec_avatar', '2023-03-09 18:56:33', '2023-03-09 18:56:35');")
 			s.Equal(int64(1), res.RowsAffected)
 			s.Nil(err)
 
 			var user User
-			err = query.Where("name", "exec_user").First(&user)
+			err = query.Query().Where("name", "exec_user").First(&user)
 			s.Nil(err)
 			s.True(user.ID > 0)
 
-			res, err = query.Exec(fmt.Sprintf("UPDATE users set name = 'exec_user1' where id = %d", user.ID))
+			res, err = query.Query().Exec(fmt.Sprintf("UPDATE users set name = 'exec_user1' where id = %d", user.ID))
 			s.Equal(int64(1), res.RowsAffected)
 			s.Nil(err)
 
-			res, err = query.Exec(fmt.Sprintf("DELETE FROM users where id = %d", user.ID))
+			res, err = query.Query().Exec(fmt.Sprintf("DELETE FROM users where id = %d", user.ID))
 			s.Equal(int64(1), res.RowsAffected)
 			s.Nil(err)
 		})
@@ -1684,19 +1660,19 @@ func (s *QueryTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "exists_user", Avatar: "exists_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "exists_user", Avatar: "exists_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var t bool
-			s.Nil(query.Model(&User{}).Where("name = ?", "exists_user").Exists(&t))
+			s.Nil(query.Query().Model(&User{}).Where("name = ?", "exists_user").Exists(&t))
 			s.True(t)
 
 			var f bool
-			s.Nil(query.Model(&User{}).Where("name = ?", "no_exists_user").Exists(&f))
+			s.Nil(query.Query().Model(&User{}).Where("name = ?", "no_exists_user").Exists(&f))
 			s.False(f)
 		})
 	}
@@ -1705,19 +1681,19 @@ func (s *QueryTestSuite) TestExists() {
 func (s *QueryTestSuite) TestFind() {
 	for _, query := range s.queries {
 		user := User{Name: "find_user"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 		s.True(user.ID > 0)
 
 		var user2 User
-		s.Nil(query.Find(&user2, user.ID))
+		s.Nil(query.Query().Find(&user2, user.ID))
 		s.True(user2.ID > 0)
 
 		var user3 []User
-		s.Nil(query.Find(&user3, []uint{user.ID}))
+		s.Nil(query.Query().Find(&user3, []uint{user.ID}))
 		s.Equal(1, len(user3))
 
 		var user4 []User
-		s.Nil(query.Where("id in ?", []uint{user.ID}).Find(&user4))
+		s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Find(&user4))
 		s.Equal(1, len(user4))
 	}
 }
@@ -1732,11 +1708,11 @@ func (s *QueryTestSuite) TestFindOrFail() {
 				name: "success",
 				setup: func() {
 					user := User{Name: "find_user"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
 					var user2 User
-					s.Nil(query.FindOrFail(&user2, user.ID))
+					s.Nil(query.Query().FindOrFail(&user2, user.ID))
 					s.True(user2.ID > 0)
 				},
 			},
@@ -1744,7 +1720,7 @@ func (s *QueryTestSuite) TestFindOrFail() {
 				name: "error",
 				setup: func() {
 					var user User
-					s.ErrorIs(query.FindOrFail(&user, 10000), orm.ErrRecordNotFound)
+					s.ErrorIs(query.Query().FindOrFail(&user, 10000), orm.ErrRecordNotFound)
 				},
 			},
 		}
@@ -1757,24 +1733,24 @@ func (s *QueryTestSuite) TestFindOrFail() {
 }
 
 func (s *QueryTestSuite) TestFirst() {
-	for driver, query := range s.queries {
+	for _, query := range s.queries {
 		user := User{Name: "first_user"}
-		s.Nil(query.Create(&user))
+		s.Nil(query.Query().Create(&user))
 		s.True(user.ID > 0)
 
 		var user1 User
-		s.Nil(query.Where("name", "first_user").First(&user1))
+		s.Nil(query.Query().Where("name", "first_user").First(&user1))
 		s.True(user1.ID > 0)
 
 		// refresh connection
-		s.mockDummyConnection(driver)
+		mockCommonConnection(query.MockConfig(), query, "dummy")
 
 		people := People{Body: "first_people"}
-		s.Nil(query.Create(&people))
+		s.Nil(query.Query().Create(&people))
 		s.True(people.ID > 0)
 
 		var people1 People
-		s.Nil(query.Where("id in ?", []uint{people.ID}).First(&people1))
+		s.Nil(query.Query().Where("id in ?", []uint{people.ID}).First(&people1))
 		s.True(people1.ID > 0)
 	}
 }
@@ -1789,7 +1765,7 @@ func (s *QueryTestSuite) TestFirstOr() {
 				name: "not found, new one",
 				setup: func() {
 					var user User
-					s.Nil(query.Where("name", "first_or_user").FirstOr(&user, func() error {
+					s.Nil(query.Query().Where("name", "first_or_user").FirstOr(&user, func() error {
 						user.Name = "goravel"
 
 						return nil
@@ -1803,11 +1779,11 @@ func (s *QueryTestSuite) TestFirstOr() {
 				name: "found",
 				setup: func() {
 					user := User{Name: "first_or_name"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
 					var user1 User
-					s.Nil(query.Where("name", "first_or_name").Find(&user1))
+					s.Nil(query.Query().Where("name", "first_or_name").Find(&user1))
 					s.True(user1.ID > 0)
 				},
 			},
@@ -1830,7 +1806,7 @@ func (s *QueryTestSuite) TestFirstOrCreate() {
 				name: "error when empty conditions",
 				setup: func() {
 					var user User
-					s.EqualError(query.FirstOrCreate(&user), "query condition is require")
+					s.EqualError(query.Query().FirstOrCreate(&user), "query condition is require")
 					s.True(user.ID == 0)
 				},
 			},
@@ -1838,16 +1814,16 @@ func (s *QueryTestSuite) TestFirstOrCreate() {
 				name: "success",
 				setup: func() {
 					var user User
-					s.Nil(query.FirstOrCreate(&user, User{Name: "first_or_create_user"}))
+					s.Nil(query.Query().FirstOrCreate(&user, User{Name: "first_or_create_user"}))
 					s.True(user.ID > 0)
 					s.Equal("first_or_create_user", user.Name)
 
 					var user1 User
-					s.Nil(query.FirstOrCreate(&user1, User{Name: "first_or_create_user"}))
+					s.Nil(query.Query().FirstOrCreate(&user1, User{Name: "first_or_create_user"}))
 					s.Equal(user.ID, user1.ID)
 
 					var user2 User
-					s.Nil(query.Where("avatar", "first_or_create_avatar").FirstOrCreate(&user2, User{Name: "user"}, User{Avatar: "first_or_create_avatar2"}))
+					s.Nil(query.Query().Where("avatar", "first_or_create_avatar").FirstOrCreate(&user2, User{Name: "user"}, User{Avatar: "first_or_create_avatar2"}))
 					s.True(user2.ID > 0)
 					s.True(user2.Avatar == "first_or_create_avatar2")
 				},
@@ -1871,7 +1847,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 				name: "fail",
 				setup: func() {
 					var user User
-					s.Equal(orm.ErrRecordNotFound, query.Where("name", "first_or_fail_user").FirstOrFail(&user))
+					s.Equal(orm.ErrRecordNotFound, query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user))
 					s.Equal(uint(0), user.ID)
 				},
 			},
@@ -1879,12 +1855,12 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 				name: "success",
 				setup: func() {
 					user := User{Name: "first_or_fail_name"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("first_or_fail_name", user.Name)
 
 					var user1 User
-					s.Nil(query.Where("name", "first_or_fail_name").FirstOrFail(&user1))
+					s.Nil(query.Query().Where("name", "first_or_fail_name").FirstOrFail(&user1))
 					s.True(user1.ID > 0)
 				},
 			},
@@ -1907,13 +1883,13 @@ func (s *QueryTestSuite) TestFirstOrNew() {
 				name: "not found, new one",
 				setup: func() {
 					var user User
-					s.Nil(query.FirstOrNew(&user, User{Name: "first_or_new_name"}))
+					s.Nil(query.Query().FirstOrNew(&user, User{Name: "first_or_new_name"}))
 					s.Equal(uint(0), user.ID)
 					s.Equal("first_or_new_name", user.Name)
 					s.Empty(user.Avatar)
 
 					var user1 User
-					s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}, User{Avatar: "first_or_new_avatar"}))
+					s.Nil(query.Query().FirstOrNew(&user1, User{Name: "first_or_new_name"}, User{Avatar: "first_or_new_avatar"}))
 					s.Equal(uint(0), user1.ID)
 					s.Equal("first_or_new_name", user1.Name)
 					s.Equal("first_or_new_avatar", user1.Avatar)
@@ -1923,12 +1899,12 @@ func (s *QueryTestSuite) TestFirstOrNew() {
 				name: "found",
 				setup: func() {
 					user := User{Name: "first_or_new_name"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("first_or_new_name", user.Name)
 
 					var user1 User
-					s.Nil(query.FirstOrNew(&user1, User{Name: "first_or_new_name"}))
+					s.Nil(query.Query().FirstOrNew(&user1, User{Name: "first_or_new_name"}))
 					s.True(user1.ID > 0)
 					s.Equal("first_or_new_name", user1.Name)
 				},
@@ -1952,17 +1928,17 @@ func (s *QueryTestSuite) TestForceDelete() {
 				name: "success",
 				setup: func() {
 					user := User{Name: "force_delete_name"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("force_delete_name", user.Name)
 
-					res, err := query.Where("name", "force_delete_name").ForceDelete(&User{})
+					res, err := query.Query().Where("name", "force_delete_name").ForceDelete(&User{})
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name", user.Name)
 
 					var user1 User
-					s.Nil(query.WithTrashed().Find(&user1, user.ID))
+					s.Nil(query.Query().WithTrashed().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -1970,17 +1946,17 @@ func (s *QueryTestSuite) TestForceDelete() {
 				name: "success by table",
 				setup: func() {
 					user := User{Name: "force_delete_name_by_table"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("force_delete_name_by_table", user.Name)
 
-					res, err := query.Table("users").Where("name", "force_delete_name_by_table").ForceDelete()
+					res, err := query.Query().Table("users").Where("name", "force_delete_name_by_table").ForceDelete()
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name_by_table", user.Name)
 
 					var user1 User
-					s.Nil(query.WithTrashed().Find(&user1, user.ID))
+					s.Nil(query.Query().WithTrashed().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -1988,17 +1964,17 @@ func (s *QueryTestSuite) TestForceDelete() {
 				name: "success by model",
 				setup: func() {
 					user := User{Name: "force_delete_name_by_model"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 					s.Equal("force_delete_name_by_model", user.Name)
 
-					res, err := query.Model(&User{}).Where("name", "force_delete_name_by_model").ForceDelete()
+					res, err := query.Query().Model(&User{}).Where("name", "force_delete_name_by_model").ForceDelete()
 					s.Equal(int64(1), res.RowsAffected)
 					s.Nil(err)
 					s.Equal("force_delete_name_by_model", user.Name)
 
 					var user1 User
-					s.Nil(query.WithTrashed().Find(&user1, user.ID))
+					s.Nil(query.Query().WithTrashed().Find(&user1, user.ID))
 					s.Equal(uint(0), user1.ID)
 				},
 			},
@@ -2015,29 +1991,28 @@ func (s *QueryTestSuite) TestGet() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "get_user"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			var user1 []User
-			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user1))
+			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user1))
 			s.Equal(1, len(user1))
 
 			// refresh connection
-			s.mockDummyConnection(driver)
+			mockCommonConnection(query.MockConfig(), query, "dummy")
 
 			people := People{Body: "get_people"}
-			s.Nil(query.Create(&people))
+			s.Nil(query.Query().Create(&people))
 			s.True(people.ID > 0)
 
 			var people1 []People
-			s.Nil(query.Where("id in ?", []uint{people.ID}).Get(&people1))
+			s.Nil(query.Query().Where("id in ?", []uint{people.ID}).Get(&people1))
 			s.Equal(1, len(people1))
 
 			var user2 []User
-			s.Nil(query.Where("id in ?", []uint{user.ID}).Get(&user2))
+			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user2))
 			s.Equal(1, len(user2))
 		})
-		break
 	}
 }
 
@@ -2045,11 +2020,11 @@ func (s *QueryTestSuite) TestJoin() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "join_user", Avatar: "join_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			userAddress := Address{UserID: user.ID, Name: "join_address", Province: "join_province"}
-			s.Nil(query.Create(&userAddress))
+			s.Nil(query.Query().Create(&userAddress))
 			s.True(userAddress.ID > 0)
 
 			type Result struct {
@@ -2057,7 +2032,7 @@ func (s *QueryTestSuite) TestJoin() {
 				UserAddressName string
 			}
 			var result []Result
-			s.Nil(query.Model(&User{}).Where("users.id = ?", user.ID).Join("left join addresses ua on users.id = ua.user_id").
+			s.Nil(query.Query().Model(&User{}).Where("users.id = ?", user.ID).Join("left join addresses ua on users.id = ua.user_id").
 				Select("users.name user_name, ua.name user_address_name").Get(&result))
 			s.Equal(1, len(result))
 			s.Equal("join_user", result[0].UserName)
@@ -2071,12 +2046,12 @@ func (s *QueryTestSuite) TestLockForUpdate() {
 		if driver != contractsorm.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "lock_for_update_user"}
-				s.Nil(query.Create(&user))
+				s.Nil(query.Query().Create(&user))
 				s.True(user.ID > 0)
 
 				for i := 0; i < 10; i++ {
 					go func() {
-						tx, err := query.Begin()
+						tx, err := query.Query().Begin()
 						s.Nil(err)
 
 						var user1 User
@@ -2092,7 +2067,7 @@ func (s *QueryTestSuite) TestLockForUpdate() {
 				time.Sleep(2 * time.Second)
 
 				var user2 User
-				s.Nil(query.Find(&user2, user.ID))
+				s.Nil(query.Query().Find(&user2, user.ID))
 				s.Equal("lock_for_update_user1111111111", user2.Name)
 			})
 		}
@@ -2103,15 +2078,15 @@ func (s *QueryTestSuite) TestOffset() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "offset_user", Avatar: "offset_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "offset_user", Avatar: "offset_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var user2 []User
-			s.Nil(query.Where("name = ?", "offset_user").Offset(1).Limit(1).Get(&user2))
+			s.Nil(query.Query().Where("name = ?", "offset_user").Offset(1).Limit(1).Get(&user2))
 			s.True(len(user2) > 0)
 			s.True(user2[0].ID > 0)
 		})
@@ -2122,15 +2097,15 @@ func (s *QueryTestSuite) TestOrder() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "order_user", Avatar: "order_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "order_user", Avatar: "order_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var user2 []User
-			s.Nil(query.Where("name = ?", "order_user").Order("id desc").Order("name asc").Get(&user2))
+			s.Nil(query.Query().Where("name = ?", "order_user").Order("id desc").Order("name asc").Get(&user2))
 			s.True(len(user2) > 0)
 			s.True(user2[0].ID > 0)
 		})
@@ -2141,20 +2116,20 @@ func (s *QueryTestSuite) TestOrderBy() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "order_asc_user", Avatar: "order_asc_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "order_asc_user", Avatar: "order_asc_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users1 []User
-			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id").Get(&users1))
+			s.Nil(query.Query().Where("name = ?", "order_asc_user").OrderBy("id").Get(&users1))
 			s.True(len(users1) == 2)
 			s.True(users1[0].ID == user.ID)
 
 			var users2 []User
-			s.Nil(query.Where("name = ?", "order_asc_user").OrderBy("id", "DESC").Get(&users2))
+			s.Nil(query.Query().Where("name = ?", "order_asc_user").OrderBy("id", "DESC").Get(&users2))
 			s.True(len(users2) == 2)
 			s.True(users2[0].ID == user1.ID)
 		})
@@ -2165,15 +2140,15 @@ func (s *QueryTestSuite) TestOrderByDesc() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "order_desc_user", Avatar: "order_desc_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "order_desc_user", Avatar: "order_desc_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "order_desc_user").OrderByDesc("id").Get(&users))
+			s.Nil(query.Query().Where("name = ?", "order_desc_user").OrderByDesc("id").Get(&users))
 			usersLength := len(users)
 			s.True(usersLength == 2)
 			s.True(users[usersLength-1].ID == user.ID)
@@ -2186,16 +2161,16 @@ func (s *QueryTestSuite) TestInRandomOrder() {
 		s.Run(driver.String(), func() {
 			for i := 0; i < 30; i++ {
 				user := User{Name: "random_order_user", Avatar: "random_order_avatar"}
-				s.Nil(query.Create(&user))
+				s.Nil(query.Query().Create(&user))
 				s.True(user.ID > 0)
 			}
 
 			var users1 []User
-			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Find(&users1))
+			s.Nil(query.Query().Where("name = ?", "random_order_user").InRandomOrder().Find(&users1))
 			s.True(len(users1) == 30)
 
 			var users2 []User
-			s.Nil(query.Where("name = ?", "random_order_user").InRandomOrder().Find(&users2))
+			s.Nil(query.Query().Where("name = ?", "random_order_user").InRandomOrder().Find(&users2))
 			s.True(len(users2) == 30)
 
 			s.True(users1[0].ID != users2[0].ID || users1[14].ID != users2[14].ID || users1[29].ID != users2[29].ID)
@@ -2207,40 +2182,40 @@ func (s *QueryTestSuite) TestPaginate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "paginate_user", Avatar: "paginate_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "paginate_user", Avatar: "paginate_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "paginate_user", Avatar: "paginate_avatar2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			user3 := User{Name: "paginate_user", Avatar: "paginate_avatar3"}
-			s.Nil(query.Create(&user3))
+			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "paginate_user").Paginate(1, 3, &users, nil))
+			s.Nil(query.Query().Where("name = ?", "paginate_user").Paginate(1, 3, &users, nil))
 			s.Equal(3, len(users))
 
 			var users1 []User
 			var total1 int64
-			s.Nil(query.Where("name = ?", "paginate_user").Paginate(2, 3, &users1, &total1))
+			s.Nil(query.Query().Where("name = ?", "paginate_user").Paginate(2, 3, &users1, &total1))
 			s.Equal(1, len(users1))
 			s.Equal(int64(4), total1)
 
 			var users2 []User
 			var total2 int64
-			s.Nil(query.Model(User{}).Where("name = ?", "paginate_user").Paginate(1, 3, &users2, &total2))
+			s.Nil(query.Query().Model(User{}).Where("name = ?", "paginate_user").Paginate(1, 3, &users2, &total2))
 			s.Equal(3, len(users2))
 			s.Equal(int64(4), total2)
 
 			var users3 []User
 			var total3 int64
-			s.Nil(query.Table("users").Where("name = ?", "paginate_user").Paginate(1, 3, &users3, &total3))
+			s.Nil(query.Query().Table("users").Where("name = ?", "paginate_user").Paginate(1, 3, &users3, &total3))
 			s.Equal(3, len(users3))
 			s.Equal(int64(4), total3)
 		})
@@ -2251,15 +2226,15 @@ func (s *QueryTestSuite) TestPluck() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "pluck_user", Avatar: "pluck_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "pluck_user", Avatar: "pluck_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var avatars []string
-			s.Nil(query.Model(&User{}).Where("name = ?", "pluck_user").Pluck("avatar", &avatars))
+			s.Nil(query.Query().Model(&User{}).Where("name = ?", "pluck_user").Pluck("avatar", &avatars))
 			s.Equal(2, len(avatars))
 			s.Equal("pluck_avatar", avatars[0])
 			s.Equal("pluck_avatar1", avatars[1])
@@ -2277,12 +2252,12 @@ func (s *QueryTestSuite) TestHasOne() {
 				},
 			}
 
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 
 			var user1 User
-			s.Nil(query.With("Address").Where("name = ?", "has_one_name").First(&user1))
+			s.Nil(query.Query().With("Address").Where("name = ?", "has_one_name").First(&user1))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 		})
@@ -2298,19 +2273,19 @@ func (s *QueryTestSuite) TestHasOneMorph() {
 					Name: "has_one_morph_house",
 				},
 			}
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.House.ID > 0)
 
 			var user1 User
-			s.Nil(query.With("House").Where("name = ?", "has_one_morph_name").First(&user1))
+			s.Nil(query.Query().With("House").Where("name = ?", "has_one_morph_name").First(&user1))
 			s.True(user.ID > 0)
 			s.True(user.Name == "has_one_morph_name")
 			s.True(user.House.ID > 0)
 			s.True(user.House.Name == "has_one_morph_house")
 
 			var house House
-			s.Nil(query.Where("name = ?", "has_one_morph_house").Where("houseable_type = ?", "users").Where("houseable_id = ?", user.ID).First(&house))
+			s.Nil(query.Query().Where("name = ?", "has_one_morph_house").Where("houseable_type = ?", "users").Where("houseable_id = ?", user.ID).First(&house))
 			s.True(house.ID > 0)
 		})
 	}
@@ -2327,13 +2302,13 @@ func (s *QueryTestSuite) TestHasMany() {
 				},
 			}
 
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[1].ID > 0)
 
 			var user1 User
-			s.Nil(query.With("Books").Where("name = ?", "has_many_name").First(&user1))
+			s.Nil(query.Query().With("Books").Where("name = ?", "has_many_name").First(&user1))
 			s.True(user.ID > 0)
 			s.True(len(user.Books) == 2)
 		})
@@ -2350,13 +2325,13 @@ func (s *QueryTestSuite) TestHasManyMorph() {
 					{Name: "has_many_morph_phone2"},
 				},
 			}
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Phones[0].ID > 0)
 			s.True(user.Phones[1].ID > 0)
 
 			var user1 User
-			s.Nil(query.With("Phones").Where("name = ?", "has_many_morph_name").First(&user1))
+			s.Nil(query.Query().With("Phones").Where("name = ?", "has_many_morph_name").First(&user1))
 			s.True(user.ID > 0)
 			s.True(user.Name == "has_many_morph_name")
 			s.True(len(user.Phones) == 2)
@@ -2364,7 +2339,7 @@ func (s *QueryTestSuite) TestHasManyMorph() {
 			s.True(user.Phones[1].Name == "has_many_morph_phone2")
 
 			var phones []Phone
-			s.Nil(query.Where("name like ?", "has_many_morph_phone%").Where("phoneable_type = ?", "users").Where("phoneable_id = ?", user.ID).Find(&phones))
+			s.Nil(query.Query().Where("name like ?", "has_many_morph_phone%").Where("phoneable_type = ?", "users").Where("phoneable_id = ?", user.ID).Find(&phones))
 			s.True(len(phones) == 2)
 		})
 	}
@@ -2381,18 +2356,18 @@ func (s *QueryTestSuite) TestManyToMany() {
 				},
 			}
 
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Roles[0].ID > 0)
 			s.True(user.Roles[1].ID > 0)
 
 			var user1 User
-			s.Nil(query.With("Roles").Where("name = ?", "many_to_many_name").First(&user1))
+			s.Nil(query.Query().With("Roles").Where("name = ?", "many_to_many_name").First(&user1))
 			s.True(user.ID > 0)
 			s.True(len(user.Roles) == 2)
 
 			var role Role
-			s.Nil(query.With("Users").Where("name = ?", "many_to_many_role1").First(&role))
+			s.Nil(query.Query().With("Users").Where("name = ?", "many_to_many_role1").First(&role))
 			s.True(role.ID > 0)
 			s.True(len(role.Users) == 1)
 			s.Equal("many_to_many_name", role.Users[0].Name)
@@ -2404,15 +2379,15 @@ func (s *QueryTestSuite) TestLimit() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "limit_user", Avatar: "limit_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "limit_user", Avatar: "limit_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var user2 []User
-			s.Nil(query.Where("name = ?", "limit_user").Limit(1).Get(&user2))
+			s.Nil(query.Query().Where("name = ?", "limit_user").Limit(1).Get(&user2))
 			s.True(len(user2) > 0)
 			s.True(user2[0].ID > 0)
 		})
@@ -2425,7 +2400,7 @@ func (s *QueryTestSuite) TestLoad() {
 		user.Address.Name = "load_address"
 		user.Books[0].Name = "load_book0"
 		user.Books[1].Name = "load_book1"
-		s.Nil(query.Select(orm.Associations).Create(&user))
+		s.Nil(query.Query().Select(orm.Associations).Create(&user))
 		s.True(user.ID > 0)
 		s.True(user.Address.ID > 0)
 		s.True(user.Books[0].ID > 0)
@@ -2439,14 +2414,14 @@ func (s *QueryTestSuite) TestLoad() {
 				description: "simple load relationship",
 				setup: func(description string) {
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.True(len(user1.Books) == 0)
-					s.Nil(query.Load(&user1, "Address"))
+					s.Nil(query.Query().Load(&user1, "Address"))
 					s.True(user1.Address.ID > 0)
 					s.True(len(user1.Books) == 0)
-					s.Nil(query.Load(&user1, "Books"))
+					s.Nil(query.Query().Load(&user1, "Books"))
 					s.True(user1.Address.ID > 0)
 					s.True(len(user1.Books) == 2)
 				},
@@ -2455,11 +2430,11 @@ func (s *QueryTestSuite) TestLoad() {
 				description: "load relationship with simple condition",
 				setup: func(description string) {
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.Nil(query.Load(&user1, "Books", "name = ?", "load_book0"))
+					s.Nil(query.Query().Load(&user1, "Books", "name = ?", "load_book0"))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(1, len(user1.Books))
@@ -2470,11 +2445,11 @@ func (s *QueryTestSuite) TestLoad() {
 				description: "load relationship with func condition",
 				setup: func(description string) {
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.Nil(query.Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
+					s.Nil(query.Query().Load(&user1, "Books", func(query contractsorm.Query) contractsorm.Query {
 						return query.Where("name = ?", "load_book0")
 					}))
 					s.True(user1.ID > 0)
@@ -2487,11 +2462,11 @@ func (s *QueryTestSuite) TestLoad() {
 				description: "error when relation is empty",
 				setup: func(description string) {
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.EqualError(query.Load(&user1, ""), "relation cannot be empty")
+					s.EqualError(query.Query().Load(&user1, ""), "relation cannot be empty")
 				},
 			},
 			{
@@ -2502,7 +2477,7 @@ func (s *QueryTestSuite) TestLoad() {
 						Avatar string
 					}
 					var userNoID UserNoID
-					s.EqualError(query.Load(&userNoID, "Book"), "id cannot be empty")
+					s.EqualError(query.Query().Load(&userNoID, "Book"), "id cannot be empty")
 				},
 			},
 		}
@@ -2521,7 +2496,7 @@ func (s *QueryTestSuite) TestLoadMissing() {
 			user.Address.Name = "load_missing_address"
 			user.Books[0].Name = "load_missing_book0"
 			user.Books[1].Name = "load_missing_book1"
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 			s.True(user.Books[0].ID > 0)
@@ -2535,14 +2510,14 @@ func (s *QueryTestSuite) TestLoadMissing() {
 					description: "load when missing",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.Find(&user1, user.ID))
+						s.Nil(query.Query().Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.True(len(user1.Books) == 0)
-						s.Nil(query.LoadMissing(&user1, "Address"))
+						s.Nil(query.Query().LoadMissing(&user1, "Address"))
 						s.True(user1.Address.ID > 0)
 						s.True(len(user1.Books) == 0)
-						s.Nil(query.LoadMissing(&user1, "Books"))
+						s.Nil(query.Query().LoadMissing(&user1, "Books"))
 						s.True(user1.Address.ID > 0)
 						s.True(len(user1.Books) == 2)
 					},
@@ -2551,13 +2526,13 @@ func (s *QueryTestSuite) TestLoadMissing() {
 					description: "don't load when not missing",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", "name = ?", "load_missing_book0").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Books", "name = ?", "load_missing_book0").Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.True(len(user1.Books) == 1)
-						s.Nil(query.LoadMissing(&user1, "Address"))
+						s.Nil(query.Query().LoadMissing(&user1, "Address"))
 						s.True(user1.Address.ID > 0)
-						s.Nil(query.LoadMissing(&user1, "Books"))
+						s.Nil(query.Query().LoadMissing(&user1, "Books"))
 						s.True(len(user1.Books) == 1)
 					},
 				},
@@ -2573,11 +2548,11 @@ func (s *QueryTestSuite) TestRaw() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "raw_user", Avatar: "raw_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			var user1 User
-			s.Nil(query.Raw("SELECT id, name FROM users WHERE name = ?", "raw_user").Scan(&user1))
+			s.Nil(query.Query().Raw("SELECT id, name FROM users WHERE name = ?", "raw_user").Scan(&user1))
 			s.True(user1.ID > 0)
 			s.Equal("raw_user", user1.Name)
 			s.Empty(user1.Avatar)
@@ -2588,11 +2563,11 @@ func (s *QueryTestSuite) TestRaw() {
 func (s *QueryTestSuite) TestReuse() {
 	for _, query := range s.queries {
 		users := []User{{Name: "reuse_user", Avatar: "reuse_avatar"}, {Name: "reuse_user1", Avatar: "reuse_avatar1"}}
-		s.Nil(query.Create(&users))
+		s.Nil(query.Query().Create(&users))
 		s.True(users[0].ID > 0)
 		s.True(users[1].ID > 0)
 
-		q := query.Where("name", "reuse_user")
+		q := query.Query().Where("name", "reuse_user")
 
 		var users1 User
 		s.Nil(q.Where("avatar", "reuse_avatar").Find(&users1))
@@ -2603,7 +2578,7 @@ func (s *QueryTestSuite) TestReuse() {
 		s.True(users2.ID == 0)
 
 		var users3 User
-		s.Nil(query.Where("avatar", "reuse_avatar1").Find(&users3))
+		s.Nil(query.Query().Where("avatar", "reuse_avatar1").Find(&users3))
 		s.True(users3.ID > 0)
 	}
 }
@@ -2632,7 +2607,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return review
 			}(),
 			setup:            func() {},
-			expectConnection: "mysql",
+			expectConnection: "postgres",
 		},
 		{
 			name: "the connection of model is same as current connection",
@@ -2641,7 +2616,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return box
 			}(),
 			setup:            func() {},
-			expectConnection: "mysql",
+			expectConnection: "postgres",
 		},
 		{
 			name: "connections are different, but drivers are same",
@@ -2650,7 +2625,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return people
 			}(),
 			setup: func() {
-				mockDummyConnection(s.mysqlQuery.MockConfig(), s.mysql1Docker.Config())
+				mockCommonConnection(s.queries[contractsorm.DriverPostgres].MockConfig(), s.additionalQuery, "dummy")
 			},
 			expectConnection: "dummy",
 		},
@@ -2661,17 +2636,17 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup: func() {
-				mockPostgresConnection(s.mysqlQuery.MockConfig(), s.postgresDocker.Config())
+				mockCommonConnection(s.queries[contractsorm.DriverPostgres].MockConfig(), s.queries[contractsorm.DriverSqlite], "sqlite")
 			},
-			expectConnection: "postgres",
+			expectConnection: "sqlite",
 		},
 	}
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			test.setup()
-			queryImpl := s.queries[contractsorm.DriverMysql].(*QueryImpl)
-			query, err := queryImpl.refreshConnection(test.model)
+			testQuery := s.queries[contractsorm.DriverPostgres]
+			query, err := testQuery.Query().(*QueryImpl).refreshConnection(test.model)
 			if test.expectErr != "" {
 				s.EqualError(err, test.expectErr)
 			} else {
@@ -2696,11 +2671,11 @@ func (s *QueryTestSuite) TestSave() {
 				name: "success when create",
 				setup: func() {
 					user := User{Name: "save_create_user", Avatar: "save_create_avatar"}
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("save_create_user", user1.Name)
 				},
 			},
@@ -2708,14 +2683,14 @@ func (s *QueryTestSuite) TestSave() {
 				name: "success when update",
 				setup: func() {
 					user := User{Name: "save_update_user", Avatar: "save_update_avatar"}
-					s.Nil(query.Create(&user))
+					s.Nil(query.Query().Create(&user))
 					s.True(user.ID > 0)
 
 					user.Name = "save_update_user1"
-					s.Nil(query.Save(&user))
+					s.Nil(query.Query().Save(&user))
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("save_update_user1", user1.Name)
 				},
 			},
@@ -2731,13 +2706,13 @@ func (s *QueryTestSuite) TestSave() {
 func (s *QueryTestSuite) TestSaveQuietly() {
 	for _, query := range s.queries {
 		user := User{Name: "event_save_quietly_name", Avatar: "save_quietly_avatar"}
-		s.Nil(query.SaveQuietly(&user))
+		s.Nil(query.Query().SaveQuietly(&user))
 		s.True(user.ID > 0)
 		s.Equal("event_save_quietly_name", user.Name)
 		s.Equal("save_quietly_avatar", user.Avatar)
 
 		var user1 User
-		s.Nil(query.Find(&user1, user.ID))
+		s.Nil(query.Query().Find(&user1, user.ID))
 		s.Equal("event_save_quietly_name", user1.Name)
 		s.Equal("save_quietly_avatar", user1.Avatar)
 	}
@@ -2747,12 +2722,12 @@ func (s *QueryTestSuite) TestScope() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			users := []User{{Name: "scope_user", Avatar: "scope_avatar"}, {Name: "scope_user1", Avatar: "scope_avatar1"}}
-			s.Nil(query.Create(&users))
+			s.Nil(query.Query().Create(&users))
 			s.True(users[0].ID > 0)
 			s.True(users[1].ID > 0)
 
 			var users1 []User
-			s.Nil(query.Scopes(paginator("1", "1")).Find(&users1))
+			s.Nil(query.Query().Scopes(paginator("1", "1")).Find(&users1))
 
 			s.Equal(1, len(users1))
 			s.True(users1[0].ID > 0)
@@ -2764,15 +2739,15 @@ func (s *QueryTestSuite) TestSelect() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "select_user", Avatar: "select_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "select_user", Avatar: "select_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "select_user1", Avatar: "select_avatar1"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			type Result struct {
@@ -2780,7 +2755,7 @@ func (s *QueryTestSuite) TestSelect() {
 				Count string
 			}
 			var result []Result
-			s.Nil(query.Model(&User{}).Select("name, count(avatar) as count").Where("id in ?", []uint{user.ID, user1.ID, user2.ID}).Group("name").Get(&result))
+			s.Nil(query.Query().Model(&User{}).Select("name, count(avatar) as count").Where("id in ?", []uint{user.ID, user1.ID, user2.ID}).Group("name").Get(&result))
 			s.Equal(2, len(result))
 			s.Equal("select_user", result[0].Name)
 			s.Equal("2", result[0].Count)
@@ -2788,7 +2763,7 @@ func (s *QueryTestSuite) TestSelect() {
 			s.Equal("1", result[1].Count)
 
 			var result1 []Result
-			s.Nil(query.Model(&User{}).Select("name, count(avatar) as count").Group("name").Having("name = ?", "select_user").Get(&result1))
+			s.Nil(query.Query().Model(&User{}).Select("name, count(avatar) as count").Group("name").Having("name = ?", "select_user").Get(&result1))
 
 			s.Equal(1, len(result1))
 			s.Equal("select_user", result1[0].Name)
@@ -2802,17 +2777,17 @@ func (s *QueryTestSuite) TestSharedLock() {
 		if driver != contractsorm.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "shared_lock_user"}
-				s.Nil(query.Create(&user))
+				s.Nil(query.Query().Create(&user))
 				s.True(user.ID > 0)
 
-				tx, err := query.Begin()
+				tx, err := query.Query().Begin()
 				s.Nil(err)
 				var user1 User
 				s.Nil(tx.SharedLock().Find(&user1, user.ID))
 				s.True(user1.ID > 0)
 
 				var user2 User
-				s.Nil(query.SharedLock().Find(&user2, user.ID))
+				s.Nil(query.Query().SharedLock().Find(&user2, user.ID))
 				s.True(user2.ID > 0)
 
 				user1.Name += "1"
@@ -2821,7 +2796,7 @@ func (s *QueryTestSuite) TestSharedLock() {
 				s.Nil(tx.Commit())
 
 				var user3 User
-				s.Nil(query.Find(&user3, user.ID))
+				s.Nil(query.Query().Find(&user3, user.ID))
 				s.Equal("shared_lock_user1", user3.Name)
 			})
 		}
@@ -2832,27 +2807,27 @@ func (s *QueryTestSuite) TestSoftDelete() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "soft_delete_user", Avatar: "soft_delete_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
-			res, err := query.Where("name = ?", "soft_delete_user").Delete(&User{})
+			res, err := query.Query().Where("name = ?", "soft_delete_user").Delete(&User{})
 			s.Equal(int64(1), res.RowsAffected)
 			s.Nil(err)
 
 			var user1 User
-			s.Nil(query.Find(&user1, user.ID))
+			s.Nil(query.Query().Find(&user1, user.ID))
 			s.Equal(uint(0), user1.ID)
 
 			var user2 User
-			s.Nil(query.WithTrashed().Find(&user2, user.ID))
+			s.Nil(query.Query().WithTrashed().Find(&user2, user.ID))
 			s.True(user2.ID > 0)
 
-			res, err = query.Where("name = ?", "soft_delete_user").ForceDelete(&User{})
+			res, err = query.Query().Where("name = ?", "soft_delete_user").ForceDelete(&User{})
 			s.Equal(int64(1), res.RowsAffected)
 			s.Nil(err)
 
 			var user3 User
-			s.Nil(query.WithTrashed().Find(&user3, user.ID))
+			s.Nil(query.Query().WithTrashed().Find(&user3, user.ID))
 			s.Equal(uint(0), user3.ID)
 		})
 	}
@@ -2862,15 +2837,15 @@ func (s *QueryTestSuite) TestSum() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "count_user", Avatar: "count_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "count_user", Avatar: "count_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var value float64
-			err := query.Table("users").Sum("id", &value)
+			err := query.Query().Table("users").Sum("id", &value)
 			s.Nil(err)
 			s.True(value > 0)
 		})
@@ -2882,11 +2857,11 @@ func (s *QueryTestSuite) TestToSql() {
 		s.Run(driver.String(), func() {
 			switch driver {
 			case contractsorm.DriverPostgres:
-				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			case contractsorm.DriverSqlserver:
-				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToSql().Find(User{}))
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
-				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Where("id", 1).ToSql().Find(User{}))
+				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			}
 		})
 	}
@@ -2897,11 +2872,11 @@ func (s *QueryTestSuite) TestToRawSql() {
 		s.Run(driver.String(), func() {
 			switch driver {
 			case contractsorm.DriverPostgres:
-				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			case contractsorm.DriverSqlserver:
-				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
+				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			default:
-				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Where("id", 1).ToRawSql().Find(User{}))
+				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			}
 		})
 	}
@@ -2912,15 +2887,15 @@ func (s *QueryTestSuite) TestTransactionSuccess() {
 		s.Run(driver.String(), func() {
 			user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 			user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-			tx, err := query.Begin()
+			tx, err := query.Query().Begin()
 			s.Nil(err)
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 			s.Nil(tx.Commit())
 
 			var user2, user3 User
-			s.Nil(query.Find(&user2, user.ID))
-			s.Nil(query.Find(&user3, user1.ID))
+			s.Nil(query.Query().Find(&user2, user.ID))
+			s.Nil(query.Query().Find(&user3, user1.ID))
 		})
 	}
 }
@@ -2930,14 +2905,14 @@ func (s *QueryTestSuite) TestTransactionError() {
 		s.Run(driver.String(), func() {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			user1 := User{Name: "transaction_error_user1", Avatar: "transaction_error_avatar1"}
-			tx, err := query.Begin()
+			tx, err := query.Query().Begin()
 			s.Nil(err)
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 			s.Nil(tx.Rollback())
 
 			var users []User
-			s.Nil(query.Where("name = ? or name = ?", "transaction_error_user", "transaction_error_user1").Find(&users))
+			s.Nil(query.Query().Where("name = ? or name = ?", "transaction_error_user", "transaction_error_user1").Find(&users))
 			s.Equal(0, len(users))
 		})
 	}
@@ -2953,19 +2928,19 @@ func (s *QueryTestSuite) TestUpdate() {
 				name: "update single column, success",
 				setup: func() {
 					users := []User{{Name: "updates_single_name", Avatar: "updates_single_avatar"}, {Name: "updates_single_name", Avatar: "updates_single_avatar1"}}
-					s.Nil(query.Create(&users))
+					s.Nil(query.Query().Create(&users))
 					s.True(users[0].ID > 0)
 					s.True(users[1].ID > 0)
 
-					res, err := query.Model(&User{}).Where("name = ?", "updates_single_name").Update("avatar", "update_single_avatar2")
+					res, err := query.Query().Model(&User{}).Where("name = ?", "updates_single_name").Update("avatar", "update_single_avatar2")
 					s.Equal(int64(2), res.RowsAffected)
 					s.Nil(err)
 
 					var user2 User
-					s.Nil(query.Find(&user2, users[0].ID))
+					s.Nil(query.Query().Find(&user2, users[0].ID))
 					s.Equal("update_single_avatar2", user2.Avatar)
 					var user3 User
-					s.Nil(query.Find(&user3, users[1].ID))
+					s.Nil(query.Query().Find(&user3, users[1].ID))
 					s.Equal("update_single_avatar2", user3.Avatar)
 				},
 			},
@@ -2973,21 +2948,21 @@ func (s *QueryTestSuite) TestUpdate() {
 				name: "update columns by map, success",
 				setup: func() {
 					users := []User{{Name: "update_map_name", Avatar: "update_map_avatar"}, {Name: "update_map_name", Avatar: "update_map_avatar1"}}
-					s.Nil(query.Create(&users))
+					s.Nil(query.Query().Create(&users))
 					s.True(users[0].ID > 0)
 					s.True(users[1].ID > 0)
 
-					res, err := query.Model(&User{}).Where("name = ?", "update_map_name").Update(map[string]any{
+					res, err := query.Query().Model(&User{}).Where("name = ?", "update_map_name").Update(map[string]any{
 						"avatar": "update_map_avatar2",
 					})
 					s.Equal(int64(2), res.RowsAffected)
 					s.Nil(err)
 
 					var user2 User
-					s.Nil(query.Find(&user2, users[0].ID))
+					s.Nil(query.Query().Find(&user2, users[0].ID))
 					s.Equal("update_map_avatar2", user2.Avatar)
 					var user3 User
-					s.Nil(query.Find(&user3, users[0].ID))
+					s.Nil(query.Query().Find(&user3, users[0].ID))
 					s.Equal("update_map_avatar2", user3.Avatar)
 				},
 			},
@@ -2995,19 +2970,19 @@ func (s *QueryTestSuite) TestUpdate() {
 				name: "update columns by model, success",
 				setup: func() {
 					users := []User{{Name: "update_model_name", Avatar: "update_model_avatar"}, {Name: "update_model_name", Avatar: "update_model_avatar1"}}
-					s.Nil(query.Create(&users))
+					s.Nil(query.Query().Create(&users))
 					s.True(users[0].ID > 0)
 					s.True(users[1].ID > 0)
 
-					res, err := query.Model(&User{}).Where("name = ?", "update_model_name").Update(User{Avatar: "update_model_avatar2"})
+					res, err := query.Query().Model(&User{}).Where("name = ?", "update_model_name").Update(User{Avatar: "update_model_avatar2"})
 					s.Equal(int64(2), res.RowsAffected)
 					s.Nil(err)
 
 					var user2 User
-					s.Nil(query.Find(&user2, users[0].ID))
+					s.Nil(query.Query().Find(&user2, users[0].ID))
 					s.Equal("update_model_avatar2", user2.Avatar)
 					var user3 User
-					s.Nil(query.Find(&user3, users[0].ID))
+					s.Nil(query.Query().Find(&user3, users[0].ID))
 					s.Equal("update_model_avatar2", user3.Avatar)
 				},
 			},
@@ -3024,28 +2999,28 @@ func (s *QueryTestSuite) TestUpdateOrCreate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			var user User
-			err := query.UpdateOrCreate(&user, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar"})
+			err := query.Query().UpdateOrCreate(&user, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar"})
 			s.Nil(err)
 			s.True(user.ID > 0)
 
 			var user1 User
-			err = query.Where("name", "update_or_create_user").Find(&user1)
+			err = query.Query().Where("name", "update_or_create_user").Find(&user1)
 			s.Nil(err)
 			s.True(user1.ID > 0)
 
 			var user2 User
-			err = query.UpdateOrCreate(&user2, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar1"})
+			err = query.Query().UpdateOrCreate(&user2, User{Name: "update_or_create_user"}, User{Avatar: "update_or_create_avatar1"})
 			s.Nil(err)
 			s.True(user2.ID > 0)
 			s.Equal("update_or_create_avatar1", user2.Avatar)
 
 			var user3 User
-			err = query.Where("avatar", "update_or_create_avatar1").Find(&user3)
+			err = query.Query().Where("avatar", "update_or_create_avatar1").Find(&user3)
 			s.Nil(err)
 			s.True(user3.ID > 0)
 
 			var count int64
-			err = query.Model(User{}).Where("name", "update_or_create_user").Count(&count)
+			err = query.Query().Model(User{}).Where("name", "update_or_create_user").Count(&count)
 			s.Nil(err)
 			s.Equal(int64(1), count)
 		})
@@ -3056,23 +3031,23 @@ func (s *QueryTestSuite) TestWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_user", Avatar: "where_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_user1", Avatar: "where_avatar1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var user2 []User
-			s.Nil(query.Where("name = ?", "where_user").OrWhere("avatar = ?", "where_avatar1").Find(&user2))
+			s.Nil(query.Query().Where("name = ?", "where_user").OrWhere("avatar = ?", "where_avatar1").Find(&user2))
 			s.Equal(2, len(user2))
 
 			var user3 User
-			s.Nil(query.Where("name = 'where_user'").Find(&user3))
+			s.Nil(query.Query().Where("name = 'where_user'").Find(&user3))
 			s.True(user3.ID > 0)
 
 			var user4 User
-			s.Nil(query.Where("name", "where_user").Find(&user4))
+			s.Nil(query.Query().Where("name", "where_user").Find(&user4))
 			s.True(user4.ID > 0)
 		})
 	}
@@ -3082,15 +3057,15 @@ func (s *QueryTestSuite) TestWhereIn() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.WhereIn("id", []any{user.ID, user1.ID}).Find(&users))
+			s.Nil(query.Query().WhereIn("id", []any{user.ID, user1.ID}).Find(&users))
 			s.True(len(users) == 2)
 		})
 	}
@@ -3100,15 +3075,15 @@ func (s *QueryTestSuite) TestOrWhereIn() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("id = ?", -1).OrWhereIn("id", []any{user.ID, user1.ID}).Find(&users))
+			s.Nil(query.Query().Where("id = ?", -1).OrWhereIn("id", []any{user.ID, user1.ID}).Find(&users))
 			s.True(len(users) == 2)
 		})
 	}
@@ -3118,19 +3093,19 @@ func (s *QueryTestSuite) TestWhereNotIn() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "where_in_user_2", Avatar: "where_in_avatar_2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			var user3 User
-			s.Nil(query.Where("id = ?", user2.ID).WhereNotIn("id", []any{user.ID, user1.ID}).First(&user3))
+			s.Nil(query.Query().Where("id = ?", user2.ID).WhereNotIn("id", []any{user.ID, user1.ID}).First(&user3))
 			s.True(user3.ID == user2.ID)
 		})
 	}
@@ -3140,19 +3115,19 @@ func (s *QueryTestSuite) TestOrWhereNotIn() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_in_user", Avatar: "where_in_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_in_user_1", Avatar: "where_in_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "where_in_user_2", Avatar: "where_in_avatar_2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("id = ?", -1).OrWhereNotIn("id", []any{user.ID, user1.ID}).Find(&users))
+			s.Nil(query.Query().Where("id = ?", -1).OrWhereNotIn("id", []any{user.ID, user1.ID}).Find(&users))
 			var user2Found bool
 			for _, user := range users {
 				if user.ID == user2.ID {
@@ -3168,19 +3143,19 @@ func (s *QueryTestSuite) TestWhereBetween() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_between_user", Avatar: "where_between_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_between_user_1", Avatar: "where_between_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "where_between_user_2", Avatar: "where_between_avatar_2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			var users []User
-			s.Nil(query.WhereBetween("id", user.ID, user2.ID).Find(&users))
+			s.Nil(query.Query().WhereBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 3)
 		})
 	}
@@ -3190,23 +3165,23 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			user3 := User{Name: "where_not_between_user", Avatar: "where_not_between_avatar_2"}
-			s.Nil(query.Create(&user3))
+			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "where_not_between_user").WhereNotBetween("id", user.ID, user2.ID).Find(&users))
+			s.Nil(query.Query().Where("name = ?", "where_not_between_user").WhereNotBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 1)
 			s.True(users[0].ID == user3.ID)
 		})
@@ -3217,23 +3192,23 @@ func (s *QueryTestSuite) TestOrWhereBetween() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "or_where_between_user", Avatar: "or_where_between_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "or_where_between_user_1", Avatar: "or_where_between_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "or_where_between_user_2", Avatar: "or_where_between_avatar_2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			user3 := User{Name: "or_where_between_user_3", Avatar: "or_where_between_avatar_3"}
-			s.Nil(query.Create(&user3))
+			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "or_where_between_user_3").OrWhereBetween("id", user.ID, user2.ID).Find(&users))
+			s.Nil(query.Query().Where("name = ?", "or_where_between_user_3").OrWhereBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) == 4)
 		})
 	}
@@ -3243,23 +3218,23 @@ func (s *QueryTestSuite) TestOrWhereNotBetween() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			user := User{Name: "or_where_between_user", Avatar: "or_where_between_avatar"}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "or_where_between_user_1", Avatar: "or_where_between_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			user2 := User{Name: "or_where_between_user_2", Avatar: "or_where_between_avatar_2"}
-			s.Nil(query.Create(&user2))
+			s.Nil(query.Query().Create(&user2))
 			s.True(user2.ID > 0)
 
 			user3 := User{Name: "or_where_between_user_3", Avatar: "or_where_between_avatar_3"}
-			s.Nil(query.Create(&user3))
+			s.Nil(query.Query().Create(&user3))
 			s.True(user3.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "or_where_between_user_3").OrWhereNotBetween("id", user.ID, user2.ID).Find(&users))
+			s.Nil(query.Query().Where("name = ?", "or_where_between_user_3").OrWhereNotBetween("id", user.ID, user2.ID).Find(&users))
 			s.True(len(users) >= 1)
 		})
 	}
@@ -3270,15 +3245,15 @@ func (s *QueryTestSuite) TestWhereNull() {
 		s.Run(driver.String(), func() {
 			bio := "where_null_bio"
 			user := User{Name: "where_null_user", Avatar: "where_null_avatar", Bio: &bio}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_null_user", Avatar: "where_null_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "where_null_user").WhereNull("bio").Find(&users))
+			s.Nil(query.Query().Where("name = ?", "where_null_user").WhereNull("bio").Find(&users))
 			s.True(len(users) == 1)
 			s.True(users[0].ID == user1.ID)
 		})
@@ -3290,15 +3265,15 @@ func (s *QueryTestSuite) TestOrWhereNull() {
 		s.Run(driver.String(), func() {
 			bio := "or_where_null_bio"
 			user := User{Name: "or_where_null_user", Avatar: "or_where_null_avatar", Bio: &bio}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "or_where_null_user_1", Avatar: "or_where_null_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "or_where_null_user").OrWhereNull("bio").Find(&users))
+			s.Nil(query.Query().Where("name = ?", "or_where_null_user").OrWhereNull("bio").Find(&users))
 			s.True(len(users) >= 2)
 		})
 	}
@@ -3309,15 +3284,15 @@ func (s *QueryTestSuite) TestWhereNotNull() {
 		s.Run(driver.String(), func() {
 			bio := "where_not_null_bio"
 			user := User{Name: "where_not_null_user", Avatar: "where_not_null_avatar", Bio: &bio}
-			s.Nil(query.Create(&user))
+			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "where_not_null_user", Avatar: "where_not_null_avatar_1"}
-			s.Nil(query.Create(&user1))
+			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
 			var users []User
-			s.Nil(query.Where("name = ?", "where_not_null_user").WhereNotNull("bio").Find(&users))
+			s.Nil(query.Query().Where("name = ?", "where_not_null_user").WhereNotNull("bio").Find(&users))
 			s.True(len(users) == 1)
 			s.True(users[0].ID == user.ID)
 		})
@@ -3334,12 +3309,12 @@ func (s *QueryTestSuite) TestWithoutEvents() {
 				name: "success",
 				setup: func() {
 					user := User{Name: "event_save_without_name", Avatar: "without_events_avatar"}
-					s.Nil(query.WithoutEvents().Save(&user))
+					s.Nil(query.Query().WithoutEvents().Save(&user))
 					s.True(user.ID > 0)
 					s.Equal("without_events_avatar", user.Avatar)
 
 					var user1 User
-					s.Nil(query.Find(&user1, user.ID))
+					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("event_save_without_name", user1.Name)
 					s.Equal("without_events_avatar", user1.Avatar)
 				},
@@ -3363,7 +3338,7 @@ func (s *QueryTestSuite) TestWith() {
 			}, {
 				Name: "with_book1",
 			}}}
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 			s.True(user.Books[0].ID > 0)
@@ -3377,7 +3352,7 @@ func (s *QueryTestSuite) TestWith() {
 					description: "simple",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Address").With("Books").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Address").With("Books").Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.True(user1.Address.ID > 0)
 						s.True(user1.Books[0].ID > 0)
@@ -3388,7 +3363,7 @@ func (s *QueryTestSuite) TestWith() {
 					description: "with simple conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", "name = ?", "with_book0").Find(&user1, user.ID))
+						s.Nil(query.Query().With("Books", "name = ?", "with_book0").Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
 						s.Equal(1, len(user1.Books))
@@ -3399,7 +3374,7 @@ func (s *QueryTestSuite) TestWith() {
 					description: "with func conditions",
 					setup: func(description string) {
 						var user1 User
-						s.Nil(query.With("Books", func(query contractsorm.Query) contractsorm.Query {
+						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
 							return query.Where("name = ?", "with_book0")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
@@ -3426,7 +3401,7 @@ func (s *QueryTestSuite) TestWithNesting() {
 				Name:   "with_nesting_book1",
 				Author: &Author{Name: "with_nesting_author1"},
 			}}}
-			s.Nil(query.Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(orm.Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[0].Author.ID > 0)
@@ -3434,7 +3409,7 @@ func (s *QueryTestSuite) TestWithNesting() {
 			s.True(user.Books[1].Author.ID > 0)
 
 			var user1 User
-			s.Nil(query.With("Books.Author").Find(&user1, user.ID))
+			s.Nil(query.Query().With("Books.Author").Find(&user1, user.ID))
 			s.True(user1.ID > 0)
 			s.Equal("with_nesting_user", user1.Name)
 			s.True(user1.Books[0].ID > 0)
@@ -3449,35 +3424,20 @@ func (s *QueryTestSuite) TestWithNesting() {
 	}
 }
 
-func (s *QueryTestSuite) mockDummyConnection(driver contractsorm.Driver) {
-	switch driver {
-	case contractsorm.DriverMysql:
-		mockDummyConnection(s.mysqlQuery.MockConfig(), s.mysql1Docker.Config())
-	case contractsorm.DriverPostgres:
-		mockDummyConnection(s.postgresQuery.MockConfig(), s.mysql1Docker.Config())
-	case contractsorm.DriverSqlite:
-		mockDummyConnection(s.sqliteQuery.MockConfig(), s.mysql1Docker.Config())
-	case contractsorm.DriverSqlserver:
-		mockDummyConnection(s.sqlserverQuery.MockConfig(), s.mysql1Docker.Config())
-	}
-}
-
 func TestCustomConnection(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := supportdocker.Mysql()
-	mysqlQuery, err := NewTestQuery(mysqlDocker)
-	require.NoError(t, err)
-
-	query := mysqlQuery.Query()
-	require.NoError(t, mysqlQuery.CreateTable(TestTableReviews, TestTableProducts))
-
 	postgresDocker := supportdocker.Postgres()
-	postgresQuery, err := NewTestQuery(postgresDocker)
-	require.NoError(t, err)
-	require.NoError(t, postgresQuery.CreateTable(TestTableReviews, TestTableProducts))
+	postgresQuery := NewTestQuery(postgresDocker)
+	postgresQuery.CreateTable(TestTableReviews, TestTableProducts)
+
+	sqliteDocker := supportdocker.Sqlite()
+	sqliteQuery := NewTestQuery(sqliteDocker)
+	sqliteQuery.CreateTable(TestTableReviews, TestTableProducts)
+
+	query := postgresQuery.Query()
 
 	review := Review{Body: "create_review"}
 	assert.Nil(t, query.Create(&review))
@@ -3487,7 +3447,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
 	assert.True(t, review1.ID > 0)
 
-	mockPostgresConnection(mysqlQuery.MockConfig(), postgresDocker.Config())
+	mockCommonConnection(postgresQuery.MockConfig(), sqliteQuery, "sqlite")
 
 	product := Product{Name: "create_product"}
 	assert.Nil(t, query.Create(&product))
@@ -3501,7 +3461,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
 	assert.True(t, product2.ID == 0)
 
-	mockDummyConnection(mysqlQuery.MockConfig(), mysqlDocker.Config())
+	mockCommonConnection(postgresQuery.MockConfig(), postgresQuery, "dummy")
 
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
@@ -3586,7 +3546,7 @@ func TestGetModelConnection(t *testing.T) {
 				var product Product
 				return product
 			}(),
-			expectConnection: "postgres",
+			expectConnection: "sqlite",
 		},
 		{
 			name: "the connection of model is not empty and model is slice",
@@ -3594,7 +3554,7 @@ func TestGetModelConnection(t *testing.T) {
 				var products []Product
 				return products
 			}(),
-			expectConnection: "postgres",
+			expectConnection: "sqlite",
 		},
 	}
 
@@ -3641,87 +3601,7 @@ func TestReadWriteSeparate(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDockers := supportdocker.Mysqls(2)
-	readMysqlQuery, err := NewTestQuery(mysqlDockers[0])
-	require.NoError(t, err)
-	require.NoError(t, readMysqlQuery.CreateTable(TestTableUsers))
-
-	writeMysqlQuery, err := NewTestQuery(mysqlDockers[1])
-	require.NoError(t, err)
-	require.NoError(t, writeMysqlQuery.CreateTable(TestTableUsers))
-
-	mysqlQuery, err := writeMysqlQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readMysqlQuery.Docker().Config().Port,
-		WritePort: writeMysqlQuery.Docker().Config().Port,
-	})
-	require.NoError(t, err)
-
-	postgresDockers := supportdocker.Postgreses(2)
-	readPostgresQuery, err := NewTestQuery(postgresDockers[0])
-	require.NoError(t, err)
-	require.NoError(t, readPostgresQuery.CreateTable(TestTableUsers))
-
-	writePostgresQuery, err := NewTestQuery(postgresDockers[1])
-	require.NoError(t, err)
-	require.NoError(t, writePostgresQuery.CreateTable(TestTableUsers))
-
-	postgresQuery, err := writePostgresQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readPostgresQuery.Docker().Config().Port,
-		WritePort: writePostgresQuery.Docker().Config().Port,
-	})
-	require.NoError(t, err)
-
-	sqliteDockers := supportdocker.Sqlites(2)
-	readSqliteQuery, err := NewTestQuery(sqliteDockers[0])
-	require.NoError(t, err)
-	require.NoError(t, readSqliteQuery.CreateTable(TestTableUsers))
-
-	writeSqliteDocker, err := NewTestQuery(sqliteDockers[1])
-	require.NoError(t, err)
-	require.NoError(t, writeSqliteDocker.CreateTable(TestTableUsers))
-
-	sqliteQuery, err := writeSqliteDocker.QueryOfReadWrite(TestReadWriteConfig{
-		ReadDatabase: readSqliteQuery.Docker().Config().Database,
-	})
-	require.NoError(t, err)
-
-	sqlserverDockers := supportdocker.Sqlservers(2)
-	readSqlserverQuery, err := NewTestQuery(sqlserverDockers[0])
-	require.NoError(t, err)
-	require.NoError(t, readSqlserverQuery.CreateTable(TestTableUsers))
-
-	writeSqlserverQuery, err := NewTestQuery(sqlserverDockers[1])
-	require.NoError(t, err)
-	require.NoError(t, writeSqlserverQuery.CreateTable(TestTableUsers))
-
-	sqlserverDB, err := writeSqlserverQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readSqlserverQuery.Docker().Config().Port,
-		WritePort: writeSqlserverQuery.Docker().Config().Port,
-	})
-	require.NoError(t, err)
-
-	dbs := map[contractsorm.Driver]map[string]contractsorm.Query{
-		contractsorm.DriverMysql: {
-			"mix":   mysqlQuery,
-			"read":  readMysqlQuery.Query(),
-			"write": writeMysqlQuery.Query(),
-		},
-		contractsorm.DriverPostgres: {
-			"mix":   postgresQuery,
-			"read":  readPostgresQuery.Query(),
-			"write": writePostgresQuery.Query(),
-		},
-		contractsorm.DriverSqlite: {
-			"mix":   sqliteQuery,
-			"read":  readSqliteQuery.Query(),
-			"write": writeSqliteDocker.Query(),
-		},
-		contractsorm.DriverSqlserver: {
-			"mix":   sqlserverDB,
-			"read":  readSqlserverQuery.Query(),
-			"write": writeSqlserverQuery.Query(),
-		},
-	}
+	dbs := NewTestQueries().QueriesOfReadWrite()
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
@@ -3749,37 +3629,16 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlQuery, err := NewTestQuery(supportdocker.Mysql(), true)
-	require.NoError(t, err)
-	require.NoError(t, mysqlQuery.CreateTable(TestTableGoravelUser))
-
-	postgresQuery, err := NewTestQuery(supportdocker.Postgres(), true)
-	require.NoError(t, err)
-	require.NoError(t, postgresQuery.CreateTable(TestTableGoravelUser))
-
-	sqliteQuery, err := NewTestQuery(supportdocker.Sqlite(), true)
-	require.NoError(t, err)
-	require.NoError(t, sqliteQuery.CreateTable(TestTableGoravelUser))
-
-	sqlserverQuery, err := NewTestQuery(supportdocker.Sqlserver(), true)
-	require.NoError(t, err)
-	require.NoError(t, sqlserverQuery.CreateTable(TestTableGoravelUser))
-
-	dbs := map[contractsorm.Driver]contractsorm.Query{
-		contractsorm.DriverMysql:     mysqlQuery.Query(),
-		contractsorm.DriverPostgres:  postgresQuery.Query(),
-		contractsorm.DriverSqlite:    sqliteQuery.Query(),
-		contractsorm.DriverSqlserver: sqlserverQuery.Query(),
-	}
+	dbs := NewTestQueries().QueriesWithPrefixAndSingular()
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
 			user := User{Name: "user"}
-			assert.Nil(t, db.Create(&user))
+			assert.Nil(t, db.Query().Create(&user))
 			assert.True(t, user.ID > 0)
 
 			var user1 User
-			assert.Nil(t, db.Find(&user1, user.ID))
+			assert.Nil(t, db.Query().Find(&user1, user.ID))
 			assert.True(t, user1.ID > 0)
 		})
 	}
@@ -3795,34 +3654,9 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 	}
 }
 
-func mockDummyConnection(mockConfig *mocksconfig.Config, databaseConfig contractstesting.DatabaseConfig) {
-	mockConfig.On("GetString", "database.connections.dummy.prefix").Return("")
-	mockConfig.On("GetBool", "database.connections.dummy.singular").Return(false)
-	mockConfig.On("Get", "database.connections.dummy.read").Return(nil)
-	mockConfig.On("Get", "database.connections.dummy.write").Return(nil)
-	mockConfig.On("GetString", "database.connections.dummy.host").Return("127.0.0.1")
-	mockConfig.On("GetString", "database.connections.dummy.username").Return(databaseConfig.Username)
-	mockConfig.On("GetString", "database.connections.dummy.password").Return(databaseConfig.Password)
-	mockConfig.On("GetInt", "database.connections.dummy.port").Return(databaseConfig.Port)
-	mockConfig.On("GetString", "database.connections.dummy.driver").Return(contractsorm.DriverMysql.String())
-	mockConfig.On("GetString", "database.connections.dummy.charset").Return("utf8mb4")
-	mockConfig.On("GetString", "database.connections.dummy.loc").Return("Local")
-	mockConfig.On("GetString", "database.connections.dummy.database").Return(databaseConfig.Database)
-}
-
-func mockPostgresConnection(mockConfig *mocksconfig.Config, databaseConfig contractstesting.DatabaseConfig) {
-	mockConfig.On("GetString", "database.connections.postgres.prefix").Return("")
-	mockConfig.On("GetBool", "database.connections.postgres.singular").Return(false)
-	mockConfig.On("Get", "database.connections.postgres.read").Return(nil)
-	mockConfig.On("Get", "database.connections.postgres.write").Return(nil)
-	mockConfig.On("GetString", "database.connections.postgres.host").Return("127.0.0.1")
-	mockConfig.On("GetString", "database.connections.postgres.username").Return(databaseConfig.Username)
-	mockConfig.On("GetString", "database.connections.postgres.password").Return(databaseConfig.Password)
-	mockConfig.On("GetInt", "database.connections.postgres.port").Return(databaseConfig.Port)
-	mockConfig.On("GetString", "database.connections.postgres.driver").Return(contractsorm.DriverPostgres.String())
-	mockConfig.On("GetString", "database.connections.postgres.sslmode").Return("disable")
-	mockConfig.On("GetString", "database.connections.postgres.timezone").Return("UTC")
-	mockConfig.On("GetString", "database.connections.postgres.database").Return(databaseConfig.Database)
+func mockCommonConnection(mockConfig *mocksconfig.Config, testQuery *TestQuery, connection string) {
+	mockDriver := GetMockDriver(testQuery.Docker(), mockConfig, connection)
+	mockDriver.Common()
 }
 
 type UserObserver struct{}

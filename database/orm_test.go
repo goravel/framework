@@ -51,21 +51,17 @@ func TestOrmSuite(t *testing.T) {
 }
 
 func (s *OrmSuite) SetupSuite() {
-	mysqlQuery, err := gorm.NewTestQuery(docker.Mysql())
-	s.Require().NoError(err)
-	s.Require().NoError(mysqlQuery.CreateTable(gorm.TestTableUsers))
+	mysqlQuery := gorm.NewTestQuery(docker.Mysql())
+	mysqlQuery.CreateTable(gorm.TestTableUsers)
 
-	postgresQuery, err := gorm.NewTestQuery(docker.Postgres())
-	s.Require().NoError(err)
-	s.Require().NoError(postgresQuery.CreateTable(gorm.TestTableUsers))
+	postgresQuery := gorm.NewTestQuery(docker.Postgres())
+	postgresQuery.CreateTable(gorm.TestTableUsers)
 
-	sqliteQuery, err := gorm.NewTestQuery(docker.Sqlite())
-	s.Require().NoError(err)
-	s.Require().NoError(sqliteQuery.CreateTable(gorm.TestTableUsers))
+	sqliteQuery := gorm.NewTestQuery(docker.Sqlite())
+	sqliteQuery.CreateTable(gorm.TestTableUsers)
 
-	sqlserverQuery, err := gorm.NewTestQuery(docker.Sqlserver())
-	s.Require().NoError(err)
-	s.Require().NoError(sqlserverQuery.CreateTable(gorm.TestTableUsers))
+	sqlserverQuery := gorm.NewTestQuery(docker.Sqlserver())
+	sqlserverQuery.CreateTable(gorm.TestTableUsers)
 
 	s.mysqlQuery = mysqlQuery.Query()
 	s.postgresQuery = postgresQuery.Query()

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
@@ -35,9 +34,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		{
 			name: "sqlite",
 			setup: func() {
-				sqliteQuery, err := gorm.NewTestQuery(docker.Sqlite())
-				require.NoError(t, err)
-
+				sqliteQuery := gorm.NewTestQuery(docker.Sqlite())
 				query = sqliteQuery.Query()
 				mockConfig = sqliteQuery.MockConfig()
 				createSqliteMigrations()
@@ -46,9 +43,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		{
 			name: "mysql",
 			setup: func() {
-				mysqlQuery, err := gorm.NewTestQuery(docker.Mysql())
-				require.Nil(t, err)
-
+				mysqlQuery := gorm.NewTestQuery(docker.Mysql())
 				query = mysqlQuery.Query()
 				mockConfig = mysqlQuery.MockConfig()
 				createMysqlMigrations()
@@ -57,9 +52,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		{
 			name: "postgres",
 			setup: func() {
-				postgresQuery, err := gorm.NewTestQuery(docker.Postgres())
-				require.NoError(t, err)
-
+				postgresQuery := gorm.NewTestQuery(docker.Postgres())
 				query = postgresQuery.Query()
 				mockConfig = postgresQuery.MockConfig()
 				createPostgresMigrations()
@@ -68,9 +61,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		{
 			name: "sqlserver",
 			setup: func() {
-				sqlserverQuery, err := gorm.NewTestQuery(docker.Sqlserver())
-				require.NoError(t, err)
-
+				sqlserverQuery := gorm.NewTestQuery(docker.Sqlserver())
 				query = sqlserverQuery.Query()
 				mockConfig = sqlserverQuery.MockConfig()
 				createSqlserverMigrations()

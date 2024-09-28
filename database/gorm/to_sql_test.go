@@ -24,9 +24,8 @@ func TestToSqlTestSuite(t *testing.T) {
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	mysqlQuery, err := NewTestQuery(docker.Mysql())
-	s.Require().NoError(err)
-	s.Require().NoError(mysqlQuery.CreateTable(TestTableUsers))
+	mysqlQuery := NewTestQuery(docker.Mysql())
+	mysqlQuery.CreateTable(TestTableUsers)
 
 	s.query = mysqlQuery.Query()
 }
