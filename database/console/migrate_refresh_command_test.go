@@ -5,11 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	configmock "github.com/goravel/framework/mocks/config"
-	consolemocks "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/docker"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -18,112 +15,57 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	var (
-		mockConfig *configmock.Config
-		query      ormcontract.Query
-	)
+	testQueries := gorm.NewTestQueries().Queries()
+	for driver, testQuery := range testQueries {
+		query := testQuery.Query()
+		mockConfig := testQuery.MockConfig()
+		createMigrations(driver)
 
-	beforeEach := func() {
-		mockConfig = &configmock.Config{}
-	}
+		mockArtisan := mocksconsole.NewArtisan(t)
+		mockContext := mocksconsole.NewContext(t)
+		mockContext.On("Option", "step").Return("").Once()
 
-	tests := []struct {
-		name  string
-		setup func()
-	}{
-		{
-			name: "sqlite",
-			setup: func() {
-				sqliteQuery := gorm.NewTestQuery(docker.Sqlite())
-				query = sqliteQuery.Query()
-				mockConfig = sqliteQuery.MockConfig()
-				createSqliteMigrations()
-			},
-		},
-		{
-			name: "mysql",
-			setup: func() {
-				mysqlQuery := gorm.NewTestQuery(docker.Mysql())
-				query = mysqlQuery.Query()
-				mockConfig = mysqlQuery.MockConfig()
-				createMysqlMigrations()
-			},
-		},
-		{
-			name: "postgres",
-			setup: func() {
-				postgresQuery := gorm.NewTestQuery(docker.Postgres())
-				query = postgresQuery.Query()
-				mockConfig = postgresQuery.MockConfig()
-				createPostgresMigrations()
-			},
-		},
-		{
-			name: "sqlserver",
-			setup: func() {
-				sqlserverQuery := gorm.NewTestQuery(docker.Sqlserver())
-				query = sqlserverQuery.Query()
-				mockConfig = sqlserverQuery.MockConfig()
-				createSqlserverMigrations()
-			},
-		},
-	}
+		migrateCommand := NewMigrateCommand(mockConfig)
+		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			beforeEach()
-			test.setup()
+		// Test MigrateRefreshCommand without --seed flag
+		mockContext.On("OptionBool", "seed").Return(false).Once()
+		migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
+		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
-			mockArtisan := &consolemocks.Artisan{}
-			mockContext := &consolemocks.Context{}
-			mockContext.On("Option", "step").Return("").Once()
+		var agent Agent
+		err := query.Where("name", "goravel").First(&agent)
+		assert.Nil(t, err)
+		assert.True(t, agent.ID > 0)
 
-			migrateCommand := NewMigrateCommand(mockConfig)
-			assert.Nil(t, migrateCommand.Handle(mockContext))
+		mockArtisan = &mocksconsole.Artisan{}
+		mockContext = &mocksconsole.Context{}
+		mockContext.On("Option", "step").Return("5").Once()
 
-			// Test MigrateRefreshCommand without --seed flag
-			mockContext.On("OptionBool", "seed").Return(false).Once()
-			migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
-			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
+		migrateCommand = NewMigrateCommand(mockConfig)
+		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			var agent Agent
-			err := query.Where("name", "goravel").First(&agent)
-			assert.Nil(t, err)
-			assert.True(t, agent.ID > 0)
+		// Test MigrateRefreshCommand with --seed flag and --seeder specified
+		mockContext.On("OptionBool", "seed").Return(true).Once()
+		mockContext.On("OptionSlice", "seeder").Return([]string{"UserSeeder"}).Once()
+		mockArtisan.On("Call", "db:seed --seeder UserSeeder").Return(nil).Once()
+		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
+		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
-			mockArtisan = &consolemocks.Artisan{}
-			mockContext = &consolemocks.Context{}
-			mockContext.On("Option", "step").Return("5").Once()
+		mockArtisan = &mocksconsole.Artisan{}
+		mockContext = &mocksconsole.Context{}
 
-			migrateCommand = NewMigrateCommand(mockConfig)
-			assert.Nil(t, migrateCommand.Handle(mockContext))
+		// Test MigrateRefreshCommand with --seed flag and no --seeder specified
+		mockContext.On("Option", "step").Return("").Once()
+		mockContext.On("OptionBool", "seed").Return(true).Once()
+		mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
+		mockArtisan.On("Call", "db:seed").Return(nil).Once()
+		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
+		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
-			// Test MigrateRefreshCommand with --seed flag and --seeder specified
-			mockContext.On("OptionBool", "seed").Return(true).Once()
-			mockContext.On("OptionSlice", "seeder").Return([]string{"UserSeeder"}).Once()
-			mockArtisan.On("Call", "db:seed --seeder UserSeeder").Return(nil).Once()
-			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
-			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
-
-			mockArtisan = &consolemocks.Artisan{}
-			mockContext = &consolemocks.Context{}
-
-			// Test MigrateRefreshCommand with --seed flag and no --seeder specified
-			mockContext.On("Option", "step").Return("").Once()
-			mockContext.On("OptionBool", "seed").Return(true).Once()
-			mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
-			mockArtisan.On("Call", "db:seed").Return(nil).Once()
-			migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
-			assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
-
-			var agent1 Agent
-			err = query.Where("name", "goravel").First(&agent1)
-			assert.Nil(t, err)
-			assert.True(t, agent1.ID > 0)
-
-			mockContext.AssertExpectations(t)
-			removeMigrations()
-
-		})
+		var agent1 Agent
+		err = query.Where("name", "goravel").First(&agent1)
+		assert.Nil(t, err)
+		assert.True(t, agent1.ID > 0)
 	}
 }

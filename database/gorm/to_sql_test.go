@@ -24,29 +24,29 @@ func TestToSqlTestSuite(t *testing.T) {
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	mysqlQuery := NewTestQuery(docker.Mysql())
-	mysqlQuery.CreateTable(TestTableUsers)
+	postgresQuery := NewTestQuery(docker.Postgres())
+	postgresQuery.CreateTable(TestTableUsers)
 
-	s.query = mysqlQuery.Query()
+	s.query = postgresQuery.Query()
 }
 
 func (s *ToSqlTestSuite) SetupTest() {}
 
 func (s *ToSqlTestSuite) TestCount() {
 	toSql := NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT count(*) FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Count())
+	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
 
 	toSql = NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), true)
-	s.Equal("SELECT count(*) FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", toSql.Count())
+	s.Equal("SELECT count(*) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Count())
 }
 
 func (s *ToSqlTestSuite) TestCreate() {
 	user := User{Name: "to_sql_create"}
 	toSql := NewToSql(s.query.(*QueryImpl), false)
-	s.Equal("INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`bio`,`avatar`) VALUES (?,?,?,?,?,?)", toSql.Create(&user))
+	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES ($1,$2,$3,$4,$5,$6) RETURNING \"id\"", toSql.Create(&user))
 
 	toSql = NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), true)
-	s.Contains(toSql.Create(&user), "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`bio`,`avatar`) VALUES (")
+	s.Contains(toSql.Create(&user), "INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES (")
 	s.Contains(toSql.Create(&user), ",NULL,'to_sql_create',NULL,'')")
 
 	var users []User
@@ -56,98 +56,98 @@ func (s *ToSqlTestSuite) TestCreate() {
 
 func (s *ToSqlTestSuite) TestDelete() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("UPDATE `users` SET `deleted_at`=? WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Delete(&User{}))
+	s.Equal("UPDATE \"users\" SET \"deleted_at\"=$1 WHERE \"id\" = $2 AND \"users\".\"deleted_at\" IS NULL", toSql.Delete(&User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("DELETE FROM `roles` WHERE `id` = ?", toSql.Delete(&Role{}))
+	s.Equal("DELETE FROM \"roles\" WHERE \"id\" = $1", toSql.Delete(&Role{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
 	sql := toSql.Delete(&User{})
-	s.Contains(sql, "UPDATE `users` SET `deleted_at`=")
-	s.Contains(sql, "WHERE `id` = 1 AND `users`.`deleted_at` IS NULL")
+	s.Contains(sql, "UPDATE \"users\" SET \"deleted_at\"=")
+	s.Contains(sql, "WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL")
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("DELETE FROM `roles` WHERE `id` = 1", toSql.Delete(&Role{}))
+	s.Equal("DELETE FROM \"roles\" WHERE \"id\" = 1", toSql.Delete(&Role{}))
 }
 
 func (s *ToSqlTestSuite) TestFind() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Find(&User{}))
+	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", toSql.Find(&User{}))
 
 	toSql = NewToSql(s.query.(*QueryImpl), false)
-	s.Equal("SELECT * FROM `users` WHERE `users`.`id` = ? AND `users`.`deleted_at` IS NULL", toSql.Find(&User{}, 1))
+	s.Equal("SELECT * FROM \"users\" WHERE \"users\".\"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", toSql.Find(&User{}, 1))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", toSql.Find(&User{}))
+	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Find(&User{}))
 
 	toSql = NewToSql(s.query.(*QueryImpl), true)
-	s.Equal("SELECT * FROM `users` WHERE `users`.`id` = 1 AND `users`.`deleted_at` IS NULL", toSql.Find(&User{}, 1))
+	s.Equal("SELECT * FROM \"users\" WHERE \"users\".\"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Find(&User{}, 1))
 }
 
 func (s *ToSqlTestSuite) TestFirst() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT ?", toSql.First(&User{}))
+	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL ORDER BY \"users\".\"id\" LIMIT $2", toSql.First(&User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT 1", toSql.First(&User{}))
+	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL ORDER BY \"users\".\"id\" LIMIT 1", toSql.First(&User{}))
 }
 
 func (s *ToSqlTestSuite) TestForceDelete() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("DELETE FROM `users` WHERE `id` = ?", toSql.ForceDelete(&User{}))
+	s.Equal("DELETE FROM \"users\" WHERE \"id\" = $1", toSql.ForceDelete(&User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("DELETE FROM `roles` WHERE `id` = ?", toSql.ForceDelete(&Role{}))
+	s.Equal("DELETE FROM \"roles\" WHERE \"id\" = $1", toSql.ForceDelete(&Role{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("DELETE FROM `users` WHERE `id` = 1", toSql.ForceDelete(&User{}))
+	s.Equal("DELETE FROM \"users\" WHERE \"id\" = 1", toSql.ForceDelete(&User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("DELETE FROM `roles` WHERE `id` = 1", toSql.ForceDelete(&Role{}))
+	s.Equal("DELETE FROM \"roles\" WHERE \"id\" = 1", toSql.ForceDelete(&Role{}))
 }
 
 func (s *ToSqlTestSuite) TestGet() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Get([]User{}))
+	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", toSql.Get([]User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", toSql.Get([]User{}))
+	s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Get([]User{}))
 }
 
 func (s *ToSqlTestSuite) TestPluck() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT `id` FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Pluck("id", User{}))
+	s.Equal("SELECT \"id\" FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", toSql.Pluck("id", User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("SELECT `id` FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", toSql.Pluck("id", User{}))
+	s.Equal("SELECT \"id\" FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Pluck("id", User{}))
 }
 
 func (s *ToSqlTestSuite) TestSave() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`bio`,`avatar`) VALUES (?,?,?,?,?,?)", toSql.Save(&User{}))
+	s.Equal("INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES ($1,$2,$3,$4,$5,$6) RETURNING \"id\"", toSql.Save(&User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
 	sql := toSql.Save(&User{})
-	s.Contains(sql, "INSERT INTO `users` (`created_at`,`updated_at`,`deleted_at`,`name`,`bio`,`avatar`) VALUES (")
+	s.Contains(sql, "INSERT INTO \"users\" (\"created_at\",\"updated_at\",\"deleted_at\",\"name\",\"bio\",\"avatar\") VALUES (")
 	s.Contains(sql, ",NULL,'',NULL,'')")
 }
 
 func (s *ToSqlTestSuite) TestSum() {
 	toSql := NewToSql(s.query.Where("id", 1).(*QueryImpl), false)
-	s.Equal("SELECT SUM(id) FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Sum("id", User{}))
+	s.Equal("SELECT SUM(id) FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", toSql.Sum("id", User{}))
 
 	toSql = NewToSql(s.query.Where("id", 1).(*QueryImpl), true)
-	s.Equal("SELECT SUM(id) FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", toSql.Sum("id", User{}))
+	s.Equal("SELECT SUM(id) FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", toSql.Sum("id", User{}))
 }
 
 func (s *ToSqlTestSuite) TestUpdate() {
 	toSql := NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), false)
-	s.Equal("UPDATE `users` SET `name`=?,`updated_at`=? WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Update("name", "goravel"))
+	s.Equal("UPDATE \"users\" SET \"name\"=$1,\"updated_at\"=$2 WHERE \"id\" = $3 AND \"users\".\"deleted_at\" IS NULL", toSql.Update("name", "goravel"))
 
 	toSql = NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), true)
 	sql := toSql.Update("name", "goravel")
-	s.Contains(sql, "UPDATE `users` SET `name`='goravel',`updated_at`=")
-	s.Contains(sql, "WHERE `id` = 1 AND `users`.`deleted_at` IS NULL")
+	s.Contains(sql, "UPDATE \"users\" SET \"name\"='goravel',\"updated_at\"=")
+	s.Contains(sql, "WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL")
 
 	toSql = NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), false)
 	s.Empty(toSql.Update(0, "goravel"))
@@ -156,7 +156,7 @@ func (s *ToSqlTestSuite) TestUpdate() {
 	s.Empty(toSql.Update(0, "goravel"))
 
 	toSql = NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), false)
-	s.Equal("UPDATE `users` SET `name`=?,`updated_at`=? WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Update(map[string]any{
+	s.Equal("UPDATE \"users\" SET \"name\"=$1,\"updated_at\"=$2 WHERE \"id\" = $3 AND \"users\".\"deleted_at\" IS NULL", toSql.Update(map[string]any{
 		"name": "goravel",
 	}))
 
@@ -164,11 +164,11 @@ func (s *ToSqlTestSuite) TestUpdate() {
 	sql = toSql.Update(map[string]any{
 		"name": "goravel",
 	})
-	s.Contains(sql, "UPDATE `users` SET `name`='goravel',`updated_at`=")
-	s.Contains(sql, "WHERE `id` = 1 AND `users`.`deleted_at` IS NULL")
+	s.Contains(sql, "UPDATE \"users\" SET \"name\"='goravel',\"updated_at\"=")
+	s.Contains(sql, "WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL")
 
 	toSql = NewToSql(s.query.Model(&User{}).Where("id", 1).(*QueryImpl), false)
-	s.Equal("UPDATE `users` SET `updated_at`=?,`name`=? WHERE `id` = ? AND `users`.`deleted_at` IS NULL", toSql.Update(User{
+	s.Equal("UPDATE \"users\" SET \"updated_at\"=$1,\"name\"=$2 WHERE \"id\" = $3 AND \"users\".\"deleted_at\" IS NULL", toSql.Update(User{
 		Name: "goravel",
 	}))
 
@@ -176,6 +176,6 @@ func (s *ToSqlTestSuite) TestUpdate() {
 	sql = toSql.Update(User{
 		Name: "goravel",
 	})
-	s.Contains(sql, "UPDATE `users` SET `updated_at`=")
-	s.Contains(sql, ",`name`='goravel' WHERE `id` = 1 AND `users`.`deleted_at` IS NULL")
+	s.Contains(sql, "UPDATE \"users\" SET \"updated_at\"=")
+	s.Contains(sql, ",\"name\"='goravel' WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL")
 }

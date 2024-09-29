@@ -82,10 +82,10 @@ func TestFactoryTestSuite(t *testing.T) {
 }
 
 func (s *FactoryTestSuite) SetupSuite() {
-	mysqlQuery := gorm.NewTestQuery(docker.Mysql())
-	mysqlQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers)
+	postgresQuery := gorm.NewTestQuery(docker.Postgres())
+	postgresQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers)
 
-	s.query = mysqlQuery.Query()
+	s.query = postgresQuery.Query()
 }
 
 func (s *FactoryTestSuite) SetupTest() {

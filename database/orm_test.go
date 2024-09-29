@@ -10,17 +10,9 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
-
-var connections = []contractsorm.Driver{
-	contractsorm.DriverMysql,
-	contractsorm.DriverPostgres,
-	contractsorm.DriverSqlite,
-	contractsorm.DriverSqlserver,
-}
 
 type contextKey int
 
@@ -35,11 +27,8 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm            *OrmImpl
-	mysqlQuery     contractsorm.Query
-	postgresQuery  contractsorm.Query
-	sqliteQuery    contractsorm.Query
-	sqlserverQuery contractsorm.Query
+	orm         *OrmImpl
+	testQueries map[contractsorm.Driver]*gorm.TestQuery
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -51,35 +40,21 @@ func TestOrmSuite(t *testing.T) {
 }
 
 func (s *OrmSuite) SetupSuite() {
-	mysqlQuery := gorm.NewTestQuery(docker.Mysql())
-	mysqlQuery.CreateTable(gorm.TestTableUsers)
-
-	postgresQuery := gorm.NewTestQuery(docker.Postgres())
-	postgresQuery.CreateTable(gorm.TestTableUsers)
-
-	sqliteQuery := gorm.NewTestQuery(docker.Sqlite())
-	sqliteQuery.CreateTable(gorm.TestTableUsers)
-
-	sqlserverQuery := gorm.NewTestQuery(docker.Sqlserver())
-	sqlserverQuery.CreateTable(gorm.TestTableUsers)
-
-	s.mysqlQuery = mysqlQuery.Query()
-	s.postgresQuery = postgresQuery.Query()
-	s.sqliteQuery = sqliteQuery.Query()
-	s.sqlserverQuery = sqlserverQuery.Query()
+	s.testQueries = gorm.NewTestQueries().Queries()
 }
 
 func (s *OrmSuite) SetupTest() {
+	queries := make(map[string]contractsorm.Query)
+
+	for key, query := range s.testQueries {
+		queries[key.String()] = query.Query()
+	}
+
 	s.orm = &OrmImpl{
-		connection: contractsorm.DriverMysql.String(),
+		connection: contractsorm.DriverPostgres.String(),
 		ctx:        context.Background(),
-		query:      s.mysqlQuery,
-		queries: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String():     s.mysqlQuery,
-			contractsorm.DriverPostgres.String():  s.postgresQuery,
-			contractsorm.DriverSqlite.String():    s.sqliteQuery,
-			contractsorm.DriverSqlserver.String(): s.sqlserverQuery,
-		},
+		query:      queries[contractsorm.DriverPostgres.String()],
+		queries:    queries,
 	}
 }
 
@@ -88,8 +63,8 @@ func (s *OrmSuite) TearDownSuite() {
 }
 
 func (s *OrmSuite) TestConnection() {
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()))
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()))
 	}
 }
 
@@ -98,8 +73,8 @@ func (s *OrmSuite) TestDB() {
 	s.NotNil(db)
 	s.Nil(err)
 
-	for _, connection := range connections {
-		db, err := s.orm.Connection(connection.String()).DB()
+	for driver := range s.testQueries {
+		db, err := s.orm.Connection(driver.String()).DB()
 		s.NotNil(db)
 		s.Nil(err)
 	}
@@ -117,16 +92,16 @@ func (s *OrmSuite) TestQuery() {
 		}
 	})
 
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Query())
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()).Query())
 	}
 }
 
 func (s *OrmSuite) TestFactory() {
 	s.NotNil(s.orm.Factory())
 
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Factory())
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()).Factory())
 	}
 }
 
@@ -137,17 +112,17 @@ func (s *OrmSuite) TestObserve() {
 		{Model: User{}, Observer: &UserObserver{}},
 	}, orm.Observers)
 
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user := User{Name: "observer_name"}
-		s.EqualError(s.orm.Connection(connection.String()).Query().Create(&user), "error")
+		s.EqualError(s.orm.Connection(driver.String()).Query().Create(&user), "error")
 	}
 }
 
 func (s *OrmSuite) TestTransactionSuccess() {
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 		user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-		s.Nil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Query) error {
+		s.Nil(s.orm.Connection(driver.String()).Transaction(func(tx contractsorm.Query) error {
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 
@@ -155,14 +130,14 @@ func (s *OrmSuite) TestTransactionSuccess() {
 		}))
 
 		var user2, user3 User
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user2, user.ID))
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user3, user1.ID))
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&user2, user.ID))
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&user3, user1.ID))
 	}
 }
 
 func (s *OrmSuite) TestTransactionError() {
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Query) error {
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()).Transaction(func(tx contractsorm.Query) error {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			s.Nil(tx.Create(&user))
 
@@ -173,7 +148,7 @@ func (s *OrmSuite) TestTransactionError() {
 		}))
 
 		var users []User
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&users))
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&users))
 		s.Equal(0, len(users))
 	}
 }
@@ -190,20 +165,20 @@ func (s *OrmSuite) TestWithContext() {
 	s.Equal("with_context_goravel", user.Avatar)
 
 	// Call Connection, then call WithContext
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user.ID = 0
 		user.Avatar = ""
-		err := s.orm.Connection(connection.String()).WithContext(ctx).Query().Create(&user)
+		err := s.orm.Connection(driver.String()).WithContext(ctx).Query().Create(&user)
 		s.Nil(err)
 		s.Equal("with_context_name", user.Name)
 		s.Equal("with_context_goravel", user.Avatar)
 	}
 
 	// Call WithContext, then call Connection
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user.ID = 0
 		user.Avatar = ""
-		err := s.orm.WithContext(ctx).Connection(connection.String()).Query().Create(&user)
+		err := s.orm.WithContext(ctx).Connection(driver.String()).Query().Create(&user)
 		s.Nil(err)
 		s.Equal("with_context_name", user.Name)
 		s.Equal("with_context_goravel", user.Avatar)
