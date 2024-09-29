@@ -196,11 +196,18 @@ func (app *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 
 // getConfiguredServiceProviders Get configured service providers.
 func (app *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
-	if configFacade := app.MakeConfig(); configFacade != nil {
-		return configFacade.Get("app.providers").([]foundation.ServiceProvider)
+	configFacade := app.MakeConfig()
+	if configFacade == nil {
+		color.Yellow().Println("Warning: config facade is not initialized. Skipping registering service providers.")
+		return []foundation.ServiceProvider{}
 	}
 
-	return []foundation.ServiceProvider{}
+	providers, ok := configFacade.Get("app.providers").([]foundation.ServiceProvider)
+	if !ok {
+		color.Yellow().Println("Warning: providers configuration is not of type []foundation.ServiceProvider. Skipping registering service providers.")
+		return []foundation.ServiceProvider{}
+	}
+	return providers
 }
 
 // registerBaseServiceProviders Register base service providers.
@@ -248,9 +255,15 @@ func (app *Application) registerCommands(commands []consolecontract.Command) {
 }
 
 func (app *Application) setTimezone() {
-	if configFacade := app.MakeConfig(); configFacade != nil {
-		carbon.SetTimezone(configFacade.GetString("app.timezone", carbon.UTC))
+	configFacade := app.MakeConfig()
+	if configFacade == nil {
+		color.Yellow().Println("Warning: config facade is not initialized. Using default timezone UTC.")
+		carbon.SetTimezone(carbon.UTC)
+		return
 	}
+
+	carbon.SetTimezone(configFacade.GetString("app.timezone", carbon.UTC))
+
 }
 
 func setEnv() {
