@@ -1,7 +1,6 @@
 package database
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -79,14 +78,14 @@ func TestFactoryTestSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql())
-	mysqlQuery, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql error: %s", err)
-	}
-	suite.Run(t, &FactoryTestSuite{
-		query: mysqlQuery,
-	})
+	suite.Run(t, &FactoryTestSuite{})
+}
+
+func (s *FactoryTestSuite) SetupSuite() {
+	postgresQuery := gorm.NewTestQuery(docker.Postgres())
+	postgresQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers)
+
+	s.query = postgresQuery.Query()
 }
 
 func (s *FactoryTestSuite) SetupTest() {

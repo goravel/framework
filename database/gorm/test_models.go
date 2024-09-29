@@ -346,7 +346,7 @@ type Product struct {
 }
 
 func (p *Product) Connection() string {
-	return "postgres"
+	return "sqlite"
 }
 
 type Review struct {
@@ -386,5 +386,5 @@ type Box struct {
 }
 
 func (p *Box) Connection() string {
-	return "mysql"
+	return "postgres"
 }

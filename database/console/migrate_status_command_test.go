@@ -5,11 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -18,86 +15,24 @@ func TestMigrateStatusCommand(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	var (
-		mockConfig *configmock.Config
-		query      ormcontract.Query
-	)
+	testQueries := gorm.NewTestQueries().Queries()
+	for driver, testQuery := range testQueries {
+		query := testQuery.Query()
+		mockConfig := testQuery.MockConfig()
+		createMigrations(driver)
 
-	beforeEach := func() {
-		mockConfig = &configmock.Config{}
-	}
+		mockContext := consolemocks.NewContext(t)
 
-	tests := []struct {
-		name  string
-		setup func()
-	}{
-		{
-			name: "mysql",
-			setup: func() {
-				var err error
-				docker := gorm.NewMysqlDocker(docker.Mysql())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createMysqlMigrations()
+		migrateCommand := NewMigrateCommand(mockConfig)
+		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			},
-		},
-		{
-			name: "postgres",
-			setup: func() {
-				var err error
-				docker := gorm.NewPostgresDocker(docker.Postgres())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createPostgresMigrations()
-			},
-		},
-		{
-			name: "sqlserver",
-			setup: func() {
-				var err error
-				docker := gorm.NewSqlserverDocker(docker.Sqlserver())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createSqlserverMigrations()
-			},
-		},
-		{
-			name: "sqlite",
-			setup: func() {
-				var err error
-				docker := gorm.NewSqliteDocker(docker.Sqlite())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createSqliteMigrations()
-			},
-		},
-	}
+		migrateStatusCommand := NewMigrateStatusCommand(mockConfig)
+		assert.Nil(t, migrateStatusCommand.Handle(mockContext))
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			beforeEach()
-			test.setup()
+		res, err := query.Table("migrations").Where("dirty", false).Update("dirty", true)
+		assert.Nil(t, err)
+		assert.Equal(t, int64(1), res.RowsAffected)
 
-			mockContext := &consolemocks.Context{}
-
-			migrateCommand := NewMigrateCommand(mockConfig)
-			assert.Nil(t, migrateCommand.Handle(mockContext))
-
-			migrateStatusCommand := NewMigrateStatusCommand(mockConfig)
-			assert.Nil(t, migrateStatusCommand.Handle(mockContext))
-
-			res, err := query.Table("migrations").Where("dirty", false).Update("dirty", true)
-			assert.Nil(t, err)
-			assert.Equal(t, int64(1), res.RowsAffected)
-
-			assert.Nil(t, migrateStatusCommand.Handle(mockContext))
-
-			removeMigrations()
-		})
+		assert.Nil(t, migrateStatusCommand.Handle(mockContext))
 	}
 }

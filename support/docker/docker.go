@@ -66,13 +66,14 @@ func Database(containerType ContainerType, database, username, password string, 
 		drivers = containers[containerType]
 	}
 
+	newDatabase := database
 	driverLength := len(drivers)
 	surplus := num - driverLength
 	for i := 0; i < surplus; i++ {
 		if containerType == ContainerTypeSqlite {
-			database = fmt.Sprintf("%s%d", database, driverLength+i)
+			newDatabase = fmt.Sprintf("%s%d", database, driverLength+i)
 		}
-		databaseDriver := DatabaseDriver(containerType, database, username, password)
+		databaseDriver := DatabaseDriver(containerType, newDatabase, username, password)
 
 		if err := databaseDriver.Build(); err != nil {
 			panic(err)
