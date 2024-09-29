@@ -2,7 +2,6 @@ package migration
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -37,17 +36,12 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupSuite() {
-	postgresDriver := supportdocker.Postgres()
-	postgresDocker := gorm.NewPostgresDocker(postgresDriver)
-	postgresQuery, err := postgresDocker.New()
-	if err != nil {
-		log.Fatalf("Init postgres docker error: %v", err)
-	}
-
+	postgresDocker := supportdocker.Postgres()
+	postgresQuery := gorm.NewTestQuery(postgresDocker)
 	s.driverToTestDB = map[contractsorm.Driver]TestDB{
 		contractsorm.DriverPostgres: {
-			config: postgresDriver.Config(),
-			query:  postgresQuery,
+			config: postgresDocker.Config(),
+			query:  postgresQuery.Query(),
 		},
 	}
 }
