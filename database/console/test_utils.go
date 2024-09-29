@@ -19,7 +19,7 @@ func createMigrations(driver contractsorm.Driver) {
 }
 
 func createMysqlMigrations() {
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	err := file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -31,13 +31,20 @@ func createMysqlMigrations() {
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+	if err != nil {
+		panic(err)
+	}
+
+	err = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
 		`DROP TABLE agents;
 `)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createPostgresMigrations() {
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	err := file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -46,13 +53,20 @@ func createPostgresMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+	if err != nil {
+		panic(err)
+	}
+
+	err = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
 		`DROP TABLE agents;
 `)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createSqlserverMigrations() {
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	err := file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -62,13 +76,21 @@ func createSqlserverMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+	if err != nil {
+		panic(err)
+	}
+
+	err = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
 		`DROP TABLE agents;
 `)
+
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createSqliteMigrations() {
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	err := file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -77,12 +99,14 @@ func createSqliteMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
-	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+	if err != nil {
+		panic(err)
+	}
+
+	err = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
 		`DROP TABLE agents;
 `)
-}
-
-func removeMigrations() {
-	_ = file.Remove("database")
-	_ = file.Remove("goravel")
+	if err != nil {
+		panic(err)
+	}
 }

@@ -12,9 +12,9 @@ import (
 	supportdocker "github.com/goravel/framework/support/docker"
 )
 
-// Define different test model, improve the testing speed.
-// The minimum model only initial one Sqlite and two Postgres,
-// and the normal model initial one Mysql, two Postgres, one Sqlite and one Sqlserver.
+// Define different test model, to improve the local testing speed.
+// The minimum model only initials one Sqlite and two Postgres,
+// and the normal model initials one Mysql, two Postgres, one Sqlite and one Sqlserver.
 const (
 	TestModelMinimum = iota
 	TestModelNormal
@@ -190,31 +190,25 @@ func (r *TestQueries) QueryOfAdditional() *TestQuery {
 }
 
 func (r *TestQueries) queries(withPrefixAndSingular bool) map[orm.Driver]*TestQuery {
-	postgresQuery := NewTestQuery(r.postgresDockers[0], withPrefixAndSingular)
-	postgresQuery.CreateTable()
+	driverToTestQuery := make(map[orm.Driver]*TestQuery)
 
-	sqliteQuery := NewTestQuery(r.sqliteDockers[0], withPrefixAndSingular)
-	sqliteQuery.CreateTable()
-
-	if TestModel == TestModelMinimum {
-		return map[orm.Driver]*TestQuery{
-			orm.DriverPostgres: postgresQuery,
-			orm.DriverSqlite:   sqliteQuery,
-		}
+	driverToDocker := map[orm.Driver]testing.DatabaseDriver{
+		orm.DriverPostgres: r.postgresDockers[0],
+		orm.DriverSqlite:   r.sqliteDockers[0],
 	}
 
-	mysqlQuery := NewTestQuery(r.mysqlDockers[0], withPrefixAndSingular)
-	mysqlQuery.CreateTable()
-
-	sqlserverQuery := NewTestQuery(r.sqlserverDockers[0], withPrefixAndSingular)
-	sqlserverQuery.CreateTable()
-
-	return map[orm.Driver]*TestQuery{
-		orm.DriverMysql:     mysqlQuery,
-		orm.DriverPostgres:  postgresQuery,
-		orm.DriverSqlite:    sqliteQuery,
-		orm.DriverSqlserver: sqlserverQuery,
+	if TestModel != TestModelMinimum {
+		driverToDocker[orm.DriverMysql] = r.mysqlDockers[0]
+		driverToDocker[orm.DriverSqlserver] = r.sqlserverDockers[0]
 	}
+
+	for driver, docker := range driverToDocker {
+		query := NewTestQuery(docker, withPrefixAndSingular)
+		query.CreateTable()
+		driverToTestQuery[driver] = query
+	}
+
+	return driverToTestQuery
 }
 
 type TestQuery struct {
