@@ -5,11 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	configmock "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -18,84 +15,22 @@ func TestMigrateResetCommand(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	var (
-		mockConfig *configmock.Config
-		query      ormcontract.Query
-	)
+	testQueries := gorm.NewTestQueries().Queries()
+	for driver, testQuery := range testQueries {
+		query := testQuery.Query()
+		mockConfig := testQuery.MockConfig()
+		createMigrations(driver)
 
-	beforeEach := func() {
-		mockConfig = &configmock.Config{}
-	}
+		mockContext := consolemocks.NewContext(t)
 
-	tests := []struct {
-		name  string
-		setup func()
-	}{
-		{
-			name: "mysql",
-			setup: func() {
-				var err error
-				docker := gorm.NewMysqlDocker(docker.Mysql())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createMysqlMigrations()
+		migrateCommand := NewMigrateCommand(mockConfig)
+		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-			},
-		},
-		{
-			name: "postgres",
-			setup: func() {
-				var err error
-				docker := gorm.NewPostgresDocker(docker.Postgres())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createPostgresMigrations()
-			},
-		},
-		{
-			name: "sqlserver",
-			setup: func() {
-				var err error
-				docker := gorm.NewSqlserverDocker(docker.Sqlserver())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createSqlserverMigrations()
-			},
-		},
-		{
-			name: "sqlite",
-			setup: func() {
-				var err error
-				docker := gorm.NewSqliteDocker(docker.Sqlite())
-				query, err = docker.New()
-				assert.Nil(t, err)
-				mockConfig = docker.MockConfig
-				createSqliteMigrations()
-			},
-		},
-	}
+		migrateResetCommand := NewMigrateResetCommand(mockConfig)
+		assert.Nil(t, migrateResetCommand.Handle(mockContext))
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			beforeEach()
-			test.setup()
-
-			mockContext := &consolemocks.Context{}
-
-			migrateCommand := NewMigrateCommand(mockConfig)
-			assert.Nil(t, migrateCommand.Handle(mockContext))
-
-			migrateResetCommand := NewMigrateResetCommand(mockConfig)
-			assert.Nil(t, migrateResetCommand.Handle(mockContext))
-
-			var agent Agent
-			err := query.Where("name", "goravel").FirstOrFail(&agent)
-			assert.Error(t, err)
-
-			removeMigrations()
-		})
+		var agent Agent
+		err := query.Where("name", "goravel").FirstOrFail(&agent)
+		assert.Error(t, err)
 	}
 }

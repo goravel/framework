@@ -3,26 +3,16 @@ package database
 import (
 	"context"
 	"errors"
-	"log"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
-
-var connections = []contractsorm.Driver{
-	contractsorm.DriverMysql,
-	contractsorm.DriverPostgres,
-	contractsorm.DriverSqlite,
-	contractsorm.DriverSqlserver,
-}
 
 type contextKey int
 
@@ -37,11 +27,8 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm           *OrmImpl
-	mysqlQuery    contractsorm.Query
-	postgresQuery contractsorm.Query
-	sqliteQuery   contractsorm.Query
-	sqlserverDB   contractsorm.Query
+	orm         *OrmImpl
+	testQueries map[contractsorm.Driver]*gorm.TestQuery
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -49,57 +36,35 @@ func TestOrmSuite(t *testing.T) {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := gorm.NewMysqlDocker(docker.Mysql())
-	mysqlQuery, err := mysqlDocker.New()
-	if err != nil {
-		log.Fatalf("Init mysql docker error: %v", err)
-	}
+	suite.Run(t, &OrmSuite{})
+}
 
-	postgresDocker := gorm.NewPostgresDocker(docker.Postgres())
-	postgresQuery, err := postgresDocker.New()
-	if err != nil {
-		log.Fatalf("Init postgres docker error: %v", err)
-	}
-
-	sqliteDocker := gorm.NewSqliteDocker(docker.Sqlite())
-	sqliteQuery, err := sqliteDocker.New()
-	if err != nil {
-		log.Fatalf("Get sqlite error: %s", err)
-	}
-
-	sqlserverDocker := gorm.NewSqlserverDocker(docker.Sqlserver())
-	sqlserverQuery, err := sqlserverDocker.New()
-	if err != nil {
-		log.Fatalf("Init sqlserver docker error: %v", err)
-	}
-
-	suite.Run(t, &OrmSuite{
-		mysqlQuery:    mysqlQuery,
-		postgresQuery: postgresQuery,
-		sqliteQuery:   sqliteQuery,
-		sqlserverDB:   sqlserverQuery,
-	})
-
-	assert.Nil(t, file.Remove("goravel"))
+func (s *OrmSuite) SetupSuite() {
+	s.testQueries = gorm.NewTestQueries().Queries()
 }
 
 func (s *OrmSuite) SetupTest() {
+	queries := make(map[string]contractsorm.Query)
+
+	for key, query := range s.testQueries {
+		queries[key.String()] = query.Query()
+	}
+
 	s.orm = &OrmImpl{
-		connection: contractsorm.DriverMysql.String(),
+		connection: contractsorm.DriverPostgres.String(),
 		ctx:        context.Background(),
-		query:      s.mysqlQuery,
-		queries: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String():     s.mysqlQuery,
-			contractsorm.DriverPostgres.String():  s.postgresQuery,
-			contractsorm.DriverSqlite.String():    s.sqliteQuery,
-			contractsorm.DriverSqlserver.String(): s.sqlserverDB,
-		},
+		query:      queries[contractsorm.DriverPostgres.String()],
+		queries:    queries,
 	}
 }
 
+func (s *OrmSuite) TearDownSuite() {
+	s.Nil(file.Remove("goravel"))
+}
+
 func (s *OrmSuite) TestConnection() {
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()))
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()))
 	}
 }
 
@@ -108,8 +73,8 @@ func (s *OrmSuite) TestDB() {
 	s.NotNil(db)
 	s.Nil(err)
 
-	for _, connection := range connections {
-		db, err := s.orm.Connection(connection.String()).DB()
+	for driver := range s.testQueries {
+		db, err := s.orm.Connection(driver.String()).DB()
 		s.NotNil(db)
 		s.Nil(err)
 	}
@@ -127,16 +92,16 @@ func (s *OrmSuite) TestQuery() {
 		}
 	})
 
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Query())
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()).Query())
 	}
 }
 
 func (s *OrmSuite) TestFactory() {
 	s.NotNil(s.orm.Factory())
 
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Factory())
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()).Factory())
 	}
 }
 
@@ -147,17 +112,17 @@ func (s *OrmSuite) TestObserve() {
 		{Model: User{}, Observer: &UserObserver{}},
 	}, orm.Observers)
 
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user := User{Name: "observer_name"}
-		s.EqualError(s.orm.Connection(connection.String()).Query().Create(&user), "error")
+		s.EqualError(s.orm.Connection(driver.String()).Query().Create(&user), "error")
 	}
 }
 
 func (s *OrmSuite) TestTransactionSuccess() {
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 		user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-		s.Nil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Query) error {
+		s.Nil(s.orm.Connection(driver.String()).Transaction(func(tx contractsorm.Query) error {
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 
@@ -165,14 +130,14 @@ func (s *OrmSuite) TestTransactionSuccess() {
 		}))
 
 		var user2, user3 User
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user2, user.ID))
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user3, user1.ID))
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&user2, user.ID))
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&user3, user1.ID))
 	}
 }
 
 func (s *OrmSuite) TestTransactionError() {
-	for _, connection := range connections {
-		s.NotNil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Query) error {
+	for driver := range s.testQueries {
+		s.NotNil(s.orm.Connection(driver.String()).Transaction(func(tx contractsorm.Query) error {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			s.Nil(tx.Create(&user))
 
@@ -183,7 +148,7 @@ func (s *OrmSuite) TestTransactionError() {
 		}))
 
 		var users []User
-		s.Nil(s.orm.Connection(connection.String()).Query().Find(&users))
+		s.Nil(s.orm.Connection(driver.String()).Query().Find(&users))
 		s.Equal(0, len(users))
 	}
 }
@@ -200,20 +165,20 @@ func (s *OrmSuite) TestWithContext() {
 	s.Equal("with_context_goravel", user.Avatar)
 
 	// Call Connection, then call WithContext
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user.ID = 0
 		user.Avatar = ""
-		err := s.orm.Connection(connection.String()).WithContext(ctx).Query().Create(&user)
+		err := s.orm.Connection(driver.String()).WithContext(ctx).Query().Create(&user)
 		s.Nil(err)
 		s.Equal("with_context_name", user.Name)
 		s.Equal("with_context_goravel", user.Avatar)
 	}
 
 	// Call WithContext, then call Connection
-	for _, connection := range connections {
+	for driver := range s.testQueries {
 		user.ID = 0
 		user.Avatar = ""
-		err := s.orm.WithContext(ctx).Connection(connection.String()).Query().Create(&user)
+		err := s.orm.WithContext(ctx).Connection(driver.String()).Query().Create(&user)
 		s.Nil(err)
 		s.Equal("with_context_name", user.Name)
 		s.Equal("with_context_goravel", user.Avatar)

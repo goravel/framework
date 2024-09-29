@@ -16,7 +16,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/grpc"
@@ -306,12 +305,8 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
-	mysql := supportdocker.Mysql()
-	mysqlDocker := gorm.NewMysqlDocker(mysql)
-	_, err := mysqlDocker.New()
-	s.Nil(err)
-
-	config := mysql.Config()
+	mysqlDocker := supportdocker.Mysql()
+	config := mysqlDocker.Config()
 	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
 	mockConfig.On("Get", "database.connections.mysql.read").Return(nil).Once()
