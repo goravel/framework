@@ -18,10 +18,8 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (database *ServiceProvider) Boot(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		artisanFacade.Register([]consolecontract.Command{
-			&console.RuleMakeCommand{},
-			&console.FilterMakeCommand{},
-		})
-	}
+	app.Commands([]consolecontract.Command{
+		&console.RuleMakeCommand{},
+		&console.FilterMakeCommand{},
+	})
 }

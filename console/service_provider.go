@@ -35,6 +35,7 @@ func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 	configFacade := app.MakeConfig()
 	if configFacade == nil {
 		color.Yellow().Println("Warning: Config Facade is not initialized. Skipping certain command registrations.")
+		return
 	}
 
 	artisanFacade.Register([]consolecontract.Command{
