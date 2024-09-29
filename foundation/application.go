@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/config"
-	consolecontract "github.com/goravel/framework/contracts/console"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation/console"
 	"github.com/goravel/framework/foundation/json"
@@ -38,7 +38,7 @@ func init() {
 }
 
 type Application struct {
-	foundation.Container
+	*Container
 	publishes     map[string]map[string]string
 	publishGroups map[string]map[string]string
 	json          foundation.Json
@@ -52,7 +52,7 @@ func NewApplication() foundation.Application {
 func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
-	app.registerCommands([]consolecontract.Command{
+	app.registerCommands([]contractsconsole.Command{
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
@@ -61,7 +61,7 @@ func (app *Application) Boot() {
 	app.bootArtisan()
 }
 
-func (app *Application) Commands(commands []consolecontract.Command) {
+func (app *Application) Commands(commands []contractsconsole.Command) {
 	app.registerCommands(commands)
 }
 
@@ -209,7 +209,7 @@ func (app *Application) bootServiceProviders(serviceProviders []foundation.Servi
 	}
 }
 
-func (app *Application) registerCommands(commands []consolecontract.Command) {
+func (app *Application) registerCommands(commands []contractsconsole.Command) {
 	app.MakeArtisan().Register(commands)
 }
 

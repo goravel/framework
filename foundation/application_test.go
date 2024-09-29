@@ -24,13 +24,13 @@ import (
 	"github.com/goravel/framework/http"
 	frameworklog "github.com/goravel/framework/log"
 	"github.com/goravel/framework/mail"
-	cachemocks "github.com/goravel/framework/mocks/cache"
-	configmocks "github.com/goravel/framework/mocks/config"
-	consolemocks "github.com/goravel/framework/mocks/console"
-	ormmocks "github.com/goravel/framework/mocks/database/orm"
-	logmocks "github.com/goravel/framework/mocks/log"
-	queuemocks "github.com/goravel/framework/mocks/queue"
-	routemocks "github.com/goravel/framework/mocks/route"
+	mockscache "github.com/goravel/framework/mocks/cache"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mockslog "github.com/goravel/framework/mocks/log"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
+	mocksroute "github.com/goravel/framework/mocks/route"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
 	frameworksession "github.com/goravel/framework/session"
@@ -84,7 +84,7 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("test").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
@@ -150,17 +150,17 @@ func (s *ApplicationTestSuite) TestMakeArtisan() {
 }
 
 func (s *ApplicationTestSuite) TestMakeAuth() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "auth.defaults.guard").Return("user").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
-		return &cachemocks.Cache{}, nil
+		return &mockscache.Cache{}, nil
 	})
 	s.app.Singleton(database.BindingOrm, func(app foundation.Application) (any, error) {
-		return &ormmocks.Orm{}, nil
+		return &mocksorm.Orm{}, nil
 	})
 
 	serviceProvider := &auth.ServiceProvider{}
@@ -171,7 +171,7 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 }
 
 func (s *ApplicationTestSuite) TestMakeCache() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "cache.default").Return("memory").Once()
 	mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
 	mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
@@ -180,7 +180,7 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 		return mockConfig, nil
 	})
 	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
-		return &logmocks.Log{}, nil
+		return &mockslog.Log{}, nil
 	})
 
 	serviceProvider := &cache.ServiceProvider{}
@@ -198,7 +198,7 @@ func (s *ApplicationTestSuite) TestMakeConfig() {
 }
 
 func (s *ApplicationTestSuite) TestMakeCrypt() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "app.key").Return("12345678901234567890123456789012").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
@@ -214,7 +214,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 
 func (s *ApplicationTestSuite) TestMakeEvent() {
 	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
-		return &queuemocks.Queue{}, nil
+		return &mocksqueue.Queue{}, nil
 	})
 
 	serviceProvider := &event.ServiceProvider{}
@@ -232,7 +232,7 @@ func (s *ApplicationTestSuite) TestMakeGate() {
 
 func (s *ApplicationTestSuite) TestMakeGrpc() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
-		return &configmocks.Config{}, nil
+		return &mocksconfig.Config{}, nil
 	})
 
 	serviceProvider := &grpc.ServiceProvider{}
@@ -242,7 +242,7 @@ func (s *ApplicationTestSuite) TestMakeGrpc() {
 }
 
 func (s *ApplicationTestSuite) TestMakeHash() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "hashing.driver", "argon2id").Return("argon2id").Once()
 	mockConfig.On("GetInt", "hashing.argon2id.time", 4).Return(4).Once()
 	mockConfig.On("GetInt", "hashing.argon2id.memory", 65536).Return(65536).Once()
@@ -260,7 +260,7 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 }
 
 func (s *ApplicationTestSuite) TestMakeLang() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "app.locale").Return("en").Once()
 	mockConfig.On("GetString", "app.fallback_locale").Return("en").Once()
 	mockConfig.On("GetString", "app.lang_path", "lang").Return("lang").Once()
@@ -269,7 +269,7 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 		return mockConfig, nil
 	})
 	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
-		return &logmocks.Log{}, nil
+		return &mockslog.Log{}, nil
 	})
 
 	serviceProvider := &frameworktranslation.ServiceProvider{}
@@ -289,10 +289,10 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 
 func (s *ApplicationTestSuite) TestMakeMail() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
-		return &configmocks.Config{}, nil
+		return &mocksconfig.Config{}, nil
 	})
 	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
-		return &queuemocks.Queue{}, nil
+		return &mocksqueue.Queue{}, nil
 	})
 
 	serviceProvider := &mail.ServiceProvider{}
@@ -312,7 +312,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	s.Nil(err)
 
 	config := mysql.Config()
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Once()
 	mockConfig.On("Get", "database.connections.mysql.read").Return(nil).Once()
 	mockConfig.On("Get", "database.connections.mysql.write").Return(nil).Once()
@@ -345,7 +345,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 
 func (s *ApplicationTestSuite) TestMakeQueue() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
-		return &configmocks.Config{}, nil
+		return &mocksconfig.Config{}, nil
 	})
 
 	serviceProvider := &queue.ServiceProvider{}
@@ -362,13 +362,13 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 }
 
 func (s *ApplicationTestSuite) TestMakeRoute() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
-	mockRoute := &routemocks.Route{}
+	mockRoute := &mocksroute.Route{}
 	s.app.Singleton("goravel.route", func(app foundation.Application) (any, error) {
 		return mockRoute, nil
 	})
@@ -378,17 +378,17 @@ func (s *ApplicationTestSuite) TestMakeRoute() {
 }
 
 func (s *ApplicationTestSuite) TestMakeSchedule() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetBool", "app.debug").Return(false).Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.Singleton(console.Binding, func(app foundation.Application) (any, error) {
-		return &consolemocks.Artisan{}, nil
+		return &mocksconsole.Artisan{}, nil
 	})
 	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
-		return &logmocks.Log{}, nil
+		return &mockslog.Log{}, nil
 	})
 
 	serviceProvider := &schedule.ServiceProvider{}
@@ -399,7 +399,7 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 }
 
 func (s *ApplicationTestSuite) TestMakeSession() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
 	mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
 	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
@@ -419,7 +419,7 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 }
 
 func (s *ApplicationTestSuite) TestMakeStorage() {
-	mockConfig := &configmocks.Config{}
+	mockConfig := &mocksconfig.Config{}
 	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 	mockConfig.On("GetString", "filesystems.disks.local.driver").Return("local").Once()
 	mockConfig.On("GetString", "filesystems.disks.local.root").Return("").Once()
