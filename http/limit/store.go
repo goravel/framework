@@ -2,9 +2,11 @@ package limit
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/http"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -56,6 +58,7 @@ type Store interface {
 type store struct {
 	tokens   uint64
 	interval time.Duration
+	cache    cache.Cache
 }
 
 func NewStore(tokens uint64, interval time.Duration) (Store, error) {
@@ -67,9 +70,14 @@ func NewStore(tokens uint64, interval time.Duration) (Store, error) {
 		interval = 1 * time.Second
 	}
 
+	if http.CacheFacade == nil {
+		return nil, errors.New("cache facade is not initialized")
+	}
+
 	s := &store{
 		tokens:   tokens,
 		interval: interval,
+		cache:    http.CacheFacade,
 	}
 
 	return s, nil
@@ -79,13 +87,13 @@ func NewStore(tokens uint64, interval time.Duration) (Store, error) {
 // successful, it returns true, otherwise false. It also returns the configured
 // limit, remaining tokens, and reset time.
 func (s *store) Take(_ context.Context, key string) (uint64, uint64, uint64, bool, error) {
-	b, ok := http.CacheFacade.Get(key).(*Bucket)
+	b, ok := s.cache.Get(key).(*Bucket)
 	if ok {
 		return b.take()
 	}
 
 	nb := NewBucket(s.tokens, s.interval)
-	if err := http.CacheFacade.Put(key, nb, s.interval); err != nil {
+	if err := s.cache.Put(key, nb, s.interval); err != nil {
 		return 0, 0, 0, false, err
 	}
 
@@ -94,7 +102,7 @@ func (s *store) Take(_ context.Context, key string) (uint64, uint64, uint64, boo
 
 // Get retrieves the information about the key, if any exists.
 func (s *store) Get(_ context.Context, key string) (uint64, uint64, error) {
-	b, ok := http.CacheFacade.Get(key).(*Bucket)
+	b, ok := s.cache.Get(key).(*Bucket)
 	if ok {
 		return b.get()
 	}
@@ -105,12 +113,12 @@ func (s *store) Get(_ context.Context, key string) (uint64, uint64, error) {
 // Set configures the Bucket-specific tokens and interval.
 func (s *store) Set(_ context.Context, key string, tokens uint64, interval time.Duration) error {
 	b := NewBucket(tokens, interval)
-	return http.CacheFacade.Put(key, b, interval)
+	return s.cache.Put(key, b, interval)
 }
 
 // Burst adds the provided value to the Bucket's currently available tokens.
 func (s *store) Burst(_ context.Context, key string, tokens uint64) error {
-	b, ok := http.CacheFacade.Get(key).(*Bucket)
+	b, ok := s.cache.Get(key).(*Bucket)
 	if ok {
 		b.lock.Lock()
 		b.availableTokens = b.availableTokens + tokens
@@ -119,7 +127,7 @@ func (s *store) Burst(_ context.Context, key string, tokens uint64) error {
 	}
 
 	nb := NewBucket(s.tokens+tokens, s.interval)
-	return http.CacheFacade.Put(key, nb, s.interval)
+	return s.cache.Put(key, nb, s.interval)
 }
 
 // Bucket is an internal wrapper around a taker.

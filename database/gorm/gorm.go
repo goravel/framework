@@ -52,6 +52,10 @@ func (r *GormImpl) Make() (*gormio.DB, error) {
 		return nil, fmt.Errorf("init gorm dialector error: %v", err)
 	}
 
+	if len(writeDialectors) == 0 {
+		return nil, errors.New("no write dialectors found")
+	}
+
 	if err := r.init(writeDialectors[0]); err != nil {
 		return nil, err
 	}

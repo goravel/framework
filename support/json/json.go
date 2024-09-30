@@ -4,12 +4,22 @@ import "github.com/goravel/framework/foundation"
 
 // Marshal serializes the given value to a JSON-encoded byte slice.
 func Marshal(v any) ([]byte, error) {
-	return foundation.App.GetJson().Marshal(v)
+	app := foundation.App
+	if app == nil {
+		return nil, ErrApplicationNotSet
+	}
+
+	return app.GetJson().Marshal(v)
 }
 
 // Unmarshal deserializes the given JSON-encoded byte slice into the provided value.
 func Unmarshal(data []byte, v any) error {
-	return foundation.App.GetJson().Unmarshal(data, v)
+	app := foundation.App
+	if app == nil {
+		return ErrApplicationNotSet
+	}
+
+	return app.GetJson().Unmarshal(data, v)
 }
 
 // MarshalString serializes the given value to a JSON-encoded string.

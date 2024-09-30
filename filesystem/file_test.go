@@ -31,16 +31,17 @@ func (s *FileTestSuite) SetupTest() {
 	s.mockConfig.On("GetString", "filesystems.default").Return("local").Once()
 	ConfigFacade = s.mockConfig
 
-	var err error
-	s.file, err = NewFile("./file.go")
+	f, err := NewFile("./file.go")
 	s.Nil(err)
-	s.NotNil(s.file)
+	s.NotNil(f)
+
+	s.file = f
 }
 
 func (s *FileTestSuite) TestNewFile_Error() {
-	file, err := NewFile("./file1.go")
+	f, err := NewFile("./file1.go")
 	s.EqualError(err, "file doesn't exist")
-	s.Nil(file)
+	s.Nil(f)
 }
 
 func (s *FileTestSuite) TestGetClientOriginalName() {
@@ -70,6 +71,7 @@ func TestNewFileFromRequest(t *testing.T) {
 	buf := new(bytes.Buffer)
 	mw := multipart.NewWriter(buf)
 	w, err := mw.CreateFormFile("file", "test.txt")
+	assert.NotNil(t, w)
 	if assert.NoError(t, err) {
 		_, err = w.Write([]byte("test"))
 		assert.NoError(t, err)

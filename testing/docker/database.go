@@ -21,11 +21,19 @@ type Database struct {
 	connection string
 }
 
-func NewDatabase(app foundation.Application, connection string) *Database {
+func NewDatabase(app foundation.Application, connection string) (*Database, error) {
 	config := app.MakeConfig()
+	if config == nil {
+		return nil, ErrConfigNotSet
+	}
 
 	if connection == "" {
 		connection = config.GetString("database.default")
+	}
+
+	artisanFacade := app.MakeArtisan()
+	if artisanFacade == nil {
+		return nil, ErrArtisanNotSet
 	}
 
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
@@ -36,11 +44,11 @@ func NewDatabase(app foundation.Application, connection string) *Database {
 
 	return &Database{
 		app:            app,
-		artisan:        app.MakeArtisan(),
+		artisan:        artisanFacade,
 		config:         config,
 		connection:     connection,
 		DatabaseDriver: databaseDriver,
-	}
+	}, nil
 }
 
 func (receiver *Database) Build() error {

@@ -18,11 +18,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) Boot(app foundation.Application) {
-	receiver.registerCommands(app)
-}
-
-func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]console.Command{
+	app.Commands([]console.Command{
 		&queueConsole.JobMakeCommand{},
 	})
 }

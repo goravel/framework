@@ -6,5 +6,9 @@ import (
 )
 
 func App() foundationcontract.Application {
-	return foundation.App
+	if foundation.App == nil {
+		panic(ErrApplicationNotSet)
+	} else {
+		return foundation.App
+	}
 }

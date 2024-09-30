@@ -22,7 +22,7 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]console.Command{
+	app.Commands([]console.Command{
 		&eventConsole.EventMakeCommand{},
 		&eventConsole.ListenerMakeCommand{},
 	})

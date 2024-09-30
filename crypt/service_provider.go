@@ -11,7 +11,17 @@ type ServiceProvider struct {
 
 func (crypt *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		return NewAES(app.MakeConfig(), app.GetJson()), nil
+		c := app.MakeConfig()
+		if c == nil {
+			return nil, ErrConfigNotSet
+		}
+
+		j := app.GetJson()
+		if j == nil {
+			return nil, ErrJsonParserNotSet
+		}
+
+		return NewAES(c, j)
 	})
 }
 

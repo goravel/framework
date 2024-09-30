@@ -18,9 +18,9 @@ func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
 		}
 	}
 
-	artisanFacades.Call(command)
+	artisanFacade.Call(command)
 }
 
 func (receiver *TestCase) RefreshDatabase(seeds ...seeder.Seeder) {
-	artisanFacades.Call("migrate:refresh")
+	artisanFacade.Call("migrate:refresh")
 }

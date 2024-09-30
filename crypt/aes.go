@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/goravel/framework/contracts/config"
@@ -20,24 +21,27 @@ type AES struct {
 }
 
 // NewAES returns a new AES hasher.
-func NewAES(config config.Config, json foundation.Json) *AES {
+func NewAES(config config.Config, json foundation.Json) (*AES, error) {
 	key := config.GetString("app.key")
 
 	// Don't use AES in artisan when the key is empty.
 	if support.Env == support.EnvArtisan && len(key) == 0 {
-		return nil
+		return nil, ErrAppKeyNotSetInArtisan
 	}
 
+	keyLength := len(key)
 	// check key length before using it
-	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		color.Red().Println("[Crypt] Empty or invalid APP_KEY, please reset it.\nExample command:\ngo run . artisan key:generate")
-		return nil
+	if keyLength != 16 && keyLength != 24 && keyLength != 32 {
+		color.Red().Printf("[Crypt] Invalid APP_KEY length. Expected 16, 24, or 32 bytes, but got %d bytes.\n", len(key))
+		color.Red().Println("Please reset it using the following command:\ngo run . artisan key:generate")
+		return nil, fmt.Errorf("%w: %d bytes", ErrInvalidAppKeyLength, keyLength)
 	}
+
 	keyBytes := []byte(key)
 	return &AES{
 		key:  keyBytes,
 		json: json,
-	}
+	}, nil
 }
 
 // EncryptString encrypts the given string, and returns the iv and ciphertext as base64 encoded strings.

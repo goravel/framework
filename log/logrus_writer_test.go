@@ -404,8 +404,14 @@ func TestLogrusWithCustomLogger(t *testing.T) {
 	filename := "custom.log"
 
 	logger := NewApplication(mockConfig, json.NewJson())
-	logger.Channel("customLogger").
-		WithTrace().
+
+	assert.NotNil(t, logger)
+
+	channel := logger.Channel("customLogger")
+
+	assert.NotNil(t, channel)
+
+	channel.WithTrace().
 		With(map[string]any{"filename": filename}).
 		User(map[string]any{"name": "kkumar-gcc"}).
 		Owner("team@goravel.dev").
@@ -421,6 +427,8 @@ func TestLogrus_Fatal(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
+
+	assert.NotNil(t, log)
 
 	if os.Getenv("FATAL") == "1" {
 		log.Fatal("Goravel")
@@ -441,6 +449,8 @@ func TestLogrus_Fatalf(t *testing.T) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
+
+	assert.NotNil(t, log)
 
 	if os.Getenv("FATAL") == "1" {
 		log.Fatalf("Goravel")

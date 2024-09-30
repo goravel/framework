@@ -35,7 +35,7 @@ func (http *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (http *ServiceProvider) registerCommands(app foundation.Application) {
-	app.MakeArtisan().Register([]consolecontract.Command{
+	app.Commands([]consolecontract.Command{
 		&console.RequestMakeCommand{},
 		&console.ControllerMakeCommand{},
 		&console.MiddlewareMakeCommand{},

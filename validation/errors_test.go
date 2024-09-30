@@ -74,9 +74,14 @@ func TestOne(t *testing.T) {
 			test.rules,
 			test.options...,
 		)
+
 		assert.Nil(t, err, test.describe)
+		assert.NotNil(t, validator, test.describe)
+
 		if test.expectRes != "" {
-			assert.Equal(t, test.expectRes, validator.Errors().One(), test.describe)
+			errors := validator.Errors()
+			assert.NotNil(t, errors)
+			assert.Equal(t, test.expectRes, errors.One(), test.describe)
 		}
 	}
 }
@@ -116,10 +121,14 @@ func TestGet(t *testing.T) {
 		)
 		assert.Nil(t, err, test.describe)
 		if len(test.expectA) > 0 {
-			assert.Equal(t, test.expectA, validator.Errors().Get("a"), test.describe)
+			errors := validator.Errors()
+			assert.NotNil(t, errors)
+			assert.Equal(t, test.expectA, errors.Get("a"), test.describe)
 		}
 		if len(test.expectB) > 0 {
-			assert.Equal(t, test.expectB, validator.Errors().Get("b"), test.describe)
+			errors := validator.Errors()
+			assert.NotNil(t, errors)
+			assert.Equal(t, test.expectB, errors.Get("b"), test.describe)
 		}
 	}
 }
@@ -161,7 +170,9 @@ func TestAll(t *testing.T) {
 		)
 		assert.Nil(t, err, test.describe)
 		if len(test.expectRes) > 0 {
-			assert.Equal(t, test.expectRes, validator.Errors().All(), test.describe)
+			errors := validator.Errors()
+			assert.NotNil(t, errors)
+			assert.Equal(t, test.expectRes, errors.All(), test.describe)
 		}
 	}
 }
@@ -199,7 +210,9 @@ func TestHas(t *testing.T) {
 		)
 		assert.Nil(t, err, test.describe)
 		if test.expectRes {
-			assert.Equal(t, test.expectRes, validator.Errors().Has("a"), test.describe)
+			errors := validator.Errors()
+			assert.NotNil(t, errors)
+			assert.Equal(t, test.expectRes, errors.Has("a"), test.describe)
 		}
 	}
 }

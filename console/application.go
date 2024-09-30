@@ -47,19 +47,31 @@ func (c *Application) Register(commands []console.Command) {
 
 // Call Run an Artisan console command by name.
 func (c *Application) Call(command string) {
+	if len(os.Args) == 0 {
+		return
+	}
+
 	commands := []string{os.Args[0]}
+
 	if c.isArtisan {
 		commands = append(commands, "artisan")
 	}
+
 	c.Run(append(commands, strings.Split(command, " ")...), false)
 }
 
 // CallAndExit Run an Artisan console command by name and exit.
 func (c *Application) CallAndExit(command string) {
+	if len(os.Args) == 0 {
+		return
+	}
+
 	commands := []string{os.Args[0]}
+
 	if c.isArtisan {
 		commands = append(commands, "artisan")
 	}
+
 	c.Run(append(commands, strings.Split(command, " ")...), true)
 }
 

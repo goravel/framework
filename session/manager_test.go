@@ -99,10 +99,11 @@ func (s *ManagerTestSuite) TestBuildSession() {
 
 	s.mockConfig.On("GetString", "session.cookie").Return("test_cookie").Once()
 	session, err := s.manager.BuildSession(driver)
-	session.Put("name", "goravel")
-
 	s.Nil(err)
 	s.NotNil(session)
+
+	session.Put("name", "goravel")
+
 	s.Equal("test_cookie", session.GetName())
 	s.Equal("goravel", session.Get("name"))
 

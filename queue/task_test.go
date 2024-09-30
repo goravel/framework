@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,16 @@ func (receiver *Test) Signature() string {
 
 // Handle Execute the job.
 func (receiver *Test) Handle(args ...any) error {
-	return file.Create("test.txt", args[0].(string))
+	if len(args) == 0 {
+		return fmt.Errorf("no arguments provided")
+	}
+
+	arg, ok := args[0].(string)
+	if !ok {
+		return fmt.Errorf("expected a string argument")
+	}
+
+	return file.Create("test.txt", arg)
 }
 
 func TestDispatchSync(t *testing.T) {

@@ -22,7 +22,7 @@ func TestTestCaseSuite(t *testing.T) {
 func (s *TestCaseSuite) SetupTest() {
 	s.mockArtisan = &consolemocks.Artisan{}
 	s.testCase = &TestCase{}
-	artisanFacades = s.mockArtisan
+	artisanFacade = s.mockArtisan
 }
 
 func (s *TestCaseSuite) TestSeed() {
