@@ -14,17 +14,19 @@ const BindingOrm = "goravel.orm"
 const BindingSchema = "goravel.schema"
 const BindingSeeder = "goravel.seeder"
 
+var appFacade foundation.Application
+
 type ServiceProvider struct {
 }
 
-func (database *ServiceProvider) Register(app foundation.Application) {
+func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
+		ctx := context.Background()
 		config := app.MakeConfig()
-		defaultConnection := config.GetString("database.default")
-
-		orm, err := InitializeOrm(context.Background(), config, defaultConnection)
+		connection := config.GetString("database.default")
+		orm, err := BuildOrm(ctx, config, connection)
 		if err != nil {
-			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", defaultConnection, err)
+			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
 		}
 
 		return orm, nil
@@ -46,11 +48,12 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (database *ServiceProvider) Boot(app foundation.Application) {
-	database.registerCommands(app)
+func (r *ServiceProvider) Boot(app foundation.Application) {
+	appFacade = app
+	r.registerCommands(app)
 }
 
-func (database *ServiceProvider) registerCommands(app foundation.Application) {
+func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
 		config := app.MakeConfig()
 		seeder := app.MakeSeeder()

@@ -39,7 +39,7 @@ var testEventModel = TestEventModel{
 	ManageAt: testNow,
 	high:     1,
 }
-var testQuery = &QueryImpl{
+var testQuery = &Query{
 	instance: &gorm.DB{
 		Statement: &gorm.Statement{
 			Selects: []string{},
@@ -85,7 +85,7 @@ func (s *EventTestSuite) SetupTest() {
 func (s *EventTestSuite) TestSetAttribute() {
 	// dest is map
 	dest := map[string]any{"avatar": "avatar1"}
-	query := &QueryImpl{
+	query := &Query{
 		instance: &gorm.DB{
 			Statement: &gorm.Statement{
 				Selects: []string{},
@@ -113,7 +113,7 @@ func (s *EventTestSuite) TestSetAttribute() {
 	dest1 := &TestEventModel{
 		Avatar: "avatar1",
 	}
-	query1 := &QueryImpl{
+	query1 := &Query{
 		instance: &gorm.DB{
 			Statement: &gorm.Statement{
 				Selects: []string{},
@@ -242,7 +242,7 @@ func (s *EventTestSuite) TestValidColumn() {
 		s.True(event.validColumn("manage"))
 		s.False(event.validColumn("age"))
 
-		event.query = &QueryImpl{
+		event.query = &Query{
 			instance: &gorm.DB{
 				Statement: &gorm.Statement{
 					Selects: []string{"name"},
@@ -255,7 +255,7 @@ func (s *EventTestSuite) TestValidColumn() {
 		s.False(event.validColumn("avatar"))
 		s.False(event.validColumn("Avatar"))
 
-		event.query = &QueryImpl{
+		event.query = &Query{
 			instance: &gorm.DB{
 				Statement: &gorm.Statement{
 					Selects: []string{},

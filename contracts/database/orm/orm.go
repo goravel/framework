@@ -16,6 +16,8 @@ type Orm interface {
 	Factory() Factory
 	// Observe registers an observer with the Orm.
 	Observe(model any, observer Observer)
+	// Refresh resets the Orm instance.
+	Refresh()
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Query) error) error
 	// WithContext sets the context to be used by the Orm.

@@ -2646,7 +2646,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 		s.Run(test.name, func() {
 			test.setup()
 			testQuery := s.queries[contractsorm.DriverPostgres]
-			query, err := testQuery.Query().(*QueryImpl).refreshConnection(test.model)
+			query, err := testQuery.Query().(*Query).refreshConnection(test.model)
 			if test.expectErr != "" {
 				s.EqualError(err, test.expectErr)
 			} else {

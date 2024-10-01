@@ -1,5 +1,6 @@
 package orm
 
+// DEPRECATED Move to contracts/database/config.go
 const (
 	DriverMysql     Driver = "mysql"
 	DriverPostgres  Driver = "postgres"

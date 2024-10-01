@@ -7,56 +7,39 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/wire"
 	gormio "gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	"github.com/goravel/framework/contracts/config"
-	databasecontract "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/gorm"
-	"github.com/goravel/framework/database/db"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/support/carbon"
 )
 
-var GormSet = wire.NewSet(NewGormImpl, wire.Bind(new(gorm.Gorm), new(*GormImpl)))
-var _ gorm.Gorm = &GormImpl{}
-
-type GormImpl struct {
-	config     config.Config
-	connection string
-	dbConfig   db.Config
-	dialector  Dialector
-	instance   *gormio.DB
+type Builder struct {
+	config   config.Config
+	configs  database.Configs
+	instance *gormio.DB
 }
 
-func NewGormImpl(config config.Config, connection string, dbConfig db.Config, dialector Dialector) *GormImpl {
-	return &GormImpl{
-		config:     config,
-		connection: connection,
-		dbConfig:   dbConfig,
-		dialector:  dialector,
+func NewGorm(config config.Config, configs database.Configs) (*gormio.DB, error) {
+	builder := &Builder{
+		config:  config,
+		configs: configs,
 	}
+
+	return builder.Build()
 }
 
-func (r *GormImpl) Make() (*gormio.DB, error) {
-	readConfigs := r.dbConfig.Reads()
-	writeConfigs := r.dbConfig.Writes()
+func (r *Builder) Build() (*gormio.DB, error) {
+	readConfigs := r.configs.Reads()
+	writeConfigs := r.configs.Writes()
 	if len(writeConfigs) == 0 {
 		return nil, errors.New("not found database configuration")
 	}
 
-	writeDialectors, err := r.dialector.Make([]databasecontract.Config{writeConfigs[0]})
-	if err != nil {
-		return nil, fmt.Errorf("init gorm dialector error: %v", err)
-	}
-
-	if len(writeDialectors) == 0 {
-		return nil, errors.New("no write dialectors found")
-	}
-
-	if err := r.init(writeDialectors[0]); err != nil {
+	if err := r.init(writeConfigs[0]); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +54,7 @@ func (r *GormImpl) Make() (*gormio.DB, error) {
 	return r.instance, nil
 }
 
-func (r *GormImpl) configurePool() error {
+func (r *Builder) configurePool() error {
 	sqlDB, err := r.instance.DB()
 	if err != nil {
 		return err
@@ -85,17 +68,17 @@ func (r *GormImpl) configurePool() error {
 	return nil
 }
 
-func (r *GormImpl) configureReadWriteSeparate(readConfigs, writeConfigs []databasecontract.Config) error {
+func (r *Builder) configureReadWriteSeparate(readConfigs, writeConfigs []database.FullConfig) error {
 	if len(readConfigs) == 0 || len(writeConfigs) == 0 {
 		return nil
 	}
 
-	readDialectors, err := r.dialector.Make(readConfigs)
+	readDialectors, err := GetDialectors(readConfigs)
 	if err != nil {
 		return err
 	}
 
-	writeDialectors, err := r.dialector.Make(writeConfigs)
+	writeDialectors, err := GetDialectors(writeConfigs)
 	if err != nil {
 		return err
 	}
@@ -108,7 +91,15 @@ func (r *GormImpl) configureReadWriteSeparate(readConfigs, writeConfigs []databa
 	}))
 }
 
-func (r *GormImpl) init(dialector gormio.Dialector) error {
+func (r *Builder) init(fullConfig database.FullConfig) error {
+	dialectors, err := GetDialectors([]database.FullConfig{fullConfig})
+	if err != nil {
+		return fmt.Errorf("init gorm dialector error: %v", err)
+	}
+	if len(dialectors) == 0 {
+		return errors.New("no dialectors found")
+	}
+
 	var logLevel gormlogger.LogLevel
 	if r.config.GetBool("app.debug") {
 		logLevel = gormlogger.Info
@@ -122,7 +113,7 @@ func (r *GormImpl) init(dialector gormio.Dialector) error {
 		IgnoreRecordNotFoundError: true,
 		Colorful:                  true,
 	})
-	instance, err := gormio.Open(dialector, &gormio.Config{
+	instance, err := gormio.Open(dialectors[0], &gormio.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
 		Logger:                                   logger.LogMode(logLevel),
@@ -130,8 +121,8 @@ func (r *GormImpl) init(dialector gormio.Dialector) error {
 			return carbon.Now().StdTime()
 		},
 		NamingStrategy: schema.NamingStrategy{
-			TablePrefix:   r.config.GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)),
-			SingularTable: r.config.GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)),
+			TablePrefix:   fullConfig.Prefix,
+			SingularTable: fullConfig.Singular,
 		},
 	})
 	if err != nil {

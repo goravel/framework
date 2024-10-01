@@ -20,7 +20,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelNormal
+	TestModel = TestModelMinimum
 )
 
 type TestTable int
@@ -229,19 +229,19 @@ func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) 
 	}
 
 	var (
-		query *QueryImpl
+		query *Query
 		err   error
 	)
 	if len(withPrefixAndSingular) > 0 && withPrefixAndSingular[0] {
 		mockDriver.WithPrefixAndSingular()
-		query, err = InitializeQuery(testContext, mockConfig, docker.Driver().String())
+		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String())
 	} else {
 		mockDriver.Common()
-		query, err = InitializeQuery(testContext, mockConfig, docker.Driver().String())
+		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String())
 	}
 
 	if err != nil {
-		panic(fmt.Sprintf("connect to %s failed", docker.Driver().String()))
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
 
 	testQuery.query = query
@@ -276,7 +276,7 @@ func (r *TestQuery) QueryOfReadWrite(config TestReadWriteConfig) (orm.Query, err
 	mockDriver := GetMockDriver(r.Docker(), mockConfig, r.Docker().Driver().String())
 	mockDriver.ReadWrite(config)
 
-	return InitializeQuery(testContext, mockConfig, r.docker.Driver().String())
+	return BuildQuery(testContext, mockConfig, r.docker.Driver().String())
 }
 
 func GetMockDriver(docker testing.DatabaseDriver, mockConfig *mocksconfig.Config, connection string) testMockDriver {

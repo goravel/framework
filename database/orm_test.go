@@ -27,7 +27,7 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm         *OrmImpl
+	orm         *Orm
 	testQueries map[contractsorm.Driver]*gorm.TestQuery
 }
 
@@ -50,7 +50,7 @@ func (s *OrmSuite) SetupTest() {
 		queries[key.String()] = query.Query()
 	}
 
-	s.orm = &OrmImpl{
+	s.orm = &Orm{
 		connection: contractsorm.DriverPostgres.String(),
 		ctx:        context.Background(),
 		query:      queries[contractsorm.DriverPostgres.String()],
