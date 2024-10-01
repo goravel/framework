@@ -67,10 +67,10 @@ func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullCo
 			if fullConfig.Password == "" {
 				fullConfig.Password = c.config.GetString(fmt.Sprintf("database.connections.%s.password", c.connection))
 			}
-			if driver == database.DriverMysql {
+			if driver == database.DriverMysql || driver == database.DriverSqlserver {
 				fullConfig.Charset = c.config.GetString(fmt.Sprintf("database.connections.%s.charset", c.connection))
 			}
-			if driver == database.DriverMysql || driver == database.DriverSqlserver {
+			if driver == database.DriverMysql {
 				fullConfig.Loc = c.config.GetString(fmt.Sprintf("database.connections.%s.loc", c.connection))
 			}
 			if driver == database.DriverPostgres {
