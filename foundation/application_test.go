@@ -307,27 +307,27 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
-	mysqlDocker := supportdocker.Mysql()
-	config := mysqlDocker.Config()
-	mockConfig := &mocksconfig.Config{}
-	mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
-	mockConfig.EXPECT().Get("database.connections.mysql.read").Return(nil).Once()
-	mockConfig.EXPECT().Get("database.connections.mysql.write").Return(nil).Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.driver").Return(contractsdatabase.DriverMysql.String()).Twice()
-	mockConfig.EXPECT().GetString("database.connections.mysql.charset").Return("utf8mb4").Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.loc").Return("Local").Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.database").Return(config.Database).Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.host").Return("localhost").Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.username").Return(config.Username).Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.password").Return(config.Password).Once()
-	mockConfig.EXPECT().GetString("database.connections.mysql.prefix").Return("").Once()
-	mockConfig.EXPECT().GetInt("database.connections.mysql.port").Return(config.Port).Once()
-	mockConfig.EXPECT().GetBool("database.connections.mysql.singular").Return(true).Once()
+	postgresDocker := supportdocker.Postgres()
+	config := postgresDocker.Config()
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
+	mockConfig.EXPECT().Get("database.connections.postgres.read").Return(nil).Once()
+	mockConfig.EXPECT().Get("database.connections.postgres.write").Return(nil).Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return(contractsdatabase.DriverPostgres.String()).Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.prefix").Return("").Once()
+	mockConfig.EXPECT().GetBool("database.connections.postgres.singular").Return(true).Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.host").Return("localhost").Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(config.Username).Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(config.Password).Once()
+	mockConfig.EXPECT().GetInt("database.connections.postgres.port").Return(config.Port).Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.sslmode").Return("disable").Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.timezone").Return("UTC").Once()
+	mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(config.Database).Once()
 	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
-	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
-	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
-	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
-	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
+	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
+	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600).Once()
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600).Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -337,7 +337,6 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeOrm())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {

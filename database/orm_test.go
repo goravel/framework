@@ -12,7 +12,6 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/file"
 )
 
 type contextKey int
@@ -57,10 +56,6 @@ func (s *OrmSuite) SetupTest() {
 		query:      queries[database.DriverPostgres.String()],
 		queries:    queries,
 	}
-}
-
-func (s *OrmSuite) TearDownSuite() {
-	s.Nil(file.Remove("goravel"))
 }
 
 func (s *OrmSuite) TestConnection() {

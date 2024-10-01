@@ -7,6 +7,7 @@ import (
 
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 )
 
@@ -34,9 +35,11 @@ func (s *DockerTestSuite) TestDatabase() {
 	mockConfig.EXPECT().GetString("database.connections.mysql.password").Return("goravel").Once()
 
 	mockArtisan := mocksconsole.NewArtisan(s.T())
+	mockOrm := mocksorm.NewOrm(s.T())
 
 	s.mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 	s.mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
+	s.mockApp.EXPECT().MakeOrm().Return(mockOrm).Once()
 
 	database, err := s.docker.Database()
 	s.Nil(err)
@@ -52,9 +55,11 @@ func (s *DockerTestSuite) TestDatabase() {
 	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return("goravel").Once()
 
 	mockArtisan = mocksconsole.NewArtisan(s.T())
+	mockOrm = mocksorm.NewOrm(s.T())
 
 	s.mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 	s.mockApp.On("MakeConfig").Return(mockConfig).Once()
+	s.mockApp.EXPECT().MakeOrm().Return(mockOrm).Once()
 
 	database, err = s.docker.Database("postgres")
 	s.Nil(err)

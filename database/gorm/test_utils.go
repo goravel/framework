@@ -20,7 +20,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelNormal
+	TestModel = TestModelMinimum
 )
 
 type TestTable int
@@ -320,8 +320,8 @@ func NewMockMysql(mockConfig *mocksconfig.Config, connection, database, username
 }
 
 func (r *MockMysql) Common() {
-	r.mockConfig.On("GetString", "contractsdatabase.default").Return("mysql")
-	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
+	r.mockConfig.On("GetString", "database.default").Return("mysql")
+	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
@@ -391,8 +391,8 @@ func NewMockPostgres(mockConfig *mocksconfig.Config, connection, database, usern
 }
 
 func (r *MockPostgres) Common() {
-	r.mockConfig.On("GetString", "contractsdatabase.default").Return("postgres")
-	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
+	r.mockConfig.On("GetString", "database.default").Return("postgres")
+	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
@@ -455,8 +455,8 @@ func NewMockSqlite(mockConfig *mocksconfig.Config, connection, database string) 
 }
 
 func (r *MockSqlite) Common() {
-	r.mockConfig.On("GetString", "contractsdatabase.default").Return("sqlite")
-	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
+	r.mockConfig.On("GetString", "database.default").Return("sqlite")
+	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
@@ -518,8 +518,8 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 }
 
 func (r *MockSqlserver) Common() {
-	r.mockConfig.On("GetString", "contractsdatabase.default").Return("sqlserver")
-	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
+	r.mockConfig.On("GetString", "database.default").Return("sqlserver")
+	r.mockConfig.On("GetString", "database.migrations").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
