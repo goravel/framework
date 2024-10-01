@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/file"
 )
 
 type contextKey int
@@ -27,8 +27,8 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
-	orm         *OrmImpl
-	testQueries map[contractsorm.Driver]*gorm.TestQuery
+	orm         *Orm
+	testQueries map[database.Driver]*gorm.TestQuery
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -50,16 +50,12 @@ func (s *OrmSuite) SetupTest() {
 		queries[key.String()] = query.Query()
 	}
 
-	s.orm = &OrmImpl{
-		connection: contractsorm.DriverPostgres.String(),
+	s.orm = &Orm{
+		connection: database.DriverPostgres.String(),
 		ctx:        context.Background(),
-		query:      queries[contractsorm.DriverPostgres.String()],
+		query:      queries[database.DriverPostgres.String()],
 		queries:    queries,
 	}
-}
-
-func (s *OrmSuite) TearDownSuite() {
-	s.Nil(file.Remove("goravel"))
 }
 
 func (s *OrmSuite) TestConnection() {

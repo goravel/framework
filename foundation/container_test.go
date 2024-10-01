@@ -97,8 +97,20 @@ func (s *ContainerTestSuite) TestSingleton() {
 		s.Equal(1, concreteImpl)
 		s.Nil(err)
 	default:
-		s.T().Errorf("error")
+		s.Fail("concrete err")
 	}
+
+	s.container.Refresh("Singleton")
+	_, exist = s.container.instances.Load("Singleton")
+	s.False(exist)
+
+	s.container.Singleton("Singleton", callback)
+	concrete, exist = s.container.bindings.Load("Singleton")
+	s.True(exist)
+	ins, ok = concrete.(instance)
+	s.True(ok)
+	s.True(ins.shared)
+	s.NotNil(ins.concrete)
 }
 
 func (s *ContainerTestSuite) TestMake() {

@@ -331,6 +331,10 @@ func (c *Container) MakeWith(key any, parameters map[string]any) (any, error) {
 	return c.make(key, parameters)
 }
 
+func (c *Container) Refresh(key any) {
+	c.instances.Delete(key)
+}
+
 func (c *Container) Singleton(key any, callback func(app contractsfoundation.Application) (any, error)) {
 	c.bindings.Store(key, instance{concrete: callback, shared: true})
 }

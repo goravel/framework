@@ -123,6 +123,8 @@ type Application interface {
 	MakeSeeder() seeder.Facade
 	// MakeWith resolves the given type with the given parameters from the container.
 	MakeWith(key any, parameters map[string]any) (any, error)
+	// Refresh an instance on the given target.
+	Refresh(key any)
 	// Singleton registers a shared binding in the container.
 	Singleton(key any, callback func(app Application) (any, error))
 }

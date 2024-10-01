@@ -3,67 +3,27 @@ package db
 import (
 	"fmt"
 
-	"github.com/goravel/framework/contracts/config"
-	databasecontract "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database"
 )
 
-type Dsn interface {
-	Mysql(config databasecontract.Config) string
-	Postgres(config databasecontract.Config) string
-	Sqlite(config databasecontract.Config) string
-	Sqlserver(config databasecontract.Config) string
-}
-
-type DsnImpl struct {
-	config     config.Config
-	connection string
-}
-
-func NewDsnImpl(config config.Config, connection string) *DsnImpl {
-	return &DsnImpl{
-		config:     config,
-		connection: connection,
-	}
-}
-
-func (d *DsnImpl) Mysql(config databasecontract.Config) string {
-	host := config.Host
-	if host == "" {
+func Dsn(config database.FullConfig) string {
+	if config.Host == "" && config.Driver != database.DriverSqlite {
 		return ""
 	}
 
-	charset := d.config.GetString("database.connections." + d.connection + ".charset")
-	loc := d.config.GetString("database.connections." + d.connection + ".loc")
-
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
-		config.Username, config.Password, host, config.Port, config.Database, charset, true, loc)
-}
-
-func (d *DsnImpl) Postgres(config databasecontract.Config) string {
-	host := config.Host
-	if host == "" {
+	switch config.Driver {
+	case database.DriverMysql:
+		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
+			config.Username, config.Password, config.Host, config.Port, config.Database, config.Charset, true, config.Loc)
+	case database.DriverPostgres:
+		return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
+			config.Username, config.Password, config.Host, config.Port, config.Database, config.Sslmode, config.Timezone)
+	case database.DriverSqlite:
+		return fmt.Sprintf("%s?multi_stmts=true", config.Database)
+	case database.DriverSqlserver:
+		return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
+			config.Username, config.Password, config.Host, config.Port, config.Database, config.Charset)
+	default:
 		return ""
 	}
-
-	sslmode := d.config.GetString("database.connections." + d.connection + ".sslmode")
-	timezone := d.config.GetString("database.connections." + d.connection + ".timezone")
-
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
-		config.Username, config.Password, host, config.Port, config.Database, sslmode, timezone)
-}
-
-func (d *DsnImpl) Sqlite(config databasecontract.Config) string {
-	return fmt.Sprintf("%s?multi_stmts=true", config.Database)
-}
-
-func (d *DsnImpl) Sqlserver(config databasecontract.Config) string {
-	host := config.Host
-	if host == "" {
-		return ""
-	}
-
-	charset := d.config.GetString("database.connections." + d.connection + ".charset")
-
-	return fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
-		config.Username, config.Password, host, config.Port, config.Database, charset)
 }

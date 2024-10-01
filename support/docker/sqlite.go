@@ -6,7 +6,7 @@ import (
 	"github.com/glebarez/sqlite"
 	gormio "gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/support/file"
 )
@@ -36,8 +36,8 @@ func (receiver *SqliteImpl) Config() testing.DatabaseConfig {
 	}
 }
 
-func (receiver *SqliteImpl) Driver() orm.Driver {
-	return orm.DriverSqlite
+func (receiver *SqliteImpl) Driver() database.Driver {
+	return database.DriverSqlite
 }
 
 func (receiver *SqliteImpl) Fresh() error {

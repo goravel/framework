@@ -13,7 +13,7 @@ import (
 )
 
 type CursorImpl struct {
-	query *QueryImpl
+	query *Query
 	row   map[string]any
 }
 

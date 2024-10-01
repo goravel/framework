@@ -2084,6 +2084,39 @@ func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]s
 	return _c
 }
 
+// Refresh provides a mock function with given fields: key
+func (_m *Application) Refresh(key interface{}) {
+	_m.Called(key)
+}
+
+// Application_Refresh_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Refresh'
+type Application_Refresh_Call struct {
+	*mock.Call
+}
+
+// Refresh is a helper method to define mock.On call
+//   - key interface{}
+func (_e *Application_Expecter) Refresh(key interface{}) *Application_Refresh_Call {
+	return &Application_Refresh_Call{Call: _e.mock.On("Refresh", key)}
+}
+
+func (_c *Application_Refresh_Call) Run(run func(key interface{})) *Application_Refresh_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Application_Refresh_Call) Return() *Application_Refresh_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_Refresh_Call) RunAndReturn(run func(interface{})) *Application_Refresh_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetJson provides a mock function with given fields: json
 func (_m *Application) SetJson(json foundation.Json) {
 	_m.Called(json)

@@ -5,15 +5,15 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	contractstesting "github.com/goravel/framework/contracts/testing"
-	configmocks "github.com/goravel/framework/mocks/config"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/env"
 )
 
 type SqlserverTestSuite struct {
 	suite.Suite
-	mockConfig *configmocks.Config
+	mockConfig *mocksconfig.Config
 	sqlserver  *SqlserverImpl
 }
 
@@ -26,7 +26,7 @@ func TestSqlserverTestSuite(t *testing.T) {
 }
 
 func (s *SqlserverTestSuite) SetupTest() {
-	s.mockConfig = &configmocks.Config{}
+	s.mockConfig = &mocksconfig.Config{}
 	s.sqlserver = NewSqlserverImpl(testDatabase, testUsername, testPassword)
 }
 
@@ -76,7 +76,7 @@ func (s *SqlserverTestSuite) TestBuild() {
 }
 
 func (s *SqlserverTestSuite) TestDriver() {
-	s.Equal(orm.DriverSqlserver, s.sqlserver.Driver())
+	s.Equal(database.DriverSqlserver, s.sqlserver.Driver())
 }
 
 func (s *SqlserverTestSuite) TestImage() {

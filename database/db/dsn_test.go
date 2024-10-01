@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 
-	databasecontract "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/orm"
-	configmock "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/contracts/database"
 )
 
 const (
@@ -19,7 +17,7 @@ const (
 	testPassword = "123123"
 )
 
-var testConfig = databasecontract.Config{
+var testConfig = database.Config{
 	Host:     testHost,
 	Port:     testPort,
 	Database: testDatabase,
@@ -27,54 +25,64 @@ var testConfig = databasecontract.Config{
 	Password: testPassword,
 }
 
-type DsnTestSuite struct {
-	suite.Suite
-	mockConfig *configmock.Config
-}
+func TestDsn(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    database.FullConfig
+		expectDsn string
+	}{
+		{
+			name: "empty",
+			config: database.FullConfig{
+				Config: database.Config{},
+			},
+		},
+		{
+			name: "mysql",
+			config: database.FullConfig{
+				Config:  testConfig,
+				Driver:  database.DriverMysql,
+				Charset: "utf8mb4",
+				Loc:     "Local",
+			},
+			expectDsn: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
+				testUsername, testPassword, testHost, testPort, testDatabase, "utf8mb4", true, "Local"),
+		},
+		{
+			name: "postgres",
+			config: database.FullConfig{
+				Config:   testConfig,
+				Driver:   database.DriverPostgres,
+				Sslmode:  "disable",
+				Timezone: "UTC",
+			},
+			expectDsn: fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
+				testUsername, testPassword, testHost, testPort, testDatabase, "disable", "UTC"),
+		},
+		{
+			name: "sqlite",
+			config: database.FullConfig{
+				Config: testConfig,
+				Driver: database.DriverSqlite,
+			},
+			expectDsn: fmt.Sprintf("%s?multi_stmts=true", testDatabase),
+		},
+		{
+			name: "sqlserver",
+			config: database.FullConfig{
+				Config:  testConfig,
+				Driver:  database.DriverSqlserver,
+				Charset: "utf8mb4",
+			},
+			expectDsn: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
+				testUsername, testPassword, testHost, testPort, testDatabase, "utf8mb4"),
+		},
+	}
 
-func TestDsnTestSuite(t *testing.T) {
-	suite.Run(t, new(DsnTestSuite))
-}
-
-func (s *DsnTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
-}
-
-func (s *DsnTestSuite) TestMysql() {
-	connection := orm.DriverMysql.String()
-	dsn := NewDsnImpl(s.mockConfig, connection)
-	charset := "utf8mb4"
-	loc := "Local"
-	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", connection)).Return(charset).Once()
-	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.loc", connection)).Return(loc).Once()
-
-	s.Equal(fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
-		testUsername, testPassword, testHost, testPort, testDatabase, charset, true, loc), dsn.Mysql(testConfig))
-}
-
-func (s *DsnTestSuite) TestPostgres() {
-	connection := orm.DriverPostgres.String()
-	dsn := NewDsnImpl(s.mockConfig, connection)
-	sslmode := "disable"
-	timezone := "UTC"
-	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", connection)).Return(sslmode).Once()
-	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", connection)).Return(timezone).Once()
-
-	s.Equal(fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
-		testUsername, testPassword, testHost, testPort, testDatabase, sslmode, timezone), dsn.Postgres(testConfig))
-}
-
-func (s *DsnTestSuite) TestSqlite() {
-	dsn := NewDsnImpl(s.mockConfig, "")
-	s.Equal(fmt.Sprintf("%s?multi_stmts=true", testDatabase), dsn.Sqlite(testConfig))
-}
-
-func (s *DsnTestSuite) TestSqlserver() {
-	connection := orm.DriverSqlserver.String()
-	dsn := NewDsnImpl(s.mockConfig, connection)
-	charset := "utf8mb4"
-	s.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", connection)).Return(charset).Once()
-
-	s.Equal(fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
-		testUsername, testPassword, testHost, testPort, testDatabase, charset), dsn.Sqlserver(testConfig))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dsn := Dsn(test.config)
+			assert.Equal(t, test.expectDsn, dsn)
+		})
+	}
 }

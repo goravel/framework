@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	configmocks "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/env"
@@ -73,7 +73,7 @@ INSERT INTO users (name) VALUES ('goravel');
 }
 
 func (s *MysqlTestSuite) TestDriver() {
-	s.Equal(orm.DriverMysql, s.mysql.Driver())
+	s.Equal(database.DriverMysql, s.mysql.Driver())
 }
 
 func (s *MysqlTestSuite) TestImage() {

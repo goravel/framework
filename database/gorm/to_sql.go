@@ -5,11 +5,11 @@ import (
 )
 
 type ToSql struct {
-	query *QueryImpl
+	query *Query
 	raw   bool
 }
 
-func NewToSql(query *QueryImpl, raw bool) *ToSql {
+func NewToSql(query *Query, raw bool) *ToSql {
 	return &ToSql{
 		query: query,
 		raw:   raw,

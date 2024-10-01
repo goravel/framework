@@ -4,107 +4,46 @@ import (
 	"fmt"
 
 	"github.com/glebarez/sqlite"
-	"github.com/google/wire"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/config"
-	databasecontract "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/db"
 )
 
-var DialectorSet = wire.NewSet(NewDialectorImpl, wire.Bind(new(Dialector), new(*DialectorImpl)))
-var _ Dialector = &DialectorImpl{}
-
-type Dialector interface {
-	Make(configs []databasecontract.Config) ([]gorm.Dialector, error)
-}
-
-type DialectorImpl struct {
-	config     config.Config
-	connection string
-	dsn        db.Dsn
-}
-
-func NewDialectorImpl(config config.Config, connection string) *DialectorImpl {
-	return &DialectorImpl{
-		config:     config,
-		connection: connection,
-		dsn:        db.NewDsnImpl(config, connection),
-	}
-}
-
-func (d *DialectorImpl) Make(configs []databasecontract.Config) ([]gorm.Dialector, error) {
-	driver := d.config.GetString(fmt.Sprintf("database.connections.%s.driver", d.connection))
-
+func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 	var dialectors []gorm.Dialector
-	for _, item := range configs {
+
+	for _, config := range configs {
 		var dialector gorm.Dialector
-		var err error
-		switch orm.Driver(driver) {
-		case orm.DriverMysql:
-			dialector = d.mysql(item)
-		case orm.DriverPostgres:
-			dialector = d.postgres(item)
-		case orm.DriverSqlite:
-			dialector = d.sqlite(item)
-		case orm.DriverSqlserver:
-			dialector = d.sqlserver(item)
-		default:
-			err = fmt.Errorf("err database driver: %s, only support mysql, postgres, sqlite and sqlserver", driver)
+		dsn := db.Dsn(config)
+		if dsn == "" {
+			return nil, fmt.Errorf("failed to generate DSN for connection: %s", config.Connection)
 		}
 
-		if err != nil {
-			return nil, err
+		switch config.Driver {
+		case database.DriverMysql:
+			dialector = mysql.New(mysql.Config{
+				DSN: dsn,
+			})
+		case database.DriverPostgres:
+			dialector = postgres.New(postgres.Config{
+				DSN: dsn,
+			})
+		case database.DriverSqlite:
+			dialector = sqlite.Open(dsn)
+		case database.DriverSqlserver:
+			dialector = sqlserver.New(sqlserver.Config{
+				DSN: dsn,
+			})
+		default:
+			return nil, fmt.Errorf("err database driver: %s, only support mysql, postgres, sqlite and sqlserver", config.Driver)
 		}
 
 		dialectors = append(dialectors, dialector)
 	}
 
 	return dialectors, nil
-}
-
-func (d *DialectorImpl) mysql(config databasecontract.Config) gorm.Dialector {
-	dsn := d.dsn.Mysql(config)
-	if dsn == "" {
-		return nil
-	}
-
-	return mysql.New(mysql.Config{
-		DSN: dsn,
-	})
-}
-
-func (d *DialectorImpl) postgres(config databasecontract.Config) gorm.Dialector {
-	dsn := d.dsn.Postgres(config)
-	if dsn == "" {
-		return nil
-	}
-
-	return postgres.New(postgres.Config{
-		DSN: dsn,
-	})
-}
-
-func (d *DialectorImpl) sqlite(config databasecontract.Config) gorm.Dialector {
-	dsn := d.dsn.Sqlite(config)
-	if dsn == "" {
-		return nil
-	}
-
-	return sqlite.Open(dsn)
-}
-
-func (d *DialectorImpl) sqlserver(config databasecontract.Config) gorm.Dialector {
-	dsn := d.dsn.Sqlserver(config)
-	if dsn == "" {
-		return nil
-	}
-
-	return sqlserver.New(sqlserver.Config{
-		DSN: dsn,
-	})
 }

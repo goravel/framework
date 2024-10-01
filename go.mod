@@ -18,7 +18,6 @@ require (
 	github.com/golang-module/carbon/v2 v2.3.12
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
-	github.com/google/wire v0.6.0
 	github.com/gookit/validate v1.5.2
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/hashicorp/go-multierror v1.1.1

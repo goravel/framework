@@ -11,9 +11,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/console/driver"
-	"github.com/goravel/framework/database/db"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/support"
 )
 
@@ -25,16 +25,15 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		dir = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
 	}
 
-	gormConfig := db.NewConfigImpl(config, connection)
-	writeConfigs := gormConfig.Writes()
+	configBuilder := databasedb.NewConfigBuilder(config, connection)
+	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
 		return nil, errors.New("not found database configuration")
 	}
 
-	switch orm.Driver(driver) {
-	case orm.DriverMysql:
-		dsn := db.NewDsnImpl(config, connection)
-		mysqlDsn := dsn.Mysql(writeConfigs[0])
+	switch database.Driver(driver) {
+	case database.DriverMysql:
+		mysqlDsn := databasedb.Dsn(writeConfigs[0])
 		if mysqlDsn == "" {
 			return nil, nil
 		}
@@ -52,9 +51,8 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "mysql", instance)
-	case orm.DriverPostgres:
-		dsn := db.NewDsnImpl(config, connection)
-		postgresDsn := dsn.Postgres(writeConfigs[0])
+	case database.DriverPostgres:
+		postgresDsn := databasedb.Dsn(writeConfigs[0])
 		if postgresDsn == "" {
 			return nil, nil
 		}
@@ -72,9 +70,8 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "postgres", instance)
-	case orm.DriverSqlite:
-		dsn := db.NewDsnImpl(config, "")
-		sqliteDsn := dsn.Sqlite(writeConfigs[0])
+	case database.DriverSqlite:
+		sqliteDsn := databasedb.Dsn(writeConfigs[0])
 		if sqliteDsn == "" {
 			return nil, nil
 		}
@@ -92,9 +89,8 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlite3", instance)
-	case orm.DriverSqlserver:
-		dsn := db.NewDsnImpl(config, connection)
-		sqlserverDsn := dsn.Sqlserver(writeConfigs[0])
+	case database.DriverSqlserver:
+		sqlserverDsn := databasedb.Dsn(writeConfigs[0])
 		if sqlserverDsn == "" {
 			return nil, nil
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
+	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
@@ -23,7 +24,7 @@ import (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries         map[contractsorm.Driver]*TestQuery
+	queries         map[database.Driver]*TestQuery
 	additionalQuery *TestQuery
 }
 
@@ -608,7 +609,7 @@ func (s *QueryTestSuite) TestDBRaw() {
 			s.Nil(query.Query().Create(&user))
 			s.True(user.ID > 0)
 			switch driver {
-			case contractsorm.DriverSqlserver, contractsorm.DriverMysql:
+			case database.DriverSqlserver, database.DriverMysql:
 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver.String()))
 				s.Nil(err)
 				s.Equal(int64(1), res.RowsAffected)
@@ -2043,7 +2044,7 @@ func (s *QueryTestSuite) TestJoin() {
 
 func (s *QueryTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
-		if driver != contractsorm.DriverSqlite {
+		if driver != database.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "lock_for_update_user"}
 				s.Nil(query.Query().Create(&user))
@@ -2625,7 +2626,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return people
 			}(),
 			setup: func() {
-				mockCommonConnection(s.queries[contractsorm.DriverPostgres].MockConfig(), s.additionalQuery, "dummy")
+				mockCommonConnection(s.queries[database.DriverPostgres].MockConfig(), s.additionalQuery, "dummy")
 			},
 			expectConnection: "dummy",
 		},
@@ -2636,7 +2637,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup: func() {
-				mockCommonConnection(s.queries[contractsorm.DriverPostgres].MockConfig(), s.queries[contractsorm.DriverSqlite], "sqlite")
+				mockCommonConnection(s.queries[database.DriverPostgres].MockConfig(), s.queries[database.DriverSqlite], "sqlite")
 			},
 			expectConnection: "sqlite",
 		},
@@ -2645,8 +2646,8 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			test.setup()
-			testQuery := s.queries[contractsorm.DriverPostgres]
-			query, err := testQuery.Query().(*QueryImpl).refreshConnection(test.model)
+			testQuery := s.queries[database.DriverPostgres]
+			query, err := testQuery.Query().(*Query).refreshConnection(test.model)
 			if test.expectErr != "" {
 				s.EqualError(err, test.expectErr)
 			} else {
@@ -2774,7 +2775,7 @@ func (s *QueryTestSuite) TestSelect() {
 
 func (s *QueryTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
-		if driver != contractsorm.DriverSqlite {
+		if driver != database.DriverSqlite {
 			s.Run(driver.String(), func() {
 				user := User{Name: "shared_lock_user"}
 				s.Nil(query.Query().Create(&user))
@@ -2856,9 +2857,9 @@ func (s *QueryTestSuite) TestToSql() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			switch driver {
-			case contractsorm.DriverPostgres:
+			case database.DriverPostgres:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
-			case contractsorm.DriverSqlserver:
+			case database.DriverSqlserver:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
@@ -2871,9 +2872,9 @@ func (s *QueryTestSuite) TestToRawSql() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
 			switch driver {
-			case contractsorm.DriverPostgres:
+			case database.DriverPostgres:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
-			case contractsorm.DriverSqlserver:
+			case database.DriverSqlserver:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
@@ -3655,7 +3656,7 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 }
 
 func mockCommonConnection(mockConfig *mocksconfig.Config, testQuery *TestQuery, connection string) {
-	mockDriver := GetMockDriver(testQuery.Docker(), mockConfig, connection)
+	mockDriver := getMockDriver(testQuery.Docker(), mockConfig, connection)
 	mockDriver.Common()
 }
 

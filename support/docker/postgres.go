@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/postgres"
 	gormio "gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 )
 
@@ -70,8 +70,8 @@ func (receiver *PostgresImpl) Config() testing.DatabaseConfig {
 	}
 }
 
-func (receiver *PostgresImpl) Driver() orm.Driver {
-	return orm.DriverPostgres
+func (receiver *PostgresImpl) Driver() database.Driver {
+	return database.DriverPostgres
 }
 
 func (receiver *PostgresImpl) Fresh() error {
