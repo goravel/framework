@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )

@@ -20,7 +20,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelNormal
+	TestModel = TestModelMinimum
 )
 
 type TestTable int
@@ -1214,8 +1214,8 @@ CREATE TABLE role_user (
 }
 
 func mockPool(mockConfig *mocksconfig.Config) {
-	mockConfig.On("GetInt", "contractsdatabase.pool.max_idle_conns", 10).Return(10)
-	mockConfig.On("GetInt", "contractsdatabase.pool.max_open_conns", 100).Return(100)
-	mockConfig.On("GetInt", "contractsdatabase.pool.conn_max_idletime", 3600).Return(3600)
-	mockConfig.On("GetInt", "contractsdatabase.pool.conn_max_lifetime", 3600).Return(3600)
+	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
+	mockConfig.On("GetInt", "database.pool.max_open_conns", 100).Return(100)
+	mockConfig.On("GetInt", "database.pool.conn_max_idletime", 3600).Return(3600)
+	mockConfig.On("GetInt", "database.pool.conn_max_lifetime", 3600).Return(3600)
 }
