@@ -18,9 +18,10 @@ type Orm struct {
 	connection string
 	query      contractsorm.Query
 	queries    map[string]contractsorm.Query
+	refresh    func(key any)
 }
 
-func NewOrm(ctx context.Context, config config.Config, connection string, query contractsorm.Query) (*Orm, error) {
+func NewOrm(ctx context.Context, config config.Config, connection string, query contractsorm.Query, refresh func(key any)) (*Orm, error) {
 	return &Orm{
 		ctx:        ctx,
 		config:     config,
@@ -29,16 +30,17 @@ func NewOrm(ctx context.Context, config config.Config, connection string, query 
 		queries: map[string]contractsorm.Query{
 			connection: query,
 		},
+		refresh: refresh,
 	}, nil
 }
 
-func BuildOrm(ctx context.Context, config config.Config, connection string) (*Orm, error) {
+func BuildOrm(ctx context.Context, config config.Config, connection string, refresh func(key any)) (*Orm, error) {
 	query, err := gorm.BuildQuery(ctx, config, connection)
 	if err != nil {
 		return nil, fmt.Errorf("[Orm] Build query for %s connection error: %v", connection, err)
 	}
 
-	return NewOrm(ctx, config, connection, query)
+	return NewOrm(ctx, config, connection, query, refresh)
 }
 
 func (r *Orm) Connection(name string) contractsorm.Orm {
@@ -95,7 +97,7 @@ func (r *Orm) Observe(model any, observer contractsorm.Observer) {
 }
 
 func (r *Orm) Refresh() {
-	appFacade.Refresh(BindingOrm)
+	r.refresh(BindingOrm)
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {

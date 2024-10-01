@@ -14,8 +14,6 @@ const BindingOrm = "goravel.orm"
 const BindingSchema = "goravel.schema"
 const BindingSeeder = "goravel.seeder"
 
-var appFacade foundation.Application
-
 type ServiceProvider struct {
 }
 
@@ -24,7 +22,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		connection := config.GetString("database.default")
-		orm, err := BuildOrm(ctx, config, connection)
+		orm, err := BuildOrm(ctx, config, connection, app.Refresh)
 		if err != nil {
 			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
 		}
@@ -49,7 +47,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (r *ServiceProvider) Boot(app foundation.Application) {
-	appFacade = app
 	r.registerCommands(app)
 }
 
