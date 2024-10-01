@@ -11,7 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/console/driver"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/support"
@@ -31,8 +31,8 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		return nil, errors.New("not found database configuration")
 	}
 
-	switch orm.Driver(driver) {
-	case orm.DriverMysql:
+	switch database.Driver(driver) {
+	case database.DriverMysql:
 		mysqlDsn := databasedb.Dsn(writeConfigs[0])
 		if mysqlDsn == "" {
 			return nil, nil
@@ -51,7 +51,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "mysql", instance)
-	case orm.DriverPostgres:
+	case database.DriverPostgres:
 		postgresDsn := databasedb.Dsn(writeConfigs[0])
 		if postgresDsn == "" {
 			return nil, nil
@@ -70,7 +70,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "postgres", instance)
-	case orm.DriverSqlite:
+	case database.DriverSqlite:
 		sqliteDsn := databasedb.Dsn(writeConfigs[0])
 		if sqliteDsn == "" {
 			return nil, nil
@@ -89,7 +89,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlite3", instance)
-	case orm.DriverSqlserver:
+	case database.DriverSqlserver:
 		sqlserverDsn := databasedb.Dsn(writeConfigs[0])
 		if sqlserverDsn == "" {
 			return nil, nil

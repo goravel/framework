@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/migration"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
@@ -73,15 +74,15 @@ func (r *Schema) Sql(sql string) {
 
 func getGrammar(driver string) migration.Grammar {
 	switch driver {
-	case contractsorm.DriverMysql.String():
+	case contractsdatabase.DriverMysql.String():
 		// TODO Optimize here when implementing Mysql driver
 		return nil
-	case contractsorm.DriverPostgres.String():
+	case contractsdatabase.DriverPostgres.String():
 		return grammars.NewPostgres()
-	case contractsorm.DriverSqlserver.String():
+	case contractsdatabase.DriverSqlserver.String():
 		// TODO Optimize here when implementing Mysql driver
 		return nil
-	case contractsorm.DriverSqlite.String():
+	case contractsdatabase.DriverSqlite.String():
 		// TODO Optimize here when implementing Mysql driver
 		return nil
 	default:

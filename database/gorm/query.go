@@ -15,7 +15,8 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/contracts/config"
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/database/orm"
@@ -57,13 +58,13 @@ func BuildQuery(ctx context.Context, config config.Config, connection string) (*
 	return NewQuery(ctx, config, connection, gorm, nil), nil
 }
 
-func (r *Query) Association(association string) ormcontract.Association {
+func (r *Query) Association(association string) contractsorm.Association {
 	query := r.buildConditions()
 
 	return query.instance.Association(association)
 }
 
-func (r *Query) Begin() (ormcontract.Query, error) {
+func (r *Query) Begin() (contractsorm.Query, error) {
 	tx := r.instance.Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
@@ -104,13 +105,13 @@ func (r *Query) Create(value any) error {
 	return query.create(value)
 }
 
-func (r *Query) Cursor() (chan ormcontract.Cursor, error) {
+func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 	with := r.conditions.with
 	query := r.buildConditions()
 	r.conditions.with = with
 
 	var err error
-	cursorChan := make(chan ormcontract.Cursor)
+	cursorChan := make(chan contractsorm.Cursor)
 	go func() {
 		var rows *sql.Rows
 		rows, err = query.instance.Rows()
@@ -132,7 +133,7 @@ func (r *Query) Cursor() (chan ormcontract.Cursor, error) {
 	return cursorChan, err
 }
 
-func (r *Query) Delete(dest ...any) (*ormcontract.Result, error) {
+func (r *Query) Delete(dest ...any) (*contractsorm.Result, error) {
 	var (
 		realDest any
 		err      error
@@ -161,27 +162,27 @@ func (r *Query) Delete(dest ...any) (*ormcontract.Result, error) {
 		return nil, err
 	}
 
-	return &ormcontract.Result{
+	return &contractsorm.Result{
 		RowsAffected: res.RowsAffected,
 	}, nil
 }
 
-func (r *Query) Distinct(args ...any) ormcontract.Query {
+func (r *Query) Distinct(args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.distinct = append(conditions.distinct, args...)
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Driver() ormcontract.Driver {
-	return ormcontract.Driver(r.instance.Dialector.Name())
+func (r *Query) Driver() contractsdatabase.Driver {
+	return contractsdatabase.Driver(r.instance.Dialector.Name())
 }
 
-func (r *Query) Exec(sql string, values ...any) (*ormcontract.Result, error) {
+func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
 	query := r.buildConditions()
 	result := query.instance.Exec(sql, values...)
 
-	return &ormcontract.Result{
+	return &contractsorm.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
 }
@@ -346,7 +347,7 @@ func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
 	return nil
 }
 
-func (r *Query) ForceDelete(dest ...any) (*ormcontract.Result, error) {
+func (r *Query) ForceDelete(dest ...any) (*contractsorm.Result, error) {
 	var (
 		realDest any
 		err      error
@@ -377,7 +378,7 @@ func (r *Query) ForceDelete(dest ...any) (*ormcontract.Result, error) {
 		}
 	}
 
-	return &ormcontract.Result{
+	return &contractsorm.Result{
 		RowsAffected: res.RowsAffected,
 	}, res.Error
 }
@@ -386,14 +387,14 @@ func (r *Query) Get(dest any) error {
 	return r.Find(dest)
 }
 
-func (r *Query) Group(name string) ormcontract.Query {
+func (r *Query) Group(name string) contractsorm.Query {
 	conditions := r.conditions
 	conditions.group = name
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Having(query any, args ...any) ormcontract.Query {
+func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.having = &Having{
 		query: query,
@@ -407,7 +408,7 @@ func (r *Query) Instance() *gormio.DB {
 	return r.instance
 }
 
-func (r *Query) Join(query string, args ...any) ormcontract.Query {
+func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.join = append(conditions.join, Join{
 		query: query,
@@ -417,7 +418,7 @@ func (r *Query) Join(query string, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Limit(limit int) ormcontract.Query {
+func (r *Query) Limit(limit int) contractsorm.Query {
 	conditions := r.conditions
 	conditions.limit = &limit
 
@@ -489,42 +490,42 @@ func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 	return r.Load(model, relation, args...)
 }
 
-func (r *Query) LockForUpdate() ormcontract.Query {
+func (r *Query) LockForUpdate() contractsorm.Query {
 	conditions := r.conditions
 	conditions.lockForUpdate = true
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Model(value any) ormcontract.Query {
+func (r *Query) Model(value any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.model = value
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Offset(offset int) ormcontract.Query {
+func (r *Query) Offset(offset int) contractsorm.Query {
 	conditions := r.conditions
 	conditions.offset = &offset
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Omit(columns ...string) ormcontract.Query {
+func (r *Query) Omit(columns ...string) contractsorm.Query {
 	conditions := r.conditions
 	conditions.omit = columns
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Order(value any) ormcontract.Query {
+func (r *Query) Order(value any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.order = append(r.conditions.order, value)
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) OrderBy(column string, direction ...string) ormcontract.Query {
+func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	var orderDirection string
 	if len(direction) > 0 {
 		orderDirection = direction[0]
@@ -534,26 +535,26 @@ func (r *Query) OrderBy(column string, direction ...string) ormcontract.Query {
 	return r.Order(fmt.Sprintf("%s %s", column, orderDirection))
 }
 
-func (r *Query) OrderByDesc(column string) ormcontract.Query {
+func (r *Query) OrderByDesc(column string) contractsorm.Query {
 	return r.Order(fmt.Sprintf("%s DESC", column))
 }
 
-func (r *Query) InRandomOrder() ormcontract.Query {
+func (r *Query) InRandomOrder() contractsorm.Query {
 	order := ""
 	switch r.Driver() {
-	case ormcontract.DriverMysql:
+	case contractsdatabase.DriverMysql:
 		order = "RAND()"
-	case ormcontract.DriverSqlserver:
+	case contractsdatabase.DriverSqlserver:
 		order = "NEWID()"
-	case ormcontract.DriverPostgres:
+	case contractsdatabase.DriverPostgres:
 		order = "RANDOM()"
-	case ormcontract.DriverSqlite:
+	case contractsdatabase.DriverSqlite:
 		order = "RANDOM()"
 	}
 	return r.Order(order)
 }
 
-func (r *Query) OrWhere(query any, args ...any) ormcontract.Query {
+func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.where = append(r.conditions.where, Where{
 		query: query,
@@ -594,7 +595,7 @@ func (r *Query) Pluck(column string, dest any) error {
 	return query.instance.Pluck(column, dest).Error
 }
 
-func (r *Query) Raw(sql string, values ...any) ormcontract.Query {
+func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	return r.new(r.instance.Raw(sql, values...))
 }
 
@@ -675,14 +676,14 @@ func (r *Query) Scan(dest any) error {
 	return query.instance.Scan(dest).Error
 }
 
-func (r *Query) Scopes(funcs ...func(ormcontract.Query) ormcontract.Query) ormcontract.Query {
+func (r *Query) Scopes(funcs ...func(contractsorm.Query) contractsorm.Query) contractsorm.Query {
 	conditions := r.conditions
 	conditions.scopes = append(r.conditions.scopes, funcs...)
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Select(query any, args ...any) ormcontract.Query {
+func (r *Query) Select(query any, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.selectColumns = &Select{
 		query: query,
@@ -697,7 +698,7 @@ func (r *Query) SetContext(ctx context.Context) {
 	r.instance.Statement.Context = ctx
 }
 
-func (r *Query) SharedLock() ormcontract.Query {
+func (r *Query) SharedLock() contractsorm.Query {
 	conditions := r.conditions
 	conditions.sharedLock = true
 
@@ -710,7 +711,7 @@ func (r *Query) Sum(column string, dest any) error {
 	return query.instance.Select("SUM(" + column + ")").Row().Scan(dest)
 }
 
-func (r *Query) Table(name string, args ...any) ormcontract.Query {
+func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.table = &Table{
 		name: name,
@@ -720,15 +721,15 @@ func (r *Query) Table(name string, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) ToSql() ormcontract.ToSql {
+func (r *Query) ToSql() contractsorm.ToSql {
 	return NewToSql(r.setConditions(r.conditions), false)
 }
 
-func (r *Query) ToRawSql() ormcontract.ToSql {
+func (r *Query) ToRawSql() contractsorm.ToSql {
 	return NewToSql(r.setConditions(r.conditions), true)
 }
 
-func (r *Query) Update(column any, value ...any) (*ormcontract.Result, error) {
+func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
 	query := r.buildConditions()
 
 	if _, ok := column.(string); !ok && len(value) > 0 {
@@ -791,7 +792,7 @@ func (r *Query) UpdateOrCreate(dest any, attributes any, values any) error {
 	return query.Create(dest)
 }
 
-func (r *Query) Where(query any, args ...any) ormcontract.Query {
+func (r *Query) Where(query any, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.where = append(r.conditions.where, Where{
 		query: query,
@@ -801,51 +802,51 @@ func (r *Query) Where(query any, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) WhereIn(column string, values []any) ormcontract.Query {
+func (r *Query) WhereIn(column string, values []any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IN ?", column), values)
 }
 
-func (r *Query) OrWhereIn(column string, values []any) ormcontract.Query {
+func (r *Query) OrWhereIn(column string, values []any) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IN ?", column), values)
 }
 
-func (r *Query) WhereNotIn(column string, values []any) ormcontract.Query {
+func (r *Query) WhereNotIn(column string, values []any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s NOT IN ?", column), values)
 }
 
-func (r *Query) OrWhereNotIn(column string, values []any) ormcontract.Query {
+func (r *Query) OrWhereNotIn(column string, values []any) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s NOT IN ?", column), values)
 }
 
-func (r *Query) WhereBetween(column string, x, y any) ormcontract.Query {
+func (r *Query) WhereBetween(column string, x, y any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s BETWEEN %v AND %v", column, x, y))
 }
 
-func (r *Query) WhereNotBetween(column string, x, y any) ormcontract.Query {
+func (r *Query) WhereNotBetween(column string, x, y any) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
 }
 
-func (r *Query) OrWhereBetween(column string, x, y any) ormcontract.Query {
+func (r *Query) OrWhereBetween(column string, x, y any) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s BETWEEN %v AND %v", column, x, y))
 }
 
-func (r *Query) OrWhereNotBetween(column string, x, y any) ormcontract.Query {
+func (r *Query) OrWhereNotBetween(column string, x, y any) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s NOT BETWEEN %v AND %v", column, x, y))
 }
 
-func (r *Query) OrWhereNull(column string) ormcontract.Query {
+func (r *Query) OrWhereNull(column string) contractsorm.Query {
 	return r.OrWhere(fmt.Sprintf("%s IS NULL", column))
 }
 
-func (r *Query) WhereNull(column string) ormcontract.Query {
+func (r *Query) WhereNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NULL", column))
 }
 
-func (r *Query) WhereNotNull(column string) ormcontract.Query {
+func (r *Query) WhereNotNull(column string) contractsorm.Query {
 	return r.Where(fmt.Sprintf("%s IS NOT NULL", column))
 }
 
-func (r *Query) With(query string, args ...any) ormcontract.Query {
+func (r *Query) With(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.with = append(r.conditions.with, With{
 		query: query,
@@ -855,14 +856,14 @@ func (r *Query) With(query string, args ...any) ormcontract.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) WithoutEvents() ormcontract.Query {
+func (r *Query) WithoutEvents() contractsorm.Query {
 	conditions := r.conditions
 	conditions.withoutEvents = true
 
 	return r.setConditions(conditions)
 }
 
-func (r *Query) WithTrashed() ormcontract.Query {
+func (r *Query) WithTrashed() contractsorm.Query {
 	conditions := r.conditions
 	conditions.withTrashed = true
 
@@ -1113,7 +1114,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 	for _, item := range r.conditions.with {
 		isSet := false
 		if len(item.args) == 1 {
-			if arg, ok := item.args[0].(func(ormcontract.Query) ormcontract.Query); ok {
+			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
 						queryImpl := NewQuery(r.ctx, r.config, r.connection, tx, nil)
@@ -1178,30 +1179,30 @@ func (r *Query) create(dest any) error {
 }
 
 func (r *Query) created(dest any) error {
-	return r.event(ormcontract.EventCreated, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventCreated, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) creating(dest any) error {
-	return r.event(ormcontract.EventCreating, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventCreating, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) deleting(dest any) error {
-	return r.event(ormcontract.EventDeleting, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) deleted(dest any) error {
-	return r.event(ormcontract.EventDeleted, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) forceDeleting(dest any) error {
-	return r.event(ormcontract.EventForceDeleting, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) forceDeleted(dest any) error {
-	return r.event(ormcontract.EventForceDeleted, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) event(event ormcontract.EventType, model, dest any) error {
+func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	if r.conditions.withoutEvents {
 		return nil
 	}
@@ -1209,7 +1210,7 @@ func (r *Query) event(event ormcontract.EventType, model, dest any) error {
 	instance := NewEvent(r, model, dest)
 
 	if dest != nil {
-		if dispatchesEvents, exist := dest.(ormcontract.DispatchesEvents); exist {
+		if dispatchesEvents, exist := dest.(contractsorm.DispatchesEvents); exist {
 			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
 				return dispatchesEvent(instance)
 			}
@@ -1218,7 +1219,7 @@ func (r *Query) event(event ormcontract.EventType, model, dest any) error {
 	}
 
 	if model != nil {
-		if dispatchesEvents, exist := model.(ormcontract.DispatchesEvents); exist {
+		if dispatchesEvents, exist := model.(contractsorm.DispatchesEvents); exist {
 			if dispatchesEvent, exists := dispatchesEvents.DispatchesEvents()[event]; exists {
 				return dispatchesEvent(instance)
 			}
@@ -1334,7 +1335,7 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 }
 
 func (r *Query) retrieved(dest any) error {
-	return r.event(ormcontract.EventRetrieved, nil, dest)
+	return r.event(contractsorm.EventRetrieved, nil, dest)
 }
 
 func (r *Query) save(value any) error {
@@ -1342,11 +1343,11 @@ func (r *Query) save(value any) error {
 }
 
 func (r *Query) saved(dest any) error {
-	return r.event(ormcontract.EventSaved, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventSaved, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) saving(dest any) error {
-	return r.event(ormcontract.EventSaving, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventSaving, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) selectCreate(value any) error {
@@ -1405,14 +1406,14 @@ func (r *Query) setConditions(conditions Conditions) *Query {
 }
 
 func (r *Query) updating(dest any) error {
-	return r.event(ormcontract.EventUpdating, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventUpdating, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) updated(dest any) error {
-	return r.event(ormcontract.EventUpdated, r.instance.Statement.Model, dest)
+	return r.event(contractsorm.EventUpdated, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) updates(values any) (*ormcontract.Result, error) {
+func (r *Query) updates(values any) (*contractsorm.Result, error) {
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return nil, errors.New("cannot set Select and Omits at the same time")
 	}
@@ -1421,7 +1422,7 @@ func (r *Query) updates(values any) (*ormcontract.Result, error) {
 		for _, val := range r.instance.Statement.Selects {
 			if val == orm.Associations {
 				result := r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Updates(values)
-				return &ormcontract.Result{
+				return &contractsorm.Result{
 					RowsAffected: result.RowsAffected,
 				}, result.Error
 			}
@@ -1429,7 +1430,7 @@ func (r *Query) updates(values any) (*ormcontract.Result, error) {
 
 		result := r.instance.Updates(values)
 
-		return &ormcontract.Result{
+		return &contractsorm.Result{
 			RowsAffected: result.RowsAffected,
 		}, result.Error
 	}
@@ -1439,20 +1440,20 @@ func (r *Query) updates(values any) (*ormcontract.Result, error) {
 			if val == orm.Associations {
 				result := r.instance.Omit(orm.Associations).Updates(values)
 
-				return &ormcontract.Result{
+				return &contractsorm.Result{
 					RowsAffected: result.RowsAffected,
 				}, result.Error
 			}
 		}
 		result := r.instance.Updates(values)
 
-		return &ormcontract.Result{
+		return &contractsorm.Result{
 			RowsAffected: result.RowsAffected,
 		}, result.Error
 	}
 	result := r.instance.Omit(orm.Associations).Updates(values)
 
-	return &ormcontract.Result{
+	return &contractsorm.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
 }
@@ -1506,7 +1507,7 @@ func getModelConnection(model any) (string, error) {
 	}
 
 	newModel := reflect.New(modelType)
-	connectionModel, ok := newModel.Interface().(ormcontract.ConnectionModel)
+	connectionModel, ok := newModel.Interface().(contractsorm.ConnectionModel)
 	if !ok {
 		return "", nil
 	}
@@ -1514,7 +1515,7 @@ func getModelConnection(model any) (string, error) {
 	return connectionModel.Connection(), nil
 }
 
-func getObserver(dest any) ormcontract.Observer {
+func getObserver(dest any) contractsorm.Observer {
 	destType := reflect.TypeOf(dest)
 	if destType.Kind() == reflect.Pointer {
 		destType = destType.Elem()
@@ -1533,29 +1534,29 @@ func getObserver(dest any) ormcontract.Observer {
 	return nil
 }
 
-func getObserverEvent(event ormcontract.EventType, observer ormcontract.Observer) func(ormcontract.Event) error {
+func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
 	switch event {
-	case ormcontract.EventRetrieved:
+	case contractsorm.EventRetrieved:
 		return observer.Retrieved
-	case ormcontract.EventCreating:
+	case contractsorm.EventCreating:
 		return observer.Creating
-	case ormcontract.EventCreated:
+	case contractsorm.EventCreated:
 		return observer.Created
-	case ormcontract.EventUpdating:
+	case contractsorm.EventUpdating:
 		return observer.Updating
-	case ormcontract.EventUpdated:
+	case contractsorm.EventUpdated:
 		return observer.Updated
-	case ormcontract.EventSaving:
+	case contractsorm.EventSaving:
 		return observer.Saving
-	case ormcontract.EventSaved:
+	case contractsorm.EventSaved:
 		return observer.Saved
-	case ormcontract.EventDeleting:
+	case contractsorm.EventDeleting:
 		return observer.Deleting
-	case ormcontract.EventDeleted:
+	case contractsorm.EventDeleted:
 		return observer.Deleted
-	case ormcontract.EventForceDeleting:
+	case contractsorm.EventForceDeleting:
 		return observer.ForceDeleting
-	case ormcontract.EventForceDeleted:
+	case contractsorm.EventForceDeleted:
 		return observer.ForceDeleted
 	}
 

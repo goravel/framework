@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	frameworkdatabase "github.com/goravel/framework/database"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -48,14 +48,13 @@ func TestNewDatabase(t *testing.T) {
 			name: "success when connection is empty",
 			setup: func() {
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
-				mockConfig.EXPECT().GetString("database.connections.mysql.driver").Return(contractsorm.DriverMysql.String()).Once()
+				mockConfig.EXPECT().GetString("database.connections.mysql.driver").Return(contractsdatabase.DriverMysql.String()).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:            mockApp,
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "mysql",
@@ -67,14 +66,13 @@ func TestNewDatabase(t *testing.T) {
 			name:       "success when connection is mysql",
 			connection: "mysql",
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.connections.mysql.driver").Return(contractsorm.DriverMysql.String()).Once()
+				mockConfig.EXPECT().GetString("database.connections.mysql.driver").Return(contractsdatabase.DriverMysql.String()).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:            mockApp,
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "mysql",
@@ -86,14 +84,13 @@ func TestNewDatabase(t *testing.T) {
 			name:       "success when connection is postgres",
 			connection: "postgres",
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return(contractsorm.DriverPostgres.String()).Once()
+				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return(contractsdatabase.DriverPostgres.String()).Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:            mockApp,
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "postgres",
@@ -105,14 +102,13 @@ func TestNewDatabase(t *testing.T) {
 			name:       "success when connection is sqlserver",
 			connection: "sqlserver",
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.connections.sqlserver.driver").Return(contractsorm.DriverSqlserver.String()).Once()
+				mockConfig.EXPECT().GetString("database.connections.sqlserver.driver").Return(contractsdatabase.DriverSqlserver.String()).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlserver.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlserver.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlserver.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:            mockApp,
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "sqlserver",
@@ -124,14 +120,13 @@ func TestNewDatabase(t *testing.T) {
 			name:       "success when connection is sqlite",
 			connection: "sqlite",
 			setup: func() {
-				mockConfig.EXPECT().GetString("database.connections.sqlite.driver").Return(contractsorm.DriverSqlite.String()).Once()
+				mockConfig.EXPECT().GetString("database.connections.sqlite.driver").Return(contractsdatabase.DriverSqlite.String()).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlite.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlite.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlite.password").Return(testPassword).Once()
 			},
 			wantDatabase: func() *Database {
 				return &Database{
-					app:            mockApp,
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "sqlite",
@@ -170,7 +165,6 @@ func (s *DatabaseTestSuite) SetupTest() {
 	s.mockArtisan = mocksconsole.NewArtisan(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.database = &Database{
-		app:            s.mockApp,
 		artisan:        s.mockArtisan,
 		config:         s.mockConfig,
 		connection:     "mysql",

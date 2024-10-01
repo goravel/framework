@@ -53,20 +53,20 @@ func (r *SqlDriver) getStub(table string, create bool) (string, string) {
 	}
 
 	driver := r.config.GetString("database.connections." + r.config.GetString("database.default") + ".driver")
-	switch orm.Driver(driver) {
-	case orm.DriverPostgres:
+	switch database.Driver(driver) {
+	case database.DriverPostgres:
 		if create {
 			return PostgresStubs{}.CreateUp(), PostgresStubs{}.CreateDown()
 		}
 
 		return PostgresStubs{}.UpdateUp(), PostgresStubs{}.UpdateDown()
-	case orm.DriverSqlite:
+	case database.DriverSqlite:
 		if create {
 			return SqliteStubs{}.CreateUp(), SqliteStubs{}.CreateDown()
 		}
 
 		return SqliteStubs{}.UpdateUp(), SqliteStubs{}.UpdateDown()
-	case orm.DriverSqlserver:
+	case database.DriverSqlserver:
 		if create {
 			return SqlserverStubs{}.CreateUp(), SqlserverStubs{}.CreateDown()
 		}

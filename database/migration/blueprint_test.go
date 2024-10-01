@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/migration/grammars"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -17,13 +17,13 @@ import (
 type BlueprintTestSuite struct {
 	suite.Suite
 	blueprint *Blueprint
-	grammars  map[orm.Driver]migration.Grammar
+	grammars  map[database.Driver]migration.Grammar
 }
 
 func TestBlueprintTestSuite(t *testing.T) {
 	suite.Run(t, &BlueprintTestSuite{
-		grammars: map[orm.Driver]migration.Grammar{
-			orm.DriverPostgres: grammars.NewPostgres(),
+		grammars: map[database.Driver]migration.Grammar{
+			database.DriverPostgres: grammars.NewPostgres(),
 		},
 	})
 }
@@ -355,7 +355,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 		//s.blueprint.String("name").Comment("comment")
 		//s.blueprint.Comment("comment")
 
-		if driver == orm.DriverPostgres {
+		if driver == database.DriverPostgres {
 			s.Len(s.blueprint.ToSql(mockQuery, grammar), 1)
 		} else {
 			s.Empty(s.blueprint.ToSql(mockQuery, grammar))

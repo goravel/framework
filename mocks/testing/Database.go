@@ -3,9 +3,10 @@
 package testing
 
 import (
-	orm "github.com/goravel/framework/contracts/database/orm"
-	seeder "github.com/goravel/framework/contracts/database/seeder"
+	database "github.com/goravel/framework/contracts/database"
 	mock "github.com/stretchr/testify/mock"
+
+	seeder "github.com/goravel/framework/contracts/database/seeder"
 
 	testing "github.com/goravel/framework/contracts/testing"
 )
@@ -114,18 +115,18 @@ func (_c *Database_Config_Call) RunAndReturn(run func() testing.DatabaseConfig) 
 }
 
 // Driver provides a mock function with given fields:
-func (_m *Database) Driver() orm.Driver {
+func (_m *Database) Driver() database.Driver {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Driver")
 	}
 
-	var r0 orm.Driver
-	if rf, ok := ret.Get(0).(func() orm.Driver); ok {
+	var r0 database.Driver
+	if rf, ok := ret.Get(0).(func() database.Driver); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(orm.Driver)
+		r0 = ret.Get(0).(database.Driver)
 	}
 
 	return r0
@@ -148,12 +149,12 @@ func (_c *Database_Driver_Call) Run(run func()) *Database_Driver_Call {
 	return _c
 }
 
-func (_c *Database_Driver_Call) Return(_a0 orm.Driver) *Database_Driver_Call {
+func (_c *Database_Driver_Call) Return(_a0 database.Driver) *Database_Driver_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Database_Driver_Call) RunAndReturn(run func() orm.Driver) *Database_Driver_Call {
+func (_c *Database_Driver_Call) RunAndReturn(run func() database.Driver) *Database_Driver_Call {
 	_c.Call.Return(run)
 	return _c
 }

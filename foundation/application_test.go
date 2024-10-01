@@ -12,7 +12,7 @@ import (
 	"github.com/goravel/framework/cache"
 	frameworkconfig "github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
-	"github.com/goravel/framework/contracts/database/orm"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
@@ -151,7 +151,7 @@ func (s *ApplicationTestSuite) TestMakeArtisan() {
 
 func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "auth.defaults.guard").Return("user").Once()
+	mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -172,9 +172,9 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 
 func (s *ApplicationTestSuite) TestMakeCache() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "cache.default").Return("memory").Once()
-	mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
-	mockConfig.On("GetString", "cache.prefix").Return("goravel").Once()
+	mockConfig.EXPECT().GetString("cache.default").Return("memory").Once()
+	mockConfig.EXPECT().GetString("cache.stores.memory.driver").Return("memory").Once()
+	mockConfig.EXPECT().GetString("cache.prefix").Return("goravel").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -199,7 +199,7 @@ func (s *ApplicationTestSuite) TestMakeConfig() {
 
 func (s *ApplicationTestSuite) TestMakeCrypt() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "app.key").Return("12345678901234567890123456789012").Once()
+	mockConfig.EXPECT().GetString("app.key").Return("12345678901234567890123456789012").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -244,10 +244,10 @@ func (s *ApplicationTestSuite) TestMakeGrpc() {
 
 func (s *ApplicationTestSuite) TestMakeHash() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "hashing.driver", "argon2id").Return("argon2id").Once()
-	mockConfig.On("GetInt", "hashing.argon2id.time", 4).Return(4).Once()
-	mockConfig.On("GetInt", "hashing.argon2id.memory", 65536).Return(65536).Once()
-	mockConfig.On("GetInt", "hashing.argon2id.threads", 1).Return(1).Once()
+	mockConfig.EXPECT().GetString("hashing.driver", "argon2id").Return("argon2id").Once()
+	mockConfig.EXPECT().GetInt("hashing.argon2id.time", 4).Return(4).Once()
+	mockConfig.EXPECT().GetInt("hashing.argon2id.memory", 65536).Return(65536).Once()
+	mockConfig.EXPECT().GetInt("hashing.argon2id.threads", 1).Return(1).Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -262,9 +262,9 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 
 func (s *ApplicationTestSuite) TestMakeLang() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "app.locale").Return("en").Once()
-	mockConfig.On("GetString", "app.fallback_locale").Return("en").Once()
-	mockConfig.On("GetString", "app.lang_path", "lang").Return("lang").Once()
+	mockConfig.EXPECT().GetString("app.locale").Return("en").Once()
+	mockConfig.EXPECT().GetString("app.fallback_locale").Return("en").Once()
+	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("lang").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -310,24 +310,24 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mysqlDocker := supportdocker.Mysql()
 	config := mysqlDocker.Config()
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "database.default").Return("mysql").Once()
-	mockConfig.On("Get", "database.connections.mysql.read").Return(nil).Once()
-	mockConfig.On("Get", "database.connections.mysql.write").Return(nil).Once()
-	mockConfig.On("GetString", "database.connections.mysql.driver").Return(orm.DriverMysql.String()).Twice()
-	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Once()
-	mockConfig.On("GetString", "database.connections.mysql.loc").Return("Local").Once()
-	mockConfig.On("GetString", "database.connections.mysql.database").Return(config.Database).Once()
-	mockConfig.On("GetString", "database.connections.mysql.host").Return("localhost").Once()
-	mockConfig.On("GetString", "database.connections.mysql.username").Return(config.Username).Once()
-	mockConfig.On("GetString", "database.connections.mysql.password").Return(config.Password).Once()
-	mockConfig.On("GetString", "database.connections.mysql.prefix").Return("").Once()
-	mockConfig.On("GetInt", "database.connections.mysql.port").Return(config.Port).Once()
-	mockConfig.On("GetBool", "database.connections.mysql.singular").Return(true).Once()
-	mockConfig.On("GetBool", "app.debug").Return(true).Once()
-	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
-	mockConfig.On("GetInt", "database.pool.max_open_conns", 100).Return(100)
-	mockConfig.On("GetInt", "database.pool.conn_max_idletime", 3600).Return(3600)
-	mockConfig.On("GetInt", "database.pool.conn_max_lifetime", 3600).Return(3600)
+	mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
+	mockConfig.EXPECT().Get("database.connections.mysql.read").Return(nil).Once()
+	mockConfig.EXPECT().Get("database.connections.mysql.write").Return(nil).Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.driver").Return(contractsdatabase.DriverMysql.String()).Twice()
+	mockConfig.EXPECT().GetString("database.connections.mysql.charset").Return("utf8mb4").Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.loc").Return("Local").Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.database").Return(config.Database).Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.host").Return("localhost").Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.username").Return(config.Username).Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.password").Return(config.Password).Once()
+	mockConfig.EXPECT().GetString("database.connections.mysql.prefix").Return("").Once()
+	mockConfig.EXPECT().GetInt("database.connections.mysql.port").Return(config.Port).Once()
+	mockConfig.EXPECT().GetBool("database.connections.mysql.singular").Return(true).Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
+	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -376,7 +376,7 @@ func (s *ApplicationTestSuite) TestMakeRoute() {
 
 func (s *ApplicationTestSuite) TestMakeSchedule() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetBool", "app.debug").Return(false).Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -397,9 +397,9 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 
 func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetInt", "session.lifetime").Return(120).Once()
-	mockConfig.On("GetInt", "session.gc_interval", 30).Return(30).Once()
-	mockConfig.On("GetString", "session.files").Return("storage/framework/sessions").Once()
+	mockConfig.EXPECT().GetInt("session.lifetime").Return(120).Once()
+	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
+	mockConfig.EXPECT().GetString("session.files").Return("storage/framework/sessions").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
@@ -418,10 +418,10 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 
 func (s *ApplicationTestSuite) TestMakeStorage() {
 	mockConfig := &mocksconfig.Config{}
-	mockConfig.On("GetString", "filesystems.default").Return("local").Once()
-	mockConfig.On("GetString", "filesystems.disks.local.driver").Return("local").Once()
-	mockConfig.On("GetString", "filesystems.disks.local.root").Return("").Once()
-	mockConfig.On("GetString", "filesystems.disks.local.url").Return("").Once()
+	mockConfig.EXPECT().GetString("filesystems.default").Return("local").Once()
+	mockConfig.EXPECT().GetString("filesystems.disks.local.driver").Return("local").Once()
+	mockConfig.EXPECT().GetString("filesystems.disks.local.root").Return("").Once()
+	mockConfig.EXPECT().GetString("filesystems.disks.local.url").Return("").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil

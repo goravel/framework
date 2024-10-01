@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/sqlserver"
 	gormio "gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 )
 
@@ -69,8 +69,8 @@ func (receiver *SqlserverImpl) Config() testing.DatabaseConfig {
 	}
 }
 
-func (receiver *SqlserverImpl) Driver() orm.Driver {
-	return orm.DriverSqlserver
+func (receiver *SqlserverImpl) Driver() database.Driver {
+	return database.DriverSqlserver
 }
 
 func (receiver *SqlserverImpl) Fresh() error {

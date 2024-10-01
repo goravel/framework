@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
@@ -28,7 +29,7 @@ type User struct {
 type OrmSuite struct {
 	suite.Suite
 	orm         *Orm
-	testQueries map[contractsorm.Driver]*gorm.TestQuery
+	testQueries map[database.Driver]*gorm.TestQuery
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -51,9 +52,9 @@ func (s *OrmSuite) SetupTest() {
 	}
 
 	s.orm = &Orm{
-		connection: contractsorm.DriverPostgres.String(),
+		connection: database.DriverPostgres.String(),
 		ctx:        context.Background(),
-		query:      queries[contractsorm.DriverPostgres.String()],
+		query:      queries[database.DriverPostgres.String()],
 		queries:    queries,
 	}
 }

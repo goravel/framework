@@ -1,7 +1,7 @@
 package testing
 
 import (
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
@@ -31,7 +31,7 @@ type DatabaseDriver interface {
 	// Image gets the database image.
 	Image(image Image)
 	// Driver gets the database driver name.
-	Driver() orm.Driver
+	Driver() database.Driver
 	// Stop the database.
 	Stop() error
 }

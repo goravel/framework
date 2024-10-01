@@ -3,6 +3,8 @@ package orm
 import (
 	"context"
 	"database/sql"
+
+	"github.com/goravel/framework/contracts/database"
 )
 
 type Orm interface {
@@ -42,7 +44,7 @@ type Query interface {
 	// Distinct specifies distinct fields to query.
 	Distinct(args ...any) Query
 	// Driver gets the driver for the query.
-	Driver() Driver
+	Driver() database.Driver
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.

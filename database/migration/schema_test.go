@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/migration"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	contractstesting "github.com/goravel/framework/contracts/testing"
@@ -24,7 +25,7 @@ type TestDB struct {
 
 type SchemaSuite struct {
 	suite.Suite
-	driverToTestDB map[contractsorm.Driver]TestDB
+	driverToTestDB map[contractsdatabase.Driver]TestDB
 }
 
 func TestSchemaSuite(t *testing.T) {
@@ -38,8 +39,8 @@ func TestSchemaSuite(t *testing.T) {
 func (s *SchemaSuite) SetupSuite() {
 	postgresDocker := supportdocker.Postgres()
 	postgresQuery := gorm.NewTestQuery(postgresDocker)
-	s.driverToTestDB = map[contractsorm.Driver]TestDB{
-		contractsorm.DriverPostgres: {
+	s.driverToTestDB = map[contractsdatabase.Driver]TestDB{
+		contractsdatabase.DriverPostgres: {
 			config: postgresDocker.Config(),
 			query:  postgresQuery.Query(),
 		},
@@ -51,8 +52,8 @@ func (s *SchemaSuite) SetupTest() {
 }
 
 func (s *SchemaSuite) TestConnection() {
-	schema, mockConfig, _, _ := initTest(s.T(), contractsorm.DriverMysql)
-	connection := contractsorm.DriverPostgres.String()
+	schema, mockConfig, _, _ := initTest(s.T(), contractsdatabase.DriverMysql)
+	connection := contractsdatabase.DriverPostgres.String()
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", connection)).Return("goravel_").Once()
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", connection)).Return("").Once()
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", connection)).Return(connection).Once()
@@ -86,7 +87,7 @@ func (s *SchemaSuite) TestDropIfExists() {
 	}
 }
 
-func initTest(t *testing.T, driver contractsorm.Driver) (*Schema, *mocksconfig.Config, *mockslog.Log, *mocksorm.Orm) {
+func initTest(t *testing.T, driver contractsdatabase.Driver) (*Schema, *mocksconfig.Config, *mockslog.Log, *mocksorm.Orm) {
 	blueprint := NewBlueprint("goravel_", "")
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", driver)).

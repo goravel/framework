@@ -1,19 +1,19 @@
 package console
 
 import (
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/support/file"
 )
 
-func createMigrations(driver contractsorm.Driver) {
+func createMigrations(driver database.Driver) {
 	switch driver {
-	case contractsorm.DriverPostgres:
+	case database.DriverPostgres:
 		createPostgresMigrations()
-	case contractsorm.DriverMysql:
+	case database.DriverMysql:
 		createMysqlMigrations()
-	case contractsorm.DriverSqlserver:
+	case database.DriverSqlserver:
 		createSqlserverMigrations()
-	case contractsorm.DriverSqlite:
+	case database.DriverSqlite:
 		createSqliteMigrations()
 	}
 }

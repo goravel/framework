@@ -76,7 +76,7 @@ func (s *SqlserverTestSuite) TestBuild() {
 }
 
 func (s *SqlserverTestSuite) TestDriver() {
-	s.Equal(orm.DriverSqlserver, s.sqlserver.Driver())
+	s.Equal(database.DriverSqlserver, s.sqlserver.Driver())
 }
 
 func (s *SqlserverTestSuite) TestImage() {

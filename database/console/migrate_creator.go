@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/migration"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
@@ -49,20 +49,20 @@ func (receiver *MigrateCreator) getStub(table string, create bool) (string, stri
 	}
 
 	driver := receiver.config.GetString("database.connections." + receiver.config.GetString("database.default") + ".driver")
-	switch orm.Driver(driver) {
-	case orm.DriverPostgres:
+	switch database.Driver(driver) {
+	case database.DriverPostgres:
 		if create {
 			return migration.PostgresStubs{}.CreateUp(), migration.PostgresStubs{}.CreateDown()
 		}
 
 		return migration.PostgresStubs{}.UpdateUp(), migration.PostgresStubs{}.UpdateDown()
-	case orm.DriverSqlite:
+	case database.DriverSqlite:
 		if create {
 			return migration.SqliteStubs{}.CreateUp(), migration.SqliteStubs{}.CreateDown()
 		}
 
 		return migration.SqliteStubs{}.UpdateUp(), migration.SqliteStubs{}.UpdateDown()
-	case orm.DriverSqlserver:
+	case database.DriverSqlserver:
 		if create {
 			return migration.SqlserverStubs{}.CreateUp(), migration.SqlserverStubs{}.CreateDown()
 		}
