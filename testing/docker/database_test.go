@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
-	frameworkdatabase "github.com/goravel/framework/database"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -27,14 +27,17 @@ func TestNewDatabase(t *testing.T) {
 		mockApp     *mocksfoundation.Application
 		mockArtisan *mocksconsole.Artisan
 		mockConfig  *mocksconfig.Config
+		mockOrm     *mocksorm.Orm
 	)
 
 	beforeEach := func() {
 		mockApp = mocksfoundation.NewApplication(t)
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockConfig = mocksconfig.NewConfig(t)
+		mockOrm = mocksorm.NewOrm(t)
 		mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 		mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
+		mockApp.EXPECT().MakeOrm().Return(mockOrm).Once()
 	}
 
 	tests := []struct {
@@ -58,6 +61,7 @@ func TestNewDatabase(t *testing.T) {
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "mysql",
+					orm:            mockOrm,
 					DatabaseDriver: supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
 				}
 			},
@@ -76,6 +80,7 @@ func TestNewDatabase(t *testing.T) {
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "mysql",
+					orm:            mockOrm,
 					DatabaseDriver: supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
 				}
 			},
@@ -94,6 +99,7 @@ func TestNewDatabase(t *testing.T) {
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "postgres",
+					orm:            mockOrm,
 					DatabaseDriver: supportdocker.NewPostgresImpl(testDatabase, testUsername, testPassword),
 				}
 			},
@@ -112,6 +118,7 @@ func TestNewDatabase(t *testing.T) {
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "sqlserver",
+					orm:            mockOrm,
 					DatabaseDriver: supportdocker.NewSqlserverImpl(testDatabase, testUsername, testPassword),
 				}
 			},
@@ -130,6 +137,7 @@ func TestNewDatabase(t *testing.T) {
 					artisan:        mockArtisan,
 					config:         mockConfig,
 					connection:     "sqlite",
+					orm:            mockOrm,
 					DatabaseDriver: supportdocker.NewSqliteImpl(testDatabase),
 				}
 			},
@@ -153,6 +161,7 @@ type DatabaseTestSuite struct {
 	mockApp     *mocksfoundation.Application
 	mockArtisan *mocksconsole.Artisan
 	mockConfig  *mocksconfig.Config
+	mockOrm     *mocksorm.Orm
 	database    *Database
 }
 
@@ -164,11 +173,13 @@ func (s *DatabaseTestSuite) SetupTest() {
 	s.mockApp = mocksfoundation.NewApplication(s.T())
 	s.mockArtisan = mocksconsole.NewArtisan(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockOrm = mocksorm.NewOrm(s.T())
 	s.database = &Database{
 		artisan:        s.mockArtisan,
 		config:         s.mockConfig,
-		connection:     "mysql",
-		DatabaseDriver: supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
+		connection:     "postgres",
+		orm:            s.mockOrm,
+		DatabaseDriver: supportdocker.NewPostgresImpl(testDatabase, testUsername, testPassword),
 	}
 }
 
@@ -177,9 +188,9 @@ func (s *DatabaseTestSuite) TestBuild() {
 		s.T().Skip("Skipping tests of using docker")
 	}
 
-	s.mockConfig.EXPECT().Add("database.connections.mysql.port", mock.Anything).Once()
+	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Once()
-	s.mockApp.EXPECT().Singleton(frameworkdatabase.BindingOrm, mock.Anything).Once()
+	s.mockOrm.EXPECT().Refresh().Once()
 
 	s.Nil(s.database.Build())
 	s.True(s.database.Config().Port > 0)
@@ -196,11 +207,9 @@ func (s *DatabaseTestSuite) TestConfig() {
 
 func (s *DatabaseTestSuite) TestSeed() {
 	s.mockArtisan.EXPECT().Call("db:seed").Once()
-
 	s.database.Seed()
 
 	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Once()
-
 	s.database.Seed(&MockSeeder{})
 }
 
