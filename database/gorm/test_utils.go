@@ -20,7 +20,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelMinimum
+	TestModel = TestModelNormal
 )
 
 type TestTable int
@@ -322,49 +322,49 @@ func NewMockMysql(mockConfig *mocksconfig.Config, connection, database, username
 func (r *MockMysql) Common() {
 	r.mockConfig.On("GetString", "contractsdatabase.default").Return("mysql")
 	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockMysql) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockMysql) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
 
 func (r *MockMysql) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.charset", r.connection)).Return("utf8mb4")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.loc", r.connection)).Return("Local")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("Local")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 
 	mockPool(r.mockConfig)
 }
 
 func (r *MockMysql) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("contractsdatabase.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockPostgres struct {
@@ -393,48 +393,48 @@ func NewMockPostgres(mockConfig *mocksconfig.Config, connection, database, usern
 func (r *MockPostgres) Common() {
 	r.mockConfig.On("GetString", "contractsdatabase.default").Return("postgres")
 	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockPostgres) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockPostgres) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
 
 func (r *MockPostgres) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.sslmode", r.connection)).Return("disable")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.timezone", r.connection)).Return("UTC")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 
 	mockPool(r.mockConfig)
 }
 
 func (r *MockPostgres) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("contractsdatabase.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockSqlite struct {
@@ -457,41 +457,41 @@ func NewMockSqlite(mockConfig *mocksconfig.Config, connection, database string) 
 func (r *MockSqlite) Common() {
 	r.mockConfig.On("GetString", "contractsdatabase.default").Return("sqlite")
 	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlite) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Database: config.ReadDatabase},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Database: r.database},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockSqlite) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlite) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlite) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 }
 
 type MockSqlserver struct {
@@ -520,46 +520,46 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 func (r *MockSqlserver) Common() {
 	r.mockConfig.On("GetString", "contractsdatabase.default").Return("sqlserver")
 	r.mockConfig.On("GetString", "contractsdatabase.migrations").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlserver) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockSqlserver) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("contractsdatabase.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlserver) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.database", r.connection)).Return(r.database)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlserver) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("contractsdatabase.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("contractsdatabase.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("contractsdatabase.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type testTables struct {

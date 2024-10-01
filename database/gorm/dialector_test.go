@@ -1,90 +1,112 @@
 package gorm
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/glebarez/sqlite"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlserver"
+	"gorm.io/gorm"
+
+	"github.com/goravel/framework/contracts/database"
 )
 
-//type DialectorTestSuite struct {
-//	suite.Suite
-//	mockConfig *configmock.Config
-//	config     databasecontract.Config
-//}
-//
-//func TestDialectorTestSuite(t *testing.T) {
-//	suite.Run(t, &DialectorTestSuite{
-//		config: databasecontract.Config{
-//			Host:     "localhost",
-//			Port:     3306,
-//			Database: "forge",
-//			Username: "root",
-//			Password: "123123",
-//		},
-//	})
-//}
-//
-//func (s *DialectorTestSuite) SetupTest() {
-//	s.mockConfig = &configmock.Config{}
-//}
-//
-//func (s *DialectorTestSuite) TestMysql() {
-//	dialector := NewDialector(s.mockConfig, orm.DriverMysql.String())
-//	s.mockConfig.On("GetString", "database.connections.mysql.driver").
-//		Return(orm.DriverMysql.String()).Once()
-//	s.mockConfig.On("GetString", "database.connections.mysql.charset").
-//		Return("utf8mb4").Once()
-//	s.mockConfig.On("GetString", "database.connections.mysql.loc").
-//		Return("Local").Once()
-//	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
-//	s.Nil(err)
-//	s.NotEmpty(dialectors)
-//	s.Equal(mysql.New(mysql.Config{
-//		DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&multiStatements=true",
-//			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "utf8mb4", true, "Local"),
-//	}), dialectors[0])
-//}
-//
-//func (s *DialectorTestSuite) TestPostgres() {
-//	dialector := NewDialector(s.mockConfig, orm.DriverPostgres.String())
-//	s.mockConfig.On("GetString", "database.connections.postgres.driver").
-//		Return(orm.DriverPostgres.String()).Once()
-//	s.mockConfig.On("GetString", "database.connections.postgres.sslmode").
-//		Return("disable").Once()
-//	s.mockConfig.On("GetString", "database.connections.postgres.timezone").
-//		Return("UTC").Once()
-//	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
-//	s.Nil(err)
-//	s.NotEmpty(dialectors)
-//	s.Equal(postgres.New(postgres.Config{
-//		DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
-//			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "disable", "UTC"),
-//	}), dialectors[0])
-//}
-//
-//func (s *DialectorTestSuite) TestSqlite() {
-//	dialector := NewDialector(s.mockConfig, orm.DriverSqlite.String())
-//	s.mockConfig.On("GetString", "database.connections.sqlite.driver").
-//		Return(orm.DriverSqlite.String()).Once()
-//	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
-//	s.Nil(err)
-//	s.NotEmpty(dialectors)
-//	s.Equal(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", s.config.Database)), dialectors[0])
-//}
-//
-//func (s *DialectorTestSuite) TestSqlserver() {
-//	dialector := NewDialector(s.mockConfig, orm.DriverSqlserver.String())
-//	s.mockConfig.On("GetString", "database.connections.sqlserver.driver").
-//		Return(orm.DriverSqlserver.String()).Once()
-//	s.mockConfig.On("GetString", "database.connections.sqlserver.charset").
-//		Return("utf8mb4").Once()
-//	dialectors, err := dialector.Make([]databasecontract.Config{s.config})
-//	s.Nil(err)
-//	s.NotEmpty(dialectors)
-//	s.Equal(sqlserver.New(sqlserver.Config{
-//		DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s&charset=%s&MultipleActiveResultSets=true",
-//			s.config.Username, s.config.Password, s.config.Host, s.config.Port, s.config.Database, "utf8mb4"),
-//	}), dialectors[0])
-//}
-
 func TestGetDialectors(t *testing.T) {
+	config := database.Config{
+		Host: "localhost",
+	}
 
+	tests := []struct {
+		name             string
+		configs          []database.FullConfig
+		expectDialectors func(dialector gorm.Dialector) bool
+		expectError      error
+	}{
+		{
+			name: "Sad path - dsn is empty",
+			configs: []database.FullConfig{
+				{
+					Connection: "postgres",
+				},
+			},
+			expectError: fmt.Errorf("failed to get dsn for postgres"),
+		},
+		{
+			name: "Happy path - mysql",
+			configs: []database.FullConfig{
+				{
+					Connection: "mysql",
+					Driver:     database.DriverMysql,
+					Config:     config,
+				},
+			},
+			expectDialectors: func(dialector gorm.Dialector) bool {
+				_, ok := dialector.(*mysql.Dialector)
+
+				return ok
+			},
+		},
+		{
+			name: "Happy path - postgres",
+			configs: []database.FullConfig{
+				{
+					Connection: "postgres",
+					Driver:     database.DriverPostgres,
+					Config:     config,
+				},
+			},
+			expectDialectors: func(dialector gorm.Dialector) bool {
+				_, ok := dialector.(*postgres.Dialector)
+
+				return ok
+			},
+		},
+		{
+			name: "Happy path - sqlserver",
+			configs: []database.FullConfig{
+				{
+					Connection: "sqlserver",
+					Driver:     database.DriverSqlserver,
+					Config:     config,
+				},
+			},
+			expectDialectors: func(dialector gorm.Dialector) bool {
+				_, ok := dialector.(*sqlserver.Dialector)
+
+				return ok
+			},
+		},
+		{
+			name: "Happy path - sqlite",
+			configs: []database.FullConfig{
+				{
+					Connection: "sqlite",
+					Driver:     database.DriverSqlite,
+					Config:     config,
+				},
+			},
+			expectDialectors: func(dialector gorm.Dialector) bool {
+				_, ok := dialector.(*sqlite.Dialector)
+
+				return ok
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dialectors, err := GetDialectors(test.configs)
+			if test.expectError != nil {
+				assert.Equal(t, test.expectError, err)
+				assert.Nil(t, dialectors)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, dialectors, 1)
+				assert.True(t, test.expectDialectors(dialectors[0]))
+			}
+		})
+	}
 }

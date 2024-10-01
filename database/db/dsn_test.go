@@ -32,6 +32,12 @@ func TestDsn(t *testing.T) {
 		expectDsn string
 	}{
 		{
+			name: "empty",
+			config: database.FullConfig{
+				Config: database.Config{},
+			},
+		},
+		{
 			name: "mysql",
 			config: database.FullConfig{
 				Config:  testConfig,
