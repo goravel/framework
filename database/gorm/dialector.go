@@ -20,7 +20,7 @@ func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 		var dialector gorm.Dialector
 		dsn := db.Dsn(config)
 		if dsn == "" {
-			return nil, fmt.Errorf("failed to generate DSN for connection '%s'", config.Connection)
+			return nil, fmt.Errorf("failed to generate DSN for connection: %s", config.Connection)
 		}
 
 		switch config.Driver {

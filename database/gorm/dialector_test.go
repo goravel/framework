@@ -32,7 +32,7 @@ func TestGetDialectors(t *testing.T) {
 					Connection: "postgres",
 				},
 			},
-			expectError: fmt.Errorf("failed to get dsn for postgres"),
+			expectError: fmt.Errorf("failed to generate DSN for connection: postgres"),
 		},
 		{
 			name: "Happy path - mysql",
