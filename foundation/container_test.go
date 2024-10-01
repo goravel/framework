@@ -97,7 +97,7 @@ func (s *ContainerTestSuite) TestSingleton() {
 		s.Equal(1, concreteImpl)
 		s.Nil(err)
 	default:
-		panic("concrete err")
+		s.Fail("concrete err")
 	}
 
 	s.container.Refresh("Singleton")

@@ -18,23 +18,23 @@ import (
 )
 
 type Builder struct {
-	config   config.Config
-	configs  database.Configs
-	instance *gormio.DB
+	config        config.Config
+	configBuilder database.ConfigBuilder
+	instance      *gormio.DB
 }
 
-func NewGorm(config config.Config, configs database.Configs) (*gormio.DB, error) {
+func NewGorm(config config.Config, configBuilder database.ConfigBuilder) (*gormio.DB, error) {
 	builder := &Builder{
-		config:  config,
-		configs: configs,
+		config:        config,
+		configBuilder: configBuilder,
 	}
 
 	return builder.Build()
 }
 
 func (r *Builder) Build() (*gormio.DB, error) {
-	readConfigs := r.configs.Reads()
-	writeConfigs := r.configs.Writes()
+	readConfigs := r.configBuilder.Reads()
+	writeConfigs := r.configBuilder.Writes()
 	if len(writeConfigs) == 0 {
 		return nil, errors.New("not found database configuration")
 	}
@@ -73,12 +73,12 @@ func (r *Builder) configureReadWriteSeparate(readConfigs, writeConfigs []databas
 		return nil
 	}
 
-	readDialectors, err := GetDialectors(readConfigs)
+	readDialectors, err := getDialectors(readConfigs)
 	if err != nil {
 		return err
 	}
 
-	writeDialectors, err := GetDialectors(writeConfigs)
+	writeDialectors, err := getDialectors(writeConfigs)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (r *Builder) configureReadWriteSeparate(readConfigs, writeConfigs []databas
 }
 
 func (r *Builder) init(fullConfig database.FullConfig) error {
-	dialectors, err := GetDialectors([]database.FullConfig{fullConfig})
+	dialectors, err := getDialectors([]database.FullConfig{fullConfig})
 	if err != nil {
 		return fmt.Errorf("init gorm dialector error: %v", err)
 	}

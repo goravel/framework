@@ -13,14 +13,14 @@ import (
 	"github.com/goravel/framework/database/db"
 )
 
-func GetDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
+func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 	var dialectors []gorm.Dialector
 
 	for _, config := range configs {
 		var dialector gorm.Dialector
 		dsn := db.Dsn(config)
 		if dsn == "" {
-			return nil, fmt.Errorf("failed to get dsn for %s", config.Connection)
+			return nil, fmt.Errorf("failed to generate DSN for connection '%s'", config.Connection)
 		}
 
 		switch config.Driver {

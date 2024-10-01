@@ -25,8 +25,8 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		dir = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
 	}
 
-	configs := databasedb.NewConfigs(config, connection)
-	writeConfigs := configs.Writes()
+	configBuilder := databasedb.NewConfigBuilder(config, connection)
+	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
 		return nil, errors.New("not found database configuration")
 	}

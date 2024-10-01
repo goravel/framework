@@ -49,8 +49,8 @@ func NewQuery(ctx context.Context, config config.Config, connection string, db *
 }
 
 func BuildQuery(ctx context.Context, config config.Config, connection string) (*Query, error) {
-	configs := db.NewConfigs(config, connection)
-	gorm, err := NewGorm(config, configs)
+	configBuilder := db.NewConfigBuilder(config, connection)
+	gorm, err := NewGorm(config, configBuilder)
 	if err != nil {
 		return nil, err
 	}

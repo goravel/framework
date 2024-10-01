@@ -12,9 +12,9 @@ import (
 
 type ConfigTestSuite struct {
 	suite.Suite
-	configs    *Configs
-	connection string
-	mockConfig *mocksconfig.Config
+	configBuilder *ConfigBuilder
+	connection    string
+	mockConfig    *mocksconfig.Config
 }
 
 func TestConfigTestSuite(t *testing.T) {
@@ -25,7 +25,7 @@ func TestConfigTestSuite(t *testing.T) {
 
 func (s *ConfigTestSuite) SetupTest() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.configs = NewConfigs(s.mockConfig, s.connection)
+	s.configBuilder = NewConfigBuilder(s.mockConfig, s.connection)
 }
 
 func (s *ConfigTestSuite) TestReads() {
@@ -35,7 +35,7 @@ func (s *ConfigTestSuite) TestReads() {
 
 	// Test when configs is empty
 	s.mockConfig.EXPECT().Get("database.connections.mysql.read").Return(nil).Once()
-	s.Nil(s.configs.Reads())
+	s.Nil(s.configBuilder.Reads())
 
 	// Test when configs is not empty
 	s.mockConfig.EXPECT().Get("database.connections.mysql.read").Return([]contractsdatabase.Config{
@@ -56,7 +56,7 @@ func (s *ConfigTestSuite) TestReads() {
 				Database: database,
 			},
 		},
-	}, s.configs.Reads())
+	}, s.configBuilder.Reads())
 }
 
 func (s *ConfigTestSuite) TestWrites() {
@@ -64,7 +64,7 @@ func (s *ConfigTestSuite) TestWrites() {
 	prefix := "goravel_"
 	singular := false
 
-	// Test when configs is empty
+	// Test when configBuilder is empty
 	s.mockConfig.EXPECT().Get("database.connections.mysql.write").Return(nil).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return(contractsdatabase.DriverSqlite.String()).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", s.connection)).Return(database).Once()
@@ -80,9 +80,9 @@ func (s *ConfigTestSuite) TestWrites() {
 				Database: database,
 			},
 		},
-	}, s.configs.Writes())
+	}, s.configBuilder.Writes())
 
-	// Test when configs is not empty
+	// Test when configBuilder is not empty
 	s.mockConfig.EXPECT().Get("database.connections.mysql.write").Return([]contractsdatabase.Config{
 		{
 			Database: database,
@@ -101,7 +101,7 @@ func (s *ConfigTestSuite) TestWrites() {
 				Database: database,
 			},
 		},
-	}, s.configs.Writes())
+	}, s.configBuilder.Writes())
 }
 
 func (s *ConfigTestSuite) TestFillDefault() {
@@ -224,7 +224,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			test.setup()
-			configs := s.configs.fillDefault(test.configs)
+			configs := s.configBuilder.fillDefault(test.configs)
 
 			s.Equal(test.expectConfigs, configs)
 		})

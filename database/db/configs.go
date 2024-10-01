@@ -7,38 +7,38 @@ import (
 	"github.com/goravel/framework/contracts/database"
 )
 
-type Configs struct {
+type ConfigBuilder struct {
 	config     contractsconfig.Config
 	connection string
 }
 
-func NewConfigs(config contractsconfig.Config, connection string) *Configs {
-	return &Configs{
+func NewConfigBuilder(config contractsconfig.Config, connection string) *ConfigBuilder {
+	return &ConfigBuilder{
 		config:     config,
 		connection: connection,
 	}
 }
 
-func (c *Configs) Reads() []database.FullConfig {
+func (c *ConfigBuilder) Reads() []database.FullConfig {
 	configs := c.config.Get(fmt.Sprintf("database.connections.%s.read", c.connection))
-	if configs, ok := configs.([]database.Config); ok {
-		return c.fillDefault(configs)
+	if readConfigs, ok := configs.([]database.Config); ok {
+		return c.fillDefault(readConfigs)
 	}
 
 	return nil
 }
 
-func (c *Configs) Writes() []database.FullConfig {
+func (c *ConfigBuilder) Writes() []database.FullConfig {
 	configs := c.config.Get(fmt.Sprintf("database.connections.%s.write", c.connection))
-	if configs, ok := configs.([]database.Config); ok {
-		return c.fillDefault(configs)
+	if writeConfigs, ok := configs.([]database.Config); ok {
+		return c.fillDefault(writeConfigs)
 	}
 
 	// Use default db configuration when write is empty
 	return c.fillDefault([]database.Config{{}})
 }
 
-func (c *Configs) fillDefault(configs []database.Config) []database.FullConfig {
+func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullConfig {
 	if len(configs) == 0 {
 		return nil
 	}

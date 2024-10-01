@@ -35,7 +35,7 @@ type FullConfig struct {
 	Timezone   string // Postgres
 }
 
-type Configs interface {
+type ConfigBuilder interface {
 	Reads() []FullConfig
 	Writes() []FullConfig
 }

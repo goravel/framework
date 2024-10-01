@@ -98,9 +98,9 @@ func TestGetDialectors(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dialectors, err := GetDialectors(test.configs)
+			dialectors, err := getDialectors(test.configs)
 			if test.expectError != nil {
-				assert.Equal(t, test.expectError, err)
+				assert.EqualError(t, err, test.expectError.Error())
 				assert.Nil(t, dialectors)
 			} else {
 				assert.NoError(t, err)

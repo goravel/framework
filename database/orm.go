@@ -76,7 +76,10 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
-	query := r.Query().(*gorm.Query)
+	query, ok := r.Query().(*gorm.Query)
+	if !ok {
+		return nil, fmt.Errorf("unexpected Query type %T, expected *gorm.Query", r.Query())
+	}
 
 	return query.Instance().DB()
 }
@@ -119,18 +122,20 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
 	for _, query := range r.queries {
-		query := query.(*gorm.Query)
-		query.SetContext(ctx)
+		if gormQuery, ok := query.(*gorm.Query); ok {
+			gormQuery.SetContext(ctx)
+		}
 	}
 
-	query := r.query.(*gorm.Query)
-	query.SetContext(ctx)
+	if gormQuery, ok := r.query.(*gorm.Query); ok {
+		gormQuery.SetContext(ctx)
+	}
 
 	return &Orm{
 		ctx:        ctx,
 		config:     r.config,
 		connection: r.connection,
-		query:      query,
+		query:      r.query,
 		queries:    r.queries,
 	}
 }
