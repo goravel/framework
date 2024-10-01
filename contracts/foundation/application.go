@@ -63,6 +63,8 @@ type Application interface {
 	SetJson(json Json)
 	// GetJson get the JSON implementation.
 	GetJson() Json
+	// RegisterServiceProviders
+	RegisterServiceProviders([]ServiceProvider) Application
 
 	// Container
 	// Bind registers a binding with the container.

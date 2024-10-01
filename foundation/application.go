@@ -39,9 +39,10 @@ func init() {
 
 type Application struct {
 	*Container
-	publishes     map[string]map[string]string
-	publishGroups map[string]map[string]string
-	json          foundation.Json
+	publishes        map[string]map[string]string
+	publishGroups    map[string]map[string]string
+	json             foundation.Json
+	serviceProviders []foundation.ServiceProvider
 }
 
 func NewApplication() foundation.Application {
@@ -50,7 +51,6 @@ func NewApplication() foundation.Application {
 
 // Boot Register and bootstrap configured service providers.
 func (app *Application) Boot() {
-	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
 	app.registerCommands([]contractsconsole.Command{
 		console.NewTestMakeCommand(),
@@ -142,6 +142,15 @@ func (app *Application) IsLocale(ctx context.Context, locale string) bool {
 	return app.CurrentLocale(ctx) == locale
 }
 
+func (app *Application) RegisterServiceProviders(serviceProviders []foundation.ServiceProvider) foundation.Application {
+	for _, provider := range serviceProviders {
+		provider.Register(app)
+		app.serviceProviders = append(app.serviceProviders, provider)
+	}
+
+	return app
+}
+
 func (app *Application) ensurePublishArrayInitialized(packageName string) {
 	if _, exist := app.publishes[packageName]; !exist {
 		app.publishes[packageName] = make(map[string]string)
@@ -170,14 +179,9 @@ func (app *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 	}
 }
 
-// getConfiguredServiceProviders Get configured service providers.
-func (app *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
-	return app.MakeConfig().Get("app.providers").([]foundation.ServiceProvider)
-}
-
 // registerBaseServiceProviders Register base service providers.
 func (app *Application) registerBaseServiceProviders() {
-	app.registerServiceProviders(app.getBaseServiceProviders())
+	app.RegisterServiceProviders(app.getBaseServiceProviders())
 }
 
 // bootBaseServiceProviders Bootstrap base service providers.
@@ -185,21 +189,9 @@ func (app *Application) bootBaseServiceProviders() {
 	app.bootServiceProviders(app.getBaseServiceProviders())
 }
 
-// registerConfiguredServiceProviders Register configured service providers.
-func (app *Application) registerConfiguredServiceProviders() {
-	app.registerServiceProviders(app.getConfiguredServiceProviders())
-}
-
 // bootConfiguredServiceProviders Bootstrap configured service providers.
 func (app *Application) bootConfiguredServiceProviders() {
-	app.bootServiceProviders(app.getConfiguredServiceProviders())
-}
-
-// registerServiceProviders Register service providers.
-func (app *Application) registerServiceProviders(serviceProviders []foundation.ServiceProvider) {
-	for _, serviceProvider := range serviceProviders {
-		serviceProvider.Register(app)
-	}
+	app.bootServiceProviders(app.serviceProviders)
 }
 
 // bootServiceProviders Bootstrap service providers.
