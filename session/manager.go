@@ -1,13 +1,13 @@
 package session
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/session/driver"
 	"github.com/goravel/framework/support/color"
 )
@@ -35,7 +35,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) (sessioncontract.Session, error) {
 	if handler == nil {
-		return nil, ErrDriverNotSet
+		return nil, errors.ErrSessionDriverIsNotSet
 	}
 
 	session := m.acquireSession()
@@ -60,11 +60,11 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 	}
 
 	if driverName == "" {
-		return nil, fmt.Errorf("driver is not set")
+		return nil, errors.ErrSessionDriverIsNotSet
 	}
 
 	if m.drivers[driverName] == nil {
-		return nil, fmt.Errorf("driver [%s] not supported", driverName)
+		return nil, errors.ErrSessionDriverNotSupported.Args(driverName)
 	}
 
 	return m.drivers[driverName], nil
@@ -72,7 +72,7 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 
 func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) error {
 	if m.drivers[driver] != nil {
-		return fmt.Errorf("driver [%s] already exists", driver)
+		return errors.ErrSessionDriverAlreadyExists.Args(driver)
 	}
 	m.drivers[driver] = handler()
 	m.startGcTimer(m.drivers[driver])
@@ -98,7 +98,7 @@ func (m *Manager) getDefaultDriver() string {
 
 func (m *Manager) extendDefaultDrivers() {
 	if err := m.Extend("file", m.createFileDriver); err != nil {
-		panic(fmt.Sprintf("failed to extend session file driver: %v", err))
+		panic(errors.ErrSessionDriverExtensionFailed.Args("file", err))
 	}
 }
 

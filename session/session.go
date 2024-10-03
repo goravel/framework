@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 	supportmaps "github.com/goravel/framework/support/maps"
 	"github.com/goravel/framework/support/str"
@@ -222,7 +223,7 @@ func (s *Session) loadSession() {
 
 func (s *Session) validateDriver() error {
 	if s.driver == nil {
-		return ErrDriverNotSet
+		return errors.ErrSessionDriverIsNotSet
 	}
 	return nil
 }
