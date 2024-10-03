@@ -6,6 +6,17 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 )
 
+// Define different test model, to improve the local testing speed.
+// The minimum model only initials one Sqlite and two Postgres,
+// and the normal model initials one Mysql, two Postgres, one Sqlite and one Sqlserver.
+const (
+	TestModelMinimum = iota
+	TestModelNormal
+
+	// Switch this value to control the test model.
+	TestModel = TestModelMinimum
+)
+
 type ContainerType string
 
 const (

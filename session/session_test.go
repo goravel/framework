@@ -164,6 +164,8 @@ func (s *SessionTestSuite) TestMigrate() {
 	s.NotEqual(oldID, s.session.GetID())
 
 	// when driver is nil
+	oldID = s.session.GetID()
+	s.driver.On("Destroy", s.session.GetID()).Return(nil).Once()
 	s.session.SetDriver(nil)
 	s.Nil(s.session.migrate(true))
 }

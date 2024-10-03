@@ -12,17 +12,6 @@ import (
 	supportdocker "github.com/goravel/framework/support/docker"
 )
 
-// Define different test model, to improve the local testing speed.
-// The minimum model only initials one Sqlite and two Postgres,
-// and the normal model initials one Mysql, two Postgres, one Sqlite and one Sqlserver.
-const (
-	TestModelMinimum = iota
-	TestModelNormal
-
-	// Switch this value to control the test model.
-	TestModel = TestModelMinimum
-)
-
 type TestTable int
 
 const (
@@ -64,7 +53,7 @@ type TestQueries struct {
 }
 
 func NewTestQueries() *TestQueries {
-	if TestModel == TestModelMinimum {
+	if supportdocker.TestModel == supportdocker.TestModelMinimum {
 		return &TestQueries{
 			sqliteDockers:   supportdocker.Sqlites(2),
 			postgresDockers: supportdocker.Postgreses(2),
@@ -111,7 +100,7 @@ func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[stri
 		panic(err)
 	}
 
-	if TestModel == TestModelMinimum {
+	if supportdocker.TestModel == supportdocker.TestModelMinimum {
 		return map[contractsdatabase.Driver]map[string]orm.Query{
 			contractsdatabase.DriverPostgres: {
 				"mix":   postgresQuery,
@@ -197,7 +186,7 @@ func (r *TestQueries) queries(withPrefixAndSingular bool) map[contractsdatabase.
 		contractsdatabase.DriverSqlite:   r.sqliteDockers[0],
 	}
 
-	if TestModel != TestModelMinimum {
+	if supportdocker.TestModel != supportdocker.TestModelMinimum {
 		driverToDocker[contractsdatabase.DriverMysql] = r.mysqlDockers[0]
 		driverToDocker[contractsdatabase.DriverSqlserver] = r.sqlserverDockers[0]
 	}

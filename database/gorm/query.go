@@ -988,7 +988,7 @@ func (r *Query) buildModel() *Query {
 	query, err := r.refreshConnection(r.conditions.model)
 	if err != nil {
 		query = r.new(r.instance.Session(&gormio.Session{}))
-		query.instance.AddError(err)
+		_ = query.instance.AddError(err)
 
 		return query
 	}
