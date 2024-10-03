@@ -17,51 +17,6 @@ func (_m *Migration) EXPECT() *Migration_Expecter {
 	return &Migration_Expecter{mock: &_m.Mock}
 }
 
-// Connection provides a mock function with given fields:
-func (_m *Migration) Connection() string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Connection")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Migration_Connection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connection'
-type Migration_Connection_Call struct {
-	*mock.Call
-}
-
-// Connection is a helper method to define mock.On call
-func (_e *Migration_Expecter) Connection() *Migration_Connection_Call {
-	return &Migration_Connection_Call{Call: _e.mock.On("Connection")}
-}
-
-func (_c *Migration_Connection_Call) Run(run func()) *Migration_Connection_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Migration_Connection_Call) Return(_a0 string) *Migration_Connection_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Migration_Connection_Call) RunAndReturn(run func() string) *Migration_Connection_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Down provides a mock function with given fields:
 func (_m *Migration) Down() {
 	_m.Called()
