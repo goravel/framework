@@ -90,7 +90,7 @@ func (r *Repository) RepositoryExists() bool {
 
 func (r *Repository) getLastBatchNumber() int {
 	var batch int
-	if err := r.query.Table(r.table).OrderBy("batch", "desc").Pluck("batch", &batch); err != nil {
+	if err := r.query.Table(r.table).OrderByDesc("batch").Limit(1).Pluck("batch", &batch); err != nil {
 		return 0
 	}
 

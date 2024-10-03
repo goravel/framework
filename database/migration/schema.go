@@ -101,7 +101,7 @@ func (r *Schema) build(blueprint migration.Blueprint) error {
 }
 
 func (r *Schema) createBlueprint(table string) migration.Blueprint {
-	return NewBlueprint(table, r.prefix)
+	return NewBlueprint(r.prefix, table)
 }
 
 func getGrammar(driver string) migration.Grammar {

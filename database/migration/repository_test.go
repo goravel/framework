@@ -6,8 +6,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
@@ -29,16 +27,16 @@ func TestRepositoryTestSuite(t *testing.T) {
 
 func (s *RepositoryTestSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
-	postgresQuery := gorm.NewTestQuery(postgresDocker)
+	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
 		database.DriverPostgres: postgresQuery,
 	}
 }
 
 func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
-	for driver, query := range s.driverToTestQuery {
+	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			repository, mockOrm := s.initRepository(driver, query.Query())
+			repository, mockOrm := s.initRepository(testQuery)
 
 			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
 			mockOrm.EXPECT().Query().Return(repository.query).Once()
@@ -64,9 +62,9 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 }
 
 func (s *RepositoryTestSuite) TestRecord() {
-	for driver, query := range s.driverToTestQuery {
+	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			repository, mockOrm := s.initRepository(driver, query.Query())
+			repository, mockOrm := s.initRepository(testQuery)
 
 			mockOrm.EXPECT().Query().Return(repository.query).Once()
 
@@ -98,23 +96,25 @@ func (s *RepositoryTestSuite) TestRecord() {
 
 			migrations, err := repository.GetMigrations(2)
 			s.NoError(err)
-			s.ElementsMatch([]migration.File{
-				{Migration: "migration3", Batch: 2},
-				{Migration: "migration2", Batch: 1},
-			}, migrations)
+			s.Len(migrations, 2)
+			s.Equal("migration3", migrations[0].Migration)
+			s.Equal(2, migrations[0].Batch)
+			s.Equal("migration2", migrations[1].Migration)
+			s.Equal(1, migrations[1].Batch)
 
 			migrations, err = repository.GetMigrationsByBatch(1)
 			s.NoError(err)
-			s.ElementsMatch([]migration.File{
-				{Migration: "migration2", Batch: 1},
-				{Migration: "migration1", Batch: 1},
-			}, migrations)
+			s.Len(migrations, 2)
+			s.Equal("migration2", migrations[0].Migration)
+			s.Equal(1, migrations[0].Batch)
+			s.Equal("migration1", migrations[1].Migration)
+			s.Equal(1, migrations[1].Batch)
 
 			migrations, err = repository.GetLast()
 			s.NoError(err)
-			s.ElementsMatch([]migration.File{
-				{Migration: "migration3", Batch: 2},
-			}, migrations)
+			s.Len(migrations, 1)
+			s.Equal("migration3", migrations[0].Migration)
+			s.Equal(2, migrations[0].Batch)
 
 			err = repository.Delete("migration1")
 			s.NoError(err)
@@ -126,8 +126,8 @@ func (s *RepositoryTestSuite) TestRecord() {
 	}
 }
 
-func (s *RepositoryTestSuite) initRepository(driver database.Driver, query orm.Query) (*Repository, *mocksorm.Orm) {
-	schema, _, _, mockOrm := initSchema(s.T(), driver)
+func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) (*Repository, *mocksorm.Orm) {
+	schema, mockOrm := initSchema(s.T(), testQuery)
 
-	return NewRepository(query, schema, schema.prefix+"migrations"), mockOrm
+	return NewRepository(testQuery.Query(), schema, "migrations"), mockOrm
 }

@@ -21,11 +21,10 @@ type Blueprint struct {
 	columns  []*ColumnDefinition
 	commands []*migration.Command
 	prefix   string
-	schema   string
 	table    string
 }
 
-func NewBlueprint(table, prefix string) *Blueprint {
+func NewBlueprint(prefix, table string) *Blueprint {
 	return &Blueprint{
 		prefix: prefix,
 		table:  table,
