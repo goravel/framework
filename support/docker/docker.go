@@ -14,7 +14,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelMinimum
+	TestModel = TestModelNormal
 )
 
 type ContainerType string
