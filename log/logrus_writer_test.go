@@ -535,7 +535,9 @@ func Benchmark_Panic(b *testing.B) {
 	assert.NotNil(b, log)
 
 	for i := 0; i < b.N; i++ {
-		defer recover() //nolint:errcheck
+		defer func() {
+			recover() //nolint:errcheck
+		}()
 		log.Panic("Goravel")
 	}
 
