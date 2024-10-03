@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	errorscontracts "github.com/goravel/framework/contracts/errors"
+	contractserrors "github.com/goravel/framework/contracts/errors"
 )
 
 type errorString struct {
@@ -15,7 +15,7 @@ type errorString struct {
 }
 
 // New creates a new error with the provided text and optional location
-func New(text string, location ...string) errorscontracts.Error {
+func New(text string, location ...string) contractserrors.Error {
 	err := &errorString{
 		text:         text,
 		withLocation: true,
@@ -28,7 +28,7 @@ func New(text string, location ...string) errorscontracts.Error {
 	return err
 }
 
-func (e *errorString) Args(args ...any) errorscontracts.Error {
+func (e *errorString) Args(args ...any) contractserrors.Error {
 	e.args = args
 	return e
 }
@@ -47,12 +47,12 @@ func (e *errorString) Error() string {
 	return formattedText
 }
 
-func (e *errorString) Location(location string) errorscontracts.Error {
+func (e *errorString) Location(location string) contractserrors.Error {
 	e.location = location
 	return e
 }
 
-func (e *errorString) WithLocation(flag bool) errorscontracts.Error {
+func (e *errorString) WithLocation(flag bool) contractserrors.Error {
 	e.withLocation = flag
 	return e
 }
