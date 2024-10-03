@@ -9,6 +9,8 @@ type Grammar interface {
 	CompileCreate(blueprint Blueprint, query orm.Query) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint) string
+	// CompileTables Compile the query to determine the tables.
+	CompileTables(database string) string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
 	// GetModifiers Get the column modifiers.

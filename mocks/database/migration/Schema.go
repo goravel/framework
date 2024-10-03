@@ -69,8 +69,21 @@ func (_c *Schema_Connection_Call) RunAndReturn(run func(string) migration.Schema
 }
 
 // Create provides a mock function with given fields: table, callback
-func (_m *Schema) Create(table string, callback func(migration.Blueprint)) {
-	_m.Called(table, callback)
+func (_m *Schema) Create(table string, callback func(migration.Blueprint)) error {
+	ret := _m.Called(table, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, func(migration.Blueprint)) error); ok {
+		r0 = rf(table, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Schema_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -92,19 +105,32 @@ func (_c *Schema_Create_Call) Run(run func(table string, callback func(migration
 	return _c
 }
 
-func (_c *Schema_Create_Call) Return() *Schema_Create_Call {
-	_c.Call.Return()
+func (_c *Schema_Create_Call) Return(_a0 error) *Schema_Create_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_Create_Call) RunAndReturn(run func(string, func(migration.Blueprint))) *Schema_Create_Call {
+func (_c *Schema_Create_Call) RunAndReturn(run func(string, func(migration.Blueprint)) error) *Schema_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DropIfExists provides a mock function with given fields: table
-func (_m *Schema) DropIfExists(table string) {
-	_m.Called(table)
+func (_m *Schema) DropIfExists(table string) error {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DropIfExists")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(table)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Schema_DropIfExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIfExists'
@@ -125,12 +151,115 @@ func (_c *Schema_DropIfExists_Call) Run(run func(table string)) *Schema_DropIfEx
 	return _c
 }
 
-func (_c *Schema_DropIfExists_Call) Return() *Schema_DropIfExists_Call {
-	_c.Call.Return()
+func (_c *Schema_DropIfExists_Call) Return(_a0 error) *Schema_DropIfExists_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string)) *Schema_DropIfExists_Call {
+func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string) error) *Schema_DropIfExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTables provides a mock function with given fields:
+func (_m *Schema) GetTables() ([]migration.Table, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTables")
+	}
+
+	var r0 []migration.Table
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]migration.Table, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []migration.Table); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]migration.Table)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Schema_GetTables_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTables'
+type Schema_GetTables_Call struct {
+	*mock.Call
+}
+
+// GetTables is a helper method to define mock.On call
+func (_e *Schema_Expecter) GetTables() *Schema_GetTables_Call {
+	return &Schema_GetTables_Call{Call: _e.mock.On("GetTables")}
+}
+
+func (_c *Schema_GetTables_Call) Run(run func()) *Schema_GetTables_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schema_GetTables_Call) Return(_a0 []migration.Table, _a1 error) *Schema_GetTables_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Schema_GetTables_Call) RunAndReturn(run func() ([]migration.Table, error)) *Schema_GetTables_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasTable provides a mock function with given fields: table
+func (_m *Schema) HasTable(table string) bool {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasTable")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(table)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Schema_HasTable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasTable'
+type Schema_HasTable_Call struct {
+	*mock.Call
+}
+
+// HasTable is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) HasTable(table interface{}) *Schema_HasTable_Call {
+	return &Schema_HasTable_Call{Call: _e.mock.On("HasTable", table)}
+}
+
+func (_c *Schema_HasTable_Call) Run(run func(table string)) *Schema_HasTable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_HasTable_Call) Return(_a0 bool) *Schema_HasTable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_HasTable_Call) RunAndReturn(run func(string) bool) *Schema_HasTable_Call {
 	_c.Call.Return(run)
 	return _c
 }
