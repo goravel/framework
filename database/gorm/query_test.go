@@ -2656,7 +2656,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 			if test.expectConnection == "" {
 				s.Nil(query)
 			} else {
-				s.Equal(test.expectConnection, query.connection)
+				s.Equal(test.expectConnection, query.fullConfig.Connection)
 			}
 		})
 	}
