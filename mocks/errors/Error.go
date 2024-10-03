@@ -122,12 +122,12 @@ func (_c *Error_Error_Call) RunAndReturn(run func() string) *Error_Error_Call {
 	return _c
 }
 
-// Location provides a mock function with given fields: _a0
-func (_m *Error) Location(_a0 string) errors.Error {
+// SetModule provides a mock function with given fields: _a0
+func (_m *Error) SetModule(_a0 string) errors.Error {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Location")
+		panic("no return value specified for SetModule")
 	}
 
 	var r0 errors.Error
@@ -142,78 +142,30 @@ func (_m *Error) Location(_a0 string) errors.Error {
 	return r0
 }
 
-// Error_Location_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Location'
-type Error_Location_Call struct {
+// Error_SetModule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetModule'
+type Error_SetModule_Call struct {
 	*mock.Call
 }
 
-// Location is a helper method to define mock.On call
+// SetModule is a helper method to define mock.On call
 //   - _a0 string
-func (_e *Error_Expecter) Location(_a0 interface{}) *Error_Location_Call {
-	return &Error_Location_Call{Call: _e.mock.On("Location", _a0)}
+func (_e *Error_Expecter) SetModule(_a0 interface{}) *Error_SetModule_Call {
+	return &Error_SetModule_Call{Call: _e.mock.On("SetModule", _a0)}
 }
 
-func (_c *Error_Location_Call) Run(run func(_a0 string)) *Error_Location_Call {
+func (_c *Error_SetModule_Call) Run(run func(_a0 string)) *Error_SetModule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *Error_Location_Call) Return(_a0 errors.Error) *Error_Location_Call {
+func (_c *Error_SetModule_Call) Return(_a0 errors.Error) *Error_SetModule_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Error_Location_Call) RunAndReturn(run func(string) errors.Error) *Error_Location_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// WithLocation provides a mock function with given fields: _a0
-func (_m *Error) WithLocation(_a0 bool) errors.Error {
-	ret := _m.Called(_a0)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithLocation")
-	}
-
-	var r0 errors.Error
-	if rf, ok := ret.Get(0).(func(bool) errors.Error); ok {
-		r0 = rf(_a0)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(errors.Error)
-		}
-	}
-
-	return r0
-}
-
-// Error_WithLocation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithLocation'
-type Error_WithLocation_Call struct {
-	*mock.Call
-}
-
-// WithLocation is a helper method to define mock.On call
-//   - _a0 bool
-func (_e *Error_Expecter) WithLocation(_a0 interface{}) *Error_WithLocation_Call {
-	return &Error_WithLocation_Call{Call: _e.mock.On("WithLocation", _a0)}
-}
-
-func (_c *Error_WithLocation_Call) Run(run func(_a0 bool)) *Error_WithLocation_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(bool))
-	})
-	return _c
-}
-
-func (_c *Error_WithLocation_Call) Return(_a0 errors.Error) *Error_WithLocation_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Error_WithLocation_Call) RunAndReturn(run func(bool) errors.Error) *Error_WithLocation_Call {
+func (_c *Error_SetModule_Call) RunAndReturn(run func(string) errors.Error) *Error_SetModule_Call {
 	_c.Call.Return(run)
 	return _c
 }
