@@ -39,6 +39,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 
 	// Convert command flags to CLI flags
 	cliFlags := flagsToCliFlags(flags)
+	assert.NotNil(t, cliFlags)
 
 	// Assert that the number of CLI flags matches the number of command flags
 	assert.Equal(t, len(cliFlags), len(flags))
@@ -49,6 +50,7 @@ func TestFlagsToCliFlags(t *testing.T) {
 		case command.FlagTypeBool:
 			boolFlag := flag.(*command.BoolFlag)
 			cliBoolFlag := cliFlags[i].(*cli.BoolFlag)
+
 			assert.Equal(t, boolFlag.Name, cliBoolFlag.Name)
 			assert.Equal(t, boolFlag.Aliases, cliBoolFlag.Aliases)
 			assert.Equal(t, boolFlag.Usage, cliBoolFlag.Usage)

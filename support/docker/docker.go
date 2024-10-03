@@ -56,7 +56,7 @@ func Sqlites(num int) []testing.DatabaseDriver {
 
 func Database(containerType ContainerType, database, username, password string, num int) []testing.DatabaseDriver {
 	if num <= 0 {
-		return nil
+		panic("the number of database container must be greater than 0")
 	}
 
 	var drivers []testing.DatabaseDriver
@@ -81,6 +81,10 @@ func Database(containerType ContainerType, database, username, password string, 
 
 		containers[containerType] = append(containers[containerType], databaseDriver)
 		drivers = append(drivers, databaseDriver)
+	}
+
+	if len(drivers) != num {
+		panic(fmt.Sprintf("the number of database container is not enough, expect: %d, got: %d", num, len(drivers)))
 	}
 
 	for _, driver := range drivers {

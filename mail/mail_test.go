@@ -13,6 +13,8 @@ import (
 	"net/textproto"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func prepareEmail() *Email {
@@ -534,21 +536,16 @@ Content-type: text/plain; charset=ISO-8859-1
 
 This is a test message!`)
 	e, err := NewEmailFromReader(bytes.NewReader(raw))
-	if err != nil {
-		t.Fatalf("Error creating email %s", err.Error())
-	}
-	if e.Subject != ex.Subject {
-		t.Fatalf("Incorrect subject. %#q != %#q", e.Subject, ex.Subject)
-	}
-	if e.From != ex.From {
-		t.Fatalf("Incorrect \"From\": %#q != %#q", e.From, ex.From)
-	}
-	if e.To[0] != ex.To[0] {
-		t.Fatalf("Incorrect \"To\": %#q != %#q", e.To, ex.To)
-	}
-	if e.Cc[0] != ex.Cc[0] {
-		t.Fatalf("Incorrect \"Cc\": %#q != %#q", e.Cc, ex.Cc)
-	}
+
+	assert.Nil(t, err)
+	assert.Equal(t, e.Subject, ex.Subject)
+	assert.Equal(t, e.From, ex.From)
+	assert.Len(t, e.To, 1)
+	assert.Len(t, ex.To, 1)
+	assert.Equal(t, e.To[0], ex.To[0])
+	assert.Len(t, e.Cc, 1)
+	assert.Len(t, ex.Cc, 1)
+	assert.Equal(t, e.Cc[0], ex.Cc[0])
 }
 
 func TestNonMultipartEmailFromReader(t *testing.T) {

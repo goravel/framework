@@ -21,8 +21,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
+		log := app.MakeLog()
 		connection := config.GetString("database.default")
-		orm, err := BuildOrm(ctx, config, connection, app.Refresh)
+		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
 			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
 		}

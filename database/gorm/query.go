@@ -17,6 +17,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/database/orm"
@@ -29,15 +30,17 @@ type Query struct {
 	ctx        context.Context
 	fullConfig contractsdatabase.FullConfig
 	instance   *gormio.DB
+	log        log.Log
 	queries    map[string]*Query
 }
 
-func NewQuery(ctx context.Context, config config.Config, fullConfig contractsdatabase.FullConfig, db *gormio.DB, conditions *Conditions) *Query {
+func NewQuery(ctx context.Context, config config.Config, fullConfig contractsdatabase.FullConfig, db *gormio.DB, log log.Log, conditions *Conditions) *Query {
 	queryImpl := &Query{
 		config:     config,
 		ctx:        ctx,
 		fullConfig: fullConfig,
 		instance:   db,
+		log:        log,
 		queries:    make(map[string]*Query),
 	}
 
@@ -48,7 +51,7 @@ func NewQuery(ctx context.Context, config config.Config, fullConfig contractsdat
 	return queryImpl
 }
 
-func BuildQuery(ctx context.Context, config config.Config, connection string) (*Query, error) {
+func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log) (*Query, error) {
 	configBuilder := db.NewConfigBuilder(config, connection)
 	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
@@ -60,7 +63,7 @@ func BuildQuery(ctx context.Context, config config.Config, connection string) (*
 		return nil, err
 	}
 
-	return NewQuery(ctx, config, writeConfigs[0], gorm, nil), nil
+	return NewQuery(ctx, config, writeConfigs[0], gorm, log, nil), nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -727,11 +730,11 @@ func (r *Query) Table(name string, args ...any) contractsorm.Query {
 }
 
 func (r *Query) ToSql() contractsorm.ToSql {
-	return NewToSql(r.setConditions(r.conditions), false)
+	return NewToSql(r.setConditions(r.conditions), r.log, false)
 }
 
 func (r *Query) ToRawSql() contractsorm.ToSql {
-	return NewToSql(r.setConditions(r.conditions), true)
+	return NewToSql(r.setConditions(r.conditions), r.log, true)
 }
 
 func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
@@ -984,7 +987,10 @@ func (r *Query) buildModel() *Query {
 
 	query, err := r.refreshConnection(r.conditions.model)
 	if err != nil {
-		return nil
+		query = r.new(r.instance.Session(&gormio.Session{}))
+		query.instance.AddError(err)
+
+		return query
 	}
 
 	return query.new(query.instance.Model(r.conditions.model))
@@ -1122,7 +1128,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
-						queryImpl := NewQuery(r.ctx, r.config, r.fullConfig, tx, nil)
+						queryImpl := NewQuery(r.ctx, r.config, r.fullConfig, tx, r.log, nil)
 						query := arg(queryImpl)
 						queryImpl = query.(*Query)
 						queryImpl = queryImpl.buildConditions()
@@ -1256,9 +1262,7 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 }
 
 func (r *Query) new(db *gormio.DB) *Query {
-	query := NewQuery(r.ctx, r.config, r.fullConfig, db, &r.conditions)
-
-	return query
+	return NewQuery(r.ctx, r.config, r.fullConfig, db, r.log, &r.conditions)
 }
 
 func (r *Query) omitCreate(value any) error {
@@ -1323,7 +1327,7 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	query, ok := r.queries[connection]
 	if !ok {
 		var err error
-		query, err = BuildQuery(r.ctx, r.config, connection)
+		query, err = BuildQuery(r.ctx, r.config, connection, r.log)
 		if err != nil {
 			return nil, err
 		}
