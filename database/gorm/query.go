@@ -26,17 +26,17 @@ import (
 type Query struct {
 	conditions Conditions
 	config     config.Config
-	connection string
 	ctx        context.Context
+	fullConfig contractsdatabase.FullConfig
 	instance   *gormio.DB
 	queries    map[string]*Query
 }
 
-func NewQuery(ctx context.Context, config config.Config, connection string, db *gormio.DB, conditions *Conditions) *Query {
+func NewQuery(ctx context.Context, config config.Config, fullConfig contractsdatabase.FullConfig, db *gormio.DB, conditions *Conditions) *Query {
 	queryImpl := &Query{
 		config:     config,
-		connection: connection,
 		ctx:        ctx,
+		fullConfig: fullConfig,
 		instance:   db,
 		queries:    make(map[string]*Query),
 	}
@@ -50,12 +50,17 @@ func NewQuery(ctx context.Context, config config.Config, connection string, db *
 
 func BuildQuery(ctx context.Context, config config.Config, connection string) (*Query, error) {
 	configBuilder := db.NewConfigBuilder(config, connection)
+	writeConfigs := configBuilder.Writes()
+	if len(writeConfigs) == 0 {
+		return nil, errors.New("not found database configuration")
+	}
+
 	gorm, err := NewGorm(config, configBuilder)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewQuery(ctx, config, connection, gorm, nil), nil
+	return NewQuery(ctx, config, writeConfigs[0], gorm, nil), nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -714,7 +719,7 @@ func (r *Query) Sum(column string, dest any) error {
 func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.table = &Table{
-		name: name,
+		name: r.fullConfig.Prefix + name,
 		args: args,
 	}
 
@@ -1117,7 +1122,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
-						queryImpl := NewQuery(r.ctx, r.config, r.connection, tx, nil)
+						queryImpl := NewQuery(r.ctx, r.config, r.fullConfig, tx, nil)
 						query := arg(queryImpl)
 						queryImpl = query.(*Query)
 						queryImpl = queryImpl.buildConditions()
@@ -1251,7 +1256,7 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 }
 
 func (r *Query) new(db *gormio.DB) *Query {
-	query := NewQuery(r.ctx, r.config, r.connection, db, &r.conditions)
+	query := NewQuery(r.ctx, r.config, r.fullConfig, db, &r.conditions)
 
 	return query
 }
@@ -1311,7 +1316,7 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	if connection == "" || connection == r.connection {
+	if connection == "" || connection == r.fullConfig.Connection {
 		return r, nil
 	}
 
