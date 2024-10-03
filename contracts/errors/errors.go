@@ -6,8 +6,6 @@ type Error interface {
 	Args(...any) Error
 	// Error implements the error interface and formats the error string
 	Error() string
-	// Location explicitly sets the location in the error message
-	Location(string) Error
-	// WithLocation enables or disables the inclusion of the location in the error message
-	WithLocation(bool) Error
+	// SetModule explicitly sets the module in the error message
+	SetModule(string) Error
 }

@@ -8,21 +8,19 @@ import (
 )
 
 type errorString struct {
-	text         string
-	location     string
-	args         []any
-	withLocation bool
+	text   string
+	module string
+	args   []any
 }
 
-// New creates a new error with the provided text and optional location
-func New(text string, location ...string) contractserrors.Error {
+// New creates a new error with the provided text and optional module
+func New(text string, module ...string) contractserrors.Error {
 	err := &errorString{
-		text:         text,
-		withLocation: true,
+		text: text,
 	}
 
-	if len(location) > 0 {
-		err.location = location[0]
+	if len(module) > 0 {
+		err.module = module[0]
 	}
 
 	return err
@@ -40,20 +38,15 @@ func (e *errorString) Error() string {
 		formattedText = fmt.Sprintf(e.text, e.args...)
 	}
 
-	if e.withLocation && e.location != "" {
-		formattedText = fmt.Sprintf("[%s] %s", e.location, formattedText)
+	if e.module != "" {
+		formattedText = fmt.Sprintf("[%s] %s", e.module, formattedText)
 	}
 
 	return formattedText
 }
 
-func (e *errorString) Location(location string) contractserrors.Error {
-	e.location = location
-	return e
-}
-
-func (e *errorString) WithLocation(flag bool) contractserrors.Error {
-	e.withLocation = flag
+func (e *errorString) SetModule(module string) contractserrors.Error {
+	e.module = module
 	return e
 }
 
