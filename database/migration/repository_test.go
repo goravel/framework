@@ -38,7 +38,7 @@ func (s *RepositoryTestSuite) SetupTest() {
 func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 	for driver, query := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			repository, mockOrm := s.initRepository(s.T(), driver, query.Query())
+			repository, mockOrm := s.initRepository(driver, query.Query())
 
 			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
 			mockOrm.EXPECT().Query().Return(repository.query).Once()
@@ -66,7 +66,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 func (s *RepositoryTestSuite) TestRecord() {
 	for driver, query := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			repository, mockOrm := s.initRepository(s.T(), driver, query.Query())
+			repository, mockOrm := s.initRepository(driver, query.Query())
 
 			mockOrm.EXPECT().Query().Return(repository.query).Once()
 
@@ -126,7 +126,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 	}
 }
 
-func (s *RepositoryTestSuite) initRepository(t *testing.T, driver database.Driver, query orm.Query) (*Repository, *mocksorm.Orm) {
+func (s *RepositoryTestSuite) initRepository(driver database.Driver, query orm.Query) (*Repository, *mocksorm.Orm) {
 	schema, _, _, mockOrm := initSchema(s.T(), driver)
 
 	return NewRepository(query, schema, schema.prefix+"migrations"), mockOrm

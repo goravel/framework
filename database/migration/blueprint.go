@@ -26,12 +26,10 @@ type Blueprint struct {
 }
 
 func NewBlueprint(table, prefix string) *Blueprint {
-	blueprint := &Blueprint{
+	return &Blueprint{
 		prefix: prefix,
 		table:  table,
 	}
-
-	return blueprint
 }
 
 func (r *Blueprint) BigIncrements(column string) migration.ColumnDefinition {
