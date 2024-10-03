@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	sessioncontract "github.com/goravel/framework/contracts/session"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	mockconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/str"
@@ -66,14 +67,15 @@ func (s *ManagerTestSuite) TestDriver() {
 	s.mockConfig.On("GetString", "session.driver").Return("not_supported").Once()
 	driver, err = s.manager.Driver()
 	s.NotNil(err)
-	s.Equal("driver [not_supported] not supported", err.Error())
+	s.ErrorIs(err, errors.ErrSessionDriverNotSupported)
+	s.Equal(errors.ErrSessionDriverNotSupported.Args("not_supported").Error(), err.Error())
 	s.Nil(driver)
 
 	// driver is not set
 	s.mockConfig.On("GetString", "session.driver").Return("").Once()
 	driver, err = s.manager.Driver()
 	s.NotNil(err)
-	s.Equal("driver is not set", err.Error())
+	s.ErrorIs(err, errors.ErrSessionDriverIsNotSet)
 	s.Nil(driver)
 }
 
@@ -88,7 +90,8 @@ func (s *ManagerTestSuite) TestExtend() {
 
 	// driver already exists
 	err = s.manager.Extend("test", NewCustomDriver)
-	s.Errorf(err, "driver [%s] already exists", "test")
+	s.ErrorIs(err, errors.ErrSessionDriverAlreadyExists)
+	s.Equal(err.Error(), errors.ErrSessionDriverAlreadyExists.Args("test").Error())
 }
 
 func (s *ManagerTestSuite) TestBuildSession() {
@@ -113,7 +116,7 @@ func (s *ManagerTestSuite) TestBuildSession() {
 
 	// driver is nil
 	session, err = s.manager.BuildSession(nil)
-	s.ErrorIs(err, ErrDriverNotSet)
+	s.ErrorIs(err, errors.ErrSessionDriverIsNotSet)
 	s.Nil(session)
 }
 

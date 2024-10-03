@@ -1,7 +1,6 @@
 package session
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	mocksession "github.com/goravel/framework/mocks/session"
 	"github.com/goravel/framework/support/str"
@@ -165,7 +165,7 @@ func (s *SessionTestSuite) TestMigrate() {
 
 	// when driver is nil
 	s.session.SetDriver(nil)
-	s.ErrorIs(s.session.migrate(true), ErrDriverNotSet)
+	s.ErrorIs(s.session.migrate(true), errors.ErrSessionDriverIsNotSet)
 }
 
 func (s *SessionTestSuite) TestMissing() {
@@ -304,7 +304,7 @@ func (s *SessionTestSuite) TestSave() {
 
 	// when driver is nil
 	s.session.SetDriver(nil)
-	s.ErrorIs(s.session.Save(), ErrDriverNotSet)
+	s.ErrorIs(s.session.Save(), errors.ErrSessionDriverIsNotSet)
 }
 
 func (s *SessionTestSuite) TestSetID() {

@@ -1,11 +1,11 @@
 package driver
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -80,7 +80,7 @@ func (f *File) Read(id string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("session [%s] not found", id)
+	return "", errors.ErrSessionNotFound.Args(id)
 }
 
 func (f *File) Write(id string, data string) error {
