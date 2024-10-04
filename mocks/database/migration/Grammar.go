@@ -115,6 +115,52 @@ func (_c *Grammar_CompileDropIfExists_Call) RunAndReturn(run func(migration.Blue
 	return _c
 }
 
+// CompileTables provides a mock function with given fields: database
+func (_m *Grammar) CompileTables(database string) string {
+	ret := _m.Called(database)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileTables")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(database)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileTables_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileTables'
+type Grammar_CompileTables_Call struct {
+	*mock.Call
+}
+
+// CompileTables is a helper method to define mock.On call
+//   - database string
+func (_e *Grammar_Expecter) CompileTables(database interface{}) *Grammar_CompileTables_Call {
+	return &Grammar_CompileTables_Call{Call: _e.mock.On("CompileTables", database)}
+}
+
+func (_c *Grammar_CompileTables_Call) Run(run func(database string)) *Grammar_CompileTables_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileTables_Call) Return(_a0 string) *Grammar_CompileTables_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileTables_Call) RunAndReturn(run func(string) string) *Grammar_CompileTables_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAttributeCommands provides a mock function with given fields:
 func (_m *Grammar) GetAttributeCommands() []string {
 	ret := _m.Called()
