@@ -6,6 +6,17 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 )
 
+// Define different test model, to improve the local testing speed.
+// The minimum model only initials one Sqlite and two Postgres,
+// and the normal model initials one Mysql, two Postgres, one Sqlite and one Sqlserver.
+const (
+	TestModelMinimum = iota
+	TestModelNormal
+
+	// Switch this value to control the test model.
+	TestModel = TestModelNormal
+)
+
 type ContainerType string
 
 const (
@@ -56,7 +67,7 @@ func Sqlites(num int) []testing.DatabaseDriver {
 
 func Database(containerType ContainerType, database, username, password string, num int) []testing.DatabaseDriver {
 	if num <= 0 {
-		return nil
+		panic("the number of database container must be greater than 0")
 	}
 
 	var drivers []testing.DatabaseDriver
@@ -81,6 +92,10 @@ func Database(containerType ContainerType, database, username, password string, 
 
 		containers[containerType] = append(containers[containerType], databaseDriver)
 		drivers = append(drivers, databaseDriver)
+	}
+
+	if len(drivers) != num {
+		panic(fmt.Sprintf("the number of database container is not enough, expect: %d, got: %d", num, len(drivers)))
 	}
 
 	for _, driver := range drivers {

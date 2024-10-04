@@ -91,7 +91,7 @@ func (s *ManagerTestSuite) TestExtend() {
 	// driver already exists
 	err = s.manager.Extend("test", NewCustomDriver)
 	s.ErrorIs(err, errors.ErrSessionDriverAlreadyExists)
-	s.Equal(err.Error(), errors.ErrSessionDriverAlreadyExists.Args("test").Error())
+	s.EqualError(err, errors.ErrSessionDriverAlreadyExists.Args("test").Error())
 }
 
 func (s *ManagerTestSuite) TestBuildSession() {

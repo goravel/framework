@@ -2545,6 +2545,21 @@ func (s *QueryTestSuite) TestLoadMissing() {
 	}
 }
 
+func (s *QueryTestSuite) TestModel() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			// model is valid
+			user := User{Name: "model_user"}
+			s.Nil(query.Query().Model(&User{}).Create(&user))
+			s.True(user.ID > 0)
+
+			// model is invalid
+			user1 := User{Name: "model_user"}
+			s.EqualError(query.Query().Model("users").Create(&user1), "invalid model")
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestRaw() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {

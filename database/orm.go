@@ -7,40 +7,52 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/support/color"
 )
 
 type Orm struct {
 	ctx        context.Context
 	config     config.Config
 	connection string
+	log        log.Log
 	query      contractsorm.Query
 	queries    map[string]contractsorm.Query
 	refresh    func(key any)
 }
 
-func NewOrm(ctx context.Context, config config.Config, connection string, query contractsorm.Query, refresh func(key any)) (*Orm, error) {
+func NewOrm(
+	ctx context.Context,
+	config config.Config,
+	connection string,
+	query contractsorm.Query,
+	queries map[string]contractsorm.Query,
+	log log.Log,
+	refresh func(key any),
+) *Orm {
 	return &Orm{
 		ctx:        ctx,
 		config:     config,
 		connection: connection,
+		log:        log,
 		query:      query,
-		queries: map[string]contractsorm.Query{
-			connection: query,
-		},
-		refresh: refresh,
-	}, nil
+		queries:    queries,
+		refresh:    refresh,
+	}
 }
 
-func BuildOrm(ctx context.Context, config config.Config, connection string, refresh func(key any)) (*Orm, error) {
-	query, err := gorm.BuildQuery(ctx, config, connection)
+func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key any)) (*Orm, error) {
+	query, err := gorm.BuildQuery(ctx, config, connection, log)
 	if err != nil {
 		return nil, fmt.Errorf("[Orm] Build query for %s connection error: %v", connection, err)
 	}
 
-	return NewOrm(ctx, config, connection, query, refresh)
+	queries := map[string]contractsorm.Query{
+		connection: query,
+	}
+
+	return NewOrm(ctx, config, connection, query, queries, log, refresh), nil
 }
 
 func (r *Orm) Connection(name string) contractsorm.Orm {
@@ -48,31 +60,19 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 		name = r.config.GetString("database.default")
 	}
 	if instance, exist := r.queries[name]; exist {
-		return &Orm{
-			ctx:        r.ctx,
-			config:     r.config,
-			connection: name,
-			query:      instance,
-			queries:    r.queries,
-		}
+		return NewOrm(r.ctx, r.config, name, instance, r.queries, r.log, r.refresh)
 	}
 
-	queue, err := gorm.BuildQuery(r.ctx, r.config, name)
-	if err != nil || queue == nil {
-		color.Red().Println(fmt.Sprintf("[Orm] Init %s connection error: %v", name, err))
+	query, err := gorm.BuildQuery(r.ctx, r.config, name, r.log)
+	if err != nil || query == nil {
+		r.log.Errorf("[Orm] Init %s connection error: %v", name, err)
 
-		return nil
+		return NewOrm(r.ctx, r.config, name, nil, r.queries, r.log, r.refresh)
 	}
 
-	r.queries[name] = queue
+	r.queries[name] = query
 
-	return &Orm{
-		ctx:        r.ctx,
-		config:     r.config,
-		connection: name,
-		query:      queue,
-		queries:    r.queries,
-	}
+	return NewOrm(r.ctx, r.config, name, query, r.queries, r.log, r.refresh)
 }
 
 func (r *Orm) DB() (*sql.DB, error) {

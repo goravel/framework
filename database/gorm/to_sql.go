@@ -2,15 +2,19 @@ package gorm
 
 import (
 	"gorm.io/gorm"
+
+	"github.com/goravel/framework/contracts/log"
 )
 
 type ToSql struct {
+	log   log.Log
 	query *Query
 	raw   bool
 }
 
-func NewToSql(query *Query, raw bool) *ToSql {
+func NewToSql(query *Query, log log.Log, raw bool) *ToSql {
 	return &ToSql{
+		log:   log,
 		query: query,
 		raw:   raw,
 	}
@@ -105,6 +109,9 @@ func (r *ToSql) Update(column any, value ...any) string {
 
 func (r *ToSql) sql(db *gorm.DB) string {
 	sql := db.Statement.SQL.String()
+	if db.Statement.Error != nil {
+		r.log.Errorf("failed to get sql: %v", db.Statement.Error)
+	}
 	if !r.raw {
 		return sql
 	}
