@@ -39,7 +39,12 @@ func (r *Repository) DeleteRepository() error {
 
 func (r *Repository) GetLast() ([]migration.File, error) {
 	var files []migration.File
-	if err := r.query.Table(r.table).Where("batch", r.getLastBatchNumber()).OrderByDesc("migration").Get(&files); err != nil {
+	lastBatchNumber, err := r.getLastBatchNumber()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.query.Table(r.table).Where("batch", lastBatchNumber).OrderByDesc("migration").Get(&files); err != nil {
 		return nil, err
 	}
 
@@ -64,8 +69,13 @@ func (r *Repository) GetMigrationsByBatch(batch int) ([]migration.File, error) {
 	return files, nil
 }
 
-func (r *Repository) GetNextBatchNumber() int {
-	return r.getLastBatchNumber() + 1
+func (r *Repository) GetNextBatchNumber() (int, error) {
+	lastBatchNumber, err := r.getLastBatchNumber()
+	if err != nil {
+		return 0, err
+	}
+
+	return lastBatchNumber + 1, nil
 }
 
 func (r *Repository) GetRan() ([]string, error) {
@@ -88,11 +98,11 @@ func (r *Repository) RepositoryExists() bool {
 	return r.schema.HasTable(r.table)
 }
 
-func (r *Repository) getLastBatchNumber() int {
+func (r *Repository) getLastBatchNumber() (int, error) {
 	var batch int
 	if err := r.query.Table(r.table).OrderByDesc("batch").Limit(1).Pluck("batch", &batch); err != nil {
-		return 0
+		return 0, err
 	}
 
-	return batch
+	return batch, nil
 }

@@ -84,10 +84,12 @@ func (s *RepositoryTestSuite) TestRecord() {
 			err = repository.Log("migration3", 2)
 			s.NoError(err)
 
-			lastBatchNumber := repository.getLastBatchNumber()
+			lastBatchNumber, err := repository.getLastBatchNumber()
+			s.NoError(err)
 			s.Equal(2, lastBatchNumber)
 
-			nextBatchNumber := repository.GetNextBatchNumber()
+			nextBatchNumber, err := repository.GetNextBatchNumber()
+			s.NoError(err)
 			s.Equal(3, nextBatchNumber)
 
 			ranMigrations, err := repository.GetRan()

@@ -20,7 +20,7 @@ type Repository interface {
 	// GetMigrationsByBatch Get the list of the migrations by batch.
 	GetMigrationsByBatch(batch int) ([]File, error)
 	// GetNextBatchNumber Get the next migration batch number.
-	GetNextBatchNumber() int
+	GetNextBatchNumber() (int, error)
 	// GetRan Get the completed migrations.
 	GetRan() ([]string, error)
 	// Log that a migration was run.
