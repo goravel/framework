@@ -330,7 +330,7 @@ func (_c *Repository_GetMigrationsByBatch_Call) RunAndReturn(run func(int) ([]mi
 }
 
 // GetNextBatchNumber provides a mock function with given fields:
-func (_m *Repository) GetNextBatchNumber() int {
+func (_m *Repository) GetNextBatchNumber() (int, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -338,13 +338,23 @@ func (_m *Repository) GetNextBatchNumber() int {
 	}
 
 	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (int, error)); ok {
+		return rf()
+	}
 	if rf, ok := ret.Get(0).(func() int); ok {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(int)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Repository_GetNextBatchNumber_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNextBatchNumber'
@@ -364,12 +374,12 @@ func (_c *Repository_GetNextBatchNumber_Call) Run(run func()) *Repository_GetNex
 	return _c
 }
 
-func (_c *Repository_GetNextBatchNumber_Call) Return(_a0 int) *Repository_GetNextBatchNumber_Call {
-	_c.Call.Return(_a0)
+func (_c *Repository_GetNextBatchNumber_Call) Return(_a0 int, _a1 error) *Repository_GetNextBatchNumber_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repository_GetNextBatchNumber_Call) RunAndReturn(run func() int) *Repository_GetNextBatchNumber_Call {
+func (_c *Repository_GetNextBatchNumber_Call) RunAndReturn(run func() (int, error)) *Repository_GetNextBatchNumber_Call {
 	_c.Call.Return(run)
 	return _c
 }
