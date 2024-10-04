@@ -111,12 +111,12 @@ func (app *Application) ExecutablePath(path ...string) string {
 }
 
 func (app *Application) Publishes(packageName string, paths map[string]string, groups ...string) {
-	app.ensurePublishArrayInitialized(packageName)
-
+	if _, exist := app.publishes[packageName]; !exist {
+		app.publishes[packageName] = make(map[string]string)
+	}
 	for key, value := range paths {
 		app.publishes[packageName][key] = value
 	}
-
 	for _, group := range groups {
 		app.addPublishGroup(group, paths)
 	}
@@ -158,12 +158,6 @@ func (app *Application) GetJson() foundation.Json {
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
 	return app.CurrentLocale(ctx) == locale
-}
-
-func (app *Application) ensurePublishArrayInitialized(packageName string) {
-	if _, exist := app.publishes[packageName]; !exist {
-		app.publishes[packageName] = make(map[string]string)
-	}
 }
 
 func (app *Application) addPublishGroup(group string, paths map[string]string) {

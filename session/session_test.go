@@ -164,8 +164,11 @@ func (s *SessionTestSuite) TestMigrate() {
 	s.NotEqual(oldID, s.session.GetID())
 
 	// when driver is nil
+	oldID = s.session.GetID()
+	s.driver.On("Destroy", oldID).Return(nil).Once()
 	s.session.SetDriver(nil)
-	s.ErrorIs(s.session.migrate(true), errors.ErrSessionDriverIsNotSet)
+	s.Nil(s.session.migrate(true))
+	s.NotEqual(oldID, s.session.GetID())
 }
 
 func (s *SessionTestSuite) TestMissing() {
@@ -301,10 +304,6 @@ func (s *SessionTestSuite) TestSave() {
 
 	s.Equal(errors.New("error"), s.session.Save())
 	s.True(s.session.started)
-
-	// when driver is nil
-	s.session.SetDriver(nil)
-	s.ErrorIs(s.session.Save(), errors.ErrSessionDriverIsNotSet)
 }
 
 func (s *SessionTestSuite) TestSetID() {

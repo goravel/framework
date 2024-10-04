@@ -472,6 +472,8 @@ func Benchmark_Debug(b *testing.B) {
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
 
+	assert.NotNil(b, log)
+
 	for i := 0; i < b.N; i++ {
 		log.Debug("Debug Goravel")
 	}
@@ -483,6 +485,8 @@ func Benchmark_Info(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
+
+	assert.NotNil(b, log)
 
 	for i := 0; i < b.N; i++ {
 		log.Info("Goravel")
@@ -496,6 +500,8 @@ func Benchmark_Warning(b *testing.B) {
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
 
+	assert.NotNil(b, log)
+
 	for i := 0; i < b.N; i++ {
 		log.Warning("Goravel")
 	}
@@ -507,6 +513,8 @@ func Benchmark_Error(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
+
+	assert.NotNil(b, log)
 
 	for i := 0; i < b.N; i++ {
 		log.Error("Goravel")
@@ -523,6 +531,8 @@ func Benchmark_Panic(b *testing.B) {
 	mockConfig := initMockConfig()
 	mockDriverConfig(mockConfig)
 	log := NewApplication(mockConfig, json.NewJson())
+
+	assert.NotNil(b, log)
 
 	for i := 0; i < b.N; i++ {
 		defer func() {

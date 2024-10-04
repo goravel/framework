@@ -92,7 +92,7 @@ func (e *Event) IsDirty(columns ...string) bool {
 }
 
 func (e *Event) Query() orm.Query {
-	return NewQuery(e.query.ctx, e.query.config, e.query.fullConfig, e.query.instance.Session(&gorm.Session{NewDB: true}), nil)
+	return NewQuery(e.query.ctx, e.query.config, e.query.fullConfig, e.query.instance.Session(&gorm.Session{NewDB: true}), e.query.log, nil)
 }
 
 func (e *Event) SetAttribute(key string, value any) {
@@ -101,6 +101,10 @@ func (e *Event) SetAttribute(key string, value any) {
 	}
 
 	destOfMap := e.getDestOfMap()
+	if destOfMap == nil {
+		return
+	}
+
 	destOfMap[e.toDBColumnName(key)] = value
 	e.destOfMap = destOfMap
 
