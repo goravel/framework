@@ -63,16 +63,16 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 		return NewOrm(r.ctx, r.config, name, instance, r.queries, r.log, r.refresh)
 	}
 
-	queue, err := gorm.BuildQuery(r.ctx, r.config, name, r.log)
-	if err != nil || queue == nil {
+	query, err := gorm.BuildQuery(r.ctx, r.config, name, r.log)
+	if err != nil || query == nil {
 		r.log.Errorf("[Orm] Init %s connection error: %v", name, err)
 
 		return NewOrm(r.ctx, r.config, name, nil, r.queries, r.log, r.refresh)
 	}
 
-	r.queries[name] = queue
+	r.queries[name] = query
 
-	return NewOrm(r.ctx, r.config, name, queue, r.queries, r.log, r.refresh)
+	return NewOrm(r.ctx, r.config, name, query, r.queries, r.log, r.refresh)
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
