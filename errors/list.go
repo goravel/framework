@@ -49,4 +49,8 @@ var (
 	ErrGrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
 	ErrGrpcEmptyServerHost         = New("host can't be empty")
 	ErrGrpcEmptyServerPort         = New("port can't be empty")
+
+	ErrLogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
+	ErrLogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
+	ErrLogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 )

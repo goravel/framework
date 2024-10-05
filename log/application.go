@@ -18,15 +18,14 @@ type Application struct {
 	json     foundation.Json
 }
 
-func NewApplication(config config.Config, json foundation.Json) *Application {
+func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
 	instance := logrus.New()
 	instance.SetLevel(logrus.DebugLevel)
 
 	if config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
 			if err := registerHook(config, json, instance, channel); err != nil {
-				color.Red().Println("Init facades.Log error: " + err.Error())
-				return nil
+				return nil, err
 			}
 		}
 	}
@@ -36,7 +35,7 @@ func NewApplication(config config.Config, json foundation.Json) *Application {
 		Writer:   NewWriter(instance.WithContext(context.Background())),
 		config:   config,
 		json:     json,
-	}
+	}, nil
 }
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
@@ -52,7 +51,7 @@ func (r *Application) Channel(channel string) log.Writer {
 	instance.SetLevel(logrus.DebugLevel)
 
 	if err := registerHook(r.config, r.json, instance, channel); err != nil {
-		color.Red().Println("Init facades.Log error: " + err.Error())
+		color.Red().Println(err)
 		return nil
 	}
 
@@ -73,7 +72,7 @@ func (r *Application) Stack(channels []string) log.Writer {
 		}
 
 		if err := registerHook(r.config, r.json, instance, channel); err != nil {
-			color.Red().Println("Init facades.Log error: " + err.Error())
+			color.Red().Println(err)
 			return nil
 		}
 	}

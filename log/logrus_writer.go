@@ -1,7 +1,6 @@
 package log
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/log/logger"
 )
@@ -303,7 +303,7 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 	case log.StackDriver:
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
-				return errors.New("stack driver can't include self channel")
+				return errors.ErrLogDriverCircularReference.Args("stack")
 			}
 
 			if err := registerHook(config, json, instance, stackChannel); err != nil {
@@ -341,7 +341,7 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		hook = &Hook{logHook}
 	default:
-		return errors.New("Error logging channel: " + channel)
+		return errors.ErrLogDriverNotSupported.Args(channel)
 	}
 
 	instance.SetFormatter(formatter.NewGeneral(config, json))

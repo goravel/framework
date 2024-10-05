@@ -10,4 +10,5 @@ var (
 	ModuleFilesystem = "filesystem"
 	ModuleGrpc       = "grpc"
 	ModuleHash       = "hash"
+	ModuleLog        = "log"
 )
