@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/database/orm"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 type Agent struct {
@@ -35,4 +36,6 @@ func TestMigrateCommand(t *testing.T) {
 		assert.Nil(t, query.Where("name", "goravel").First(&agent))
 		assert.True(t, agent.ID > 0)
 	}
+
+	defer assert.Nil(t, file.Remove("database"))
 }

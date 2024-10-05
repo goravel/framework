@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateResetCommand(t *testing.T) {
@@ -33,4 +34,6 @@ func TestMigrateResetCommand(t *testing.T) {
 		err := query.Where("name", "goravel").FirstOrFail(&agent)
 		assert.Error(t, err)
 	}
+
+	defer assert.Nil(t, file.Remove("database"))
 }

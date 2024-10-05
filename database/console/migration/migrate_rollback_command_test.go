@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateRollbackCommand(t *testing.T) {
@@ -39,4 +40,6 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		err = query.Where("name", "goravel").FirstOrFail(&agent1)
 		assert.Error(t, err)
 	}
+
+	defer assert.Nil(t, file.Remove("database"))
 }

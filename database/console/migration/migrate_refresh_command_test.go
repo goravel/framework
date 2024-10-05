@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateRefreshCommand(t *testing.T) {
@@ -68,4 +69,6 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, agent1.ID > 0)
 	}
+
+	defer assert.Nil(t, file.Remove("database"))
 }
