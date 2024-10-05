@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/database/console"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -26,7 +25,7 @@ func TestMigrateCommand(t *testing.T) {
 	for driver, testQuery := range testQueries {
 		query := testQuery.Query()
 		mockConfig := testQuery.MockConfig()
-		console.createMigrations(driver)
+		createMigrations(driver)
 
 		migrateCommand := NewMigrateCommand(mockConfig)
 		mockContext := &mocksconsole.Context{}

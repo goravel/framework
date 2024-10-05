@@ -10,7 +10,7 @@ import (
 
 func GetDriver(config config.Config) (contractsmigration.Driver, error) {
 	connection := config.GetString("database.default")
-	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
+	driver := config.GetString("database.migrations.driver")
 
 	switch driver {
 	case contractsmigration.DriverDefault:
