@@ -16,7 +16,7 @@ type Schema interface {
 	// Sql Execute a sql directly.
 	Sql(sql string)
 	// Table Modify a table on the schema.
-	//Table(table string, callback func(table Blueprint))
+	Table(table string, callback func(table Blueprint)) error
 }
 
 type Migration interface {

@@ -56,3 +56,11 @@ func getType(grammar migration.Grammar, column migration.ColumnDefinition) strin
 
 	return ""
 }
+
+func prefixArray(prefix string, values []string) []string {
+	for i, value := range values {
+		values[i] = prefix + " " + value
+	}
+
+	return values
+}

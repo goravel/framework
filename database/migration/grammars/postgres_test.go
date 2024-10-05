@@ -19,15 +19,73 @@ func TestPostgresSuite(t *testing.T) {
 }
 
 func (s *PostgresSuite) SetupTest() {
-	postgres := &Postgres{
-		attributeCommands: []string{"comment"},
-		serials:           []string{"bigInteger"},
-	}
-	postgres.modifiers = []func(contractsmigration.Blueprint, contractsmigration.ColumnDefinition) string{
-		postgres.ModifyDefault,
+	s.grammar = NewPostgres()
+}
+
+func (s *PostgresSuite) TestCompileChange() {
+	var (
+		mockBlueprint *mocksmigration.Blueprint
+		mockColumn1   *mocksmigration.ColumnDefinition
+		mockColumn2   *mocksmigration.ColumnDefinition
+	)
+
+	tests := []struct {
+		name      string
+		setup     func()
+		expectSql string
+	}{
+		{
+			name: "no changes",
+			setup: func() {
+				mockBlueprint.EXPECT().GetChangedColumns().Return([]contractsmigration.ColumnDefinition{}).Once()
+			},
+		},
+		{
+			name: "single change",
+			setup: func() {
+				mockColumn1.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn1.EXPECT().GetDefault().Return("goravel").Twice()
+				mockColumn1.EXPECT().GetName().Return("name").Once()
+				mockColumn1.EXPECT().GetChange().Return(true).Times(3)
+				mockColumn1.EXPECT().GetNullable().Return(true).Once()
+				mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+				mockBlueprint.EXPECT().GetChangedColumns().Return([]contractsmigration.ColumnDefinition{mockColumn1}).Once()
+			},
+			expectSql: "alter table users alter column name set default 'goravel', alter column name drop not null",
+		},
+		{
+			name: "multiple changes",
+			setup: func() {
+				mockColumn1.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn1.EXPECT().GetDefault().Return("goravel").Twice()
+				mockColumn1.EXPECT().GetName().Return("name").Once()
+				mockColumn1.EXPECT().GetChange().Return(true).Times(3)
+				mockColumn1.EXPECT().GetNullable().Return(true).Once()
+				mockColumn2.EXPECT().GetAutoIncrement().Return(false).Once()
+				mockColumn2.EXPECT().GetDefault().Return(1).Twice()
+				mockColumn2.EXPECT().GetName().Return("age").Once()
+				mockColumn2.EXPECT().GetChange().Return(true).Times(3)
+				mockColumn2.EXPECT().GetNullable().Return(false).Once()
+				mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+				mockBlueprint.EXPECT().GetChangedColumns().Return([]contractsmigration.ColumnDefinition{mockColumn1, mockColumn2}).Once()
+			},
+			expectSql: "alter table users alter column name set default 'goravel', alter column name drop not null, alter column age set default '1', alter column age set not null",
+		},
 	}
 
-	s.grammar = postgres
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockBlueprint = mocksmigration.NewBlueprint(s.T())
+			mockColumn1 = mocksmigration.NewColumnDefinition(s.T())
+			mockColumn2 = mocksmigration.NewColumnDefinition(s.T())
+
+			test.setup()
+
+			sql := s.grammar.CompileChange(mockBlueprint)
+
+			s.Equal(test.expectSql, sql)
+		})
+	}
 }
 
 func (s *PostgresSuite) TestCompileCreate() {

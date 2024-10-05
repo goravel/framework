@@ -152,6 +152,10 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar migration.Grammar) []
 	var statements []string
 	for _, command := range r.commands {
 		switch command.Name {
+		case commandAdd:
+			statements = append(statements, grammar.CompileAdd(r))
+		case commandChange:
+			statements = append(statements, grammar.CompileChange(r))
 		case commandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case commandDropIfExists:

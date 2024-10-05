@@ -22,6 +22,98 @@ func (_m *Grammar) EXPECT() *Grammar_Expecter {
 	return &Grammar_Expecter{mock: &_m.Mock}
 }
 
+// CompileAdd provides a mock function with given fields: blueprint
+func (_m *Grammar) CompileAdd(blueprint migration.Blueprint) string {
+	ret := _m.Called(blueprint)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileAdd")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(migration.Blueprint) string); ok {
+		r0 = rf(blueprint)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileAdd_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileAdd'
+type Grammar_CompileAdd_Call struct {
+	*mock.Call
+}
+
+// CompileAdd is a helper method to define mock.On call
+//   - blueprint migration.Blueprint
+func (_e *Grammar_Expecter) CompileAdd(blueprint interface{}) *Grammar_CompileAdd_Call {
+	return &Grammar_CompileAdd_Call{Call: _e.mock.On("CompileAdd", blueprint)}
+}
+
+func (_c *Grammar_CompileAdd_Call) Run(run func(blueprint migration.Blueprint)) *Grammar_CompileAdd_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(migration.Blueprint))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileAdd_Call) Return(_a0 string) *Grammar_CompileAdd_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(migration.Blueprint) string) *Grammar_CompileAdd_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileChange provides a mock function with given fields: blueprint
+func (_m *Grammar) CompileChange(blueprint migration.Blueprint) string {
+	ret := _m.Called(blueprint)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileChange")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(migration.Blueprint) string); ok {
+		r0 = rf(blueprint)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileChange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileChange'
+type Grammar_CompileChange_Call struct {
+	*mock.Call
+}
+
+// CompileChange is a helper method to define mock.On call
+//   - blueprint migration.Blueprint
+func (_e *Grammar_Expecter) CompileChange(blueprint interface{}) *Grammar_CompileChange_Call {
+	return &Grammar_CompileChange_Call{Call: _e.mock.On("CompileChange", blueprint)}
+}
+
+func (_c *Grammar_CompileChange_Call) Run(run func(blueprint migration.Blueprint)) *Grammar_CompileChange_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(migration.Blueprint))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileChange_Call) Return(_a0 string) *Grammar_CompileChange_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(migration.Blueprint) string) *Grammar_CompileChange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileCreate provides a mock function with given fields: blueprint, query
 func (_m *Grammar) CompileCreate(blueprint migration.Blueprint, query orm.Query) string {
 	ret := _m.Called(blueprint, query)
