@@ -4,6 +4,7 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/mail/console"
 	"github.com/goravel/framework/support/color"
 )
@@ -15,7 +16,16 @@ type ServiceProvider struct {
 
 func (route *ServiceProvider) Register(app foundation.Application) {
 	app.Bind(Binding, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeConfig(), app.MakeQueue()), nil
+		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleMail)
+		}
+
+		queueFacade := app.MakeQueue()
+		if queueFacade == nil {
+			return nil, errors.ErrQueueFacadeNotSet.SetModule(errors.ModuleMail)
+		}
+		return NewApplication(config, queueFacade), nil
 	})
 }
 

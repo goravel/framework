@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -39,5 +40,5 @@ func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 			return val, nil
 		}
 	}
-	return nil, ErrFileNotExist
+	return nil, errors.ErrLangFileNotExist
 }

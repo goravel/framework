@@ -98,7 +98,7 @@ func (m *Manager) getDefaultDriver() string {
 
 func (m *Manager) extendDefaultDrivers() {
 	if err := m.Extend("file", m.createFileDriver); err != nil {
-		panic(errors.ErrSessionDriverExtensionFailed.Args("file", err))
+		panic(errors.ErrSessionDriverExtensionFailed.SetModule(errors.ModuleSession).Args("file", err))
 	}
 }
 

@@ -11,4 +11,6 @@ var (
 	ModuleGrpc       = "grpc"
 	ModuleHash       = "hash"
 	ModuleLog        = "log"
+	ModuleMail       = "mail"
+	ModuleLang       = "lang"
 )

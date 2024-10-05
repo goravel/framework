@@ -53,4 +53,6 @@ var (
 	ErrLogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	ErrLogDriverCircularReference = New("%s driver can't include self channel").SetModule(ModuleLog)
 	ErrLogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
+
+	ErrLangFileNotExist = New("translation file does not exist")
 )
