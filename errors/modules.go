@@ -13,4 +13,5 @@ var (
 	ModuleLog        = "log"
 	ModuleMail       = "mail"
 	ModuleLang       = "lang"
+	ModuleTesting    = "testing"
 )
