@@ -5,7 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type Driver string
@@ -21,19 +21,15 @@ type Storage struct {
 	drivers map[string]filesystem.Driver
 }
 
-func NewStorage(config config.Config) *Storage {
+func NewStorage(config config.Config) (*Storage, error) {
 	defaultDisk := config.GetString("filesystems.default")
 	if defaultDisk == "" {
-		color.Red().Println("[filesystem] please set default disk")
-
-		return nil
+		return nil, errors.ErrFilesystemDiskNotSet.SetModule(errors.ModuleFilesystem)
 	}
 
 	driver, err := NewDriver(config, defaultDisk)
 	if err != nil {
-		color.Red().Printf("[filesystem] %s\n", err)
-
-		return nil
+		return nil, err
 	}
 
 	drivers := make(map[string]filesystem.Driver)
@@ -42,7 +38,7 @@ func NewStorage(config config.Config) *Storage {
 		Driver:  driver,
 		config:  config,
 		drivers: drivers,
-	}
+	}, nil
 }
 
 func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
@@ -61,10 +57,10 @@ func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
 			return driverCallback()
 		}
 
-		return nil, fmt.Errorf("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)", disk)
+		return nil, errors.ErrFilesystemInvalidCustomDriver.Args(disk)
 	}
 
-	return nil, fmt.Errorf("invalid driver: %s, only support local, custom", driver)
+	return nil, errors.ErrFilesystemDriverNotSupported.Args(driver)
 }
 
 func (r *Storage) Disk(disk string) filesystem.Driver {

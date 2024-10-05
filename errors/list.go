@@ -38,4 +38,9 @@ var (
 	ErrCryptMissingValueKey     = New("decrypt payload error: missing value key")
 
 	ErrEventListenerNotBind = New("event %v doesn't bind listeners")
+
+	ErrFilesystemDiskNotSet          = New("please set default disk")
+	ErrFilesystemDriverNotSupported  = New("invalid driver: %s, only support local, custom")
+	ErrFilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
+	ErrFilesystemDeleteDirectory     = New("can't delete directory, please use DeleteDirectory")
 )
