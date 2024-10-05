@@ -1,12 +1,12 @@
 package gorm
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/errors"
 	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
