@@ -25,7 +25,7 @@ func NewMemory(config config.Config) (*Memory, error) {
 	}, nil
 }
 
-// Add Driver an item in the cache if the key does not exist.
+// Add an item in the cache if the key does not exist.
 func (r *Memory) Add(key string, value any, t time.Duration) bool {
 	if t != NoExpiration {
 		time.AfterFunc(t, func() {
@@ -59,7 +59,7 @@ func (r *Memory) Decrement(key string, value ...int64) (int64, error) {
 	}
 }
 
-// Forever Driver an item in the cache indefinitely.
+// Forever Put an item in the cache indefinitely.
 func (r *Memory) Forever(key string, value any) bool {
 	if err := r.Put(key, value, NoExpiration); err != nil {
 		return false
@@ -132,7 +132,7 @@ func (r *Memory) GetString(key string, def ...string) string {
 	return cast.ToString(r.Get(key, def[0]))
 }
 
-// Has Check an item exists in the cache.
+// Has Checks an item exists in the cache.
 func (r *Memory) Has(key string) bool {
 	_, exist := r.instance.Load(r.key(key))
 	return exist
@@ -176,7 +176,7 @@ func (r *Memory) Pull(key string, def ...any) any {
 	return res
 }
 
-// Put Driver an item in the cache for a given number of seconds.
+// Put an item in the cache for a given number of seconds.
 func (r *Memory) Put(key string, value any, t time.Duration) error {
 	if t != NoExpiration {
 		time.AfterFunc(t, func() {

@@ -8,11 +8,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-//go:generate mockery --name=Driver
-type Driver interface {
-	New(store string) (cache.Driver, error)
-}
-
 type DriverImpl struct {
 	config config.Config
 }

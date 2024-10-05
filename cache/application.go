@@ -9,7 +9,6 @@ import (
 type Application struct {
 	cache.Driver
 	config config.Config
-	driver Driver
 	log    log.Log
 	stores map[string]cache.Driver
 }
@@ -24,7 +23,6 @@ func NewApplication(config config.Config, log log.Log, store string) (*Applicati
 	return &Application{
 		Driver: instance,
 		config: config,
-		driver: driver,
 		log:    log,
 		stores: map[string]cache.Driver{
 			store: instance,
@@ -37,7 +35,8 @@ func (app *Application) Store(name string) cache.Driver {
 		return driver
 	}
 
-	instance, err := app.driver.New(name)
+	driver := NewDriverImpl(app.config)
+	instance, err := driver.New(name)
 	if err != nil {
 		app.log.Error(err)
 
