@@ -22,11 +22,9 @@ func NewApplication(config config.Config, json foundation.Json) (*Application, e
 	instance := logrus.New()
 	instance.SetLevel(logrus.DebugLevel)
 
-	if config != nil {
-		if channel := config.GetString("logging.default"); channel != "" {
-			if err := registerHook(config, json, instance, channel); err != nil {
-				return nil, err
-			}
+	if channel := config.GetString("logging.default"); channel != "" {
+		if err := registerHook(config, json, instance, channel); err != nil {
+			return nil, err
 		}
 	}
 

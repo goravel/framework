@@ -282,6 +282,15 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 }
 
 func (s *ApplicationTestSuite) TestMakeLog() {
+	mockConfig := &mocksconfig.Config{}
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	mockConfig.EXPECT().GetString("logging.default").Return("").Once()
+
+	s.app.SetJson(json.NewJson())
+
 	serviceProvider := &frameworklog.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
@@ -333,6 +342,10 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		return mockConfig, nil
 	})
 
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
+	})
+
 	serviceProvider := &database.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
@@ -342,6 +355,10 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 func (s *ApplicationTestSuite) TestMakeQueue() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
+	})
+
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
 	})
 
 	serviceProvider := &queue.ServiceProvider{}
@@ -385,6 +402,9 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	})
 	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
+	})
+	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
+		return &mockscache.Cache{}, nil
 	})
 
 	serviceProvider := &schedule.ServiceProvider{}
