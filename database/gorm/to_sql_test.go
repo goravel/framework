@@ -120,7 +120,7 @@ func (s *ToSqlTestSuite) TestGet() {
 }
 
 func (s *ToSqlTestSuite) TestInvalidModel() {
-	s.mockLog.EXPECT().Errorf("failed to get sql: %v", errors.New("invalid model")).Once()
+	s.mockLog.EXPECT().Error(errors.ErrOrmQueryInvalidModel.Args("")).Once()
 	toSql := NewToSql(s.query.Model("invalid").Where("id", 1).(*Query), s.mockLog, false)
 	s.Empty(toSql.Get([]User{}))
 }
