@@ -9,4 +9,5 @@ var (
 	ModuleFacade     = "facade"
 	ModuleFilesystem = "filesystem"
 	ModuleGrpc       = "grpc"
+	ModuleHash       = "hash"
 )
