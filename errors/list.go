@@ -41,7 +41,7 @@ var (
 
 	ErrEventListenerNotBind = New("event %v doesn't bind listeners")
 
-	ErrFilesystemDiskNotSet          = New("please set default disk")
+	ErrFilesystemDefaultDiskNotSet   = New("please set default disk")
 	ErrFilesystemDriverNotSupported  = New("invalid driver: %s, only support local, custom")
 	ErrFilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 	ErrFilesystemDeleteDirectory     = New("can't delete directory, please use DeleteDirectory")
@@ -63,4 +63,7 @@ var (
 	ErrValidationDataInvalidType = New("data must be map[string]any or map[string][]string or struct")
 	ErrValidationEmptyData       = New("data can't be empty")
 	ErrValidationEmptyRules      = New("rules can't be empty")
+
+	ErrRouteDefaultDriverNotSet = New("please set default driver")
+	ErrRouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 )

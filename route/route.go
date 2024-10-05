@@ -1,11 +1,9 @@
 package route
 
 import (
-	"fmt"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/route"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type Driver string
@@ -15,25 +13,21 @@ type Route struct {
 	config config.Config
 }
 
-func NewRoute(config config.Config) *Route {
+func NewRoute(config config.Config) (*Route, error) {
 	defaultDriver := config.GetString("http.default")
 	if defaultDriver == "" {
-		color.Red().Println("[http] please set default driver")
-
-		return nil
+		return nil, errors.ErrRouteDefaultDriverNotSet.SetModule(errors.ModuleRoute)
 	}
 
 	driver, err := NewDriver(config, defaultDriver)
 	if err != nil {
-		color.Red().Printf("[http] %s\n", err)
-
-		return nil
+		return nil, err
 	}
 
 	return &Route{
 		Route:  driver,
 		config: config,
-	}
+	}, nil
 }
 
 func NewDriver(config config.Config, driver string) (route.Route, error) {
@@ -47,5 +41,5 @@ func NewDriver(config config.Config, driver string) (route.Route, error) {
 		return engineCallback()
 	}
 
-	return nil, fmt.Errorf("init route driver fail: route must be implement route.Route or func() (route.Route, error)")
+	return nil, errors.ErrRouteInvalidDriver.Args(driver).SetModule(errors.ModuleRoute)
 }

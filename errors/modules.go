@@ -15,4 +15,5 @@ var (
 	ModuleLang       = "lang"
 	ModuleTesting    = "testing"
 	ModuleSchedule   = "schedule"
+	ModuleRoute      = "route"
 )
