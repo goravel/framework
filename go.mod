@@ -1,6 +1,8 @@
 module github.com/goravel/framework
 
-go 1.22
+go 1.22.0
+
+toolchain go1.23.2
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
@@ -35,7 +37,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.4
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.28.0
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
+	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6
 	google.golang.org/grpc v1.67.1
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.9
