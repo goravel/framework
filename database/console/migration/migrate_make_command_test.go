@@ -48,7 +48,6 @@ func TestMigrateMakeCommand(t *testing.T) {
 			name: "default driver",
 			setup: func() {
 				mockContext.On("Argument", 0).Return("create_users_table").Once()
-				mockConfig.On("GetString", "database.default").Return("postgres").Once()
 				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
 			},
 			assert: func() {
@@ -63,7 +62,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockContext.On("Argument", 0).Return("create_users_table").Once()
 				mockConfig.On("GetString", "database.default").Return("postgres").Once()
 				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverSql).Once()
-				mockConfig.On("GetString", "database.connections.postgres.charset").Return("postgres").Once()
+				mockConfig.On("GetString", "database.connections.postgres.driver").Return("postgres").Once()
+				mockConfig.On("GetString", "database.connections.postgres.charset").Return("utf8mb4").Once()
 			},
 			assert: func() {
 				up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
