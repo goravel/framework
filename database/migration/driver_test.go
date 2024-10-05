@@ -55,6 +55,8 @@ func (s *DriverSuite) TestCreate() {
 		})
 	}
 
-	carbon.UnsetTestNow()
-	s.NoError(file.Remove("database"))
+	defer func() {
+		carbon.UnsetTestNow()
+		s.NoError(file.Remove("database"))
+	}()
 }

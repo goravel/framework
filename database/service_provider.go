@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	consolecontract "github.com/goravel/framework/contracts/console"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
-	migration2 "github.com/goravel/framework/database/console/migration"
+	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
 )
 
@@ -53,14 +53,14 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
 		config := app.MakeConfig()
 		seeder := app.MakeSeeder()
-		artisanFacade.Register([]consolecontract.Command{
-			migration2.NewMigrateMakeCommand(config),
-			migration2.NewMigrateCommand(config),
-			migration2.NewMigrateRollbackCommand(config),
-			migration2.NewMigrateResetCommand(config),
-			migration2.NewMigrateRefreshCommand(config, artisanFacade),
-			migration2.NewMigrateFreshCommand(config, artisanFacade),
-			migration2.NewMigrateStatusCommand(config),
+		artisanFacade.Register([]contractsconsole.Command{
+			consolemigration.NewMigrateMakeCommand(config),
+			consolemigration.NewMigrateCommand(config),
+			consolemigration.NewMigrateRollbackCommand(config),
+			consolemigration.NewMigrateResetCommand(config),
+			consolemigration.NewMigrateRefreshCommand(config, artisanFacade),
+			consolemigration.NewMigrateFreshCommand(config, artisanFacade),
+			consolemigration.NewMigrateStatusCommand(config),
 			console.NewModelMakeCommand(),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
