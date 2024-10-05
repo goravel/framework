@@ -8,15 +8,13 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/migration"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
 
 type DriverSuite struct {
 	suite.Suite
-	mockConfig *mocksconfig.Config
-	drivers    map[string]migration.Driver
+	drivers map[string]migration.Driver
 }
 
 func TestDriverSuite(t *testing.T) {
