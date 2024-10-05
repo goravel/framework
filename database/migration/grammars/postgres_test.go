@@ -90,26 +90,51 @@ func (s *PostgresSuite) TestCompileChange() {
 
 func (s *PostgresSuite) TestCompileCreate() {
 	mockColumn1 := mocksmigration.NewColumnDefinition(s.T())
-	mockColumn1.EXPECT().GetName().Return("id").Once()
-	mockColumn1.EXPECT().GetType().Return("integer").Once()
-	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
-	mockColumn1.EXPECT().GetChange().Return(false).Once()
-	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
-
 	mockColumn2 := mocksmigration.NewColumnDefinition(s.T())
-	mockColumn2.EXPECT().GetName().Return("name").Once()
-	mockColumn2.EXPECT().GetType().Return("string").Once()
-	mockColumn2.EXPECT().GetLength().Return(100).Once()
-	mockColumn2.EXPECT().GetChange().Return(false).Once()
-	mockColumn2.EXPECT().GetDefault().Return(nil).Once()
-
 	mockBlueprint := mocksmigration.NewBlueprint(s.T())
+
+	// postgres.go::CompileCreate
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+	// utils.go::getColumns
 	mockBlueprint.EXPECT().GetAddedColumns().Return([]contractsmigration.ColumnDefinition{
 		mockColumn1, mockColumn2,
 	}).Once()
+	// utils.go::getColumns
+	mockColumn1.EXPECT().GetName().Return("id").Once()
+	// utils.go::getType
+	mockColumn1.EXPECT().GetType().Return("integer").Once()
+	// postgres.go::TypeInteger
+	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
+	// postgres.go::ModifyDefault
+	mockColumn1.EXPECT().GetChange().Return(false).Once()
+	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
+	// postgres.go::ModifyIncrement
+	mockColumn1.EXPECT().GetChange().Return(false).Once()
+	mockBlueprint.EXPECT().HasCommand("primary").Return(false).Once()
+	mockColumn1.EXPECT().GetType().Return("integer").Once()
+	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
+	// postgres.go::ModifyNullable
+	mockColumn1.EXPECT().GetChange().Return(false).Once()
+	mockColumn1.EXPECT().GetNullable().Return(false).Once()
 
-	s.Equal("create table users (id serial,name varchar(100))",
+	// utils.go::getColumns
+	mockColumn2.EXPECT().GetName().Return("name").Once()
+	// utils.go::getType
+	mockColumn2.EXPECT().GetType().Return("string").Once()
+	// postgres.go::TypeString
+	mockColumn2.EXPECT().GetLength().Return(100).Once()
+	// postgres.go::ModifyDefault
+	mockColumn2.EXPECT().GetChange().Return(false).Once()
+	mockColumn2.EXPECT().GetDefault().Return(nil).Once()
+	// postgres.go::ModifyIncrement
+	mockColumn2.EXPECT().GetChange().Return(false).Once()
+	mockBlueprint.EXPECT().HasCommand("primary").Return(false).Once()
+	mockColumn2.EXPECT().GetType().Return("string").Once()
+	// postgres.go::ModifyNullable
+	mockColumn2.EXPECT().GetChange().Return(false).Once()
+	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+
+	s.Equal("create table users (id serial primary key not null,name varchar(100) null)",
 		s.grammar.CompileCreate(mockBlueprint, nil))
 }
 
