@@ -6,6 +6,7 @@ var (
 	ErrCacheFacadeNotSet  = New("cache facade is not initialized")
 	ErrOrmFacadeNotSet    = New("orm facade is not initialized")
 	ErrLogFacadeNotSet    = New("log facade is not initialized")
+	ErrQueueFacadeNotSet  = New("queue facade is not initialized")
 
 	ErrCacheSupportRequired = New("cache support is required")
 	ErrCacheForeverFailed   = New("cache forever is failed")
@@ -34,4 +35,6 @@ var (
 	ErrCryptInvalidAppKeyLength = New("invalid APP_KEY length: %d bytes")
 	ErrCryptMissingIVKey        = New("decrypt payload error: missing iv key")
 	ErrCryptMissingValueKey     = New("decrypt payload error: missing value key")
+
+	ErrEventListenerNotBind = New("event %v doesn't bind listeners")
 )

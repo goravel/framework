@@ -5,4 +5,5 @@ var (
 	ModuleAuth    = "auth"
 	ModuleCache   = "cache"
 	ModuleCrypt   = "crypt"
+	ModuleEvent   = "event"
 )

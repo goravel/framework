@@ -1,10 +1,9 @@
 package event
 
 import (
-	"fmt"
-
 	"github.com/goravel/framework/contracts/event"
 	queuecontract "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 )
 
 type Task struct {
@@ -25,7 +24,7 @@ func NewTask(queue queuecontract.Queue, args []event.Arg, event event.Event, lis
 
 func (receiver *Task) Dispatch() error {
 	if len(receiver.listeners) == 0 {
-		return fmt.Errorf("event %v doesn't bind listeners", receiver.event)
+		return errors.ErrEventListenerNotBind.Args(receiver.event)
 	}
 
 	handledArgs, err := receiver.event.Handle(receiver.args)
