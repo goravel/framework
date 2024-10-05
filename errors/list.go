@@ -43,4 +43,10 @@ var (
 	ErrFilesystemDriverNotSupported  = New("invalid driver: %s, only support local, custom")
 	ErrFilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 	ErrFilesystemDeleteDirectory     = New("can't delete directory, please use DeleteDirectory")
+
+	ErrGrpcEmptyClientHost         = New("client's host can't be empty")
+	ErrGrpcEmptyClientPost         = New("client's port can't be empty")
+	ErrGrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
+	ErrGrpcEmptyServerHost         = New("host can't be empty")
+	ErrGrpcEmptyServerPort         = New("port can't be empty")
 )

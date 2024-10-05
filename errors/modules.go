@@ -8,4 +8,5 @@ var (
 	ModuleEvent      = "event"
 	ModuleFacade     = "facade"
 	ModuleFilesystem = "filesystem"
+	ModuleGrpc       = "grpc"
 )
