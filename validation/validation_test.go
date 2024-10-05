@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/errors"
 )
 
 func TestMake(t *testing.T) {
@@ -54,7 +54,7 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.New("data must be map[string]any or map[string][]string or struct"),
+			expectErr: errors.ErrValidationDataInvalidType,
 		},
 		{
 			description: "error when data is empty map",
@@ -63,13 +63,13 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.New("data can't be empty"),
+			expectErr: errors.ErrValidationEmptyData,
 		},
 		{
 			description: "error when rule is empty map",
 			data:        map[string]any{"a": "b"},
 			rules:       map[string]string{},
-			expectErr:   errors.New("rules can't be empty"),
+			expectErr:   errors.ErrValidationEmptyRules,
 		},
 		{
 			description: "error when PrepareForValidation returns error",
@@ -174,7 +174,9 @@ func TestMake(t *testing.T) {
 			validation := NewValidation()
 			validator, err := validation.Make(test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
-			assert.Equal(t, test.expectErr, err, test.description)
+			if test.expectErr != nil {
+				assert.EqualError(t, err, test.expectErr.Error(), test.description)
+			}
 
 			if validator != nil {
 				var data Data

@@ -1,13 +1,13 @@
 package validation
 
 import (
-	"errors"
 	"net/url"
 
 	"github.com/gookit/validate"
 
 	"github.com/goravel/framework/contracts/http"
 	validatecontract "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/errors"
 )
 
 type Validation struct {
@@ -24,10 +24,10 @@ func NewValidation() *Validation {
 
 func (r *Validation) Make(data any, rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if data == nil {
-		return nil, errors.New("data can't be empty")
+		return nil, errors.ErrValidationEmptyData
 	}
 	if len(rules) == 0 {
-		return nil, errors.New("rules can't be empty")
+		return nil, errors.ErrValidationEmptyRules
 	}
 
 	var dataFace validate.DataFace
@@ -37,7 +37,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 		dataFace = td
 	case map[string]any:
 		if len(td) == 0 {
-			return nil, errors.New("data can't be empty")
+			return nil, errors.ErrValidationEmptyData
 		}
 		dataFace = validate.FromMap(td)
 	case url.Values:
@@ -47,7 +47,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	default:
 		dataFace, err = validate.FromStruct(data)
 		if err != nil {
-			return nil, errors.New("data must be map[string]any or map[string][]string or struct")
+			return nil, errors.ErrValidationDataInvalidType
 		}
 	}
 
@@ -70,7 +70,7 @@ func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
 	for _, filter := range filters {
 		for _, existFilterName := range existFilterNames {
 			if existFilterName == filter.Signature() {
-				return errors.New("duplicate filter name: " + filter.Signature())
+				return errors.ErrValidationDuplicateFilter.Args(filter.Signature())
 			}
 		}
 	}
@@ -84,7 +84,7 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 	for _, rule := range rules {
 		for _, existRuleName := range existRuleNames {
 			if existRuleName == rule.Signature() {
-				return errors.New("duplicate rule name: " + rule.Signature())
+				return errors.ErrValidationDuplicateRule.Args(rule.Signature())
 			}
 		}
 	}

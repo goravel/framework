@@ -55,4 +55,10 @@ var (
 	ErrLogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
 	ErrLangFileNotExist = New("translation file does not exist")
+
+	ErrValidationDuplicateFilter = New("duplicate filter name: %s")
+	ErrValidationDuplicateRule   = New("duplicate rule name: %s")
+	ErrValidationDataInvalidType = New("data must be map[string]any or map[string][]string or struct")
+	ErrValidationEmptyData       = New("data can't be empty")
+	ErrValidationEmptyRules      = New("rules can't be empty")
 )
