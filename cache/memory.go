@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,6 +10,7 @@ import (
 
 	contractscache "github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/errors"
 )
 
 type Memory struct {
@@ -37,7 +37,7 @@ func (r *Memory) Add(key string, value any, t time.Duration) bool {
 	return !loaded
 }
 
-// Decrement Decrement the value of an item in the cache.
+// Decrement decrements the value of an item in the cache.
 func (r *Memory) Decrement(key string, value ...int64) (int64, error) {
 	if len(value) == 0 {
 		value = append(value, 1)
@@ -55,7 +55,7 @@ func (r *Memory) Decrement(key string, value ...int64) (int64, error) {
 	case *int32:
 		return int64(atomic.AddInt32(nv, int32(-value[0]))), nil
 	default:
-		return 0, fmt.Errorf("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32", key)
+		return 0, errors.ErrCacheMemoryInvalidIntValueType.Args(key)
 	}
 }
 
@@ -155,7 +155,7 @@ func (r *Memory) Increment(key string, value ...int64) (int64, error) {
 	case *int32:
 		return int64(atomic.AddInt32(nv, int32(value[0]))), nil
 	default:
-		return 0, fmt.Errorf("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32", key)
+		return 0, errors.ErrCacheMemoryInvalidIntValueType.Args(key)
 	}
 }
 

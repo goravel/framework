@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/errors"
 )
 
 //go:generate mockery --name=Driver
@@ -30,17 +31,12 @@ func (d *DriverImpl) New(store string) (cache.Driver, error) {
 	case "custom":
 		return d.custom(store)
 	default:
-		return nil, fmt.Errorf("invalid driver: %s, only support memory, custom\n", driver)
+		return nil, errors.ErrCacheDriverNotSupported.Args(driver)
 	}
 }
 
 func (d *DriverImpl) memory() (cache.Driver, error) {
-	memory, err := NewMemory(d.config)
-	if err != nil {
-		return nil, fmt.Errorf("init memory driver error: %v", err)
-	}
-
-	return memory, nil
+	return NewMemory(d.config)
 }
 
 func (d *DriverImpl) custom(store string) (cache.Driver, error) {
@@ -51,5 +47,5 @@ func (d *DriverImpl) custom(store string) (cache.Driver, error) {
 		return custom()
 	}
 
-	return nil, fmt.Errorf("%s doesn't implement contracts/cache/store\n", store)
+	return nil, errors.ErrCacheStoreContractNotFulfilled.Args(store)
 }
