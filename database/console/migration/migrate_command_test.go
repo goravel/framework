@@ -1,16 +1,23 @@
-package console
+package migration
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/database/console"
 	"github.com/goravel/framework/database/gorm"
-	consolemocks "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/database/orm"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
 )
 
-func TestMigrateResetCommand(t *testing.T) {
+type Agent struct {
+	orm.Model
+	Name string
+}
+
+func TestMigrateCommand(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
@@ -19,18 +26,14 @@ func TestMigrateResetCommand(t *testing.T) {
 	for driver, testQuery := range testQueries {
 		query := testQuery.Query()
 		mockConfig := testQuery.MockConfig()
-		createMigrations(driver)
-
-		mockContext := consolemocks.NewContext(t)
+		console.createMigrations(driver)
 
 		migrateCommand := NewMigrateCommand(mockConfig)
+		mockContext := &mocksconsole.Context{}
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-		migrateResetCommand := NewMigrateResetCommand(mockConfig)
-		assert.Nil(t, migrateResetCommand.Handle(mockContext))
-
 		var agent Agent
-		err := query.Where("name", "goravel").FirstOrFail(&agent)
-		assert.Error(t, err)
+		assert.Nil(t, query.Where("name", "goravel").First(&agent))
+		assert.True(t, agent.ID > 0)
 	}
 }

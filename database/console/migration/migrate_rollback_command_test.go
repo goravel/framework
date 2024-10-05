@@ -1,10 +1,11 @@
-package console
+package migration
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/database/console"
 	"github.com/goravel/framework/database/gorm"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
@@ -19,7 +20,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 	for driver, testQuery := range testQueries {
 		query := testQuery.Query()
 		mockConfig := testQuery.MockConfig()
-		createMigrations(driver)
+		console.createMigrations(driver)
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.On("Option", "step").Return("1").Once()

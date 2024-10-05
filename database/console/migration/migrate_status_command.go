@@ -1,4 +1,4 @@
-package console
+package migration
 
 import (
 	_ "github.com/go-sql-driver/mysql"
