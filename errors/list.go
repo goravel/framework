@@ -29,4 +29,9 @@ var (
 	ErrCacheDriverNotSupported        = New("invalid driver: %s, only support memory, custom")
 	ErrCacheStoreContractNotFulfilled = New("%s doesn't implement contracts/cache/store")
 	ErrCacheMemoryInvalidIntValueType = New("value type of %s is not *atomic.Int64 or *int64 or *atomic.Int32 or *int32")
+
+	ErrCryptAppKeyNotSet        = New("APP_KEY is required in artisan environment")
+	ErrCryptInvalidAppKeyLength = New("invalid APP_KEY length: %d bytes")
+	ErrCryptMissingIVKey        = New("decrypt payload error: missing iv key")
+	ErrCryptMissingValueKey     = New("decrypt payload error: missing value key")
 )
