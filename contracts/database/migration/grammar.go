@@ -5,6 +5,10 @@ import (
 )
 
 type Grammar interface {
+	// CompileAdd Compile an add column command.
+	CompileAdd(blueprint Blueprint) string
+	// CompileChange Compile a change column command into a series of SQL statements.
+	CompileChange(blueprint Blueprint) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint, query orm.Query) string
 	// CompileDropIfExists Compile a drop table (if exists) command.

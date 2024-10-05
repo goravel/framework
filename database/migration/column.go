@@ -23,6 +23,10 @@ func (r *ColumnDefinition) AutoIncrement() migration.ColumnDefinition {
 	return r
 }
 
+func (r *ColumnDefinition) Change() {
+	r.change = convert.Pointer(true)
+}
+
 func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
 	if r.autoIncrement != nil {
 		return *r.autoIncrement
@@ -73,6 +77,12 @@ func (r *ColumnDefinition) GetType() (ttype string) {
 	}
 
 	return
+}
+
+func (r *ColumnDefinition) Nullable() migration.ColumnDefinition {
+	r.nullable = convert.Pointer(true)
+
+	return r
 }
 
 func (r *ColumnDefinition) Unsigned() migration.ColumnDefinition {

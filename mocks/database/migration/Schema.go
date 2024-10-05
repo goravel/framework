@@ -330,6 +330,53 @@ func (_c *Schema_Sql_Call) RunAndReturn(run func(string)) *Schema_Sql_Call {
 	return _c
 }
 
+// Table provides a mock function with given fields: table, callback
+func (_m *Schema) Table(table string, callback func(migration.Blueprint)) error {
+	ret := _m.Called(table, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Table")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, func(migration.Blueprint)) error); ok {
+		r0 = rf(table, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Schema_Table_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Table'
+type Schema_Table_Call struct {
+	*mock.Call
+}
+
+// Table is a helper method to define mock.On call
+//   - table string
+//   - callback func(migration.Blueprint)
+func (_e *Schema_Expecter) Table(table interface{}, callback interface{}) *Schema_Table_Call {
+	return &Schema_Table_Call{Call: _e.mock.On("Table", table, callback)}
+}
+
+func (_c *Schema_Table_Call) Run(run func(table string, callback func(migration.Blueprint))) *Schema_Table_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(func(migration.Blueprint)))
+	})
+	return _c
+}
+
+func (_c *Schema_Table_Call) Return(_a0 error) *Schema_Table_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_Table_Call) RunAndReturn(run func(string, func(migration.Blueprint)) error) *Schema_Table_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewSchema creates a new instance of Schema. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewSchema(t interface {

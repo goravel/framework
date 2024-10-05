@@ -1,8 +1,6 @@
 package migration
 
 import (
-	"fmt"
-
 	"github.com/goravel/framework/contracts/database/migration"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/support/convert"
@@ -48,8 +46,6 @@ func (r *Blueprint) BigInteger(column string) migration.ColumnDefinition {
 
 func (r *Blueprint) Build(query ormcontract.Query, grammar migration.Grammar) error {
 	for _, sql := range r.ToSql(query, grammar) {
-		// TODO remove
-		fmt.Println("sql:", sql)
 		if _, err := query.Exec(sql); err != nil {
 			return err
 		}
@@ -152,6 +148,10 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar migration.Grammar) []
 	var statements []string
 	for _, command := range r.commands {
 		switch command.Name {
+		case commandAdd:
+			statements = append(statements, grammar.CompileAdd(r))
+		case commandChange:
+			statements = append(statements, grammar.CompileChange(r))
 		case commandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case commandDropIfExists:

@@ -63,3 +63,8 @@ func TestGetType(t *testing.T) {
 
 	assert.Empty(t, getType(mockGrammar1, mockColumn1))
 }
+
+func TestPrefixArray(t *testing.T) {
+	values := []string{"a", "b", "c"}
+	assert.Equal(t, []string{"prefix a", "prefix b", "prefix c"}, prefixArray("prefix", values))
+}

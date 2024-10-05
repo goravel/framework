@@ -67,6 +67,38 @@ func (_c *ColumnDefinition_AutoIncrement_Call) RunAndReturn(run func() migration
 	return _c
 }
 
+// Change provides a mock function with given fields:
+func (_m *ColumnDefinition) Change() {
+	_m.Called()
+}
+
+// ColumnDefinition_Change_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Change'
+type ColumnDefinition_Change_Call struct {
+	*mock.Call
+}
+
+// Change is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) Change() *ColumnDefinition_Change_Call {
+	return &ColumnDefinition_Change_Call{Call: _e.mock.On("Change")}
+}
+
+func (_c *ColumnDefinition_Change_Call) Run(run func()) *ColumnDefinition_Change_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Change_Call) Return() *ColumnDefinition_Change_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ColumnDefinition_Change_Call) RunAndReturn(run func()) *ColumnDefinition_Change_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAutoIncrement provides a mock function with given fields:
 func (_m *ColumnDefinition) GetAutoIncrement() bool {
 	ret := _m.Called()
@@ -380,6 +412,53 @@ func (_c *ColumnDefinition_GetType_Call) Return(_a0 string) *ColumnDefinition_Ge
 }
 
 func (_c *ColumnDefinition_GetType_Call) RunAndReturn(run func() string) *ColumnDefinition_GetType_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Nullable provides a mock function with given fields:
+func (_m *ColumnDefinition) Nullable() migration.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Nullable")
+	}
+
+	var r0 migration.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() migration.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(migration.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Nullable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Nullable'
+type ColumnDefinition_Nullable_Call struct {
+	*mock.Call
+}
+
+// Nullable is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) Nullable() *ColumnDefinition_Nullable_Call {
+	return &ColumnDefinition_Nullable_Call{Call: _e.mock.On("Nullable")}
+}
+
+func (_c *ColumnDefinition_Nullable_Call) Run(run func()) *ColumnDefinition_Nullable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Nullable_Call) Return(_a0 migration.ColumnDefinition) *ColumnDefinition_Nullable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() migration.ColumnDefinition) *ColumnDefinition_Nullable_Call {
 	_c.Call.Return(run)
 	return _c
 }
