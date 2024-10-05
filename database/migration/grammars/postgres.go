@@ -29,6 +29,31 @@ func NewPostgres() *Postgres {
 	return postgres
 }
 
+func (r *Postgres) CompileAdd(blueprint migration.Blueprint) string {
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(prefixArray("add column", getColumns(r, blueprint)), ","))
+}
+
+func (r *Postgres) CompileChange(blueprint migration.Blueprint) string {
+	var columns []string
+	for _, column := range blueprint.GetChangedColumns() {
+		var changes []string
+
+		for _, modifier := range r.modifiers {
+			if change := modifier(blueprint, column); change != "" {
+				changes = append(changes, change)
+			}
+		}
+
+		columns = append(columns, strings.Join(prefixArray("alter column "+column.GetName(), changes), ", "))
+	}
+
+	if len(columns) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(columns, ", "))
+}
+
 func (r *Postgres) CompileCreate(blueprint migration.Blueprint, query orm.Query) string {
 	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
 }

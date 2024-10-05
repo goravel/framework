@@ -96,6 +96,14 @@ func (r *Schema) Sql(sql string) {
 	_, _ = r.orm.Connection(r.connection).Query().Exec(sql)
 }
 
+func (r *Schema) Table(table string, callback func(table migration.Blueprint)) error {
+	blueprint := r.createBlueprint(table)
+	callback(blueprint)
+
+	// TODO catch error and rollback
+	return r.build(blueprint)
+}
+
 func (r *Schema) build(blueprint migration.Blueprint) error {
 	return blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
 }
