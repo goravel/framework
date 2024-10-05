@@ -14,4 +14,5 @@ var (
 	ModuleMail       = "mail"
 	ModuleLang       = "lang"
 	ModuleTesting    = "testing"
+	ModuleSchedule   = "schedule"
 )

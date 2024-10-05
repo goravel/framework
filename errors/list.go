@@ -1,14 +1,15 @@
 package errors
 
 var (
-	ErrConfigFacadeNotSet  = New("config facade is not initialized")
-	ErrJSONParserNotSet    = New("JSON parser is not initialized")
-	ErrCacheFacadeNotSet   = New("cache facade is not initialized")
-	ErrOrmFacadeNotSet     = New("orm facade is not initialized")
-	ErrLogFacadeNotSet     = New("log facade is not initialized")
-	ErrQueueFacadeNotSet   = New("queue facade is not initialized")
-	ErrApplicationNotSet   = New("application instance is not initialized")
-	ErrArtisanFacadeNotSet = New("artisan facade is not initialized")
+	ErrConfigFacadeNotSet   = New("config facade is not initialized")
+	ErrJSONParserNotSet     = New("JSON parser is not initialized")
+	ErrCacheFacadeNotSet    = New("cache facade is not initialized")
+	ErrOrmFacadeNotSet      = New("orm facade is not initialized")
+	ErrLogFacadeNotSet      = New("log facade is not initialized")
+	ErrQueueFacadeNotSet    = New("queue facade is not initialized")
+	ErrApplicationNotSet    = New("application instance is not initialized")
+	ErrArtisanFacadeNotSet  = New("artisan facade is not initialized")
+	ErrScheduleFacadeNotSet = New("schedule facade is not initialized")
 
 	ErrCacheSupportRequired = New("cache support is required")
 	ErrCacheForeverFailed   = New("cache forever is failed")
