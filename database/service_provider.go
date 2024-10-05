@@ -21,8 +21,9 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
+		log := app.MakeLog()
 		connection := config.GetString("database.default")
-		orm, err := BuildOrm(ctx, config, connection, app.Refresh)
+		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
 			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
 		}
@@ -35,11 +36,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		log := app.MakeLog()
 
 		connection := config.GetString("database.default")
-		prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", connection))
-		schema := config.GetString(fmt.Sprintf("database.connections.%s.schema", connection))
-		blueprint := migration.NewBlueprint(prefix, schema)
 
-		return migration.NewSchema(blueprint, config, connection, log, orm), nil
+		return migration.NewSchema(config, connection, log, orm), nil
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil

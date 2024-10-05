@@ -53,7 +53,7 @@ func Throttle(name string) httpcontract.Middleware {
 
 func key(ctx httpcontract.Context, limit *httplimit.Limit, name string, index int) string {
 	// if no key is set, use the path and ip address as the default key
-	if len(limit.Key) == 0 {
+	if len(limit.Key) == 0 && ctx.Request() != nil {
 		return fmt.Sprintf("throttle:%s:%d:%s:%s", name, index, ctx.Request().Ip(), ctx.Request().Path())
 	}
 
@@ -64,6 +64,8 @@ func response(ctx httpcontract.Context, limit *httplimit.Limit) {
 	if limit.ResponseCallback != nil {
 		limit.ResponseCallback(ctx)
 	} else {
-		ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests)
+		if ctx.Request() != nil {
+			ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests)
+		}
 	}
 }
