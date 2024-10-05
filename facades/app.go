@@ -2,12 +2,13 @@ package facades
 
 import (
 	foundationcontract "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation"
 )
 
 func App() foundationcontract.Application {
 	if foundation.App == nil {
-		panic(ErrApplicationNotSet)
+		panic(errors.ErrApplicationNotSet.SetModule(errors.ModuleFacade))
 	} else {
 		return foundation.App
 	}

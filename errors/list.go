@@ -7,6 +7,7 @@ var (
 	ErrOrmFacadeNotSet    = New("orm facade is not initialized")
 	ErrLogFacadeNotSet    = New("log facade is not initialized")
 	ErrQueueFacadeNotSet  = New("queue facade is not initialized")
+	ErrApplicationNotSet  = New("application instance is not initialized")
 
 	ErrCacheSupportRequired = New("cache support is required")
 	ErrCacheForeverFailed   = New("cache forever is failed")
