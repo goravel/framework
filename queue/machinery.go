@@ -1,8 +1,6 @@
 package queue
 
 import (
-	"fmt"
-
 	"github.com/RichardKnop/machinery/v2"
 	redisbackend "github.com/RichardKnop/machinery/v2/backends/redis"
 	redisbroker "github.com/RichardKnop/machinery/v2/brokers/redis"
@@ -11,6 +9,7 @@ import (
 	"github.com/RichardKnop/machinery/v2/log"
 
 	logcontract "github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -35,7 +34,7 @@ func (m *Machinery) Server(connection string, queue string) (*machinery.Server, 
 		return m.redisServer(connection, queue), nil
 	}
 
-	return nil, fmt.Errorf("unknown queue driver: %s", driver)
+	return nil, errors.ErrQueueDriverNotSupported.Args(driver)
 }
 
 func (m *Machinery) redisServer(connection string, queue string) *machinery.Server {

@@ -3,6 +3,7 @@ package queue
 import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	queueConsole "github.com/goravel/framework/queue/console"
 )
 
@@ -13,7 +14,17 @@ type ServiceProvider struct {
 
 func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		return NewApplication(app.MakeConfig(), app.MakeLog()), nil
+		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleQueue)
+		}
+
+		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleQueue)
+		}
+
+		return NewApplication(config, log), nil
 	})
 }
 

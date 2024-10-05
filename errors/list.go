@@ -66,4 +66,9 @@ var (
 
 	ErrRouteDefaultDriverNotSet = New("please set default driver")
 	ErrRouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
+
+	ErrQueueEmptyJobSignature      = New("the Signature of job can't be empty")
+	ErrQueueDuplicateJobSignature  = New("job signature duplicate: %s, the names of Job and Listener cannot be duplicated")
+	ErrQueueEmptyListenerSignature = New("the Signature of listener can't be empty")
+	ErrQueueDriverNotSupported     = New("unknown queue driver: %s")
 )
