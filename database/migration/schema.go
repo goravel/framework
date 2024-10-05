@@ -9,6 +9,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/migration/grammars"
+	"github.com/goravel/framework/errors"
 )
 
 var _ migration.Schema = (*Schema)(nil)
@@ -74,7 +75,7 @@ func (r *Schema) HasTable(name string) bool {
 
 	tables, err := r.GetTables()
 	if err != nil {
-		r.log.Errorf("failed to get %s tables: %v", r.connection, err)
+		r.log.Errorf(errors.ErrSchemaFailedToGetTables.Args(r.connection, err).Error())
 		return false
 	}
 
@@ -118,6 +119,6 @@ func getGrammar(driver string) migration.Grammar {
 		// TODO Optimize here when implementing Mysql driver
 		return nil
 	default:
-		panic(fmt.Sprintf("unsupported database driver: %s", driver))
+		panic(errors.ErrSchemaDriverNotSupported.Args(driver))
 	}
 }

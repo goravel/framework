@@ -2,12 +2,12 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/framework/errors"
 )
 
 const BindingOrm = "goravel.orm"
@@ -21,19 +21,33 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
-		log := app.MakeLog()
-		connection := config.GetString("database.default")
-		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
-		if err != nil {
-			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
+		if config == nil {
+			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleOrm)
 		}
 
-		return orm, nil
+		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleOrm)
+		}
+
+		connection := config.GetString("database.default")
+		return BuildOrm(ctx, config, connection, log, app.Refresh)
 	})
 	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
-		orm := app.MakeOrm()
 		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
+
 		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
+
+		orm := app.MakeOrm()
+		if orm == nil {
+			return nil, errors.ErrOrmFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
 
 		connection := config.GetString("database.default")
 

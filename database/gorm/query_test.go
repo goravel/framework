@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
@@ -16,6 +15,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	supportdocker "github.com/goravel/framework/support/docker"
@@ -1721,7 +1721,7 @@ func (s *QueryTestSuite) TestFindOrFail() {
 				name: "error",
 				setup: func() {
 					var user User
-					s.ErrorIs(query.Query().FindOrFail(&user, 10000), orm.ErrRecordNotFound)
+					s.ErrorIs(query.Query().FindOrFail(&user, 10000), errors.ErrOrmRecordNotFound)
 				},
 			},
 		}
@@ -1848,7 +1848,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 				name: "fail",
 				setup: func() {
 					var user User
-					s.Equal(orm.ErrRecordNotFound, query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user))
+					s.Equal(errors.ErrOrmRecordNotFound, query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user))
 					s.Equal(uint(0), user.ID)
 				},
 			},
@@ -3496,12 +3496,12 @@ func TestFilterFindConditions(t *testing.T) {
 		{
 			name:       "condition is empty string",
 			conditions: []any{""},
-			expectErr:  ErrorMissingWhereClause,
+			expectErr:  errors.ErrOrmMissingWhereClause,
 		},
 		{
 			name:       "condition is empty slice",
 			conditions: []any{[]string{}},
-			expectErr:  ErrorMissingWhereClause,
+			expectErr:  errors.ErrOrmMissingWhereClause,
 		},
 		{
 			name:       "condition has value",

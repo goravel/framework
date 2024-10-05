@@ -3,7 +3,6 @@ package gorm
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 )
 
@@ -55,7 +55,7 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 	configBuilder := db.NewConfigBuilder(config, connection)
 	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
-		return nil, errors.New("not found database configuration")
+		return nil, errors.ErrOrmDatabaseConfigNotFound
 	}
 
 	gorm, err := NewGorm(config, configBuilder)
@@ -99,7 +99,7 @@ func (r *Query) Create(value any) error {
 	query = query.buildConditions()
 
 	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
-		return errors.New("cannot set Select and Omits at the same time")
+		return errors.ErrOrmQuerySelectAndOmitsConflict
 	}
 
 	if len(query.instance.Statement.Selects) > 0 {
@@ -237,7 +237,7 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 	}
 
 	if res.RowsAffected == 0 {
-		return orm.ErrRecordNotFound
+		return errors.ErrOrmRecordNotFound
 	}
 
 	return query.retrieved(dest)
@@ -291,7 +291,7 @@ func (r *Query) FirstOrCreate(dest any, conds ...any) error {
 	query = query.buildConditions()
 
 	if len(conds) == 0 {
-		return errors.New("query condition is require")
+		return errors.ErrOrmQueryConditionRequired
 	}
 
 	var res *gormio.DB
@@ -321,7 +321,7 @@ func (r *Query) FirstOrFail(dest any) error {
 
 	if err := query.instance.First(dest).Error; err != nil {
 		if errors.Is(err, gormio.ErrRecordNotFound) {
-			return orm.ErrRecordNotFound
+			return errors.ErrOrmRecordNotFound
 		}
 
 		return err
@@ -435,16 +435,16 @@ func (r *Query) Limit(limit int) contractsorm.Query {
 
 func (r *Query) Load(model any, relation string, args ...any) error {
 	if relation == "" {
-		return errors.New("relation cannot be empty")
+		return errors.ErrOrmQueryEmptyRelation
 	}
 
 	destType := reflect.TypeOf(model)
 	if destType.Kind() != reflect.Pointer {
-		return errors.New("model must be pointer")
+		return errors.ErrOrmQueryModelNotPointer
 	}
 
 	if id := database.GetID(model); id == nil {
-		return errors.New("id cannot be empty")
+		return errors.ErrOrmQueryEmptyId
 	}
 
 	copyDest := copyStruct(model)
@@ -467,7 +467,7 @@ func (r *Query) Load(model any, relation string, args ...any) error {
 func (r *Query) LoadMissing(model any, relation string, args ...any) error {
 	destType := reflect.TypeOf(model)
 	if destType.Kind() != reflect.Pointer {
-		return errors.New("model must be pointer")
+		return errors.ErrOrmQueryModelNotPointer
 	}
 
 	t := reflect.TypeOf(model).Elem()
@@ -620,7 +620,7 @@ func (r *Query) Save(value any) error {
 	query = query.buildConditions()
 
 	if len(query.instance.Statement.Selects) > 0 && len(query.instance.Statement.Omits) > 0 {
-		return errors.New("cannot set Select and Omits at the same time")
+		return errors.ErrOrmQuerySelectAndOmitsConflict
 	}
 
 	id := database.GetID(value)
@@ -741,7 +741,7 @@ func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
 	query := r.buildConditions()
 
 	if _, ok := column.(string); !ok && len(value) > 0 {
-		return nil, errors.New("parameter error, please check the document")
+		return nil, errors.ErrOrmQueryInvalidParameter
 	}
 
 	var singleUpdate bool
@@ -1269,7 +1269,7 @@ func (r *Query) omitCreate(value any) error {
 	if len(r.instance.Statement.Omits) > 1 {
 		for _, val := range r.instance.Statement.Omits {
 			if val == orm.Associations {
-				return errors.New("cannot set orm.Associations and other fields at the same time")
+				return errors.ErrOrmQueryAssociationsConflict
 			}
 		}
 	}
@@ -1363,7 +1363,7 @@ func (r *Query) selectCreate(value any) error {
 	if len(r.instance.Statement.Selects) > 1 {
 		for _, val := range r.instance.Statement.Selects {
 			if val == orm.Associations {
-				return errors.New("cannot set orm.Associations and other fields at the same time")
+				return errors.ErrOrmQueryAssociationsConflict
 			}
 		}
 	}
@@ -1424,7 +1424,7 @@ func (r *Query) updated(dest any) error {
 
 func (r *Query) updates(values any) (*contractsorm.Result, error) {
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
-		return nil, errors.New("cannot set Select and Omits at the same time")
+		return nil, errors.ErrOrmQuerySelectAndOmitsConflict
 	}
 
 	if len(r.instance.Statement.Selects) > 0 {
@@ -1472,14 +1472,14 @@ func filterFindConditions(conds ...any) error {
 		switch cond := conds[0].(type) {
 		case string:
 			if cond == "" {
-				return ErrorMissingWhereClause
+				return errors.ErrOrmMissingWhereClause
 			}
 		default:
 			reflectValue := reflect.Indirect(reflect.ValueOf(cond))
 			switch reflectValue.Kind() {
 			case reflect.Slice, reflect.Array:
 				if reflectValue.Len() == 0 {
-					return ErrorMissingWhereClause
+					return errors.ErrOrmMissingWhereClause
 				}
 			}
 		}
@@ -1510,9 +1510,9 @@ func getModelConnection(model any) (string, error) {
 
 	if modelType.Kind() != reflect.Struct {
 		if modelType.PkgPath() == "" {
-			return "", errors.New("invalid model")
+			return "", errors.ErrOrmQueryInvalidModel.Args("")
 		}
-		return "", fmt.Errorf("%s: %s.%s", "invalid model", modelType.PkgPath(), modelType.Name())
+		return "", errors.ErrOrmQueryInvalidModel.Args(fmt.Sprintf(": %s.%s", modelType.PkgPath(), modelType.Name()))
 	}
 
 	newModel := reflect.New(modelType)
