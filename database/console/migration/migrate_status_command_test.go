@@ -1,4 +1,4 @@
-package console
+package migration
 
 import (
 	"testing"
@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateStatusCommand(t *testing.T) {
@@ -35,4 +36,6 @@ func TestMigrateStatusCommand(t *testing.T) {
 
 		assert.Nil(t, migrateStatusCommand.Handle(mockContext))
 	}
+
+	defer assert.Nil(t, file.Remove("database"))
 }
