@@ -13,7 +13,7 @@ import (
 type File struct {
 	path    string
 	minutes int
-	mu      sync.Mutex
+	mu      sync.RWMutex
 }
 
 func NewFile(path string, minutes int) *File {
@@ -62,8 +62,8 @@ func (f *File) Open(string, string) error {
 }
 
 func (f *File) Read(id string) (string, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 
 	path := f.getFilePath(id)
 	if file.Exists(path) {
