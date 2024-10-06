@@ -3,9 +3,10 @@ package database
 import (
 	"context"
 
-	consolecontract "github.com/goravel/framework/contracts/console"
+	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
+	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
 	"github.com/goravel/framework/errors"
 )
@@ -66,14 +67,14 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
 		config := app.MakeConfig()
 		seeder := app.MakeSeeder()
-		artisanFacade.Register([]consolecontract.Command{
-			console.NewMigrateMakeCommand(config),
-			console.NewMigrateCommand(config),
-			console.NewMigrateRollbackCommand(config),
-			console.NewMigrateResetCommand(config),
-			console.NewMigrateRefreshCommand(config, artisanFacade),
-			console.NewMigrateFreshCommand(config, artisanFacade),
-			console.NewMigrateStatusCommand(config),
+		artisanFacade.Register([]contractsconsole.Command{
+			consolemigration.NewMigrateMakeCommand(config),
+			consolemigration.NewMigrateCommand(config),
+			consolemigration.NewMigrateRollbackCommand(config),
+			consolemigration.NewMigrateResetCommand(config),
+			consolemigration.NewMigrateRefreshCommand(config, artisanFacade),
+			consolemigration.NewMigrateFreshCommand(config, artisanFacade),
+			consolemigration.NewMigrateStatusCommand(config),
 			console.NewModelMakeCommand(),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),

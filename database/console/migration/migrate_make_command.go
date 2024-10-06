@@ -1,14 +1,11 @@
-package console
+package migration
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	contractsmigration "github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/database/migration"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -21,24 +18,24 @@ func NewMigrateMakeCommand(config config.Config) *MigrateMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateMakeCommand) Signature() string {
+func (r *MigrateMakeCommand) Signature() string {
 	return "make:migration"
 }
 
 // Description The console command description.
-func (receiver *MigrateMakeCommand) Description() string {
+func (r *MigrateMakeCommand) Description() string {
 	return "Create a new migration file"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateMakeCommand) Extend() command.Extend {
+func (r *MigrateMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
+func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// It's possible for the developer to specify the tables to modify in this
 	// schema operation. The developer may also specify if this table needs
 	// to be freshly created, so we can create the appropriate migrations.
@@ -59,19 +56,11 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	var migrationDriver contractsmigration.Driver
-	driver := receiver.config.GetString("database.migration.driver")
-
-	switch driver {
-	case contractsmigration.DriverDefault:
-		migrationDriver = migration.NewDefaultDriver()
-	case contractsmigration.DriverSql:
-		migrationDriver = migration.NewSqlDriver(receiver.config)
-	default:
-		return fmt.Errorf("unsupported migration driver: %s", driver)
+	migrationDriver, err := GetDriver(r.config)
+	if err != nil {
+		return err
 	}
 
-	// Write the migration file to disk.
 	if err := migrationDriver.Create(name); err != nil {
 		return err
 	}

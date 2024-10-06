@@ -1,4 +1,4 @@
-package console
+package migration
 
 import (
 	"database/sql"
@@ -44,7 +44,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		instance, err := mysql.WithInstance(db, &mysql.Config{
-			MigrationsTable: config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations.table"),
 		})
 		if err != nil {
 			return nil, err
@@ -63,7 +63,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		instance, err := postgres.WithInstance(db, &postgres.Config{
-			MigrationsTable: config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations.table"),
 		})
 		if err != nil {
 			return nil, err
@@ -82,7 +82,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		instance, err := sqlite.WithInstance(db, &sqlite.Config{
-			MigrationsTable: config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations.table"),
 		})
 		if err != nil {
 			return nil, err
@@ -101,7 +101,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		}
 
 		instance, err := sqlserver.WithInstance(db, &sqlserver.Config{
-			MigrationsTable: config.GetString("database.migrations"),
+			MigrationsTable: config.GetString("database.migrations.table"),
 		})
 
 		if err != nil {
