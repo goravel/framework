@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-
 	"io"
 
 	"github.com/goravel/framework/contracts/config"
