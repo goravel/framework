@@ -22,12 +22,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleOrm)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleOrm)
 		}
 
 		log := app.MakeLog()
 		if log == nil {
-			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleOrm)
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleOrm)
 		}
 
 		connection := config.GetString("database.default")
@@ -36,17 +36,17 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleSchema)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
 		}
 
 		log := app.MakeLog()
 		if log == nil {
-			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleSchema)
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleSchema)
 		}
 
 		orm := app.MakeOrm()
 		if orm == nil {
-			return nil, errors.ErrOrmFacadeNotSet.SetModule(errors.ModuleSchema)
+			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleSchema)
 		}
 
 		connection := config.GetString("database.default")

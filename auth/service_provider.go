@@ -21,16 +21,16 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 	app.BindWith(BindingAuth, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleAuth)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 		cacheFacade := app.MakeCache()
 		if cacheFacade == nil {
-			return nil, errors.ErrCacheFacadeNotSet.SetModule(errors.ModuleAuth)
+			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
 		ormFacade := app.MakeOrm()
 		if ormFacade == nil {
-			return nil, errors.ErrOrmFacadeNotSet.SetModule(errors.ModuleAuth)
+			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
 		return NewAuth(config.GetString("auth.defaults.guard"),

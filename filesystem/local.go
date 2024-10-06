@@ -82,7 +82,7 @@ func (r *Local) Delete(files ...string) error {
 		}
 
 		if fileInfo.IsDir() {
-			return errors.ErrFilesystemDeleteDirectory
+			return errors.FilesystemDeleteDirectory
 		}
 	}
 

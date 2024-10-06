@@ -54,7 +54,7 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.ErrValidationDataInvalidType,
+			expectErr: errors.ValidationDataInvalidType,
 		},
 		{
 			description: "error when data is empty map",
@@ -63,13 +63,13 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.ErrValidationEmptyData,
+			expectErr: errors.ValidationEmptyData,
 		},
 		{
 			description: "error when rule is empty map",
 			data:        map[string]any{"a": "b"},
 			rules:       map[string]string{},
-			expectErr:   errors.ErrValidationEmptyRules,
+			expectErr:   errors.ValidationEmptyRules,
 		},
 		{
 			description: "error when PrepareForValidation returns error",

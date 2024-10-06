@@ -303,7 +303,7 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 	case log.StackDriver:
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
-				return errors.ErrLogDriverCircularReference.Args("stack")
+				return errors.LogDriverCircularReference.Args("stack")
 			}
 
 			if err := registerHook(config, json, instance, stackChannel); err != nil {
@@ -341,7 +341,7 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		hook = &Hook{logHook}
 	default:
-		return errors.ErrLogDriverNotSupported.Args(channel)
+		return errors.LogDriverNotSupported.Args(channel)
 	}
 
 	instance.SetFormatter(formatter.NewGeneral(config, json))

@@ -16,7 +16,7 @@ type Route struct {
 func NewRoute(config config.Config) (*Route, error) {
 	defaultDriver := config.GetString("http.default")
 	if defaultDriver == "" {
-		return nil, errors.ErrRouteDefaultDriverNotSet.SetModule(errors.ModuleRoute)
+		return nil, errors.RouteDefaultDriverNotSet.SetModule(errors.ModuleRoute)
 	}
 
 	driver, err := NewDriver(config, defaultDriver)
@@ -41,5 +41,5 @@ func NewDriver(config config.Config, driver string) (route.Route, error) {
 		return engineCallback()
 	}
 
-	return nil, errors.ErrRouteInvalidDriver.Args(driver).SetModule(errors.ModuleRoute)
+	return nil, errors.RouteInvalidDriver.Args(driver).SetModule(errors.ModuleRoute)
 }

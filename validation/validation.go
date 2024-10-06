@@ -24,10 +24,10 @@ func NewValidation() *Validation {
 
 func (r *Validation) Make(data any, rules map[string]string, options ...validatecontract.Option) (validatecontract.Validator, error) {
 	if data == nil {
-		return nil, errors.ErrValidationEmptyData
+		return nil, errors.ValidationEmptyData
 	}
 	if len(rules) == 0 {
-		return nil, errors.ErrValidationEmptyRules
+		return nil, errors.ValidationEmptyRules
 	}
 
 	var dataFace validate.DataFace
@@ -37,7 +37,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 		dataFace = td
 	case map[string]any:
 		if len(td) == 0 {
-			return nil, errors.ErrValidationEmptyData
+			return nil, errors.ValidationEmptyData
 		}
 		dataFace = validate.FromMap(td)
 	case url.Values:
@@ -47,7 +47,7 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	default:
 		dataFace, err = validate.FromStruct(data)
 		if err != nil {
-			return nil, errors.ErrValidationDataInvalidType
+			return nil, errors.ValidationDataInvalidType
 		}
 	}
 
@@ -70,7 +70,7 @@ func (r *Validation) AddFilters(filters []validatecontract.Filter) error {
 	for _, filter := range filters {
 		for _, existFilterName := range existFilterNames {
 			if existFilterName == filter.Signature() {
-				return errors.ErrValidationDuplicateFilter.Args(filter.Signature())
+				return errors.ValidationDuplicateFilter.Args(filter.Signature())
 			}
 		}
 	}
@@ -84,7 +84,7 @@ func (r *Validation) AddRules(rules []validatecontract.Rule) error {
 	for _, rule := range rules {
 		for _, existRuleName := range existRuleNames {
 			if existRuleName == rule.Signature() {
-				return errors.ErrValidationDuplicateRule.Args(rule.Signature())
+				return errors.ValidationDuplicateRule.Args(rule.Signature())
 			}
 		}
 	}

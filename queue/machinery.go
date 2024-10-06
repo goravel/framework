@@ -34,7 +34,7 @@ func (m *Machinery) Server(connection string, queue string) (*machinery.Server, 
 		return m.redisServer(connection, queue), nil
 	}
 
-	return nil, errors.ErrQueueDriverNotSupported.Args(driver)
+	return nil, errors.QueueDriverNotSupported.Args(driver)
 }
 
 func (m *Machinery) redisServer(connection string, queue string) *machinery.Server {

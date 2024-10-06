@@ -24,7 +24,7 @@ type Database struct {
 func NewDatabase(app foundation.Application, connection string) (*Database, error) {
 	config := app.MakeConfig()
 	if config == nil {
-		return nil, errors.ErrConfigFacadeNotSet
+		return nil, errors.ConfigFacadeNotSet
 	}
 
 	if connection == "" {
@@ -33,7 +33,7 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
-		return nil, errors.ErrArtisanFacadeNotSet
+		return nil, errors.ArtisanFacadeNotSet
 	}
 
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))

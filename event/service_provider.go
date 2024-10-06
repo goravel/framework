@@ -16,7 +16,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		queueFacade := app.MakeQueue()
 		if queueFacade == nil {
-			return nil, errors.ErrQueueFacadeNotSet.SetModule(errors.ModuleEvent)
+			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleEvent)
 		}
 
 		return NewApplication(queueFacade), nil

@@ -24,7 +24,7 @@ func NewTask(queue queuecontract.Queue, args []event.Arg, event event.Event, lis
 
 func (receiver *Task) Dispatch() error {
 	if len(receiver.listeners) == 0 {
-		return errors.ErrEventListenerNotBind.Args(receiver.event)
+		return errors.EventListenerNotBind.Args(receiver.event)
 	}
 
 	handledArgs, err := receiver.event.Handle(receiver.args)

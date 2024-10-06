@@ -91,7 +91,7 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 
 	f.Error(err)
 	f.Nil(translations)
-	f.EqualError(err, errors.ErrLangFileNotExist.Error())
+	f.EqualError(err, errors.LangFileNotExist.Error())
 }
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {

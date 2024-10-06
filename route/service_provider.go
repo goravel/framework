@@ -14,7 +14,7 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleRoute)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleRoute)
 		}
 
 		return NewRoute(config)

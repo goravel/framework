@@ -55,7 +55,7 @@ func (r *Memory) Decrement(key string, value ...int64) (int64, error) {
 	case *int32:
 		return int64(atomic.AddInt32(nv, int32(-value[0]))), nil
 	default:
-		return 0, errors.ErrCacheMemoryInvalidIntValueType.Args(key)
+		return 0, errors.CacheMemoryInvalidIntValueType.Args(key)
 	}
 }
 
@@ -155,7 +155,7 @@ func (r *Memory) Increment(key string, value ...int64) (int64, error) {
 	case *int32:
 		return int64(atomic.AddInt32(nv, int32(value[0]))), nil
 	default:
-		return 0, errors.ErrCacheMemoryInvalidIntValueType.Args(key)
+		return 0, errors.CacheMemoryInvalidIntValueType.Args(key)
 	}
 }
 

@@ -11,11 +11,11 @@ func jobs2Tasks(jobs []queue.Job) (map[string]any, error) {
 
 	for _, job := range jobs {
 		if job.Signature() == "" {
-			return nil, errors.ErrQueueEmptyJobSignature
+			return nil, errors.QueueEmptyJobSignature
 		}
 
 		if tasks[job.Signature()] != nil {
-			return nil, errors.ErrQueueDuplicateJobSignature.Args(job.Signature())
+			return nil, errors.QueueDuplicateJobSignature.Args(job.Signature())
 		}
 
 		tasks[job.Signature()] = job.Handle
@@ -30,7 +30,7 @@ func eventsToTasks(events map[event.Event][]event.Listener) (map[string]any, err
 	for _, listeners := range events {
 		for _, listener := range listeners {
 			if listener.Signature() == "" {
-				return nil, errors.ErrQueueEmptyListenerSignature
+				return nil, errors.QueueEmptyListenerSignature
 			}
 
 			if tasks[listener.Signature()] != nil {

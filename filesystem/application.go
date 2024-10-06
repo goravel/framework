@@ -24,7 +24,7 @@ type Storage struct {
 func NewStorage(config config.Config) (*Storage, error) {
 	defaultDisk := config.GetString("filesystems.default")
 	if defaultDisk == "" {
-		return nil, errors.ErrFilesystemDefaultDiskNotSet.SetModule(errors.ModuleFilesystem)
+		return nil, errors.FilesystemDefaultDiskNotSet.SetModule(errors.ModuleFilesystem)
 	}
 
 	driver, err := NewDriver(config, defaultDisk)
@@ -57,10 +57,10 @@ func NewDriver(config config.Config, disk string) (filesystem.Driver, error) {
 			return driverCallback()
 		}
 
-		return nil, errors.ErrFilesystemInvalidCustomDriver.Args(disk)
+		return nil, errors.FilesystemInvalidCustomDriver.Args(disk)
 	}
 
-	return nil, errors.ErrFilesystemDriverNotSupported.Args(driver)
+	return nil, errors.FilesystemDriverNotSupported.Args(driver)
 }
 
 func (r *Storage) Disk(disk string) filesystem.Driver {

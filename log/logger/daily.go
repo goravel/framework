@@ -33,7 +33,7 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 	var hook logrus.Hook
 	logPath := daily.config.GetString(channel + ".path")
 	if logPath == "" {
-		return hook, errors.ErrLogEmptyLogFilePath
+		return hook, errors.LogEmptyLogFilePath
 	}
 
 	ext := filepath.Ext(logPath)

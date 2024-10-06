@@ -78,7 +78,7 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 func (r *Orm) DB() (*sql.DB, error) {
 	query, ok := r.Query().(*gorm.Query)
 	if !ok {
-		return nil, errors.ErrOrmUnexpectedQueryType.Args(r.Query())
+		return nil, errors.OrmUnexpectedQueryType.Args(r.Query())
 	}
 
 	return query.Instance().DB()

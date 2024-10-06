@@ -32,7 +32,7 @@ func TestGetDialectors(t *testing.T) {
 					Connection: "postgres",
 				},
 			},
-			expectError: errors.ErrOrmFailedToGenerateDNS.Args("postgres"),
+			expectError: errors.OrmFailedToGenerateDNS.Args("postgres"),
 		},
 		{
 			name: "Happy path - mysql",

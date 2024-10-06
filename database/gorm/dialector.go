@@ -19,7 +19,7 @@ func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 		var dialector gorm.Dialector
 		dsn := db.Dsn(config)
 		if dsn == "" {
-			return nil, errors.ErrOrmFailedToGenerateDNS.Args(config.Connection)
+			return nil, errors.OrmFailedToGenerateDNS.Args(config.Connection)
 		}
 
 		switch config.Driver {
@@ -38,7 +38,7 @@ func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 				DSN: dsn,
 			})
 		default:
-			return nil, errors.ErrOrmDriverNotSupported.Args(config.Driver)
+			return nil, errors.OrmDriverNotSupported.Args(config.Driver)
 		}
 
 		dialectors = append(dialectors, dialector)

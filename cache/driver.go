@@ -26,7 +26,7 @@ func (d *DriverImpl) New(store string) (cache.Driver, error) {
 	case "custom":
 		return d.custom(store)
 	default:
-		return nil, errors.ErrCacheDriverNotSupported.Args(driver)
+		return nil, errors.CacheDriverNotSupported.Args(driver)
 	}
 }
 
@@ -42,5 +42,5 @@ func (d *DriverImpl) custom(store string) (cache.Driver, error) {
 		return custom()
 	}
 
-	return nil, errors.ErrCacheStoreContractNotFulfilled.Args(store)
+	return nil, errors.CacheStoreContractNotFulfilled.Args(store)
 }

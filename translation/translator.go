@@ -157,7 +157,7 @@ func (t *Translator) SetLocale(locale string) context.Context {
 }
 
 func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
-	if err := t.load(locale, group); err != nil && !errors.Is(err, errors.ErrLangFileNotExist) {
+	if err := t.load(locale, group); err != nil && !errors.Is(err, errors.LangFileNotExist) {
 		t.logger.Panic(err)
 		return t.key
 	}

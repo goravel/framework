@@ -117,7 +117,7 @@ func (s *AuthTestSuite) TestLoginUsingID_EmptySecret() {
 
 	token, err := s.auth.LoginUsingID(1)
 	s.Empty(token)
-	s.ErrorIs(err, errors.ErrAuthEmptySecret)
+	s.ErrorIs(err, errors.AuthEmptySecret)
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -128,7 +128,7 @@ func (s *AuthTestSuite) TestLoginUsingID_InvalidKey() {
 
 	token, err := s.auth.LoginUsingID("")
 	s.Empty(token)
-	s.ErrorIs(err, errors.ErrAuthInvalidKey)
+	s.ErrorIs(err, errors.AuthInvalidKey)
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -198,7 +198,7 @@ func (s *AuthTestSuite) TestLogin_ErrorModel() {
 	errorUser.Name = "Goravel"
 	token, err := s.auth.Login(&errorUser)
 	s.Empty(token)
-	s.EqualError(err, errors.ErrAuthNoPrimaryKeyField.Error())
+	s.EqualError(err, errors.AuthNoPrimaryKeyField.Error())
 }
 
 func (s *AuthTestSuite) TestLogin_NoPrimaryKey() {
@@ -212,7 +212,7 @@ func (s *AuthTestSuite) TestLogin_NoPrimaryKey() {
 	user.Name = "Goravel"
 	token, err := s.auth.Login(&user)
 	s.Empty(token)
-	s.ErrorIs(err, errors.ErrAuthNoPrimaryKeyField)
+	s.ErrorIs(err, errors.AuthNoPrimaryKeyField)
 }
 
 func (s *AuthTestSuite) TestParse_TokenDisabled() {
@@ -221,7 +221,7 @@ func (s *AuthTestSuite) TestParse_TokenDisabled() {
 
 	payload, err := s.auth.Parse(token)
 	s.Nil(payload)
-	s.EqualError(err, errors.ErrAuthTokenDisabled.Error())
+	s.EqualError(err, errors.AuthTokenDisabled.Error())
 }
 
 func (s *AuthTestSuite) TestParse_TokenInvalid() {
@@ -260,7 +260,7 @@ func (s *AuthTestSuite) TestParse_TokenExpired() {
 		ExpireAt: jwt.NewNumericDate(expireAt).Local(),
 		IssuedAt: jwt.NewNumericDate(issuedAt).Local(),
 	}, payload)
-	s.ErrorIs(err, errors.ErrAuthTokenExpired)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	carbon.UnsetTestNow()
 
@@ -271,7 +271,7 @@ func (s *AuthTestSuite) TestParse_InvalidCache() {
 	auth := NewAuth(testUserGuard, nil, s.mockConfig, s.mockContext, s.mockOrm)
 	payload, err := auth.Parse("1")
 	s.Nil(payload)
-	s.EqualError(err, errors.ErrCacheSupportRequired.SetModule(errors.ModuleAuth).Error())
+	s.EqualError(err, errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 }
 
 func (s *AuthTestSuite) TestParse_Success() {
@@ -326,7 +326,7 @@ func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
 	_, err := s.auth.Parse(token)
-	s.ErrorIs(err, errors.ErrAuthInvalidToken)
+	s.ErrorIs(err, errors.AuthInvalidToken)
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -334,7 +334,7 @@ func (s *AuthTestSuite) TestParse_ExpiredAndInvalid() {
 func (s *AuthTestSuite) TestUser_NoParse() {
 	var user User
 	err := s.auth.User(user)
-	s.EqualError(err, errors.ErrAuthParseTokenFirst.Error())
+	s.EqualError(err, errors.AuthParseTokenFirst.Error())
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -380,7 +380,7 @@ func (s *AuthTestSuite) TestID_TokenExpired() {
 
 	// Parse the token
 	_, err = s.auth.Parse(token)
-	s.ErrorIs(err, errors.ErrAuthTokenExpired)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	// Now, call the ID method and expect it to return an empty value
 	id, _ := s.auth.Id()
@@ -397,7 +397,7 @@ func (s *AuthTestSuite) TestID_TokenInvalid() {
 	s.mockCache.On("GetBool", "jwt:disabled:"+token, false).Return(false).Once()
 
 	_, err := s.auth.Parse(token)
-	s.ErrorIs(err, errors.ErrAuthInvalidToken)
+	s.ErrorIs(err, errors.AuthInvalidToken)
 
 	id, _ := s.auth.Id()
 	s.Empty(id)
@@ -441,11 +441,11 @@ func (s *AuthTestSuite) TestUser_Expired() {
 
 	payload, err := s.auth.Parse(token)
 	s.NotNil(payload)
-	s.ErrorIs(err, errors.ErrAuthTokenExpired)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	var user User
 	err = s.auth.User(&user)
-	s.EqualError(err, errors.ErrAuthTokenExpired.Error())
+	s.EqualError(err, errors.AuthTokenExpired.Error())
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(2).Once()
 
@@ -478,11 +478,11 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	payload, err := s.auth.Parse(token)
 	s.NotNil(payload)
-	s.ErrorIs(err, errors.ErrAuthTokenExpired)
+	s.ErrorIs(err, errors.AuthTokenExpired)
 
 	var user User
 	err = s.auth.User(&user)
-	s.EqualError(err, errors.ErrAuthTokenExpired.Error())
+	s.EqualError(err, errors.AuthTokenExpired.Error())
 
 	s.mockConfig.On("GetInt", "jwt.refresh_ttl").Return(1).Once()
 
@@ -490,7 +490,7 @@ func (s *AuthTestSuite) TestUser_RefreshExpired() {
 
 	token, err = s.auth.Refresh()
 	s.Empty(token)
-	s.EqualError(err, errors.ErrAuthRefreshTimeExceeded.Error())
+	s.EqualError(err, errors.AuthRefreshTimeExceeded.Error())
 
 	carbon.UnsetTestNow()
 
@@ -577,7 +577,7 @@ func (s *AuthTestSuite) TestUser_Success_MultipleParse() {
 func (s *AuthTestSuite) TestRefresh_NotParse() {
 	token, err := s.auth.Refresh()
 	s.Empty(token)
-	s.EqualError(err, errors.ErrAuthParseTokenFirst.Error())
+	s.EqualError(err, errors.AuthParseTokenFirst.Error())
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -602,7 +602,7 @@ func (s *AuthTestSuite) TestRefresh_RefreshTimeExceeded() {
 
 	token, err = s.auth.Refresh()
 	s.Empty(token)
-	s.EqualError(err, errors.ErrAuthRefreshTimeExceeded.Error())
+	s.EqualError(err, errors.AuthRefreshTimeExceeded.Error())
 
 	carbon.UnsetTestNow()
 
@@ -653,7 +653,7 @@ func (s *AuthTestSuite) TestLogout_CacheUnsupported() {
 	token, err := s.auth.LoginUsingID(1)
 	s.NotEmpty(token)
 	s.Nil(err)
-	s.EqualError(s.auth.Logout(), errors.ErrCacheSupportRequired.SetModule(errors.ModuleAuth).Error())
+	s.EqualError(s.auth.Logout(), errors.CacheSupportRequired.SetModule(errors.ModuleAuth).Error())
 
 	s.mockConfig.AssertExpectations(s.T())
 }
@@ -740,7 +740,7 @@ func (s *AuthTestSuite) TestLogout_Error_TTL_Is_0() {
 
 	s.mockCache.On("Forever", testifymock.Anything, true).Return(false).Once()
 
-	s.EqualError(s.auth.Logout(), errors.ErrCacheForeverFailed.SetModule(errors.ModuleAuth).Error())
+	s.EqualError(s.auth.Logout(), errors.CacheForeverFailed.SetModule(errors.ModuleAuth).Error())
 
 	s.mockConfig.AssertExpectations(s.T())
 }

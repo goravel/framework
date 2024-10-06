@@ -28,7 +28,7 @@ func NewSingle(config config.Config, json foundation.Json) *Single {
 func (single *Single) Handle(channel string) (logrus.Hook, error) {
 	logPath := single.config.GetString(channel + ".path")
 	if logPath == "" {
-		return nil, errors.ErrLogEmptyLogFilePath
+		return nil, errors.LogEmptyLogFilePath
 	}
 
 	logPath = filepath.Join(support.RelativePath, logPath)

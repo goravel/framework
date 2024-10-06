@@ -8,7 +8,7 @@ import (
 
 func App() foundationcontract.Application {
 	if foundation.App == nil {
-		panic(errors.ErrApplicationNotSet.SetModule(errors.ModuleFacade))
+		panic(errors.ApplicationNotSet.SetModule(errors.ModuleFacade))
 	} else {
 		return foundation.App
 	}

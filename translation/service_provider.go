@@ -16,12 +16,12 @@ func (translation *ServiceProvider) Register(app foundation.Application) {
 	app.BindWith(Binding, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleLang)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLang)
 		}
 
 		logger := app.MakeLog()
 		if logger == nil {
-			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleLang)
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleLang)
 		}
 
 		locale := config.GetString("app.locale")

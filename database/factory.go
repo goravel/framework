@@ -60,7 +60,7 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 				return err
 			}
 			if attributes == nil {
-				return errors.ErrOrmFactoryMissingAttributes.SetModule(errors.ModuleOrm)
+				return errors.OrmFactoryMissingAttributes.SetModule(errors.ModuleOrm)
 			}
 			decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 				Squash: true,
@@ -84,7 +84,7 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 			return err
 		}
 		if attributes == nil {
-			return errors.ErrOrmFactoryMissingAttributes.SetModule(errors.ModuleOrm)
+			return errors.OrmFactoryMissingAttributes.SetModule(errors.ModuleOrm)
 		}
 		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 			Squash: true,
@@ -101,7 +101,7 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 func (f *FactoryImpl) getRawAttributes(value any, attributes ...map[string]any) (map[string]any, error) {
 	factoryModel, exist := value.(factory.Model)
 	if !exist {
-		return nil, errors.ErrOrmFactoryMissingMethod.Args(reflect.TypeOf(value).String()).SetModule(errors.ModuleOrm)
+		return nil, errors.OrmFactoryMissingMethod.Args(reflect.TypeOf(value).String()).SetModule(errors.ModuleOrm)
 	}
 
 	definition := factoryModel.Factory().Definition()

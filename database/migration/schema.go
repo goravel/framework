@@ -75,7 +75,7 @@ func (r *Schema) HasTable(name string) bool {
 
 	tables, err := r.GetTables()
 	if err != nil {
-		r.log.Errorf(errors.ErrSchemaFailedToGetTables.Args(r.connection, err).Error())
+		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.connection, err).Error())
 		return false
 	}
 
@@ -127,6 +127,6 @@ func getGrammar(driver string) migration.Grammar {
 		// TODO Optimize here when implementing Mysql driver
 		return nil
 	default:
-		panic(errors.ErrSchemaDriverNotSupported.Args(driver))
+		panic(errors.SchemaDriverNotSupported.Args(driver))
 	}
 }

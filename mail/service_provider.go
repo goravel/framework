@@ -18,12 +18,12 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 	app.Bind(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleMail)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleMail)
 		}
 
 		queueFacade := app.MakeQueue()
 		if queueFacade == nil {
-			return nil, errors.ErrQueueFacadeNotSet.SetModule(errors.ModuleMail)
+			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleMail)
 		}
 		return NewApplication(config, queueFacade), nil
 	})

@@ -33,12 +33,12 @@ func (app *Application) Server() *grpc.Server {
 func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientConn, error) {
 	host := app.config.GetString(fmt.Sprintf("grpc.clients.%s.host", name))
 	if host == "" {
-		return nil, errors.ErrGrpcEmptyClientHost
+		return nil, errors.GrpcEmptyClientHost
 	}
 	if !strings.Contains(host, ":") {
 		port := app.config.GetString(fmt.Sprintf("grpc.clients.%s.port", name))
 		if port == "" {
-			return nil, errors.ErrGrpcEmptyClientPost
+			return nil, errors.GrpcEmptyClientPost
 		}
 
 		host += ":" + port
@@ -46,7 +46,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 	interceptors, ok := app.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).([]string)
 	if !ok {
-		return nil, errors.ErrGrpcInvalidInterceptorsType.Args(name)
+		return nil, errors.GrpcInvalidInterceptorsType.Args(name)
 	}
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
@@ -62,13 +62,13 @@ func (app *Application) Run(host ...string) error {
 	if len(host) == 0 {
 		defaultHost := app.config.GetString("grpc.host")
 		if defaultHost == "" {
-			return errors.ErrGrpcEmptyServerHost
+			return errors.GrpcEmptyServerHost
 		}
 
 		if !strings.Contains(defaultHost, ":") {
 			defaultPort := app.config.GetString("grpc.port")
 			if defaultPort == "" {
-				return errors.ErrGrpcEmptyServerPort
+				return errors.GrpcEmptyServerPort
 			}
 			defaultHost += ":" + defaultPort
 		}

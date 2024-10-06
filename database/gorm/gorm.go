@@ -35,7 +35,7 @@ func (r *Builder) Build() (*gormio.DB, error) {
 	readConfigs := r.configBuilder.Reads()
 	writeConfigs := r.configBuilder.Writes()
 	if len(writeConfigs) == 0 {
-		return nil, errors.ErrOrmDatabaseConfigNotFound
+		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
 	if err := r.init(writeConfigs[0]); err != nil {
@@ -96,7 +96,7 @@ func (r *Builder) init(fullConfig database.FullConfig) error {
 		return err
 	}
 	if len(dialectors) == 0 {
-		return errors.ErrOrmNoDialectorsFound
+		return errors.OrmNoDialectorsFound
 	}
 
 	var logLevel gormlogger.LogLevel

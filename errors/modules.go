@@ -1,7 +1,6 @@
 package errors
 
 var (
-	ModuleSession    = "session"
 	ModuleAuth       = "auth"
 	ModuleCache      = "cache"
 	ModuleCrypt      = "crypt"
@@ -10,13 +9,14 @@ var (
 	ModuleFilesystem = "filesystem"
 	ModuleGrpc       = "grpc"
 	ModuleHash       = "hash"
+	ModuleLang       = "lang"
 	ModuleLog        = "log"
 	ModuleMail       = "mail"
-	ModuleLang       = "lang"
-	ModuleTesting    = "testing"
-	ModuleSchedule   = "schedule"
-	ModuleRoute      = "route"
-	ModuleQueue      = "queue"
 	ModuleOrm        = "orm"
+	ModuleQueue      = "queue"
+	ModuleRoute      = "route"
 	ModuleSchema     = "schema"
+	ModuleSchedule   = "schedule"
+	ModuleSession    = "session"
+	ModuleTesting    = "testing"
 )

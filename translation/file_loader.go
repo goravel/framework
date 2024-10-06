@@ -40,5 +40,5 @@ func (f *FileLoader) Load(locale string, group string) (map[string]any, error) {
 			return val, nil
 		}
 	}
-	return nil, errors.ErrLangFileNotExist
+	return nil, errors.LangFileNotExist
 }

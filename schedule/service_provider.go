@@ -14,22 +14,22 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrScheduleFacadeNotSet.SetModule(errors.ModuleSchedule)
+			return nil, errors.ScheduleFacadeNotSet.SetModule(errors.ModuleSchedule)
 		}
 
 		artisan := app.MakeArtisan()
 		if artisan == nil {
-			return nil, errors.ErrArtisanFacadeNotSet.SetModule(errors.ModuleSchedule)
+			return nil, errors.ArtisanFacadeNotSet.SetModule(errors.ModuleSchedule)
 		}
 
 		log := app.MakeLog()
 		if log == nil {
-			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleSchedule)
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleSchedule)
 		}
 
 		cache := app.MakeCache()
 		if cache == nil {
-			return nil, errors.ErrCacheFacadeNotSet.SetModule(errors.ModuleSchedule)
+			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleSchedule)
 		}
 
 		return NewApplication(artisan, cache, log, config.GetBool("app.debug")), nil

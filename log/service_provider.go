@@ -14,12 +14,12 @@ func (log *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleLog)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLog)
 		}
 
 		json := app.GetJson()
 		if json == nil {
-			return nil, errors.ErrJSONParserNotSet.SetModule(errors.ModuleLog)
+			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleLog)
 		}
 		return NewApplication(config, json)
 	})

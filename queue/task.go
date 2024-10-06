@@ -55,7 +55,7 @@ func (receiver *Task) Delay(delay time.Time) queue.Task {
 func (receiver *Task) Dispatch() error {
 	driver := receiver.config.Driver(receiver.connection)
 	if driver == "" {
-		return errors.ErrQueueDriverNotSupported.Args(driver)
+		return errors.QueueDriverNotSupported.Args(driver)
 	}
 	if driver == DriverSync {
 		return receiver.DispatchSync()

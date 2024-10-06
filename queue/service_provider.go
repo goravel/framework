@@ -16,12 +16,12 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleQueue)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleQueue)
 		}
 
 		log := app.MakeLog()
 		if log == nil {
-			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleQueue)
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleQueue)
 		}
 
 		return NewApplication(config, log), nil

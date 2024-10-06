@@ -19,7 +19,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleFilesystem)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleFilesystem)
 		}
 
 		return NewStorage(config)

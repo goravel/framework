@@ -20,7 +20,7 @@ func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
 	}
 
 	if artisanFacade == nil {
-		panic(errors.ErrArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
+		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	artisanFacade.Call(command)
@@ -28,7 +28,7 @@ func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
 
 func (receiver *TestCase) RefreshDatabase(seeds ...seeder.Seeder) {
 	if artisanFacade == nil {
-		panic(errors.ErrArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
+		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	artisanFacade.Call("migrate:refresh")

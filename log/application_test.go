@@ -33,7 +33,7 @@ func TestNewApplication(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test.driver").Return("test")
 
 	app, err = NewApplication(mockConfig, j)
-	assert.EqualError(t, err, errors.ErrLogDriverNotSupported.Args("test").Error())
+	assert.EqualError(t, err, errors.LogDriverNotSupported.Args("test").Error())
 	assert.Nil(t, app)
 }
 
@@ -60,7 +60,7 @@ func TestApplication_Channel(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test2.driver").Return("test2")
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, app.Channel("test2"))
-	}), errors.ErrLogDriverNotSupported.Args("test2").Error())
+	}), errors.LogDriverNotSupported.Args("test2").Error())
 }
 
 func TestApplication_Stack(t *testing.T) {
@@ -78,7 +78,7 @@ func TestApplication_Stack(t *testing.T) {
 	mockConfig.On("GetString", "logging.channels.test2.driver").Return("test2")
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, app.Stack([]string{"", "test2", "daily"}))
-	}), errors.ErrLogDriverNotSupported.Args("test2").Error())
+	}), errors.LogDriverNotSupported.Args("test2").Error())
 
 	mockConfig.On("GetString", "logging.channels.dummy.driver").Return("daily")
 	mockConfig.On("GetString", "logging.channels.dummy.path").Return("dummy")

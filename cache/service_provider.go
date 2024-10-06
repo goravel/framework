@@ -16,12 +16,12 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ErrConfigFacadeNotSet.SetModule(errors.ModuleCache)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleCache)
 		}
 
 		log := app.MakeLog()
 		if log == nil {
-			return nil, errors.ErrLogFacadeNotSet.SetModule(errors.ModuleCache)
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleCache)
 		}
 
 		store := config.GetString("cache.default")
