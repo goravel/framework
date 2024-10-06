@@ -33,8 +33,13 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleAuth)
 		}
 
+		ctx, ok := parameters["ctx"].(http.Context)
+		if !ok {
+			return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
+		}
+
 		return NewAuth(config.GetString("auth.defaults.guard"),
-			cacheFacade, config, parameters["ctx"].(http.Context), ormFacade), nil
+			cacheFacade, config, ctx, ormFacade), nil
 	})
 	app.Singleton(BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil

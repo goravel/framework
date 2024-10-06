@@ -14,7 +14,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
-			return nil, errors.ScheduleFacadeNotSet.SetModule(errors.ModuleSchedule)
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchedule)
 		}
 
 		artisan := app.MakeArtisan()

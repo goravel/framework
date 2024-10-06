@@ -38,7 +38,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 	if !strings.Contains(host, ":") {
 		port := app.config.GetString(fmt.Sprintf("grpc.clients.%s.port", name))
 		if port == "" {
-			return nil, errors.GrpcEmptyClientPost
+			return nil, errors.GrpcEmptyClientPort
 		}
 
 		host += ":" + port

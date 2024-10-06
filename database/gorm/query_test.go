@@ -1848,7 +1848,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 				name: "fail",
 				setup: func() {
 					var user User
-					s.Equal(errors.OrmRecordNotFound, query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user))
+					s.ErrorIs(query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user), errors.OrmRecordNotFound)
 					s.Equal(uint(0), user.ID)
 				},
 			},

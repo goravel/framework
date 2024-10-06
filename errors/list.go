@@ -10,6 +10,7 @@ var (
 	OrmFacadeNotSet      = New("orm facade is not initialized")
 	QueueFacadeNotSet    = New("queue facade is not initialized")
 	ScheduleFacadeNotSet = New("schedule facade is not initialized")
+	InvalidHttpContext   = New("invalid http context")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
@@ -40,7 +41,7 @@ var (
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 
 	GrpcEmptyClientHost         = New("client's host can't be empty")
-	GrpcEmptyClientPost         = New("client's port can't be empty")
+	GrpcEmptyClientPort         = New("client's port can't be empty")
 	GrpcEmptyServerHost         = New("host can't be empty")
 	GrpcEmptyServerPort         = New("port can't be empty")
 	GrpcInvalidInterceptorsType = New("the type of clients.%s.interceptors must be []string")
