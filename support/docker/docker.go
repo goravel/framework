@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
 )
 
 // Define different test model, to improve the local testing speed.
@@ -67,7 +68,7 @@ func Sqlites(num int) []testing.DatabaseDriver {
 
 func Database(containerType ContainerType, database, username, password string, num int) []testing.DatabaseDriver {
 	if num <= 0 {
-		panic("the number of database container must be greater than 0")
+		panic(errors.DockerDatabaseContainerCountZero)
 	}
 
 	var drivers []testing.DatabaseDriver
@@ -95,7 +96,7 @@ func Database(containerType ContainerType, database, username, password string, 
 	}
 
 	if len(drivers) != num {
-		panic(fmt.Sprintf("the number of database container is not enough, expect: %d, got: %d", num, len(drivers)))
+		panic(errors.DockerInsufficientDatabaseContainers.Args(num, len(drivers)))
 	}
 
 	for _, driver := range drivers {
@@ -118,7 +119,7 @@ func DatabaseDriver(containerType ContainerType, database, username, password st
 	case ContainerTypeSqlite:
 		return NewSqliteImpl(database)
 	default:
-		panic("unknown container type")
+		panic(errors.DockerUnknownContainerType)
 	}
 }
 

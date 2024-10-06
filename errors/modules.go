@@ -3,6 +3,7 @@ package errors
 var (
 	ModuleAuth       = "auth"
 	ModuleCache      = "cache"
+	ModuleConsole    = "console"
 	ModuleCrypt      = "crypt"
 	ModuleEvent      = "event"
 	ModuleFacade     = "facade"

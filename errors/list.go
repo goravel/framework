@@ -13,6 +13,13 @@ var (
 	StorageFacadeNotSet  = New("storage facade is not initialized")
 	InvalidHttpContext   = New("invalid http context")
 
+	ConsoleFileAlreadyExists = New("the %s already exists. Use the --force or -f flag to overwrite").SetModule(ModuleConsole)
+	ConsoleEmptyFieldValue   = New("the %s name cannot be empty").SetModule(ModuleConsole)
+
+	DockerUnknownContainerType           = New("unknown container type")
+	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
+	DockerDatabaseContainerCountZero     = New("the number of database container must be greater than 0")
+
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
 	AuthInvalidKey          = New("authentication key is invalid")
