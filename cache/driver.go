@@ -8,17 +8,17 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-type DriverImpl struct {
+type Driver struct {
 	config config.Config
 }
 
-func NewDriverImpl(config config.Config) *DriverImpl {
-	return &DriverImpl{
+func NewDriver(config config.Config) *Driver {
+	return &Driver{
 		config: config,
 	}
 }
 
-func (d *DriverImpl) New(store string) (cache.Driver, error) {
+func (d *Driver) New(store string) (cache.Driver, error) {
 	driver := d.config.GetString(fmt.Sprintf("cache.stores.%s.driver", store))
 	switch driver {
 	case "memory":
@@ -30,11 +30,11 @@ func (d *DriverImpl) New(store string) (cache.Driver, error) {
 	}
 }
 
-func (d *DriverImpl) memory() (cache.Driver, error) {
+func (d *Driver) memory() (cache.Driver, error) {
 	return NewMemory(d.config)
 }
 
-func (d *DriverImpl) custom(store string) (cache.Driver, error) {
+func (d *Driver) custom(store string) (cache.Driver, error) {
 	if custom, ok := d.config.Get(fmt.Sprintf("cache.stores.%s.via", store)).(cache.Driver); ok {
 		return custom, nil
 	}
