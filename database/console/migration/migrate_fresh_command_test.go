@@ -1,4 +1,4 @@
-package console
+package migration
 
 import (
 	"testing"
@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateFreshCommand(t *testing.T) {
@@ -62,4 +63,6 @@ func TestMigrateFreshCommand(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, agent2.ID > 0)
 	}
+
+	defer assert.Nil(t, file.Remove("database"))
 }

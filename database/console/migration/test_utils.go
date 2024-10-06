@@ -1,4 +1,4 @@
-package console
+package migration
 
 import (
 	"github.com/goravel/framework/contracts/database"

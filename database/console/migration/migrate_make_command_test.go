@@ -1,4 +1,4 @@
-package console
+package migration
 
 import (
 	"errors"
@@ -8,29 +8,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	configmock "github.com/goravel/framework/mocks/config"
-	consolemocks "github.com/goravel/framework/mocks/console"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
 	var (
-		mockConfig  *configmock.Config
-		mockContext *consolemocks.Context
+		mockConfig  *mocksconfig.Config
+		mockContext *mocksconsole.Context
 	)
 
 	now := carbon.Now()
 	carbon.SetTestNow(now)
 
 	beforeEach := func() {
-		mockConfig = &configmock.Config{}
-		mockContext = &consolemocks.Context{}
-	}
-
-	afterEach := func() {
-		mockConfig.AssertExpectations(t)
-		mockContext.AssertExpectations(t)
+		mockConfig = mocksconfig.NewConfig(t)
+		mockContext = mocksconsole.NewContext(t)
 	}
 
 	tests := []struct {
@@ -51,8 +47,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 		{
 			name: "default driver",
 			setup: func() {
-				mockConfig.On("GetString", "database.migration.driver").Return("default").Once()
 				mockContext.On("Argument", 0).Return("create_users_table").Once()
+				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
 			},
 			assert: func() {
 				migration := fmt.Sprintf("database/migrations/%s_%s.go", now.ToShortDateTimeString(), "create_users_table")
@@ -63,11 +59,11 @@ func TestMigrateMakeCommand(t *testing.T) {
 		{
 			name: "sql driver",
 			setup: func() {
-				mockConfig.On("GetString", "database.migration.driver").Return("sql").Once()
-				mockConfig.On("GetString", "database.default").Return("mysql").Times(3)
-				mockConfig.On("GetString", "database.connections.mysql.driver").Return("mysql").Once()
-				mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Twice()
 				mockContext.On("Argument", 0).Return("create_users_table").Once()
+				mockConfig.On("GetString", "database.default").Return("postgres").Once()
+				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+				mockConfig.On("GetString", "database.connections.postgres.driver").Return("postgres").Once()
+				mockConfig.On("GetString", "database.connections.postgres.charset").Return("utf8mb4").Once()
 			},
 			assert: func() {
 				up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
@@ -89,9 +85,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 			assert.Equal(t, test.expectErr, err)
 
 			test.assert()
-			afterEach()
 		})
 	}
 
-	assert.Nil(t, file.Remove("database"))
+	defer assert.Nil(t, file.Remove("database"))
 }
