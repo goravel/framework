@@ -10,6 +10,7 @@ var (
 	OrmFacadeNotSet      = New("orm facade is not initialized")
 	QueueFacadeNotSet    = New("queue facade is not initialized")
 	ScheduleFacadeNotSet = New("schedule facade is not initialized")
+	StorageFacadeNotSet  = New("storage facade is not initialized")
 	InvalidHttpContext   = New("invalid http context")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
@@ -38,6 +39,7 @@ var (
 	FilesystemDefaultDiskNotSet   = New("please set default disk")
 	FilesystemDeleteDirectory     = New("can't delete directory, please use DeleteDirectory")
 	FilesystemDriverNotSupported  = New("invalid driver: %s, only support local, custom")
+	FilesystemFileNotExist        = New("file doesn't exist")
 	FilesystemInvalidCustomDriver = New("init %s disk fail: via must be implement filesystem.Driver or func() (filesystem.Driver, error)")
 
 	GrpcEmptyClientHost         = New("client's host can't be empty")

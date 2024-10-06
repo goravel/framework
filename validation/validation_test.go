@@ -16,6 +16,8 @@ func TestMake(t *testing.T) {
 		A string
 	}
 
+	ErrInvalidData := errors.New("error")
+
 	tests := []struct {
 		description        string
 		data               any
@@ -78,10 +80,10 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
-					return errors.New("error")
+					return ErrInvalidData
 				}),
 			},
-			expectErr: errors.New("error"),
+			expectErr: ErrInvalidData,
 		},
 		{
 			description: "success when data is map[string]any and with PrepareForValidation",
@@ -175,7 +177,7 @@ func TestMake(t *testing.T) {
 			validator, err := validation.Make(test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
 			if test.expectErr != nil {
-				assert.EqualError(t, err, test.expectErr.Error(), test.description)
+				assert.ErrorIs(t, err, test.expectErr, test.description)
 			}
 
 			if validator != nil {
