@@ -61,7 +61,6 @@ func (f *File) Open(string, string) error {
 	return nil
 }
 
-//
 func (f *File) Read(id string) (string, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
