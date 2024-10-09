@@ -25,6 +25,8 @@ type Context interface {
 	Context() context.Context
 	// WithValue add value associated with key in context
 	WithValue(key any, value any)
+
+	WithContext(ctx context.Context)
 	// Request returns the ContextRequest
 	Request() ContextRequest
 	// Response returns the ContextResponse
