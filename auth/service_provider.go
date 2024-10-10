@@ -8,6 +8,7 @@ import (
 	contractconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
 )
 
 const BindingAuth = "goravel.auth"
@@ -19,8 +20,26 @@ type ServiceProvider struct {
 func (database *ServiceProvider) Register(app foundation.Application) {
 	app.BindWith(BindingAuth, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleAuth)
+		}
+		cacheFacade := app.MakeCache()
+		if cacheFacade == nil {
+			return nil, errors.CacheFacadeNotSet.SetModule(errors.ModuleAuth)
+		}
+
+		ormFacade := app.MakeOrm()
+		if ormFacade == nil {
+			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleAuth)
+		}
+
+		ctx, ok := parameters["ctx"].(http.Context)
+		if !ok {
+			return nil, errors.InvalidHttpContext.SetModule(errors.ModuleAuth)
+		}
+
 		return NewAuth(config.GetString("auth.defaults.guard"),
-			app.MakeCache(), config, parameters["ctx"].(http.Context), app.MakeOrm()), nil
+			cacheFacade, config, ctx, ormFacade), nil
 	})
 	app.Singleton(BindingGate, func(app foundation.Application) (any, error) {
 		return access.NewGate(context.Background()), nil

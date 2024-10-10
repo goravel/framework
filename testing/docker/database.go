@@ -9,6 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
 	supportdocker "github.com/goravel/framework/support/docker"
 )
 
@@ -23,7 +24,7 @@ type Database struct {
 func NewDatabase(app foundation.Application, connection string) (*Database, error) {
 	config := app.MakeConfig()
 	if config == nil {
-		return nil, ErrConfigNotSet
+		return nil, errors.ConfigFacadeNotSet
 	}
 
 	if connection == "" {
@@ -32,7 +33,7 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
-		return nil, ErrArtisanNotSet
+		return nil, errors.ArtisanFacadeNotSet
 	}
 
 	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))

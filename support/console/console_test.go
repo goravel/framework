@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/errors"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -81,10 +81,10 @@ func TestNewMake(t *testing.T) {
 			name: "Sad path - name is empty",
 			setup: func() {
 				name = ""
-				mockCtx.EXPECT().Ask("Enter the rule name", mock.Anything).Return("", errors.New("the rule name cannot be empty")).Once()
+				mockCtx.EXPECT().Ask("Enter the rule name", mock.Anything).Return("", errors.ConsoleEmptyFieldValue.Args("rule")).Once()
 			},
 			expectMake:  nil,
-			expectError: errors.New("the rule name cannot be empty"),
+			expectError: errors.ConsoleEmptyFieldValue.Args("rule"),
 		},
 		{
 			name: "Sad path - name already exists",
@@ -94,7 +94,7 @@ func TestNewMake(t *testing.T) {
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
 			},
 			expectMake:  nil,
-			expectError: errors.New("the rule already exists. Use the --force or -f flag to overwrite"),
+			expectError: errors.ConsoleFileAlreadyExists.Args("rule"),
 		},
 		{
 			name: "Happy path - name already exists, but force is true",

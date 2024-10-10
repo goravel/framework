@@ -2,7 +2,6 @@ package filesystem
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/errors"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -82,7 +82,7 @@ func (r *Local) Delete(files ...string) error {
 		}
 
 		if fileInfo.IsDir() {
-			return errors.New("can't delete directory, please use DeleteDirectory")
+			return errors.FilesystemDeleteDirectory
 		}
 	}
 

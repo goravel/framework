@@ -1,7 +1,6 @@
 package gorm
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -12,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/errors"
 )
 
 func TestGetDialectors(t *testing.T) {
@@ -32,7 +32,7 @@ func TestGetDialectors(t *testing.T) {
 					Connection: "postgres",
 				},
 			},
-			expectError: fmt.Errorf("failed to generate DSN for connection: postgres"),
+			expectError: errors.OrmFailedToGenerateDNS.Args("postgres"),
 		},
 		{
 			name: "Happy path - mysql",

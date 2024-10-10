@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
@@ -16,6 +15,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	supportdocker "github.com/goravel/framework/support/docker"
@@ -521,7 +521,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), "cannot set Select and Omits at the same time")
+					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), errors.OrmQuerySelectAndOmitsConflict.Error())
 				},
 			},
 			{
@@ -531,7 +531,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
+					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
 				},
 			},
 			{
@@ -541,7 +541,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
+					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
 				},
 			},
 		}
@@ -1721,7 +1721,7 @@ func (s *QueryTestSuite) TestFindOrFail() {
 				name: "error",
 				setup: func() {
 					var user User
-					s.ErrorIs(query.Query().FindOrFail(&user, 10000), orm.ErrRecordNotFound)
+					s.ErrorIs(query.Query().FindOrFail(&user, 10000), errors.OrmRecordNotFound)
 				},
 			},
 		}
@@ -1807,7 +1807,7 @@ func (s *QueryTestSuite) TestFirstOrCreate() {
 				name: "error when empty conditions",
 				setup: func() {
 					var user User
-					s.EqualError(query.Query().FirstOrCreate(&user), "query condition is require")
+					s.EqualError(query.Query().FirstOrCreate(&user), errors.OrmQueryConditionRequired.Error())
 					s.True(user.ID == 0)
 				},
 			},
@@ -1848,7 +1848,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 				name: "fail",
 				setup: func() {
 					var user User
-					s.Equal(orm.ErrRecordNotFound, query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user))
+					s.ErrorIs(query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user), errors.OrmRecordNotFound)
 					s.Equal(uint(0), user.ID)
 				},
 			},
@@ -2467,7 +2467,7 @@ func (s *QueryTestSuite) TestLoad() {
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.EqualError(query.Query().Load(&user1, ""), "relation cannot be empty")
+					s.EqualError(query.Query().Load(&user1, ""), errors.OrmQueryEmptyRelation.Error())
 				},
 			},
 			{
@@ -2478,7 +2478,7 @@ func (s *QueryTestSuite) TestLoad() {
 						Avatar string
 					}
 					var userNoID UserNoID
-					s.EqualError(query.Query().Load(&userNoID, "Book"), "id cannot be empty")
+					s.EqualError(query.Query().Load(&userNoID, "Book"), errors.OrmQueryEmptyId.Error())
 				},
 			},
 		}
@@ -2555,7 +2555,7 @@ func (s *QueryTestSuite) TestModel() {
 
 			// model is invalid
 			user1 := User{Name: "model_user"}
-			s.EqualError(query.Query().Model("users").Create(&user1), "invalid model")
+			s.EqualError(query.Query().Model("users").Create(&user1), errors.OrmQueryInvalidModel.Args("").Error())
 		})
 	}
 }
@@ -2614,7 +2614,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup:     func() {},
-			expectErr: "invalid model",
+			expectErr: errors.OrmQueryInvalidModel.Args("").Error(),
 		},
 		{
 			name: "the connection of model is empty",
@@ -3496,12 +3496,12 @@ func TestFilterFindConditions(t *testing.T) {
 		{
 			name:       "condition is empty string",
 			conditions: []any{""},
-			expectErr:  ErrorMissingWhereClause,
+			expectErr:  errors.OrmMissingWhereClause,
 		},
 		{
 			name:       "condition is empty slice",
 			conditions: []any{[]string{}},
-			expectErr:  ErrorMissingWhereClause,
+			expectErr:  errors.OrmMissingWhereClause,
 		},
 		{
 			name:       "condition has value",
@@ -3534,7 +3534,7 @@ func TestGetModelConnection(t *testing.T) {
 				var product string
 				return product
 			}(),
-			expectErr: "invalid model",
+			expectErr: errors.OrmQueryInvalidModel.Args("").Error(),
 		},
 		{
 			name: "not ConnectionModel",

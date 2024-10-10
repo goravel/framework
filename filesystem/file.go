@@ -1,7 +1,6 @@
 package filesystem
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/filesystem"
+	"github.com/goravel/framework/errors"
 	supportfile "github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -26,11 +26,11 @@ type File struct {
 
 func NewFile(file string) (*File, error) {
 	if ConfigFacade == nil {
-		return nil, errors.New("config facade not set")
+		return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleFilesystem)
 	}
 
 	if !supportfile.Exists(file) {
-		return nil, errors.New("file doesn't exist")
+		return nil, errors.FilesystemFileNotExist
 	}
 
 	return &File{
@@ -44,7 +44,7 @@ func NewFile(file string) (*File, error) {
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	if ConfigFacade == nil {
-		return nil, errors.New("config facade not set")
+		return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleFilesystem)
 	}
 
 	src, err := fileHeader.Open()
@@ -119,10 +119,6 @@ func (f *File) HashName(path ...string) string {
 }
 
 func (f *File) LastModified() (time.Time, error) {
-	if f.config == nil {
-		return time.Time{}, errors.New("config facade is not initialized")
-	}
-
 	return supportfile.LastModified(f.path, f.config.GetString("app.timezone"))
 }
 
@@ -152,7 +148,7 @@ func (f *File) StoreAs(path string, name string) (string, error) {
 
 func (f *File) validateStorageFacade() error {
 	if f.storage == nil {
-		return ErrStorageFacadeNotSet
+		return errors.StorageFacadeNotSet.SetModule(errors.ModuleFilesystem)
 	}
 
 	return nil

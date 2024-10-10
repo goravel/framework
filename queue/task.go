@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"errors"
 	"time"
 
 	"github.com/RichardKnop/machinery/v2"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 )
 
 type Task struct {
@@ -55,7 +55,7 @@ func (receiver *Task) Delay(delay time.Time) queue.Task {
 func (receiver *Task) Dispatch() error {
 	driver := receiver.config.Driver(receiver.connection)
 	if driver == "" {
-		return errors.New("unknown queue driver")
+		return errors.QueueDriverNotSupported.Args(driver)
 	}
 	if driver == DriverSync {
 		return receiver.DispatchSync()

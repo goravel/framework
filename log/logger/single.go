@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"errors"
 	"path/filepath"
 
 	"github.com/rifflock/lfshook"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
 )
@@ -28,7 +28,7 @@ func NewSingle(config config.Config, json foundation.Json) *Single {
 func (single *Single) Handle(channel string) (logrus.Hook, error) {
 	logPath := single.config.GetString(channel + ".path")
 	if logPath == "" {
-		return nil, errors.New("error log path")
+		return nil, errors.LogEmptyLogFilePath
 	}
 
 	logPath = filepath.Join(support.RelativePath, logPath)

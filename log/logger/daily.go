@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"errors"
 	"path/filepath"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
@@ -33,7 +33,7 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 	var hook logrus.Hook
 	logPath := daily.config.GetString(channel + ".path")
 	if logPath == "" {
-		return hook, errors.New("error log path")
+		return hook, errors.LogEmptyLogFilePath
 	}
 
 	ext := filepath.Ext(logPath)
@@ -47,7 +47,7 @@ func (daily *Daily) Handle(channel string) (logrus.Hook, error) {
 		rotatelogs.WithClock(rotatelogs.NewClock(carbon.Now().StdTime())),
 	)
 	if err != nil {
-		return hook, errors.New("Config local file system for logger error: " + err.Error())
+		return hook, err
 	}
 
 	levels := getLevels(daily.config.GetString(channel + ".level"))

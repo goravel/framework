@@ -2,7 +2,6 @@ package gorm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -12,6 +11,8 @@ import (
 	"time"
 
 	"gorm.io/gorm/logger"
+
+	"github.com/goravel/framework/errors"
 )
 
 func NewLogger(writer logger.Writer, config logger.Config) logger.Interface {

@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -9,12 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/errors"
 )
 
 func TestMake(t *testing.T) {
 	type Data struct {
 		A string
 	}
+
+	ErrInvalidData := errors.New("error")
 
 	tests := []struct {
 		description        string
@@ -54,7 +56,7 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.New("data must be map[string]any or map[string][]string or struct"),
+			expectErr: errors.ValidationDataInvalidType,
 		},
 		{
 			description: "error when data is empty map",
@@ -63,13 +65,13 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.New("data can't be empty"),
+			expectErr: errors.ValidationEmptyData,
 		},
 		{
 			description: "error when rule is empty map",
 			data:        map[string]any{"a": "b"},
 			rules:       map[string]string{},
-			expectErr:   errors.New("rules can't be empty"),
+			expectErr:   errors.ValidationEmptyRules,
 		},
 		{
 			description: "error when PrepareForValidation returns error",
@@ -78,10 +80,10 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 				PrepareForValidation(func(data httpvalidate.Data) error {
-					return errors.New("error")
+					return ErrInvalidData
 				}),
 			},
-			expectErr: errors.New("error"),
+			expectErr: ErrInvalidData,
 		},
 		{
 			description: "success when data is map[string]any and with PrepareForValidation",
@@ -174,7 +176,9 @@ func TestMake(t *testing.T) {
 			validation := NewValidation()
 			validator, err := validation.Make(test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
-			assert.Equal(t, test.expectErr, err, test.description)
+			if test.expectErr != nil {
+				assert.ErrorIs(t, err, test.expectErr, test.description)
+			}
 
 			if validator != nil {
 				var data Data

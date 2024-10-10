@@ -1,8 +1,6 @@
 package orm
 
 import (
-	"errors"
-
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -11,8 +9,6 @@ import (
 )
 
 const Associations = clause.Associations
-
-var ErrRecordNotFound = errors.New("record not found")
 
 var Observers = make([]Observer, 0)
 
