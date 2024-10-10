@@ -35,7 +35,7 @@ func isTesting() bool {
 // isAir checks if the application is running using Air.
 func isAir() bool {
 	for _, arg := range os.Args {
-		if strings.Contains(arg, "/storage/temp") {
+		if strings.Contains(filepath.ToSlash(arg), "/storage/temp") {
 			return true
 		}
 	}
@@ -47,5 +47,5 @@ func isAir() bool {
 func isDirectlyRun() bool {
 	executable, _ := os.Executable()
 	return strings.Contains(filepath.Base(executable), os.TempDir()) ||
-		(strings.Contains(executable, "/var/folders") && strings.Contains(executable, "/T/go-build")) // macOS
+		(strings.Contains(filepath.ToSlash(executable), "/var/folders") && strings.Contains(filepath.ToSlash(executable), "/T/go-build")) // macOS
 }
