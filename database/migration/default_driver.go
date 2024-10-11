@@ -1,14 +1,18 @@
 package migration
 
 import (
+	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/support/file"
 )
 
 type DefaultDriver struct {
+	repository migration.Repository
 }
 
-func NewDefaultDriver() *DefaultDriver {
-	return &DefaultDriver{}
+func NewDefaultDriver(schema migration.Schema, table string) *DefaultDriver {
+	return &DefaultDriver{
+		repository: NewRepository(schema, table),
+	}
 }
 
 func (r *DefaultDriver) Create(name string) error {
@@ -29,5 +33,10 @@ func (r *DefaultDriver) Create(name string) error {
 }
 
 func (r *DefaultDriver) Run(paths []string) error {
+	return nil
+}
+
+// prepareDatabase Prepare the migration database for running.
+func (r *DefaultDriver) prepareDatabase() error {
 	return nil
 }

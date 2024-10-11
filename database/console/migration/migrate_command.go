@@ -1,10 +1,6 @@
 package migration
 
 import (
-	"errors"
-
-	"github.com/golang-migrate/migrate/v4"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
@@ -40,19 +36,15 @@ func (receiver *MigrateCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (receiver *MigrateCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
+	driver, err := GetDriver(receiver.config)
 	if err != nil {
 		return err
 	}
-	if m == nil {
-		color.Yellow().Println("Please fill database config first")
 
-		return nil
-	}
-
-	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	// support for multiple migration paths in the future
+	path := []string{"./database/migrations"}
+	if err := driver.Run(path); err != nil {
 		color.Red().Println("Migration failed:", err.Error())
-
 		return nil
 	}
 

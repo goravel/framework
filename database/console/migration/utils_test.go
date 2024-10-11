@@ -24,7 +24,7 @@ func TestGetDriver(t *testing.T) {
 			setup: func() {
 				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
 			},
-			expectDriver: migration.NewDefaultDriver(),
+			expectDriver: &migration.DefaultDriver{},
 		},
 		{
 			name: "sql driver",
@@ -34,7 +34,7 @@ func TestGetDriver(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
 			},
-			expectDriver: migration.NewSqlDriver("postgres", "utf8mb4"),
+			expectDriver: &migration.SqlDriver{},
 		},
 		{
 			name: "unsupported driver",

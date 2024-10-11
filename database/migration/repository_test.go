@@ -39,22 +39,22 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 			repository, mockOrm := s.initRepository(testQuery)
 
 			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(repository.query).Once()
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			err := repository.CreateRepository()
 			s.NoError(err)
 
-			mockOrm.EXPECT().Query().Return(repository.query).Once()
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			s.True(repository.RepositoryExists())
 
 			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(repository.query).Once()
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			err = repository.DeleteRepository()
 			s.NoError(err)
 
-			mockOrm.EXPECT().Query().Return(repository.query).Once()
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			s.False(repository.RepositoryExists())
 		})
@@ -66,11 +66,11 @@ func (s *RepositoryTestSuite) TestRecord() {
 		s.Run(driver.String(), func() {
 			repository, mockOrm := s.initRepository(testQuery)
 
-			mockOrm.EXPECT().Query().Return(repository.query).Once()
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			if !repository.RepositoryExists() {
 				mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-				mockOrm.EXPECT().Query().Return(repository.query).Once()
+				mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 				s.NoError(repository.CreateRepository())
 			}
@@ -131,5 +131,5 @@ func (s *RepositoryTestSuite) TestRecord() {
 func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) (*Repository, *mocksorm.Orm) {
 	schema, mockOrm := initSchema(s.T(), testQuery)
 
-	return NewRepository(testQuery.Query(), schema, "migrations"), mockOrm
+	return NewRepository(schema, "migrations"), mockOrm
 }

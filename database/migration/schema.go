@@ -16,7 +16,6 @@ var _ migration.Schema = (*Schema)(nil)
 
 type Schema struct {
 	config     config.Config
-	connection string
 	grammar    migration.Grammar
 	log        log.Log
 	migrations []migration.Migration
@@ -24,23 +23,22 @@ type Schema struct {
 	prefix     string
 }
 
-func NewSchema(config config.Config, connection string, log log.Log, orm contractsorm.Orm) *Schema {
-	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
-	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", connection))
+func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm) *Schema {
+	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", orm.Name()))
+	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", orm.Name()))
 	grammar := getGrammar(driver)
 
 	return &Schema{
-		config:     config,
-		connection: connection,
-		grammar:    grammar,
-		log:        log,
-		orm:        orm,
-		prefix:     prefix,
+		config:  config,
+		grammar: grammar,
+		log:     log,
+		orm:     orm,
+		prefix:  prefix,
 	}
 }
 
 func (r *Schema) Connection(name string) migration.Schema {
-	return NewSchema(r.config, name, r.log, r.orm)
+	return NewSchema(r.config, r.log, r.orm.Connection(name))
 }
 
 func (r *Schema) Create(table string, callback func(table migration.Blueprint)) error {
@@ -75,7 +73,7 @@ func (r *Schema) HasTable(name string) bool {
 
 	tables, err := r.GetTables()
 	if err != nil {
-		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.connection, err).Error())
+		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.orm.Name(), err).Error())
 		return false
 	}
 
@@ -88,13 +86,17 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
+func (r *Schema) Orm() contractsorm.Orm {
+	return r.orm
+}
+
 func (r *Schema) Register(migrations []migration.Migration) {
 	r.migrations = migrations
 }
 
 func (r *Schema) Sql(sql string) {
 	// TODO catch error and rollback, optimize test
-	_, _ = r.orm.Connection(r.connection).Query().Exec(sql)
+	_, _ = r.orm.Query().Exec(sql)
 }
 
 func (r *Schema) Table(table string, callback func(table migration.Blueprint)) error {
@@ -106,7 +108,7 @@ func (r *Schema) Table(table string, callback func(table migration.Blueprint)) e
 }
 
 func (r *Schema) build(blueprint migration.Blueprint) error {
-	return blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
+	return blueprint.Build(r.orm.Query(), r.grammar)
 }
 
 func (r *Schema) createBlueprint(table string) migration.Blueprint {

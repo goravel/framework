@@ -8,13 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/migration"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
 
 type DriverSuite struct {
 	suite.Suite
-	drivers map[string]migration.Driver
+	mockConfig *mocksconfig.Config
+	drivers    map[string]migration.Driver
 }
 
 func TestDriverSuite(t *testing.T) {
@@ -22,9 +24,12 @@ func TestDriverSuite(t *testing.T) {
 }
 
 func (s *DriverSuite) SetupTest() {
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
+	s.mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
 	s.drivers = map[string]migration.Driver{
 		migration.DriverDefault: NewDefaultDriver(),
-		migration.DriverSql:     NewSqlDriver("postgres", "utf8mb4"),
+		migration.DriverSql:     NewSqlDriver(s.mockConfig, "postgres"),
 	}
 }
 

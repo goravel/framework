@@ -1,16 +1,22 @@
 package migration
 
+import (
+	"github.com/goravel/framework/contracts/database/orm"
+)
+
 type Schema interface {
-	// Create a new table on the schema.
-	Create(table string, callback func(table Blueprint)) error
 	// Connection Get the connection for the schema.
 	Connection(name string) Schema
+	// Create a new table on the schema.
+	Create(table string, callback func(table Blueprint)) error
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
 	// GetTables Get the tables that belong to the database.
 	GetTables() ([]Table, error)
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
+	// Orm Get the orm instance.
+	Orm() orm.Orm
 	// Register migrations.
 	Register([]Migration)
 	// Sql Execute a sql directly.
