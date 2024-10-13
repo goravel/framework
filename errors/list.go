@@ -19,6 +19,7 @@ var (
 	DockerUnknownContainerType           = New("unknown container type")
 	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
 	DockerDatabaseContainerCountZero     = New("the number of database container must be greater than 0")
+	DockerMissingContainerId             = New("no container id return when creating %s docker")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
@@ -95,6 +96,8 @@ var (
 	SessionDriverIsNotSet        = New("session driver is not set")
 	SessionDriverNotSupported    = New("session driver [%s] not supported")
 	SessionNotFound              = New("session [%s] not found")
+
+	UnknownFileExtension = New("unknown file extension")
 
 	ValidationDataInvalidType = New("data must be map[string]any or map[string][]string or struct")
 	ValidationDuplicateFilter = New("duplicate filter name: %s")

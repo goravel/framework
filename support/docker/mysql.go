@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
 )
 
 type MysqlImpl struct {
@@ -52,7 +53,7 @@ func (receiver *MysqlImpl) Build() error {
 		return fmt.Errorf("init Mysql docker error: %v", err)
 	}
 	if containerID == "" {
-		return fmt.Errorf("no container id return when creating Mysql docker")
+		return errors.DockerMissingContainerId.Args("Mysql")
 	}
 
 	receiver.containerID = containerID

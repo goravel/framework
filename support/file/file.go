@@ -1,13 +1,14 @@
 package file
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gabriel-vasile/mimetype"
+
+	"github.com/goravel/framework/errors"
 )
 
 func ClientOriginalExtension(file string) string {
@@ -63,7 +64,7 @@ func Extension(file string, originalWhenUnknown ...bool) (string, error) {
 			}
 		}
 
-		return "", errors.New("unknown file extension")
+		return "", errors.UnknownFileExtension
 	}
 
 	return strings.TrimPrefix(mtype.Extension(), "."), nil
