@@ -18,26 +18,25 @@ import (
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
 )
 
 // TODO Remove in v1.16
 type SqlDriver struct {
-	config     config.Config
-	connection string
-	creator    *SqlCreator
-	driver     database.Driver
+	configBuilder *databasedb.ConfigBuilder
+	creator       *SqlCreator
+	table         string
 }
 
-func NewSqlDriver(config config.Config, connection string) *SqlDriver {
-	driver := database.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", connection)))
+func NewSqlDriver(config config.Config) *SqlDriver {
+	connection := config.GetString("database.default")
 	charset := config.GetString(fmt.Sprintf("database.connections.%s.charset", connection))
+	driver := database.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", connection)))
+	table := config.GetString("database.migrations.table")
 
 	return &SqlDriver{
-		config:     config,
-		connection: connection,
-		creator:    NewSqlCreator(driver, charset),
-		driver:     driver,
+		configBuilder: databasedb.NewConfigBuilder(config, connection),
+		creator:       NewSqlCreator(driver, charset),
+		table:         table,
 	}
 }
 
@@ -59,12 +58,8 @@ func (r *SqlDriver) Create(name string) error {
 	return nil
 }
 
-func (r *SqlDriver) Run(paths []string) error {
-	if len(paths) == 0 {
-		return nil
-	}
-
-	migrator, err := r.getMigrator(paths[0])
+func (r *SqlDriver) Run() error {
+	migrator, err := r.getMigrator()
 	if err != nil {
 		return err
 	}
@@ -76,22 +71,21 @@ func (r *SqlDriver) Run(paths []string) error {
 	return nil
 }
 
-func (r *SqlDriver) getMigrator(path string) (*migrate.Migrate, error) {
+func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
+	path := "file://./database/migrations"
 	if support.RelativePath != "" {
-		path = fmt.Sprintf("%s/%s", support.RelativePath, str.Of(path).LTrim("./"))
+		path = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
 	}
-	path = fmt.Sprintf("file://%s", path)
 
-	configBuilder := databasedb.NewConfigBuilder(r.config, r.connection)
-	writeConfigs := configBuilder.Writes()
+	writeConfigs := r.configBuilder.Writes()
 	if len(writeConfigs) == 0 {
 		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
-	table := r.config.GetString("database.migrations.table")
+	writeConfig := writeConfigs[0]
 	dsn := databasedb.Dsn(writeConfigs[0])
 	if dsn == "" {
-		return nil, errors.OrmFailedToGenerateDNS.Args(r.connection)
+		return nil, errors.OrmFailedToGenerateDNS.Args(writeConfig.Connection)
 	}
 
 	var (
@@ -101,7 +95,7 @@ func (r *SqlDriver) getMigrator(path string) (*migrate.Migrate, error) {
 		err          error
 	)
 
-	switch r.driver {
+	switch writeConfig.Driver {
 	case database.DriverMysql:
 		databaseName = "mysql"
 		db, err = sql.Open(databaseName, dsn)
@@ -110,7 +104,7 @@ func (r *SqlDriver) getMigrator(path string) (*migrate.Migrate, error) {
 		}
 
 		driver, err = mysql.WithInstance(db, &mysql.Config{
-			MigrationsTable: table,
+			MigrationsTable: r.table,
 		})
 	case database.DriverPostgres:
 		databaseName = "postgres"
@@ -120,7 +114,7 @@ func (r *SqlDriver) getMigrator(path string) (*migrate.Migrate, error) {
 		}
 
 		driver, err = postgres.WithInstance(db, &postgres.Config{
-			MigrationsTable: table,
+			MigrationsTable: r.table,
 		})
 	case database.DriverSqlite:
 		databaseName = "sqlite3"
@@ -130,7 +124,7 @@ func (r *SqlDriver) getMigrator(path string) (*migrate.Migrate, error) {
 		}
 
 		driver, err = sqlite.WithInstance(db, &sqlite.Config{
-			MigrationsTable: table,
+			MigrationsTable: r.table,
 		})
 	case database.DriverSqlserver:
 		databaseName = "sqlserver"
@@ -140,10 +134,10 @@ func (r *SqlDriver) getMigrator(path string) (*migrate.Migrate, error) {
 		}
 
 		driver, err = sqlserver.WithInstance(db, &sqlserver.Config{
-			MigrationsTable: table,
+			MigrationsTable: r.table,
 		})
 	default:
-		err = errors.OrmDriverNotSupported.Args(r.driver)
+		err = errors.OrmDriverNotSupported.Args(writeConfig.Connection)
 	}
 
 	if err != nil {

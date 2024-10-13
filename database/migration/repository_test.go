@@ -41,8 +41,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
-			err := repository.CreateRepository()
-			s.NoError(err)
+			repository.CreateRepository()
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -51,8 +50,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
-			err = repository.DeleteRepository()
-			s.NoError(err)
+			repository.DeleteRepository()
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -72,7 +70,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 				mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
 				mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
-				s.NoError(repository.CreateRepository())
+				repository.CreateRepository()
 			}
 
 			err := repository.Log("migration1", 1)

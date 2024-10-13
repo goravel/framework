@@ -71,21 +71,8 @@ func (_c *Schema_Connection_Call) RunAndReturn(run func(string) migration.Schema
 }
 
 // Create provides a mock function with given fields: table, callback
-func (_m *Schema) Create(table string, callback func(migration.Blueprint)) error {
-	ret := _m.Called(table, callback)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, func(migration.Blueprint)) error); ok {
-		r0 = rf(table, callback)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Schema) Create(table string, callback func(migration.Blueprint)) {
+	_m.Called(table, callback)
 }
 
 // Schema_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -107,32 +94,19 @@ func (_c *Schema_Create_Call) Run(run func(table string, callback func(migration
 	return _c
 }
 
-func (_c *Schema_Create_Call) Return(_a0 error) *Schema_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *Schema_Create_Call) Return() *Schema_Create_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Schema_Create_Call) RunAndReturn(run func(string, func(migration.Blueprint)) error) *Schema_Create_Call {
+func (_c *Schema_Create_Call) RunAndReturn(run func(string, func(migration.Blueprint))) *Schema_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DropIfExists provides a mock function with given fields: table
-func (_m *Schema) DropIfExists(table string) error {
-	ret := _m.Called(table)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DropIfExists")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(table)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Schema) DropIfExists(table string) {
+	_m.Called(table)
 }
 
 // Schema_DropIfExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIfExists'
@@ -153,12 +127,57 @@ func (_c *Schema_DropIfExists_Call) Run(run func(table string)) *Schema_DropIfEx
 	return _c
 }
 
-func (_c *Schema_DropIfExists_Call) Return(_a0 error) *Schema_DropIfExists_Call {
+func (_c *Schema_DropIfExists_Call) Return() *Schema_DropIfExists_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string)) *Schema_DropIfExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetConnection provides a mock function with given fields:
+func (_m *Schema) GetConnection() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetConnection")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Schema_GetConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetConnection'
+type Schema_GetConnection_Call struct {
+	*mock.Call
+}
+
+// GetConnection is a helper method to define mock.On call
+func (_e *Schema_Expecter) GetConnection() *Schema_GetConnection_Call {
+	return &Schema_GetConnection_Call{Call: _e.mock.On("GetConnection")}
+}
+
+func (_c *Schema_GetConnection_Call) Run(run func()) *Schema_GetConnection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schema_GetConnection_Call) Return(_a0 string) *Schema_GetConnection_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string) error) *Schema_DropIfExists_Call {
+func (_c *Schema_GetConnection_Call) RunAndReturn(run func() string) *Schema_GetConnection_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -266,6 +285,53 @@ func (_c *Schema_HasTable_Call) RunAndReturn(run func(string) bool) *Schema_HasT
 	return _c
 }
 
+// Migrations provides a mock function with given fields:
+func (_m *Schema) Migrations() []migration.Migration {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Migrations")
+	}
+
+	var r0 []migration.Migration
+	if rf, ok := ret.Get(0).(func() []migration.Migration); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]migration.Migration)
+		}
+	}
+
+	return r0
+}
+
+// Schema_Migrations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Migrations'
+type Schema_Migrations_Call struct {
+	*mock.Call
+}
+
+// Migrations is a helper method to define mock.On call
+func (_e *Schema_Expecter) Migrations() *Schema_Migrations_Call {
+	return &Schema_Migrations_Call{Call: _e.mock.On("Migrations")}
+}
+
+func (_c *Schema_Migrations_Call) Run(run func()) *Schema_Migrations_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Schema_Migrations_Call) Return(_a0 []migration.Migration) *Schema_Migrations_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_Migrations_Call) RunAndReturn(run func() []migration.Migration) *Schema_Migrations_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Orm provides a mock function with given fields:
 func (_m *Schema) Orm() orm.Orm {
 	ret := _m.Called()
@@ -346,6 +412,39 @@ func (_c *Schema_Register_Call) RunAndReturn(run func([]migration.Migration)) *S
 	return _c
 }
 
+// SetConnection provides a mock function with given fields: name
+func (_m *Schema) SetConnection(name string) {
+	_m.Called(name)
+}
+
+// Schema_SetConnection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetConnection'
+type Schema_SetConnection_Call struct {
+	*mock.Call
+}
+
+// SetConnection is a helper method to define mock.On call
+//   - name string
+func (_e *Schema_Expecter) SetConnection(name interface{}) *Schema_SetConnection_Call {
+	return &Schema_SetConnection_Call{Call: _e.mock.On("SetConnection", name)}
+}
+
+func (_c *Schema_SetConnection_Call) Run(run func(name string)) *Schema_SetConnection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_SetConnection_Call) Return() *Schema_SetConnection_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Schema_SetConnection_Call) RunAndReturn(run func(string)) *Schema_SetConnection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Sql provides a mock function with given fields: sql
 func (_m *Schema) Sql(sql string) {
 	_m.Called(sql)
@@ -380,21 +479,8 @@ func (_c *Schema_Sql_Call) RunAndReturn(run func(string)) *Schema_Sql_Call {
 }
 
 // Table provides a mock function with given fields: table, callback
-func (_m *Schema) Table(table string, callback func(migration.Blueprint)) error {
-	ret := _m.Called(table, callback)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Table")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, func(migration.Blueprint)) error); ok {
-		r0 = rf(table, callback)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Schema) Table(table string, callback func(migration.Blueprint)) {
+	_m.Called(table, callback)
 }
 
 // Schema_Table_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Table'
@@ -416,12 +502,12 @@ func (_c *Schema_Table_Call) Run(run func(table string, callback func(migration.
 	return _c
 }
 
-func (_c *Schema_Table_Call) Return(_a0 error) *Schema_Table_Call {
-	_c.Call.Return(_a0)
+func (_c *Schema_Table_Call) Return() *Schema_Table_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Schema_Table_Call) RunAndReturn(run func(string, func(migration.Blueprint)) error) *Schema_Table_Call {
+func (_c *Schema_Table_Call) RunAndReturn(run func(string, func(migration.Blueprint))) *Schema_Table_Call {
 	_c.Call.Return(run)
 	return _c
 }

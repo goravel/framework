@@ -2,8 +2,14 @@ package migration
 
 import (
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/file"
 )
+
+type Agent struct {
+	orm.Model
+	Name string
+}
 
 func createMigrations(driver database.Driver) {
 	switch driver {

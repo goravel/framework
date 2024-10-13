@@ -16,8 +16,8 @@ func NewRepository(schema migration.Schema, table string) *Repository {
 	}
 }
 
-func (r *Repository) CreateRepository() error {
-	return r.schema.Create(r.table, func(table migration.Blueprint) {
+func (r *Repository) CreateRepository() {
+	r.schema.Create(r.table, func(table migration.Blueprint) {
 		table.ID()
 		table.String("migration")
 		table.Integer("batch")
@@ -30,8 +30,8 @@ func (r *Repository) Delete(migration string) error {
 	return err
 }
 
-func (r *Repository) DeleteRepository() error {
-	return r.schema.DropIfExists(r.table)
+func (r *Repository) DeleteRepository() {
+	r.schema.DropIfExists(r.table)
 }
 
 func (r *Repository) GetLast() ([]migration.File, error) {

@@ -50,9 +50,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleSchema)
 		}
 
-		connection := config.GetString("database.default")
-
-		return migration.NewSchema(config, connection, log, orm), nil
+		return migration.NewSchema(config, log, orm, nil), nil
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
@@ -66,10 +64,12 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
 		config := app.MakeConfig()
+		schema := app.MakeSchema()
 		seeder := app.MakeSeeder()
+
 		artisanFacade.Register([]contractsconsole.Command{
-			consolemigration.NewMigrateMakeCommand(config),
-			consolemigration.NewMigrateCommand(config),
+			consolemigration.NewMigrateMakeCommand(config, schema),
+			consolemigration.NewMigrateCommand(config, schema),
 			consolemigration.NewMigrateRollbackCommand(config),
 			consolemigration.NewMigrateResetCommand(config),
 			consolemigration.NewMigrateRefreshCommand(config, artisanFacade),

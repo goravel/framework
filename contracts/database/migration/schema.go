@@ -8,21 +8,27 @@ type Schema interface {
 	// Connection Get the connection for the schema.
 	Connection(name string) Schema
 	// Create a new table on the schema.
-	Create(table string, callback func(table Blueprint)) error
+	Create(table string, callback func(table Blueprint))
 	// DropIfExists Drop a table from the schema if exists.
-	DropIfExists(table string) error
+	DropIfExists(table string)
+	// GetConnection Get the connection for the schema.
+	GetConnection() string
 	// GetTables Get the tables that belong to the database.
 	GetTables() ([]Table, error)
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
+	// Migrations Get the migrations.
+	Migrations() []Migration
 	// Orm Get the orm instance.
 	Orm() orm.Orm
 	// Register migrations.
 	Register([]Migration)
+	// SetConnection Set the connection for the schema.
+	SetConnection(name string)
 	// Sql Execute a sql directly.
 	Sql(sql string)
 	// Table Modify a table on the schema.
-	Table(table string, callback func(table Blueprint)) error
+	Table(table string, callback func(table Blueprint))
 }
 
 type Migration interface {

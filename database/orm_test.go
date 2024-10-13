@@ -41,6 +41,9 @@ func TestOrmSuite(t *testing.T) {
 
 func (s *OrmSuite) SetupSuite() {
 	s.testQueries = gorm.NewTestQueries().Queries()
+	for _, testQuery := range s.testQueries {
+		testQuery.CreateTable()
+	}
 }
 
 func (s *OrmSuite) SetupTest() {

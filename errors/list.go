@@ -62,6 +62,8 @@ var (
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
+	MigrationUnsupportedDriver = New("unsupported migration driver: %s")
+
 	OrmDatabaseConfigNotFound      = New("not found database configuration")
 	OrmDriverNotSupported          = New("invalid driver: %s, only support mysql, postgres, sqlite and sqlserver")
 	OrmFailedToGenerateDNS         = New("failed to generate DSN for connection: %s")

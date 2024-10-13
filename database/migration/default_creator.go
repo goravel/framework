@@ -31,9 +31,10 @@ func (r *DefaultCreator) GetStub(table string, create bool) string {
 }
 
 // PopulateStub Populate the place-holders in the migration stub.
-func (r *DefaultCreator) PopulateStub(stub, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyMigration", str.Of(name).Prepend("m_").Studly().String())
-	stub = strings.ReplaceAll(stub, "DummyName", name)
+func (r *DefaultCreator) PopulateStub(stub, signature, table string) string {
+	stub = strings.ReplaceAll(stub, "DummyMigration", str.Of(signature).Prepend("m_").Studly().String())
+	stub = strings.ReplaceAll(stub, "DummySignature", signature)
+	stub = strings.ReplaceAll(stub, "DummyTable", table)
 
 	return stub
 }

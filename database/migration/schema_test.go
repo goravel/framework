@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -9,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/gorm"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
@@ -41,19 +43,17 @@ func (s *SchemaSuite) TestDropIfExists() {
 
 			table := "drop_if_exists"
 
-			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Twice()
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
-			s.NoError(schema.DropIfExists(table))
-			s.NoError(schema.Create(table, func(table migration.Blueprint) {
+			schema.DropIfExists(table)
+			schema.Create(table, func(table migration.Blueprint) {
 				table.String("name")
-			}))
+			})
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 			s.True(schema.HasTable(table))
 
-			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Once()
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-			s.NoError(schema.DropIfExists(table))
+			schema.DropIfExists(table)
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 			s.False(schema.HasTable(table))
@@ -66,13 +66,11 @@ func (s *SchemaSuite) TestTable() {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
 
-			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Once()
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Times(3)
 
-			err := schema.Create("changes", func(table migration.Blueprint) {
+			schema.Create("changes", func(table migration.Blueprint) {
 				table.String("name")
 			})
-			s.NoError(err)
 			s.True(schema.HasTable("changes"))
 
 			tables, err := schema.GetTables()
@@ -130,7 +128,13 @@ func (s *SchemaSuite) TestTable() {
 
 func initSchema(t *testing.T, testQuery *gorm.TestQuery) (*Schema, *mocksorm.Orm) {
 	mockOrm := mocksorm.NewOrm(t)
-	schema := NewSchema(testQuery.MockConfig(), testQuery.Docker().Driver().String(), nil, mockOrm)
+	schema := NewSchema(testQuery.MockConfig(), nil, mockOrm, nil)
 
 	return schema, mockOrm
+}
+
+func TestA(t *testing.T) {
+	color.Green().Println("1")
+	log.Fatalln("failed")
+	color.Green().Println("2")
 }

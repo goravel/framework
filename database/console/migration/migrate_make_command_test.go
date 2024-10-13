@@ -11,6 +11,7 @@ import (
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -19,6 +20,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	var (
 		mockConfig  *mocksconfig.Config
 		mockContext *mocksconsole.Context
+		mockSchema  *mocksmigration.Schema
 	)
 
 	now := carbon.Now()
@@ -27,6 +29,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	beforeEach := func() {
 		mockConfig = mocksconfig.NewConfig(t)
 		mockContext = mocksconsole.NewContext(t)
+		mockSchema = mocksmigration.NewSchema(t)
 	}
 
 	tests := []struct {
@@ -49,6 +52,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.On("Argument", 0).Return("create_users_table").Once()
 				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
+				mockConfig.On("GetString", "database.migrations.table").Return("migrations").Once()
 			},
 			assert: func() {
 				migration := fmt.Sprintf("database/migrations/%s_%s.go", now.ToShortDateTimeString(), "create_users_table")
@@ -64,6 +68,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverSql).Once()
 				mockConfig.On("GetString", "database.connections.postgres.driver").Return("postgres").Once()
 				mockConfig.On("GetString", "database.connections.postgres.charset").Return("utf8mb4").Once()
+				mockConfig.On("GetString", "database.migrations.table").Return("migrations").Once()
 			},
 			assert: func() {
 				up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
@@ -80,7 +85,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 
-			migrateMakeCommand := NewMigrateMakeCommand(mockConfig)
+			migrateMakeCommand := NewMigrateMakeCommand(mockConfig, mockSchema)
 			err := migrateMakeCommand.Handle(mockContext)
 			assert.Equal(t, test.expectErr, err)
 
@@ -88,5 +93,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 		})
 	}
 
-	defer assert.Nil(t, file.Remove("database"))
+	defer func() {
+		assert.Nil(t, file.Remove("database"))
+		carbon.UnsetTestNow()
+	}()
 }

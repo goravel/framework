@@ -4,46 +4,47 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/support/color"
 )
 
 type MigrateCommand struct {
 	config config.Config
+	schema migration.Schema
+	driver migration.Driver
 }
 
-func NewMigrateCommand(config config.Config) *MigrateCommand {
+func NewMigrateCommand(config config.Config, schema migration.Schema) *MigrateCommand {
+	driver, err := GetDriver(config, schema)
+	if err != nil {
+		color.Red().Println(err.Error())
+	}
+
 	return &MigrateCommand{
-		config: config,
+		driver: driver,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateCommand) Signature() string {
+func (r *MigrateCommand) Signature() string {
 	return "migrate"
 }
 
 // Description The console command description.
-func (receiver *MigrateCommand) Description() string {
+func (r *MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateCommand) Extend() command.Extend {
+func (r *MigrateCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateCommand) Handle(ctx console.Context) error {
-	driver, err := GetDriver(receiver.config)
-	if err != nil {
-		return err
-	}
-
-	// support for multiple migration paths in the future
-	path := []string{"./database/migrations"}
-	if err := driver.Run(path); err != nil {
+func (r *MigrateCommand) Handle(ctx console.Context) error {
+	if err := r.driver.Run(); err != nil {
 		color.Red().Println("Migration failed:", err.Error())
 		return nil
 	}
