@@ -32,7 +32,12 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		connection := config.GetString("database.default")
-		return BuildOrm(ctx, config, connection, log, app.Refresh)
+		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
+		if err != nil {
+			return nil, errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm)
+		}
+
+		return orm, nil
 	})
 	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()

@@ -69,6 +69,7 @@ var (
 	OrmFailedToGenerateDNS         = New("failed to generate DSN for connection: %s")
 	OrmFactoryMissingAttributes    = New("failed to get raw attributes")
 	OrmFactoryMissingMethod        = New("%s does not find factory method")
+	OrmInitConnection              = New("init %s connection error: %v")
 	OrmMissingWhereClause          = New("WHERE conditions required")
 	OrmNoDialectorsFound           = New("no dialectors found")
 	OrmQueryAssociationsConflict   = New("cannot set orm.Associations and other fields at the same time")
