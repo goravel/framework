@@ -3675,7 +3675,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
-			db.CreateTable(TestTableUsers)
+			db.CreateTable(TestTableGoravelUser)
 
 			user := User{Name: "user"}
 			assert.Nil(t, db.Query().Create(&user))

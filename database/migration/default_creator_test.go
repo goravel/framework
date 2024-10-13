@@ -36,8 +36,6 @@ func (s *DefaultCreatorSuite) TestPopulateStub() {
 			table:     "users",
 			expected: `package migrations
 
-import "github.com/goravel/framework/contracts/database/migration"
-
 type M202410131203CreateUsersTable struct {
 }
 

@@ -6,8 +6,6 @@ type Stubs struct {
 func (receiver Stubs) Empty() string {
 	return `package migrations
 
-import "github.com/goravel/framework/contracts/database/migration"
-
 type DummyMigration struct {
 }
 

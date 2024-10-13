@@ -3,9 +3,11 @@ package migration
 import (
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
@@ -38,8 +40,11 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 		s.Run(driver.String(), func() {
 			repository, mockOrm := s.initRepository(testQuery)
 
-			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+			var err error
+			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
+				err = txFunc(testQuery.Query())
+			}).Return(err).Once()
+			s.NoError(err)
 
 			repository.CreateRepository()
 
@@ -47,8 +52,10 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 
 			s.True(repository.RepositoryExists())
 
-			mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
+				err = txFunc(testQuery.Query())
+			}).Return(err).Once()
+			s.NoError(err)
 
 			repository.DeleteRepository()
 
@@ -67,34 +74,53 @@ func (s *RepositoryTestSuite) TestRecord() {
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			if !repository.RepositoryExists() {
-				mockOrm.EXPECT().Connection(driver.String()).Return(mockOrm).Once()
-				mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+				var err error
+				mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
+					err = txFunc(testQuery.Query())
+				}).Return(err).Once()
+
+				s.NoError(err)
 
 				repository.CreateRepository()
 			}
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			err := repository.Log("migration1", 1)
 			s.NoError(err)
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			err = repository.Log("migration2", 1)
 			s.NoError(err)
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			err = repository.Log("migration3", 2)
 			s.NoError(err)
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			lastBatchNumber, err := repository.getLastBatchNumber()
 			s.NoError(err)
 			s.Equal(2, lastBatchNumber)
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			nextBatchNumber, err := repository.GetNextBatchNumber()
 			s.NoError(err)
 			s.Equal(3, nextBatchNumber)
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			ranMigrations, err := repository.GetRan()
 			s.NoError(err)
 			s.ElementsMatch([]string{"migration1", "migration2", "migration3"}, ranMigrations)
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			migrations, err := repository.GetMigrations(2)
+
 			s.NoError(err)
 			s.Len(migrations, 2)
 			s.Equal("migration3", migrations[0].Migration)
@@ -102,7 +128,10 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal("migration2", migrations[1].Migration)
 			s.Equal(1, migrations[1].Batch)
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			migrations, err = repository.GetMigrationsByBatch(1)
+
 			s.NoError(err)
 			s.Len(migrations, 2)
 			s.Equal("migration2", migrations[0].Migration)
@@ -110,14 +139,21 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal("migration1", migrations[1].Migration)
 			s.Equal(1, migrations[1].Batch)
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
+
 			migrations, err = repository.GetLast()
+
 			s.NoError(err)
 			s.Len(migrations, 1)
 			s.Equal("migration3", migrations[0].Migration)
 			s.Equal(2, migrations[0].Batch)
 
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			err = repository.Delete("migration1")
 			s.NoError(err)
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			ranMigrations, err = repository.GetRan()
 			s.NoError(err)

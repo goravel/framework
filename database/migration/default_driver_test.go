@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/migration"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
@@ -19,7 +18,6 @@ var testValue = 0
 
 type DefaultDriverSuite struct {
 	suite.Suite
-	mockConfig     *mocksconfig.Config
 	mockRepository *mocksmigration.Repository
 	mockSchema     *mocksmigration.Schema
 	driver         *DefaultDriver

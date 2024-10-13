@@ -31,7 +31,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		createMigrations(driver)
 
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.On("Option", "step").Return("1").Once()
+		mockContext.EXPECT().Option("step").Return("1").Once()
 
 		mockSchema := mocksmigration.NewSchema(t)
 

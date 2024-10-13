@@ -26,8 +26,10 @@ func TestSqlDriverSuite(t *testing.T) {
 
 func (s *SqlDriverSuite) SetupTest() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
 	s.mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
 	s.mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
+	s.mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
 	s.mockSchema = mocksmigration.NewSchema(s.T())
 
 	s.driver = NewSqlDriver(s.mockConfig)

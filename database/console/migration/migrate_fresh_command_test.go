@@ -37,7 +37,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-		mockContext.On("OptionBool", "seed").Return(false).Once()
+		mockContext.EXPECT().OptionBool("seed").Return(false).Once()
 
 		migrateFreshCommand := NewMigrateFreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateFreshCommand.Handle(mockContext))
@@ -53,9 +53,9 @@ func TestMigrateFreshCommand(t *testing.T) {
 		mockConfig.EXPECT().GetString("database.migrations.driver").Return(migration.DriverSql).Once()
 
 		mockArtisan = mocksconsole.NewArtisan(t)
-		mockContext.On("OptionBool", "seed").Return(true).Once()
-		mockContext.On("OptionSlice", "seeder").Return([]string{"MockSeeder"}).Once()
-		mockArtisan.On("Call", "db:seed --seeder MockSeeder").Return(nil).Once()
+		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
+		mockContext.EXPECT().OptionSlice("seeder").Return([]string{"MockSeeder"}).Once()
+		mockArtisan.EXPECT().Call("db:seed --seeder MockSeeder").Once()
 
 		migrateFreshCommand = NewMigrateFreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateFreshCommand.Handle(mockContext))
@@ -68,9 +68,9 @@ func TestMigrateFreshCommand(t *testing.T) {
 		// Test MigrateFreshCommand with --seed flag and no seeders specified
 		mockContext = mocksconsole.NewContext(t)
 		mockArtisan = mocksconsole.NewArtisan(t)
-		mockContext.On("OptionBool", "seed").Return(true).Once()
-		mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
-		mockArtisan.On("Call", "db:seed").Return(nil).Once()
+		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
+		mockContext.EXPECT().OptionSlice("seeder").Return([]string{}).Once()
+		mockArtisan.EXPECT().Call("db:seed").Once()
 
 		migrateFreshCommand = NewMigrateFreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateFreshCommand.Handle(mockContext))

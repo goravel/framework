@@ -33,13 +33,13 @@ func TestMigrateRefreshCommand(t *testing.T) {
 
 		mockArtisan := mocksconsole.NewArtisan(t)
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.On("Option", "step").Return("").Once()
+		mockContext.EXPECT().Option("step").Return("").Once()
 
 		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		// Test MigrateRefreshCommand without --seed flag
-		mockContext.On("OptionBool", "seed").Return(false).Once()
+		mockContext.EXPECT().OptionBool("seed").Return(false).Once()
 		migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
@@ -50,16 +50,16 @@ func TestMigrateRefreshCommand(t *testing.T) {
 
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockContext = mocksconsole.NewContext(t)
-		mockContext.On("Option", "step").Return("5").Once()
+		mockContext.EXPECT().Option("step").Return("5").Once()
 		mockSchema = mocksmigration.NewSchema(t)
 
 		migrateCommand = NewMigrateCommand(mockConfig, mockSchema)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		// Test MigrateRefreshCommand with --seed flag and --seeder specified
-		mockContext.On("OptionBool", "seed").Return(true).Once()
-		mockContext.On("OptionSlice", "seeder").Return([]string{"UserSeeder"}).Once()
-		mockArtisan.On("Call", "db:seed --seeder UserSeeder").Return(nil).Once()
+		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
+		mockContext.EXPECT().OptionSlice("seeder").Return([]string{"UserSeeder"}).Once()
+		mockArtisan.EXPECT().Call("db:seed --seeder UserSeeder").Once()
 		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
@@ -67,10 +67,10 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockContext = mocksconsole.NewContext(t)
 
 		// Test MigrateRefreshCommand with --seed flag and no --seeder specified
-		mockContext.On("Option", "step").Return("").Once()
-		mockContext.On("OptionBool", "seed").Return(true).Once()
-		mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
-		mockArtisan.On("Call", "db:seed").Return(nil).Once()
+		mockContext.EXPECT().Option("step").Return("").Once()
+		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
+		mockContext.EXPECT().OptionSlice("seeder").Return([]string{}).Once()
+		mockArtisan.EXPECT().Call("db:seed").Once()
 		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 

@@ -11,7 +11,7 @@ type Schema interface {
 	Create(table string, callback func(table Blueprint))
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string)
-	// GetConnection Get the connection for the schema.
+	// GetConnection Get the connection of the schema.
 	GetConnection() string
 	// GetTables Get the tables that belong to the database.
 	GetTables() ([]Table, error)
@@ -23,7 +23,7 @@ type Schema interface {
 	Orm() orm.Orm
 	// Register migrations.
 	Register([]Migration)
-	// SetConnection Set the connection for the schema.
+	// SetConnection Set the connection of the schema.
 	SetConnection(name string)
 	// Sql Execute a sql directly.
 	Sql(sql string)

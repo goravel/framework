@@ -9,8 +9,6 @@ import (
 )
 
 type MigrateCommand struct {
-	config config.Config
-	schema migration.Schema
 	driver migration.Driver
 }
 

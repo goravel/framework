@@ -41,8 +41,8 @@ func TestMigrateMakeCommand(t *testing.T) {
 		{
 			name: "the migration name is empty",
 			setup: func() {
-				mockContext.On("Argument", 0).Return("").Once()
-				mockContext.On("Ask", "Enter the migration name", mock.Anything).Return("", errors.New("the migration name cannot be empty")).Once()
+				mockContext.EXPECT().Argument(0).Return("").Once()
+				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("", errors.New("the migration name cannot be empty")).Once()
 			},
 			assert:    func() {},
 			expectErr: errors.New("the migration name cannot be empty"),
@@ -50,9 +50,9 @@ func TestMigrateMakeCommand(t *testing.T) {
 		{
 			name: "default driver",
 			setup: func() {
-				mockContext.On("Argument", 0).Return("create_users_table").Once()
-				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
-				mockConfig.On("GetString", "database.migrations.table").Return("migrations").Once()
+				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
+				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
+				mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
 			},
 			assert: func() {
 				migration := fmt.Sprintf("database/migrations/%s_%s.go", now.ToShortDateTimeString(), "create_users_table")
@@ -63,12 +63,12 @@ func TestMigrateMakeCommand(t *testing.T) {
 		{
 			name: "sql driver",
 			setup: func() {
-				mockContext.On("Argument", 0).Return("create_users_table").Once()
-				mockConfig.On("GetString", "database.default").Return("postgres").Once()
-				mockConfig.On("GetString", "database.migrations.driver").Return(contractsmigration.DriverSql).Once()
-				mockConfig.On("GetString", "database.connections.postgres.driver").Return("postgres").Once()
-				mockConfig.On("GetString", "database.connections.postgres.charset").Return("utf8mb4").Once()
-				mockConfig.On("GetString", "database.migrations.table").Return("migrations").Once()
+				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
+				mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
+				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
+				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
+				mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
 			},
 			assert: func() {
 				up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
