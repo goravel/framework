@@ -14,7 +14,7 @@ import (
 
 type DriverTestSuite struct {
 	suite.Suite
-	driver     *DriverImpl
+	driver     *Driver
 	mockConfig *configmock.Config
 	mockLog    *logmock.Log
 }
@@ -26,7 +26,7 @@ func TestDriverTestSuite(t *testing.T) {
 func (s *DriverTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
 	s.mockLog = &logmock.Log{}
-	s.driver = NewDriverImpl(s.mockConfig)
+	s.driver = NewDriver(s.mockConfig)
 }
 
 func (s *DriverTestSuite) TestMemory() {

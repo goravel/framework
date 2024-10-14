@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/errors"
 )
 
 type TestCase struct {
@@ -19,7 +20,7 @@ func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
 	}
 
 	if artisanFacade == nil {
-		panic("Artisan facade is not initialized")
+		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	artisanFacade.Call(command)
@@ -27,7 +28,7 @@ func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
 
 func (receiver *TestCase) RefreshDatabase(seeds ...seeder.Seeder) {
 	if artisanFacade == nil {
-		panic("Artisan facade is not initialized")
+		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	artisanFacade.Call("migrate:refresh")

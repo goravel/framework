@@ -5,12 +5,11 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
-	"fmt"
 	"io"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 )
@@ -26,7 +25,7 @@ func NewAES(config config.Config, json foundation.Json) (*AES, error) {
 
 	// Don't use AES in artisan when the key is empty.
 	if support.Env == support.EnvArtisan && len(key) == 0 {
-		return nil, ErrAppKeyNotSetInArtisan
+		return nil, errors.CryptAppKeyNotSet
 	}
 
 	keyLength := len(key)
@@ -34,7 +33,7 @@ func NewAES(config config.Config, json foundation.Json) (*AES, error) {
 	if keyLength != 16 && keyLength != 24 && keyLength != 32 {
 		color.Red().Printf("[Crypt] Invalid APP_KEY length. Expected 16, 24, or 32 bytes, but got %d bytes.\n", len(key))
 		color.Red().Println("Please reset it using the following command:\ngo run . artisan key:generate")
-		return nil, fmt.Errorf("%w: %d bytes", ErrInvalidAppKeyLength, keyLength)
+		return nil, errors.CryptInvalidAppKeyLength.Args(keyLength)
 	}
 
 	keyBytes := []byte(key)
@@ -93,10 +92,10 @@ func (b *AES) DecryptString(payload string) (string, error) {
 
 	// check if the json payload has the correct keys
 	if _, ok := decodeJson["iv"]; !ok {
-		return "", errors.New("decrypt payload error: missing iv key")
+		return "", errors.CryptMissingIVKey
 	}
 	if _, ok := decodeJson["value"]; !ok {
-		return "", errors.New("decrypt payload error: missing value key")
+		return "", errors.CryptMissingValueKey
 	}
 
 	decodeIv := decodeJson["iv"]

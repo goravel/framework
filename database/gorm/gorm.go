@@ -1,8 +1,6 @@
 package gorm
 
 import (
-	"errors"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -14,6 +12,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -36,7 +35,7 @@ func (r *Builder) Build() (*gormio.DB, error) {
 	readConfigs := r.configBuilder.Reads()
 	writeConfigs := r.configBuilder.Writes()
 	if len(writeConfigs) == 0 {
-		return nil, errors.New("not found database configuration")
+		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
 	if err := r.init(writeConfigs[0]); err != nil {
@@ -94,10 +93,10 @@ func (r *Builder) configureReadWriteSeparate(readConfigs, writeConfigs []databas
 func (r *Builder) init(fullConfig database.FullConfig) error {
 	dialectors, err := getDialectors([]database.FullConfig{fullConfig})
 	if err != nil {
-		return fmt.Errorf("init gorm dialector error: %v", err)
+		return err
 	}
 	if len(dialectors) == 0 {
-		return errors.New("no dialectors found")
+		return errors.OrmNoDialectorsFound
 	}
 
 	var logLevel gormlogger.LogLevel

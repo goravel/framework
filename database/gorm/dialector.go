@@ -1,8 +1,6 @@
 package gorm
 
 import (
-	"fmt"
-
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -11,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/db"
+	"github.com/goravel/framework/errors"
 )
 
 func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
@@ -20,7 +19,7 @@ func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 		var dialector gorm.Dialector
 		dsn := db.Dsn(config)
 		if dsn == "" {
-			return nil, fmt.Errorf("failed to generate DSN for connection: %s", config.Connection)
+			return nil, errors.OrmFailedToGenerateDNS.Args(config.Connection)
 		}
 
 		switch config.Driver {
@@ -39,7 +38,7 @@ func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 				DSN: dsn,
 			})
 		default:
-			return nil, fmt.Errorf("err database driver: %s, only support mysql, postgres, sqlite and sqlserver", config.Driver)
+			return nil, errors.OrmDriverNotSupported.Args(config.Driver)
 		}
 
 		dialectors = append(dialectors, dialector)

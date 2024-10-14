@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -90,7 +91,7 @@ func (f *FileLoaderTestSuite) TestLoadNonExistentFile() {
 
 	f.Error(err)
 	f.Nil(translations)
-	f.Equal(ErrFileNotExist, err)
+	f.EqualError(err, errors.LangFileNotExist.Error())
 }
 
 func (f *FileLoaderTestSuite) TestLoadInvalidJSON() {

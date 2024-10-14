@@ -84,7 +84,7 @@ func (s *ApplicationTestSuite) TestStoragePath() {
 }
 
 func (s *ApplicationTestSuite) TestLangPath() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("test").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
@@ -150,7 +150,7 @@ func (s *ApplicationTestSuite) TestMakeArtisan() {
 }
 
 func (s *ApplicationTestSuite) TestMakeAuth() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
@@ -167,11 +167,10 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeAuth(http.Background()))
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeCache() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("cache.default").Return("memory").Once()
 	mockConfig.EXPECT().GetString("cache.stores.memory.driver").Return("memory").Once()
 	mockConfig.EXPECT().GetString("cache.prefix").Return("goravel").Once()
@@ -187,7 +186,6 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeCache())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeConfig() {
@@ -198,7 +196,7 @@ func (s *ApplicationTestSuite) TestMakeConfig() {
 }
 
 func (s *ApplicationTestSuite) TestMakeCrypt() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.key").Return("12345678901234567890123456789012").Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
@@ -210,7 +208,6 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeCrypt())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeEvent() {
@@ -243,7 +240,7 @@ func (s *ApplicationTestSuite) TestMakeGrpc() {
 }
 
 func (s *ApplicationTestSuite) TestMakeHash() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("hashing.driver", "argon2id").Return("argon2id").Once()
 	mockConfig.EXPECT().GetInt("hashing.argon2id.time", 4).Return(4).Once()
 	mockConfig.EXPECT().GetInt("hashing.argon2id.memory", 65536).Return(65536).Once()
@@ -257,11 +254,10 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeHash())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeLang() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.locale").Return("en").Once()
 	mockConfig.EXPECT().GetString("app.fallback_locale").Return("en").Once()
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("lang").Once()
@@ -278,10 +274,18 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 	ctx := http.Background()
 
 	s.NotNil(s.app.MakeLang(ctx))
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeLog() {
+	mockConfig := mocksconfig.NewConfig(s.T())
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	mockConfig.EXPECT().GetString("logging.default").Return("").Once()
+
+	s.app.SetJson(json.NewJson())
+
 	serviceProvider := &frameworklog.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
@@ -333,6 +337,10 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		return mockConfig, nil
 	})
 
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
+	})
+
 	serviceProvider := &database.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
@@ -342,6 +350,10 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 func (s *ApplicationTestSuite) TestMakeQueue() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
+	})
+
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
 	})
 
 	serviceProvider := &queue.ServiceProvider{}
@@ -358,23 +370,21 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 }
 
 func (s *ApplicationTestSuite) TestMakeRoute() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
-	mockRoute := &mocksroute.Route{}
 	s.app.Singleton("goravel.route", func(app foundation.Application) (any, error) {
-		return mockRoute, nil
+		return &mocksroute.Route{}, nil
 	})
 
 	s.NotNil(s.app.MakeRoute())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeSchedule() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
 
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
@@ -386,16 +396,18 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
+	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
+		return &mockscache.Cache{}, nil
+	})
 
 	serviceProvider := &schedule.ServiceProvider{}
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeSchedule())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeSession() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetInt("session.lifetime").Return(120).Once()
 	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
 	mockConfig.EXPECT().GetString("session.files").Return("storage/framework/sessions").Once()
@@ -411,12 +423,10 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 
 	serviceProvider.Register(s.app)
 	s.NotNil(s.app.MakeSession())
-
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeStorage() {
-	mockConfig := &mocksconfig.Config{}
+	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("filesystems.default").Return("local").Once()
 	mockConfig.EXPECT().GetString("filesystems.disks.local.driver").Return("local").Once()
 	mockConfig.EXPECT().GetString("filesystems.disks.local.root").Return("").Once()
@@ -430,7 +440,6 @@ func (s *ApplicationTestSuite) TestMakeStorage() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeStorage())
-	mockConfig.AssertExpectations(s.T())
 }
 
 func (s *ApplicationTestSuite) TestMakeValidation() {

@@ -3,13 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 )
 
 type Orm struct {
@@ -45,7 +45,7 @@ func NewOrm(
 func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key any)) (*Orm, error) {
 	query, err := gorm.BuildQuery(ctx, config, connection, log)
 	if err != nil {
-		return nil, fmt.Errorf("[Orm] Build query for %s connection error: %v", connection, err)
+		return nil, err
 	}
 
 	queries := map[string]contractsorm.Query{
@@ -78,7 +78,7 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 func (r *Orm) DB() (*sql.DB, error) {
 	query, ok := r.Query().(*gorm.Query)
 	if !ok {
-		return nil, fmt.Errorf("unexpected Query type %T, expected *gorm.Query", r.Query())
+		return nil, errors.OrmUnexpectedQueryType.Args(r.Query())
 	}
 
 	return query.Instance().DB()
@@ -111,7 +111,7 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
 
 	if err := txFunc(tx); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return fmt.Errorf("rollback error: %v", err)
+			return err
 		}
 
 		return err

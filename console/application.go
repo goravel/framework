@@ -36,7 +36,7 @@ func (c *Application) Register(commands []console.Command) {
 			Name:  item.Signature(),
 			Usage: item.Description(),
 			Action: func(ctx *cli.Context) error {
-				return item.Handle(&CliContext{ctx})
+				return item.Handle(NewCliContext(ctx))
 			},
 			Category: item.Extend().Category,
 			Flags:    flagsToCliFlags(item.Extend().Flags),

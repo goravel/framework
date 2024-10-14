@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	logcontract "github.com/goravel/framework/contracts/log"
 	translationcontract "github.com/goravel/framework/contracts/translation"
+	"github.com/goravel/framework/errors"
 )
 
 type Translator struct {
@@ -156,7 +157,7 @@ func (t *Translator) SetLocale(locale string) context.Context {
 }
 
 func (t *Translator) getLine(locale string, group string, key string, options ...translationcontract.Option) string {
-	if err := t.load(locale, group); err != nil && err != ErrFileNotExist {
+	if err := t.load(locale, group); err != nil && !errors.Is(err, errors.LangFileNotExist) {
 		t.logger.Panic(err)
 		return t.key
 	}
