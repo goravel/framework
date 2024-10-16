@@ -1,22 +1,20 @@
 package console
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/database/seeder"
+	contractsseeder "github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
 type SeedCommand struct {
 	config config.Config
-	seeder seeder.Facade
+	seeder contractsseeder.Facade
 }
 
-func NewSeedCommand(config config.Config, seeder seeder.Facade) *SeedCommand {
+func NewSeedCommand(config config.Config, seeder contractsseeder.Facade) *SeedCommand {
 	return &SeedCommand{
 		config: config,
 		seeder: seeder,
@@ -85,19 +83,19 @@ func (receiver *SeedCommand) ConfirmToProceed(force bool) error {
 		return nil
 	}
 
-	return errors.New("application in production use --force to run this command")
+	return errors.DBForceIsRequiredInProduction
 }
 
 // GetSeeders returns a seeder instances
-func (receiver *SeedCommand) GetSeeders(names []string) ([]seeder.Seeder, error) {
+func (receiver *SeedCommand) GetSeeders(names []string) ([]contractsseeder.Seeder, error) {
 	if len(names) == 0 {
 		return receiver.seeder.GetSeeders(), nil
 	}
-	var seeders []seeder.Seeder
+	var seeders []contractsseeder.Seeder
 	for _, name := range names {
 		seeder := receiver.seeder.GetSeeder(name)
 		if seeder == nil {
-			return nil, fmt.Errorf("no seeder of %s found", name)
+			return nil, errors.DBSeederNotFound.Args(name)
 		}
 		seeders = append(seeders, seeder)
 	}

@@ -1,12 +1,11 @@
 package migration
 
 import (
-	"errors"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -47,7 +46,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		name, err = ctx.Ask("Enter the migration name", console.AskOption{
 			Validate: func(s string) error {
 				if s == "" {
-					return errors.New("the migration name cannot be empty")
+					return errors.MigrationNameIsRequired
 				}
 
 				return nil

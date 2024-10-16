@@ -20,10 +20,13 @@ type SqlDriverSuite struct {
 	suite.Suite
 	mockConfig        *mocksconfig.Config
 	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
-	driver            *SqlDriver
 }
 
 func TestSqlDriverSuite(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skipping tests of using docker")
+	}
+
 	suite.Run(t, &SqlDriverSuite{})
 }
 

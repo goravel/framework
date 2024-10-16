@@ -42,6 +42,9 @@ var (
 	CryptMissingIVKey        = New("decrypt payload error: missing iv key")
 	CryptMissingValueKey     = New("decrypt payload error: missing value key")
 
+	DBForceIsRequiredInProduction = New("application in production use --force to run this command")
+	DBSeederNotFound              = New("not found %s seeder")
+
 	EventListenerNotBind = New("event %v doesn't bind listeners")
 
 	FilesystemDefaultDiskNotSet   = New("please set default disk")
@@ -62,6 +65,7 @@ var (
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
+	MigrationNameIsRequired    = New("migration name cannot be empty")
 	MigrationUnsupportedDriver = New("unsupported migration driver: %s")
 
 	OrmDatabaseConfigNotFound      = New("not found database configuration")

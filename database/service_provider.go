@@ -67,18 +67,19 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		config := app.MakeConfig()
-		schema := app.MakeSchema()
-		seeder := app.MakeSeeder()
+	artisan := app.MakeArtisan()
+	config := app.MakeConfig()
+	schema := app.MakeSchema()
+	seeder := app.MakeSeeder()
 
-		artisanFacade.Register([]contractsconsole.Command{
+	if artisan != nil && config != nil && schema != nil && seeder != nil {
+		artisan.Register([]contractsconsole.Command{
 			consolemigration.NewMigrateMakeCommand(config, schema),
 			consolemigration.NewMigrateCommand(config, schema),
 			consolemigration.NewMigrateRollbackCommand(config),
 			consolemigration.NewMigrateResetCommand(config),
-			consolemigration.NewMigrateRefreshCommand(config, artisanFacade),
-			consolemigration.NewMigrateFreshCommand(config, artisanFacade),
+			consolemigration.NewMigrateRefreshCommand(config, artisan),
+			consolemigration.NewMigrateFreshCommand(config, artisan),
 			consolemigration.NewMigrateStatusCommand(config),
 			console.NewModelMakeCommand(),
 			console.NewObserverMakeCommand(),
