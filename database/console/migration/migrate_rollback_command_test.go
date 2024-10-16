@@ -6,8 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/database/migration"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/env"
@@ -25,10 +26,10 @@ func TestMigrateRollbackCommand(t *testing.T) {
 
 		mockConfig := testQuery.MockConfig()
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(migration.DriverSql).Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4").Once()
 
-		createMigrations(driver)
+		migration.CreateTestMigrations(driver)
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("1").Once()
@@ -38,7 +39,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-		var agent Agent
+		var agent migration.Agent
 		err := query.Where("name", "goravel").FirstOrFail(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
@@ -46,7 +47,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 		assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
 
-		var agent1 Agent
+		var agent1 migration.Agent
 		err = query.Where("name", "goravel").FirstOrFail(&agent1)
 		assert.Error(t, err)
 	}

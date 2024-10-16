@@ -19,7 +19,7 @@ import (
 
 func getMigrate(config config.Config) (*migrate.Migrate, error) {
 	connection := config.GetString("database.default")
-	driver := config.GetString("database.connections." + connection + ".driver")
+	dbDriver := database.Driver(config.GetString("database.connections." + connection + ".driver"))
 	dir := "file://./database/migrations"
 	if support.RelativePath != "" {
 		dir = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
@@ -31,7 +31,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 		return nil, errors.New("not found database configuration")
 	}
 
-	switch database.Driver(driver) {
+	switch dbDriver {
 	case database.DriverMysql:
 		mysqlDsn := databasedb.Dsn(writeConfigs[0])
 		if mysqlDsn == "" {
@@ -81,7 +81,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		instance, err := sqlite.WithInstance(db, &sqlite.Config{
+		instance, err := driver.WithInstance(db, &driver.Config{
 			MigrationsTable: config.GetString("database.migrations.table"),
 		})
 		if err != nil {

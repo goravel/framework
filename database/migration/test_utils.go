@@ -11,7 +11,7 @@ type Agent struct {
 	Name string
 }
 
-func createMigrations(driver database.Driver) {
+func CreateTestMigrations(driver database.Driver) {
 	switch driver {
 	case database.DriverPostgres:
 		createPostgresMigrations()

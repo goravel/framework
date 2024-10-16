@@ -9,6 +9,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlserver"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
@@ -91,7 +92,7 @@ func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
 	var (
 		databaseName string
 		db           *sql.DB
-		driver       migratedatabase.Driver
+		dbDriver     migratedatabase.Driver
 		err          error
 	)
 
@@ -103,7 +104,7 @@ func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		driver, err = mysql.WithInstance(db, &mysql.Config{
+		dbDriver, err = mysql.WithInstance(db, &mysql.Config{
 			MigrationsTable: r.table,
 		})
 	case database.DriverPostgres:
@@ -113,7 +114,7 @@ func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		driver, err = postgres.WithInstance(db, &postgres.Config{
+		dbDriver, err = postgres.WithInstance(db, &postgres.Config{
 			MigrationsTable: r.table,
 		})
 	case database.DriverSqlite:
@@ -123,7 +124,7 @@ func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		driver, err = sqlite.WithInstance(db, &sqlite.Config{
+		dbDriver, err = driver.WithInstance(db, &driver.Config{
 			MigrationsTable: r.table,
 		})
 	case database.DriverSqlserver:
@@ -133,7 +134,7 @@ func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		driver, err = sqlserver.WithInstance(db, &sqlserver.Config{
+		dbDriver, err = sqlserver.WithInstance(db, &sqlserver.Config{
 			MigrationsTable: r.table,
 		})
 	default:
@@ -144,5 +145,5 @@ func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
 		return nil, err
 	}
 
-	return migrate.NewWithDatabaseInstance(path, databaseName, driver)
+	return migrate.NewWithDatabaseInstance(path, databaseName, dbDriver)
 }

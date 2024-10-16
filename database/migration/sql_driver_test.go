@@ -7,32 +7,32 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	databasedb "github.com/goravel/framework/database/db"
+	"github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
 type SqlDriverSuite struct {
 	suite.Suite
-	mockConfig *mocksconfig.Config
-	mockSchema *mocksmigration.Schema
-	driver     *SqlDriver
+	mockConfig        *mocksconfig.Config
+	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
+	driver            *SqlDriver
 }
 
 func TestSqlDriverSuite(t *testing.T) {
 	suite.Run(t, &SqlDriverSuite{})
 }
 
-func (s *SqlDriverSuite) SetupTest() {
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
-	s.mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
-	s.mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
-	s.mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-	s.mockSchema = mocksmigration.NewSchema(s.T())
+func (s *SqlDriverSuite) SetupSuite() {
+	s.driverToTestQuery = gorm.NewTestQueries().Queries()
+}
 
-	s.driver = NewSqlDriver(s.mockConfig)
+func (s *SqlDriverSuite) SetupTest() {
+
 }
 
 func (s *SqlDriverSuite) TestCreate() {
@@ -43,7 +43,15 @@ func (s *SqlDriverSuite) TestCreate() {
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
-	s.NoError(s.driver.Create(name))
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
+	s.mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
+	s.mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
+	s.mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
+
+	driver := NewSqlDriver(s.mockConfig)
+
+	s.NoError(driver.Create(name))
 
 	upFile := filepath.Join(path, "20240817214501_"+name+".up.sql")
 	downFile := filepath.Join(path, "20240817214501_"+name+".down.sql")
@@ -55,4 +63,34 @@ func (s *SqlDriverSuite) TestCreate() {
 		carbon.UnsetTestNow()
 		s.NoError(file.Remove("database"))
 	}()
+}
+
+func (s *SqlDriverSuite) TestRun() {
+	if env.IsWindows() {
+		s.T().Skip("Skipping tests of using docker")
+	}
+
+	testQueries := gorm.NewTestQueries().Queries()
+	for driver, testQuery := range testQueries {
+		query := testQuery.Query()
+		mockConfig := testQuery.MockConfig()
+		CreateTestMigrations(driver)
+
+		sqlDriver := &SqlDriver{
+			configBuilder: databasedb.NewConfigBuilder(mockConfig, driver.String()),
+			creator:       NewSqlCreator(driver, "utf8bm4"),
+			table:         "migrations",
+		}
+		err := sqlDriver.Run()
+		s.NoError(err)
+
+		var agent Agent
+		s.Nil(query.Where("name", "goravel").First(&agent))
+		s.True(agent.ID > 0)
+
+		err = sqlDriver.Run()
+		s.NoError(err)
+	}
+
+	defer s.Nil(file.Remove("database"))
 }

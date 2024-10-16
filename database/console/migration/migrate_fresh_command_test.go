@@ -6,8 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/database/migration"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/env"
@@ -24,11 +25,11 @@ func TestMigrateFreshCommand(t *testing.T) {
 		query := testQuery.Query()
 		mockConfig := testQuery.MockConfig()
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(migration.DriverSql).Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4").Once()
 
 		mockSchema := mocksmigration.NewSchema(t)
-		createMigrations(driver)
+		migration.CreateTestMigrations(driver)
 
 		mockContext := mocksconsole.NewContext(t)
 		mockArtisan := mocksconsole.NewArtisan(t)
@@ -42,7 +43,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 		migrateFreshCommand := NewMigrateFreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateFreshCommand.Handle(mockContext))
 
-		var agent Agent
+		var agent migration.Agent
 		err := query.Where("name", "goravel").First(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
@@ -50,7 +51,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 		// Test MigrateFreshCommand with --seed flag and seeders specified
 		mockContext = mocksconsole.NewContext(t)
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(migration.DriverSql).Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
 
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
@@ -60,7 +61,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 		migrateFreshCommand = NewMigrateFreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateFreshCommand.Handle(mockContext))
 
-		var agent1 Agent
+		var agent1 migration.Agent
 		err = query.Where("name", "goravel").First(&agent1)
 		assert.Nil(t, err)
 		assert.True(t, agent1.ID > 0)
@@ -75,7 +76,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 		migrateFreshCommand = NewMigrateFreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateFreshCommand.Handle(mockContext))
 
-		var agent2 Agent
+		var agent2 migration.Agent
 		err = query.Where("name", "goravel").First(&agent2)
 		assert.Nil(t, err)
 		assert.True(t, agent2.ID > 0)

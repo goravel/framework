@@ -36,7 +36,7 @@ func (s *SchemaSuite) SetupTest() {
 	}
 }
 
-func (s *SchemaSuite) TestDropIfExists() {
+func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
@@ -77,7 +77,7 @@ func (s *SchemaSuite) TestDropIfExists() {
 	}
 }
 
-func (s *SchemaSuite) TestTable() {
+func (s *SchemaSuite) TestTable_GetTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
@@ -147,6 +147,34 @@ func (s *SchemaSuite) TestTable() {
 			//		s.Equal("int4", column.TypeName)
 			//	}
 			//}
+		})
+	}
+}
+
+func (s *SchemaSuite) TestSql() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema, mockOrm := initSchema(s.T(), testQuery)
+
+			var err error
+			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
+				err = txFunc(testQuery.Query())
+			}).Return(err).Once()
+			s.NoError(err)
+
+			schema.Create("sql", func(table migration.Blueprint) {
+				table.String("name")
+			})
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
+			schema.Sql("insert into goravel_sql (name) values ('goravel');")
+
+			var count int64
+			err = testQuery.Query().Table("sql").Where("name", "goravel").Count(&count)
+
+			s.NoError(err)
+			s.Equal(int64(1), count)
 		})
 	}
 }
