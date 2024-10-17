@@ -68,9 +68,7 @@ func (s *SqlDriverSuite) TestCreate() {
 	s.True(file.Exists(upFile))
 	s.True(file.Exists(downFile))
 
-	defer func() {
-		carbon.UnsetTestNow()
-	}()
+	defer carbon.UnsetTestNow()
 }
 
 func (s *SqlDriverSuite) TestRun() {
