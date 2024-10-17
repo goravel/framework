@@ -71,8 +71,8 @@ func (s *DefaultDriverSuite) TestRun() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]migration.Migration{
-					&TestMigration{},
-					&TestConnectionMigration{},
+					&TestMigration{suite: s},
+					&TestConnectionMigration{suite: s},
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
 				s.mockRepository.EXPECT().Log("20240817214501_create_users_table", 1).Return(nil).Once()
@@ -84,8 +84,8 @@ func (s *DefaultDriverSuite) TestRun() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]migration.Migration{
-					&TestMigration{},
-					&TestConnectionMigration{},
+					&TestMigration{suite: s},
+					&TestConnectionMigration{suite: s},
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
 				s.mockRepository.EXPECT().Log("20240817214501_create_users_table", 1).Return(errors.New("error")).Once()
@@ -98,8 +98,8 @@ func (s *DefaultDriverSuite) TestRun() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]migration.Migration{
-					&TestMigration{},
-					&TestConnectionMigration{},
+					&TestMigration{suite: s},
+					&TestConnectionMigration{suite: s},
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, errors.New("error")).Once()
 			},
@@ -131,8 +131,8 @@ func (s *DefaultDriverSuite) TestRun() {
 
 func (s *DefaultDriverSuite) TestPendingMigrations() {
 	migrations := []migration.Migration{
-		&TestMigration{},
-		&TestConnectionMigration{},
+		&TestMigration{suite: s},
+		&TestConnectionMigration{suite: s},
 	}
 	ran := []string{
 		"20240817214501_create_users_table",
@@ -140,7 +140,7 @@ func (s *DefaultDriverSuite) TestPendingMigrations() {
 
 	pendingMigrations := s.driver.pendingMigrations(migrations, ran)
 	s.Len(pendingMigrations, 1)
-	s.Equal(&TestConnectionMigration{}, pendingMigrations[0])
+	s.Equal(&TestConnectionMigration{suite: s}, pendingMigrations[0])
 }
 
 func (s *DefaultDriverSuite) TestPrepareDatabase() {
@@ -162,7 +162,7 @@ func (s *DefaultDriverSuite) TestRunPending() {
 		{
 			name: "Happy path",
 			migrations: []migration.Migration{
-				&TestMigration{},
+				&TestMigration{suite: s},
 			},
 			setup: func() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
@@ -177,7 +177,7 @@ func (s *DefaultDriverSuite) TestRunPending() {
 		{
 			name: "Sad path - GetNextBatchNumber returns error",
 			migrations: []migration.Migration{
-				&TestMigration{},
+				&TestMigration{suite: s},
 			},
 			setup: func() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, errors.New("error")).Once()
@@ -187,7 +187,7 @@ func (s *DefaultDriverSuite) TestRunPending() {
 		{
 			name: "Sad path - runUp returns error",
 			migrations: []migration.Migration{
-				&TestMigration{},
+				&TestMigration{suite: s},
 			},
 			setup: func() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
