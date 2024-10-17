@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/gorm"
@@ -37,6 +38,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockContext.EXPECT().Option("step").Return("").Once()
 
 		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		// Test MigrateRefreshCommand without --seed flag
@@ -55,6 +57,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockSchema = mocksmigration.NewSchema(t)
 
 		migrateCommand = NewMigrateCommand(mockConfig, mockSchema)
+		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		// Test MigrateRefreshCommand with --seed flag and --seeder specified

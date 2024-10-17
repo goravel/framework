@@ -38,6 +38,10 @@ func (s *SqlDriverSuite) SetupTest() {
 
 }
 
+func (s *SqlDriverSuite) TearDownTest() {
+	s.NoError(file.Remove("database"))
+}
+
 func (s *SqlDriverSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
@@ -66,7 +70,6 @@ func (s *SqlDriverSuite) TestCreate() {
 
 	defer func() {
 		carbon.UnsetTestNow()
-		s.NoError(file.Remove("database"))
 	}()
 }
 
@@ -92,6 +95,4 @@ func (s *SqlDriverSuite) TestRun() {
 		err = sqlDriver.Run()
 		s.NoError(err)
 	}
-
-	defer s.NoError(file.Remove("database"))
 }

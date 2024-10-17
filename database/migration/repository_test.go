@@ -3,11 +3,9 @@ package migration
 import (
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
@@ -39,10 +37,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			repository, mockOrm := s.initRepository(testQuery)
-
-			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
-				return txFunc(testQuery.Query())
-			}).Once()
+			mockTransaction(mockOrm, testQuery)
 
 			repository.CreateRepository()
 
@@ -50,9 +45,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 
 			s.True(repository.RepositoryExists())
 
-			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
-				return txFunc(testQuery.Query())
-			}).Once()
+			mockTransaction(mockOrm, testQuery)
 
 			repository.DeleteRepository()
 
@@ -71,9 +64,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			if !repository.RepositoryExists() {
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
-					return txFunc(testQuery.Query())
-				}).Once()
+				mockTransaction(mockOrm, testQuery)
 
 				repository.CreateRepository()
 			}

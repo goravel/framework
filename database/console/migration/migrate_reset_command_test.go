@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/gorm"
@@ -35,6 +36,7 @@ func TestMigrateResetCommand(t *testing.T) {
 		mockSchema := mocksmigration.NewSchema(t)
 
 		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		migrateResetCommand := NewMigrateResetCommand(mockConfig)
