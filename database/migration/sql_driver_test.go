@@ -42,7 +42,9 @@ func (s *SqlDriverSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
 
-	pwd, _ := os.Getwd()
+	pwd, err := os.Getwd()
+	s.NoError(err)
+
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
@@ -69,10 +71,6 @@ func (s *SqlDriverSuite) TestCreate() {
 }
 
 func (s *SqlDriverSuite) TestRun() {
-	if env.IsWindows() {
-		s.T().Skip("Skipping tests of using docker")
-	}
-
 	testQueries := gorm.NewTestQueries().Queries()
 	for driver, testQuery := range testQueries {
 		query := testQuery.Query()
@@ -81,19 +79,19 @@ func (s *SqlDriverSuite) TestRun() {
 
 		sqlDriver := &SqlDriver{
 			configBuilder: databasedb.NewConfigBuilder(mockConfig, driver.String()),
-			creator:       NewSqlCreator(driver, "utf8bm4"),
+			creator:       NewSqlCreator(driver, "utf8mb4"),
 			table:         "migrations",
 		}
 		err := sqlDriver.Run()
 		s.NoError(err)
 
 		var agent Agent
-		s.Nil(query.Where("name", "goravel").First(&agent))
+		s.NoError(query.Where("name", "goravel").First(&agent))
 		s.True(agent.ID > 0)
 
 		err = sqlDriver.Run()
 		s.NoError(err)
 	}
 
-	defer s.Nil(file.Remove("database"))
+	defer s.NoError(file.Remove("database"))
 }

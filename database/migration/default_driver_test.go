@@ -14,10 +14,9 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-var testValue = 0
-
 type DefaultDriverSuite struct {
 	suite.Suite
+	value          int
 	mockRepository *mocksmigration.Repository
 	mockSchema     *mocksmigration.Schema
 	driver         *DefaultDriver
@@ -28,6 +27,7 @@ func TestDefaultDriverSuite(t *testing.T) {
 }
 
 func (s *DefaultDriverSuite) SetupTest() {
+	s.value = 0
 	s.mockRepository = mocksmigration.NewRepository(s.T())
 	s.mockSchema = mocksmigration.NewSchema(s.T())
 
@@ -42,7 +42,9 @@ func (s *DefaultDriverSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
 
-	pwd, _ := os.Getwd()
+	pwd, err := os.Getwd()
+	s.NoError(err)
+
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
@@ -125,8 +127,6 @@ func (s *DefaultDriverSuite) TestRun() {
 			}
 		})
 	}
-
-	testValue = 0
 }
 
 func (s *DefaultDriverSuite) TestPendingMigrations() {
@@ -209,28 +209,29 @@ func (s *DefaultDriverSuite) TestRunPending() {
 			}
 		})
 	}
-
-	testValue = 0
 }
 
 func (s *DefaultDriverSuite) TestRunUp() {
 	batch := 1
 	s.mockRepository.EXPECT().Log("20240817214501_create_users_table", batch).Return(nil).Once()
-	s.NoError(s.driver.runUp(&TestMigration{}, batch))
-	s.Equal(1, testValue)
+	s.NoError(s.driver.runUp(&TestMigration{
+		suite: s,
+	}, batch))
+	s.Equal(1, s.value)
 
 	previousConnection := "postgres"
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 	s.mockSchema.EXPECT().SetConnection("mysql").Once()
 	s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
 	s.mockRepository.EXPECT().Log("20240817214501_create_agents_table", batch).Return(nil).Once()
-	s.NoError(s.driver.runUp(&TestConnectionMigration{}, batch))
-	s.Equal(2, testValue)
-
-	testValue = 0
+	s.NoError(s.driver.runUp(&TestConnectionMigration{
+		suite: s,
+	}, batch))
+	s.Equal(2, s.value)
 }
 
 type TestMigration struct {
+	suite *DefaultDriverSuite
 }
 
 func (s *TestMigration) Signature() string {
@@ -238,7 +239,7 @@ func (s *TestMigration) Signature() string {
 }
 
 func (s *TestMigration) Up() {
-	testValue++
+	s.suite.value++
 }
 
 func (s *TestMigration) Down() {
@@ -246,6 +247,7 @@ func (s *TestMigration) Down() {
 }
 
 type TestConnectionMigration struct {
+	suite *DefaultDriverSuite
 }
 
 func (s *TestConnectionMigration) Signature() string {
@@ -257,7 +259,7 @@ func (s *TestConnectionMigration) Connection() string {
 }
 
 func (s *TestConnectionMigration) Up() {
-	testValue++
+	s.suite.value++
 }
 
 func (s *TestConnectionMigration) Down() {

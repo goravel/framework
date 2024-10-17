@@ -40,11 +40,9 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 		s.Run(driver.String(), func() {
 			repository, mockOrm := s.initRepository(testQuery)
 
-			var err error
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
-			s.NoError(err)
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			repository.CreateRepository()
 
@@ -52,10 +50,9 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 
 			s.True(repository.RepositoryExists())
 
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
-			s.NoError(err)
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			repository.DeleteRepository()
 
@@ -74,12 +71,9 @@ func (s *RepositoryTestSuite) TestRecord() {
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			if !repository.RepositoryExists() {
-				var err error
-				mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-					err = txFunc(testQuery.Query())
-				}).Return(err).Once()
-
-				s.NoError(err)
+				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+					return txFunc(testQuery.Query())
+				}).Once()
 
 				repository.CreateRepository()
 			}

@@ -42,18 +42,15 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
 			table := "drop_if_exists"
 
-			var err error
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
-
-			s.NoError(err)
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			schema.DropIfExists(table)
 
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			schema.Create(table, func(table migration.Blueprint) {
 				table.String("name")
@@ -63,11 +60,9 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 
 			s.True(schema.HasTable(table))
 
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
-
-			s.NoError(err)
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			schema.DropIfExists(table)
 
@@ -82,11 +77,9 @@ func (s *SchemaSuite) TestTable_GetTables() {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
 
-			var err error
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
-			s.NoError(err)
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			schema.Create("changes", func(table migration.Blueprint) {
 				table.String("name")
@@ -156,11 +149,9 @@ func (s *SchemaSuite) TestSql() {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
 
-			var err error
-			mockOrm.EXPECT().Transaction(mock.Anything).Run(func(txFunc func(orm.Query) error) {
-				err = txFunc(testQuery.Query())
-			}).Return(err).Once()
-			s.NoError(err)
+			mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(orm.Query) error) error {
+				return txFunc(testQuery.Query())
+			}).Once()
 
 			schema.Create("sql", func(table migration.Blueprint) {
 				table.String("name")
@@ -171,7 +162,7 @@ func (s *SchemaSuite) TestSql() {
 			schema.Sql("insert into goravel_sql (name) values ('goravel');")
 
 			var count int64
-			err = testQuery.Query().Table("sql").Where("name", "goravel").Count(&count)
+			err := testQuery.Query().Table("sql").Where("name", "goravel").Count(&count)
 
 			s.NoError(err)
 			s.Equal(int64(1), count)

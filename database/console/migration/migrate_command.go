@@ -16,6 +16,7 @@ func NewMigrateCommand(config config.Config, schema migration.Schema) *MigrateCo
 	driver, err := GetDriver(config, schema)
 	if err != nil {
 		color.Red().Println(err.Error())
+		return nil
 	}
 
 	return &MigrateCommand{
