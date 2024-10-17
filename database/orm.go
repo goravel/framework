@@ -84,12 +84,12 @@ func (r *Orm) DB() (*sql.DB, error) {
 	return query.Instance().DB()
 }
 
-func (r *Orm) Query() contractsorm.Query {
-	return r.query
-}
-
 func (r *Orm) Factory() contractsorm.Factory {
 	return NewFactoryImpl(r.Query())
+}
+
+func (r *Orm) Name() string {
+	return r.connection
 }
 
 func (r *Orm) Observe(model any, observer contractsorm.Observer) {
@@ -97,6 +97,10 @@ func (r *Orm) Observe(model any, observer contractsorm.Observer) {
 		Model:    model,
 		Observer: observer,
 	})
+}
+
+func (r *Orm) Query() contractsorm.Query {
+	return r.query
 }
 
 func (r *Orm) Refresh() {

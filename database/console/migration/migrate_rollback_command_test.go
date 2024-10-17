@@ -1,12 +1,17 @@
 package migration
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -19,16 +24,24 @@ func TestMigrateRollbackCommand(t *testing.T) {
 	testQueries := gorm.NewTestQueries().Queries()
 	for driver, testQuery := range testQueries {
 		query := testQuery.Query()
+
 		mockConfig := testQuery.MockConfig()
-		createMigrations(driver)
+		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4").Once()
+
+		migration.CreateTestMigrations(driver)
 
 		mockContext := mocksconsole.NewContext(t)
-		mockContext.On("Option", "step").Return("1").Once()
+		mockContext.EXPECT().Option("step").Return("1").Once()
 
-		migrateCommand := NewMigrateCommand(mockConfig)
+		mockSchema := mocksmigration.NewSchema(t)
+
+		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
-		var agent Agent
+		var agent migration.Agent
 		err := query.Where("name", "goravel").FirstOrFail(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
@@ -36,7 +49,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 		assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
 
-		var agent1 Agent
+		var agent1 migration.Agent
 		err = query.Where("name", "goravel").FirstOrFail(&agent1)
 		assert.Error(t, err)
 	}

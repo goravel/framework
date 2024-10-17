@@ -1,26 +1,23 @@
 package migration
 
 import (
-	"fmt"
-
 	"github.com/goravel/framework/contracts/config"
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/framework/errors"
 )
 
-func GetDriver(config config.Config) (contractsmigration.Driver, error) {
+func GetDriver(config config.Config, schema contractsmigration.Schema) (contractsmigration.Driver, error) {
 	driver := config.GetString("database.migrations.driver")
 
 	switch driver {
 	case contractsmigration.DriverDefault:
-		return migration.NewDefaultDriver(), nil
-	case contractsmigration.DriverSql:
-		connection := config.GetString("database.default")
-		dbDriver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
-		charset := config.GetString(fmt.Sprintf("database.connections.%s.charset", connection))
+		table := config.GetString("database.migrations.table")
 
-		return migration.NewSqlDriver(dbDriver, charset), nil
+		return migration.NewDefaultDriver(schema, table), nil
+	case contractsmigration.DriverSql:
+		return migration.NewSqlDriver(config), nil
 	default:
-		return nil, fmt.Errorf("unsupported migration driver: %s", driver)
+		return nil, errors.MigrationUnsupportedDriver.Args(driver).SetModule(errors.ModuleMigration)
 	}
 }

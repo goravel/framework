@@ -34,26 +34,28 @@ func (s *SchemaSuite) SetupTest() {
 	}
 }
 
-func (s *SchemaSuite) TestDropIfExists() {
+func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
-
 			table := "drop_if_exists"
+			mockTransaction(mockOrm, testQuery)
 
-			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Twice()
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
-			s.NoError(schema.DropIfExists(table))
-			s.NoError(schema.Create(table, func(table migration.Blueprint) {
+			schema.DropIfExists(table)
+
+			mockTransaction(mockOrm, testQuery)
+
+			schema.Create(table, func(table migration.Blueprint) {
 				table.String("name")
-			}))
+			})
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			s.True(schema.HasTable(table))
 
-			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-			s.NoError(schema.DropIfExists(table))
+			mockTransaction(mockOrm, testQuery)
+
+			schema.DropIfExists(table)
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 			s.False(schema.HasTable(table))
@@ -61,23 +63,25 @@ func (s *SchemaSuite) TestDropIfExists() {
 	}
 }
 
-func (s *SchemaSuite) TestTable() {
+func (s *SchemaSuite) TestTable_GetTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := initSchema(s.T(), testQuery)
+			mockTransaction(mockOrm, testQuery)
 
-			mockOrm.EXPECT().Connection(schema.connection).Return(mockOrm).Once()
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Times(3)
-
-			err := schema.Create("changes", func(table migration.Blueprint) {
+			schema.Create("changes", func(table migration.Blueprint) {
 				table.String("name")
 			})
-			s.NoError(err)
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
 			s.True(schema.HasTable("changes"))
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			tables, err := schema.GetTables()
 			s.NoError(err)
-			s.Greater(len(tables), 0)
+			s.Len(tables, 1)
 
 			// Open this after implementing other methods
 			//s.Require().True(schema.HasColumn("changes", "name"))
@@ -128,9 +132,33 @@ func (s *SchemaSuite) TestTable() {
 	}
 }
 
+func (s *SchemaSuite) TestSql() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema, mockOrm := initSchema(s.T(), testQuery)
+			mockTransaction(mockOrm, testQuery)
+
+			schema.Create("sql", func(table migration.Blueprint) {
+				table.String("name")
+			})
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
+			schema.Sql("insert into goravel_sql (name) values ('goravel');")
+
+			var count int64
+			err := testQuery.Query().Table("sql").Where("name", "goravel").Count(&count)
+
+			s.NoError(err)
+			s.Equal(int64(1), count)
+		})
+	}
+}
+
 func initSchema(t *testing.T, testQuery *gorm.TestQuery) (*Schema, *mocksorm.Orm) {
 	mockOrm := mocksorm.NewOrm(t)
-	schema := NewSchema(testQuery.MockConfig(), testQuery.Docker().Driver().String(), nil, mockOrm)
+	mockOrm.EXPECT().Name().Return(testQuery.Docker().Driver().String()).Twice()
+	schema := NewSchema(testQuery.MockConfig(), nil, mockOrm, nil)
 
 	return schema, mockOrm
 }

@@ -12,12 +12,14 @@ type Orm interface {
 	Connection(name string) Orm
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
-	// Query gets a new query builder instance.
-	Query() Query
 	// Factory gets a new factory instance for the given model name.
 	Factory() Factory
+	// Name gets the current connection name.
+	Name() string
 	// Observe registers an observer with the Orm.
 	Observe(model any, observer Observer)
+	// Query gets a new query builder instance.
+	Query() Query
 	// Refresh resets the Orm instance.
 	Refresh()
 	// Transaction runs a callback wrapped in a database transaction.

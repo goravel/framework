@@ -63,17 +63,17 @@ func (_c *Driver_Create_Call) RunAndReturn(run func(string) error) *Driver_Creat
 	return _c
 }
 
-// Run provides a mock function with given fields: paths
-func (_m *Driver) Run(paths []string) error {
-	ret := _m.Called(paths)
+// Run provides a mock function with given fields:
+func (_m *Driver) Run() error {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Run")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]string) error); ok {
-		r0 = rf(paths)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -87,14 +87,13 @@ type Driver_Run_Call struct {
 }
 
 // Run is a helper method to define mock.On call
-//   - paths []string
-func (_e *Driver_Expecter) Run(paths interface{}) *Driver_Run_Call {
-	return &Driver_Run_Call{Call: _e.mock.On("Run", paths)}
+func (_e *Driver_Expecter) Run() *Driver_Run_Call {
+	return &Driver_Run_Call{Call: _e.mock.On("Run")}
 }
 
-func (_c *Driver_Run_Call) Run(run func(paths []string)) *Driver_Run_Call {
+func (_c *Driver_Run_Call) Run(run func()) *Driver_Run_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string))
+		run()
 	})
 	return _c
 }
@@ -104,7 +103,7 @@ func (_c *Driver_Run_Call) Return(_a0 error) *Driver_Run_Call {
 	return _c
 }
 
-func (_c *Driver_Run_Call) RunAndReturn(run func([]string) error) *Driver_Run_Call {
+func (_c *Driver_Run_Call) RunAndReturn(run func() error) *Driver_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }

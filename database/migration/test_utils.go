@@ -1,11 +1,22 @@
 package migration
 
 import (
+	"github.com/stretchr/testify/mock"
+
 	"github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/orm"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/file"
 )
 
-func createMigrations(driver database.Driver) {
+type Agent struct {
+	orm.Model
+	Name string
+}
+
+func CreateTestMigrations(driver database.Driver) {
 	switch driver {
 	case database.DriverPostgres:
 		createPostgresMigrations()
@@ -109,4 +120,10 @@ INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11
 	if err != nil {
 		panic(err)
 	}
+}
+
+func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {
+	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(contractsorm.Query) error) error {
+		return txFunc(testQuery.Query())
+	}).Once()
 }

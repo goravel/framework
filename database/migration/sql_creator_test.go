@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
@@ -40,7 +41,7 @@ func (s *SqlCreatorSuite) TestGetPath() {
 func (s *SqlCreatorSuite) TestPopulateStub() {
 	tests := []struct {
 		name       string
-		driver     string
+		driver     database.Driver
 		table      string
 		create     bool
 		expectUp   string

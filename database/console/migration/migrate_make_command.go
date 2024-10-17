@@ -1,20 +1,21 @@
 package migration
 
 import (
-	"errors"
-
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
 type MigrateMakeCommand struct {
 	config config.Config
+	schema migration.Schema
 }
 
-func NewMigrateMakeCommand(config config.Config) *MigrateMakeCommand {
-	return &MigrateMakeCommand{config: config}
+func NewMigrateMakeCommand(config config.Config, schema migration.Schema) *MigrateMakeCommand {
+	return &MigrateMakeCommand{config: config, schema: schema}
 }
 
 // Signature The name and signature of the console command.
@@ -45,7 +46,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		name, err = ctx.Ask("Enter the migration name", console.AskOption{
 			Validate: func(s string) error {
 				if s == "" {
-					return errors.New("the migration name cannot be empty")
+					return errors.MigrationNameIsRequired
 				}
 
 				return nil
@@ -56,7 +57,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	migrationDriver, err := GetDriver(r.config)
+	migrationDriver, err := GetDriver(r.config, r.schema)
 	if err != nil {
 		return err
 	}

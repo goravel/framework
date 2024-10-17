@@ -11,11 +11,11 @@ import (
 )
 
 type SqlCreator struct {
-	driver  string
+	driver  database.Driver
 	charset string
 }
 
-func NewSqlCreator(driver, charset string) *SqlCreator {
+func NewSqlCreator(driver database.Driver, charset string) *SqlCreator {
 	return &SqlCreator{
 		driver:  driver,
 		charset: charset,
@@ -35,7 +35,7 @@ func (r *SqlCreator) GetStub(table string, create bool) (string, string) {
 		return "", ""
 	}
 
-	switch database.Driver(r.driver) {
+	switch r.driver {
 	case database.DriverPostgres:
 		if create {
 			return PostgresStubs{}.CreateUp(), PostgresStubs{}.CreateDown()

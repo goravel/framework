@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/errors"
 	configmocks "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	seedermocks "github.com/goravel/framework/mocks/database/seeder"
@@ -51,7 +52,7 @@ func (s *SeedCommandTestSuite) TestConfirmToProceed() {
 
 	s.mockContext.On("OptionBool", "force").Return(false).Once()
 	err = s.seedCommand.ConfirmToProceed(false)
-	s.EqualError(err, "application in production use --force to run this command")
+	s.ErrorIs(err, errors.DBForceIsRequiredInProduction)
 }
 
 func (s *SeedCommandTestSuite) TestGetSeeders() {

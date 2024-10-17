@@ -53,118 +53,63 @@ type TestQueries struct {
 }
 
 func NewTestQueries() *TestQueries {
-	if supportdocker.TestModel == supportdocker.TestModelMinimum {
-		return &TestQueries{
-			sqliteDockers:   supportdocker.Sqlites(2),
-			postgresDockers: supportdocker.Postgreses(2),
-		}
+	testQueries := &TestQueries{
+		sqliteDockers:   supportdocker.Sqlites(2),
+		postgresDockers: supportdocker.Postgreses(2),
 	}
 
-	return &TestQueries{
-		mysqlDockers:     supportdocker.Mysqls(2),
-		postgresDockers:  supportdocker.Postgreses(2),
-		sqliteDockers:    supportdocker.Sqlites(2),
-		sqlserverDockers: supportdocker.Sqlservers(2),
+	if supportdocker.TestModel == supportdocker.TestModelMinimum {
+		return testQueries
 	}
+
+	testQueries.mysqlDockers = supportdocker.Mysqls(2)
+	testQueries.sqlserverDockers = supportdocker.Sqlservers(2)
+
+	return testQueries
 }
 
 func (r *TestQueries) Queries() map[contractsdatabase.Driver]*TestQuery {
 	return r.queries(false)
 }
 
-func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[string]orm.Query {
+func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[string]*TestQuery {
 	readPostgresQuery := NewTestQuery(r.postgresDockers[0])
-	readPostgresQuery.CreateTable(TestTableUsers)
-
 	writePostgresQuery := NewTestQuery(r.postgresDockers[1])
-	writePostgresQuery.CreateTable(TestTableUsers)
-
-	postgresQuery, err := writePostgresQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readPostgresQuery.Docker().Config().Port,
-		WritePort: writePostgresQuery.Docker().Config().Port,
-	})
-	if err != nil {
-		panic(err)
-	}
 
 	readSqliteQuery := NewTestQuery(r.sqliteDockers[0])
-	readSqliteQuery.CreateTable(TestTableUsers)
-
 	writeSqliteQuery := NewTestQuery(r.sqliteDockers[1])
-	writeSqliteQuery.CreateTable(TestTableUsers)
 
-	sqliteQuery, err := writeSqliteQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadDatabase: readSqliteQuery.Docker().Config().Database,
-	})
-	if err != nil {
-		panic(err)
+	queries := map[contractsdatabase.Driver]map[string]*TestQuery{
+		contractsdatabase.DriverPostgres: {
+			"read":  readPostgresQuery,
+			"write": writePostgresQuery,
+		},
+		contractsdatabase.DriverSqlite: {
+			"read":  readSqliteQuery,
+			"write": writeSqliteQuery,
+		},
 	}
 
 	if supportdocker.TestModel == supportdocker.TestModelMinimum {
-		return map[contractsdatabase.Driver]map[string]orm.Query{
-			contractsdatabase.DriverPostgres: {
-				"mix":   postgresQuery,
-				"read":  readPostgresQuery.Query(),
-				"write": writePostgresQuery.Query(),
-			},
-			contractsdatabase.DriverSqlite: {
-				"mix":   sqliteQuery,
-				"read":  readSqliteQuery.Query(),
-				"write": writeSqliteQuery.Query(),
-			},
-		}
+		return queries
 	}
 
 	readMysqlQuery := NewTestQuery(r.mysqlDockers[0])
-	readMysqlQuery.CreateTable(TestTableUsers)
-
 	writeMysqlQuery := NewTestQuery(r.mysqlDockers[1])
-	writeMysqlQuery.CreateTable(TestTableUsers)
-
-	mysqlQuery, err := writeMysqlQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readMysqlQuery.Docker().Config().Port,
-		WritePort: writeMysqlQuery.Docker().Config().Port,
-	})
-	if err != nil {
-		panic(err)
-	}
 
 	readSqlserverQuery := NewTestQuery(r.sqlserverDockers[0])
-	readSqlserverQuery.CreateTable(TestTableUsers)
-
 	writeSqlserverQuery := NewTestQuery(r.sqlserverDockers[1])
-	writeSqlserverQuery.CreateTable(TestTableUsers)
 
-	sqlserverQuery, err := writeSqlserverQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readSqlserverQuery.Docker().Config().Port,
-		WritePort: writeSqlserverQuery.Docker().Config().Port,
-	})
-	if err != nil {
-		panic(err)
+	queries[contractsdatabase.DriverMysql] = map[string]*TestQuery{
+		"read":  readMysqlQuery,
+		"write": writeMysqlQuery,
+	}
+	queries[contractsdatabase.DriverSqlserver] = map[string]*TestQuery{
+		"read":  readSqlserverQuery,
+		"write": writeSqlserverQuery,
 	}
 
-	return map[contractsdatabase.Driver]map[string]orm.Query{
-		contractsdatabase.DriverMysql: {
-			"mix":   mysqlQuery,
-			"read":  readMysqlQuery.Query(),
-			"write": writeMysqlQuery.Query(),
-		},
-		contractsdatabase.DriverPostgres: {
-			"mix":   postgresQuery,
-			"read":  readPostgresQuery.Query(),
-			"write": writePostgresQuery.Query(),
-		},
-		contractsdatabase.DriverSqlite: {
-			"mix":   sqliteQuery,
-			"read":  readSqliteQuery.Query(),
-			"write": writeSqliteQuery.Query(),
-		},
-		contractsdatabase.DriverSqlserver: {
-			"mix":   sqlserverQuery,
-			"read":  readSqlserverQuery.Query(),
-			"write": writeSqlserverQuery.Query(),
-		},
-	}
+	return queries
 }
 
 func (r *TestQueries) QueriesWithPrefixAndSingular() map[contractsdatabase.Driver]*TestQuery {
@@ -173,7 +118,6 @@ func (r *TestQueries) QueriesWithPrefixAndSingular() map[contractsdatabase.Drive
 
 func (r *TestQueries) QueryOfAdditional() *TestQuery {
 	postgresQuery := NewTestQuery(r.postgresDockers[1])
-	postgresQuery.CreateTable()
 
 	return postgresQuery
 }
@@ -193,7 +137,6 @@ func (r *TestQueries) queries(withPrefixAndSingular bool) map[contractsdatabase.
 
 	for driver, docker := range driverToDocker {
 		query := NewTestQuery(docker, withPrefixAndSingular)
-		query.CreateTable()
 		driverToTestQuery[driver] = query
 	}
 

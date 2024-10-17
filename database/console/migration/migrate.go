@@ -2,7 +2,6 @@ package migration
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -14,12 +13,13 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/database/console/driver"
 	databasedb "github.com/goravel/framework/database/db"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
 )
 
 func getMigrate(config config.Config) (*migrate.Migrate, error) {
 	connection := config.GetString("database.default")
-	driver := config.GetString("database.connections." + connection + ".driver")
+	dbDriver := database.Driver(config.GetString("database.connections." + connection + ".driver"))
 	dir := "file://./database/migrations"
 	if support.RelativePath != "" {
 		dir = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
@@ -28,10 +28,10 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 	configBuilder := databasedb.NewConfigBuilder(config, connection)
 	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
-		return nil, errors.New("not found database configuration")
+		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
-	switch database.Driver(driver) {
+	switch dbDriver {
 	case database.DriverMysql:
 		mysqlDsn := databasedb.Dsn(writeConfigs[0])
 		if mysqlDsn == "" {
@@ -81,7 +81,7 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 			return nil, err
 		}
 
-		instance, err := sqlite.WithInstance(db, &sqlite.Config{
+		instance, err := driver.WithInstance(db, &driver.Config{
 			MigrationsTable: config.GetString("database.migrations.table"),
 		})
 		if err != nil {
@@ -110,6 +110,6 @@ func getMigrate(config config.Config) (*migrate.Migrate, error) {
 
 		return migrate.NewWithDatabaseInstance(dir, "sqlserver", instance)
 	default:
-		return nil, errors.New("database driver only support mysql, postgres, sqlite and sqlserver")
+		return nil, errors.OrmDriverNotSupported
 	}
 }
