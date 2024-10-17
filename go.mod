@@ -24,7 +24,7 @@ require (
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/pterm/pterm v0.12.79
-	github.com/redis/go-redis/v9 v9.6.2
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
