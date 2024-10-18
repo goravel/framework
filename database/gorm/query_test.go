@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
@@ -42,7 +43,12 @@ func (s *QueryTestSuite) SetupSuite() {
 
 	testQueries := NewTestQueries()
 	s.queries = testQueries.Queries()
+	for _, query := range s.queries {
+		query.CreateTable()
+	}
+
 	s.additionalQuery = testQueries.QueryOfAdditional()
+	s.additionalQuery.CreateTable()
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -3621,20 +3627,40 @@ func TestReadWriteSeparate(t *testing.T) {
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
+			var (
+				mixQuery contractsorm.Query
+				err      error
+			)
+			if drive == database.DriverSqlite {
+				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
+					ReadDatabase: db["read"].Docker().Config().Database,
+				})
+			} else {
+				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
+					ReadPort:  db["read"].Docker().Config().Port,
+					WritePort: db["write"].Docker().Config().Port,
+				})
+			}
+
+			require.NoError(t, err)
+
+			db["read"].CreateTable(TestTableUsers)
+			db["write"].CreateTable(TestTableUsers)
+
 			user := User{Name: "user"}
-			assert.Nil(t, db["mix"].Create(&user))
+			assert.Nil(t, mixQuery.Create(&user))
 			assert.True(t, user.ID > 0)
 
 			var user2 User
-			assert.Nil(t, db["mix"].Find(&user2, user.ID))
+			assert.Nil(t, mixQuery.Find(&user2, user.ID))
 			assert.True(t, user2.ID == 0)
 
 			var user3 User
-			assert.Nil(t, db["read"].Find(&user3, user.ID))
+			assert.Nil(t, db["read"].Query().Find(&user3, user.ID))
 			assert.True(t, user3.ID == 0)
 
 			var user4 User
-			assert.Nil(t, db["write"].Find(&user4, user.ID))
+			assert.Nil(t, db["write"].Query().Find(&user4, user.ID))
 			assert.True(t, user4.ID > 0)
 		})
 	}
@@ -3649,6 +3675,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
+			db.CreateTable(TestTableGoravelUser)
+
 			user := User{Name: "user"}
 			assert.Nil(t, db.Query().Create(&user))
 			assert.True(t, user.ID > 0)

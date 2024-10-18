@@ -11,12 +11,7 @@ type DummyMigration struct {
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
-	return "DummyName"
-}
-
-// Connection The database connection that should be used by the migration.
-func (r *DummyMigration) Connection() string {
-	return ""
+	return "DummySignature"
 }
 
 // Up Run the migrations.
@@ -31,55 +26,52 @@ func (r *DummyMigration) Down() {
 `
 }
 
-// TODO add the facades.Schema().Create() method
 func (receiver Stubs) Create() string {
 	return `package migrations
 
+import "github.com/goravel/framework/contracts/database/migration"
+
 type DummyMigration struct {
 }
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
-	return "DummyName"
-}
-
-// Connection The database connection that should be used by the migration.
-func (r *DummyMigration) Connection() string {
-	return ""
+	return "DummySignature"
 }
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() {
-
+	facades.Schema.Create("DummyTable", func(table migration.Blueprint) {
+ 		table.BigIncrements("id")
+ 		table.Timestamps()
+	})
 }
 
 // Down Reverse the migrations.
 func (r *DummyMigration) Down() {
-
+ 	facades.Schema.DropIfExists("DummyTable")
 }
 `
 }
 
-// TODO add the facades.Schema().Table() method
 func (receiver Stubs) Update() string {
 	return `package migrations
+
+import "github.com/goravel/framework/contracts/database/migration"
 
 type DummyMigration struct {
 }
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
-	return "DummyName"
-}
-
-// Connection The database connection that should be used by the migration.
-func (r *DummyMigration) Connection() string {
-	return ""
+	return "DummySignature"
 }
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() {
+	facades.Schema.Table("DummyTable", func(table migration.Blueprint) {
 
+	})
 }
 
 // Down Reverse the migrations.

@@ -13,6 +13,7 @@ var (
 	ModuleLang       = "lang"
 	ModuleLog        = "log"
 	ModuleMail       = "mail"
+	ModuleMigration  = "migration"
 	ModuleOrm        = "orm"
 	ModuleQueue      = "queue"
 	ModuleRoute      = "route"

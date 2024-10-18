@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -10,13 +11,13 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/migration/grammars"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 var _ migration.Schema = (*Schema)(nil)
 
 type Schema struct {
 	config     config.Config
-	connection string
 	grammar    migration.Grammar
 	log        log.Log
 	migrations []migration.Migration
@@ -24,40 +25,48 @@ type Schema struct {
 	prefix     string
 }
 
-func NewSchema(config config.Config, connection string, log log.Log, orm contractsorm.Orm) *Schema {
-	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
-	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", connection))
+func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []migration.Migration) *Schema {
+	driver := contractsdatabase.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", orm.Name())))
+	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", orm.Name()))
 	grammar := getGrammar(driver)
 
 	return &Schema{
 		config:     config,
-		connection: connection,
 		grammar:    grammar,
 		log:        log,
+		migrations: migrations,
 		orm:        orm,
 		prefix:     prefix,
 	}
 }
 
 func (r *Schema) Connection(name string) migration.Schema {
-	return NewSchema(r.config, name, r.log, r.orm)
+	return NewSchema(r.config, r.log, r.orm.Connection(name), r.migrations)
 }
 
-func (r *Schema) Create(table string, callback func(table migration.Blueprint)) error {
+func (r *Schema) Create(table string, callback func(table migration.Blueprint)) {
 	blueprint := r.createBlueprint(table)
 	blueprint.Create()
 	callback(blueprint)
 
-	// TODO catch error and rollback
-	return r.build(blueprint)
+	if err := r.build(blueprint); err != nil {
+		color.Red().Printf("failed to create %s table: %v\n", table, err)
+		os.Exit(1)
+	}
 }
 
-func (r *Schema) DropIfExists(table string) error {
+func (r *Schema) DropIfExists(table string) {
 	blueprint := r.createBlueprint(table)
 	blueprint.DropIfExists()
 
-	// TODO catch error when run migrate command
-	return r.build(blueprint)
+	if err := r.build(blueprint); err != nil {
+		color.Red().Printf("failed to drop %s table: %v\n", table, err)
+		os.Exit(1)
+	}
+}
+
+func (r *Schema) GetConnection() string {
+	return r.orm.Name()
 }
 
 func (r *Schema) GetTables() ([]migration.Table, error) {
@@ -75,7 +84,7 @@ func (r *Schema) HasTable(name string) bool {
 
 	tables, err := r.GetTables()
 	if err != nil {
-		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.connection, err).Error())
+		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.orm.Name(), err).Error())
 		return false
 	}
 
@@ -88,42 +97,58 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
+func (r *Schema) Migrations() []migration.Migration {
+	return r.migrations
+}
+
+func (r *Schema) Orm() contractsorm.Orm {
+	return r.orm
+}
+
 func (r *Schema) Register(migrations []migration.Migration) {
 	r.migrations = migrations
 }
 
-func (r *Schema) Sql(sql string) {
-	// TODO catch error and rollback, optimize test
-	_, _ = r.orm.Connection(r.connection).Query().Exec(sql)
+func (r *Schema) SetConnection(name string) {
+	r.orm = r.orm.Connection(name)
 }
 
-func (r *Schema) Table(table string, callback func(table migration.Blueprint)) error {
+func (r *Schema) Sql(sql string) {
+	if _, err := r.orm.Query().Exec(sql); err != nil {
+		r.log.Fatalf("failed to execute sql: %v", err)
+	}
+}
+
+func (r *Schema) Table(table string, callback func(table migration.Blueprint)) {
 	blueprint := r.createBlueprint(table)
 	callback(blueprint)
 
-	// TODO catch error and rollback
-	return r.build(blueprint)
+	if err := r.build(blueprint); err != nil {
+		r.log.Fatalf("failed to modify %s table: %v", table, err)
+	}
 }
 
 func (r *Schema) build(blueprint migration.Blueprint) error {
-	return blueprint.Build(r.orm.Connection(r.connection).Query(), r.grammar)
+	return r.orm.Transaction(func(tx contractsorm.Query) error {
+		return blueprint.Build(tx, r.grammar)
+	})
 }
 
 func (r *Schema) createBlueprint(table string) migration.Blueprint {
 	return NewBlueprint(r.prefix, table)
 }
 
-func getGrammar(driver string) migration.Grammar {
+func getGrammar(driver contractsdatabase.Driver) migration.Grammar {
 	switch driver {
-	case contractsdatabase.DriverMysql.String():
+	case contractsdatabase.DriverMysql:
 		// TODO Optimize here when implementing Mysql driver
 		return nil
-	case contractsdatabase.DriverPostgres.String():
+	case contractsdatabase.DriverPostgres:
 		return grammars.NewPostgres()
-	case contractsdatabase.DriverSqlserver.String():
+	case contractsdatabase.DriverSqlserver:
 		// TODO Optimize here when implementing Mysql driver
 		return nil
-	case contractsdatabase.DriverSqlite.String():
+	case contractsdatabase.DriverSqlite:
 		// TODO Optimize here when implementing Mysql driver
 		return nil
 	default:
