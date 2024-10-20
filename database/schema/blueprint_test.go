@@ -1,4 +1,4 @@
-package migration
+package schema
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/database/migration/grammars"
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/schema/grammars"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/convert"
@@ -17,12 +17,12 @@ import (
 type BlueprintTestSuite struct {
 	suite.Suite
 	blueprint *Blueprint
-	grammars  map[database.Driver]migration.Grammar
+	grammars  map[database.Driver]schema.Grammar
 }
 
 func TestBlueprintTestSuite(t *testing.T) {
 	suite.Run(t, &BlueprintTestSuite{
-		grammars: map[database.Driver]migration.Grammar{
+		grammars: map[database.Driver]schema.Grammar{
 			database.DriverPostgres: grammars.NewPostgres(),
 		},
 	})
@@ -44,7 +44,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 		name           string
 		columns        []*ColumnDefinition
 		setup          func()
-		expectCommands []*migration.Command
+		expectCommands []*schema.Command
 	}{
 		{
 			name: "Should not add command when columns is empty",
@@ -65,7 +65,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 			setup: func() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
 			},
-			expectCommands: []*migration.Command{
+			expectCommands: []*schema.Command{
 				{
 					Column: columnDefinition,
 					Name:   "comment",
@@ -94,9 +94,9 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 	tests := []struct {
 		name           string
 		columns        []*ColumnDefinition
-		commands       []*migration.Command
+		commands       []*schema.Command
 		setup          func()
-		expectCommands []*migration.Command
+		expectCommands []*schema.Command
 	}{
 		{
 			name: "Should not add the add command when there are added columns but it is a create operation",
@@ -105,7 +105,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 					name: convert.Pointer("name"),
 				},
 			},
-			commands: []*migration.Command{
+			commands: []*schema.Command{
 				{
 					Name: "create",
 				},
@@ -113,7 +113,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 			setup: func() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
 			},
-			expectCommands: []*migration.Command{
+			expectCommands: []*schema.Command{
 				{
 					Name: "create",
 				},
@@ -127,7 +127,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 					change: convert.Pointer(true),
 				},
 			},
-			commands: []*migration.Command{
+			commands: []*schema.Command{
 				{
 					Name: "create",
 				},
@@ -135,7 +135,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 			setup: func() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
 			},
-			expectCommands: []*migration.Command{
+			expectCommands: []*schema.Command{
 				{
 					Name: "create",
 				},
@@ -156,7 +156,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 			setup: func() {
 				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
 			},
-			expectCommands: []*migration.Command{
+			expectCommands: []*schema.Command{
 				{
 					Name: "add",
 				},
@@ -283,7 +283,7 @@ func (s *BlueprintTestSuite) TestHasCommand() {
 
 func (s *BlueprintTestSuite) TestIsCreate() {
 	s.False(s.blueprint.isCreate())
-	s.blueprint.commands = []*migration.Command{
+	s.blueprint.commands = []*schema.Command{
 		{
 			Name: commandCreate,
 		},

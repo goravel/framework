@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -27,7 +27,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 
 		mockConfig := testQuery.MockConfig()
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorSql).Once()
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4").Once()
 
 		migration.CreateTestMigrations(driver)
@@ -35,9 +35,9 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("1").Once()
 
-		mockSchema := mocksmigration.NewSchema(t)
+		mockSchema := mocksschema.NewSchema(t)
 
-		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		migrateCommand := NewMigrateCommand(nil, mockConfig, mockSchema)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 

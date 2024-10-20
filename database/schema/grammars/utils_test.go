@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	contractsmigration "github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/schema"
 	mockmigration "github.com/goravel/framework/mocks/database/migration"
 )
 
@@ -19,12 +19,12 @@ func TestGetColumns(t *testing.T) {
 	mockColumn2.EXPECT().GetType().Return("string").Once()
 
 	mockBlueprint := mockmigration.NewBlueprint(t)
-	mockBlueprint.EXPECT().GetAddedColumns().Return([]contractsmigration.ColumnDefinition{
+	mockBlueprint.EXPECT().GetAddedColumns().Return([]schema.ColumnDefinition{
 		mockColumn1, mockColumn2,
 	}).Once()
 
 	mockGrammar := mockmigration.NewGrammar(t)
-	mockGrammar.EXPECT().GetModifiers().Return([]func(contractsmigration.Blueprint, contractsmigration.ColumnDefinition) string{}).Twice()
+	mockGrammar.EXPECT().GetModifiers().Return([]func(schema.Blueprint, schema.ColumnDefinition) string{}).Twice()
 	mockGrammar.EXPECT().TypeString(mockColumn1).Return("varchar(100)").Once()
 	mockGrammar.EXPECT().TypeString(mockColumn2).Return("varchar").Once()
 

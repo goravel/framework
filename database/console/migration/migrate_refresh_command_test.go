@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -27,17 +27,17 @@ func TestMigrateRefreshCommand(t *testing.T) {
 
 		mockConfig := testQuery.MockConfig()
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations")
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql)
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorSql)
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4")
 
-		mockSchema := mocksmigration.NewSchema(t)
+		mockSchema := mocksschema.NewSchema(t)
 		migration.CreateTestMigrations(driver)
 
 		mockArtisan := mocksconsole.NewArtisan(t)
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("").Once()
 
-		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		migrateCommand := NewMigrateCommand(nil, mockConfig, mockSchema)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
@@ -54,9 +54,9 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockContext = mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("5").Once()
-		mockSchema = mocksmigration.NewSchema(t)
+		mockSchema = mocksschema.NewSchema(t)
 
-		migrateCommand = NewMigrateCommand(mockConfig, mockSchema)
+		migrateCommand = NewMigrateCommand(nil, mockConfig, mockSchema)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 

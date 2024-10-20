@@ -1,20 +1,20 @@
-package migration
+package schema
 
 import (
 	"github.com/goravel/framework/contracts/database/orm"
 )
 
 type Schema interface {
+	CommonSchema
+	DriverSchema
 	// Connection Get the connection for the schema.
 	Connection(name string) Schema
 	// Create a new table on the schema.
-	Create(table string, callback func(table Blueprint))
+	Create(table string, callback func(table Blueprint)) error
 	// DropIfExists Drop a table from the schema if exists.
-	DropIfExists(table string)
+	DropIfExists(table string) error
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
-	// GetTables Get the tables that belong to the database.
-	GetTables() ([]Table, error)
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
 	// Migrations Get the migrations.
@@ -31,13 +31,31 @@ type Schema interface {
 	Table(table string, callback func(table Blueprint))
 }
 
+type CommonSchema interface {
+	// GetTables Get the tables that belong to the database.
+	GetTables() ([]Table, error)
+	// GetViews Get the views that belong to the database.
+	GetViews() ([]View, error)
+}
+
+type DriverSchema interface {
+	// DropAllTables Drop all tables from the schema.
+	DropAllTables() error
+	// DropAllTypes Drop all types from the schema.
+	DropAllTypes() error
+	// DropAllViews Drop all views from the schema.
+	DropAllViews() error
+	// GetTypes Get the types that belong to the database.
+	GetTypes() ([]Type, error)
+}
+
 type Migration interface {
 	// Signature Get the migration signature.
 	Signature() string
 	// Up Run the migrations.
-	Up()
+	Up() error
 	// Down Reverse the migrations.
-	Down()
+	Down() error
 }
 
 type Connection interface {
@@ -63,5 +81,20 @@ type Command struct {
 type Table struct {
 	Comment string
 	Name    string
+	Schema  string
 	Size    int
+}
+
+type Type struct {
+	Category string
+	Implicit bool
+	Name     string
+	Schema   string
+	Type     string
+}
+
+type View struct {
+	Name       string
+	Schema     string
+	Definition string
 }

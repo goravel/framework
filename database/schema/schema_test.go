@@ -1,12 +1,13 @@
-package migration
+package schema
 
 import (
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/migration"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
@@ -37,7 +38,7 @@ func (s *SchemaSuite) SetupTest() {
 func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := initSchema(s.T(), testQuery)
+			schema, mockOrm := GetTestSchema(s.T(), testQuery)
 			table := "drop_if_exists"
 			mockTransaction(mockOrm, testQuery)
 
@@ -45,7 +46,7 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 
 			mockTransaction(mockOrm, testQuery)
 
-			schema.Create(table, func(table migration.Blueprint) {
+			schema.Create(table, func(table schema.Blueprint) {
 				table.String("name")
 			})
 
@@ -66,10 +67,10 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 func (s *SchemaSuite) TestTable_GetTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := initSchema(s.T(), testQuery)
+			schema, mockOrm := GetTestSchema(s.T(), testQuery)
 			mockTransaction(mockOrm, testQuery)
 
-			schema.Create("changes", func(table migration.Blueprint) {
+			schema.Create("changes", func(table schema.Blueprint) {
 				table.String("name")
 			})
 
@@ -135,10 +136,10 @@ func (s *SchemaSuite) TestTable_GetTables() {
 func (s *SchemaSuite) TestSql() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := initSchema(s.T(), testQuery)
+			schema, mockOrm := GetTestSchema(s.T(), testQuery)
 			mockTransaction(mockOrm, testQuery)
 
-			schema.Create("sql", func(table migration.Blueprint) {
+			schema.Create("sql", func(table schema.Blueprint) {
 				table.String("name")
 			})
 
@@ -155,10 +156,8 @@ func (s *SchemaSuite) TestSql() {
 	}
 }
 
-func initSchema(t *testing.T, testQuery *gorm.TestQuery) (*Schema, *mocksorm.Orm) {
-	mockOrm := mocksorm.NewOrm(t)
-	mockOrm.EXPECT().Name().Return(testQuery.Docker().Driver().String()).Twice()
-	schema := NewSchema(testQuery.MockConfig(), nil, mockOrm, nil)
-
-	return schema, mockOrm
+func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {
+	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(contractsorm.Query) error) error {
+		return txFunc(testQuery.Query())
+	}).Once()
 }

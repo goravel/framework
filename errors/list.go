@@ -95,8 +95,10 @@ var (
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 
-	SchemaDriverNotSupported = New("driver %s is not supported")
-	SchemaFailedToGetTables  = New("failed to get %s tables: %v")
+	SchemaDriverNotSupported  = New("driver %s is not supported")
+	SchemaFailedToCreateTable = New("failed to create %s table: %v")
+	SchemaFailedToDropTable   = New("failed to drop %s table: %v")
+	SchemaFailedToGetTables   = New("failed to get %s tables: %v")
 
 	SessionDriverAlreadyExists   = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed = New("session failed to extend session [%s] driver [%v]")

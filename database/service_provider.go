@@ -4,10 +4,12 @@ import (
 	"context"
 
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/errors"
 )
 
@@ -55,7 +57,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleSchema)
 		}
 
-		return migration.NewSchema(config, log, orm, nil), nil
+		return schema.NewSchema(config, log, orm, nil), nil
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
@@ -69,23 +71,37 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	artisan := app.MakeArtisan()
 	config := app.MakeConfig()
+	log := app.MakeLog()
 	schema := app.MakeSchema()
 	seeder := app.MakeSeeder()
 
-	if artisan != nil && config != nil && schema != nil && seeder != nil {
+	if artisan != nil && config != nil && log != nil && schema != nil && seeder != nil {
+		var migrator contractsmigration.Migrator
+
+		driver := config.GetString("database.migrations.driver")
+		if driver == contractsmigration.MigratorDefault {
+			migrator = migration.NewDefaultMigrator(artisan, schema, config.GetString("database.migrations.table"))
+		} else if driver == contractsmigration.MigratorSql {
+			migrator = migration.NewSqlMigrator(config)
+		} else {
+			log.Error(errors.MigrationUnsupportedDriver.Args(driver).SetModule(errors.ModuleMigration))
+			return
+		}
+
 		artisan.Register([]contractsconsole.Command{
-			consolemigration.NewMigrateMakeCommand(config, schema),
-			consolemigration.NewMigrateCommand(config, schema),
+			consolemigration.NewMigrateMakeCommand(migrator),
+			consolemigration.NewMigrateCommand(migrator),
 			consolemigration.NewMigrateRollbackCommand(config),
 			consolemigration.NewMigrateResetCommand(config),
 			consolemigration.NewMigrateRefreshCommand(config, artisan),
-			consolemigration.NewMigrateFreshCommand(config, artisan),
+			consolemigration.NewMigrateFreshCommand(artisan, migrator),
 			consolemigration.NewMigrateStatusCommand(config),
 			console.NewModelMakeCommand(),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),
 			console.NewFactoryMakeCommand(),
+			console.NewWipeCommand(config, schema),
 		})
 	}
 }

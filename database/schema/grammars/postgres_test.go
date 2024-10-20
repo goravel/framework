@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	contractsmigration "github.com/goravel/framework/contracts/database/migration"
+	contractsmigration "github.com/goravel/framework/contracts/database/schema"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 )
 

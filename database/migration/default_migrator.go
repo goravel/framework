@@ -3,26 +3,30 @@ package migration
 import (
 	"slices"
 
+	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
-type DefaultDriver struct {
+type DefaultMigrator struct {
+	artisan    console.Artisan
 	creator    *DefaultCreator
 	repository migration.Repository
-	schema     migration.Schema
+	schema     schema.Schema
 }
 
-func NewDefaultDriver(schema migration.Schema, table string) *DefaultDriver {
-	return &DefaultDriver{
+func NewDefaultMigrator(artisan console.Artisan, schema schema.Schema, table string) *DefaultMigrator {
+	return &DefaultMigrator{
+		artisan:    artisan,
 		creator:    NewDefaultCreator(),
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
 }
 
-func (r *DefaultDriver) Create(name string) error {
+func (r *DefaultMigrator) Create(name string) error {
 	table, create := TableGuesser{}.Guess(name)
 
 	stub := r.creator.GetStub(table, create)
@@ -38,8 +42,18 @@ func (r *DefaultDriver) Create(name string) error {
 	return nil
 }
 
-func (r *DefaultDriver) Run() error {
-	r.prepareDatabase()
+// TODO Remove this function and move the logic to the migrate:fresh command when the sql migrator is removed.
+func (r *DefaultMigrator) Fresh() error {
+	r.artisan.Call("db:wipe --force")
+	r.artisan.Call("migrate")
+
+	return nil
+}
+
+func (r *DefaultMigrator) Run() error {
+	if err := r.prepareDatabase(); err != nil {
+		return err
+	}
 
 	ran, err := r.repository.GetRan()
 	if err != nil {
@@ -51,8 +65,8 @@ func (r *DefaultDriver) Run() error {
 	return r.runPending(pendingMigrations)
 }
 
-func (r *DefaultDriver) pendingMigrations(migrations []migration.Migration, ran []string) []migration.Migration {
-	var pendingMigrations []migration.Migration
+func (r *DefaultMigrator) pendingMigrations(migrations []schema.Migration, ran []string) []schema.Migration {
+	var pendingMigrations []schema.Migration
 	for _, migration := range migrations {
 		if !slices.Contains(ran, migration.Signature()) {
 			pendingMigrations = append(pendingMigrations, migration)
@@ -62,15 +76,15 @@ func (r *DefaultDriver) pendingMigrations(migrations []migration.Migration, ran 
 	return pendingMigrations
 }
 
-func (r *DefaultDriver) prepareDatabase() {
+func (r *DefaultMigrator) prepareDatabase() error {
 	if r.repository.RepositoryExists() {
-		return
+		return nil
 	}
 
-	r.repository.CreateRepository()
+	return r.repository.CreateRepository()
 }
 
-func (r *DefaultDriver) runPending(migrations []migration.Migration) error {
+func (r *DefaultMigrator) runPending(migrations []schema.Migration) error {
 	if len(migrations) == 0 {
 		color.Infoln("Nothing to migrate")
 
@@ -95,14 +109,16 @@ func (r *DefaultDriver) runPending(migrations []migration.Migration) error {
 	return nil
 }
 
-func (r *DefaultDriver) runUp(file migration.Migration, batch int) error {
-	if connectionMigration, ok := file.(migration.Connection); ok {
+func (r *DefaultMigrator) runUp(file schema.Migration, batch int) error {
+	if connectionMigration, ok := file.(schema.Connection); ok {
 		previousConnection := r.schema.GetConnection()
 		r.schema.SetConnection(connectionMigration.Connection())
 		defer r.schema.SetConnection(previousConnection)
 	}
 
-	file.Up()
+	if err := file.Up(); err != nil {
+		return err
+	}
 
 	return r.repository.Log(file.Signature(), batch)
 }

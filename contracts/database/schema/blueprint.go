@@ -1,4 +1,4 @@
-package migration
+package schema
 
 import (
 	"github.com/goravel/framework/contracts/database/orm"

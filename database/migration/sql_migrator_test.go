@@ -58,7 +58,7 @@ func (s *SqlDriverSuite) TestCreate() {
 	s.mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
 	s.mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
 
-	driver := NewSqlDriver(s.mockConfig)
+	driver := NewSqlMigrator(s.mockConfig)
 
 	s.NoError(driver.Create(name))
 
@@ -71,6 +71,10 @@ func (s *SqlDriverSuite) TestCreate() {
 	defer carbon.UnsetTestNow()
 }
 
+func (s *SqlDriverSuite) TestFresh() {
+
+}
+
 func (s *SqlDriverSuite) TestRun() {
 	testQueries := gorm.NewTestQueries().Queries()
 	for driver, testQuery := range testQueries {
@@ -78,7 +82,7 @@ func (s *SqlDriverSuite) TestRun() {
 		mockConfig := testQuery.MockConfig()
 		CreateTestMigrations(driver)
 
-		sqlDriver := &SqlDriver{
+		sqlDriver := &SqlMigrator{
 			configBuilder: databasedb.NewConfigBuilder(mockConfig, driver.String()),
 			creator:       NewSqlCreator(driver, "utf8mb4"),
 			table:         "migrations",

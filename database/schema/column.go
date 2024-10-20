@@ -1,7 +1,7 @@
-package migration
+package schema
 
 import (
-	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
@@ -17,7 +17,7 @@ type ColumnDefinition struct {
 	unsigned      *bool
 }
 
-func (r *ColumnDefinition) AutoIncrement() migration.ColumnDefinition {
+func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	r.autoIncrement = convert.Pointer(true)
 
 	return r
@@ -79,13 +79,13 @@ func (r *ColumnDefinition) GetType() (ttype string) {
 	return
 }
 
-func (r *ColumnDefinition) Nullable() migration.ColumnDefinition {
+func (r *ColumnDefinition) Nullable() schema.ColumnDefinition {
 	r.nullable = convert.Pointer(true)
 
 	return r
 }
 
-func (r *ColumnDefinition) Unsigned() migration.ColumnDefinition {
+func (r *ColumnDefinition) Unsigned() schema.ColumnDefinition {
 	r.unsigned = convert.Pointer(true)
 
 	return r

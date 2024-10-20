@@ -1,36 +1,58 @@
-package migration
+package schema
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/migration"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/migration/grammars"
+	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
-var _ migration.Schema = (*Schema)(nil)
+var _ schema.Schema = (*Schema)(nil)
 
 type Schema struct {
+	schema.CommonSchema
+	schema.DriverSchema
+
 	config     config.Config
-	grammar    migration.Grammar
+	grammar    schema.Grammar
 	log        log.Log
-	migrations []migration.Migration
+	migrations []schema.Migration
 	orm        contractsorm.Orm
 	prefix     string
 }
 
-func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []migration.Migration) *Schema {
+func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []schema.Migration) *Schema {
 	driver := contractsdatabase.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", orm.Name())))
 	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", orm.Name()))
-	grammar := getGrammar(driver)
+	var (
+		driverSchema schema.DriverSchema
+		grammar      schema.Grammar
+	)
+
+	switch driver {
+	case contractsdatabase.DriverMysql:
+		// TODO Optimize here when implementing Mysql driver
+	case contractsdatabase.DriverPostgres:
+		postgresGrammar := grammars.NewPostgres()
+		driverSchema = NewPostgresSchema(config, postgresGrammar, orm)
+		grammar = postgresGrammar
+	case contractsdatabase.DriverSqlserver:
+		// TODO Optimize here when implementing Mysql driver
+	case contractsdatabase.DriverSqlite:
+		// TODO Optimize here when implementing Mysql driver
+	default:
+		panic(errors.SchemaDriverNotSupported.Args(driver))
+	}
 
 	return &Schema{
+		DriverSchema: driverSchema,
+		CommonSchema: NewCommonSchema(grammar, orm),
+
 		config:     config,
 		grammar:    grammar,
 		log:        log,
@@ -40,42 +62,35 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 	}
 }
 
-func (r *Schema) Connection(name string) migration.Schema {
+func (r *Schema) Connection(name string) schema.Schema {
 	return NewSchema(r.config, r.log, r.orm.Connection(name), r.migrations)
 }
 
-func (r *Schema) Create(table string, callback func(table migration.Blueprint)) {
+func (r *Schema) Create(table string, callback func(table schema.Blueprint)) error {
 	blueprint := r.createBlueprint(table)
 	blueprint.Create()
 	callback(blueprint)
 
 	if err := r.build(blueprint); err != nil {
-		color.Red().Printf("failed to create %s table: %v\n", table, err)
-		os.Exit(1)
+		return errors.SchemaFailedToCreateTable.Args(table, err)
 	}
+
+	return nil
 }
 
-func (r *Schema) DropIfExists(table string) {
+func (r *Schema) DropIfExists(table string) error {
 	blueprint := r.createBlueprint(table)
 	blueprint.DropIfExists()
 
 	if err := r.build(blueprint); err != nil {
-		color.Red().Printf("failed to drop %s table: %v\n", table, err)
-		os.Exit(1)
+		return errors.SchemaFailedToDropTable.Args(table, err)
 	}
+
+	return nil
 }
 
 func (r *Schema) GetConnection() string {
 	return r.orm.Name()
-}
-
-func (r *Schema) GetTables() ([]migration.Table, error) {
-	var tables []migration.Table
-	if err := r.orm.Query().Raw(r.grammar.CompileTables("")).Scan(&tables); err != nil {
-		return nil, err
-	}
-
-	return tables, nil
 }
 
 func (r *Schema) HasTable(name string) bool {
@@ -97,7 +112,7 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
-func (r *Schema) Migrations() []migration.Migration {
+func (r *Schema) Migrations() []schema.Migration {
 	return r.migrations
 }
 
@@ -105,7 +120,7 @@ func (r *Schema) Orm() contractsorm.Orm {
 	return r.orm
 }
 
-func (r *Schema) Register(migrations []migration.Migration) {
+func (r *Schema) Register(migrations []schema.Migration) {
 	r.migrations = migrations
 }
 
@@ -119,7 +134,7 @@ func (r *Schema) Sql(sql string) {
 	}
 }
 
-func (r *Schema) Table(table string, callback func(table migration.Blueprint)) {
+func (r *Schema) Table(table string, callback func(table schema.Blueprint)) {
 	blueprint := r.createBlueprint(table)
 	callback(blueprint)
 
@@ -128,30 +143,12 @@ func (r *Schema) Table(table string, callback func(table migration.Blueprint)) {
 	}
 }
 
-func (r *Schema) build(blueprint migration.Blueprint) error {
+func (r *Schema) build(blueprint schema.Blueprint) error {
 	return r.orm.Transaction(func(tx contractsorm.Query) error {
 		return blueprint.Build(tx, r.grammar)
 	})
 }
 
-func (r *Schema) createBlueprint(table string) migration.Blueprint {
+func (r *Schema) createBlueprint(table string) schema.Blueprint {
 	return NewBlueprint(r.prefix, table)
-}
-
-func getGrammar(driver contractsdatabase.Driver) migration.Grammar {
-	switch driver {
-	case contractsdatabase.DriverMysql:
-		// TODO Optimize here when implementing Mysql driver
-		return nil
-	case contractsdatabase.DriverPostgres:
-		return grammars.NewPostgres()
-	case contractsdatabase.DriverSqlserver:
-		// TODO Optimize here when implementing Mysql driver
-		return nil
-	case contractsdatabase.DriverSqlite:
-		// TODO Optimize here when implementing Mysql driver
-		return nil
-	default:
-		panic(errors.SchemaDriverNotSupported.Args(driver))
-	}
 }

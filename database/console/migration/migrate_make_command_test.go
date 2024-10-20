@@ -11,7 +11,7 @@ import (
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -20,7 +20,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	var (
 		mockConfig  *mocksconfig.Config
 		mockContext *mocksconsole.Context
-		mockSchema  *mocksmigration.Schema
+		mockSchema  *mocksschema.Schema
 	)
 
 	now := carbon.Now()
@@ -29,7 +29,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	beforeEach := func() {
 		mockConfig = mocksconfig.NewConfig(t)
 		mockContext = mocksconsole.NewContext(t)
-		mockSchema = mocksmigration.NewSchema(t)
+		mockSchema = mocksschema.NewSchema(t)
 	}
 
 	tests := []struct {
@@ -51,7 +51,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			name: "default driver",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
-				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
+				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorDefault).Once()
 				mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
 			},
 			assert: func() {
@@ -65,7 +65,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
 				mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
-				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorSql).Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
 				mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()

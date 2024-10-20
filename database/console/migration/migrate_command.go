@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
@@ -9,18 +8,12 @@ import (
 )
 
 type MigrateCommand struct {
-	driver migration.Driver
+	migrator migration.Migrator
 }
 
-func NewMigrateCommand(config config.Config, schema migration.Schema) *MigrateCommand {
-	driver, err := GetDriver(config, schema)
-	if err != nil {
-		color.Red().Println(err.Error())
-		return nil
-	}
-
+func NewMigrateCommand(migrator migration.Migrator) *MigrateCommand {
 	return &MigrateCommand{
-		driver: driver,
+		migrator: migrator,
 	}
 }
 
@@ -43,7 +36,7 @@ func (r *MigrateCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MigrateCommand) Handle(ctx console.Context) error {
-	if err := r.driver.Run(); err != nil {
+	if err := r.migrator.Run(); err != nil {
 		color.Red().Println("Migration failed:", err.Error())
 		return nil
 	}

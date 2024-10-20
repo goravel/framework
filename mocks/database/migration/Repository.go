@@ -21,8 +21,21 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 }
 
 // CreateRepository provides a mock function with given fields:
-func (_m *Repository) CreateRepository() {
-	_m.Called()
+func (_m *Repository) CreateRepository() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateRepository")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Repository_CreateRepository_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateRepository'
@@ -42,12 +55,12 @@ func (_c *Repository_CreateRepository_Call) Run(run func()) *Repository_CreateRe
 	return _c
 }
 
-func (_c *Repository_CreateRepository_Call) Return() *Repository_CreateRepository_Call {
-	_c.Call.Return()
+func (_c *Repository_CreateRepository_Call) Return(_a0 error) *Repository_CreateRepository_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Repository_CreateRepository_Call) RunAndReturn(run func()) *Repository_CreateRepository_Call {
+func (_c *Repository_CreateRepository_Call) RunAndReturn(run func() error) *Repository_CreateRepository_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -99,8 +112,21 @@ func (_c *Repository_Delete_Call) RunAndReturn(run func(string) error) *Reposito
 }
 
 // DeleteRepository provides a mock function with given fields:
-func (_m *Repository) DeleteRepository() {
-	_m.Called()
+func (_m *Repository) DeleteRepository() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteRepository")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Repository_DeleteRepository_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteRepository'
@@ -120,12 +146,12 @@ func (_c *Repository_DeleteRepository_Call) Run(run func()) *Repository_DeleteRe
 	return _c
 }
 
-func (_c *Repository_DeleteRepository_Call) Return() *Repository_DeleteRepository_Call {
-	_c.Call.Return()
+func (_c *Repository_DeleteRepository_Call) Return(_a0 error) *Repository_DeleteRepository_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Repository_DeleteRepository_Call) RunAndReturn(run func()) *Repository_DeleteRepository_Call {
+func (_c *Repository_DeleteRepository_Call) RunAndReturn(run func() error) *Repository_DeleteRepository_Call {
 	_c.Call.Return(run)
 	return _c
 }

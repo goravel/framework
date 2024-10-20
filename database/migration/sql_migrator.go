@@ -22,26 +22,26 @@ import (
 )
 
 // TODO Remove in v1.16
-type SqlDriver struct {
+type SqlMigrator struct {
 	configBuilder *databasedb.ConfigBuilder
 	creator       *SqlCreator
 	table         string
 }
 
-func NewSqlDriver(config config.Config) *SqlDriver {
+func NewSqlMigrator(config config.Config) *SqlMigrator {
 	connection := config.GetString("database.default")
 	charset := config.GetString(fmt.Sprintf("database.connections.%s.charset", connection))
 	driver := database.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", connection)))
 	table := config.GetString("database.migrations.table")
 
-	return &SqlDriver{
+	return &SqlMigrator{
 		configBuilder: databasedb.NewConfigBuilder(config, connection),
 		creator:       NewSqlCreator(driver, charset),
 		table:         table,
 	}
 }
 
-func (r *SqlDriver) Create(name string) error {
+func (r *SqlMigrator) Create(name string) error {
 	table, create := TableGuesser{}.Guess(name)
 
 	upStub, downStub := r.creator.GetStub(table, create)
@@ -59,7 +59,20 @@ func (r *SqlDriver) Create(name string) error {
 	return nil
 }
 
-func (r *SqlDriver) Run() error {
+func (r *SqlMigrator) Fresh() error {
+	migrator, err := r.getMigrator()
+	if err != nil {
+		return err
+	}
+
+	if err = migrator.Drop(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+
+	return r.Run()
+}
+
+func (r *SqlMigrator) Run() error {
 	migrator, err := r.getMigrator()
 	if err != nil {
 		return err
@@ -72,7 +85,7 @@ func (r *SqlDriver) Run() error {
 	return nil
 }
 
-func (r *SqlDriver) getMigrator() (*migrate.Migrate, error) {
+func (r *SqlMigrator) getMigrator() (*migrate.Migrate, error) {
 	path := "file://./database/migrations"
 	if support.RelativePath != "" {
 		path = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)

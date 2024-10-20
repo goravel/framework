@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func addModify(modifiers []func(migration.Blueprint, migration.ColumnDefinition) string, sql string, blueprint migration.Blueprint, column migration.ColumnDefinition) string {
+func addModify(modifiers []func(schema.Blueprint, schema.ColumnDefinition) string, sql string, blueprint schema.Blueprint, column schema.ColumnDefinition) string {
 	for _, modifier := range modifiers {
 		sql += modifier(blueprint, column)
 	}
@@ -18,7 +18,7 @@ func addModify(modifiers []func(migration.Blueprint, migration.ColumnDefinition)
 	return sql
 }
 
-func getColumns(grammar migration.Grammar, blueprint migration.Blueprint) []string {
+func getColumns(grammar schema.Grammar, blueprint schema.Blueprint) []string {
 	var columns []string
 	for _, column := range blueprint.GetAddedColumns() {
 		sql := fmt.Sprintf("%s %s", column.GetName(), getType(grammar, column))
@@ -38,7 +38,7 @@ func getDefaultValue(def any) string {
 	return "'" + cast.ToString(def) + "'"
 }
 
-func getType(grammar migration.Grammar, column migration.ColumnDefinition) string {
+func getType(grammar schema.Grammar, column schema.ColumnDefinition) string {
 	t := []rune(column.GetType())
 	if len(t) == 0 {
 		return ""

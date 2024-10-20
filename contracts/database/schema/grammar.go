@@ -1,4 +1,4 @@
-package migration
+package schema
 
 import (
 	"github.com/goravel/framework/contracts/database/orm"
@@ -11,10 +11,22 @@ type Grammar interface {
 	CompileChange(blueprint Blueprint) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint, query orm.Query) string
+	// CompileDropAllDomains Compile the SQL needed to drop all domains.
+	CompileDropAllDomains(domains []string) string
+	// CompileDropAllTables Compile the SQL needed to drop all tables.
+	CompileDropAllTables(tables []string) string
+	// CompileDropAllTypes Compile the SQL needed to drop all types.
+	CompileDropAllTypes(tables []string) string
+	// CompileDropAllViews Compile the SQL needed to drop all views.
+	CompileDropAllViews(tables []string) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint) string
 	// CompileTables Compile the query to determine the tables.
 	CompileTables(database string) string
+	// CompileTypes Compile the query to determine the types.
+	CompileTypes() string
+	// CompileViews Compile the query to determine the views.
+	CompileViews() string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
 	// GetModifiers Get the column modifiers.

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/schema"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
@@ -19,7 +19,7 @@ type DefaultDriverSuite struct {
 	value          int
 	mockRepository *mocksmigration.Repository
 	mockSchema     *mocksmigration.Schema
-	driver         *DefaultDriver
+	driver         *DefaultMigrator
 }
 
 func TestDefaultDriverSuite(t *testing.T) {
@@ -31,7 +31,7 @@ func (s *DefaultDriverSuite) SetupTest() {
 	s.mockRepository = mocksmigration.NewRepository(s.T())
 	s.mockSchema = mocksmigration.NewSchema(s.T())
 
-	s.driver = &DefaultDriver{
+	s.driver = &DefaultMigrator{
 		creator:    NewDefaultCreator(),
 		repository: s.mockRepository,
 		schema:     s.mockSchema,
@@ -70,7 +70,7 @@ func (s *DefaultDriverSuite) TestRun() {
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]migration.Migration{
+				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{
 					&TestMigration{suite: s},
 					&TestConnectionMigration{suite: s},
 				}).Once()
@@ -83,7 +83,7 @@ func (s *DefaultDriverSuite) TestRun() {
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]migration.Migration{
+				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{
 					&TestMigration{suite: s},
 					&TestConnectionMigration{suite: s},
 				}).Once()
@@ -97,7 +97,7 @@ func (s *DefaultDriverSuite) TestRun() {
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]migration.Migration{
+				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{
 					&TestMigration{suite: s},
 					&TestConnectionMigration{suite: s},
 				}).Once()
@@ -130,7 +130,7 @@ func (s *DefaultDriverSuite) TestRun() {
 }
 
 func (s *DefaultDriverSuite) TestPendingMigrations() {
-	migrations := []migration.Migration{
+	migrations := []schema.Migration{
 		&TestMigration{suite: s},
 		&TestConnectionMigration{suite: s},
 	}
@@ -155,13 +155,13 @@ func (s *DefaultDriverSuite) TestPrepareDatabase() {
 func (s *DefaultDriverSuite) TestRunPending() {
 	tests := []struct {
 		name        string
-		migrations  []migration.Migration
+		migrations  []schema.Migration
 		setup       func()
 		expectError string
 	}{
 		{
 			name: "Happy path",
-			migrations: []migration.Migration{
+			migrations: []schema.Migration{
 				&TestMigration{suite: s},
 			},
 			setup: func() {
@@ -171,12 +171,12 @@ func (s *DefaultDriverSuite) TestRunPending() {
 		},
 		{
 			name:       "Happy path - no migrations",
-			migrations: []migration.Migration{},
+			migrations: []schema.Migration{},
 			setup:      func() {},
 		},
 		{
 			name: "Sad path - GetNextBatchNumber returns error",
-			migrations: []migration.Migration{
+			migrations: []schema.Migration{
 				&TestMigration{suite: s},
 			},
 			setup: func() {
@@ -186,7 +186,7 @@ func (s *DefaultDriverSuite) TestRunPending() {
 		},
 		{
 			name: "Sad path - runUp returns error",
-			migrations: []migration.Migration{
+			migrations: []schema.Migration{
 				&TestMigration{suite: s},
 			},
 			setup: func() {
@@ -238,12 +238,14 @@ func (s *TestMigration) Signature() string {
 	return "20240817214501_create_users_table"
 }
 
-func (s *TestMigration) Up() {
+func (s *TestMigration) Up() error {
 	s.suite.value++
+
+	return nil
 }
 
-func (s *TestMigration) Down() {
-
+func (s *TestMigration) Down() error {
+	return nil
 }
 
 type TestConnectionMigration struct {
@@ -258,10 +260,12 @@ func (s *TestConnectionMigration) Connection() string {
 	return "mysql"
 }
 
-func (s *TestConnectionMigration) Up() {
+func (s *TestConnectionMigration) Up() error {
 	s.suite.value++
+
+	return nil
 }
 
-func (s *TestConnectionMigration) Down() {
-
+func (s *TestConnectionMigration) Down() error {
+	return nil
 }

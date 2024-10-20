@@ -27,7 +27,7 @@ func TestMigrateStatusCommand(t *testing.T) {
 
 		mockConfig := testQuery.MockConfig()
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorSql).Once()
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4").Once()
 
 		migration.CreateTestMigrations(driver)
@@ -35,7 +35,7 @@ func TestMigrateStatusCommand(t *testing.T) {
 		mockContext := consolemocks.NewContext(t)
 		mockSchema := mocksmigration.NewSchema(t)
 
-		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		migrateCommand := NewMigrateCommand(nil, mockConfig, mockSchema)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 

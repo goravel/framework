@@ -1,8 +1,8 @@
-package migration
+package schema
 
 import (
-	"github.com/goravel/framework/contracts/database/migration"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
@@ -17,7 +17,7 @@ const (
 
 type Blueprint struct {
 	columns  []*ColumnDefinition
-	commands []*migration.Command
+	commands []*schema.Command
 	prefix   string
 	table    string
 }
@@ -29,11 +29,11 @@ func NewBlueprint(prefix, table string) *Blueprint {
 	}
 }
 
-func (r *Blueprint) BigIncrements(column string) migration.ColumnDefinition {
+func (r *Blueprint) BigIncrements(column string) schema.ColumnDefinition {
 	return r.UnsignedBigInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) BigInteger(column string) migration.ColumnDefinition {
+func (r *Blueprint) BigInteger(column string) schema.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("bigInteger"),
@@ -44,7 +44,7 @@ func (r *Blueprint) BigInteger(column string) migration.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Build(query ormcontract.Query, grammar migration.Grammar) error {
+func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error {
 	for _, sql := range r.ToSql(query, grammar) {
 		if _, err := query.Exec(sql); err != nil {
 			return err
@@ -55,19 +55,19 @@ func (r *Blueprint) Build(query ormcontract.Query, grammar migration.Grammar) er
 }
 
 func (r *Blueprint) Create() {
-	r.addCommand(&migration.Command{
+	r.addCommand(&schema.Command{
 		Name: commandCreate,
 	})
 }
 
 func (r *Blueprint) DropIfExists() {
-	r.addCommand(&migration.Command{
+	r.addCommand(&schema.Command{
 		Name: commandDropIfExists,
 	})
 }
 
-func (r *Blueprint) GetAddedColumns() []migration.ColumnDefinition {
-	var columns []migration.ColumnDefinition
+func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
+	var columns []schema.ColumnDefinition
 	for _, column := range r.columns {
 		if column.change == nil || !*column.change {
 			columns = append(columns, column)
@@ -77,8 +77,8 @@ func (r *Blueprint) GetAddedColumns() []migration.ColumnDefinition {
 	return columns
 }
 
-func (r *Blueprint) GetChangedColumns() []migration.ColumnDefinition {
-	var columns []migration.ColumnDefinition
+func (r *Blueprint) GetChangedColumns() []schema.ColumnDefinition {
+	var columns []schema.ColumnDefinition
 	for _, column := range r.columns {
 		if column.change != nil && *column.change {
 			columns = append(columns, column)
@@ -103,7 +103,7 @@ func (r *Blueprint) HasCommand(command string) bool {
 	return false
 }
 
-func (r *Blueprint) ID(column ...string) migration.ColumnDefinition {
+func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 	if len(column) > 0 {
 		return r.BigIncrements(column[0])
 	}
@@ -111,7 +111,7 @@ func (r *Blueprint) ID(column ...string) migration.ColumnDefinition {
 	return r.BigIncrements("id")
 }
 
-func (r *Blueprint) Integer(column string) migration.ColumnDefinition {
+func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
 		ttype: convert.Pointer("integer"),
@@ -126,7 +126,7 @@ func (r *Blueprint) SetTable(name string) {
 	r.table = name
 }
 
-func (r *Blueprint) String(column string, length ...int) migration.ColumnDefinition {
+func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
 	defaultLength := defaultStringLength
 	if len(length) > 0 {
 		defaultLength = length[0]
@@ -142,7 +142,7 @@ func (r *Blueprint) String(column string, length ...int) migration.ColumnDefinit
 	return columnImpl
 }
 
-func (r *Blueprint) ToSql(query ormcontract.Query, grammar migration.Grammar) []string {
+func (r *Blueprint) ToSql(query ormcontract.Query, grammar schema.Grammar) []string {
 	r.addImpliedCommands(grammar)
 
 	var statements []string
@@ -162,16 +162,16 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar migration.Grammar) []
 	return statements
 }
 
-func (r *Blueprint) UnsignedBigInteger(column string) migration.ColumnDefinition {
+func (r *Blueprint) UnsignedBigInteger(column string) schema.ColumnDefinition {
 	return r.BigInteger(column).Unsigned()
 }
 
-func (r *Blueprint) addAttributeCommands(grammar migration.Grammar) {
+func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
 	attributeCommands := grammar.GetAttributeCommands()
 	for _, column := range r.columns {
 		for _, command := range attributeCommands {
 			if command == "comment" && column.comment != nil {
-				r.addCommand(&migration.Command{
+				r.addCommand(&schema.Command{
 					Column: column,
 					Name:   commandComment,
 				})
@@ -184,19 +184,19 @@ func (r *Blueprint) addColumn(column *ColumnDefinition) {
 	r.columns = append(r.columns, column)
 }
 
-func (r *Blueprint) addCommand(command *migration.Command) {
+func (r *Blueprint) addCommand(command *schema.Command) {
 	r.commands = append(r.commands, command)
 }
 
-func (r *Blueprint) addImpliedCommands(grammar migration.Grammar) {
-	var commands []*migration.Command
+func (r *Blueprint) addImpliedCommands(grammar schema.Grammar) {
+	var commands []*schema.Command
 	if len(r.GetAddedColumns()) > 0 && !r.isCreate() {
-		commands = append(commands, &migration.Command{
+		commands = append(commands, &schema.Command{
 			Name: commandAdd,
 		})
 	}
 	if len(r.GetChangedColumns()) > 0 && !r.isCreate() {
-		commands = append(commands, &migration.Command{
+		commands = append(commands, &schema.Command{
 			Name: commandChange,
 		})
 	}

@@ -3,10 +3,13 @@ package migration
 import (
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/schema"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -148,7 +151,13 @@ func (s *RepositoryTestSuite) TestRecord() {
 }
 
 func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) (*Repository, *mocksorm.Orm) {
-	schema, mockOrm := initSchema(s.T(), testQuery)
+	schema, mockOrm := schema.GetTestSchema(s.T(), testQuery)
 
 	return NewRepository(schema, "migrations"), mockOrm
+}
+
+func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {
+	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(contractsorm.Query) error) error {
+		return txFunc(testQuery.Query())
+	}).Once()
 }

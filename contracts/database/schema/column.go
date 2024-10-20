@@ -1,4 +1,4 @@
-package migration
+package schema
 
 type ColumnDefinition interface {
 	// AutoIncrement set the column as auto increment
