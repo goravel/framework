@@ -66,6 +66,10 @@ func (mc *Context) Context() context.Context {
 	return mc.ctx
 }
 
+func (mc *Context) WithContext(newCtx context.Context) {
+	mc.ctx = newCtx
+}
+
 func (mc *Context) WithValue(key any, value any) {
 	mc.mu.Lock()
 	mc.values[key] = value
