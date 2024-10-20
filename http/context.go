@@ -28,7 +28,7 @@ func (r *Context) Context() context.Context {
 
 func (c *Context) WithContext(ctx context.Context) {
 	// Changing the request context to a new context
-	c.instance.Request = c.instance.Request.WithContext(ctx)
+	c.Ctx = ctx
 }
 
 func (r *Context) WithValue(key any, value any) {
