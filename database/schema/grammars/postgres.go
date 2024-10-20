@@ -86,8 +86,7 @@ func (r *Postgres) CompileTables(database string) string {
 }
 
 func (r *Postgres) CompileTypes() string {
-	return fmt.Sprintf(
-		`select t.typname as name, n.nspname as schema, t.typtype as type, t.typcategory as category, 
+	return `select t.typname as name, n.nspname as schema, t.typtype as type, t.typcategory as category, 
 		((t.typinput = 'array_in'::regproc and t.typoutput = 'array_out'::regproc) or t.typtype = 'm') as implicit 
 		from pg_type t 
 		join pg_namespace n on n.oid = t.typnamespace 
@@ -96,7 +95,7 @@ func (r *Postgres) CompileTypes() string {
 		left join pg_class ce on ce.oid = el.typrelid 
 		where ((t.typrelid = 0 and (ce.relkind = 'c' or ce.relkind is null)) or c.relkind = 'c') 
 		and not exists (select 1 from pg_depend d where d.objid in (t.oid, t.typelem) and d.deptype = 'e') 
-		and n.nspname not in ('pg_catalog', 'information_schema')`)
+		and n.nspname not in ('pg_catalog', 'information_schema')`
 }
 
 func (r *Postgres) CompileViews() string {
@@ -104,7 +103,7 @@ func (r *Postgres) CompileViews() string {
 }
 
 func (r *Postgres) EscapeNames(names []string) []string {
-	var escapedNames []string
+	escapedNames := make([]string, len(names))
 
 	for _, name := range names {
 		segments := strings.Split(name, ".")

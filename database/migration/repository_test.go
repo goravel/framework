@@ -42,7 +42,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 			repository, mockOrm := s.initRepository(testQuery)
 			mockTransaction(mockOrm, testQuery)
 
-			repository.CreateRepository()
+			s.NoError(repository.CreateRepository())
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -50,7 +50,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 
 			mockTransaction(mockOrm, testQuery)
 
-			repository.DeleteRepository()
+			s.NoError(repository.DeleteRepository())
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -69,7 +69,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 			if !repository.RepositoryExists() {
 				mockTransaction(mockOrm, testQuery)
 
-				repository.CreateRepository()
+				s.NoError(repository.CreateRepository())
 			}
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
@@ -151,9 +151,9 @@ func (s *RepositoryTestSuite) TestRecord() {
 }
 
 func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) (*Repository, *mocksorm.Orm) {
-	schema, mockOrm := schema.GetTestSchema(s.T(), testQuery)
+	testSchema, mockOrm := schema.GetTestSchema(s.T(), testQuery)
 
-	return NewRepository(schema, "migrations"), mockOrm
+	return NewRepository(testSchema, "migrations"), mockOrm
 }
 
 func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {

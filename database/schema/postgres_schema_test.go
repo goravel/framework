@@ -17,7 +17,6 @@ type PostgresSchemaSuite struct {
 	suite.Suite
 	mockConfig     *mocksconfig.Config
 	mockOrm        *mocksorm.Orm
-	schema         *Schema
 	postgresSchema *PostgresSchema
 	testQuery      *gorm.TestQuery
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -20,7 +19,6 @@ import (
 
 type SqlMigratorSuite struct {
 	suite.Suite
-	mockConfig        *mocksconfig.Config
 	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
 }
 

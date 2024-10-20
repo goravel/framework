@@ -133,3 +133,62 @@ func TestNewMake(t *testing.T) {
 		})
 	}
 }
+
+func TestConfirmToProceed(t *testing.T) {
+	var (
+		mockCtx *consolemocks.Context
+	)
+
+	beforeEach := func() {
+		mockCtx = &consolemocks.Context{}
+	}
+
+	tests := []struct {
+		name         string
+		env          string
+		setup        func()
+		expectResult bool
+	}{
+		{
+			name:         "env is not production",
+			setup:        func() {},
+			expectResult: true,
+		},
+		{
+			name: "the force option is true",
+			env:  "production",
+			setup: func() {
+				mockCtx.EXPECT().OptionBool("force").Return(true).Once()
+			},
+			expectResult: true,
+		},
+		{
+			name: "confirm returns err",
+			env:  "production",
+			setup: func() {
+				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
+				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(false, assert.AnError).Once()
+			},
+			expectResult: false,
+		},
+		{
+			name: "confirm returns true",
+			env:  "production",
+			setup: func() {
+				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
+				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(true, nil).Once()
+			},
+			expectResult: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			beforeEach()
+			tt.setup()
+			result := ConfirmToProceed(mockCtx, tt.env)
+
+			assert.Equal(t, tt.expectResult, result)
+		})
+	}
+}
