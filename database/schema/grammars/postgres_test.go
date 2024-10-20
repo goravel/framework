@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsmigration "github.com/goravel/framework/contracts/database/schema"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 )
 
 type PostgresSuite struct {
@@ -24,9 +24,9 @@ func (s *PostgresSuite) SetupTest() {
 
 func (s *PostgresSuite) TestCompileChange() {
 	var (
-		mockBlueprint *mocksmigration.Blueprint
-		mockColumn1   *mocksmigration.ColumnDefinition
-		mockColumn2   *mocksmigration.ColumnDefinition
+		mockBlueprint *mocksschema.Blueprint
+		mockColumn1   *mocksschema.ColumnDefinition
+		mockColumn2   *mocksschema.ColumnDefinition
 	)
 
 	tests := []struct {
@@ -75,9 +75,9 @@ func (s *PostgresSuite) TestCompileChange() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			mockBlueprint = mocksmigration.NewBlueprint(s.T())
-			mockColumn1 = mocksmigration.NewColumnDefinition(s.T())
-			mockColumn2 = mocksmigration.NewColumnDefinition(s.T())
+			mockBlueprint = mocksschema.NewBlueprint(s.T())
+			mockColumn1 = mocksschema.NewColumnDefinition(s.T())
+			mockColumn2 = mocksschema.NewColumnDefinition(s.T())
 
 			test.setup()
 
@@ -89,9 +89,9 @@ func (s *PostgresSuite) TestCompileChange() {
 }
 
 func (s *PostgresSuite) TestCompileCreate() {
-	mockColumn1 := mocksmigration.NewColumnDefinition(s.T())
-	mockColumn2 := mocksmigration.NewColumnDefinition(s.T())
-	mockBlueprint := mocksmigration.NewBlueprint(s.T())
+	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
+	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
 
 	// postgres.go::CompileCreate
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
@@ -139,7 +139,7 @@ func (s *PostgresSuite) TestCompileCreate() {
 }
 
 func (s *PostgresSuite) TestCompileDropIfExists() {
-	mockBlueprint := mocksmigration.NewBlueprint(s.T())
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
 	s.Equal("drop table if exists users", s.grammar.CompileDropIfExists(mockBlueprint))
@@ -147,8 +147,8 @@ func (s *PostgresSuite) TestCompileDropIfExists() {
 
 func (s *PostgresSuite) TestModifyDefault() {
 	var (
-		mockBlueprint *mocksmigration.Blueprint
-		mockColumn    *mocksmigration.ColumnDefinition
+		mockBlueprint *mocksschema.Blueprint
+		mockColumn    *mocksschema.ColumnDefinition
 	)
 
 	tests := []struct {
@@ -200,8 +200,8 @@ func (s *PostgresSuite) TestModifyDefault() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			mockBlueprint = mocksmigration.NewBlueprint(s.T())
-			mockColumn = mocksmigration.NewColumnDefinition(s.T())
+			mockBlueprint = mocksschema.NewBlueprint(s.T())
+			mockColumn = mocksschema.NewColumnDefinition(s.T())
 
 			test.setup()
 
@@ -213,9 +213,9 @@ func (s *PostgresSuite) TestModifyDefault() {
 }
 
 func (s *PostgresSuite) TestModifyNullable() {
-	mockBlueprint := mocksmigration.NewBlueprint(s.T())
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
 
-	mockColumn := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetChange().Return(true).Once()
 	mockColumn.EXPECT().GetNullable().Return(true).Once()
 
@@ -238,9 +238,9 @@ func (s *PostgresSuite) TestModifyNullable() {
 }
 
 func (s *PostgresSuite) TestModifyIncrement() {
-	mockBlueprint := mocksmigration.NewBlueprint(s.T())
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
 
-	mockColumn := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetChange().Return(true).Once()
 
 	s.Empty(s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
@@ -254,36 +254,36 @@ func (s *PostgresSuite) TestModifyIncrement() {
 }
 
 func (s *PostgresSuite) TestTypeBigInteger() {
-	mockColumn1 := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
 
 	s.Equal("bigserial", s.grammar.TypeBigInteger(mockColumn1))
 
-	mockColumn2 := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn2.EXPECT().GetAutoIncrement().Return(false).Once()
 
 	s.Equal("bigint", s.grammar.TypeBigInteger(mockColumn2))
 }
 
 func (s *PostgresSuite) TestTypeInteger() {
-	mockColumn1 := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
 
 	s.Equal("serial", s.grammar.TypeInteger(mockColumn1))
 
-	mockColumn2 := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn2.EXPECT().GetAutoIncrement().Return(false).Once()
 
 	s.Equal("integer", s.grammar.TypeInteger(mockColumn2))
 }
 
 func (s *PostgresSuite) TestTypeString() {
-	mockColumn1 := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn1.EXPECT().GetLength().Return(100).Once()
 
 	s.Equal("varchar(100)", s.grammar.TypeString(mockColumn1))
 
-	mockColumn2 := mocksmigration.NewColumnDefinition(s.T())
+	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn2.EXPECT().GetLength().Return(0).Once()
 
 	s.Equal("varchar", s.grammar.TypeString(mockColumn2))

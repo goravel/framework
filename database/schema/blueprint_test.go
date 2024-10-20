@@ -9,8 +9,8 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/convert"
 )
 
@@ -34,7 +34,7 @@ func (s *BlueprintTestSuite) SetupTest() {
 
 func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 	var (
-		mockGrammar      *mocksmigration.Grammar
+		mockGrammar      *mocksschema.Grammar
 		columnDefinition = &ColumnDefinition{
 			comment: convert.Pointer("comment"),
 		}
@@ -76,7 +76,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			mockGrammar = mocksmigration.NewGrammar(s.T())
+			mockGrammar = mocksschema.NewGrammar(s.T())
 			s.blueprint.columns = test.columns
 			test.setup()
 
@@ -88,7 +88,7 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 
 func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 	var (
-		mockGrammar *mocksmigration.Grammar
+		mockGrammar *mocksschema.Grammar
 	)
 
 	tests := []struct {
@@ -176,7 +176,7 @@ func (s *BlueprintTestSuite) TestAddImpliedCommands() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			mockGrammar = mocksmigration.NewGrammar(s.T())
+			mockGrammar = mocksschema.NewGrammar(s.T())
 			s.blueprint.columns = test.columns
 			s.blueprint.commands = test.commands
 			test.setup()

@@ -6,24 +6,24 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/database/schema"
-	mockmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 )
 
 func TestGetColumns(t *testing.T) {
-	mockColumn1 := mockmigration.NewColumnDefinition(t)
+	mockColumn1 := mocksschema.NewColumnDefinition(t)
 	mockColumn1.EXPECT().GetName().Return("id").Once()
 	mockColumn1.EXPECT().GetType().Return("string").Once()
 
-	mockColumn2 := mockmigration.NewColumnDefinition(t)
+	mockColumn2 := mocksschema.NewColumnDefinition(t)
 	mockColumn2.EXPECT().GetName().Return("name").Once()
 	mockColumn2.EXPECT().GetType().Return("string").Once()
 
-	mockBlueprint := mockmigration.NewBlueprint(t)
+	mockBlueprint := mocksschema.NewBlueprint(t)
 	mockBlueprint.EXPECT().GetAddedColumns().Return([]schema.ColumnDefinition{
 		mockColumn1, mockColumn2,
 	}).Once()
 
-	mockGrammar := mockmigration.NewGrammar(t)
+	mockGrammar := mocksschema.NewGrammar(t)
 	mockGrammar.EXPECT().GetModifiers().Return([]func(schema.Blueprint, schema.ColumnDefinition) string{}).Twice()
 	mockGrammar.EXPECT().TypeString(mockColumn1).Return("varchar(100)").Once()
 	mockGrammar.EXPECT().TypeString(mockColumn2).Return("varchar").Once()
@@ -47,19 +47,19 @@ func TestGetDefaultValue(t *testing.T) {
 
 func TestGetType(t *testing.T) {
 	// valid type
-	mockColumn := mockmigration.NewColumnDefinition(t)
+	mockColumn := mocksschema.NewColumnDefinition(t)
 	mockColumn.EXPECT().GetType().Return("string").Once()
 
-	mockGrammar := mockmigration.NewGrammar(t)
+	mockGrammar := mocksschema.NewGrammar(t)
 	mockGrammar.EXPECT().TypeString(mockColumn).Return("varchar").Once()
 
 	assert.Equal(t, "varchar", getType(mockGrammar, mockColumn))
 
 	// invalid type
-	mockColumn1 := mockmigration.NewColumnDefinition(t)
+	mockColumn1 := mocksschema.NewColumnDefinition(t)
 	mockColumn1.EXPECT().GetType().Return("invalid").Once()
 
-	mockGrammar1 := mockmigration.NewGrammar(t)
+	mockGrammar1 := mocksschema.NewGrammar(t)
 
 	assert.Empty(t, getType(mockGrammar1, mockColumn1))
 }

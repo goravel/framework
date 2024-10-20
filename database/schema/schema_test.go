@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/gorm"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
@@ -42,13 +43,13 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 			table := "drop_if_exists"
 			mockTransaction(mockOrm, testQuery)
 
-			schema.DropIfExists(table)
+			s.NoError(schema.DropIfExists(table))
 
 			mockTransaction(mockOrm, testQuery)
 
-			schema.Create(table, func(table schema.Blueprint) {
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.String("name")
-			})
+			}))
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -56,12 +57,50 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 
 			mockTransaction(mockOrm, testQuery)
 
-			schema.DropIfExists(table)
+			s.NoError(schema.DropIfExists(table))
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 			s.False(schema.HasTable(table))
 		})
 	}
+}
+
+func (s *SchemaSuite) TestDropAllTables() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema, mockOrm := GetTestSchema(s.T(), testQuery)
+			table := "drop_all_tables"
+
+			mockTransaction(mockOrm, testQuery)
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+
+			s.True(schema.HasTable(table))
+
+			mockOrm.EXPECT().Name().Return("postgres").Once()
+			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
+
+			s.NoError(schema.DropAllTables())
+
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+			s.False(schema.HasTable(table))
+		})
+	}
+}
+
+// TODO Implement this after implementing create type
+func (s *SchemaSuite) TestDropAllTypes() {
+
+}
+
+// TODO Implement this after implementing create view
+func (s *SchemaSuite) TestDropAllViews() {
+
 }
 
 func (s *SchemaSuite) TestTable_GetTables() {
@@ -70,9 +109,9 @@ func (s *SchemaSuite) TestTable_GetTables() {
 			schema, mockOrm := GetTestSchema(s.T(), testQuery)
 			mockTransaction(mockOrm, testQuery)
 
-			schema.Create("changes", func(table schema.Blueprint) {
+			s.NoError(schema.Create("changes", func(table contractsschema.Blueprint) {
 				table.String("name")
-			})
+			}))
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -139,9 +178,9 @@ func (s *SchemaSuite) TestSql() {
 			schema, mockOrm := GetTestSchema(s.T(), testQuery)
 			mockTransaction(mockOrm, testQuery)
 
-			schema.Create("sql", func(table schema.Blueprint) {
+			s.NoError(schema.Create("sql", func(table contractsschema.Blueprint) {
 				table.String("name")
-			})
+			}))
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 

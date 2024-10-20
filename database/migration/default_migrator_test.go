@@ -9,36 +9,41 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/schema"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
+	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
 
-type DefaultDriverSuite struct {
+type DefaultMigratorSuite struct {
 	suite.Suite
 	value          int
+	mockArtisan    *mocksconsole.Artisan
 	mockRepository *mocksmigration.Repository
-	mockSchema     *mocksmigration.Schema
+	mockSchema     *mocksschema.Schema
 	driver         *DefaultMigrator
 }
 
-func TestDefaultDriverSuite(t *testing.T) {
-	suite.Run(t, &DefaultDriverSuite{})
+func TestDefaultMigratorSuite(t *testing.T) {
+	suite.Run(t, &DefaultMigratorSuite{})
 }
 
-func (s *DefaultDriverSuite) SetupTest() {
+func (s *DefaultMigratorSuite) SetupTest() {
 	s.value = 0
+	s.mockArtisan = mocksconsole.NewArtisan(s.T())
 	s.mockRepository = mocksmigration.NewRepository(s.T())
-	s.mockSchema = mocksmigration.NewSchema(s.T())
+	s.mockSchema = mocksschema.NewSchema(s.T())
 
 	s.driver = &DefaultMigrator{
+		artisan:    s.mockArtisan,
 		creator:    NewDefaultCreator(),
 		repository: s.mockRepository,
 		schema:     s.mockSchema,
 	}
 }
 
-func (s *DefaultDriverSuite) TestCreate() {
+func (s *DefaultMigratorSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
 
@@ -59,7 +64,14 @@ func (s *DefaultDriverSuite) TestCreate() {
 	}()
 }
 
-func (s *DefaultDriverSuite) TestRun() {
+func (s *DefaultMigratorSuite) TestFresh() {
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Once()
+	s.mockArtisan.EXPECT().Call("migrate").Once()
+
+	s.NoError(s.driver.Fresh())
+}
+
+func (s *DefaultMigratorSuite) TestRun() {
 	tests := []struct {
 		name        string
 		setup       func()
@@ -129,7 +141,7 @@ func (s *DefaultDriverSuite) TestRun() {
 	}
 }
 
-func (s *DefaultDriverSuite) TestPendingMigrations() {
+func (s *DefaultMigratorSuite) TestPendingMigrations() {
 	migrations := []schema.Migration{
 		&TestMigration{suite: s},
 		&TestConnectionMigration{suite: s},
@@ -143,16 +155,16 @@ func (s *DefaultDriverSuite) TestPendingMigrations() {
 	s.Equal(&TestConnectionMigration{suite: s}, pendingMigrations[0])
 }
 
-func (s *DefaultDriverSuite) TestPrepareDatabase() {
+func (s *DefaultMigratorSuite) TestPrepareDatabase() {
 	s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-	s.driver.prepareDatabase()
+	s.NoError(s.driver.prepareDatabase())
 
 	s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
-	s.mockRepository.EXPECT().CreateRepository().Once()
-	s.driver.prepareDatabase()
+	s.mockRepository.EXPECT().CreateRepository().Return(nil).Once()
+	s.NoError(s.driver.prepareDatabase())
 }
 
-func (s *DefaultDriverSuite) TestRunPending() {
+func (s *DefaultMigratorSuite) TestRunPending() {
 	tests := []struct {
 		name        string
 		migrations  []schema.Migration
@@ -211,7 +223,7 @@ func (s *DefaultDriverSuite) TestRunPending() {
 	}
 }
 
-func (s *DefaultDriverSuite) TestRunUp() {
+func (s *DefaultMigratorSuite) TestRunUp() {
 	batch := 1
 	s.mockRepository.EXPECT().Log("20240817214501_create_users_table", batch).Return(nil).Once()
 	s.NoError(s.driver.runUp(&TestMigration{
@@ -231,7 +243,7 @@ func (s *DefaultDriverSuite) TestRunUp() {
 }
 
 type TestMigration struct {
-	suite *DefaultDriverSuite
+	suite *DefaultMigratorSuite
 }
 
 func (s *TestMigration) Signature() string {
@@ -249,7 +261,7 @@ func (s *TestMigration) Down() error {
 }
 
 type TestConnectionMigration struct {
-	suite *DefaultDriverSuite
+	suite *DefaultMigratorSuite
 }
 
 func (s *TestConnectionMigration) Signature() string {

@@ -66,6 +66,7 @@ var (
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
 	MigrationNameIsRequired    = New("migration name cannot be empty")
+	MigrationSqlMigratorInit   = New("failed to init sql migration driver: %s")
 	MigrationUnsupportedDriver = New("unsupported migration driver: %s")
 
 	OrmDatabaseConfigNotFound      = New("not found database configuration")

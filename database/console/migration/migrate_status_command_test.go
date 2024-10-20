@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/migration"
 	consolemocks "github.com/goravel/framework/mocks/console"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -32,10 +31,12 @@ func TestMigrateStatusCommand(t *testing.T) {
 
 		migration.CreateTestMigrations(driver)
 
-		mockContext := consolemocks.NewContext(t)
-		mockSchema := mocksmigration.NewSchema(t)
+		migrator, err := migration.NewSqlMigrator(mockConfig)
+		require.NoError(t, err)
 
-		migrateCommand := NewMigrateCommand(nil, mockConfig, mockSchema)
+		mockContext := consolemocks.NewContext(t)
+
+		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 

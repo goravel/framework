@@ -17,7 +17,6 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -25,20 +24,27 @@ import (
 type SqlMigrator struct {
 	configBuilder *databasedb.ConfigBuilder
 	creator       *SqlCreator
+	migrator      *migrate.Migrate
 	table         string
 }
 
-func NewSqlMigrator(config config.Config) *SqlMigrator {
+func NewSqlMigrator(config config.Config) (*SqlMigrator, error) {
 	connection := config.GetString("database.default")
 	charset := config.GetString(fmt.Sprintf("database.connections.%s.charset", connection))
-	driver := database.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", connection)))
+	dbDriver := database.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", connection)))
 	table := config.GetString("database.migrations.table")
+	configBuilder := databasedb.NewConfigBuilder(config, connection)
+	migrator, err := getMigrator(configBuilder, table)
+	if err != nil {
+		return nil, err
+	}
 
 	return &SqlMigrator{
-		configBuilder: databasedb.NewConfigBuilder(config, connection),
-		creator:       NewSqlCreator(driver, charset),
+		configBuilder: configBuilder,
+		creator:       NewSqlCreator(dbDriver, charset),
+		migrator:      migrator,
 		table:         table,
-	}
+	}, nil
 }
 
 func (r *SqlMigrator) Create(name string) error {
@@ -60,38 +66,36 @@ func (r *SqlMigrator) Create(name string) error {
 }
 
 func (r *SqlMigrator) Fresh() error {
-	migrator, err := r.getMigrator()
+	if err := r.migrator.Drop(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+
+	// Recreate the migrations table.
+	migrator, err := getMigrator(r.configBuilder, r.table)
 	if err != nil {
 		return err
 	}
 
-	if err = migrator.Drop(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return err
-	}
+	r.migrator = migrator
 
 	return r.Run()
 }
 
 func (r *SqlMigrator) Run() error {
-	migrator, err := r.getMigrator()
-	if err != nil {
+	if err := r.migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err
-	}
-
-	if err = migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		color.Red().Println("Migration failed:", err.Error())
 	}
 
 	return nil
 }
 
-func (r *SqlMigrator) getMigrator() (*migrate.Migrate, error) {
+func getMigrator(configBuilder *databasedb.ConfigBuilder, table string) (*migrate.Migrate, error) {
 	path := "file://./database/migrations"
 	if support.RelativePath != "" {
 		path = fmt.Sprintf("file://%s/database/migrations", support.RelativePath)
 	}
 
-	writeConfigs := r.configBuilder.Writes()
+	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
 		return nil, errors.OrmDatabaseConfigNotFound
 	}
@@ -118,7 +122,7 @@ func (r *SqlMigrator) getMigrator() (*migrate.Migrate, error) {
 		}
 
 		dbDriver, err = mysql.WithInstance(db, &mysql.Config{
-			MigrationsTable: r.table,
+			MigrationsTable: table,
 		})
 	case database.DriverPostgres:
 		databaseName = "postgres"
@@ -128,7 +132,7 @@ func (r *SqlMigrator) getMigrator() (*migrate.Migrate, error) {
 		}
 
 		dbDriver, err = postgres.WithInstance(db, &postgres.Config{
-			MigrationsTable: r.table,
+			MigrationsTable: table,
 		})
 	case database.DriverSqlite:
 		databaseName = "sqlite3"
@@ -138,7 +142,7 @@ func (r *SqlMigrator) getMigrator() (*migrate.Migrate, error) {
 		}
 
 		dbDriver, err = driver.WithInstance(db, &driver.Config{
-			MigrationsTable: r.table,
+			MigrationsTable: table,
 		})
 	case database.DriverSqlserver:
 		databaseName = "sqlserver"
@@ -148,7 +152,7 @@ func (r *SqlMigrator) getMigrator() (*migrate.Migrate, error) {
 		}
 
 		dbDriver, err = sqlserver.WithInstance(db, &sqlserver.Config{
-			MigrationsTable: r.table,
+			MigrationsTable: table,
 		})
 	default:
 		err = errors.OrmDriverNotSupported.Args(writeConfig.Connection)

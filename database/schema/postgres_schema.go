@@ -6,13 +6,13 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/database/schema"
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/database/schema/processors"
 )
 
 type PostgresSchema struct {
-	schema.CommonSchema
+	contractsschema.CommonSchema
 
 	config    config.Config
 	grammar   *grammars.Postgres
@@ -118,15 +118,6 @@ func (r *PostgresSchema) DropAllViews() error {
 	return err
 }
 
-func (r *PostgresSchema) GetTypes() ([]schema.Type, error) {
-	var types []schema.Type
-	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
-		return nil, err
-	}
-
-	return r.processor.ProcessTypes(types), nil
-}
-
 func (r *PostgresSchema) getSchema() string {
 	schema := r.config.GetString(fmt.Sprintf("database.connections.%s.search_path", r.orm.Name()))
 	if schema == "" {
@@ -134,4 +125,13 @@ func (r *PostgresSchema) getSchema() string {
 	}
 
 	return schema
+}
+
+func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {
+	var types []contractsschema.Type
+	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessTypes(types), nil
 }

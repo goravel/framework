@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -30,14 +29,16 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorSql)
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4")
 
-		mockSchema := mocksschema.NewSchema(t)
 		migration.CreateTestMigrations(driver)
+
+		migrator, err := migration.NewSqlMigrator(mockConfig)
+		require.NoError(t, err)
 
 		mockArtisan := mocksconsole.NewArtisan(t)
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("").Once()
 
-		migrateCommand := NewMigrateCommand(nil, mockConfig, mockSchema)
+		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
@@ -47,16 +48,15 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
 		var agent migration.Agent
-		err := query.Where("name", "goravel").First(&agent)
+		err = query.Where("name", "goravel").First(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
 
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockContext = mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("5").Once()
-		mockSchema = mocksschema.NewSchema(t)
 
-		migrateCommand = NewMigrateCommand(nil, mockConfig, mockSchema)
+		migrateCommand = NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 

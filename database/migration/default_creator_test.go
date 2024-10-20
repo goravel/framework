@@ -45,12 +45,12 @@ func (r *M202410131203CreateUsersTable) Signature() string {
 }
 
 // Up Run the migrations.
-func (r *M202410131203CreateUsersTable) Up() {
+func (r *M202410131203CreateUsersTable) Up() error {
 
 }
 
 // Down Reverse the migrations.
-func (r *M202410131203CreateUsersTable) Down() {
+func (r *M202410131203CreateUsersTable) Down() error {
 
 }
 `,
@@ -73,7 +73,7 @@ func (r *M202410131203CreateUsersTable) Signature() string {
 }
 
 // Up Run the migrations.
-func (r *M202410131203CreateUsersTable) Up() {
+func (r *M202410131203CreateUsersTable) Up() error {
 	facades.Schema.Create("users", func(table migration.Blueprint) {
  		table.BigIncrements("id")
  		table.Timestamps()
@@ -81,7 +81,7 @@ func (r *M202410131203CreateUsersTable) Up() {
 }
 
 // Down Reverse the migrations.
-func (r *M202410131203CreateUsersTable) Down() {
+func (r *M202410131203CreateUsersTable) Down() error {
  	facades.Schema.DropIfExists("users")
 }
 `,
@@ -103,14 +103,14 @@ func (r *M202410131203CreateUsersTable) Signature() string {
 }
 
 // Up Run the migrations.
-func (r *M202410131203CreateUsersTable) Up() {
+func (r *M202410131203CreateUsersTable) Up() error {
 	facades.Schema.Table("users", func(table migration.Blueprint) {
 
 	})
 }
 
 // Down Reverse the migrations.
-func (r *M202410131203CreateUsersTable) Down() {
+func (r *M202410131203CreateUsersTable) Down() error {
 
 }
 `,

@@ -82,7 +82,12 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		if driver == contractsmigration.MigratorDefault {
 			migrator = migration.NewDefaultMigrator(artisan, schema, config.GetString("database.migrations.table"))
 		} else if driver == contractsmigration.MigratorSql {
-			migrator = migration.NewSqlMigrator(config)
+			var err error
+			migrator, err = migration.NewSqlMigrator(config)
+			if err != nil {
+				log.Error(errors.MigrationSqlMigratorInit.Args(err).SetModule(errors.ModuleMigration))
+				return
+			}
 		} else {
 			log.Error(errors.MigrationUnsupportedDriver.Args(driver).SetModule(errors.ModuleMigration))
 			return

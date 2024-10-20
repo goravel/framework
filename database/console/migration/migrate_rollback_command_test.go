@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -32,17 +31,18 @@ func TestMigrateRollbackCommand(t *testing.T) {
 
 		migration.CreateTestMigrations(driver)
 
+		migrator, err := migration.NewSqlMigrator(mockConfig)
+		require.NoError(t, err)
+
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("1").Once()
 
-		mockSchema := mocksschema.NewSchema(t)
-
-		migrateCommand := NewMigrateCommand(nil, mockConfig, mockSchema)
+		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		var agent migration.Agent
-		err := query.Where("name", "goravel").FirstOrFail(&agent)
+		err = query.Where("name", "goravel").FirstOrFail(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
 

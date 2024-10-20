@@ -5,9 +5,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
@@ -16,35 +18,36 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-type SqlDriverSuite struct {
+type SqlMigratorSuite struct {
 	suite.Suite
 	mockConfig        *mocksconfig.Config
 	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
 }
 
-func TestSqlDriverSuite(t *testing.T) {
+func TestSqlMigratorSuite(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skipping tests of using docker")
 	}
 
-	suite.Run(t, &SqlDriverSuite{})
+	suite.Run(t, &SqlMigratorSuite{})
 }
 
-func (s *SqlDriverSuite) SetupSuite() {
+func (s *SqlMigratorSuite) SetupSuite() {
 	s.driverToTestQuery = gorm.NewTestQueries().Queries()
 }
 
-func (s *SqlDriverSuite) SetupTest() {
+func (s *SqlMigratorSuite) SetupTest() {
 
 }
 
-func (s *SqlDriverSuite) TearDownTest() {
+func (s *SqlMigratorSuite) TearDownTest() {
 	s.NoError(file.Remove("database"))
 }
 
-func (s *SqlDriverSuite) TestCreate() {
+func (s *SqlMigratorSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
+	defer carbon.UnsetTestNow()
 
 	pwd, err := os.Getwd()
 	s.NoError(err)
@@ -52,49 +55,66 @@ func (s *SqlDriverSuite) TestCreate() {
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
-	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
-	s.mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
-	s.mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
-	s.mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
+	for driver, testQuery := range s.driverToTestQuery {
+		migrator, _ := getTestSqlMigrator(s.T(), driver, testQuery)
 
-	driver := NewSqlMigrator(s.mockConfig)
+		s.NoError(migrator.Create(name))
 
-	s.NoError(driver.Create(name))
+		upFile := filepath.Join(path, "20240817214501_"+name+".up.sql")
+		downFile := filepath.Join(path, "20240817214501_"+name+".down.sql")
 
-	upFile := filepath.Join(path, "20240817214501_"+name+".up.sql")
-	downFile := filepath.Join(path, "20240817214501_"+name+".down.sql")
-
-	s.True(file.Exists(upFile))
-	s.True(file.Exists(downFile))
-
-	defer carbon.UnsetTestNow()
+		s.True(file.Exists(upFile))
+		s.True(file.Exists(downFile))
+	}
 }
 
-func (s *SqlDriverSuite) TestFresh() {
+func (s *SqlMigratorSuite) TestFresh() {
+	for driver, testQuery := range s.driverToTestQuery {
+		migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
 
+		err := migrator.Run()
+		s.NoError(err)
+
+		err = migrator.Fresh()
+		s.NoError(err)
+
+		var agent Agent
+		err = query.Where("name", "goravel").First(&agent)
+		s.Nil(err)
+		s.True(agent.ID > 0)
+	}
 }
 
-func (s *SqlDriverSuite) TestRun() {
-	testQueries := gorm.NewTestQueries().Queries()
-	for driver, testQuery := range testQueries {
-		query := testQuery.Query()
-		mockConfig := testQuery.MockConfig()
-		CreateTestMigrations(driver)
+func (s *SqlMigratorSuite) TestRun() {
+	for driver, testQuery := range s.driverToTestQuery {
+		migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
 
-		sqlDriver := &SqlMigrator{
-			configBuilder: databasedb.NewConfigBuilder(mockConfig, driver.String()),
-			creator:       NewSqlCreator(driver, "utf8mb4"),
-			table:         "migrations",
-		}
-		err := sqlDriver.Run()
+		err := migrator.Run()
 		s.NoError(err)
 
 		var agent Agent
 		s.NoError(query.Where("name", "goravel").First(&agent))
 		s.True(agent.ID > 0)
 
-		err = sqlDriver.Run()
+		err = migrator.Run()
 		s.NoError(err)
 	}
+}
+
+func getTestSqlMigrator(t *testing.T, driver contractsdatabase.Driver, testQuery *gorm.TestQuery) (*SqlMigrator, orm.Query) {
+	query := testQuery.Query()
+	mockConfig := testQuery.MockConfig()
+	CreateTestMigrations(driver)
+
+	table := "migrations"
+	configBuilder := databasedb.NewConfigBuilder(mockConfig, driver.String())
+	migrator, err := getMigrator(configBuilder, table)
+	require.NoError(t, err)
+
+	return &SqlMigrator{
+		configBuilder: databasedb.NewConfigBuilder(mockConfig, driver.String()),
+		creator:       NewSqlCreator(driver, "utf8mb4"),
+		migrator:      migrator,
+		table:         table,
+	}, query
 }
