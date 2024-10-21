@@ -18,7 +18,7 @@ type Docker interface {
 type Database interface {
 	DatabaseDriver
 	// Seed runs the database seeds.
-	Seed(seeds ...seeder.Seeder)
+	Seed(seeders ...seeder.Seeder) error
 }
 
 type DatabaseDriver interface {

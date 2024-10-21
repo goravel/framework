@@ -57,20 +57,24 @@ func (r *Database) Build() error {
 	}
 
 	r.config.Add(fmt.Sprintf("database.connections.%s.port", r.connection), r.DatabaseDriver.Config().Port)
-	r.artisan.Call("migrate")
+
+	if err := r.artisan.Call("migrate"); err != nil {
+		return err
+	}
+
 	r.orm.Refresh()
 
 	return nil
 }
 
-func (r *Database) Seed(seeds ...seeder.Seeder) {
+func (r *Database) Seed(seeders ...seeder.Seeder) error {
 	command := "db:seed"
-	if len(seeds) > 0 {
+	if len(seeders) > 0 {
 		command += " --seeder"
-		for _, seed := range seeds {
+		for _, seed := range seeders {
 			command += fmt.Sprintf(" %s", seed.Signature())
 		}
 	}
 
-	r.artisan.Call(command)
+	return r.artisan.Call(command)
 }

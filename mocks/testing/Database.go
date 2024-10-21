@@ -237,15 +237,28 @@ func (_c *Database_Image_Call) RunAndReturn(run func(testing.Image)) *Database_I
 	return _c
 }
 
-// Seed provides a mock function with given fields: seeds
-func (_m *Database) Seed(seeds ...seeder.Seeder) {
-	_va := make([]interface{}, len(seeds))
-	for _i := range seeds {
-		_va[_i] = seeds[_i]
+// Seed provides a mock function with given fields: seeders
+func (_m *Database) Seed(seeders ...seeder.Seeder) error {
+	_va := make([]interface{}, len(seeders))
+	for _i := range seeders {
+		_va[_i] = seeders[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
-	_m.Called(_ca...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Seed")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(...seeder.Seeder) error); ok {
+		r0 = rf(seeders...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Database_Seed_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Seed'
@@ -254,13 +267,13 @@ type Database_Seed_Call struct {
 }
 
 // Seed is a helper method to define mock.On call
-//   - seeds ...seeder.Seeder
-func (_e *Database_Expecter) Seed(seeds ...interface{}) *Database_Seed_Call {
+//   - seeders ...seeder.Seeder
+func (_e *Database_Expecter) Seed(seeders ...interface{}) *Database_Seed_Call {
 	return &Database_Seed_Call{Call: _e.mock.On("Seed",
-		append([]interface{}{}, seeds...)...)}
+		append([]interface{}{}, seeders...)...)}
 }
 
-func (_c *Database_Seed_Call) Run(run func(seeds ...seeder.Seeder)) *Database_Seed_Call {
+func (_c *Database_Seed_Call) Run(run func(seeders ...seeder.Seeder)) *Database_Seed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]seeder.Seeder, len(args)-0)
 		for i, a := range args[0:] {
@@ -273,12 +286,12 @@ func (_c *Database_Seed_Call) Run(run func(seeds ...seeder.Seeder)) *Database_Se
 	return _c
 }
 
-func (_c *Database_Seed_Call) Return() *Database_Seed_Call {
-	_c.Call.Return()
+func (_c *Database_Seed_Call) Return(_a0 error) *Database_Seed_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Database_Seed_Call) RunAndReturn(run func(...seeder.Seeder)) *Database_Seed_Call {
+func (_c *Database_Seed_Call) RunAndReturn(run func(...seeder.Seeder) error) *Database_Seed_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -96,7 +96,9 @@ func (app *Application) getJob(event schedule.Event) cron.Job {
 
 func (app *Application) runJob(event schedule.Event) {
 	if event.GetCommand() != "" {
-		app.artisan.Call(event.GetCommand())
+		if err := app.artisan.Call(event.GetCommand()); err != nil {
+			app.log.Errorf("run %s command error: %v", event.GetCommand(), err)
+		}
 	} else {
 		event.GetCallback()()
 	}

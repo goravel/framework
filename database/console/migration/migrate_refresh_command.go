@@ -25,17 +25,17 @@ func NewMigrateRefreshCommand(config config.Config, artisan console.Artisan) *Mi
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateRefreshCommand) Signature() string {
+func (r *MigrateRefreshCommand) Signature() string {
 	return "migrate:refresh"
 }
 
 // Description The console command description.
-func (receiver *MigrateRefreshCommand) Description() string {
+func (r *MigrateRefreshCommand) Description() string {
 	return "Reset and re-run all migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateRefreshCommand) Extend() command.Extend {
+func (r *MigrateRefreshCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 		Flags: []command.Flag{
@@ -57,8 +57,8 @@ func (receiver *MigrateRefreshCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
+func (r *MigrateRefreshCommand) Handle(ctx console.Context) error {
+	m, err := getMigrate(r.config)
 	if err != nil {
 		return err
 	}
@@ -90,14 +90,12 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 	} else {
 		if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 			ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
-
 			return nil
 		}
 	}
 
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
-
 		return nil
 	}
 
@@ -108,7 +106,11 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		if len(seeders) > 0 {
 			seederFlag = " --seeder " + strings.Join(seeders, ",")
 		}
-		receiver.artisan.Call("db:seed" + seederFlag)
+
+		if err := r.artisan.Call("db:seed" + seederFlag); err != nil {
+			ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
+			return nil
+		}
 	}
 	ctx.Info("Migration refresh success")
 
