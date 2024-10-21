@@ -54,6 +54,10 @@ func (r *DefaultMigrator) Fresh() error {
 	return nil
 }
 
+func (r *DefaultMigrator) Rollback() error {
+	return nil
+}
+
 func (r *DefaultMigrator) Run() error {
 	if err := r.prepareDatabase(); err != nil {
 		return err
