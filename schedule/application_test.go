@@ -27,7 +27,7 @@ func (s *ApplicationTestSuite) SetupTest() {
 
 func (s *ApplicationTestSuite) TestCallAndCommand() {
 	mockArtisan := mocksconsole.NewArtisan(s.T())
-	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").Return().Once()
+	mockArtisan.EXPECT().Call("test --name Goravel argument0 argument1").Return(nil).Once()
 
 	mockLog := mockslog.NewLog(s.T())
 	mockLog.EXPECT().Error("panic", mock.Anything).Return().Once()

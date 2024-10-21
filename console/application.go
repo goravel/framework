@@ -46,9 +46,9 @@ func (c *Application) Register(commands []console.Command) {
 }
 
 // Call Run an Artisan console command by name.
-func (c *Application) Call(command string) {
+func (c *Application) Call(command string) error {
 	if len(os.Args) == 0 {
-		return
+		return nil
 	}
 
 	commands := []string{os.Args[0]}
@@ -57,7 +57,7 @@ func (c *Application) Call(command string) {
 		commands = append(commands, "artisan")
 	}
 
-	c.Run(append(commands, strings.Split(command, " ")...), false)
+	return c.Run(append(commands, strings.Split(command, " ")...), false)
 }
 
 // CallAndExit Run an Artisan console command by name and exit.
@@ -76,7 +76,7 @@ func (c *Application) CallAndExit(command string) {
 }
 
 // Run a command. Args come from os.Args.
-func (c *Application) Run(args []string, exitIfArtisan bool) {
+func (c *Application) Run(args []string, exitIfArtisan bool) error {
 	artisanIndex := -1
 	if c.isArtisan {
 		for i, arg := range args {
@@ -97,13 +97,19 @@ func (c *Application) Run(args []string, exitIfArtisan bool) {
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
 		if err := c.instance.Run(cliArgs); err != nil {
-			panic(err.Error())
+			if exitIfArtisan {
+				panic(err.Error())
+			}
+
+			return err
 		}
 
 		if exitIfArtisan {
-			os.Exit(0)
+			os.Exit(1)
 		}
 	}
+
+	return nil
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {

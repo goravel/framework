@@ -62,7 +62,11 @@ func (r *MigrateFreshCommand) Handle(ctx console.Context) error {
 		if len(seeders) > 0 {
 			seederFlag = " --seeder " + strings.Join(seeders, ",")
 		}
-		r.artisan.Call("db:seed" + seederFlag)
+
+		if err := r.artisan.Call("db:seed" + seederFlag); err != nil {
+			ctx.Error(errors.MigrationFreshFailed.Args(err).Error())
+			return nil
+		}
 	}
 
 	ctx.Info("Migration fresh success")

@@ -68,7 +68,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
 		mockContext.EXPECT().OptionSlice("seeder").Return([]string{"UserSeeder"}).Once()
 		mockContext.EXPECT().Info("Migration refresh success").Once()
-		mockArtisan.EXPECT().Call("db:seed --seeder UserSeeder").Once()
+		mockArtisan.EXPECT().Call("db:seed --seeder UserSeeder").Return(nil).Once()
 
 		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
@@ -81,7 +81,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
 		mockContext.EXPECT().OptionSlice("seeder").Return([]string{}).Once()
 		mockContext.EXPECT().Info("Migration refresh success").Once()
-		mockArtisan.EXPECT().Call("db:seed").Once()
+		mockArtisan.EXPECT().Call("db:seed").Return(nil).Once()
 
 		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))

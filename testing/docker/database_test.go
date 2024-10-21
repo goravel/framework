@@ -188,13 +188,19 @@ func (s *DatabaseTestSuite) TestBuild() {
 		s.T().Skip("Skipping tests that use Docker")
 	}
 
+	// Call success
 	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
-	s.mockArtisan.EXPECT().Call("migrate").Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
 	s.mockOrm.EXPECT().Refresh().Once()
 
 	s.Nil(s.database.Build())
 	s.True(s.database.Config().Port > 0)
 	s.Nil(s.database.Stop())
+
+	// Call error
+	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
+	s.EqualError(s.database.Build(), assert.AnError.Error())
 }
 
 func (s *DatabaseTestSuite) TestConfig() {
@@ -206,10 +212,10 @@ func (s *DatabaseTestSuite) TestConfig() {
 }
 
 func (s *DatabaseTestSuite) TestSeed() {
-	s.mockArtisan.EXPECT().Call("db:seed").Once()
+	s.mockArtisan.EXPECT().Call("db:seed").Return(nil).Once()
 	s.database.Seed()
 
-	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Once()
+	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Return(nil).Once()
 	s.database.Seed(&MockSeeder{})
 }
 
