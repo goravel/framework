@@ -6,7 +6,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateFreshCommand struct {
@@ -51,7 +51,7 @@ func (r *MigrateFreshCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *MigrateFreshCommand) Handle(ctx console.Context) error {
 	if err := r.migrator.Fresh(); err != nil {
-		color.Red().Println("Migration fresh failed:", err.Error())
+		ctx.Error(errors.MigrationFreshFailed.Args(err).Error())
 		return nil
 	}
 
@@ -65,7 +65,7 @@ func (r *MigrateFreshCommand) Handle(ctx console.Context) error {
 		r.artisan.Call("db:seed" + seederFlag)
 	}
 
-	color.Green().Println("Migration fresh success")
+	ctx.Info("Migration fresh success")
 
 	return nil
 }

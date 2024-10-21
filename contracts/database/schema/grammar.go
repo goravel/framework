@@ -16,9 +16,9 @@ type Grammar interface {
 	// CompileDropAllTables Compile the SQL needed to drop all tables.
 	CompileDropAllTables(tables []string) string
 	// CompileDropAllTypes Compile the SQL needed to drop all types.
-	CompileDropAllTypes(tables []string) string
+	CompileDropAllTypes(types []string) string
 	// CompileDropAllViews Compile the SQL needed to drop all views.
-	CompileDropAllViews(tables []string) string
+	CompileDropAllViews(views []string) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint) string
 	// CompileTables Compile the query to determine the tables.

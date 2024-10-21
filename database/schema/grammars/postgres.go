@@ -103,12 +103,12 @@ func (r *Postgres) CompileViews() string {
 }
 
 func (r *Postgres) EscapeNames(names []string) []string {
-	escapedNames := make([]string, len(names))
+	escapedNames := make([]string, 0, len(names))
 
 	for _, name := range names {
 		segments := strings.Split(name, ".")
 		for i, segment := range segments {
-			segments[i] = strings.Trim(segment, `\'"`)
+			segments[i] = strings.Trim(segment, `'"`)
 		}
 		escapedName := `"` + strings.Join(segments, `"."`) + `"`
 		escapedNames = append(escapedNames, escapedName)

@@ -145,6 +145,23 @@ func (s *PostgresSuite) TestCompileDropIfExists() {
 	s.Equal("drop table if exists users", s.grammar.CompileDropIfExists(mockBlueprint))
 }
 
+func (s *PostgresSuite) TestEscapeNames() {
+	// SingleName
+	names := []string{"username"}
+	expected := []string{`"username"`}
+	s.Equal(expected, s.grammar.EscapeNames(names))
+
+	// MultipleNames
+	names = []string{"username", "user.email"}
+	expected = []string{`"username"`, `"user"."email"`}
+	s.Equal(expected, s.grammar.EscapeNames(names))
+
+	// NamesEmpty
+	names = []string{}
+	expected = []string{}
+	s.Equal(expected, s.grammar.EscapeNames(names))
+}
+
 func (s *PostgresSuite) TestModifyDefault() {
 	var (
 		mockBlueprint *mocksschema.Blueprint

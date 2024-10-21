@@ -1,11 +1,12 @@
 package migration
 
 import (
+	"fmt"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
 type MigrateMakeCommand struct {
@@ -59,7 +60,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Printf("Created Migration: %s\n", name)
+	ctx.Info(fmt.Sprintf("Created Migration: %s", name))
 
 	return nil
 }

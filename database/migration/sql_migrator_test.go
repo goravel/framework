@@ -78,7 +78,7 @@ func (s *SqlMigratorSuite) TestFresh() {
 
 		var agent Agent
 		err = query.Where("name", "goravel").First(&agent)
-		s.Nil(err)
+		s.NoError(err)
 		s.True(agent.ID > 0)
 	}
 }

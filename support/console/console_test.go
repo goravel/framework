@@ -168,6 +168,7 @@ func TestConfirmToProceed(t *testing.T) {
 			setup: func() {
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
 				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(false, assert.AnError).Once()
+				mockCtx.EXPECT().Error(errors.ConsoleFailedToConfirm.Args(assert.AnError).Error()).Once()
 			},
 			expectResult: false,
 		},

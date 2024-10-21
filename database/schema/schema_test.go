@@ -172,11 +172,6 @@ func (s *SchemaSuite) TestTable_GetTables() {
 	}
 }
 
-// TODO Implement this after implementing create view
-func (s *SchemaSuite) TestGetViews() {
-
-}
-
 func (s *SchemaSuite) TestSql() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {

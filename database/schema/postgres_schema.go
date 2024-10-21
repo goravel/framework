@@ -44,9 +44,10 @@ func (r *PostgresSchema) DropAllTables() error {
 	for _, table := range tables {
 		qualifiedName := fmt.Sprintf("%s.%s", table.Schema, table.Name)
 
-		if !slices.Contains(excludedTables, qualifiedName) &&
-			!slices.Contains(excludedTables, table.Name) &&
-			schema == r.grammar.EscapeNames([]string{table.Schema})[0] {
+		isExcludedTable := slices.Contains(excludedTables, qualifiedName) || slices.Contains(excludedTables, table.Name)
+		isInCurrentSchema := schema == r.grammar.EscapeNames([]string{table.Schema})[0]
+
+		if !isExcludedTable && isInCurrentSchema {
 			dropTables = append(dropTables, qualifiedName)
 		}
 	}

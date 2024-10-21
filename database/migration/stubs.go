@@ -16,12 +16,12 @@ func (r *DummyMigration) Signature() string {
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() error {
-
+	return nil
 }
 
 // Down Reverse the migrations.
 func (r *DummyMigration) Down() error {
-
+	return nil
 }
 `
 }
@@ -41,7 +41,7 @@ func (r *DummyMigration) Signature() string {
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() error {
-	facades.Schema.Create("DummyTable", func(table migration.Blueprint) {
+	return facades.Schema.Create("DummyTable", func(table migration.Blueprint) {
  		table.BigIncrements("id")
  		table.Timestamps()
 	})
@@ -49,7 +49,7 @@ func (r *DummyMigration) Up() error {
 
 // Down Reverse the migrations.
 func (r *DummyMigration) Down() error {
- 	facades.Schema.DropIfExists("DummyTable")
+ 	return facades.Schema.DropIfExists("DummyTable")
 }
 `
 }
@@ -69,14 +69,14 @@ func (r *DummyMigration) Signature() string {
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() error {
-	facades.Schema.Table("DummyTable", func(table migration.Blueprint) {
+	return facades.Schema.Table("DummyTable", func(table migration.Blueprint) {
 
 	})
 }
 
 // Down Reverse the migrations.
 func (r *DummyMigration) Down() error {
-
+	return nil
 }
 `
 }

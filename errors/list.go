@@ -13,8 +13,10 @@ var (
 	StorageFacadeNotSet  = New("storage facade is not initialized")
 	InvalidHttpContext   = New("invalid http context")
 
-	ConsoleFileAlreadyExists = New("the %s already exists. Use the --force or -f flag to overwrite").SetModule(ModuleConsole)
-	ConsoleEmptyFieldValue   = New("the %s name cannot be empty").SetModule(ModuleConsole)
+	ConsoleEmptyDatabaseConfig = New("please fill database config first").SetModule(ModuleConsole)
+	ConsoleEmptyFieldValue     = New("the %s name cannot be empty").SetModule(ModuleConsole)
+	ConsoleFileAlreadyExists   = New("the %s already exists. Use the --force or -f flag to overwrite").SetModule(ModuleConsole)
+	ConsoleFailedToConfirm     = New("failed to confirm the action: %v").SetModule(ModuleConsole)
 
 	DockerUnknownContainerType           = New("unknown container type")
 	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
@@ -65,7 +67,13 @@ var (
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
+	MigrationFreshFailed       = New("fresh failed: %v")
+	MigrationGetStatusFailed   = New("get status failed: %v")
+	MigrationMigrateFailed     = New("migrate failed: %v")
 	MigrationNameIsRequired    = New("migration name cannot be empty")
+	MigrationRefreshFailed     = New("refresh failed: %v")
+	MigrationResetFailed       = New("reset failed: %v")
+	MigrationRollbackFailed    = New("rollback failed: %v")
 	MigrationSqlMigratorInit   = New("failed to init sql migration driver: %s")
 	MigrationUnsupportedDriver = New("unsupported migration driver: %s")
 

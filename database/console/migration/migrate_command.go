@@ -4,7 +4,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateCommand struct {
@@ -37,11 +37,11 @@ func (r *MigrateCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *MigrateCommand) Handle(ctx console.Context) error {
 	if err := r.migrator.Run(); err != nil {
-		color.Red().Println("Migration failed:", err.Error())
+		ctx.Error(errors.MigrationMigrateFailed.Args(err).Error())
 		return nil
 	}
 
-	color.Green().Println("Migration success")
+	ctx.Info("Migration success")
 
 	return nil
 }

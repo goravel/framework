@@ -142,7 +142,7 @@ func (m *Sqlite) Drop() (err error) {
 		}
 	}()
 
-	tableNames := make([]string, 0)
+	var tableNames []string
 	for tables.Next() {
 		var tableName string
 		if err = tables.Scan(&tableName); err != nil {
