@@ -22,7 +22,7 @@ type SchemaSuite struct {
 
 func TestSchemaSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	suite.Run(t, &SchemaSuite{})
@@ -69,17 +69,23 @@ func (s *SchemaSuite) TestDropAllTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema, mockOrm := GetTestSchema(s.T(), testQuery)
-			table := "drop_all_tables"
+			tableOne := "drop_all1_tables"
+			tableTwo := "drop_all2_tables"
 
 			mockTransaction(mockOrm, testQuery)
-
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+			s.NoError(schema.Create(tableOne, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+			mockTransaction(mockOrm, testQuery)
+			s.NoError(schema.Create(tableTwo, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
 
-			s.True(schema.HasTable(table))
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
+
+			s.True(schema.HasTable(tableOne))
+			s.True(schema.HasTable(tableTwo))
 
 			mockOrm.EXPECT().Name().Return("postgres").Once()
 			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
@@ -87,8 +93,9 @@ func (s *SchemaSuite) TestDropAllTables() {
 
 			s.NoError(schema.DropAllTables())
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-			s.False(schema.HasTable(table))
+			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
+			s.False(schema.HasTable(tableOne))
+			s.False(schema.HasTable(tableTwo))
 		})
 	}
 }

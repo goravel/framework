@@ -185,7 +185,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 
 func (s *DatabaseTestSuite) TestBuild() {
 	if env.IsWindows() {
-		s.T().Skip("Skipping tests of using docker")
+		s.T().Skip("Skipping tests that use Docker")
 	}
 
 	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()

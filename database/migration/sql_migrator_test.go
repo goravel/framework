@@ -24,7 +24,7 @@ type SqlMigratorSuite struct {
 
 func TestSqlMigratorSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	suite.Run(t, &SqlMigratorSuite{})
@@ -68,34 +68,38 @@ func (s *SqlMigratorSuite) TestCreate() {
 
 func (s *SqlMigratorSuite) TestFresh() {
 	for driver, testQuery := range s.driverToTestQuery {
-		migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
+		s.Run(driver.String(), func() {
+			migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
 
-		err := migrator.Run()
-		s.NoError(err)
+			err := migrator.Run()
+			s.NoError(err)
 
-		err = migrator.Fresh()
-		s.NoError(err)
+			err = migrator.Fresh()
+			s.NoError(err)
 
-		var agent Agent
-		err = query.Where("name", "goravel").First(&agent)
-		s.NoError(err)
-		s.True(agent.ID > 0)
+			var agent Agent
+			err = query.Where("name", "goravel").First(&agent)
+			s.NoError(err)
+			s.True(agent.ID > 0)
+		})
 	}
 }
 
 func (s *SqlMigratorSuite) TestRun() {
 	for driver, testQuery := range s.driverToTestQuery {
-		migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
+		s.Run(driver.String(), func() {
+			migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
 
-		err := migrator.Run()
-		s.NoError(err)
+			err := migrator.Run()
+			s.NoError(err)
 
-		var agent Agent
-		s.NoError(query.Where("name", "goravel").First(&agent))
-		s.True(agent.ID > 0)
+			var agent Agent
+			s.NoError(query.Where("name", "goravel").First(&agent))
+			s.True(agent.ID > 0)
 
-		err = migrator.Run()
-		s.NoError(err)
+			err = migrator.Run()
+			s.NoError(err)
+		})
 	}
 }
 

@@ -19,7 +19,7 @@ type PostgresTestSuite struct {
 
 func TestPostgresTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	suite.Run(t, new(PostgresTestSuite))
