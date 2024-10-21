@@ -8,11 +8,11 @@ type File struct {
 
 type Repository interface {
 	// CreateRepository Create the migration repository data store.
-	CreateRepository()
+	CreateRepository() error
 	// Delete Remove a migration from the log.
 	Delete(migration string) error
 	// DeleteRepository Delete the migration repository data store.
-	DeleteRepository()
+	DeleteRepository() error
 	// GetLast Get the last migration batch.
 	GetLast() ([]File, error)
 	// GetMigrations Get the list of migrations.

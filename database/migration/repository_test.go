@@ -3,10 +3,13 @@ package migration
 import (
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/schema"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -19,7 +22,7 @@ type RepositoryTestSuite struct {
 
 func TestRepositoryTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	suite.Run(t, &RepositoryTestSuite{})
@@ -39,7 +42,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 			repository, mockOrm := s.initRepository(testQuery)
 			mockTransaction(mockOrm, testQuery)
 
-			repository.CreateRepository()
+			s.NoError(repository.CreateRepository())
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -47,7 +50,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 
 			mockTransaction(mockOrm, testQuery)
 
-			repository.DeleteRepository()
+			s.NoError(repository.DeleteRepository())
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
@@ -66,7 +69,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 			if !repository.RepositoryExists() {
 				mockTransaction(mockOrm, testQuery)
 
-				repository.CreateRepository()
+				s.NoError(repository.CreateRepository())
 			}
 
 			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
@@ -148,7 +151,13 @@ func (s *RepositoryTestSuite) TestRecord() {
 }
 
 func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) (*Repository, *mocksorm.Orm) {
-	schema, mockOrm := initSchema(s.T(), testQuery)
+	testSchema, mockOrm := schema.GetTestSchema(s.T(), testQuery)
 
-	return NewRepository(schema, "migrations"), mockOrm
+	return NewRepository(testSchema, "migrations"), mockOrm
+}
+
+func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {
+	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(contractsorm.Query) error) error {
+		return txFunc(testQuery.Query())
+	}).Once()
 }

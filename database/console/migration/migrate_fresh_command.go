@@ -3,39 +3,36 @@ package migration
 import (
 	"strings"
 
-	"github.com/golang-migrate/migrate/v4"
-
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
 type MigrateFreshCommand struct {
-	config  config.Config
-	artisan console.Artisan
+	artisan  console.Artisan
+	migrator migration.Migrator
 }
 
-func NewMigrateFreshCommand(config config.Config, artisan console.Artisan) *MigrateFreshCommand {
+func NewMigrateFreshCommand(artisan console.Artisan, migrator migration.Migrator) *MigrateFreshCommand {
 	return &MigrateFreshCommand{
-		config:  config,
-		artisan: artisan,
+		artisan:  artisan,
+		migrator: migrator,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateFreshCommand) Signature() string {
+func (r *MigrateFreshCommand) Signature() string {
 	return "migrate:fresh"
 }
 
 // Description The console command description.
-func (receiver *MigrateFreshCommand) Description() string {
+func (r *MigrateFreshCommand) Description() string {
 	return "Drop all tables and re-run all migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateFreshCommand) Extend() command.Extend {
+func (r *MigrateFreshCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 		Flags: []command.Flag{
@@ -52,32 +49,9 @@ func (receiver *MigrateFreshCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
-	if err != nil {
-		return err
-	}
-	if m == nil {
-		color.Yellow().Println("Please fill database config first")
-		return nil
-	}
-
-	if err = m.Drop(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		color.Red().Println("Migration failed:", err.Error())
-		return nil
-	}
-
-	m2, err2 := getMigrate(receiver.config)
-	if err2 != nil {
-		return err2
-	}
-	if m2 == nil {
-		color.Yellow().Println("Please fill database config first")
-		return nil
-	}
-
-	if err2 = m2.Up(); err2 != nil && !errors.Is(err2, migrate.ErrNoChange) {
-		color.Red().Println("Migration failed:", err2.Error())
+func (r *MigrateFreshCommand) Handle(ctx console.Context) error {
+	if err := r.migrator.Fresh(); err != nil {
+		ctx.Error(errors.MigrationFreshFailed.Args(err).Error())
 		return nil
 	}
 
@@ -88,10 +62,10 @@ func (receiver *MigrateFreshCommand) Handle(ctx console.Context) error {
 		if len(seeders) > 0 {
 			seederFlag = " --seeder " + strings.Join(seeders, ",")
 		}
-		receiver.artisan.Call("db:seed" + seederFlag)
+		r.artisan.Call("db:seed" + seederFlag)
 	}
 
-	color.Green().Println("Migration fresh success")
+	ctx.Info("Migration fresh success")
 
 	return nil
 }

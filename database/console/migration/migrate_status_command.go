@@ -1,13 +1,15 @@
 package migration
 
 import (
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateStatusCommand struct {
@@ -44,26 +46,24 @@ func (receiver *MigrateStatusCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellow().Println("Please fill database config first")
+		ctx.Error(errors.ConsoleEmptyDatabaseConfig.Error())
 		return nil
 	}
 
 	version, dirty, err := m.Version()
 	if err != nil {
-		color.Red().Println("Migration status failed:", err.Error())
+		ctx.Error(errors.MigrationGetStatusFailed.Args(err).Error())
 
 		return nil
 	}
 
 	if dirty {
-		color.Yellow().Println("Migration status: dirty")
-		color.Green().Println("Migration version:", version)
-
-		return nil
+		ctx.Warning("Migration status: dirty")
+	} else {
+		ctx.Info("Migration status: clean")
 	}
 
-	color.Green().Println("Migration status: clean")
-	color.Green().Println("Migration version:", version)
+	ctx.Info(fmt.Sprintf("Migration version: %d", version))
 
 	return nil
 }

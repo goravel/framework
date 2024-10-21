@@ -10,7 +10,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
 type MigrateRefreshCommand struct {
@@ -64,7 +63,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellow().Println("Please fill database config first")
+		ctx.Error(errors.ConsoleEmptyDatabaseConfig.Error())
 
 		return nil
 	}
@@ -73,7 +72,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		stepString := "-" + step
 		s, err := strconv.Atoi(stepString)
 		if err != nil {
-			color.Red().Println("Migration refresh failed: invalid step", ctx.Option("step"))
+			ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
 
 			return nil
 		}
@@ -83,21 +82,21 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 			switch {
 			case errors.As(err, &errShortLimit):
 			default:
-				color.Red().Println("Migration refresh failed:", err.Error())
+				ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
 
 				return nil
 			}
 		}
 	} else {
 		if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-			color.Red().Println("Migration reset failed:", err.Error())
+			ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
 
 			return nil
 		}
 	}
 
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		color.Red().Println("Migration refresh failed:", err.Error())
+		ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
 
 		return nil
 	}
@@ -111,7 +110,7 @@ func (receiver *MigrateRefreshCommand) Handle(ctx console.Context) error {
 		}
 		receiver.artisan.Call("db:seed" + seederFlag)
 	}
-	color.Green().Println("Migration refresh success")
+	ctx.Info("Migration refresh success")
 
 	return nil
 }

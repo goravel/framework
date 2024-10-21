@@ -2,22 +2,23 @@ package migration
 
 import (
 	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/schema"
 )
 
 type Repository struct {
-	schema migration.Schema
+	schema schema.Schema
 	table  string
 }
 
-func NewRepository(schema migration.Schema, table string) *Repository {
+func NewRepository(schema schema.Schema, table string) *Repository {
 	return &Repository{
 		schema: schema,
 		table:  table,
 	}
 }
 
-func (r *Repository) CreateRepository() {
-	r.schema.Create(r.table, func(table migration.Blueprint) {
+func (r *Repository) CreateRepository() error {
+	return r.schema.Create(r.table, func(table schema.Blueprint) {
 		table.ID()
 		table.String("migration")
 		table.Integer("batch")
@@ -30,8 +31,8 @@ func (r *Repository) Delete(migration string) error {
 	return err
 }
 
-func (r *Repository) DeleteRepository() {
-	r.schema.DropIfExists(r.table)
+func (r *Repository) DeleteRepository() error {
+	return r.schema.DropIfExists(r.table)
 }
 
 func (r *Repository) GetLast() ([]migration.File, error) {

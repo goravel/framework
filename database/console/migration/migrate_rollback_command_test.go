@@ -11,14 +11,13 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/migration"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateRollbackCommand(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	testQueries := gorm.NewTestQueries().Queries()
@@ -27,24 +26,28 @@ func TestMigrateRollbackCommand(t *testing.T) {
 
 		mockConfig := testQuery.MockConfig()
 		mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
+		mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.MigratorSql).Once()
 		mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", testQuery.Docker().Driver().String())).Return("utf8bm4").Once()
 
 		migration.CreateTestMigrations(driver)
 
+		migrator, err := migration.NewSqlMigrator(mockConfig)
+		require.NoError(t, err)
+
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("1").Once()
+		mockContext.EXPECT().Info("Migration success").Once()
 
-		mockSchema := mocksmigration.NewSchema(t)
-
-		migrateCommand := NewMigrateCommand(mockConfig, mockSchema)
+		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
 
 		var agent migration.Agent
-		err := query.Where("name", "goravel").FirstOrFail(&agent)
+		err = query.Where("name", "goravel").FirstOrFail(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
+
+		mockContext.EXPECT().Info("Migration rollback success").Once()
 
 		migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 		assert.Nil(t, migrateRollbackCommand.Handle(mockContext))

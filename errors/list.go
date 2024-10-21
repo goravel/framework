@@ -13,14 +13,6 @@ var (
 	StorageFacadeNotSet  = New("storage facade is not initialized")
 	InvalidHttpContext   = New("invalid http context")
 
-	ConsoleFileAlreadyExists = New("the %s already exists. Use the --force or -f flag to overwrite").SetModule(ModuleConsole)
-	ConsoleEmptyFieldValue   = New("the %s name cannot be empty").SetModule(ModuleConsole)
-
-	DockerUnknownContainerType           = New("unknown container type")
-	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
-	DockerDatabaseContainerCountZero     = New("the number of database container must be greater than 0")
-	DockerMissingContainerId             = New("no container id return when creating %s docker")
-
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
 	AuthInvalidKey          = New("authentication key is invalid")
@@ -37,6 +29,15 @@ var (
 	CacheStoreContractNotFulfilled = New("%s doesn't implement contracts/cache/store")
 	CacheSupportRequired           = New("cache support is required")
 
+	ConsoleDropAllTablesFailed = New("drop all tables failed: %v")
+	ConsoleDropAllTypesFailed  = New("drop all types failed: %v")
+	ConsoleDropAllViewsFailed  = New("drop all views failed: %v")
+	ConsoleEmptyDatabaseConfig = New("please fill database config first")
+	ConsoleEmptyFieldValue     = New("the %s name cannot be empty")
+	ConsoleFileAlreadyExists   = New("the %s already exists. Use the --force or -f flag to overwrite")
+	ConsoleFailedToConfirm     = New("failed to confirm the action: %v")
+	ConsoleRunInProduction     = New("Please use the --force option if you want to run the command in production")
+
 	CryptAppKeyNotSet        = New("APP_KEY is required in artisan environment")
 	CryptInvalidAppKeyLength = New("invalid APP_KEY length: %d bytes")
 	CryptMissingIVKey        = New("decrypt payload error: missing iv key")
@@ -44,6 +45,11 @@ var (
 
 	DBForceIsRequiredInProduction = New("application in production use --force to run this command")
 	DBSeederNotFound              = New("not found %s seeder")
+
+	DockerUnknownContainerType           = New("unknown container type")
+	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
+	DockerDatabaseContainerCountZero     = New("the number of database container must be greater than 0")
+	DockerMissingContainerId             = New("no container id return when creating %s docker")
 
 	EventListenerNotBind = New("event %v doesn't bind listeners")
 
@@ -65,7 +71,15 @@ var (
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
+	MigrationCreateFailed      = New("Create migration failed: %v")
+	MigrationFreshFailed       = New("migration fresh failed: %v")
+	MigrationGetStatusFailed   = New("get migration status failed: %v")
+	MigrationMigrateFailed     = New("migrate failed: %v")
 	MigrationNameIsRequired    = New("migration name cannot be empty")
+	MigrationRefreshFailed     = New("migration refresh failed: %v")
+	MigrationResetFailed       = New("migration reset failed: %v")
+	MigrationRollbackFailed    = New("migration rollback failed: %v")
+	MigrationSqlMigratorInit   = New("failed to init sql migration driver: %s")
 	MigrationUnsupportedDriver = New("unsupported migration driver: %s")
 
 	OrmDatabaseConfigNotFound      = New("not found database configuration")
@@ -95,8 +109,10 @@ var (
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 
-	SchemaDriverNotSupported = New("driver %s is not supported")
-	SchemaFailedToGetTables  = New("failed to get %s tables: %v")
+	SchemaDriverNotSupported  = New("driver %s is not supported")
+	SchemaFailedToCreateTable = New("failed to create %s table: %v")
+	SchemaFailedToDropTable   = New("failed to drop %s table: %v")
+	SchemaFailedToGetTables   = New("failed to get %s tables: %v")
 
 	SessionDriverAlreadyExists   = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed = New("session failed to extend session [%s] driver [%v]")

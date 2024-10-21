@@ -1,81 +1,62 @@
 package migration
 
 import (
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	contractsmigration "github.com/goravel/framework/contracts/database/migration"
-	mocksconfig "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
 	var (
-		mockConfig  *mocksconfig.Config
-		mockContext *mocksconsole.Context
-		mockSchema  *mocksmigration.Schema
+		mockContext  *mocksconsole.Context
+		mockMigrator *mocksmigration.Migrator
 	)
 
-	now := carbon.Now()
-	carbon.SetTestNow(now)
-
 	beforeEach := func() {
-		mockConfig = mocksconfig.NewConfig(t)
 		mockContext = mocksconsole.NewContext(t)
-		mockSchema = mocksmigration.NewSchema(t)
+		mockMigrator = mocksmigration.NewMigrator(t)
 	}
 
 	tests := []struct {
-		name      string
-		setup     func()
-		assert    func()
-		expectErr error
+		name  string
+		setup func()
 	}{
 		{
-			name: "the migration name is empty",
+			name: "Happy path",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("").Once()
-				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("", errors.New("the migration name cannot be empty")).Once()
-			},
-			assert:    func() {},
-			expectErr: errors.New("the migration name cannot be empty"),
-		},
-		{
-			name: "default driver",
-			setup: func() {
-				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
-				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverDefault).Once()
-				mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
-			},
-			assert: func() {
-				migration := fmt.Sprintf("database/migrations/%s_%s.go", now.ToShortDateTimeString(), "create_users_table")
-
-				assert.True(t, file.Exists(migration))
+				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("create_users_table", nil).Once()
+				mockMigrator.EXPECT().Create("create_users_table").Return(nil).Once()
+				mockContext.EXPECT().Info("Created Migration: create_users_table").Once()
 			},
 		},
 		{
-			name: "sql driver",
+			name: "Happy path - name is not empty",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
-				mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
-				mockConfig.EXPECT().GetString("database.migrations.driver").Return(contractsmigration.DriverSql).Once()
-				mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
-				mockConfig.EXPECT().GetString("database.connections.postgres.charset").Return("utf8mb4").Once()
-				mockConfig.EXPECT().GetString("database.migrations.table").Return("migrations").Once()
+				mockMigrator.EXPECT().Create("create_users_table").Return(nil).Once()
+				mockContext.EXPECT().Info("Created Migration: create_users_table").Once()
 			},
-			assert: func() {
-				up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
-				down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "down")
-
-				assert.True(t, file.Exists(up))
-				assert.True(t, file.Exists(down))
+		},
+		{
+			name: "Sad path - failed to ask",
+			setup: func() {
+				mockContext.EXPECT().Argument(0).Return("").Once()
+				mockContext.EXPECT().Ask("Enter the migration name", mock.Anything).Return("", assert.AnError).Once()
+				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
+			},
+		},
+		{
+			name: "Sad path - failed to create",
+			setup: func() {
+				mockContext.EXPECT().Argument(0).Return("create_users_table").Once()
+				mockMigrator.EXPECT().Create("create_users_table").Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationCreateFailed.Args(assert.AnError).Error()).Once()
 			},
 		},
 	}
@@ -85,16 +66,10 @@ func TestMigrateMakeCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 
-			migrateMakeCommand := NewMigrateMakeCommand(mockConfig, mockSchema)
+			migrateMakeCommand := NewMigrateMakeCommand(mockMigrator)
 			err := migrateMakeCommand.Handle(mockContext)
-			assert.Equal(t, test.expectErr, err)
 
-			test.assert()
+			assert.NoError(t, err)
 		})
 	}
-
-	defer func() {
-		assert.Nil(t, file.Remove("database"))
-		carbon.UnsetTestNow()
-	}()
 }
