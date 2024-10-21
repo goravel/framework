@@ -213,10 +213,13 @@ func (s *DatabaseTestSuite) TestConfig() {
 
 func (s *DatabaseTestSuite) TestSeed() {
 	s.mockArtisan.EXPECT().Call("db:seed").Return(nil).Once()
-	s.database.Seed()
+	s.NoError(s.database.Seed())
 
 	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Return(nil).Once()
-	s.database.Seed(&MockSeeder{})
+	s.NoError(s.database.Seed(&MockSeeder{}))
+
+	s.mockArtisan.EXPECT().Call("db:seed").Return(assert.AnError).Once()
+	s.EqualError(s.database.Seed(), assert.AnError.Error())
 }
 
 type MockSeeder struct{}
