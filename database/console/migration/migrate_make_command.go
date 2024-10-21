@@ -52,12 +52,14 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 			},
 		})
 		if err != nil {
-			return err
+			ctx.Error(err.Error())
+			return nil
 		}
 	}
 
 	if err := r.migrator.Create(name); err != nil {
-		return err
+		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
+		return nil
 	}
 
 	ctx.Info(fmt.Sprintf("Created Migration: %s", name))

@@ -5,7 +5,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 	supportconsole "github.com/goravel/framework/support/console"
 )
 
@@ -63,7 +63,7 @@ func (r *WipeCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *WipeCommand) Handle(ctx console.Context) error {
 	if !supportconsole.ConfirmToProceed(ctx, r.config.GetString("app.env")) {
-		color.Warnln("Please use the --force option if you want to run the command in production")
+		ctx.Warning(errors.ConsoleRunInProduction.Error())
 		return nil
 	}
 
@@ -71,27 +71,27 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 
 	if ctx.OptionBool("drop-views") {
 		if err := r.dropAllViews(database); err != nil {
-			color.Red().Println("Drop all views failed:", err.Error())
+			ctx.Error(errors.ConsoleDropAllViewsFailed.Args(err).Error())
 			return nil
 		}
 
-		color.Green().Println("Dropped all views successfully")
+		ctx.Info("Dropped all views successfully")
 	}
 
 	if err := r.dropAllTables(database); err != nil {
-		color.Red().Println("Drop all tables failed:", err.Error())
+		ctx.Error(errors.ConsoleDropAllTablesFailed.Args(err).Error())
 		return nil
 	}
 
-	color.Green().Println("Dropped all tables successfully")
+	ctx.Info("Dropped all tables successfully")
 
 	if ctx.OptionBool("drop-types") {
 		if err := r.dropAllTypes(database); err != nil {
-			color.Red().Println("Drop all types failed:", err.Error())
+			ctx.Error(errors.ConsoleDropAllTypesFailed.Args(err).Error())
 			return nil
 		}
 
-		color.Green().Println("Dropped all types successfully")
+		ctx.Info("Dropped all types successfully")
 	}
 
 	return nil

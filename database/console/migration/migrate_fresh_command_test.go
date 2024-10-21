@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 )
@@ -33,12 +34,14 @@ func TestMigrateFreshCommand(t *testing.T) {
 				mockContext.EXPECT().OptionBool("seed").Return(true).Once()
 				mockContext.EXPECT().OptionSlice("seeder").Return([]string{"UserSeeder", "AgentSeeder"}).Once()
 				mockArtisan.EXPECT().Call("db:seed --seeder UserSeeder,AgentSeeder").Once()
+				mockContext.EXPECT().Info("Migration fresh success").Once()
 			},
 		},
 		{
-			name: "Sad path - Fresh failed",
+			name: "Sad path - fresh failed",
 			setup: func() {
 				mockMigrator.EXPECT().Fresh().Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationFreshFailed.Args(assert.AnError).Error()).Once()
 			},
 		},
 	}

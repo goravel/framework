@@ -35,10 +35,13 @@ func TestMigrateResetCommand(t *testing.T) {
 		require.NoError(t, err)
 
 		mockContext := consolemocks.NewContext(t)
+		mockContext.EXPECT().Info("Migration success").Once()
 
 		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
+
+		mockContext.EXPECT().Info("Migration reset success").Once()
 
 		migrateResetCommand := NewMigrateResetCommand(mockConfig)
 		assert.Nil(t, migrateResetCommand.Handle(mockContext))

@@ -37,6 +37,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockArtisan := mocksconsole.NewArtisan(t)
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("").Once()
+		mockContext.EXPECT().Info("Migration success").Once()
 
 		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
@@ -44,6 +45,8 @@ func TestMigrateRefreshCommand(t *testing.T) {
 
 		// Test MigrateRefreshCommand without --seed flag
 		mockContext.EXPECT().OptionBool("seed").Return(false).Once()
+		mockContext.EXPECT().Info("Migration refresh success").Once()
+
 		migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
@@ -55,6 +58,7 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockArtisan = mocksconsole.NewArtisan(t)
 		mockContext = mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("5").Once()
+		mockContext.EXPECT().Info("Migration success").Once()
 
 		migrateCommand = NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
@@ -63,7 +67,9 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		// Test MigrateRefreshCommand with --seed flag and --seeder specified
 		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
 		mockContext.EXPECT().OptionSlice("seeder").Return([]string{"UserSeeder"}).Once()
+		mockContext.EXPECT().Info("Migration refresh success").Once()
 		mockArtisan.EXPECT().Call("db:seed --seeder UserSeeder").Once()
+
 		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 
@@ -74,7 +80,9 @@ func TestMigrateRefreshCommand(t *testing.T) {
 		mockContext.EXPECT().Option("step").Return("").Once()
 		mockContext.EXPECT().OptionBool("seed").Return(true).Once()
 		mockContext.EXPECT().OptionSlice("seeder").Return([]string{}).Once()
+		mockContext.EXPECT().Info("Migration refresh success").Once()
 		mockArtisan.EXPECT().Call("db:seed").Once()
+
 		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
 		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
 

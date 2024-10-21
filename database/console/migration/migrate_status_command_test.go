@@ -35,10 +35,14 @@ func TestMigrateStatusCommand(t *testing.T) {
 		require.NoError(t, err)
 
 		mockContext := consolemocks.NewContext(t)
+		mockContext.EXPECT().Info("Migration success").Once()
 
 		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
 		assert.Nil(t, migrateCommand.Handle(mockContext))
+
+		mockContext.EXPECT().Info("Migration status: clean").Once()
+		mockContext.EXPECT().Info("Migration version: 20230311160527").Once()
 
 		migrateStatusCommand := NewMigrateStatusCommand(mockConfig)
 		assert.Nil(t, migrateStatusCommand.Handle(mockContext))
@@ -46,6 +50,9 @@ func TestMigrateStatusCommand(t *testing.T) {
 		res, err := query.Table("migrations").Where("dirty", false).Update("dirty", true)
 		assert.Nil(t, err)
 		assert.Equal(t, int64(1), res.RowsAffected)
+
+		mockContext.EXPECT().Warning("Migration status: dirty").Once()
+		mockContext.EXPECT().Info("Migration version: 20230311160527").Once()
 
 		assert.Nil(t, migrateStatusCommand.Handle(mockContext))
 	}

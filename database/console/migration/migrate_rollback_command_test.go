@@ -36,6 +36,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 
 		mockContext := mocksconsole.NewContext(t)
 		mockContext.EXPECT().Option("step").Return("1").Once()
+		mockContext.EXPECT().Info("Migration success").Once()
 
 		migrateCommand := NewMigrateCommand(migrator)
 		require.NotNil(t, migrateCommand)
@@ -45,6 +46,8 @@ func TestMigrateRollbackCommand(t *testing.T) {
 		err = query.Where("name", "goravel").FirstOrFail(&agent)
 		assert.Nil(t, err)
 		assert.True(t, agent.ID > 0)
+
+		mockContext.EXPECT().Info("Migration rollback success").Once()
 
 		migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
 		assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
