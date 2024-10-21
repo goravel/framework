@@ -252,9 +252,9 @@ func (_c *Grammar_CompileDropAllTables_Call) RunAndReturn(run func([]string) str
 	return _c
 }
 
-// CompileDropAllTypes provides a mock function with given fields: tables
-func (_m *Grammar) CompileDropAllTypes(tables []string) string {
-	ret := _m.Called(tables)
+// CompileDropAllTypes provides a mock function with given fields: types
+func (_m *Grammar) CompileDropAllTypes(types []string) string {
+	ret := _m.Called(types)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropAllTypes")
@@ -262,7 +262,7 @@ func (_m *Grammar) CompileDropAllTypes(tables []string) string {
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func([]string) string); ok {
-		r0 = rf(tables)
+		r0 = rf(types)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -276,12 +276,12 @@ type Grammar_CompileDropAllTypes_Call struct {
 }
 
 // CompileDropAllTypes is a helper method to define mock.On call
-//   - tables []string
-func (_e *Grammar_Expecter) CompileDropAllTypes(tables interface{}) *Grammar_CompileDropAllTypes_Call {
-	return &Grammar_CompileDropAllTypes_Call{Call: _e.mock.On("CompileDropAllTypes", tables)}
+//   - types []string
+func (_e *Grammar_Expecter) CompileDropAllTypes(types interface{}) *Grammar_CompileDropAllTypes_Call {
+	return &Grammar_CompileDropAllTypes_Call{Call: _e.mock.On("CompileDropAllTypes", types)}
 }
 
-func (_c *Grammar_CompileDropAllTypes_Call) Run(run func(tables []string)) *Grammar_CompileDropAllTypes_Call {
+func (_c *Grammar_CompileDropAllTypes_Call) Run(run func(types []string)) *Grammar_CompileDropAllTypes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].([]string))
 	})
@@ -298,9 +298,9 @@ func (_c *Grammar_CompileDropAllTypes_Call) RunAndReturn(run func([]string) stri
 	return _c
 }
 
-// CompileDropAllViews provides a mock function with given fields: tables
-func (_m *Grammar) CompileDropAllViews(tables []string) string {
-	ret := _m.Called(tables)
+// CompileDropAllViews provides a mock function with given fields: views
+func (_m *Grammar) CompileDropAllViews(views []string) string {
+	ret := _m.Called(views)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropAllViews")
@@ -308,7 +308,7 @@ func (_m *Grammar) CompileDropAllViews(tables []string) string {
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func([]string) string); ok {
-		r0 = rf(tables)
+		r0 = rf(views)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -322,12 +322,12 @@ type Grammar_CompileDropAllViews_Call struct {
 }
 
 // CompileDropAllViews is a helper method to define mock.On call
-//   - tables []string
-func (_e *Grammar_Expecter) CompileDropAllViews(tables interface{}) *Grammar_CompileDropAllViews_Call {
-	return &Grammar_CompileDropAllViews_Call{Call: _e.mock.On("CompileDropAllViews", tables)}
+//   - views []string
+func (_e *Grammar_Expecter) CompileDropAllViews(views interface{}) *Grammar_CompileDropAllViews_Call {
+	return &Grammar_CompileDropAllViews_Call{Call: _e.mock.On("CompileDropAllViews", views)}
 }
 
-func (_c *Grammar_CompileDropAllViews_Call) Run(run func(tables []string)) *Grammar_CompileDropAllViews_Call {
+func (_c *Grammar_CompileDropAllViews_Call) Run(run func(views []string)) *Grammar_CompileDropAllViews_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].([]string))
 	})
