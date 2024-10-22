@@ -5,6 +5,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
@@ -54,7 +55,34 @@ func (r *DefaultMigrator) Fresh() error {
 	return nil
 }
 
-func (r *DefaultMigrator) Rollback() error {
+func (r *DefaultMigrator) Rollback(step, batch int) error {
+	files, err := r.getFilesForRollback(step, batch)
+	if err != nil {
+		return err
+	}
+	if len(files) == 0 {
+		color.Infoln("Nothing to rollback")
+
+		return nil
+	}
+
+	color.Infoln("Rolling back migration")
+
+	for _, file := range files {
+		migration := r.getMigrationViaFile(file)
+		if migration == nil {
+			color.Warnf("Migration not found: %s\n", file.Migration)
+
+			continue
+		}
+
+		if err := r.runDown(migration); err != nil {
+			return err
+		}
+
+		color.Infoln("Rolled back:", migration.Signature())
+	}
+
 	return nil
 }
 
@@ -71,6 +99,28 @@ func (r *DefaultMigrator) Run() error {
 	pendingMigrations := r.pendingMigrations(r.schema.Migrations(), ran)
 
 	return r.runPending(pendingMigrations)
+}
+
+func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]migration.File, error) {
+	if step > 0 {
+		return r.repository.GetMigrations(step)
+	}
+
+	if batch > 0 {
+		return r.repository.GetMigrationsByBatch(batch)
+	}
+
+	return r.repository.GetLast()
+}
+
+func (r *DefaultMigrator) getMigrationViaFile(file migration.File) schema.Migration {
+	for _, migration := range r.schema.Migrations() {
+		if migration.Signature() == file.Migration {
+			return migration
+		}
+	}
+
+	return nil
 }
 
 func (r *DefaultMigrator) pendingMigrations(migrations []schema.Migration, ran []string) []schema.Migration {
@@ -117,16 +167,54 @@ func (r *DefaultMigrator) runPending(migrations []schema.Migration) error {
 	return nil
 }
 
-func (r *DefaultMigrator) runUp(file schema.Migration, batch int) error {
-	if connectionMigration, ok := file.(schema.Connection); ok {
-		previousConnection := r.schema.GetConnection()
+func (r *DefaultMigrator) runUp(migration schema.Migration, batch int) error {
+	defaultConnection := r.schema.GetConnection()
+	if connectionMigration, ok := migration.(schema.Connection); ok {
 		r.schema.SetConnection(connectionMigration.Connection())
-		defer r.schema.SetConnection(previousConnection)
 	}
 
-	if err := file.Up(); err != nil {
-		return err
+	return r.schema.Orm().Transaction(func(tx orm.Query) error {
+		defaultQuery := r.schema.Orm().Query()
+		r.schema.Orm().SetQuery(tx)
+
+		if err := migration.Up(); err != nil {
+			// reset the connection and query to default.
+			r.schema.SetConnection(defaultConnection)
+			r.schema.Orm().SetQuery(defaultQuery)
+
+			return err
+		}
+
+		// repository.Log should be called in the default connection.
+		r.schema.SetConnection(defaultConnection)
+		r.schema.Orm().SetQuery(defaultQuery)
+
+		return r.repository.Log(migration.Signature(), batch)
+	})
+}
+
+func (r *DefaultMigrator) runDown(migration schema.Migration) error {
+	defaultConnection := r.schema.GetConnection()
+	if connectionMigration, ok := migration.(schema.Connection); ok {
+		r.schema.SetConnection(connectionMigration.Connection())
 	}
 
-	return r.repository.Log(file.Signature(), batch)
+	return r.schema.Orm().Transaction(func(tx orm.Query) error {
+		defaultQuery := r.schema.Orm().Query()
+		r.schema.Orm().SetQuery(tx)
+
+		if err := migration.Down(); err != nil {
+			// reset the connection and query to default.
+			r.schema.SetConnection(defaultConnection)
+			r.schema.Orm().SetQuery(defaultQuery)
+
+			return err
+		}
+
+		// repository.Log should be called in the default connection.
+		r.schema.SetConnection(defaultConnection)
+		r.schema.Orm().SetQuery(defaultQuery)
+
+		return r.repository.Delete(migration.Signature())
+	})
 }
