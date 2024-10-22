@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/schema"
@@ -65,10 +66,22 @@ func (s *DefaultMigratorSuite) TestCreate() {
 }
 
 func (s *DefaultMigratorSuite) TestFresh() {
-	s.mockArtisan.EXPECT().Call("db:wipe --force").Once()
-	s.mockArtisan.EXPECT().Call("migrate").Once()
+	// Success
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
 
 	s.NoError(s.driver.Fresh())
+
+	// db:wipe returns error
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(assert.AnError).Once()
+
+	s.EqualError(s.driver.Fresh(), assert.AnError.Error())
+
+	// migrate returns error
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
+
+	s.EqualError(s.driver.Fresh(), assert.AnError.Error())
 }
 
 func (s *DefaultMigratorSuite) TestRun() {

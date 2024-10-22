@@ -16,23 +16,21 @@ func NewListCommand(artisan console.Artisan) *ListCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *ListCommand) Signature() string {
+func (r *ListCommand) Signature() string {
 	return "list"
 }
 
 // Description The console command description.
-func (receiver *ListCommand) Description() string {
+func (r *ListCommand) Description() string {
 	return "List commands"
 }
 
 // Extend The console command extend.
-func (receiver *ListCommand) Extend() command.Extend {
+func (r *ListCommand) Extend() command.Extend {
 	return command.Extend{}
 }
 
 // Handle Execute the console command.
-func (receiver *ListCommand) Handle(ctx console.Context) error {
-	receiver.artisan.Call("--help")
-
-	return nil
+func (r *ListCommand) Handle(ctx console.Context) error {
+	return r.artisan.Call("--help")
 }

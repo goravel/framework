@@ -178,7 +178,7 @@ func (app *Application) bootArtisan() {
 		return
 	}
 
-	artisanFacade.Run(os.Args, true)
+	_ = artisanFacade.Run(os.Args, true)
 }
 
 // getBaseServiceProviders Get base service providers.

@@ -44,8 +44,12 @@ func (r *DefaultMigrator) Create(name string) error {
 
 // TODO Remove this function and move the logic to the migrate:fresh command when the sql migrator is removed.
 func (r *DefaultMigrator) Fresh() error {
-	r.artisan.Call("db:wipe --force")
-	r.artisan.Call("migrate")
+	if err := r.artisan.Call("db:wipe --force"); err != nil {
+		return err
+	}
+	if err := r.artisan.Call("migrate"); err != nil {
+		return err
+	}
 
 	return nil
 }
