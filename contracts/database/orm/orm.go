@@ -22,6 +22,8 @@ type Orm interface {
 	Query() Query
 	// Refresh resets the Orm instance.
 	Refresh()
+	// SetQuery sets the query builder instance.
+	SetQuery(query Query)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Query) error) error
 	// WithContext sets the context to be used by the Orm.
@@ -78,6 +80,8 @@ type Query interface {
 	Having(query any, args ...any) Query
 	// InRandomOrder specifies the order randomly.
 	InRandomOrder() Query
+	// InTransaction checks if the query is in a transaction.
+	InTransaction() bool
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Limit the number of records returned.

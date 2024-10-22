@@ -34,13 +34,13 @@ func (r *MigrateRollbackCommand) Extend() command.Extend {
 		Flags: []command.Flag{
 			&command.IntFlag{
 				Name:  "step",
-				Value: 1,
+				Value: 0,
 				Usage: "rollback steps",
 			},
 			&command.IntFlag{
 				Name:  "batch",
 				Value: 0,
-				Usage: "rollback batch number (only can be used in the default driver)",
+				Usage: "rollback batch number (only can be used in default driver)",
 			},
 		},
 	}
@@ -50,9 +50,7 @@ func (r *MigrateRollbackCommand) Extend() command.Extend {
 func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	var step, batch int
 	if step = ctx.OptionInt("step"); step == 0 {
-		if batch = ctx.OptionInt("step"); batch == 0 {
-			step = 1
-		}
+		batch = ctx.OptionInt("batch")
 	}
 
 	if err := r.migrator.Rollback(step, batch); err != nil {

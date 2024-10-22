@@ -412,10 +412,6 @@ func (r *Query) Having(query any, args ...any) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Instance() *gormio.DB {
-	return r.instance
-}
-
 func (r *Query) Join(query string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.join = append(conditions.join, Join{
@@ -547,6 +543,10 @@ func (r *Query) OrderByDesc(column string) contractsorm.Query {
 	return r.Order(fmt.Sprintf("%s DESC", column))
 }
 
+func (r *Query) Instance() *gormio.DB {
+	return r.instance
+}
+
 func (r *Query) InRandomOrder() contractsorm.Query {
 	order := ""
 	switch r.Driver() {
@@ -560,6 +560,12 @@ func (r *Query) InRandomOrder() contractsorm.Query {
 		order = "RANDOM()"
 	}
 	return r.Order(order)
+}
+
+func (r *Query) InTransaction() bool {
+	committer, ok := r.Instance().Statement.ConnPool.(gormio.TxCommitter)
+
+	return ok && committer != nil
 }
 
 func (r *Query) OrWhere(query any, args ...any) contractsorm.Query {

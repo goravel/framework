@@ -103,6 +103,10 @@ func (r *Orm) Query() contractsorm.Query {
 	return r.query
 }
 
+func (r *Orm) SetQuery(query contractsorm.Query) {
+	r.query = query
+}
+
 func (r *Orm) Refresh() {
 	r.refresh(BindingOrm)
 }

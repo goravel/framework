@@ -108,6 +108,53 @@ func (_c *Migrator_Fresh_Call) RunAndReturn(run func() error) *Migrator_Fresh_Ca
 	return _c
 }
 
+// Rollback provides a mock function with given fields: step, batch
+func (_m *Migrator) Rollback(step int, batch int) error {
+	ret := _m.Called(step, batch)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rollback")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, int) error); ok {
+		r0 = rf(step, batch)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Migrator_Rollback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rollback'
+type Migrator_Rollback_Call struct {
+	*mock.Call
+}
+
+// Rollback is a helper method to define mock.On call
+//   - step int
+//   - batch int
+func (_e *Migrator_Expecter) Rollback(step interface{}, batch interface{}) *Migrator_Rollback_Call {
+	return &Migrator_Rollback_Call{Call: _e.mock.On("Rollback", step, batch)}
+}
+
+func (_c *Migrator_Rollback_Call) Run(run func(step int, batch int)) *Migrator_Rollback_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *Migrator_Rollback_Call) Return(_a0 error) *Migrator_Rollback_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Migrator_Rollback_Call) RunAndReturn(run func(int, int) error) *Migrator_Rollback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Run provides a mock function with given fields:
 func (_m *Migrator) Run() error {
 	ret := _m.Called()
