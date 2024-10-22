@@ -85,6 +85,29 @@ func (s *SqlMigratorSuite) TestFresh() {
 	}
 }
 
+func (s *SqlMigratorSuite) TestRollback() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			migrator, query := getTestSqlMigrator(s.T(), driver, testQuery)
+
+			err := migrator.Run()
+			s.NoError(err)
+
+			var agent Agent
+			err = query.Where("name", "goravel").First(&agent)
+			s.NoError(err)
+			s.True(agent.ID > 0)
+
+			err = migrator.Rollback(1, 0)
+			s.NoError(err)
+
+			var agent1 Agent
+			err = query.Where("name", "goravel").First(&agent1)
+			s.NotNil(err)
+		})
+	}
+}
+
 func (s *SqlMigratorSuite) TestRun() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
