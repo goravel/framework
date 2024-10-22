@@ -1240,6 +1240,51 @@ func (_c *Query_InRandomOrder_Call) RunAndReturn(run func() orm.Query) *Query_In
 	return _c
 }
 
+// InTransaction provides a mock function with given fields:
+func (_m *Query) InTransaction() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for InTransaction")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Query_InTransaction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InTransaction'
+type Query_InTransaction_Call struct {
+	*mock.Call
+}
+
+// InTransaction is a helper method to define mock.On call
+func (_e *Query_Expecter) InTransaction() *Query_InTransaction_Call {
+	return &Query_InTransaction_Call{Call: _e.mock.On("InTransaction")}
+}
+
+func (_c *Query_InTransaction_Call) Run(run func()) *Query_InTransaction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_InTransaction_Call) Return(_a0 bool) *Query_InTransaction_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_InTransaction_Call) RunAndReturn(run func() bool) *Query_InTransaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Join provides a mock function with given fields: query, args
 func (_m *Query) Join(query string, args ...any) orm.Query {
 	var _ca []interface{}
