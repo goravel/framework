@@ -18,19 +18,19 @@ func (_m *Filter) EXPECT() *Filter_Expecter {
 }
 
 // Handle provides a mock function with given fields:
-func (_m *Filter) Handle() interface{} {
+func (_m *Filter) Handle() any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Handle")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func() interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func() any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -54,12 +54,12 @@ func (_c *Filter_Handle_Call) Run(run func()) *Filter_Handle_Call {
 	return _c
 }
 
-func (_c *Filter_Handle_Call) Return(_a0 interface{}) *Filter_Handle_Call {
+func (_c *Filter_Handle_Call) Return(_a0 any) *Filter_Handle_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Filter_Handle_Call) RunAndReturn(run func() interface{}) *Filter_Handle_Call {
+func (_c *Filter_Handle_Call) RunAndReturn(run func() any) *Filter_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }

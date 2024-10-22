@@ -62,7 +62,7 @@ func (_c *ContextRequest_AbortWithStatus_Call) RunAndReturn(run func(int)) *Cont
 }
 
 // AbortWithStatusJson provides a mock function with given fields: code, jsonObj
-func (_m *ContextRequest) AbortWithStatusJson(code int, jsonObj interface{}) {
+func (_m *ContextRequest) AbortWithStatusJson(code int, jsonObj any) {
 	_m.Called(code, jsonObj)
 }
 
@@ -73,14 +73,14 @@ type ContextRequest_AbortWithStatusJson_Call struct {
 
 // AbortWithStatusJson is a helper method to define mock.On call
 //   - code int
-//   - jsonObj interface{}
+//   - jsonObj any
 func (_e *ContextRequest_Expecter) AbortWithStatusJson(code interface{}, jsonObj interface{}) *ContextRequest_AbortWithStatusJson_Call {
 	return &ContextRequest_AbortWithStatusJson_Call{Call: _e.mock.On("AbortWithStatusJson", code, jsonObj)}
 }
 
-func (_c *ContextRequest_AbortWithStatusJson_Call) Run(run func(code int, jsonObj interface{})) *ContextRequest_AbortWithStatusJson_Call {
+func (_c *ContextRequest_AbortWithStatusJson_Call) Run(run func(code int, jsonObj any)) *ContextRequest_AbortWithStatusJson_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(interface{}))
+		run(args[0].(int), args[1].(any))
 	})
 	return _c
 }
@@ -90,25 +90,25 @@ func (_c *ContextRequest_AbortWithStatusJson_Call) Return() *ContextRequest_Abor
 	return _c
 }
 
-func (_c *ContextRequest_AbortWithStatusJson_Call) RunAndReturn(run func(int, interface{})) *ContextRequest_AbortWithStatusJson_Call {
+func (_c *ContextRequest_AbortWithStatusJson_Call) RunAndReturn(run func(int, any)) *ContextRequest_AbortWithStatusJson_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // All provides a mock function with given fields:
-func (_m *ContextRequest) All() map[string]interface{} {
+func (_m *ContextRequest) All() map[string]any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for All")
 	}
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+	var r0 map[string]any
+	if rf, ok := ret.Get(0).(func() map[string]any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(map[string]any)
 		}
 	}
 
@@ -132,18 +132,18 @@ func (_c *ContextRequest_All_Call) Run(run func()) *ContextRequest_All_Call {
 	return _c
 }
 
-func (_c *ContextRequest_All_Call) Return(_a0 map[string]interface{}) *ContextRequest_All_Call {
+func (_c *ContextRequest_All_Call) Return(_a0 map[string]any) *ContextRequest_All_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextRequest_All_Call) RunAndReturn(run func() map[string]interface{}) *ContextRequest_All_Call {
+func (_c *ContextRequest_All_Call) RunAndReturn(run func() map[string]any) *ContextRequest_All_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Bind provides a mock function with given fields: obj
-func (_m *ContextRequest) Bind(obj interface{}) error {
+func (_m *ContextRequest) Bind(obj any) error {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
@@ -151,7 +151,7 @@ func (_m *ContextRequest) Bind(obj interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(any) error); ok {
 		r0 = rf(obj)
 	} else {
 		r0 = ret.Error(0)
@@ -166,14 +166,14 @@ type ContextRequest_Bind_Call struct {
 }
 
 // Bind is a helper method to define mock.On call
-//   - obj interface{}
+//   - obj any
 func (_e *ContextRequest_Expecter) Bind(obj interface{}) *ContextRequest_Bind_Call {
 	return &ContextRequest_Bind_Call{Call: _e.mock.On("Bind", obj)}
 }
 
-func (_c *ContextRequest_Bind_Call) Run(run func(obj interface{})) *ContextRequest_Bind_Call {
+func (_c *ContextRequest_Bind_Call) Run(run func(obj any)) *ContextRequest_Bind_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -183,13 +183,13 @@ func (_c *ContextRequest_Bind_Call) Return(_a0 error) *ContextRequest_Bind_Call 
 	return _c
 }
 
-func (_c *ContextRequest_Bind_Call) RunAndReturn(run func(interface{}) error) *ContextRequest_Bind_Call {
+func (_c *ContextRequest_Bind_Call) RunAndReturn(run func(any) error) *ContextRequest_Bind_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // BindQuery provides a mock function with given fields: obj
-func (_m *ContextRequest) BindQuery(obj interface{}) error {
+func (_m *ContextRequest) BindQuery(obj any) error {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
@@ -197,7 +197,7 @@ func (_m *ContextRequest) BindQuery(obj interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(any) error); ok {
 		r0 = rf(obj)
 	} else {
 		r0 = ret.Error(0)
@@ -212,14 +212,14 @@ type ContextRequest_BindQuery_Call struct {
 }
 
 // BindQuery is a helper method to define mock.On call
-//   - obj interface{}
+//   - obj any
 func (_e *ContextRequest_Expecter) BindQuery(obj interface{}) *ContextRequest_BindQuery_Call {
 	return &ContextRequest_BindQuery_Call{Call: _e.mock.On("BindQuery", obj)}
 }
 
-func (_c *ContextRequest_BindQuery_Call) Run(run func(obj interface{})) *ContextRequest_BindQuery_Call {
+func (_c *ContextRequest_BindQuery_Call) Run(run func(obj any)) *ContextRequest_BindQuery_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -229,7 +229,7 @@ func (_c *ContextRequest_BindQuery_Call) Return(_a0 error) *ContextRequest_BindQ
 	return _c
 }
 
-func (_c *ContextRequest_BindQuery_Call) RunAndReturn(run func(interface{}) error) *ContextRequest_BindQuery_Call {
+func (_c *ContextRequest_BindQuery_Call) RunAndReturn(run func(any) error) *ContextRequest_BindQuery_Call {
 	_c.Call.Return(run)
 	return _c
 }

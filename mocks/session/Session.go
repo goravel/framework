@@ -21,19 +21,19 @@ func (_m *Session) EXPECT() *Session_Expecter {
 }
 
 // All provides a mock function with given fields:
-func (_m *Session) All() map[string]interface{} {
+func (_m *Session) All() map[string]any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for All")
 	}
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+	var r0 map[string]any
+	if rf, ok := ret.Get(0).(func() map[string]any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(map[string]any)
 		}
 	}
 
@@ -57,12 +57,12 @@ func (_c *Session_All_Call) Run(run func()) *Session_All_Call {
 	return _c
 }
 
-func (_c *Session_All_Call) Return(_a0 map[string]interface{}) *Session_All_Call {
+func (_c *Session_All_Call) Return(_a0 map[string]any) *Session_All_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Session_All_Call) RunAndReturn(run func() map[string]interface{}) *Session_All_Call {
+func (_c *Session_All_Call) RunAndReturn(run func() map[string]any) *Session_All_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -114,7 +114,7 @@ func (_c *Session_Exists_Call) RunAndReturn(run func(string) bool) *Session_Exis
 }
 
 // Flash provides a mock function with given fields: key, value
-func (_m *Session) Flash(key string, value interface{}) session.Session {
+func (_m *Session) Flash(key string, value any) session.Session {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -122,7 +122,7 @@ func (_m *Session) Flash(key string, value interface{}) session.Session {
 	}
 
 	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
+	if rf, ok := ret.Get(0).(func(string, any) session.Session); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -140,14 +140,14 @@ type Session_Flash_Call struct {
 
 // Flash is a helper method to define mock.On call
 //   - key string
-//   - value interface{}
+//   - value any
 func (_e *Session_Expecter) Flash(key interface{}, value interface{}) *Session_Flash_Call {
 	return &Session_Flash_Call{Call: _e.mock.On("Flash", key, value)}
 }
 
-func (_c *Session_Flash_Call) Run(run func(key string, value interface{})) *Session_Flash_Call {
+func (_c *Session_Flash_Call) Run(run func(key string, value any)) *Session_Flash_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string), args[1].(any))
 	})
 	return _c
 }
@@ -157,7 +157,7 @@ func (_c *Session_Flash_Call) Return(_a0 session.Session) *Session_Flash_Call {
 	return _c
 }
 
-func (_c *Session_Flash_Call) RunAndReturn(run func(string, interface{}) session.Session) *Session_Flash_Call {
+func (_c *Session_Flash_Call) RunAndReturn(run func(string, any) session.Session) *Session_Flash_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -271,7 +271,7 @@ func (_c *Session_Forget_Call) RunAndReturn(run func(...string) session.Session)
 }
 
 // Get provides a mock function with given fields: key, defaultValue
-func (_m *Session) Get(key string, defaultValue ...interface{}) interface{} {
+func (_m *Session) Get(key string, defaultValue ...any) any {
 	var _ca []interface{}
 	_ca = append(_ca, key)
 	_ca = append(_ca, defaultValue...)
@@ -281,12 +281,12 @@ func (_m *Session) Get(key string, defaultValue ...interface{}) interface{} {
 		panic("no return value specified for Get")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
 		r0 = rf(key, defaultValue...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -300,18 +300,18 @@ type Session_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - key string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Session_Expecter) Get(key interface{}, defaultValue ...interface{}) *Session_Get_Call {
 	return &Session_Get_Call{Call: _e.mock.On("Get",
 		append([]interface{}{key}, defaultValue...)...)}
 }
 
-func (_c *Session_Get_Call) Run(run func(key string, defaultValue ...interface{})) *Session_Get_Call {
+func (_c *Session_Get_Call) Run(run func(key string, defaultValue ...any)) *Session_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -319,12 +319,12 @@ func (_c *Session_Get_Call) Run(run func(key string, defaultValue ...interface{}
 	return _c
 }
 
-func (_c *Session_Get_Call) Return(_a0 interface{}) *Session_Get_Call {
+func (_c *Session_Get_Call) Return(_a0 any) *Session_Get_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Session_Get_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Session_Get_Call {
+func (_c *Session_Get_Call) RunAndReturn(run func(string, ...any) any) *Session_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -618,7 +618,7 @@ func (_c *Session_Missing_Call) RunAndReturn(run func(string) bool) *Session_Mis
 }
 
 // Now provides a mock function with given fields: key, value
-func (_m *Session) Now(key string, value interface{}) session.Session {
+func (_m *Session) Now(key string, value any) session.Session {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -626,7 +626,7 @@ func (_m *Session) Now(key string, value interface{}) session.Session {
 	}
 
 	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
+	if rf, ok := ret.Get(0).(func(string, any) session.Session); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -644,14 +644,14 @@ type Session_Now_Call struct {
 
 // Now is a helper method to define mock.On call
 //   - key string
-//   - value interface{}
+//   - value any
 func (_e *Session_Expecter) Now(key interface{}, value interface{}) *Session_Now_Call {
 	return &Session_Now_Call{Call: _e.mock.On("Now", key, value)}
 }
 
-func (_c *Session_Now_Call) Run(run func(key string, value interface{})) *Session_Now_Call {
+func (_c *Session_Now_Call) Run(run func(key string, value any)) *Session_Now_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string), args[1].(any))
 	})
 	return _c
 }
@@ -661,25 +661,25 @@ func (_c *Session_Now_Call) Return(_a0 session.Session) *Session_Now_Call {
 	return _c
 }
 
-func (_c *Session_Now_Call) RunAndReturn(run func(string, interface{}) session.Session) *Session_Now_Call {
+func (_c *Session_Now_Call) RunAndReturn(run func(string, any) session.Session) *Session_Now_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Only provides a mock function with given fields: keys
-func (_m *Session) Only(keys []string) map[string]interface{} {
+func (_m *Session) Only(keys []string) map[string]any {
 	ret := _m.Called(keys)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Only")
 	}
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func([]string) map[string]interface{}); ok {
+	var r0 map[string]any
+	if rf, ok := ret.Get(0).(func([]string) map[string]any); ok {
 		r0 = rf(keys)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(map[string]any)
 		}
 	}
 
@@ -704,18 +704,18 @@ func (_c *Session_Only_Call) Run(run func(keys []string)) *Session_Only_Call {
 	return _c
 }
 
-func (_c *Session_Only_Call) Return(_a0 map[string]interface{}) *Session_Only_Call {
+func (_c *Session_Only_Call) Return(_a0 map[string]any) *Session_Only_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Session_Only_Call) RunAndReturn(run func([]string) map[string]interface{}) *Session_Only_Call {
+func (_c *Session_Only_Call) RunAndReturn(run func([]string) map[string]any) *Session_Only_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Pull provides a mock function with given fields: key, defaultValue
-func (_m *Session) Pull(key string, defaultValue ...interface{}) interface{} {
+func (_m *Session) Pull(key string, defaultValue ...any) any {
 	var _ca []interface{}
 	_ca = append(_ca, key)
 	_ca = append(_ca, defaultValue...)
@@ -725,12 +725,12 @@ func (_m *Session) Pull(key string, defaultValue ...interface{}) interface{} {
 		panic("no return value specified for Pull")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
 		r0 = rf(key, defaultValue...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -744,18 +744,18 @@ type Session_Pull_Call struct {
 
 // Pull is a helper method to define mock.On call
 //   - key string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Session_Expecter) Pull(key interface{}, defaultValue ...interface{}) *Session_Pull_Call {
 	return &Session_Pull_Call{Call: _e.mock.On("Pull",
 		append([]interface{}{key}, defaultValue...)...)}
 }
 
-func (_c *Session_Pull_Call) Run(run func(key string, defaultValue ...interface{})) *Session_Pull_Call {
+func (_c *Session_Pull_Call) Run(run func(key string, defaultValue ...any)) *Session_Pull_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -763,18 +763,18 @@ func (_c *Session_Pull_Call) Run(run func(key string, defaultValue ...interface{
 	return _c
 }
 
-func (_c *Session_Pull_Call) Return(_a0 interface{}) *Session_Pull_Call {
+func (_c *Session_Pull_Call) Return(_a0 any) *Session_Pull_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Session_Pull_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Session_Pull_Call {
+func (_c *Session_Pull_Call) RunAndReturn(run func(string, ...any) any) *Session_Pull_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Put provides a mock function with given fields: key, value
-func (_m *Session) Put(key string, value interface{}) session.Session {
+func (_m *Session) Put(key string, value any) session.Session {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -782,7 +782,7 @@ func (_m *Session) Put(key string, value interface{}) session.Session {
 	}
 
 	var r0 session.Session
-	if rf, ok := ret.Get(0).(func(string, interface{}) session.Session); ok {
+	if rf, ok := ret.Get(0).(func(string, any) session.Session); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -800,14 +800,14 @@ type Session_Put_Call struct {
 
 // Put is a helper method to define mock.On call
 //   - key string
-//   - value interface{}
+//   - value any
 func (_e *Session_Expecter) Put(key interface{}, value interface{}) *Session_Put_Call {
 	return &Session_Put_Call{Call: _e.mock.On("Put", key, value)}
 }
 
-func (_c *Session_Put_Call) Run(run func(key string, value interface{})) *Session_Put_Call {
+func (_c *Session_Put_Call) Run(run func(key string, value any)) *Session_Put_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string), args[1].(any))
 	})
 	return _c
 }
@@ -817,7 +817,7 @@ func (_c *Session_Put_Call) Return(_a0 session.Session) *Session_Put_Call {
 	return _c
 }
 
-func (_c *Session_Put_Call) RunAndReturn(run func(string, interface{}) session.Session) *Session_Put_Call {
+func (_c *Session_Put_Call) RunAndReturn(run func(string, any) session.Session) *Session_Put_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -929,19 +929,19 @@ func (_c *Session_Regenerate_Call) RunAndReturn(run func(...bool) error) *Sessio
 }
 
 // Remove provides a mock function with given fields: key
-func (_m *Session) Remove(key string) interface{} {
+func (_m *Session) Remove(key string) any {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Remove")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(string) any); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -966,12 +966,12 @@ func (_c *Session_Remove_Call) Run(run func(key string)) *Session_Remove_Call {
 	return _c
 }
 
-func (_c *Session_Remove_Call) Return(_a0 interface{}) *Session_Remove_Call {
+func (_c *Session_Remove_Call) Return(_a0 any) *Session_Remove_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Session_Remove_Call) RunAndReturn(run func(string) interface{}) *Session_Remove_Call {
+func (_c *Session_Remove_Call) RunAndReturn(run func(string) any) *Session_Remove_Call {
 	_c.Call.Return(run)
 	return _c
 }

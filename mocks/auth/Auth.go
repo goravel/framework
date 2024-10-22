@@ -124,7 +124,7 @@ func (_c *Auth_Id_Call) RunAndReturn(run func() (string, error)) *Auth_Id_Call {
 }
 
 // Login provides a mock function with given fields: user
-func (_m *Auth) Login(user interface{}) (string, error) {
+func (_m *Auth) Login(user any) (string, error) {
 	ret := _m.Called(user)
 
 	if len(ret) == 0 {
@@ -133,16 +133,16 @@ func (_m *Auth) Login(user interface{}) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(any) (string, error)); ok {
 		return rf(user)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any) string); ok {
 		r0 = rf(user)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(any) error); ok {
 		r1 = rf(user)
 	} else {
 		r1 = ret.Error(1)
@@ -157,14 +157,14 @@ type Auth_Login_Call struct {
 }
 
 // Login is a helper method to define mock.On call
-//   - user interface{}
+//   - user any
 func (_e *Auth_Expecter) Login(user interface{}) *Auth_Login_Call {
 	return &Auth_Login_Call{Call: _e.mock.On("Login", user)}
 }
 
-func (_c *Auth_Login_Call) Run(run func(user interface{})) *Auth_Login_Call {
+func (_c *Auth_Login_Call) Run(run func(user any)) *Auth_Login_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -174,13 +174,13 @@ func (_c *Auth_Login_Call) Return(token string, err error) *Auth_Login_Call {
 	return _c
 }
 
-func (_c *Auth_Login_Call) RunAndReturn(run func(interface{}) (string, error)) *Auth_Login_Call {
+func (_c *Auth_Login_Call) RunAndReturn(run func(any) (string, error)) *Auth_Login_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // LoginUsingID provides a mock function with given fields: id
-func (_m *Auth) LoginUsingID(id interface{}) (string, error) {
+func (_m *Auth) LoginUsingID(id any) (string, error) {
 	ret := _m.Called(id)
 
 	if len(ret) == 0 {
@@ -189,16 +189,16 @@ func (_m *Auth) LoginUsingID(id interface{}) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(any) (string, error)); ok {
 		return rf(id)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any) string); ok {
 		r0 = rf(id)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(any) error); ok {
 		r1 = rf(id)
 	} else {
 		r1 = ret.Error(1)
@@ -213,14 +213,14 @@ type Auth_LoginUsingID_Call struct {
 }
 
 // LoginUsingID is a helper method to define mock.On call
-//   - id interface{}
+//   - id any
 func (_e *Auth_Expecter) LoginUsingID(id interface{}) *Auth_LoginUsingID_Call {
 	return &Auth_LoginUsingID_Call{Call: _e.mock.On("LoginUsingID", id)}
 }
 
-func (_c *Auth_LoginUsingID_Call) Run(run func(id interface{})) *Auth_LoginUsingID_Call {
+func (_c *Auth_LoginUsingID_Call) Run(run func(id any)) *Auth_LoginUsingID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -230,7 +230,7 @@ func (_c *Auth_LoginUsingID_Call) Return(token string, err error) *Auth_LoginUsi
 	return _c
 }
 
-func (_c *Auth_LoginUsingID_Call) RunAndReturn(run func(interface{}) (string, error)) *Auth_LoginUsingID_Call {
+func (_c *Auth_LoginUsingID_Call) RunAndReturn(run func(any) (string, error)) *Auth_LoginUsingID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -394,7 +394,7 @@ func (_c *Auth_Refresh_Call) RunAndReturn(run func() (string, error)) *Auth_Refr
 }
 
 // User provides a mock function with given fields: user
-func (_m *Auth) User(user interface{}) error {
+func (_m *Auth) User(user any) error {
 	ret := _m.Called(user)
 
 	if len(ret) == 0 {
@@ -402,7 +402,7 @@ func (_m *Auth) User(user interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(any) error); ok {
 		r0 = rf(user)
 	} else {
 		r0 = ret.Error(0)
@@ -417,14 +417,14 @@ type Auth_User_Call struct {
 }
 
 // User is a helper method to define mock.On call
-//   - user interface{}
+//   - user any
 func (_e *Auth_Expecter) User(user interface{}) *Auth_User_Call {
 	return &Auth_User_Call{Call: _e.mock.On("User", user)}
 }
 
-func (_c *Auth_User_Call) Run(run func(user interface{})) *Auth_User_Call {
+func (_c *Auth_User_Call) Run(run func(user any)) *Auth_User_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -434,7 +434,7 @@ func (_c *Auth_User_Call) Return(_a0 error) *Auth_User_Call {
 	return _c
 }
 
-func (_c *Auth_User_Call) RunAndReturn(run func(interface{}) error) *Auth_User_Call {
+func (_c *Auth_User_Call) RunAndReturn(run func(any) error) *Auth_User_Call {
 	_c.Call.Return(run)
 	return _c
 }
