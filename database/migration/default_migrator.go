@@ -167,32 +167,6 @@ func (r *DefaultMigrator) runPending(migrations []schema.Migration) error {
 	return nil
 }
 
-func (r *DefaultMigrator) runUp(migration schema.Migration, batch int) error {
-	defaultConnection := r.schema.GetConnection()
-	if connectionMigration, ok := migration.(schema.Connection); ok {
-		r.schema.SetConnection(connectionMigration.Connection())
-	}
-
-	return r.schema.Orm().Transaction(func(tx orm.Query) error {
-		defaultQuery := r.schema.Orm().Query()
-		r.schema.Orm().SetQuery(tx)
-
-		if err := migration.Up(); err != nil {
-			// reset the connection and query to default.
-			r.schema.SetConnection(defaultConnection)
-			r.schema.Orm().SetQuery(defaultQuery)
-
-			return err
-		}
-
-		// repository.Log should be called in the default connection.
-		r.schema.SetConnection(defaultConnection)
-		r.schema.Orm().SetQuery(defaultQuery)
-
-		return r.repository.Log(migration.Signature(), batch)
-	})
-}
-
 func (r *DefaultMigrator) runDown(migration schema.Migration) error {
 	defaultConnection := r.schema.GetConnection()
 	if connectionMigration, ok := migration.(schema.Connection); ok {
@@ -216,5 +190,31 @@ func (r *DefaultMigrator) runDown(migration schema.Migration) error {
 		r.schema.Orm().SetQuery(defaultQuery)
 
 		return r.repository.Delete(migration.Signature())
+	})
+}
+
+func (r *DefaultMigrator) runUp(migration schema.Migration, batch int) error {
+	defaultConnection := r.schema.GetConnection()
+	if connectionMigration, ok := migration.(schema.Connection); ok {
+		r.schema.SetConnection(connectionMigration.Connection())
+	}
+
+	return r.schema.Orm().Transaction(func(tx orm.Query) error {
+		defaultQuery := r.schema.Orm().Query()
+		r.schema.Orm().SetQuery(tx)
+
+		if err := migration.Up(); err != nil {
+			// reset the connection and query to default.
+			r.schema.SetConnection(defaultConnection)
+			r.schema.Orm().SetQuery(defaultQuery)
+
+			return err
+		}
+
+		// repository.Log should be called in the default connection.
+		r.schema.SetConnection(defaultConnection)
+		r.schema.Orm().SetQuery(defaultQuery)
+
+		return r.repository.Log(migration.Signature(), batch)
 	})
 }

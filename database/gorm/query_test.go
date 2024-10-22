@@ -2185,6 +2185,30 @@ func (s *QueryTestSuite) TestInRandomOrder() {
 	}
 }
 
+func (s *QueryTestSuite) TestInTransaction() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			s.False(query.Query().InTransaction())
+
+			tx, err := query.Query().Begin()
+			s.NotNil(tx)
+			s.NoError(err)
+
+			s.True(tx.InTransaction())
+			s.NoError(tx.Commit())
+			s.False(query.Query().InTransaction())
+
+			tx, err = query.Query().Begin()
+			s.NotNil(tx)
+			s.NoError(err)
+
+			s.True(tx.InTransaction())
+			s.NoError(tx.Rollback())
+			s.False(query.Query().InTransaction())
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestPaginate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {

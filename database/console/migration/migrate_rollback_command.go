@@ -50,7 +50,9 @@ func (r *MigrateRollbackCommand) Extend() command.Extend {
 func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	var step, batch int
 	if step = ctx.OptionInt("step"); step == 0 {
-		batch = ctx.OptionInt("batch")
+		if batch = ctx.OptionInt("batch"); batch == 0 {
+			step = 1
+		}
 	}
 
 	if err := r.migrator.Rollback(step, batch); err != nil {

@@ -73,6 +73,10 @@ func (r *Query) Association(association string) contractsorm.Association {
 }
 
 func (r *Query) Begin() (contractsorm.Query, error) {
+	if r.InTransaction() {
+		return r, nil
+	}
+
 	tx := r.instance.Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
