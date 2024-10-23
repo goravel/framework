@@ -15,7 +15,7 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/schema"
+	databaseschema "github.com/goravel/framework/database/schema"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
@@ -51,7 +51,7 @@ func (s *DefaultMigratorWithDBSuite) SetupTest() {
 func (s *DefaultMigratorWithDBSuite) TestRun() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema := schema.GetTestSchema(testQuery, s.driverToTestQuery)
+			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
 			testMigration := NewTestMigration(schema)
 			schema.Register([]contractsschema.Migration{
 				testMigration,
@@ -63,6 +63,11 @@ func (s *DefaultMigratorWithDBSuite) TestRun() {
 			s.True(schema.HasTable("users"))
 		})
 	}
+}
+
+// TODO Add rollback test cases after implementing Sqlite driver, to test migrating different databases.
+func (s *DefaultMigratorWithDBSuite) TestRollback() {
+
 }
 
 type DefaultMigratorSuite struct {
@@ -687,7 +692,7 @@ func (r *TestConnectionMigration) Signature() string {
 }
 
 func (r *TestConnectionMigration) Connection() string {
-	return "mysql"
+	return "sqlite"
 }
 
 func (r *TestConnectionMigration) Up() error {
