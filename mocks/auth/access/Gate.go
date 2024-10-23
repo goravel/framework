@@ -24,7 +24,7 @@ func (_m *Gate) EXPECT() *Gate_Expecter {
 }
 
 // After provides a mock function with given fields: callback
-func (_m *Gate) After(callback func(context.Context, string, map[string]interface{}, access.Response) access.Response) {
+func (_m *Gate) After(callback func(context.Context, string, map[string]any, access.Response) access.Response) {
 	_m.Called(callback)
 }
 
@@ -34,14 +34,14 @@ type Gate_After_Call struct {
 }
 
 // After is a helper method to define mock.On call
-//   - callback func(context.Context , string , map[string]interface{} , access.Response) access.Response
+//   - callback func(context.Context , string , map[string]any , access.Response) access.Response
 func (_e *Gate_Expecter) After(callback interface{}) *Gate_After_Call {
 	return &Gate_After_Call{Call: _e.mock.On("After", callback)}
 }
 
-func (_c *Gate_After_Call) Run(run func(callback func(context.Context, string, map[string]interface{}, access.Response) access.Response)) *Gate_After_Call {
+func (_c *Gate_After_Call) Run(run func(callback func(context.Context, string, map[string]any, access.Response) access.Response)) *Gate_After_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(context.Context, string, map[string]interface{}, access.Response) access.Response))
+		run(args[0].(func(context.Context, string, map[string]any, access.Response) access.Response))
 	})
 	return _c
 }
@@ -51,13 +51,13 @@ func (_c *Gate_After_Call) Return() *Gate_After_Call {
 	return _c
 }
 
-func (_c *Gate_After_Call) RunAndReturn(run func(func(context.Context, string, map[string]interface{}, access.Response) access.Response)) *Gate_After_Call {
+func (_c *Gate_After_Call) RunAndReturn(run func(func(context.Context, string, map[string]any, access.Response) access.Response)) *Gate_After_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Allows provides a mock function with given fields: ability, arguments
-func (_m *Gate) Allows(ability string, arguments map[string]interface{}) bool {
+func (_m *Gate) Allows(ability string, arguments map[string]any) bool {
 	ret := _m.Called(ability, arguments)
 
 	if len(ret) == 0 {
@@ -65,7 +65,7 @@ func (_m *Gate) Allows(ability string, arguments map[string]interface{}) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, map[string]interface{}) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, map[string]any) bool); ok {
 		r0 = rf(ability, arguments)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -81,14 +81,14 @@ type Gate_Allows_Call struct {
 
 // Allows is a helper method to define mock.On call
 //   - ability string
-//   - arguments map[string]interface{}
+//   - arguments map[string]any
 func (_e *Gate_Expecter) Allows(ability interface{}, arguments interface{}) *Gate_Allows_Call {
 	return &Gate_Allows_Call{Call: _e.mock.On("Allows", ability, arguments)}
 }
 
-func (_c *Gate_Allows_Call) Run(run func(ability string, arguments map[string]interface{})) *Gate_Allows_Call {
+func (_c *Gate_Allows_Call) Run(run func(ability string, arguments map[string]any)) *Gate_Allows_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(map[string]interface{}))
+		run(args[0].(string), args[1].(map[string]any))
 	})
 	return _c
 }
@@ -98,13 +98,13 @@ func (_c *Gate_Allows_Call) Return(_a0 bool) *Gate_Allows_Call {
 	return _c
 }
 
-func (_c *Gate_Allows_Call) RunAndReturn(run func(string, map[string]interface{}) bool) *Gate_Allows_Call {
+func (_c *Gate_Allows_Call) RunAndReturn(run func(string, map[string]any) bool) *Gate_Allows_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Any provides a mock function with given fields: abilities, arguments
-func (_m *Gate) Any(abilities []string, arguments map[string]interface{}) bool {
+func (_m *Gate) Any(abilities []string, arguments map[string]any) bool {
 	ret := _m.Called(abilities, arguments)
 
 	if len(ret) == 0 {
@@ -112,7 +112,7 @@ func (_m *Gate) Any(abilities []string, arguments map[string]interface{}) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func([]string, map[string]interface{}) bool); ok {
+	if rf, ok := ret.Get(0).(func([]string, map[string]any) bool); ok {
 		r0 = rf(abilities, arguments)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -128,14 +128,14 @@ type Gate_Any_Call struct {
 
 // Any is a helper method to define mock.On call
 //   - abilities []string
-//   - arguments map[string]interface{}
+//   - arguments map[string]any
 func (_e *Gate_Expecter) Any(abilities interface{}, arguments interface{}) *Gate_Any_Call {
 	return &Gate_Any_Call{Call: _e.mock.On("Any", abilities, arguments)}
 }
 
-func (_c *Gate_Any_Call) Run(run func(abilities []string, arguments map[string]interface{})) *Gate_Any_Call {
+func (_c *Gate_Any_Call) Run(run func(abilities []string, arguments map[string]any)) *Gate_Any_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(map[string]interface{}))
+		run(args[0].([]string), args[1].(map[string]any))
 	})
 	return _c
 }
@@ -145,13 +145,13 @@ func (_c *Gate_Any_Call) Return(_a0 bool) *Gate_Any_Call {
 	return _c
 }
 
-func (_c *Gate_Any_Call) RunAndReturn(run func([]string, map[string]interface{}) bool) *Gate_Any_Call {
+func (_c *Gate_Any_Call) RunAndReturn(run func([]string, map[string]any) bool) *Gate_Any_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Before provides a mock function with given fields: callback
-func (_m *Gate) Before(callback func(context.Context, string, map[string]interface{}) access.Response) {
+func (_m *Gate) Before(callback func(context.Context, string, map[string]any) access.Response) {
 	_m.Called(callback)
 }
 
@@ -161,14 +161,14 @@ type Gate_Before_Call struct {
 }
 
 // Before is a helper method to define mock.On call
-//   - callback func(context.Context , string , map[string]interface{}) access.Response
+//   - callback func(context.Context , string , map[string]any) access.Response
 func (_e *Gate_Expecter) Before(callback interface{}) *Gate_Before_Call {
 	return &Gate_Before_Call{Call: _e.mock.On("Before", callback)}
 }
 
-func (_c *Gate_Before_Call) Run(run func(callback func(context.Context, string, map[string]interface{}) access.Response)) *Gate_Before_Call {
+func (_c *Gate_Before_Call) Run(run func(callback func(context.Context, string, map[string]any) access.Response)) *Gate_Before_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(func(context.Context, string, map[string]interface{}) access.Response))
+		run(args[0].(func(context.Context, string, map[string]any) access.Response))
 	})
 	return _c
 }
@@ -178,13 +178,13 @@ func (_c *Gate_Before_Call) Return() *Gate_Before_Call {
 	return _c
 }
 
-func (_c *Gate_Before_Call) RunAndReturn(run func(func(context.Context, string, map[string]interface{}) access.Response)) *Gate_Before_Call {
+func (_c *Gate_Before_Call) RunAndReturn(run func(func(context.Context, string, map[string]any) access.Response)) *Gate_Before_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Define provides a mock function with given fields: ability, callback
-func (_m *Gate) Define(ability string, callback func(context.Context, map[string]interface{}) access.Response) {
+func (_m *Gate) Define(ability string, callback func(context.Context, map[string]any) access.Response) {
 	_m.Called(ability, callback)
 }
 
@@ -195,14 +195,14 @@ type Gate_Define_Call struct {
 
 // Define is a helper method to define mock.On call
 //   - ability string
-//   - callback func(context.Context , map[string]interface{}) access.Response
+//   - callback func(context.Context , map[string]any) access.Response
 func (_e *Gate_Expecter) Define(ability interface{}, callback interface{}) *Gate_Define_Call {
 	return &Gate_Define_Call{Call: _e.mock.On("Define", ability, callback)}
 }
 
-func (_c *Gate_Define_Call) Run(run func(ability string, callback func(context.Context, map[string]interface{}) access.Response)) *Gate_Define_Call {
+func (_c *Gate_Define_Call) Run(run func(ability string, callback func(context.Context, map[string]any) access.Response)) *Gate_Define_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(func(context.Context, map[string]interface{}) access.Response))
+		run(args[0].(string), args[1].(func(context.Context, map[string]any) access.Response))
 	})
 	return _c
 }
@@ -212,13 +212,13 @@ func (_c *Gate_Define_Call) Return() *Gate_Define_Call {
 	return _c
 }
 
-func (_c *Gate_Define_Call) RunAndReturn(run func(string, func(context.Context, map[string]interface{}) access.Response)) *Gate_Define_Call {
+func (_c *Gate_Define_Call) RunAndReturn(run func(string, func(context.Context, map[string]any) access.Response)) *Gate_Define_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Denies provides a mock function with given fields: ability, arguments
-func (_m *Gate) Denies(ability string, arguments map[string]interface{}) bool {
+func (_m *Gate) Denies(ability string, arguments map[string]any) bool {
 	ret := _m.Called(ability, arguments)
 
 	if len(ret) == 0 {
@@ -226,7 +226,7 @@ func (_m *Gate) Denies(ability string, arguments map[string]interface{}) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, map[string]interface{}) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, map[string]any) bool); ok {
 		r0 = rf(ability, arguments)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -242,14 +242,14 @@ type Gate_Denies_Call struct {
 
 // Denies is a helper method to define mock.On call
 //   - ability string
-//   - arguments map[string]interface{}
+//   - arguments map[string]any
 func (_e *Gate_Expecter) Denies(ability interface{}, arguments interface{}) *Gate_Denies_Call {
 	return &Gate_Denies_Call{Call: _e.mock.On("Denies", ability, arguments)}
 }
 
-func (_c *Gate_Denies_Call) Run(run func(ability string, arguments map[string]interface{})) *Gate_Denies_Call {
+func (_c *Gate_Denies_Call) Run(run func(ability string, arguments map[string]any)) *Gate_Denies_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(map[string]interface{}))
+		run(args[0].(string), args[1].(map[string]any))
 	})
 	return _c
 }
@@ -259,13 +259,13 @@ func (_c *Gate_Denies_Call) Return(_a0 bool) *Gate_Denies_Call {
 	return _c
 }
 
-func (_c *Gate_Denies_Call) RunAndReturn(run func(string, map[string]interface{}) bool) *Gate_Denies_Call {
+func (_c *Gate_Denies_Call) RunAndReturn(run func(string, map[string]any) bool) *Gate_Denies_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Inspect provides a mock function with given fields: ability, arguments
-func (_m *Gate) Inspect(ability string, arguments map[string]interface{}) access.Response {
+func (_m *Gate) Inspect(ability string, arguments map[string]any) access.Response {
 	ret := _m.Called(ability, arguments)
 
 	if len(ret) == 0 {
@@ -273,7 +273,7 @@ func (_m *Gate) Inspect(ability string, arguments map[string]interface{}) access
 	}
 
 	var r0 access.Response
-	if rf, ok := ret.Get(0).(func(string, map[string]interface{}) access.Response); ok {
+	if rf, ok := ret.Get(0).(func(string, map[string]any) access.Response); ok {
 		r0 = rf(ability, arguments)
 	} else {
 		if ret.Get(0) != nil {
@@ -291,14 +291,14 @@ type Gate_Inspect_Call struct {
 
 // Inspect is a helper method to define mock.On call
 //   - ability string
-//   - arguments map[string]interface{}
+//   - arguments map[string]any
 func (_e *Gate_Expecter) Inspect(ability interface{}, arguments interface{}) *Gate_Inspect_Call {
 	return &Gate_Inspect_Call{Call: _e.mock.On("Inspect", ability, arguments)}
 }
 
-func (_c *Gate_Inspect_Call) Run(run func(ability string, arguments map[string]interface{})) *Gate_Inspect_Call {
+func (_c *Gate_Inspect_Call) Run(run func(ability string, arguments map[string]any)) *Gate_Inspect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(map[string]interface{}))
+		run(args[0].(string), args[1].(map[string]any))
 	})
 	return _c
 }
@@ -308,13 +308,13 @@ func (_c *Gate_Inspect_Call) Return(_a0 access.Response) *Gate_Inspect_Call {
 	return _c
 }
 
-func (_c *Gate_Inspect_Call) RunAndReturn(run func(string, map[string]interface{}) access.Response) *Gate_Inspect_Call {
+func (_c *Gate_Inspect_Call) RunAndReturn(run func(string, map[string]any) access.Response) *Gate_Inspect_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // None provides a mock function with given fields: abilities, arguments
-func (_m *Gate) None(abilities []string, arguments map[string]interface{}) bool {
+func (_m *Gate) None(abilities []string, arguments map[string]any) bool {
 	ret := _m.Called(abilities, arguments)
 
 	if len(ret) == 0 {
@@ -322,7 +322,7 @@ func (_m *Gate) None(abilities []string, arguments map[string]interface{}) bool 
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func([]string, map[string]interface{}) bool); ok {
+	if rf, ok := ret.Get(0).(func([]string, map[string]any) bool); ok {
 		r0 = rf(abilities, arguments)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -338,14 +338,14 @@ type Gate_None_Call struct {
 
 // None is a helper method to define mock.On call
 //   - abilities []string
-//   - arguments map[string]interface{}
+//   - arguments map[string]any
 func (_e *Gate_Expecter) None(abilities interface{}, arguments interface{}) *Gate_None_Call {
 	return &Gate_None_Call{Call: _e.mock.On("None", abilities, arguments)}
 }
 
-func (_c *Gate_None_Call) Run(run func(abilities []string, arguments map[string]interface{})) *Gate_None_Call {
+func (_c *Gate_None_Call) Run(run func(abilities []string, arguments map[string]any)) *Gate_None_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string), args[1].(map[string]interface{}))
+		run(args[0].([]string), args[1].(map[string]any))
 	})
 	return _c
 }
@@ -355,7 +355,7 @@ func (_c *Gate_None_Call) Return(_a0 bool) *Gate_None_Call {
 	return _c
 }
 
-func (_c *Gate_None_Call) RunAndReturn(run func([]string, map[string]interface{}) bool) *Gate_None_Call {
+func (_c *Gate_None_Call) RunAndReturn(run func([]string, map[string]any) bool) *Gate_None_Call {
 	_c.Call.Return(run)
 	return _c
 }

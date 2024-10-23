@@ -190,19 +190,19 @@ func (_c *ColumnDefinition_GetChange_Call) RunAndReturn(run func() bool) *Column
 }
 
 // GetDefault provides a mock function with given fields:
-func (_m *ColumnDefinition) GetDefault() interface{} {
+func (_m *ColumnDefinition) GetDefault() any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDefault")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func() interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func() any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -226,12 +226,12 @@ func (_c *ColumnDefinition_GetDefault_Call) Run(run func()) *ColumnDefinition_Ge
 	return _c
 }
 
-func (_c *ColumnDefinition_GetDefault_Call) Return(_a0 interface{}) *ColumnDefinition_GetDefault_Call {
+func (_c *ColumnDefinition_GetDefault_Call) Return(_a0 any) *ColumnDefinition_GetDefault_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetDefault_Call) RunAndReturn(run func() interface{}) *ColumnDefinition_GetDefault_Call {
+func (_c *ColumnDefinition_GetDefault_Call) RunAndReturn(run func() any) *ColumnDefinition_GetDefault_Call {
 	_c.Call.Return(run)
 	return _c
 }

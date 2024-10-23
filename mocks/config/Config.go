@@ -18,7 +18,7 @@ func (_m *Config) EXPECT() *Config_Expecter {
 }
 
 // Add provides a mock function with given fields: name, configuration
-func (_m *Config) Add(name string, configuration interface{}) {
+func (_m *Config) Add(name string, configuration any) {
 	_m.Called(name, configuration)
 }
 
@@ -29,14 +29,14 @@ type Config_Add_Call struct {
 
 // Add is a helper method to define mock.On call
 //   - name string
-//   - configuration interface{}
+//   - configuration any
 func (_e *Config_Expecter) Add(name interface{}, configuration interface{}) *Config_Add_Call {
 	return &Config_Add_Call{Call: _e.mock.On("Add", name, configuration)}
 }
 
-func (_c *Config_Add_Call) Run(run func(name string, configuration interface{})) *Config_Add_Call {
+func (_c *Config_Add_Call) Run(run func(name string, configuration any)) *Config_Add_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string), args[1].(any))
 	})
 	return _c
 }
@@ -46,13 +46,13 @@ func (_c *Config_Add_Call) Return() *Config_Add_Call {
 	return _c
 }
 
-func (_c *Config_Add_Call) RunAndReturn(run func(string, interface{})) *Config_Add_Call {
+func (_c *Config_Add_Call) RunAndReturn(run func(string, any)) *Config_Add_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Env provides a mock function with given fields: envName, defaultValue
-func (_m *Config) Env(envName string, defaultValue ...interface{}) interface{} {
+func (_m *Config) Env(envName string, defaultValue ...any) any {
 	var _ca []interface{}
 	_ca = append(_ca, envName)
 	_ca = append(_ca, defaultValue...)
@@ -62,12 +62,12 @@ func (_m *Config) Env(envName string, defaultValue ...interface{}) interface{} {
 		panic("no return value specified for Env")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
 		r0 = rf(envName, defaultValue...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -81,18 +81,18 @@ type Config_Env_Call struct {
 
 // Env is a helper method to define mock.On call
 //   - envName string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Config_Expecter) Env(envName interface{}, defaultValue ...interface{}) *Config_Env_Call {
 	return &Config_Env_Call{Call: _e.mock.On("Env",
 		append([]interface{}{envName}, defaultValue...)...)}
 }
 
-func (_c *Config_Env_Call) Run(run func(envName string, defaultValue ...interface{})) *Config_Env_Call {
+func (_c *Config_Env_Call) Run(run func(envName string, defaultValue ...any)) *Config_Env_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -100,18 +100,18 @@ func (_c *Config_Env_Call) Run(run func(envName string, defaultValue ...interfac
 	return _c
 }
 
-func (_c *Config_Env_Call) Return(_a0 interface{}) *Config_Env_Call {
+func (_c *Config_Env_Call) Return(_a0 any) *Config_Env_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_Env_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Config_Env_Call {
+func (_c *Config_Env_Call) RunAndReturn(run func(string, ...any) any) *Config_Env_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Get provides a mock function with given fields: path, defaultValue
-func (_m *Config) Get(path string, defaultValue ...interface{}) interface{} {
+func (_m *Config) Get(path string, defaultValue ...any) any {
 	var _ca []interface{}
 	_ca = append(_ca, path)
 	_ca = append(_ca, defaultValue...)
@@ -121,12 +121,12 @@ func (_m *Config) Get(path string, defaultValue ...interface{}) interface{} {
 		panic("no return value specified for Get")
 	}
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
 		r0 = rf(path, defaultValue...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
+			r0 = ret.Get(0).(any)
 		}
 	}
 
@@ -140,18 +140,18 @@ type Config_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - path string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Config_Expecter) Get(path interface{}, defaultValue ...interface{}) *Config_Get_Call {
 	return &Config_Get_Call{Call: _e.mock.On("Get",
 		append([]interface{}{path}, defaultValue...)...)}
 }
 
-func (_c *Config_Get_Call) Run(run func(path string, defaultValue ...interface{})) *Config_Get_Call {
+func (_c *Config_Get_Call) Run(run func(path string, defaultValue ...any)) *Config_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -159,18 +159,18 @@ func (_c *Config_Get_Call) Run(run func(path string, defaultValue ...interface{}
 	return _c
 }
 
-func (_c *Config_Get_Call) Return(_a0 interface{}) *Config_Get_Call {
+func (_c *Config_Get_Call) Return(_a0 any) *Config_Get_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Config_Get_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Config_Get_Call {
+func (_c *Config_Get_Call) RunAndReturn(run func(string, ...any) any) *Config_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetBool provides a mock function with given fields: path, defaultValue
-func (_m *Config) GetBool(path string, defaultValue ...interface{}) bool {
+func (_m *Config) GetBool(path string, defaultValue ...any) bool {
 	var _ca []interface{}
 	_ca = append(_ca, path)
 	_ca = append(_ca, defaultValue...)
@@ -181,7 +181,7 @@ func (_m *Config) GetBool(path string, defaultValue ...interface{}) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) bool); ok {
 		r0 = rf(path, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -197,18 +197,18 @@ type Config_GetBool_Call struct {
 
 // GetBool is a helper method to define mock.On call
 //   - path string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Config_Expecter) GetBool(path interface{}, defaultValue ...interface{}) *Config_GetBool_Call {
 	return &Config_GetBool_Call{Call: _e.mock.On("GetBool",
 		append([]interface{}{path}, defaultValue...)...)}
 }
 
-func (_c *Config_GetBool_Call) Run(run func(path string, defaultValue ...interface{})) *Config_GetBool_Call {
+func (_c *Config_GetBool_Call) Run(run func(path string, defaultValue ...any)) *Config_GetBool_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -221,13 +221,13 @@ func (_c *Config_GetBool_Call) Return(_a0 bool) *Config_GetBool_Call {
 	return _c
 }
 
-func (_c *Config_GetBool_Call) RunAndReturn(run func(string, ...interface{}) bool) *Config_GetBool_Call {
+func (_c *Config_GetBool_Call) RunAndReturn(run func(string, ...any) bool) *Config_GetBool_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetInt provides a mock function with given fields: path, defaultValue
-func (_m *Config) GetInt(path string, defaultValue ...interface{}) int {
+func (_m *Config) GetInt(path string, defaultValue ...any) int {
 	var _ca []interface{}
 	_ca = append(_ca, path)
 	_ca = append(_ca, defaultValue...)
@@ -238,7 +238,7 @@ func (_m *Config) GetInt(path string, defaultValue ...interface{}) int {
 	}
 
 	var r0 int
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) int); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) int); ok {
 		r0 = rf(path, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(int)
@@ -254,18 +254,18 @@ type Config_GetInt_Call struct {
 
 // GetInt is a helper method to define mock.On call
 //   - path string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Config_Expecter) GetInt(path interface{}, defaultValue ...interface{}) *Config_GetInt_Call {
 	return &Config_GetInt_Call{Call: _e.mock.On("GetInt",
 		append([]interface{}{path}, defaultValue...)...)}
 }
 
-func (_c *Config_GetInt_Call) Run(run func(path string, defaultValue ...interface{})) *Config_GetInt_Call {
+func (_c *Config_GetInt_Call) Run(run func(path string, defaultValue ...any)) *Config_GetInt_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -278,13 +278,13 @@ func (_c *Config_GetInt_Call) Return(_a0 int) *Config_GetInt_Call {
 	return _c
 }
 
-func (_c *Config_GetInt_Call) RunAndReturn(run func(string, ...interface{}) int) *Config_GetInt_Call {
+func (_c *Config_GetInt_Call) RunAndReturn(run func(string, ...any) int) *Config_GetInt_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetString provides a mock function with given fields: path, defaultValue
-func (_m *Config) GetString(path string, defaultValue ...interface{}) string {
+func (_m *Config) GetString(path string, defaultValue ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, path)
 	_ca = append(_ca, defaultValue...)
@@ -295,7 +295,7 @@ func (_m *Config) GetString(path string, defaultValue ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) string); ok {
 		r0 = rf(path, defaultValue...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -311,18 +311,18 @@ type Config_GetString_Call struct {
 
 // GetString is a helper method to define mock.On call
 //   - path string
-//   - defaultValue ...interface{}
+//   - defaultValue ...any
 func (_e *Config_Expecter) GetString(path interface{}, defaultValue ...interface{}) *Config_GetString_Call {
 	return &Config_GetString_Call{Call: _e.mock.On("GetString",
 		append([]interface{}{path}, defaultValue...)...)}
 }
 
-func (_c *Config_GetString_Call) Run(run func(path string, defaultValue ...interface{})) *Config_GetString_Call {
+func (_c *Config_GetString_Call) Run(run func(path string, defaultValue ...any)) *Config_GetString_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -335,7 +335,7 @@ func (_c *Config_GetString_Call) Return(_a0 string) *Config_GetString_Call {
 	return _c
 }
 
-func (_c *Config_GetString_Call) RunAndReturn(run func(string, ...interface{}) string) *Config_GetString_Call {
+func (_c *Config_GetString_Call) RunAndReturn(run func(string, ...any) string) *Config_GetString_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -18,7 +18,7 @@ func (_m *Association) EXPECT() *Association_Expecter {
 }
 
 // Append provides a mock function with given fields: values
-func (_m *Association) Append(values ...interface{}) error {
+func (_m *Association) Append(values ...any) error {
 	var _ca []interface{}
 	_ca = append(_ca, values...)
 	ret := _m.Called(_ca...)
@@ -28,7 +28,7 @@ func (_m *Association) Append(values ...interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(...any) error); ok {
 		r0 = rf(values...)
 	} else {
 		r0 = ret.Error(0)
@@ -43,18 +43,18 @@ type Association_Append_Call struct {
 }
 
 // Append is a helper method to define mock.On call
-//   - values ...interface{}
+//   - values ...any
 func (_e *Association_Expecter) Append(values ...interface{}) *Association_Append_Call {
 	return &Association_Append_Call{Call: _e.mock.On("Append",
 		append([]interface{}{}, values...)...)}
 }
 
-func (_c *Association_Append_Call) Run(run func(values ...interface{})) *Association_Append_Call {
+func (_c *Association_Append_Call) Run(run func(values ...any)) *Association_Append_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -67,7 +67,7 @@ func (_c *Association_Append_Call) Return(_a0 error) *Association_Append_Call {
 	return _c
 }
 
-func (_c *Association_Append_Call) RunAndReturn(run func(...interface{}) error) *Association_Append_Call {
+func (_c *Association_Append_Call) RunAndReturn(run func(...any) error) *Association_Append_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -163,7 +163,7 @@ func (_c *Association_Count_Call) RunAndReturn(run func() int64) *Association_Co
 }
 
 // Delete provides a mock function with given fields: values
-func (_m *Association) Delete(values ...interface{}) error {
+func (_m *Association) Delete(values ...any) error {
 	var _ca []interface{}
 	_ca = append(_ca, values...)
 	ret := _m.Called(_ca...)
@@ -173,7 +173,7 @@ func (_m *Association) Delete(values ...interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(...any) error); ok {
 		r0 = rf(values...)
 	} else {
 		r0 = ret.Error(0)
@@ -188,18 +188,18 @@ type Association_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - values ...interface{}
+//   - values ...any
 func (_e *Association_Expecter) Delete(values ...interface{}) *Association_Delete_Call {
 	return &Association_Delete_Call{Call: _e.mock.On("Delete",
 		append([]interface{}{}, values...)...)}
 }
 
-func (_c *Association_Delete_Call) Run(run func(values ...interface{})) *Association_Delete_Call {
+func (_c *Association_Delete_Call) Run(run func(values ...any)) *Association_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -212,13 +212,13 @@ func (_c *Association_Delete_Call) Return(_a0 error) *Association_Delete_Call {
 	return _c
 }
 
-func (_c *Association_Delete_Call) RunAndReturn(run func(...interface{}) error) *Association_Delete_Call {
+func (_c *Association_Delete_Call) RunAndReturn(run func(...any) error) *Association_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Find provides a mock function with given fields: out, conds
-func (_m *Association) Find(out interface{}, conds ...interface{}) error {
+func (_m *Association) Find(out any, conds ...any) error {
 	var _ca []interface{}
 	_ca = append(_ca, out)
 	_ca = append(_ca, conds...)
@@ -229,7 +229,7 @@ func (_m *Association) Find(out interface{}, conds ...interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(any, ...any) error); ok {
 		r0 = rf(out, conds...)
 	} else {
 		r0 = ret.Error(0)
@@ -244,22 +244,22 @@ type Association_Find_Call struct {
 }
 
 // Find is a helper method to define mock.On call
-//   - out interface{}
-//   - conds ...interface{}
+//   - out any
+//   - conds ...any
 func (_e *Association_Expecter) Find(out interface{}, conds ...interface{}) *Association_Find_Call {
 	return &Association_Find_Call{Call: _e.mock.On("Find",
 		append([]interface{}{out}, conds...)...)}
 }
 
-func (_c *Association_Find_Call) Run(run func(out interface{}, conds ...interface{})) *Association_Find_Call {
+func (_c *Association_Find_Call) Run(run func(out any, conds ...any)) *Association_Find_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(args[0].(any), variadicArgs...)
 	})
 	return _c
 }
@@ -269,13 +269,13 @@ func (_c *Association_Find_Call) Return(_a0 error) *Association_Find_Call {
 	return _c
 }
 
-func (_c *Association_Find_Call) RunAndReturn(run func(interface{}, ...interface{}) error) *Association_Find_Call {
+func (_c *Association_Find_Call) RunAndReturn(run func(any, ...any) error) *Association_Find_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Replace provides a mock function with given fields: values
-func (_m *Association) Replace(values ...interface{}) error {
+func (_m *Association) Replace(values ...any) error {
 	var _ca []interface{}
 	_ca = append(_ca, values...)
 	ret := _m.Called(_ca...)
@@ -285,7 +285,7 @@ func (_m *Association) Replace(values ...interface{}) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(...any) error); ok {
 		r0 = rf(values...)
 	} else {
 		r0 = ret.Error(0)
@@ -300,18 +300,18 @@ type Association_Replace_Call struct {
 }
 
 // Replace is a helper method to define mock.On call
-//   - values ...interface{}
+//   - values ...any
 func (_e *Association_Expecter) Replace(values ...interface{}) *Association_Replace_Call {
 	return &Association_Replace_Call{Call: _e.mock.On("Replace",
 		append([]interface{}{}, values...)...)}
 }
 
-func (_c *Association_Replace_Call) Run(run func(values ...interface{})) *Association_Replace_Call {
+func (_c *Association_Replace_Call) Run(run func(values ...any)) *Association_Replace_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -324,7 +324,7 @@ func (_c *Association_Replace_Call) Return(_a0 error) *Association_Replace_Call 
 	return _c
 }
 
-func (_c *Association_Replace_Call) RunAndReturn(run func(...interface{}) error) *Association_Replace_Call {
+func (_c *Association_Replace_Call) RunAndReturn(run func(...any) error) *Association_Replace_Call {
 	_c.Call.Return(run)
 	return _c
 }

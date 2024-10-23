@@ -63,7 +63,7 @@ func (_c *ToSql_Count_Call) RunAndReturn(run func() string) *ToSql_Count_Call {
 }
 
 // Create provides a mock function with given fields: value
-func (_m *ToSql) Create(value interface{}) string {
+func (_m *ToSql) Create(value any) string {
 	ret := _m.Called(value)
 
 	if len(ret) == 0 {
@@ -71,7 +71,7 @@ func (_m *ToSql) Create(value interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any) string); ok {
 		r0 = rf(value)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -86,14 +86,14 @@ type ToSql_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - value interface{}
+//   - value any
 func (_e *ToSql_Expecter) Create(value interface{}) *ToSql_Create_Call {
 	return &ToSql_Create_Call{Call: _e.mock.On("Create", value)}
 }
 
-func (_c *ToSql_Create_Call) Run(run func(value interface{})) *ToSql_Create_Call {
+func (_c *ToSql_Create_Call) Run(run func(value any)) *ToSql_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -103,13 +103,13 @@ func (_c *ToSql_Create_Call) Return(_a0 string) *ToSql_Create_Call {
 	return _c
 }
 
-func (_c *ToSql_Create_Call) RunAndReturn(run func(interface{}) string) *ToSql_Create_Call {
+func (_c *ToSql_Create_Call) RunAndReturn(run func(any) string) *ToSql_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Delete provides a mock function with given fields: value
-func (_m *ToSql) Delete(value ...interface{}) string {
+func (_m *ToSql) Delete(value ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, value...)
 	ret := _m.Called(_ca...)
@@ -119,7 +119,7 @@ func (_m *ToSql) Delete(value ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(...any) string); ok {
 		r0 = rf(value...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -134,18 +134,18 @@ type ToSql_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-//   - value ...interface{}
+//   - value ...any
 func (_e *ToSql_Expecter) Delete(value ...interface{}) *ToSql_Delete_Call {
 	return &ToSql_Delete_Call{Call: _e.mock.On("Delete",
 		append([]interface{}{}, value...)...)}
 }
 
-func (_c *ToSql_Delete_Call) Run(run func(value ...interface{})) *ToSql_Delete_Call {
+func (_c *ToSql_Delete_Call) Run(run func(value ...any)) *ToSql_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -158,13 +158,13 @@ func (_c *ToSql_Delete_Call) Return(_a0 string) *ToSql_Delete_Call {
 	return _c
 }
 
-func (_c *ToSql_Delete_Call) RunAndReturn(run func(...interface{}) string) *ToSql_Delete_Call {
+func (_c *ToSql_Delete_Call) RunAndReturn(run func(...any) string) *ToSql_Delete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Find provides a mock function with given fields: dest, conds
-func (_m *ToSql) Find(dest interface{}, conds ...interface{}) string {
+func (_m *ToSql) Find(dest any, conds ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, dest)
 	_ca = append(_ca, conds...)
@@ -175,7 +175,7 @@ func (_m *ToSql) Find(dest interface{}, conds ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any, ...any) string); ok {
 		r0 = rf(dest, conds...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -190,22 +190,22 @@ type ToSql_Find_Call struct {
 }
 
 // Find is a helper method to define mock.On call
-//   - dest interface{}
-//   - conds ...interface{}
+//   - dest any
+//   - conds ...any
 func (_e *ToSql_Expecter) Find(dest interface{}, conds ...interface{}) *ToSql_Find_Call {
 	return &ToSql_Find_Call{Call: _e.mock.On("Find",
 		append([]interface{}{dest}, conds...)...)}
 }
 
-func (_c *ToSql_Find_Call) Run(run func(dest interface{}, conds ...interface{})) *ToSql_Find_Call {
+func (_c *ToSql_Find_Call) Run(run func(dest any, conds ...any)) *ToSql_Find_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(args[0].(any), variadicArgs...)
 	})
 	return _c
 }
@@ -215,13 +215,13 @@ func (_c *ToSql_Find_Call) Return(_a0 string) *ToSql_Find_Call {
 	return _c
 }
 
-func (_c *ToSql_Find_Call) RunAndReturn(run func(interface{}, ...interface{}) string) *ToSql_Find_Call {
+func (_c *ToSql_Find_Call) RunAndReturn(run func(any, ...any) string) *ToSql_Find_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // First provides a mock function with given fields: dest
-func (_m *ToSql) First(dest interface{}) string {
+func (_m *ToSql) First(dest any) string {
 	ret := _m.Called(dest)
 
 	if len(ret) == 0 {
@@ -229,7 +229,7 @@ func (_m *ToSql) First(dest interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any) string); ok {
 		r0 = rf(dest)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -244,14 +244,14 @@ type ToSql_First_Call struct {
 }
 
 // First is a helper method to define mock.On call
-//   - dest interface{}
+//   - dest any
 func (_e *ToSql_Expecter) First(dest interface{}) *ToSql_First_Call {
 	return &ToSql_First_Call{Call: _e.mock.On("First", dest)}
 }
 
-func (_c *ToSql_First_Call) Run(run func(dest interface{})) *ToSql_First_Call {
+func (_c *ToSql_First_Call) Run(run func(dest any)) *ToSql_First_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -261,13 +261,13 @@ func (_c *ToSql_First_Call) Return(_a0 string) *ToSql_First_Call {
 	return _c
 }
 
-func (_c *ToSql_First_Call) RunAndReturn(run func(interface{}) string) *ToSql_First_Call {
+func (_c *ToSql_First_Call) RunAndReturn(run func(any) string) *ToSql_First_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ForceDelete provides a mock function with given fields: value
-func (_m *ToSql) ForceDelete(value ...interface{}) string {
+func (_m *ToSql) ForceDelete(value ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, value...)
 	ret := _m.Called(_ca...)
@@ -277,7 +277,7 @@ func (_m *ToSql) ForceDelete(value ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(...any) string); ok {
 		r0 = rf(value...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -292,18 +292,18 @@ type ToSql_ForceDelete_Call struct {
 }
 
 // ForceDelete is a helper method to define mock.On call
-//   - value ...interface{}
+//   - value ...any
 func (_e *ToSql_Expecter) ForceDelete(value ...interface{}) *ToSql_ForceDelete_Call {
 	return &ToSql_ForceDelete_Call{Call: _e.mock.On("ForceDelete",
 		append([]interface{}{}, value...)...)}
 }
 
-func (_c *ToSql_ForceDelete_Call) Run(run func(value ...interface{})) *ToSql_ForceDelete_Call {
+func (_c *ToSql_ForceDelete_Call) Run(run func(value ...any)) *ToSql_ForceDelete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -316,13 +316,13 @@ func (_c *ToSql_ForceDelete_Call) Return(_a0 string) *ToSql_ForceDelete_Call {
 	return _c
 }
 
-func (_c *ToSql_ForceDelete_Call) RunAndReturn(run func(...interface{}) string) *ToSql_ForceDelete_Call {
+func (_c *ToSql_ForceDelete_Call) RunAndReturn(run func(...any) string) *ToSql_ForceDelete_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Get provides a mock function with given fields: dest
-func (_m *ToSql) Get(dest interface{}) string {
+func (_m *ToSql) Get(dest any) string {
 	ret := _m.Called(dest)
 
 	if len(ret) == 0 {
@@ -330,7 +330,7 @@ func (_m *ToSql) Get(dest interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any) string); ok {
 		r0 = rf(dest)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -345,14 +345,14 @@ type ToSql_Get_Call struct {
 }
 
 // Get is a helper method to define mock.On call
-//   - dest interface{}
+//   - dest any
 func (_e *ToSql_Expecter) Get(dest interface{}) *ToSql_Get_Call {
 	return &ToSql_Get_Call{Call: _e.mock.On("Get", dest)}
 }
 
-func (_c *ToSql_Get_Call) Run(run func(dest interface{})) *ToSql_Get_Call {
+func (_c *ToSql_Get_Call) Run(run func(dest any)) *ToSql_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -362,13 +362,13 @@ func (_c *ToSql_Get_Call) Return(_a0 string) *ToSql_Get_Call {
 	return _c
 }
 
-func (_c *ToSql_Get_Call) RunAndReturn(run func(interface{}) string) *ToSql_Get_Call {
+func (_c *ToSql_Get_Call) RunAndReturn(run func(any) string) *ToSql_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Pluck provides a mock function with given fields: column, dest
-func (_m *ToSql) Pluck(column string, dest interface{}) string {
+func (_m *ToSql) Pluck(column string, dest any) string {
 	ret := _m.Called(column, dest)
 
 	if len(ret) == 0 {
@@ -376,7 +376,7 @@ func (_m *ToSql) Pluck(column string, dest interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(string, any) string); ok {
 		r0 = rf(column, dest)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -392,14 +392,14 @@ type ToSql_Pluck_Call struct {
 
 // Pluck is a helper method to define mock.On call
 //   - column string
-//   - dest interface{}
+//   - dest any
 func (_e *ToSql_Expecter) Pluck(column interface{}, dest interface{}) *ToSql_Pluck_Call {
 	return &ToSql_Pluck_Call{Call: _e.mock.On("Pluck", column, dest)}
 }
 
-func (_c *ToSql_Pluck_Call) Run(run func(column string, dest interface{})) *ToSql_Pluck_Call {
+func (_c *ToSql_Pluck_Call) Run(run func(column string, dest any)) *ToSql_Pluck_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string), args[1].(any))
 	})
 	return _c
 }
@@ -409,13 +409,13 @@ func (_c *ToSql_Pluck_Call) Return(_a0 string) *ToSql_Pluck_Call {
 	return _c
 }
 
-func (_c *ToSql_Pluck_Call) RunAndReturn(run func(string, interface{}) string) *ToSql_Pluck_Call {
+func (_c *ToSql_Pluck_Call) RunAndReturn(run func(string, any) string) *ToSql_Pluck_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Save provides a mock function with given fields: value
-func (_m *ToSql) Save(value interface{}) string {
+func (_m *ToSql) Save(value any) string {
 	ret := _m.Called(value)
 
 	if len(ret) == 0 {
@@ -423,7 +423,7 @@ func (_m *ToSql) Save(value interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any) string); ok {
 		r0 = rf(value)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -438,14 +438,14 @@ type ToSql_Save_Call struct {
 }
 
 // Save is a helper method to define mock.On call
-//   - value interface{}
+//   - value any
 func (_e *ToSql_Expecter) Save(value interface{}) *ToSql_Save_Call {
 	return &ToSql_Save_Call{Call: _e.mock.On("Save", value)}
 }
 
-func (_c *ToSql_Save_Call) Run(run func(value interface{})) *ToSql_Save_Call {
+func (_c *ToSql_Save_Call) Run(run func(value any)) *ToSql_Save_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -455,13 +455,13 @@ func (_c *ToSql_Save_Call) Return(_a0 string) *ToSql_Save_Call {
 	return _c
 }
 
-func (_c *ToSql_Save_Call) RunAndReturn(run func(interface{}) string) *ToSql_Save_Call {
+func (_c *ToSql_Save_Call) RunAndReturn(run func(any) string) *ToSql_Save_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Sum provides a mock function with given fields: column, dest
-func (_m *ToSql) Sum(column string, dest interface{}) string {
+func (_m *ToSql) Sum(column string, dest any) string {
 	ret := _m.Called(column, dest)
 
 	if len(ret) == 0 {
@@ -469,7 +469,7 @@ func (_m *ToSql) Sum(column string, dest interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(string, any) string); ok {
 		r0 = rf(column, dest)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -485,14 +485,14 @@ type ToSql_Sum_Call struct {
 
 // Sum is a helper method to define mock.On call
 //   - column string
-//   - dest interface{}
+//   - dest any
 func (_e *ToSql_Expecter) Sum(column interface{}, dest interface{}) *ToSql_Sum_Call {
 	return &ToSql_Sum_Call{Call: _e.mock.On("Sum", column, dest)}
 }
 
-func (_c *ToSql_Sum_Call) Run(run func(column string, dest interface{})) *ToSql_Sum_Call {
+func (_c *ToSql_Sum_Call) Run(run func(column string, dest any)) *ToSql_Sum_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
+		run(args[0].(string), args[1].(any))
 	})
 	return _c
 }
@@ -502,13 +502,13 @@ func (_c *ToSql_Sum_Call) Return(_a0 string) *ToSql_Sum_Call {
 	return _c
 }
 
-func (_c *ToSql_Sum_Call) RunAndReturn(run func(string, interface{}) string) *ToSql_Sum_Call {
+func (_c *ToSql_Sum_Call) RunAndReturn(run func(string, any) string) *ToSql_Sum_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Update provides a mock function with given fields: column, value
-func (_m *ToSql) Update(column interface{}, value ...interface{}) string {
+func (_m *ToSql) Update(column any, value ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, column)
 	_ca = append(_ca, value...)
@@ -519,7 +519,7 @@ func (_m *ToSql) Update(column interface{}, value ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(any, ...any) string); ok {
 		r0 = rf(column, value...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -534,22 +534,22 @@ type ToSql_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-//   - column interface{}
-//   - value ...interface{}
+//   - column any
+//   - value ...any
 func (_e *ToSql_Expecter) Update(column interface{}, value ...interface{}) *ToSql_Update_Call {
 	return &ToSql_Update_Call{Call: _e.mock.On("Update",
 		append([]interface{}{column}, value...)...)}
 }
 
-func (_c *ToSql_Update_Call) Run(run func(column interface{}, value ...interface{})) *ToSql_Update_Call {
+func (_c *ToSql_Update_Call) Run(run func(column any, value ...any)) *ToSql_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
-		run(args[0].(interface{}), variadicArgs...)
+		run(args[0].(any), variadicArgs...)
 	})
 	return _c
 }
@@ -559,7 +559,7 @@ func (_c *ToSql_Update_Call) Return(_a0 string) *ToSql_Update_Call {
 	return _c
 }
 
-func (_c *ToSql_Update_Call) RunAndReturn(run func(interface{}, ...interface{}) string) *ToSql_Update_Call {
+func (_c *ToSql_Update_Call) RunAndReturn(run func(any, ...any) string) *ToSql_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }
