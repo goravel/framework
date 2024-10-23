@@ -12,6 +12,8 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
+const BindingSchema = "goravel.schema"
+
 var _ schema.Schema = (*Schema)(nil)
 
 type Schema struct {

@@ -39,21 +39,11 @@ func (s *RepositoryTestSuite) SetupTest() {
 func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			repository, mockOrm := s.initRepository(testQuery)
-			mockTransaction(mockOrm, testQuery)
+			repository := s.initRepository(testQuery)
 
 			s.NoError(repository.CreateRepository())
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			s.True(repository.RepositoryExists())
-
-			mockTransaction(mockOrm, testQuery)
-
 			s.NoError(repository.DeleteRepository())
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			s.False(repository.RepositoryExists())
 		})
 	}
@@ -62,50 +52,32 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 func (s *RepositoryTestSuite) TestRecord() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			repository, mockOrm := s.initRepository(testQuery)
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
+			repository := s.initRepository(testQuery)
 
 			if !repository.RepositoryExists() {
-				mockTransaction(mockOrm, testQuery)
-
 				s.NoError(repository.CreateRepository())
 			}
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			err := repository.Log("migration1", 1)
 			s.NoError(err)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			err = repository.Log("migration2", 1)
 			s.NoError(err)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			err = repository.Log("migration3", 2)
 			s.NoError(err)
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			lastBatchNumber, err := repository.getLastBatchNumber()
 			s.NoError(err)
 			s.Equal(2, lastBatchNumber)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			nextBatchNumber, err := repository.GetNextBatchNumber()
 			s.NoError(err)
 			s.Equal(3, nextBatchNumber)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			ranMigrations, err := repository.GetRan()
 			s.NoError(err)
 			s.ElementsMatch([]string{"migration1", "migration2", "migration3"}, ranMigrations)
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			migrations, err := repository.GetMigrations(2)
 
@@ -116,8 +88,6 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal("migration2", migrations[1].Migration)
 			s.Equal(1, migrations[1].Batch)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			migrations, err = repository.GetMigrationsByBatch(1)
 
 			s.NoError(err)
@@ -127,8 +97,6 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal("migration1", migrations[1].Migration)
 			s.Equal(1, migrations[1].Batch)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
-
 			migrations, err = repository.GetLast()
 
 			s.NoError(err)
@@ -136,12 +104,8 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal("migration3", migrations[0].Migration)
 			s.Equal(2, migrations[0].Batch)
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			err = repository.Delete("migration1")
 			s.NoError(err)
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			ranMigrations, err = repository.GetRan()
 			s.NoError(err)
@@ -150,10 +114,10 @@ func (s *RepositoryTestSuite) TestRecord() {
 	}
 }
 
-func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) (*Repository, *mocksorm.Orm) {
-	testSchema, mockOrm := schema.GetTestSchema(s.T(), testQuery)
+func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) *Repository {
+	schema := schema.GetTestSchema(testQuery, s.driverToTestQuery)
 
-	return NewRepository(testSchema, "migrations"), mockOrm
+	return NewRepository(schema, "migrations")
 }
 
 func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {

@@ -1,9 +1,11 @@
-package database
+package seeder
 
 import (
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/support/color"
 )
+
+const BindingSeeder = "goravel.seeder"
 
 var _ seeder.Facade = (*SeederFacade)(nil)
 

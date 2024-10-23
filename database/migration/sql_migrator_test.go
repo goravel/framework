@@ -30,12 +30,8 @@ func TestSqlMigratorSuite(t *testing.T) {
 	suite.Run(t, &SqlMigratorSuite{})
 }
 
-func (s *SqlMigratorSuite) SetupSuite() {
-	s.driverToTestQuery = gorm.NewTestQueries().Queries()
-}
-
 func (s *SqlMigratorSuite) SetupTest() {
-
+	s.driverToTestQuery = gorm.NewTestQueries().Queries()
 }
 
 func (s *SqlMigratorSuite) TearDownTest() {
