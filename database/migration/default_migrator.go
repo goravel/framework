@@ -205,15 +205,15 @@ func (r *DefaultMigrator) runUp(migration schema.Migration, batch int) error {
 
 		if err := migration.Up(); err != nil {
 			// reset the connection and query to default.
-			r.schema.SetConnection(defaultConnection)
 			r.schema.Orm().SetQuery(defaultQuery)
+			r.schema.SetConnection(defaultConnection)
 
 			return err
 		}
 
 		// repository.Log should be called in the default connection.
-		r.schema.SetConnection(defaultConnection)
 		r.schema.Orm().SetQuery(defaultQuery)
+		r.schema.SetConnection(defaultConnection)
 
 		return r.repository.Log(migration.Signature(), batch)
 	})

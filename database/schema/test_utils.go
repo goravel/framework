@@ -1,16 +1,27 @@
 package schema
 
 import (
-	"testing"
+	"context"
 
+	"github.com/stretchr/testify/mock"
+
+	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	databaseorm "github.com/goravel/framework/database/orms"
+	mockslog "github.com/goravel/framework/mocks/log"
 )
 
-func GetTestSchema(t *testing.T, testQuery *gorm.TestQuery) (*Schema, *mocksorm.Orm) {
-	mockOrm := mocksorm.NewOrm(t)
-	mockOrm.EXPECT().Name().Return(testQuery.Docker().Driver().String()).Twice()
-	schema := NewSchema(testQuery.MockConfig(), nil, mockOrm, nil)
+func GetTestSchema(testQuery *gorm.TestQuery, driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery) *Schema {
+	queries := make(map[string]contractsorm.Query)
+	for driver, testQuery := range driverToTestQuery {
+		queries[driver.String()] = testQuery.Query()
+	}
 
-	return schema, mockOrm
+	mockLog := &mockslog.Log{}
+	mockLog.EXPECT().Errorf(mock.Anything).Maybe()
+	orm := databaseorm.NewOrm(context.Background(), testQuery.MockConfig(), testQuery.Docker().Driver().String(), testQuery.Query(), queries, mockLog, nil)
+	schema := NewSchema(testQuery.MockConfig(), mockLog, orm, nil)
+
+	return schema
 }

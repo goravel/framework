@@ -1,4 +1,5 @@
-package database
+// Cant merge this folder to orm, avoid circular dependencies.
+package orms
 
 import (
 	"context"
@@ -7,10 +8,13 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/database/factory"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 )
+
+const BindingOrm = "goravel.orm"
 
 type Orm struct {
 	ctx        context.Context
@@ -85,7 +89,7 @@ func (r *Orm) DB() (*sql.DB, error) {
 }
 
 func (r *Orm) Factory() contractsorm.Factory {
-	return NewFactoryImpl(r.Query())
+	return factory.NewFactoryImpl(r.Query())
 }
 
 func (r *Orm) Name() string {

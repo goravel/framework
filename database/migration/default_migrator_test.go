@@ -10,16 +10,60 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/database/schema"
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/schema"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
+
+type DefaultMigratorWithDBSuite struct {
+	suite.Suite
+	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
+}
+
+func TestDefaultMigratorWithDBSuite(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skipping tests that use Docker")
+	}
+
+	suite.Run(t, &DefaultMigratorWithDBSuite{})
+}
+
+func (s *DefaultMigratorWithDBSuite) SetupTest() {
+	// TODO Add other drivers
+	postgresDocker := docker.Postgres()
+	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
+		contractsdatabase.DriverPostgres: postgresQuery,
+	}
+}
+
+func (s *DefaultMigratorWithDBSuite) TestRun() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := schema.GetTestSchema(testQuery, s.driverToTestQuery)
+			testMigration := NewTestMigration(schema)
+			schema.Register([]contractsschema.Migration{
+				testMigration,
+			})
+
+			migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+			s.NoError(migrator.Run())
+			s.True(schema.HasTable("users"))
+		})
+	}
+}
 
 type DefaultMigratorSuite struct {
 	suite.Suite
@@ -171,10 +215,9 @@ func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
 
 func (s *DefaultMigratorSuite) TestRollback() {
 	tests := []struct {
-		name        string
-		setup       func()
-		expectValue int
-		expectErr   string
+		name      string
+		setup     func()
+		expectErr string
 	}{
 		{
 			name: "Rollback with no files",
@@ -186,12 +229,10 @@ func (s *DefaultMigratorSuite) TestRollback() {
 			name: "Rollback with files",
 			setup: func() {
 				previousConnection := "postgres"
-				testMigration := &TestMigration{
-					suite: s,
-				}
+				testMigration := NewTestMigration(s.mockSchema)
 
 				s.mockRepository.EXPECT().GetMigrations(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{testMigration}).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{testMigration}).Once()
 				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
@@ -200,6 +241,7 @@ func (s *DefaultMigratorSuite) TestRollback() {
 					mockQuery := mocksorm.NewQuery(s.T())
 					mockOrm.EXPECT().Query().Return(mockQuery).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
+					s.mockSchema.EXPECT().Create("users", mock.Anything).Return(nil).Once()
 					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
 					s.mockRepository.EXPECT().Delete(testMigration.Signature()).Return(nil).Once()
@@ -207,25 +249,22 @@ func (s *DefaultMigratorSuite) TestRollback() {
 					return f(mockQuery)
 				}).Once()
 			},
-			expectValue: 2,
 		},
 		{
 			name: "Rollback with missing migration",
 			setup: func() {
 				s.mockRepository.EXPECT().GetMigrations(1).Return([]migration.File{{Migration: "20240817214501_create_users_table"}}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{}).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{}).Once()
 			},
 		},
 		{
 			name: "Rollback with error",
 			setup: func() {
 				previousConnection := "postgres"
-				testMigration := &TestMigration{
-					suite: s,
-				}
+				testMigration := NewTestMigration(s.mockSchema)
 
 				s.mockRepository.EXPECT().GetMigrations(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{testMigration}).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{testMigration}).Once()
 				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
@@ -234,9 +273,9 @@ func (s *DefaultMigratorSuite) TestRollback() {
 					mockQuery := mocksorm.NewQuery(s.T())
 					mockOrm.EXPECT().Query().Return(mockQuery).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
+					s.mockSchema.EXPECT().Create("users", mock.Anything).Return(assert.AnError).Once()
 					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockRepository.EXPECT().Delete(testMigration.Signature()).Return(assert.AnError).Once()
 
 					return f(mockQuery)
 				}).Once()
@@ -257,15 +296,14 @@ func (s *DefaultMigratorSuite) TestRollback() {
 			} else {
 				s.EqualError(err, test.expectErr)
 			}
-
-			if test.expectValue != 0 {
-				s.Equal(test.expectValue, s.value)
-			}
 		})
 	}
 }
 
 func (s *DefaultMigratorSuite) TestRun() {
+	testMigration := NewTestMigration(s.mockSchema)
+	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
+
 	tests := []struct {
 		name        string
 		setup       func()
@@ -275,26 +313,26 @@ func (s *DefaultMigratorSuite) TestRun() {
 			name: "Happy path",
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{
-					&TestMigration{suite: s},
-					&TestConnectionMigration{suite: s},
+				s.mockRepository.EXPECT().GetRan().Return([]string{testConnectionMigration.Signature()}, nil).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+					testMigration,
+					testConnectionMigration,
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log("20240817214501_create_users_table", 1).Return(nil).Once()
+				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(nil).Once()
 			},
 		},
 		{
 			name: "Sad path - Log returns error",
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{
-					&TestMigration{suite: s},
-					&TestConnectionMigration{suite: s},
+				s.mockRepository.EXPECT().GetRan().Return([]string{testConnectionMigration.Signature()}, nil).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+					testMigration,
+					testConnectionMigration,
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log("20240817214501_create_users_table", 1).Return(errors.New("error")).Once()
+				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(errors.New("error")).Once()
 			},
 			expectError: "error",
 		},
@@ -302,10 +340,10 @@ func (s *DefaultMigratorSuite) TestRun() {
 			name: "Sad path - GetNextBatchNumber returns error",
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_agents_table"}, nil).Once()
-				s.mockSchema.EXPECT().Migrations().Return([]schema.Migration{
-					&TestMigration{suite: s},
-					&TestConnectionMigration{suite: s},
+				s.mockRepository.EXPECT().GetRan().Return([]string{testConnectionMigration.Signature()}, nil).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+					testMigration,
+					testConnectionMigration,
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, errors.New("error")).Once()
 			},
@@ -336,9 +374,9 @@ func (s *DefaultMigratorSuite) TestRun() {
 }
 
 func (s *DefaultMigratorSuite) TestPendingMigrations() {
-	migrations := []schema.Migration{
-		&TestMigration{suite: s},
-		&TestConnectionMigration{suite: s},
+	migrations := []contractsschema.Migration{
+		NewTestMigration(s.mockSchema),
+		NewTestConnectionMigration(s.mockSchema),
 	}
 	ran := []string{
 		"20240817214501_create_users_table",
@@ -346,7 +384,7 @@ func (s *DefaultMigratorSuite) TestPendingMigrations() {
 
 	pendingMigrations := s.driver.pendingMigrations(migrations, ran)
 	s.Len(pendingMigrations, 1)
-	s.Equal(&TestConnectionMigration{suite: s}, pendingMigrations[0])
+	s.Equal(NewTestConnectionMigration(s.mockSchema), pendingMigrations[0])
 }
 
 func (s *DefaultMigratorSuite) TestPrepareDatabase() {
@@ -359,31 +397,33 @@ func (s *DefaultMigratorSuite) TestPrepareDatabase() {
 }
 
 func (s *DefaultMigratorSuite) TestRunPending() {
+	testMigration := NewTestMigration(s.mockSchema)
+
 	tests := []struct {
 		name        string
-		migrations  []schema.Migration
+		migrations  []contractsschema.Migration
 		setup       func()
 		expectError string
 	}{
 		{
 			name: "Happy path",
-			migrations: []schema.Migration{
-				&TestMigration{suite: s},
+			migrations: []contractsschema.Migration{
+				testMigration,
 			},
 			setup: func() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log("20240817214501_create_users_table", 1).Return(nil).Once()
+				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(nil).Once()
 			},
 		},
 		{
 			name:       "Happy path - no migrations",
-			migrations: []schema.Migration{},
+			migrations: []contractsschema.Migration{},
 			setup:      func() {},
 		},
 		{
 			name: "Sad path - GetNextBatchNumber returns error",
-			migrations: []schema.Migration{
-				&TestMigration{suite: s},
+			migrations: []contractsschema.Migration{
+				testMigration,
 			},
 			setup: func() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, errors.New("error")).Once()
@@ -392,12 +432,12 @@ func (s *DefaultMigratorSuite) TestRunPending() {
 		},
 		{
 			name: "Sad path - runUp returns error",
-			migrations: []schema.Migration{
-				&TestMigration{suite: s},
+			migrations: []contractsschema.Migration{
+				testMigration,
 			},
 			setup: func() {
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log("20240817214501_create_users_table", 1).Return(errors.New("error")).Once()
+				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(errors.New("error")).Once()
 			},
 			expectError: "error",
 		},
@@ -419,16 +459,10 @@ func (s *DefaultMigratorSuite) TestRunPending() {
 
 func (s *DefaultMigratorSuite) TestRunDown() {
 	var (
-		previousConnection = "postgres"
-		testMigration      = &TestMigration{
-			suite: s,
-		}
-		testErrorMigration = &TestErrorMigration{
-			suite: s,
-		}
-		testConnectionMigration = &TestConnectionMigration{
-			suite: s,
-		}
+		previousConnection      = "postgres"
+		testMigration           = NewTestMigration(s.mockSchema)
+		testErrorMigration      = NewTestErrorMigration()
+		testConnectionMigration = NewTestConnectionMigration(s.mockSchema)
 
 		mockOrm *mocksorm.Orm
 	)
@@ -440,7 +474,7 @@ func (s *DefaultMigratorSuite) TestRunDown() {
 
 	tests := []struct {
 		name        string
-		migration   schema.Migration
+		migration   contractsschema.Migration
 		setup       func()
 		expectValue int
 		expectErr   string
@@ -522,17 +556,11 @@ func (s *DefaultMigratorSuite) TestRunDown() {
 
 func (s *DefaultMigratorSuite) TestRunUp() {
 	var (
-		batch              = 1
-		previousConnection = "postgres"
-		testMigration      = &TestMigration{
-			suite: s,
-		}
-		testErrorMigration = &TestErrorMigration{
-			suite: s,
-		}
-		testConnectionMigration = &TestConnectionMigration{
-			suite: s,
-		}
+		batch                   = 1
+		previousConnection      = "postgres"
+		testMigration           = NewTestMigration(s.mockSchema)
+		testErrorMigration      = NewTestErrorMigration()
+		testConnectionMigration = NewTestConnectionMigration(s.mockSchema)
 
 		mockOrm *mocksorm.Orm
 	)
@@ -544,7 +572,7 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 
 	tests := []struct {
 		name        string
-		migration   schema.Migration
+		migration   contractsschema.Migration
 		setup       func()
 		expectValue int
 		expectErr   string
@@ -625,61 +653,68 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 }
 
 type TestMigration struct {
-	suite *DefaultMigratorSuite
+	schema contractsschema.Schema
 }
 
-func (s *TestMigration) Signature() string {
+func NewTestMigration(schema contractsschema.Schema) *TestMigration {
+	return &TestMigration{schema: schema}
+}
+
+func (r *TestMigration) Signature() string {
 	return "20240817214501_create_users_table"
 }
 
-func (s *TestMigration) Up() error {
-	s.suite.value = 1
-
-	return nil
+func (r *TestMigration) Up() error {
+	return r.schema.Create("users", func(table contractsschema.Blueprint) {
+		table.String("name")
+	})
 }
 
-func (s *TestMigration) Down() error {
-	s.suite.value = 2
-
-	return nil
+func (r *TestMigration) Down() error {
+	return r.schema.DropIfExists("users")
 }
 
 type TestConnectionMigration struct {
-	suite *DefaultMigratorSuite
+	schema contractsschema.Schema
 }
 
-func (s *TestConnectionMigration) Signature() string {
+func NewTestConnectionMigration(schema contractsschema.Schema) *TestConnectionMigration {
+	return &TestConnectionMigration{schema: schema}
+}
+
+func (r *TestConnectionMigration) Signature() string {
 	return "20240817214501_create_agents_table"
 }
 
-func (s *TestConnectionMigration) Connection() string {
+func (r *TestConnectionMigration) Connection() string {
 	return "mysql"
 }
 
-func (s *TestConnectionMigration) Up() error {
-	s.suite.value = 1
-
-	return nil
+func (r *TestConnectionMigration) Up() error {
+	return r.schema.Create("agents", func(table contractsschema.Blueprint) {
+		table.String("name")
+	})
 }
 
-func (s *TestConnectionMigration) Down() error {
-	s.suite.value = 2
-
-	return nil
+func (r *TestConnectionMigration) Down() error {
+	return r.schema.DropIfExists("agents")
 }
 
 type TestErrorMigration struct {
-	suite *DefaultMigratorSuite
 }
 
-func (s *TestErrorMigration) Signature() string {
+func NewTestErrorMigration() *TestErrorMigration {
+	return &TestErrorMigration{}
+}
+
+func (r *TestErrorMigration) Signature() string {
 	return "20240817214501_create_companies_table"
 }
 
-func (s *TestErrorMigration) Up() error {
+func (r *TestErrorMigration) Up() error {
 	return assert.AnError
 }
 
-func (s *TestErrorMigration) Down() error {
+func (r *TestErrorMigration) Down() error {
 	return assert.AnError
 }
