@@ -185,16 +185,22 @@ func (s *DatabaseTestSuite) SetupTest() {
 
 func (s *DatabaseTestSuite) TestBuild() {
 	if env.IsWindows() {
-		s.T().Skip("Skipping tests of using docker")
+		s.T().Skip("Skipping tests that use Docker")
 	}
 
+	// Call success
 	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
-	s.mockArtisan.EXPECT().Call("migrate").Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
 	s.mockOrm.EXPECT().Refresh().Once()
 
 	s.Nil(s.database.Build())
 	s.True(s.database.Config().Port > 0)
 	s.Nil(s.database.Stop())
+
+	// Call error
+	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
+	s.EqualError(s.database.Build(), assert.AnError.Error())
 }
 
 func (s *DatabaseTestSuite) TestConfig() {
@@ -206,11 +212,14 @@ func (s *DatabaseTestSuite) TestConfig() {
 }
 
 func (s *DatabaseTestSuite) TestSeed() {
-	s.mockArtisan.EXPECT().Call("db:seed").Once()
-	s.database.Seed()
+	s.mockArtisan.EXPECT().Call("db:seed").Return(nil).Once()
+	s.NoError(s.database.Seed())
 
-	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Once()
-	s.database.Seed(&MockSeeder{})
+	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Return(nil).Once()
+	s.NoError(s.database.Seed(&MockSeeder{}))
+
+	s.mockArtisan.EXPECT().Call("db:seed").Return(assert.AnError).Once()
+	s.EqualError(s.database.Seed(), assert.AnError.Error())
 }
 
 type MockSeeder struct{}

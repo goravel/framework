@@ -1,14 +1,12 @@
 package migration
 
 import (
-	"errors"
-
 	"github.com/golang-migrate/migrate/v4"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateResetCommand struct {
@@ -45,19 +43,19 @@ func (receiver *MigrateResetCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellow().Println("Please fill database config first")
+		ctx.Error(errors.ConsoleEmptyDatabaseConfig.Error())
 
 		return nil
 	}
 
 	// Rollback all migrations.
 	if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		color.Red().Println("Migration reset failed:", err.Error())
+		ctx.Error(errors.MigrationResetFailed.Args(err).Error())
 
 		return nil
 	}
 
-	color.Green().Println("Migration reset success")
+	ctx.Info("Migration reset success")
 
 	return nil
 }

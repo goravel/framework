@@ -1,20 +1,20 @@
 package migration
 
 import (
-	"errors"
+	"fmt"
 
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateMakeCommand struct {
-	config config.Config
+	migrator migration.Migrator
 }
 
-func NewMigrateMakeCommand(config config.Config) *MigrateMakeCommand {
-	return &MigrateMakeCommand{config: config}
+func NewMigrateMakeCommand(migrator migration.Migrator) *MigrateMakeCommand {
+	return &MigrateMakeCommand{migrator: migrator}
 }
 
 // Signature The name and signature of the console command.
@@ -45,27 +45,24 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		name, err = ctx.Ask("Enter the migration name", console.AskOption{
 			Validate: func(s string) error {
 				if s == "" {
-					return errors.New("the migration name cannot be empty")
+					return errors.MigrationNameIsRequired
 				}
 
 				return nil
 			},
 		})
 		if err != nil {
-			return err
+			ctx.Error(err.Error())
+			return nil
 		}
 	}
 
-	migrationDriver, err := GetDriver(r.config)
-	if err != nil {
-		return err
+	if err := r.migrator.Create(name); err != nil {
+		ctx.Error(errors.MigrationCreateFailed.Args(err).Error())
+		return nil
 	}
 
-	if err := migrationDriver.Create(name); err != nil {
-		return err
-	}
-
-	color.Green().Printf("Created Migration: %s\n", name)
+	ctx.Info(fmt.Sprintf("Created Migration: %s", name))
 
 	return nil
 }

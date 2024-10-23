@@ -29,56 +29,56 @@ func NewApplication(name, usage, usageText, version string, artisan ...bool) con
 	}
 }
 
-func (c *Application) Register(commands []console.Command) {
+func (r *Application) Register(commands []console.Command) {
 	for _, item := range commands {
 		item := item
 		cliCommand := cli.Command{
 			Name:  item.Signature(),
 			Usage: item.Description(),
 			Action: func(ctx *cli.Context) error {
-				return item.Handle(&CliContext{ctx})
+				return item.Handle(NewCliContext(ctx))
 			},
 			Category: item.Extend().Category,
 			Flags:    flagsToCliFlags(item.Extend().Flags),
 		}
-		c.instance.Commands = append(c.instance.Commands, &cliCommand)
+		r.instance.Commands = append(r.instance.Commands, &cliCommand)
 	}
 }
 
 // Call Run an Artisan console command by name.
-func (c *Application) Call(command string) {
+func (r *Application) Call(command string) error {
 	if len(os.Args) == 0 {
-		return
+		return nil
 	}
 
 	commands := []string{os.Args[0]}
 
-	if c.isArtisan {
+	if r.isArtisan {
 		commands = append(commands, "artisan")
 	}
 
-	c.Run(append(commands, strings.Split(command, " ")...), false)
+	return r.Run(append(commands, strings.Split(command, " ")...), false)
 }
 
 // CallAndExit Run an Artisan console command by name and exit.
-func (c *Application) CallAndExit(command string) {
+func (r *Application) CallAndExit(command string) {
 	if len(os.Args) == 0 {
 		return
 	}
 
 	commands := []string{os.Args[0]}
 
-	if c.isArtisan {
+	if r.isArtisan {
 		commands = append(commands, "artisan")
 	}
 
-	c.Run(append(commands, strings.Split(command, " ")...), true)
+	_ = r.Run(append(commands, strings.Split(command, " ")...), true)
 }
 
 // Run a command. Args come from os.Args.
-func (c *Application) Run(args []string, exitIfArtisan bool) {
+func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	artisanIndex := -1
-	if c.isArtisan {
+	if r.isArtisan {
 		for i, arg := range args {
 			if arg == "artisan" {
 				artisanIndex = i
@@ -96,14 +96,20 @@ func (c *Application) Run(args []string, exitIfArtisan bool) {
 		}
 
 		cliArgs := append([]string{args[0]}, args[artisanIndex+1:]...)
-		if err := c.instance.Run(cliArgs); err != nil {
-			panic(err.Error())
+		if err := r.instance.Run(cliArgs); err != nil {
+			if exitIfArtisan {
+				panic(err.Error())
+			}
+
+			return err
 		}
 
 		if exitIfArtisan {
-			os.Exit(0)
+			os.Exit(1)
 		}
 	}
+
+	return nil
 }
 
 func flagsToCliFlags(flags []command.Flag) []cli.Flag {

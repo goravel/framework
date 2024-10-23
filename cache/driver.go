@@ -5,24 +5,20 @@ import (
 
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/errors"
 )
 
-//go:generate mockery --name=Driver
-type Driver interface {
-	New(store string) (cache.Driver, error)
-}
-
-type DriverImpl struct {
+type Driver struct {
 	config config.Config
 }
 
-func NewDriverImpl(config config.Config) *DriverImpl {
-	return &DriverImpl{
+func NewDriver(config config.Config) *Driver {
+	return &Driver{
 		config: config,
 	}
 }
 
-func (d *DriverImpl) New(store string) (cache.Driver, error) {
+func (d *Driver) New(store string) (cache.Driver, error) {
 	driver := d.config.GetString(fmt.Sprintf("cache.stores.%s.driver", store))
 	switch driver {
 	case "memory":
@@ -30,20 +26,15 @@ func (d *DriverImpl) New(store string) (cache.Driver, error) {
 	case "custom":
 		return d.custom(store)
 	default:
-		return nil, fmt.Errorf("invalid driver: %s, only support memory, custom\n", driver)
+		return nil, errors.CacheDriverNotSupported.Args(driver)
 	}
 }
 
-func (d *DriverImpl) memory() (cache.Driver, error) {
-	memory, err := NewMemory(d.config)
-	if err != nil {
-		return nil, fmt.Errorf("init memory driver error: %v", err)
-	}
-
-	return memory, nil
+func (d *Driver) memory() (cache.Driver, error) {
+	return NewMemory(d.config)
 }
 
-func (d *DriverImpl) custom(store string) (cache.Driver, error) {
+func (d *Driver) custom(store string) (cache.Driver, error) {
 	if custom, ok := d.config.Get(fmt.Sprintf("cache.stores.%s.via", store)).(cache.Driver); ok {
 		return custom, nil
 	}
@@ -51,5 +42,5 @@ func (d *DriverImpl) custom(store string) (cache.Driver, error) {
 		return custom()
 	}
 
-	return nil, fmt.Errorf("%s doesn't implement contracts/cache/store\n", store)
+	return nil, errors.CacheStoreContractNotFulfilled.Args(store)
 }

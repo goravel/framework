@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/database"
 )
@@ -58,16 +58,16 @@ func (a *Auth) Guard(name string) contractsauth.Auth {
 func (a *Auth) User(user any) error {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
-		return ErrorParseTokenFirst
+		return errors.AuthParseTokenFirst
 	}
 	if auth[a.guard].Claims == nil {
-		return ErrorParseTokenFirst
+		return errors.AuthParseTokenFirst
 	}
 	if auth[a.guard].Claims.Key == "" {
-		return ErrorInvalidKey
+		return errors.AuthInvalidKey
 	}
 	if auth[a.guard].Token == "" {
-		return ErrorTokenExpired
+		return errors.AuthTokenExpired
 	}
 	if err := a.orm.Query().FindOrFail(user, clause.Eq{Column: clause.PrimaryColumn, Value: auth[a.guard].Claims.Key}); err != nil {
 		return err
@@ -79,10 +79,10 @@ func (a *Auth) User(user any) error {
 func (a *Auth) Id() (string, error) {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
-		return "", ErrorParseTokenFirst
+		return "", errors.AuthParseTokenFirst
 	}
 	if auth[a.guard].Token == "" {
-		return "", ErrorTokenExpired
+		return "", errors.AuthTokenExpired
 	}
 
 	return auth[a.guard].Claims.Key, nil
@@ -91,10 +91,10 @@ func (a *Auth) Id() (string, error) {
 func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 	token = strings.ReplaceAll(token, "Bearer ", "")
 	if a.cache == nil {
-		return nil, errors.New("cache support is required")
+		return nil, errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
 	}
 	if a.tokenIsDisabled(token) {
-		return nil, ErrorTokenDisabled
+		return nil, errors.AuthTokenDisabled
 	}
 
 	jwtSecret := a.config.GetString("jwt.secret")
@@ -107,7 +107,7 @@ func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 		if errors.Is(err, jwt.ErrTokenExpired) && tokenClaims != nil {
 			claims, ok := tokenClaims.Claims.(*Claims)
 			if !ok {
-				return nil, ErrorInvalidClaims
+				return nil, errors.AuthInvalidClaims
 			}
 
 			a.makeAuthContext(claims, "")
@@ -117,18 +117,18 @@ func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 				Key:      claims.Key,
 				ExpireAt: claims.ExpiresAt.Local(),
 				IssuedAt: claims.IssuedAt.Local(),
-			}, ErrorTokenExpired
+			}, errors.AuthTokenExpired
 		}
 
-		return nil, ErrorInvalidToken
+		return nil, errors.AuthInvalidToken
 	}
 	if tokenClaims == nil || !tokenClaims.Valid {
-		return nil, ErrorInvalidToken
+		return nil, errors.AuthInvalidToken
 	}
 
 	claims, ok := tokenClaims.Claims.(*Claims)
 	if !ok {
-		return nil, ErrorInvalidClaims
+		return nil, errors.AuthInvalidClaims
 	}
 
 	a.makeAuthContext(claims, token)
@@ -144,7 +144,7 @@ func (a *Auth) Parse(token string) (*contractsauth.Payload, error) {
 func (a *Auth) Login(user any) (token string, err error) {
 	id := database.GetID(user)
 	if id == nil {
-		return "", ErrorNoPrimaryKeyField
+		return "", errors.AuthNoPrimaryKeyField
 	}
 
 	return a.LoginUsingID(id)
@@ -153,7 +153,7 @@ func (a *Auth) Login(user any) (token string, err error) {
 func (a *Auth) LoginUsingID(id any) (token string, err error) {
 	jwtSecret := a.config.GetString("jwt.secret")
 	if jwtSecret == "" {
-		return "", ErrorEmptySecret
+		return "", errors.AuthEmptySecret
 	}
 
 	nowTime := carbon.Now()
@@ -165,7 +165,7 @@ func (a *Auth) LoginUsingID(id any) (token string, err error) {
 	expireTime := nowTime.AddMinutes(ttl).StdTime()
 	key := cast.ToString(id)
 	if key == "" {
-		return "", ErrorInvalidKey
+		return "", errors.AuthInvalidKey
 	}
 	claims := Claims{
 		key,
@@ -191,10 +191,10 @@ func (a *Auth) LoginUsingID(id any) (token string, err error) {
 func (a *Auth) Refresh() (token string, err error) {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
-		return "", ErrorParseTokenFirst
+		return "", errors.AuthParseTokenFirst
 	}
 	if auth[a.guard].Claims == nil {
-		return "", ErrorParseTokenFirst
+		return "", errors.AuthParseTokenFirst
 	}
 
 	nowTime := carbon.Now()
@@ -206,7 +206,7 @@ func (a *Auth) Refresh() (token string, err error) {
 
 	expireTime := carbon.FromStdTime(auth[a.guard].Claims.ExpiresAt.Time).AddMinutes(refreshTtl)
 	if nowTime.Gt(expireTime) {
-		return "", ErrorRefreshTimeExceeded
+		return "", errors.AuthRefreshTimeExceeded
 	}
 
 	return a.LoginUsingID(auth[a.guard].Claims.Key)
@@ -219,13 +219,13 @@ func (a *Auth) Logout() error {
 	}
 
 	if a.cache == nil {
-		return errors.New("cache support is required")
+		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
 	}
 
 	ttl := a.config.GetInt("jwt.ttl")
 	if ttl == 0 {
 		if ok := a.cache.Forever(getDisabledCacheKey(auth[a.guard].Token), true); !ok {
-			return errors.New("cache forever failed")
+			return errors.CacheForeverFailed.SetModule(errors.ModuleAuth)
 		}
 	} else {
 		if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),

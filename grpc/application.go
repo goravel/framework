@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -33,12 +33,12 @@ func (app *Application) Server() *grpc.Server {
 func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientConn, error) {
 	host := app.config.GetString(fmt.Sprintf("grpc.clients.%s.host", name))
 	if host == "" {
-		return nil, errors.New("client host can't be empty")
+		return nil, errors.GrpcEmptyClientHost
 	}
 	if !strings.Contains(host, ":") {
 		port := app.config.GetString(fmt.Sprintf("grpc.clients.%s.port", name))
 		if port == "" {
-			return nil, errors.New("client port can't be empty")
+			return nil, errors.GrpcEmptyClientPort
 		}
 
 		host += ":" + port
@@ -46,7 +46,7 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 
 	interceptors, ok := app.config.Get(fmt.Sprintf("grpc.clients.%s.interceptors", name)).([]string)
 	if !ok {
-		return nil, fmt.Errorf("the type of clients.%s.interceptors must be []string", name)
+		return nil, errors.GrpcInvalidInterceptorsType.Args(name)
 	}
 
 	clientInterceptors := app.getClientInterceptors(interceptors)
@@ -62,13 +62,13 @@ func (app *Application) Run(host ...string) error {
 	if len(host) == 0 {
 		defaultHost := app.config.GetString("grpc.host")
 		if defaultHost == "" {
-			return errors.New("host can't be empty")
+			return errors.GrpcEmptyServerHost
 		}
 
 		if !strings.Contains(defaultHost, ":") {
 			defaultPort := app.config.GetString("grpc.port")
 			if defaultPort == "" {
-				return errors.New("port can't be empty")
+				return errors.GrpcEmptyServerPort
 			}
 			defaultHost += ":" + defaultPort
 		}

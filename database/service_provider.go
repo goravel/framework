@@ -2,13 +2,15 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/framework/database/schema"
+	"github.com/goravel/framework/errors"
 )
 
 const BindingOrm = "goravel.orm"
@@ -22,23 +24,40 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleOrm)
+		}
+
 		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleOrm)
+		}
+
 		connection := config.GetString("database.default")
 		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
-			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
+			return nil, errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm)
 		}
 
 		return orm, nil
 	})
 	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
-		orm := app.MakeOrm()
 		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
+
 		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
 
-		connection := config.GetString("database.default")
+		orm := app.MakeOrm()
+		if orm == nil {
+			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
 
-		return migration.NewSchema(config, connection, log, orm), nil
+		return schema.NewSchema(config, log, orm, nil), nil
 	})
 	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
 		return NewSeederFacade(), nil
@@ -50,22 +69,44 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		config := app.MakeConfig()
-		seeder := app.MakeSeeder()
-		artisanFacade.Register([]contractsconsole.Command{
-			consolemigration.NewMigrateMakeCommand(config),
-			consolemigration.NewMigrateCommand(config),
+	artisan := app.MakeArtisan()
+	config := app.MakeConfig()
+	log := app.MakeLog()
+	schema := app.MakeSchema()
+	seeder := app.MakeSeeder()
+
+	if artisan != nil && config != nil && log != nil && schema != nil && seeder != nil {
+		var migrator contractsmigration.Migrator
+
+		driver := config.GetString("database.migrations.driver")
+		if driver == contractsmigration.MigratorDefault {
+			migrator = migration.NewDefaultMigrator(artisan, schema, config.GetString("database.migrations.table"))
+		} else if driver == contractsmigration.MigratorSql {
+			var err error
+			migrator, err = migration.NewSqlMigrator(config)
+			if err != nil {
+				log.Error(errors.MigrationSqlMigratorInit.Args(err).SetModule(errors.ModuleMigration))
+				return
+			}
+		} else {
+			log.Error(errors.MigrationUnsupportedDriver.Args(driver).SetModule(errors.ModuleMigration))
+			return
+		}
+
+		artisan.Register([]contractsconsole.Command{
+			consolemigration.NewMigrateMakeCommand(migrator),
+			consolemigration.NewMigrateCommand(migrator),
 			consolemigration.NewMigrateRollbackCommand(config),
 			consolemigration.NewMigrateResetCommand(config),
-			consolemigration.NewMigrateRefreshCommand(config, artisanFacade),
-			consolemigration.NewMigrateFreshCommand(config, artisanFacade),
+			consolemigration.NewMigrateRefreshCommand(config, artisan),
+			consolemigration.NewMigrateFreshCommand(artisan, migrator),
 			consolemigration.NewMigrateStatusCommand(config),
 			console.NewModelMakeCommand(),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),
 			console.NewFactoryMakeCommand(),
+			console.NewWipeCommand(config, schema),
 		})
 	}
 }

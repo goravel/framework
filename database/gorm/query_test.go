@@ -2,13 +2,13 @@ package gorm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
@@ -16,6 +16,7 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
 	supportdocker "github.com/goravel/framework/support/docker"
@@ -30,7 +31,7 @@ type QueryTestSuite struct {
 
 func TestQueryTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	suite.Run(t, &QueryTestSuite{})
@@ -42,7 +43,12 @@ func (s *QueryTestSuite) SetupSuite() {
 
 	testQueries := NewTestQueries()
 	s.queries = testQueries.Queries()
+	for _, query := range s.queries {
+		query.CreateTable()
+	}
+
 	s.additionalQuery = testQueries.QueryOfAdditional()
+	s.additionalQuery.CreateTable()
 }
 
 func (s *QueryTestSuite) SetupTest() {}
@@ -521,7 +527,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), "cannot set Select and Omits at the same time")
+					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), errors.OrmQuerySelectAndOmitsConflict.Error())
 				},
 			},
 			{
@@ -531,7 +537,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
+					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
 				},
 			},
 			{
@@ -541,7 +547,7 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), "cannot set orm.Associations and other fields at the same time")
+					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
 				},
 			},
 		}
@@ -1721,7 +1727,7 @@ func (s *QueryTestSuite) TestFindOrFail() {
 				name: "error",
 				setup: func() {
 					var user User
-					s.ErrorIs(query.Query().FindOrFail(&user, 10000), orm.ErrRecordNotFound)
+					s.ErrorIs(query.Query().FindOrFail(&user, 10000), errors.OrmRecordNotFound)
 				},
 			},
 		}
@@ -1807,7 +1813,7 @@ func (s *QueryTestSuite) TestFirstOrCreate() {
 				name: "error when empty conditions",
 				setup: func() {
 					var user User
-					s.EqualError(query.Query().FirstOrCreate(&user), "query condition is require")
+					s.EqualError(query.Query().FirstOrCreate(&user), errors.OrmQueryConditionRequired.Error())
 					s.True(user.ID == 0)
 				},
 			},
@@ -1848,7 +1854,7 @@ func (s *QueryTestSuite) TestFirstOrFail() {
 				name: "fail",
 				setup: func() {
 					var user User
-					s.Equal(orm.ErrRecordNotFound, query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user))
+					s.ErrorIs(query.Query().Where("name", "first_or_fail_user").FirstOrFail(&user), errors.OrmRecordNotFound)
 					s.Equal(uint(0), user.ID)
 				},
 			},
@@ -2467,7 +2473,7 @@ func (s *QueryTestSuite) TestLoad() {
 					s.True(user1.ID > 0)
 					s.Nil(user1.Address)
 					s.Equal(0, len(user1.Books))
-					s.EqualError(query.Query().Load(&user1, ""), "relation cannot be empty")
+					s.EqualError(query.Query().Load(&user1, ""), errors.OrmQueryEmptyRelation.Error())
 				},
 			},
 			{
@@ -2478,7 +2484,7 @@ func (s *QueryTestSuite) TestLoad() {
 						Avatar string
 					}
 					var userNoID UserNoID
-					s.EqualError(query.Query().Load(&userNoID, "Book"), "id cannot be empty")
+					s.EqualError(query.Query().Load(&userNoID, "Book"), errors.OrmQueryEmptyId.Error())
 				},
 			},
 		}
@@ -2555,7 +2561,7 @@ func (s *QueryTestSuite) TestModel() {
 
 			// model is invalid
 			user1 := User{Name: "model_user"}
-			s.EqualError(query.Query().Model("users").Create(&user1), "invalid model")
+			s.EqualError(query.Query().Model("users").Create(&user1), errors.OrmQueryInvalidModel.Args("").Error())
 		})
 	}
 }
@@ -2614,7 +2620,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 				return product
 			}(),
 			setup:     func() {},
-			expectErr: "invalid model",
+			expectErr: errors.OrmQueryInvalidModel.Args("").Error(),
 		},
 		{
 			name: "the connection of model is empty",
@@ -3442,7 +3448,7 @@ func (s *QueryTestSuite) TestWithNesting() {
 
 func TestCustomConnection(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	postgresDocker := supportdocker.Postgres()
@@ -3496,12 +3502,12 @@ func TestFilterFindConditions(t *testing.T) {
 		{
 			name:       "condition is empty string",
 			conditions: []any{""},
-			expectErr:  ErrorMissingWhereClause,
+			expectErr:  errors.OrmMissingWhereClause,
 		},
 		{
 			name:       "condition is empty slice",
 			conditions: []any{[]string{}},
-			expectErr:  ErrorMissingWhereClause,
+			expectErr:  errors.OrmMissingWhereClause,
 		},
 		{
 			name:       "condition has value",
@@ -3534,7 +3540,7 @@ func TestGetModelConnection(t *testing.T) {
 				var product string
 				return product
 			}(),
-			expectErr: "invalid model",
+			expectErr: errors.OrmQueryInvalidModel.Args("").Error(),
 		},
 		{
 			name: "not ConnectionModel",
@@ -3614,27 +3620,47 @@ func TestObserverEvent(t *testing.T) {
 
 func TestReadWriteSeparate(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	dbs := NewTestQueries().QueriesOfReadWrite()
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
+			var (
+				mixQuery contractsorm.Query
+				err      error
+			)
+			if drive == database.DriverSqlite {
+				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
+					ReadDatabase: db["read"].Docker().Config().Database,
+				})
+			} else {
+				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
+					ReadPort:  db["read"].Docker().Config().Port,
+					WritePort: db["write"].Docker().Config().Port,
+				})
+			}
+
+			require.NoError(t, err)
+
+			db["read"].CreateTable(TestTableUsers)
+			db["write"].CreateTable(TestTableUsers)
+
 			user := User{Name: "user"}
-			assert.Nil(t, db["mix"].Create(&user))
+			assert.Nil(t, mixQuery.Create(&user))
 			assert.True(t, user.ID > 0)
 
 			var user2 User
-			assert.Nil(t, db["mix"].Find(&user2, user.ID))
+			assert.Nil(t, mixQuery.Find(&user2, user.ID))
 			assert.True(t, user2.ID == 0)
 
 			var user3 User
-			assert.Nil(t, db["read"].Find(&user3, user.ID))
+			assert.Nil(t, db["read"].Query().Find(&user3, user.ID))
 			assert.True(t, user3.ID == 0)
 
 			var user4 User
-			assert.Nil(t, db["write"].Find(&user4, user.ID))
+			assert.Nil(t, db["write"].Query().Find(&user4, user.ID))
 			assert.True(t, user4.ID > 0)
 		})
 	}
@@ -3642,13 +3668,15 @@ func TestReadWriteSeparate(t *testing.T) {
 
 func TestTablePrefixAndSingular(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skipping tests that use Docker")
 	}
 
 	dbs := NewTestQueries().QueriesWithPrefixAndSingular()
 
 	for drive, db := range dbs {
 		t.Run(drive.String(), func(t *testing.T) {
+			db.CreateTable(TestTableGoravelUser)
+
 			user := User{Name: "user"}
 			assert.Nil(t, db.Query().Create(&user))
 			assert.True(t, user.ID > 0)

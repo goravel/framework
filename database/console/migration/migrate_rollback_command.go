@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"errors"
 	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -11,7 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateRollbackCommand struct {
@@ -55,7 +54,7 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		return err
 	}
 	if m == nil {
-		color.Yellow().Println("Please fill database config first")
+		ctx.Error(errors.ConsoleEmptyDatabaseConfig.Error())
 
 		return nil
 	}
@@ -63,7 +62,7 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	stepString := "-" + ctx.Option("step")
 	step, err := strconv.Atoi(stepString)
 	if err != nil {
-		color.Red().Println("Migration rollback failed: invalid step", ctx.Option("step"))
+		ctx.Error(errors.MigrationRollbackFailed.Args(err).Error())
 
 		return nil
 	}
@@ -73,13 +72,13 @@ func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		switch {
 		case errors.As(err, &errShortLimit):
 		default:
-			color.Red().Println("Migration rollback failed:", err.Error())
+			ctx.Error(errors.MigrationRollbackFailed.Args(err).Error())
 
 			return nil
 		}
 	}
 
-	color.Green().Println("Migration rollback success")
+	ctx.Info("Migration rollback success")
 
 	return nil
 }

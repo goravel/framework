@@ -3,32 +3,42 @@ package testing
 import (
 	"fmt"
 
-	"github.com/goravel/framework/contracts/database/seeder"
+	contractsseeder "github.com/goravel/framework/contracts/database/seeder"
+	"github.com/goravel/framework/errors"
 )
 
 type TestCase struct {
 }
 
-func (receiver *TestCase) Seed(seeds ...seeder.Seeder) {
-	command := "db:seed"
-	if len(seeds) > 0 {
-		command += " --seeder"
-		for _, seed := range seeds {
-			command += fmt.Sprintf(" %s", seed.Signature())
-		}
-	}
-
+func (r *TestCase) Seed(seeders ...contractsseeder.Seeder) {
 	if artisanFacade == nil {
-		panic("Artisan facade is not initialized")
+		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
-	artisanFacade.Call(command)
+	if err := artisanFacade.Call("db:seed" + getCommandOptionOfSeeders(seeders)); err != nil {
+		panic(err)
+	}
 }
 
-func (receiver *TestCase) RefreshDatabase(seeds ...seeder.Seeder) {
+func (r *TestCase) RefreshDatabase(seeders ...contractsseeder.Seeder) {
 	if artisanFacade == nil {
-		panic("Artisan facade is not initialized")
+		panic(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
-	artisanFacade.Call("migrate:refresh")
+	if err := artisanFacade.Call("migrate:refresh" + getCommandOptionOfSeeders(seeders)); err != nil {
+		panic(err)
+	}
+}
+
+func getCommandOptionOfSeeders(seeders []contractsseeder.Seeder) string {
+	if len(seeders) == 0 {
+		return ""
+	}
+
+	command := " --seeder"
+	for _, seed := range seeders {
+		command += fmt.Sprintf(" %s", seed.Signature())
+	}
+
+	return command
 }

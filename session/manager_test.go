@@ -67,15 +67,15 @@ func (s *ManagerTestSuite) TestDriver() {
 	s.mockConfig.On("GetString", "session.driver").Return("not_supported").Once()
 	driver, err = s.manager.Driver()
 	s.NotNil(err)
-	s.ErrorIs(err, errors.ErrSessionDriverNotSupported)
-	s.Equal(errors.ErrSessionDriverNotSupported.Args("not_supported").Error(), err.Error())
+	s.ErrorIs(err, errors.SessionDriverNotSupported)
+	s.Equal(errors.SessionDriverNotSupported.Args("not_supported").Error(), err.Error())
 	s.Nil(driver)
 
 	// driver is not set
 	s.mockConfig.On("GetString", "session.driver").Return("").Once()
 	driver, err = s.manager.Driver()
 	s.NotNil(err)
-	s.ErrorIs(err, errors.ErrSessionDriverIsNotSet)
+	s.ErrorIs(err, errors.SessionDriverIsNotSet)
 	s.Nil(driver)
 }
 
@@ -90,8 +90,8 @@ func (s *ManagerTestSuite) TestExtend() {
 
 	// driver already exists
 	err = s.manager.Extend("test", NewCustomDriver)
-	s.ErrorIs(err, errors.ErrSessionDriverAlreadyExists)
-	s.EqualError(err, errors.ErrSessionDriverAlreadyExists.Args("test").Error())
+	s.ErrorIs(err, errors.SessionDriverAlreadyExists)
+	s.EqualError(err, errors.SessionDriverAlreadyExists.Args("test").Error())
 }
 
 func (s *ManagerTestSuite) TestBuildSession() {
@@ -116,7 +116,7 @@ func (s *ManagerTestSuite) TestBuildSession() {
 
 	// driver is nil
 	session, err = s.manager.BuildSession(nil)
-	s.ErrorIs(err, errors.ErrSessionDriverIsNotSet)
+	s.ErrorIs(err, errors.SessionDriverIsNotSet)
 	s.Nil(session)
 }
 

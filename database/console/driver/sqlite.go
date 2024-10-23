@@ -1,4 +1,4 @@
-package sqlite
+package driver
 
 import (
 	"database/sql"
@@ -19,11 +19,9 @@ func init() {
 	database.Register("sqlite", &Sqlite{})
 }
 
-var DefaultMigrationsTable = "schema_migrations"
 var (
-	ErrDatabaseDirty  = fmt.Errorf("database is dirty")
-	ErrNilConfig      = fmt.Errorf("no config")
-	ErrNoDatabaseName = fmt.Errorf("no database name")
+	DefaultMigrationsTable = "schema_migrations"
+	ErrNilConfig           = fmt.Errorf("no config")
 )
 
 type Config struct {
@@ -144,7 +142,7 @@ func (m *Sqlite) Drop() (err error) {
 		}
 	}()
 
-	tableNames := make([]string, 0)
+	var tableNames []string
 	for tables.Next() {
 		var tableName string
 		if err = tables.Scan(&tableName); err != nil {

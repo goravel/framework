@@ -2,6 +2,7 @@ package crypt
 
 import (
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 )
 
 const Binding = "goravel.crypt"
@@ -11,17 +12,17 @@ type ServiceProvider struct {
 
 func (crypt *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		c := app.MakeConfig()
-		if c == nil {
-			return nil, ErrConfigNotSet
+		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleCrypt)
 		}
 
-		j := app.GetJson()
-		if j == nil {
-			return nil, ErrJsonParserNotSet
+		json := app.GetJson()
+		if json == nil {
+			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleCrypt)
 		}
 
-		return NewAES(c, j)
+		return NewAES(config, json)
 	})
 }
 

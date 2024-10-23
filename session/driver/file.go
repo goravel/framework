@@ -80,7 +80,7 @@ func (f *File) Read(id string) (string, error) {
 		}
 	}
 
-	return "", errors.ErrSessionNotFound.Args(id)
+	return "", errors.SessionNotFound.Args(id)
 }
 
 func (f *File) Write(id string, data string) error {
