@@ -21,7 +21,7 @@ func (_m *Printer) EXPECT() *Printer_Expecter {
 }
 
 // Print provides a mock function with given fields: a
-func (_m *Printer) Print(a ...interface{}) *support.Printer {
+func (_m *Printer) Print(a ...any) *support.Printer {
 	var _ca []interface{}
 	_ca = append(_ca, a...)
 	ret := _m.Called(_ca...)
@@ -31,7 +31,7 @@ func (_m *Printer) Print(a ...interface{}) *support.Printer {
 	}
 
 	var r0 *support.Printer
-	if rf, ok := ret.Get(0).(func(...interface{}) *support.Printer); ok {
+	if rf, ok := ret.Get(0).(func(...any) *support.Printer); ok {
 		r0 = rf(a...)
 	} else {
 		if ret.Get(0) != nil {
@@ -48,18 +48,18 @@ type Printer_Print_Call struct {
 }
 
 // Print is a helper method to define mock.On call
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Print(a ...interface{}) *Printer_Print_Call {
 	return &Printer_Print_Call{Call: _e.mock.On("Print",
 		append([]interface{}{}, a...)...)}
 }
 
-func (_c *Printer_Print_Call) Run(run func(a ...interface{})) *Printer_Print_Call {
+func (_c *Printer_Print_Call) Run(run func(a ...any)) *Printer_Print_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -72,13 +72,13 @@ func (_c *Printer_Print_Call) Return(_a0 *support.Printer) *Printer_Print_Call {
 	return _c
 }
 
-func (_c *Printer_Print_Call) RunAndReturn(run func(...interface{}) *support.Printer) *Printer_Print_Call {
+func (_c *Printer_Print_Call) RunAndReturn(run func(...any) *support.Printer) *Printer_Print_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Printf provides a mock function with given fields: format, a
-func (_m *Printer) Printf(format string, a ...interface{}) *support.Printer {
+func (_m *Printer) Printf(format string, a ...any) *support.Printer {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, a...)
@@ -89,7 +89,7 @@ func (_m *Printer) Printf(format string, a ...interface{}) *support.Printer {
 	}
 
 	var r0 *support.Printer
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) *support.Printer); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) *support.Printer); ok {
 		r0 = rf(format, a...)
 	} else {
 		if ret.Get(0) != nil {
@@ -107,18 +107,18 @@ type Printer_Printf_Call struct {
 
 // Printf is a helper method to define mock.On call
 //   - format string
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Printf(format interface{}, a ...interface{}) *Printer_Printf_Call {
 	return &Printer_Printf_Call{Call: _e.mock.On("Printf",
 		append([]interface{}{format}, a...)...)}
 }
 
-func (_c *Printer_Printf_Call) Run(run func(format string, a ...interface{})) *Printer_Printf_Call {
+func (_c *Printer_Printf_Call) Run(run func(format string, a ...any)) *Printer_Printf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -131,13 +131,13 @@ func (_c *Printer_Printf_Call) Return(_a0 *support.Printer) *Printer_Printf_Call
 	return _c
 }
 
-func (_c *Printer_Printf_Call) RunAndReturn(run func(string, ...interface{}) *support.Printer) *Printer_Printf_Call {
+func (_c *Printer_Printf_Call) RunAndReturn(run func(string, ...any) *support.Printer) *Printer_Printf_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Printfln provides a mock function with given fields: format, a
-func (_m *Printer) Printfln(format string, a ...interface{}) *support.Printer {
+func (_m *Printer) Printfln(format string, a ...any) *support.Printer {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, a...)
@@ -148,7 +148,7 @@ func (_m *Printer) Printfln(format string, a ...interface{}) *support.Printer {
 	}
 
 	var r0 *support.Printer
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) *support.Printer); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) *support.Printer); ok {
 		r0 = rf(format, a...)
 	} else {
 		if ret.Get(0) != nil {
@@ -166,18 +166,18 @@ type Printer_Printfln_Call struct {
 
 // Printfln is a helper method to define mock.On call
 //   - format string
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Printfln(format interface{}, a ...interface{}) *Printer_Printfln_Call {
 	return &Printer_Printfln_Call{Call: _e.mock.On("Printfln",
 		append([]interface{}{format}, a...)...)}
 }
 
-func (_c *Printer_Printfln_Call) Run(run func(format string, a ...interface{})) *Printer_Printfln_Call {
+func (_c *Printer_Printfln_Call) Run(run func(format string, a ...any)) *Printer_Printfln_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -190,13 +190,13 @@ func (_c *Printer_Printfln_Call) Return(_a0 *support.Printer) *Printer_Printfln_
 	return _c
 }
 
-func (_c *Printer_Printfln_Call) RunAndReturn(run func(string, ...interface{}) *support.Printer) *Printer_Printfln_Call {
+func (_c *Printer_Printfln_Call) RunAndReturn(run func(string, ...any) *support.Printer) *Printer_Printfln_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Println provides a mock function with given fields: a
-func (_m *Printer) Println(a ...interface{}) *support.Printer {
+func (_m *Printer) Println(a ...any) *support.Printer {
 	var _ca []interface{}
 	_ca = append(_ca, a...)
 	ret := _m.Called(_ca...)
@@ -206,7 +206,7 @@ func (_m *Printer) Println(a ...interface{}) *support.Printer {
 	}
 
 	var r0 *support.Printer
-	if rf, ok := ret.Get(0).(func(...interface{}) *support.Printer); ok {
+	if rf, ok := ret.Get(0).(func(...any) *support.Printer); ok {
 		r0 = rf(a...)
 	} else {
 		if ret.Get(0) != nil {
@@ -223,18 +223,18 @@ type Printer_Println_Call struct {
 }
 
 // Println is a helper method to define mock.On call
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Println(a ...interface{}) *Printer_Println_Call {
 	return &Printer_Println_Call{Call: _e.mock.On("Println",
 		append([]interface{}{}, a...)...)}
 }
 
-func (_c *Printer_Println_Call) Run(run func(a ...interface{})) *Printer_Println_Call {
+func (_c *Printer_Println_Call) Run(run func(a ...any)) *Printer_Println_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -247,13 +247,13 @@ func (_c *Printer_Println_Call) Return(_a0 *support.Printer) *Printer_Println_Ca
 	return _c
 }
 
-func (_c *Printer_Println_Call) RunAndReturn(run func(...interface{}) *support.Printer) *Printer_Println_Call {
+func (_c *Printer_Println_Call) RunAndReturn(run func(...any) *support.Printer) *Printer_Println_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Sprint provides a mock function with given fields: a
-func (_m *Printer) Sprint(a ...interface{}) string {
+func (_m *Printer) Sprint(a ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, a...)
 	ret := _m.Called(_ca...)
@@ -263,7 +263,7 @@ func (_m *Printer) Sprint(a ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(...any) string); ok {
 		r0 = rf(a...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -278,18 +278,18 @@ type Printer_Sprint_Call struct {
 }
 
 // Sprint is a helper method to define mock.On call
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Sprint(a ...interface{}) *Printer_Sprint_Call {
 	return &Printer_Sprint_Call{Call: _e.mock.On("Sprint",
 		append([]interface{}{}, a...)...)}
 }
 
-func (_c *Printer_Sprint_Call) Run(run func(a ...interface{})) *Printer_Sprint_Call {
+func (_c *Printer_Sprint_Call) Run(run func(a ...any)) *Printer_Sprint_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -302,13 +302,13 @@ func (_c *Printer_Sprint_Call) Return(_a0 string) *Printer_Sprint_Call {
 	return _c
 }
 
-func (_c *Printer_Sprint_Call) RunAndReturn(run func(...interface{}) string) *Printer_Sprint_Call {
+func (_c *Printer_Sprint_Call) RunAndReturn(run func(...any) string) *Printer_Sprint_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Sprintf provides a mock function with given fields: format, a
-func (_m *Printer) Sprintf(format string, a ...interface{}) string {
+func (_m *Printer) Sprintf(format string, a ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, a...)
@@ -319,7 +319,7 @@ func (_m *Printer) Sprintf(format string, a ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) string); ok {
 		r0 = rf(format, a...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -335,18 +335,18 @@ type Printer_Sprintf_Call struct {
 
 // Sprintf is a helper method to define mock.On call
 //   - format string
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Sprintf(format interface{}, a ...interface{}) *Printer_Sprintf_Call {
 	return &Printer_Sprintf_Call{Call: _e.mock.On("Sprintf",
 		append([]interface{}{format}, a...)...)}
 }
 
-func (_c *Printer_Sprintf_Call) Run(run func(format string, a ...interface{})) *Printer_Sprintf_Call {
+func (_c *Printer_Sprintf_Call) Run(run func(format string, a ...any)) *Printer_Sprintf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -359,13 +359,13 @@ func (_c *Printer_Sprintf_Call) Return(_a0 string) *Printer_Sprintf_Call {
 	return _c
 }
 
-func (_c *Printer_Sprintf_Call) RunAndReturn(run func(string, ...interface{}) string) *Printer_Sprintf_Call {
+func (_c *Printer_Sprintf_Call) RunAndReturn(run func(string, ...any) string) *Printer_Sprintf_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Sprintfln provides a mock function with given fields: format, a
-func (_m *Printer) Sprintfln(format string, a ...interface{}) string {
+func (_m *Printer) Sprintfln(format string, a ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, a...)
@@ -376,7 +376,7 @@ func (_m *Printer) Sprintfln(format string, a ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) string); ok {
 		r0 = rf(format, a...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -392,18 +392,18 @@ type Printer_Sprintfln_Call struct {
 
 // Sprintfln is a helper method to define mock.On call
 //   - format string
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Sprintfln(format interface{}, a ...interface{}) *Printer_Sprintfln_Call {
 	return &Printer_Sprintfln_Call{Call: _e.mock.On("Sprintfln",
 		append([]interface{}{format}, a...)...)}
 }
 
-func (_c *Printer_Sprintfln_Call) Run(run func(format string, a ...interface{})) *Printer_Sprintfln_Call {
+func (_c *Printer_Sprintfln_Call) Run(run func(format string, a ...any)) *Printer_Sprintfln_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -416,13 +416,13 @@ func (_c *Printer_Sprintfln_Call) Return(_a0 string) *Printer_Sprintfln_Call {
 	return _c
 }
 
-func (_c *Printer_Sprintfln_Call) RunAndReturn(run func(string, ...interface{}) string) *Printer_Sprintfln_Call {
+func (_c *Printer_Sprintfln_Call) RunAndReturn(run func(string, ...any) string) *Printer_Sprintfln_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Sprintln provides a mock function with given fields: a
-func (_m *Printer) Sprintln(a ...interface{}) string {
+func (_m *Printer) Sprintln(a ...any) string {
 	var _ca []interface{}
 	_ca = append(_ca, a...)
 	ret := _m.Called(_ca...)
@@ -432,7 +432,7 @@ func (_m *Printer) Sprintln(a ...interface{}) string {
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(...interface{}) string); ok {
+	if rf, ok := ret.Get(0).(func(...any) string); ok {
 		r0 = rf(a...)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -447,18 +447,18 @@ type Printer_Sprintln_Call struct {
 }
 
 // Sprintln is a helper method to define mock.On call
-//   - a ...interface{}
+//   - a ...any
 func (_e *Printer_Expecter) Sprintln(a ...interface{}) *Printer_Sprintln_Call {
 	return &Printer_Sprintln_Call{Call: _e.mock.On("Sprintln",
 		append([]interface{}{}, a...)...)}
 }
 
-func (_c *Printer_Sprintln_Call) Run(run func(a ...interface{})) *Printer_Sprintln_Call {
+func (_c *Printer_Sprintln_Call) Run(run func(a ...any)) *Printer_Sprintln_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -471,7 +471,7 @@ func (_c *Printer_Sprintln_Call) Return(_a0 string) *Printer_Sprintln_Call {
 	return _c
 }
 
-func (_c *Printer_Sprintln_Call) RunAndReturn(run func(...interface{}) string) *Printer_Sprintln_Call {
+func (_c *Printer_Sprintln_Call) RunAndReturn(run func(...any) string) *Printer_Sprintln_Call {
 	_c.Call.Return(run)
 	return _c
 }

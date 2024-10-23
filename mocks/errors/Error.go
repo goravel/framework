@@ -21,7 +21,7 @@ func (_m *Error) EXPECT() *Error_Expecter {
 }
 
 // Args provides a mock function with given fields: _a0
-func (_m *Error) Args(_a0 ...interface{}) errors.Error {
+func (_m *Error) Args(_a0 ...any) errors.Error {
 	var _ca []interface{}
 	_ca = append(_ca, _a0...)
 	ret := _m.Called(_ca...)
@@ -31,7 +31,7 @@ func (_m *Error) Args(_a0 ...interface{}) errors.Error {
 	}
 
 	var r0 errors.Error
-	if rf, ok := ret.Get(0).(func(...interface{}) errors.Error); ok {
+	if rf, ok := ret.Get(0).(func(...any) errors.Error); ok {
 		r0 = rf(_a0...)
 	} else {
 		if ret.Get(0) != nil {
@@ -48,18 +48,18 @@ type Error_Args_Call struct {
 }
 
 // Args is a helper method to define mock.On call
-//   - _a0 ...interface{}
+//   - _a0 ...any
 func (_e *Error_Expecter) Args(_a0 ...interface{}) *Error_Args_Call {
 	return &Error_Args_Call{Call: _e.mock.On("Args",
 		append([]interface{}{}, _a0...)...)}
 }
 
-func (_c *Error_Args_Call) Run(run func(_a0 ...interface{})) *Error_Args_Call {
+func (_c *Error_Args_Call) Run(run func(_a0 ...any)) *Error_Args_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -72,7 +72,7 @@ func (_c *Error_Args_Call) Return(_a0 errors.Error) *Error_Args_Call {
 	return _c
 }
 
-func (_c *Error_Args_Call) RunAndReturn(run func(...interface{}) errors.Error) *Error_Args_Call {
+func (_c *Error_Args_Call) RunAndReturn(run func(...any) errors.Error) *Error_Args_Call {
 	_c.Call.Return(run)
 	return _c
 }

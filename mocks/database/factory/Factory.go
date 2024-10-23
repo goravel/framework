@@ -18,19 +18,19 @@ func (_m *Factory) EXPECT() *Factory_Expecter {
 }
 
 // Definition provides a mock function with given fields:
-func (_m *Factory) Definition() map[string]interface{} {
+func (_m *Factory) Definition() map[string]any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Definition")
 	}
 
-	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
+	var r0 map[string]any
+	if rf, ok := ret.Get(0).(func() map[string]any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]interface{})
+			r0 = ret.Get(0).(map[string]any)
 		}
 	}
 
@@ -54,12 +54,12 @@ func (_c *Factory_Definition_Call) Run(run func()) *Factory_Definition_Call {
 	return _c
 }
 
-func (_c *Factory_Definition_Call) Return(_a0 map[string]interface{}) *Factory_Definition_Call {
+func (_c *Factory_Definition_Call) Return(_a0 map[string]any) *Factory_Definition_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Factory_Definition_Call) RunAndReturn(run func() map[string]interface{}) *Factory_Definition_Call {
+func (_c *Factory_Definition_Call) RunAndReturn(run func() map[string]any) *Factory_Definition_Call {
 	_c.Call.Return(run)
 	return _c
 }

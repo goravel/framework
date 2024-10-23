@@ -18,7 +18,7 @@ func (_m *Option) EXPECT() *Option_Expecter {
 }
 
 // Execute provides a mock function with given fields: _a0
-func (_m *Option) Execute(_a0 map[string]interface{}) {
+func (_m *Option) Execute(_a0 map[string]any) {
 	_m.Called(_a0)
 }
 
@@ -28,14 +28,14 @@ type Option_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - _a0 map[string]interface{}
+//   - _a0 map[string]any
 func (_e *Option_Expecter) Execute(_a0 interface{}) *Option_Execute_Call {
 	return &Option_Execute_Call{Call: _e.mock.On("Execute", _a0)}
 }
 
-func (_c *Option_Execute_Call) Run(run func(_a0 map[string]interface{})) *Option_Execute_Call {
+func (_c *Option_Execute_Call) Run(run func(_a0 map[string]any)) *Option_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]interface{}))
+		run(args[0].(map[string]any))
 	})
 	return _c
 }
@@ -45,7 +45,7 @@ func (_c *Option_Execute_Call) Return() *Option_Execute_Call {
 	return _c
 }
 
-func (_c *Option_Execute_Call) RunAndReturn(run func(map[string]interface{})) *Option_Execute_Call {
+func (_c *Option_Execute_Call) RunAndReturn(run func(map[string]any)) *Option_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

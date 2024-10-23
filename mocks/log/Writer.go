@@ -71,7 +71,7 @@ func (_c *Writer_Code_Call) RunAndReturn(run func(string) log.Writer) *Writer_Co
 }
 
 // Debug provides a mock function with given fields: args
-func (_m *Writer) Debug(args ...interface{}) {
+func (_m *Writer) Debug(args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	_m.Called(_ca...)
@@ -83,18 +83,18 @@ type Writer_Debug_Call struct {
 }
 
 // Debug is a helper method to define mock.On call
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Debug(args ...interface{}) *Writer_Debug_Call {
 	return &Writer_Debug_Call{Call: _e.mock.On("Debug",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Writer_Debug_Call) Run(run func(args ...interface{})) *Writer_Debug_Call {
+func (_c *Writer_Debug_Call) Run(run func(args ...any)) *Writer_Debug_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -107,13 +107,13 @@ func (_c *Writer_Debug_Call) Return() *Writer_Debug_Call {
 	return _c
 }
 
-func (_c *Writer_Debug_Call) RunAndReturn(run func(...interface{})) *Writer_Debug_Call {
+func (_c *Writer_Debug_Call) RunAndReturn(run func(...any)) *Writer_Debug_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Debugf provides a mock function with given fields: format, args
-func (_m *Writer) Debugf(format string, args ...interface{}) {
+func (_m *Writer) Debugf(format string, args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, args...)
@@ -127,18 +127,18 @@ type Writer_Debugf_Call struct {
 
 // Debugf is a helper method to define mock.On call
 //   - format string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Debugf(format interface{}, args ...interface{}) *Writer_Debugf_Call {
 	return &Writer_Debugf_Call{Call: _e.mock.On("Debugf",
 		append([]interface{}{format}, args...)...)}
 }
 
-func (_c *Writer_Debugf_Call) Run(run func(format string, args ...interface{})) *Writer_Debugf_Call {
+func (_c *Writer_Debugf_Call) Run(run func(format string, args ...any)) *Writer_Debugf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -151,13 +151,13 @@ func (_c *Writer_Debugf_Call) Return() *Writer_Debugf_Call {
 	return _c
 }
 
-func (_c *Writer_Debugf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Debugf_Call {
+func (_c *Writer_Debugf_Call) RunAndReturn(run func(string, ...any)) *Writer_Debugf_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Error provides a mock function with given fields: args
-func (_m *Writer) Error(args ...interface{}) {
+func (_m *Writer) Error(args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	_m.Called(_ca...)
@@ -169,18 +169,18 @@ type Writer_Error_Call struct {
 }
 
 // Error is a helper method to define mock.On call
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Error(args ...interface{}) *Writer_Error_Call {
 	return &Writer_Error_Call{Call: _e.mock.On("Error",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Writer_Error_Call) Run(run func(args ...interface{})) *Writer_Error_Call {
+func (_c *Writer_Error_Call) Run(run func(args ...any)) *Writer_Error_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -193,13 +193,13 @@ func (_c *Writer_Error_Call) Return() *Writer_Error_Call {
 	return _c
 }
 
-func (_c *Writer_Error_Call) RunAndReturn(run func(...interface{})) *Writer_Error_Call {
+func (_c *Writer_Error_Call) RunAndReturn(run func(...any)) *Writer_Error_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Errorf provides a mock function with given fields: format, args
-func (_m *Writer) Errorf(format string, args ...interface{}) {
+func (_m *Writer) Errorf(format string, args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, args...)
@@ -213,18 +213,18 @@ type Writer_Errorf_Call struct {
 
 // Errorf is a helper method to define mock.On call
 //   - format string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Errorf(format interface{}, args ...interface{}) *Writer_Errorf_Call {
 	return &Writer_Errorf_Call{Call: _e.mock.On("Errorf",
 		append([]interface{}{format}, args...)...)}
 }
 
-func (_c *Writer_Errorf_Call) Run(run func(format string, args ...interface{})) *Writer_Errorf_Call {
+func (_c *Writer_Errorf_Call) Run(run func(format string, args ...any)) *Writer_Errorf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -237,13 +237,13 @@ func (_c *Writer_Errorf_Call) Return() *Writer_Errorf_Call {
 	return _c
 }
 
-func (_c *Writer_Errorf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Errorf_Call {
+func (_c *Writer_Errorf_Call) RunAndReturn(run func(string, ...any)) *Writer_Errorf_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Fatal provides a mock function with given fields: args
-func (_m *Writer) Fatal(args ...interface{}) {
+func (_m *Writer) Fatal(args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	_m.Called(_ca...)
@@ -255,18 +255,18 @@ type Writer_Fatal_Call struct {
 }
 
 // Fatal is a helper method to define mock.On call
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Fatal(args ...interface{}) *Writer_Fatal_Call {
 	return &Writer_Fatal_Call{Call: _e.mock.On("Fatal",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Writer_Fatal_Call) Run(run func(args ...interface{})) *Writer_Fatal_Call {
+func (_c *Writer_Fatal_Call) Run(run func(args ...any)) *Writer_Fatal_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -279,13 +279,13 @@ func (_c *Writer_Fatal_Call) Return() *Writer_Fatal_Call {
 	return _c
 }
 
-func (_c *Writer_Fatal_Call) RunAndReturn(run func(...interface{})) *Writer_Fatal_Call {
+func (_c *Writer_Fatal_Call) RunAndReturn(run func(...any)) *Writer_Fatal_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Fatalf provides a mock function with given fields: format, args
-func (_m *Writer) Fatalf(format string, args ...interface{}) {
+func (_m *Writer) Fatalf(format string, args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, args...)
@@ -299,18 +299,18 @@ type Writer_Fatalf_Call struct {
 
 // Fatalf is a helper method to define mock.On call
 //   - format string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Fatalf(format interface{}, args ...interface{}) *Writer_Fatalf_Call {
 	return &Writer_Fatalf_Call{Call: _e.mock.On("Fatalf",
 		append([]interface{}{format}, args...)...)}
 }
 
-func (_c *Writer_Fatalf_Call) Run(run func(format string, args ...interface{})) *Writer_Fatalf_Call {
+func (_c *Writer_Fatalf_Call) Run(run func(format string, args ...any)) *Writer_Fatalf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -323,7 +323,7 @@ func (_c *Writer_Fatalf_Call) Return() *Writer_Fatalf_Call {
 	return _c
 }
 
-func (_c *Writer_Fatalf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Fatalf_Call {
+func (_c *Writer_Fatalf_Call) RunAndReturn(run func(string, ...any)) *Writer_Fatalf_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -425,7 +425,7 @@ func (_c *Writer_In_Call) RunAndReturn(run func(string) log.Writer) *Writer_In_C
 }
 
 // Info provides a mock function with given fields: args
-func (_m *Writer) Info(args ...interface{}) {
+func (_m *Writer) Info(args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	_m.Called(_ca...)
@@ -437,18 +437,18 @@ type Writer_Info_Call struct {
 }
 
 // Info is a helper method to define mock.On call
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Info(args ...interface{}) *Writer_Info_Call {
 	return &Writer_Info_Call{Call: _e.mock.On("Info",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Writer_Info_Call) Run(run func(args ...interface{})) *Writer_Info_Call {
+func (_c *Writer_Info_Call) Run(run func(args ...any)) *Writer_Info_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -461,13 +461,13 @@ func (_c *Writer_Info_Call) Return() *Writer_Info_Call {
 	return _c
 }
 
-func (_c *Writer_Info_Call) RunAndReturn(run func(...interface{})) *Writer_Info_Call {
+func (_c *Writer_Info_Call) RunAndReturn(run func(...any)) *Writer_Info_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Infof provides a mock function with given fields: format, args
-func (_m *Writer) Infof(format string, args ...interface{}) {
+func (_m *Writer) Infof(format string, args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, args...)
@@ -481,18 +481,18 @@ type Writer_Infof_Call struct {
 
 // Infof is a helper method to define mock.On call
 //   - format string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Infof(format interface{}, args ...interface{}) *Writer_Infof_Call {
 	return &Writer_Infof_Call{Call: _e.mock.On("Infof",
 		append([]interface{}{format}, args...)...)}
 }
 
-func (_c *Writer_Infof_Call) Run(run func(format string, args ...interface{})) *Writer_Infof_Call {
+func (_c *Writer_Infof_Call) Run(run func(format string, args ...any)) *Writer_Infof_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -505,13 +505,13 @@ func (_c *Writer_Infof_Call) Return() *Writer_Infof_Call {
 	return _c
 }
 
-func (_c *Writer_Infof_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Infof_Call {
+func (_c *Writer_Infof_Call) RunAndReturn(run func(string, ...any)) *Writer_Infof_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Owner provides a mock function with given fields: owner
-func (_m *Writer) Owner(owner interface{}) log.Writer {
+func (_m *Writer) Owner(owner any) log.Writer {
 	ret := _m.Called(owner)
 
 	if len(ret) == 0 {
@@ -519,7 +519,7 @@ func (_m *Writer) Owner(owner interface{}) log.Writer {
 	}
 
 	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(interface{}) log.Writer); ok {
+	if rf, ok := ret.Get(0).(func(any) log.Writer); ok {
 		r0 = rf(owner)
 	} else {
 		if ret.Get(0) != nil {
@@ -536,14 +536,14 @@ type Writer_Owner_Call struct {
 }
 
 // Owner is a helper method to define mock.On call
-//   - owner interface{}
+//   - owner any
 func (_e *Writer_Expecter) Owner(owner interface{}) *Writer_Owner_Call {
 	return &Writer_Owner_Call{Call: _e.mock.On("Owner", owner)}
 }
 
-func (_c *Writer_Owner_Call) Run(run func(owner interface{})) *Writer_Owner_Call {
+func (_c *Writer_Owner_Call) Run(run func(owner any)) *Writer_Owner_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -553,13 +553,13 @@ func (_c *Writer_Owner_Call) Return(_a0 log.Writer) *Writer_Owner_Call {
 	return _c
 }
 
-func (_c *Writer_Owner_Call) RunAndReturn(run func(interface{}) log.Writer) *Writer_Owner_Call {
+func (_c *Writer_Owner_Call) RunAndReturn(run func(any) log.Writer) *Writer_Owner_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Panic provides a mock function with given fields: args
-func (_m *Writer) Panic(args ...interface{}) {
+func (_m *Writer) Panic(args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	_m.Called(_ca...)
@@ -571,18 +571,18 @@ type Writer_Panic_Call struct {
 }
 
 // Panic is a helper method to define mock.On call
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Panic(args ...interface{}) *Writer_Panic_Call {
 	return &Writer_Panic_Call{Call: _e.mock.On("Panic",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Writer_Panic_Call) Run(run func(args ...interface{})) *Writer_Panic_Call {
+func (_c *Writer_Panic_Call) Run(run func(args ...any)) *Writer_Panic_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -595,13 +595,13 @@ func (_c *Writer_Panic_Call) Return() *Writer_Panic_Call {
 	return _c
 }
 
-func (_c *Writer_Panic_Call) RunAndReturn(run func(...interface{})) *Writer_Panic_Call {
+func (_c *Writer_Panic_Call) RunAndReturn(run func(...any)) *Writer_Panic_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Panicf provides a mock function with given fields: format, args
-func (_m *Writer) Panicf(format string, args ...interface{}) {
+func (_m *Writer) Panicf(format string, args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, args...)
@@ -615,18 +615,18 @@ type Writer_Panicf_Call struct {
 
 // Panicf is a helper method to define mock.On call
 //   - format string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Panicf(format interface{}, args ...interface{}) *Writer_Panicf_Call {
 	return &Writer_Panicf_Call{Call: _e.mock.On("Panicf",
 		append([]interface{}{format}, args...)...)}
 }
 
-func (_c *Writer_Panicf_Call) Run(run func(format string, args ...interface{})) *Writer_Panicf_Call {
+func (_c *Writer_Panicf_Call) Run(run func(format string, args ...any)) *Writer_Panicf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -639,7 +639,7 @@ func (_c *Writer_Panicf_Call) Return() *Writer_Panicf_Call {
 	return _c
 }
 
-func (_c *Writer_Panicf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Panicf_Call {
+func (_c *Writer_Panicf_Call) RunAndReturn(run func(string, ...any)) *Writer_Panicf_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -802,7 +802,7 @@ func (_c *Writer_Tags_Call) RunAndReturn(run func(...string) log.Writer) *Writer
 }
 
 // User provides a mock function with given fields: user
-func (_m *Writer) User(user interface{}) log.Writer {
+func (_m *Writer) User(user any) log.Writer {
 	ret := _m.Called(user)
 
 	if len(ret) == 0 {
@@ -810,7 +810,7 @@ func (_m *Writer) User(user interface{}) log.Writer {
 	}
 
 	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(interface{}) log.Writer); ok {
+	if rf, ok := ret.Get(0).(func(any) log.Writer); ok {
 		r0 = rf(user)
 	} else {
 		if ret.Get(0) != nil {
@@ -827,14 +827,14 @@ type Writer_User_Call struct {
 }
 
 // User is a helper method to define mock.On call
-//   - user interface{}
+//   - user any
 func (_e *Writer_Expecter) User(user interface{}) *Writer_User_Call {
 	return &Writer_User_Call{Call: _e.mock.On("User", user)}
 }
 
-func (_c *Writer_User_Call) Run(run func(user interface{})) *Writer_User_Call {
+func (_c *Writer_User_Call) Run(run func(user any)) *Writer_User_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -844,13 +844,13 @@ func (_c *Writer_User_Call) Return(_a0 log.Writer) *Writer_User_Call {
 	return _c
 }
 
-func (_c *Writer_User_Call) RunAndReturn(run func(interface{}) log.Writer) *Writer_User_Call {
+func (_c *Writer_User_Call) RunAndReturn(run func(any) log.Writer) *Writer_User_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Warning provides a mock function with given fields: args
-func (_m *Writer) Warning(args ...interface{}) {
+func (_m *Writer) Warning(args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	_m.Called(_ca...)
@@ -862,18 +862,18 @@ type Writer_Warning_Call struct {
 }
 
 // Warning is a helper method to define mock.On call
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Warning(args ...interface{}) *Writer_Warning_Call {
 	return &Writer_Warning_Call{Call: _e.mock.On("Warning",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Writer_Warning_Call) Run(run func(args ...interface{})) *Writer_Warning_Call {
+func (_c *Writer_Warning_Call) Run(run func(args ...any)) *Writer_Warning_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-0)
+		variadicArgs := make([]any, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(variadicArgs...)
@@ -886,13 +886,13 @@ func (_c *Writer_Warning_Call) Return() *Writer_Warning_Call {
 	return _c
 }
 
-func (_c *Writer_Warning_Call) RunAndReturn(run func(...interface{})) *Writer_Warning_Call {
+func (_c *Writer_Warning_Call) RunAndReturn(run func(...any)) *Writer_Warning_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Warningf provides a mock function with given fields: format, args
-func (_m *Writer) Warningf(format string, args ...interface{}) {
+func (_m *Writer) Warningf(format string, args ...any) {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, args...)
@@ -906,18 +906,18 @@ type Writer_Warningf_Call struct {
 
 // Warningf is a helper method to define mock.On call
 //   - format string
-//   - args ...interface{}
+//   - args ...any
 func (_e *Writer_Expecter) Warningf(format interface{}, args ...interface{}) *Writer_Warningf_Call {
 	return &Writer_Warningf_Call{Call: _e.mock.On("Warningf",
 		append([]interface{}{format}, args...)...)}
 }
 
-func (_c *Writer_Warningf_Call) Run(run func(format string, args ...interface{})) *Writer_Warningf_Call {
+func (_c *Writer_Warningf_Call) Run(run func(format string, args ...any)) *Writer_Warningf_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -930,13 +930,13 @@ func (_c *Writer_Warningf_Call) Return() *Writer_Warningf_Call {
 	return _c
 }
 
-func (_c *Writer_Warningf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Warningf_Call {
+func (_c *Writer_Warningf_Call) RunAndReturn(run func(string, ...any)) *Writer_Warningf_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // With provides a mock function with given fields: data
-func (_m *Writer) With(data map[string]interface{}) log.Writer {
+func (_m *Writer) With(data map[string]any) log.Writer {
 	ret := _m.Called(data)
 
 	if len(ret) == 0 {
@@ -944,7 +944,7 @@ func (_m *Writer) With(data map[string]interface{}) log.Writer {
 	}
 
 	var r0 log.Writer
-	if rf, ok := ret.Get(0).(func(map[string]interface{}) log.Writer); ok {
+	if rf, ok := ret.Get(0).(func(map[string]any) log.Writer); ok {
 		r0 = rf(data)
 	} else {
 		if ret.Get(0) != nil {
@@ -961,14 +961,14 @@ type Writer_With_Call struct {
 }
 
 // With is a helper method to define mock.On call
-//   - data map[string]interface{}
+//   - data map[string]any
 func (_e *Writer_Expecter) With(data interface{}) *Writer_With_Call {
 	return &Writer_With_Call{Call: _e.mock.On("With", data)}
 }
 
-func (_c *Writer_With_Call) Run(run func(data map[string]interface{})) *Writer_With_Call {
+func (_c *Writer_With_Call) Run(run func(data map[string]any)) *Writer_With_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]interface{}))
+		run(args[0].(map[string]any))
 	})
 	return _c
 }
@@ -978,7 +978,7 @@ func (_c *Writer_With_Call) Return(_a0 log.Writer) *Writer_With_Call {
 	return _c
 }
 
-func (_c *Writer_With_Call) RunAndReturn(run func(map[string]interface{}) log.Writer) *Writer_With_Call {
+func (_c *Writer_With_Call) RunAndReturn(run func(map[string]any) log.Writer) *Writer_With_Call {
 	_c.Call.Return(run)
 	return _c
 }

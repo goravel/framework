@@ -21,7 +21,7 @@ func (_m *ResponseView) EXPECT() *ResponseView_Expecter {
 }
 
 // First provides a mock function with given fields: views, data
-func (_m *ResponseView) First(views []string, data ...interface{}) http.Response {
+func (_m *ResponseView) First(views []string, data ...any) http.Response {
 	var _ca []interface{}
 	_ca = append(_ca, views)
 	_ca = append(_ca, data...)
@@ -32,7 +32,7 @@ func (_m *ResponseView) First(views []string, data ...interface{}) http.Response
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func([]string, ...interface{}) http.Response); ok {
+	if rf, ok := ret.Get(0).(func([]string, ...any) http.Response); ok {
 		r0 = rf(views, data...)
 	} else {
 		if ret.Get(0) != nil {
@@ -50,18 +50,18 @@ type ResponseView_First_Call struct {
 
 // First is a helper method to define mock.On call
 //   - views []string
-//   - data ...interface{}
+//   - data ...any
 func (_e *ResponseView_Expecter) First(views interface{}, data ...interface{}) *ResponseView_First_Call {
 	return &ResponseView_First_Call{Call: _e.mock.On("First",
 		append([]interface{}{views}, data...)...)}
 }
 
-func (_c *ResponseView_First_Call) Run(run func(views []string, data ...interface{})) *ResponseView_First_Call {
+func (_c *ResponseView_First_Call) Run(run func(views []string, data ...any)) *ResponseView_First_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].([]string), variadicArgs...)
@@ -74,13 +74,13 @@ func (_c *ResponseView_First_Call) Return(_a0 http.Response) *ResponseView_First
 	return _c
 }
 
-func (_c *ResponseView_First_Call) RunAndReturn(run func([]string, ...interface{}) http.Response) *ResponseView_First_Call {
+func (_c *ResponseView_First_Call) RunAndReturn(run func([]string, ...any) http.Response) *ResponseView_First_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Make provides a mock function with given fields: view, data
-func (_m *ResponseView) Make(view string, data ...interface{}) http.Response {
+func (_m *ResponseView) Make(view string, data ...any) http.Response {
 	var _ca []interface{}
 	_ca = append(_ca, view)
 	_ca = append(_ca, data...)
@@ -91,7 +91,7 @@ func (_m *ResponseView) Make(view string, data ...interface{}) http.Response {
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) http.Response); ok {
+	if rf, ok := ret.Get(0).(func(string, ...any) http.Response); ok {
 		r0 = rf(view, data...)
 	} else {
 		if ret.Get(0) != nil {
@@ -109,18 +109,18 @@ type ResponseView_Make_Call struct {
 
 // Make is a helper method to define mock.On call
 //   - view string
-//   - data ...interface{}
+//   - data ...any
 func (_e *ResponseView_Expecter) Make(view interface{}, data ...interface{}) *ResponseView_Make_Call {
 	return &ResponseView_Make_Call{Call: _e.mock.On("Make",
 		append([]interface{}{view}, data...)...)}
 }
 
-func (_c *ResponseView_Make_Call) Run(run func(view string, data ...interface{})) *ResponseView_Make_Call {
+func (_c *ResponseView_Make_Call) Run(run func(view string, data ...any)) *ResponseView_Make_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
+		variadicArgs := make([]any, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(interface{})
+				variadicArgs[i] = a.(any)
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -133,7 +133,7 @@ func (_c *ResponseView_Make_Call) Return(_a0 http.Response) *ResponseView_Make_C
 	return _c
 }
 
-func (_c *ResponseView_Make_Call) RunAndReturn(run func(string, ...interface{}) http.Response) *ResponseView_Make_Call {
+func (_c *ResponseView_Make_Call) RunAndReturn(run func(string, ...any) http.Response) *ResponseView_Make_Call {
 	_c.Call.Return(run)
 	return _c
 }

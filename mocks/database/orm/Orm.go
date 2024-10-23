@@ -222,7 +222,7 @@ func (_c *Orm_Name_Call) RunAndReturn(run func() string) *Orm_Name_Call {
 }
 
 // Observe provides a mock function with given fields: model, observer
-func (_m *Orm) Observe(model interface{}, observer orm.Observer) {
+func (_m *Orm) Observe(model any, observer orm.Observer) {
 	_m.Called(model, observer)
 }
 
@@ -232,15 +232,15 @@ type Orm_Observe_Call struct {
 }
 
 // Observe is a helper method to define mock.On call
-//   - model interface{}
+//   - model any
 //   - observer orm.Observer
 func (_e *Orm_Expecter) Observe(model interface{}, observer interface{}) *Orm_Observe_Call {
 	return &Orm_Observe_Call{Call: _e.mock.On("Observe", model, observer)}
 }
 
-func (_c *Orm_Observe_Call) Run(run func(model interface{}, observer orm.Observer)) *Orm_Observe_Call {
+func (_c *Orm_Observe_Call) Run(run func(model any, observer orm.Observer)) *Orm_Observe_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}), args[1].(orm.Observer))
+		run(args[0].(any), args[1].(orm.Observer))
 	})
 	return _c
 }
@@ -250,7 +250,7 @@ func (_c *Orm_Observe_Call) Return() *Orm_Observe_Call {
 	return _c
 }
 
-func (_c *Orm_Observe_Call) RunAndReturn(run func(interface{}, orm.Observer)) *Orm_Observe_Call {
+func (_c *Orm_Observe_Call) RunAndReturn(run func(any, orm.Observer)) *Orm_Observe_Call {
 	_c.Call.Return(run)
 	return _c
 }
