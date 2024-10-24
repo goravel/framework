@@ -12,6 +12,8 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
+const BindingSchema = "goravel.schema"
+
 var _ schema.Schema = (*Schema)(nil)
 
 type Schema struct {
@@ -144,6 +146,10 @@ func (r *Schema) Table(table string, callback func(table schema.Blueprint)) {
 }
 
 func (r *Schema) build(blueprint schema.Blueprint) error {
+	if r.orm.Query().InTransaction() {
+		return blueprint.Build(r.orm.Query(), r.grammar)
+	}
+
 	return r.orm.Transaction(func(tx contractsorm.Query) error {
 		return blueprint.Build(tx, r.grammar)
 	})

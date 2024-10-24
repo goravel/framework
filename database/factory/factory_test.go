@@ -1,4 +1,4 @@
-package database
+package factory
 
 import (
 	"testing"
@@ -11,11 +11,31 @@ import (
 	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
+
+type Model struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	Timestamps
+}
+
+type SoftDeletes struct {
+	DeletedAt gormio.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+}
+
+type Timestamps struct {
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+}
+
+type User struct {
+	Model
+	SoftDeletes
+	Name   string
+	Avatar string
+}
 
 func (u *User) Factory() factory.Factory {
 	return &UserFactory{}
@@ -35,10 +55,10 @@ func (u *UserFactory) Definition() map[string]any {
 }
 
 type Author struct {
-	orm.Model
+	Model
 	BookID uint
 	Name   string
-	orm.SoftDeletes
+	SoftDeletes
 }
 
 func (a *Author) Factory() factory.Factory {
@@ -61,7 +81,7 @@ func (a *AuthorFactory) Definition() map[string]any {
 }
 
 type House struct {
-	orm.Model
+	Model
 	Name          string
 	HouseableID   uint
 	HouseableType string

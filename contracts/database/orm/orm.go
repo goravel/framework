@@ -22,6 +22,8 @@ type Orm interface {
 	Query() Query
 	// Refresh resets the Orm instance.
 	Refresh()
+	// SetQuery sets the query builder instance.
+	SetQuery(query Query)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Query) error) error
 	// WithContext sets the context to be used by the Orm.
@@ -41,6 +43,8 @@ type Query interface {
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	Cursor() (chan Cursor, error)
+	// DB gets the underlying database connection.
+	DB() (*sql.DB, error)
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
 	Delete(value ...any) (*Result, error)
 	// Distinct specifies distinct fields to query.
@@ -78,6 +82,8 @@ type Query interface {
 	Having(query any, args ...any) Query
 	// InRandomOrder specifies the order randomly.
 	InRandomOrder() Query
+	// InTransaction checks if the query is in a transaction.
+	InTransaction() bool
 	// Join specifying JOIN conditions for the query.
 	Join(query string, args ...any) Query
 	// Limit the number of records returned.
@@ -165,6 +171,14 @@ type Query interface {
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
+}
+
+type QueryWithSetContext interface {
+	SetContext(ctx context.Context)
+}
+
+type QueryWithObserver interface {
+	Observe(model any, observer Observer)
 }
 
 type Association interface {

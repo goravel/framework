@@ -334,6 +334,39 @@ func (_c *Orm_Refresh_Call) RunAndReturn(run func()) *Orm_Refresh_Call {
 	return _c
 }
 
+// SetQuery provides a mock function with given fields: query
+func (_m *Orm) SetQuery(query orm.Query) {
+	_m.Called(query)
+}
+
+// Orm_SetQuery_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetQuery'
+type Orm_SetQuery_Call struct {
+	*mock.Call
+}
+
+// SetQuery is a helper method to define mock.On call
+//   - query orm.Query
+func (_e *Orm_Expecter) SetQuery(query interface{}) *Orm_SetQuery_Call {
+	return &Orm_SetQuery_Call{Call: _e.mock.On("SetQuery", query)}
+}
+
+func (_c *Orm_SetQuery_Call) Run(run func(query orm.Query)) *Orm_SetQuery_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(orm.Query))
+	})
+	return _c
+}
+
+func (_c *Orm_SetQuery_Call) Return() *Orm_SetQuery_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Orm_SetQuery_Call) RunAndReturn(run func(orm.Query)) *Orm_SetQuery_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Transaction provides a mock function with given fields: txFunc
 func (_m *Orm) Transaction(txFunc func(orm.Query) error) error {
 	ret := _m.Called(txFunc)

@@ -9,19 +9,17 @@ import (
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/database/schema"
+	"github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/errors"
 )
-
-const BindingOrm = "goravel.orm"
-const BindingSchema = "goravel.schema"
-const BindingSeeder = "goravel.seeder"
 
 type ServiceProvider struct {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
+	app.Singleton(orm.BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		if config == nil {
@@ -34,14 +32,14 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		connection := config.GetString("database.default")
-		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
+		orm, err := orm.BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
 			return nil, errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm)
 		}
 
 		return orm, nil
 	})
-	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
+	app.Singleton(schema.BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
@@ -59,8 +57,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		return schema.NewSchema(config, log, orm, nil), nil
 	})
-	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
-		return NewSeederFacade(), nil
+	app.Singleton(seeder.BindingSeeder, func(app foundation.Application) (any, error) {
+		return seeder.NewSeederFacade(), nil
 	})
 }
 
@@ -96,7 +94,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 		artisan.Register([]contractsconsole.Command{
 			consolemigration.NewMigrateMakeCommand(migrator),
 			consolemigration.NewMigrateCommand(migrator),
-			consolemigration.NewMigrateRollbackCommand(config),
+			consolemigration.NewMigrateRollbackCommand(migrator),
 			consolemigration.NewMigrateResetCommand(config),
 			consolemigration.NewMigrateRefreshCommand(config, artisan),
 			consolemigration.NewMigrateFreshCommand(artisan, migrator),

@@ -7,8 +7,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/carbon"
 )
+
+type Model struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	Timestamps
+}
+
+type Timestamps struct {
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+}
 
 type TestStruct struct {
 	ID   int `gorm:"primaryKey"`
@@ -49,10 +59,10 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "return value with orm.Model",
+			description: "return value with Model",
 			setup: func(description string) {
 				type User struct {
-					orm.Model
+					Model
 					Name   string
 					Avatar string
 				}
@@ -86,10 +96,10 @@ func TestGetID(t *testing.T) {
 			},
 		},
 		{
-			description: "return value with orm.Model",
+			description: "return value with Model",
 			setup: func(description string) {
 				type User struct {
-					orm.Model
+					Model
 					Name   string
 					Avatar string
 				}
