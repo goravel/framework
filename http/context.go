@@ -26,6 +26,11 @@ func (r *Context) Context() context.Context {
 	return r.Ctx
 }
 
+func (c *Context) WithContext(ctx context.Context) {
+	// Changing the request context to a new context
+	c.Ctx = ctx
+}
+
 func (r *Context) WithValue(key any, value any) {
 	//nolint:all
 	r.Ctx = context.WithValue(r.Ctx, key, value)

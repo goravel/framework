@@ -117,6 +117,10 @@ func (r *TestContext) Context() context.Context {
 	return r.ctx
 }
 
+func (r *TestContext) WithContext(context.Context) {
+	panic("do not need to implement it")
+}
+
 func (r *TestContext) WithValue(key any, value any) {
 	r.ctx = context.WithValue(r.ctx, key, value)
 }
