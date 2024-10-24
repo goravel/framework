@@ -238,21 +238,9 @@ func (s *DefaultMigratorSuite) TestRollback() {
 
 				s.mockRepository.EXPECT().GetMigrations(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{testMigration}).Once()
-				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockSchema.EXPECT().Create("users", mock.Anything).Return(nil).Once()
-					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockRepository.EXPECT().Delete(testMigration.Signature()).Return(nil).Once()
-
-					return f(mockQuery)
-				}).Once()
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil)
 			},
 		},
 		{
@@ -270,20 +258,9 @@ func (s *DefaultMigratorSuite) TestRollback() {
 
 				s.mockRepository.EXPECT().GetMigrations(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{testMigration}).Once()
-				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 
 				mockOrm := mocksorm.NewOrm(s.T())
-				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockSchema.EXPECT().Create("users", mock.Anything).Return(assert.AnError).Once()
-					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-
-					return f(mockQuery)
-				}).Once()
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", assert.AnError)
 			},
 			expectErr: assert.AnError.Error(),
 		},
@@ -317,6 +294,8 @@ func (s *DefaultMigratorSuite) TestRun() {
 		{
 			name: "Happy path",
 			setup: func() {
+				previousConnection := "postgres"
+
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{testConnectionMigration.Signature()}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
@@ -324,12 +303,16 @@ func (s *DefaultMigratorSuite) TestRun() {
 					testConnectionMigration,
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(nil).Once()
+
+				mockOrm := mocksorm.NewOrm(s.T())
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil)
 			},
 		},
 		{
 			name: "Sad path - Log returns error",
 			setup: func() {
+				previousConnection := "postgres"
+
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 				s.mockRepository.EXPECT().GetRan().Return([]string{testConnectionMigration.Signature()}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
@@ -337,9 +320,11 @@ func (s *DefaultMigratorSuite) TestRun() {
 					testConnectionMigration,
 				}).Once()
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(errors.New("error")).Once()
+
+				mockOrm := mocksorm.NewOrm(s.T())
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError)
 			},
-			expectError: "error",
+			expectError: assert.AnError.Error(),
 		},
 		{
 			name: "Sad path - GetNextBatchNumber returns error",
@@ -350,17 +335,17 @@ func (s *DefaultMigratorSuite) TestRun() {
 					testMigration,
 					testConnectionMigration,
 				}).Once()
-				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, errors.New("error")).Once()
+				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, assert.AnError).Once()
 			},
-			expectError: "error",
+			expectError: assert.AnError.Error(),
 		},
 		{
 			name: "Sad path - GetRan returns error",
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return(nil, errors.New("error")).Once()
+				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
 			},
-			expectError: "error",
+			expectError: assert.AnError.Error(),
 		},
 	}
 
@@ -416,8 +401,11 @@ func (s *DefaultMigratorSuite) TestRunPending() {
 				testMigration,
 			},
 			setup: func() {
+				previousConnection := "postgres"
+				mockOrm := mocksorm.NewOrm(s.T())
+
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(nil).Once()
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil)
 			},
 		},
 		{
@@ -431,9 +419,9 @@ func (s *DefaultMigratorSuite) TestRunPending() {
 				testMigration,
 			},
 			setup: func() {
-				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, errors.New("error")).Once()
+				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, assert.AnError).Once()
 			},
-			expectError: "error",
+			expectError: assert.AnError.Error(),
 		},
 		{
 			name: "Sad path - runUp returns error",
@@ -441,10 +429,13 @@ func (s *DefaultMigratorSuite) TestRunPending() {
 				testMigration,
 			},
 			setup: func() {
+				previousConnection := "postgres"
+				mockOrm := mocksorm.NewOrm(s.T())
+
 				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRepository.EXPECT().Log(testMigration.Signature(), 1).Return(errors.New("error")).Once()
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError)
 			},
-			expectError: "error",
+			expectError: assert.AnError.Error(),
 		},
 	}
 
@@ -478,53 +469,27 @@ func (s *DefaultMigratorSuite) TestRunDown() {
 	}
 
 	tests := []struct {
-		name        string
-		migration   contractsschema.Migration
-		setup       func()
-		expectValue int
-		expectErr   string
+		name      string
+		migration contractsschema.Migration
+		setup     func()
+		expectErr string
 	}{
 		{
 			name:      "Happy path",
 			migration: testMigration,
 			setup: func() {
-				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockRepository.EXPECT().Delete(testMigration.Signature()).Return(nil).Once()
-
-					return f(mockQuery)
-				}).Once()
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil)
 			},
-			expectValue: 2,
 		},
 		{
 			name:      "Happy path - with connection",
 			migration: testConnectionMigration,
 			setup: func() {
-				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-				s.mockSchema.EXPECT().SetConnection(testConnectionMigration.Connection()).Once()
-				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockRepository.EXPECT().Delete(testConnectionMigration.Signature()).Return(nil).Once()
-
-					return f(mockQuery)
-				}).Once()
+				s.mockRunDown(mockOrm, previousConnection, testConnectionMigration.Signature(), "agents", nil)
 			},
-			expectValue: 2,
 		},
 		{
-			name:      "Sad path - up returns error",
+			name:      "Sad path - Down returns error",
 			migration: testErrorMigration,
 			setup: func() {
 				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
@@ -576,53 +541,27 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 	}
 
 	tests := []struct {
-		name        string
-		migration   contractsschema.Migration
-		setup       func()
-		expectValue int
-		expectErr   string
+		name      string
+		migration contractsschema.Migration
+		setup     func()
+		expectErr string
 	}{
 		{
 			name:      "Happy path",
 			migration: testMigration,
 			setup: func() {
-				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockRepository.EXPECT().Log(testMigration.Signature(), batch).Return(nil).Once()
-
-					return f(mockQuery)
-				}).Once()
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", batch, nil)
 			},
-			expectValue: 1,
 		},
 		{
 			name:      "Happy path - with connection",
 			migration: testConnectionMigration,
 			setup: func() {
-				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-				s.mockSchema.EXPECT().SetConnection(testConnectionMigration.Connection()).Once()
-				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-					mockOrm.EXPECT().SetQuery(mockQuery).Once()
-					s.mockRepository.EXPECT().Log(testConnectionMigration.Signature(), batch).Return(nil).Once()
-
-					return f(mockQuery)
-				}).Once()
+				s.mockRunUp(mockOrm, previousConnection, testConnectionMigration.Signature(), "agents", batch, nil)
 			},
-			expectValue: 1,
 		},
 		{
-			name:      "Sad path - up returns error",
+			name:      "Sad path - Up returns error",
 			migration: testErrorMigration,
 			setup: func() {
 				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
@@ -655,6 +594,59 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 			}
 		})
 	}
+}
+
+func (s *DefaultMigratorSuite) mockRunDown(
+	mockOrm *mocksorm.Orm,
+	previousConnection, migrationSignature, table string,
+	err error,
+) {
+	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
+	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+
+	testConnectionMigration := &TestConnectionMigration{}
+	if testConnectionMigration.Signature() == migrationSignature {
+		s.mockSchema.EXPECT().SetConnection(testConnectionMigration.Connection()).Once()
+	}
+
+	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
+		mockQuery := mocksorm.NewQuery(s.T())
+		mockOrm.EXPECT().Query().Return(mockQuery).Once()
+		mockOrm.EXPECT().SetQuery(mockQuery).Once()
+		s.mockSchema.EXPECT().DropIfExists(table).Return(nil).Once()
+		s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
+		mockOrm.EXPECT().SetQuery(mockQuery).Once()
+		s.mockRepository.EXPECT().Delete(migrationSignature).Return(err).Once()
+
+		return f(mockQuery)
+	}).Once()
+}
+
+func (s *DefaultMigratorSuite) mockRunUp(
+	mockOrm *mocksorm.Orm,
+	previousConnection, migrationSignature, table string,
+	batch int,
+	err error,
+) {
+	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
+	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+
+	testConnectionMigration := &TestConnectionMigration{}
+	if testConnectionMigration.Signature() == migrationSignature {
+		s.mockSchema.EXPECT().SetConnection(testConnectionMigration.Connection()).Once()
+	}
+
+	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
+		mockQuery := mocksorm.NewQuery(s.T())
+		mockOrm.EXPECT().Query().Return(mockQuery).Once()
+		mockOrm.EXPECT().SetQuery(mockQuery).Once()
+		s.mockSchema.EXPECT().Create(table, mock.Anything).Return(nil).Once()
+		s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
+		mockOrm.EXPECT().SetQuery(mockQuery).Once()
+		s.mockRepository.EXPECT().Log(migrationSignature, batch).Return(err).Once()
+
+		return f(mockQuery)
+	}).Once()
 }
 
 type TestMigration struct {
