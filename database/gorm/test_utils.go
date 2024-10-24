@@ -680,7 +680,7 @@ CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   deleted_at datetime(3) DEFAULT NULL,
@@ -695,7 +695,7 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL,
   deleted_at timestamp DEFAULT NULL
@@ -707,7 +707,7 @@ CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL
@@ -719,7 +719,7 @@ CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL,
@@ -739,7 +739,7 @@ CREATE TABLE goravel_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   deleted_at datetime(3) DEFAULT NULL,
@@ -754,7 +754,7 @@ CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL,
   deleted_at timestamp DEFAULT NULL
@@ -766,7 +766,7 @@ CREATE TABLE goravel_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL
@@ -778,7 +778,7 @@ CREATE TABLE goravel_user (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL,
@@ -798,7 +798,7 @@ CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   user_id bigint(20) unsigned DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   PRIMARY KEY (id),
@@ -812,7 +812,7 @@ CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
   user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL
 );
@@ -823,7 +823,7 @@ CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL
 );
@@ -834,7 +834,7 @@ CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
   user_id bigint DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   PRIMARY KEY (id)
