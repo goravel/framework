@@ -24,3 +24,8 @@ type Observer interface {
 	// ForceDeleted called when the model has been force deleted.
 	ForceDeleted(Event) error
 }
+
+type ModelToObserver struct {
+	Model    any
+	Observer Observer
+}

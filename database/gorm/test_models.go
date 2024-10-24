@@ -4,17 +4,33 @@ import (
 	"errors"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type contextKey int
 
 const testContextKey contextKey = 0
 
+type Model struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	Timestamps
+}
+
+type SoftDeletes struct {
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+}
+
+type Timestamps struct {
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+}
+
 type User struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Name    string
 	Bio     *string
 	Avatar  string
@@ -294,13 +310,13 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 }
 
 type Role struct {
-	orm.Model
+	Model
 	Name  string
 	Users []*User `gorm:"many2many:role_user"`
 }
 
 type Address struct {
-	orm.Model
+	Model
 	UserID   uint
 	Name     string
 	Province string
@@ -308,7 +324,7 @@ type Address struct {
 }
 
 type Book struct {
-	orm.Model
+	Model
 	UserID uint
 	Name   string
 	User   *User
@@ -316,13 +332,13 @@ type Book struct {
 }
 
 type Author struct {
-	orm.Model
+	Model
 	BookID uint
 	Name   string
 }
 
 type House struct {
-	orm.Model
+	Model
 	Name          string
 	HouseableID   uint
 	HouseableType string
@@ -333,15 +349,15 @@ func (h *House) Factory() string {
 }
 
 type Phone struct {
-	orm.Model
+	Model
 	Name          string
 	PhoneableID   uint
 	PhoneableType string
 }
 
 type Product struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Name string
 }
 
@@ -350,8 +366,8 @@ func (p *Product) Connection() string {
 }
 
 type Review struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Body string
 }
 
@@ -360,8 +376,8 @@ func (r *Review) Connection() string {
 }
 
 type People struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Body string
 }
 
@@ -370,8 +386,8 @@ func (p *People) Connection() string {
 }
 
 type Person struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Name string
 }
 
@@ -380,8 +396,8 @@ func (p *Person) Connection() string {
 }
 
 type Box struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Name string
 }
 

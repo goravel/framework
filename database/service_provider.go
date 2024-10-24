@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
-	"github.com/goravel/framework/database/orms"
+	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/errors"
@@ -19,7 +19,7 @@ type ServiceProvider struct {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(orms.BindingOrm, func(app foundation.Application) (any, error) {
+	app.Singleton(orm.BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		if config == nil {
@@ -32,7 +32,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		connection := config.GetString("database.default")
-		orm, err := orms.BuildOrm(ctx, config, connection, log, app.Refresh)
+		orm, err := orm.BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
 			return nil, errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm)
 		}
