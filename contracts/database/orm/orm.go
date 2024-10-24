@@ -43,6 +43,8 @@ type Query interface {
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
 	Cursor() (chan Cursor, error)
+	// DB gets the underlying database connection.
+	DB() (*sql.DB, error)
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
 	Delete(value ...any) (*Result, error)
 	// Distinct specifies distinct fields to query.
@@ -169,6 +171,14 @@ type Query interface {
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
+}
+
+type QueryWithSetContext interface {
+	SetContext(ctx context.Context)
+}
+
+type QueryWithObserver interface {
+	Observe(model any, observer Observer)
 }
 
 type Association interface {

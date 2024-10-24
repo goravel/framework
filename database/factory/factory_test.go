@@ -11,13 +11,33 @@ import (
 	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
 
-func (u *orm.User) Factory() factory.Factory {
+type Model struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	Timestamps
+}
+
+type SoftDeletes struct {
+	DeletedAt gormio.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+}
+
+type Timestamps struct {
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+}
+
+type User struct {
+	Model
+	SoftDeletes
+	Name   string
+	Avatar string
+}
+
+func (u *User) Factory() factory.Factory {
 	return &UserFactory{}
 }
 
@@ -35,10 +55,10 @@ func (u *UserFactory) Definition() map[string]any {
 }
 
 type Author struct {
-	orm.Model
+	Model
 	BookID uint
 	Name   string
-	orm.SoftDeletes
+	SoftDeletes
 }
 
 func (a *Author) Factory() factory.Factory {
@@ -61,7 +81,7 @@ func (a *AuthorFactory) Definition() map[string]any {
 }
 
 type House struct {
-	orm.Model
+	Model
 	Name          string
 	HouseableID   uint
 	HouseableType string
@@ -93,7 +113,7 @@ func (s *FactoryTestSuite) SetupTest() {
 }
 
 func (s *FactoryTestSuite) TestTimes() {
-	var user []orm.User
+	var user []User
 	s.Nil(s.factory.Count(2).Make(&user))
 	s.True(len(user) == 2)
 	s.True(len(user[0].Name) > 0)
@@ -101,7 +121,7 @@ func (s *FactoryTestSuite) TestTimes() {
 }
 
 func (s *FactoryTestSuite) TestCreate() {
-	var user []orm.User
+	var user []User
 	s.Nil(s.factory.Create(&user))
 	s.True(len(user) == 1)
 	s.True(user[0].ID > 0)
@@ -110,7 +130,7 @@ func (s *FactoryTestSuite) TestCreate() {
 	s.NotEmpty(user[0].CreatedAt.String())
 	s.NotEmpty(user[0].UpdatedAt.String())
 
-	var user1 orm.User
+	var user1 User
 	s.Nil(s.factory.Create(&user1))
 	s.NotNil(user1)
 	s.True(user1.ID > 0)
@@ -118,7 +138,7 @@ func (s *FactoryTestSuite) TestCreate() {
 	s.NotEmpty(user1.CreatedAt.String())
 	s.NotEmpty(user1.UpdatedAt.String())
 
-	var user2 orm.User
+	var user2 User
 	s.Nil(s.factory.Create(&user2, map[string]any{
 		"Avatar": "avatar",
 	}))
@@ -128,7 +148,7 @@ func (s *FactoryTestSuite) TestCreate() {
 	s.NotEmpty(user2.CreatedAt.String())
 	s.NotEmpty(user2.UpdatedAt.String())
 
-	var user3 []orm.User
+	var user3 []User
 	s.Nil(s.factory.Count(2).Create(&user3))
 	s.True(len(user3) == 2)
 	s.True(user3[0].ID > 0)
@@ -138,7 +158,7 @@ func (s *FactoryTestSuite) TestCreate() {
 }
 
 func (s *FactoryTestSuite) TestCreateQuietly() {
-	var user []orm.User
+	var user []User
 	s.Nil(s.factory.CreateQuietly(&user))
 	s.True(len(user) == 1)
 	s.True(user[0].ID > 0)
@@ -147,7 +167,7 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 	s.NotEmpty(user[0].CreatedAt.String())
 	s.NotEmpty(user[0].UpdatedAt.String())
 
-	var user1 orm.User
+	var user1 User
 	s.Nil(s.factory.CreateQuietly(&user1))
 	s.NotNil(user1)
 	s.True(user1.ID > 0)
@@ -155,7 +175,7 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 	s.NotEmpty(user1.CreatedAt.String())
 	s.NotEmpty(user1.UpdatedAt.String())
 
-	var user2 orm.User
+	var user2 User
 	s.Nil(s.factory.CreateQuietly(&user2, map[string]any{
 		"Avatar": "avatar",
 	}))
@@ -165,7 +185,7 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 	s.NotEmpty(user2.CreatedAt.String())
 	s.NotEmpty(user2.UpdatedAt.String())
 
-	var user3 []orm.User
+	var user3 []User
 	s.Nil(s.factory.Count(2).CreateQuietly(&user3))
 	s.True(len(user3) == 2)
 	s.True(user3[0].ID > 0)
@@ -175,7 +195,7 @@ func (s *FactoryTestSuite) TestCreateQuietly() {
 }
 
 func (s *FactoryTestSuite) TestMake() {
-	var user orm.User
+	var user User
 	s.Nil(s.factory.Make(&user))
 	s.True(user.ID == 0)
 	s.True(len(user.Name) > 0)
@@ -183,7 +203,7 @@ func (s *FactoryTestSuite) TestMake() {
 	s.NotEmpty(user.CreatedAt.String())
 	s.NotEmpty(user.UpdatedAt.String())
 
-	var user1 orm.User
+	var user1 User
 	s.Nil(s.factory.Make(&user1, map[string]any{
 		"Avatar": "avatar",
 	}))
@@ -193,7 +213,7 @@ func (s *FactoryTestSuite) TestMake() {
 	s.NotEmpty(user1.CreatedAt.String())
 	s.NotEmpty(user1.UpdatedAt.String())
 
-	var users []orm.User
+	var users []User
 	s.Nil(s.factory.Make(&users))
 	s.True(len(users) == 1)
 	s.True(users[0].ID == 0)
@@ -218,12 +238,12 @@ func (s *FactoryTestSuite) TestGetRawAttributes() {
 	s.NotNil(err)
 	s.Nil(attributes)
 
-	var user orm.User
+	var user User
 	attributes, err = s.factory.getRawAttributes(&user)
 	s.Nil(err)
 	s.NotNil(attributes)
 
-	var user1 orm.User
+	var user1 User
 	attributes, err = s.factory.getRawAttributes(&user1, map[string]any{
 		"Avatar": "avatar",
 	})

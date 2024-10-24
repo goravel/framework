@@ -19,29 +19,40 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm/hints"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 )
 
+const Associations = clause.Associations
+
 type Query struct {
-	conditions Conditions
-	config     config.Config
-	ctx        context.Context
-	fullConfig contractsdatabase.FullConfig
-	instance   *gormio.DB
-	log        log.Log
-	queries    map[string]*Query
+	conditions      Conditions
+	config          config.Config
+	ctx             context.Context
+	fullConfig      contractsdatabase.FullConfig
+	instance        *gormio.DB
+	log             log.Log
+	modelToObserver []contractsorm.ModelToObserver
+	queries         map[string]*Query
 }
 
-func NewQuery(ctx context.Context, config config.Config, fullConfig contractsdatabase.FullConfig, db *gormio.DB, log log.Log, conditions *Conditions) *Query {
+func NewQuery(
+	ctx context.Context,
+	config config.Config,
+	fullConfig contractsdatabase.FullConfig,
+	db *gormio.DB,
+	log log.Log,
+	modelToObserver []contractsorm.ModelToObserver,
+	conditions *Conditions,
+) *Query {
 	queryImpl := &Query{
-		config:     config,
-		ctx:        ctx,
-		fullConfig: fullConfig,
-		instance:   db,
-		log:        log,
-		queries:    make(map[string]*Query),
+		config:          config,
+		ctx:             ctx,
+		fullConfig:      fullConfig,
+		instance:        db,
+		log:             log,
+		modelToObserver: modelToObserver,
+		queries:         make(map[string]*Query),
 	}
 
 	if conditions != nil {
@@ -51,7 +62,7 @@ func NewQuery(ctx context.Context, config config.Config, fullConfig contractsdat
 	return queryImpl
 }
 
-func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log) (*Query, error) {
+func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, error) {
 	configBuilder := db.NewConfigBuilder(config, connection)
 	writeConfigs := configBuilder.Writes()
 	if len(writeConfigs) == 0 {
@@ -63,7 +74,7 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 		return nil, err
 	}
 
-	return NewQuery(ctx, config, writeConfigs[0], gorm, log, nil), nil
+	return NewQuery(ctx, config, writeConfigs[0], gorm, log, modelToObserver, nil), nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -143,6 +154,10 @@ func (r *Query) Cursor() (chan contractsorm.Cursor, error) {
 		close(cursorChan)
 	}()
 	return cursorChan, err
+}
+
+func (r *Query) DB() (*sql.DB, error) {
+	return r.instance.DB()
 }
 
 func (r *Query) Delete(dest ...any) (*contractsorm.Result, error) {
@@ -510,6 +525,13 @@ func (r *Query) Model(value any) contractsorm.Query {
 	conditions.model = value
 
 	return r.setConditions(conditions)
+}
+
+func (r *Query) Observe(model any, observer contractsorm.Observer) {
+	r.modelToObserver = append(r.modelToObserver, contractsorm.ModelToObserver{
+		Model:    model,
+		Observer: observer,
+	})
 }
 
 func (r *Query) Offset(offset int) contractsorm.Query {
@@ -1138,7 +1160,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
-						queryImpl := NewQuery(r.ctx, r.config, r.fullConfig, tx, r.log, nil)
+						queryImpl := NewQuery(r.ctx, r.config, r.fullConfig, tx, r.log, r.modelToObserver, nil)
 						query := arg(queryImpl)
 						queryImpl = query.(*Query)
 						queryImpl = queryImpl.buildConditions()
@@ -1185,7 +1207,7 @@ func (r *Query) create(dest any) error {
 		return err
 	}
 
-	if err := r.instance.Omit(orm.Associations).Create(dest).Error; err != nil {
+	if err := r.instance.Omit(Associations).Create(dest).Error; err != nil {
 		return err
 	}
 
@@ -1250,7 +1272,7 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	}
 
 	if dest != nil {
-		if observer := getObserver(dest); observer != nil {
+		if observer := r.getObserver(dest); observer != nil {
 			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
 				return observerEvent(instance)
 			}
@@ -1259,7 +1281,7 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	}
 
 	if model != nil {
-		if observer := getObserver(model); observer != nil {
+		if observer := r.getObserver(model); observer != nil {
 			if observerEvent := getObserverEvent(event, observer); observerEvent != nil {
 				return observerEvent(instance)
 			}
@@ -1271,20 +1293,39 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	return nil
 }
 
+func (r *Query) getObserver(dest any) contractsorm.Observer {
+	destType := reflect.TypeOf(dest)
+	if destType.Kind() == reflect.Pointer {
+		destType = destType.Elem()
+	}
+
+	for _, observer := range r.modelToObserver {
+		modelType := reflect.TypeOf(observer.Model)
+		if modelType.Kind() == reflect.Pointer {
+			modelType = modelType.Elem()
+		}
+		if destType.Name() == modelType.Name() {
+			return observer.Observer
+		}
+	}
+
+	return nil
+}
+
 func (r *Query) new(db *gormio.DB) *Query {
-	return NewQuery(r.ctx, r.config, r.fullConfig, db, r.log, &r.conditions)
+	return NewQuery(r.ctx, r.config, r.fullConfig, db, r.log, r.modelToObserver, &r.conditions)
 }
 
 func (r *Query) omitCreate(value any) error {
 	if len(r.instance.Statement.Omits) > 1 {
 		for _, val := range r.instance.Statement.Omits {
-			if val == orm.Associations {
+			if val == Associations {
 				return errors.OrmQueryAssociationsConflict
 			}
 		}
 	}
 
-	if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == orm.Associations {
+	if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == Associations {
 		r.instance.Statement.Selects = []string{}
 	}
 
@@ -1295,8 +1336,8 @@ func (r *Query) omitCreate(value any) error {
 		return err
 	}
 
-	if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == orm.Associations {
-		if err := r.instance.Omit(orm.Associations).Create(value).Error; err != nil {
+	if len(r.instance.Statement.Omits) == 1 && r.instance.Statement.Omits[0] == Associations {
+		if err := r.instance.Omit(Associations).Create(value).Error; err != nil {
 			return err
 		}
 	} else {
@@ -1317,8 +1358,8 @@ func (r *Query) omitCreate(value any) error {
 
 func (r *Query) omitSave(value any) error {
 	for _, val := range r.instance.Statement.Omits {
-		if val == orm.Associations {
-			return r.instance.Omit(orm.Associations).Save(value).Error
+		if val == Associations {
+			return r.instance.Omit(Associations).Save(value).Error
 		}
 	}
 
@@ -1337,7 +1378,7 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	query, ok := r.queries[connection]
 	if !ok {
 		var err error
-		query, err = BuildQuery(r.ctx, r.config, connection, r.log)
+		query, err = BuildQuery(r.ctx, r.config, connection, r.log, r.modelToObserver)
 		if err != nil {
 			return nil, err
 		}
@@ -1358,7 +1399,7 @@ func (r *Query) retrieved(dest any) error {
 }
 
 func (r *Query) save(value any) error {
-	return r.instance.Omit(orm.Associations).Save(value).Error
+	return r.instance.Omit(Associations).Save(value).Error
 }
 
 func (r *Query) saved(dest any) error {
@@ -1372,13 +1413,13 @@ func (r *Query) saving(dest any) error {
 func (r *Query) selectCreate(value any) error {
 	if len(r.instance.Statement.Selects) > 1 {
 		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Associations {
+			if val == Associations {
 				return errors.OrmQueryAssociationsConflict
 			}
 		}
 	}
 
-	if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == orm.Associations {
+	if len(r.instance.Statement.Selects) == 1 && r.instance.Statement.Selects[0] == Associations {
 		r.instance.Statement.Selects = []string{}
 	}
 
@@ -1405,7 +1446,7 @@ func (r *Query) selectCreate(value any) error {
 
 func (r *Query) selectSave(value any) error {
 	for _, val := range r.instance.Statement.Selects {
-		if val == orm.Associations {
+		if val == Associations {
 			return r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Save(value).Error
 		}
 	}
@@ -1439,7 +1480,7 @@ func (r *Query) updates(values any) (*contractsorm.Result, error) {
 
 	if len(r.instance.Statement.Selects) > 0 {
 		for _, val := range r.instance.Statement.Selects {
-			if val == orm.Associations {
+			if val == Associations {
 				result := r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Updates(values)
 				return &contractsorm.Result{
 					RowsAffected: result.RowsAffected,
@@ -1456,8 +1497,8 @@ func (r *Query) updates(values any) (*contractsorm.Result, error) {
 
 	if len(r.instance.Statement.Omits) > 0 {
 		for _, val := range r.instance.Statement.Omits {
-			if val == orm.Associations {
-				result := r.instance.Omit(orm.Associations).Updates(values)
+			if val == Associations {
+				result := r.instance.Omit(Associations).Updates(values)
 
 				return &contractsorm.Result{
 					RowsAffected: result.RowsAffected,
@@ -1470,7 +1511,7 @@ func (r *Query) updates(values any) (*contractsorm.Result, error) {
 			RowsAffected: result.RowsAffected,
 		}, result.Error
 	}
-	result := r.instance.Omit(orm.Associations).Updates(values)
+	result := r.instance.Omit(Associations).Updates(values)
 
 	return &contractsorm.Result{
 		RowsAffected: result.RowsAffected,
@@ -1532,25 +1573,6 @@ func getModelConnection(model any) (string, error) {
 	}
 
 	return connectionModel.Connection(), nil
-}
-
-func getObserver(dest any) contractsorm.Observer {
-	destType := reflect.TypeOf(dest)
-	if destType.Kind() == reflect.Pointer {
-		destType = destType.Elem()
-	}
-
-	for _, observer := range orm.Observers {
-		modelType := reflect.TypeOf(observer.Model)
-		if modelType.Kind() == reflect.Pointer {
-			modelType = modelType.Elem()
-		}
-		if destType.Name() == modelType.Name() {
-			return observer.Observer
-		}
-	}
-
-	return nil
 }
 
 func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
