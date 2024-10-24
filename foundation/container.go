@@ -34,7 +34,9 @@ import (
 	contractstranslation "github.com/goravel/framework/contracts/translation"
 	contractsvalidation "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/crypt"
-	"github.com/goravel/framework/database"
+	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/database/schema"
+	"github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/grpc"
@@ -207,7 +209,7 @@ func (c *Container) MakeMail() contractsmail.Mail {
 }
 
 func (c *Container) MakeOrm() contractsorm.Orm {
-	instance, err := c.Make(database.BindingOrm)
+	instance, err := c.Make(orm.BindingOrm)
 	if err != nil {
 		color.Errorln(err)
 		return nil
@@ -257,7 +259,7 @@ func (c *Container) MakeSchedule() contractsschedule.Schedule {
 }
 
 func (c *Container) MakeSchema() contractsmigration.Schema {
-	instance, err := c.Make(database.BindingSchema)
+	instance, err := c.Make(schema.BindingSchema)
 	if err != nil {
 		color.Errorln(err)
 		return nil
@@ -317,7 +319,7 @@ func (c *Container) MakeView() contractshttp.View {
 }
 
 func (c *Container) MakeSeeder() contractsseerder.Facade {
-	instance, err := c.Make(database.BindingSeeder)
+	instance, err := c.Make(seeder.BindingSeeder)
 
 	if err != nil {
 		color.Errorln(err)
