@@ -2692,13 +2692,58 @@ func (s *QueryTestSuite) TestSave() {
 			{
 				name: "success when create",
 				setup: func() {
-					user := User{Name: "save_create_user", Avatar: "save_create_avatar"}
+					user := User{
+						Name:   "save_create_user",
+						Avatar: "save_create_avatar",
+						House:  &House{Name: "save_create_house"},
+					}
 					s.Nil(query.Query().Save(&user))
 					s.True(user.ID > 0)
+					s.True(user.House.ID == 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("save_create_user", user1.Name)
+				},
+			},
+			{
+				name: "success when create with Select",
+				setup: func() {
+					user := User{
+						Name:   "save_create_with_select_user",
+						Avatar: "save_create_with_select_avatar",
+						House:  &House{Name: "save_create_with_select_house"},
+					}
+					s.Nil(query.Query().Select("Name", "House").Save(&user))
+					s.True(user.ID > 0)
+					s.True(user.House.ID > 0)
+
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("save_create_with_select_user", user1.Name)
+					s.Empty(user1.Avatar)
+
+					var house1 House
+					s.Nil(query.Query().Find(&house1, user.House.ID))
+					s.Equal("save_create_with_select_house", house1.Name)
+				},
+			},
+			{
+				name: "success when create with Omit",
+				setup: func() {
+					user := User{
+						Name:   "save_create_with_omit_user",
+						Avatar: "save_create_with_omit_avatar",
+						House:  &House{Name: "save_create_with_omit_house"},
+					}
+					s.Nil(query.Query().Omit("House").Save(&user))
+					s.True(user.ID > 0)
+					s.True(user.House.ID == 0)
+
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("save_create_with_omit_user", user1.Name)
+					s.Equal("save_create_with_omit_avatar", user1.Avatar)
 				},
 			},
 			{
@@ -2714,6 +2759,65 @@ func (s *QueryTestSuite) TestSave() {
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("save_update_user1", user1.Name)
+				},
+			},
+			{
+				name: "success when update with Select",
+				setup: func() {
+					user := User{
+						Name:   "save_update_with_select_user",
+						Avatar: "save_update_with_select_avatar",
+						House:  &House{Name: "save_update_with_select_house"},
+					}
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.House.ID == 0)
+
+					user.Name = "save_update_with_select_user1"
+					s.Nil(query.Query().Select("Name", "House").Save(&user))
+
+					s.True(user.House.ID > 0)
+
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("save_update_with_select_user1", user1.Name)
+
+					var house1 House
+					s.Nil(query.Query().Find(&house1, user.House.ID))
+					s.Equal("save_update_with_select_house", house1.Name)
+				},
+			},
+			{
+				name: "success when update with Omit",
+				setup: func() {
+					user := User{
+						Name:    "save_update_with_omit_user",
+						Avatar:  "save_update_with_omit_avatar",
+						Address: &Address{Name: "save_update_with_omit_address"},
+						House:   &House{Name: "save_update_with_omit_house"},
+					}
+					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					s.True(user.ID > 0)
+					s.True(user.Address.ID > 0)
+					s.True(user.House.ID == 0)
+
+					user.Name = "save_update_with_omit_user1"
+					user.Address.Name = "save_update_with_omit_address1"
+					s.Nil(query.Query().Omit("Address").Save(&user))
+
+					s.True(user.House.ID > 0)
+
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal("save_update_with_omit_user1", user1.Name)
+
+					var address1 Address
+					s.Nil(query.Query().Find(&address1, user.Address.ID))
+					s.Equal("save_update_with_omit_address", address1.Name)
+
+					var house1 House
+					s.Nil(query.Query().Find(&house1, user.House.ID))
+					s.Equal("save_update_with_omit_house", house1.Name)
 				},
 			},
 		}
