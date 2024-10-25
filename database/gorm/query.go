@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
@@ -33,6 +34,7 @@ type Query struct {
 	instance        *gormio.DB
 	log             log.Log
 	modelToObserver []contractsorm.ModelToObserver
+	mutex           sync.Mutex
 	queries         map[string]*Query
 }
 
@@ -528,6 +530,8 @@ func (r *Query) Model(value any) contractsorm.Query {
 }
 
 func (r *Query) Observe(model any, observer contractsorm.Observer) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.modelToObserver = append(r.modelToObserver, contractsorm.ModelToObserver{
 		Model:    model,
 		Observer: observer,
@@ -1304,7 +1308,7 @@ func (r *Query) getObserver(dest any) contractsorm.Observer {
 		if modelType.Kind() == reflect.Pointer {
 			modelType = modelType.Elem()
 		}
-		if destType.Name() == modelType.Name() {
+		if destType.PkgPath() == modelType.PkgPath() && destType.Name() == modelType.Name() {
 			return observer.Observer
 		}
 	}

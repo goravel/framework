@@ -173,25 +173,27 @@ func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) err
 
 func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
 	defaultConnection := r.schema.GetConnection()
+	defaultQuery := r.schema.Orm().Query()
 	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
 		r.schema.SetConnection(connectionMigration.Connection())
 	}
 
+	defer func() {
+		// reset the connection and query to default, to avoid err and panic
+		r.schema.Orm().SetQuery(defaultQuery)
+		r.schema.SetConnection(defaultConnection)
+	}()
+
 	return r.schema.Orm().Transaction(func(tx orm.Query) error {
-		defaultQuery := r.schema.Orm().Query()
 		r.schema.Orm().SetQuery(tx)
 
 		if err := migration.Down(); err != nil {
-			// reset the connection and query to default.
-			r.schema.SetConnection(defaultConnection)
-			r.schema.Orm().SetQuery(defaultQuery)
-
 			return err
 		}
 
 		// repository.Log should be called in the default connection.
-		r.schema.SetConnection(defaultConnection)
 		r.schema.Orm().SetQuery(defaultQuery)
+		r.schema.SetConnection(defaultConnection)
 
 		return r.repository.Delete(migration.Signature())
 	})
@@ -199,19 +201,21 @@ func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
 
 func (r *DefaultMigrator) runUp(migration contractsschema.Migration, batch int) error {
 	defaultConnection := r.schema.GetConnection()
+	defaultQuery := r.schema.Orm().Query()
 	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
 		r.schema.SetConnection(connectionMigration.Connection())
 	}
 
+	defer func() {
+		// reset the connection and query to default, to avoid err and panic
+		r.schema.Orm().SetQuery(defaultQuery)
+		r.schema.SetConnection(defaultConnection)
+	}()
+
 	return r.schema.Orm().Transaction(func(tx orm.Query) error {
-		defaultQuery := r.schema.Orm().Query()
 		r.schema.Orm().SetQuery(tx)
 
 		if err := migration.Up(); err != nil {
-			// reset the connection and query to default.
-			r.schema.Orm().SetQuery(defaultQuery)
-			r.schema.SetConnection(defaultConnection)
-
 			return err
 		}
 

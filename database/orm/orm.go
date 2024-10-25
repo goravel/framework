@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"sync"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -19,6 +20,7 @@ type Orm struct {
 	connection      string
 	log             log.Log
 	modelToObserver []contractsorm.ModelToObserver
+	mutex           sync.Mutex
 	query           contractsorm.Query
 	queries         map[string]contractsorm.Query
 	refresh         func(key any)
@@ -92,6 +94,9 @@ func (r *Orm) Name() string {
 }
 
 func (r *Orm) Observe(model any, observer contractsorm.Observer) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	r.modelToObserver = append(r.modelToObserver, contractsorm.ModelToObserver{
 		Model:    model,
 		Observer: observer,
