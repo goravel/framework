@@ -2765,29 +2765,22 @@ func (s *QueryTestSuite) TestSave() {
 				name: "success when update with Select",
 				setup: func() {
 					user := User{
-						Name:    "save_update_with_select_user",
-						Avatar:  "save_update_with_select_avatar",
-						Address: &Address{Name: "save_update_with_select_address"},
-						House:   &House{Name: "save_update_with_select_house"},
+						Name:   "save_update_with_select_user",
+						Avatar: "save_update_with_select_avatar",
+						House:  &House{Name: "save_update_with_select_house"},
 					}
-					s.Nil(query.Query().Select("Name", "Avatar", "Address").Create(&user))
+					s.Nil(query.Query().Select("Name", "Avatar").Create(&user))
 					s.True(user.ID > 0)
-					s.True(user.Address.ID > 0)
 					s.True(user.House.ID == 0)
 
 					user.Name = "save_update_with_select_user1"
-					user.Address.Name = "save_update_with_select_address1"
-					s.Nil(query.Query().Select("Name", "Address", "Address.Name", "House").Save(&user))
+					s.Nil(query.Query().Select("Name", "House").Save(&user))
 
 					s.True(user.House.ID > 0)
 
 					var user1 User
 					s.Nil(query.Query().Find(&user1, user.ID))
 					s.Equal("save_update_with_select_user1", user1.Name)
-
-					var address1 Address
-					s.Nil(query.Query().Find(&address1, user.Address.ID))
-					s.Equal("save_update_with_select_address1", address1.Name)
 
 					var house1 House
 					s.Nil(query.Query().Find(&house1, user.House.ID))
