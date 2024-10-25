@@ -52,6 +52,7 @@ func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
 	if step = ctx.OptionInt("step"); step <= 0 {
 		if batch = ctx.OptionInt("batch"); batch <= 0 {
 			step = 1
+			batch = 0
 		}
 	}
 

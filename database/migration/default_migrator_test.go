@@ -489,9 +489,11 @@ func (s *DefaultMigratorSuite) TestRunDown() {
 			setup: func() {
 				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+
+				mockQuery := mocksorm.NewQuery(s.T())
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
+
 				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
 					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
@@ -560,9 +562,11 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 			setup: func() {
 				s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 				s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+
+				mockQuery := mocksorm.NewQuery(s.T())
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
+
 				mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-					mockQuery := mocksorm.NewQuery(s.T())
-					mockOrm.EXPECT().Query().Return(mockQuery).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
 					s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
 					mockOrm.EXPECT().SetQuery(mockQuery).Once()
@@ -596,7 +600,10 @@ func (s *DefaultMigratorSuite) mockRunDown(
 	err error,
 ) {
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
+
+	mockQuery := mocksorm.NewQuery(s.T())
+	mockOrm.EXPECT().Query().Return(mockQuery).Once()
 
 	testConnectionMigration := &TestConnectionMigration{}
 	if testConnectionMigration.Signature() == migrationSignature {
@@ -604,12 +611,10 @@ func (s *DefaultMigratorSuite) mockRunDown(
 	}
 
 	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-		mockQuery := mocksorm.NewQuery(s.T())
-		mockOrm.EXPECT().Query().Return(mockQuery).Once()
 		mockOrm.EXPECT().SetQuery(mockQuery).Once()
 		s.mockSchema.EXPECT().DropIfExists(table).Return(nil).Once()
-		s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-		mockOrm.EXPECT().SetQuery(mockQuery).Once()
+		s.mockSchema.EXPECT().SetConnection(previousConnection).Twice()
+		mockOrm.EXPECT().SetQuery(mockQuery).Twice()
 		s.mockRepository.EXPECT().Delete(migrationSignature).Return(err).Once()
 
 		return f(mockQuery)
@@ -623,7 +628,10 @@ func (s *DefaultMigratorSuite) mockRunUp(
 	err error,
 ) {
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
-	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
+
+	mockQuery := mocksorm.NewQuery(s.T())
+	mockOrm.EXPECT().Query().Return(mockQuery).Once()
 
 	testConnectionMigration := &TestConnectionMigration{}
 	if testConnectionMigration.Signature() == migrationSignature {
@@ -631,12 +639,10 @@ func (s *DefaultMigratorSuite) mockRunUp(
 	}
 
 	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(f func(tx orm.Query) error) error {
-		mockQuery := mocksorm.NewQuery(s.T())
-		mockOrm.EXPECT().Query().Return(mockQuery).Once()
 		mockOrm.EXPECT().SetQuery(mockQuery).Once()
 		s.mockSchema.EXPECT().Create(table, mock.Anything).Return(nil).Once()
-		s.mockSchema.EXPECT().SetConnection(previousConnection).Once()
-		mockOrm.EXPECT().SetQuery(mockQuery).Once()
+		s.mockSchema.EXPECT().SetConnection(previousConnection).Twice()
+		mockOrm.EXPECT().SetQuery(mockQuery).Twice()
 		s.mockRepository.EXPECT().Log(migrationSignature, batch).Return(err).Once()
 
 		return f(mockQuery)
