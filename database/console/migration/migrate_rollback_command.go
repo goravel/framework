@@ -48,12 +48,26 @@ func (r *MigrateRollbackCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
-	var step, batch int
-	if step = ctx.OptionInt("step"); step <= 0 {
-		if batch = ctx.OptionInt("batch"); batch <= 0 {
-			step = 1
-			batch = 0
-		}
+	step := ctx.OptionInt("step")
+	batch := ctx.OptionInt("batch")
+
+	// Validate inputs
+	if step < 0 {
+		ctx.Error("The step option should be a positive integer")
+		return nil
+	}
+	if batch < 0 {
+		ctx.Error("The batch option should be a positive integer")
+		return nil
+	}
+	if step > 0 && batch > 0 {
+		ctx.Error("The step and batch options cannot be used together")
+		return nil
+	}
+
+	// Set defaults if neither option is provided
+	if step == 0 && batch == 0 {
+		step = 1
 	}
 
 	if err := r.migrator.Rollback(step, batch); err != nil {

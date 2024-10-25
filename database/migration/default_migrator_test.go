@@ -680,7 +680,7 @@ func NewTestConnectionMigration(schema contractsschema.Schema) *TestConnectionMi
 }
 
 func (r *TestConnectionMigration) Signature() string {
-	return "20240817214501_create_agents_table"
+	return "20240817214502_create_agents_table"
 }
 
 func (r *TestConnectionMigration) Connection() string {
@@ -705,7 +705,7 @@ func NewTestErrorMigration() *TestErrorMigration {
 }
 
 func (r *TestErrorMigration) Signature() string {
-	return "20240817214501_create_companies_table"
+	return "20240817214503_create_companies_table"
 }
 
 func (r *TestErrorMigration) Up() error {

@@ -39,8 +39,7 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().OptionInt("step").Return(-1).Once()
 				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
-				mockMigrator.EXPECT().Rollback(1, 0).Return(nil).Once()
-				mockContext.EXPECT().Info("Migration rollback success").Once()
+				mockContext.EXPECT().Error("The step option should be a positive integer").Once()
 			},
 		},
 		{
@@ -48,14 +47,22 @@ func TestMigrateRollbackCommand(t *testing.T) {
 			setup: func() {
 				mockContext.EXPECT().OptionInt("step").Return(0).Once()
 				mockContext.EXPECT().OptionInt("batch").Return(-1).Once()
-				mockMigrator.EXPECT().Rollback(1, 0).Return(nil).Once()
-				mockContext.EXPECT().Info("Migration rollback success").Once()
+				mockContext.EXPECT().Error("The batch option should be a positive integer").Once()
+			},
+		},
+		{
+			name: "step > 0 && batch > 0",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(1).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(1).Once()
+				mockContext.EXPECT().Error("The step and batch options cannot be used together").Once()
 			},
 		},
 		{
 			name: "With step",
 			setup: func() {
 				mockContext.EXPECT().OptionInt("step").Return(2).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
 				mockMigrator.EXPECT().Rollback(2, 0).Return(nil).Once()
 				mockContext.EXPECT().Info("Migration rollback success").Once()
 			},
