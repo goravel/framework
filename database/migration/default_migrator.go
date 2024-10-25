@@ -4,24 +4,31 @@ import (
 	"slices"
 
 	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/database/migration"
+	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/database/schema"
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/support/file"
+	supportfile "github.com/goravel/framework/support/file"
 )
 
 type DefaultMigrator struct {
 	artisan    console.Artisan
 	creator    *DefaultCreator
-	repository migration.Repository
-	schema     schema.Schema
+	migrations map[string]contractsschema.Migration
+	repository contractsmigration.Repository
+	schema     contractsschema.Schema
 }
 
-func NewDefaultMigrator(artisan console.Artisan, schema schema.Schema, table string) *DefaultMigrator {
+func NewDefaultMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *DefaultMigrator {
+	migrations := make(map[string]contractsschema.Migration)
+	for _, m := range schema.Migrations() {
+		migrations[m.Signature()] = m
+	}
+
 	return &DefaultMigrator{
 		artisan:    artisan,
 		creator:    NewDefaultCreator(),
+		migrations: migrations,
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
@@ -36,7 +43,7 @@ func (r *DefaultMigrator) Create(name string) error {
 	fileName := r.creator.GetFileName(name)
 
 	// Create the up.sql file.
-	if err := file.Create(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
+	if err := supportfile.Create(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
 		return err
 	}
 
@@ -96,12 +103,12 @@ func (r *DefaultMigrator) Run() error {
 		return err
 	}
 
-	pendingMigrations := r.pendingMigrations(r.schema.Migrations(), ran)
+	pendingMigrations := r.pendingMigrations(ran)
 
 	return r.runPending(pendingMigrations)
 }
 
-func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]migration.File, error) {
+func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigration.File, error) {
 	if step > 0 {
 		return r.repository.GetMigrations(step)
 	}
@@ -113,20 +120,17 @@ func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]migration.File
 	return r.repository.GetLast()
 }
 
-func (r *DefaultMigrator) getMigrationViaFile(file migration.File) schema.Migration {
-	for _, migration := range r.schema.Migrations() {
-		if migration.Signature() == file.Migration {
-			return migration
-		}
+func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) contractsschema.Migration {
+	if m, exists := r.migrations[file.Migration]; exists {
+		return m
 	}
-
 	return nil
 }
 
-func (r *DefaultMigrator) pendingMigrations(migrations []schema.Migration, ran []string) []schema.Migration {
-	var pendingMigrations []schema.Migration
-	for _, migration := range migrations {
-		if !slices.Contains(ran, migration.Signature()) {
+func (r *DefaultMigrator) pendingMigrations(ran []string) []contractsschema.Migration {
+	var pendingMigrations []contractsschema.Migration
+	for name, migration := range r.migrations {
+		if !slices.Contains(ran, name) {
 			pendingMigrations = append(pendingMigrations, migration)
 		}
 	}
@@ -142,7 +146,7 @@ func (r *DefaultMigrator) prepareDatabase() error {
 	return r.repository.CreateRepository()
 }
 
-func (r *DefaultMigrator) runPending(migrations []schema.Migration) error {
+func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) error {
 	if len(migrations) == 0 {
 		color.Infoln("Nothing to migrate")
 
@@ -167,9 +171,9 @@ func (r *DefaultMigrator) runPending(migrations []schema.Migration) error {
 	return nil
 }
 
-func (r *DefaultMigrator) runDown(migration schema.Migration) error {
+func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
 	defaultConnection := r.schema.GetConnection()
-	if connectionMigration, ok := migration.(schema.Connection); ok {
+	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
 		r.schema.SetConnection(connectionMigration.Connection())
 	}
 
@@ -193,9 +197,9 @@ func (r *DefaultMigrator) runDown(migration schema.Migration) error {
 	})
 }
 
-func (r *DefaultMigrator) runUp(migration schema.Migration, batch int) error {
+func (r *DefaultMigrator) runUp(migration contractsschema.Migration, batch int) error {
 	defaultConnection := r.schema.GetConnection()
-	if connectionMigration, ok := migration.(schema.Connection); ok {
+	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
 		r.schema.SetConnection(connectionMigration.Connection())
 	}
 
