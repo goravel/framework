@@ -45,6 +45,7 @@ var (
 
 	DBForceIsRequiredInProduction = New("application in production use --force to run this command")
 	DBSeederNotFound              = New("not found %s seeder")
+	DBFailToRunSeeder             = New("fail to run seeder: %v")
 
 	DockerUnknownContainerType           = New("unknown container type")
 	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")

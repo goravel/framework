@@ -3,6 +3,7 @@ package testing
 import (
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
 )
 
@@ -22,6 +23,6 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 func (receiver *ServiceProvider) Boot(app foundation.Application) {
 	artisanFacade = app.MakeArtisan()
 	if artisanFacade == nil {
-		color.Errorln("Warning: Artisan facade is not initialized")
+		color.Errorln(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 }

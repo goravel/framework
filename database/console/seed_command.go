@@ -6,7 +6,6 @@ import (
 	"github.com/goravel/framework/contracts/console/command"
 	contractsseeder "github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
 type SeedCommand struct {
@@ -22,17 +21,17 @@ func NewSeedCommand(config config.Config, seeder contractsseeder.Facade) *SeedCo
 }
 
 // Signature The name and signature of the console command.
-func (receiver *SeedCommand) Signature() string {
+func (r *SeedCommand) Signature() string {
 	return "db:seed"
 }
 
 // Description The console command description.
-func (receiver *SeedCommand) Description() string {
+func (r *SeedCommand) Description() string {
 	return "Seed the database with records"
 }
 
 // Extend The console command extend.
-func (receiver *SeedCommand) Extend() command.Extend {
+func (r *SeedCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "db",
 		Flags: []command.Flag{
@@ -51,35 +50,36 @@ func (receiver *SeedCommand) Extend() command.Extend {
 }
 
 // Handle executes the console command.
-func (receiver *SeedCommand) Handle(ctx console.Context) error {
+func (r *SeedCommand) Handle(ctx console.Context) error {
 	force := ctx.OptionBool("force")
-	if err := receiver.ConfirmToProceed(force); err != nil {
-		color.Errorln(err)
+	if err := r.ConfirmToProceed(force); err != nil {
+		ctx.Error(err.Error())
 		return nil
 	}
 
 	names := ctx.OptionSlice("seeder")
-	seeders, err := receiver.GetSeeders(names)
+	seeders, err := r.GetSeeders(names)
 	if err != nil {
-		color.Errorln(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 	if len(seeders) == 0 {
-		color.Errorln("no seeders found")
+		ctx.Success("no seeders found")
 		return nil
 	}
 
-	if err := receiver.seeder.Call(seeders); err != nil {
-		color.Errorf("error running seeder: %v\n", err)
+	if err := r.seeder.Call(seeders); err != nil {
+		ctx.Error(errors.DBFailToRunSeeder.Args(err).Error())
+		return nil
 	}
-	color.Successln("Database seeding completed successfully.")
+	ctx.Success("Database seeding completed successfully.")
 
 	return nil
 }
 
 // ConfirmToProceed determines if the command should proceed based on user confirmation.
-func (receiver *SeedCommand) ConfirmToProceed(force bool) error {
-	if force || (receiver.config.Env("APP_ENV") != "production") {
+func (r *SeedCommand) ConfirmToProceed(force bool) error {
+	if force || (r.config.GetString("app.env") != "production") {
 		return nil
 	}
 
@@ -87,13 +87,13 @@ func (receiver *SeedCommand) ConfirmToProceed(force bool) error {
 }
 
 // GetSeeders returns a seeder instances
-func (receiver *SeedCommand) GetSeeders(names []string) ([]contractsseeder.Seeder, error) {
+func (r *SeedCommand) GetSeeders(names []string) ([]contractsseeder.Seeder, error) {
 	if len(names) == 0 {
-		return receiver.seeder.GetSeeders(), nil
+		return r.seeder.GetSeeders(), nil
 	}
 	var seeders []contractsseeder.Seeder
 	for _, name := range names {
-		seeder := receiver.seeder.GetSeeder(name)
+		seeder := r.seeder.GetSeeder(name)
 		if seeder == nil {
 			return nil, errors.DBSeederNotFound.Args(name)
 		}
