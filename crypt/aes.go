@@ -31,8 +31,9 @@ func NewAES(config config.Config, json foundation.Json) (*AES, error) {
 	keyLength := len(key)
 	// check key length before using it
 	if keyLength != 16 && keyLength != 24 && keyLength != 32 {
-		color.Errorln("[Crypt] Invalid APP_KEY length. Expected 16, 24, or 32 bytes, but got %d bytes.\n", len(key))
-		color.Default().Println("Please reset it using the following command:\ngo run . artisan key:generate")
+		color.Errorf("[Crypt] Invalid APP_KEY length. Expected 16, 24, or 32 bytes, but got %d bytes.\n", len(key))
+		color.Default().Println("Please reset it using the following command:")
+		color.Default().Println("go run . artisan key:generate")
 		return nil, errors.CryptInvalidAppKeyLength.Args(keyLength)
 	}
 
