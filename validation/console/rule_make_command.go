@@ -43,7 +43,7 @@ func (receiver *RuleMakeCommand) Extend() command.Extend {
 func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), filepath.Join("app", "rules"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Rule created successfully")
+	color.Successln("Rule created successfully")
 
 	return nil
 }

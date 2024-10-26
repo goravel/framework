@@ -22,6 +22,6 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 func (receiver *ServiceProvider) Boot(app foundation.Application) {
 	artisanFacade = app.MakeArtisan()
 	if artisanFacade == nil {
-		color.Red().Println("Warning: Artisan facade is not initialized")
+		color.Errorln("Warning: Artisan facade is not initialized")
 	}
 }

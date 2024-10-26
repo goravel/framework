@@ -54,25 +54,25 @@ func (receiver *SeedCommand) Extend() command.Extend {
 func (receiver *SeedCommand) Handle(ctx console.Context) error {
 	force := ctx.OptionBool("force")
 	if err := receiver.ConfirmToProceed(force); err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
 	names := ctx.OptionSlice("seeder")
 	seeders, err := receiver.GetSeeders(names)
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 	if len(seeders) == 0 {
-		color.Red().Println("no seeders found")
+		color.Errorln("no seeders found")
 		return nil
 	}
 
 	if err := receiver.seeder.Call(seeders); err != nil {
-		color.Red().Printf("error running seeder: %v\n", err)
+		color.Errorf("error running seeder: %v\n", err)
 	}
-	color.Green().Println("Database seeding completed successfully.")
+	color.Successln("Database seeding completed successfully.")
 
 	return nil
 }

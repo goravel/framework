@@ -42,7 +42,7 @@ func (receiver *EventMakeCommand) Extend() command.Extend {
 func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), filepath.Join("app", "events"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -50,7 +50,7 @@ func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Event created successfully")
+	color.Successln("Event created successfully")
 
 	return nil
 }

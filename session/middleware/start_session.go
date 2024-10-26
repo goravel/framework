@@ -20,7 +20,7 @@ func StartSession() http.Middleware {
 		// Retrieve session driver
 		driver, err := session.SessionFacade.Driver()
 		if err != nil {
-			color.Red().Println(err)
+			color.Errorln(err)
 			req.Next()
 			return
 		}
@@ -28,7 +28,7 @@ func StartSession() http.Middleware {
 		// Build session
 		s, err := session.SessionFacade.BuildSession(driver)
 		if err != nil {
-			color.Red().Println(err)
+			color.Errorln(err)
 			req.Next()
 			return
 		}
@@ -57,7 +57,7 @@ func StartSession() http.Middleware {
 
 		// Save session
 		if err = s.Save(); err != nil {
-			color.Red().Printf("Error saving session: %s\n", err)
+			color.Errorf("Error saving session: %s\n", err)
 		}
 
 		// Release session

@@ -39,7 +39,7 @@ func (receiver *MakeCommand) Extend() command.Extend {
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), filepath.Join("app", "console", "commands"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -47,7 +47,7 @@ func (receiver *MakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Console command created successfully")
+	color.Successln("Console command created successfully")
 
 	return nil
 }

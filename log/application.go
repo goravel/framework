@@ -51,7 +51,7 @@ func (r *Application) Channel(channel string) log.Writer {
 	instance.SetLevel(logrus.DebugLevel)
 
 	if err := registerHook(r.config, r.json, instance, channel); err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -72,7 +72,7 @@ func (r *Application) Stack(channels []string) log.Writer {
 		}
 
 		if err := registerHook(r.config, r.json, instance, channel); err != nil {
-			color.Red().Println(err)
+			color.Errorln(err)
 			return nil
 		}
 	}

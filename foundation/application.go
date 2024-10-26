@@ -129,7 +129,7 @@ func (app *Application) Version() string {
 func (app *Application) CurrentLocale(ctx context.Context) string {
 	lang := app.MakeLang(ctx)
 	if lang == nil {
-		color.Red().Println("Error: Lang facade not initialized.")
+		color.Errorln("Error: Lang facade not initialized.")
 		return ""
 	}
 
@@ -139,7 +139,7 @@ func (app *Application) CurrentLocale(ctx context.Context) string {
 func (app *Application) SetLocale(ctx context.Context, locale string) context.Context {
 	lang := app.MakeLang(ctx)
 	if lang == nil {
-		color.Red().Println("Error: Lang facade not initialized.")
+		color.Errorln("Error: Lang facade not initialized.")
 		return ctx
 	}
 
@@ -174,7 +174,7 @@ func (app *Application) addPublishGroup(group string, paths map[string]string) {
 func (app *Application) bootArtisan() {
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
-		color.Yellow().Println("Warning: Artisan Facade is not initialized. Skipping artisan command execution.")
+		color.Warningln("Warning: Artisan Facade is not initialized. Skipping artisan command execution.")
 		return
 	}
 
@@ -192,13 +192,13 @@ func (app *Application) getBaseServiceProviders() []foundation.ServiceProvider {
 func (app *Application) getConfiguredServiceProviders() []foundation.ServiceProvider {
 	configFacade := app.MakeConfig()
 	if configFacade == nil {
-		color.Yellow().Println("Warning: config facade is not initialized. Skipping registering service providers.")
+		color.Warningln("Warning: config facade is not initialized. Skipping registering service providers.")
 		return []foundation.ServiceProvider{}
 	}
 
 	providers, ok := configFacade.Get("app.providers").([]foundation.ServiceProvider)
 	if !ok {
-		color.Yellow().Println("Warning: providers configuration is not of type []foundation.ServiceProvider. Skipping registering service providers.")
+		color.Warningln("Warning: providers configuration is not of type []foundation.ServiceProvider. Skipping registering service providers.")
 		return []foundation.ServiceProvider{}
 	}
 	return providers
@@ -241,7 +241,7 @@ func (app *Application) bootServiceProviders(serviceProviders []foundation.Servi
 func (app *Application) registerCommands(commands []contractsconsole.Command) {
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
-		color.Yellow().Println("Warning: Artisan Facade is not initialized. Skipping command registration.")
+		color.Warningln("Warning: Artisan Facade is not initialized. Skipping command registration.")
 		return
 	}
 
@@ -251,7 +251,7 @@ func (app *Application) registerCommands(commands []contractsconsole.Command) {
 func (app *Application) setTimezone() {
 	configFacade := app.MakeConfig()
 	if configFacade == nil {
-		color.Yellow().Println("Warning: config facade is not initialized. Using default timezone UTC.")
+		color.Warningln("Warning: config facade is not initialized. Using default timezone UTC.")
 		carbon.SetTimezone(carbon.UTC)
 		return
 	}

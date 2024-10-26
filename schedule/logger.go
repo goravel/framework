@@ -21,7 +21,7 @@ func (log *Logger) Info(msg string, keysAndValues ...any) {
 	if !log.debug {
 		return
 	}
-	color.Green().Printf("%s %v\n", msg, keysAndValues)
+	color.Successf("%s %v\n", msg, keysAndValues)
 }
 
 func (log *Logger) Error(err error, msg string, keysAndValues ...any) {

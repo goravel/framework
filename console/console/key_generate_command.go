@@ -42,9 +42,9 @@ func (receiver *KeyGenerateCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 	if receiver.config.GetString("app.env") == "production" {
-		color.Yellow().Println("**************************************")
-		color.Yellow().Println("*     Application In Production!     *")
-		color.Yellow().Println("**************************************")
+		color.Warningln("**************************************")
+		color.Warningln("*     Application In Production!     *")
+		color.Warningln("**************************************")
 
 		answer, err := ctx.Confirm("Do you really wish to run this command?")
 		if err != nil {
@@ -52,19 +52,19 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 		}
 
 		if !answer {
-			color.Yellow().Println("Command cancelled!")
+			color.Warningln("Command cancelled!")
 			return nil
 		}
 	}
 
 	key := receiver.generateRandomKey()
 	if err := receiver.writeNewEnvironmentFileWith(key); err != nil {
-		color.Red().Println(err.Error())
+		color.Errorln(err.Error())
 
 		return nil
 	}
 
-	color.Green().Println("Application key set successfully")
+	color.Successln("Application key set successfully")
 
 	return nil
 }

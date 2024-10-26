@@ -99,7 +99,7 @@ func (r *CliContext) Choice(question string, choices []console.Choice, option ..
 }
 
 func (r *CliContext) Comment(message string) {
-	color.Gray().Println(message)
+	color.Debugln(message)
 }
 
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
@@ -121,11 +121,11 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (
 }
 
 func (r *CliContext) Error(message string) {
-	color.Red().Println(message)
+	color.Errorln(message)
 }
 
 func (r *CliContext) Info(message string) {
-	color.Green().Println(message)
+	color.Infoln(message)
 }
 
 func (r *CliContext) Line(message string) {
@@ -244,8 +244,12 @@ func (r *CliContext) Spinner(message string, option console.SpinnerOption) error
 	return err
 }
 
+func (r *CliContext) Success(message string) {
+	color.Successln(message)
+}
+
 func (r *CliContext) Warning(message string) {
-	color.Yellow().Println(message)
+	color.Warningln(message)
 }
 
 func (r *CliContext) WithProgressBar(items []any, callback func(any) error) ([]any, error) {

@@ -121,7 +121,7 @@ func (m *Manager) startGcTimer(driver sessioncontract.Driver) {
 		for range ticker.C {
 			lifetime := ConfigFacade.GetInt("session.lifetime") * 60
 			if err := driver.Gc(lifetime); err != nil {
-				color.Red().Printf("Error performing garbage collection: %s\n", err)
+				color.Errorf("Error performing garbage collection: %s\n", err)
 			}
 		}
 	}()
