@@ -40,13 +40,13 @@ func (route *ServiceProvider) Boot(app foundation.Application) {
 func (route *ServiceProvider) registerJobs(app foundation.Application) {
 	queueFacade := app.MakeQueue()
 	if queueFacade == nil {
-		color.Warningln("Warning: Queue Facade is not initialized. Skipping job registration.")
+		color.Warningln("Queue Facade is not initialized. Skipping job registration.")
 		return
 	}
 
 	configFacade := app.MakeConfig()
 	if configFacade == nil {
-		color.Warningln("Warning: Config Facade is not initialized. Skipping job registration.")
+		color.Warningln("Config Facade is not initialized. Skipping job registration.")
 		return
 	}
 

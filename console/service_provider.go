@@ -28,13 +28,13 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
-		color.Warningln("Warning: Artisan Facade is not initialized. Skipping command registration.")
+		color.Warningln("Artisan Facade is not initialized. Skipping command registration.")
 		return
 	}
 
 	configFacade := app.MakeConfig()
 	if configFacade == nil {
-		color.Warningln("Warning: Config Facade is not initialized. Skipping certain command registrations.")
+		color.Warningln("Config Facade is not initialized. Skipping certain command registrations.")
 		return
 	}
 
