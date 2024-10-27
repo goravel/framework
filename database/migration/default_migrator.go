@@ -172,24 +172,6 @@ func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) err
 }
 
 func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
-	return r.runMigration(migration, func() error {
-		if err := migration.Down(); err != nil {
-			return err
-		}
-		return r.repository.Delete(migration.Signature())
-	})
-}
-
-func (r *DefaultMigrator) runUp(migration contractsschema.Migration, batch int) error {
-	return r.runMigration(migration, func() error {
-		if err := migration.Up(); err != nil {
-			return err
-		}
-		return r.repository.Log(migration.Signature(), batch)
-	})
-}
-
-func (r *DefaultMigrator) runMigration(migration contractsschema.Migration, operation func() error) error {
 	defaultConnection := r.schema.GetConnection()
 	defaultQuery := r.schema.Orm().Query()
 	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
@@ -197,6 +179,7 @@ func (r *DefaultMigrator) runMigration(migration contractsschema.Migration, oper
 	}
 
 	defer func() {
+		// reset the connection and query to default, to avoid err and panic
 		r.schema.Orm().SetQuery(defaultQuery)
 		r.schema.SetConnection(defaultConnection)
 	}()
@@ -204,14 +187,42 @@ func (r *DefaultMigrator) runMigration(migration contractsschema.Migration, oper
 	return r.schema.Orm().Transaction(func(tx orm.Query) error {
 		r.schema.Orm().SetQuery(tx)
 
-		if err := operation(); err != nil {
+		if err := migration.Down(); err != nil {
 			return err
 		}
 
-		// Reset to default connection for repository operations
+		// repository.Log should be called in the default connection.
 		r.schema.Orm().SetQuery(defaultQuery)
 		r.schema.SetConnection(defaultConnection)
 
-		return nil
+		return r.repository.Delete(migration.Signature())
+	})
+}
+
+func (r *DefaultMigrator) runUp(migration contractsschema.Migration, batch int) error {
+	defaultConnection := r.schema.GetConnection()
+	defaultQuery := r.schema.Orm().Query()
+	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
+		r.schema.SetConnection(connectionMigration.Connection())
+	}
+
+	defer func() {
+		// reset the connection and query to default, to avoid err and panic
+		r.schema.Orm().SetQuery(defaultQuery)
+		r.schema.SetConnection(defaultConnection)
+	}()
+
+	return r.schema.Orm().Transaction(func(tx orm.Query) error {
+		r.schema.Orm().SetQuery(tx)
+
+		if err := migration.Up(); err != nil {
+			return err
+		}
+
+		// repository.Log should be called in the default connection.
+		r.schema.Orm().SetQuery(defaultQuery)
+		r.schema.SetConnection(defaultConnection)
+
+		return r.repository.Log(migration.Signature(), batch)
 	})
 }
