@@ -81,6 +81,19 @@ func (r *SqlMigrator) Fresh() error {
 	return r.Run()
 }
 
+func (r *SqlMigrator) Rollback(step, batch int) error {
+	if err := r.migrator.Steps(-step); err != nil {
+		var errShortLimit migrate.ErrShortLimit
+		if errors.Is(err, migrate.ErrNoChange) || errors.Is(err, migrate.ErrNilVersion) || errors.As(err, &errShortLimit) {
+			return nil
+		}
+
+		return errors.MigrationRollbackFailed.Args(err)
+	}
+
+	return nil
+}
+
 func (r *SqlMigrator) Run() error {
 	if err := r.migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err

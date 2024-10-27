@@ -2,13 +2,15 @@ package migration
 
 import (
 	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
 
 type Agent struct {
-	orm.Model
-	Name string
+	ID        uint `gorm:"primaryKey" json:"id"`
+	Name      string
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 func CreateTestMigrations(driver database.Driver) {

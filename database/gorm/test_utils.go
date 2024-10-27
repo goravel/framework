@@ -166,10 +166,10 @@ func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) 
 	)
 	if len(withPrefixAndSingular) > 0 && withPrefixAndSingular[0] {
 		mockDriver.WithPrefixAndSingular()
-		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil)
+		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
 	} else {
 		mockDriver.Common()
-		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil)
+		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
 	}
 
 	if err != nil {
@@ -208,7 +208,7 @@ func (r *TestQuery) QueryOfReadWrite(config TestReadWriteConfig) (orm.Query, err
 	mockDriver := getMockDriver(r.Docker(), mockConfig, r.Docker().Driver().String())
 	mockDriver.ReadWrite(config)
 
-	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), nil)
+	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), nil, nil)
 }
 
 func getMockDriver(docker testing.DatabaseDriver, mockConfig *mocksconfig.Config, connection string) testMockDriver {

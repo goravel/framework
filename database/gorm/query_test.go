@@ -15,7 +15,6 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	databasedb "github.com/goravel/framework/database/db"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/carbon"
@@ -70,7 +69,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						age: 1,
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
@@ -94,7 +93,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
@@ -119,7 +118,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
@@ -144,7 +143,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
@@ -169,7 +168,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
@@ -194,7 +193,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
@@ -230,7 +229,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 
@@ -255,7 +254,7 @@ func (s *QueryTestSuite) TestAssociation() {
 						},
 					}
 
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Books[0].ID > 0)
 					s.True(user.Books[1].ID > 0)
@@ -286,7 +285,7 @@ func (s *QueryTestSuite) TestBelongsTo() {
 				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 
@@ -465,13 +464,13 @@ func (s *QueryTestSuite) TestCreate() {
 				},
 			},
 			{
-				name: "success when create with select orm.Associations",
+				name: "success when create with select Associations",
 				setup: func() {
 					user := User{Name: "create_user", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Query().Select(orm.Associations).Create(&user))
+					s.Nil(query.Query().Select(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID > 0)
 					s.True(user.Books[0].ID > 0)
@@ -507,13 +506,13 @@ func (s *QueryTestSuite) TestCreate() {
 				},
 			},
 			{
-				name: "success create with omit orm.Associations",
+				name: "success create with omit Associations",
 				setup: func() {
 					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.Nil(query.Query().Omit(orm.Associations).Create(&user))
+					s.Nil(query.Query().Omit(Associations).Create(&user))
 					s.True(user.ID > 0)
 					s.True(user.Address.ID == 0)
 					s.True(user.Books[0].ID == 0)
@@ -527,27 +526,27 @@ func (s *QueryTestSuite) TestCreate() {
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit(orm.Associations).Select("Name").Create(&user), errors.OrmQuerySelectAndOmitsConflict.Error())
+					s.EqualError(query.Query().Omit(Associations).Select("Name").Create(&user), errors.OrmQuerySelectAndOmitsConflict.Error())
 				},
 			},
 			{
-				name: "error when select that set fields and orm.Associations at the same time",
+				name: "error when select that set fields and Associations at the same time",
 				setup: func() {
 					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Select("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
+					s.EqualError(query.Query().Select("Name", Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
 				},
 			},
 			{
-				name: "error when omit that set fields and orm.Associations at the same time",
+				name: "error when omit that set fields and Associations at the same time",
 				setup: func() {
 					user := User{Name: "create_user", Avatar: "create_avatar", Address: &Address{}, Books: []*Book{{}, {}}}
 					user.Address.Name = "create_address"
 					user.Books[0].Name = "create_book0"
 					user.Books[1].Name = "create_book1"
-					s.EqualError(query.Query().Omit("Name", orm.Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
+					s.EqualError(query.Query().Omit("Name", Associations).Create(&user), errors.OrmQueryAssociationsConflict.Error())
 				},
 			},
 		}
@@ -565,7 +564,7 @@ func (s *QueryTestSuite) TestCursor() {
 			user := User{Name: "cursor_user", Avatar: "cursor_avatar", Address: &Address{Name: "cursor_address"}, Books: []*Book{
 				{Name: "cursor_book"},
 			}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 
 			user1 := User{Name: "cursor_user", Avatar: "cursor_avatar1"}
@@ -2023,6 +2022,20 @@ func (s *QueryTestSuite) TestGet() {
 	}
 }
 
+func (s *QueryTestSuite) TestGetObserver() {
+	query := &Query{
+		modelToObserver: []contractsorm.ModelToObserver{
+			{
+				Model:    User{},
+				Observer: &UserObserver{},
+			},
+		},
+	}
+
+	s.Nil(query.getObserver(Product{}))
+	s.Equal(&UserObserver{}, query.getObserver(User{}))
+}
+
 func (s *QueryTestSuite) TestJoin() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
@@ -2185,6 +2198,30 @@ func (s *QueryTestSuite) TestInRandomOrder() {
 	}
 }
 
+func (s *QueryTestSuite) TestInTransaction() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			s.False(query.Query().InTransaction())
+
+			tx, err := query.Query().Begin()
+			s.NotNil(tx)
+			s.NoError(err)
+
+			s.True(tx.InTransaction())
+			s.NoError(tx.Commit())
+			s.False(query.Query().InTransaction())
+
+			tx, err = query.Query().Begin()
+			s.NotNil(tx)
+			s.NoError(err)
+
+			s.True(tx.InTransaction())
+			s.NoError(tx.Rollback())
+			s.False(query.Query().InTransaction())
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestPaginate() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
@@ -2259,7 +2296,7 @@ func (s *QueryTestSuite) TestHasOne() {
 				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 
@@ -2280,7 +2317,7 @@ func (s *QueryTestSuite) TestHasOneMorph() {
 					Name: "has_one_morph_house",
 				},
 			}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.House.ID > 0)
 
@@ -2309,7 +2346,7 @@ func (s *QueryTestSuite) TestHasMany() {
 				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[1].ID > 0)
@@ -2332,7 +2369,7 @@ func (s *QueryTestSuite) TestHasManyMorph() {
 					{Name: "has_many_morph_phone2"},
 				},
 			}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Phones[0].ID > 0)
 			s.True(user.Phones[1].ID > 0)
@@ -2363,7 +2400,7 @@ func (s *QueryTestSuite) TestManyToMany() {
 				},
 			}
 
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Roles[0].ID > 0)
 			s.True(user.Roles[1].ID > 0)
@@ -2407,7 +2444,7 @@ func (s *QueryTestSuite) TestLoad() {
 		user.Address.Name = "load_address"
 		user.Books[0].Name = "load_book0"
 		user.Books[1].Name = "load_book1"
-		s.Nil(query.Query().Select(orm.Associations).Create(&user))
+		s.Nil(query.Query().Select(Associations).Create(&user))
 		s.True(user.ID > 0)
 		s.True(user.Address.ID > 0)
 		s.True(user.Books[0].ID > 0)
@@ -2503,7 +2540,7 @@ func (s *QueryTestSuite) TestLoadMissing() {
 			user.Address.Name = "load_missing_address"
 			user.Books[0].Name = "load_missing_book0"
 			user.Books[1].Name = "load_missing_book1"
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 			s.True(user.Books[0].ID > 0)
@@ -3464,7 +3501,7 @@ func (s *QueryTestSuite) TestWith() {
 			}, {
 				Name: "with_book1",
 			}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Address.ID > 0)
 			s.True(user.Books[0].ID > 0)
@@ -3527,7 +3564,7 @@ func (s *QueryTestSuite) TestWithNesting() {
 				Name:   "with_nesting_book1",
 				Author: &Author{Name: "with_nesting_author1"},
 			}}}
-			s.Nil(query.Query().Select(orm.Associations).Create(&user))
+			s.Nil(query.Query().Select(Associations).Create(&user))
 			s.True(user.ID > 0)
 			s.True(user.Books[0].ID > 0)
 			s.True(user.Books[0].Author.ID > 0)
@@ -3695,16 +3732,6 @@ func TestGetModelConnection(t *testing.T) {
 			assert.Equal(t, test.expectConnection, connection)
 		})
 	}
-}
-
-func TestObserver(t *testing.T) {
-	orm.Observers = append(orm.Observers, orm.Observer{
-		Model:    User{},
-		Observer: &UserObserver{},
-	})
-
-	assert.Nil(t, getObserver(Product{}))
-	assert.Equal(t, &UserObserver{}, getObserver(User{}))
 }
 
 func TestObserverEvent(t *testing.T) {

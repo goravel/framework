@@ -13,7 +13,6 @@ import (
 
 	authcontract "github.com/goravel/framework/contracts/auth"
 	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/errors"
 	cachemock "github.com/goravel/framework/mocks/cache"
 	configmock "github.com/goravel/framework/mocks/config"
@@ -24,8 +23,10 @@ import (
 var testUserGuard = "user"
 
 type User struct {
-	orm.Model
-	Name string
+	ID        uint `gorm:"primaryKey" json:"id"`
+	Name      string
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }
 
 type Context struct {

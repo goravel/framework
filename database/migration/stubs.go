@@ -29,7 +29,7 @@ func (r *DummyMigration) Down() error {
 func (receiver Stubs) Create() string {
 	return `package migrations
 
-import "github.com/goravel/framework/contracts/database/migration"
+import "github.com/goravel/framework/contracts/database/schema"
 
 type DummyMigration struct {
 }
@@ -41,7 +41,7 @@ func (r *DummyMigration) Signature() string {
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() error {
-	return facades.Schema.Create("DummyTable", func(table migration.Blueprint) {
+	return facades.Schema().Create("DummyTable", func(table schema.Blueprint) {
  		table.BigIncrements("id")
  		table.Timestamps()
 	})
@@ -49,7 +49,7 @@ func (r *DummyMigration) Up() error {
 
 // Down Reverse the migrations.
 func (r *DummyMigration) Down() error {
- 	return facades.Schema.DropIfExists("DummyTable")
+ 	return facades.Schema().DropIfExists("DummyTable")
 }
 `
 }
@@ -57,7 +57,7 @@ func (r *DummyMigration) Down() error {
 func (receiver Stubs) Update() string {
 	return `package migrations
 
-import "github.com/goravel/framework/contracts/database/migration"
+import "github.com/goravel/framework/contracts/database/schema"
 
 type DummyMigration struct {
 }
@@ -69,7 +69,7 @@ func (r *DummyMigration) Signature() string {
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() error {
-	return facades.Schema.Table("DummyTable", func(table migration.Blueprint) {
+	return facades.Schema().Table("DummyTable", func(table schema.Blueprint) {
 
 	})
 }

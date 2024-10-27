@@ -16,6 +16,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
+	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/foundation/json"
@@ -159,7 +160,7 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
-	s.app.Singleton(database.BindingOrm, func(app foundation.Application) (any, error) {
+	s.app.Singleton(orm.BindingOrm, func(app foundation.Application) (any, error) {
 		return &mocksorm.Orm{}, nil
 	})
 

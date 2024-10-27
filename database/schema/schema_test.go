@@ -3,14 +3,11 @@ package schema
 import (
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/gorm"
-	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
@@ -29,6 +26,7 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
+	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
@@ -39,27 +37,15 @@ func (s *SchemaSuite) SetupTest() {
 func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := GetTestSchema(s.T(), testQuery)
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "drop_if_exists"
-			mockTransaction(mockOrm, testQuery)
 
 			s.NoError(schema.DropIfExists(table))
-
-			mockTransaction(mockOrm, testQuery)
-
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			s.True(schema.HasTable(table))
-
-			mockTransaction(mockOrm, testQuery)
-
 			s.NoError(schema.DropIfExists(table))
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 			s.False(schema.HasTable(table))
 		})
 	}
@@ -68,32 +54,23 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 func (s *SchemaSuite) TestDropAllTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := GetTestSchema(s.T(), testQuery)
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			tableOne := "drop_all1_tables"
 			tableTwo := "drop_all2_tables"
 
-			mockTransaction(mockOrm, testQuery)
 			s.NoError(schema.Create(tableOne, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
 
-			mockTransaction(mockOrm, testQuery)
 			s.NoError(schema.Create(tableTwo, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
-
 			s.True(schema.HasTable(tableOne))
 			s.True(schema.HasTable(tableTwo))
 
-			mockOrm.EXPECT().Name().Return("postgres").Once()
 			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
 
 			s.NoError(schema.DropAllTables())
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Twice()
 			s.False(schema.HasTable(tableOne))
 			s.False(schema.HasTable(tableTwo))
 		})
@@ -113,20 +90,15 @@ func (s *SchemaSuite) TestDropAllViews() {
 func (s *SchemaSuite) TestTable_GetTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := GetTestSchema(s.T(), testQuery)
-			mockTransaction(mockOrm, testQuery)
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 			s.NoError(schema.Create("changes", func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			s.True(schema.HasTable("changes"))
 
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
-
 			tables, err := schema.GetTables()
+
 			s.NoError(err)
 			s.Len(tables, 1)
 
@@ -182,14 +154,11 @@ func (s *SchemaSuite) TestTable_GetTables() {
 func (s *SchemaSuite) TestSql() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
-			schema, mockOrm := GetTestSchema(s.T(), testQuery)
-			mockTransaction(mockOrm, testQuery)
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 			s.NoError(schema.Create("sql", func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
-			mockOrm.EXPECT().Query().Return(testQuery.Query()).Once()
 
 			schema.Sql("insert into goravel_sql (name) values ('goravel');")
 
@@ -200,10 +169,4 @@ func (s *SchemaSuite) TestSql() {
 			s.Equal(int64(1), count)
 		})
 	}
-}
-
-func mockTransaction(mockOrm *mocksorm.Orm, testQuery *gorm.TestQuery) {
-	mockOrm.EXPECT().Transaction(mock.Anything).RunAndReturn(func(txFunc func(contractsorm.Query) error) error {
-		return txFunc(testQuery.Query())
-	}).Once()
 }

@@ -1,4 +1,4 @@
-package database
+package orm
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/env"
 )
 
@@ -19,8 +18,8 @@ type contextKey int
 const testContextKey contextKey = 0
 
 type User struct {
-	orm.Model
-	orm.SoftDeletes
+	Model
+	SoftDeletes
 	Name   string
 	Avatar string
 }
@@ -106,10 +105,6 @@ func (s *OrmSuite) TestFactory() {
 
 func (s *OrmSuite) TestObserve() {
 	s.orm.Observe(User{}, &UserObserver{})
-
-	s.Equal([]orm.Observer{
-		{Model: User{}, Observer: &UserObserver{}},
-	}, orm.Observers)
 
 	for driver := range s.testQueries {
 		user := User{Name: "observer_name"}
