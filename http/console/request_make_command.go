@@ -42,7 +42,7 @@ func (receiver *RequestMakeCommand) Extend() command.Extend {
 func (receiver *RequestMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "request", ctx.Argument(0), filepath.Join("app", "http", "requests"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -50,7 +50,7 @@ func (receiver *RequestMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Request created successfully")
+	color.Successln("Request created successfully")
 
 	return nil
 }

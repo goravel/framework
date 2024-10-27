@@ -46,7 +46,7 @@ func (receiver *ModelMakeCommand) Extend() command.Extend {
 func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), filepath.Join("app", "models"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Model created successfully")
+	color.Successln("Model created successfully")
 
 	return nil
 }

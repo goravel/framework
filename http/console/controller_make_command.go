@@ -47,7 +47,7 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), filepath.Join("app", "http", "controllers"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -60,7 +60,7 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Controller created successfully")
+	color.Successln("Controller created successfully")
 
 	return nil
 }

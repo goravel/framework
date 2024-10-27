@@ -45,7 +45,7 @@ func (receiver *TestMakeCommand) Extend() command.Extend {
 func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), "tests")
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Test created successfully")
+	color.Successln("Test created successfully")
 
 	return nil
 }

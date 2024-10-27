@@ -46,7 +46,7 @@ func (receiver *MailMakeCommand) Extend() command.Extend {
 func (receiver *MailMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), filepath.Join("app", "mails"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func (receiver *MailMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Mail created successfully")
+	color.Successln("Mail created successfully")
 
 	return nil
 }

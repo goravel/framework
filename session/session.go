@@ -240,12 +240,12 @@ func (s *Session) migrate(destroy ...bool) error {
 func (s *Session) readFromHandler() map[string]any {
 	value, err := s.driver.Read(s.GetID())
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 	var data map[string]any
 	if err := s.json.Unmarshal([]byte(value), &data); err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 	return data

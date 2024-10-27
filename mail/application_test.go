@@ -34,7 +34,7 @@ func TestApplicationTestSuite(t *testing.T) {
 	}
 
 	if !file.Exists("../.env") && os.Getenv("MAIL_HOST") == "" {
-		color.Red().Println("No mail tests run, need create .env based on .env.example, then initialize it")
+		color.Errorln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
 

@@ -1167,6 +1167,39 @@ func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOpt
 	return _c
 }
 
+// Success provides a mock function with given fields: message
+func (_m *Context) Success(message string) {
+	_m.Called(message)
+}
+
+// Context_Success_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Success'
+type Context_Success_Call struct {
+	*mock.Call
+}
+
+// Success is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Success(message interface{}) *Context_Success_Call {
+	return &Context_Success_Call{Call: _e.mock.On("Success", message)}
+}
+
+func (_c *Context_Success_Call) Run(run func(message string)) *Context_Success_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Success_Call) Return() *Context_Success_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Success_Call) RunAndReturn(run func(string)) *Context_Success_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Warning provides a mock function with given fields: message
 func (_m *Context) Warning(message string) {
 	_m.Called(message)

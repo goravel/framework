@@ -65,7 +65,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	root := ctx.Option("root") + "/" + pkg
 
 	if file.Exists(root) {
-		color.Red().Printf("Package %s already exists\n", pkg)
+		color.Errorf("Package %s already exists\n", pkg)
 		return nil
 	}
 
@@ -86,7 +86,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	color.Green().Printf("Package created successfully: %s\n", root)
+	color.Successf("Package created successfully: %s\n", root)
 
 	return nil
 }

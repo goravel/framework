@@ -23,7 +23,7 @@ func (s *SeederFacade) Register(seeders []seeder.Seeder) {
 		signature := seeder.Signature()
 
 		if existingSignatures[signature] {
-			color.Red().Printf("Duplicate seeder signature: %s in %T\n", signature, seeder)
+			color.Errorf("Duplicate seeder signature: %s in %T\n", signature, seeder)
 		} else {
 			existingSignatures[signature] = true
 			s.Seeders = append(s.Seeders, seeder)

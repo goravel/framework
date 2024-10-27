@@ -46,7 +46,7 @@ func (receiver *PolicyMakeCommand) Extend() command.Extend {
 func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), filepath.Join("app", "policies"))
 	if err != nil {
-		color.Red().Println(err)
+		color.Errorln(err)
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Policy created successfully")
+	color.Successln("Policy created successfully")
 
 	return nil
 }
