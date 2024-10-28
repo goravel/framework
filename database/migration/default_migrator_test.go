@@ -238,6 +238,72 @@ func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
 	}
 }
 
+func (s *DefaultMigratorSuite) TestGetMaxNameLength() {
+	// Returns zero for empty list
+	var migrationStatus []status
+	length := s.migrator.getMaxNameLength(migrationStatus)
+	s.Equal(0, length)
+
+	// Returns correct length for single item
+	migrationStatus = []status{
+		{Name: "short"},
+	}
+	length = s.migrator.getMaxNameLength(migrationStatus)
+	s.Equal(5, length)
+
+	// Returns correct length for multiple items
+	migrationStatus = []status{
+		{Name: "short"},
+		{Name: "longername"},
+		{Name: "longestnameofall"},
+	}
+	length = s.migrator.getMaxNameLength(migrationStatus)
+	s.Equal(16, length)
+
+	// Handles equal length names
+	migrationStatus = []status{
+		{Name: "same"},
+		{Name: "size"},
+	}
+	length = s.migrator.getMaxNameLength(migrationStatus)
+	s.Equal(4, length)
+}
+
+func (s *DefaultMigratorSuite) TestGetMigrations() {
+	testMigration := NewTestMigration(s.mockSchema)
+	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
+
+	s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+		testMigration,
+		testConnectionMigration,
+	}).Once()
+
+	migrations := s.migrator.getMigrations()
+
+	s.Len(migrations, 2)
+	s.Equal(testMigration, migrations[testMigration.Signature()])
+	s.Equal(testConnectionMigration, migrations[testConnectionMigration.Signature()])
+}
+
+func (s *DefaultMigratorSuite) TestGetStatusForMigrations() {
+	testMigration := NewTestMigration(s.mockSchema)
+	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
+
+	s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+		testMigration,
+		testConnectionMigration,
+	}).Once()
+
+	migrations := s.migrator.getStatusForMigrations([]migration.File{
+		{ID: 1, Migration: testMigration.Signature(), Batch: 1},
+	})
+
+	s.Equal([]status{
+		{Name: testMigration.Signature(), Batch: 1, Ran: true},
+		{Name: testConnectionMigration.Signature(), Ran: false},
+	}, migrations)
+}
+
 func (s *DefaultMigratorSuite) TestPendingMigrations() {
 	testMigration := NewTestMigration(s.mockSchema)
 	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
@@ -261,6 +327,12 @@ func (s *DefaultMigratorSuite) TestPrepareDatabase() {
 	s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
 	s.mockRepository.EXPECT().CreateRepository().Return(nil).Once()
 	s.NoError(s.migrator.prepareDatabase())
+}
+
+func (s *DefaultMigratorSuite) TestPrintTitle() {
+	s.Equal("\x1b[39mMigration name      \x1b[0m\x1b[39m | Batch / Status\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m\x1b[0m\n\x1b[39m\x1b[0m", color.CaptureOutput(func(w io.Writer) {
+		s.migrator.printTitle(20)
+	}))
 }
 
 func (s *DefaultMigratorSuite) TestRollback() {
@@ -687,6 +759,7 @@ func (s *DefaultMigratorSuite) TestStatus() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
+			s.SetupTest()
 			test.setup()
 			test.assert()
 		})
