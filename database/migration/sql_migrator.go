@@ -17,6 +17,7 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -98,6 +99,26 @@ func (r *SqlMigrator) Run() error {
 	if err := r.migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err
 	}
+
+	return nil
+}
+
+func (r *SqlMigrator) Status() error {
+	version, dirty, err := r.migrator.Version()
+	if err != nil {
+		if errors.Is(err, migrate.ErrNilVersion) {
+			color.Warningln("No migrations found")
+
+			return nil
+		} else {
+			return errors.MigrationGetStatusFailed.Args(err)
+		}
+	}
+	if dirty {
+		color.Warningln("Migration status: dirty")
+	}
+
+	color.Successln(fmt.Sprintf("Migration version: %d", version))
 
 	return nil
 }

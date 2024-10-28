@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/goravel/framework/contracts/console"
@@ -11,6 +12,12 @@ import (
 	supportfile "github.com/goravel/framework/support/file"
 )
 
+type status struct {
+	Name  string
+	Batch int
+	Ran   bool
+}
+
 type DefaultMigrator struct {
 	artisan    console.Artisan
 	creator    *DefaultCreator
@@ -20,15 +27,9 @@ type DefaultMigrator struct {
 }
 
 func NewDefaultMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *DefaultMigrator {
-	migrations := make(map[string]contractsschema.Migration)
-	for _, m := range schema.Migrations() {
-		migrations[m.Signature()] = m
-	}
-
 	return &DefaultMigrator{
 		artisan:    artisan,
 		creator:    NewDefaultCreator(),
-		migrations: migrations,
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
@@ -108,6 +109,46 @@ func (r *DefaultMigrator) Run() error {
 	return r.runPending(pendingMigrations)
 }
 
+func (r *DefaultMigrator) Status() error {
+	if !r.repository.RepositoryExists() {
+		color.Warningln("Migration table not found")
+
+		return nil
+	}
+
+	ran, err := r.repository.GetRan()
+	if err != nil {
+		return err
+	}
+
+	batches, err := r.repository.GetMigrationBatches()
+	if err != nil {
+		return err
+	}
+
+	migrationStatus := r.getStatusForMigrations(ran, batches)
+	if len(migrationStatus) == 0 {
+		color.Warningln("No migrations found")
+
+		return nil
+	}
+
+	maxNameLength := r.getMaxNameLength(migrationStatus)
+	r.printTitle(maxNameLength)
+
+	for _, s := range migrationStatus {
+		color.Default().Print(fmt.Sprintf("%-*s", maxNameLength, s.Name))
+		if s.Ran {
+			color.Default().Printf(" | [%d] ", s.Batch)
+			color.Green().Println("Ran")
+		} else {
+			color.Yellow().Println(" | Pending")
+		}
+	}
+
+	return nil
+}
+
 func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigration.File, error) {
 	if step > 0 {
 		return r.repository.GetMigrations(step)
@@ -120,16 +161,68 @@ func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigra
 	return r.repository.GetLast()
 }
 
+func (r *DefaultMigrator) getMaxNameLength(migrationStatus []status) int {
+	var length int
+	for _, s := range migrationStatus {
+		if len(s.Name) > length {
+			length = len(s.Name)
+		}
+	}
+
+	return length
+}
+
+func (r *DefaultMigrator) getMigrations() map[string]contractsschema.Migration {
+	if r.migrations == nil {
+		migrations := make(map[string]contractsschema.Migration)
+		for _, m := range r.schema.Migrations() {
+			migrations[m.Signature()] = m
+		}
+
+		r.migrations = migrations
+	}
+
+	return r.migrations
+}
+
 func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) contractsschema.Migration {
-	if m, exists := r.migrations[file.Migration]; exists {
+	if m, exists := r.getMigrations()[file.Migration]; exists {
 		return m
 	}
 	return nil
 }
 
+func (r *DefaultMigrator) getStatusForMigrations(ran []string, batches []contractsmigration.File) []status {
+	var migrationStatus []status
+
+	for name, _ := range r.getMigrations() {
+		if slices.Contains(ran, name) {
+			var batch int
+			for _, b := range batches {
+				if b.Migration == name {
+					batch = b.Batch
+				}
+			}
+
+			migrationStatus = append(migrationStatus, status{
+				Name:  name,
+				Batch: batch,
+				Ran:   true,
+			})
+		} else {
+			migrationStatus = append(migrationStatus, status{
+				Name: name,
+				Ran:  false,
+			})
+		}
+	}
+
+	return migrationStatus
+}
+
 func (r *DefaultMigrator) pendingMigrations(ran []string) []contractsschema.Migration {
 	var pendingMigrations []contractsschema.Migration
-	for name, migration := range r.migrations {
+	for name, migration := range r.getMigrations() {
 		if !slices.Contains(ran, name) {
 			pendingMigrations = append(pendingMigrations, migration)
 		}
@@ -144,6 +237,15 @@ func (r *DefaultMigrator) prepareDatabase() error {
 	}
 
 	return r.repository.CreateRepository()
+}
+
+func (r *DefaultMigrator) printTitle(maxNameLength int) {
+	color.Default().Print(fmt.Sprintf("%-*s", maxNameLength, "Migration name"))
+	color.Default().Println(" | Batch / Status")
+	for i := 0; i < maxNameLength+17; i++ {
+		color.Default().Print("-")
+	}
+	color.Default().Println()
 }
 
 func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) error {

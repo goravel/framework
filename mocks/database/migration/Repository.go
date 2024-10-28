@@ -213,6 +213,63 @@ func (_c *Repository_GetLast_Call) RunAndReturn(run func() ([]migration.File, er
 	return _c
 }
 
+// GetMigrationBatches provides a mock function with given fields:
+func (_m *Repository) GetMigrationBatches() ([]migration.File, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMigrationBatches")
+	}
+
+	var r0 []migration.File
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]migration.File, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []migration.File); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]migration.File)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_GetMigrationBatches_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMigrationBatches'
+type Repository_GetMigrationBatches_Call struct {
+	*mock.Call
+}
+
+// GetMigrationBatches is a helper method to define mock.On call
+func (_e *Repository_Expecter) GetMigrationBatches() *Repository_GetMigrationBatches_Call {
+	return &Repository_GetMigrationBatches_Call{Call: _e.mock.On("GetMigrationBatches")}
+}
+
+func (_c *Repository_GetMigrationBatches_Call) Run(run func()) *Repository_GetMigrationBatches_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Repository_GetMigrationBatches_Call) Return(_a0 []migration.File, _a1 error) *Repository_GetMigrationBatches_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_GetMigrationBatches_Call) RunAndReturn(run func() ([]migration.File, error)) *Repository_GetMigrationBatches_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetMigrations provides a mock function with given fields: steps
 func (_m *Repository) GetMigrations(steps int) ([]migration.File, error) {
 	ret := _m.Called(steps)

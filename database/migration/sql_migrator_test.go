@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
@@ -118,6 +120,27 @@ func (s *SqlMigratorSuite) TestRun() {
 
 			err = migrator.Run()
 			s.NoError(err)
+		})
+	}
+}
+
+func (s *SqlMigratorSuite) TestStatus() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			migrator, _ := getTestSqlMigrator(s.T(), driver, testQuery)
+
+			s.Equal("\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mNo migrations found\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
+				err := migrator.Status()
+				s.NoError(err)
+			}))
+
+			err := migrator.Run()
+			s.NoError(err)
+
+			s.Equal("\x1b[30;42m\x1b[30;42m SUCCESS \x1b[0m\x1b[0m \x1b[32m\x1b[32mMigration version: 20230311160527\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
+				err := migrator.Status()
+				s.NoError(err)
+			}))
 		})
 	}
 }

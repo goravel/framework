@@ -2,6 +2,7 @@ package migration
 
 import (
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,6 +22,7 @@ import (
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
@@ -70,12 +72,32 @@ func (s *DefaultMigratorWithDBSuite) TestRollback() {
 
 }
 
+func (s *DefaultMigratorWithDBSuite) TestStatus() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
+			testMigration := NewTestMigration(schema)
+			migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+			s.NoError(migrator.Status())
+
+			schema.Register([]contractsschema.Migration{
+				testMigration,
+			})
+
+			s.NoError(migrator.Run())
+			s.True(schema.HasTable("users"))
+			s.NoError(migrator.Status())
+		})
+	}
+}
+
 type DefaultMigratorSuite struct {
 	suite.Suite
 	mockArtisan    *mocksconsole.Artisan
 	mockRepository *mocksmigration.Repository
 	mockSchema     *mocksschema.Schema
-	driver         *DefaultMigrator
+	migrator       *DefaultMigrator
 }
 
 func TestDefaultMigratorSuite(t *testing.T) {
@@ -87,7 +109,7 @@ func (s *DefaultMigratorSuite) SetupTest() {
 	s.mockRepository = mocksmigration.NewRepository(s.T())
 	s.mockSchema = mocksschema.NewSchema(s.T())
 
-	s.driver = &DefaultMigrator{
+	s.migrator = &DefaultMigrator{
 		artisan:    s.mockArtisan,
 		creator:    NewDefaultCreator(),
 		repository: s.mockRepository,
@@ -105,7 +127,7 @@ func (s *DefaultMigratorSuite) TestCreate() {
 	path := filepath.Join(pwd, "database", "migrations")
 	name := "create_users_table"
 
-	s.NoError(s.driver.Create(name))
+	s.NoError(s.migrator.Create(name))
 
 	migrationFile := filepath.Join(path, "20240817214501_"+name+".go")
 	s.True(file.Exists(migrationFile))
@@ -121,18 +143,18 @@ func (s *DefaultMigratorSuite) TestFresh() {
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
 
-	s.NoError(s.driver.Fresh())
+	s.NoError(s.migrator.Fresh())
 
 	// db:wipe returns error
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(assert.AnError).Once()
 
-	s.EqualError(s.driver.Fresh(), assert.AnError.Error())
+	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
 
 	// migrate returns error
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
 
-	s.EqualError(s.driver.Fresh(), assert.AnError.Error())
+	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
 }
 
 func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
@@ -204,7 +226,7 @@ func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
 		s.Run(test.name, func() {
 			test.setup()
 
-			files, err := s.driver.getFilesForRollback(test.step, test.batch)
+			files, err := s.migrator.getFilesForRollback(test.step, test.batch)
 			if test.expectError == "" {
 				s.NoError(err)
 				s.Equal(test.expectFiles, files)
@@ -214,6 +236,31 @@ func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
 			}
 		})
 	}
+}
+
+func (s *DefaultMigratorSuite) TestPendingMigrations() {
+	testMigration := NewTestMigration(s.mockSchema)
+	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
+	s.migrator.migrations = map[string]contractsschema.Migration{
+		testMigration.Signature():           testMigration,
+		testConnectionMigration.Signature(): testConnectionMigration,
+	}
+	ran := []string{
+		"20240817214501_create_users_table",
+	}
+
+	pendingMigrations := s.migrator.pendingMigrations(ran)
+	s.Len(pendingMigrations, 1)
+	s.Equal(NewTestConnectionMigration(s.mockSchema), pendingMigrations[0])
+}
+
+func (s *DefaultMigratorSuite) TestPrepareDatabase() {
+	s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+	s.NoError(s.migrator.prepareDatabase())
+
+	s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
+	s.mockRepository.EXPECT().CreateRepository().Return(nil).Once()
+	s.NoError(s.migrator.prepareDatabase())
 }
 
 func (s *DefaultMigratorSuite) TestRollback() {
@@ -234,7 +281,7 @@ func (s *DefaultMigratorSuite) TestRollback() {
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 
-				s.driver.migrations = map[string]contractsschema.Migration{
+				s.migrator.migrations = map[string]contractsschema.Migration{
 					testMigration.Signature(): testMigration,
 				}
 
@@ -256,7 +303,7 @@ func (s *DefaultMigratorSuite) TestRollback() {
 				previousConnection := "postgres"
 				testMigration := NewTestMigration(s.mockSchema)
 
-				s.driver.migrations = map[string]contractsschema.Migration{
+				s.migrator.migrations = map[string]contractsschema.Migration{
 					testMigration.Signature(): testMigration,
 				}
 
@@ -273,7 +320,7 @@ func (s *DefaultMigratorSuite) TestRollback() {
 		s.Run(test.name, func() {
 			test.setup()
 
-			err := s.driver.Rollback(1, 0)
+			err := s.migrator.Rollback(1, 0)
 
 			if test.expectErr == "" {
 				s.NoError(err)
@@ -287,7 +334,7 @@ func (s *DefaultMigratorSuite) TestRollback() {
 func (s *DefaultMigratorSuite) TestRun() {
 	testMigration := NewTestMigration(s.mockSchema)
 	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
-	s.driver.migrations = map[string]contractsschema.Migration{
+	s.migrator.migrations = map[string]contractsschema.Migration{
 		testMigration.Signature():           testMigration,
 		testConnectionMigration.Signature(): testConnectionMigration,
 	}
@@ -347,99 +394,7 @@ func (s *DefaultMigratorSuite) TestRun() {
 		s.Run(test.name, func() {
 			test.setup()
 
-			err := s.driver.Run()
-			if test.expectError == "" {
-				s.Nil(err)
-			} else {
-				s.EqualError(err, test.expectError)
-			}
-		})
-	}
-}
-
-func (s *DefaultMigratorSuite) TestPendingMigrations() {
-	testMigration := NewTestMigration(s.mockSchema)
-	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
-	s.driver.migrations = map[string]contractsschema.Migration{
-		testMigration.Signature():           testMigration,
-		testConnectionMigration.Signature(): testConnectionMigration,
-	}
-	ran := []string{
-		"20240817214501_create_users_table",
-	}
-
-	pendingMigrations := s.driver.pendingMigrations(ran)
-	s.Len(pendingMigrations, 1)
-	s.Equal(NewTestConnectionMigration(s.mockSchema), pendingMigrations[0])
-}
-
-func (s *DefaultMigratorSuite) TestPrepareDatabase() {
-	s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-	s.NoError(s.driver.prepareDatabase())
-
-	s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
-	s.mockRepository.EXPECT().CreateRepository().Return(nil).Once()
-	s.NoError(s.driver.prepareDatabase())
-}
-
-func (s *DefaultMigratorSuite) TestRunPending() {
-	testMigration := NewTestMigration(s.mockSchema)
-
-	tests := []struct {
-		name        string
-		migrations  []contractsschema.Migration
-		setup       func()
-		expectError string
-	}{
-		{
-			name: "Happy path",
-			migrations: []contractsschema.Migration{
-				testMigration,
-			},
-			setup: func() {
-				previousConnection := "postgres"
-				mockOrm := mocksorm.NewOrm(s.T())
-
-				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil)
-			},
-		},
-		{
-			name:       "Happy path - no migrations",
-			migrations: []contractsschema.Migration{},
-			setup:      func() {},
-		},
-		{
-			name: "Sad path - GetNextBatchNumber returns error",
-			migrations: []contractsschema.Migration{
-				testMigration,
-			},
-			setup: func() {
-				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, assert.AnError).Once()
-			},
-			expectError: assert.AnError.Error(),
-		},
-		{
-			name: "Sad path - runUp returns error",
-			migrations: []contractsschema.Migration{
-				testMigration,
-			},
-			setup: func() {
-				previousConnection := "postgres"
-				mockOrm := mocksorm.NewOrm(s.T())
-
-				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
-				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError)
-			},
-			expectError: assert.AnError.Error(),
-		},
-	}
-
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			test.setup()
-
-			err := s.driver.runPending(test.migrations)
+			err := s.migrator.Run()
 			if test.expectError == "" {
 				s.Nil(err)
 			} else {
@@ -510,12 +465,79 @@ func (s *DefaultMigratorSuite) TestRunDown() {
 			beforeEach()
 			test.setup()
 
-			err := s.driver.runDown(test.migration)
+			err := s.migrator.runDown(test.migration)
 
 			if test.expectErr == "" {
 				s.NoError(err)
 			} else {
 				s.EqualError(err, test.expectErr)
+			}
+		})
+	}
+}
+
+func (s *DefaultMigratorSuite) TestRunPending() {
+	testMigration := NewTestMigration(s.mockSchema)
+
+	tests := []struct {
+		name        string
+		migrations  []contractsschema.Migration
+		setup       func()
+		expectError string
+	}{
+		{
+			name: "Happy path",
+			migrations: []contractsschema.Migration{
+				testMigration,
+			},
+			setup: func() {
+				previousConnection := "postgres"
+				mockOrm := mocksorm.NewOrm(s.T())
+
+				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, nil)
+			},
+		},
+		{
+			name:       "Happy path - no migrations",
+			migrations: []contractsschema.Migration{},
+			setup:      func() {},
+		},
+		{
+			name: "Sad path - GetNextBatchNumber returns error",
+			migrations: []contractsschema.Migration{
+				testMigration,
+			},
+			setup: func() {
+				s.mockRepository.EXPECT().GetNextBatchNumber().Return(0, assert.AnError).Once()
+			},
+			expectError: assert.AnError.Error(),
+		},
+		{
+			name: "Sad path - runUp returns error",
+			migrations: []contractsschema.Migration{
+				testMigration,
+			},
+			setup: func() {
+				previousConnection := "postgres"
+				mockOrm := mocksorm.NewOrm(s.T())
+
+				s.mockRepository.EXPECT().GetNextBatchNumber().Return(1, nil).Once()
+				s.mockRunUp(mockOrm, previousConnection, testMigration.Signature(), "users", 1, assert.AnError)
+			},
+			expectError: assert.AnError.Error(),
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			test.setup()
+
+			err := s.migrator.runPending(test.migrations)
+			if test.expectError == "" {
+				s.Nil(err)
+			} else {
+				s.EqualError(err, test.expectError)
 			}
 		})
 	}
@@ -583,13 +605,104 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 			beforeEach()
 			test.setup()
 
-			err := s.driver.runUp(test.migration, batch)
+			err := s.migrator.runUp(test.migration, batch)
 
 			if test.expectErr == "" {
 				s.NoError(err)
 			} else {
 				s.EqualError(err, test.expectErr)
 			}
+		})
+	}
+}
+
+func (s *DefaultMigratorSuite) TestStatus() {
+	tests := []struct {
+		name        string
+		setup       func()
+		assert      func()
+		expectError string
+	}{
+		{
+			name: "The migration table doesn't exist",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(false).Once()
+			},
+			assert: func() {
+				s.Equal("\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mMigration table not found\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
+					err := s.migrator.Status()
+					s.NoError(err)
+				}))
+			},
+		},
+		{
+			name: "Get ran failed",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
+			},
+			assert: func() {
+				err := s.migrator.Status()
+				s.EqualError(err, assert.AnError.Error())
+			},
+		},
+		{
+			name: "Get migration batches failed",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_users_table"}, nil).Once()
+				s.mockRepository.EXPECT().GetMigrationBatches().Return(nil, assert.AnError).Once()
+			},
+			assert: func() {
+				err := s.migrator.Status()
+				s.EqualError(err, assert.AnError.Error())
+			},
+		},
+		{
+			name: "No migrations found",
+			setup: func() {
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_users_table"}, nil).Once()
+				s.mockSchema.EXPECT().Migrations().Return(nil).Once()
+				s.mockRepository.EXPECT().GetMigrationBatches().Return(nil, nil).Once()
+			},
+			assert: func() {
+				s.Equal("\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mNo migrations found\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
+					err := s.migrator.Status()
+					s.NoError(err)
+				}))
+			},
+		},
+		{
+			name: "Success",
+			setup: func() {
+				testMigration := NewTestMigration(s.mockSchema)
+				testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
+
+				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
+				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+					testMigration,
+					testConnectionMigration,
+				}).Once()
+				s.mockRepository.EXPECT().GetMigrationBatches().Return([]migration.File{
+					{ID: 1, Migration: testMigration.Signature(), Batch: 1},
+				}, nil).Once()
+			},
+			assert: func() {
+				s.Equal("\x1b[39mMigration name                    \x1b[0m\x1b[39m | Batch / Status\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m20240817214501_create_users_table \x1b[0m\x1b[39m | [1] \x1b[0m\x1b[32mRan\x1b[0m\n\x1b[32m\x1b[0m\x1b[39m20240817214502_create_agents_table\x1b[0m\x1b[33m | Pending\x1b[0m\n\x1b[33m\x1b[0m",
+					color.CaptureOutput(func(w io.Writer) {
+						err := s.migrator.Status()
+						s.NoError(err)
+					}))
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			test.setup()
+			test.assert()
 		})
 	}
 }

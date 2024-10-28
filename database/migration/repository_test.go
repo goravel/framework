@@ -94,6 +94,17 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal("migration1", migrations[1].Migration)
 			s.Equal(1, migrations[1].Batch)
 
+			migrations, err = repository.GetMigrationBatches()
+
+			s.NoError(err)
+			s.Len(migrations, 3)
+			s.Equal("migration3", migrations[0].Migration)
+			s.Equal(2, migrations[0].Batch)
+			s.Equal("migration2", migrations[1].Migration)
+			s.Equal(1, migrations[1].Batch)
+			s.Equal("migration1", migrations[2].Migration)
+			s.Equal(1, migrations[2].Batch)
+
 			migrations, err = repository.GetLast()
 
 			s.NoError(err)
