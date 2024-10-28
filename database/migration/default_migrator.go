@@ -8,6 +8,7 @@ import (
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
 )
@@ -116,17 +117,12 @@ func (r *DefaultMigrator) Status() error {
 		return nil
 	}
 
-	ran, err := r.repository.GetRan()
-	if err != nil {
-		return err
-	}
-
 	batches, err := r.repository.GetMigrationBatches()
 	if err != nil {
 		return err
 	}
 
-	migrationStatus := r.getStatusForMigrations(ran, batches)
+	migrationStatus := r.getStatusForMigrations(batches)
 	if len(migrationStatus) == 0 {
 		color.Warningln("No migrations found")
 
@@ -192,21 +188,22 @@ func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) cont
 	return nil
 }
 
-func (r *DefaultMigrator) getStatusForMigrations(ran []string, batches []contractsmigration.File) []status {
+func (r *DefaultMigrator) getStatusForMigrations(batches []contractsmigration.File) []status {
 	var migrationStatus []status
 
 	for name, _ := range r.getMigrations() {
-		if slices.Contains(ran, name) {
-			var batch int
-			for _, b := range batches {
-				if b.Migration == name {
-					batch = b.Batch
-				}
+		var file contractsmigration.File
+		collect.Each(batches, func(item contractsmigration.File, index int) {
+			if item.Migration == name {
+				file = item
+				return
 			}
+		})
 
+		if file.ID > 0 {
 			migrationStatus = append(migrationStatus, status{
 				Name:  name,
-				Batch: batch,
+				Batch: file.Batch,
 				Ran:   true,
 			})
 		} else {

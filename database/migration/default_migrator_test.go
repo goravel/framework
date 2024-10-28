@@ -636,21 +636,9 @@ func (s *DefaultMigratorSuite) TestStatus() {
 			},
 		},
 		{
-			name: "Get ran failed",
-			setup: func() {
-				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
-			},
-			assert: func() {
-				err := s.migrator.Status()
-				s.EqualError(err, assert.AnError.Error())
-			},
-		},
-		{
 			name: "Get migration batches failed",
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_users_table"}, nil).Once()
 				s.mockRepository.EXPECT().GetMigrationBatches().Return(nil, assert.AnError).Once()
 			},
 			assert: func() {
@@ -662,7 +650,6 @@ func (s *DefaultMigratorSuite) TestStatus() {
 			name: "No migrations found",
 			setup: func() {
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return([]string{"20240817214501_create_users_table"}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return(nil).Once()
 				s.mockRepository.EXPECT().GetMigrationBatches().Return(nil, nil).Once()
 			},
@@ -680,7 +667,6 @@ func (s *DefaultMigratorSuite) TestStatus() {
 				testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
 
 				s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
-				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
 				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
 					testMigration,
 					testConnectionMigration,
