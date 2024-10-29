@@ -76,7 +76,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.NoError(err)
 			s.ElementsMatch([]string{"migration1", "migration2", "migration3"}, ranMigrations)
 
-			migrations, err := repository.GetMigrations(2)
+			migrations, err := repository.GetMigrationsByStep(2)
 
 			s.NoError(err)
 			s.Len(migrations, 2)
@@ -93,6 +93,17 @@ func (s *RepositoryTestSuite) TestRecord() {
 			s.Equal(1, migrations[0].Batch)
 			s.Equal("migration1", migrations[1].Migration)
 			s.Equal(1, migrations[1].Batch)
+
+			migrations, err = repository.GetMigrations()
+
+			s.NoError(err)
+			s.Len(migrations, 3)
+			s.Equal("migration3", migrations[0].Migration)
+			s.Equal(2, migrations[0].Batch)
+			s.Equal("migration2", migrations[1].Migration)
+			s.Equal(1, migrations[1].Batch)
+			s.Equal("migration1", migrations[2].Migration)
+			s.Equal(1, migrations[2].Batch)
 
 			migrations, err = repository.GetLast()
 

@@ -200,6 +200,51 @@ func (_c *Migrator_Run_Call) RunAndReturn(run func() error) *Migrator_Run_Call {
 	return _c
 }
 
+// Status provides a mock function with given fields:
+func (_m *Migrator) Status() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Status")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Migrator_Status_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Status'
+type Migrator_Status_Call struct {
+	*mock.Call
+}
+
+// Status is a helper method to define mock.On call
+func (_e *Migrator_Expecter) Status() *Migrator_Status_Call {
+	return &Migrator_Status_Call{Call: _e.mock.On("Status")}
+}
+
+func (_c *Migrator_Status_Call) Run(run func()) *Migrator_Status_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Migrator_Status_Call) Return(_a0 error) *Migrator_Status_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Migrator_Status_Call) RunAndReturn(run func() error) *Migrator_Status_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMigrator creates a new instance of Migrator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMigrator(t interface {

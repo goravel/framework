@@ -14,4 +14,6 @@ type Migrator interface {
 	Rollback(step, batch int) error
 	// Run the migrations according to paths.
 	Run() error
+	// Status get the migration's status.
+	Status() error
 }

@@ -213,9 +213,9 @@ func (_c *Repository_GetLast_Call) RunAndReturn(run func() ([]migration.File, er
 	return _c
 }
 
-// GetMigrations provides a mock function with given fields: steps
-func (_m *Repository) GetMigrations(steps int) ([]migration.File, error) {
-	ret := _m.Called(steps)
+// GetMigrations provides a mock function with given fields:
+func (_m *Repository) GetMigrations() ([]migration.File, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetMigrations")
@@ -223,19 +223,19 @@ func (_m *Repository) GetMigrations(steps int) ([]migration.File, error) {
 
 	var r0 []migration.File
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int) ([]migration.File, error)); ok {
-		return rf(steps)
+	if rf, ok := ret.Get(0).(func() ([]migration.File, error)); ok {
+		return rf()
 	}
-	if rf, ok := ret.Get(0).(func(int) []migration.File); ok {
-		r0 = rf(steps)
+	if rf, ok := ret.Get(0).(func() []migration.File); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]migration.File)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(int) error); ok {
-		r1 = rf(steps)
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -249,14 +249,13 @@ type Repository_GetMigrations_Call struct {
 }
 
 // GetMigrations is a helper method to define mock.On call
-//   - steps int
-func (_e *Repository_Expecter) GetMigrations(steps interface{}) *Repository_GetMigrations_Call {
-	return &Repository_GetMigrations_Call{Call: _e.mock.On("GetMigrations", steps)}
+func (_e *Repository_Expecter) GetMigrations() *Repository_GetMigrations_Call {
+	return &Repository_GetMigrations_Call{Call: _e.mock.On("GetMigrations")}
 }
 
-func (_c *Repository_GetMigrations_Call) Run(run func(steps int)) *Repository_GetMigrations_Call {
+func (_c *Repository_GetMigrations_Call) Run(run func()) *Repository_GetMigrations_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int))
+		run()
 	})
 	return _c
 }
@@ -266,7 +265,7 @@ func (_c *Repository_GetMigrations_Call) Return(_a0 []migration.File, _a1 error)
 	return _c
 }
 
-func (_c *Repository_GetMigrations_Call) RunAndReturn(run func(int) ([]migration.File, error)) *Repository_GetMigrations_Call {
+func (_c *Repository_GetMigrations_Call) RunAndReturn(run func() ([]migration.File, error)) *Repository_GetMigrations_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -325,6 +324,64 @@ func (_c *Repository_GetMigrationsByBatch_Call) Return(_a0 []migration.File, _a1
 }
 
 func (_c *Repository_GetMigrationsByBatch_Call) RunAndReturn(run func(int) ([]migration.File, error)) *Repository_GetMigrationsByBatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetMigrationsByStep provides a mock function with given fields: steps
+func (_m *Repository) GetMigrationsByStep(steps int) ([]migration.File, error) {
+	ret := _m.Called(steps)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMigrationsByStep")
+	}
+
+	var r0 []migration.File
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) ([]migration.File, error)); ok {
+		return rf(steps)
+	}
+	if rf, ok := ret.Get(0).(func(int) []migration.File); ok {
+		r0 = rf(steps)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]migration.File)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(steps)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_GetMigrationsByStep_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMigrationsByStep'
+type Repository_GetMigrationsByStep_Call struct {
+	*mock.Call
+}
+
+// GetMigrationsByStep is a helper method to define mock.On call
+//   - steps int
+func (_e *Repository_Expecter) GetMigrationsByStep(steps interface{}) *Repository_GetMigrationsByStep_Call {
+	return &Repository_GetMigrationsByStep_Call{Call: _e.mock.On("GetMigrationsByStep", steps)}
+}
+
+func (_c *Repository_GetMigrationsByStep_Call) Run(run func(steps int)) *Repository_GetMigrationsByStep_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *Repository_GetMigrationsByStep_Call) Return(_a0 []migration.File, _a1 error) *Repository_GetMigrationsByStep_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_GetMigrationsByStep_Call) RunAndReturn(run func(int) ([]migration.File, error)) *Repository_GetMigrationsByStep_Call {
 	_c.Call.Return(run)
 	return _c
 }

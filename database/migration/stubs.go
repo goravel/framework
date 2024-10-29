@@ -29,7 +29,10 @@ func (r *DummyMigration) Down() error {
 func (receiver Stubs) Create() string {
 	return `package migrations
 
-import "github.com/goravel/framework/contracts/database/schema"
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/facades"
+)
 
 type DummyMigration struct {
 }
@@ -57,7 +60,10 @@ func (r *DummyMigration) Down() error {
 func (receiver Stubs) Update() string {
 	return `package migrations
 
-import "github.com/goravel/framework/contracts/database/schema"
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/facades"
+)
 
 type DummyMigration struct {
 }

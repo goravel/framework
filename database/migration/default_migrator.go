@@ -1,34 +1,35 @@
 package migration
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/goravel/framework/contracts/console"
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/color"
 	supportfile "github.com/goravel/framework/support/file"
 )
 
+type status struct {
+	Name  string
+	Batch int
+	Ran   bool
+}
+
 type DefaultMigrator struct {
 	artisan    console.Artisan
 	creator    *DefaultCreator
-	migrations map[string]contractsschema.Migration
 	repository contractsmigration.Repository
 	schema     contractsschema.Schema
 }
 
 func NewDefaultMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *DefaultMigrator {
-	migrations := make(map[string]contractsschema.Migration)
-	for _, m := range schema.Migrations() {
-		migrations[m.Signature()] = m
-	}
-
 	return &DefaultMigrator{
 		artisan:    artisan,
 		creator:    NewDefaultCreator(),
-		migrations: migrations,
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
@@ -78,7 +79,7 @@ func (r *DefaultMigrator) Rollback(step, batch int) error {
 	for _, file := range files {
 		migration := r.getMigrationViaFile(file)
 		if migration == nil {
-			color.Warnf("Migration not found: %s\n", file.Migration)
+			color.Warningf("Migration not found: %s\n", file.Migration)
 
 			continue
 		}
@@ -108,9 +109,44 @@ func (r *DefaultMigrator) Run() error {
 	return r.runPending(pendingMigrations)
 }
 
+func (r *DefaultMigrator) Status() error {
+	if !r.repository.RepositoryExists() {
+		color.Warningln("Migration table not found")
+
+		return nil
+	}
+
+	batches, err := r.repository.GetMigrations()
+	if err != nil {
+		return err
+	}
+
+	migrationStatus := r.getStatusForMigrations(batches)
+	if len(migrationStatus) == 0 {
+		color.Warningln("No migrations found")
+
+		return nil
+	}
+
+	maxNameLength := r.getMaxNameLength(migrationStatus)
+	r.printTitle(maxNameLength)
+
+	for _, s := range migrationStatus {
+		color.Default().Print(fmt.Sprintf("%-*s", maxNameLength, s.Name))
+		if s.Ran {
+			color.Default().Printf(" | [%d] ", s.Batch)
+			color.Green().Println("Ran")
+		} else {
+			color.Yellow().Println(" | Pending")
+		}
+	}
+
+	return nil
+}
+
 func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigration.File, error) {
 	if step > 0 {
-		return r.repository.GetMigrations(step)
+		return r.repository.GetMigrationsByStep(step)
 	}
 
 	if batch > 0 {
@@ -120,17 +156,60 @@ func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigra
 	return r.repository.GetLast()
 }
 
-func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) contractsschema.Migration {
-	if m, exists := r.migrations[file.Migration]; exists {
-		return m
+func (r *DefaultMigrator) getMaxNameLength(migrationStatus []status) int {
+	var length int
+	for _, s := range migrationStatus {
+		if len(s.Name) > length {
+			length = len(s.Name)
+		}
 	}
+
+	return length
+}
+
+func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) contractsschema.Migration {
+	for _, migration := range r.schema.Migrations() {
+		if migration.Signature() == file.Migration {
+			return migration
+		}
+	}
+
 	return nil
+}
+
+func (r *DefaultMigrator) getStatusForMigrations(batches []contractsmigration.File) []status {
+	var migrationStatus []status
+
+	for _, migration := range r.schema.Migrations() {
+		var file contractsmigration.File
+		collect.Each(batches, func(item contractsmigration.File, index int) {
+			if item.Migration == migration.Signature() {
+				file = item
+				return
+			}
+		})
+
+		if file.ID > 0 {
+			migrationStatus = append(migrationStatus, status{
+				Name:  migration.Signature(),
+				Batch: file.Batch,
+				Ran:   true,
+			})
+		} else {
+			migrationStatus = append(migrationStatus, status{
+				Name: migration.Signature(),
+				Ran:  false,
+			})
+		}
+	}
+
+	return migrationStatus
 }
 
 func (r *DefaultMigrator) pendingMigrations(ran []string) []contractsschema.Migration {
 	var pendingMigrations []contractsschema.Migration
-	for name, migration := range r.migrations {
-		if !slices.Contains(ran, name) {
+	for _, migration := range r.schema.Migrations() {
+		if !slices.Contains(ran, migration.Signature()) {
 			pendingMigrations = append(pendingMigrations, migration)
 		}
 	}
@@ -144,6 +223,15 @@ func (r *DefaultMigrator) prepareDatabase() error {
 	}
 
 	return r.repository.CreateRepository()
+}
+
+func (r *DefaultMigrator) printTitle(maxNameLength int) {
+	color.Default().Print(fmt.Sprintf("%-*s", maxNameLength, "Migration name"))
+	color.Default().Println(" | Batch / Status")
+	for i := 0; i < maxNameLength+17; i++ {
+		color.Default().Print("-")
+	}
+	color.Default().Println()
 }
 
 func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) error {

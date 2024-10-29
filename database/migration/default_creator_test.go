@@ -62,7 +62,10 @@ func (r *M202410131203CreateUsersTable) Down() error {
 			table:     "users",
 			expected: `package migrations
 
-import "github.com/goravel/framework/contracts/database/schema"
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/facades"
+)
 
 type M202410131203CreateUsersTable struct {
 }
@@ -92,7 +95,10 @@ func (r *M202410131203CreateUsersTable) Down() error {
 			signature: "202410131203_create_users_table",
 			expected: `package migrations
 
-import "github.com/goravel/framework/contracts/database/schema"
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/facades"
+)
 
 type M202410131203CreateUsersTable struct {
 }
