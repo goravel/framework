@@ -49,16 +49,7 @@ func (r *Repository) GetLast() ([]migration.File, error) {
 	return files, nil
 }
 
-func (r *Repository) GetMigrations(steps int) ([]migration.File, error) {
-	var files []migration.File
-	if err := r.schema.Orm().Query().Table(r.table).Where("batch >= 1").OrderByDesc("batch").OrderByDesc("migration").Limit(steps).Get(&files); err != nil {
-		return nil, err
-	}
-
-	return files, nil
-}
-
-func (r *Repository) GetMigrationBatches() ([]migration.File, error) {
+func (r *Repository) GetMigrations() ([]migration.File, error) {
 	var files []migration.File
 	if err := r.schema.Orm().Query().Table(r.table).OrderByDesc("batch").OrderByDesc("migration").Get(&files); err != nil {
 		return nil, err
@@ -70,6 +61,15 @@ func (r *Repository) GetMigrationBatches() ([]migration.File, error) {
 func (r *Repository) GetMigrationsByBatch(batch int) ([]migration.File, error) {
 	var files []migration.File
 	if err := r.schema.Orm().Query().Table(r.table).Where("batch", batch).OrderByDesc("migration").Get(&files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func (r *Repository) GetMigrationsByStep(steps int) ([]migration.File, error) {
+	var files []migration.File
+	if err := r.schema.Orm().Query().Table(r.table).Where("batch >= 1").OrderByDesc("batch").OrderByDesc("migration").Limit(steps).Get(&files); err != nil {
 		return nil, err
 	}
 
