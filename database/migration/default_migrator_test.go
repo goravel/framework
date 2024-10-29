@@ -324,6 +324,52 @@ func (s *DefaultMigratorSuite) TestPrintTitle() {
 	}))
 }
 
+func (s *DefaultMigratorSuite) TestReset() {
+	tests := []struct {
+		name      string
+		setup     func()
+		expectErr string
+	}{
+		{
+			name: "Get ran failed",
+			setup: func() {
+				s.mockRepository.EXPECT().GetRan().Return(nil, assert.AnError).Once()
+			},
+			expectErr: assert.AnError.Error(),
+		},
+		{
+			name: "Rollback with no files",
+			setup: func() {
+				previousConnection := "postgres"
+				testMigration := NewTestMigration(s.mockSchema)
+				s.mockRepository.EXPECT().GetRan().Return([]string{testMigration.Signature()}, nil).Once()
+
+				s.mockSchema.EXPECT().Migrations().Return([]contractsschema.Migration{
+					testMigration,
+				})
+				s.mockRepository.EXPECT().GetMigrationsByStep(1).Return([]migration.File{{Migration: testMigration.Signature()}}, nil).Once()
+
+				mockOrm := mocksorm.NewOrm(s.T())
+				s.mockRunDown(mockOrm, previousConnection, testMigration.Signature(), "users", nil)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			test.setup()
+
+			err := s.migrator.Reset()
+
+			if test.expectErr == "" {
+				s.NoError(err)
+			} else {
+				s.EqualError(err, test.expectErr)
+			}
+		})
+	}
+}
+
 func (s *DefaultMigratorSuite) TestRollback() {
 	tests := []struct {
 		name      string

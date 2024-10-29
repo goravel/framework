@@ -1,61 +1,43 @@
 package migration
 
 import (
-	"github.com/golang-migrate/migrate/v4"
-
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/contracts/database/migration"
 )
 
 type MigrateResetCommand struct {
-	config config.Config
+	migrator migration.Migrator
 }
 
-func NewMigrateResetCommand(config config.Config) *MigrateResetCommand {
+func NewMigrateResetCommand(migrator migration.Migrator) *MigrateResetCommand {
 	return &MigrateResetCommand{
-		config: config,
+		migrator: migrator,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateResetCommand) Signature() string {
+func (r *MigrateResetCommand) Signature() string {
 	return "migrate:reset"
 }
 
 // Description The console command description.
-func (receiver *MigrateResetCommand) Description() string {
+func (r *MigrateResetCommand) Description() string {
 	return "Rollback all database migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateResetCommand) Extend() command.Extend {
+func (r *MigrateResetCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateResetCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
-	if err != nil {
-		return err
+func (r *MigrateResetCommand) Handle(ctx console.Context) error {
+	if err := r.migrator.Status(); err != nil {
+		ctx.Error(err.Error())
 	}
-	if m == nil {
-		ctx.Error(errors.ConsoleEmptyDatabaseConfig.Error())
-
-		return nil
-	}
-
-	// Rollback all migrations.
-	if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		ctx.Error(errors.MigrationResetFailed.Args(err).Error())
-
-		return nil
-	}
-
-	ctx.Info("Migration reset success")
 
 	return nil
 }
