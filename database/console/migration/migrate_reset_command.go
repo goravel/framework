@@ -35,7 +35,7 @@ func (r *MigrateResetCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MigrateResetCommand) Handle(ctx console.Context) error {
-	if err := r.migrator.Status(); err != nil {
+	if err := r.migrator.Reset(); err != nil {
 		ctx.Error(err.Error())
 	}
 
