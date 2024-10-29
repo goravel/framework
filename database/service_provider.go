@@ -95,7 +95,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			consolemigration.NewMigrateMakeCommand(migrator),
 			consolemigration.NewMigrateCommand(migrator),
 			consolemigration.NewMigrateRollbackCommand(migrator),
-			consolemigration.NewMigrateResetCommand(config),
+			consolemigration.NewMigrateResetCommand(migrator),
 			consolemigration.NewMigrateRefreshCommand(config, artisan),
 			consolemigration.NewMigrateFreshCommand(artisan, migrator),
 			consolemigration.NewMigrateStatusCommand(migrator),

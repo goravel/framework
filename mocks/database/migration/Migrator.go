@@ -108,6 +108,51 @@ func (_c *Migrator_Fresh_Call) RunAndReturn(run func() error) *Migrator_Fresh_Ca
 	return _c
 }
 
+// Reset provides a mock function with given fields:
+func (_m *Migrator) Reset() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Reset")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Migrator_Reset_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reset'
+type Migrator_Reset_Call struct {
+	*mock.Call
+}
+
+// Reset is a helper method to define mock.On call
+func (_e *Migrator_Expecter) Reset() *Migrator_Reset_Call {
+	return &Migrator_Reset_Call{Call: _e.mock.On("Reset")}
+}
+
+func (_c *Migrator_Reset_Call) Run(run func()) *Migrator_Reset_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Migrator_Reset_Call) Return(_a0 error) *Migrator_Reset_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Migrator_Reset_Call) RunAndReturn(run func() error) *Migrator_Reset_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Rollback provides a mock function with given fields: step, batch
 func (_m *Migrator) Rollback(step int, batch int) error {
 	ret := _m.Called(step, batch)

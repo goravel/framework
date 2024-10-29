@@ -63,6 +63,15 @@ func (r *DefaultMigrator) Fresh() error {
 	return nil
 }
 
+func (r *DefaultMigrator) Reset() error {
+	ran, err := r.repository.GetRan()
+	if err != nil {
+		return err
+	}
+
+	return r.Rollback(len(ran), 0)
+}
+
 func (r *DefaultMigrator) Rollback(step, batch int) error {
 	files, err := r.getFilesForRollback(step, batch)
 	if err != nil {
