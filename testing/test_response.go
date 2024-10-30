@@ -1,7 +1,6 @@
 package testing
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,8 +33,6 @@ func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestRespons
 }
 
 func (r *TestResponseImpl) AssertOk() contractstesting.TestResponse {
-	color.Warningln(r.getContent())
-	color.Warningln(r.getStreamedContent())
 	return r.AssertStatus(http.StatusOK)
 }
 
@@ -203,6 +200,9 @@ func (r *TestResponseImpl) getStatusCode() int {
 }
 
 func (r *TestResponseImpl) getContent() (content string, err error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	if r.content != "" {
 		return r.content, err
 	}
@@ -231,24 +231,4 @@ func (r *TestResponseImpl) getCookie(name string) *http.Cookie {
 	}
 
 	return nil
-}
-
-func (r *TestResponseImpl) getStreamedContent() (string, error) {
-	if r.streamedContent != "" {
-		return r.streamedContent, nil
-	}
-
-	if r.Response.Body == nil {
-		return "", fmt.Errorf("response body is nil")
-	}
-
-	buf := new(bytes.Buffer)
-	_, err := io.Copy(buf, r.Response.Body)
-	if err != nil {
-		return "", fmt.Errorf("error reading streamed content: %w", err)
-	}
-
-	r.streamedContent = buf.String()
-	defer r.Response.Body.Close()
-	return r.streamedContent, nil
 }
