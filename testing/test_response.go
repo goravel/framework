@@ -168,7 +168,7 @@ func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.Tes
 
 	expirationTime := carbon.FromStdTime(cookie.Expires)
 
-	assert.True(r.t, !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime))
+	assert.True(r.T(), !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime))
 
 	return r
 }
@@ -179,12 +179,12 @@ func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.
 
 	expirationTime := carbon.FromStdTime(cookie.Expires)
 
-	assert.True(r.t, expirationTime.IsZero() || expirationTime.Gt(carbon.Now()), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
+	assert.True(r.T(), expirationTime.IsZero() || expirationTime.Gt(carbon.Now()), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
 	return r
 }
 
 func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.TestResponse {
-	assert.Nil(r.t, r.getCookie(name), fmt.Sprintf("Cookie [%s] is present on response.", name))
+	assert.Nil(r.T(), r.getCookie(name), fmt.Sprintf("Cookie [%s] is present on response.", name))
 
 	return r
 }
@@ -200,19 +200,17 @@ func (r *TestResponseImpl) getStatusCode() int {
 }
 
 func (r *TestResponseImpl) getContent() (content string, err error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	if r.content != "" {
-		return r.content, err
+		return r.content, nil
 	}
 	if r.Response.Body == nil {
 		return "", fmt.Errorf("response body is nil")
 	}
 
-	defer func(Body io.ReadCloser) {
-		err = Body.Close()
-	}(r.Response.Body)
+	defer r.Response.Body.Close()
 
 	body, err := io.ReadAll(r.Response.Body)
 	if err != nil {

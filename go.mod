@@ -42,8 +42,6 @@ require (
 	gorm.io/plugin/dbresolver v1.5.3
 )
 
-require github.com/go-sql-driver/mysql v1.8.1 // indirect
-
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
@@ -167,3 +165,5 @@ require (
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/sqlite v1.28.0 // indirect
 )
+
+require github.com/go-sql-driver/mysql v1.8.1 // indirect
