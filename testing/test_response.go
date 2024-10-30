@@ -2,8 +2,8 @@ package testing
 
 import (
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
@@ -21,8 +21,9 @@ type TestResponseImpl struct {
 	content  string
 }
 
-func NewTestResponse(t *testing.T, resp *http.Response) contractstesting.TestResponse {
-	return &TestResponseImpl{t: t, response: resp}
+func NewTestResponse(t *testing.T, recorder *httptest.ResponseRecorder) contractstesting.TestResponse {
+	content := recorder.Body.String()
+	return &TestResponseImpl{t: t, content: content, response: recorder.Result()}
 }
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
@@ -51,9 +52,7 @@ func (r *TestResponseImpl) AssertNoContent(status ...int) contractstesting.TestR
 
 	r.AssertStatus(expectedStatus)
 
-	body, err := r.getContent()
-	assert.NoError(r.T(), err)
-	assert.Empty(r.T(), body)
+	assert.Empty(r.T(), r.content)
 
 	return r
 }
@@ -214,24 +213,6 @@ func (r *TestResponseImpl) T() *testing.T {
 
 func (r *TestResponseImpl) getStatusCode() int {
 	return r.response.StatusCode
-}
-
-func (r *TestResponseImpl) getContent() (string, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if r.content != "" {
-		return r.content, nil
-	}
-
-	defer r.response.Body.Close()
-	body, err := io.ReadAll(r.response.Body)
-	if err != nil {
-		return "", err
-	}
-
-	r.content = string(body)
-	return r.content, nil
 }
 
 func (r *TestResponseImpl) getCookie(name string) *http.Cookie {

@@ -79,5 +79,5 @@ func (r *TestRequest) call(method string, uri string) (contractstesting.TestResp
 
 	routeFacade.ServeHTTP(recorder, req)
 
-	return NewTestResponse(r.t, recorder.Result()), nil
+	return NewTestResponse(r.t, recorder), nil
 }

@@ -2,6 +2,7 @@ package testing
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -16,7 +17,7 @@ func TestAssertStatus(t *testing.T) {
 func TestAssertHeader(t *testing.T) {
 	headerName, headerValue := "Content-Type", "application/json"
 	resp := createTestResponse(http.StatusCreated)
-	resp.Header.Set(headerName, headerValue)
+	resp.Result().Header.Set(headerName, headerValue)
 
 	r := NewTestResponse(t, resp)
 
@@ -27,7 +28,7 @@ func TestAssertHeader(t *testing.T) {
 
 func TestAssertCookie(t *testing.T) {
 	resp := createTestResponse(http.StatusCreated)
-	resp.Header.Add("Set-Cookie", (&http.Cookie{
+	resp.Result().Header.Add("Set-Cookie", (&http.Cookie{
 		Name:     "session_id",
 		Value:    "12345",
 		Expires:  time.Now().Add(24 * time.Hour),
@@ -43,7 +44,7 @@ func TestAssertCookie(t *testing.T) {
 
 func TestAssertCookieExpired(t *testing.T) {
 	resp := createTestResponse(http.StatusOK)
-	resp.Header.Add("Set-Cookie", (&http.Cookie{
+	resp.Result().Header.Add("Set-Cookie", (&http.Cookie{
 		Name:    "session_id",
 		Value:   "expired",
 		Expires: time.Now().Add(-24 * time.Hour),
@@ -63,9 +64,8 @@ func TestAssertCookieMissing(t *testing.T) {
 	r.AssertCookieMissing("session_id")
 }
 
-func createTestResponse(statusCode int) *http.Response {
-	return &http.Response{
-		StatusCode: statusCode,
-		Header:     http.Header{},
-	}
+func createTestResponse(statusCode int) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+	recorder.WriteHeader(statusCode)
+	return recorder
 }
