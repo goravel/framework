@@ -12,7 +12,6 @@ import (
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/color"
 )
 
 type TestResponseImpl struct {
@@ -217,22 +216,18 @@ func (r *TestResponseImpl) getStatusCode() int {
 	return r.response.StatusCode
 }
 
-func (r *TestResponseImpl) getContent() (content string, err error) {
+func (r *TestResponseImpl) getContent() (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if r.content != "" {
 		return r.content, nil
 	}
-	if r.Response.Body == nil {
-		return "", fmt.Errorf("response body is nil")
-	}
 
-	defer r.Response.Body.Close()
-
-	body, err := io.ReadAll(r.Response.Body)
+	defer r.response.Body.Close()
+	body, err := io.ReadAll(r.response.Body)
 	if err != nil {
-		return "", fmt.Errorf("error reading response body: %w", err)
+		return "", err
 	}
 
 	r.content = string(body)
