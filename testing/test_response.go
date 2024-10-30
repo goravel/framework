@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -15,15 +16,14 @@ import (
 )
 
 type TestResponseImpl struct {
-	t               *testing.T
-	mu              sync.RWMutex
-	Response        *http.Response
-	content         string
-	streamedContent string
+	t        *testing.T
+	mu       sync.RWMutex
+	response *http.Response
+	content  string
 }
 
 func NewTestResponse(t *testing.T, resp *http.Response) contractstesting.TestResponse {
-	return &TestResponseImpl{t: t, Response: resp}
+	return &TestResponseImpl{t: t, response: resp}
 }
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
@@ -140,8 +140,7 @@ func (r *TestResponseImpl) AssertServiceUnavailable() contractstesting.TestRespo
 }
 
 func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesting.TestResponse {
-	color.Errorln(r.Response.Header)
-	got := r.Response.Header.Get(headerName)
+	got := r.response.Header.Get(headerName)
 	assert.NotEmpty(r.T(), got, fmt.Sprintf("Header [%s] not present on response.", headerName))
 	if got != "" {
 		assert.Equal(r.T(), value, got, fmt.Sprintf("Header [%s] was found, but value [%s] does not match [%s].", headerName, got, value))
@@ -150,7 +149,7 @@ func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesti
 }
 
 func (r *TestResponseImpl) AssertHeaderMissing(headerName string) contractstesting.TestResponse {
-	got := r.Response.Header.Get(headerName)
+	got := r.response.Header.Get(headerName)
 	assert.Empty(r.T(), got, fmt.Sprintf("Unexpected header [%s] is present on response.", headerName))
 	return r
 }
@@ -158,7 +157,13 @@ func (r *TestResponseImpl) AssertHeaderMissing(headerName string) contractstesti
 func (r *TestResponseImpl) AssertCookie(name, value string) contractstesting.TestResponse {
 	cookie := r.getCookie(name)
 	assert.NotNil(r.T(), cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
+
+	if cookie == nil {
+		return r
+	}
+
 	assert.Equal(r.T(), value, cookie.Value, fmt.Sprintf("Cookie [%s] was found, but value [%s] does not match [%s]", name, cookie.Value, value))
+
 	return r
 }
 
@@ -166,10 +171,16 @@ func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.Tes
 	cookie := r.getCookie(name)
 	assert.NotNil(r.T(), cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
+	if cookie == nil {
+		return r
+	}
+
 	expirationTime := carbon.FromStdTime(cookie.Expires)
+	if expirationTime.IsZero() && cookie.MaxAge > 0 {
+		expirationTime = carbon.FromStdTime(time.Unix(int64(cookie.MaxAge), 0))
+	}
 
-	assert.True(r.T(), !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime))
-
+	assert.True(r.T(), !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime.ToString()))
 	return r
 }
 
@@ -177,7 +188,14 @@ func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.
 	cookie := r.getCookie(name)
 	assert.NotNil(r.T(), cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
+	if cookie == nil {
+		return r
+	}
+
 	expirationTime := carbon.FromStdTime(cookie.Expires)
+	if expirationTime.IsZero() && cookie.MaxAge > 0 {
+		expirationTime = carbon.FromStdTime(time.Unix(int64(cookie.MaxAge), 0))
+	}
 
 	assert.True(r.T(), expirationTime.IsZero() || expirationTime.Gt(carbon.Now()), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
 	return r
@@ -196,7 +214,7 @@ func (r *TestResponseImpl) T() *testing.T {
 }
 
 func (r *TestResponseImpl) getStatusCode() int {
-	return r.Response.StatusCode
+	return r.response.StatusCode
 }
 
 func (r *TestResponseImpl) getContent() (content string, err error) {
@@ -222,7 +240,7 @@ func (r *TestResponseImpl) getContent() (content string, err error) {
 }
 
 func (r *TestResponseImpl) getCookie(name string) *http.Cookie {
-	for _, c := range r.Response.Cookies() {
+	for _, c := range r.response.Cookies() {
 		if c.Name == name {
 			return c
 		}

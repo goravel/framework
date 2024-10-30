@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cast"
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
 )
@@ -71,6 +72,10 @@ func (r *TestRequest) call(method string, uri string) (contractstesting.TestResp
 	}
 
 	recorder := httptest.NewRecorder()
+
+	if routeFacade == nil {
+		panic(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
+	}
 
 	routeFacade.ServeHTTP(recorder, req)
 
