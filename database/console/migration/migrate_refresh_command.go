@@ -1,25 +1,20 @@
 package migration
 
 import (
-	"strconv"
+	"fmt"
 	"strings"
 
-	"github.com/golang-migrate/migrate/v4"
-
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
 )
 
 type MigrateRefreshCommand struct {
-	config  config.Config
 	artisan console.Artisan
 }
 
-func NewMigrateRefreshCommand(config config.Config, artisan console.Artisan) *MigrateRefreshCommand {
+func NewMigrateRefreshCommand(artisan console.Artisan) *MigrateRefreshCommand {
 	return &MigrateRefreshCommand{
-		config:  config,
 		artisan: artisan,
 	}
 }
@@ -39,9 +34,9 @@ func (r *MigrateRefreshCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 		Flags: []command.Flag{
-			&command.StringFlag{
+			&command.IntFlag{
 				Name:  "step",
-				Value: "",
+				Value: 0,
 				Usage: "refresh steps",
 			},
 			&command.BoolFlag{
@@ -58,43 +53,19 @@ func (r *MigrateRefreshCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *MigrateRefreshCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(r.config)
-	if err != nil {
-		return err
-	}
-	if m == nil {
-		ctx.Error(errors.ConsoleEmptyDatabaseConfig.Error())
-
-		return nil
-	}
-
-	if step := ctx.Option("step"); step != "" {
-		stepString := "-" + step
-		s, err := strconv.Atoi(stepString)
-		if err != nil {
+	if step := ctx.OptionInt("step"); step == 0 {
+		if err := r.artisan.Call("migrate:reset"); err != nil {
 			ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
-
 			return nil
-		}
-
-		if err = m.Steps(s); err != nil && !errors.Is(err, migrate.ErrNoChange) && !errors.Is(err, migrate.ErrNilVersion) {
-			var errShortLimit migrate.ErrShortLimit
-			switch {
-			case errors.As(err, &errShortLimit):
-			default:
-				ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
-
-				return nil
-			}
 		}
 	} else {
-		if err = m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		if err := r.artisan.Call(fmt.Sprintf("migrate:rollback --step %d", step)); err != nil {
 			ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
 			return nil
 		}
 	}
 
-	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	if err := r.artisan.Call("migrate"); err != nil {
 		ctx.Error(errors.MigrationRefreshFailed.Args(err).Error())
 		return nil
 	}
@@ -112,7 +83,7 @@ func (r *MigrateRefreshCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
-	ctx.Info("Migration refresh success")
+	ctx.Success("Migration refresh success")
 
 	return nil
 }
