@@ -12,6 +12,7 @@ var (
 	ScheduleFacadeNotSet = New("schedule facade is not initialized")
 	StorageFacadeNotSet  = New("storage facade is not initialized")
 	InvalidHttpContext   = New("invalid http context")
+	RouteFacadeNotSet    = New("route facade is not initialized")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
