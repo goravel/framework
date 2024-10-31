@@ -79,7 +79,7 @@ func (_c *TestRequest_Get_Call) RunAndReturn(run func(string) (testing.TestRespo
 }
 
 // WithCookie provides a mock function with given fields: key, value
-func (_m *TestRequest) WithCookie(key string, value any) testing.TestRequest {
+func (_m *TestRequest) WithCookie(key string, value string) testing.TestRequest {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -87,7 +87,7 @@ func (_m *TestRequest) WithCookie(key string, value any) testing.TestRequest {
 	}
 
 	var r0 testing.TestRequest
-	if rf, ok := ret.Get(0).(func(string, any) testing.TestRequest); ok {
+	if rf, ok := ret.Get(0).(func(string, string) testing.TestRequest); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -105,14 +105,14 @@ type TestRequest_WithCookie_Call struct {
 
 // WithCookie is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value string
 func (_e *TestRequest_Expecter) WithCookie(key interface{}, value interface{}) *TestRequest_WithCookie_Call {
 	return &TestRequest_WithCookie_Call{Call: _e.mock.On("WithCookie", key, value)}
 }
 
-func (_c *TestRequest_WithCookie_Call) Run(run func(key string, value any)) *TestRequest_WithCookie_Call {
+func (_c *TestRequest_WithCookie_Call) Run(run func(key string, value string)) *TestRequest_WithCookie_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
@@ -122,13 +122,13 @@ func (_c *TestRequest_WithCookie_Call) Return(_a0 testing.TestRequest) *TestRequ
 	return _c
 }
 
-func (_c *TestRequest_WithCookie_Call) RunAndReturn(run func(string, any) testing.TestRequest) *TestRequest_WithCookie_Call {
+func (_c *TestRequest_WithCookie_Call) RunAndReturn(run func(string, string) testing.TestRequest) *TestRequest_WithCookie_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // WithCookies provides a mock function with given fields: cookies
-func (_m *TestRequest) WithCookies(cookies map[string]any) testing.TestRequest {
+func (_m *TestRequest) WithCookies(cookies map[string]string) testing.TestRequest {
 	ret := _m.Called(cookies)
 
 	if len(ret) == 0 {
@@ -136,7 +136,7 @@ func (_m *TestRequest) WithCookies(cookies map[string]any) testing.TestRequest {
 	}
 
 	var r0 testing.TestRequest
-	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestRequest); ok {
+	if rf, ok := ret.Get(0).(func(map[string]string) testing.TestRequest); ok {
 		r0 = rf(cookies)
 	} else {
 		if ret.Get(0) != nil {
@@ -153,14 +153,14 @@ type TestRequest_WithCookies_Call struct {
 }
 
 // WithCookies is a helper method to define mock.On call
-//   - cookies map[string]any
+//   - cookies map[string]string
 func (_e *TestRequest_Expecter) WithCookies(cookies interface{}) *TestRequest_WithCookies_Call {
 	return &TestRequest_WithCookies_Call{Call: _e.mock.On("WithCookies", cookies)}
 }
 
-func (_c *TestRequest_WithCookies_Call) Run(run func(cookies map[string]any)) *TestRequest_WithCookies_Call {
+func (_c *TestRequest_WithCookies_Call) Run(run func(cookies map[string]string)) *TestRequest_WithCookies_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]any))
+		run(args[0].(map[string]string))
 	})
 	return _c
 }
@@ -170,7 +170,7 @@ func (_c *TestRequest_WithCookies_Call) Return(_a0 testing.TestRequest) *TestReq
 	return _c
 }
 
-func (_c *TestRequest_WithCookies_Call) RunAndReturn(run func(map[string]any) testing.TestRequest) *TestRequest_WithCookies_Call {
+func (_c *TestRequest_WithCookies_Call) RunAndReturn(run func(map[string]string) testing.TestRequest) *TestRequest_WithCookies_Call {
 	_c.Call.Return(run)
 	return _c
 }
