@@ -3,7 +3,6 @@ package testing
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -19,9 +18,9 @@ type TestResponseImpl struct {
 	content  string
 }
 
-func NewTestResponse(t *testing.T, recorder *httptest.ResponseRecorder) contractstesting.TestResponse {
-	content := recorder.Body.String()
-	return &TestResponseImpl{t: t, content: content, response: recorder.Result()}
+func NewTestResponse(t *testing.T, response *http.Response) contractstesting.TestResponse {
+	//content := recorder.Body.String()
+	return &TestResponseImpl{t: t, response: response}
 }
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {

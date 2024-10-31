@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/goravel/framework/constants"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
@@ -26,7 +27,7 @@ func NewTestRequest(t *testing.T) contractstesting.TestRequest {
 }
 
 func (r *TestRequest) WithHeaders(headers map[string]string) contractstesting.TestRequest {
-	collect.Merge(r.defaultHeaders, headers)
+	r.defaultHeaders = collect.Merge(r.defaultHeaders, headers)
 	return r
 }
 
@@ -41,7 +42,7 @@ func (r *TestRequest) WithoutHeader(key string) contractstesting.TestRequest {
 }
 
 func (r *TestRequest) WithCookies(cookies map[string]string) contractstesting.TestRequest {
-	collect.Merge(r.defaultCookies, cookies)
+	r.defaultCookies = collect.Merge(r.defaultCookies, cookies)
 	return r
 }
 
@@ -69,13 +70,27 @@ func (r *TestRequest) call(method string, uri string) (contractstesting.TestResp
 		req.AddCookie(&cookie)
 	}
 
-	recorder := httptest.NewRecorder()
-
 	if routeFacade == nil {
 		r.t.Fatal(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
+	if configFacade == nil {
+		r.t.Fatal(errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting))
+	}
+
+	driver := configFacade.Get("http.default")
+	if driver == constants.DriverFiber {
+		response, err := routeFacade.Test(req)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewTestResponse(r.t, response), nil
+	}
+
+	recorder := httptest.NewRecorder()
+
 	routeFacade.ServeHTTP(recorder, req)
 
-	return NewTestResponse(r.t, recorder), nil
+	return NewTestResponse(r.t, recorder.Result()), nil
 }

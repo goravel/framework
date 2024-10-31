@@ -2,207 +2,207 @@ package testing
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 )
 
 func TestAssertOk(t *testing.T) {
-	recorder := createTestResponse(http.StatusOK)
-	response := NewTestResponse(t, recorder)
-	response.AssertOk()
+	res := createTestResponse(http.StatusOK)
+	r := NewTestResponse(t, res)
+	r.AssertOk()
 }
 
 func TestAssertCreated(t *testing.T) {
-	recorder := createTestResponse(http.StatusCreated)
-	response := NewTestResponse(t, recorder)
-	response.AssertCreated()
+	res := createTestResponse(http.StatusCreated)
+	r := NewTestResponse(t, res)
+	r.AssertCreated()
 }
 
 func TestAssertAccepted(t *testing.T) {
-	recorder := createTestResponse(http.StatusAccepted)
-	response := NewTestResponse(t, recorder)
-	response.AssertAccepted()
+	res := createTestResponse(http.StatusAccepted)
+	r := NewTestResponse(t, res)
+	r.AssertAccepted()
 }
 
 func TestAssertNoContent(t *testing.T) {
-	recorder := createTestResponse(http.StatusNoContent)
-	response := NewTestResponse(t, recorder)
-	response.AssertNoContent()
+	res := createTestResponse(http.StatusNoContent)
+	r := NewTestResponse(t, res)
+	r.AssertNoContent()
 }
 
 func TestAssertMovedPermanently(t *testing.T) {
-	recorder := createTestResponse(http.StatusMovedPermanently)
-	response := NewTestResponse(t, recorder)
-	response.AssertMovedPermanently()
+	res := createTestResponse(http.StatusMovedPermanently)
+	r := NewTestResponse(t, res)
+	r.AssertMovedPermanently()
 }
 
 func TestAssertFound(t *testing.T) {
-	recorder := createTestResponse(http.StatusFound)
-	response := NewTestResponse(t, recorder)
-	response.AssertFound()
+	res := createTestResponse(http.StatusFound)
+	r := NewTestResponse(t, res)
+	r.AssertFound()
 }
 
 func TestAssertNotModified(t *testing.T) {
-	recorder := createTestResponse(http.StatusNotModified)
-	response := NewTestResponse(t, recorder)
-	response.AssertNotModified()
+	res := createTestResponse(http.StatusNotModified)
+	r := NewTestResponse(t, res)
+	r.AssertNotModified()
 }
 
 func TestAssertPartialContent(t *testing.T) {
-	recorder := createTestResponse(http.StatusPartialContent)
-	response := NewTestResponse(t, recorder)
-	response.AssertPartialContent()
+	res := createTestResponse(http.StatusPartialContent)
+	r := NewTestResponse(t, res)
+	r.AssertPartialContent()
 }
 
 func TestAssertTemporaryRedirect(t *testing.T) {
-	recorder := createTestResponse(http.StatusTemporaryRedirect)
-	response := NewTestResponse(t, recorder)
-	response.AssertTemporaryRedirect()
+	res := createTestResponse(http.StatusTemporaryRedirect)
+	r := NewTestResponse(t, res)
+	r.AssertTemporaryRedirect()
 }
 
 func TestAssertBadRequest(t *testing.T) {
-	recorder := createTestResponse(http.StatusBadRequest)
-	response := NewTestResponse(t, recorder)
-	response.AssertBadRequest()
+	res := createTestResponse(http.StatusBadRequest)
+	r := NewTestResponse(t, res)
+	r.AssertBadRequest()
 }
 
 func TestAssertUnauthorized(t *testing.T) {
-	recorder := createTestResponse(http.StatusUnauthorized)
-	response := NewTestResponse(t, recorder)
-	response.AssertUnauthorized()
+	res := createTestResponse(http.StatusUnauthorized)
+	r := NewTestResponse(t, res)
+	r.AssertUnauthorized()
 }
 
 func TestAssertPaymentRequired(t *testing.T) {
-	recorder := createTestResponse(http.StatusPaymentRequired)
-	response := NewTestResponse(t, recorder)
-	response.AssertPaymentRequired()
+	res := createTestResponse(http.StatusPaymentRequired)
+	r := NewTestResponse(t, res)
+	r.AssertPaymentRequired()
 }
 
 func TestAssertForbidden(t *testing.T) {
-	recorder := createTestResponse(http.StatusForbidden)
-	response := NewTestResponse(t, recorder)
-	response.AssertForbidden()
+	res := createTestResponse(http.StatusForbidden)
+	r := NewTestResponse(t, res)
+	r.AssertForbidden()
 }
 
 func TestAssertNotFound(t *testing.T) {
-	recorder := createTestResponse(http.StatusNotFound)
-	response := NewTestResponse(t, recorder)
-	response.AssertNotFound()
+	res := createTestResponse(http.StatusNotFound)
+	r := NewTestResponse(t, res)
+	r.AssertNotFound()
 }
 
 func TestAssertMethodNotAllowed(t *testing.T) {
-	recorder := createTestResponse(http.StatusMethodNotAllowed)
-	response := NewTestResponse(t, recorder)
-	response.AssertMethodNotAllowed()
+	res := createTestResponse(http.StatusMethodNotAllowed)
+	r := NewTestResponse(t, res)
+	r.AssertMethodNotAllowed()
 }
 
 func TestAssertNotAcceptable(t *testing.T) {
-	recorder := createTestResponse(http.StatusNotAcceptable)
-	response := NewTestResponse(t, recorder)
-	response.AssertNotAcceptable()
+	res := createTestResponse(http.StatusNotAcceptable)
+	r := NewTestResponse(t, res)
+	r.AssertNotAcceptable()
 }
 
 func TestAssertConflict(t *testing.T) {
-	recorder := createTestResponse(http.StatusConflict)
-	response := NewTestResponse(t, recorder)
-	response.AssertConflict()
+	res := createTestResponse(http.StatusConflict)
+	r := NewTestResponse(t, res)
+	r.AssertConflict()
 }
 
 func TestAssertRequestTimeout(t *testing.T) {
-	recorder := createTestResponse(http.StatusRequestTimeout)
-	response := NewTestResponse(t, recorder)
-	response.AssertRequestTimeout()
+	res := createTestResponse(http.StatusRequestTimeout)
+	r := NewTestResponse(t, res)
+	r.AssertRequestTimeout()
 }
 
 func TestAssertGone(t *testing.T) {
-	recorder := createTestResponse(http.StatusGone)
-	response := NewTestResponse(t, recorder)
-	response.AssertGone()
+	res := createTestResponse(http.StatusGone)
+	r := NewTestResponse(t, res)
+	r.AssertGone()
 }
 
 func TestAssertUnsupportedMediaType(t *testing.T) {
-	recorder := createTestResponse(http.StatusUnsupportedMediaType)
-	response := NewTestResponse(t, recorder)
-	response.AssertUnsupportedMediaType()
+	res := createTestResponse(http.StatusUnsupportedMediaType)
+	r := NewTestResponse(t, res)
+	r.AssertUnsupportedMediaType()
 }
 
 func TestAssertUnprocessableEntity(t *testing.T) {
-	recorder := createTestResponse(http.StatusUnprocessableEntity)
-	response := NewTestResponse(t, recorder)
-	response.AssertUnprocessableEntity()
+	res := createTestResponse(http.StatusUnprocessableEntity)
+	r := NewTestResponse(t, res)
+	r.AssertUnprocessableEntity()
 }
 
 func TestAssertTooManyRequests(t *testing.T) {
-	recorder := createTestResponse(http.StatusTooManyRequests)
-	response := NewTestResponse(t, recorder)
-	response.AssertTooManyRequests()
+	res := createTestResponse(http.StatusTooManyRequests)
+	r := NewTestResponse(t, res)
+	r.AssertTooManyRequests()
 }
 
 func TestAssertInternalServerError(t *testing.T) {
-	recorder := createTestResponse(http.StatusInternalServerError)
-	response := NewTestResponse(t, recorder)
-	response.AssertInternalServerError()
+	res := createTestResponse(http.StatusInternalServerError)
+	r := NewTestResponse(t, res)
+	r.AssertInternalServerError()
 }
 
 func TestAssertHeader(t *testing.T) {
 	headerName, headerValue := "Content-Type", "application/json"
-	recorder := createTestResponse(http.StatusCreated)
-	recorder.Result().Header.Set(headerName, headerValue)
+	res := createTestResponse(http.StatusCreated)
+	res.Header.Set(headerName, headerValue)
 
-	response := NewTestResponse(t, recorder)
+	r := NewTestResponse(t, res)
 
-	response.AssertHeader(headerName, headerValue).AssertCreated()
+	r.AssertHeader(headerName, headerValue).AssertCreated()
 }
 
 func TestAssertHeaderMissing(t *testing.T) {
-	recorder := createTestResponse(http.StatusCreated)
+	res := createTestResponse(http.StatusCreated)
 
-	response := NewTestResponse(t, recorder)
+	r := NewTestResponse(t, res)
 
-	response.AssertHeaderMissing("X-Custom-Header").AssertCreated()
+	r.AssertHeaderMissing("X-Custom-Header").AssertCreated()
 }
 
 func TestAssertCookie(t *testing.T) {
-	recorder := createTestResponse(http.StatusCreated)
-	recorder.Result().Header.Add("Set-Cookie", (&http.Cookie{
+	res := createTestResponse(http.StatusCreated)
+	res.Header.Add("Set-Cookie", (&http.Cookie{
 		Name:     "session_id",
 		Value:    "12345",
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	}).String())
 
-	response := NewTestResponse(t, recorder)
+	r := NewTestResponse(t, res)
 
-	response.AssertCookie("session_id", "12345").
+	r.AssertCookie("session_id", "12345").
 		AssertCookieNotExpired("session_id").
 		AssertCreated()
 }
 
 func TestAssertCookieExpired(t *testing.T) {
-	recorder := createTestResponse(http.StatusOK)
-	recorder.Result().Header.Add("Set-Cookie", (&http.Cookie{
+	res := createTestResponse(http.StatusOK)
+	res.Header.Add("Set-Cookie", (&http.Cookie{
 		Name:    "session_id",
 		Value:   "expired",
 		Expires: time.Now().Add(-24 * time.Hour),
 	}).String())
 
-	response := NewTestResponse(t, recorder)
+	r := NewTestResponse(t, res)
 
-	response.AssertCookie("session_id", "expired").
+	r.AssertCookie("session_id", "expired").
 		AssertCookieExpired("session_id")
 }
 
 func TestAssertCookieMissing(t *testing.T) {
-	recorder := createTestResponse(http.StatusOK)
+	res := createTestResponse(http.StatusOK)
 
-	response := NewTestResponse(t, recorder)
+	r := NewTestResponse(t, res)
 
-	response.AssertCookieMissing("session_id")
+	r.AssertCookieMissing("session_id")
 }
 
-func createTestResponse(statusCode int) *httptest.ResponseRecorder {
-	recorder := httptest.NewRecorder()
-	recorder.WriteHeader(statusCode)
-	return recorder
+func createTestResponse(statusCode int) *http.Response {
+	return &http.Response{
+		StatusCode: statusCode,
+		Header:     http.Header{},
+	}
 }
