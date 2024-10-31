@@ -4,8 +4,7 @@ go 1.22.0
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
-	github.com/brianvoe/gofakeit/v7 v7.1.1
-	github.com/brianvoe/gofakeit/v7 v7.1.1
+	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/charmbracelet/huh v0.6.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20241028115900-20a4d21717a8
 	github.com/charmbracelet/lipgloss v0.13.1
@@ -13,7 +12,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.6
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/golang-module/carbon/v2 v2.4.1
@@ -43,6 +41,8 @@ require (
 	gorm.io/gorm v1.25.12
 	gorm.io/plugin/dbresolver v1.5.3
 )
+
+require github.com/go-sql-driver/mysql v1.8.1 // indirect
 
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
