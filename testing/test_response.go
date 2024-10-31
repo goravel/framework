@@ -25,7 +25,7 @@ func NewTestResponse(t *testing.T, response *http.Response) contractstesting.Tes
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
 	actual := r.getStatusCode()
-	assert.Equal(r.T(), status, actual, fmt.Sprintf("Expected response status code [%d] but received %d.", status, actual))
+	assert.Equal(r.t, status, actual, fmt.Sprintf("Expected response status code [%d] but received %d.", status, actual))
 	return r
 }
 
@@ -49,7 +49,7 @@ func (r *TestResponseImpl) AssertNoContent(status ...int) contractstesting.TestR
 
 	r.AssertStatus(expectedStatus)
 
-	assert.Empty(r.T(), r.content)
+	assert.Empty(r.t, r.content)
 
 	return r
 }
@@ -136,35 +136,35 @@ func (r *TestResponseImpl) AssertServiceUnavailable() contractstesting.TestRespo
 
 func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesting.TestResponse {
 	got := r.getHeader(headerName)
-	assert.NotEmpty(r.T(), got, fmt.Sprintf("Header [%s] not present on response.", headerName))
+	assert.NotEmpty(r.t, got, fmt.Sprintf("Header [%s] not present on response.", headerName))
 	if got != "" {
-		assert.Equal(r.T(), value, got, fmt.Sprintf("Header [%s] was found, but value [%s] does not match [%s].", headerName, got, value))
+		assert.Equal(r.t, value, got, fmt.Sprintf("Header [%s] was found, but value [%s] does not match [%s].", headerName, got, value))
 	}
 	return r
 }
 
 func (r *TestResponseImpl) AssertHeaderMissing(headerName string) contractstesting.TestResponse {
 	got := r.getHeader(headerName)
-	assert.Empty(r.T(), got, fmt.Sprintf("Unexpected header [%s] is present on response.", headerName))
+	assert.Empty(r.t, got, fmt.Sprintf("Unexpected header [%s] is present on response.", headerName))
 	return r
 }
 
 func (r *TestResponseImpl) AssertCookie(name, value string) contractstesting.TestResponse {
 	cookie := r.getCookie(name)
-	assert.NotNil(r.T(), cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
+	assert.NotNil(r.t, cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
 	if cookie == nil {
 		return r
 	}
 
-	assert.Equal(r.T(), value, cookie.Value, fmt.Sprintf("Cookie [%s] was found, but value [%s] does not match [%s]", name, cookie.Value, value))
+	assert.Equal(r.t, value, cookie.Value, fmt.Sprintf("Cookie [%s] was found, but value [%s] does not match [%s]", name, cookie.Value, value))
 
 	return r
 }
 
 func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.TestResponse {
 	cookie := r.getCookie(name)
-	assert.NotNil(r.T(), cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
+	assert.NotNil(r.t, cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
 	if cookie == nil {
 		return r
@@ -175,13 +175,13 @@ func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.Tes
 		expirationTime = carbon.FromStdTime(time.Unix(int64(cookie.MaxAge), 0))
 	}
 
-	assert.True(r.T(), !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime.ToString()))
+	assert.True(r.t, !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime.ToString()))
 	return r
 }
 
 func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.TestResponse {
 	cookie := r.getCookie(name)
-	assert.NotNil(r.T(), cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
+	assert.NotNil(r.t, cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
 	if cookie == nil {
 		return r
@@ -192,18 +192,14 @@ func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.
 		expirationTime = carbon.FromStdTime(time.Unix(int64(cookie.MaxAge), 0))
 	}
 
-	assert.True(r.T(), expirationTime.IsZero() || expirationTime.Gt(carbon.Now()), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
+	assert.True(r.t, expirationTime.IsZero() || expirationTime.Gt(carbon.Now()), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
 	return r
 }
 
 func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.TestResponse {
-	assert.Nil(r.T(), r.getCookie(name), fmt.Sprintf("Cookie [%s] is present on response.", name))
+	assert.Nil(r.t, r.getCookie(name), fmt.Sprintf("Cookie [%s] is present on response.", name))
 
 	return r
-}
-
-func (r *TestResponseImpl) T() *testing.T {
-	return r.t
 }
 
 func (r *TestResponseImpl) getStatusCode() int {
