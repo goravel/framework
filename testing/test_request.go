@@ -5,8 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/spf13/cast"
-
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
@@ -16,14 +14,14 @@ import (
 type TestRequest struct {
 	t              *testing.T
 	defaultHeaders map[string]string
-	defaultCookies map[string]any
+	defaultCookies map[string]string
 }
 
 func NewTestRequest(t *testing.T) contractstesting.TestRequest {
 	return &TestRequest{
 		t:              t,
 		defaultHeaders: make(map[string]string),
-		defaultCookies: make(map[string]any),
+		defaultCookies: make(map[string]string),
 	}
 }
 
@@ -42,12 +40,12 @@ func (r *TestRequest) WithoutHeader(key string) contractstesting.TestRequest {
 	return r
 }
 
-func (r *TestRequest) WithCookies(cookies map[string]any) contractstesting.TestRequest {
+func (r *TestRequest) WithCookies(cookies map[string]string) contractstesting.TestRequest {
 	collect.Merge(r.defaultCookies, cookies)
 	return r
 }
 
-func (r *TestRequest) WithCookie(key string, value any) contractstesting.TestRequest {
+func (r *TestRequest) WithCookie(key, value string) contractstesting.TestRequest {
 	maps.Set(r.defaultCookies, key, value)
 	return r
 }
@@ -67,14 +65,14 @@ func (r *TestRequest) call(method string, uri string) (contractstesting.TestResp
 	}
 
 	for name, value := range r.defaultCookies {
-		cookie := http.Cookie{Name: name, Value: cast.ToString(value)}
+		cookie := http.Cookie{Name: name, Value: value}
 		req.AddCookie(&cookie)
 	}
 
 	recorder := httptest.NewRecorder()
 
 	if routeFacade == nil {
-		panic(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
+		r.t.Fatal(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
 	routeFacade.ServeHTTP(recorder, req)

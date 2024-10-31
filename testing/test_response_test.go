@@ -9,6 +9,7 @@ import (
 
 func TestAssertStatus(t *testing.T) {
 	resp := createTestResponse(http.StatusOK)
+
 	r := NewTestResponse(t, resp)
 
 	r.AssertStatus(http.StatusOK)
@@ -21,9 +22,15 @@ func TestAssertHeader(t *testing.T) {
 
 	r := NewTestResponse(t, resp)
 
-	r.AssertHeader(headerName, headerValue).
-		AssertHeaderMissing("X-Custom-Header").
-		AssertCreated()
+	r.AssertHeader(headerName, headerValue).AssertCreated()
+}
+
+func TestAssertHeaderMissing(t *testing.T) {
+	resp := createTestResponse(http.StatusCreated)
+
+	r := NewTestResponse(t, resp)
+
+	r.AssertHeaderMissing("X-Custom-Header").AssertCreated()
 }
 
 func TestAssertCookie(t *testing.T) {
