@@ -136,7 +136,7 @@ func (r *TestResponseImpl) AssertServiceUnavailable() contractstesting.TestRespo
 }
 
 func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesting.TestResponse {
-	got := r.response.Header.Get(headerName)
+	got := r.getHeader(headerName)
 	assert.NotEmpty(r.T(), got, fmt.Sprintf("Header [%s] not present on response.", headerName))
 	if got != "" {
 		assert.Equal(r.T(), value, got, fmt.Sprintf("Header [%s] was found, but value [%s] does not match [%s].", headerName, got, value))
@@ -145,7 +145,7 @@ func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesti
 }
 
 func (r *TestResponseImpl) AssertHeaderMissing(headerName string) contractstesting.TestResponse {
-	got := r.response.Header.Get(headerName)
+	got := r.getHeader(headerName)
 	assert.Empty(r.T(), got, fmt.Sprintf("Unexpected header [%s] is present on response.", headerName))
 	return r
 }
@@ -219,4 +219,8 @@ func (r *TestResponseImpl) getCookie(name string) *http.Cookie {
 	}
 
 	return nil
+}
+
+func (r *TestResponseImpl) getHeader(name string) string {
+	return r.response.Header.Get(name)
 }
