@@ -217,5 +217,15 @@ func (r *TestResponseImpl) isCookieExpired(cookie *http.Cookie) bool {
 		return false
 	}
 
+	if cookie.MaxAge < 0 {
+		return true
+	}
+
+	// MaxAge == 0 means no Max-Age specified; check Expires attribute
+	if cookie.Expires.IsZero() {
+		// Session cookie; consider not expired until the session ends
+		return false
+	}
+
 	return cookie.Expires.Before(time.Now())
 }
