@@ -25,6 +25,8 @@ type Route interface {
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	// Stop gracefully stop the serve.
 	Stop(ctx ...context.Context) error
+	// Test method to simulate HTTP requests (Fiber driver only)
+	Test(request *http.Request) (*http.Response, error)
 }
 
 type Router interface {
