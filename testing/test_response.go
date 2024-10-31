@@ -18,7 +18,6 @@ type TestResponseImpl struct {
 }
 
 func NewTestResponse(t *testing.T, response *http.Response) contractstesting.TestResponse {
-	//content := recorder.Body.String()
 	return &TestResponseImpl{t: t, response: response}
 }
 
