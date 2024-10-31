@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -171,11 +170,8 @@ func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.Tes
 	}
 
 	expirationTime := carbon.FromStdTime(cookie.Expires)
-	if expirationTime.IsZero() && cookie.MaxAge > 0 {
-		expirationTime = carbon.FromStdTime(time.Unix(int64(cookie.MaxAge), 0))
-	}
+	assert.True(r.t, !(cookie.MaxAge > 0 || (!expirationTime.IsZero() && expirationTime.Gt(carbon.Now()))), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime.ToString()))
 
-	assert.True(r.t, !expirationTime.IsZero() && expirationTime.Lt(carbon.Now()), fmt.Sprintf("Cookie [%s] is not expired; it expires at [%s].", name, expirationTime.ToString()))
 	return r
 }
 
@@ -188,11 +184,7 @@ func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.
 	}
 
 	expirationTime := carbon.FromStdTime(cookie.Expires)
-	if expirationTime.IsZero() && cookie.MaxAge > 0 {
-		expirationTime = carbon.FromStdTime(time.Unix(int64(cookie.MaxAge), 0))
-	}
-
-	assert.True(r.t, expirationTime.IsZero() || expirationTime.Gt(carbon.Now()), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
+	assert.True(r.t, cookie.MaxAge > 0 || (!expirationTime.IsZero() && expirationTime.Gt(carbon.Now())), fmt.Sprintf("Cookie [%s] is expired; it expired at [%s].", name, expirationTime))
 	return r
 }
 
