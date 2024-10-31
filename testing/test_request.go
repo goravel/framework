@@ -2,10 +2,8 @@ package testing
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/goravel/framework/constants"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
@@ -74,23 +72,10 @@ func (r *TestRequest) call(method string, uri string) (contractstesting.TestResp
 		r.t.Fatal(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
-	if configFacade == nil {
-		r.t.Fatal(errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting))
+	response, err := routeFacade.Test(req)
+	if err != nil {
+		return nil, err
 	}
 
-	driver := configFacade.Get("http.default")
-	if driver == constants.DriverFiber {
-		response, err := routeFacade.Test(req)
-		if err != nil {
-			return nil, err
-		}
-
-		return NewTestResponse(r.t, response), nil
-	}
-
-	recorder := httptest.NewRecorder()
-
-	routeFacade.ServeHTTP(recorder, req)
-
-	return NewTestResponse(r.t, recorder.Result()), nil
+	return NewTestResponse(r.t, response), nil
 }

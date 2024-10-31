@@ -1,7 +1,6 @@
 package testing
 
 import (
-	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsroute "github.com/goravel/framework/contracts/route"
@@ -13,7 +12,6 @@ const Binding = "goravel.testing"
 
 var artisanFacade contractsconsole.Artisan
 var routeFacade contractsroute.Route
-var configFacade contractsconfig.Config
 
 type ServiceProvider struct {
 }
@@ -33,10 +31,5 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 	routeFacade = app.MakeRoute()
 	if routeFacade == nil {
 		color.Errorln(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
-	}
-
-	configFacade = app.MakeConfig()
-	if configFacade == nil {
-		color.Errorln(errors.ConfigFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 }
