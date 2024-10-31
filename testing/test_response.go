@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 
 type TestResponseImpl struct {
 	t        *testing.T
-	mu       sync.RWMutex
 	response *http.Response
 	content  string
 }
@@ -206,8 +204,6 @@ func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.Tes
 }
 
 func (r *TestResponseImpl) T() *testing.T {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	return r.t
 }
 
