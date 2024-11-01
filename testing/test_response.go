@@ -2,6 +2,7 @@ package testing
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -20,6 +21,20 @@ type TestResponseImpl struct {
 
 func NewTestResponse(t *testing.T, response *http.Response) contractstesting.TestResponse {
 	return &TestResponseImpl{t: t, response: response}
+}
+
+func (r *TestResponseImpl) Json() (map[string]any, error) {
+	content, err := r.getContent()
+	if err != nil {
+		return nil, err
+	}
+
+	testAble, err := NewAssertableJSONString(content)
+	if err != nil {
+		return nil, err
+	}
+
+	return testAble.Json(), nil
 }
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
@@ -48,7 +63,9 @@ func (r *TestResponseImpl) AssertNoContent(status ...int) contractstesting.TestR
 
 	r.AssertStatus(expectedStatus)
 
-	assert.Empty(r.t, r.content)
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+	assert.Empty(r.t, content)
 
 	return r
 }
@@ -196,6 +213,22 @@ func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.Tes
 
 func (r *TestResponseImpl) getStatusCode() int {
 	return r.response.StatusCode
+}
+
+func (r *TestResponseImpl) getContent() (string, error) {
+	if r.content != "" {
+		return r.content, nil
+	}
+
+	defer r.response.Body.Close()
+
+	content, err := io.ReadAll(r.response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	r.content = string(content)
+	return r.content, nil
 }
 
 func (r *TestResponseImpl) getCookie(name string) *http.Cookie {

@@ -1,7 +1,10 @@
 package testing
 
 import (
+	"context"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
@@ -12,6 +15,7 @@ import (
 
 type TestRequest struct {
 	t              *testing.T
+	ctx            context.Context
 	defaultHeaders map[string]string
 	defaultCookies map[string]string
 }
@@ -19,6 +23,7 @@ type TestRequest struct {
 func NewTestRequest(t *testing.T) contractstesting.TestRequest {
 	return &TestRequest{
 		t:              t,
+		ctx:            context.Background(),
 		defaultHeaders: make(map[string]string),
 		defaultCookies: make(map[string]string),
 	}
@@ -49,15 +54,41 @@ func (r *TestRequest) WithCookie(key, value string) contractstesting.TestRequest
 	return r
 }
 
-func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodGet, uri)
+func (r *TestRequest) WithContext(ctx context.Context) contractstesting.TestRequest {
+	r.ctx = ctx
+	return r
 }
 
-func (r *TestRequest) call(method string, uri string) (contractstesting.TestResponse, error) {
-	req, err := http.NewRequest(method, uri, nil)
-	if err != nil {
-		return nil, err
-	}
+func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodGet, uri, nil)
+}
+
+func (r *TestRequest) Post(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodPost, uri, body)
+}
+
+func (r *TestRequest) Put(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodPut, uri, body)
+}
+
+func (r *TestRequest) Patch(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodPatch, uri, body)
+}
+
+func (r *TestRequest) Delete(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodDelete, uri, body)
+}
+
+func (r *TestRequest) Head(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodHead, uri, body)
+}
+
+func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodOptions, uri, nil)
+}
+
+func (r *TestRequest) call(method string, uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	req := httptest.NewRequestWithContext(r.ctx, method, uri, body)
 
 	for key, value := range r.defaultHeaders {
 		req.Header.Set(key, value)
