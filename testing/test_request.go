@@ -88,7 +88,7 @@ func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error)
 }
 
 func (r *TestRequest) call(method string, uri string, body io.Reader) (contractstesting.TestResponse, error) {
-	req := httptest.NewRequestWithContext(r.ctx, method, uri, body)
+	req := httptest.NewRequest(method, uri, body).WithContext(r.ctx)
 
 	for key, value := range r.defaultHeaders {
 		req.Header.Set(key, value)
