@@ -5,6 +5,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -254,6 +255,51 @@ func (r *TestResponseImpl) AssertDontSee(value []string, escaped ...bool) contra
 		}
 
 		assert.NotContains(r.t, content, checkValue, fmt.Sprintf("Response should not contain '%s', but it was found.", checkValue))
+	}
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertSee(value []string, escaped ...bool) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	shouldEscape := true
+	if len(escaped) > 0 {
+		shouldEscape = escaped[0]
+	}
+
+	for _, v := range value {
+		checkValue := v
+		if shouldEscape {
+			checkValue = html.EscapeString(v)
+		}
+
+		assert.Contains(r.t, content, checkValue, fmt.Sprintf("Expected to see '%s' in response, but it was not found.", checkValue))
+	}
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	shouldEscape := true
+	if len(escaped) > 0 {
+		shouldEscape = escaped[0]
+	}
+
+	previousIndex := -1
+	for _, v := range value {
+		checkValue := v
+		if shouldEscape {
+			checkValue = html.EscapeString(v)
+		}
+
+		currentIndex := strings.Index(content[previousIndex+1:], checkValue)
+		assert.GreaterOrEqual(r.t, currentIndex, 0, fmt.Sprintf("Expected to see '%s' in response in the correct order, but it was not found.", checkValue))
+		previousIndex += currentIndex + len(checkValue)
 	}
 
 	return r

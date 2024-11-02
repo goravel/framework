@@ -39,4 +39,6 @@ type TestResponse interface {
 	AssertSuccessful() TestResponse
 	AssertServerError() TestResponse
 	AssertDontSee([]string, ...bool) TestResponse
+	AssertSee([]string, ...bool) TestResponse
+	AssertSeeInOrder([]string, ...bool) TestResponse
 }
