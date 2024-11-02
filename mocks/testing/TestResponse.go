@@ -210,9 +210,9 @@ func (_c *TestResponse_AssertCookie_Call) RunAndReturn(run func(string, string) 
 	return _c
 }
 
-// AssertCookieExpired provides a mock function with given fields: name
-func (_m *TestResponse) AssertCookieExpired(name string) testing.TestResponse {
-	ret := _m.Called(name)
+// AssertCookieExpired provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertCookieExpired(_a0 string) testing.TestResponse {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AssertCookieExpired")
@@ -220,7 +220,7 @@ func (_m *TestResponse) AssertCookieExpired(name string) testing.TestResponse {
 
 	var r0 testing.TestResponse
 	if rf, ok := ret.Get(0).(func(string) testing.TestResponse); ok {
-		r0 = rf(name)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(testing.TestResponse)
@@ -236,12 +236,12 @@ type TestResponse_AssertCookieExpired_Call struct {
 }
 
 // AssertCookieExpired is a helper method to define mock.On call
-//   - name string
-func (_e *TestResponse_Expecter) AssertCookieExpired(name interface{}) *TestResponse_AssertCookieExpired_Call {
-	return &TestResponse_AssertCookieExpired_Call{Call: _e.mock.On("AssertCookieExpired", name)}
+//   - _a0 string
+func (_e *TestResponse_Expecter) AssertCookieExpired(_a0 interface{}) *TestResponse_AssertCookieExpired_Call {
+	return &TestResponse_AssertCookieExpired_Call{Call: _e.mock.On("AssertCookieExpired", _a0)}
 }
 
-func (_c *TestResponse_AssertCookieExpired_Call) Run(run func(name string)) *TestResponse_AssertCookieExpired_Call {
+func (_c *TestResponse_AssertCookieExpired_Call) Run(run func(_a0 string)) *TestResponse_AssertCookieExpired_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -258,9 +258,9 @@ func (_c *TestResponse_AssertCookieExpired_Call) RunAndReturn(run func(string) t
 	return _c
 }
 
-// AssertCookieMissing provides a mock function with given fields: name
-func (_m *TestResponse) AssertCookieMissing(name string) testing.TestResponse {
-	ret := _m.Called(name)
+// AssertCookieMissing provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertCookieMissing(_a0 string) testing.TestResponse {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AssertCookieMissing")
@@ -268,7 +268,7 @@ func (_m *TestResponse) AssertCookieMissing(name string) testing.TestResponse {
 
 	var r0 testing.TestResponse
 	if rf, ok := ret.Get(0).(func(string) testing.TestResponse); ok {
-		r0 = rf(name)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(testing.TestResponse)
@@ -284,12 +284,12 @@ type TestResponse_AssertCookieMissing_Call struct {
 }
 
 // AssertCookieMissing is a helper method to define mock.On call
-//   - name string
-func (_e *TestResponse_Expecter) AssertCookieMissing(name interface{}) *TestResponse_AssertCookieMissing_Call {
-	return &TestResponse_AssertCookieMissing_Call{Call: _e.mock.On("AssertCookieMissing", name)}
+//   - _a0 string
+func (_e *TestResponse_Expecter) AssertCookieMissing(_a0 interface{}) *TestResponse_AssertCookieMissing_Call {
+	return &TestResponse_AssertCookieMissing_Call{Call: _e.mock.On("AssertCookieMissing", _a0)}
 }
 
-func (_c *TestResponse_AssertCookieMissing_Call) Run(run func(name string)) *TestResponse_AssertCookieMissing_Call {
+func (_c *TestResponse_AssertCookieMissing_Call) Run(run func(_a0 string)) *TestResponse_AssertCookieMissing_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -306,9 +306,9 @@ func (_c *TestResponse_AssertCookieMissing_Call) RunAndReturn(run func(string) t
 	return _c
 }
 
-// AssertCookieNotExpired provides a mock function with given fields: name
-func (_m *TestResponse) AssertCookieNotExpired(name string) testing.TestResponse {
-	ret := _m.Called(name)
+// AssertCookieNotExpired provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertCookieNotExpired(_a0 string) testing.TestResponse {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AssertCookieNotExpired")
@@ -316,7 +316,7 @@ func (_m *TestResponse) AssertCookieNotExpired(name string) testing.TestResponse
 
 	var r0 testing.TestResponse
 	if rf, ok := ret.Get(0).(func(string) testing.TestResponse); ok {
-		r0 = rf(name)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(testing.TestResponse)
@@ -332,12 +332,12 @@ type TestResponse_AssertCookieNotExpired_Call struct {
 }
 
 // AssertCookieNotExpired is a helper method to define mock.On call
-//   - name string
-func (_e *TestResponse_Expecter) AssertCookieNotExpired(name interface{}) *TestResponse_AssertCookieNotExpired_Call {
-	return &TestResponse_AssertCookieNotExpired_Call{Call: _e.mock.On("AssertCookieNotExpired", name)}
+//   - _a0 string
+func (_e *TestResponse_Expecter) AssertCookieNotExpired(_a0 interface{}) *TestResponse_AssertCookieNotExpired_Call {
+	return &TestResponse_AssertCookieNotExpired_Call{Call: _e.mock.On("AssertCookieNotExpired", _a0)}
 }
 
-func (_c *TestResponse_AssertCookieNotExpired_Call) Run(run func(name string)) *TestResponse_AssertCookieNotExpired_Call {
+func (_c *TestResponse_AssertCookieNotExpired_Call) Run(run func(_a0 string)) *TestResponse_AssertCookieNotExpired_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -397,6 +397,69 @@ func (_c *TestResponse_AssertCreated_Call) Return(_a0 testing.TestResponse) *Tes
 }
 
 func (_c *TestResponse_AssertCreated_Call) RunAndReturn(run func() testing.TestResponse) *TestResponse_AssertCreated_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AssertDontSee provides a mock function with given fields: _a0, _a1
+func (_m *TestResponse) AssertDontSee(_a0 []string, _a1 ...bool) testing.TestResponse {
+	_va := make([]interface{}, len(_a1))
+	for _i := range _a1 {
+		_va[_i] = _a1[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertDontSee")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func([]string, ...bool) testing.TestResponse); ok {
+		r0 = rf(_a0, _a1...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertDontSee_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertDontSee'
+type TestResponse_AssertDontSee_Call struct {
+	*mock.Call
+}
+
+// AssertDontSee is a helper method to define mock.On call
+//   - _a0 []string
+//   - _a1 ...bool
+func (_e *TestResponse_Expecter) AssertDontSee(_a0 interface{}, _a1 ...interface{}) *TestResponse_AssertDontSee_Call {
+	return &TestResponse_AssertDontSee_Call{Call: _e.mock.On("AssertDontSee",
+		append([]interface{}{_a0}, _a1...)...)}
+}
+
+func (_c *TestResponse_AssertDontSee_Call) Run(run func(_a0 []string, _a1 ...bool)) *TestResponse_AssertDontSee_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]bool, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(bool)
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertDontSee_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertDontSee_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertDontSee_Call) RunAndReturn(run func([]string, ...bool) testing.TestResponse) *TestResponse_AssertDontSee_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -591,9 +654,9 @@ func (_c *TestResponse_AssertHeader_Call) RunAndReturn(run func(string, string) 
 	return _c
 }
 
-// AssertHeaderMissing provides a mock function with given fields: headerName
-func (_m *TestResponse) AssertHeaderMissing(headerName string) testing.TestResponse {
-	ret := _m.Called(headerName)
+// AssertHeaderMissing provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertHeaderMissing(_a0 string) testing.TestResponse {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AssertHeaderMissing")
@@ -601,7 +664,7 @@ func (_m *TestResponse) AssertHeaderMissing(headerName string) testing.TestRespo
 
 	var r0 testing.TestResponse
 	if rf, ok := ret.Get(0).(func(string) testing.TestResponse); ok {
-		r0 = rf(headerName)
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(testing.TestResponse)
@@ -617,12 +680,12 @@ type TestResponse_AssertHeaderMissing_Call struct {
 }
 
 // AssertHeaderMissing is a helper method to define mock.On call
-//   - headerName string
-func (_e *TestResponse_Expecter) AssertHeaderMissing(headerName interface{}) *TestResponse_AssertHeaderMissing_Call {
-	return &TestResponse_AssertHeaderMissing_Call{Call: _e.mock.On("AssertHeaderMissing", headerName)}
+//   - _a0 string
+func (_e *TestResponse_Expecter) AssertHeaderMissing(_a0 interface{}) *TestResponse_AssertHeaderMissing_Call {
+	return &TestResponse_AssertHeaderMissing_Call{Call: _e.mock.On("AssertHeaderMissing", _a0)}
 }
 
-func (_c *TestResponse_AssertHeaderMissing_Call) Run(run func(headerName string)) *TestResponse_AssertHeaderMissing_Call {
+func (_c *TestResponse_AssertHeaderMissing_Call) Run(run func(_a0 string)) *TestResponse_AssertHeaderMissing_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -1170,6 +1233,53 @@ func (_c *TestResponse_AssertRequestTimeout_Call) RunAndReturn(run func() testin
 	return _c
 }
 
+// AssertServerError provides a mock function with given fields:
+func (_m *TestResponse) AssertServerError() testing.TestResponse {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertServerError")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func() testing.TestResponse); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertServerError_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertServerError'
+type TestResponse_AssertServerError_Call struct {
+	*mock.Call
+}
+
+// AssertServerError is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) AssertServerError() *TestResponse_AssertServerError_Call {
+	return &TestResponse_AssertServerError_Call{Call: _e.mock.On("AssertServerError")}
+}
+
+func (_c *TestResponse_AssertServerError_Call) Run(run func()) *TestResponse_AssertServerError_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertServerError_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertServerError_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertServerError_Call) RunAndReturn(run func() testing.TestResponse) *TestResponse_AssertServerError_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AssertServiceUnavailable provides a mock function with given fields:
 func (_m *TestResponse) AssertServiceUnavailable() testing.TestResponse {
 	ret := _m.Called()
@@ -1261,6 +1371,53 @@ func (_c *TestResponse_AssertStatus_Call) Return(_a0 testing.TestResponse) *Test
 }
 
 func (_c *TestResponse_AssertStatus_Call) RunAndReturn(run func(int) testing.TestResponse) *TestResponse_AssertStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AssertSuccessful provides a mock function with given fields:
+func (_m *TestResponse) AssertSuccessful() testing.TestResponse {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertSuccessful")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func() testing.TestResponse); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertSuccessful_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertSuccessful'
+type TestResponse_AssertSuccessful_Call struct {
+	*mock.Call
+}
+
+// AssertSuccessful is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) AssertSuccessful() *TestResponse_AssertSuccessful_Call {
+	return &TestResponse_AssertSuccessful_Call{Call: _e.mock.On("AssertSuccessful")}
+}
+
+func (_c *TestResponse_AssertSuccessful_Call) Run(run func()) *TestResponse_AssertSuccessful_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertSuccessful_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertSuccessful_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertSuccessful_Call) RunAndReturn(run func() testing.TestResponse) *TestResponse_AssertSuccessful_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1496,6 +1653,208 @@ func (_c *TestResponse_AssertUnsupportedMediaType_Call) Return(_a0 testing.TestR
 }
 
 func (_c *TestResponse_AssertUnsupportedMediaType_Call) RunAndReturn(run func() testing.TestResponse) *TestResponse_AssertUnsupportedMediaType_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Content provides a mock function with given fields:
+func (_m *TestResponse) Content() (string, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Content")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (string, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TestResponse_Content_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Content'
+type TestResponse_Content_Call struct {
+	*mock.Call
+}
+
+// Content is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) Content() *TestResponse_Content_Call {
+	return &TestResponse_Content_Call{Call: _e.mock.On("Content")}
+}
+
+func (_c *TestResponse_Content_Call) Run(run func()) *TestResponse_Content_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_Content_Call) Return(_a0 string, _a1 error) *TestResponse_Content_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TestResponse_Content_Call) RunAndReturn(run func() (string, error)) *TestResponse_Content_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsServerError provides a mock function with given fields:
+func (_m *TestResponse) IsServerError() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsServerError")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// TestResponse_IsServerError_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsServerError'
+type TestResponse_IsServerError_Call struct {
+	*mock.Call
+}
+
+// IsServerError is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) IsServerError() *TestResponse_IsServerError_Call {
+	return &TestResponse_IsServerError_Call{Call: _e.mock.On("IsServerError")}
+}
+
+func (_c *TestResponse_IsServerError_Call) Run(run func()) *TestResponse_IsServerError_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_IsServerError_Call) Return(_a0 bool) *TestResponse_IsServerError_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_IsServerError_Call) RunAndReturn(run func() bool) *TestResponse_IsServerError_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsSuccessful provides a mock function with given fields:
+func (_m *TestResponse) IsSuccessful() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsSuccessful")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// TestResponse_IsSuccessful_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsSuccessful'
+type TestResponse_IsSuccessful_Call struct {
+	*mock.Call
+}
+
+// IsSuccessful is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) IsSuccessful() *TestResponse_IsSuccessful_Call {
+	return &TestResponse_IsSuccessful_Call{Call: _e.mock.On("IsSuccessful")}
+}
+
+func (_c *TestResponse_IsSuccessful_Call) Run(run func()) *TestResponse_IsSuccessful_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_IsSuccessful_Call) Return(_a0 bool) *TestResponse_IsSuccessful_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_IsSuccessful_Call) RunAndReturn(run func() bool) *TestResponse_IsSuccessful_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Json provides a mock function with given fields:
+func (_m *TestResponse) Json() (map[string]any, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Json")
+	}
+
+	var r0 map[string]any
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (map[string]any, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]any)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TestResponse_Json_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Json'
+type TestResponse_Json_Call struct {
+	*mock.Call
+}
+
+// Json is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) Json() *TestResponse_Json_Call {
+	return &TestResponse_Json_Call{Call: _e.mock.On("Json")}
+}
+
+func (_c *TestResponse_Json_Call) Run(run func()) *TestResponse_Json_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_Json_Call) Return(_a0 map[string]any, _a1 error) *TestResponse_Json_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TestResponse_Json_Call) RunAndReturn(run func() (map[string]any, error)) *TestResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
