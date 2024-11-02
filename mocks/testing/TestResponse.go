@@ -1233,6 +1233,132 @@ func (_c *TestResponse_AssertRequestTimeout_Call) RunAndReturn(run func() testin
 	return _c
 }
 
+// AssertSee provides a mock function with given fields: _a0, _a1
+func (_m *TestResponse) AssertSee(_a0 []string, _a1 ...bool) testing.TestResponse {
+	_va := make([]interface{}, len(_a1))
+	for _i := range _a1 {
+		_va[_i] = _a1[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertSee")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func([]string, ...bool) testing.TestResponse); ok {
+		r0 = rf(_a0, _a1...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertSee_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertSee'
+type TestResponse_AssertSee_Call struct {
+	*mock.Call
+}
+
+// AssertSee is a helper method to define mock.On call
+//   - _a0 []string
+//   - _a1 ...bool
+func (_e *TestResponse_Expecter) AssertSee(_a0 interface{}, _a1 ...interface{}) *TestResponse_AssertSee_Call {
+	return &TestResponse_AssertSee_Call{Call: _e.mock.On("AssertSee",
+		append([]interface{}{_a0}, _a1...)...)}
+}
+
+func (_c *TestResponse_AssertSee_Call) Run(run func(_a0 []string, _a1 ...bool)) *TestResponse_AssertSee_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]bool, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(bool)
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertSee_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertSee_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertSee_Call) RunAndReturn(run func([]string, ...bool) testing.TestResponse) *TestResponse_AssertSee_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AssertSeeInOrder provides a mock function with given fields: _a0, _a1
+func (_m *TestResponse) AssertSeeInOrder(_a0 []string, _a1 ...bool) testing.TestResponse {
+	_va := make([]interface{}, len(_a1))
+	for _i := range _a1 {
+		_va[_i] = _a1[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _a0)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertSeeInOrder")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func([]string, ...bool) testing.TestResponse); ok {
+		r0 = rf(_a0, _a1...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertSeeInOrder_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertSeeInOrder'
+type TestResponse_AssertSeeInOrder_Call struct {
+	*mock.Call
+}
+
+// AssertSeeInOrder is a helper method to define mock.On call
+//   - _a0 []string
+//   - _a1 ...bool
+func (_e *TestResponse_Expecter) AssertSeeInOrder(_a0 interface{}, _a1 ...interface{}) *TestResponse_AssertSeeInOrder_Call {
+	return &TestResponse_AssertSeeInOrder_Call{Call: _e.mock.On("AssertSeeInOrder",
+		append([]interface{}{_a0}, _a1...)...)}
+}
+
+func (_c *TestResponse_AssertSeeInOrder_Call) Run(run func(_a0 []string, _a1 ...bool)) *TestResponse_AssertSeeInOrder_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]bool, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(bool)
+			}
+		}
+		run(args[0].([]string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertSeeInOrder_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertSeeInOrder_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertSeeInOrder_Call) RunAndReturn(run func([]string, ...bool) testing.TestResponse) *TestResponse_AssertSeeInOrder_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AssertServerError provides a mock function with given fields:
 func (_m *TestResponse) AssertServerError() testing.TestResponse {
 	ret := _m.Called()
