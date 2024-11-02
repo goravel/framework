@@ -880,6 +880,64 @@ func (_c *Route_Stop_Call) RunAndReturn(run func(...context.Context) error) *Rou
 	return _c
 }
 
+// Test provides a mock function with given fields: request
+func (_m *Route) Test(request *nethttp.Request) (*nethttp.Response, error) {
+	ret := _m.Called(request)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Test")
+	}
+
+	var r0 *nethttp.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*nethttp.Request) (*nethttp.Response, error)); ok {
+		return rf(request)
+	}
+	if rf, ok := ret.Get(0).(func(*nethttp.Request) *nethttp.Response); ok {
+		r0 = rf(request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*nethttp.Response)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*nethttp.Request) error); ok {
+		r1 = rf(request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Route_Test_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Test'
+type Route_Test_Call struct {
+	*mock.Call
+}
+
+// Test is a helper method to define mock.On call
+//   - request *nethttp.Request
+func (_e *Route_Expecter) Test(request interface{}) *Route_Test_Call {
+	return &Route_Test_Call{Call: _e.mock.On("Test", request)}
+}
+
+func (_c *Route_Test_Call) Run(run func(request *nethttp.Request)) *Route_Test_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*nethttp.Request))
+	})
+	return _c
+}
+
+func (_c *Route_Test_Call) Return(_a0 *nethttp.Response, _a1 error) *Route_Test_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Route_Test_Call) RunAndReturn(run func(*nethttp.Request) (*nethttp.Response, error)) *Route_Test_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewRoute creates a new instance of Route. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewRoute(t interface {

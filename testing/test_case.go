@@ -2,12 +2,18 @@ package testing
 
 import (
 	"fmt"
+	"testing"
 
 	contractsseeder "github.com/goravel/framework/contracts/database/seeder"
+	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 )
 
 type TestCase struct {
+}
+
+func (r *TestCase) Http(t *testing.T) contractstesting.TestRequest {
+	return NewTestRequest(t)
 }
 
 func (r *TestCase) Seed(seeders ...contractsseeder.Seeder) {
