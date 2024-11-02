@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/schema/constants"
 )
 
 type Postgres struct {
@@ -17,7 +18,7 @@ type Postgres struct {
 
 func NewPostgres() *Postgres {
 	postgres := &Postgres{
-		attributeCommands: []string{"comment"},
+		attributeCommands: []string{constants.CommandComment},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 	}
 	postgres.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
@@ -29,29 +30,22 @@ func NewPostgres() *Postgres {
 	return postgres
 }
 
-func (r *Postgres) CompileAdd(blueprint schema.Blueprint) string {
-	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(prefixArray("add column", getColumns(r, blueprint)), ","))
+func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s add column %s", blueprint.GetTableName(), getColumn(r, blueprint, command.Column))
 }
 
-func (r *Postgres) CompileChange(blueprint schema.Blueprint) string {
-	var columns []string
-	for _, column := range blueprint.GetChangedColumns() {
-		var changes []string
+func (r *Postgres) CompileChange(blueprint schema.Blueprint, command *schema.Command) string {
+	var changes []string
 
-		for _, modifier := range r.modifiers {
-			if change := modifier(blueprint, column); change != "" {
-				changes = append(changes, change)
-			}
+	for _, modifier := range r.modifiers {
+		if change := modifier(blueprint, command.Column); change != "" {
+			changes = append(changes, change)
 		}
-
-		columns = append(columns, strings.Join(prefixArray("alter column "+column.GetName(), changes), ", "))
 	}
 
-	if len(columns) == 0 {
-		return ""
-	}
+	column := strings.Join(prefixArray("alter column "+command.Column.GetName(), changes), ", ")
 
-	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), strings.Join(columns, ", "))
+	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), column)
 }
 
 func (r *Postgres) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
@@ -78,7 +72,7 @@ func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
 
-func (r *Postgres) CompileTables(database string) string {
+func (r *Postgres) CompileTables() string {
 	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
 		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
 		"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +

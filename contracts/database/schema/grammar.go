@@ -6,9 +6,9 @@ import (
 
 type Grammar interface {
 	// CompileAdd Compile an add column command.
-	CompileAdd(blueprint Blueprint) string
+	CompileAdd(blueprint Blueprint, command *Command) string
 	// CompileChange Compile a change column command into a series of SQL statements.
-	CompileChange(blueprint Blueprint) string
+	CompileChange(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint, query orm.Query) string
 	// CompileDropAllDomains Compile the SQL needed to drop all domains.
@@ -22,7 +22,7 @@ type Grammar interface {
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint) string
 	// CompileTables Compile the query to determine the tables.
-	CompileTables(database string) string
+	CompileTables() string
 	// CompileTypes Compile the query to determine the types.
 	CompileTypes() string
 	// CompileViews Compile the query to determine the views.

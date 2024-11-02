@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/schema/constants"
 	"github.com/goravel/framework/database/schema/grammars"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
@@ -81,107 +82,6 @@ func (s *BlueprintTestSuite) TestAddAttributeCommands() {
 			test.setup()
 
 			s.blueprint.addAttributeCommands(mockGrammar)
-			s.Equal(test.expectCommands, s.blueprint.commands)
-		})
-	}
-}
-
-func (s *BlueprintTestSuite) TestAddImpliedCommands() {
-	var (
-		mockGrammar *mocksschema.Grammar
-	)
-
-	tests := []struct {
-		name           string
-		columns        []*ColumnDefinition
-		commands       []*schema.Command
-		setup          func()
-		expectCommands []*schema.Command
-	}{
-		{
-			name: "Should not add the add command when there are added columns but it is a create operation",
-			columns: []*ColumnDefinition{
-				{
-					name: convert.Pointer("name"),
-				},
-			},
-			commands: []*schema.Command{
-				{
-					Name: "create",
-				},
-			},
-			setup: func() {
-				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
-			},
-			expectCommands: []*schema.Command{
-				{
-					Name: "create",
-				},
-			},
-		},
-		{
-			name: "Should not add the change command when there are changed columns but it is a create operation",
-			columns: []*ColumnDefinition{
-				{
-					name:   convert.Pointer("name"),
-					change: convert.Pointer(true),
-				},
-			},
-			commands: []*schema.Command{
-				{
-					Name: "create",
-				},
-			},
-			setup: func() {
-				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
-			},
-			expectCommands: []*schema.Command{
-				{
-					Name: "create",
-				},
-			},
-		},
-		{
-			name: "Should add the add, change, attribute commands when there are added and changed columns, and it is not a create operation",
-			columns: []*ColumnDefinition{
-				{
-					name:    convert.Pointer("name"),
-					comment: convert.Pointer("comment"),
-				},
-				{
-					name:   convert.Pointer("age"),
-					change: convert.Pointer(true),
-				},
-			},
-			setup: func() {
-				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
-			},
-			expectCommands: []*schema.Command{
-				{
-					Name: "add",
-				},
-				{
-					Name: "change",
-				},
-				{
-					Column: &ColumnDefinition{
-						name:    convert.Pointer("name"),
-						comment: convert.Pointer("comment"),
-					},
-					Name: "comment",
-				},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		s.Run(test.name, func() {
-			mockGrammar = mocksschema.NewGrammar(s.T())
-			s.blueprint.columns = test.columns
-			s.blueprint.commands = test.commands
-			test.setup()
-
-			s.blueprint.addImpliedCommands(mockGrammar)
 			s.Equal(test.expectCommands, s.blueprint.commands)
 		})
 	}
@@ -276,16 +176,16 @@ func (s *BlueprintTestSuite) TestGetTableName() {
 }
 
 func (s *BlueprintTestSuite) TestHasCommand() {
-	s.False(s.blueprint.HasCommand(commandCreate))
+	s.False(s.blueprint.HasCommand(constants.CommandCreate))
 	s.blueprint.Create()
-	s.True(s.blueprint.HasCommand(commandCreate))
+	s.True(s.blueprint.HasCommand(constants.CommandCreate))
 }
 
 func (s *BlueprintTestSuite) TestIsCreate() {
 	s.False(s.blueprint.isCreate())
 	s.blueprint.commands = []*schema.Command{
 		{
-			Name: commandCreate,
+			Name: constants.CommandCreate,
 		},
 	}
 	s.True(s.blueprint.isCreate())
@@ -329,7 +229,7 @@ func (s *BlueprintTestSuite) TestInteger() {
 func (s *BlueprintTestSuite) TestString() {
 	column := "name"
 	customLength := 100
-	length := defaultStringLength
+	length := constants.DefaultStringLength
 	ttype := "string"
 	s.blueprint.String(column)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
@@ -348,6 +248,7 @@ func (s *BlueprintTestSuite) TestString() {
 
 func (s *BlueprintTestSuite) TestToSql() {
 	for driver, grammar := range s.grammars {
+		// Create a table
 		mockQuery := mocksorm.NewQuery(s.T())
 		s.blueprint.Create()
 		s.blueprint.String("name")
@@ -355,6 +256,15 @@ func (s *BlueprintTestSuite) TestToSql() {
 		//s.blueprint.String("name").Comment("comment")
 		//s.blueprint.Comment("comment")
 
+		if driver == database.DriverPostgres {
+			s.Len(s.blueprint.ToSql(mockQuery, grammar), 1)
+		} else {
+			s.Empty(s.blueprint.ToSql(mockQuery, grammar))
+		}
+
+		// Update a table
+		s.SetupTest()
+		s.blueprint.String("avatar")
 		if driver == database.DriverPostgres {
 			s.Len(s.blueprint.ToSql(mockQuery, grammar), 1)
 		} else {
