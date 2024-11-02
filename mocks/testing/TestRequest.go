@@ -141,9 +141,9 @@ func (_c *TestRequest_Get_Call) RunAndReturn(run func(string) (testing.TestRespo
 	return _c
 }
 
-// Head provides a mock function with given fields: uri, body
-func (_m *TestRequest) Head(uri string, body io.Reader) (testing.TestResponse, error) {
-	ret := _m.Called(uri, body)
+// Head provides a mock function with given fields: uri
+func (_m *TestRequest) Head(uri string) (testing.TestResponse, error) {
+	ret := _m.Called(uri)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Head")
@@ -151,19 +151,19 @@ func (_m *TestRequest) Head(uri string, body io.Reader) (testing.TestResponse, e
 
 	var r0 testing.TestResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, io.Reader) (testing.TestResponse, error)); ok {
-		return rf(uri, body)
+	if rf, ok := ret.Get(0).(func(string) (testing.TestResponse, error)); ok {
+		return rf(uri)
 	}
-	if rf, ok := ret.Get(0).(func(string, io.Reader) testing.TestResponse); ok {
-		r0 = rf(uri, body)
+	if rf, ok := ret.Get(0).(func(string) testing.TestResponse); ok {
+		r0 = rf(uri)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(testing.TestResponse)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, io.Reader) error); ok {
-		r1 = rf(uri, body)
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(uri)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -178,14 +178,13 @@ type TestRequest_Head_Call struct {
 
 // Head is a helper method to define mock.On call
 //   - uri string
-//   - body io.Reader
-func (_e *TestRequest_Expecter) Head(uri interface{}, body interface{}) *TestRequest_Head_Call {
-	return &TestRequest_Head_Call{Call: _e.mock.On("Head", uri, body)}
+func (_e *TestRequest_Expecter) Head(uri interface{}) *TestRequest_Head_Call {
+	return &TestRequest_Head_Call{Call: _e.mock.On("Head", uri)}
 }
 
-func (_c *TestRequest_Head_Call) Run(run func(uri string, body io.Reader)) *TestRequest_Head_Call {
+func (_c *TestRequest_Head_Call) Run(run func(uri string)) *TestRequest_Head_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(io.Reader))
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -195,7 +194,7 @@ func (_c *TestRequest_Head_Call) Return(_a0 testing.TestResponse, _a1 error) *Te
 	return _c
 }
 
-func (_c *TestRequest_Head_Call) RunAndReturn(run func(string, io.Reader) (testing.TestResponse, error)) *TestRequest_Head_Call {
+func (_c *TestRequest_Head_Call) RunAndReturn(run func(string) (testing.TestResponse, error)) *TestRequest_Head_Call {
 	_c.Call.Return(run)
 	return _c
 }
