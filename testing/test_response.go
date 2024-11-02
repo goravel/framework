@@ -2,6 +2,7 @@ package testing
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"testing"
@@ -35,6 +36,20 @@ func (r *TestResponseImpl) Json() (map[string]any, error) {
 	}
 
 	return testAble.Json(), nil
+}
+
+func (r *TestResponseImpl) IsSuccessful() bool {
+	statusCode := r.getStatusCode()
+	return statusCode >= 200 && statusCode < 300
+}
+
+func (r *TestResponseImpl) IsServerError() bool {
+	statusCode := r.getStatusCode()
+	return statusCode >= 500 && statusCode < 600
+}
+
+func (r *TestResponseImpl) Content() (string, error) {
+	return r.getContent()
 }
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
@@ -207,6 +222,39 @@ func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.
 
 func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.TestResponse {
 	assert.Nil(r.t, r.getCookie(name), fmt.Sprintf("Cookie [%s] is present on response.", name))
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertSuccessful() contractstesting.TestResponse {
+	assert.True(r.t, r.IsSuccessful(), fmt.Sprintf("Expected response status code >=200, <300 but received %d.", r.getStatusCode()))
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertServerError() contractstesting.TestResponse {
+	assert.True(r.t, r.IsServerError(), fmt.Sprintf("Expected response status code >=500, <600 but received %d.", r.getStatusCode()))
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertDontSee(value []string, escaped ...bool) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	shouldEscape := true
+	if len(escaped) > 0 {
+		shouldEscape = escaped[0]
+	}
+
+	for _, v := range value {
+		checkValue := v
+		if shouldEscape {
+			checkValue = html.EscapeString(v)
+		}
+
+		assert.NotContains(r.t, content, checkValue, fmt.Sprintf("Response should not contain '%s', but it was found.", checkValue))
+	}
 
 	return r
 }
