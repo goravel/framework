@@ -1,6 +1,10 @@
 package testing
 
 type TestResponse interface {
+	IsSuccessful() bool
+	IsServerError() bool
+	Content() (string, error)
+	Json() (map[string]any, error)
 	AssertStatus(status int) TestResponse
 	AssertOk() TestResponse
 	AssertCreated() TestResponse
@@ -27,9 +31,14 @@ type TestResponse interface {
 	AssertInternalServerError() TestResponse
 	AssertServiceUnavailable() TestResponse
 	AssertHeader(headerName, value string) TestResponse
-	AssertHeaderMissing(headerName string) TestResponse
+	AssertHeaderMissing(string) TestResponse
 	AssertCookie(name, value string) TestResponse
-	AssertCookieExpired(name string) TestResponse
-	AssertCookieNotExpired(name string) TestResponse
-	AssertCookieMissing(name string) TestResponse
+	AssertCookieExpired(string) TestResponse
+	AssertCookieNotExpired(string) TestResponse
+	AssertCookieMissing(string) TestResponse
+	AssertSuccessful() TestResponse
+	AssertServerError() TestResponse
+	AssertDontSee([]string, ...bool) TestResponse
+	AssertSee([]string, ...bool) TestResponse
+	AssertSeeInOrder([]string, ...bool) TestResponse
 }
