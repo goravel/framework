@@ -17,6 +17,6 @@ type TestRequest interface {
 	Put(uri string, body io.Reader) (TestResponse, error)
 	Patch(uri string, body io.Reader) (TestResponse, error)
 	Delete(uri string, body io.Reader) (TestResponse, error)
-	Head(uri string, body io.Reader) (TestResponse, error)
+	Head(uri string) (TestResponse, error)
 	Options(uri string) (TestResponse, error)
 }

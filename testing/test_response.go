@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 type TestResponseImpl struct {
 	t        *testing.T
+	mu       sync.Mutex
 	response *http.Response
 	content  string
 }
@@ -310,6 +312,9 @@ func (r *TestResponseImpl) getStatusCode() int {
 }
 
 func (r *TestResponseImpl) getContent() (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if r.content != "" {
 		return r.content, nil
 	}

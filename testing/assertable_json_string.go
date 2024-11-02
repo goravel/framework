@@ -11,15 +11,15 @@ type AssertableJSONString struct {
 	decoded map[string]any
 }
 
-func NewAssertableJSONString(jsonAble string) (contractstesting.AssertableJSON, error) {
-	var decoded = make(map[string]any)
-	err := json.Unmarshal([]byte(jsonAble), &decoded)
+func NewAssertableJSONString(jsonStr string) (contractstesting.AssertableJSON, error) {
+	var decoded map[string]any
+	err := json.Unmarshal([]byte(jsonStr), &decoded)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AssertableJSONString{
-		json:    jsonAble,
+		json:    jsonStr,
 		decoded: decoded,
 	}, nil
 }

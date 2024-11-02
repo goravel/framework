@@ -79,8 +79,8 @@ func (r *TestRequest) Delete(uri string, body io.Reader) (contractstesting.TestR
 	return r.call(http.MethodDelete, uri, body)
 }
 
-func (r *TestRequest) Head(uri string, body io.Reader) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodHead, uri, body)
+func (r *TestRequest) Head(uri string) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodHead, uri, nil)
 }
 
 func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error) {
