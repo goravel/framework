@@ -25,7 +25,7 @@ func TestBodyImpl_Build_JSONBody(t *testing.T) {
 	assert.NoError(t, err)
 
 	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(reader)
+	_, err = buf.ReadFrom(reader.Reader())
 	assert.NoError(t, err)
 
 	var result map[string]any
