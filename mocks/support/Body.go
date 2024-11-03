@@ -3,8 +3,6 @@
 package support
 
 import (
-	io "io"
-
 	support "github.com/goravel/framework/contracts/support"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -23,23 +21,23 @@ func (_m *Body) EXPECT() *Body_Expecter {
 }
 
 // Build provides a mock function with given fields:
-func (_m *Body) Build() (io.Reader, error) {
+func (_m *Body) Build() (support.BodyContent, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
 	}
 
-	var r0 io.Reader
+	var r0 support.BodyContent
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (io.Reader, error)); ok {
+	if rf, ok := ret.Get(0).(func() (support.BodyContent, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() io.Reader); ok {
+	if rf, ok := ret.Get(0).(func() support.BodyContent); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(io.Reader)
+			r0 = ret.Get(0).(support.BodyContent)
 		}
 	}
 
@@ -69,12 +67,12 @@ func (_c *Body_Build_Call) Run(run func()) *Body_Build_Call {
 	return _c
 }
 
-func (_c *Body_Build_Call) Return(_a0 io.Reader, _a1 error) *Body_Build_Call {
+func (_c *Body_Build_Call) Return(_a0 support.BodyContent, _a1 error) *Body_Build_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Body_Build_Call) RunAndReturn(run func() (io.Reader, error)) *Body_Build_Call {
+func (_c *Body_Build_Call) RunAndReturn(run func() (support.BodyContent, error)) *Body_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }
