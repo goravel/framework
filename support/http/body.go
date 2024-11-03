@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/goravel/framework/contracts/support"
+	"github.com/goravel/framework/contracts/support/http"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
 )
@@ -38,7 +38,7 @@ type BodyImpl struct {
 
 // NewBody creates a new BodyImpl instance with an optional bodyType argument.
 // If bodyType is not provided, it defaults to BodyTypeJSON.
-func NewBody(bodyType ...BodyType) support.Body {
+func NewBody(bodyType ...BodyType) http.Body {
 	bt := BodyTypeJSON
 	if len(bodyType) > 0 {
 		bt = bodyType[0]
@@ -51,33 +51,7 @@ func NewBody(bodyType ...BodyType) support.Body {
 	}
 }
 
-func (r *BodyImpl) SetFields(fields map[string]any) support.Body {
-	r.data = collect.Merge(r.data, fields)
-	return r
-}
-
-func (r *BodyImpl) SetField(key string, value any) support.Body {
-	maps.Add(r.data, key, value)
-	return r
-}
-
-func (r *BodyImpl) GetField(key string) any {
-	return maps.Get(r.data, key)
-}
-
-func (r *BodyImpl) SetFiles(files map[string]string) support.Body {
-	r.fileFields = collect.Merge(r.fileFields, files)
-	r.bodyType = BodyTypeMultipart
-	return r
-}
-
-func (r *BodyImpl) SetFile(fieldName, filePath string) support.Body {
-	r.fileFields[fieldName] = filePath
-	r.bodyType = BodyTypeMultipart
-	return r
-}
-
-func (r *BodyImpl) Build() (support.BodyContent, error) {
+func (r *BodyImpl) Build() (http.Reader, error) {
 	switch r.bodyType {
 	case BodyTypeMultipart:
 		return r.buildMultipartBody()
@@ -86,10 +60,35 @@ func (r *BodyImpl) Build() (support.BodyContent, error) {
 	default:
 		return r.buildJSONBody()
 	}
-
 }
 
-func (r *BodyImpl) buildMultipartBody() (support.BodyContent, error) {
+func (r *BodyImpl) GetField(key string) any {
+	return maps.Get(r.data, key)
+}
+
+func (r *BodyImpl) SetField(key string, value any) http.Body {
+	maps.Add(r.data, key, value)
+	return r
+}
+
+func (r *BodyImpl) SetFields(fields map[string]any) http.Body {
+	r.data = collect.Merge(r.data, fields)
+	return r
+}
+
+func (r *BodyImpl) SetFile(fieldName, filePath string) http.Body {
+	r.fileFields[fieldName] = filePath
+	r.bodyType = BodyTypeMultipart
+	return r
+}
+
+func (r *BodyImpl) SetFiles(files map[string]string) http.Body {
+	r.fileFields = collect.Merge(r.fileFields, files)
+	r.bodyType = BodyTypeMultipart
+	return r
+}
+
+func (r *BodyImpl) buildMultipartBody() (http.Reader, error) {
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
 
@@ -105,25 +104,25 @@ func (r *BodyImpl) buildMultipartBody() (support.BodyContent, error) {
 		return nil, err
 	}
 
-	return newBodyContent(payload, writer.FormDataContentType()), nil
+	return newReader(payload, writer.FormDataContentType()), nil
 }
 
-func (r *BodyImpl) buildFormBody() (support.BodyContent, error) {
+func (r *BodyImpl) buildFormBody() (http.Reader, error) {
 	formData := url.Values{}
 	for key, val := range r.data {
 		formData.Add(key, cast.ToString(val))
 	}
 
-	return newBodyContent(strings.NewReader(formData.Encode()), ContentTypeFormURLEncoded), nil
+	return newReader(strings.NewReader(formData.Encode()), ContentTypeFormURLEncoded), nil
 }
 
-func (r *BodyImpl) buildJSONBody() (support.BodyContent, error) {
+func (r *BodyImpl) buildJSONBody() (http.Reader, error) {
 	jsonBody, err := json.Marshal(r.data)
 	if err != nil {
 		return nil, err
 	}
 
-	return newBodyContent(bytes.NewReader(jsonBody), ContentTypeJSON), nil
+	return newReader(bytes.NewReader(jsonBody), ContentTypeJSON), nil
 }
 
 func (r *BodyImpl) addFormFields(writer *multipart.Writer) error {
