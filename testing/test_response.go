@@ -33,7 +33,7 @@ func (r *TestResponseImpl) Json() (map[string]any, error) {
 		return nil, err
 	}
 
-	testAble, err := NewAssertableJSONString(content)
+	testAble, err := NewAssertableJSON(r.t, content)
 	if err != nil {
 		return nil, err
 	}
@@ -303,6 +303,18 @@ func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) con
 		assert.GreaterOrEqual(r.t, currentIndex, 0, fmt.Sprintf("Expected to see '%s' in response in the correct order, but it was not found.", checkValue))
 		previousIndex += currentIndex + len(checkValue)
 	}
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertFluentJson(callback func(json contractstesting.AssertableJSON)) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	assertableJson, err := NewAssertableJSON(r.t, content)
+	assert.Nil(r.t, err)
+
+	callback(assertableJson)
 
 	return r
 }
