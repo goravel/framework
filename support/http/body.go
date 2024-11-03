@@ -67,7 +67,7 @@ func (r *BodyImpl) GetField(key string) any {
 }
 
 func (r *BodyImpl) SetField(key string, value any) http.Body {
-	maps.Add(r.data, key, value)
+	maps.Set(r.data, key, value)
 	return r
 }
 
@@ -77,7 +77,7 @@ func (r *BodyImpl) SetFields(fields map[string]any) http.Body {
 }
 
 func (r *BodyImpl) SetFile(fieldName, filePath string) http.Body {
-	r.fileFields[fieldName] = filePath
+	maps.Set(r.fileFields, fieldName, filePath)
 	r.bodyType = BodyTypeMultipart
 	return r
 }
