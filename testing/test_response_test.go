@@ -1,7 +1,10 @@
 package testing
 
 import (
+	"html"
+	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -26,6 +29,8 @@ func TestAssertAccepted(t *testing.T) {
 
 func TestAssertNoContent(t *testing.T) {
 	res := createTestResponse(http.StatusNoContent)
+	res.Body = http.NoBody
+
 	r := NewTestResponse(t, res)
 	r.AssertNoContent()
 }
@@ -198,6 +203,56 @@ func TestAssertCookieMissing(t *testing.T) {
 	r := NewTestResponse(t, res)
 
 	r.AssertCookieMissing("session_id")
+}
+
+func TestAssertSee(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader("Hello, World! This is a test response."))
+
+	r := NewTestResponse(t, res)
+	r.AssertSee([]string{"Hello", "test"})
+}
+
+func TestAssertSeeEscaped(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	escapedContent := html.EscapeString("<div>Hello, World!</div>")
+	res.Body = io.NopCloser(strings.NewReader(escapedContent))
+
+	r := NewTestResponse(t, res)
+	r.AssertSee([]string{"<div>Hello, World!</div>"}, true)
+}
+
+func TestAssertDontSee(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader("This is a safe response."))
+
+	r := NewTestResponse(t, res)
+	r.AssertDontSee([]string{"error", "failure"})
+}
+
+func TestAssertDontSeeEscaped(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader("<div>Unauthorized access</div>"))
+
+	r := NewTestResponse(t, res)
+	r.AssertDontSee([]string{"<div>Unauthorized access</div>"}, true)
+}
+
+func TestAssertSeeInOrder(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader("Hello, this is a test for seeing values in order."))
+
+	r := NewTestResponse(t, res)
+	r.AssertSeeInOrder([]string{"Hello", "test", "values"})
+}
+
+func TestAssertSeeInOrderWithEscape(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	escapedContent := html.EscapeString("Hello, <div>ordered</div> values")
+	res.Body = io.NopCloser(strings.NewReader(escapedContent))
+
+	r := NewTestResponse(t, res)
+	r.AssertSeeInOrder([]string{"Hello,", "<div>ordered</div>"}, true)
 }
 
 func createTestResponse(statusCode int) *http.Response {

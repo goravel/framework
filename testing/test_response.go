@@ -2,7 +2,11 @@ package testing
 
 import (
 	"fmt"
+	"html"
+	"io"
 	"net/http"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,12 +18,41 @@ import (
 
 type TestResponseImpl struct {
 	t        *testing.T
+	mu       sync.Mutex
 	response *http.Response
 	content  string
 }
 
 func NewTestResponse(t *testing.T, response *http.Response) contractstesting.TestResponse {
 	return &TestResponseImpl{t: t, response: response}
+}
+
+func (r *TestResponseImpl) Json() (map[string]any, error) {
+	content, err := r.getContent()
+	if err != nil {
+		return nil, err
+	}
+
+	testAble, err := NewAssertableJSONString(content)
+	if err != nil {
+		return nil, err
+	}
+
+	return testAble.Json(), nil
+}
+
+func (r *TestResponseImpl) IsSuccessful() bool {
+	statusCode := r.getStatusCode()
+	return statusCode >= 200 && statusCode < 300
+}
+
+func (r *TestResponseImpl) IsServerError() bool {
+	statusCode := r.getStatusCode()
+	return statusCode >= 500 && statusCode < 600
+}
+
+func (r *TestResponseImpl) Content() (string, error) {
+	return r.getContent()
 }
 
 func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
@@ -48,7 +81,9 @@ func (r *TestResponseImpl) AssertNoContent(status ...int) contractstesting.TestR
 
 	r.AssertStatus(expectedStatus)
 
-	assert.Empty(r.t, r.content)
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+	assert.Empty(r.t, content)
 
 	return r
 }
@@ -194,8 +229,105 @@ func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.Tes
 	return r
 }
 
+func (r *TestResponseImpl) AssertSuccessful() contractstesting.TestResponse {
+	assert.True(r.t, r.IsSuccessful(), fmt.Sprintf("Expected response status code >=200, <300 but received %d.", r.getStatusCode()))
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertServerError() contractstesting.TestResponse {
+	assert.True(r.t, r.IsServerError(), fmt.Sprintf("Expected response status code >=500, <600 but received %d.", r.getStatusCode()))
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertDontSee(value []string, escaped ...bool) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	shouldEscape := true
+	if len(escaped) > 0 {
+		shouldEscape = escaped[0]
+	}
+
+	for _, v := range value {
+		checkValue := v
+		if shouldEscape {
+			checkValue = html.EscapeString(v)
+		}
+
+		assert.NotContains(r.t, content, checkValue, fmt.Sprintf("Response should not contain '%s', but it was found.", checkValue))
+	}
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertSee(value []string, escaped ...bool) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	shouldEscape := true
+	if len(escaped) > 0 {
+		shouldEscape = escaped[0]
+	}
+
+	for _, v := range value {
+		checkValue := v
+		if shouldEscape {
+			checkValue = html.EscapeString(v)
+		}
+
+		assert.Contains(r.t, content, checkValue, fmt.Sprintf("Expected to see '%s' in response, but it was not found.", checkValue))
+	}
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	shouldEscape := true
+	if len(escaped) > 0 {
+		shouldEscape = escaped[0]
+	}
+
+	previousIndex := -1
+	for _, v := range value {
+		checkValue := v
+		if shouldEscape {
+			checkValue = html.EscapeString(v)
+		}
+
+		currentIndex := strings.Index(content[previousIndex+1:], checkValue)
+		assert.GreaterOrEqual(r.t, currentIndex, 0, fmt.Sprintf("Expected to see '%s' in response in the correct order, but it was not found.", checkValue))
+		previousIndex += currentIndex + len(checkValue)
+	}
+
+	return r
+}
+
 func (r *TestResponseImpl) getStatusCode() int {
 	return r.response.StatusCode
+}
+
+func (r *TestResponseImpl) getContent() (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.content != "" {
+		return r.content, nil
+	}
+
+	defer r.response.Body.Close()
+
+	content, err := io.ReadAll(r.response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	r.content = string(content)
+	return r.content, nil
 }
 
 func (r *TestResponseImpl) getCookie(name string) *http.Cookie {
