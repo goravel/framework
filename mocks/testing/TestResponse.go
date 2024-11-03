@@ -464,6 +464,54 @@ func (_c *TestResponse_AssertDontSee_Call) RunAndReturn(run func([]string, ...bo
 	return _c
 }
 
+// AssertFluentJson provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertFluentJson(_a0 func(testing.AssertableJSON)) testing.TestResponse {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertFluentJson")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func(func(testing.AssertableJSON)) testing.TestResponse); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertFluentJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertFluentJson'
+type TestResponse_AssertFluentJson_Call struct {
+	*mock.Call
+}
+
+// AssertFluentJson is a helper method to define mock.On call
+//   - _a0 func(testing.AssertableJSON)
+func (_e *TestResponse_Expecter) AssertFluentJson(_a0 interface{}) *TestResponse_AssertFluentJson_Call {
+	return &TestResponse_AssertFluentJson_Call{Call: _e.mock.On("AssertFluentJson", _a0)}
+}
+
+func (_c *TestResponse_AssertFluentJson_Call) Run(run func(_a0 func(testing.AssertableJSON))) *TestResponse_AssertFluentJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(testing.AssertableJSON)))
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertFluentJson_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertFluentJson_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertFluentJson_Call) RunAndReturn(run func(func(testing.AssertableJSON)) testing.TestResponse) *TestResponse_AssertFluentJson_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AssertForbidden provides a mock function with given fields:
 func (_m *TestResponse) AssertForbidden() testing.TestResponse {
 	ret := _m.Called()
