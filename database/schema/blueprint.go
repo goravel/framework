@@ -61,24 +61,25 @@ func (r *Blueprint) DropIfExists() {
 func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 	var columns []schema.ColumnDefinition
 	for _, column := range r.columns {
-		if column.change == nil || !*column.change {
-			columns = append(columns, column)
-		}
+		columns = append(columns, column)
+		//if column.change == nil || !*column.change {
+		//	columns = append(columns, column)
+		//}
 	}
 
 	return columns
 }
 
-func (r *Blueprint) GetChangedColumns() []schema.ColumnDefinition {
-	var columns []schema.ColumnDefinition
-	for _, column := range r.columns {
-		if column.change != nil && *column.change {
-			columns = append(columns, column)
-		}
-	}
-
-	return columns
-}
+//func (r *Blueprint) GetChangedColumns() []schema.ColumnDefinition {
+//	var columns []schema.ColumnDefinition
+//	for _, column := range r.columns {
+//		if column.change != nil && *column.change {
+//			columns = append(columns, column)
+//		}
+//	}
+//
+//	return columns
+//}
 
 func (r *Blueprint) GetCommands() []*schema.Command {
 	return r.commands
@@ -180,12 +181,13 @@ func (r *Blueprint) addColumn(column *ColumnDefinition) {
 	r.columns = append(r.columns, column)
 
 	if !r.isCreate() {
-		var name string
-		if column.GetChange() {
-			name = constants.CommandChange
-		} else {
-			name = constants.CommandAdd
-		}
+		//var name string
+		//if column.GetChange() {
+		//	name = constants.CommandChange
+		//} else {
+		//	name = constants.CommandAdd
+		//}
+		name := constants.CommandAdd
 		r.addCommand(&schema.Command{
 			Name:   name,
 			Column: column,

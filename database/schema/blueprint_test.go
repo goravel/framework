@@ -138,37 +138,38 @@ func (s *BlueprintTestSuite) TestBuild() {
 
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
 	name := "name"
-	change := true
 	addedColumn := &ColumnDefinition{
 		name: &name,
 	}
-	changedColumn := &ColumnDefinition{
-		change: &change,
-		name:   &name,
-	}
 
-	s.blueprint.columns = []*ColumnDefinition{addedColumn, changedColumn}
+	//change := true
+	//changedColumn := &ColumnDefinition{
+	//	change: &change,
+	//	name:   &name,
+	//}
+
+	s.blueprint.columns = []*ColumnDefinition{addedColumn}
 
 	s.Len(s.blueprint.GetAddedColumns(), 1)
 	s.Equal(addedColumn, s.blueprint.GetAddedColumns()[0])
 }
 
-func (s *BlueprintTestSuite) TestGetChangedColumns() {
-	name := "name"
-	change := true
-	addedColumn := &ColumnDefinition{
-		name: &name,
-	}
-	changedColumn := &ColumnDefinition{
-		change: &change,
-		name:   &name,
-	}
-
-	s.blueprint.columns = []*ColumnDefinition{addedColumn, changedColumn}
-
-	s.Len(s.blueprint.GetChangedColumns(), 1)
-	s.Equal(changedColumn, s.blueprint.GetChangedColumns()[0])
-}
+//func (s *BlueprintTestSuite) TestGetChangedColumns() {
+//	name := "name"
+//	change := true
+//	addedColumn := &ColumnDefinition{
+//		name: &name,
+//	}
+//	changedColumn := &ColumnDefinition{
+//		change: &change,
+//		name:   &name,
+//	}
+//
+//	s.blueprint.columns = []*ColumnDefinition{addedColumn, changedColumn}
+//
+//	s.Len(s.blueprint.GetChangedColumns(), 1)
+//	s.Equal(changedColumn, s.blueprint.GetChangedColumns()[0])
+//}
 
 func (s *BlueprintTestSuite) TestGetTableName() {
 	s.blueprint.SetTable("users")

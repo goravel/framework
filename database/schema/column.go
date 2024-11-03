@@ -7,14 +7,14 @@ import (
 
 type ColumnDefinition struct {
 	autoIncrement *bool
-	change        *bool
-	comment       *string
-	def           any
-	length        *int
-	name          *string
-	nullable      *bool
-	ttype         *string
-	unsigned      *bool
+	//change        *bool
+	comment  *string
+	def      any
+	length   *int
+	name     *string
+	nullable *bool
+	ttype    *string
+	unsigned *bool
 }
 
 func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
@@ -23,9 +23,9 @@ func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	return r
 }
 
-func (r *ColumnDefinition) Change() {
-	r.change = convert.Pointer(true)
-}
+//func (r *ColumnDefinition) Change() {
+//	r.change = convert.Pointer(true)
+//}
 
 func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
 	if r.autoIncrement != nil {
@@ -35,13 +35,13 @@ func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
 	return
 }
 
-func (r *ColumnDefinition) GetChange() (change bool) {
-	if r.change != nil {
-		return *r.change
-	}
-
-	return
-}
+//func (r *ColumnDefinition) GetChange() (change bool) {
+//	if r.change != nil {
+//		return *r.change
+//	}
+//
+//	return
+//}
 
 func (r *ColumnDefinition) GetDefault() any {
 	return r.def

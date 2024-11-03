@@ -91,10 +91,6 @@ func (r *Schema) DropIfExists(table string) error {
 	return nil
 }
 
-func (r *Schema) GetColumns() {
-
-}
-
 func (r *Schema) GetConnection() string {
 	return r.orm.Name()
 }
