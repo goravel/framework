@@ -67,38 +67,6 @@ func (_c *ColumnDefinition_AutoIncrement_Call) RunAndReturn(run func() schema.Co
 	return _c
 }
 
-// Change provides a mock function with given fields:
-func (_m *ColumnDefinition) Change() {
-	_m.Called()
-}
-
-// ColumnDefinition_Change_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Change'
-type ColumnDefinition_Change_Call struct {
-	*mock.Call
-}
-
-// Change is a helper method to define mock.On call
-func (_e *ColumnDefinition_Expecter) Change() *ColumnDefinition_Change_Call {
-	return &ColumnDefinition_Change_Call{Call: _e.mock.On("Change")}
-}
-
-func (_c *ColumnDefinition_Change_Call) Run(run func()) *ColumnDefinition_Change_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ColumnDefinition_Change_Call) Return() *ColumnDefinition_Change_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ColumnDefinition_Change_Call) RunAndReturn(run func()) *ColumnDefinition_Change_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetAutoIncrement provides a mock function with given fields:
 func (_m *ColumnDefinition) GetAutoIncrement() bool {
 	ret := _m.Called()
@@ -140,51 +108,6 @@ func (_c *ColumnDefinition_GetAutoIncrement_Call) Return(_a0 bool) *ColumnDefini
 }
 
 func (_c *ColumnDefinition_GetAutoIncrement_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetAutoIncrement_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetChange provides a mock function with given fields:
-func (_m *ColumnDefinition) GetChange() bool {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetChange")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// ColumnDefinition_GetChange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetChange'
-type ColumnDefinition_GetChange_Call struct {
-	*mock.Call
-}
-
-// GetChange is a helper method to define mock.On call
-func (_e *ColumnDefinition_Expecter) GetChange() *ColumnDefinition_GetChange_Call {
-	return &ColumnDefinition_GetChange_Call{Call: _e.mock.On("GetChange")}
-}
-
-func (_c *ColumnDefinition_GetChange_Call) Run(run func()) *ColumnDefinition_GetChange_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ColumnDefinition_GetChange_Call) Return(_a0 bool) *ColumnDefinition_GetChange_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ColumnDefinition_GetChange_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetChange_Call {
 	_c.Call.Return(run)
 	return _c
 }
