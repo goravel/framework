@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/support"
+	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
 )
 
@@ -26,9 +27,18 @@ func NewBody() support.Body {
 	}
 }
 
+func (r *BodyImpl) SetFields(fields map[string]any) support.Body {
+	r.formValues = collect.Merge(r.formValues, fields)
+	return r
+}
+
 func (r *BodyImpl) SetField(key string, value any) support.Body {
 	maps.Add(r.formValues, key, value)
 	return r
+}
+
+func (r *BodyImpl) GetField(key string) any {
+	return maps.Get(r.formValues, key)
 }
 
 func (r *BodyImpl) SetFile(fieldName, filePath string) support.Body {
