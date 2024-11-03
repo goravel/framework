@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/url"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,7 +89,11 @@ func TestBuildMultipartBody(t *testing.T) {
 	_, err = buf.ReadFrom(reader.Reader())
 	assert.NoError(t, err)
 
-	mr := multipart.NewReader(buf, reader.ContentType()[strings.Index(reader.ContentType(), "=")+1:])
+	contentType := reader.ContentType()
+	_, params, err := mime.ParseMediaType(contentType)
+	assert.NoError(t, err)
+	boundary := params["boundary"]
+	mr := multipart.NewReader(buf, boundary)
 	form, err := mr.ReadForm(1024)
 	assert.NoError(t, err)
 
