@@ -7,5 +7,10 @@ type Body interface {
 	SetField(key string, value any) Body
 	GetField(key string) any
 	SetFile(fieldName, filePath string) Body
-	Build() (io.Reader, error)
+	Build() (BodyContent, error)
+}
+
+type BodyContent interface {
+	Reader() io.Reader
+	ContentType() string
 }
