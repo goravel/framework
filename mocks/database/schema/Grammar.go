@@ -68,53 +68,6 @@ func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint, *sche
 	return _c
 }
 
-// CompileChange provides a mock function with given fields: blueprint, command
-func (_m *Grammar) CompileChange(blueprint schema.Blueprint, command *schema.Command) string {
-	ret := _m.Called(blueprint, command)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CompileChange")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
-		r0 = rf(blueprint, command)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Grammar_CompileChange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileChange'
-type Grammar_CompileChange_Call struct {
-	*mock.Call
-}
-
-// CompileChange is a helper method to define mock.On call
-//   - blueprint schema.Blueprint
-//   - command *schema.Command
-func (_e *Grammar_Expecter) CompileChange(blueprint interface{}, command interface{}) *Grammar_CompileChange_Call {
-	return &Grammar_CompileChange_Call{Call: _e.mock.On("CompileChange", blueprint, command)}
-}
-
-func (_c *Grammar_CompileChange_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileChange_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
-	})
-	return _c
-}
-
-func (_c *Grammar_CompileChange_Call) Return(_a0 string) *Grammar_CompileChange_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileChange_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // CompileCreate provides a mock function with given fields: blueprint, query
 func (_m *Grammar) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
 	ret := _m.Called(blueprint, query)
