@@ -62,24 +62,10 @@ func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 	var columns []schema.ColumnDefinition
 	for _, column := range r.columns {
 		columns = append(columns, column)
-		//if column.change == nil || !*column.change {
-		//	columns = append(columns, column)
-		//}
 	}
 
 	return columns
 }
-
-//func (r *Blueprint) GetChangedColumns() []schema.ColumnDefinition {
-//	var columns []schema.ColumnDefinition
-//	for _, column := range r.columns {
-//		if column.change != nil && *column.change {
-//			columns = append(columns, column)
-//		}
-//	}
-//
-//	return columns
-//}
 
 func (r *Blueprint) GetCommands() []*schema.Command {
 	return r.commands
@@ -147,8 +133,6 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schema.Grammar) []str
 		switch command.Name {
 		case constants.CommandAdd:
 			statements = append(statements, grammar.CompileAdd(r, command))
-		case constants.CommandChange:
-			statements = append(statements, grammar.CompileChange(r, command))
 		case constants.CommandCreate:
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case constants.CommandDropIfExists:
@@ -181,15 +165,8 @@ func (r *Blueprint) addColumn(column *ColumnDefinition) {
 	r.columns = append(r.columns, column)
 
 	if !r.isCreate() {
-		//var name string
-		//if column.GetChange() {
-		//	name = constants.CommandChange
-		//} else {
-		//	name = constants.CommandAdd
-		//}
-		name := constants.CommandAdd
 		r.addCommand(&schema.Command{
-			Name:   name,
+			Name:   constants.CommandAdd,
 			Column: column,
 		})
 	}

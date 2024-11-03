@@ -13,8 +13,6 @@ type Blueprint interface {
 	DropIfExists()
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
-	// GetChangedColumns Get the changed columns.
-	//GetChangedColumns() []ColumnDefinition
 	// GetCommands Get the commands.
 	GetCommands() []*Command
 	// GetTableName Get the table name with prefix.

@@ -34,20 +34,6 @@ func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Comman
 	return fmt.Sprintf("alter table %s add column %s", blueprint.GetTableName(), getColumn(r, blueprint, command.Column))
 }
 
-func (r *Postgres) CompileChange(blueprint schema.Blueprint, command *schema.Command) string {
-	var changes []string
-
-	for _, modifier := range r.modifiers {
-		if change := modifier(blueprint, command.Column); change != "" {
-			changes = append(changes, change)
-		}
-	}
-
-	column := strings.Join(prefixArray("alter column "+command.Column.GetName(), changes), ", ")
-
-	return fmt.Sprintf("alter table %s %s", blueprint.GetTableName(), column)
-}
-
 func (r *Postgres) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
 	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
 }
@@ -120,18 +106,6 @@ func (r *Postgres) GetModifiers() []func(blueprint schema.Blueprint, column sche
 }
 
 func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if column.GetChange() {
-		if !column.GetAutoIncrement() {
-			if column.GetDefault() == nil {
-				return "drop default"
-			} else {
-				return fmt.Sprintf("set default %s", getDefaultValue(column.GetDefault()))
-			}
-		}
-
-		return ""
-	}
-
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
 	}
@@ -140,14 +114,6 @@ func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.Colum
 }
 
 func (r *Postgres) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if column.GetChange() {
-		if column.GetNullable() {
-			return "drop not null"
-		} else {
-			return "set not null"
-		}
-	}
-
 	if column.GetNullable() {
 		return " null"
 	} else {
@@ -156,7 +122,7 @@ func (r *Postgres) ModifyNullable(blueprint schema.Blueprint, column schema.Colu
 }
 
 func (r *Postgres) ModifyIncrement(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if !column.GetChange() && !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+	if !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
 		return " primary key"
 	}
 

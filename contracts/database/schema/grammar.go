@@ -7,8 +7,6 @@ import (
 type Grammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
-	// CompileChange Compile a change column command into a series of SQL statements.
-	CompileChange(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint, query orm.Query) string
 	// CompileDropAllDomains Compile the SQL needed to drop all domains.
