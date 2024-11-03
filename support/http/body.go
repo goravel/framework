@@ -65,6 +65,12 @@ func (r *BodyImpl) GetField(key string) any {
 	return maps.Get(r.data, key)
 }
 
+func (r *BodyImpl) SetFiles(files map[string]string) support.Body {
+	r.fileFields = collect.Merge(r.fileFields, files)
+	r.bodyType = BodyTypeMultipart
+	return r
+}
+
 func (r *BodyImpl) SetFile(fieldName, filePath string) support.Body {
 	r.fileFields[fieldName] = filePath
 	r.bodyType = BodyTypeMultipart
