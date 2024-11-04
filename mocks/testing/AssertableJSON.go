@@ -69,6 +69,104 @@ func (_c *AssertableJSON_Count_Call) RunAndReturn(run func(string, int) testing.
 	return _c
 }
 
+// Each provides a mock function with given fields: key, callback
+func (_m *AssertableJSON) Each(key string, callback func(testing.AssertableJSON)) testing.AssertableJSON {
+	ret := _m.Called(key, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Each")
+	}
+
+	var r0 testing.AssertableJSON
+	if rf, ok := ret.Get(0).(func(string, func(testing.AssertableJSON)) testing.AssertableJSON); ok {
+		r0 = rf(key, callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.AssertableJSON)
+		}
+	}
+
+	return r0
+}
+
+// AssertableJSON_Each_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Each'
+type AssertableJSON_Each_Call struct {
+	*mock.Call
+}
+
+// Each is a helper method to define mock.On call
+//   - key string
+//   - callback func(testing.AssertableJSON)
+func (_e *AssertableJSON_Expecter) Each(key interface{}, callback interface{}) *AssertableJSON_Each_Call {
+	return &AssertableJSON_Each_Call{Call: _e.mock.On("Each", key, callback)}
+}
+
+func (_c *AssertableJSON_Each_Call) Run(run func(key string, callback func(testing.AssertableJSON))) *AssertableJSON_Each_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(func(testing.AssertableJSON)))
+	})
+	return _c
+}
+
+func (_c *AssertableJSON_Each_Call) Return(_a0 testing.AssertableJSON) *AssertableJSON_Each_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AssertableJSON_Each_Call) RunAndReturn(run func(string, func(testing.AssertableJSON)) testing.AssertableJSON) *AssertableJSON_Each_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// First provides a mock function with given fields: key, callback
+func (_m *AssertableJSON) First(key string, callback func(testing.AssertableJSON)) testing.AssertableJSON {
+	ret := _m.Called(key, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for First")
+	}
+
+	var r0 testing.AssertableJSON
+	if rf, ok := ret.Get(0).(func(string, func(testing.AssertableJSON)) testing.AssertableJSON); ok {
+		r0 = rf(key, callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.AssertableJSON)
+		}
+	}
+
+	return r0
+}
+
+// AssertableJSON_First_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'First'
+type AssertableJSON_First_Call struct {
+	*mock.Call
+}
+
+// First is a helper method to define mock.On call
+//   - key string
+//   - callback func(testing.AssertableJSON)
+func (_e *AssertableJSON_Expecter) First(key interface{}, callback interface{}) *AssertableJSON_First_Call {
+	return &AssertableJSON_First_Call{Call: _e.mock.On("First", key, callback)}
+}
+
+func (_c *AssertableJSON_First_Call) Run(run func(key string, callback func(testing.AssertableJSON))) *AssertableJSON_First_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(func(testing.AssertableJSON)))
+	})
+	return _c
+}
+
+func (_c *AssertableJSON_First_Call) Return(_a0 testing.AssertableJSON) *AssertableJSON_First_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AssertableJSON_First_Call) RunAndReturn(run func(string, func(testing.AssertableJSON)) testing.AssertableJSON) *AssertableJSON_First_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Has provides a mock function with given fields: key
 func (_m *AssertableJSON) Has(key string) testing.AssertableJSON {
 	ret := _m.Called(key)
@@ -209,6 +307,56 @@ func (_c *AssertableJSON_HasAny_Call) Return(_a0 testing.AssertableJSON) *Assert
 }
 
 func (_c *AssertableJSON_HasAny_Call) RunAndReturn(run func([]string) testing.AssertableJSON) *AssertableJSON_HasAny_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasWithScope provides a mock function with given fields: key, length, callback
+func (_m *AssertableJSON) HasWithScope(key string, length int, callback func(testing.AssertableJSON)) testing.AssertableJSON {
+	ret := _m.Called(key, length, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasWithScope")
+	}
+
+	var r0 testing.AssertableJSON
+	if rf, ok := ret.Get(0).(func(string, int, func(testing.AssertableJSON)) testing.AssertableJSON); ok {
+		r0 = rf(key, length, callback)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.AssertableJSON)
+		}
+	}
+
+	return r0
+}
+
+// AssertableJSON_HasWithScope_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasWithScope'
+type AssertableJSON_HasWithScope_Call struct {
+	*mock.Call
+}
+
+// HasWithScope is a helper method to define mock.On call
+//   - key string
+//   - length int
+//   - callback func(testing.AssertableJSON)
+func (_e *AssertableJSON_Expecter) HasWithScope(key interface{}, length interface{}, callback interface{}) *AssertableJSON_HasWithScope_Call {
+	return &AssertableJSON_HasWithScope_Call{Call: _e.mock.On("HasWithScope", key, length, callback)}
+}
+
+func (_c *AssertableJSON_HasWithScope_Call) Run(run func(key string, length int, callback func(testing.AssertableJSON))) *AssertableJSON_HasWithScope_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(int), args[2].(func(testing.AssertableJSON)))
+	})
+	return _c
+}
+
+func (_c *AssertableJSON_HasWithScope_Call) Return(_a0 testing.AssertableJSON) *AssertableJSON_HasWithScope_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *AssertableJSON_HasWithScope_Call) RunAndReturn(run func(string, int, func(testing.AssertableJSON)) testing.AssertableJSON) *AssertableJSON_HasWithScope_Call {
 	_c.Call.Return(run)
 	return _c
 }
