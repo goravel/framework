@@ -87,6 +87,25 @@ func (s *SchemaSuite) TestDropAllViews() {
 
 }
 
+func (s *SchemaSuite) TestPrimary() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "primaries"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Primary("name", "age")
+			}))
+
+			s.Require().True(schema.HasTable(table))
+			// TODO Open below when implementing index methods
+			//s.Require().True(schema.HasIndex(table, "primaries_pkey"))
+		})
+	}
+}
+
 func (s *SchemaSuite) TestTable_GetTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {

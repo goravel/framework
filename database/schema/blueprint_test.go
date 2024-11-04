@@ -136,6 +136,11 @@ func (s *BlueprintTestSuite) TestBuild() {
 	}
 }
 
+func (s *BlueprintTestSuite) TestCreateIndexName() {
+	name := s.blueprint.createIndexName("index", []string{"id", "name-1", "name.2"})
+	s.Equal("goravel_users_id_name_1_name_2_index", name)
+}
+
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
 	name := "name"
 	addedColumn := &ColumnDefinition{
@@ -157,6 +162,26 @@ func (s *BlueprintTestSuite) TestHasCommand() {
 	s.False(s.blueprint.HasCommand(constants.CommandCreate))
 	s.blueprint.Create()
 	s.True(s.blueprint.HasCommand(constants.CommandCreate))
+}
+
+func (s *BlueprintTestSuite) TestIndexCommand() {
+	s.blueprint.indexCommand("index", []string{"id", "name"})
+	s.Contains(s.blueprint.commands, &schema.Command{
+		Columns: []string{"id", "name"},
+		Name:    "index",
+		Index:   "goravel_users_id_name_index",
+	})
+
+	s.blueprint.indexCommand("index", []string{"id", "name"}, schema.IndexConfig{
+		Algorithm: "custom_algorithm",
+		Name:      "custom_name",
+	})
+	s.Contains(s.blueprint.commands, &schema.Command{
+		Algorithm: "custom_algorithm",
+		Columns:   []string{"id", "name"},
+		Name:      "index",
+		Index:     "custom_name",
+	})
 }
 
 func (s *BlueprintTestSuite) TestIsCreate() {
