@@ -28,13 +28,6 @@ func (s *ColumnDefinitionTestSuite) GetAutoIncrement() {
 	s.True(s.columnDefinition.GetAutoIncrement())
 }
 
-func (s *ColumnDefinitionTestSuite) GetChange() {
-	s.False(s.columnDefinition.GetChange())
-
-	s.columnDefinition.change = convert.Pointer(true)
-	s.True(s.columnDefinition.GetChange())
-}
-
 func (s *ColumnDefinitionTestSuite) GetDefault() {
 	s.Nil(s.columnDefinition.GetDefault())
 

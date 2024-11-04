@@ -179,49 +179,49 @@ func (_c *Blueprint_GetAddedColumns_Call) RunAndReturn(run func() []schema.Colum
 	return _c
 }
 
-// GetChangedColumns provides a mock function with given fields:
-func (_m *Blueprint) GetChangedColumns() []schema.ColumnDefinition {
+// GetCommands provides a mock function with given fields:
+func (_m *Blueprint) GetCommands() []*schema.Command {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetChangedColumns")
+		panic("no return value specified for GetCommands")
 	}
 
-	var r0 []schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func() []schema.ColumnDefinition); ok {
+	var r0 []*schema.Command
+	if rf, ok := ret.Get(0).(func() []*schema.Command); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]schema.ColumnDefinition)
+			r0 = ret.Get(0).([]*schema.Command)
 		}
 	}
 
 	return r0
 }
 
-// Blueprint_GetChangedColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetChangedColumns'
-type Blueprint_GetChangedColumns_Call struct {
+// Blueprint_GetCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCommands'
+type Blueprint_GetCommands_Call struct {
 	*mock.Call
 }
 
-// GetChangedColumns is a helper method to define mock.On call
-func (_e *Blueprint_Expecter) GetChangedColumns() *Blueprint_GetChangedColumns_Call {
-	return &Blueprint_GetChangedColumns_Call{Call: _e.mock.On("GetChangedColumns")}
+// GetCommands is a helper method to define mock.On call
+func (_e *Blueprint_Expecter) GetCommands() *Blueprint_GetCommands_Call {
+	return &Blueprint_GetCommands_Call{Call: _e.mock.On("GetCommands")}
 }
 
-func (_c *Blueprint_GetChangedColumns_Call) Run(run func()) *Blueprint_GetChangedColumns_Call {
+func (_c *Blueprint_GetCommands_Call) Run(run func()) *Blueprint_GetCommands_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Blueprint_GetChangedColumns_Call) Return(_a0 []schema.ColumnDefinition) *Blueprint_GetChangedColumns_Call {
+func (_c *Blueprint_GetCommands_Call) Return(_a0 []*schema.Command) *Blueprint_GetCommands_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Blueprint_GetChangedColumns_Call) RunAndReturn(run func() []schema.ColumnDefinition) *Blueprint_GetChangedColumns_Call {
+func (_c *Blueprint_GetCommands_Call) RunAndReturn(run func() []*schema.Command) *Blueprint_GetCommands_Call {
 	_c.Call.Return(run)
 	return _c
 }

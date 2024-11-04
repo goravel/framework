@@ -18,12 +18,16 @@ func addModify(modifiers []func(schema.Blueprint, schema.ColumnDefinition) strin
 	return sql
 }
 
+func getColumn(grammar schema.Grammar, blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	sql := fmt.Sprintf("%s %s", column.GetName(), getType(grammar, column))
+
+	return addModify(grammar.GetModifiers(), sql, blueprint, column)
+}
+
 func getColumns(grammar schema.Grammar, blueprint schema.Blueprint) []string {
 	var columns []string
 	for _, column := range blueprint.GetAddedColumns() {
-		sql := fmt.Sprintf("%s %s", column.GetName(), getType(grammar, column))
-
-		columns = append(columns, addModify(grammar.GetModifiers(), sql, blueprint, column))
+		columns = append(columns, getColumn(grammar, blueprint, column))
 	}
 
 	return columns
