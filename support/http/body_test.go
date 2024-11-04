@@ -97,6 +97,8 @@ func TestBuildMultipartBody(t *testing.T) {
 	form, err := mr.ReadForm(1024)
 	assert.NoError(t, err)
 
+	assert.NotNil(t, form.Value["name"])
+	assert.Greater(t, len(form.Value["name"]), 0)
 	assert.Equal(t, "krishan", form.Value["name"][0])
 
 	fileHeaders, ok := form.File["file"]
