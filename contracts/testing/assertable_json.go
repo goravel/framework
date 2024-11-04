@@ -10,4 +10,7 @@ type AssertableJSON interface {
 	MissingAll(keys []string) AssertableJSON
 	Where(key string, value any) AssertableJSON
 	WhereNot(key string, value any) AssertableJSON
+	Each(key string, callback func(AssertableJSON)) AssertableJSON
+	First(key string, callback func(AssertableJSON)) AssertableJSON
+	HasWithScope(key string, length int, callback func(AssertableJSON)) AssertableJSON
 }
