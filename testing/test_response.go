@@ -307,6 +307,40 @@ func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) con
 	return r
 }
 
+func (r *TestResponseImpl) AssertJson(data map[string]any) contractstesting.TestResponse {
+	content, err := r.getContent()
+	assert.Nil(r.t, err)
+
+	assertableJson, err := NewAssertableJSON(r.t, content)
+	assert.Nil(r.t, err)
+
+	for key, value := range data {
+		assertableJson.Where(key, value)
+	}
+
+	return r
+}
+
+func (r *TestResponseImpl) AssertExactJson(data map[string]any) contractstesting.TestResponse {
+	actual, err := r.Json()
+	assert.Nil(r.t, err)
+	assert.Equal(r.t, data, actual, "The JSON response does not match exactly with the expected content")
+	return r
+}
+
+func (r *TestResponseImpl) AssertJsonMissing(data map[string]any) contractstesting.TestResponse {
+	actual, err := r.Json()
+	assert.Nil(r.t, err)
+
+	for key, expectedValue := range data {
+		actualValue, found := actual[key]
+		if found {
+			assert.NotEqual(r.t, expectedValue, actualValue, "Found unexpected key-value pair in JSON response: key '%s' with value '%v'", key, actualValue)
+		}
+	}
+	return r
+}
+
 func (r *TestResponseImpl) AssertFluentJson(callback func(json contractstesting.AssertableJSON)) contractstesting.TestResponse {
 	content, err := r.getContent()
 	assert.Nil(r.t, err)

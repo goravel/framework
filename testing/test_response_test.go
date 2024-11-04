@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	contractstesting "github.com/goravel/framework/contracts/testing"
 )
 
 func TestAssertOk(t *testing.T) {
@@ -149,6 +151,12 @@ func TestAssertInternalServerError(t *testing.T) {
 	r.AssertInternalServerError()
 }
 
+func TestAssertServiceUnavailable(t *testing.T) {
+	res := createTestResponse(http.StatusServiceUnavailable)
+	r := NewTestResponse(t, res)
+	r.AssertServiceUnavailable()
+}
+
 func TestAssertHeader(t *testing.T) {
 	headerName, headerValue := "Content-Type", "application/json"
 	res := createTestResponse(http.StatusCreated)
@@ -165,6 +173,18 @@ func TestAssertHeaderMissing(t *testing.T) {
 	r := NewTestResponse(t, res)
 
 	r.AssertHeaderMissing("X-Custom-Header").AssertCreated()
+}
+
+func TestAssertSuccessful(t *testing.T) {
+	res := createTestResponse(http.StatusPartialContent)
+	r := NewTestResponse(t, res)
+	r.AssertSuccessful()
+}
+
+func TestServerError(t *testing.T) {
+	res := createTestResponse(http.StatusInternalServerError)
+	r := NewTestResponse(t, res)
+	r.AssertServerError()
 }
 
 func TestAssertCookie(t *testing.T) {
@@ -244,6 +264,46 @@ func TestAssertSeeInOrder(t *testing.T) {
 
 	r := NewTestResponse(t, res)
 	r.AssertSeeInOrder([]string{"Hello", "test", "values"})
+}
+
+func TestAssertJson(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader(`{"key1": "value1", "key2": 42}`))
+
+	r := NewTestResponse(t, res)
+	r.AssertJson(map[string]any{"key1": "value1"})
+}
+
+func TestAssertExactJson(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader(`{"key1": "value1", "key2": 42}`))
+
+	r := NewTestResponse(t, res)
+	r.AssertExactJson(map[string]any{"key1": "value1", "key2": float64(42)})
+}
+
+func TestAssertJsonMissing(t *testing.T) {
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader(`{"key1": "value1", "key2": 42}`))
+
+	r := NewTestResponse(t, res)
+	r.AssertJsonMissing(map[string]any{"key3": "value3"})
+}
+
+func TestAssertFluentJson(t *testing.T) {
+	sampleJson := `{"name": "krishan", "age": 22, "email": "krishan@example.com"}`
+	res := createTestResponse(http.StatusOK)
+	res.Body = io.NopCloser(strings.NewReader(sampleJson))
+
+	r := NewTestResponse(t, res)
+
+	r.AssertFluentJson(func(json contractstesting.AssertableJSON) {
+		json.Has("name").Where("name", "krishan")
+		json.Has("age").Where("age", float64(22))
+		json.Has("email").Where("email", "krishan@example.com")
+	}).AssertFluentJson(func(json contractstesting.AssertableJSON) {
+		json.Missing("non_existent_field")
+	})
 }
 
 func TestAssertSeeInOrderWithEscape(t *testing.T) {
