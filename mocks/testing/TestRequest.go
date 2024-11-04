@@ -83,6 +83,53 @@ func (_c *TestRequest_Delete_Call) RunAndReturn(run func(string, io.Reader) (tes
 	return _c
 }
 
+// FlushHeaders provides a mock function with given fields:
+func (_m *TestRequest) FlushHeaders() testing.TestRequest {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for FlushHeaders")
+	}
+
+	var r0 testing.TestRequest
+	if rf, ok := ret.Get(0).(func() testing.TestRequest); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestRequest)
+		}
+	}
+
+	return r0
+}
+
+// TestRequest_FlushHeaders_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FlushHeaders'
+type TestRequest_FlushHeaders_Call struct {
+	*mock.Call
+}
+
+// FlushHeaders is a helper method to define mock.On call
+func (_e *TestRequest_Expecter) FlushHeaders() *TestRequest_FlushHeaders_Call {
+	return &TestRequest_FlushHeaders_Call{Call: _e.mock.On("FlushHeaders")}
+}
+
+func (_c *TestRequest_FlushHeaders_Call) Run(run func()) *TestRequest_FlushHeaders_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestRequest_FlushHeaders_Call) Return(_a0 testing.TestRequest) *TestRequest_FlushHeaders_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestRequest_FlushHeaders_Call) RunAndReturn(run func() testing.TestRequest) *TestRequest_FlushHeaders_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: uri
 func (_m *TestRequest) Get(uri string) (testing.TestResponse, error) {
 	ret := _m.Called(uri)
@@ -434,6 +481,55 @@ func (_c *TestRequest_Put_Call) RunAndReturn(run func(string, io.Reader) (testin
 	return _c
 }
 
+// WithBasicAuth provides a mock function with given fields: username, password
+func (_m *TestRequest) WithBasicAuth(username string, password string) testing.TestRequest {
+	ret := _m.Called(username, password)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithBasicAuth")
+	}
+
+	var r0 testing.TestRequest
+	if rf, ok := ret.Get(0).(func(string, string) testing.TestRequest); ok {
+		r0 = rf(username, password)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestRequest)
+		}
+	}
+
+	return r0
+}
+
+// TestRequest_WithBasicAuth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithBasicAuth'
+type TestRequest_WithBasicAuth_Call struct {
+	*mock.Call
+}
+
+// WithBasicAuth is a helper method to define mock.On call
+//   - username string
+//   - password string
+func (_e *TestRequest_Expecter) WithBasicAuth(username interface{}, password interface{}) *TestRequest_WithBasicAuth_Call {
+	return &TestRequest_WithBasicAuth_Call{Call: _e.mock.On("WithBasicAuth", username, password)}
+}
+
+func (_c *TestRequest_WithBasicAuth_Call) Run(run func(username string, password string)) *TestRequest_WithBasicAuth_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *TestRequest_WithBasicAuth_Call) Return(_a0 testing.TestRequest) *TestRequest_WithBasicAuth_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestRequest_WithBasicAuth_Call) RunAndReturn(run func(string, string) testing.TestRequest) *TestRequest_WithBasicAuth_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithContext provides a mock function with given fields: ctx
 func (_m *TestRequest) WithContext(ctx context.Context) testing.TestRequest {
 	ret := _m.Called(ctx)
@@ -676,6 +772,69 @@ func (_c *TestRequest_WithHeaders_Call) RunAndReturn(run func(map[string]string)
 	return _c
 }
 
+// WithToken provides a mock function with given fields: token, ttype
+func (_m *TestRequest) WithToken(token string, ttype ...string) testing.TestRequest {
+	_va := make([]interface{}, len(ttype))
+	for _i := range ttype {
+		_va[_i] = ttype[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, token)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithToken")
+	}
+
+	var r0 testing.TestRequest
+	if rf, ok := ret.Get(0).(func(string, ...string) testing.TestRequest); ok {
+		r0 = rf(token, ttype...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestRequest)
+		}
+	}
+
+	return r0
+}
+
+// TestRequest_WithToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithToken'
+type TestRequest_WithToken_Call struct {
+	*mock.Call
+}
+
+// WithToken is a helper method to define mock.On call
+//   - token string
+//   - ttype ...string
+func (_e *TestRequest_Expecter) WithToken(token interface{}, ttype ...interface{}) *TestRequest_WithToken_Call {
+	return &TestRequest_WithToken_Call{Call: _e.mock.On("WithToken",
+		append([]interface{}{token}, ttype...)...)}
+}
+
+func (_c *TestRequest_WithToken_Call) Run(run func(token string, ttype ...string)) *TestRequest_WithToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *TestRequest_WithToken_Call) Return(_a0 testing.TestRequest) *TestRequest_WithToken_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestRequest_WithToken_Call) RunAndReturn(run func(string, ...string) testing.TestRequest) *TestRequest_WithToken_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithoutHeader provides a mock function with given fields: key
 func (_m *TestRequest) WithoutHeader(key string) testing.TestRequest {
 	ret := _m.Called(key)
@@ -720,6 +879,53 @@ func (_c *TestRequest_WithoutHeader_Call) Return(_a0 testing.TestRequest) *TestR
 }
 
 func (_c *TestRequest_WithoutHeader_Call) RunAndReturn(run func(string) testing.TestRequest) *TestRequest_WithoutHeader_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithoutToken provides a mock function with given fields:
+func (_m *TestRequest) WithoutToken() testing.TestRequest {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithoutToken")
+	}
+
+	var r0 testing.TestRequest
+	if rf, ok := ret.Get(0).(func() testing.TestRequest); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestRequest)
+		}
+	}
+
+	return r0
+}
+
+// TestRequest_WithoutToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithoutToken'
+type TestRequest_WithoutToken_Call struct {
+	*mock.Call
+}
+
+// WithoutToken is a helper method to define mock.On call
+func (_e *TestRequest_Expecter) WithoutToken() *TestRequest_WithoutToken_Call {
+	return &TestRequest_WithoutToken_Call{Call: _e.mock.On("WithoutToken")}
+}
+
+func (_c *TestRequest_WithoutToken_Call) Run(run func()) *TestRequest_WithoutToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestRequest_WithoutToken_Call) Return(_a0 testing.TestRequest) *TestRequest_WithoutToken_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestRequest_WithoutToken_Call) RunAndReturn(run func() testing.TestRequest) *TestRequest_WithoutToken_Call {
 	_c.Call.Return(run)
 	return _c
 }
