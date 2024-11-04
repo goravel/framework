@@ -107,8 +107,8 @@ func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
 	return columnImpl
 }
 
-func (r *Blueprint) Primary(column ...string) {
-	r.indexCommand(constants.CommandPrimary, column)
+func (r *Blueprint) Primary(columns ...string) {
+	r.indexCommand(constants.CommandPrimary, columns)
 }
 
 func (r *Blueprint) SetTable(name string) {
