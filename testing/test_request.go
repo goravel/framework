@@ -2,6 +2,8 @@ package testing
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +29,11 @@ func NewTestRequest(t *testing.T) contractstesting.TestRequest {
 		defaultHeaders: make(map[string]string),
 		defaultCookies: make(map[string]string),
 	}
+}
+
+func (r *TestRequest) FlushHeaders() contractstesting.TestRequest {
+	r.defaultHeaders = make(map[string]string)
+	return r
 }
 
 func (r *TestRequest) WithHeaders(headers map[string]string) contractstesting.TestRequest {
@@ -57,6 +64,23 @@ func (r *TestRequest) WithCookie(key, value string) contractstesting.TestRequest
 func (r *TestRequest) WithContext(ctx context.Context) contractstesting.TestRequest {
 	r.ctx = ctx
 	return r
+}
+
+func (r *TestRequest) WithToken(token string, ttype ...string) contractstesting.TestRequest {
+	tt := "Bearer"
+	if len(ttype) > 0 {
+		tt = ttype[0]
+	}
+	return r.WithHeader("Authorization", fmt.Sprintf("%s %s", tt, token))
+}
+
+func (r *TestRequest) WithBasicAuth(username, password string) contractstesting.TestRequest {
+	encoded := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+	return r.WithToken(encoded, "Basic")
+}
+
+func (r *TestRequest) WithoutToken() contractstesting.TestRequest {
+	return r.WithoutHeader("Authorization")
 }
 
 func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {

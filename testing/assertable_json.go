@@ -11,7 +11,7 @@ import (
 	"github.com/goravel/framework/support/maps"
 )
 
-type AssertableJsonImpl struct {
+type AssertableJson struct {
 	t       *testing.T
 	json    string
 	decoded map[string]any
@@ -24,32 +24,32 @@ func NewAssertableJSON(t *testing.T, jsonStr string) (contractstesting.Assertabl
 		return nil, err
 	}
 
-	return &AssertableJsonImpl{
+	return &AssertableJson{
 		t:       t,
 		json:    jsonStr,
 		decoded: decoded,
 	}, nil
 }
 
-func (r *AssertableJsonImpl) Json() map[string]any {
+func (r *AssertableJson) Json() map[string]any {
 	return r.getDecoded()
 }
 
-func (r *AssertableJsonImpl) Count(key string, length int) contractstesting.AssertableJSON {
+func (r *AssertableJson) Count(key string, length int) contractstesting.AssertableJSON {
 	actual := maps.Get(r.getDecoded(), key)
 	assert.Len(r.t, actual, length, fmt.Sprintf("Property [%s] does not have the expected size.", key))
 
 	return r
 }
 
-func (r *AssertableJsonImpl) Has(key string) contractstesting.AssertableJSON {
+func (r *AssertableJson) Has(key string) contractstesting.AssertableJSON {
 	exists := maps.Has(r.getDecoded(), key)
 	assert.True(r.t, exists, fmt.Sprintf("Property [%s] does not exist.", key))
 
 	return r
 }
 
-func (r *AssertableJsonImpl) HasAll(keys []string) contractstesting.AssertableJSON {
+func (r *AssertableJson) HasAll(keys []string) contractstesting.AssertableJSON {
 	for _, key := range keys {
 		r.Has(key)
 	}
@@ -57,19 +57,19 @@ func (r *AssertableJsonImpl) HasAll(keys []string) contractstesting.AssertableJS
 	return r
 }
 
-func (r *AssertableJsonImpl) HasAny(keys []string) contractstesting.AssertableJSON {
+func (r *AssertableJson) HasAny(keys []string) contractstesting.AssertableJSON {
 	assert.True(r.t, maps.HasAny(r.getDecoded(), keys...), fmt.Sprintf("None of properties [%v] exist.", keys))
 
 	return r
 }
 
-func (r *AssertableJsonImpl) Missing(key string) contractstesting.AssertableJSON {
+func (r *AssertableJson) Missing(key string) contractstesting.AssertableJSON {
 	assert.False(r.t, maps.Has(r.getDecoded(), key), fmt.Sprintf("Property [%s] was found while it was expected to be missing.", key))
 
 	return r
 }
 
-func (r *AssertableJsonImpl) MissingAll(keys []string) contractstesting.AssertableJSON {
+func (r *AssertableJson) MissingAll(keys []string) contractstesting.AssertableJSON {
 	for _, key := range keys {
 		r.Missing(key)
 	}
@@ -77,7 +77,7 @@ func (r *AssertableJsonImpl) MissingAll(keys []string) contractstesting.Assertab
 	return r
 }
 
-func (r *AssertableJsonImpl) Where(key string, value any) contractstesting.AssertableJSON {
+func (r *AssertableJson) Where(key string, value any) contractstesting.AssertableJSON {
 	r.Has(key)
 
 	actual := maps.Get(r.getDecoded(), key)
@@ -87,7 +87,7 @@ func (r *AssertableJsonImpl) Where(key string, value any) contractstesting.Asser
 	return r
 }
 
-func (r *AssertableJsonImpl) WhereNot(key string, value any) contractstesting.AssertableJSON {
+func (r *AssertableJson) WhereNot(key string, value any) contractstesting.AssertableJSON {
 	r.Has(key)
 
 	actual := maps.Get(r.getDecoded(), key)
@@ -95,6 +95,6 @@ func (r *AssertableJsonImpl) WhereNot(key string, value any) contractstesting.As
 	return r
 }
 
-func (r *AssertableJsonImpl) getDecoded() map[string]any {
+func (r *AssertableJson) getDecoded() map[string]any {
 	return r.decoded
 }
