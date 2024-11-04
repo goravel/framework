@@ -19,7 +19,7 @@ func NewCommonSchema(grammar schema.Grammar, orm orm.Orm) *CommonSchema {
 
 func (r *CommonSchema) GetTables() ([]schema.Table, error) {
 	var tables []schema.Table
-	if err := r.orm.Query().Raw(r.grammar.CompileTables("")).Scan(&tables); err != nil {
+	if err := r.orm.Query().Raw(r.grammar.CompileTables()).Scan(&tables); err != nil {
 		return nil, err
 	}
 

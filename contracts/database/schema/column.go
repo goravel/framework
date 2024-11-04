@@ -3,12 +3,8 @@ package schema
 type ColumnDefinition interface {
 	// AutoIncrement set the column as auto increment
 	AutoIncrement() ColumnDefinition
-	// Change the column
-	Change()
 	// GetAutoIncrement returns the autoIncrement value
 	GetAutoIncrement() bool
-	// GetChange returns the change value
-	GetChange() bool
 	// GetDefault returns the default value
 	GetDefault() any
 	// GetLength returns the length value

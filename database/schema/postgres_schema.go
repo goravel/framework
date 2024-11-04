@@ -119,15 +119,6 @@ func (r *PostgresSchema) DropAllViews() error {
 	return err
 }
 
-func (r *PostgresSchema) getSchema() string {
-	schema := r.config.GetString(fmt.Sprintf("database.connections.%s.search_path", r.orm.Name()))
-	if schema == "" {
-		return "public"
-	}
-
-	return schema
-}
-
 func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {
 	var types []contractsschema.Type
 	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
@@ -135,4 +126,13 @@ func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {
 	}
 
 	return r.processor.ProcessTypes(types), nil
+}
+
+func (r *PostgresSchema) getSchema() string {
+	schema := r.config.GetString(fmt.Sprintf("database.connections.%s.search_path", r.orm.Name()))
+	if schema == "" {
+		return "public"
+	}
+
+	return schema
 }

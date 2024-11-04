@@ -21,17 +21,17 @@ func (_m *Grammar) EXPECT() *Grammar_Expecter {
 	return &Grammar_Expecter{mock: &_m.Mock}
 }
 
-// CompileAdd provides a mock function with given fields: blueprint
-func (_m *Grammar) CompileAdd(blueprint schema.Blueprint) string {
-	ret := _m.Called(blueprint)
+// CompileAdd provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileAdd")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint) string); ok {
-		r0 = rf(blueprint)
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -46,13 +46,14 @@ type Grammar_CompileAdd_Call struct {
 
 // CompileAdd is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-func (_e *Grammar_Expecter) CompileAdd(blueprint interface{}) *Grammar_CompileAdd_Call {
-	return &Grammar_CompileAdd_Call{Call: _e.mock.On("CompileAdd", blueprint)}
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileAdd(blueprint interface{}, command interface{}) *Grammar_CompileAdd_Call {
+	return &Grammar_CompileAdd_Call{Call: _e.mock.On("CompileAdd", blueprint, command)}
 }
 
-func (_c *Grammar_CompileAdd_Call) Run(run func(blueprint schema.Blueprint)) *Grammar_CompileAdd_Call {
+func (_c *Grammar_CompileAdd_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileAdd_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint))
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
 	})
 	return _c
 }
@@ -62,53 +63,7 @@ func (_c *Grammar_CompileAdd_Call) Return(_a0 string) *Grammar_CompileAdd_Call {
 	return _c
 }
 
-func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint) string) *Grammar_CompileAdd_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CompileChange provides a mock function with given fields: blueprint
-func (_m *Grammar) CompileChange(blueprint schema.Blueprint) string {
-	ret := _m.Called(blueprint)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CompileChange")
-	}
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint) string); ok {
-		r0 = rf(blueprint)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// Grammar_CompileChange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileChange'
-type Grammar_CompileChange_Call struct {
-	*mock.Call
-}
-
-// CompileChange is a helper method to define mock.On call
-//   - blueprint schema.Blueprint
-func (_e *Grammar_Expecter) CompileChange(blueprint interface{}) *Grammar_CompileChange_Call {
-	return &Grammar_CompileChange_Call{Call: _e.mock.On("CompileChange", blueprint)}
-}
-
-func (_c *Grammar_CompileChange_Call) Run(run func(blueprint schema.Blueprint)) *Grammar_CompileChange_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint))
-	})
-	return _c
-}
-
-func (_c *Grammar_CompileChange_Call) Return(_a0 string) *Grammar_CompileChange_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Grammar_CompileChange_Call) RunAndReturn(run func(schema.Blueprint) string) *Grammar_CompileChange_Call {
+func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileAdd_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -390,17 +345,17 @@ func (_c *Grammar_CompileDropIfExists_Call) RunAndReturn(run func(schema.Bluepri
 	return _c
 }
 
-// CompileTables provides a mock function with given fields: database
-func (_m *Grammar) CompileTables(database string) string {
-	ret := _m.Called(database)
+// CompileTables provides a mock function with given fields:
+func (_m *Grammar) CompileTables() string {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileTables")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(database)
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -414,14 +369,13 @@ type Grammar_CompileTables_Call struct {
 }
 
 // CompileTables is a helper method to define mock.On call
-//   - database string
-func (_e *Grammar_Expecter) CompileTables(database interface{}) *Grammar_CompileTables_Call {
-	return &Grammar_CompileTables_Call{Call: _e.mock.On("CompileTables", database)}
+func (_e *Grammar_Expecter) CompileTables() *Grammar_CompileTables_Call {
+	return &Grammar_CompileTables_Call{Call: _e.mock.On("CompileTables")}
 }
 
-func (_c *Grammar_CompileTables_Call) Run(run func(database string)) *Grammar_CompileTables_Call {
+func (_c *Grammar_CompileTables_Call) Run(run func()) *Grammar_CompileTables_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run()
 	})
 	return _c
 }
@@ -431,7 +385,7 @@ func (_c *Grammar_CompileTables_Call) Return(_a0 string) *Grammar_CompileTables_
 	return _c
 }
 
-func (_c *Grammar_CompileTables_Call) RunAndReturn(run func(string) string) *Grammar_CompileTables_Call {
+func (_c *Grammar_CompileTables_Call) RunAndReturn(run func() string) *Grammar_CompileTables_Call {
 	_c.Call.Return(run)
 	return _c
 }
