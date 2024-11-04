@@ -19,6 +19,8 @@ type Grammar interface {
 	CompileDropAllViews(views []string) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint) string
+	// CompilePrimary Compile a primary key command.
+	CompilePrimary(blueprint Blueprint, command *Command) string
 	// CompileTables Compile the query to determine the tables.
 	CompileTables() string
 	// CompileTypes Compile the query to determine the types.

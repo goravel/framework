@@ -58,6 +58,10 @@ func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
 
+func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s add primary key (%s)", blueprint.GetTableName(), strings.Join(command.Columns, ","))
+}
+
 func (r *Postgres) CompileTables() string {
 	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
 		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +

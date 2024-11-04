@@ -426,6 +426,52 @@ func (_c *Blueprint_Integer_Call) RunAndReturn(run func(string) schema.ColumnDef
 	return _c
 }
 
+// Primary provides a mock function with given fields: column
+func (_m *Blueprint) Primary(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Blueprint_Primary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Primary'
+type Blueprint_Primary_Call struct {
+	*mock.Call
+}
+
+// Primary is a helper method to define mock.On call
+//   - column ...string
+func (_e *Blueprint_Expecter) Primary(column ...interface{}) *Blueprint_Primary_Call {
+	return &Blueprint_Primary_Call{Call: _e.mock.On("Primary",
+		append([]interface{}{}, column...)...)}
+}
+
+func (_c *Blueprint_Primary_Call) Run(run func(column ...string)) *Blueprint_Primary_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_Primary_Call) Return() *Blueprint_Primary_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_Primary_Call) RunAndReturn(run func(...string)) *Blueprint_Primary_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetTable provides a mock function with given fields: name
 func (_m *Blueprint) SetTable(name string) {
 	_m.Called(name)

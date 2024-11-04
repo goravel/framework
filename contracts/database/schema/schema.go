@@ -66,6 +66,7 @@ type Connection interface {
 type Command struct {
 	Algorithm  string
 	Column     ColumnDefinition
+	Columns    []string
 	From       string
 	Index      string
 	On         string
