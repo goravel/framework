@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"strings"
+
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
@@ -105,6 +107,10 @@ func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
 	return columnImpl
 }
 
+func (r *Blueprint) Primary(column ...string) {
+	r.indexCommand(constants.CommandPrimary, column)
+}
+
 func (r *Blueprint) SetTable(name string) {
 	r.table = name
 }
@@ -137,6 +143,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schema.Grammar) []str
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
+		case constants.CommandPrimary:
+			statements = append(statements, grammar.CompilePrimary(r, command))
 		}
 	}
 
@@ -178,6 +186,32 @@ func (r *Blueprint) addCommand(command *schema.Command) {
 
 func (r *Blueprint) addImpliedCommands(grammar schema.Grammar) {
 	r.addAttributeCommands(grammar)
+}
+
+func (r *Blueprint) createIndexName(ttype string, columns []string) string {
+	table := r.GetTableName()
+	index := strings.ToLower(table + "_" + strings.Join(columns, "_") + "_" + ttype)
+	index = strings.ReplaceAll(index, "-", "_")
+
+	return strings.ReplaceAll(index, ".", "_")
+}
+
+func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schema.IndexConfig) *schema.Command {
+	command := &schema.Command{
+		Columns: columns,
+		Name:    ttype,
+	}
+
+	if len(config) > 0 {
+		command.Algorithm = config[0].Algorithm
+		command.Index = config[0].Name
+	} else {
+		command.Index = r.createIndexName(ttype, columns)
+	}
+
+	r.addCommand(command)
+
+	return command
 }
 
 func (r *Blueprint) isCreate() bool {

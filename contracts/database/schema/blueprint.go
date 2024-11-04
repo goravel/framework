@@ -19,6 +19,8 @@ type Blueprint interface {
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.
 	HasCommand(command string) bool
+	// Primary Specify the primary key(s) for the table.
+	Primary(column ...string)
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
 	ID(column ...string) ColumnDefinition
 	// Integer Create a new integer (4-byte) column on the table.
@@ -29,4 +31,9 @@ type Blueprint interface {
 	String(column string, length ...int) ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(query orm.Query, grammar Grammar) []string
+}
+
+type IndexConfig struct {
+	Algorithm string
+	Name      string
 }

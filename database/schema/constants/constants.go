@@ -2,9 +2,9 @@ package constants
 
 const (
 	CommandAdd          = "add"
-	CommandChange       = "change"
 	CommandComment      = "comment"
 	CommandCreate       = "create"
 	CommandDropIfExists = "dropIfExists"
+	CommandPrimary      = "primary"
 	DefaultStringLength = 255
 )
