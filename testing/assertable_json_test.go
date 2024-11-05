@@ -32,11 +32,17 @@ func TestCount(t *testing.T) {
 }
 
 func TestHas(t *testing.T) {
-	jsonStr := `{"key1": "value1", "key2": [1, 2, 3]}`
+	jsonStr := `{
+		"key1": "value1",
+		"key2": [1, 2, 3],
+		"nested": {"deep": "value"},
+		"nullKey": null
+	}`
 	assertable, err := NewAssertableJSON(t, jsonStr)
 	assert.NoError(t, err)
 
 	assertable.Has("key1")
+	assertable.Has("nullKey")
 
 	//assertable.Has("nonExistingKey")
 }
@@ -90,16 +96,31 @@ func TestMissingAll(t *testing.T) {
 }
 
 func TestWhere(t *testing.T) {
-	jsonStr := `{"key1": "value1", "key2": [1, 2, 3]}`
+	jsonStr := `{
+		"key1": "value1",
+		"intKey": 42,
+     	"floatKey": 42.0,
+		"nullKey": null,
+		"objKey": {"nested": "value"},
+		"arrayKey": [1, 2, 3]
+	}`
 	assertable, err := NewAssertableJSON(t, jsonStr)
 	assert.NoError(t, err)
 
 	// Test correct value
 	assertable.Where("key1", "value1")
+	// Test number type handling
+	assertable.Where("intKey", float64(42))
+	assertable.Where("floatKey", float64(42))
+	// Test null
+	assertable.Where("nullKey", nil)
+	// Test object equality
+	assertable.Where("objKey", map[string]any{"nested": "value"})
+	// Test array equality
+	assertable.Where("arrayKey", []any{float64(1), float64(2), float64(3)})
 
 	// Test incorrect value
-	//assertable.Where("key1", "wrongValue").
-	//	Where("key2", []any{1.0, 2.0, 3.0})
+	//assertable.Where("key1", "wrongValue")
 }
 
 func TestWhereNot(t *testing.T) {
@@ -122,7 +143,7 @@ func TestFirst(t *testing.T) {
 
 	// Test fetching the first item
 	assertable.First("items", func(item contractstesting.AssertableJSON) {
-		item.Where("id", float64(1)) // Verify the first item's id
+		item.Where("id", float64(1))
 	})
 
 	// Test with a non-existing key
@@ -153,17 +174,22 @@ func TestHasWithScope(t *testing.T) {
 }
 
 func TestEach(t *testing.T) {
-	jsonStr := `{"items": [{"id": 1}, {"id": 2}]}`
+	jsonStr := `{
+		"items": [{"id": 1}, {"id": 2}],
+		"mixedTypes": [42, "string", {"key": "value"}],
+		"nonArray": "value"
+	}`
 
 	assertable, err := NewAssertableJSON(t, jsonStr)
 	assert.NoError(t, err)
 
 	// Test iterating over each item
-	i := 1
+	callCount := 0
 	assertable.Each("items", func(item contractstesting.AssertableJSON) {
-		item.Where("id", float64(i))
-		i++
+		item.Where("id", float64(callCount+1))
+		callCount++
 	})
+	assert.Equal(t, 2, callCount)
 
 	// Test with a non-existing key
 	//assertable.Each("nonExistingKey", func(item contractstesting.AssertableJSON) {})
@@ -172,6 +198,9 @@ func TestEach(t *testing.T) {
 	emptyJsonStr := `{"items": []}`
 	emptyAssertable, err := NewAssertableJSON(t, emptyJsonStr)
 	assert.NoError(t, err)
-
-	emptyAssertable.Each("items", func(item contractstesting.AssertableJSON) {})
+	emptyCallCount := 0
+	emptyAssertable.Each("items", func(item contractstesting.AssertableJSON) {
+		emptyCallCount++
+	})
+	assert.Equal(t, 0, emptyCallCount)
 }
