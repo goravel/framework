@@ -2,11 +2,12 @@ package schema
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/database/schema"
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/errors"
@@ -14,34 +15,36 @@ import (
 
 const BindingSchema = "goravel.schema"
 
-var _ schema.Schema = (*Schema)(nil)
+var _ contractsschema.Schema = (*Schema)(nil)
 
 type Schema struct {
-	schema.CommonSchema
-	schema.DriverSchema
+	contractsschema.CommonSchema
+	contractsschema.DriverSchema
 
 	config     config.Config
-	grammar    schema.Grammar
+	grammar    contractsschema.Grammar
 	log        log.Log
-	migrations []schema.Migration
+	migrations []contractsschema.Migration
 	orm        contractsorm.Orm
 	prefix     string
 }
 
-func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []schema.Migration) *Schema {
+func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []contractsschema.Migration) *Schema {
 	driver := contractsdatabase.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", orm.Name())))
 	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", orm.Name()))
 	var (
-		driverSchema schema.DriverSchema
-		grammar      schema.Grammar
+		driverSchema contractsschema.DriverSchema
+		grammar      contractsschema.Grammar
 	)
 
 	switch driver {
 	case contractsdatabase.DriverMysql:
 		// TODO Optimize here when implementing Mysql driver
 	case contractsdatabase.DriverPostgres:
+		schema := config.GetString(fmt.Sprintf("database.connections.%s.search_path", orm.Name()), "public")
+
 		postgresGrammar := grammars.NewPostgres()
-		driverSchema = NewPostgresSchema(config, postgresGrammar, orm)
+		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)
 		grammar = postgresGrammar
 	case contractsdatabase.DriverSqlserver:
 		// TODO Optimize here when implementing Sqlserver driver
@@ -64,11 +67,11 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 	}
 }
 
-func (r *Schema) Connection(name string) schema.Schema {
+func (r *Schema) Connection(name string) contractsschema.Schema {
 	return NewSchema(r.config, r.log, r.orm.Connection(name), r.migrations)
 }
 
-func (r *Schema) Create(table string, callback func(table schema.Blueprint)) error {
+func (r *Schema) Create(table string, callback func(table contractsschema.Blueprint)) error {
 	blueprint := r.createBlueprint(table)
 	blueprint.Create()
 	callback(blueprint)
@@ -95,6 +98,27 @@ func (r *Schema) GetConnection() string {
 	return r.orm.Name()
 }
 
+func (r *Schema) GetIndexListing(table string) []string {
+	indexes, err := r.GetIndexes(table)
+	if err != nil {
+		r.log.Errorf("failed to get %s indexes: %v", table, err)
+		return nil
+	}
+
+	var names []string
+	for _, index := range indexes {
+		names = append(names, index.Name)
+	}
+
+	return names
+}
+
+func (r *Schema) HasIndex(table, index string) bool {
+	indexListing := r.GetIndexListing(table)
+
+	return slices.Contains(indexListing, index)
+}
+
 func (r *Schema) HasTable(name string) bool {
 	blueprint := r.createBlueprint(name)
 	tableName := blueprint.GetTableName()
@@ -114,7 +138,7 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
-func (r *Schema) Migrations() []schema.Migration {
+func (r *Schema) Migrations() []contractsschema.Migration {
 	return r.migrations
 }
 
@@ -122,7 +146,7 @@ func (r *Schema) Orm() contractsorm.Orm {
 	return r.orm
 }
 
-func (r *Schema) Register(migrations []schema.Migration) {
+func (r *Schema) Register(migrations []contractsschema.Migration) {
 	r.migrations = migrations
 }
 
@@ -136,7 +160,7 @@ func (r *Schema) Sql(sql string) {
 	}
 }
 
-func (r *Schema) Table(table string, callback func(table schema.Blueprint)) {
+func (r *Schema) Table(table string, callback func(table contractsschema.Blueprint)) {
 	blueprint := r.createBlueprint(table)
 	callback(blueprint)
 
@@ -145,7 +169,7 @@ func (r *Schema) Table(table string, callback func(table schema.Blueprint)) {
 	}
 }
 
-func (r *Schema) build(blueprint schema.Blueprint) error {
+func (r *Schema) build(blueprint contractsschema.Blueprint) error {
 	if r.orm.Query().InTransaction() {
 		return blueprint.Build(r.orm.Query(), r.grammar)
 	}
@@ -155,6 +179,6 @@ func (r *Schema) build(blueprint schema.Blueprint) error {
 	})
 }
 
-func (r *Schema) createBlueprint(table string) schema.Blueprint {
+func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
 	return NewBlueprint(r.prefix, table)
 }

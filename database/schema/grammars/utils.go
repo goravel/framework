@@ -68,3 +68,7 @@ func prefixArray(prefix string, values []string) []string {
 
 	return values
 }
+
+func quoteString(value string) string {
+	return fmt.Sprintf("'%s'", value)
+}

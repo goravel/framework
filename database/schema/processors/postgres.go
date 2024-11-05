@@ -1,6 +1,8 @@
 package processors
 
 import (
+	"strings"
+
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -11,7 +13,16 @@ func NewPostgres() Postgres {
 	return Postgres{}
 }
 
-func (r Postgres) ProcessTypes(types []schema.Type) []schema.Type {
+func (r *Postgres) ProcessIndexes(indexes []schema.Index) []schema.Index {
+	for i, index := range indexes {
+		indexes[i].Name = strings.ToLower(index.Name)
+		indexes[i].Type = strings.ToLower(index.Type)
+	}
+
+	return indexes
+}
+
+func (r *Postgres) ProcessTypes(types []schema.Type) []schema.Type {
 	processType := map[string]string{
 		"b": "base",
 		"c": "composite",
