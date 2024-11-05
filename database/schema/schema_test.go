@@ -100,8 +100,7 @@ func (s *SchemaSuite) TestPrimary() {
 			}))
 
 			s.Require().True(schema.HasTable(table))
-			// TODO Open below when implementing index methods
-			//s.Require().True(schema.HasIndex(table, "primaries_pkey"))
+			s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
 		})
 	}
 }

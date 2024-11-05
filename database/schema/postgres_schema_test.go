@@ -7,7 +7,6 @@ import (
 
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/schema/grammars"
-	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -15,7 +14,6 @@ import (
 
 type PostgresSchemaSuite struct {
 	suite.Suite
-	mockConfig     *mocksconfig.Config
 	mockOrm        *mocksorm.Orm
 	postgresSchema *PostgresSchema
 	testQuery      *gorm.TestQuery
@@ -32,21 +30,8 @@ func TestPostgresSchemaSuite(t *testing.T) {
 func (s *PostgresSchemaSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
 	s.testQuery = gorm.NewTestQuery(postgresDocker, true)
-	s.mockConfig = s.testQuery.MockConfig()
 	s.mockOrm = mocksorm.NewOrm(s.T())
-	s.postgresSchema = NewPostgresSchema(s.testQuery.MockConfig(), grammars.NewPostgres(), s.mockOrm)
-}
-
-func (s *PostgresSchemaSuite) TestGetSchema() {
-	s.mockOrm.EXPECT().Name().Return("postgres").Once()
-	s.mockConfig.EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
-
-	s.Equal(s.postgresSchema.getSchema(), "public")
-
-	s.mockOrm.EXPECT().Name().Return("postgres").Once()
-	s.mockConfig.EXPECT().GetString("database.connections.postgres.search_path").Return("goravel").Once()
-
-	s.Equal(s.postgresSchema.getSchema(), "goravel")
+	s.postgresSchema = NewPostgresSchema(grammars.NewPostgres(), s.mockOrm, "goravel", "framework")
 }
 
 // TODO Implement this after implementing create type
