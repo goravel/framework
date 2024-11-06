@@ -39,7 +39,7 @@ func (r *Blueprint) BigInteger(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error {
-	for _, sql := range r.ToSql(query, grammar) {
+	for _, sql := range r.ToSql(grammar) {
 		if _, err := query.Exec(sql); err != nil {
 			return err
 		}
@@ -96,6 +96,12 @@ func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 	return r.BigIncrements("id")
 }
 
+func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
+	command := r.indexCommand(constants.CommandIndex, column)
+
+	return NewIndexDefinition(command)
+}
+
 func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
 	columnImpl := &ColumnDefinition{
 		name:  &column,
@@ -131,7 +137,7 @@ func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition
 	return columnImpl
 }
 
-func (r *Blueprint) ToSql(query ormcontract.Query, grammar schema.Grammar) []string {
+func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 	r.addImpliedCommands(grammar)
 
 	var statements []string
@@ -143,6 +149,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schema.Grammar) []str
 			statements = append(statements, grammar.CompileCreate(r))
 		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
+		case constants.CommandIndex:
+			statements = append(statements, grammar.CompileIndex(r, command))
 		case constants.CommandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command))
 		}

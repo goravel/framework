@@ -38,3 +38,20 @@ func (s *PostgresSchemaSuite) SetupTest() {
 func (s *PostgresSchemaSuite) TestGetTypes() {
 
 }
+
+func (s *PostgresSchemaSuite) TestParseSchemaAndTable() {
+	tests := []struct {
+		reference      string
+		expectedSchema string
+		expectedTable  string
+	}{
+		{"public.users", "public", "users"},
+		{"users", "goravel", "users"},
+	}
+
+	for _, test := range tests {
+		schema, table := s.postgresSchema.parseSchemaAndTable(test.reference)
+		s.Equal(test.expectedSchema, schema)
+		s.Equal(test.expectedTable, table)
+	}
+}

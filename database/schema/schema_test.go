@@ -105,6 +105,40 @@ func (s *SchemaSuite) TestPrimary() {
 	}
 }
 
+func (s *SchemaSuite) TestIndexMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "indexes"
+			err := schema.Create(table, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Index("id", "name")
+				table.Index("name").Name("name_index")
+			})
+
+			s.Require().Nil(err)
+			s.True(schema.HasTable(table))
+			s.Contains(schema.GetIndexListing(table), "goravel_indexes_id_name_index")
+			s.True(schema.HasIndex(table, "goravel_indexes_id_name_index"))
+			s.True(schema.HasIndex(table, "name_index"))
+
+			indexes, err := schema.GetIndexes(table)
+			s.Require().Nil(err)
+			s.Len(indexes, 3)
+
+			for _, index := range indexes {
+				if index.Name == "goravel_indexes_id_name_index" {
+					s.ElementsMatch(index.Columns, []string{"id", "name"})
+					s.False(index.Primary)
+					s.Equal("btree", index.Type)
+					s.False(index.Unique)
+				}
+			}
+		})
+	}
+}
+
 func (s *SchemaSuite) TestTable_GetTables() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {

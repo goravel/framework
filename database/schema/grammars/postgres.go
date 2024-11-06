@@ -57,6 +57,20 @@ func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
 
+func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	var algorithm string
+	if command.Algorithm != "" {
+		algorithm = " using " + command.Algorithm
+	}
+
+	return fmt.Sprintf("create index %s on %s%s (%s)",
+		command.Index,
+		blueprint.GetTableName(),
+		algorithm,
+		strings.Join(command.Columns, ", "),
+	)
+}
+
 func (r *Postgres) CompileIndexes(schema, table string) string {
 	query := fmt.Sprintf(
 		"select ic.relname as name, string_agg(a.attname, ',' order by indseq.ord) as columns, "+
