@@ -60,6 +60,12 @@ func (r *Blueprint) DropIfExists() {
 	})
 }
 
+func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
+	command := r.indexCommand(constants.CommandForeign, column)
+
+	return NewForeignKeyDefinition(command)
+}
+
 func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 	var columns []schema.ColumnDefinition
 	for _, column := range r.columns {
@@ -143,6 +149,8 @@ func (r *Blueprint) ToSql(query ormcontract.Query, grammar schema.Grammar) []str
 			statements = append(statements, grammar.CompileCreate(r, query))
 		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
+		case constants.CommandForeign:
+			statements = append(statements, grammar.CompileForeign(r, command))
 		case constants.CommandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command))
 		}

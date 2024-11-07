@@ -92,6 +92,53 @@ func (s *PostgresSuite) TestCompileDropIfExists() {
 	s.Equal("drop table if exists users", s.grammar.CompileDropIfExists(mockBlueprint))
 }
 
+func (s *PostgresSuite) TestCompileForeign() {
+	var mockBlueprint *mocksschema.Blueprint
+
+	beforeEach := func() {
+		mockBlueprint = mocksschema.NewBlueprint(s.T())
+		mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+	}
+
+	tests := []struct {
+		name      string
+		command   *contractsschema.Command
+		expectSql string
+	}{
+		{
+			name: "with on delete and on update",
+			command: &contractsschema.Command{
+				Index:      "fk_users_role_id",
+				Columns:    []string{"role_id"},
+				On:         "roles",
+				References: []string{"id"},
+				OnDelete:   "cascade",
+				OnUpdate:   "restrict",
+			},
+			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references roles (id) on delete cascade on update restrict",
+		},
+		{
+			name: "without on delete and on update",
+			command: &contractsschema.Command{
+				Index:      "fk_users_role_id",
+				Columns:    []string{"role_id"},
+				On:         "roles",
+				References: []string{"id"},
+			},
+			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references roles (id)",
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			beforeEach()
+
+			sql := s.grammar.CompileForeign(mockBlueprint, test.command)
+			s.Equal(test.expectSql, sql)
+		})
+	}
+}
+
 func (s *PostgresSuite) TestEscapeNames() {
 	// SingleName
 	names := []string{"username"}

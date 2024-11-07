@@ -58,6 +58,19 @@ func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
 }
 
+func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	sql := fmt.Sprintf("alter table %s add constraint %s foreign key (%s) references %s (%s)",
+		blueprint.GetTableName(), command.Index, strings.Join(command.Columns, ", "), command.On, strings.Join(command.References, ", "))
+	if command.OnDelete != "" {
+		sql += " on delete " + command.OnDelete
+	}
+	if command.OnUpdate != "" {
+		sql += " on update " + command.OnUpdate
+	}
+
+	return sql
+}
+
 func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
 	return fmt.Sprintf("alter table %s add primary key (%s)", blueprint.GetTableName(), strings.Join(command.Columns, ","))
 }
