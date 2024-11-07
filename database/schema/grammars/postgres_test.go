@@ -82,7 +82,7 @@ func (s *PostgresSuite) TestCompileCreate() {
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
 
 	s.Equal("create table users (id serial primary key not null,name varchar(100) null)",
-		s.grammar.CompileCreate(mockBlueprint, nil))
+		s.grammar.CompileCreate(mockBlueprint))
 }
 
 func (s *PostgresSuite) TestCompileDropIfExists() {

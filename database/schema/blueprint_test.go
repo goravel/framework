@@ -122,13 +122,13 @@ func (s *BlueprintTestSuite) TestBuild() {
 		s.blueprint.Create()
 		s.blueprint.String("name")
 
-		sqlStatements := s.blueprint.ToSql(mockQuery, grammar)
+		sqlStatements := s.blueprint.ToSql(grammar)
 		s.NotEmpty(sqlStatements)
 
 		mockQuery.EXPECT().Exec(sqlStatements[0]).Return(nil, nil).Once()
 		s.Nil(s.blueprint.Build(mockQuery, grammar))
 
-		sqlStatements = s.blueprint.ToSql(mockQuery, grammar)
+		sqlStatements = s.blueprint.ToSql(grammar)
 		s.NotEmpty(sqlStatements)
 
 		mockQuery.EXPECT().Exec(sqlStatements[0]).Return(nil, errors.New("error")).Once()
@@ -252,7 +252,6 @@ func (s *BlueprintTestSuite) TestString() {
 func (s *BlueprintTestSuite) TestToSql() {
 	for driver, grammar := range s.grammars {
 		// Create a table
-		mockQuery := mocksorm.NewQuery(s.T())
 		s.blueprint.Create()
 		s.blueprint.String("name")
 		// TODO Add below when implementing the comment method
@@ -260,18 +259,18 @@ func (s *BlueprintTestSuite) TestToSql() {
 		//s.blueprint.Comment("comment")
 
 		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(mockQuery, grammar), 1)
+			s.Len(s.blueprint.ToSql(grammar), 1)
 		} else {
-			s.Empty(s.blueprint.ToSql(mockQuery, grammar))
+			s.Empty(s.blueprint.ToSql(grammar))
 		}
 
 		// Update a table
 		s.SetupTest()
 		s.blueprint.String("avatar")
 		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(mockQuery, grammar), 1)
+			s.Len(s.blueprint.ToSql(grammar), 1)
 		} else {
-			s.Empty(s.blueprint.ToSql(mockQuery, grammar))
+			s.Empty(s.blueprint.ToSql(grammar))
 		}
 	}
 }

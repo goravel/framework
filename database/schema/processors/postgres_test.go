@@ -8,6 +8,31 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
+func TestProcessIndexes(t *testing.T) {
+	// Test with valid indexes
+	input := []schema.Index{
+		{Name: "INDEX_A", Type: "BTREE"},
+		{Name: "INDEX_B", Type: "HASH"},
+	}
+	expected := []schema.Index{
+		{Name: "index_a", Type: "btree"},
+		{Name: "index_b", Type: "hash"},
+	}
+
+	postgres := NewPostgres()
+	result := postgres.ProcessIndexes(input)
+
+	assert.Equal(t, expected, result)
+
+	// Test with empty input
+	input = []schema.Index{}
+	expected = []schema.Index{}
+
+	result = postgres.ProcessIndexes(input)
+
+	assert.Equal(t, expected, result)
+}
+
 func TestProcessTypes(t *testing.T) {
 	// ValidTypes_ReturnsProcessedTypes
 	input := []schema.Type{

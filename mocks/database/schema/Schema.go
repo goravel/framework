@@ -342,6 +342,112 @@ func (_c *Schema_GetConnection_Call) RunAndReturn(run func() string) *Schema_Get
 	return _c
 }
 
+// GetIndexListing provides a mock function with given fields: table
+func (_m *Schema) GetIndexListing(table string) []string {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetIndexListing")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(table)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Schema_GetIndexListing_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetIndexListing'
+type Schema_GetIndexListing_Call struct {
+	*mock.Call
+}
+
+// GetIndexListing is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) GetIndexListing(table interface{}) *Schema_GetIndexListing_Call {
+	return &Schema_GetIndexListing_Call{Call: _e.mock.On("GetIndexListing", table)}
+}
+
+func (_c *Schema_GetIndexListing_Call) Run(run func(table string)) *Schema_GetIndexListing_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_GetIndexListing_Call) Return(_a0 []string) *Schema_GetIndexListing_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_GetIndexListing_Call) RunAndReturn(run func(string) []string) *Schema_GetIndexListing_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetIndexes provides a mock function with given fields: table
+func (_m *Schema) GetIndexes(table string) ([]schema.Index, error) {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetIndexes")
+	}
+
+	var r0 []schema.Index
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]schema.Index, error)); ok {
+		return rf(table)
+	}
+	if rf, ok := ret.Get(0).(func(string) []schema.Index); ok {
+		r0 = rf(table)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.Index)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(table)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Schema_GetIndexes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetIndexes'
+type Schema_GetIndexes_Call struct {
+	*mock.Call
+}
+
+// GetIndexes is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) GetIndexes(table interface{}) *Schema_GetIndexes_Call {
+	return &Schema_GetIndexes_Call{Call: _e.mock.On("GetIndexes", table)}
+}
+
+func (_c *Schema_GetIndexes_Call) Run(run func(table string)) *Schema_GetIndexes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_GetIndexes_Call) Return(_a0 []schema.Index, _a1 error) *Schema_GetIndexes_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Schema_GetIndexes_Call) RunAndReturn(run func(string) ([]schema.Index, error)) *Schema_GetIndexes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTables provides a mock function with given fields:
 func (_m *Schema) GetTables() ([]schema.Table, error) {
 	ret := _m.Called()
@@ -509,6 +615,53 @@ func (_c *Schema_GetViews_Call) Return(_a0 []schema.View, _a1 error) *Schema_Get
 }
 
 func (_c *Schema_GetViews_Call) RunAndReturn(run func() ([]schema.View, error)) *Schema_GetViews_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasIndex provides a mock function with given fields: table, index
+func (_m *Schema) HasIndex(table string, index string) bool {
+	ret := _m.Called(table, index)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasIndex")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+		r0 = rf(table, index)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Schema_HasIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasIndex'
+type Schema_HasIndex_Call struct {
+	*mock.Call
+}
+
+// HasIndex is a helper method to define mock.On call
+//   - table string
+//   - index string
+func (_e *Schema_Expecter) HasIndex(table interface{}, index interface{}) *Schema_HasIndex_Call {
+	return &Schema_HasIndex_Call{Call: _e.mock.On("HasIndex", table, index)}
+}
+
+func (_c *Schema_HasIndex_Call) Run(run func(table string, index string)) *Schema_HasIndex_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_HasIndex_Call) Return(_a0 bool) *Schema_HasIndex_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_HasIndex_Call) RunAndReturn(run func(string, string) bool) *Schema_HasIndex_Call {
 	_c.Call.Return(run)
 	return _c
 }

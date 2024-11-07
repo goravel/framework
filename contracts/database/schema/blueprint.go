@@ -23,6 +23,8 @@ type Blueprint interface {
 	Primary(column ...string)
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
 	ID(column ...string) ColumnDefinition
+	// Index Specify an index for the table.
+	Index(column ...string) IndexDefinition
 	// Integer Create a new integer (4-byte) column on the table.
 	Integer(column string) ColumnDefinition
 	// SetTable Set the table that the blueprint operates on.
@@ -30,7 +32,7 @@ type Blueprint interface {
 	// String Create a new string column on the table.
 	String(column string, length ...int) ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
-	ToSql(query orm.Query, grammar Grammar) []string
+	ToSql(grammar Grammar) []string
 }
 
 type IndexConfig struct {
