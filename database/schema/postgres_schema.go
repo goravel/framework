@@ -3,8 +3,8 @@ package schema
 import (
 	"fmt"
 	"slices"
+	"strings"
 
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
@@ -14,26 +14,27 @@ import (
 type PostgresSchema struct {
 	contractsschema.CommonSchema
 
-	config    config.Config
 	grammar   *grammars.Postgres
 	orm       orm.Orm
+	prefix    string
 	processor processors.Postgres
+	schema    string
 }
 
-func NewPostgresSchema(config config.Config, grammar *grammars.Postgres, orm orm.Orm) *PostgresSchema {
+func NewPostgresSchema(grammar *grammars.Postgres, orm orm.Orm, schema, prefix string) *PostgresSchema {
 	return &PostgresSchema{
 		CommonSchema: NewCommonSchema(grammar, orm),
-
-		config:    config,
-		grammar:   grammar,
-		orm:       orm,
-		processor: processors.NewPostgres(),
+		grammar:      grammar,
+		orm:          orm,
+		prefix:       prefix,
+		processor:    processors.NewPostgres(),
+		schema:       schema,
 	}
 }
 
 func (r *PostgresSchema) DropAllTables() error {
 	excludedTables := r.grammar.EscapeNames([]string{"spatial_ref_sys"})
-	schema := r.grammar.EscapeNames([]string{r.getSchema()})[0]
+	schema := r.grammar.EscapeNames([]string{r.schema})[0]
 
 	tables, err := r.GetTables()
 	if err != nil {
@@ -62,7 +63,7 @@ func (r *PostgresSchema) DropAllTables() error {
 }
 
 func (r *PostgresSchema) DropAllTypes() error {
-	schema := r.grammar.EscapeNames([]string{r.getSchema()})[0]
+	schema := r.grammar.EscapeNames([]string{r.schema})[0]
 	types, err := r.GetTypes()
 	if err != nil {
 		return err
@@ -96,7 +97,7 @@ func (r *PostgresSchema) DropAllTypes() error {
 }
 
 func (r *PostgresSchema) DropAllViews() error {
-	schema := r.grammar.EscapeNames([]string{r.getSchema()})[0]
+	schema := r.grammar.EscapeNames([]string{r.schema})[0]
 
 	views, err := r.GetViews()
 	if err != nil {
@@ -119,6 +120,37 @@ func (r *PostgresSchema) DropAllViews() error {
 	return err
 }
 
+func (r *PostgresSchema) GetIndexes(table string) ([]contractsschema.Index, error) {
+	schema, table := r.parseSchemaAndTable(table)
+	table = r.prefix + table
+
+	type Index struct {
+		Columns string
+		Name    string
+		Primary bool
+		Type    string
+		Unique  bool
+	}
+
+	var tempIndexes []Index
+	if err := r.orm.Query().Raw(r.grammar.CompileIndexes(schema, table)).Scan(&tempIndexes); err != nil {
+		return nil, err
+	}
+
+	var indexes []contractsschema.Index
+	for _, tempIndex := range tempIndexes {
+		indexes = append(indexes, contractsschema.Index{
+			Columns: strings.Split(tempIndex.Columns, ","),
+			Name:    tempIndex.Name,
+			Primary: tempIndex.Primary,
+			Type:    tempIndex.Type,
+			Unique:  tempIndex.Unique,
+		})
+	}
+
+	return r.processor.ProcessIndexes(indexes), nil
+}
+
 func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {
 	var types []contractsschema.Type
 	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
@@ -128,11 +160,15 @@ func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {
 	return r.processor.ProcessTypes(types), nil
 }
 
-func (r *PostgresSchema) getSchema() string {
-	schema := r.config.GetString(fmt.Sprintf("database.connections.%s.search_path", r.orm.Name()))
-	if schema == "" {
-		return "public"
+func (r *PostgresSchema) parseSchemaAndTable(reference string) (schema, table string) {
+	parts := strings.Split(reference, ".")
+	schema = r.schema
+	if len(parts) == 2 {
+		schema = parts[0]
+		parts = parts[1:]
 	}
 
-	return schema
+	table = parts[0]
+
+	return
 }

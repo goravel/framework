@@ -1,14 +1,10 @@
 package schema
 
-import (
-	"github.com/goravel/framework/contracts/database/orm"
-)
-
 type Grammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
-	CompileCreate(blueprint Blueprint, query orm.Query) string
+	CompileCreate(blueprint Blueprint) string
 	// CompileDropAllDomains Compile the SQL needed to drop all domains.
 	CompileDropAllDomains(domains []string) string
 	// CompileDropAllTables Compile the SQL needed to drop all tables.
@@ -21,6 +17,10 @@ type Grammar interface {
 	CompileDropIfExists(blueprint Blueprint) string
 	// CompileForeign Compile a foreign key command.
 	CompileForeign(blueprint Blueprint, command *Command) string
+	// CompileIndex Compile a plain index key command.
+	CompileIndex(blueprint Blueprint, command *Command) string
+	// CompileIndexes Compile the query to determine the indexes.
+	CompileIndexes(schema, table string) string
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
 	// CompileTables Compile the query to determine the tables.

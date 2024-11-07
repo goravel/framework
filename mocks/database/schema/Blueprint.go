@@ -287,6 +287,51 @@ func (_c *Blueprint_GetCommands_Call) RunAndReturn(run func() []*schema.Command)
 	return _c
 }
 
+// GetPrefix provides a mock function with given fields:
+func (_m *Blueprint) GetPrefix() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetPrefix")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Blueprint_GetPrefix_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetPrefix'
+type Blueprint_GetPrefix_Call struct {
+	*mock.Call
+}
+
+// GetPrefix is a helper method to define mock.On call
+func (_e *Blueprint_Expecter) GetPrefix() *Blueprint_GetPrefix_Call {
+	return &Blueprint_GetPrefix_Call{Call: _e.mock.On("GetPrefix")}
+}
+
+func (_c *Blueprint_GetPrefix_Call) Run(run func()) *Blueprint_GetPrefix_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Blueprint_GetPrefix_Call) Return(_a0 string) *Blueprint_GetPrefix_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_GetPrefix_Call) RunAndReturn(run func() string) *Blueprint_GetPrefix_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTableName provides a mock function with given fields:
 func (_m *Blueprint) GetTableName() string {
 	ret := _m.Called()
@@ -435,6 +480,67 @@ func (_c *Blueprint_ID_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_ID_C
 }
 
 func (_c *Blueprint_ID_Call) RunAndReturn(run func(...string) schema.ColumnDefinition) *Blueprint_ID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Index provides a mock function with given fields: column
+func (_m *Blueprint) Index(column ...string) schema.IndexDefinition {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Index")
+	}
+
+	var r0 schema.IndexDefinition
+	if rf, ok := ret.Get(0).(func(...string) schema.IndexDefinition); ok {
+		r0 = rf(column...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.IndexDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Index_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Index'
+type Blueprint_Index_Call struct {
+	*mock.Call
+}
+
+// Index is a helper method to define mock.On call
+//   - column ...string
+func (_e *Blueprint_Expecter) Index(column ...interface{}) *Blueprint_Index_Call {
+	return &Blueprint_Index_Call{Call: _e.mock.On("Index",
+		append([]interface{}{}, column...)...)}
+}
+
+func (_c *Blueprint_Index_Call) Run(run func(column ...string)) *Blueprint_Index_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_Index_Call) Return(_a0 schema.IndexDefinition) *Blueprint_Index_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Index_Call) RunAndReturn(run func(...string) schema.IndexDefinition) *Blueprint_Index_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -629,17 +735,17 @@ func (_c *Blueprint_String_Call) RunAndReturn(run func(string, ...int) schema.Co
 	return _c
 }
 
-// ToSql provides a mock function with given fields: query, grammar
-func (_m *Blueprint) ToSql(query orm.Query, grammar schema.Grammar) []string {
-	ret := _m.Called(query, grammar)
+// ToSql provides a mock function with given fields: grammar
+func (_m *Blueprint) ToSql(grammar schema.Grammar) []string {
+	ret := _m.Called(grammar)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ToSql")
 	}
 
 	var r0 []string
-	if rf, ok := ret.Get(0).(func(orm.Query, schema.Grammar) []string); ok {
-		r0 = rf(query, grammar)
+	if rf, ok := ret.Get(0).(func(schema.Grammar) []string); ok {
+		r0 = rf(grammar)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
@@ -655,15 +761,14 @@ type Blueprint_ToSql_Call struct {
 }
 
 // ToSql is a helper method to define mock.On call
-//   - query orm.Query
 //   - grammar schema.Grammar
-func (_e *Blueprint_Expecter) ToSql(query interface{}, grammar interface{}) *Blueprint_ToSql_Call {
-	return &Blueprint_ToSql_Call{Call: _e.mock.On("ToSql", query, grammar)}
+func (_e *Blueprint_Expecter) ToSql(grammar interface{}) *Blueprint_ToSql_Call {
+	return &Blueprint_ToSql_Call{Call: _e.mock.On("ToSql", grammar)}
 }
 
-func (_c *Blueprint_ToSql_Call) Run(run func(query orm.Query, grammar schema.Grammar)) *Blueprint_ToSql_Call {
+func (_c *Blueprint_ToSql_Call) Run(run func(grammar schema.Grammar)) *Blueprint_ToSql_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(orm.Query), args[1].(schema.Grammar))
+		run(args[0].(schema.Grammar))
 	})
 	return _c
 }
@@ -673,7 +778,7 @@ func (_c *Blueprint_ToSql_Call) Return(_a0 []string) *Blueprint_ToSql_Call {
 	return _c
 }
 
-func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(orm.Query, schema.Grammar) []string) *Blueprint_ToSql_Call {
+func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(schema.Grammar) []string) *Blueprint_ToSql_Call {
 	_c.Call.Return(run)
 	return _c
 }

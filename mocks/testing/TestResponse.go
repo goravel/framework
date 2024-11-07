@@ -464,6 +464,102 @@ func (_c *TestResponse_AssertDontSee_Call) RunAndReturn(run func([]string, ...bo
 	return _c
 }
 
+// AssertExactJson provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertExactJson(_a0 map[string]any) testing.TestResponse {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertExactJson")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestResponse); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertExactJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertExactJson'
+type TestResponse_AssertExactJson_Call struct {
+	*mock.Call
+}
+
+// AssertExactJson is a helper method to define mock.On call
+//   - _a0 map[string]any
+func (_e *TestResponse_Expecter) AssertExactJson(_a0 interface{}) *TestResponse_AssertExactJson_Call {
+	return &TestResponse_AssertExactJson_Call{Call: _e.mock.On("AssertExactJson", _a0)}
+}
+
+func (_c *TestResponse_AssertExactJson_Call) Run(run func(_a0 map[string]any)) *TestResponse_AssertExactJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]any))
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertExactJson_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertExactJson_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertExactJson_Call) RunAndReturn(run func(map[string]any) testing.TestResponse) *TestResponse_AssertExactJson_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AssertFluentJson provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertFluentJson(_a0 func(testing.AssertableJSON)) testing.TestResponse {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertFluentJson")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func(func(testing.AssertableJSON)) testing.TestResponse); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertFluentJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertFluentJson'
+type TestResponse_AssertFluentJson_Call struct {
+	*mock.Call
+}
+
+// AssertFluentJson is a helper method to define mock.On call
+//   - _a0 func(testing.AssertableJSON)
+func (_e *TestResponse_Expecter) AssertFluentJson(_a0 interface{}) *TestResponse_AssertFluentJson_Call {
+	return &TestResponse_AssertFluentJson_Call{Call: _e.mock.On("AssertFluentJson", _a0)}
+}
+
+func (_c *TestResponse_AssertFluentJson_Call) Run(run func(_a0 func(testing.AssertableJSON))) *TestResponse_AssertFluentJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(testing.AssertableJSON)))
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertFluentJson_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertFluentJson_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertFluentJson_Call) RunAndReturn(run func(func(testing.AssertableJSON)) testing.TestResponse) *TestResponse_AssertFluentJson_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AssertForbidden provides a mock function with given fields:
 func (_m *TestResponse) AssertForbidden() testing.TestResponse {
 	ret := _m.Called()
@@ -745,6 +841,102 @@ func (_c *TestResponse_AssertInternalServerError_Call) Return(_a0 testing.TestRe
 }
 
 func (_c *TestResponse_AssertInternalServerError_Call) RunAndReturn(run func() testing.TestResponse) *TestResponse_AssertInternalServerError_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AssertJson provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertJson(_a0 map[string]any) testing.TestResponse {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertJson")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestResponse); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertJson'
+type TestResponse_AssertJson_Call struct {
+	*mock.Call
+}
+
+// AssertJson is a helper method to define mock.On call
+//   - _a0 map[string]any
+func (_e *TestResponse_Expecter) AssertJson(_a0 interface{}) *TestResponse_AssertJson_Call {
+	return &TestResponse_AssertJson_Call{Call: _e.mock.On("AssertJson", _a0)}
+}
+
+func (_c *TestResponse_AssertJson_Call) Run(run func(_a0 map[string]any)) *TestResponse_AssertJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]any))
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertJson_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertJson_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertJson_Call) RunAndReturn(run func(map[string]any) testing.TestResponse) *TestResponse_AssertJson_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AssertJsonMissing provides a mock function with given fields: _a0
+func (_m *TestResponse) AssertJsonMissing(_a0 map[string]any) testing.TestResponse {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssertJsonMissing")
+	}
+
+	var r0 testing.TestResponse
+	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestResponse); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestResponse)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_AssertJsonMissing_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AssertJsonMissing'
+type TestResponse_AssertJsonMissing_Call struct {
+	*mock.Call
+}
+
+// AssertJsonMissing is a helper method to define mock.On call
+//   - _a0 map[string]any
+func (_e *TestResponse_Expecter) AssertJsonMissing(_a0 interface{}) *TestResponse_AssertJsonMissing_Call {
+	return &TestResponse_AssertJsonMissing_Call{Call: _e.mock.On("AssertJsonMissing", _a0)}
+}
+
+func (_c *TestResponse_AssertJsonMissing_Call) Run(run func(_a0 map[string]any)) *TestResponse_AssertJsonMissing_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]any))
+	})
+	return _c
+}
+
+func (_c *TestResponse_AssertJsonMissing_Call) Return(_a0 testing.TestResponse) *TestResponse_AssertJsonMissing_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_AssertJsonMissing_Call) RunAndReturn(run func(map[string]any) testing.TestResponse) *TestResponse_AssertJsonMissing_Call {
 	_c.Call.Return(run)
 	return _c
 }

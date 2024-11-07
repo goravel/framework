@@ -12,3 +12,8 @@ type ForeignKeyDefinition interface {
 	RestrictOnDelete() ForeignKeyDefinition
 	RestrictOnUpdate() ForeignKeyDefinition
 }
+
+type IndexDefinition interface {
+	Algorithm(algorithm string) IndexDefinition
+	Name(name string) IndexDefinition
+}

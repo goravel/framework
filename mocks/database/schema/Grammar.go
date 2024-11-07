@@ -3,7 +3,6 @@
 package schema
 
 import (
-	orm "github.com/goravel/framework/contracts/database/orm"
 	schema "github.com/goravel/framework/contracts/database/schema"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -68,17 +67,17 @@ func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint, *sche
 	return _c
 }
 
-// CompileCreate provides a mock function with given fields: blueprint, query
-func (_m *Grammar) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
-	ret := _m.Called(blueprint, query)
+// CompileCreate provides a mock function with given fields: blueprint
+func (_m *Grammar) CompileCreate(blueprint schema.Blueprint) string {
+	ret := _m.Called(blueprint)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileCreate")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(schema.Blueprint, orm.Query) string); ok {
-		r0 = rf(blueprint, query)
+	if rf, ok := ret.Get(0).(func(schema.Blueprint) string); ok {
+		r0 = rf(blueprint)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -93,14 +92,13 @@ type Grammar_CompileCreate_Call struct {
 
 // CompileCreate is a helper method to define mock.On call
 //   - blueprint schema.Blueprint
-//   - query orm.Query
-func (_e *Grammar_Expecter) CompileCreate(blueprint interface{}, query interface{}) *Grammar_CompileCreate_Call {
-	return &Grammar_CompileCreate_Call{Call: _e.mock.On("CompileCreate", blueprint, query)}
+func (_e *Grammar_Expecter) CompileCreate(blueprint interface{}) *Grammar_CompileCreate_Call {
+	return &Grammar_CompileCreate_Call{Call: _e.mock.On("CompileCreate", blueprint)}
 }
 
-func (_c *Grammar_CompileCreate_Call) Run(run func(blueprint schema.Blueprint, query orm.Query)) *Grammar_CompileCreate_Call {
+func (_c *Grammar_CompileCreate_Call) Run(run func(blueprint schema.Blueprint)) *Grammar_CompileCreate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(schema.Blueprint), args[1].(orm.Query))
+		run(args[0].(schema.Blueprint))
 	})
 	return _c
 }
@@ -110,7 +108,7 @@ func (_c *Grammar_CompileCreate_Call) Return(_a0 string) *Grammar_CompileCreate_
 	return _c
 }
 
-func (_c *Grammar_CompileCreate_Call) RunAndReturn(run func(schema.Blueprint, orm.Query) string) *Grammar_CompileCreate_Call {
+func (_c *Grammar_CompileCreate_Call) RunAndReturn(run func(schema.Blueprint) string) *Grammar_CompileCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -388,6 +386,100 @@ func (_c *Grammar_CompileForeign_Call) Return(_a0 string) *Grammar_CompileForeig
 }
 
 func (_c *Grammar_CompileForeign_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileForeign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileIndex provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileIndex")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileIndex'
+type Grammar_CompileIndex_Call struct {
+	*mock.Call
+}
+
+// CompileIndex is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileIndex(blueprint interface{}, command interface{}) *Grammar_CompileIndex_Call {
+	return &Grammar_CompileIndex_Call{Call: _e.mock.On("CompileIndex", blueprint, command)}
+}
+
+func (_c *Grammar_CompileIndex_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileIndex_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileIndex_Call) Return(_a0 string) *Grammar_CompileIndex_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileIndex_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileIndex_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileIndexes provides a mock function with given fields: _a0, table
+func (_m *Grammar) CompileIndexes(_a0 string, table string) string {
+	ret := _m.Called(_a0, table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileIndexes")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(_a0, table)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileIndexes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileIndexes'
+type Grammar_CompileIndexes_Call struct {
+	*mock.Call
+}
+
+// CompileIndexes is a helper method to define mock.On call
+//   - _a0 string
+//   - table string
+func (_e *Grammar_Expecter) CompileIndexes(_a0 interface{}, table interface{}) *Grammar_CompileIndexes_Call {
+	return &Grammar_CompileIndexes_Call{Call: _e.mock.On("CompileIndexes", _a0, table)}
+}
+
+func (_c *Grammar_CompileIndexes_Call) Run(run func(_a0 string, table string)) *Grammar_CompileIndexes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileIndexes_Call) Return(_a0 string) *Grammar_CompileIndexes_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileIndexes_Call) RunAndReturn(run func(string, string) string) *Grammar_CompileIndexes_Call {
 	_c.Call.Return(run)
 	return _c
 }

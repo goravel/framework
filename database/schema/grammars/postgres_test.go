@@ -82,7 +82,7 @@ func (s *PostgresSuite) TestCompileCreate() {
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
 
 	s.Equal("create table users (id serial primary key not null,name varchar(100) null)",
-		s.grammar.CompileCreate(mockBlueprint, nil))
+		s.grammar.CompileCreate(mockBlueprint))
 }
 
 func (s *PostgresSuite) TestCompileDropIfExists() {
@@ -97,6 +97,7 @@ func (s *PostgresSuite) TestCompileForeign() {
 
 	beforeEach := func() {
 		mockBlueprint = mocksschema.NewBlueprint(s.T())
+		mockBlueprint.EXPECT().GetPrefix().Return("goravel_").Once()
 		mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 	}
 
@@ -115,7 +116,7 @@ func (s *PostgresSuite) TestCompileForeign() {
 				OnDelete:   "cascade",
 				OnUpdate:   "restrict",
 			},
-			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references roles (id) on delete cascade on update restrict",
+			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references goravel_roles (id) on delete cascade on update restrict",
 		},
 		{
 			name: "without on delete and on update",
@@ -125,7 +126,7 @@ func (s *PostgresSuite) TestCompileForeign() {
 				On:         "roles",
 				References: []string{"id"},
 			},
-			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references roles (id)",
+			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references goravel_roles (id)",
 		},
 	}
 

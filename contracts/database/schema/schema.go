@@ -15,6 +15,10 @@ type Schema interface {
 	DropIfExists(table string) error
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
+	// GetIndexListing Get the names of the indexes for a given table.
+	GetIndexListing(table string) []string
+	// HasIndex Determine if the given table has a given index.
+	HasIndex(table, index string) bool
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
 	// Migrations Get the migrations.
@@ -45,6 +49,8 @@ type DriverSchema interface {
 	DropAllTypes() error
 	// DropAllViews Drop all views from the schema.
 	DropAllViews() error
+	// GetIndexes Get the indexes for a given table.
+	GetIndexes(table string) ([]Index, error)
 	// GetTypes Get the types that belong to the database.
 	GetTypes() ([]Type, error)
 }
@@ -76,6 +82,14 @@ type Command struct {
 	To         string
 	References []string
 	Value      string
+}
+
+type Index struct {
+	Columns []string
+	Name    string
+	Primary bool
+	Type    string
+	Unique  bool
 }
 
 type Table struct {

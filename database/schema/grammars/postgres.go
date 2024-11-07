@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
 )
@@ -34,7 +33,7 @@ func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Comman
 	return fmt.Sprintf("alter table %s add column %s", blueprint.GetTableName(), getColumn(r, blueprint, command.Column))
 }
 
-func (r *Postgres) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
+func (r *Postgres) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
 }
 
@@ -60,7 +59,11 @@ func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
 
 func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
 	sql := fmt.Sprintf("alter table %s add constraint %s foreign key (%s) references %s (%s)",
-		blueprint.GetTableName(), command.Index, strings.Join(command.Columns, ", "), command.On, strings.Join(command.References, ", "))
+		blueprint.GetTableName(),
+		command.Index,
+		strings.Join(command.Columns, ", "),
+		fmt.Sprintf("%s%s", blueprint.GetPrefix(), command.On),
+		strings.Join(command.References, ", "))
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete
 	}
@@ -69,6 +72,40 @@ func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Co
 	}
 
 	return sql
+}
+
+func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	var algorithm string
+	if command.Algorithm != "" {
+		algorithm = " using " + command.Algorithm
+	}
+
+	return fmt.Sprintf("create index %s on %s%s (%s)",
+		command.Index,
+		blueprint.GetTableName(),
+		algorithm,
+		strings.Join(command.Columns, ", "),
+	)
+}
+
+func (r *Postgres) CompileIndexes(schema, table string) string {
+	query := fmt.Sprintf(
+		"select ic.relname as name, string_agg(a.attname, ',' order by indseq.ord) as columns, "+
+			"am.amname as \"type\", i.indisunique as \"unique\", i.indisprimary as \"primary\" "+
+			"from pg_index i "+
+			"join pg_class tc on tc.oid = i.indrelid "+
+			"join pg_namespace tn on tn.oid = tc.relnamespace "+
+			"join pg_class ic on ic.oid = i.indexrelid "+
+			"join pg_am am on am.oid = ic.relam "+
+			"join lateral unnest(i.indkey) with ordinality as indseq(num, ord) on true "+
+			"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
+			"where tc.relname = %s and tn.nspname = %s "+
+			"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
+		quoteString(table),
+		quoteString(schema),
+	)
+
+	return query
 }
 
 func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
