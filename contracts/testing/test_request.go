@@ -6,12 +6,16 @@ import (
 )
 
 type TestRequest interface {
-	WithHeaders(headers map[string]string) TestRequest
-	WithHeader(key, value string) TestRequest
-	WithoutHeader(key string) TestRequest
+	FlushHeaders() TestRequest
 	WithCookies(cookies map[string]string) TestRequest
 	WithCookie(key, value string) TestRequest
 	WithContext(ctx context.Context) TestRequest
+	WithHeaders(headers map[string]string) TestRequest
+	WithHeader(key, value string) TestRequest
+	WithoutHeader(key string) TestRequest
+	WithToken(token string, ttype ...string) TestRequest
+	WithBasicAuth(username, password string) TestRequest
+	WithoutToken() TestRequest
 	Get(uri string) (TestResponse, error)
 	Post(uri string, body io.Reader) (TestResponse, error)
 	Put(uri string, body io.Reader) (TestResponse, error)

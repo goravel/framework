@@ -41,4 +41,8 @@ type TestResponse interface {
 	AssertDontSee([]string, ...bool) TestResponse
 	AssertSee([]string, ...bool) TestResponse
 	AssertSeeInOrder([]string, ...bool) TestResponse
+	AssertJson(map[string]any) TestResponse
+	AssertExactJson(map[string]any) TestResponse
+	AssertJsonMissing(map[string]any) TestResponse
+	AssertFluentJson(func(json AssertableJSON)) TestResponse
 }
