@@ -36,7 +36,7 @@ func (r *Sqlite) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s%s%s)",
 		blueprint.GetTableName(),
 		strings.Join(getColumns(r, blueprint), ","),
-		r.addForeignKeys(blueprint, getCommandsByName(blueprint.GetCommands(), "foreign")),
+		r.addForeignKeys(getCommandsByName(blueprint.GetCommands(), "foreign")),
 		r.addPrimaryKeys(getCommandByName(blueprint.GetCommands(), "primary")))
 }
 
@@ -151,10 +151,6 @@ func (r *Sqlite) TypeBigInteger(column schema.ColumnDefinition) string {
 }
 
 func (r *Sqlite) TypeInteger(column schema.ColumnDefinition) string {
-	if column.GetAutoIncrement() {
-		return "serial"
-	}
-
 	return "integer"
 }
 
@@ -162,11 +158,11 @@ func (r *Sqlite) TypeString(column schema.ColumnDefinition) string {
 	return "varchar"
 }
 
-func (r *Sqlite) addForeignKeys(blueprint schema.Blueprint, commands []*schema.Command) string {
+func (r *Sqlite) addForeignKeys(commands []*schema.Command) string {
 	var sql string
 
 	for _, command := range commands {
-		sql += r.getForeignKey(blueprint, command)
+		sql += r.getForeignKey(command)
 	}
 
 	return sql
@@ -180,7 +176,7 @@ func (r *Sqlite) addPrimaryKeys(command *schema.Command) string {
 	return fmt.Sprintf(", primary key (%s)", strings.Join(command.Columns, ", "))
 }
 
-func (r *Sqlite) getForeignKey(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) getForeignKey(command *schema.Command) string {
 	sql := fmt.Sprintf(", foreign key(%s) references %s(%s)",
 		strings.Join(command.Columns, ","),
 		command.On,

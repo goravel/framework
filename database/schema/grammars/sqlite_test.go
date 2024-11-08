@@ -60,7 +60,6 @@ func (s *SqliteSuite) TestCompileCreate() {
 	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
 	// sqlite.go::ModifyIncrement
 	mockColumn1.EXPECT().GetType().Return("integer").Once()
-	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
 	// sqlite.go::ModifyNullable
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
 
@@ -99,7 +98,7 @@ func (s *SqliteSuite) TestCompileCreate() {
 		},
 	}).Twice()
 
-	s.Equal("create table users (id serial primary key autoincrement not null,name varchar null, foreign key(role_id) references roles(id) on delete cascade on update restrict, foreign key(permission_id) references permissions(id) on delete cascade on update restrict, primary key (id))",
+	s.Equal("create table users (id integer primary key autoincrement not null,name varchar null, foreign key(role_id) references roles(id) on delete cascade on update restrict, foreign key(permission_id) references permissions(id) on delete cascade on update restrict, primary key (id))",
 		s.grammar.CompileCreate(mockBlueprint))
 }
 
@@ -172,16 +171,4 @@ func (s *SqliteSuite) TestModifyIncrement() {
 	mockColumn.EXPECT().GetAutoIncrement().Return(true).Once()
 
 	s.Equal(" primary key autoincrement", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
-}
-
-func (s *SqliteSuite) TestTypeInteger() {
-	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
-	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
-
-	s.Equal("serial", s.grammar.TypeInteger(mockColumn1))
-
-	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
-	mockColumn2.EXPECT().GetAutoIncrement().Return(false).Once()
-
-	s.Equal("integer", s.grammar.TypeInteger(mockColumn2))
 }
