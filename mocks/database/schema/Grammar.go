@@ -343,6 +343,53 @@ func (_c *Grammar_CompileDropIfExists_Call) RunAndReturn(run func(schema.Bluepri
 	return _c
 }
 
+// CompileForeign provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileForeign")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileForeign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileForeign'
+type Grammar_CompileForeign_Call struct {
+	*mock.Call
+}
+
+// CompileForeign is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileForeign(blueprint interface{}, command interface{}) *Grammar_CompileForeign_Call {
+	return &Grammar_CompileForeign_Call{Call: _e.mock.On("CompileForeign", blueprint, command)}
+}
+
+func (_c *Grammar_CompileForeign_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileForeign_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileForeign_Call) Return(_a0 string) *Grammar_CompileForeign_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileForeign_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileForeign_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileIndex provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
 	ret := _m.Called(blueprint, command)

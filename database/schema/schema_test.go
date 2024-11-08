@@ -87,6 +87,34 @@ func (s *SchemaSuite) TestDropAllViews() {
 
 }
 
+func (s *SchemaSuite) TestForeign() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table1 := "foreign1"
+
+			err := schema.Create(table1, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.HasTable(table1))
+
+			table2 := "foreign2"
+			err = schema.Create(table2, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.Integer("foreign1_id")
+				table.Foreign("foreign1_id").References("id").On(table1)
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.HasTable(table2))
+		})
+	}
+}
+
 func (s *SchemaSuite) TestPrimary() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {

@@ -11,10 +11,14 @@ type Blueprint interface {
 	Create()
 	// DropIfExists Indicate that the table should be dropped if it exists.
 	DropIfExists()
+	// Foreign Specify a foreign key for the table.
+	Foreign(column ...string) ForeignKeyDefinition
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
 	// GetCommands Get the commands.
 	GetCommands() []*Command
+	// GetPrefix Get the table prefix.
+	GetPrefix() string
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.

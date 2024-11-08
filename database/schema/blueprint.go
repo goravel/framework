@@ -60,6 +60,12 @@ func (r *Blueprint) DropIfExists() {
 	})
 }
 
+func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
+	command := r.indexCommand(constants.CommandForeign, column)
+
+	return NewForeignKeyDefinition(command)
+}
+
 func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 	var columns []schema.ColumnDefinition
 	for _, column := range r.columns {
@@ -71,6 +77,10 @@ func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 
 func (r *Blueprint) GetCommands() []*schema.Command {
 	return r.commands
+}
+
+func (r *Blueprint) GetPrefix() string {
+	return r.prefix
 }
 
 func (r *Blueprint) GetTableName() string {
@@ -149,6 +159,8 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 			statements = append(statements, grammar.CompileCreate(r))
 		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
+		case constants.CommandForeign:
+			statements = append(statements, grammar.CompileForeign(r, command))
 		case constants.CommandIndex:
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case constants.CommandPrimary:

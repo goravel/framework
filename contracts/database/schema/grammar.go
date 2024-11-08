@@ -15,6 +15,8 @@ type Grammar interface {
 	CompileDropAllViews(views []string) string
 	// CompileDropIfExists Compile a drop table (if exists) command.
 	CompileDropIfExists(blueprint Blueprint) string
+	// CompileForeign Compile a foreign key command.
+	CompileForeign(blueprint Blueprint, command *Command) string
 	// CompileIndex Compile a plain index key command.
 	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
