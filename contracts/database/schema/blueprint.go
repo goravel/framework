@@ -17,8 +17,6 @@ type Blueprint interface {
 	GetAddedColumns() []ColumnDefinition
 	// GetCommands Get the commands.
 	GetCommands() []*Command
-	// GetPrefix Get the table prefix.
-	GetPrefix() string
 	// GetTableName Get the table name with prefix.
 	GetTableName() string
 	// HasCommand Determine if the blueprint has a specific command.

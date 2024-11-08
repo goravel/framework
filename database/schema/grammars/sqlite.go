@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -33,12 +32,16 @@ func (r *Sqlite) CompileAdd(blueprint schema.Blueprint, command *schema.Command)
 	return fmt.Sprintf("alter table %s add column %s", blueprint.GetTableName(), getColumn(r, blueprint, command.Column))
 }
 
-func (r *Sqlite) CompileCreate(blueprint schema.Blueprint, query orm.Query) string {
+func (r *Sqlite) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s%s%s)",
 		blueprint.GetTableName(),
 		strings.Join(getColumns(r, blueprint), ","),
-		r.addForeignKeys(getCommandsByName(blueprint.GetCommands(), "foreign")),
+		r.addForeignKeys(blueprint, getCommandsByName(blueprint.GetCommands(), "foreign")),
 		r.addPrimaryKeys(getCommandByName(blueprint.GetCommands(), "primary")))
+}
+
+func (r *Sqlite) CompileDisableWriteableSchema() string {
+	return r.pragma("writable_schema", "0")
 }
 
 func (r *Sqlite) CompileDropAllDomains(domains []string) string {
@@ -59,6 +62,44 @@ func (r *Sqlite) CompileDropAllViews(views []string) string {
 
 func (r *Sqlite) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
+}
+
+func (r *Sqlite) CompileEnableWriteableSchema() string {
+	return r.pragma("writable_schema", "1")
+}
+
+func (r *Sqlite) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	return ""
+}
+
+func (r *Sqlite) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("create index %s on %s (%s)",
+		command.Index,
+		blueprint.GetTableName(),
+		strings.Join(command.Columns, ", "),
+	)
+}
+
+func (r *Sqlite) CompileIndexes(schema, table string) string {
+	quotedTable := quoteString(strings.ReplaceAll(table, ".", "__"))
+
+	return fmt.Sprintf(
+		`select 'primary' as name, group_concat(col) as columns, 1 as "unique", 1 as "primary" `+
+			`from (select name as col from pragma_table_info(%s) where pk > 0 order by pk, cid) group by name `+
+			`union select name, group_concat(col) as columns, "unique", origin = 'pk' as "primary" `+
+			`from (select il.*, ii.name as col from pragma_index_list(%s) il, pragma_index_info(il.name) ii order by il.seq, ii.seqno) `+
+			`group by name, "unique", "primary"`,
+		quotedTable,
+		quoteString(table),
+	)
+}
+
+func (r *Sqlite) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
+	return ""
+}
+
+func (r *Sqlite) CompileRebuild() string {
+	return "vacuum"
 }
 
 func (r *Sqlite) CompileTables() string {
@@ -121,9 +162,14 @@ func (r *Sqlite) TypeString(column schema.ColumnDefinition) string {
 	return "varchar"
 }
 
-// addForeignKeys Get the foreign key syntax for a table creation statement.
-func (r *Sqlite) addForeignKeys([]*schema.Command) string {
-	return ""
+func (r *Sqlite) addForeignKeys(blueprint schema.Blueprint, commands []*schema.Command) string {
+	var sql string
+
+	for _, command := range commands {
+		sql += r.getForeignKey(blueprint, command)
+	}
+
+	return sql
 }
 
 func (r *Sqlite) addPrimaryKeys(command *schema.Command) string {
@@ -131,10 +177,25 @@ func (r *Sqlite) addPrimaryKeys(command *schema.Command) string {
 		return ""
 	}
 
-	return fmt.Sprintf(", primary key (%s)", strings.Join(r.EscapeNames(command.Columns), ", "))
+	return fmt.Sprintf(", primary key (%s)", strings.Join(command.Columns, ", "))
 }
 
-// getForeignKey Get the SQL for the foreign key.
-func (r *Sqlite) getForeignKey(*schema.Command) string {
+func (r *Sqlite) getForeignKey(blueprint schema.Blueprint, command *schema.Command) string {
+	sql := fmt.Sprintf(", foreign key(%s) references %s(%s)",
+		strings.Join(command.Columns, ","),
+		command.On,
+		strings.Join(command.References, ","))
+
+	if command.OnDelete != "" {
+		sql += " on delete " + command.OnDelete
+	}
+	if command.OnUpdate != "" {
+		sql += " on update " + command.OnUpdate
+	}
+
 	return ""
+}
+
+func (r *Sqlite) pragma(name, value string) string {
+	return fmt.Sprintf("pragma %s = %s", name, value)
 }
