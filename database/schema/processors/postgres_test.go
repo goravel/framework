@@ -3,20 +3,20 @@ package processors
 import (
 	"testing"
 
-	"github.com/gookit/goutil/testutil/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func TestProcessIndexes(t *testing.T) {
+func TestPostgresProcessIndexes(t *testing.T) {
 	// Test with valid indexes
-	input := []schema.Index{
-		{Name: "INDEX_A", Type: "BTREE"},
-		{Name: "INDEX_B", Type: "HASH"},
+	input := []DBIndex{
+		{Name: "INDEX_A", Type: "BTREE", Columns: "a,b"},
+		{Name: "INDEX_B", Type: "HASH", Columns: "c,d"},
 	}
 	expected := []schema.Index{
-		{Name: "index_a", Type: "btree"},
-		{Name: "index_b", Type: "hash"},
+		{Name: "index_a", Type: "btree", Columns: []string{"a", "b"}},
+		{Name: "index_b", Type: "hash", Columns: []string{"c", "d"}},
 	}
 
 	postgres := NewPostgres()
@@ -25,15 +25,14 @@ func TestProcessIndexes(t *testing.T) {
 	assert.Equal(t, expected, result)
 
 	// Test with empty input
-	input = []schema.Index{}
-	expected = []schema.Index{}
+	input = []DBIndex{}
 
 	result = postgres.ProcessIndexes(input)
 
-	assert.Equal(t, expected, result)
+	assert.Nil(t, result)
 }
 
-func TestProcessTypes(t *testing.T) {
+func TestPostgresProcessTypes(t *testing.T) {
 	// ValidTypes_ReturnsProcessedTypes
 	input := []schema.Type{
 		{Type: "b", Category: "a"},

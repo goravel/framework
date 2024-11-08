@@ -193,7 +193,7 @@ func (r *Sqlite) getForeignKey(blueprint schema.Blueprint, command *schema.Comma
 		sql += " on update " + command.OnUpdate
 	}
 
-	return ""
+	return sql
 }
 
 func (r *Sqlite) pragma(name, value string) string {
