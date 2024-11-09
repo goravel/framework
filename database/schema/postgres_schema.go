@@ -124,31 +124,12 @@ func (r *PostgresSchema) GetIndexes(table string) ([]contractsschema.Index, erro
 	schema, table := r.parseSchemaAndTable(table)
 	table = r.prefix + table
 
-	type Index struct {
-		Columns string
-		Name    string
-		Primary bool
-		Type    string
-		Unique  bool
-	}
-
-	var tempIndexes []Index
-	if err := r.orm.Query().Raw(r.grammar.CompileIndexes(schema, table)).Scan(&tempIndexes); err != nil {
+	var dbIndexes []processors.DBIndex
+	if err := r.orm.Query().Raw(r.grammar.CompileIndexes(schema, table)).Scan(&dbIndexes); err != nil {
 		return nil, err
 	}
 
-	var indexes []contractsschema.Index
-	for _, tempIndex := range tempIndexes {
-		indexes = append(indexes, contractsschema.Index{
-			Columns: strings.Split(tempIndex.Columns, ","),
-			Name:    tempIndex.Name,
-			Primary: tempIndex.Primary,
-			Type:    tempIndex.Type,
-			Unique:  tempIndex.Unique,
-		})
-	}
-
-	return r.processor.ProcessIndexes(indexes), nil
+	return r.processor.ProcessIndexes(dbIndexes), nil
 }
 
 func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {

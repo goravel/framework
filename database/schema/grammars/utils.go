@@ -33,6 +33,26 @@ func getColumns(grammar schema.Grammar, blueprint schema.Blueprint) []string {
 	return columns
 }
 
+func getCommandByName(commands []*schema.Command, name string) *schema.Command {
+	commands = getCommandsByName(commands, name)
+	if len(commands) == 0 {
+		return nil
+	}
+
+	return commands[0]
+}
+
+func getCommandsByName(commands []*schema.Command, name string) []*schema.Command {
+	var filteredCommands []*schema.Command
+	for _, command := range commands {
+		if command.Name == name {
+			filteredCommands = append(filteredCommands, command)
+		}
+	}
+
+	return filteredCommands
+}
+
 func getDefaultValue(def any) string {
 	switch def.(type) {
 	case bool:

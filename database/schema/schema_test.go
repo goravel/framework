@@ -29,8 +29,13 @@ func (s *SchemaSuite) SetupTest() {
 	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+
+	sqliteDocker := docker.Sqlite()
+	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
+
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
 		database.DriverPostgres: postgresQuery,
+		database.DriverSqlite:   sqliteQuery,
 	}
 }
 
@@ -128,7 +133,10 @@ func (s *SchemaSuite) TestPrimary() {
 			}))
 
 			s.Require().True(schema.HasTable(table))
-			s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
+			if driver != database.DriverSqlite {
+				// SQLite does not support set primary index separately
+				s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
+			}
 		})
 	}
 }
@@ -159,7 +167,11 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "goravel_indexes_id_name_index" {
 					s.ElementsMatch(index.Columns, []string{"id", "name"})
 					s.False(index.Primary)
-					s.Equal("btree", index.Type)
+					if driver == database.DriverSqlite {
+						s.Empty(index.Type)
+					} else {
+						s.Equal("btree", index.Type)
+					}
 					s.False(index.Unique)
 				}
 			}

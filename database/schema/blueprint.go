@@ -63,7 +63,7 @@ func (r *Blueprint) DropIfExists() {
 func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
 	command := r.indexCommand(constants.CommandForeign, column)
 
-	return NewForeignKeyDefinition(command)
+	return NewForeignKeyDefinition(command, r.prefix)
 }
 
 func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
@@ -77,10 +77,6 @@ func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 
 func (r *Blueprint) GetCommands() []*schema.Command {
 	return r.commands
-}
-
-func (r *Blueprint) GetPrefix() string {
-	return r.prefix
 }
 
 func (r *Blueprint) GetTableName() string {

@@ -31,6 +31,23 @@ func TestGetColumns(t *testing.T) {
 	assert.Equal(t, []string{"id varchar(100)", "name varchar"}, getColumns(mockGrammar, mockBlueprint))
 }
 
+func TestGetCommandByName(t *testing.T) {
+	commands := []*schema.Command{
+		{Name: "create"},
+		{Name: "update"},
+		{Name: "delete"},
+	}
+
+	// Test case: Command exists
+	result := getCommandByName(commands, "update")
+	assert.NotNil(t, result)
+	assert.Equal(t, "update", result.Name)
+
+	// Test case: Command does not exist
+	result = getCommandByName(commands, "drop")
+	assert.Nil(t, result)
+}
+
 func TestGetDefaultValue(t *testing.T) {
 	def := true
 	assert.Equal(t, "'1'", getDefaultValue(def))

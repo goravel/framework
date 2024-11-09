@@ -62,7 +62,7 @@ func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Co
 		blueprint.GetTableName(),
 		command.Index,
 		strings.Join(command.Columns, ", "),
-		fmt.Sprintf("%s%s", blueprint.GetPrefix(), command.On),
+		command.On,
 		strings.Join(command.References, ", "))
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete
@@ -89,7 +89,7 @@ func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Comm
 }
 
 func (r *Postgres) CompileIndexes(schema, table string) string {
-	query := fmt.Sprintf(
+	return fmt.Sprintf(
 		"select ic.relname as name, string_agg(a.attname, ',' order by indseq.ord) as columns, "+
 			"am.amname as \"type\", i.indisunique as \"unique\", i.indisprimary as \"primary\" "+
 			"from pg_index i "+
@@ -104,8 +104,6 @@ func (r *Postgres) CompileIndexes(schema, table string) string {
 		quoteString(table),
 		quoteString(schema),
 	)
-
-	return query
 }
 
 func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {

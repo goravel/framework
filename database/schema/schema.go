@@ -38,18 +38,20 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 	)
 
 	switch driver {
-	case contractsdatabase.DriverMysql:
-		// TODO Optimize here when implementing Mysql driver
 	case contractsdatabase.DriverPostgres:
 		schema := config.GetString(fmt.Sprintf("database.connections.%s.search_path", orm.Name()), "public")
 
 		postgresGrammar := grammars.NewPostgres()
 		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)
 		grammar = postgresGrammar
+	case contractsdatabase.DriverMysql:
+		// TODO Optimize here when implementing Mysql driver
 	case contractsdatabase.DriverSqlserver:
 		// TODO Optimize here when implementing Sqlserver driver
 	case contractsdatabase.DriverSqlite:
-		// TODO Optimize here when implementing Sqlite driver
+		sqliteGrammar := grammars.NewSqlite()
+		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)
+		grammar = sqliteGrammar
 	default:
 		panic(errors.SchemaDriverNotSupported.Args(driver))
 	}

@@ -6,11 +6,13 @@ import (
 
 type ForeignKeyDefinition struct {
 	command *schema.Command
+	prefix  string
 }
 
-func NewForeignKeyDefinition(command *schema.Command) schema.ForeignKeyDefinition {
+func NewForeignKeyDefinition(command *schema.Command, prefix string) schema.ForeignKeyDefinition {
 	return &ForeignKeyDefinition{
 		command: command,
+		prefix:  prefix,
 	}
 }
 
@@ -27,7 +29,7 @@ func (f *ForeignKeyDefinition) CascadeOnUpdate() schema.ForeignKeyDefinition {
 }
 
 func (f *ForeignKeyDefinition) On(table string) schema.ForeignKeyDefinition {
-	f.command.On = table
+	f.command.On = f.prefix + table
 
 	return f
 }
