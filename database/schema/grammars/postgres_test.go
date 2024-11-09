@@ -206,6 +206,31 @@ func (s *PostgresSuite) TestCompilePrimary() {
 	}))
 }
 
+func (s *PostgresSuite) TestGetColumns() {
+	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
+	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+
+	mockBlueprint.EXPECT().GetAddedColumns().Return([]contractsschema.ColumnDefinition{
+		mockColumn1, mockColumn2,
+	}).Once()
+	mockBlueprint.EXPECT().HasCommand("primary").Return(false).Twice()
+
+	mockColumn1.EXPECT().GetName().Return("id").Once()
+	mockColumn1.EXPECT().GetType().Return("integer").Twice()
+	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
+	mockColumn1.EXPECT().GetNullable().Return(false).Once()
+	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Twice()
+
+	mockColumn2.EXPECT().GetName().Return("name").Once()
+	mockColumn2.EXPECT().GetType().Return("string").Twice()
+	mockColumn2.EXPECT().GetDefault().Return("goravel").Twice()
+	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+	mockColumn2.EXPECT().GetLength().Return(10).Once()
+
+	s.Equal([]string{"\"id\" serial primary key not null", "\"name\" varchar(10) default 'goravel' null"}, s.grammar.getColumns(mockBlueprint))
+}
+
 func (s *PostgresSuite) TestEscapeNames() {
 	// SingleName
 	names := []string{"username"}

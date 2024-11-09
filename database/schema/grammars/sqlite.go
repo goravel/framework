@@ -12,12 +12,16 @@ type Sqlite struct {
 	attributeCommands []string
 	modifiers         []func(schema.Blueprint, schema.ColumnDefinition) string
 	serials           []string
+	tablePrefix       string
+	wrap              *Wrap
 }
 
-func NewSqlite() *Sqlite {
+func NewSqlite(tablePrefix string) *Sqlite {
 	sqlite := &Sqlite{
 		attributeCommands: []string{},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
+		tablePrefix:       tablePrefix,
+		wrap:              NewWrap(tablePrefix),
 	}
 	sqlite.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
 		sqlite.ModifyDefault,
@@ -29,13 +33,13 @@ func NewSqlite() *Sqlite {
 }
 
 func (r *Sqlite) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
-	return fmt.Sprintf("alter table %s add column %s", blueprint.GetTableName(), getColumn(r, blueprint, command.Column))
+	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
 func (r *Sqlite) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s%s%s)",
-		blueprint.GetTableName(),
-		strings.Join(getColumns(r, blueprint), ","),
+		r.wrap.Table(blueprint.GetTableName()),
+		strings.Join(r.getColumns(blueprint), ", "),
 		r.addForeignKeys(getCommandsByName(blueprint.GetCommands(), "foreign")),
 		r.addPrimaryKeys(getCommandByName(blueprint.GetCommands(), "primary")))
 }
@@ -61,7 +65,7 @@ func (r *Sqlite) CompileDropAllViews(views []string) string {
 }
 
 func (r *Sqlite) CompileDropIfExists(blueprint schema.Blueprint) string {
-	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
+	return fmt.Sprintf("drop table if exists %s", r.wrap.Table(blueprint.GetTableName()))
 }
 
 func (r *Sqlite) CompileEnableWriteableSchema() string {
@@ -74,14 +78,14 @@ func (r *Sqlite) CompileForeign(blueprint schema.Blueprint, command *schema.Comm
 
 func (r *Sqlite) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
 	return fmt.Sprintf("create index %s on %s (%s)",
-		command.Index,
-		blueprint.GetTableName(),
-		strings.Join(command.Columns, ", "),
+		r.wrap.Column(command.Index),
+		r.wrap.Table(blueprint.GetTableName()),
+		r.wrap.Columns(command.Columns),
 	)
 }
 
 func (r *Sqlite) CompileIndexes(schema, table string) string {
-	quotedTable := quoteString(strings.ReplaceAll(table, ".", "__"))
+	quotedTable := r.wrap.Quote(strings.ReplaceAll(table, ".", "__"))
 
 	return fmt.Sprintf(
 		`select 'primary' as name, group_concat(col) as columns, 1 as "unique", 1 as "primary" `+
@@ -90,7 +94,7 @@ func (r *Sqlite) CompileIndexes(schema, table string) string {
 			`from (select il.*, ii.name as col from pragma_index_list(%s) il, pragma_index_info(il.name) ii order by il.seq, ii.seqno) `+
 			`group by name, "unique", "primary"`,
 		quotedTable,
-		quoteString(table),
+		r.wrap.Quote(table),
 	)
 }
 
@@ -173,14 +177,33 @@ func (r *Sqlite) addPrimaryKeys(command *schema.Command) string {
 		return ""
 	}
 
-	return fmt.Sprintf(", primary key (%s)", strings.Join(command.Columns, ", "))
+	return fmt.Sprintf(", primary key (%s)", r.wrap.Columns(command.Columns))
+}
+
+func (r *Sqlite) getColumns(blueprint schema.Blueprint) []string {
+	var columns []string
+	for _, column := range blueprint.GetAddedColumns() {
+		columns = append(columns, r.getColumn(blueprint, column))
+	}
+
+	return columns
+}
+
+func (r *Sqlite) getColumn(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	sql := fmt.Sprintf("%s %s", r.wrap.Column(column.GetName()), getType(r, column))
+
+	for _, modifier := range r.modifiers {
+		sql += modifier(blueprint, column)
+	}
+
+	return sql
 }
 
 func (r *Sqlite) getForeignKey(command *schema.Command) string {
 	sql := fmt.Sprintf(", foreign key(%s) references %s(%s)",
-		strings.Join(command.Columns, ","),
-		command.On,
-		strings.Join(command.References, ","))
+		r.wrap.Columns(command.Columns),
+		r.wrap.Table(command.On),
+		r.wrap.Columns(command.References))
 
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete
