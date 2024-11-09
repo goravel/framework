@@ -24,7 +24,7 @@ type BlueprintTestSuite struct {
 func TestBlueprintTestSuite(t *testing.T) {
 	suite.Run(t, &BlueprintTestSuite{
 		grammars: map[database.Driver]schema.Grammar{
-			database.DriverPostgres: grammars.NewPostgres(),
+			database.DriverPostgres: grammars.NewPostgres("goravel_"),
 		},
 	})
 }
@@ -139,6 +139,10 @@ func (s *BlueprintTestSuite) TestBuild() {
 func (s *BlueprintTestSuite) TestCreateIndexName() {
 	name := s.blueprint.createIndexName("index", []string{"id", "name-1", "name.2"})
 	s.Equal("goravel_users_id_name_1_name_2_index", name)
+
+	s.blueprint.table = "public.users"
+	name = s.blueprint.createIndexName("index", []string{"id", "name-1", "name.2"})
+	s.Equal("public_goravel_users_id_name_1_name_2_index", name)
 }
 
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
@@ -151,11 +155,6 @@ func (s *BlueprintTestSuite) TestGetAddedColumns() {
 
 	s.Len(s.blueprint.GetAddedColumns(), 1)
 	s.Equal(addedColumn, s.blueprint.GetAddedColumns()[0])
-}
-
-func (s *BlueprintTestSuite) TestGetTableName() {
-	s.blueprint.SetTable("users")
-	s.Equal("goravel_users", s.blueprint.GetTableName())
 }
 
 func (s *BlueprintTestSuite) TestHasCommand() {

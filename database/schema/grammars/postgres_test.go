@@ -19,7 +19,7 @@ func TestPostgresSuite(t *testing.T) {
 }
 
 func (s *PostgresSuite) SetupTest() {
-	s.grammar = NewPostgres()
+	s.grammar = NewPostgres("goravel_")
 }
 
 func (s *PostgresSuite) TestCompileAdd() {
@@ -38,7 +38,7 @@ func (s *PostgresSuite) TestCompileAdd() {
 		Column: mockColumn,
 	})
 
-	s.Equal("alter table users add column name varchar(1) default 'goravel' not null", sql)
+	s.Equal(`alter table "goravel_users" add column "name" varchar(1) default 'goravel' not null`, sql)
 }
 
 func (s *PostgresSuite) TestCompileCreate() {
@@ -81,15 +81,31 @@ func (s *PostgresSuite) TestCompileCreate() {
 	// postgres.go::ModifyNullable
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
 
-	s.Equal("create table users (id serial primary key not null,name varchar(100) null)",
+	s.Equal(`create table "goravel_users" ("id" serial primary key not null, "name" varchar(100) null)`,
 		s.grammar.CompileCreate(mockBlueprint))
+}
+
+func (s *PostgresSuite) TestCompileDropAllDomains() {
+	s.Equal(`drop domain "domain", "user"."email" cascade`, s.grammar.CompileDropAllDomains([]string{"domain", "user.email"}))
+}
+
+func (s *PostgresSuite) TestCompileDropAllTables() {
+	s.Equal(`drop table "domain", "user"."email" cascade`, s.grammar.CompileDropAllTables([]string{"domain", "user.email"}))
+}
+
+func (s *PostgresSuite) TestCompileDropAllTypes() {
+	s.Equal(`drop type "domain", "user"."email" cascade`, s.grammar.CompileDropAllTypes([]string{"domain", "user.email"}))
+}
+
+func (s *PostgresSuite) TestCompileDropAllViews() {
+	s.Equal(`drop view "domain", "user"."email" cascade`, s.grammar.CompileDropAllViews([]string{"domain", "user.email"}))
 }
 
 func (s *PostgresSuite) TestCompileDropIfExists() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
-	s.Equal("drop table if exists users", s.grammar.CompileDropIfExists(mockBlueprint))
+	s.Equal(`drop table if exists "goravel_users"`, s.grammar.CompileDropIfExists(mockBlueprint))
 }
 
 func (s *PostgresSuite) TestCompileForeign() {
@@ -109,23 +125,23 @@ func (s *PostgresSuite) TestCompileForeign() {
 			name: "with on delete and on update",
 			command: &contractsschema.Command{
 				Index:      "fk_users_role_id",
-				Columns:    []string{"role_id"},
+				Columns:    []string{"role_id", "user_id"},
 				On:         "roles",
-				References: []string{"id"},
+				References: []string{"id", "user_id"},
 				OnDelete:   "cascade",
 				OnUpdate:   "restrict",
 			},
-			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references roles (id) on delete cascade on update restrict",
+			expectSql: `alter table "goravel_users" add constraint "fk_users_role_id" foreign key ("role_id", "user_id") references "goravel_roles" ("id", "user_id") on delete cascade on update restrict`,
 		},
 		{
 			name: "without on delete and on update",
 			command: &contractsschema.Command{
 				Index:      "fk_users_role_id",
-				Columns:    []string{"role_id"},
+				Columns:    []string{"role_id", "user_id"},
 				On:         "roles",
-				References: []string{"id"},
+				References: []string{"id", "user_id"},
 			},
-			expectSql: "alter table users add constraint fk_users_role_id foreign key (role_id) references roles (id)",
+			expectSql: `alter table "goravel_users" add constraint "fk_users_role_id" foreign key ("role_id", "user_id") references "goravel_roles" ("id", "user_id")`,
 		},
 	}
 
@@ -137,6 +153,57 @@ func (s *PostgresSuite) TestCompileForeign() {
 			s.Equal(test.expectSql, sql)
 		})
 	}
+}
+
+func (s *PostgresSuite) TestCompileIndex() {
+	var mockBlueprint *mocksschema.Blueprint
+
+	beforeEach := func() {
+		mockBlueprint = mocksschema.NewBlueprint(s.T())
+		mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+	}
+
+	tests := []struct {
+		name      string
+		command   *contractsschema.Command
+		expectSql string
+	}{
+		{
+			name: "with Algorithm",
+			command: &contractsschema.Command{
+				Index:     "fk_users_role_id",
+				Columns:   []string{"role_id", "user_id"},
+				Algorithm: "btree",
+			},
+			expectSql: `create index "fk_users_role_id" on "goravel_users" using btree ("role_id", "user_id")`,
+		},
+		{
+			name: "without Algorithm",
+			command: &contractsschema.Command{
+				Index:   "fk_users_role_id",
+				Columns: []string{"role_id", "user_id"},
+			},
+			expectSql: `create index "fk_users_role_id" on "goravel_users" ("role_id", "user_id")`,
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			beforeEach()
+
+			sql := s.grammar.CompileIndex(mockBlueprint, test.command)
+			s.Equal(test.expectSql, sql)
+		})
+	}
+}
+
+func (s *PostgresSuite) TestCompilePrimary() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal(`alter table "goravel_users" add primary key ("role_id", "user_id")`, s.grammar.CompilePrimary(mockBlueprint, &contractsschema.Command{
+		Columns: []string{"role_id", "user_id"},
+	}))
 }
 
 func (s *PostgresSuite) TestEscapeNames() {
