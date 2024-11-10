@@ -22,7 +22,6 @@ type TestRequest struct {
 	defaultCookies    map[string]string
 	sessionId         string
 	sessionAttributes map[string]any
-	withSession       bool
 }
 
 func NewTestRequest(t *testing.T) contractstesting.TestRequest {
@@ -89,7 +88,6 @@ func (r *TestRequest) WithoutToken() contractstesting.TestRequest {
 
 func (r *TestRequest) WithSession(attributes map[string]any) contractstesting.TestRequest {
 	r.sessionAttributes = collect.Merge(r.sessionAttributes, attributes)
-	r.withSession = true
 	return r
 }
 
@@ -156,7 +154,7 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 }
 
 func (r *TestRequest) setSession() error {
-	if !r.withSession {
+	if len(r.sessionAttributes) <= 0 {
 		return nil
 	}
 
