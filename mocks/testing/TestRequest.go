@@ -772,6 +772,103 @@ func (_c *TestRequest_WithHeaders_Call) RunAndReturn(run func(map[string]string)
 	return _c
 }
 
+// WithSession provides a mock function with given fields: attributes
+func (_m *TestRequest) WithSession(attributes map[string]any) testing.TestRequest {
+	ret := _m.Called(attributes)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithSession")
+	}
+
+	var r0 testing.TestRequest
+	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestRequest); ok {
+		r0 = rf(attributes)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestRequest)
+		}
+	}
+
+	return r0
+}
+
+// TestRequest_WithSession_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithSession'
+type TestRequest_WithSession_Call struct {
+	*mock.Call
+}
+
+// WithSession is a helper method to define mock.On call
+//   - attributes map[string]any
+func (_e *TestRequest_Expecter) WithSession(attributes interface{}) *TestRequest_WithSession_Call {
+	return &TestRequest_WithSession_Call{Call: _e.mock.On("WithSession", attributes)}
+}
+
+func (_c *TestRequest_WithSession_Call) Run(run func(attributes map[string]any)) *TestRequest_WithSession_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]any))
+	})
+	return _c
+}
+
+func (_c *TestRequest_WithSession_Call) Return(_a0 testing.TestRequest) *TestRequest_WithSession_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestRequest_WithSession_Call) RunAndReturn(run func(map[string]any) testing.TestRequest) *TestRequest_WithSession_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithSessionId provides a mock function with given fields: sessionId, attributes
+func (_m *TestRequest) WithSessionId(sessionId string, attributes map[string]any) testing.TestRequest {
+	ret := _m.Called(sessionId, attributes)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithSessionId")
+	}
+
+	var r0 testing.TestRequest
+	if rf, ok := ret.Get(0).(func(string, map[string]any) testing.TestRequest); ok {
+		r0 = rf(sessionId, attributes)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.TestRequest)
+		}
+	}
+
+	return r0
+}
+
+// TestRequest_WithSessionId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithSessionId'
+type TestRequest_WithSessionId_Call struct {
+	*mock.Call
+}
+
+// WithSessionId is a helper method to define mock.On call
+//   - sessionId string
+//   - attributes map[string]any
+func (_e *TestRequest_Expecter) WithSessionId(sessionId interface{}, attributes interface{}) *TestRequest_WithSessionId_Call {
+	return &TestRequest_WithSessionId_Call{Call: _e.mock.On("WithSessionId", sessionId, attributes)}
+}
+
+func (_c *TestRequest_WithSessionId_Call) Run(run func(sessionId string, attributes map[string]any)) *TestRequest_WithSessionId_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(map[string]any))
+	})
+	return _c
+}
+
+func (_c *TestRequest_WithSessionId_Call) Return(_a0 testing.TestRequest) *TestRequest_WithSessionId_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestRequest_WithSessionId_Call) RunAndReturn(run func(string, map[string]any) testing.TestRequest) *TestRequest_WithSessionId_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // WithToken provides a mock function with given fields: token, ttype
 func (_m *TestRequest) WithToken(token string, ttype ...string) testing.TestRequest {
 	_va := make([]interface{}, len(ttype))
