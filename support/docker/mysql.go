@@ -46,8 +46,8 @@ func NewMysqlImpl(database, username, password string) *MysqlImpl {
 	}
 }
 
-func (receiver *MysqlImpl) Build() error {
-	command, exposedPorts := imageToCommand(receiver.image)
+func (r *MysqlImpl) Build() error {
+	command, exposedPorts := imageToCommand(r.image)
 	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Mysql docker error: %v", err)
@@ -56,32 +56,33 @@ func (receiver *MysqlImpl) Build() error {
 		return errors.DockerMissingContainerId.Args("Mysql")
 	}
 
-	receiver.containerID = containerID
-	receiver.port = getExposedPort(exposedPorts, 3306)
+	r.containerID = containerID
+	r.port = getExposedPort(exposedPorts, 3306)
 
-	if _, err := receiver.connect(); err != nil {
+	if _, err := r.connect(); err != nil {
 		return fmt.Errorf("connect Mysql docker error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *MysqlImpl) Config() testing.DatabaseConfig {
+func (r *MysqlImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
-		Host:     receiver.host,
-		Port:     receiver.port,
-		Database: receiver.database,
-		Username: receiver.username,
-		Password: receiver.password,
+		Host:        r.host,
+		Port:        r.port,
+		Database:    r.database,
+		Username:    r.username,
+		Password:    r.password,
+		ContainerID: r.containerID,
 	}
 }
 
-func (receiver *MysqlImpl) Driver() database.Driver {
+func (r *MysqlImpl) Driver() database.Driver {
 	return database.DriverMysql
 }
 
-func (receiver *MysqlImpl) Fresh() error {
-	instance, err := receiver.connect()
+func (r *MysqlImpl) Fresh() error {
+	instance, err := r.connect()
 	if err != nil {
 		return fmt.Errorf("connect Mysql error when clearing: %v", err)
 	}
@@ -107,19 +108,19 @@ func (receiver *MysqlImpl) Fresh() error {
 	return nil
 }
 
-func (receiver *MysqlImpl) Image(image testing.Image) {
-	receiver.image = &image
+func (r *MysqlImpl) Image(image testing.Image) {
+	r.image = &image
 }
 
-func (receiver *MysqlImpl) Stop() error {
-	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+func (r *MysqlImpl) Stop() error {
+	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Mysql error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *MysqlImpl) connect() (*gormio.DB, error) {
+func (r *MysqlImpl) connect() (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error
@@ -128,7 +129,7 @@ func (receiver *MysqlImpl) connect() (*gormio.DB, error) {
 	// docker compose need time to start
 	for i := 0; i < 60; i++ {
 		instance, err = gormio.Open(mysql.New(mysql.Config{
-			DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", receiver.username, receiver.password, receiver.host, receiver.port, receiver.database),
+			DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", r.username, r.password, r.host, r.port, r.database),
 		}))
 
 		if err == nil {

@@ -2,9 +2,9 @@ package docker
 
 import (
 	"fmt"
-
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
+	"os"
 )
 
 // Define different test model, to improve the local testing speed.
@@ -131,6 +131,17 @@ func Stop() error {
 			}
 		}
 	}
+
+	return nil
+}
+
+func getContainers() map[ContainerType][]testing.DatabaseDriver {
+	file, err := os.CreateTemp(os.TempDir(), "goravel_docker")
+	if err != nil {
+		panic(err)
+	}
+	_, err = file.WriteString("file content")
+	defer file.Close()
 
 	return nil
 }
