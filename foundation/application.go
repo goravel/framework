@@ -3,6 +3,7 @@ package foundation
 import (
 	"context"
 	"flag"
+	"github.com/goravel/framework/support/env"
 	"os"
 	"path/filepath"
 	"strings"
@@ -305,7 +306,7 @@ func setEnv() {
 }
 
 func setRootPath() {
-	support.RootPath = getCurrentAbsolutePath()
+	support.RootPath = env.CurrentAbsolutePath()
 }
 
 func getEnvPath() string {

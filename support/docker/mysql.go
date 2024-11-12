@@ -68,13 +68,31 @@ func (r *MysqlImpl) Build() error {
 
 func (r *MysqlImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
+		ContainerID: r.containerID,
 		Host:        r.host,
 		Port:        r.port,
 		Database:    r.database,
 		Username:    r.username,
 		Password:    r.password,
-		ContainerID: r.containerID,
 	}
+}
+
+func (r *MysqlImpl) Database(name string) (testing.DatabaseDriver, error) {
+	instance, err := r.connect("root")
+	if err != nil {
+		return nil, fmt.Errorf("connect Mysql error: %v", err)
+	}
+
+	res := instance.Exec(fmt.Sprintf("CREATE DATABASE %s;", name))
+	if res.Error != nil {
+		return nil, fmt.Errorf("create Mysql database error: %v", res.Error)
+	}
+
+	mysqlImpl := NewMysqlImpl(name, r.username, r.password)
+	mysqlImpl.containerID = r.containerID
+	mysqlImpl.port = r.port
+
+	return mysqlImpl, nil
 }
 
 func (r *MysqlImpl) Driver() database.Driver {
@@ -120,16 +138,21 @@ func (r *MysqlImpl) Stop() error {
 	return nil
 }
 
-func (r *MysqlImpl) connect() (*gormio.DB, error) {
+func (r *MysqlImpl) connect(username ...string) (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error
 	)
 
+	useUsername := r.username
+	if len(username) > 0 {
+		useUsername = username[0]
+	}
+
 	// docker compose need time to start
 	for i := 0; i < 60; i++ {
 		instance, err = gormio.Open(mysql.New(mysql.Config{
-			DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", r.username, r.password, r.host, r.port, r.database),
+			DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", useUsername, r.password, r.host, r.port, r.database),
 		}))
 
 		if err == nil {

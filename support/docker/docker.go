@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"github.com/goravel/framework/support/str"
 
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
@@ -15,7 +16,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelNormal
+	TestModel = TestModelMinimum
 )
 
 type ContainerType string
@@ -32,14 +33,12 @@ const (
 	ContainerTypeRedis     ContainerType = "redis"
 )
 
-var containers = make(map[ContainerType][]testing.DatabaseDriver)
-
 func Mysql() testing.DatabaseDriver {
 	return Mysqls(1)[0]
 }
 
 func Mysqls(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeMysql, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypeMysql, testUsername, testPassword, num)
 }
 
 func Postgres() testing.DatabaseDriver {
@@ -47,7 +46,7 @@ func Postgres() testing.DatabaseDriver {
 }
 
 func Postgreses(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypePostgres, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypePostgres, testUsername, testPassword, num)
 }
 
 func Sqlserver() testing.DatabaseDriver {
@@ -55,7 +54,7 @@ func Sqlserver() testing.DatabaseDriver {
 }
 
 func Sqlservers(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeSqlserver, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypeSqlserver, testUsername, testPassword, num)
 }
 
 func Sqlite() testing.DatabaseDriver {
@@ -63,56 +62,61 @@ func Sqlite() testing.DatabaseDriver {
 }
 
 func Sqlites(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeSqlite, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypeSqlite, testUsername, testPassword, num)
 }
 
-func Database(containerType ContainerType, database, username, password string, num int) []testing.DatabaseDriver {
+func Database(containerType ContainerType, username, password string, num int) []testing.DatabaseDriver {
 	if num <= 0 {
 		panic(errors.DockerDatabaseContainerCountZero)
 	}
 
 	// Get containers from temp file.
+	containerManager := NewContainerManager()
+	containerManager.Lock()
+	defer containerManager.Unlock()
 
-	var drivers []testing.DatabaseDriver
-	if len(containers[containerType]) >= num {
-		drivers = containers[containerType][:num]
+	containerTypeToDatabaseDrivers := containerManager.All()
+
+	var databaseDrivers []testing.DatabaseDriver
+	if len(containerTypeToDatabaseDrivers[containerType]) >= num {
+		databaseDrivers = containerTypeToDatabaseDrivers[containerType][:num]
 	} else {
-		drivers = containers[containerType]
+		databaseDrivers = containerTypeToDatabaseDrivers[containerType]
 	}
 
-	newDatabase := database
-	driverLength := len(drivers)
+	// Create new database in the exist docker container
+	for i, databaseDriver := range databaseDrivers {
+		databaseName := fmt.Sprintf("goravel_%s", str.Random(6))
+		if newDatabaseDriver, err := databaseDriver.Database(databaseName); err != nil {
+			panic(err)
+		} else {
+			databaseDrivers[i] = newDatabaseDriver
+		}
+	}
+
+	// Create new docker container
+	driverLength := len(databaseDrivers)
 	surplus := num - driverLength
 	for i := 0; i < surplus; i++ {
-		if containerType == ContainerTypeSqlite {
-			newDatabase = fmt.Sprintf("%s%d", database, driverLength+i)
-		}
-		databaseDriver := DatabaseDriver(containerType, newDatabase, username, password)
+		databaseName := fmt.Sprintf("goravel_%s", str.Random(6))
+		databaseDriver := NewDatabaseDriver(containerType, databaseName, username, password)
 
 		if err := databaseDriver.Build(); err != nil {
 			panic(err)
 		}
 
-		containers[containerType] = append(containers[containerType], databaseDriver)
-		drivers = append(drivers, databaseDriver)
-
-		// Write containers to temp file.
+		containerManager.Add(containerType, databaseDriver)
+		databaseDrivers = append(databaseDrivers, databaseDriver)
 	}
 
-	if len(drivers) != num {
-		panic(errors.DockerInsufficientDatabaseContainers.Args(num, len(drivers)))
+	if len(databaseDrivers) != num {
+		panic(errors.DockerInsufficientDatabaseContainers.Args(num, len(databaseDrivers)))
 	}
 
-	for _, driver := range drivers {
-		if err := driver.Fresh(); err != nil {
-			panic(err)
-		}
-	}
-
-	return drivers
+	return databaseDrivers
 }
 
-func DatabaseDriver(containerType ContainerType, database, username, password string) testing.DatabaseDriver {
+func NewDatabaseDriver(containerType ContainerType, database, username, password string) testing.DatabaseDriver {
 	switch containerType {
 	case ContainerTypeMysql:
 		return NewMysqlImpl(database, username, password)
@@ -127,8 +131,39 @@ func DatabaseDriver(containerType ContainerType, database, username, password st
 	}
 }
 
+func NewDatabaseDriverByExist(containerType ContainerType, containerID, database, username, password string, port int) testing.DatabaseDriver {
+	switch containerType {
+	case ContainerTypeMysql:
+		driver := NewMysqlImpl(database, username, password)
+		driver.containerID = containerID
+		driver.port = port
+
+		return driver
+	case ContainerTypePostgres:
+		driver := NewPostgresImpl(database, username, password)
+		driver.containerID = containerID
+		driver.port = port
+
+		return driver
+	case ContainerTypeSqlserver:
+		driver := NewSqlserverImpl(database, username, password)
+		driver.containerID = containerID
+		driver.port = port
+
+		return driver
+	case ContainerTypeSqlite:
+		return NewSqliteImpl(database)
+
+	default:
+		panic(errors.DockerUnknownContainerType)
+	}
+}
+
 func Stop() error {
-	for _, drivers := range containers {
+	containerManager := NewContainerManager()
+	containerTypeToDatabaseDrivers := containerManager.All()
+
+	for _, drivers := range containerTypeToDatabaseDrivers {
 		for _, driver := range drivers {
 			if err := driver.Stop(); err != nil {
 				return err
