@@ -20,7 +20,6 @@ type TestRequest struct {
 	ctx               context.Context
 	defaultHeaders    map[string]string
 	defaultCookies    map[string]string
-	sessionId         string
 	sessionAttributes map[string]any
 }
 
@@ -149,7 +148,7 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 }
 
 func (r *TestRequest) setSession() error {
-	if len(r.sessionAttributes) <= 0 {
+	if len(r.sessionAttributes) == 0 {
 		return nil
 	}
 
@@ -164,7 +163,7 @@ func (r *TestRequest) setSession() error {
 	}
 
 	// Build session
-	session, err := sessionFacade.BuildSession(driver, r.sessionId)
+	session, err := sessionFacade.BuildSession(driver)
 	if err != nil {
 		return err
 	}
