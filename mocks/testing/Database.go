@@ -114,6 +114,64 @@ func (_c *Database_Config_Call) RunAndReturn(run func() testing.DatabaseConfig) 
 	return _c
 }
 
+// Database provides a mock function with given fields: name
+func (_m *Database) Database(name string) (testing.DatabaseDriver, error) {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Database")
+	}
+
+	var r0 testing.DatabaseDriver
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (testing.DatabaseDriver, error)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) testing.DatabaseDriver); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.DatabaseDriver)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Database_Database_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Database'
+type Database_Database_Call struct {
+	*mock.Call
+}
+
+// Database is a helper method to define mock.On call
+//   - name string
+func (_e *Database_Expecter) Database(name interface{}) *Database_Database_Call {
+	return &Database_Database_Call{Call: _e.mock.On("Database", name)}
+}
+
+func (_c *Database_Database_Call) Run(run func(name string)) *Database_Database_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Database_Database_Call) Return(_a0 testing.DatabaseDriver, _a1 error) *Database_Database_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Database_Database_Call) RunAndReturn(run func(string) (testing.DatabaseDriver, error)) *Database_Database_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Driver provides a mock function with given fields:
 func (_m *Database) Driver() database.Driver {
 	ret := _m.Called()
