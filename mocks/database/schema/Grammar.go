@@ -713,53 +713,6 @@ func (_c *Grammar_GetAttributeCommands_Call) RunAndReturn(run func() []string) *
 	return _c
 }
 
-// GetModifiers provides a mock function with given fields:
-func (_m *Grammar) GetModifiers() []func(schema.Blueprint, schema.ColumnDefinition) string {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetModifiers")
-	}
-
-	var r0 []func(schema.Blueprint, schema.ColumnDefinition) string
-	if rf, ok := ret.Get(0).(func() []func(schema.Blueprint, schema.ColumnDefinition) string); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]func(schema.Blueprint, schema.ColumnDefinition) string)
-		}
-	}
-
-	return r0
-}
-
-// Grammar_GetModifiers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetModifiers'
-type Grammar_GetModifiers_Call struct {
-	*mock.Call
-}
-
-// GetModifiers is a helper method to define mock.On call
-func (_e *Grammar_Expecter) GetModifiers() *Grammar_GetModifiers_Call {
-	return &Grammar_GetModifiers_Call{Call: _e.mock.On("GetModifiers")}
-}
-
-func (_c *Grammar_GetModifiers_Call) Run(run func()) *Grammar_GetModifiers_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Grammar_GetModifiers_Call) Return(_a0 []func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_GetModifiers_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Grammar_GetModifiers_Call) RunAndReturn(run func() []func(schema.Blueprint, schema.ColumnDefinition) string) *Grammar_GetModifiers_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // TypeBigInteger provides a mock function with given fields: column
 func (_m *Grammar) TypeBigInteger(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
