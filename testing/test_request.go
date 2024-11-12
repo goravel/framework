@@ -91,11 +91,6 @@ func (r *TestRequest) WithSession(attributes map[string]any) contractstesting.Te
 	return r
 }
 
-func (r *TestRequest) WithSessionId(id string, attributes map[string]any) contractstesting.TestRequest {
-	r.sessionId = id
-	return r.WithSession(attributes)
-}
-
 func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
 	return r.call(http.MethodGet, uri, nil)
 }

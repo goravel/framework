@@ -17,7 +17,6 @@ type TestRequest interface {
 	WithBasicAuth(username, password string) TestRequest
 	WithoutToken() TestRequest
 	WithSession(attributes map[string]any) TestRequest
-	WithSessionId(sessionId string, attributes map[string]any) TestRequest
 	Get(uri string) (TestResponse, error)
 	Post(uri string, body io.Reader) (TestResponse, error)
 	Put(uri string, body io.Reader) (TestResponse, error)
