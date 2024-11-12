@@ -2,9 +2,9 @@ package docker
 
 import (
 	"fmt"
+
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
-	"os"
 )
 
 // Define different test model, to improve the local testing speed.
@@ -71,6 +71,8 @@ func Database(containerType ContainerType, database, username, password string, 
 		panic(errors.DockerDatabaseContainerCountZero)
 	}
 
+	// Get containers from temp file.
+
 	var drivers []testing.DatabaseDriver
 	if len(containers[containerType]) >= num {
 		drivers = containers[containerType][:num]
@@ -93,6 +95,8 @@ func Database(containerType ContainerType, database, username, password string, 
 
 		containers[containerType] = append(containers[containerType], databaseDriver)
 		drivers = append(drivers, databaseDriver)
+
+		// Write containers to temp file.
 	}
 
 	if len(drivers) != num {
@@ -131,17 +135,6 @@ func Stop() error {
 			}
 		}
 	}
-
-	return nil
-}
-
-func getContainers() map[ContainerType][]testing.DatabaseDriver {
-	file, err := os.CreateTemp(os.TempDir(), "goravel_docker")
-	if err != nil {
-		panic(err)
-	}
-	_, err = file.WriteString("file content")
-	defer file.Close()
 
 	return nil
 }
