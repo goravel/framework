@@ -8,7 +8,7 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v7 v7.1.2
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20241107185248-43f38f61b23f
+	github.com/charmbracelet/huh/spinner v0.0.0-20241112234317-16963471bda6
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/gabriel-vasile/mimetype v1.4.6
@@ -35,11 +35,11 @@ require (
 	github.com/urfave/cli/v2 v2.27.5
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.29.0
-	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
+	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	google.golang.org/grpc v1.68.0
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.9
-	gorm.io/driver/sqlserver v1.5.3
+	gorm.io/driver/sqlserver v1.5.4
 	gorm.io/gorm v1.25.12
 	gorm.io/plugin/dbresolver v1.5.3
 )
@@ -65,10 +65,10 @@ require (
 	github.com/catppuccin/go v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/bubbles v0.20.0 // indirect
-	github.com/charmbracelet/bubbletea v1.2.0 // indirect
+	github.com/charmbracelet/bubbletea v1.2.2 // indirect
 	github.com/charmbracelet/x/ansi v0.4.5 // indirect
 	github.com/charmbracelet/x/exp/strings v0.0.0-20240722160745-212f7b056ed0 // indirect
-	github.com/charmbracelet/x/term v0.2.0 // indirect
+	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -93,7 +93,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gookit/filter v1.2.1 // indirect
-	github.com/gookit/goutil v0.6.17
+	github.com/gookit/goutil v0.6.17 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -113,7 +113,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/microsoft/go-mssqldb v1.6.0 // indirect
+	github.com/microsoft/go-mssqldb v1.7.2 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
