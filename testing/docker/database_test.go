@@ -156,6 +156,7 @@ func (s *DatabaseTestSuite) TestBuild() {
 	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
 	s.EqualError(s.database.Build(), assert.AnError.Error())
+	s.Nil(s.database.Stop())
 }
 
 func (s *DatabaseTestSuite) TestConfig() {

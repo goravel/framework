@@ -47,6 +47,7 @@ func (s *DockerTestSuite) TestDatabase() {
 
 	databaseImpl := database.(*Database)
 	s.Equal("mysql", databaseImpl.connection)
+	s.NoError(database.Stop())
 
 	mockConfig = mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
@@ -67,4 +68,5 @@ func (s *DockerTestSuite) TestDatabase() {
 
 	databaseImpl = database.(*Database)
 	s.Equal("postgres", databaseImpl.connection)
+	s.NoError(database.Stop())
 }
