@@ -40,7 +40,9 @@ func (s *SchemaSuite) SetupTest() {
 }
 
 func (s *SchemaSuite) TearDownTest() {
-	s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
+	if s.driverToTestQuery[database.DriverSqlite] != nil {
+		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
+	}
 }
 
 func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {

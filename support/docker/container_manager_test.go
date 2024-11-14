@@ -2,50 +2,74 @@ package docker
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
-func TestContainer(t *testing.T) {
-	//testPortUsing = true
-	//container := NewContainerManager()
-	//
-	//postgresDriver1 := NewPostgresImpl("goravel", "goravel", "Framework!123")
-	//postgresDriver1.port = 5432
-	//postgresDriver1.containerID = "123456"
-	//
-	//postgresDriver2 := NewPostgresImpl("goravel", "goravel", "Framework!123")
-	//postgresDriver2.port = 5433
-	//postgresDriver2.containerID = "1234565"
-	//
-	//sqliteDriver := NewSqliteImpl("goravel")
-	//
-	//mysqlDriver := NewMysqlImpl("goravel", "goravel", "Framework!123")
-	//mysqlDriver.port = 5432
-	//mysqlDriver.containerID = "123456"
-	//
-	//sqlserverDriver := NewSqlserverImpl("goravel", "goravel", "Framework!123")
-	//sqlserverDriver.port = 5432
-	//sqlserverDriver.containerID = "123456"
-	//
-	//container.Add(ContainerTypePostgres, postgresDriver1)
-	//container.Add(ContainerTypePostgres, postgresDriver2)
-	//container.Add(ContainerTypeSqlite, sqliteDriver)
-	//container.Add(ContainerTypeMysql, mysqlDriver)
-	//container.Add(ContainerTypeSqlserver, sqlserverDriver)
-	//
-	//containers := container.All()
-	//assert.Len(t, containers, 4)
-	//assert.Len(t, containers[ContainerTypePostgres], 2)
-	//assert.Len(t, containers[ContainerTypeSqlite], 1)
-	//assert.Len(t, containers[ContainerTypeMysql], 1)
-	//assert.Len(t, containers[ContainerTypeSqlserver], 1)
-	//assert.Equal(t, postgresDriver1, containers[ContainerTypePostgres][0])
-	//assert.Equal(t, postgresDriver2, containers[ContainerTypePostgres][1])
-	//assert.Equal(t, sqliteDriver, containers[ContainerTypeSqlite][0])
-	//assert.Equal(t, mysqlDriver, containers[ContainerTypeMysql][0])
-	//assert.Equal(t, sqlserverDriver, containers[ContainerTypeSqlserver][0])
-	//
-	//defer func() {
-	//	testPortUsing = false
-	//	assert.NoError(t, container.Remove())
-	//}()
+type ContainerManagerTestSuite struct {
+	suite.Suite
+	containerManager *ContainerManager
+}
+
+func TestContainerMangerTestSuite(t *testing.T) {
+	suite.Run(t, new(ContainerManagerTestSuite))
+}
+
+func (s *ContainerManagerTestSuite) SetupTest() {
+	s.containerManager = NewContainerManager()
+}
+
+func (s *ContainerManagerTestSuite) TestGet() {
+	driver, err := s.containerManager.Get(ContainerTypeMysql)
+	s.NoError(err)
+	s.NotNil(driver)
+
+	driver, err = s.containerManager.Get(ContainerTypePostgres)
+	s.NoError(err)
+	s.NotNil(driver)
+
+	driver, err = s.containerManager.Get(ContainerTypeSqlite)
+	s.NoError(err)
+	s.NotNil(driver)
+	s.NoError(driver.Stop())
+
+	driver, err = s.containerManager.Get(ContainerTypeSqlserver)
+	s.NoError(err)
+	s.NotNil(driver)
+}
+
+func (s *ContainerManagerTestSuite) TestAddAndAll() {
+	port := 5432
+	containerID := "123456"
+
+	postgresDriver := NewPostgresImpl(testDatabase, testUsername, testPassword)
+	postgresDriver.port = port
+	postgresDriver.containerID = containerID
+
+	sqliteDriver := NewSqliteImpl(testDatabase)
+
+	mysqlDriver := NewMysqlImpl(testDatabase, testUsername, testPassword)
+	mysqlDriver.port = port
+	mysqlDriver.containerID = containerID
+
+	sqlserverDriver := NewSqlserverImpl(testDatabase, testUsername, testPassword)
+	sqlserverDriver.port = port
+	sqlserverDriver.containerID = containerID
+
+	s.NoError(s.containerManager.add(ContainerTypePostgres, postgresDriver))
+	s.NoError(s.containerManager.add(ContainerTypeSqlite, sqliteDriver))
+	s.NoError(s.containerManager.add(ContainerTypeMysql, mysqlDriver))
+	s.NoError(s.containerManager.add(ContainerTypeSqlserver, sqlserverDriver))
+
+	containers, err := s.containerManager.all()
+	s.NoError(err)
+	s.Len(containers, 4)
+	s.Equal(postgresDriver.Config(), containers[ContainerTypePostgres])
+	s.Equal(sqliteDriver.Config(), containers[ContainerTypeSqlite])
+	s.Equal(mysqlDriver.Config(), containers[ContainerTypeMysql])
+	s.Equal(sqlserverDriver.Config(), containers[ContainerTypeSqlserver])
+
+	defer func() {
+		s.NoError(s.containerManager.Remove())
+	}()
 }

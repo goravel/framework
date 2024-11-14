@@ -2,11 +2,11 @@ package docker
 
 import (
 	"fmt"
-	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/support/str"
 
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/str"
 )
 
 // Define different test model, to improve the local testing speed.
@@ -78,6 +78,10 @@ func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
 				databaseDrivers = append(databaseDrivers, newDatabaseDriver)
 			}
 		}
+	}
+
+	if len(databaseDrivers) != num {
+		panic(errors.DockerInsufficientDatabaseContainers)
 	}
 
 	return databaseDrivers

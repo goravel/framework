@@ -3,7 +3,6 @@ package foundation
 import (
 	"context"
 	"flag"
-	"github.com/goravel/framework/support/env"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 )
 
 var (

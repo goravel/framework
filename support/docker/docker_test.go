@@ -3,9 +3,10 @@ package docker
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/support/env"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDatabase(t *testing.T) {
@@ -86,6 +87,12 @@ func TestDatabase(t *testing.T) {
 				drivers := Database(test.containerType, test.num)
 
 				assert.Len(t, drivers, test.num)
+
+				if test.containerType == ContainerTypeSqlite {
+					for _, driver := range drivers {
+						assert.NoError(t, driver.Stop())
+					}
+				}
 			}
 		})
 	}

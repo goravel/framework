@@ -77,7 +77,7 @@ func (r *SqlserverImpl) Database(name string) (testing.DatabaseDriver, error) {
 
 	_, err := sqlserverImpl.connect()
 	if err != nil {
-		return nil, fmt.Errorf("connect Mysql error: %v", err)
+		return nil, fmt.Errorf("connect Sqlserver error: %v", err)
 	}
 
 	return sqlserverImpl, nil

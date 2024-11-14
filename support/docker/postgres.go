@@ -86,6 +86,11 @@ func (r *PostgresImpl) Database(name string) (testing.DatabaseDriver, error) {
 	postgresImpl.containerID = r.containerID
 	postgresImpl.port = r.port
 
+	_, err = postgresImpl.connect()
+	if err != nil {
+		return nil, fmt.Errorf("connect Postgres error: %v", err)
+	}
+
 	return postgresImpl, nil
 }
 

@@ -16,11 +16,6 @@ import (
 type ContainerType string
 
 const (
-	// TODO remove
-	testDatabase = "goravel"
-	testUsername = "goravel"
-	testPassword = "Framework!123"
-
 	ContainerTypeMysql     ContainerType = "mysql"
 	ContainerTypePostgres  ContainerType = "postgres"
 	ContainerTypeSqlite    ContainerType = "sqlite"
@@ -119,6 +114,9 @@ func (r *ContainerManager) add(containerType ContainerType, databaseDriver testi
 		return err
 	}
 
+	if containerTypeToDatabaseConfig == nil {
+		containerTypeToDatabaseConfig = make(map[ContainerType]testing.DatabaseConfig)
+	}
 	containerTypeToDatabaseConfig[containerType] = databaseDriver.Config()
 
 	f, err := os.OpenFile(r.file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
@@ -185,7 +183,6 @@ func (r *ContainerManager) databaseConfigToDatabaseDriver(containerType Containe
 		return driver
 	case ContainerTypeSqlite:
 		return NewSqliteImpl(databaseConfig.Database)
-
 	default:
 		panic(errors.DockerUnknownContainerType)
 	}

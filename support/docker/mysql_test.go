@@ -79,6 +79,7 @@ func (s *MysqlTestSuite) TestDatabase() {
 	s.NoError(err)
 	s.NotNil(databaseDriver)
 	s.NoError(databaseDriver.Stop())
+	s.Nil(s.mysql.Stop())
 }
 
 func (s *MysqlTestSuite) TestDriver() {

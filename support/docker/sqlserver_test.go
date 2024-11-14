@@ -82,6 +82,7 @@ func (s *SqlserverTestSuite) TestDatabase() {
 	s.NoError(err)
 	s.NotNil(databaseDriver)
 	s.NoError(databaseDriver.Stop())
+	s.Nil(s.sqlserver.Stop())
 }
 
 func (s *SqlserverTestSuite) TestDriver() {

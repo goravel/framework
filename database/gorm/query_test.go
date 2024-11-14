@@ -53,7 +53,9 @@ func (s *QueryTestSuite) SetupSuite() {
 func (s *QueryTestSuite) SetupTest() {}
 
 func (s *QueryTestSuite) TearDownSuite() {
-	s.NoError(s.queries[database.DriverSqlite].Docker().Stop())
+	if s.queries[database.DriverSqlite] != nil {
+		s.NoError(s.queries[database.DriverSqlite].Docker().Stop())
+	}
 }
 
 func (s *QueryTestSuite) TestAssociation() {
@@ -3822,7 +3824,9 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		})
 	}
 
-	assert.NoError(t, dbs[database.DriverSqlite].Docker().Stop())
+	if dbs[database.DriverSqlite] != nil {
+		assert.NoError(t, dbs[database.DriverSqlite].Docker().Stop())
+	}
 }
 
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {

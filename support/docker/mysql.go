@@ -97,7 +97,7 @@ func (r *MysqlImpl) Database(name string) (testing.DatabaseDriver, error) {
 	mysqlImpl.containerID = r.containerID
 	mysqlImpl.port = r.port
 
-	_, err = mysqlImpl.connect("root")
+	_, err = mysqlImpl.connect()
 	if err != nil {
 		return nil, fmt.Errorf("connect Mysql error: %v", err)
 	}
@@ -115,7 +115,7 @@ func (r *MysqlImpl) Fresh() error {
 		return fmt.Errorf("connect Mysql error when clearing: %v", err)
 	}
 
-	res := instance.Raw("select concat('drop table ',table_name,';') from information_schema.TABLES where table_schema=?;", testDatabase)
+	res := instance.Raw("select concat('drop table ',table_name,';') from information_schema.TABLES where table_schema=?;", r.database)
 	if res.Error != nil {
 		return fmt.Errorf("get tables of Mysql error: %v", res.Error)
 	}
