@@ -3542,7 +3542,7 @@ func (s *QueryTestSuite) TestWith() {
 					setup: func(description string) {
 						var user1 User
 						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
-							return query.Where("name = ?", "with_book0")
+							return query.Where("name = ?", "with_book0").Select("id", "user_id", "name")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
