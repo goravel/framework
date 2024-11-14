@@ -1122,10 +1122,6 @@ CREATE TABLE role_user (
 	}
 }
 
-func StopSqlite() {
-
-}
-
 func mockPool(mockConfig *mocksconfig.Config) {
 	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
 	mockConfig.On("GetInt", "database.pool.max_open_conns", 100).Return(100)
