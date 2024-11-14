@@ -11,7 +11,7 @@ import (
 
 func TestDatabase(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	tests := []struct {

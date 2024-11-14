@@ -309,7 +309,7 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
 	if env.IsWindows() {
-		s.T().Skip("Skipping tests that use Docker")
+		s.T().Skip("Skip test that using Docker")
 	}
 
 	postgresDocker := supportdocker.Postgres()

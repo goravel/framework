@@ -20,7 +20,7 @@ type MysqlTestSuite struct {
 
 func TestMysqlTestSuite(t *testing.T) {
 	if env.IsWindows() || TestModel == TestModelMinimum {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, new(MysqlTestSuite))

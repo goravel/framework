@@ -3,6 +3,7 @@ package docker
 import (
 	"testing"
 
+	"github.com/goravel/framework/support/env"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -12,6 +13,10 @@ type ContainerManagerTestSuite struct {
 }
 
 func TestContainerMangerTestSuite(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
 	suite.Run(t, new(ContainerManagerTestSuite))
 }
 

@@ -21,7 +21,7 @@ type PostgresSchemaSuite struct {
 
 func TestPostgresSchemaSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &PostgresSchemaSuite{})

@@ -30,7 +30,7 @@ type QueryTestSuite struct {
 
 func TestQueryTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &QueryTestSuite{})
@@ -3595,7 +3595,7 @@ func (s *QueryTestSuite) TestWithNesting() {
 
 func TestCustomConnection(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	postgresDocker := supportdocker.Postgres()
@@ -3759,7 +3759,7 @@ func TestObserverEvent(t *testing.T) {
 
 func TestReadWriteSeparate(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	dbs := NewTestQueries().QueriesOfReadWrite()
@@ -3805,7 +3805,7 @@ func TestReadWriteSeparate(t *testing.T) {
 
 func TestTablePrefixAndSingular(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	dbs := NewTestQueries().QueriesWithPrefixAndSingular()

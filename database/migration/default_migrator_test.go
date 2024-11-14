@@ -35,7 +35,7 @@ type DefaultMigratorWithDBSuite struct {
 
 func TestDefaultMigratorWithDBSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &DefaultMigratorWithDBSuite{})

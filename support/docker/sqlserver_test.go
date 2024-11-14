@@ -19,7 +19,7 @@ type SqlserverTestSuite struct {
 
 func TestSqlserverTestSuite(t *testing.T) {
 	if env.IsWindows() || TestModel == TestModelMinimum {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, new(SqlserverTestSuite))

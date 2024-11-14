@@ -23,6 +23,10 @@ var (
 )
 
 func TestNewDatabase(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
 	var (
 		mockApp     *mocksfoundation.Application
 		mockArtisan *mocksconsole.Artisan
@@ -140,7 +144,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 
 func (s *DatabaseTestSuite) TestBuild() {
 	if env.IsWindows() {
-		s.T().Skip("Skipping tests that use Docker")
+		s.T().Skip("Skip test that using Docker")
 	}
 
 	// Call success
