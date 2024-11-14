@@ -13,12 +13,14 @@ type Postgres struct {
 	attributeCommands []string
 	modifiers         []func(schema.Blueprint, schema.ColumnDefinition) string
 	serials           []string
+	wrap              *Wrap
 }
 
-func NewPostgres() *Postgres {
+func NewPostgres(tablePrefix string) *Postgres {
 	postgres := &Postgres{
 		attributeCommands: []string{constants.CommandComment},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
+		wrap:              NewWrap(tablePrefix),
 	}
 	postgres.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
 		postgres.ModifyDefault,
@@ -30,40 +32,40 @@ func NewPostgres() *Postgres {
 }
 
 func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
-	return fmt.Sprintf("alter table %s add column %s", blueprint.GetTableName(), getColumn(r, blueprint, command.Column))
+	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
 func (r *Postgres) CompileCreate(blueprint schema.Blueprint) string {
-	return fmt.Sprintf("create table %s (%s)", blueprint.GetTableName(), strings.Join(getColumns(r, blueprint), ","))
+	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
 }
 
 func (r *Postgres) CompileDropAllDomains(domains []string) string {
-	return fmt.Sprintf("drop domain %s cascade", strings.Join(domains, ", "))
+	return fmt.Sprintf("drop domain %s cascade", strings.Join(r.EscapeNames(domains), ", "))
 }
 
 func (r *Postgres) CompileDropAllTables(tables []string) string {
-	return fmt.Sprintf("drop table %s cascade", strings.Join(tables, ", "))
+	return fmt.Sprintf("drop table %s cascade", strings.Join(r.EscapeNames(tables), ", "))
 }
 
 func (r *Postgres) CompileDropAllTypes(types []string) string {
-	return fmt.Sprintf("drop type %s cascade", strings.Join(types, ", "))
+	return fmt.Sprintf("drop type %s cascade", strings.Join(r.EscapeNames(types), ", "))
 }
 
 func (r *Postgres) CompileDropAllViews(views []string) string {
-	return fmt.Sprintf("drop view %s cascade", strings.Join(views, ", "))
+	return fmt.Sprintf("drop view %s cascade", strings.Join(r.EscapeNames(views), ", "))
 }
 
 func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
-	return fmt.Sprintf("drop table if exists %s", blueprint.GetTableName())
+	return fmt.Sprintf("drop table if exists %s", r.wrap.Table(blueprint.GetTableName()))
 }
 
 func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
 	sql := fmt.Sprintf("alter table %s add constraint %s foreign key (%s) references %s (%s)",
-		blueprint.GetTableName(),
-		command.Index,
-		strings.Join(command.Columns, ", "),
-		command.On,
-		strings.Join(command.References, ", "))
+		r.wrap.Table(blueprint.GetTableName()),
+		r.wrap.Column(command.Index),
+		r.wrap.Columns(command.Columns),
+		r.wrap.Table(command.On),
+		r.wrap.Columns(command.References))
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete
 	}
@@ -81,10 +83,10 @@ func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Comm
 	}
 
 	return fmt.Sprintf("create index %s on %s%s (%s)",
-		command.Index,
-		blueprint.GetTableName(),
+		r.wrap.Column(command.Index),
+		r.wrap.Table(blueprint.GetTableName()),
 		algorithm,
-		strings.Join(command.Columns, ", "),
+		r.wrap.Columns(command.Columns),
 	)
 }
 
@@ -101,13 +103,13 @@ func (r *Postgres) CompileIndexes(schema, table string) string {
 			"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
 			"where tc.relname = %s and tn.nspname = %s "+
 			"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
-		quoteString(table),
-		quoteString(schema),
+		r.wrap.Quote(table),
+		r.wrap.Quote(schema),
 	)
 }
 
 func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
-	return fmt.Sprintf("alter table %s add primary key (%s)", blueprint.GetTableName(), strings.Join(command.Columns, ","))
+	return fmt.Sprintf("alter table %s add primary key (%s)", r.wrap.Table(blueprint.GetTableName()), r.wrap.Columns(command.Columns))
 }
 
 func (r *Postgres) CompileTables() string {
@@ -151,10 +153,6 @@ func (r *Postgres) EscapeNames(names []string) []string {
 
 func (r *Postgres) GetAttributeCommands() []string {
 	return r.attributeCommands
-}
-
-func (r *Postgres) GetModifiers() []func(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	return r.modifiers
 }
 
 func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
@@ -204,4 +202,23 @@ func (r *Postgres) TypeString(column schema.ColumnDefinition) string {
 	}
 
 	return "varchar"
+}
+
+func (r *Postgres) getColumns(blueprint schema.Blueprint) []string {
+	var columns []string
+	for _, column := range blueprint.GetAddedColumns() {
+		columns = append(columns, r.getColumn(blueprint, column))
+	}
+
+	return columns
+}
+
+func (r *Postgres) getColumn(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	sql := fmt.Sprintf("%s %s", r.wrap.Column(column.GetName()), getType(r, column))
+
+	for _, modifier := range r.modifiers {
+		sql += modifier(blueprint, column)
+	}
+
+	return sql
 }

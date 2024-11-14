@@ -31,8 +31,6 @@ type Grammar interface {
 	CompileViews() string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
-	// GetModifiers Get the column modifiers.
-	GetModifiers() []func(Blueprint, ColumnDefinition) string
 	// TypeBigInteger Create the column definition for a big integer type.
 	TypeBigInteger(column ColumnDefinition) string
 	// TypeInteger Create the column definition for an integer type.
