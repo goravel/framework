@@ -75,7 +75,7 @@ func (r *SqlserverImpl) Database(name string) (testing.DatabaseDriver, error) {
 	sqlserverImpl.containerID = r.containerID
 	sqlserverImpl.port = r.port
 
-	_, err := r.connect()
+	_, err := sqlserverImpl.connect()
 	if err != nil {
 		return nil, fmt.Errorf("connect Mysql error: %v", err)
 	}
@@ -149,13 +149,20 @@ func (r *SqlserverImpl) connect() (*gormio.DB, error) {
 
 			if !exists {
 				// Create User database
-				if err := instance.Exec(fmt.Sprintf("CREATE DATABASE %s", r.database)).Error; err != nil {
+				if err := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, r.database)).Error; err != nil {
 					return nil, err
 				}
 
-				// Create User account
-				if err := instance.Exec(fmt.Sprintf("CREATE LOGIN %s WITH PASSWORD = '%s'", r.username, r.password)).Error; err != nil {
+				query = fmt.Sprintf("SELECT 1 FROM sys.server_principals WHERE name = '%s' AND type = 'S'", r.username)
+				if err := instance.Raw(query).Scan(&exists).Error; err != nil {
 					return nil, err
+				}
+
+				if !exists {
+					// Create User account
+					if err := instance.Exec(fmt.Sprintf("CREATE LOGIN %s WITH PASSWORD = '%s'", r.username, r.password)).Error; err != nil {
+						return nil, err
+					}
 				}
 
 				// Create DB account for User

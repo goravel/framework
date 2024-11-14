@@ -74,12 +74,12 @@ func (r *PostgresImpl) Config() testing.DatabaseConfig {
 func (r *PostgresImpl) Database(name string) (testing.DatabaseDriver, error) {
 	instance, err := r.connect()
 	if err != nil {
-		return nil, fmt.Errorf("connect Mysql error: %v", err)
+		return nil, fmt.Errorf("connect Postgres error: %v", err)
 	}
 
-	res := instance.Exec(fmt.Sprintf("CREATE DATABASE %s;", name))
+	res := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, name))
 	if res.Error != nil {
-		return nil, fmt.Errorf("create Mysql database error: %v", res.Error)
+		return nil, fmt.Errorf("create Postgres database error: %v", res.Error)
 	}
 
 	postgresImpl := NewPostgresImpl(name, r.username, r.password)

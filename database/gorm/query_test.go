@@ -52,6 +52,10 @@ func (s *QueryTestSuite) SetupSuite() {
 
 func (s *QueryTestSuite) SetupTest() {}
 
+func (s *QueryTestSuite) TearDownSuite() {
+	s.NoError(s.queries[database.DriverSqlite].Docker().Stop())
+}
+
 func (s *QueryTestSuite) TestAssociation() {
 	for driver, query := range s.queries {
 		tests := []struct {
@@ -3629,6 +3633,8 @@ func TestCustomConnection(t *testing.T) {
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
 	assert.True(t, person.ID == 0)
+
+	assert.NoError(t, sqliteDocker.Stop())
 }
 
 func TestFilterFindConditions(t *testing.T) {
@@ -3763,14 +3769,9 @@ func TestReadWriteSeparate(t *testing.T) {
 				err      error
 			)
 			if drive == database.DriverSqlite {
-				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
-					ReadDatabase: db["read"].Docker().Config().Database,
-				})
+				mixQuery, err = db["write"].QueryOfReadWrite(db["read"].Docker().Config())
 			} else {
-				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
-					ReadPort:  db["read"].Docker().Config().Port,
-					WritePort: db["write"].Docker().Config().Port,
-				})
+				mixQuery, err = db["write"].QueryOfReadWrite(db["read"].Docker().Config())
 			}
 
 			require.NoError(t, err)
@@ -3795,6 +3796,9 @@ func TestReadWriteSeparate(t *testing.T) {
 			assert.True(t, user4.ID > 0)
 		})
 	}
+
+	assert.NoError(t, dbs[database.DriverSqlite]["read"].Docker().Stop())
+	assert.NoError(t, dbs[database.DriverSqlite]["write"].Docker().Stop())
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
@@ -3817,6 +3821,8 @@ func TestTablePrefixAndSingular(t *testing.T) {
 			assert.True(t, user1.ID > 0)
 		})
 	}
+
+	assert.NoError(t, dbs[database.DriverSqlite].Docker().Stop())
 }
 
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {

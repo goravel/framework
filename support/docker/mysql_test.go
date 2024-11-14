@@ -19,7 +19,7 @@ type MysqlTestSuite struct {
 }
 
 func TestMysqlTestSuite(t *testing.T) {
-	if env.IsWindows() || TestModel == TestModelNormal {
+	if env.IsWindows() || TestModel == TestModelMinimum {
 		t.Skip("Skipping tests that use Docker")
 	}
 
@@ -70,6 +70,15 @@ INSERT INTO users (name) VALUES ('goravel');
 	s.Equal(int64(0), count)
 
 	s.Nil(s.mysql.Stop())
+}
+
+func (s *MysqlTestSuite) TestDatabase() {
+	s.NoError(s.mysql.Build())
+
+	databaseDriver, err := s.mysql.Database("another")
+	s.NoError(err)
+	s.NotNil(databaseDriver)
+	s.NoError(databaseDriver.Stop())
 }
 
 func (s *MysqlTestSuite) TestDriver() {

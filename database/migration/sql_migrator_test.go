@@ -22,6 +22,7 @@ import (
 type SqlMigratorSuite struct {
 	suite.Suite
 	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
+	testQueries       *gorm.TestQueries
 }
 
 func TestSqlMigratorSuite(t *testing.T) {
@@ -38,6 +39,7 @@ func (s *SqlMigratorSuite) SetupTest() {
 
 func (s *SqlMigratorSuite) TearDownTest() {
 	s.NoError(file.Remove("database"))
+	s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Stop())
 }
 
 func (s *SqlMigratorSuite) TestCreate() {

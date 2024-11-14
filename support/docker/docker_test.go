@@ -1,11 +1,11 @@
 package docker
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/support/env"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDatabase(t *testing.T) {
@@ -80,21 +80,13 @@ func TestDatabase(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if test.num == 0 {
 				assert.Panics(t, func() {
-					Database(test.containerType, testUsername, testPassword, test.num)
+					Database(test.containerType, test.num)
 				})
 			} else {
-				drivers := Database(test.containerType, testUsername, testPassword, test.num)
+				drivers := Database(test.containerType, test.num)
 
 				assert.Len(t, drivers, test.num)
 			}
 		})
 	}
 }
-
-//func TestA(t *testing.T) {
-//	go Postgreses(2)
-//	go Postgreses(2)
-//	go Postgreses(2)
-//
-//	time.Sleep(20 * time.Second)
-//}

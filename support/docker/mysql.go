@@ -83,14 +83,24 @@ func (r *MysqlImpl) Database(name string) (testing.DatabaseDriver, error) {
 		return nil, fmt.Errorf("connect Mysql error: %v", err)
 	}
 
-	res := instance.Exec(fmt.Sprintf("CREATE DATABASE %s;", name))
+	res := instance.Exec(fmt.Sprintf(`CREATE DATABASE %s;`, name))
 	if res.Error != nil {
 		return nil, fmt.Errorf("create Mysql database error: %v", res.Error)
+	}
+
+	res = instance.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO `%s`@`%%`;", name, r.username))
+	if res.Error != nil {
+		return nil, fmt.Errorf("grant privileges in Mysql database error: %v", res.Error)
 	}
 
 	mysqlImpl := NewMysqlImpl(name, r.username, r.password)
 	mysqlImpl.containerID = r.containerID
 	mysqlImpl.port = r.port
+
+	_, err = mysqlImpl.connect("root")
+	if err != nil {
+		return nil, fmt.Errorf("connect Mysql error: %v", err)
+	}
 
 	return mysqlImpl, nil
 }

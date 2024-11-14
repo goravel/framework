@@ -39,6 +39,10 @@ func (s *SchemaSuite) SetupTest() {
 	}
 }
 
+func (s *SchemaSuite) TearDownTest() {
+	s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
+}
+
 func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {

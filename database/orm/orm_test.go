@@ -60,6 +60,10 @@ func (s *OrmSuite) SetupTest() {
 	}
 }
 
+func (s *OrmSuite) TearDownSuite() {
+	s.NoError(s.testQueries[database.DriverSqlite].Docker().Stop())
+}
+
 func (s *OrmSuite) TestConnection() {
 	for driver := range s.testQueries {
 		s.NotNil(s.orm.Connection(driver.String()))

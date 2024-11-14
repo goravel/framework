@@ -18,7 +18,7 @@ type SqliteTestSuite struct {
 }
 
 func TestSqliteTestSuite(t *testing.T) {
-	if env.IsWindows() || TestModel == TestModelNormal {
+	if env.IsWindows() {
 		t.Skip("Skipping tests that use Docker")
 	}
 

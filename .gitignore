@@ -2,5 +2,4 @@
 .idea
 .DS_Store
 .vscode
-goravel_*
 /vendor

@@ -31,41 +31,17 @@ const (
 
 var testContext = context.Background()
 
-type TestReadWriteConfig struct {
-	ReadPort  int
-	WritePort int
-
-	// Used by Sqlite
-	ReadDatabase string
-}
-
 type testMockDriver interface {
 	Common()
-	ReadWrite(config TestReadWriteConfig)
+	ReadWrite(readDatabaseConfig testing.DatabaseConfig)
 	WithPrefixAndSingular()
 }
 
 type TestQueries struct {
-	mysqlDockers     []testing.DatabaseDriver
-	postgresDockers  []testing.DatabaseDriver
-	sqliteDockers    []testing.DatabaseDriver
-	sqlserverDockers []testing.DatabaseDriver
 }
 
 func NewTestQueries() *TestQueries {
-	testQueries := &TestQueries{
-		sqliteDockers:   supportdocker.Sqlites(2),
-		postgresDockers: supportdocker.Postgreses(2),
-	}
-
-	if supportdocker.TestModel == supportdocker.TestModelMinimum {
-		return testQueries
-	}
-
-	testQueries.mysqlDockers = supportdocker.Mysqls(2)
-	testQueries.sqlserverDockers = supportdocker.Sqlservers(2)
-
-	return testQueries
+	return &TestQueries{}
 }
 
 func (r *TestQueries) Queries() map[contractsdatabase.Driver]*TestQuery {
@@ -73,11 +49,11 @@ func (r *TestQueries) Queries() map[contractsdatabase.Driver]*TestQuery {
 }
 
 func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[string]*TestQuery {
-	readPostgresQuery := NewTestQuery(r.postgresDockers[0])
-	writePostgresQuery := NewTestQuery(r.postgresDockers[1])
+	readPostgresQuery := NewTestQuery(supportdocker.Postgres())
+	writePostgresQuery := NewTestQuery(supportdocker.Postgres())
 
-	readSqliteQuery := NewTestQuery(r.sqliteDockers[0])
-	writeSqliteQuery := NewTestQuery(r.sqliteDockers[1])
+	readSqliteQuery := NewTestQuery(supportdocker.Sqlite())
+	writeSqliteQuery := NewTestQuery(supportdocker.Sqlite())
 
 	queries := map[contractsdatabase.Driver]map[string]*TestQuery{
 		contractsdatabase.DriverPostgres: {
@@ -94,11 +70,11 @@ func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[stri
 		return queries
 	}
 
-	readMysqlQuery := NewTestQuery(r.mysqlDockers[0])
-	writeMysqlQuery := NewTestQuery(r.mysqlDockers[1])
+	readMysqlQuery := NewTestQuery(supportdocker.Mysql())
+	writeMysqlQuery := NewTestQuery(supportdocker.Mysql())
 
-	readSqlserverQuery := NewTestQuery(r.sqlserverDockers[0])
-	writeSqlserverQuery := NewTestQuery(r.sqlserverDockers[1])
+	readSqlserverQuery := NewTestQuery(supportdocker.Sqlserver())
+	writeSqlserverQuery := NewTestQuery(supportdocker.Sqlserver())
 
 	queries[contractsdatabase.DriverMysql] = map[string]*TestQuery{
 		"read":  readMysqlQuery,
@@ -117,7 +93,7 @@ func (r *TestQueries) QueriesWithPrefixAndSingular() map[contractsdatabase.Drive
 }
 
 func (r *TestQueries) QueryOfAdditional() *TestQuery {
-	postgresQuery := NewTestQuery(r.postgresDockers[1])
+	postgresQuery := NewTestQuery(supportdocker.Postgres())
 
 	return postgresQuery
 }
@@ -126,13 +102,13 @@ func (r *TestQueries) queries(withPrefixAndSingular bool) map[contractsdatabase.
 	driverToTestQuery := make(map[contractsdatabase.Driver]*TestQuery)
 
 	driverToDocker := map[contractsdatabase.Driver]testing.DatabaseDriver{
-		contractsdatabase.DriverPostgres: r.postgresDockers[0],
-		contractsdatabase.DriverSqlite:   r.sqliteDockers[0],
+		contractsdatabase.DriverPostgres: supportdocker.Postgres(),
+		contractsdatabase.DriverSqlite:   supportdocker.Sqlite(),
 	}
 
 	if supportdocker.TestModel != supportdocker.TestModelMinimum {
-		driverToDocker[contractsdatabase.DriverMysql] = r.mysqlDockers[0]
-		driverToDocker[contractsdatabase.DriverSqlserver] = r.sqlserverDockers[0]
+		driverToDocker[contractsdatabase.DriverMysql] = supportdocker.Mysql()
+		driverToDocker[contractsdatabase.DriverSqlserver] = supportdocker.Sqlserver()
 	}
 
 	for driver, docker := range driverToDocker {
@@ -203,10 +179,10 @@ func (r *TestQuery) Query() orm.Query {
 	return r.query
 }
 
-func (r *TestQuery) QueryOfReadWrite(config TestReadWriteConfig) (orm.Query, error) {
+func (r *TestQuery) QueryOfReadWrite(readDatabaseConfig testing.DatabaseConfig) (orm.Query, error) {
 	mockConfig := &mocksconfig.Config{}
 	mockDriver := getMockDriver(r.Docker(), mockConfig, r.Docker().Driver().String())
-	mockDriver.ReadWrite(config)
+	mockDriver.ReadWrite(readDatabaseConfig)
 
 	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), nil, nil)
 }
@@ -260,12 +236,12 @@ func (r *MockMysql) Common() {
 	r.basic()
 }
 
-func (r *MockMysql) ReadWrite(config TestReadWriteConfig) {
+func (r *MockMysql) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
+		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
+		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
@@ -331,12 +307,12 @@ func (r *MockPostgres) Common() {
 	r.basic()
 }
 
-func (r *MockPostgres) ReadWrite(config TestReadWriteConfig) {
+func (r *MockPostgres) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
+		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
+		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
@@ -396,9 +372,9 @@ func (r *MockSqlite) Common() {
 	r.basic()
 }
 
-func (r *MockSqlite) ReadWrite(config TestReadWriteConfig) {
+func (r *MockSqlite) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Database: config.ReadDatabase},
+		{Database: readDatabaseConfig.Database},
 	})
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Database: r.database},
@@ -459,12 +435,12 @@ func (r *MockSqlserver) Common() {
 	r.basic()
 }
 
-func (r *MockSqlserver) ReadWrite(config TestReadWriteConfig) {
+func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
+		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
+		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
@@ -1144,6 +1120,10 @@ CREATE TABLE role_user (
 	default:
 		return ""
 	}
+}
+
+func StopSqlite() {
+
 }
 
 func mockPool(mockConfig *mocksconfig.Config) {
