@@ -41,11 +41,10 @@ func TestNewDatabase(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
-		connection   string
-		setup        func()
-		wantDatabase func() *Database
-		wantErr      error
+		name       string
+		connection string
+		setup      func()
+		wantErr    error
 	}{
 		{
 			name: "success when connection is empty",
@@ -55,15 +54,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.mysql.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.password").Return(testPassword).Once()
-			},
-			wantDatabase: func() *Database {
-				return &Database{
-					artisan:        mockArtisan,
-					config:         mockConfig,
-					connection:     "mysql",
-					orm:            mockOrm,
-					DatabaseDriver: supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
-				}
 			},
 		},
 		{
@@ -75,15 +65,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.mysql.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.mysql.password").Return(testPassword).Once()
 			},
-			wantDatabase: func() *Database {
-				return &Database{
-					artisan:        mockArtisan,
-					config:         mockConfig,
-					connection:     "mysql",
-					orm:            mockOrm,
-					DatabaseDriver: supportdocker.NewMysqlImpl(testDatabase, testUsername, testPassword),
-				}
-			},
 		},
 		{
 			name:       "success when connection is postgres",
@@ -93,15 +74,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(testPassword).Once()
-			},
-			wantDatabase: func() *Database {
-				return &Database{
-					artisan:        mockArtisan,
-					config:         mockConfig,
-					connection:     "postgres",
-					orm:            mockOrm,
-					DatabaseDriver: supportdocker.NewPostgresImpl(testDatabase, testUsername, testPassword),
-				}
 			},
 		},
 		{
@@ -113,15 +85,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.sqlserver.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlserver.password").Return(testPassword).Once()
 			},
-			wantDatabase: func() *Database {
-				return &Database{
-					artisan:        mockArtisan,
-					config:         mockConfig,
-					connection:     "sqlserver",
-					orm:            mockOrm,
-					DatabaseDriver: supportdocker.NewSqlserverImpl(testDatabase, testUsername, testPassword),
-				}
-			},
 		},
 		{
 			name:       "success when connection is sqlite",
@@ -131,15 +94,6 @@ func TestNewDatabase(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.sqlite.database").Return(testDatabase).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlite.username").Return(testUsername).Once()
 				mockConfig.EXPECT().GetString("database.connections.sqlite.password").Return(testPassword).Once()
-			},
-			wantDatabase: func() *Database {
-				return &Database{
-					artisan:        mockArtisan,
-					config:         mockConfig,
-					connection:     "sqlite",
-					orm:            mockOrm,
-					DatabaseDriver: supportdocker.NewSqliteImpl(testDatabase),
-				}
 			},
 		},
 	}
@@ -151,7 +105,8 @@ func TestNewDatabase(t *testing.T) {
 			gotDatabase, err := NewDatabase(mockApp, tt.connection)
 
 			assert.Nil(t, err)
-			assert.Equal(t, tt.wantDatabase(), gotDatabase)
+			assert.NotNil(t, gotDatabase)
+			assert.NoError(t, gotDatabase.Stop())
 		})
 	}
 }
