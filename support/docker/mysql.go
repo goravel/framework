@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 type MysqlImpl struct {
@@ -59,10 +60,6 @@ func (r *MysqlImpl) Build() error {
 	r.containerID = containerID
 	r.port = getExposedPort(exposedPorts, 3306)
 
-	if _, err := r.connect(); err != nil {
-		return fmt.Errorf("connect Mysql docker error: %v", err)
-	}
-
 	return nil
 }
 
@@ -78,29 +75,32 @@ func (r *MysqlImpl) Config() testing.DatabaseConfig {
 }
 
 func (r *MysqlImpl) Database(name string) (testing.DatabaseDriver, error) {
-	instance, err := r.connect("root")
-	if err != nil {
-		return nil, fmt.Errorf("connect Mysql error: %v", err)
-	}
+	// We want to return the DatabaseDriver instance directly, to avoid blocking test cases in different packages,
+	// because the test process will be clocked when creating a new container, each package should call the Ready method
+	// to check if the container is ready. Returning the DatabaseDriver instance directly will allow to initialize multiple
+	// container simultaneously.
+	go func() {
+		instance, err := r.connect("root")
+		if err != nil {
+			color.Errorf("connect Mysql error: %v", err)
+			return
+		}
 
-	res := instance.Exec(fmt.Sprintf(`CREATE DATABASE %s;`, name))
-	if res.Error != nil {
-		return nil, fmt.Errorf("create Mysql database error: %v", res.Error)
-	}
+		res := instance.Exec(fmt.Sprintf(`CREATE DATABASE %s;`, name))
+		if res.Error != nil {
+			color.Errorf("create Mysql database error: %v", res.Error)
+			return
+		}
 
-	res = instance.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO `%s`@`%%`;", name, r.username))
-	if res.Error != nil {
-		return nil, fmt.Errorf("grant privileges in Mysql database error: %v", res.Error)
-	}
+		res = instance.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO `%s`@`%%`;", name, r.username))
+		if res.Error != nil {
+			color.Errorf("grant privileges in Mysql database error: %v", res.Error)
+		}
+	}()
 
 	mysqlImpl := NewMysqlImpl(name, r.username, r.password)
 	mysqlImpl.containerID = r.containerID
 	mysqlImpl.port = r.port
-
-	_, err = mysqlImpl.connect()
-	if err != nil {
-		return nil, fmt.Errorf("connect Mysql error: %v", err)
-	}
 
 	return mysqlImpl, nil
 }
@@ -138,6 +138,12 @@ func (r *MysqlImpl) Fresh() error {
 
 func (r *MysqlImpl) Image(image testing.Image) {
 	r.image = &image
+}
+
+func (r *MysqlImpl) Ready() error {
+	_, err := r.connect()
+
+	return err
 }
 
 func (r *MysqlImpl) Stop() error {

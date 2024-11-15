@@ -27,7 +27,10 @@ func TestToSqlTestSuite(t *testing.T) {
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	postgresQuery := NewTestQuery(docker.Postgres())
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := NewTestQuery(postgresDocker)
 	postgresQuery.CreateTable(TestTableUsers)
 
 	s.query = postgresQuery.Query()

@@ -28,6 +28,8 @@ func TestSchemaSuite(t *testing.T) {
 func (s *SchemaSuite) SetupTest() {
 	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 
 	sqliteDocker := docker.Sqlite()

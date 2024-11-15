@@ -52,10 +52,6 @@ func (r *SqlserverImpl) Build() error {
 	r.containerID = containerID
 	r.port = getExposedPort(exposedPorts, 1433)
 
-	if _, err := r.connect(); err != nil {
-		return fmt.Errorf("connect Sqlserver docker error: %v", err)
-	}
-
 	return nil
 }
 
@@ -74,11 +70,6 @@ func (r *SqlserverImpl) Database(name string) (testing.DatabaseDriver, error) {
 	sqlserverImpl := NewSqlserverImpl(name, r.username, r.password)
 	sqlserverImpl.containerID = r.containerID
 	sqlserverImpl.port = r.port
-
-	_, err := sqlserverImpl.connect()
-	if err != nil {
-		return nil, fmt.Errorf("connect Sqlserver error: %v", err)
-	}
 
 	return sqlserverImpl, nil
 }
@@ -116,6 +107,12 @@ func (r *SqlserverImpl) Fresh() error {
 
 func (r *SqlserverImpl) Image(image testing.Image) {
 	r.image = &image
+}
+
+func (r *SqlserverImpl) Ready() error {
+	_, err := r.connect()
+
+	return err
 }
 
 func (r *SqlserverImpl) Stop() error {

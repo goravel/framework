@@ -71,16 +71,12 @@ func (s *SqlserverTestSuite) TestBuild() {
 	`).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
-	s.Nil(s.sqlserver.Stop())
-}
-
-func (s *SqlserverTestSuite) TestDatabase() {
-	s.NoError(s.sqlserver.Build())
 
 	databaseDriver, err := s.sqlserver.Database("another")
 	s.NoError(err)
 	s.NotNil(databaseDriver)
-	s.NoError(databaseDriver.Stop())
+
+	s.Nil(s.sqlserver.Stop())
 }
 
 func (s *SqlserverTestSuite) TestDriver() {

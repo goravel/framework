@@ -17,7 +17,7 @@ const (
 	TestModelNormal
 
 	// Switch this value to control the test model.
-	TestModel = TestModelNormal
+	TestModel = TestModelMinimum
 )
 
 func Mysql() testing.DatabaseDriver {
@@ -50,6 +50,16 @@ func Sqlite() testing.DatabaseDriver {
 
 func Sqlites(num int) []testing.DatabaseDriver {
 	return Database(ContainerTypeSqlite, num)
+}
+
+func Ready(drivers ...testing.DatabaseDriver) error {
+	for _, driver := range drivers {
+		if err := driver.Ready(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func Database(containerType ContainerType, num int) []testing.DatabaseDriver {

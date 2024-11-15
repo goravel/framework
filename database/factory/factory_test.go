@@ -102,7 +102,10 @@ func TestFactoryTestSuite(t *testing.T) {
 }
 
 func (s *FactoryTestSuite) SetupSuite() {
-	postgresQuery := gorm.NewTestQuery(docker.Postgres())
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQuery(postgresDocker)
 	postgresQuery.CreateTable(gorm.TestTableHouses, gorm.TestTableUsers)
 
 	s.query = postgresQuery.Query()

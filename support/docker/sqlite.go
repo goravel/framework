@@ -65,6 +65,12 @@ func (r *SqliteImpl) Image(image testing.Image) {
 	r.image = &image
 }
 
+func (r *SqliteImpl) Ready() error {
+	_, err := r.connect()
+
+	return err
+}
+
 func (r *SqliteImpl) Stop() error {
 	if err := file.Remove(r.database); err != nil {
 		return fmt.Errorf("stop Sqlite error: %v", err)

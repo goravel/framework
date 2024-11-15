@@ -76,16 +76,12 @@ func (s *PostgresTestSuite) TestBuild() {
 		`).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
-	s.Nil(s.postgres.Stop())
-}
-
-func (s *PostgresTestSuite) TestDatabase() {
-	s.NoError(s.postgres.Build())
 
 	databaseDriver, err := s.postgres.Database("another")
 	s.NoError(err)
 	s.NotNil(databaseDriver)
-	s.NoError(databaseDriver.Stop())
+
+	s.Nil(s.postgres.Stop())
 }
 
 func (s *PostgresTestSuite) TestDriver() {

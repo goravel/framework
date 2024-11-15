@@ -3599,6 +3599,8 @@ func TestCustomConnection(t *testing.T) {
 	}
 
 	postgresDocker := supportdocker.Postgres()
+	require.NoError(t, postgresDocker.Ready())
+
 	postgresQuery := NewTestQuery(postgresDocker)
 	postgresQuery.CreateTable(TestTableReviews, TestTableProducts)
 

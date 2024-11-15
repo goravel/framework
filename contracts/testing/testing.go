@@ -34,6 +34,8 @@ type DatabaseDriver interface {
 	Fresh() error
 	// Image gets the database image.
 	Image(image Image)
+	// Ready checks if the database is ready, the Build method needs to be called first.
+	Ready() error
 	// Stop the database.
 	Stop() error
 }

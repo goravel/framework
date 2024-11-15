@@ -68,16 +68,12 @@ INSERT INTO users (name) VALUES ('goravel');
 	res = instance.Raw(fmt.Sprintf("SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and table_name = 'users';", s.mysql.Config().Database)).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
-	s.Nil(s.mysql.Stop())
-}
-
-func (s *MysqlTestSuite) TestDatabase() {
-	s.NoError(s.mysql.Build())
 
 	databaseDriver, err := s.mysql.Database("another")
 	s.NoError(err)
 	s.NotNil(databaseDriver)
-	s.NoError(databaseDriver.Stop())
+
+	s.Nil(s.mysql.Stop())
 }
 
 func (s *MysqlTestSuite) TestDriver() {

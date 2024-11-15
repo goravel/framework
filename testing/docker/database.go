@@ -45,7 +45,10 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 	if err != nil {
 		return nil, err
 	}
-	
+	if err = databaseDriver.Ready(); err != nil {
+		return nil, err
+	}
+
 	return &Database{
 		DatabaseDriver: databaseDriver,
 		artisan:        artisanFacade,

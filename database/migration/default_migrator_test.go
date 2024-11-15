@@ -44,6 +44,8 @@ func TestDefaultMigratorWithDBSuite(t *testing.T) {
 func (s *DefaultMigratorWithDBSuite) SetupTest() {
 	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
+	s.NoError(postgresDocker.Ready())
+
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
 		contractsdatabase.DriverPostgres: postgresQuery,

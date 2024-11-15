@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/support/color"
 )
 
 type PostgresImpl struct {
@@ -53,10 +54,6 @@ func (r *PostgresImpl) Build() error {
 	r.containerID = containerID
 	r.port = getExposedPort(exposedPorts, 5432)
 
-	if _, err := r.connect(); err != nil {
-		return fmt.Errorf("connect Postgres error: %v", err)
-	}
-
 	return nil
 }
 
@@ -72,24 +69,22 @@ func (r *PostgresImpl) Config() testing.DatabaseConfig {
 }
 
 func (r *PostgresImpl) Database(name string) (testing.DatabaseDriver, error) {
-	instance, err := r.connect()
-	if err != nil {
-		return nil, fmt.Errorf("connect Postgres error: %v", err)
-	}
+	go func() {
+		instance, err := r.connect()
+		if err != nil {
+			color.Errorf("connect Postgres error: %v", err)
+			return
+		}
 
-	res := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, name))
-	if res.Error != nil {
-		return nil, fmt.Errorf("create Postgres database error: %v", res.Error)
-	}
+		res := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, name))
+		if res.Error != nil {
+			color.Errorf("create Postgres database error: %v", res.Error)
+		}
+	}()
 
 	postgresImpl := NewPostgresImpl(name, r.username, r.password)
 	postgresImpl.containerID = r.containerID
 	postgresImpl.port = r.port
-
-	_, err = postgresImpl.connect()
-	if err != nil {
-		return nil, fmt.Errorf("connect Postgres error: %v", err)
-	}
 
 	return postgresImpl, nil
 }
@@ -117,6 +112,12 @@ func (r *PostgresImpl) Fresh() error {
 
 func (r *PostgresImpl) Image(image testing.Image) {
 	r.image = &image
+}
+
+func (r *PostgresImpl) Ready() error {
+	_, err := r.connect()
+
+	return err
 }
 
 func (r *PostgresImpl) Stop() error {

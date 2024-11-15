@@ -45,17 +45,32 @@ type TestQueries struct {
 }
 
 func NewTestQueries() *TestQueries {
+	postgresDockers := supportdocker.Postgreses(2)
+	if err := supportdocker.Ready(postgresDockers...); err != nil {
+		panic(err)
+	}
+
 	testQueries := &TestQueries{
 		sqliteDockers:   supportdocker.Sqlites(2),
-		postgresDockers: supportdocker.Postgreses(2),
+		postgresDockers: postgresDockers,
 	}
 
 	if supportdocker.TestModel == supportdocker.TestModelMinimum {
 		return testQueries
 	}
 
-	testQueries.mysqlDockers = supportdocker.Mysqls(2)
-	testQueries.sqlserverDockers = supportdocker.Sqlservers(2)
+	// Create all containers first, containers will be returned directly, then check the container status, the speed will be faster.
+	mysqlDockers := supportdocker.Mysqls(2)
+	sqlserverDockers := supportdocker.Sqlservers(2)
+	if err := supportdocker.Ready(mysqlDockers...); err != nil {
+		panic(err)
+	}
+	if err := supportdocker.Ready(sqlserverDockers...); err != nil {
+		panic(err)
+	}
+
+	testQueries.mysqlDockers = mysqlDockers
+	testQueries.sqlserverDockers = sqlserverDockers
 
 	return testQueries
 }

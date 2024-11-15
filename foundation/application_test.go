@@ -313,6 +313,8 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	}
 
 	postgresDocker := supportdocker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	config := postgresDocker.Config()
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
