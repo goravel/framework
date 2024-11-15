@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
 	"io"
 	"os"
@@ -68,7 +69,7 @@ func (r *ContainerManager) Get(containerType ContainerType) (testing.DatabaseDri
 		err            error
 	)
 
-	color.Red().Printf("Test---Get: Ready to set lock, containerType: %v, tempfile: %s", containerType, r.file)
+	color.Red().Printf("Test---Get: Ready to set lock, containerType: %v, tempfile: %s, now: %s\n", containerType, r.file, carbon.Now().ToDateTimeString())
 	r.lock()
 	defer r.unlock()
 
@@ -83,7 +84,7 @@ func (r *ContainerManager) Get(containerType ContainerType) (testing.DatabaseDri
 			databaseDriver = r.databaseConfigToDatabaseDriver(containerType, containerTypeToDatabaseConfig[containerType])
 		}
 	}
-	color.Red().Printf("Test---Get: filtered containers: %+v\n", databaseDriver)
+	color.Red().Printf("Test---Get: filtered containers, databaseDriver: %+v, containerType: %v\n", databaseDriver, containerType)
 	if databaseDriver == nil {
 		database := fmt.Sprintf("goravel_%s", str.Random(6))
 		color.Red().Println("Test---Get: driver is empty, going to create new container", database)
@@ -91,7 +92,7 @@ func (r *ContainerManager) Get(containerType ContainerType) (testing.DatabaseDri
 		if err != nil {
 			return nil, err
 		}
-		color.Red().Printf("Test---Get: created a new container: %+v\n", databaseDriver)
+		color.Red().Printf("Test---Get: created a new container, databaseDriver: %+v, containerType: %v\n", databaseDriver, containerType)
 		// Sqlite doesn't need to create a docker container, so it doesn't need to be added to the file, and create it every time.
 		if containerType != ContainerTypeSqlite {
 			color.Red().Printf("Test---Get: going to add the new container\n")
@@ -205,7 +206,7 @@ func (r *ContainerManager) lock() {
 }
 
 func (r *ContainerManager) unlock() {
-	color.Red().Printf("Test---unlock\n")
+	color.Red().Printf("Test---unlock, now: %s\n", carbon.Now().ToDateTimeString())
 	if err := file.Remove(r.lockFile); err != nil {
 		panic(err)
 	}
