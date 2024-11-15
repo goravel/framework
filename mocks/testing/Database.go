@@ -295,6 +295,51 @@ func (_c *Database_Image_Call) RunAndReturn(run func(testing.Image)) *Database_I
 	return _c
 }
 
+// Ready provides a mock function with given fields:
+func (_m *Database) Ready() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Ready")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Database_Ready_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Ready'
+type Database_Ready_Call struct {
+	*mock.Call
+}
+
+// Ready is a helper method to define mock.On call
+func (_e *Database_Expecter) Ready() *Database_Ready_Call {
+	return &Database_Ready_Call{Call: _e.mock.On("Ready")}
+}
+
+func (_c *Database_Ready_Call) Run(run func()) *Database_Ready_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Database_Ready_Call) Return(_a0 error) *Database_Ready_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Database_Ready_Call) RunAndReturn(run func() error) *Database_Ready_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Seed provides a mock function with given fields: seeders
 func (_m *Database) Seed(seeders ...seeder.Seeder) error {
 	_va := make([]interface{}, len(seeders))
