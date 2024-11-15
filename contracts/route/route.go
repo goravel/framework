@@ -16,7 +16,7 @@ type Route interface {
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
 	// Recover allows you to set a custom recovery when a request panics
-	Recover(recoverFunc func(ctx Context, err interface{}))
+	Recover(recoverFunc func(ctx context.Context, err interface{}))
 	// Run starts the HTTP server and listens for incoming connections on the specified host.
 	Run(host ...string) error
 	// RunTLS starts the HTTPS server with the provided TLS configuration and listens on the specified host.
