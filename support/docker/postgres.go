@@ -70,15 +70,19 @@ func (r *PostgresImpl) Config() testing.DatabaseConfig {
 
 func (r *PostgresImpl) Database(name string) (testing.DatabaseDriver, error) {
 	go func() {
-		instance, err := r.connect()
+		gormDB, err := r.connect()
 		if err != nil {
 			color.Errorf("connect Postgres error: %v", err)
 			return
 		}
 
-		res := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, name))
+		res := gormDB.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, name))
 		if res.Error != nil {
 			color.Errorf("create Postgres database error: %v", res.Error)
+		}
+
+		if err := r.close(gormDB); err != nil {
+			color.Errorf("close Postgres connection error: %v", err)
 		}
 	}()
 
@@ -94,20 +98,20 @@ func (r *PostgresImpl) Driver() database.Driver {
 }
 
 func (r *PostgresImpl) Fresh() error {
-	instance, err := r.connect()
+	gormDB, err := r.connect()
 	if err != nil {
 		return fmt.Errorf("connect Postgres error when clearing: %v", err)
 	}
 
-	if res := instance.Exec("DROP SCHEMA public CASCADE;"); res.Error != nil {
+	if res := gormDB.Exec("DROP SCHEMA public CASCADE;"); res.Error != nil {
 		return fmt.Errorf("drop schema of Postgres error: %v", res.Error)
 	}
 
-	if res := instance.Exec("CREATE SCHEMA public;"); res.Error != nil {
+	if res := gormDB.Exec("CREATE SCHEMA public;"); res.Error != nil {
 		return fmt.Errorf("create schema of Postgres error: %v", res.Error)
 	}
 
-	return nil
+	return r.close(gormDB)
 }
 
 func (r *PostgresImpl) Image(image testing.Image) {
@@ -115,9 +119,12 @@ func (r *PostgresImpl) Image(image testing.Image) {
 }
 
 func (r *PostgresImpl) Ready() error {
-	_, err := r.connect()
+	gormDB, err := r.connect()
+	if err != nil {
+		return err
+	}
 
-	return err
+	return r.close(gormDB)
 }
 
 func (r *PostgresImpl) Stop() error {
@@ -154,4 +161,13 @@ func (r *PostgresImpl) connect() (*gormio.DB, error) {
 	}
 
 	return instance, err
+}
+
+func (r *PostgresImpl) close(gormDB *gormio.DB) error {
+	db, err := gormDB.DB()
+	if err != nil {
+		return err
+	}
+
+	return db.Close()
 }
