@@ -76,7 +76,6 @@ func (s *PostgresTestSuite) TestBuild() {
 		`).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
-
 	s.Nil(s.postgres.Stop())
 }
 

@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"github.com/goravel/framework/support/color"
 	"io"
 	"os"
 	"path/filepath"
@@ -67,6 +68,7 @@ func (r *ContainerManager) Get(containerType ContainerType) (testing.DatabaseDri
 		err            error
 	)
 
+	color.Red().Printf("Test---Get: Ready to set lock, containerType: %v, tempfile: %s", containerType, r.file)
 	r.lock()
 	defer r.unlock()
 
@@ -74,23 +76,25 @@ func (r *ContainerManager) Get(containerType ContainerType) (testing.DatabaseDri
 	if err != nil {
 		return nil, err
 	}
-
+	color.Red().Println("Test---Get: get all containers", containerTypeToDatabaseConfig)
 	// If the port is not occupied, provide the container is released.
 	if containerTypeToDatabaseConfig != nil {
 		if _, exist := containerTypeToDatabaseConfig[containerType]; exist && isPortUsing(containerTypeToDatabaseConfig[containerType].Port) {
 			databaseDriver = r.databaseConfigToDatabaseDriver(containerType, containerTypeToDatabaseConfig[containerType])
 		}
 	}
-
+	color.Red().Printf("Test---Get: filtered containers: %+v\n", databaseDriver)
 	if databaseDriver == nil {
 		database := fmt.Sprintf("goravel_%s", str.Random(6))
+		color.Red().Println("Test---Get: driver is empty, going to create new container", database)
 		databaseDriver, err = r.Create(containerType, database, r.username, r.password)
 		if err != nil {
 			return nil, err
 		}
-
+		color.Red().Printf("Test---Get: created a new container: %+v\n", databaseDriver)
 		// Sqlite doesn't need to create a docker container, so it doesn't need to be added to the file, and create it every time.
 		if containerType != ContainerTypeSqlite {
+			color.Red().Printf("Test---Get: going to add the new container\n")
 			if err := r.add(containerType, databaseDriver); err != nil {
 				return nil, err
 			}
@@ -110,6 +114,7 @@ func (r *ContainerManager) Remove() error {
 
 func (r *ContainerManager) add(containerType ContainerType, databaseDriver testing.DatabaseDriver) error {
 	containerTypeToDatabaseConfig, err := r.all()
+	color.Red().Printf("Test---add: get all containers: %+v, type: %v, databaseDriver: %+v\n", containerTypeToDatabaseConfig, containerType, databaseDriver)
 	if err != nil {
 		return err
 	}
@@ -118,7 +123,7 @@ func (r *ContainerManager) add(containerType ContainerType, databaseDriver testi
 		containerTypeToDatabaseConfig = make(map[ContainerType]testing.DatabaseConfig)
 	}
 	containerTypeToDatabaseConfig[containerType] = databaseDriver.Config()
-
+	color.Red().Printf("Test---add: new containers, type: %v, containerTypeToDatabaseConfig: %+v\n", containerType, containerTypeToDatabaseConfig)
 	f, err := os.OpenFile(r.file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		return err
@@ -200,6 +205,7 @@ func (r *ContainerManager) lock() {
 }
 
 func (r *ContainerManager) unlock() {
+	color.Red().Printf("Test---unlock\n")
 	if err := file.Remove(r.lockFile); err != nil {
 		panic(err)
 	}
