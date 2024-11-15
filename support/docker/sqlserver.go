@@ -178,7 +178,13 @@ func (r *SqlserverImpl) connect() (*gormio.DB, error) {
 					r.username, r.password, r.host, r.port, r.database),
 			}))
 
-			break
+			db, err := instance.DB()
+			if err == nil {
+				db.SetMaxIdleConns(10)
+				db.SetMaxOpenConns(100)
+
+				break
+			}
 		}
 
 		time.Sleep(2 * time.Second)
