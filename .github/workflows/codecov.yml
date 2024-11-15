@@ -19,7 +19,7 @@ jobs:
       - name: Print coverage report
         run: go tool cover -func=coverage.out
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: ./coverage.out
           token: ${{ secrets.CODECOV }}
