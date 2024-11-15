@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
@@ -201,6 +202,7 @@ func (r *ContainerManager) lock() {
 		if !file.Exists(r.lockFile) {
 			break
 		}
+		time.Sleep(1 * time.Second)
 	}
 	if err := file.Create(r.lockFile, ""); err != nil {
 		panic(err)

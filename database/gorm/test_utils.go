@@ -38,10 +38,26 @@ type testMockDriver interface {
 }
 
 type TestQueries struct {
+	mysqlDockers     []testing.DatabaseDriver
+	postgresDockers  []testing.DatabaseDriver
+	sqliteDockers    []testing.DatabaseDriver
+	sqlserverDockers []testing.DatabaseDriver
 }
 
 func NewTestQueries() *TestQueries {
-	return &TestQueries{}
+	testQueries := &TestQueries{
+		sqliteDockers:   supportdocker.Sqlites(2),
+		postgresDockers: supportdocker.Postgreses(2),
+	}
+
+	if supportdocker.TestModel == supportdocker.TestModelMinimum {
+		return testQueries
+	}
+
+	testQueries.mysqlDockers = supportdocker.Mysqls(2)
+	testQueries.sqlserverDockers = supportdocker.Sqlservers(2)
+
+	return testQueries
 }
 
 func (r *TestQueries) Queries() map[contractsdatabase.Driver]*TestQuery {
@@ -49,11 +65,11 @@ func (r *TestQueries) Queries() map[contractsdatabase.Driver]*TestQuery {
 }
 
 func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[string]*TestQuery {
-	readPostgresQuery := NewTestQuery(supportdocker.Postgres())
-	writePostgresQuery := NewTestQuery(supportdocker.Postgres())
+	readPostgresQuery := NewTestQuery(r.postgresDockers[0])
+	writePostgresQuery := NewTestQuery(r.postgresDockers[1])
 
-	readSqliteQuery := NewTestQuery(supportdocker.Sqlite())
-	writeSqliteQuery := NewTestQuery(supportdocker.Sqlite())
+	readSqliteQuery := NewTestQuery(r.sqliteDockers[0])
+	writeSqliteQuery := NewTestQuery(r.sqliteDockers[1])
 
 	queries := map[contractsdatabase.Driver]map[string]*TestQuery{
 		contractsdatabase.DriverPostgres: {
@@ -70,11 +86,11 @@ func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[stri
 		return queries
 	}
 
-	readMysqlQuery := NewTestQuery(supportdocker.Mysql())
-	writeMysqlQuery := NewTestQuery(supportdocker.Mysql())
+	readMysqlQuery := NewTestQuery(r.mysqlDockers[0])
+	writeMysqlQuery := NewTestQuery(r.mysqlDockers[1])
 
-	readSqlserverQuery := NewTestQuery(supportdocker.Sqlserver())
-	writeSqlserverQuery := NewTestQuery(supportdocker.Sqlserver())
+	readSqlserverQuery := NewTestQuery(r.sqlserverDockers[0])
+	writeSqlserverQuery := NewTestQuery(r.sqlserverDockers[1])
 
 	queries[contractsdatabase.DriverMysql] = map[string]*TestQuery{
 		"read":  readMysqlQuery,
@@ -93,7 +109,7 @@ func (r *TestQueries) QueriesWithPrefixAndSingular() map[contractsdatabase.Drive
 }
 
 func (r *TestQueries) QueryOfAdditional() *TestQuery {
-	postgresQuery := NewTestQuery(supportdocker.Postgres())
+	postgresQuery := NewTestQuery(r.postgresDockers[1])
 
 	return postgresQuery
 }
@@ -102,13 +118,13 @@ func (r *TestQueries) queries(withPrefixAndSingular bool) map[contractsdatabase.
 	driverToTestQuery := make(map[contractsdatabase.Driver]*TestQuery)
 
 	driverToDocker := map[contractsdatabase.Driver]testing.DatabaseDriver{
-		contractsdatabase.DriverPostgres: supportdocker.Postgres(),
-		contractsdatabase.DriverSqlite:   supportdocker.Sqlite(),
+		contractsdatabase.DriverPostgres: r.postgresDockers[0],
+		contractsdatabase.DriverSqlite:   r.sqliteDockers[0],
 	}
 
 	if supportdocker.TestModel != supportdocker.TestModelMinimum {
-		driverToDocker[contractsdatabase.DriverMysql] = supportdocker.Mysql()
-		driverToDocker[contractsdatabase.DriverSqlserver] = supportdocker.Sqlserver()
+		driverToDocker[contractsdatabase.DriverMysql] = r.mysqlDockers[0]
+		driverToDocker[contractsdatabase.DriverSqlserver] = r.sqlserverDockers[0]
 	}
 
 	for driver, docker := range driverToDocker {
