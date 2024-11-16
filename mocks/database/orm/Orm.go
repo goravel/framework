@@ -129,6 +129,51 @@ func (_c *Orm_DB_Call) RunAndReturn(run func() (*sql.DB, error)) *Orm_DB_Call {
 	return _c
 }
 
+// DatabaseName provides a mock function with given fields:
+func (_m *Orm) DatabaseName() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DatabaseName")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Orm_DatabaseName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DatabaseName'
+type Orm_DatabaseName_Call struct {
+	*mock.Call
+}
+
+// DatabaseName is a helper method to define mock.On call
+func (_e *Orm_Expecter) DatabaseName() *Orm_DatabaseName_Call {
+	return &Orm_DatabaseName_Call{Call: _e.mock.On("DatabaseName")}
+}
+
+func (_c *Orm_DatabaseName_Call) Run(run func()) *Orm_DatabaseName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Orm_DatabaseName_Call) Return(_a0 string) *Orm_DatabaseName_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Orm_DatabaseName_Call) RunAndReturn(run func() string) *Orm_DatabaseName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Factory provides a mock function with given fields:
 func (_m *Orm) Factory() orm.Factory {
 	ret := _m.Called()

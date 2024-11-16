@@ -30,7 +30,7 @@ func (s *WrapTestSuite) ColumnWithoutAlias() {
 }
 
 func (s *WrapTestSuite) ColumnsWithMultipleColumns() {
-	result := s.wrap.Columns([]string{"column1", "column2 as alias2"})
+	result := s.wrap.Columnize([]string{"column1", "column2 as alias2"})
 	s.Equal(`"column1", "column2" as "prefix_alias2"`, result)
 }
 

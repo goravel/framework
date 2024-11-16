@@ -70,18 +70,19 @@ type Connection interface {
 }
 
 type Command struct {
-	Algorithm  string
-	Column     ColumnDefinition
-	Columns    []string
-	From       string
-	Index      string
-	On         string
-	OnDelete   string
-	OnUpdate   string
-	Name       string
-	To         string
-	References []string
-	Value      string
+	Algorithm       string
+	Column          ColumnDefinition
+	Columns         []string
+	From            string
+	Index           string
+	On              string
+	OnDelete        string
+	OnUpdate        string
+	Name            string
+	To              string
+	References      []string
+	ShouldBeSkipped bool
+	Value           string
 }
 
 type Index struct {

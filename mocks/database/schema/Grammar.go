@@ -531,17 +531,17 @@ func (_c *Grammar_CompilePrimary_Call) RunAndReturn(run func(schema.Blueprint, *
 	return _c
 }
 
-// CompileTables provides a mock function with given fields:
-func (_m *Grammar) CompileTables() string {
-	ret := _m.Called()
+// CompileTables provides a mock function with given fields: database
+func (_m *Grammar) CompileTables(database string) string {
+	ret := _m.Called(database)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileTables")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(database)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -555,13 +555,14 @@ type Grammar_CompileTables_Call struct {
 }
 
 // CompileTables is a helper method to define mock.On call
-func (_e *Grammar_Expecter) CompileTables() *Grammar_CompileTables_Call {
-	return &Grammar_CompileTables_Call{Call: _e.mock.On("CompileTables")}
+//   - database string
+func (_e *Grammar_Expecter) CompileTables(database interface{}) *Grammar_CompileTables_Call {
+	return &Grammar_CompileTables_Call{Call: _e.mock.On("CompileTables", database)}
 }
 
-func (_c *Grammar_CompileTables_Call) Run(run func()) *Grammar_CompileTables_Call {
+func (_c *Grammar_CompileTables_Call) Run(run func(database string)) *Grammar_CompileTables_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -571,7 +572,7 @@ func (_c *Grammar_CompileTables_Call) Return(_a0 string) *Grammar_CompileTables_
 	return _c
 }
 
-func (_c *Grammar_CompileTables_Call) RunAndReturn(run func() string) *Grammar_CompileTables_Call {
+func (_c *Grammar_CompileTables_Call) RunAndReturn(run func(string) string) *Grammar_CompileTables_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -621,17 +622,17 @@ func (_c *Grammar_CompileTypes_Call) RunAndReturn(run func() string) *Grammar_Co
 	return _c
 }
 
-// CompileViews provides a mock function with given fields:
-func (_m *Grammar) CompileViews() string {
-	ret := _m.Called()
+// CompileViews provides a mock function with given fields: database
+func (_m *Grammar) CompileViews(database string) string {
+	ret := _m.Called(database)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileViews")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(database)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -645,13 +646,14 @@ type Grammar_CompileViews_Call struct {
 }
 
 // CompileViews is a helper method to define mock.On call
-func (_e *Grammar_Expecter) CompileViews() *Grammar_CompileViews_Call {
-	return &Grammar_CompileViews_Call{Call: _e.mock.On("CompileViews")}
+//   - database string
+func (_e *Grammar_Expecter) CompileViews(database interface{}) *Grammar_CompileViews_Call {
+	return &Grammar_CompileViews_Call{Call: _e.mock.On("CompileViews", database)}
 }
 
-func (_c *Grammar_CompileViews_Call) Run(run func()) *Grammar_CompileViews_Call {
+func (_c *Grammar_CompileViews_Call) Run(run func(database string)) *Grammar_CompileViews_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -661,7 +663,7 @@ func (_c *Grammar_CompileViews_Call) Return(_a0 string) *Grammar_CompileViews_Ca
 	return _c
 }
 
-func (_c *Grammar_CompileViews_Call) RunAndReturn(run func() string) *Grammar_CompileViews_Call {
+func (_c *Grammar_CompileViews_Call) RunAndReturn(run func(string) string) *Grammar_CompileViews_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 
 	"github.com/goravel/framework/contracts/config"
@@ -87,6 +88,10 @@ func (r *Orm) DB() (*sql.DB, error) {
 
 func (r *Orm) Factory() contractsorm.Factory {
 	return factory.NewFactoryImpl(r.Query())
+}
+
+func (r *Orm) DatabaseName() string {
+	return r.config.GetString(fmt.Sprintf("database.connections.%s.database", r.connection))
 }
 
 func (r *Orm) Name() string {

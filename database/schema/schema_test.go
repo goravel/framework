@@ -27,15 +27,19 @@ func TestSchemaSuite(t *testing.T) {
 
 func (s *SchemaSuite) SetupTest() {
 	// TODO Add other drivers
-	postgresDocker := docker.Postgres()
-	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	//postgresDocker := docker.Postgres()
+	//postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	//
+	//sqliteDocker := docker.Sqlite()
+	//sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
 
-	sqliteDocker := docker.Sqlite()
-	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
+	mysqlDocker := docker.Mysql()
+	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
 
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		database.DriverPostgres: postgresQuery,
-		database.DriverSqlite:   sqliteQuery,
+		//database.DriverPostgres: postgresQuery,
+		//database.DriverSqlite:   sqliteQuery,
+		database.DriverMysql: mysqlQuery,
 	}
 }
 

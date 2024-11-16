@@ -24,11 +24,11 @@ type Grammar interface {
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
 	// CompileTables Compile the query to determine the tables.
-	CompileTables() string
+	CompileTables(database string) string
 	// CompileTypes Compile the query to determine the types.
 	CompileTypes() string
 	// CompileViews Compile the query to determine the views.
-	CompileViews() string
+	CompileViews(database string) string
 	// GetAttributeCommands Get the commands for the schema build.
 	GetAttributeCommands() []string
 	// TypeBigInteger Create the column definition for a big integer type.
