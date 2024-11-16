@@ -41,7 +41,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 	case contractsdatabase.DriverPostgres:
 		schema := config.GetString(fmt.Sprintf("database.connections.%s.search_path", orm.Name()), "public")
 
-		postgresGrammar := grammars.NewPostgres()
+		postgresGrammar := grammars.NewPostgres(prefix)
 		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)
 		grammar = postgresGrammar
 	case contractsdatabase.DriverMysql:
@@ -49,7 +49,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 	case contractsdatabase.DriverSqlserver:
 		// TODO Optimize here when implementing Sqlserver driver
 	case contractsdatabase.DriverSqlite:
-		sqliteGrammar := grammars.NewSqlite()
+		sqliteGrammar := grammars.NewSqlite(prefix)
 		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)
 		grammar = sqliteGrammar
 	default:
@@ -122,8 +122,7 @@ func (r *Schema) HasIndex(table, index string) bool {
 }
 
 func (r *Schema) HasTable(name string) bool {
-	blueprint := r.createBlueprint(name)
-	tableName := blueprint.GetTableName()
+	tableName := r.prefix + name
 
 	tables, err := r.GetTables()
 	if err != nil {

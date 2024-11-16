@@ -19,7 +19,26 @@ func TestSqliteSuite(t *testing.T) {
 }
 
 func (s *SqliteSuite) SetupTest() {
-	s.grammar = NewSqlite()
+	s.grammar = NewSqlite("goravel_")
+}
+
+func (s *SqliteSuite) TestAddForeignKeys() {
+	commands := []*contractsschema.Command{
+		{
+			Columns:    []string{"role_id", "permission_id"},
+			On:         "roles",
+			References: []string{"id", "user_id"},
+			OnDelete:   "cascade",
+			OnUpdate:   "restrict",
+		},
+		{
+			Columns:    []string{"permission_id", "role_id"},
+			On:         "permissions",
+			References: []string{"id", "user_id"},
+		},
+	}
+
+	s.Equal(`, foreign key("role_id", "permission_id") references "goravel_roles"("id", "user_id") on delete cascade on update restrict, foreign key("permission_id", "role_id") references "goravel_permissions"("id", "user_id")`, s.grammar.addForeignKeys(commands))
 }
 
 func (s *SqliteSuite) TestCompileAdd() {
@@ -36,7 +55,7 @@ func (s *SqliteSuite) TestCompileAdd() {
 		Column: mockColumn,
 	})
 
-	s.Equal("alter table users add column name varchar default 'goravel' not null", sql)
+	s.Equal(`alter table "goravel_users" add column "name" varchar default 'goravel' not null`, sql)
 }
 
 func (s *SqliteSuite) TestCompileCreate() {
@@ -82,7 +101,7 @@ func (s *SqliteSuite) TestCompileCreate() {
 		},
 		{
 			Name:       "foreign",
-			Columns:    []string{"role_id"},
+			Columns:    []string{"role_id", "permission_id"},
 			On:         "roles",
 			References: []string{"id"},
 			OnDelete:   "cascade",
@@ -90,7 +109,7 @@ func (s *SqliteSuite) TestCompileCreate() {
 		},
 		{
 			Name:       "foreign",
-			Columns:    []string{"permission_id"},
+			Columns:    []string{"permission_id", "role_id"},
 			On:         "permissions",
 			References: []string{"id"},
 			OnDelete:   "cascade",
@@ -98,7 +117,7 @@ func (s *SqliteSuite) TestCompileCreate() {
 		},
 	}).Twice()
 
-	s.Equal("create table users (id integer primary key autoincrement not null,name varchar null, foreign key(role_id) references roles(id) on delete cascade on update restrict, foreign key(permission_id) references permissions(id) on delete cascade on update restrict, primary key (id))",
+	s.Equal(`create table "goravel_users" ("id" integer primary key autoincrement not null, "name" varchar null, foreign key("role_id", "permission_id") references "goravel_roles"("id") on delete cascade on update restrict, foreign key("permission_id", "role_id") references "goravel_permissions"("id") on delete cascade on update restrict, primary key ("id"))`,
 		s.grammar.CompileCreate(mockBlueprint))
 }
 
@@ -106,7 +125,41 @@ func (s *SqliteSuite) TestCompileDropIfExists() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
-	s.Equal("drop table if exists users", s.grammar.CompileDropIfExists(mockBlueprint))
+	s.Equal(`drop table if exists "goravel_users"`, s.grammar.CompileDropIfExists(mockBlueprint))
+}
+
+func (s *SqliteSuite) TestCompileIndex() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+	command := &contractsschema.Command{
+		Index:   "users",
+		Columns: []string{"role_id", "permission_id"},
+	}
+
+	s.Equal(`create index "users" on "goravel_users" ("role_id", "permission_id")`, s.grammar.CompileIndex(mockBlueprint, command))
+}
+
+func (s *SqliteSuite) TestGetColumns() {
+	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
+	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+
+	mockBlueprint.EXPECT().GetAddedColumns().Return([]contractsschema.ColumnDefinition{
+		mockColumn1, mockColumn2,
+	}).Once()
+
+	mockColumn1.EXPECT().GetName().Return("id").Once()
+	mockColumn1.EXPECT().GetType().Return("integer").Twice()
+	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
+	mockColumn1.EXPECT().GetNullable().Return(false).Once()
+	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
+
+	mockColumn2.EXPECT().GetName().Return("name").Once()
+	mockColumn2.EXPECT().GetType().Return("string").Twice()
+	mockColumn2.EXPECT().GetDefault().Return("goravel").Twice()
+	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+
+	s.Equal([]string{"\"id\" integer primary key autoincrement not null", "\"name\" varchar default 'goravel' null"}, s.grammar.getColumns(mockBlueprint))
 }
 
 func (s *SqliteSuite) TestModifyDefault() {

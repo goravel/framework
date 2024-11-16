@@ -31,7 +31,7 @@ func (s *PostgresSchemaSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
 	s.testQuery = gorm.NewTestQuery(postgresDocker, true)
 	s.mockOrm = mocksorm.NewOrm(s.T())
-	s.postgresSchema = NewPostgresSchema(grammars.NewPostgres(), s.mockOrm, "goravel", "framework")
+	s.postgresSchema = NewPostgresSchema(grammars.NewPostgres("goravel_"), s.mockOrm, "goravel", "goravel_")
 }
 
 // TODO Implement this after implementing create type

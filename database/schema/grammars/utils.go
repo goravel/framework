@@ -10,29 +10,6 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func addModify(modifiers []func(schema.Blueprint, schema.ColumnDefinition) string, sql string, blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	for _, modifier := range modifiers {
-		sql += modifier(blueprint, column)
-	}
-
-	return sql
-}
-
-func getColumn(grammar schema.Grammar, blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	sql := fmt.Sprintf("%s %s", column.GetName(), getType(grammar, column))
-
-	return addModify(grammar.GetModifiers(), sql, blueprint, column)
-}
-
-func getColumns(grammar schema.Grammar, blueprint schema.Blueprint) []string {
-	var columns []string
-	for _, column := range blueprint.GetAddedColumns() {
-		columns = append(columns, getColumn(grammar, blueprint, column))
-	}
-
-	return columns
-}
-
 func getCommandByName(commands []*schema.Command, name string) *schema.Command {
 	commands = getCommandsByName(commands, name)
 	if len(commands) == 0 {
@@ -79,20 +56,4 @@ func getType(grammar schema.Grammar, column schema.ColumnDefinition) string {
 	}
 
 	return ""
-}
-
-func prefixArray(prefix string, values []string) []string {
-	for i, value := range values {
-		values[i] = prefix + " " + value
-	}
-
-	return values
-}
-
-func quoteString(value string) string {
-	if value == "" {
-		return value
-	}
-
-	return fmt.Sprintf("'%s'", value)
 }

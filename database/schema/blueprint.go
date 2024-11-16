@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"fmt"
 	"strings"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
@@ -63,7 +64,7 @@ func (r *Blueprint) DropIfExists() {
 func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
 	command := r.indexCommand(constants.CommandForeign, column)
 
-	return NewForeignKeyDefinition(command, r.prefix)
+	return NewForeignKeyDefinition(command)
 }
 
 func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
@@ -81,7 +82,7 @@ func (r *Blueprint) GetCommands() []*schema.Command {
 
 func (r *Blueprint) GetTableName() string {
 	// TODO Add schema for Postgres
-	return r.prefix + r.table
+	return r.table
 }
 
 func (r *Blueprint) HasCommand(command string) bool {
@@ -205,11 +206,20 @@ func (r *Blueprint) addImpliedCommands(grammar schema.Grammar) {
 }
 
 func (r *Blueprint) createIndexName(ttype string, columns []string) string {
-	table := r.GetTableName()
-	index := strings.ToLower(table + "_" + strings.Join(columns, "_") + "_" + ttype)
-	index = strings.ReplaceAll(index, "-", "_")
+	var table string
+	if strings.Contains(r.table, ".") {
+		lastDotIndex := strings.LastIndex(r.table, ".")
+		table = r.table[:lastDotIndex+1] + r.prefix + r.table[lastDotIndex+1:]
+	} else {
+		table = r.prefix + r.table
+	}
 
-	return strings.ReplaceAll(index, ".", "_")
+	index := strings.ToLower(fmt.Sprintf("%s_%s_%s", table, strings.Join(columns, "_"), ttype))
+
+	index = strings.ReplaceAll(index, "-", "_")
+	index = strings.ReplaceAll(index, ".", "_")
+
+	return index
 }
 
 func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schema.IndexConfig) *schema.Command {
