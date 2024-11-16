@@ -22,7 +22,8 @@ type Database interface {
 }
 
 type DatabaseDriver interface {
-	// Build the database.
+	// Build a database container, it doesn't wait for the database to be ready, the Ready method needs to be called if
+	// you want to check the container status.
 	Build() error
 	// Config get database configuration.
 	Config() DatabaseConfig

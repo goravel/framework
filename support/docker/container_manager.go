@@ -2,8 +2,6 @@ package docker
 
 import (
 	"fmt"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/color"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,6 +10,8 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
+	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )

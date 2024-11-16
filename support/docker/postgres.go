@@ -148,13 +148,7 @@ func (r *PostgresImpl) connect() (*gormio.DB, error) {
 		}))
 
 		if err == nil {
-			db, err := instance.DB()
-			if err == nil {
-				db.SetMaxIdleConns(10)
-				db.SetMaxOpenConns(100)
-
-				break
-			}
+			break
 		}
 
 		time.Sleep(2 * time.Second)
