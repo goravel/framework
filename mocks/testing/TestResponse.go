@@ -3,6 +3,8 @@
 package testing
 
 import (
+	http "net/http"
+
 	testing "github.com/goravel/framework/contracts/testing"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -2030,6 +2032,148 @@ func (_c *TestResponse_Content_Call) RunAndReturn(run func() (string, error)) *T
 	return _c
 }
 
+// Cookie provides a mock function with given fields: name
+func (_m *TestResponse) Cookie(name string) *http.Cookie {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Cookie")
+	}
+
+	var r0 *http.Cookie
+	if rf, ok := ret.Get(0).(func(string) *http.Cookie); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*http.Cookie)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_Cookie_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cookie'
+type TestResponse_Cookie_Call struct {
+	*mock.Call
+}
+
+// Cookie is a helper method to define mock.On call
+//   - name string
+func (_e *TestResponse_Expecter) Cookie(name interface{}) *TestResponse_Cookie_Call {
+	return &TestResponse_Cookie_Call{Call: _e.mock.On("Cookie", name)}
+}
+
+func (_c *TestResponse_Cookie_Call) Run(run func(name string)) *TestResponse_Cookie_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *TestResponse_Cookie_Call) Return(_a0 *http.Cookie) *TestResponse_Cookie_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_Cookie_Call) RunAndReturn(run func(string) *http.Cookie) *TestResponse_Cookie_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Cookies provides a mock function with given fields:
+func (_m *TestResponse) Cookies() []*http.Cookie {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Cookies")
+	}
+
+	var r0 []*http.Cookie
+	if rf, ok := ret.Get(0).(func() []*http.Cookie); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*http.Cookie)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_Cookies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cookies'
+type TestResponse_Cookies_Call struct {
+	*mock.Call
+}
+
+// Cookies is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) Cookies() *TestResponse_Cookies_Call {
+	return &TestResponse_Cookies_Call{Call: _e.mock.On("Cookies")}
+}
+
+func (_c *TestResponse_Cookies_Call) Run(run func()) *TestResponse_Cookies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_Cookies_Call) Return(_a0 []*http.Cookie) *TestResponse_Cookies_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_Cookies_Call) RunAndReturn(run func() []*http.Cookie) *TestResponse_Cookies_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Headers provides a mock function with given fields:
+func (_m *TestResponse) Headers() http.Header {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Headers")
+	}
+
+	var r0 http.Header
+	if rf, ok := ret.Get(0).(func() http.Header); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.Header)
+		}
+	}
+
+	return r0
+}
+
+// TestResponse_Headers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Headers'
+type TestResponse_Headers_Call struct {
+	*mock.Call
+}
+
+// Headers is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) Headers() *TestResponse_Headers_Call {
+	return &TestResponse_Headers_Call{Call: _e.mock.On("Headers")}
+}
+
+func (_c *TestResponse_Headers_Call) Run(run func()) *TestResponse_Headers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_Headers_Call) Return(_a0 http.Header) *TestResponse_Headers_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TestResponse_Headers_Call) RunAndReturn(run func() http.Header) *TestResponse_Headers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // IsServerError provides a mock function with given fields:
 func (_m *TestResponse) IsServerError() bool {
 	ret := _m.Called()
@@ -2173,6 +2317,63 @@ func (_c *TestResponse_Json_Call) Return(_a0 map[string]any, _a1 error) *TestRes
 }
 
 func (_c *TestResponse_Json_Call) RunAndReturn(run func() (map[string]any, error)) *TestResponse_Json_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Session provides a mock function with given fields:
+func (_m *TestResponse) Session() (map[string]any, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Session")
+	}
+
+	var r0 map[string]any
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (map[string]any, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]any)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TestResponse_Session_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Session'
+type TestResponse_Session_Call struct {
+	*mock.Call
+}
+
+// Session is a helper method to define mock.On call
+func (_e *TestResponse_Expecter) Session() *TestResponse_Session_Call {
+	return &TestResponse_Session_Call{Call: _e.mock.On("Session")}
+}
+
+func (_c *TestResponse_Session_Call) Run(run func()) *TestResponse_Session_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TestResponse_Session_Call) Return(_a0 map[string]any, _a1 error) *TestResponse_Session_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TestResponse_Session_Call) RunAndReturn(run func() (map[string]any, error)) *TestResponse_Session_Call {
 	_c.Call.Return(run)
 	return _c
 }
