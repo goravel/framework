@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
-	contractstesting "github.com/goravel/framework/contracts/testing"
 	configmocks "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/env"
 )
@@ -77,12 +76,4 @@ INSERT INTO users (name) VALUES ('goravel');
 
 func (s *SqliteTestSuite) TestDriver() {
 	s.Equal(database.DriverSqlite, s.sqlite.Driver())
-}
-
-func (s *SqliteTestSuite) TestImage() {
-	image := contractstesting.Image{
-		Repository: "sqlite",
-	}
-	s.sqlite.Image(image)
-	s.Equal(&image, s.sqlite.image)
 }

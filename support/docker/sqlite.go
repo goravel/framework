@@ -13,7 +13,6 @@ import (
 
 type SqliteImpl struct {
 	database string
-	image    *testing.Image
 }
 
 func NewSqliteImpl(database string) *SqliteImpl {
@@ -37,12 +36,12 @@ func (r *SqliteImpl) Config() testing.DatabaseConfig {
 }
 
 func (r *SqliteImpl) Database(name string) (testing.DatabaseDriver, error) {
-	sqlserverImpl := NewSqliteImpl(name)
-	if err := sqlserverImpl.Build(); err != nil {
+	sqliteImpl := NewSqliteImpl(name)
+	if err := sqliteImpl.Build(); err != nil {
 		return nil, err
 	}
 
-	return sqlserverImpl, nil
+	return sqliteImpl, nil
 }
 
 func (r *SqliteImpl) Driver() database.Driver {
@@ -62,7 +61,6 @@ func (r *SqliteImpl) Fresh() error {
 }
 
 func (r *SqliteImpl) Image(image testing.Image) {
-	r.image = &image
 }
 
 func (r *SqliteImpl) Ready() error {

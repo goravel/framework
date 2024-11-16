@@ -33,7 +33,11 @@ func IsDarwin() bool {
 
 // IsDirectlyRun checks if the application is running using go run .
 func IsDirectlyRun() bool {
-	executable, _ := os.Executable()
+	executable, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return strings.Contains(filepath.Base(executable), os.TempDir()) ||
 		(strings.Contains(filepath.ToSlash(executable), "/var/folders") && strings.Contains(filepath.ToSlash(executable), "/T/go-build")) // macOS
 }
@@ -86,10 +90,16 @@ func CurrentAbsolutePath() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	res, _ := filepath.EvalSymlinks(filepath.Dir(executable))
+	res, err := filepath.EvalSymlinks(filepath.Dir(executable))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if IsTesting() || IsAir() || IsDirectlyRun() {
-		res, _ = os.Getwd()
+		res, err = os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return res
