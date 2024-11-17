@@ -24,6 +24,10 @@ func (s *TestRequestSuite) SetupTest() {
 	sessionFacade = s.mockSessionManager
 }
 
+func (s *TestRequestSuite) TearDownTest() {
+	sessionFacade = nil
+}
+
 func (s *TestRequestSuite) TestSetSessionErrors() {
 	type testCase struct {
 		name              string
