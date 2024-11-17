@@ -36,6 +36,8 @@ func (s *SchemaSuite) SetupTest() {
 	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
 
 	mysqlDocker := docker.Mysql()
+	s.Require().NoError(mysqlDocker.Ready())
+
 	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
 
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
