@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 type MysqlImpl struct {
@@ -46,8 +47,8 @@ func NewMysqlImpl(database, username, password string) *MysqlImpl {
 	}
 }
 
-func (receiver *MysqlImpl) Build() error {
-	command, exposedPorts := imageToCommand(receiver.image)
+func (r *MysqlImpl) Build() error {
+	command, exposedPorts := imageToCommand(r.image)
 	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Mysql docker error: %v", err)
@@ -56,37 +57,65 @@ func (receiver *MysqlImpl) Build() error {
 		return errors.DockerMissingContainerId.Args("Mysql")
 	}
 
-	receiver.containerID = containerID
-	receiver.port = getExposedPort(exposedPorts, 3306)
-
-	if _, err := receiver.connect(); err != nil {
-		return fmt.Errorf("connect Mysql docker error: %v", err)
-	}
+	r.containerID = containerID
+	r.port = getExposedPort(exposedPorts, 3306)
 
 	return nil
 }
 
-func (receiver *MysqlImpl) Config() testing.DatabaseConfig {
+func (r *MysqlImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
-		Host:     receiver.host,
-		Port:     receiver.port,
-		Database: receiver.database,
-		Username: receiver.username,
-		Password: receiver.password,
+		ContainerID: r.containerID,
+		Host:        r.host,
+		Port:        r.port,
+		Database:    r.database,
+		Username:    r.username,
+		Password:    r.password,
 	}
 }
 
-func (receiver *MysqlImpl) Driver() database.Driver {
+func (r *MysqlImpl) Database(name string) (testing.DatabaseDriver, error) {
+	// We want to return the DatabaseDriver instance directly, to avoid blocking test cases in different packages,
+	// because the test process will be clocked when creating a new container, each package should call the Ready method
+	// to check if the container is ready. Returning the DatabaseDriver instance directly will allow to initialize multiple
+	// container simultaneously.
+	go func() {
+		instance, err := r.connect("root")
+		if err != nil {
+			color.Errorf("connect Mysql error: %v", err)
+			return
+		}
+
+		res := instance.Exec(fmt.Sprintf(`CREATE DATABASE %s;`, name))
+		if res.Error != nil {
+			color.Errorf("create Mysql database error: %v", res.Error)
+			return
+		}
+
+		res = instance.Exec(fmt.Sprintf("GRANT ALL PRIVILEGES ON %s.* TO `%s`@`%%`;", name, r.username))
+		if res.Error != nil {
+			color.Errorf("grant privileges in Mysql database error: %v", res.Error)
+		}
+	}()
+
+	mysqlImpl := NewMysqlImpl(name, r.username, r.password)
+	mysqlImpl.containerID = r.containerID
+	mysqlImpl.port = r.port
+
+	return mysqlImpl, nil
+}
+
+func (r *MysqlImpl) Driver() database.Driver {
 	return database.DriverMysql
 }
 
-func (receiver *MysqlImpl) Fresh() error {
-	instance, err := receiver.connect()
+func (r *MysqlImpl) Fresh() error {
+	instance, err := r.connect()
 	if err != nil {
 		return fmt.Errorf("connect Mysql error when clearing: %v", err)
 	}
 
-	res := instance.Raw("select concat('drop table ',table_name,';') from information_schema.TABLES where table_schema=?;", testDatabase)
+	res := instance.Raw("select concat('drop table ',table_name,';') from information_schema.TABLES where table_schema=?;", r.database)
 	if res.Error != nil {
 		return fmt.Errorf("get tables of Mysql error: %v", res.Error)
 	}
@@ -97,6 +126,10 @@ func (receiver *MysqlImpl) Fresh() error {
 		return fmt.Errorf("get tables of Mysql error: %v", res.Error)
 	}
 
+	if res := instance.Exec("SET FOREIGN_KEY_CHECKS=0;"); res.Error != nil {
+		return fmt.Errorf("disable foreign key check of Mysql error: %v", res.Error)
+	}
+
 	for _, table := range tables {
 		res = instance.Exec(table)
 		if res.Error != nil {
@@ -104,31 +137,46 @@ func (receiver *MysqlImpl) Fresh() error {
 		}
 	}
 
+	if res := instance.Exec("SET FOREIGN_KEY_CHECKS=1;"); res.Error != nil {
+		return fmt.Errorf("enable foreign key check of Mysql error: %v", res.Error)
+	}
+
 	return nil
 }
 
-func (receiver *MysqlImpl) Image(image testing.Image) {
-	receiver.image = &image
+func (r *MysqlImpl) Image(image testing.Image) {
+	r.image = &image
 }
 
-func (receiver *MysqlImpl) Stop() error {
-	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+func (r *MysqlImpl) Ready() error {
+	_, err := r.connect()
+
+	return err
+}
+
+func (r *MysqlImpl) Stop() error {
+	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Mysql error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *MysqlImpl) connect() (*gormio.DB, error) {
+func (r *MysqlImpl) connect(username ...string) (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error
 	)
 
+	useUsername := r.username
+	if len(username) > 0 {
+		useUsername = username[0]
+	}
+
 	// docker compose need time to start
 	for i := 0; i < 60; i++ {
 		instance, err = gormio.Open(mysql.New(mysql.Config{
-			DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", receiver.username, receiver.password, receiver.host, receiver.port, receiver.database),
+			DSN: fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", useUsername, r.password, r.host, r.port, r.database),
 		}))
 
 		if err == nil {

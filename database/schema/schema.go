@@ -45,7 +45,9 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)
 		grammar = postgresGrammar
 	case contractsdatabase.DriverMysql:
-		// TODO Optimize here when implementing Mysql driver
+		mysqlGrammar := grammars.NewMysql(prefix)
+		driverSchema = NewMysqlSchema(mysqlGrammar, orm, prefix)
+		grammar = mysqlGrammar
 	case contractsdatabase.DriverSqlserver:
 		// TODO Optimize here when implementing Sqlserver driver
 	case contractsdatabase.DriverSqlite:

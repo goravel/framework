@@ -19,7 +19,7 @@ type RepositoryTestSuite struct {
 
 func TestRepositoryTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &RepositoryTestSuite{})
@@ -27,6 +27,8 @@ func TestRepositoryTestSuite(t *testing.T) {
 
 func (s *RepositoryTestSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
 		database.DriverPostgres: postgresQuery,

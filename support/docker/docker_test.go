@@ -11,7 +11,7 @@ import (
 
 func TestDatabase(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	tests := []struct {
@@ -30,6 +30,11 @@ func TestDatabase(t *testing.T) {
 			containerType: ContainerTypePostgres,
 			num:           1,
 		},
+		{
+			name:          "multiple postgres",
+			containerType: ContainerTypePostgres,
+			num:           2,
+		},
 	}
 
 	if TestModel == TestModelNormal {
@@ -47,11 +52,6 @@ func TestDatabase(t *testing.T) {
 			{
 				name:          "multiple mysql",
 				containerType: ContainerTypeMysql,
-				num:           2,
-			},
-			{
-				name:          "multiple postgres",
-				containerType: ContainerTypePostgres,
 				num:           2,
 			},
 			{
@@ -81,13 +81,18 @@ func TestDatabase(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if test.num == 0 {
 				assert.Panics(t, func() {
-					Database(test.containerType, testDatabase, testUsername, testPassword, test.num)
+					Database(test.containerType, test.num)
 				})
 			} else {
-				drivers := Database(test.containerType, testDatabase, testUsername, testPassword, test.num)
+				drivers := Database(test.containerType, test.num)
 
 				assert.Len(t, drivers, test.num)
-				assert.Len(t, containers[test.containerType], test.num)
+
+				if test.containerType == ContainerTypeSqlite {
+					for _, driver := range drivers {
+						assert.NoError(t, driver.Stop())
+					}
+				}
 			}
 		})
 	}

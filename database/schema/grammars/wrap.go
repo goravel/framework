@@ -3,14 +3,18 @@ package grammars
 import (
 	"fmt"
 	"strings"
+
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 )
 
 type Wrap struct {
+	driver      contractsdatabase.Driver
 	tablePrefix string
 }
 
-func NewWrap(tablePrefix string) *Wrap {
+func NewWrap(driver contractsdatabase.Driver, tablePrefix string) *Wrap {
 	return &Wrap{
+		driver:      driver,
 		tablePrefix: tablePrefix,
 	}
 }
@@ -23,10 +27,16 @@ func (r *Wrap) Column(column string) string {
 	return r.Segments(strings.Split(column, "."))
 }
 
-func (r *Wrap) Columns(columns []string) string {
+func (r *Wrap) Columns(columns []string) []string {
 	for i, column := range columns {
 		columns[i] = r.Column(column)
 	}
+
+	return columns
+}
+
+func (r *Wrap) Columnize(columns []string) string {
+	columns = r.Columns(columns)
 
 	return strings.Join(columns, ", ")
 }
@@ -67,6 +77,9 @@ func (r *Wrap) Table(table string) string {
 
 func (r *Wrap) Value(value string) string {
 	if value != "*" {
+		if r.driver == contractsdatabase.DriverMysql {
+			return "`" + strings.ReplaceAll(value, "`", "``") + "`"
+		}
 		return `"` + strings.ReplaceAll(value, `"`, `""`) + `"`
 	}
 
