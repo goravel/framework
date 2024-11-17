@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/contracts/database"
 )
 
 type WrapTestSuite struct {
@@ -16,55 +18,61 @@ func TestWrapSuite(t *testing.T) {
 }
 
 func (s *WrapTestSuite) SetupTest() {
-	s.wrap = NewWrap("prefix_")
+	s.wrap = NewWrap(database.DriverPostgres, "prefix_")
 }
 
-func (s *WrapTestSuite) ColumnWithAlias() {
+func (s *WrapTestSuite) TestColumnWithAlias() {
 	result := s.wrap.Column("column as alias")
 	s.Equal(`"column" as "prefix_alias"`, result)
 }
 
-func (s *WrapTestSuite) ColumnWithoutAlias() {
+func (s *WrapTestSuite) TestColumnWithoutAlias() {
 	result := s.wrap.Column("column")
 	s.Equal(`"column"`, result)
 }
 
-func (s *WrapTestSuite) ColumnsWithMultipleColumns() {
+func (s *WrapTestSuite) TestColumnsWithMultipleColumns() {
 	result := s.wrap.Columnize([]string{"column1", "column2 as alias2"})
 	s.Equal(`"column1", "column2" as "prefix_alias2"`, result)
 }
 
-func (s *WrapTestSuite) QuoteWithNonEmptyValue() {
+func (s *WrapTestSuite) TestQuoteWithNonEmptyValue() {
 	result := s.wrap.Quote("value")
 	s.Equal("'value'", result)
 }
 
-func (s *WrapTestSuite) QuoteWithEmptyValue() {
+func (s *WrapTestSuite) TestQuoteWithEmptyValue() {
 	result := s.wrap.Quote("")
 	s.Equal("", result)
 }
 
-func (s *WrapTestSuite) SegmentsWithMultipleSegments() {
+func (s *WrapTestSuite) TestSegmentsWithMultipleSegments() {
 	result := s.wrap.Segments([]string{"table", "column"})
 	s.Equal(`"prefix_table"."column"`, result)
 }
 
-func (s *WrapTestSuite) TableWithAlias() {
+func (s *WrapTestSuite) TestTableWithAlias() {
 	result := s.wrap.Table("table as alias")
 	s.Equal(`"prefix_table" as "prefix_alias"`, result)
 }
 
-func (s *WrapTestSuite) TableWithoutAlias() {
+func (s *WrapTestSuite) TestTableWithoutAlias() {
 	result := s.wrap.Table("table")
 	s.Equal(`"prefix_table"`, result)
 }
 
-func (s *WrapTestSuite) ValueWithAsterisk() {
+func (s *WrapTestSuite) TestValueWithAsterisk() {
 	result := s.wrap.Value("*")
 	s.Equal("*", result)
 }
 
-func (s *WrapTestSuite) ValueWithNonAsterisk() {
+func (s *WrapTestSuite) TestValueWithNonAsterisk() {
 	result := s.wrap.Value("value")
 	s.Equal(`"value"`, result)
+}
+
+func (s *WrapTestSuite) TestValueOfMysql() {
+	s.wrap.driver = database.DriverMysql
+	result := s.wrap.Value("value")
+	s.Equal("`value`", result)
 }

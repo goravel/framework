@@ -61,7 +61,7 @@ func (r *Mysql) CompileDropAllDomains(domains []string) string {
 }
 
 func (r *Mysql) CompileDropAllTables(tables []string) string {
-	return fmt.Sprintf("drop table %s", strings.Join(r.wrap.Columns(tables), ", "))
+	return fmt.Sprintf("drop table %s", r.wrap.Columnize(tables))
 }
 
 func (r *Mysql) CompileDropAllTypes(types []string) string {
@@ -69,7 +69,7 @@ func (r *Mysql) CompileDropAllTypes(types []string) string {
 }
 
 func (r *Mysql) CompileDropAllViews(views []string) string {
-	return fmt.Sprintf("drop view %s", strings.Join(r.wrap.Columns(views), ", "))
+	return fmt.Sprintf("drop view %s", r.wrap.Columnize(views))
 }
 
 func (r *Mysql) CompileDropIfExists(blueprint schema.Blueprint) string {
