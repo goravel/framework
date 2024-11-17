@@ -11,7 +11,6 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 )
 
 const BindingSchema = "goravel.schema"
@@ -116,7 +115,7 @@ func (r *Schema) GetIndexListing(table string) []string {
 	for _, index := range indexes {
 		names = append(names, index.Name)
 	}
-	color.Red().Println(names)
+
 	return names
 }
 

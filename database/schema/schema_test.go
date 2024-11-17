@@ -26,18 +26,18 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
-	//postgresDocker := docker.Postgres()
-	//s.Require().NoError(postgresDocker.Ready())
-	//
-	//postgresQuery := gorm.NewTestQuery(postgresDocker, true)
-	//
-	//sqliteDocker := docker.Sqlite()
-	//sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
-	//
-	//mysqlDocker := docker.Mysql()
-	//s.Require().NoError(mysqlDocker.Ready())
-	//
-	//mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+
+	sqliteDocker := docker.Sqlite()
+	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
+
+	mysqlDocker := docker.Mysql()
+	s.Require().NoError(mysqlDocker.Ready())
+
+	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
 
 	sqlserverDocker := docker.Sqlserver()
 	s.Require().NoError(sqlserverDocker.Ready())
@@ -45,9 +45,9 @@ func (s *SchemaSuite) SetupTest() {
 	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
 
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		//database.DriverPostgres:  postgresQuery,
-		//database.DriverSqlite:    sqliteQuery,
-		//database.DriverMysql:     mysqlQuery,
+		database.DriverPostgres:  postgresQuery,
+		database.DriverSqlite:    sqliteQuery,
+		database.DriverMysql:     mysqlQuery,
 		database.DriverSqlserver: sqlserverQuery,
 	}
 }
