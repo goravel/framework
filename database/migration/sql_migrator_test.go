@@ -26,7 +26,7 @@ type SqlMigratorSuite struct {
 
 func TestSqlMigratorSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &SqlMigratorSuite{})
@@ -38,6 +38,9 @@ func (s *SqlMigratorSuite) SetupTest() {
 
 func (s *SqlMigratorSuite) TearDownTest() {
 	s.NoError(file.Remove("database"))
+	if s.driverToTestQuery[contractsdatabase.DriverSqlite] != nil {
+		s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Stop())
+	}
 }
 
 func (s *SqlMigratorSuite) TestCreate() {

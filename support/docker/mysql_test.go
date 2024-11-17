@@ -19,8 +19,8 @@ type MysqlTestSuite struct {
 }
 
 func TestMysqlTestSuite(t *testing.T) {
-	if env.IsWindows() || TestModel == TestModelNormal {
-		t.Skip("Skipping tests that use Docker")
+	if env.IsWindows() || TestModel == TestModelMinimum {
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, new(MysqlTestSuite))
@@ -68,6 +68,10 @@ INSERT INTO users (name) VALUES ('goravel');
 	res = instance.Raw(fmt.Sprintf("SELECT count(*) FROM information_schema.tables WHERE table_schema = '%s' and table_name = 'users';", s.mysql.Config().Database)).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
+
+	databaseDriver, err := s.mysql.Database("another")
+	s.NoError(err)
+	s.NotNil(databaseDriver)
 
 	s.Nil(s.mysql.Stop())
 }

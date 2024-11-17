@@ -32,7 +32,7 @@ type OrmSuite struct {
 
 func TestOrmSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &OrmSuite{})
@@ -57,6 +57,12 @@ func (s *OrmSuite) SetupTest() {
 		ctx:        context.Background(),
 		query:      queries[database.DriverPostgres.String()],
 		queries:    queries,
+	}
+}
+
+func (s *OrmSuite) TearDownSuite() {
+	if s.testQueries[database.DriverSqlite] != nil {
+		s.NoError(s.testQueries[database.DriverSqlite].Docker().Stop())
 	}
 }
 

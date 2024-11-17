@@ -20,14 +20,17 @@ type ToSqlTestSuite struct {
 
 func TestToSqlTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &ToSqlTestSuite{})
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	postgresQuery := NewTestQuery(docker.Postgres())
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := NewTestQuery(postgresDocker)
 	postgresQuery.CreateTable(TestTableUsers)
 
 	s.query = postgresQuery.Query()

@@ -19,7 +19,7 @@ type SchemaSuite struct {
 
 func TestSchemaSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &SchemaSuite{})
@@ -28,6 +28,8 @@ func TestSchemaSuite(t *testing.T) {
 func (s *SchemaSuite) SetupTest() {
 	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 
 	sqliteDocker := docker.Sqlite()
@@ -40,6 +42,12 @@ func (s *SchemaSuite) SetupTest() {
 		database.DriverPostgres: postgresQuery,
 		database.DriverSqlite:   sqliteQuery,
 		database.DriverMysql:    mysqlQuery,
+	}
+}
+
+func (s *SchemaSuite) TearDownTest() {
+	if s.driverToTestQuery[database.DriverSqlite] != nil {
+		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
 	}
 }
 
