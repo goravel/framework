@@ -19,15 +19,15 @@ func TestMysqlProcessIndexes(t *testing.T) {
 		{Name: "index_b", Type: "hash", Columns: []string{"c", "d"}},
 	}
 
-	postgres := NewMysql()
-	result := postgres.ProcessIndexes(input)
+	mysql := NewMysql()
+	result := mysql.ProcessIndexes(input)
 
 	assert.Equal(t, expected, result)
 
 	// Test with empty input
 	input = []DBIndex{}
 
-	result = postgres.ProcessIndexes(input)
+	result = mysql.ProcessIndexes(input)
 
 	assert.Nil(t, result)
 }

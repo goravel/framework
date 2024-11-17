@@ -301,5 +301,5 @@ func (s *MysqlSuite) TestTypeString() {
 	mockColumn2 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn2.EXPECT().GetLength().Return(0).Once()
 
-	s.Equal("varchar", s.grammar.TypeString(mockColumn2))
+	s.Equal("varchar(255)", s.grammar.TypeString(mockColumn2))
 }

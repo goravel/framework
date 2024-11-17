@@ -18,18 +18,18 @@ type Mysql struct {
 }
 
 func NewMysql(tablePrefix string) *Mysql {
-	postgres := &Mysql{
+	mysql := &Mysql{
 		attributeCommands: []string{constants.CommandComment},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		wrap:              NewWrap(contractsdatabase.DriverMysql, tablePrefix),
 	}
-	postgres.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
-		postgres.ModifyDefault,
-		postgres.ModifyIncrement,
-		postgres.ModifyNullable,
+	mysql.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
+		mysql.ModifyDefault,
+		mysql.ModifyIncrement,
+		mysql.ModifyNullable,
 	}
 
-	return postgres
+	return mysql
 }
 
 func (r *Mysql) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
@@ -194,7 +194,7 @@ func (r *Mysql) TypeString(column schema.ColumnDefinition) string {
 		return fmt.Sprintf("varchar(%d)", length)
 	}
 
-	return "varchar"
+	return "varchar(255)"
 }
 
 func (r *Mysql) getColumns(blueprint schema.Blueprint) []string {
