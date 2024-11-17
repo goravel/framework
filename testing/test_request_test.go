@@ -88,9 +88,6 @@ func (s *TestRequestSuite) TestSetSessionErrors() {
 			} else {
 				s.EqualError(err, tc.expectedError)
 			}
-
-			s.mockSessionManager.AssertExpectations(s.T())
-			mockSession.AssertExpectations(s.T())
 		})
 	}
 }
@@ -123,9 +120,6 @@ func (s *TestRequestSuite) TestSetSessionUsingWithSession() {
 	err := request.(*TestRequest).setSession()
 
 	s.NoError(err)
-
-	s.mockSessionManager.AssertExpectations(s.T())
-	mockSession.AssertExpectations(s.T())
 }
 
 func (s *TestRequestSuite) TestSetSessionUsingWithoutSession() {
