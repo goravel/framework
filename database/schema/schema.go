@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 const BindingSchema = "goravel.schema"
@@ -49,7 +50,9 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 		driverSchema = NewMysqlSchema(mysqlGrammar, orm, prefix)
 		grammar = mysqlGrammar
 	case contractsdatabase.DriverSqlserver:
-		// TODO Optimize here when implementing Sqlserver driver
+		sqlserverGrammar := grammars.NewSqlserver(prefix)
+		driverSchema = NewSqlserverSchema(sqlserverGrammar, orm, prefix)
+		grammar = sqlserverGrammar
 	case contractsdatabase.DriverSqlite:
 		sqliteGrammar := grammars.NewSqlite(prefix)
 		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)
@@ -113,7 +116,7 @@ func (r *Schema) GetIndexListing(table string) []string {
 	for _, index := range indexes {
 		names = append(names, index.Name)
 	}
-
+	color.Red().Println(names)
 	return names
 }
 

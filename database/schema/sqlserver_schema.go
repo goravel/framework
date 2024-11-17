@@ -1,8 +1,7 @@
 package schema
 
 import (
-	"fmt"
-	"slices"
+	"strings"
 
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
@@ -17,48 +16,28 @@ type SqlserverSchema struct {
 	orm       orm.Orm
 	prefix    string
 	processor processors.Sqlserver
-	schema    string
 }
 
-func NewSqlserverSchema(grammar *grammars.Sqlserver, orm orm.Orm, schema, prefix string) *SqlserverSchema {
+func NewSqlserverSchema(grammar *grammars.Sqlserver, orm orm.Orm, prefix string) *SqlserverSchema {
 	return &SqlserverSchema{
 		CommonSchema: NewCommonSchema(grammar, orm),
 		grammar:      grammar,
 		orm:          orm,
 		prefix:       prefix,
 		processor:    processors.NewSqlserver(),
-		schema:       schema,
 	}
 }
 
 func (r *SqlserverSchema) DropAllTables() error {
-	excludedTables := r.grammar.EscapeNames([]string{"spatial_ref_sys"})
-	schema := r.grammar.EscapeNames([]string{r.schema})[0]
-
-	tables, err := r.GetTables()
-	if err != nil {
+	if _, err := r.orm.Query().Exec(r.grammar.CompileDropAllForeignKeys()); err != nil {
 		return err
 	}
 
-	var dropTables []string
-	for _, table := range tables {
-		qualifiedName := fmt.Sprintf("%s.%s", table.Schema, table.Name)
-
-		isExcludedTable := slices.Contains(excludedTables, qualifiedName) || slices.Contains(excludedTables, table.Name)
-		isInCurrentSchema := schema == r.grammar.EscapeNames([]string{table.Schema})[0]
-
-		if !isExcludedTable && isInCurrentSchema {
-			dropTables = append(dropTables, qualifiedName)
-		}
+	if _, err := r.orm.Query().Exec(r.grammar.CompileDropAllTables(nil)); err != nil {
+		return err
 	}
 
-	if len(dropTables) == 0 {
-		return nil
-	}
-
-	_, err = r.orm.Query().Exec(r.grammar.CompileDropAllTables(dropTables))
-
-	return err
+	return nil
 }
 
 func (r *SqlserverSchema) DropAllTypes() error {
@@ -66,25 +45,7 @@ func (r *SqlserverSchema) DropAllTypes() error {
 }
 
 func (r *SqlserverSchema) DropAllViews() error {
-	schema := r.grammar.EscapeNames([]string{r.schema})[0]
-
-	views, err := r.GetViews()
-	if err != nil {
-		return err
-	}
-
-	var dropViews []string
-	for _, view := range views {
-		if schema == view.Schema {
-			dropViews = append(dropViews, fmt.Sprintf("%s.%s", view.Schema, view.Name))
-		}
-	}
-
-	if len(dropViews) == 0 {
-		return nil
-	}
-
-	_, err = r.orm.Query().Exec(r.grammar.CompileDropAllViews(dropViews))
+	_, err := r.orm.Query().Exec(r.grammar.CompileDropAllViews(nil))
 
 	return err
 }
@@ -103,4 +64,16 @@ func (r *SqlserverSchema) GetIndexes(table string) ([]contractsschema.Index, err
 
 func (r *SqlserverSchema) GetTypes() ([]contractsschema.Type, error) {
 	return nil, nil
+}
+
+func (r *SqlserverSchema) parseSchemaAndTable(reference string) (schema, table string) {
+	parts := strings.Split(reference, ".")
+	if len(parts) == 2 {
+		schema = parts[0]
+		parts = parts[1:]
+	}
+
+	table = parts[0]
+
+	return
 }

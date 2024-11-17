@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
 )
@@ -20,7 +21,7 @@ func NewSqlserver(tablePrefix string) *Sqlserver {
 	sqlserver := &Sqlserver{
 		attributeCommands: []string{constants.CommandComment},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
-		wrap:              NewWrap(tablePrefix),
+		wrap:              NewWrap(database.DriverSqlserver, tablePrefix),
 	}
 	sqlserver.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
 		sqlserver.ModifyDefault,
@@ -36,12 +37,21 @@ func (r *Sqlserver) CompileAdd(blueprint schema.Blueprint, command *schema.Comma
 }
 
 func (r *Sqlserver) CompileCreate(blueprint schema.Blueprint) string {
-	// TODO use columnize
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
 }
 
 func (r *Sqlserver) CompileDropAllDomains(domains []string) string {
 	return ""
+}
+
+func (r *Sqlserver) CompileDropAllForeignKeys() string {
+	return `DECLARE @sql NVARCHAR(MAX) = N'';
+            SELECT @sql += 'ALTER TABLE '
+                + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + + QUOTENAME(OBJECT_NAME(parent_object_id))
+                + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';'
+            FROM sys.foreign_keys;
+
+            EXEC sp_executesql @sql;`
 }
 
 func (r *Sqlserver) CompileDropAllTables(tables []string) string {
@@ -70,9 +80,9 @@ func (r *Sqlserver) CompileForeign(blueprint schema.Blueprint, command *schema.C
 	sql := fmt.Sprintf("alter table %s add constraint %s foreign key (%s) references %s (%s)",
 		r.wrap.Table(blueprint.GetTableName()),
 		r.wrap.Column(command.Index),
-		r.wrap.Columns(command.Columns),
+		r.wrap.Columnize(command.Columns),
 		r.wrap.Table(command.On),
-		r.wrap.Columns(command.References))
+		r.wrap.Columnize(command.References))
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete
 	}
@@ -87,8 +97,7 @@ func (r *Sqlserver) CompileIndex(blueprint schema.Blueprint, command *schema.Com
 	return fmt.Sprintf("create index %s on %s (%s)",
 		r.wrap.Column(command.Index),
 		r.wrap.Table(blueprint.GetTableName()),
-		// TODO use columnize
-		r.wrap.Columns(command.Columns),
+		r.wrap.Columnize(command.Columns),
 	)
 }
 
@@ -117,11 +126,10 @@ func (r *Sqlserver) CompilePrimary(blueprint schema.Blueprint, command *schema.C
 	return fmt.Sprintf("alter table %s add constraint %s primary key (%s)",
 		r.wrap.Table(blueprint.GetTableName()),
 		r.wrap.Column(command.Index),
-		// TODO use columnize
-		r.wrap.Columns(command.Columns))
+		r.wrap.Columnize(command.Columns))
 }
 
-func (r *Sqlserver) CompileTables() string {
+func (r *Sqlserver) CompileTables(database string) string {
 	return "select t.name as name, schema_name(t.schema_id) as [schema], sum(u.total_pages) * 8 * 1024 as size " +
 		"from sys.tables as t " +
 		"join sys.partitions as p on p.object_id = t.object_id " +
@@ -134,7 +142,7 @@ func (r *Sqlserver) CompileTypes() string {
 	return ""
 }
 
-func (r *Sqlserver) CompileViews() string {
+func (r *Sqlserver) CompileViews(database string) string {
 	return "select name, schema_name(v.schema_id) as [schema], definition from sys.views as v " +
 		"inner join sys.sql_modules as m on v.object_id = m.object_id " +
 		"order by name"
