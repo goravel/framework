@@ -14,6 +14,8 @@ type Orm interface {
 	DB() (*sql.DB, error)
 	// Factory gets a new factory instance for the given model name.
 	Factory() Factory
+	// DatabaseName gets the current database name.
+	DatabaseName() string
 	// Name gets the current connection name.
 	Name() string
 	// Observe registers an observer with the Orm.

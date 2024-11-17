@@ -126,11 +126,19 @@ func (r *MysqlImpl) Fresh() error {
 		return fmt.Errorf("get tables of Mysql error: %v", res.Error)
 	}
 
+	if res := instance.Exec("SET FOREIGN_KEY_CHECKS=0;"); res.Error != nil {
+		return fmt.Errorf("disable foreign key check of Mysql error: %v", res.Error)
+	}
+
 	for _, table := range tables {
 		res = instance.Exec(table)
 		if res.Error != nil {
 			return fmt.Errorf("drop table %s of Mysql error: %v", table, res.Error)
 		}
+	}
+
+	if res := instance.Exec("SET FOREIGN_KEY_CHECKS=1;"); res.Error != nil {
+		return fmt.Errorf("enable foreign key check of Mysql error: %v", res.Error)
 	}
 
 	return nil

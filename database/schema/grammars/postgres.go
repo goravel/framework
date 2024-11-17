@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
 )
@@ -20,7 +21,7 @@ func NewPostgres(tablePrefix string) *Postgres {
 	postgres := &Postgres{
 		attributeCommands: []string{constants.CommandComment},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
-		wrap:              NewWrap(tablePrefix),
+		wrap:              NewWrap(contractsdatabase.DriverPostgres, tablePrefix),
 	}
 	postgres.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
 		postgres.ModifyDefault,
@@ -63,9 +64,9 @@ func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Co
 	sql := fmt.Sprintf("alter table %s add constraint %s foreign key (%s) references %s (%s)",
 		r.wrap.Table(blueprint.GetTableName()),
 		r.wrap.Column(command.Index),
-		r.wrap.Columns(command.Columns),
+		r.wrap.Columnize(command.Columns),
 		r.wrap.Table(command.On),
-		r.wrap.Columns(command.References))
+		r.wrap.Columnize(command.References))
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete
 	}
@@ -86,7 +87,7 @@ func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Comm
 		r.wrap.Column(command.Index),
 		r.wrap.Table(blueprint.GetTableName()),
 		algorithm,
-		r.wrap.Columns(command.Columns),
+		r.wrap.Columnize(command.Columns),
 	)
 }
 
@@ -109,10 +110,10 @@ func (r *Postgres) CompileIndexes(schema, table string) string {
 }
 
 func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
-	return fmt.Sprintf("alter table %s add primary key (%s)", r.wrap.Table(blueprint.GetTableName()), r.wrap.Columns(command.Columns))
+	return fmt.Sprintf("alter table %s add primary key (%s)", r.wrap.Table(blueprint.GetTableName()), r.wrap.Columnize(command.Columns))
 }
 
-func (r *Postgres) CompileTables() string {
+func (r *Postgres) CompileTables(database string) string {
 	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
 		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
 		"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
@@ -132,7 +133,7 @@ func (r *Postgres) CompileTypes() string {
 		and n.nspname not in ('pg_catalog', 'information_schema')`
 }
 
-func (r *Postgres) CompileViews() string {
+func (r *Postgres) CompileViews(database string) string {
 	return "select viewname as name, schemaname as schema, definition from pg_views where schemaname not in ('pg_catalog', 'information_schema') order by viewname"
 }
 
