@@ -13,14 +13,16 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type TestResponseImpl struct {
-	t        *testing.T
-	mu       sync.Mutex
-	response *http.Response
-	content  string
+	t                 *testing.T
+	mu                sync.Mutex
+	response          *http.Response
+	content           string
+	sessionAttributes map[string]any
 }
 
 func NewTestResponse(t *testing.T, response *http.Response) contractstesting.TestResponse {
@@ -39,6 +41,45 @@ func (r *TestResponseImpl) Json() (map[string]any, error) {
 	}
 
 	return testAble.Json(), nil
+}
+
+func (r *TestResponseImpl) Headers() http.Header {
+	return r.response.Header
+}
+
+func (r *TestResponseImpl) Cookies() []*http.Cookie {
+	return r.response.Cookies()
+}
+
+func (r *TestResponseImpl) Cookie(name string) *http.Cookie {
+	return r.getCookie(name)
+}
+
+func (r *TestResponseImpl) Session() (map[string]any, error) {
+	if r.sessionAttributes != nil {
+		return r.sessionAttributes, nil
+	}
+
+	if sessionFacade == nil {
+		return nil, errors.SessionFacadeNotSet
+	}
+
+	// Retrieve session driver
+	driver, err := sessionFacade.Driver()
+	if err != nil {
+		return nil, err
+	}
+
+	// Build session
+	session, err := sessionFacade.BuildSession(driver)
+	if err != nil {
+		return nil, err
+	}
+
+	r.sessionAttributes = session.All()
+	sessionFacade.ReleaseSession(session)
+
+	return r.sessionAttributes, nil
 }
 
 func (r *TestResponseImpl) IsSuccessful() bool {

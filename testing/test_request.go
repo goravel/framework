@@ -16,18 +16,20 @@ import (
 )
 
 type TestRequest struct {
-	t              *testing.T
-	ctx            context.Context
-	defaultHeaders map[string]string
-	defaultCookies map[string]string
+	t                 *testing.T
+	ctx               context.Context
+	defaultHeaders    map[string]string
+	defaultCookies    map[string]string
+	sessionAttributes map[string]any
 }
 
 func NewTestRequest(t *testing.T) contractstesting.TestRequest {
 	return &TestRequest{
-		t:              t,
-		ctx:            context.Background(),
-		defaultHeaders: make(map[string]string),
-		defaultCookies: make(map[string]string),
+		t:                 t,
+		ctx:               context.Background(),
+		defaultHeaders:    make(map[string]string),
+		defaultCookies:    make(map[string]string),
+		sessionAttributes: make(map[string]any),
 	}
 }
 
@@ -83,6 +85,11 @@ func (r *TestRequest) WithoutToken() contractstesting.TestRequest {
 	return r.WithoutHeader("Authorization")
 }
 
+func (r *TestRequest) WithSession(attributes map[string]any) contractstesting.TestRequest {
+	r.sessionAttributes = collect.Merge(r.sessionAttributes, attributes)
+	return r
+}
+
 func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
 	return r.call(http.MethodGet, uri, nil)
 }
@@ -112,6 +119,11 @@ func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error)
 }
 
 func (r *TestRequest) call(method string, uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	err := r.setSession()
+	if err != nil {
+		return nil, err
+	}
+
 	req := httptest.NewRequest(method, uri, body).WithContext(r.ctx)
 
 	for key, value := range r.defaultHeaders {
@@ -133,4 +145,40 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 	}
 
 	return NewTestResponse(r.t, response), nil
+}
+
+func (r *TestRequest) setSession() error {
+	if len(r.sessionAttributes) == 0 {
+		return nil
+	}
+
+	if sessionFacade == nil {
+		return errors.SessionFacadeNotSet
+	}
+
+	// Retrieve session driver
+	driver, err := sessionFacade.Driver()
+	if err != nil {
+		return err
+	}
+
+	// Build session
+	session, err := sessionFacade.BuildSession(driver)
+	if err != nil {
+		return err
+	}
+
+	for key, value := range r.sessionAttributes {
+		session.Put(key, value)
+	}
+
+	r.WithCookie(session.GetName(), session.GetID())
+
+	if err = session.Save(); err != nil {
+		return err
+	}
+
+	// Release session
+	sessionFacade.ReleaseSession(session)
+	return nil
 }
