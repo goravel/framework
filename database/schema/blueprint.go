@@ -149,6 +149,10 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 
 	var statements []string
 	for _, command := range r.commands {
+		if command.ShouldBeSkipped {
+			continue
+		}
+
 		switch command.Name {
 		case constants.CommandAdd:
 			statements = append(statements, grammar.CompileAdd(r, command))

@@ -40,7 +40,14 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 	database := config.GetString(fmt.Sprintf("database.connections.%s.database", connection))
 	username := config.GetString(fmt.Sprintf("database.connections.%s.username", connection))
 	password := config.GetString(fmt.Sprintf("database.connections.%s.password", connection))
-	databaseDriver := supportdocker.DatabaseDriver(supportdocker.ContainerType(driver), database, username, password)
+	containerManager := supportdocker.NewContainerManager()
+	databaseDriver, err := containerManager.Create(supportdocker.ContainerType(driver), database, username, password)
+	if err != nil {
+		return nil, err
+	}
+	if err = databaseDriver.Ready(); err != nil {
+		return nil, err
+	}
 
 	return &Database{
 		DatabaseDriver: databaseDriver,

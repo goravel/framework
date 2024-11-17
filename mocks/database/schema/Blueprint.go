@@ -21,6 +21,102 @@ func (_m *Blueprint) EXPECT() *Blueprint_Expecter {
 	return &Blueprint_Expecter{mock: &_m.Mock}
 }
 
+// BigIncrements provides a mock function with given fields: column
+func (_m *Blueprint) BigIncrements(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BigIncrements")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_BigIncrements_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BigIncrements'
+type Blueprint_BigIncrements_Call struct {
+	*mock.Call
+}
+
+// BigIncrements is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) BigIncrements(column interface{}) *Blueprint_BigIncrements_Call {
+	return &Blueprint_BigIncrements_Call{Call: _e.mock.On("BigIncrements", column)}
+}
+
+func (_c *Blueprint_BigIncrements_Call) Run(run func(column string)) *Blueprint_BigIncrements_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_BigIncrements_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_BigIncrements_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_BigIncrements_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_BigIncrements_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// BigInteger provides a mock function with given fields: column
+func (_m *Blueprint) BigInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BigInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_BigInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BigInteger'
+type Blueprint_BigInteger_Call struct {
+	*mock.Call
+}
+
+// BigInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) BigInteger(column interface{}) *Blueprint_BigInteger_Call {
+	return &Blueprint_BigInteger_Call{Call: _e.mock.On("BigInteger", column)}
+}
+
+func (_c *Blueprint_BigInteger_Call) Run(run func(column string)) *Blueprint_BigInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_BigInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_BigInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_BigInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_BigInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Build provides a mock function with given fields: query, grammar
 func (_m *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
 	ret := _m.Called(query, grammar)
@@ -734,6 +830,54 @@ func (_c *Blueprint_ToSql_Call) Return(_a0 []string) *Blueprint_ToSql_Call {
 }
 
 func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(schema.Grammar) []string) *Blueprint_ToSql_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UnsignedBigInteger provides a mock function with given fields: column
+func (_m *Blueprint) UnsignedBigInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnsignedBigInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_UnsignedBigInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnsignedBigInteger'
+type Blueprint_UnsignedBigInteger_Call struct {
+	*mock.Call
+}
+
+// UnsignedBigInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) UnsignedBigInteger(column interface{}) *Blueprint_UnsignedBigInteger_Call {
+	return &Blueprint_UnsignedBigInteger_Call{Call: _e.mock.On("UnsignedBigInteger", column)}
+}
+
+func (_c *Blueprint_UnsignedBigInteger_Call) Run(run func(column string)) *Blueprint_UnsignedBigInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_UnsignedBigInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_UnsignedBigInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_UnsignedBigInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedBigInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }

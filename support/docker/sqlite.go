@@ -13,7 +13,6 @@ import (
 
 type SqliteImpl struct {
 	database string
-	image    *testing.Image
 }
 
 func NewSqliteImpl(database string) *SqliteImpl {
@@ -22,48 +21,62 @@ func NewSqliteImpl(database string) *SqliteImpl {
 	}
 }
 
-func (receiver *SqliteImpl) Build() error {
-	if _, err := receiver.connect(); err != nil {
+func (r *SqliteImpl) Build() error {
+	if _, err := r.connect(); err != nil {
 		return fmt.Errorf("connect Sqlite error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *SqliteImpl) Config() testing.DatabaseConfig {
+func (r *SqliteImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
-		Database: receiver.database,
+		Database: r.database,
 	}
 }
 
-func (receiver *SqliteImpl) Driver() database.Driver {
+func (r *SqliteImpl) Database(name string) (testing.DatabaseDriver, error) {
+	sqliteImpl := NewSqliteImpl(name)
+	if err := sqliteImpl.Build(); err != nil {
+		return nil, err
+	}
+
+	return sqliteImpl, nil
+}
+
+func (r *SqliteImpl) Driver() database.Driver {
 	return database.DriverSqlite
 }
 
-func (receiver *SqliteImpl) Fresh() error {
-	if err := receiver.Stop(); err != nil {
+func (r *SqliteImpl) Fresh() error {
+	if err := r.Stop(); err != nil {
 		return err
 	}
 
-	if _, err := receiver.connect(); err != nil {
+	if _, err := r.connect(); err != nil {
 		return fmt.Errorf("connect Sqlite error when freshing: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *SqliteImpl) Image(image testing.Image) {
-	receiver.image = &image
+func (r *SqliteImpl) Image(image testing.Image) {
 }
 
-func (receiver *SqliteImpl) Stop() error {
-	if err := file.Remove(receiver.database); err != nil {
+func (r *SqliteImpl) Ready() error {
+	_, err := r.connect()
+
+	return err
+}
+
+func (r *SqliteImpl) Stop() error {
+	if err := file.Remove(r.database); err != nil {
 		return fmt.Errorf("stop Sqlite error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *SqliteImpl) connect() (*gormio.DB, error) {
-	return gormio.Open(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", receiver.database)))
+func (r *SqliteImpl) connect() (*gormio.DB, error) {
+	return gormio.Open(sqlite.Open(fmt.Sprintf("%s?multi_stmts=true", r.database)))
 }

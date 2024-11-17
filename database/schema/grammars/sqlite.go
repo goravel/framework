@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -21,7 +22,7 @@ func NewSqlite(tablePrefix string) *Sqlite {
 		attributeCommands: []string{},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		tablePrefix:       tablePrefix,
-		wrap:              NewWrap(tablePrefix),
+		wrap:              NewWrap(contractsdatabase.DriverSqlite, tablePrefix),
 	}
 	sqlite.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
 		sqlite.ModifyDefault,
@@ -80,7 +81,7 @@ func (r *Sqlite) CompileIndex(blueprint schema.Blueprint, command *schema.Comman
 	return fmt.Sprintf("create index %s on %s (%s)",
 		r.wrap.Column(command.Index),
 		r.wrap.Table(blueprint.GetTableName()),
-		r.wrap.Columns(command.Columns),
+		r.wrap.Columnize(command.Columns),
 	)
 }
 
@@ -106,7 +107,7 @@ func (r *Sqlite) CompileRebuild() string {
 	return "vacuum"
 }
 
-func (r *Sqlite) CompileTables() string {
+func (r *Sqlite) CompileTables(database string) string {
 	return "select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name"
 }
 
@@ -114,7 +115,7 @@ func (r *Sqlite) CompileTypes() string {
 	return ""
 }
 
-func (r *Sqlite) CompileViews() string {
+func (r *Sqlite) CompileViews(database string) string {
 	return "select name, sql as definition from sqlite_master where type = 'view' order by name"
 }
 
@@ -177,7 +178,7 @@ func (r *Sqlite) addPrimaryKeys(command *schema.Command) string {
 		return ""
 	}
 
-	return fmt.Sprintf(", primary key (%s)", r.wrap.Columns(command.Columns))
+	return fmt.Sprintf(", primary key (%s)", r.wrap.Columnize(command.Columns))
 }
 
 func (r *Sqlite) getColumns(blueprint schema.Blueprint) []string {
@@ -201,9 +202,9 @@ func (r *Sqlite) getColumn(blueprint schema.Blueprint, column schema.ColumnDefin
 
 func (r *Sqlite) getForeignKey(command *schema.Command) string {
 	sql := fmt.Sprintf(", foreign key(%s) references %s(%s)",
-		r.wrap.Columns(command.Columns),
+		r.wrap.Columnize(command.Columns),
 		r.wrap.Table(command.On),
-		r.wrap.Columns(command.References))
+		r.wrap.Columnize(command.References))
 
 	if command.OnDelete != "" {
 		sql += " on delete " + command.OnDelete

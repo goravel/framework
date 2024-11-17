@@ -52,7 +52,7 @@ func TestImageToCommand(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	_, err := run("ls")

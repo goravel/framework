@@ -21,7 +21,7 @@ type PostgresSchemaSuite struct {
 
 func TestPostgresSchemaSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &PostgresSchemaSuite{})
@@ -29,6 +29,8 @@ func TestPostgresSchemaSuite(t *testing.T) {
 
 func (s *PostgresSchemaSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	s.testQuery = gorm.NewTestQuery(postgresDocker, true)
 	s.mockOrm = mocksorm.NewOrm(s.T())
 	s.postgresSchema = NewPostgresSchema(grammars.NewPostgres("goravel_"), s.mockOrm, "goravel", "goravel_")

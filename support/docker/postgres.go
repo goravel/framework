@@ -9,6 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/support/color"
 )
 
 type PostgresImpl struct {
@@ -40,8 +41,8 @@ func NewPostgresImpl(database, username, password string) *PostgresImpl {
 	}
 }
 
-func (receiver *PostgresImpl) Build() error {
-	command, exposedPorts := imageToCommand(receiver.image)
+func (r *PostgresImpl) Build() error {
+	command, exposedPorts := imageToCommand(r.image)
 	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Postgres error: %v", err)
@@ -50,60 +51,91 @@ func (receiver *PostgresImpl) Build() error {
 		return fmt.Errorf("no container id return when creating Postgres docker")
 	}
 
-	receiver.containerID = containerID
-	receiver.port = getExposedPort(exposedPorts, 5432)
-
-	if _, err := receiver.connect(); err != nil {
-		return fmt.Errorf("connect Postgres error: %v", err)
-	}
+	r.containerID = containerID
+	r.port = getExposedPort(exposedPorts, 5432)
 
 	return nil
 }
 
-func (receiver *PostgresImpl) Config() testing.DatabaseConfig {
+func (r *PostgresImpl) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
-		Host:     receiver.host,
-		Port:     receiver.port,
-		Database: receiver.database,
-		Username: receiver.username,
-		Password: receiver.password,
+		ContainerID: r.containerID,
+		Host:        r.host,
+		Port:        r.port,
+		Database:    r.database,
+		Username:    r.username,
+		Password:    r.password,
 	}
 }
 
-func (receiver *PostgresImpl) Driver() database.Driver {
+func (r *PostgresImpl) Database(name string) (testing.DatabaseDriver, error) {
+	go func() {
+		gormDB, err := r.connect()
+		if err != nil {
+			color.Errorf("connect Postgres error: %v", err)
+			return
+		}
+
+		res := gormDB.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, name))
+		if res.Error != nil {
+			color.Errorf("create Postgres database error: %v", res.Error)
+		}
+
+		if err := r.close(gormDB); err != nil {
+			color.Errorf("close Postgres connection error: %v", err)
+		}
+	}()
+
+	postgresImpl := NewPostgresImpl(name, r.username, r.password)
+	postgresImpl.containerID = r.containerID
+	postgresImpl.port = r.port
+
+	return postgresImpl, nil
+}
+
+func (r *PostgresImpl) Driver() database.Driver {
 	return database.DriverPostgres
 }
 
-func (receiver *PostgresImpl) Fresh() error {
-	instance, err := receiver.connect()
+func (r *PostgresImpl) Fresh() error {
+	gormDB, err := r.connect()
 	if err != nil {
 		return fmt.Errorf("connect Postgres error when clearing: %v", err)
 	}
 
-	if res := instance.Exec("DROP SCHEMA public CASCADE;"); res.Error != nil {
+	if res := gormDB.Exec("DROP SCHEMA public CASCADE;"); res.Error != nil {
 		return fmt.Errorf("drop schema of Postgres error: %v", res.Error)
 	}
 
-	if res := instance.Exec("CREATE SCHEMA public;"); res.Error != nil {
+	if res := gormDB.Exec("CREATE SCHEMA public;"); res.Error != nil {
 		return fmt.Errorf("create schema of Postgres error: %v", res.Error)
 	}
 
-	return nil
+	return r.close(gormDB)
 }
 
-func (receiver *PostgresImpl) Image(image testing.Image) {
-	receiver.image = &image
+func (r *PostgresImpl) Image(image testing.Image) {
+	r.image = &image
 }
 
-func (receiver *PostgresImpl) Stop() error {
-	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+func (r *PostgresImpl) Ready() error {
+	gormDB, err := r.connect()
+	if err != nil {
+		return err
+	}
+
+	return r.close(gormDB)
+}
+
+func (r *PostgresImpl) Stop() error {
+	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Postgres error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *PostgresImpl) connect() (*gormio.DB, error) {
+func (r *PostgresImpl) connect() (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error
@@ -112,7 +144,7 @@ func (receiver *PostgresImpl) connect() (*gormio.DB, error) {
 	// docker compose need time to start
 	for i := 0; i < 60; i++ {
 		instance, err = gormio.Open(postgres.New(postgres.Config{
-			DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s", receiver.username, receiver.password, receiver.host, receiver.port, receiver.database),
+			DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s", r.username, r.password, r.host, r.port, r.database),
 		}))
 
 		if err == nil {
@@ -123,4 +155,13 @@ func (receiver *PostgresImpl) connect() (*gormio.DB, error) {
 	}
 
 	return instance, err
+}
+
+func (r *PostgresImpl) close(gormDB *gormio.DB) error {
+	db, err := gormDB.DB()
+	if err != nil {
+		return err
+	}
+
+	return db.Close()
 }

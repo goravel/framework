@@ -11,6 +11,12 @@ import (
 	"github.com/goravel/framework/support/env"
 )
 
+const (
+	testDatabase = "goravel"
+	testUsername = "goravel"
+	testPassword = "Framework!123"
+)
+
 type PostgresTestSuite struct {
 	suite.Suite
 	mockConfig *configmocks.Config
@@ -19,7 +25,7 @@ type PostgresTestSuite struct {
 
 func TestPostgresTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, new(PostgresTestSuite))
@@ -70,6 +76,10 @@ func (s *PostgresTestSuite) TestBuild() {
 		`).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
+
+	databaseDriver, err := s.postgres.Database("another")
+	s.NoError(err)
+	s.NotNil(databaseDriver)
 
 	s.Nil(s.postgres.Stop())
 }

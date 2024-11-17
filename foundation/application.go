@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 )
 
 var (
@@ -305,7 +306,7 @@ func setEnv() {
 }
 
 func setRootPath() {
-	support.RootPath = getCurrentAbsolutePath()
+	support.RootPath = env.CurrentAbsolutePath()
 }
 
 func getEnvPath() string {

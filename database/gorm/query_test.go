@@ -30,7 +30,7 @@ type QueryTestSuite struct {
 
 func TestQueryTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &QueryTestSuite{})
@@ -51,6 +51,12 @@ func (s *QueryTestSuite) SetupSuite() {
 }
 
 func (s *QueryTestSuite) SetupTest() {}
+
+func (s *QueryTestSuite) TearDownSuite() {
+	if s.queries[database.DriverSqlite] != nil {
+		s.NoError(s.queries[database.DriverSqlite].Docker().Stop())
+	}
+}
 
 func (s *QueryTestSuite) TestAssociation() {
 	for driver, query := range s.queries {
@@ -3538,7 +3544,7 @@ func (s *QueryTestSuite) TestWith() {
 					setup: func(description string) {
 						var user1 User
 						s.Nil(query.Query().With("Books", func(query contractsorm.Query) contractsorm.Query {
-							return query.Where("name = ?", "with_book0")
+							return query.Where("name = ?", "with_book0").Select("id", "user_id", "name")
 						}).Find(&user1, user.ID))
 						s.True(user1.ID > 0)
 						s.Nil(user1.Address)
@@ -3589,10 +3595,12 @@ func (s *QueryTestSuite) TestWithNesting() {
 
 func TestCustomConnection(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	postgresDocker := supportdocker.Postgres()
+	require.NoError(t, postgresDocker.Ready())
+
 	postgresQuery := NewTestQuery(postgresDocker)
 	postgresQuery.CreateTable(TestTableReviews, TestTableProducts)
 
@@ -3629,6 +3637,8 @@ func TestCustomConnection(t *testing.T) {
 	person := Person{Name: "create_person"}
 	assert.NotNil(t, query.Create(&person))
 	assert.True(t, person.ID == 0)
+
+	assert.NoError(t, sqliteDocker.Stop())
 }
 
 func TestFilterFindConditions(t *testing.T) {
@@ -3751,7 +3761,7 @@ func TestObserverEvent(t *testing.T) {
 
 func TestReadWriteSeparate(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	dbs := NewTestQueries().QueriesOfReadWrite()
@@ -3763,14 +3773,9 @@ func TestReadWriteSeparate(t *testing.T) {
 				err      error
 			)
 			if drive == database.DriverSqlite {
-				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
-					ReadDatabase: db["read"].Docker().Config().Database,
-				})
+				mixQuery, err = db["write"].QueryOfReadWrite(db["read"].Docker().Config())
 			} else {
-				mixQuery, err = db["write"].QueryOfReadWrite(TestReadWriteConfig{
-					ReadPort:  db["read"].Docker().Config().Port,
-					WritePort: db["write"].Docker().Config().Port,
-				})
+				mixQuery, err = db["write"].QueryOfReadWrite(db["read"].Docker().Config())
 			}
 
 			require.NoError(t, err)
@@ -3795,11 +3800,14 @@ func TestReadWriteSeparate(t *testing.T) {
 			assert.True(t, user4.ID > 0)
 		})
 	}
+
+	assert.NoError(t, dbs[database.DriverSqlite]["read"].Docker().Stop())
+	assert.NoError(t, dbs[database.DriverSqlite]["write"].Docker().Stop())
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	dbs := NewTestQueries().QueriesWithPrefixAndSingular()
@@ -3816,6 +3824,10 @@ func TestTablePrefixAndSingular(t *testing.T) {
 			assert.Nil(t, db.Query().Find(&user1, user.ID))
 			assert.True(t, user1.ID > 0)
 		})
+	}
+
+	if dbs[database.DriverSqlite] != nil {
+		assert.NoError(t, dbs[database.DriverSqlite].Docker().Stop())
 	}
 }
 
