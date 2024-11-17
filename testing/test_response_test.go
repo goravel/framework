@@ -8,7 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	contractstesting "github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
+	mockssession "github.com/goravel/framework/mocks/session"
 )
 
 func TestAssertOk(t *testing.T) {
@@ -313,6 +317,71 @@ func TestAssertSeeInOrderWithEscape(t *testing.T) {
 
 	r := NewTestResponse(t, res)
 	r.AssertSeeInOrder([]string{"Hello,", "<div>ordered</div>"}, true)
+}
+
+func TestSession_Success(t *testing.T) {
+	mockSessionManager := mockssession.NewManager(t)
+	mockDriver := mockssession.NewDriver(t)
+	mockSession := mockssession.NewSession(t)
+	sessionFacade = mockSessionManager
+
+	sessionData := map[string]any{
+		"user_id":   123,
+		"user_role": "admin",
+	}
+
+	mockSessionManager.On("Driver").Return(mockDriver, nil).Once()
+	mockSessionManager.On("BuildSession", mockDriver).Return(mockSession, nil).Once()
+	mockSessionManager.On("ReleaseSession", mockSession).Once()
+	mockSession.On("All").Return(sessionData).Once()
+
+	cookie := &http.Cookie{
+		Name:  "session_id",
+		Value: "test_session_id",
+	}
+	response := createTestResponse(http.StatusOK)
+	response.Header.Add("Set-Cookie", cookie.String())
+
+	testResponse := &TestResponseImpl{}
+	session, err := testResponse.Session()
+
+	require.NoError(t, err)
+	require.Equal(t, sessionData, session)
+}
+
+func TestSession_DriverError(t *testing.T) {
+	mockSessionManager := mockssession.NewManager(t)
+	sessionFacade = mockSessionManager
+
+	mockSessionManager.On("Driver").Return(nil, errors.New("driver error")).Once()
+
+	testResponse := &TestResponseImpl{}
+	_, err := testResponse.Session()
+
+	require.EqualError(t, err, "driver error")
+}
+
+func TestSession_BuildSessionError(t *testing.T) {
+	mockSessionManager := mockssession.NewManager(t)
+	mockDriver := mockssession.NewDriver(t)
+	sessionFacade = mockSessionManager
+
+	mockSessionManager.On("Driver").Return(mockDriver, nil).Once()
+	mockSessionManager.On("BuildSession", mockDriver).Return(nil, errors.New("build session error")).Once()
+
+	testResponse := &TestResponseImpl{}
+	_, err := testResponse.Session()
+
+	require.EqualError(t, err, "build session error")
+}
+
+func TestSession_SessionFacadeNotSet(t *testing.T) {
+	sessionFacade = nil
+
+	testResponse := &TestResponseImpl{}
+	_, err := testResponse.Session()
+
+	require.ErrorIs(t, err, errors.SessionFacadeNotSet)
 }
 
 func createTestResponse(statusCode int) *http.Response {
