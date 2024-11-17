@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cast"
@@ -14,6 +13,22 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/support/str"
 )
+
+// Used by TestContainer, to simulate the port is using.
+var testPortUsing = false
+
+func isPortUsing(port int) bool {
+	if testPortUsing {
+		return true
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if l != nil {
+		l.Close()
+	}
+
+	return err != nil
+}
 
 func getExposedPort(exposedPorts []string, port int) int {
 	for _, exposedPort := range exposedPorts {
@@ -32,7 +47,7 @@ func getExposedPort(exposedPorts []string, port int) int {
 func getValidPort() int {
 	for i := 0; i < 60; i++ {
 		random := rand.Intn(10000) + 10000
-		l, err := net.Listen("tcp", fmt.Sprintf(":%s", strconv.Itoa(random)))
+		l, err := net.Listen("tcp", fmt.Sprintf(":%d", random))
 		if err != nil {
 			continue
 		}

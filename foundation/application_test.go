@@ -309,10 +309,12 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
 	if env.IsWindows() {
-		s.T().Skip("Skipping tests that use Docker")
+		s.T().Skip("Skip test that using Docker")
 	}
 
 	postgresDocker := supportdocker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	config := postgresDocker.Config()
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()

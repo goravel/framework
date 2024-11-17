@@ -18,8 +18,8 @@ type SqlserverTestSuite struct {
 }
 
 func TestSqlserverTestSuite(t *testing.T) {
-	if env.IsWindows() || TestModel == TestModelNormal {
-		t.Skip("Skipping tests that use Docker")
+	if env.IsWindows() || TestModel == TestModelMinimum {
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, new(SqlserverTestSuite))
@@ -71,6 +71,10 @@ func (s *SqlserverTestSuite) TestBuild() {
 	`).Scan(&count)
 	s.Nil(res.Error)
 	s.Equal(int64(0), count)
+
+	databaseDriver, err := s.sqlserver.Database("another")
+	s.NoError(err)
+	s.NotNil(databaseDriver)
 
 	s.Nil(s.sqlserver.Stop())
 }

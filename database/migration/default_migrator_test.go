@@ -35,7 +35,7 @@ type DefaultMigratorWithDBSuite struct {
 
 func TestDefaultMigratorWithDBSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &DefaultMigratorWithDBSuite{})
@@ -44,6 +44,8 @@ func TestDefaultMigratorWithDBSuite(t *testing.T) {
 func (s *DefaultMigratorWithDBSuite) SetupTest() {
 	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
+	s.NoError(postgresDocker.Ready())
+
 	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
 		contractsdatabase.DriverPostgres: postgresQuery,
