@@ -8,7 +8,7 @@ type Blueprint interface {
 	// BigIncrements Create a new auto-incrementing big integer (8-byte) column on the table.
 	BigIncrements(column string) ColumnDefinition
 	// BigInteger Create a new big integer (8-byte) column on the table.
-	BigInteger(column string, config ...IntegerConfig) ColumnDefinition
+	BigInteger(column string) ColumnDefinition
 	// Build Execute the blueprint to build / modify the table.
 	Build(query orm.Query, grammar Grammar) error
 	// Create Indicate that the table needs to be created.
@@ -28,7 +28,7 @@ type Blueprint interface {
 	// MediumIncrements Create a new auto-incrementing medium integer (3-byte) column on the table.
 	MediumIncrements(column string) ColumnDefinition
 	// MediumInteger Create a new medium integer (3-byte) column on the table.
-	MediumInteger(column string, config ...IntegerConfig) ColumnDefinition
+	MediumInteger(column string) ColumnDefinition
 	// ID Create a new auto-incrementing big integer (8-byte) column on the table.
 	ID(column ...string) ColumnDefinition
 	// Increments Create a new auto-incrementing integer (4-byte) column on the table.
@@ -36,7 +36,7 @@ type Blueprint interface {
 	// Index Specify an index for the table.
 	Index(column ...string) IndexDefinition
 	// Integer Create a new integer (4-byte) column on the table.
-	Integer(column string, config ...IntegerConfig) ColumnDefinition
+	Integer(column string) ColumnDefinition
 	// IntegerIncrements Create a new auto-incrementing integer (4-byte) column on the table.
 	IntegerIncrements(column string) ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
@@ -46,13 +46,13 @@ type Blueprint interface {
 	// SmallIncrements Create a new auto-incrementing small integer (2-byte) column on the table.
 	SmallIncrements(column string) ColumnDefinition
 	// SmallInteger Create a new small integer (2-byte) column on the table.
-	SmallInteger(column string, config ...IntegerConfig) ColumnDefinition
+	SmallInteger(column string) ColumnDefinition
 	// String Create a new string column on the table.
 	String(column string, length ...int) ColumnDefinition
 	// TinyIncrements Create a new auto-incrementing tiny integer (1-byte) column on the table.
 	TinyIncrements(column string) ColumnDefinition
 	// TinyInteger Create a new tiny integer (1-byte) column on the table.
-	TinyInteger(column string, config ...IntegerConfig) ColumnDefinition
+	TinyInteger(column string) ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(grammar Grammar) []string
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
