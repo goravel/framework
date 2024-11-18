@@ -56,15 +56,15 @@ type Blueprint interface {
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(grammar Grammar) []string
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
-	UnsignedBigInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedBigInteger(column string) ColumnDefinition
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.
-	UnsignedInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedInteger(column string) ColumnDefinition
 	// UnsignedMediumInteger Create a new unsigned medium integer (3-byte) column on the table.
-	UnsignedMediumInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedMediumInteger(column string) ColumnDefinition
 	// UnsignedSmallInteger Create a new unsigned small integer (2-byte) column on the table.
-	UnsignedSmallInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedSmallInteger(column string) ColumnDefinition
 	// UnsignedTinyInteger Create a new unsigned tiny integer (1-byte) column on the table.
-	UnsignedTinyInteger(column string, autoIncrement ...bool) ColumnDefinition
+	UnsignedTinyInteger(column string) ColumnDefinition
 }
 
 type IndexConfig struct {
