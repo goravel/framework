@@ -101,7 +101,7 @@ func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) Increments(column string) schema.ColumnDefinition {
-	return r.UnsignedInteger(column).AutoIncrement()
+	return r.IntegerIncrements(column)
 }
 
 func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
