@@ -36,23 +36,25 @@ func (r *MysqlSchema) DropAllTables() error {
 		return nil
 	}
 
-	if _, err = r.orm.Query().Exec(r.grammar.CompileDisableForeignKeyConstraints()); err != nil {
-		return err
-	}
+	return r.orm.Transaction(func(tx orm.Query) error {
+		if _, err = tx.Exec(r.grammar.CompileDisableForeignKeyConstraints()); err != nil {
+			return err
+		}
 
-	var dropTables []string
-	for _, table := range tables {
-		dropTables = append(dropTables, table.Name)
-	}
-	if _, err = r.orm.Query().Exec(r.grammar.CompileDropAllTables(dropTables)); err != nil {
-		return err
-	}
+		var dropTables []string
+		for _, table := range tables {
+			dropTables = append(dropTables, table.Name)
+		}
+		if _, err = tx.Exec(r.grammar.CompileDropAllTables(dropTables)); err != nil {
+			return err
+		}
 
-	if _, err = r.orm.Query().Exec(r.grammar.CompileEnableForeignKeyConstraints()); err != nil {
-		return err
-	}
+		if _, err = tx.Exec(r.grammar.CompileEnableForeignKeyConstraints()); err != nil {
+			return err
+		}
 
-	return err
+		return err
+	})
 }
 
 func (r *MysqlSchema) DropAllTypes() error {

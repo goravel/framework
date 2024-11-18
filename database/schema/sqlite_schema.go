@@ -48,20 +48,22 @@ func (r *SqliteSchema) DropAllTypes() error {
 }
 
 func (r *SqliteSchema) DropAllViews() error {
-	if _, err := r.orm.Query().Exec(r.grammar.CompileEnableWriteableSchema()); err != nil {
-		return err
-	}
-	if _, err := r.orm.Query().Exec(r.grammar.CompileDropAllViews(nil)); err != nil {
-		return err
-	}
-	if _, err := r.orm.Query().Exec(r.grammar.CompileDisableWriteableSchema()); err != nil {
-		return err
-	}
-	if _, err := r.orm.Query().Exec(r.grammar.CompileRebuild()); err != nil {
-		return err
-	}
+	return r.orm.Transaction(func(tx orm.Query) error {
+		if _, err := tx.Exec(r.grammar.CompileEnableWriteableSchema()); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(r.grammar.CompileDropAllViews(nil)); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(r.grammar.CompileDisableWriteableSchema()); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(r.grammar.CompileRebuild()); err != nil {
+			return err
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (r *SqliteSchema) GetIndexes(table string) ([]schema.Index, error) {

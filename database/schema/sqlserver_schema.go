@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"strings"
-
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
@@ -51,7 +49,11 @@ func (r *SqlserverSchema) DropAllViews() error {
 }
 
 func (r *SqlserverSchema) GetIndexes(table string) ([]contractsschema.Index, error) {
-	schema, table := r.parseSchemaAndTable(table)
+	schema, table, err := parseSchemaAndTable(table, "")
+	if err != nil {
+		return nil, err
+	}
+
 	table = r.prefix + table
 
 	var dbIndexes []processors.DBIndex
@@ -64,16 +66,4 @@ func (r *SqlserverSchema) GetIndexes(table string) ([]contractsschema.Index, err
 
 func (r *SqlserverSchema) GetTypes() ([]contractsschema.Type, error) {
 	return nil, nil
-}
-
-func (r *SqlserverSchema) parseSchemaAndTable(reference string) (schema, table string) {
-	parts := strings.Split(reference, ".")
-	if len(parts) == 2 {
-		schema = parts[0]
-		parts = parts[1:]
-	}
-
-	table = parts[0]
-
-	return
 }

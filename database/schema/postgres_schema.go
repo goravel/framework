@@ -2,13 +2,11 @@ package schema
 
 import (
 	"fmt"
-	"slices"
-	"strings"
-
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/database/schema/processors"
+	"slices"
 )
 
 type PostgresSchema struct {
@@ -81,19 +79,21 @@ func (r *PostgresSchema) DropAllTypes() error {
 		}
 	}
 
-	if len(dropTypes) > 0 {
-		if _, err := r.orm.Query().Exec(r.grammar.CompileDropAllTypes(dropTypes)); err != nil {
-			return err
+	return r.orm.Transaction(func(tx orm.Query) error {
+		if len(dropTypes) > 0 {
+			if _, err := tx.Exec(r.grammar.CompileDropAllTypes(dropTypes)); err != nil {
+				return err
+			}
 		}
-	}
 
-	if len(dropDomains) > 0 {
-		if _, err := r.orm.Query().Exec(r.grammar.CompileDropAllDomains(dropDomains)); err != nil {
-			return err
+		if len(dropDomains) > 0 {
+			if _, err := tx.Exec(r.grammar.CompileDropAllDomains(dropDomains)); err != nil {
+				return err
+			}
 		}
-	}
 
-	return nil
+		return nil
+	})
 }
 
 func (r *PostgresSchema) DropAllViews() error {
@@ -121,7 +121,11 @@ func (r *PostgresSchema) DropAllViews() error {
 }
 
 func (r *PostgresSchema) GetIndexes(table string) ([]contractsschema.Index, error) {
-	schema, table := r.parseSchemaAndTable(table)
+	schema, table, err := parseSchemaAndTable(table, r.schema)
+	if err != nil {
+		return nil, err
+	}
+
 	table = r.prefix + table
 
 	var dbIndexes []processors.DBIndex
@@ -139,17 +143,4 @@ func (r *PostgresSchema) GetTypes() ([]contractsschema.Type, error) {
 	}
 
 	return r.processor.ProcessTypes(types), nil
-}
-
-func (r *PostgresSchema) parseSchemaAndTable(reference string) (schema, table string) {
-	parts := strings.Split(reference, ".")
-	schema = r.schema
-	if len(parts) == 2 {
-		schema = parts[0]
-		parts = parts[1:]
-	}
-
-	table = parts[0]
-
-	return
 }
