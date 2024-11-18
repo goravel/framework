@@ -69,24 +69,17 @@ func (_c *Blueprint_BigIncrements_Call) RunAndReturn(run func(string) schema.Col
 	return _c
 }
 
-// BigInteger provides a mock function with given fields: column, config
-func (_m *Blueprint) BigInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, column)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// BigInteger provides a mock function with given fields: column
+func (_m *Blueprint) BigInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BigInteger")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, ...schema.IntegerConfig) schema.ColumnDefinition); ok {
-		r0 = rf(column, config...)
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -103,21 +96,13 @@ type Blueprint_BigInteger_Call struct {
 
 // BigInteger is a helper method to define mock.On call
 //   - column string
-//   - config ...schema.IntegerConfig
-func (_e *Blueprint_Expecter) BigInteger(column interface{}, config ...interface{}) *Blueprint_BigInteger_Call {
-	return &Blueprint_BigInteger_Call{Call: _e.mock.On("BigInteger",
-		append([]interface{}{column}, config...)...)}
+func (_e *Blueprint_Expecter) BigInteger(column interface{}) *Blueprint_BigInteger_Call {
+	return &Blueprint_BigInteger_Call{Call: _e.mock.On("BigInteger", column)}
 }
 
-func (_c *Blueprint_BigInteger_Call) Run(run func(column string, config ...schema.IntegerConfig)) *Blueprint_BigInteger_Call {
+func (_c *Blueprint_BigInteger_Call) Run(run func(column string)) *Blueprint_BigInteger_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IntegerConfig, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(schema.IntegerConfig)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -127,7 +112,7 @@ func (_c *Blueprint_BigInteger_Call) Return(_a0 schema.ColumnDefinition) *Bluepr
 	return _c
 }
 
-func (_c *Blueprint_BigInteger_Call) RunAndReturn(run func(string, ...schema.IntegerConfig) schema.ColumnDefinition) *Blueprint_BigInteger_Call {
+func (_c *Blueprint_BigInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_BigInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -659,24 +644,17 @@ func (_c *Blueprint_Index_Call) RunAndReturn(run func(...string) schema.IndexDef
 	return _c
 }
 
-// Integer provides a mock function with given fields: column, config
-func (_m *Blueprint) Integer(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, column)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// Integer provides a mock function with given fields: column
+func (_m *Blueprint) Integer(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Integer")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, ...schema.IntegerConfig) schema.ColumnDefinition); ok {
-		r0 = rf(column, config...)
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -693,21 +671,13 @@ type Blueprint_Integer_Call struct {
 
 // Integer is a helper method to define mock.On call
 //   - column string
-//   - config ...schema.IntegerConfig
-func (_e *Blueprint_Expecter) Integer(column interface{}, config ...interface{}) *Blueprint_Integer_Call {
-	return &Blueprint_Integer_Call{Call: _e.mock.On("Integer",
-		append([]interface{}{column}, config...)...)}
+func (_e *Blueprint_Expecter) Integer(column interface{}) *Blueprint_Integer_Call {
+	return &Blueprint_Integer_Call{Call: _e.mock.On("Integer", column)}
 }
 
-func (_c *Blueprint_Integer_Call) Run(run func(column string, config ...schema.IntegerConfig)) *Blueprint_Integer_Call {
+func (_c *Blueprint_Integer_Call) Run(run func(column string)) *Blueprint_Integer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IntegerConfig, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(schema.IntegerConfig)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -717,7 +687,7 @@ func (_c *Blueprint_Integer_Call) Return(_a0 schema.ColumnDefinition) *Blueprint
 	return _c
 }
 
-func (_c *Blueprint_Integer_Call) RunAndReturn(run func(string, ...schema.IntegerConfig) schema.ColumnDefinition) *Blueprint_Integer_Call {
+func (_c *Blueprint_Integer_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Integer_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -818,24 +788,17 @@ func (_c *Blueprint_MediumIncrements_Call) RunAndReturn(run func(string) schema.
 	return _c
 }
 
-// MediumInteger provides a mock function with given fields: column, config
-func (_m *Blueprint) MediumInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, column)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// MediumInteger provides a mock function with given fields: column
+func (_m *Blueprint) MediumInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for MediumInteger")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, ...schema.IntegerConfig) schema.ColumnDefinition); ok {
-		r0 = rf(column, config...)
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -852,21 +815,13 @@ type Blueprint_MediumInteger_Call struct {
 
 // MediumInteger is a helper method to define mock.On call
 //   - column string
-//   - config ...schema.IntegerConfig
-func (_e *Blueprint_Expecter) MediumInteger(column interface{}, config ...interface{}) *Blueprint_MediumInteger_Call {
-	return &Blueprint_MediumInteger_Call{Call: _e.mock.On("MediumInteger",
-		append([]interface{}{column}, config...)...)}
+func (_e *Blueprint_Expecter) MediumInteger(column interface{}) *Blueprint_MediumInteger_Call {
+	return &Blueprint_MediumInteger_Call{Call: _e.mock.On("MediumInteger", column)}
 }
 
-func (_c *Blueprint_MediumInteger_Call) Run(run func(column string, config ...schema.IntegerConfig)) *Blueprint_MediumInteger_Call {
+func (_c *Blueprint_MediumInteger_Call) Run(run func(column string)) *Blueprint_MediumInteger_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IntegerConfig, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(schema.IntegerConfig)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -876,7 +831,7 @@ func (_c *Blueprint_MediumInteger_Call) Return(_a0 schema.ColumnDefinition) *Blu
 	return _c
 }
 
-func (_c *Blueprint_MediumInteger_Call) RunAndReturn(run func(string, ...schema.IntegerConfig) schema.ColumnDefinition) *Blueprint_MediumInteger_Call {
+func (_c *Blueprint_MediumInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_MediumInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1008,24 +963,17 @@ func (_c *Blueprint_SmallIncrements_Call) RunAndReturn(run func(string) schema.C
 	return _c
 }
 
-// SmallInteger provides a mock function with given fields: column, config
-func (_m *Blueprint) SmallInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, column)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// SmallInteger provides a mock function with given fields: column
+func (_m *Blueprint) SmallInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SmallInteger")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, ...schema.IntegerConfig) schema.ColumnDefinition); ok {
-		r0 = rf(column, config...)
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -1042,21 +990,13 @@ type Blueprint_SmallInteger_Call struct {
 
 // SmallInteger is a helper method to define mock.On call
 //   - column string
-//   - config ...schema.IntegerConfig
-func (_e *Blueprint_Expecter) SmallInteger(column interface{}, config ...interface{}) *Blueprint_SmallInteger_Call {
-	return &Blueprint_SmallInteger_Call{Call: _e.mock.On("SmallInteger",
-		append([]interface{}{column}, config...)...)}
+func (_e *Blueprint_Expecter) SmallInteger(column interface{}) *Blueprint_SmallInteger_Call {
+	return &Blueprint_SmallInteger_Call{Call: _e.mock.On("SmallInteger", column)}
 }
 
-func (_c *Blueprint_SmallInteger_Call) Run(run func(column string, config ...schema.IntegerConfig)) *Blueprint_SmallInteger_Call {
+func (_c *Blueprint_SmallInteger_Call) Run(run func(column string)) *Blueprint_SmallInteger_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IntegerConfig, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(schema.IntegerConfig)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -1066,7 +1006,7 @@ func (_c *Blueprint_SmallInteger_Call) Return(_a0 schema.ColumnDefinition) *Blue
 	return _c
 }
 
-func (_c *Blueprint_SmallInteger_Call) RunAndReturn(run func(string, ...schema.IntegerConfig) schema.ColumnDefinition) *Blueprint_SmallInteger_Call {
+func (_c *Blueprint_SmallInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_SmallInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1182,24 +1122,17 @@ func (_c *Blueprint_TinyIncrements_Call) RunAndReturn(run func(string) schema.Co
 	return _c
 }
 
-// TinyInteger provides a mock function with given fields: column, config
-func (_m *Blueprint) TinyInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, column)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// TinyInteger provides a mock function with given fields: column
+func (_m *Blueprint) TinyInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TinyInteger")
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, ...schema.IntegerConfig) schema.ColumnDefinition); ok {
-		r0 = rf(column, config...)
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ColumnDefinition)
@@ -1216,21 +1149,13 @@ type Blueprint_TinyInteger_Call struct {
 
 // TinyInteger is a helper method to define mock.On call
 //   - column string
-//   - config ...schema.IntegerConfig
-func (_e *Blueprint_Expecter) TinyInteger(column interface{}, config ...interface{}) *Blueprint_TinyInteger_Call {
-	return &Blueprint_TinyInteger_Call{Call: _e.mock.On("TinyInteger",
-		append([]interface{}{column}, config...)...)}
+func (_e *Blueprint_Expecter) TinyInteger(column interface{}) *Blueprint_TinyInteger_Call {
+	return &Blueprint_TinyInteger_Call{Call: _e.mock.On("TinyInteger", column)}
 }
 
-func (_c *Blueprint_TinyInteger_Call) Run(run func(column string, config ...schema.IntegerConfig)) *Blueprint_TinyInteger_Call {
+func (_c *Blueprint_TinyInteger_Call) Run(run func(column string)) *Blueprint_TinyInteger_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IntegerConfig, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(schema.IntegerConfig)
-			}
-		}
-		run(args[0].(string), variadicArgs...)
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -1240,7 +1165,7 @@ func (_c *Blueprint_TinyInteger_Call) Return(_a0 schema.ColumnDefinition) *Bluep
 	return _c
 }
 
-func (_c *Blueprint_TinyInteger_Call) RunAndReturn(run func(string, ...schema.IntegerConfig) schema.ColumnDefinition) *Blueprint_TinyInteger_Call {
+func (_c *Blueprint_TinyInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TinyInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
