@@ -761,6 +761,143 @@ func (_c *Grammar_TypeBigInteger_Call) RunAndReturn(run func(schema.ColumnDefini
 	return _c
 }
 
+// TypeDecimal provides a mock function with given fields: column
+func (_m *Grammar) TypeDecimal(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeDecimal")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeDecimal_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeDecimal'
+type Grammar_TypeDecimal_Call struct {
+	*mock.Call
+}
+
+// TypeDecimal is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeDecimal(column interface{}) *Grammar_TypeDecimal_Call {
+	return &Grammar_TypeDecimal_Call{Call: _e.mock.On("TypeDecimal", column)}
+}
+
+func (_c *Grammar_TypeDecimal_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeDecimal_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeDecimal_Call) Return(_a0 string) *Grammar_TypeDecimal_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeDecimal_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeDecimal_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeDouble provides a mock function with given fields:
+func (_m *Grammar) TypeDouble() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeDouble")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeDouble_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeDouble'
+type Grammar_TypeDouble_Call struct {
+	*mock.Call
+}
+
+// TypeDouble is a helper method to define mock.On call
+func (_e *Grammar_Expecter) TypeDouble() *Grammar_TypeDouble_Call {
+	return &Grammar_TypeDouble_Call{Call: _e.mock.On("TypeDouble")}
+}
+
+func (_c *Grammar_TypeDouble_Call) Run(run func()) *Grammar_TypeDouble_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeDouble_Call) Return(_a0 string) *Grammar_TypeDouble_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeDouble_Call) RunAndReturn(run func() string) *Grammar_TypeDouble_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeFloat provides a mock function with given fields: column
+func (_m *Grammar) TypeFloat(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeFloat")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeFloat_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeFloat'
+type Grammar_TypeFloat_Call struct {
+	*mock.Call
+}
+
+// TypeFloat is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeFloat(column interface{}) *Grammar_TypeFloat_Call {
+	return &Grammar_TypeFloat_Call{Call: _e.mock.On("TypeFloat", column)}
+}
+
+func (_c *Grammar_TypeFloat_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeFloat_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeFloat_Call) Return(_a0 string) *Grammar_TypeFloat_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeFloat_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeFloat_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeInteger provides a mock function with given fields: column
 func (_m *Grammar) TypeInteger(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
@@ -807,6 +944,98 @@ func (_c *Grammar_TypeInteger_Call) RunAndReturn(run func(schema.ColumnDefinitio
 	return _c
 }
 
+// TypeMediumInteger provides a mock function with given fields: column
+func (_m *Grammar) TypeMediumInteger(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeMediumInteger")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeMediumInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeMediumInteger'
+type Grammar_TypeMediumInteger_Call struct {
+	*mock.Call
+}
+
+// TypeMediumInteger is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeMediumInteger(column interface{}) *Grammar_TypeMediumInteger_Call {
+	return &Grammar_TypeMediumInteger_Call{Call: _e.mock.On("TypeMediumInteger", column)}
+}
+
+func (_c *Grammar_TypeMediumInteger_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeMediumInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeMediumInteger_Call) Return(_a0 string) *Grammar_TypeMediumInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeMediumInteger_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeMediumInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeSmallInteger provides a mock function with given fields: column
+func (_m *Grammar) TypeSmallInteger(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeSmallInteger")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeSmallInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeSmallInteger'
+type Grammar_TypeSmallInteger_Call struct {
+	*mock.Call
+}
+
+// TypeSmallInteger is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeSmallInteger(column interface{}) *Grammar_TypeSmallInteger_Call {
+	return &Grammar_TypeSmallInteger_Call{Call: _e.mock.On("TypeSmallInteger", column)}
+}
+
+func (_c *Grammar_TypeSmallInteger_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeSmallInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeSmallInteger_Call) Return(_a0 string) *Grammar_TypeSmallInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeSmallInteger_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeSmallInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeString provides a mock function with given fields: column
 func (_m *Grammar) TypeString(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
@@ -849,6 +1078,52 @@ func (_c *Grammar_TypeString_Call) Return(_a0 string) *Grammar_TypeString_Call {
 }
 
 func (_c *Grammar_TypeString_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeString_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeTinyInteger provides a mock function with given fields: column
+func (_m *Grammar) TypeTinyInteger(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeTinyInteger")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeTinyInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeTinyInteger'
+type Grammar_TypeTinyInteger_Call struct {
+	*mock.Call
+}
+
+// TypeTinyInteger is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeTinyInteger(column interface{}) *Grammar_TypeTinyInteger_Call {
+	return &Grammar_TypeTinyInteger_Call{Call: _e.mock.On("TypeTinyInteger", column)}
+}
+
+func (_c *Grammar_TypeTinyInteger_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeTinyInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeTinyInteger_Call) Return(_a0 string) *Grammar_TypeTinyInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeTinyInteger_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTinyInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
