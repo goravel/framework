@@ -28,15 +28,8 @@ func (r *Blueprint) BigIncrements(column string) schema.ColumnDefinition {
 	return r.UnsignedBigInteger(column).AutoIncrement()
 }
 
-func (r *Blueprint) BigInteger(column string) schema.ColumnDefinition {
-	columnImpl := &ColumnDefinition{
-		name:  &column,
-		ttype: convert.Pointer("bigInteger"),
-	}
-
-	r.addColumn(columnImpl)
-
-	return columnImpl
+func (r *Blueprint) BigInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
+	return r.addIntegerColumn("bigInteger", column, config...)
 }
 
 func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error {
@@ -95,6 +88,10 @@ func (r *Blueprint) HasCommand(command string) bool {
 	return false
 }
 
+func (r *Blueprint) MediumIncrements(column string) ColumnDefinition {
+
+}
+
 func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 	if len(column) > 0 {
 		return r.BigIncrements(column[0])
@@ -103,21 +100,26 @@ func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 	return r.BigIncrements("id")
 }
 
+func (r *Blueprint) Increments(column string) ColumnDefinition {
+
+}
+
 func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
 	command := r.indexCommand(constants.CommandIndex, column)
 
 	return NewIndexDefinition(command)
 }
 
-func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
-	columnImpl := &ColumnDefinition{
-		name:  &column,
-		ttype: convert.Pointer("integer"),
-	}
+func (r *Blueprint) Integer(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
+	return r.addIntegerColumn("integer", column, config...)
+}
 
-	r.addColumn(columnImpl)
+func (r *Blueprint) IntegerIncrements(column string) schema.ColumnDefinition {
 
-	return columnImpl
+}
+
+func (r *Blueprint) MediumInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
+	return r.addIntegerColumn("mediumInteger", column, config...)
 }
 
 func (r *Blueprint) Primary(columns ...string) {
@@ -126,6 +128,14 @@ func (r *Blueprint) Primary(columns ...string) {
 
 func (r *Blueprint) SetTable(name string) {
 	r.table = name
+}
+
+func (r *Blueprint) SmallIncrements(column string) schema.ColumnDefinition {
+
+}
+
+func (r *Blueprint) SmallInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
+	return r.addIntegerColumn("smallInteger", column, config...)
 }
 
 func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
@@ -142,6 +152,14 @@ func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition
 	r.addColumn(columnImpl)
 
 	return columnImpl
+}
+
+func (r *Blueprint) TinyIncrements(column string) ColumnDefinition {
+
+}
+
+func (r *Blueprint) TinyInteger(column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
+	return r.addIntegerColumn("tinyInteger", column, config...)
 }
 
 func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
@@ -172,8 +190,39 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 	return statements
 }
 
-func (r *Blueprint) UnsignedBigInteger(column string) schema.ColumnDefinition {
-	return r.BigInteger(column).Unsigned()
+func (r *Blueprint) UnsignedBigInteger(column string, autoIncrement ...bool) schema.ColumnDefinition {
+	columnDefinition := r.BigInteger(column).Unsigned()
+	if len(autoIncrement) > 0 && autoIncrement[0] {
+		columnDefinition.AutoIncrement()
+	}
+
+	return columnDefinition
+}
+
+func (r *Blueprint) UnsignedInteger(column string, autoIncrement ...bool) schema.ColumnDefinition {
+	columnDefinition := r.Integer(column).Unsigned()
+	if len(autoIncrement) > 0 && autoIncrement[0] {
+		columnDefinition.AutoIncrement()
+	}
+
+	return columnDefinition
+}
+
+func (r *Blueprint) UnsignedMediumInteger(column string, autoIncrement ...bool) schema.ColumnDefinition {
+	columnDefinition := r.Integer(column).Unsigned()
+	if len(autoIncrement) > 0 && autoIncrement[0] {
+		columnDefinition.AutoIncrement()
+	}
+
+	return columnDefinition
+}
+
+func (r *Blueprint) UnsignedSmallInteger(column string, autoIncrement ...bool) schema.ColumnDefinition {
+
+}
+
+func (r *Blueprint) UnsignedTinyInteger(column string, autoIncrement ...bool) schema.ColumnDefinition {
+
 }
 
 func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
@@ -207,6 +256,26 @@ func (r *Blueprint) addCommand(command *schema.Command) {
 
 func (r *Blueprint) addImpliedCommands(grammar schema.Grammar) {
 	r.addAttributeCommands(grammar)
+}
+
+func (r *Blueprint) addIntegerColumn(name, column string, config ...schema.IntegerConfig) schema.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer(name),
+	}
+
+	if len(config) > 0 {
+		if config[0].AutoIncrement {
+			columnImpl.AutoIncrement()
+		}
+		if config[0].Unsigned {
+			columnImpl.Unsigned()
+		}
+	}
+
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) createIndexName(ttype string, columns []string) string {

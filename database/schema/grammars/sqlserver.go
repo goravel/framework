@@ -183,8 +183,37 @@ func (r *Sqlserver) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Sqlserver) TypeDecimal(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
+}
+
+func (r *Sqlserver) TypeDouble() string {
+	return "double precision"
+}
+
+func (r *Sqlserver) TypeFloat(column schema.ColumnDefinition) string {
+	precision := column.GetPrecision()
+	if precision > 0 {
+		return fmt.Sprintf("float(%d)", precision)
+	}
+
+	return "float"
+}
+
 func (r *Sqlserver) TypeInteger(column schema.ColumnDefinition) string {
 	return "int"
+}
+
+func (r *Sqlserver) TypeMediumInteger(column schema.ColumnDefinition) string {
+	return "int"
+}
+
+func (r *Sqlserver) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return "tinyint"
+}
+
+func (r *Sqlserver) TypeSmallInteger(column schema.ColumnDefinition) string {
+	return "smallint"
 }
 
 func (r *Sqlserver) TypeString(column schema.ColumnDefinition) string {

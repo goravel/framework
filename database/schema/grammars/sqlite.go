@@ -155,7 +155,31 @@ func (r *Sqlite) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 
+func (r *Sqlite) TypeDecimal(column schema.ColumnDefinition) string {
+	return "numeric"
+}
+
+func (r *Sqlite) TypeDouble() string {
+	return "double"
+}
+
+func (r *Sqlite) TypeFloat(column schema.ColumnDefinition) string {
+	return "float"
+}
+
 func (r *Sqlite) TypeInteger(column schema.ColumnDefinition) string {
+	return "integer"
+}
+
+func (r *Sqlite) TypeMediumInteger(column schema.ColumnDefinition) string {
+	return "integer"
+}
+
+func (r *Sqlite) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return "integer"
+}
+
+func (r *Sqlite) TypeSmallInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 

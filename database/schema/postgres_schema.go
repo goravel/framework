@@ -2,11 +2,12 @@ package schema
 
 import (
 	"fmt"
+	"slices"
+
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/grammars"
 	"github.com/goravel/framework/database/schema/processors"
-	"slices"
 )
 
 type PostgresSchema struct {
