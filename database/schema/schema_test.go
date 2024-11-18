@@ -26,7 +26,6 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
-	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
 	s.Require().NoError(postgresDocker.Ready())
 
@@ -40,10 +39,16 @@ func (s *SchemaSuite) SetupTest() {
 
 	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
 
+	sqlserverDocker := docker.Sqlserver()
+	s.Require().NoError(sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
+
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		database.DriverPostgres: postgresQuery,
-		database.DriverSqlite:   sqliteQuery,
-		database.DriverMysql:    mysqlQuery,
+		database.DriverPostgres:  postgresQuery,
+		database.DriverSqlite:    sqliteQuery,
+		database.DriverMysql:     mysqlQuery,
+		database.DriverSqlserver: sqlserverQuery,
 	}
 }
 
@@ -155,6 +160,9 @@ func (s *SchemaSuite) TestPrimary() {
 			if driver == database.DriverMysql {
 				s.Require().True(schema.HasIndex(table, "primary"))
 			}
+			if driver == database.DriverSqlserver {
+				s.Require().True(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
+			}
 		})
 	}
 }
@@ -187,6 +195,8 @@ func (s *SchemaSuite) TestIndexMethods() {
 					s.False(index.Primary)
 					if driver == database.DriverSqlite {
 						s.Empty(index.Type)
+					} else if driver == database.DriverSqlserver {
+						s.Equal("nonclustered", index.Type)
 					} else {
 						s.Equal("btree", index.Type)
 					}

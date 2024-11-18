@@ -49,7 +49,9 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 		driverSchema = NewMysqlSchema(mysqlGrammar, orm, prefix)
 		grammar = mysqlGrammar
 	case contractsdatabase.DriverSqlserver:
-		// TODO Optimize here when implementing Sqlserver driver
+		sqlserverGrammar := grammars.NewSqlserver(prefix)
+		driverSchema = NewSqlserverSchema(sqlserverGrammar, orm, prefix)
+		grammar = sqlserverGrammar
 	case contractsdatabase.DriverSqlite:
 		sqliteGrammar := grammars.NewSqlite(prefix)
 		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)

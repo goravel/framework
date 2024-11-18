@@ -8,7 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func TestMysqlProcessIndexes(t *testing.T) {
+func TestProcessIndexes(t *testing.T) {
 	// Test with valid indexes
 	input := []DBIndex{
 		{Name: "INDEX_A", Type: "BTREE", Columns: "a,b"},
@@ -19,15 +19,14 @@ func TestMysqlProcessIndexes(t *testing.T) {
 		{Name: "index_b", Type: "hash", Columns: []string{"c", "d"}},
 	}
 
-	mysql := NewMysql()
-	result := mysql.ProcessIndexes(input)
+	result := processIndexes(input)
 
 	assert.Equal(t, expected, result)
 
 	// Test with empty input
 	input = []DBIndex{}
 
-	result = mysql.ProcessIndexes(input)
+	result = processIndexes(input)
 
 	assert.Nil(t, result)
 }
