@@ -26,8 +26,3 @@ type ColumnDefinition interface {
 	// Unsigned set the column as unsigned
 	Unsigned() ColumnDefinition
 }
-
-type IntegerConfig struct {
-	AutoIncrement bool
-	Unsigned      bool
-}
