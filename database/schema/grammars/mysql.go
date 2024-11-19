@@ -184,8 +184,37 @@ func (r *Mysql) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Mysql) TypeDecimal(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
+}
+
+func (r *Mysql) TypeDouble() string {
+	return "double"
+}
+
+func (r *Mysql) TypeFloat(column schema.ColumnDefinition) string {
+	precision := column.GetPrecision()
+	if precision > 0 {
+		return fmt.Sprintf("float(%d)", precision)
+	}
+
+	return "float"
+}
+
 func (r *Mysql) TypeInteger(column schema.ColumnDefinition) string {
 	return "int"
+}
+
+func (r *Mysql) TypeMediumInteger(column schema.ColumnDefinition) string {
+	return "mediumint"
+}
+
+func (r *Mysql) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return "tinyint"
+}
+
+func (r *Mysql) TypeSmallInteger(column schema.ColumnDefinition) string {
+	return "smallint"
 }
 
 func (r *Mysql) TypeString(column schema.ColumnDefinition) string {

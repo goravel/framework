@@ -276,6 +276,25 @@ func (s *SqlserverSuite) TestModifyIncrement() {
 	s.Equal(" identity primary key", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
 }
 
+func (s *SqlserverSuite) TestTypeDecimal() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetTotal().Return(4).Once()
+	mockColumn.EXPECT().GetPlaces().Return(2).Once()
+
+	s.Equal("decimal(4, 2)", s.grammar.TypeDecimal(mockColumn))
+}
+
+func (s *SqlserverSuite) TestTypeFloat() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+
+	s.Equal("float", s.grammar.TypeFloat(mockColumn))
+
+	mockColumn.EXPECT().GetPrecision().Return(2).Once()
+
+	s.Equal("float(2)", s.grammar.TypeFloat(mockColumn))
+}
+
 func (s *SqlserverSuite) TestTypeString() {
 	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn1.EXPECT().GetLength().Return(100).Once()

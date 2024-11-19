@@ -163,6 +163,17 @@ func (s *BlueprintTestSuite) TestHasCommand() {
 	s.True(s.blueprint.HasCommand(constants.CommandCreate))
 }
 
+func (s *BlueprintTestSuite) TestIntegerIncrements() {
+	name := "name"
+	s.blueprint.IntegerIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("integer"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestIndexCommand() {
 	s.blueprint.indexCommand("index", []string{"id", "name"})
 	s.Contains(s.blueprint.commands, &schema.Command{
@@ -218,13 +229,45 @@ func (s *BlueprintTestSuite) TestInteger() {
 		name:  &name,
 		ttype: convert.Pointer("integer"),
 	})
+}
 
-	s.blueprint.Integer(name).AutoIncrement().Unsigned()
+func (s *BlueprintTestSuite) TestMediumIncrements() {
+	name := "name"
+	s.blueprint.MediumIncrements(name)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
 		autoIncrement: convert.Pointer(true),
 		name:          &name,
 		unsigned:      convert.Pointer(true),
-		ttype:         convert.Pointer("integer"),
+		ttype:         convert.Pointer("mediumInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestMediumInteger() {
+	name := "name"
+	s.blueprint.MediumInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("mediumInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestSmallIncrements() {
+	name := "name"
+	s.blueprint.SmallIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("smallInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestSmallInteger() {
+	name := "name"
+	s.blueprint.SmallInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("smallInteger"),
 	})
 }
 
@@ -245,6 +288,26 @@ func (s *BlueprintTestSuite) TestString() {
 		length: &customLength,
 		name:   &column,
 		ttype:  &ttype,
+	})
+}
+
+func (s *BlueprintTestSuite) TestTinyIncrements() {
+	name := "name"
+	s.blueprint.TinyIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("tinyInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestTinyInteger() {
+	name := "name"
+	s.blueprint.TinyInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("tinyInteger"),
 	})
 }
 
@@ -280,6 +343,46 @@ func (s *BlueprintTestSuite) TestUnsignedBigInteger() {
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
 		name:     &name,
 		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedInteger() {
+	name := "name"
+	s.blueprint.UnsignedInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("integer"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedMediumInteger() {
+	name := "name"
+	s.blueprint.UnsignedMediumInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("mediumInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedSmallInteger() {
+	name := "name"
+	s.blueprint.UnsignedSmallInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("smallInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedTinyInteger() {
+	name := "name"
+	s.blueprint.UnsignedTinyInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("tinyInteger"),
 		unsigned: convert.Pointer(true),
 	})
 }

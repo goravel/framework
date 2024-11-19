@@ -12,6 +12,9 @@ type ColumnDefinition struct {
 	length        *int
 	name          *string
 	nullable      *bool
+	places        *int
+	precision     *int
+	total         *int
 	ttype         *string
 	unsigned      *bool
 }
@@ -56,6 +59,30 @@ func (r *ColumnDefinition) GetNullable() bool {
 	}
 
 	return false
+}
+
+func (r *ColumnDefinition) GetPlaces() (places int) {
+	if r.places != nil {
+		return *r.places
+	}
+
+	return 2
+}
+
+func (r *ColumnDefinition) GetPrecision() (precision int) {
+	if r.precision != nil {
+		return *r.precision
+	}
+
+	return
+}
+
+func (r *ColumnDefinition) GetTotal() (total int) {
+	if r.total != nil {
+		return *r.total
+	}
+
+	return 8
 }
 
 func (r *ColumnDefinition) GetType() (ttype string) {

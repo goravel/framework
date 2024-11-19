@@ -33,8 +33,20 @@ type Grammar interface {
 	GetAttributeCommands() []string
 	// TypeBigInteger Create the column definition for a big integer type.
 	TypeBigInteger(column ColumnDefinition) string
+	// TypeDecimal Create the column definition for a decimal type.
+	TypeDecimal(column ColumnDefinition) string
+	// TypeDouble Create the column definition for a double type.
+	TypeDouble() string
+	// TypeFloat Create the column definition for a float type.
+	TypeFloat(column ColumnDefinition) string
 	// TypeInteger Create the column definition for an integer type.
 	TypeInteger(column ColumnDefinition) string
+	// TypeMediumInteger Create the column definition for a medium integer type.
+	TypeMediumInteger(column ColumnDefinition) string
+	// TypeTinyInteger Create the column definition for a tiny integer type.
+	TypeTinyInteger(column ColumnDefinition) string
+	// TypeSmallInteger Create the column definition for a small integer type.
+	TypeSmallInteger(column ColumnDefinition) string
 	// TypeString Create the column definition for a string type.
 	TypeString(column ColumnDefinition) string
 }

@@ -188,12 +188,45 @@ func (r *Postgres) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Postgres) TypeDecimal(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
+}
+
+func (r *Postgres) TypeDouble() string {
+	return "double precision"
+}
+
+func (r *Postgres) TypeFloat(column schema.ColumnDefinition) string {
+	precision := column.GetPrecision()
+	if precision > 0 {
+		return fmt.Sprintf("float(%d)", precision)
+	}
+
+	return "float"
+}
+
 func (r *Postgres) TypeInteger(column schema.ColumnDefinition) string {
 	if column.GetAutoIncrement() {
 		return "serial"
 	}
 
 	return "integer"
+}
+
+func (r *Postgres) TypeMediumInteger(column schema.ColumnDefinition) string {
+	return r.TypeInteger(column)
+}
+
+func (r *Postgres) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return r.TypeSmallInteger(column)
+}
+
+func (r *Postgres) TypeSmallInteger(column schema.ColumnDefinition) string {
+	if column.GetAutoIncrement() {
+		return "smallserial"
+	}
+
+	return "smallint"
 }
 
 func (r *Postgres) TypeString(column schema.ColumnDefinition) string {

@@ -535,6 +535,54 @@ func (_c *Blueprint_ID_Call) RunAndReturn(run func(...string) schema.ColumnDefin
 	return _c
 }
 
+// Increments provides a mock function with given fields: column
+func (_m *Blueprint) Increments(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Increments")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Increments_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Increments'
+type Blueprint_Increments_Call struct {
+	*mock.Call
+}
+
+// Increments is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Increments(column interface{}) *Blueprint_Increments_Call {
+	return &Blueprint_Increments_Call{Call: _e.mock.On("Increments", column)}
+}
+
+func (_c *Blueprint_Increments_Call) Run(run func(column string)) *Blueprint_Increments_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Increments_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Increments_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Increments_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Increments_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Index provides a mock function with given fields: column
 func (_m *Blueprint) Index(column ...string) schema.IndexDefinition {
 	_va := make([]interface{}, len(column))
@@ -644,6 +692,150 @@ func (_c *Blueprint_Integer_Call) RunAndReturn(run func(string) schema.ColumnDef
 	return _c
 }
 
+// IntegerIncrements provides a mock function with given fields: column
+func (_m *Blueprint) IntegerIncrements(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IntegerIncrements")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_IntegerIncrements_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IntegerIncrements'
+type Blueprint_IntegerIncrements_Call struct {
+	*mock.Call
+}
+
+// IntegerIncrements is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) IntegerIncrements(column interface{}) *Blueprint_IntegerIncrements_Call {
+	return &Blueprint_IntegerIncrements_Call{Call: _e.mock.On("IntegerIncrements", column)}
+}
+
+func (_c *Blueprint_IntegerIncrements_Call) Run(run func(column string)) *Blueprint_IntegerIncrements_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_IntegerIncrements_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_IntegerIncrements_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_IntegerIncrements_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_IntegerIncrements_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MediumIncrements provides a mock function with given fields: column
+func (_m *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MediumIncrements")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_MediumIncrements_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MediumIncrements'
+type Blueprint_MediumIncrements_Call struct {
+	*mock.Call
+}
+
+// MediumIncrements is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) MediumIncrements(column interface{}) *Blueprint_MediumIncrements_Call {
+	return &Blueprint_MediumIncrements_Call{Call: _e.mock.On("MediumIncrements", column)}
+}
+
+func (_c *Blueprint_MediumIncrements_Call) Run(run func(column string)) *Blueprint_MediumIncrements_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_MediumIncrements_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_MediumIncrements_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_MediumIncrements_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_MediumIncrements_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MediumInteger provides a mock function with given fields: column
+func (_m *Blueprint) MediumInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MediumInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_MediumInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MediumInteger'
+type Blueprint_MediumInteger_Call struct {
+	*mock.Call
+}
+
+// MediumInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) MediumInteger(column interface{}) *Blueprint_MediumInteger_Call {
+	return &Blueprint_MediumInteger_Call{Call: _e.mock.On("MediumInteger", column)}
+}
+
+func (_c *Blueprint_MediumInteger_Call) Run(run func(column string)) *Blueprint_MediumInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_MediumInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_MediumInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_MediumInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_MediumInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Primary provides a mock function with given fields: column
 func (_m *Blueprint) Primary(column ...string) {
 	_va := make([]interface{}, len(column))
@@ -723,6 +915,102 @@ func (_c *Blueprint_SetTable_Call) RunAndReturn(run func(string)) *Blueprint_Set
 	return _c
 }
 
+// SmallIncrements provides a mock function with given fields: column
+func (_m *Blueprint) SmallIncrements(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SmallIncrements")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_SmallIncrements_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SmallIncrements'
+type Blueprint_SmallIncrements_Call struct {
+	*mock.Call
+}
+
+// SmallIncrements is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) SmallIncrements(column interface{}) *Blueprint_SmallIncrements_Call {
+	return &Blueprint_SmallIncrements_Call{Call: _e.mock.On("SmallIncrements", column)}
+}
+
+func (_c *Blueprint_SmallIncrements_Call) Run(run func(column string)) *Blueprint_SmallIncrements_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_SmallIncrements_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_SmallIncrements_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_SmallIncrements_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_SmallIncrements_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SmallInteger provides a mock function with given fields: column
+func (_m *Blueprint) SmallInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SmallInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_SmallInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SmallInteger'
+type Blueprint_SmallInteger_Call struct {
+	*mock.Call
+}
+
+// SmallInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) SmallInteger(column interface{}) *Blueprint_SmallInteger_Call {
+	return &Blueprint_SmallInteger_Call{Call: _e.mock.On("SmallInteger", column)}
+}
+
+func (_c *Blueprint_SmallInteger_Call) Run(run func(column string)) *Blueprint_SmallInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_SmallInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_SmallInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_SmallInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_SmallInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // String provides a mock function with given fields: column, length
 func (_m *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
 	_va := make([]interface{}, len(length))
@@ -782,6 +1070,102 @@ func (_c *Blueprint_String_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_
 }
 
 func (_c *Blueprint_String_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_String_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TinyIncrements provides a mock function with given fields: column
+func (_m *Blueprint) TinyIncrements(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TinyIncrements")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_TinyIncrements_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TinyIncrements'
+type Blueprint_TinyIncrements_Call struct {
+	*mock.Call
+}
+
+// TinyIncrements is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) TinyIncrements(column interface{}) *Blueprint_TinyIncrements_Call {
+	return &Blueprint_TinyIncrements_Call{Call: _e.mock.On("TinyIncrements", column)}
+}
+
+func (_c *Blueprint_TinyIncrements_Call) Run(run func(column string)) *Blueprint_TinyIncrements_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_TinyIncrements_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_TinyIncrements_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_TinyIncrements_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TinyIncrements_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TinyInteger provides a mock function with given fields: column
+func (_m *Blueprint) TinyInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TinyInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_TinyInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TinyInteger'
+type Blueprint_TinyInteger_Call struct {
+	*mock.Call
+}
+
+// TinyInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) TinyInteger(column interface{}) *Blueprint_TinyInteger_Call {
+	return &Blueprint_TinyInteger_Call{Call: _e.mock.On("TinyInteger", column)}
+}
+
+func (_c *Blueprint_TinyInteger_Call) Run(run func(column string)) *Blueprint_TinyInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_TinyInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_TinyInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_TinyInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TinyInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -878,6 +1262,198 @@ func (_c *Blueprint_UnsignedBigInteger_Call) Return(_a0 schema.ColumnDefinition)
 }
 
 func (_c *Blueprint_UnsignedBigInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedBigInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UnsignedInteger provides a mock function with given fields: column
+func (_m *Blueprint) UnsignedInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnsignedInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_UnsignedInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnsignedInteger'
+type Blueprint_UnsignedInteger_Call struct {
+	*mock.Call
+}
+
+// UnsignedInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) UnsignedInteger(column interface{}) *Blueprint_UnsignedInteger_Call {
+	return &Blueprint_UnsignedInteger_Call{Call: _e.mock.On("UnsignedInteger", column)}
+}
+
+func (_c *Blueprint_UnsignedInteger_Call) Run(run func(column string)) *Blueprint_UnsignedInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_UnsignedInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_UnsignedInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_UnsignedInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UnsignedMediumInteger provides a mock function with given fields: column
+func (_m *Blueprint) UnsignedMediumInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnsignedMediumInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_UnsignedMediumInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnsignedMediumInteger'
+type Blueprint_UnsignedMediumInteger_Call struct {
+	*mock.Call
+}
+
+// UnsignedMediumInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) UnsignedMediumInteger(column interface{}) *Blueprint_UnsignedMediumInteger_Call {
+	return &Blueprint_UnsignedMediumInteger_Call{Call: _e.mock.On("UnsignedMediumInteger", column)}
+}
+
+func (_c *Blueprint_UnsignedMediumInteger_Call) Run(run func(column string)) *Blueprint_UnsignedMediumInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_UnsignedMediumInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_UnsignedMediumInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_UnsignedMediumInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedMediumInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UnsignedSmallInteger provides a mock function with given fields: column
+func (_m *Blueprint) UnsignedSmallInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnsignedSmallInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_UnsignedSmallInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnsignedSmallInteger'
+type Blueprint_UnsignedSmallInteger_Call struct {
+	*mock.Call
+}
+
+// UnsignedSmallInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) UnsignedSmallInteger(column interface{}) *Blueprint_UnsignedSmallInteger_Call {
+	return &Blueprint_UnsignedSmallInteger_Call{Call: _e.mock.On("UnsignedSmallInteger", column)}
+}
+
+func (_c *Blueprint_UnsignedSmallInteger_Call) Run(run func(column string)) *Blueprint_UnsignedSmallInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_UnsignedSmallInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_UnsignedSmallInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_UnsignedSmallInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedSmallInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UnsignedTinyInteger provides a mock function with given fields: column
+func (_m *Blueprint) UnsignedTinyInteger(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnsignedTinyInteger")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_UnsignedTinyInteger_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnsignedTinyInteger'
+type Blueprint_UnsignedTinyInteger_Call struct {
+	*mock.Call
+}
+
+// UnsignedTinyInteger is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) UnsignedTinyInteger(column interface{}) *Blueprint_UnsignedTinyInteger_Call {
+	return &Blueprint_UnsignedTinyInteger_Call{Call: _e.mock.On("UnsignedTinyInteger", column)}
+}
+
+func (_c *Blueprint_UnsignedTinyInteger_Call) Run(run func(column string)) *Blueprint_UnsignedTinyInteger_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_UnsignedTinyInteger_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_UnsignedTinyInteger_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_UnsignedTinyInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_UnsignedTinyInteger_Call {
 	_c.Call.Return(run)
 	return _c
 }
