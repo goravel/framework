@@ -25,7 +25,7 @@ func (_m *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Autoincrement")
+		panic("no return value specified for AutoIncrement")
 	}
 
 	var r0 schema.ColumnDefinition
@@ -47,7 +47,7 @@ type ColumnDefinition_AutoIncrement_Call struct {
 
 // AutoIncrement is a helper method to define mock.On call
 func (_e *ColumnDefinition_Expecter) AutoIncrement() *ColumnDefinition_AutoIncrement_Call {
-	return &ColumnDefinition_AutoIncrement_Call{Call: _e.mock.On("Autoincrement")}
+	return &ColumnDefinition_AutoIncrement_Call{Call: _e.mock.On("AutoIncrement")}
 }
 
 func (_c *ColumnDefinition_AutoIncrement_Call) Run(run func()) *ColumnDefinition_AutoIncrement_Call {
