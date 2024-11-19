@@ -13,10 +13,16 @@ type Schema interface {
 	Create(table string, callback func(table Blueprint)) error
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
+	// GetColumnListing Get the column listing for a given table.
+	GetColumnListing(table string) []string
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
+	// HasColumn Determine if the given table has a given column.
+	HasColumn(table, column string) bool
+	// HasColumns Determine if the given table has given columns.
+	HasColumns(table string, columns []string) bool
 	// HasIndex Determine if the given table has a given index.
 	HasIndex(table, index string) bool
 	// HasTable Determine if the given table exists.
@@ -49,6 +55,8 @@ type DriverSchema interface {
 	DropAllTypes() error
 	// DropAllViews Drop all views from the schema.
 	DropAllViews() error
+	// GetColumns Get the columns for a given table.
+	GetColumns(table string) ([]Column, error)
 	// GetIndexes Get the indexes for a given table.
 	GetIndexes(table string) ([]Index, error)
 	// GetTypes Get the types that belong to the database.

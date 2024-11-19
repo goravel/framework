@@ -25,7 +25,7 @@ func (_m *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for AutoIncrement")
+		panic("no return value specified for Autoincrement")
 	}
 
 	var r0 schema.ColumnDefinition
@@ -47,7 +47,7 @@ type ColumnDefinition_AutoIncrement_Call struct {
 
 // AutoIncrement is a helper method to define mock.On call
 func (_e *ColumnDefinition_Expecter) AutoIncrement() *ColumnDefinition_AutoIncrement_Call {
-	return &ColumnDefinition_AutoIncrement_Call{Call: _e.mock.On("AutoIncrement")}
+	return &ColumnDefinition_AutoIncrement_Call{Call: _e.mock.On("Autoincrement")}
 }
 
 func (_c *ColumnDefinition_AutoIncrement_Call) Run(run func()) *ColumnDefinition_AutoIncrement_Call {
@@ -63,6 +63,54 @@ func (_c *ColumnDefinition_AutoIncrement_Call) Return(_a0 schema.ColumnDefinitio
 }
 
 func (_c *ColumnDefinition_AutoIncrement_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_AutoIncrement_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Comment provides a mock function with given fields: comment
+func (_m *ColumnDefinition) Comment(comment string) schema.ColumnDefinition {
+	ret := _m.Called(comment)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Comment")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(comment)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Comment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Comment'
+type ColumnDefinition_Comment_Call struct {
+	*mock.Call
+}
+
+// Comment is a helper method to define mock.On call
+//   - comment string
+func (_e *ColumnDefinition_Expecter) Comment(comment interface{}) *ColumnDefinition_Comment_Call {
+	return &ColumnDefinition_Comment_Call{Call: _e.mock.On("Comment", comment)}
+}
+
+func (_c *ColumnDefinition_Comment_Call) Run(run func(comment string)) *ColumnDefinition_Comment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Comment_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Comment_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Comment_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *ColumnDefinition_Comment_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -108,6 +156,51 @@ func (_c *ColumnDefinition_GetAutoIncrement_Call) Return(_a0 bool) *ColumnDefini
 }
 
 func (_c *ColumnDefinition_GetAutoIncrement_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetAutoIncrement_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetComment provides a mock function with given fields:
+func (_m *ColumnDefinition) GetComment() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetComment")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetComment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetComment'
+type ColumnDefinition_GetComment_Call struct {
+	*mock.Call
+}
+
+// GetComment is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetComment() *ColumnDefinition_GetComment_Call {
+	return &ColumnDefinition_GetComment_Call{Call: _e.mock.On("GetComment")}
+}
+
+func (_c *ColumnDefinition_GetComment_Call) Run(run func()) *ColumnDefinition_GetComment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetComment_Call) Return(comment string) *ColumnDefinition_GetComment_Call {
+	_c.Call.Return(comment)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetComment_Call) RunAndReturn(run func() string) *ColumnDefinition_GetComment_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -474,6 +567,51 @@ func (_c *ColumnDefinition_GetType_Call) RunAndReturn(run func() string) *Column
 	return _c
 }
 
+// IsSetComment provides a mock function with given fields:
+func (_m *ColumnDefinition) IsSetComment() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsSetComment")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_IsSetComment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsSetComment'
+type ColumnDefinition_IsSetComment_Call struct {
+	*mock.Call
+}
+
+// IsSetComment is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) IsSetComment() *ColumnDefinition_IsSetComment_Call {
+	return &ColumnDefinition_IsSetComment_Call{Call: _e.mock.On("IsSetComment")}
+}
+
+func (_c *ColumnDefinition_IsSetComment_Call) Run(run func()) *ColumnDefinition_IsSetComment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_IsSetComment_Call) Return(_a0 bool) *ColumnDefinition_IsSetComment_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_IsSetComment_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsSetComment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Nullable provides a mock function with given fields:
 func (_m *ColumnDefinition) Nullable() schema.ColumnDefinition {
 	ret := _m.Called()
@@ -517,6 +655,102 @@ func (_c *ColumnDefinition_Nullable_Call) Return(_a0 schema.ColumnDefinition) *C
 }
 
 func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_Nullable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Places provides a mock function with given fields: places
+func (_m *ColumnDefinition) Places(places int) schema.ColumnDefinition {
+	ret := _m.Called(places)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Places")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(int) schema.ColumnDefinition); ok {
+		r0 = rf(places)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Places_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Places'
+type ColumnDefinition_Places_Call struct {
+	*mock.Call
+}
+
+// Places is a helper method to define mock.On call
+//   - places int
+func (_e *ColumnDefinition_Expecter) Places(places interface{}) *ColumnDefinition_Places_Call {
+	return &ColumnDefinition_Places_Call{Call: _e.mock.On("Places", places)}
+}
+
+func (_c *ColumnDefinition_Places_Call) Run(run func(places int)) *ColumnDefinition_Places_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Places_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Places_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Places_Call) RunAndReturn(run func(int) schema.ColumnDefinition) *ColumnDefinition_Places_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Total provides a mock function with given fields: total
+func (_m *ColumnDefinition) Total(total int) schema.ColumnDefinition {
+	ret := _m.Called(total)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Total")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(int) schema.ColumnDefinition); ok {
+		r0 = rf(total)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Total_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Total'
+type ColumnDefinition_Total_Call struct {
+	*mock.Call
+}
+
+// Total is a helper method to define mock.On call
+//   - total int
+func (_e *ColumnDefinition_Expecter) Total(total interface{}) *ColumnDefinition_Total_Call {
+	return &ColumnDefinition_Total_Call{Call: _e.mock.On("Total", total)}
+}
+
+func (_c *ColumnDefinition_Total_Call) Run(run func(total int)) *ColumnDefinition_Total_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Total_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Total_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Total_Call) RunAndReturn(run func(int) schema.ColumnDefinition) *ColumnDefinition_Total_Call {
 	_c.Call.Return(run)
 	return _c
 }

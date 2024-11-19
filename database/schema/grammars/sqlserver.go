@@ -36,6 +36,34 @@ func (r *Sqlserver) CompileAdd(blueprint schema.Blueprint, command *schema.Comma
 	return fmt.Sprintf("alter table %s add %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Sqlserver) CompileColumns(schema, table string) string {
+	newSchema := "schema_name()"
+	if schema != "" {
+		newSchema = r.wrap.Quote(schema)
+	}
+
+	return fmt.Sprintf(
+		"select col.name, type.name as type_name, "+
+			"col.max_length as length, col.precision as precision, col.scale as places, "+
+			"col.is_nullable as nullable, def.definition as [default], "+
+			"col.is_identity as autoincrement, col.collation_name as collation, "+
+			"com.definition as [expression], is_persisted as [persisted], "+
+			"cast(prop.value as nvarchar(max)) as comment "+
+			"from sys.columns as col "+
+			"join sys.types as type on col.user_type_id = type.user_type_id "+
+			"join sys.objects as obj on col.object_id = obj.object_id "+
+			"join sys.schemas as scm on obj.schema_id = scm.schema_id "+
+			"left join sys.default_constraints def on col.default_object_id = def.object_id and col.object_id = def.parent_object_id "+
+			"left join sys.extended_properties as prop on obj.object_id = prop.major_id and col.column_id = prop.minor_id and prop.name = 'MS_Description' "+
+			"left join sys.computed_columns as com on col.column_id = com.column_id and col.object_id = com.object_id "+
+			"where obj.type in ('U', 'V') and obj.name = %s and scm.name = %s "+
+			"order by col.column_id", r.wrap.Quote(table), newSchema)
+}
+
+func (r *Sqlserver) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+	return ""
+}
+
 func (r *Sqlserver) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
 }
@@ -187,7 +215,7 @@ func (r *Sqlserver) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
-func (r *Sqlserver) TypeDouble() string {
+func (r *Sqlserver) TypeDouble(column schema.ColumnDefinition) string {
 	return "double precision"
 }
 

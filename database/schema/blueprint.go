@@ -48,10 +48,44 @@ func (r *Blueprint) Create() {
 	})
 }
 
+func (r *Blueprint) Decimal(column string) schema.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("decimal"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
+}
+
+func (r *Blueprint) Double(column string) schema.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:  &column,
+		ttype: convert.Pointer("double"),
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
+}
+
 func (r *Blueprint) DropIfExists() {
 	r.addCommand(&schema.Command{
 		Name: constants.CommandDropIfExists,
 	})
+}
+
+func (r *Blueprint) Float(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := &ColumnDefinition{
+		name:      &column,
+		precision: convert.Pointer(53),
+		ttype:     convert.Pointer("float"),
+	}
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+	r.addColumn(columnImpl)
+
+	return columnImpl
 }
 
 func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
@@ -88,10 +122,6 @@ func (r *Blueprint) HasCommand(command string) bool {
 	return false
 }
 
-func (r *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
-	return r.UnsignedMediumInteger(column).AutoIncrement()
-}
-
 func (r *Blueprint) ID(column ...string) schema.ColumnDefinition {
 	if len(column) > 0 {
 		return r.BigIncrements(column[0])
@@ -116,6 +146,10 @@ func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
 
 func (r *Blueprint) IntegerIncrements(column string) schema.ColumnDefinition {
 	return r.UnsignedInteger(column).AutoIncrement()
+}
+
+func (r *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
+	return r.UnsignedMediumInteger(column).AutoIncrement()
 }
 
 func (r *Blueprint) MediumInteger(column string) schema.ColumnDefinition {
@@ -174,6 +208,10 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 		switch command.Name {
 		case constants.CommandAdd:
 			statements = append(statements, grammar.CompileAdd(r, command))
+		case constants.CommandComment:
+			if statement := grammar.CompileComment(r, command); statement != "" {
+				statements = append(statements, statement)
+			}
 		case constants.CommandCreate:
 			statements = append(statements, grammar.CompileCreate(r))
 		case constants.CommandDropIfExists:

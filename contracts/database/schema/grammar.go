@@ -3,6 +3,10 @@ package schema
 type Grammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
+	// CompileColumns Compile the query to determine the columns.
+	CompileColumns(schema, table string) string
+	// CompileComment Compile a column comment command.
+	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint) string
 	// CompileDropAllDomains Compile the SQL needed to drop all domains.
@@ -36,7 +40,7 @@ type Grammar interface {
 	// TypeDecimal Create the column definition for a decimal type.
 	TypeDecimal(column ColumnDefinition) string
 	// TypeDouble Create the column definition for a double type.
-	TypeDouble() string
+	TypeDouble(column ColumnDefinition) string
 	// TypeFloat Create the column definition for a float type.
 	TypeFloat(column ColumnDefinition) string
 	// TypeInteger Create the column definition for an integer type.

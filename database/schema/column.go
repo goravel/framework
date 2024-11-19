@@ -25,9 +25,23 @@ func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	return r
 }
 
+func (r *ColumnDefinition) Comment(comment string) schema.ColumnDefinition {
+	r.comment = &comment
+
+	return r
+}
+
 func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
 	if r.autoIncrement != nil {
 		return *r.autoIncrement
+	}
+
+	return
+}
+
+func (r *ColumnDefinition) GetComment() (comment string) {
+	if r.comment != nil {
+		return *r.comment
 	}
 
 	return
@@ -93,8 +107,24 @@ func (r *ColumnDefinition) GetType() (ttype string) {
 	return
 }
 
+func (r *ColumnDefinition) IsSetComment() bool {
+	return r != nil && r.comment != nil
+}
+
 func (r *ColumnDefinition) Nullable() schema.ColumnDefinition {
 	r.nullable = convert.Pointer(true)
+
+	return r
+}
+
+func (r *ColumnDefinition) Places(places int) schema.ColumnDefinition {
+	r.places = convert.Pointer(places)
+
+	return r
+}
+
+func (r *ColumnDefinition) Total(total int) schema.ColumnDefinition {
+	r.total = convert.Pointer(total)
 
 	return r
 }

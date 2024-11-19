@@ -48,6 +48,22 @@ func (r *SqlserverSchema) DropAllViews() error {
 	return err
 }
 
+func (r *SqlserverSchema) GetColumns(table string) ([]contractsschema.Column, error) {
+	schema, table, err := parseSchemaAndTable(table, "")
+	if err != nil {
+		return nil, err
+	}
+
+	table = r.prefix + table
+
+	var dbColumns []processors.DBColumn
+	if err := r.orm.Query().Raw(r.grammar.CompileColumns(schema, table)).Scan(&dbColumns); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessColumns(dbColumns), nil
+}
+
 func (r *SqlserverSchema) GetIndexes(table string) ([]contractsschema.Index, error) {
 	schema, table, err := parseSchemaAndTable(table, "")
 	if err != nil {

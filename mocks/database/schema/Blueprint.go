@@ -196,6 +196,102 @@ func (_c *Blueprint_Create_Call) RunAndReturn(run func()) *Blueprint_Create_Call
 	return _c
 }
 
+// Decimal provides a mock function with given fields: column
+func (_m *Blueprint) Decimal(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Decimal")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Decimal_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Decimal'
+type Blueprint_Decimal_Call struct {
+	*mock.Call
+}
+
+// Decimal is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Decimal(column interface{}) *Blueprint_Decimal_Call {
+	return &Blueprint_Decimal_Call{Call: _e.mock.On("Decimal", column)}
+}
+
+func (_c *Blueprint_Decimal_Call) Run(run func(column string)) *Blueprint_Decimal_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Decimal_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Decimal_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Decimal_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Decimal_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Double provides a mock function with given fields: column
+func (_m *Blueprint) Double(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Double")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Double_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Double'
+type Blueprint_Double_Call struct {
+	*mock.Call
+}
+
+// Double is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Double(column interface{}) *Blueprint_Double_Call {
+	return &Blueprint_Double_Call{Call: _e.mock.On("Double", column)}
+}
+
+func (_c *Blueprint_Double_Call) Run(run func(column string)) *Blueprint_Double_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Double_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Double_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Double_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Double_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DropIfExists provides a mock function with given fields:
 func (_m *Blueprint) DropIfExists() {
 	_m.Called()
@@ -224,6 +320,69 @@ func (_c *Blueprint_DropIfExists_Call) Return() *Blueprint_DropIfExists_Call {
 }
 
 func (_c *Blueprint_DropIfExists_Call) RunAndReturn(run func()) *Blueprint_DropIfExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Float provides a mock function with given fields: column, precision
+func (_m *Blueprint) Float(column string, precision ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(precision))
+	for _i := range precision {
+		_va[_i] = precision[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Float")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, precision...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Float_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Float'
+type Blueprint_Float_Call struct {
+	*mock.Call
+}
+
+// Float is a helper method to define mock.On call
+//   - column string
+//   - precision ...int
+func (_e *Blueprint_Expecter) Float(column interface{}, precision ...interface{}) *Blueprint_Float_Call {
+	return &Blueprint_Float_Call{Call: _e.mock.On("Float",
+		append([]interface{}{column}, precision...)...)}
+}
+
+func (_c *Blueprint_Float_Call) Run(run func(column string, precision ...int)) *Blueprint_Float_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_Float_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Float_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Float_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_Float_Call {
 	_c.Call.Return(run)
 	return _c
 }

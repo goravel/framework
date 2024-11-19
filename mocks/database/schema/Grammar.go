@@ -67,6 +67,100 @@ func (_c *Grammar_CompileAdd_Call) RunAndReturn(run func(schema.Blueprint, *sche
 	return _c
 }
 
+// CompileColumns provides a mock function with given fields: _a0, table
+func (_m *Grammar) CompileColumns(_a0 string, table string) string {
+	ret := _m.Called(_a0, table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileColumns")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(_a0, table)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileColumns'
+type Grammar_CompileColumns_Call struct {
+	*mock.Call
+}
+
+// CompileColumns is a helper method to define mock.On call
+//   - _a0 string
+//   - table string
+func (_e *Grammar_Expecter) CompileColumns(_a0 interface{}, table interface{}) *Grammar_CompileColumns_Call {
+	return &Grammar_CompileColumns_Call{Call: _e.mock.On("CompileColumns", _a0, table)}
+}
+
+func (_c *Grammar_CompileColumns_Call) Run(run func(_a0 string, table string)) *Grammar_CompileColumns_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileColumns_Call) Return(_a0 string) *Grammar_CompileColumns_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileColumns_Call) RunAndReturn(run func(string, string) string) *Grammar_CompileColumns_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CompileComment provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileComment")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileComment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileComment'
+type Grammar_CompileComment_Call struct {
+	*mock.Call
+}
+
+// CompileComment is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileComment(blueprint interface{}, command interface{}) *Grammar_CompileComment_Call {
+	return &Grammar_CompileComment_Call{Call: _e.mock.On("CompileComment", blueprint, command)}
+}
+
+func (_c *Grammar_CompileComment_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileComment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileComment_Call) Return(_a0 string) *Grammar_CompileComment_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileComment_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileComment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileCreate provides a mock function with given fields: blueprint
 func (_m *Grammar) CompileCreate(blueprint schema.Blueprint) string {
 	ret := _m.Called(blueprint)
@@ -807,17 +901,17 @@ func (_c *Grammar_TypeDecimal_Call) RunAndReturn(run func(schema.ColumnDefinitio
 	return _c
 }
 
-// TypeDouble provides a mock function with given fields:
-func (_m *Grammar) TypeDouble() string {
-	ret := _m.Called()
+// TypeDouble provides a mock function with given fields: column
+func (_m *Grammar) TypeDouble(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
 
 	if len(ret) == 0 {
 		panic("no return value specified for TypeDouble")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
@@ -831,13 +925,14 @@ type Grammar_TypeDouble_Call struct {
 }
 
 // TypeDouble is a helper method to define mock.On call
-func (_e *Grammar_Expecter) TypeDouble() *Grammar_TypeDouble_Call {
-	return &Grammar_TypeDouble_Call{Call: _e.mock.On("TypeDouble")}
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeDouble(column interface{}) *Grammar_TypeDouble_Call {
+	return &Grammar_TypeDouble_Call{Call: _e.mock.On("TypeDouble", column)}
 }
 
-func (_c *Grammar_TypeDouble_Call) Run(run func()) *Grammar_TypeDouble_Call {
+func (_c *Grammar_TypeDouble_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeDouble_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(schema.ColumnDefinition))
 	})
 	return _c
 }
@@ -847,7 +942,7 @@ func (_c *Grammar_TypeDouble_Call) Return(_a0 string) *Grammar_TypeDouble_Call {
 	return _c
 }
 
-func (_c *Grammar_TypeDouble_Call) RunAndReturn(run func() string) *Grammar_TypeDouble_Call {
+func (_c *Grammar_TypeDouble_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeDouble_Call {
 	_c.Call.Return(run)
 	return _c
 }

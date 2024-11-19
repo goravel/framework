@@ -7,7 +7,6 @@ import (
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/database/schema/constants"
 )
 
 type Mysql struct {
@@ -19,11 +18,12 @@ type Mysql struct {
 
 func NewMysql(tablePrefix string) *Mysql {
 	mysql := &Mysql{
-		attributeCommands: []string{constants.CommandComment},
+		attributeCommands: []string{},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		wrap:              NewWrap(contractsdatabase.DriverMysql, tablePrefix),
 	}
 	mysql.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
+		mysql.ModifyComment,
 		mysql.ModifyDefault,
 		mysql.ModifyIncrement,
 		mysql.ModifyNullable,
@@ -34,6 +34,20 @@ func NewMysql(tablePrefix string) *Mysql {
 
 func (r *Mysql) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
 	return fmt.Sprintf("alter table %s add %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
+}
+
+func (r *Mysql) CompileColumns(schema, table string) string {
+	return fmt.Sprintf(
+		"select column_name as `name`, data_type as `type_name`, column_type as `type`, "+
+			"collation_name as `collation`, is_nullable as `nullable`, "+
+			"column_default as `default`, column_comment as `comment`, "+
+			"generation_expression as `expression`, extra as `extra` "+
+			"from information_schema.columns where table_schema = %s and table_name = %s "+
+			"order by ordinal_position asc", r.wrap.Quote(schema), r.wrap.Quote(table))
+}
+
+func (r *Mysql) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+	return ""
 }
 
 func (r *Mysql) CompileCreate(blueprint schema.Blueprint) string {
@@ -153,6 +167,14 @@ func (r *Mysql) GetAttributeCommands() []string {
 	return r.attributeCommands
 }
 
+func (r *Mysql) ModifyComment(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.GetComment() != "" {
+		return fmt.Sprintf(" comment '%s'", column.GetComment())
+	}
+
+	return ""
+}
+
 func (r *Mysql) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
@@ -188,7 +210,7 @@ func (r *Mysql) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
-func (r *Mysql) TypeDouble() string {
+func (r *Mysql) TypeDouble(column schema.ColumnDefinition) string {
 	return "double"
 }
 

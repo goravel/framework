@@ -66,6 +66,17 @@ func (r *SqliteSchema) DropAllViews() error {
 	})
 }
 
+func (r *SqliteSchema) GetColumns(table string) ([]schema.Column, error) {
+	table = r.prefix + table
+
+	var dbColumns []processors.DBColumn
+	if err := r.orm.Query().Raw(r.grammar.CompileColumns("", table)).Scan(&dbColumns); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessColumns(dbColumns), nil
+}
+
 func (r *SqliteSchema) GetIndexes(table string) ([]schema.Index, error) {
 	table = r.prefix + table
 
