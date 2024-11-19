@@ -327,19 +327,19 @@ func (s *PostgresSuite) TestTypeBigInteger() {
 
 func (s *PostgresSuite) TestTypeDecimal() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
-	mockColumn.On("GetTotal").Return(4).Once()
-	mockColumn.On("GetPlaces").Return(2).Once()
+	mockColumn.EXPECT().GetTotal().Return(4).Once()
+	mockColumn.EXPECT().GetPlaces().Return(2).Once()
 
 	s.Equal("decimal(4, 2)", s.grammar.TypeDecimal(mockColumn))
 }
 
 func (s *PostgresSuite) TestTypeFloat() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
-	mockColumn.On("GetPrecision").Return(0).Once()
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
 
 	s.Equal("float", s.grammar.TypeFloat(mockColumn))
 
-	mockColumn.On("GetPrecision").Return(2).Once()
+	mockColumn.EXPECT().GetPrecision().Return(2).Once()
 
 	s.Equal("float(2)", s.grammar.TypeFloat(mockColumn))
 }
