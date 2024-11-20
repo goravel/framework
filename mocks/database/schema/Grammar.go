@@ -855,6 +855,52 @@ func (_c *Grammar_TypeBigInteger_Call) RunAndReturn(run func(schema.ColumnDefini
 	return _c
 }
 
+// TypeChar provides a mock function with given fields: column
+func (_m *Grammar) TypeChar(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeChar")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeChar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeChar'
+type Grammar_TypeChar_Call struct {
+	*mock.Call
+}
+
+// TypeChar is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeChar(column interface{}) *Grammar_TypeChar_Call {
+	return &Grammar_TypeChar_Call{Call: _e.mock.On("TypeChar", column)}
+}
+
+func (_c *Grammar_TypeChar_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeChar_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeChar_Call) Return(_a0 string) *Grammar_TypeChar_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeChar_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeChar_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeDecimal provides a mock function with given fields: column
 func (_m *Grammar) TypeDecimal(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
@@ -943,6 +989,52 @@ func (_c *Grammar_TypeDouble_Call) Return(_a0 string) *Grammar_TypeDouble_Call {
 }
 
 func (_c *Grammar_TypeDouble_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeDouble_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeEnum provides a mock function with given fields: column
+func (_m *Grammar) TypeEnum(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeEnum")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeEnum_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeEnum'
+type Grammar_TypeEnum_Call struct {
+	*mock.Call
+}
+
+// TypeEnum is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeEnum(column interface{}) *Grammar_TypeEnum_Call {
+	return &Grammar_TypeEnum_Call{Call: _e.mock.On("TypeEnum", column)}
+}
+
+func (_c *Grammar_TypeEnum_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeEnum_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeEnum_Call) Return(_a0 string) *Grammar_TypeEnum_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeEnum_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeEnum_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1039,6 +1131,144 @@ func (_c *Grammar_TypeInteger_Call) RunAndReturn(run func(schema.ColumnDefinitio
 	return _c
 }
 
+// TypeJson provides a mock function with given fields: column
+func (_m *Grammar) TypeJson(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeJson")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeJson_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeJson'
+type Grammar_TypeJson_Call struct {
+	*mock.Call
+}
+
+// TypeJson is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeJson(column interface{}) *Grammar_TypeJson_Call {
+	return &Grammar_TypeJson_Call{Call: _e.mock.On("TypeJson", column)}
+}
+
+func (_c *Grammar_TypeJson_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeJson_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeJson_Call) Return(_a0 string) *Grammar_TypeJson_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeJson_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeJson_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeJsonb provides a mock function with given fields: column
+func (_m *Grammar) TypeJsonb(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeJsonb")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeJsonb_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeJsonb'
+type Grammar_TypeJsonb_Call struct {
+	*mock.Call
+}
+
+// TypeJsonb is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeJsonb(column interface{}) *Grammar_TypeJsonb_Call {
+	return &Grammar_TypeJsonb_Call{Call: _e.mock.On("TypeJsonb", column)}
+}
+
+func (_c *Grammar_TypeJsonb_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeJsonb_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeJsonb_Call) Return(_a0 string) *Grammar_TypeJsonb_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeJsonb_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeJsonb_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeLongText provides a mock function with given fields: column
+func (_m *Grammar) TypeLongText(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeLongText")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeLongText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeLongText'
+type Grammar_TypeLongText_Call struct {
+	*mock.Call
+}
+
+// TypeLongText is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeLongText(column interface{}) *Grammar_TypeLongText_Call {
+	return &Grammar_TypeLongText_Call{Call: _e.mock.On("TypeLongText", column)}
+}
+
+func (_c *Grammar_TypeLongText_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeLongText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeLongText_Call) Return(_a0 string) *Grammar_TypeLongText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeLongText_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeLongText_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeMediumInteger provides a mock function with given fields: column
 func (_m *Grammar) TypeMediumInteger(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
@@ -1081,6 +1311,52 @@ func (_c *Grammar_TypeMediumInteger_Call) Return(_a0 string) *Grammar_TypeMedium
 }
 
 func (_c *Grammar_TypeMediumInteger_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeMediumInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeMediumText provides a mock function with given fields: column
+func (_m *Grammar) TypeMediumText(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeMediumText")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeMediumText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeMediumText'
+type Grammar_TypeMediumText_Call struct {
+	*mock.Call
+}
+
+// TypeMediumText is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeMediumText(column interface{}) *Grammar_TypeMediumText_Call {
+	return &Grammar_TypeMediumText_Call{Call: _e.mock.On("TypeMediumText", column)}
+}
+
+func (_c *Grammar_TypeMediumText_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeMediumText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeMediumText_Call) Return(_a0 string) *Grammar_TypeMediumText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeMediumText_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeMediumText_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1177,6 +1453,52 @@ func (_c *Grammar_TypeString_Call) RunAndReturn(run func(schema.ColumnDefinition
 	return _c
 }
 
+// TypeText provides a mock function with given fields: column
+func (_m *Grammar) TypeText(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeText")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeText'
+type Grammar_TypeText_Call struct {
+	*mock.Call
+}
+
+// TypeText is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeText(column interface{}) *Grammar_TypeText_Call {
+	return &Grammar_TypeText_Call{Call: _e.mock.On("TypeText", column)}
+}
+
+func (_c *Grammar_TypeText_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeText_Call) Return(_a0 string) *Grammar_TypeText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeText_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeText_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeTinyInteger provides a mock function with given fields: column
 func (_m *Grammar) TypeTinyInteger(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
@@ -1219,6 +1541,52 @@ func (_c *Grammar_TypeTinyInteger_Call) Return(_a0 string) *Grammar_TypeTinyInte
 }
 
 func (_c *Grammar_TypeTinyInteger_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTinyInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeTinyText provides a mock function with given fields: column
+func (_m *Grammar) TypeTinyText(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeTinyText")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeTinyText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeTinyText'
+type Grammar_TypeTinyText_Call struct {
+	*mock.Call
+}
+
+// TypeTinyText is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeTinyText(column interface{}) *Grammar_TypeTinyText_Call {
+	return &Grammar_TypeTinyText_Call{Call: _e.mock.On("TypeTinyText", column)}
+}
+
+func (_c *Grammar_TypeTinyText_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeTinyText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeTinyText_Call) Return(_a0 string) *Grammar_TypeTinyText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeTinyText_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTinyText_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -165,12 +165,20 @@ func (r *Sqlite) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 
+func (r *Sqlite) TypeChar(column schema.ColumnDefinition) string {
+	return "varchar"
+}
+
 func (r *Sqlite) TypeDecimal(column schema.ColumnDefinition) string {
 	return "numeric"
 }
 
 func (r *Sqlite) TypeDouble(column schema.ColumnDefinition) string {
 	return "double"
+}
+
+func (r *Sqlite) TypeEnum(column schema.ColumnDefinition) string {
+	return fmt.Sprintf(`varchar check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
 }
 
 func (r *Sqlite) TypeFloat(column schema.ColumnDefinition) string {
@@ -181,12 +189,36 @@ func (r *Sqlite) TypeInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 
+func (r *Sqlite) TypeJson(column schema.ColumnDefinition) string {
+	return "text"
+}
+
+func (r *Sqlite) TypeJsonb(column schema.ColumnDefinition) string {
+	return "text"
+}
+
+func (r *Sqlite) TypeLongText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
 func (r *Sqlite) TypeMediumInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 
+func (r *Sqlite) TypeMediumText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
+func (r *Sqlite) TypeText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
 func (r *Sqlite) TypeTinyInteger(column schema.ColumnDefinition) string {
 	return "integer"
+}
+
+func (r *Sqlite) TypeTinyText(column schema.ColumnDefinition) string {
+	return "text"
 }
 
 func (r *Sqlite) TypeSmallInteger(column schema.ColumnDefinition) string {

@@ -348,6 +348,14 @@ func (s *PostgresSuite) TestTypeDecimal() {
 	s.Equal("decimal(4, 2)", s.grammar.TypeDecimal(mockColumn))
 }
 
+func (s *PostgresSuite) TestTypeEnum() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetName().Return("a").Once()
+	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+
+	s.Equal(`varchar(255) check ("a" in ('a', 'b'))`, s.grammar.TypeEnum(mockColumn))
+}
+
 func (s *PostgresSuite) TestTypeFloat() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetPrecision().Return(0).Once()

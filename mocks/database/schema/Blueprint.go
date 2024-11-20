@@ -164,6 +164,69 @@ func (_c *Blueprint_Build_Call) RunAndReturn(run func(orm.Query, schema.Grammar)
 	return _c
 }
 
+// Char provides a mock function with given fields: column, length
+func (_m *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
+	_va := make([]interface{}, len(length))
+	for _i := range length {
+		_va[_i] = length[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Char")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string, ...int) schema.ColumnDefinition); ok {
+		r0 = rf(column, length...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Char_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Char'
+type Blueprint_Char_Call struct {
+	*mock.Call
+}
+
+// Char is a helper method to define mock.On call
+//   - column string
+//   - length ...int
+func (_e *Blueprint_Expecter) Char(column interface{}, length ...interface{}) *Blueprint_Char_Call {
+	return &Blueprint_Char_Call{Call: _e.mock.On("Char",
+		append([]interface{}{column}, length...)...)}
+}
+
+func (_c *Blueprint_Char_Call) Run(run func(column string, length ...int)) *Blueprint_Char_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]int, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(int)
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Blueprint_Char_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Char_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Char_Call) RunAndReturn(run func(string, ...int) schema.ColumnDefinition) *Blueprint_Char_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Create provides a mock function with given fields:
 func (_m *Blueprint) Create() {
 	_m.Called()
@@ -320,6 +383,55 @@ func (_c *Blueprint_DropIfExists_Call) Return() *Blueprint_DropIfExists_Call {
 }
 
 func (_c *Blueprint_DropIfExists_Call) RunAndReturn(run func()) *Blueprint_DropIfExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Enum provides a mock function with given fields: column, array
+func (_m *Blueprint) Enum(column string, array []string) schema.ColumnDefinition {
+	ret := _m.Called(column, array)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Enum")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string, []string) schema.ColumnDefinition); ok {
+		r0 = rf(column, array)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Enum_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Enum'
+type Blueprint_Enum_Call struct {
+	*mock.Call
+}
+
+// Enum is a helper method to define mock.On call
+//   - column string
+//   - array []string
+func (_e *Blueprint_Expecter) Enum(column interface{}, array interface{}) *Blueprint_Enum_Call {
+	return &Blueprint_Enum_Call{Call: _e.mock.On("Enum", column, array)}
+}
+
+func (_c *Blueprint_Enum_Call) Run(run func(column string, array []string)) *Blueprint_Enum_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].([]string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Enum_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Enum_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Enum_Call) RunAndReturn(run func(string, []string) schema.ColumnDefinition) *Blueprint_Enum_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -899,6 +1011,150 @@ func (_c *Blueprint_IntegerIncrements_Call) RunAndReturn(run func(string) schema
 	return _c
 }
 
+// Json provides a mock function with given fields: column
+func (_m *Blueprint) Json(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Json")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Json_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Json'
+type Blueprint_Json_Call struct {
+	*mock.Call
+}
+
+// Json is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Json(column interface{}) *Blueprint_Json_Call {
+	return &Blueprint_Json_Call{Call: _e.mock.On("Json", column)}
+}
+
+func (_c *Blueprint_Json_Call) Run(run func(column string)) *Blueprint_Json_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Json_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Json_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Json_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Json_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Jsonb provides a mock function with given fields: column
+func (_m *Blueprint) Jsonb(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Jsonb")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Jsonb_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Jsonb'
+type Blueprint_Jsonb_Call struct {
+	*mock.Call
+}
+
+// Jsonb is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Jsonb(column interface{}) *Blueprint_Jsonb_Call {
+	return &Blueprint_Jsonb_Call{Call: _e.mock.On("Jsonb", column)}
+}
+
+func (_c *Blueprint_Jsonb_Call) Run(run func(column string)) *Blueprint_Jsonb_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Jsonb_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Jsonb_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Jsonb_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Jsonb_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LongText provides a mock function with given fields: column
+func (_m *Blueprint) LongText(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LongText")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_LongText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LongText'
+type Blueprint_LongText_Call struct {
+	*mock.Call
+}
+
+// LongText is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) LongText(column interface{}) *Blueprint_LongText_Call {
+	return &Blueprint_LongText_Call{Call: _e.mock.On("LongText", column)}
+}
+
+func (_c *Blueprint_LongText_Call) Run(run func(column string)) *Blueprint_LongText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_LongText_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_LongText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_LongText_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_LongText_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // MediumIncrements provides a mock function with given fields: column
 func (_m *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
 	ret := _m.Called(column)
@@ -991,6 +1247,54 @@ func (_c *Blueprint_MediumInteger_Call) Return(_a0 schema.ColumnDefinition) *Blu
 }
 
 func (_c *Blueprint_MediumInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_MediumInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MediumText provides a mock function with given fields: column
+func (_m *Blueprint) MediumText(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MediumText")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_MediumText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MediumText'
+type Blueprint_MediumText_Call struct {
+	*mock.Call
+}
+
+// MediumText is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) MediumText(column interface{}) *Blueprint_MediumText_Call {
+	return &Blueprint_MediumText_Call{Call: _e.mock.On("MediumText", column)}
+}
+
+func (_c *Blueprint_MediumText_Call) Run(run func(column string)) *Blueprint_MediumText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_MediumText_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_MediumText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_MediumText_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_MediumText_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1233,6 +1537,54 @@ func (_c *Blueprint_String_Call) RunAndReturn(run func(string, ...int) schema.Co
 	return _c
 }
 
+// Text provides a mock function with given fields: column
+func (_m *Blueprint) Text(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Text")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Text_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Text'
+type Blueprint_Text_Call struct {
+	*mock.Call
+}
+
+// Text is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Text(column interface{}) *Blueprint_Text_Call {
+	return &Blueprint_Text_Call{Call: _e.mock.On("Text", column)}
+}
+
+func (_c *Blueprint_Text_Call) Run(run func(column string)) *Blueprint_Text_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Text_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Text_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Text_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Text_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TinyIncrements provides a mock function with given fields: column
 func (_m *Blueprint) TinyIncrements(column string) schema.ColumnDefinition {
 	ret := _m.Called(column)
@@ -1325,6 +1677,54 @@ func (_c *Blueprint_TinyInteger_Call) Return(_a0 schema.ColumnDefinition) *Bluep
 }
 
 func (_c *Blueprint_TinyInteger_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TinyInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TinyText provides a mock function with given fields: column
+func (_m *Blueprint) TinyText(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TinyText")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_TinyText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TinyText'
+type Blueprint_TinyText_Call struct {
+	*mock.Call
+}
+
+// TinyText is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) TinyText(column interface{}) *Blueprint_TinyText_Call {
+	return &Blueprint_TinyText_Call{Call: _e.mock.On("TinyText", column)}
+}
+
+func (_c *Blueprint_TinyText_Call) Run(run func(column string)) *Blueprint_TinyText_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_TinyText_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_TinyText_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_TinyText_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_TinyText_Call {
 	_c.Call.Return(run)
 	return _c
 }

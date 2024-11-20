@@ -210,12 +210,20 @@ func (r *Mysql) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Mysql) TypeChar(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("char(%d)", column.GetLength())
+}
+
 func (r *Mysql) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
 func (r *Mysql) TypeDouble(column schema.ColumnDefinition) string {
 	return "double"
+}
+
+func (r *Mysql) TypeEnum(column schema.ColumnDefinition) string {
+	return fmt.Sprintf(`enum(%s)`, strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
 }
 
 func (r *Mysql) TypeFloat(column schema.ColumnDefinition) string {
@@ -231,12 +239,28 @@ func (r *Mysql) TypeInteger(column schema.ColumnDefinition) string {
 	return "int"
 }
 
+func (r *Mysql) TypeJson(column schema.ColumnDefinition) string {
+	return "json"
+}
+
+func (r *Mysql) TypeJsonb(column schema.ColumnDefinition) string {
+	return "json"
+}
+
+func (r *Mysql) TypeLongText(column schema.ColumnDefinition) string {
+	return "longtext"
+}
+
 func (r *Mysql) TypeMediumInteger(column schema.ColumnDefinition) string {
 	return "mediumint"
 }
 
-func (r *Mysql) TypeTinyInteger(column schema.ColumnDefinition) string {
-	return "tinyint"
+func (r *Mysql) TypeMediumText(column schema.ColumnDefinition) string {
+	return "mediumtext"
+}
+
+func (r *Mysql) TypeText(column schema.ColumnDefinition) string {
+	return "text"
 }
 
 func (r *Mysql) TypeSmallInteger(column schema.ColumnDefinition) string {
@@ -250,6 +274,14 @@ func (r *Mysql) TypeString(column schema.ColumnDefinition) string {
 	}
 
 	return "varchar(255)"
+}
+
+func (r *Mysql) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return "tinyint"
+}
+
+func (r *Mysql) TypeTinyText(column schema.ColumnDefinition) string {
+	return "tinytext"
 }
 
 func (r *Mysql) getColumns(blueprint schema.Blueprint) []string {

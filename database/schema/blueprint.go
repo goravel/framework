@@ -29,7 +29,7 @@ func (r *Blueprint) BigIncrements(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) BigInteger(column string) schema.ColumnDefinition {
-	return r.addIntegerColumn("bigInteger", column)
+	return r.createAndAddColumn("bigInteger", column)
 }
 
 func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error {
@@ -42,6 +42,18 @@ func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error
 	return nil
 }
 
+func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
+	defaultLength := constants.DefaultStringLength
+	if len(length) > 0 {
+		defaultLength = length[0]
+	}
+
+	columnImpl := r.createAndAddColumn("char", column)
+	columnImpl.length = &defaultLength
+
+	return columnImpl
+}
+
 func (r *Blueprint) Create() {
 	r.addCommand(&schema.Command{
 		Name: constants.CommandCreate,
@@ -49,23 +61,11 @@ func (r *Blueprint) Create() {
 }
 
 func (r *Blueprint) Decimal(column string) schema.ColumnDefinition {
-	columnImpl := &ColumnDefinition{
-		name:  &column,
-		ttype: convert.Pointer("decimal"),
-	}
-	r.addColumn(columnImpl)
-
-	return columnImpl
+	return r.createAndAddColumn("decimal", column)
 }
 
 func (r *Blueprint) Double(column string) schema.ColumnDefinition {
-	columnImpl := &ColumnDefinition{
-		name:  &column,
-		ttype: convert.Pointer("double"),
-	}
-	r.addColumn(columnImpl)
-
-	return columnImpl
+	return r.createAndAddColumn("double", column)
 }
 
 func (r *Blueprint) DropIfExists() {
@@ -74,16 +74,20 @@ func (r *Blueprint) DropIfExists() {
 	})
 }
 
+func (r *Blueprint) Enum(column string, allowed []string) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("enum", column)
+	columnImpl.allowed = allowed
+
+	return columnImpl
+}
+
 func (r *Blueprint) Float(column string, precision ...int) schema.ColumnDefinition {
-	columnImpl := &ColumnDefinition{
-		name:      &column,
-		precision: convert.Pointer(53),
-		ttype:     convert.Pointer("float"),
-	}
+	columnImpl := r.createAndAddColumn("float", column)
+	columnImpl.precision = convert.Pointer(53)
+
 	if len(precision) > 0 {
 		columnImpl.precision = &precision[0]
 	}
-	r.addColumn(columnImpl)
 
 	return columnImpl
 }
@@ -141,11 +145,23 @@ func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
 }
 
 func (r *Blueprint) Integer(column string) schema.ColumnDefinition {
-	return r.addIntegerColumn("integer", column)
+	return r.createAndAddColumn("integer", column)
 }
 
 func (r *Blueprint) IntegerIncrements(column string) schema.ColumnDefinition {
 	return r.UnsignedInteger(column).AutoIncrement()
+}
+
+func (r *Blueprint) Json(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("json", column)
+}
+
+func (r *Blueprint) Jsonb(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("jsonb", column)
+}
+
+func (r *Blueprint) LongText(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("longText", column)
 }
 
 func (r *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
@@ -153,7 +169,11 @@ func (r *Blueprint) MediumIncrements(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) MediumInteger(column string) schema.ColumnDefinition {
-	return r.addIntegerColumn("mediumInteger", column)
+	return r.createAndAddColumn("mediumInteger", column)
+}
+
+func (r *Blueprint) MediumText(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("mediumText", column)
 }
 
 func (r *Blueprint) Primary(columns ...string) {
@@ -169,7 +189,7 @@ func (r *Blueprint) SmallIncrements(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) SmallInteger(column string) schema.ColumnDefinition {
-	return r.addIntegerColumn("smallInteger", column)
+	return r.createAndAddColumn("smallInteger", column)
 }
 
 func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
@@ -178,14 +198,14 @@ func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition
 		defaultLength = length[0]
 	}
 
-	columnImpl := &ColumnDefinition{
-		length: &defaultLength,
-		name:   &column,
-		ttype:  convert.Pointer("string"),
-	}
-	r.addColumn(columnImpl)
+	columnImpl := r.createAndAddColumn("string", column)
+	columnImpl.length = &defaultLength
 
 	return columnImpl
+}
+
+func (r *Blueprint) Text(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("text", column)
 }
 
 func (r *Blueprint) TinyIncrements(column string) schema.ColumnDefinition {
@@ -193,7 +213,11 @@ func (r *Blueprint) TinyIncrements(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) TinyInteger(column string) schema.ColumnDefinition {
-	return r.addIntegerColumn("tinyInteger", column)
+	return r.createAndAddColumn("tinyInteger", column)
+}
+
+func (r *Blueprint) TinyText(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("tinyText", column)
 }
 
 func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
@@ -262,17 +286,6 @@ func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
 	}
 }
 
-func (r *Blueprint) addColumn(column *ColumnDefinition) {
-	r.columns = append(r.columns, column)
-
-	if !r.isCreate() {
-		r.addCommand(&schema.Command{
-			Name:   constants.CommandAdd,
-			Column: column,
-		})
-	}
-}
-
 func (r *Blueprint) addCommand(command *schema.Command) {
 	r.commands = append(r.commands, command)
 }
@@ -281,13 +294,20 @@ func (r *Blueprint) addImpliedCommands(grammar schema.Grammar) {
 	r.addAttributeCommands(grammar)
 }
 
-func (r *Blueprint) addIntegerColumn(name, column string) schema.ColumnDefinition {
+func (r *Blueprint) createAndAddColumn(ttype, name string) *ColumnDefinition {
 	columnImpl := &ColumnDefinition{
-		name:  &column,
-		ttype: convert.Pointer(name),
+		name:  &name,
+		ttype: convert.Pointer(ttype),
 	}
 
-	r.addColumn(columnImpl)
+	r.columns = append(r.columns, columnImpl)
+
+	if !r.isCreate() {
+		r.addCommand(&schema.Command{
+			Name:   constants.CommandAdd,
+			Column: columnImpl,
+		})
+	}
 
 	return columnImpl
 }

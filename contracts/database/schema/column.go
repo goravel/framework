@@ -5,6 +5,8 @@ type ColumnDefinition interface {
 	AutoIncrement() ColumnDefinition
 	// Comment sets the comment value
 	Comment(comment string) ColumnDefinition
+	// GetAllowed returns the allowed value
+	GetAllowed() []string
 	// GetAutoIncrement returns the autoIncrement value
 	GetAutoIncrement() bool
 	// GetComment returns the comment value

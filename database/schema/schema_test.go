@@ -81,15 +81,15 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("bigint", column.Type)
 			s.Equal("int8", column.TypeName)
 		}
-		//if column.Name == "char" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a char column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character(255)", column.Type)
-		//	s.Equal("bpchar", column.TypeName)
-		//}
+		if column.Name == "char" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a char column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character(255)", column.Type)
+			s.Equal("bpchar", column.TypeName)
+		}
 		//if column.Name == "date" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -135,15 +135,15 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("double precision", column.Type)
 			s.Equal("float8", column.TypeName)
 		}
-		//if column.Name == "enum" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a enum column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character varying(255)", column.Type)
-		//	s.Equal("varchar", column.TypeName)
-		//}
+		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -198,33 +198,60 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("character varying(255)", column.Type)
 			s.Equal("varchar", column.TypeName)
 		}
-		//if column.Name == "json" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a json column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("json", column.Type)
-		//	s.Equal("json", column.TypeName)
-		//}
-		//if column.Name == "jsonb" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a jsonb column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("jsonb", column.Type)
-		//	s.Equal("jsonb", column.TypeName)
-		//}
-		//if column.Name == "text" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a text column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("text", column.Type)
-		//	s.Equal("text", column.TypeName)
-		//}
+		if column.Name == "json" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a json column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("json", column.Type)
+			s.Equal("json", column.TypeName)
+		}
+		if column.Name == "jsonb" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a jsonb column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("jsonb", column.Type)
+			s.Equal("jsonb", column.TypeName)
+		}
+		if column.Name == "text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
+		}
+		if column.Name == "long_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a long_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
+		}
+		if column.Name == "medium_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a medium_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a tiny_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
 		//if column.Name == "time" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -321,15 +348,13 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
 		}
-		//if column.Name == "char" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a char column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character(255)", column.Type)
-		//	s.Equal("bpchar", column.TypeName)
-		//}
+		if column.Name == "char" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("varchar", column.Type)
+		}
 		//if column.Name == "date" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -371,15 +396,13 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("double", column.Type)
 		}
-		//if column.Name == "enum" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a enum column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character varying(255)", column.Type)
-		//	s.Equal("varchar", column.TypeName)
-		//}
+		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("varchar", column.Type)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -426,33 +449,48 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
 		}
-		//if column.Name == "json" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a json column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("json", column.Type)
-		//	s.Equal("json", column.TypeName)
-		//}
-		//if column.Name == "jsonb" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a jsonb column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("jsonb", column.Type)
-		//	s.Equal("jsonb", column.TypeName)
-		//}
-		//if column.Name == "text" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a text column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("text", column.Type)
-		//	s.Equal("text", column.TypeName)
-		//}
+		if column.Name == "json" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+		}
+		if column.Name == "jsonb" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+		}
+		if column.Name == "text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+		}
+		if column.Name == "long_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+		}
+		if column.Name == "medium_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+		}
 		//if column.Name == "time" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -1538,22 +1576,25 @@ func (s *SchemaSuite) TestSql() {
 func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contractsschema.Schema, table string) {
 	err := schema.Create(table, func(table contractsschema.Blueprint) {
 		table.BigInteger("big_integer").Comment("This is a big_integer column")
-		//table.Char("char").Comment("This is a char column")
+		table.Char("char").Comment("This is a char column")
 		//table.Date("date").Comment("This is a date column")
 		//table.DateTime("date_time", 3).Comment("This is a date time column")
 		//table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
 		table.Decimal("decimal").Places(1).Total(4).Comment("This is a decimal column")
 		table.Double("double").Comment("This is a double column")
-		//table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
+		table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
 		table.Float("float", 2).Comment("This is a float column")
 		table.ID().Comment("This is a id column")
 		table.Integer("integer").Comment("This is a integer column")
 		//table.SoftDeletes()
 		//table.SoftDeletesTz("another_deleted_at")
 		table.String("string").Comment("This is a string column")
-		//table.Json("json").Comment("This is a json column")
-		//table.Jsonb("jsonb").Comment("This is a jsonb column")
-		//table.Text("text").Comment("This is a text column")
+		table.Json("json").Comment("This is a json column")
+		table.Jsonb("jsonb").Comment("This is a jsonb column")
+		table.Text("text").Comment("This is a text column")
+		table.LongText("long_text").Comment("This is a long_text column")
+		table.MediumText("medium_text").Comment("This is a medium_text column")
+		table.TinyText("tiny_text").Comment("This is a tiny_text column")
 		//table.Time("time", 2).Comment("This is a time column")
 		//table.TimeTz("time_tz", 2).Comment("This is a time with time zone column")
 		//table.Timestamp("timestamp", 2).Comment("This is a timestamp without time zone column")
@@ -1570,23 +1611,26 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	columnListing := schema.GetColumnListing(table)
 
-	s.Equal(9, len(columnListing))
+	s.Equal(17, len(columnListing))
 	s.Contains(columnListing, "big_integer")
-	//s.Contains(columnListing, "char")
+	s.Contains(columnListing, "char")
 	//s.Contains(columnListing, "date")
 	//s.Contains(columnListing, "date_time")
 	//s.Contains(columnListing, "date_time_tz")
 	s.Contains(columnListing, "decimal")
 	s.Contains(columnListing, "double")
-	//s.Contains(columnListing, "enum")
+	s.Contains(columnListing, "enum")
 	s.Contains(columnListing, "id")
 	s.Contains(columnListing, "integer")
 	//s.Contains(columnListing, "deleted_at")
 	//s.Contains(columnListing, "another_deleted_at")
 	s.Contains(columnListing, "string")
-	//s.Contains(columnListing, "json")
-	//s.Contains(columnListing, "jsonb")
-	//s.Contains(columnListing, "text")
+	s.Contains(columnListing, "json")
+	s.Contains(columnListing, "jsonb")
+	s.Contains(columnListing, "text")
+	s.Contains(columnListing, "long_text")
+	s.Contains(columnListing, "medium_text")
+	s.Contains(columnListing, "tiny_text")
 	//s.Contains(columnListing, "time")
 	//s.Contains(columnListing, "time_tz")
 	//s.Contains(columnListing, "timestamp")

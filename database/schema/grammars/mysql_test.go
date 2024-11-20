@@ -305,6 +305,13 @@ func (s *MysqlSuite) TestTypeDecimal() {
 	s.Equal("decimal(4, 2)", s.grammar.TypeDecimal(mockColumn))
 }
 
+func (s *MysqlSuite) TestTypeEnum() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+
+	s.Equal(`enum('a', 'b')`, s.grammar.TypeEnum(mockColumn))
+}
+
 func (s *MysqlSuite) TestTypeFloat() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetPrecision().Return(0).Once()
