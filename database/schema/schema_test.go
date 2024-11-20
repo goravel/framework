@@ -1298,7 +1298,6 @@ func (s *SchemaSuite) TestID_Mysql() {
 	tests := []struct {
 		table          string
 		setup          func(table string) error
-		expectDefault  string
 		expectType     string
 		expectTypeName string
 	}{
@@ -1309,7 +1308,6 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.ID("id").Comment("This is a id column")
 				})
 			},
-			expectDefault:  `nextval('"goravel_ID_id_seq"'::regclass)`,
 			expectType:     "bigint",
 			expectTypeName: "bigint",
 		},
@@ -1320,7 +1318,6 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.MediumIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectDefault:  `nextval('"goravel_MediumIncrements_id_seq"'::regclass)`,
 			expectType:     "mediumint",
 			expectTypeName: "mediumint",
 		},
@@ -1331,7 +1328,6 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.IntegerIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectDefault:  `nextval('"goravel_IntegerIncrements_id_seq"'::regclass)`,
 			expectType:     "int",
 			expectTypeName: "int",
 		},
@@ -1342,7 +1338,6 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.SmallIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectDefault:  `nextval('"goravel_SmallIncrements_id_seq"'::regclass)`,
 			expectType:     "smallint",
 			expectTypeName: "smallint",
 		},
@@ -1353,7 +1348,6 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.TinyIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectDefault:  `nextval('"goravel_TinyIncrements_id_seq"'::regclass)`,
 			expectType:     "tinyint",
 			expectTypeName: "tinyint",
 		},

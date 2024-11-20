@@ -169,6 +169,10 @@ func (r *Mysql) GetAttributeCommands() []string {
 
 func (r *Mysql) ModifyComment(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
 	if comment := column.GetComment(); comment != "" {
+		// Escape special characters to prevent SQL injection
+		comment = strings.ReplaceAll(comment, "'", "''")
+		comment = strings.ReplaceAll(comment, "\\", "\\\\")
+
 		return fmt.Sprintf(" comment '%s'", comment)
 	}
 
