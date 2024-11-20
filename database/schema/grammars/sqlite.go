@@ -37,6 +37,16 @@ func (r *Sqlite) CompileAdd(blueprint schema.Blueprint, command *schema.Command)
 	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Sqlite) CompileColumns(schema, table string) string {
+	return fmt.Sprintf(
+		`select name, type, not "notnull" as "nullable", dflt_value as "default", pk as "primary", hidden as "extra" `+
+			"from pragma_table_xinfo(%s) order by cid asc", r.wrap.Quote(strings.ReplaceAll(table, ".", "__")))
+}
+
+func (r *Sqlite) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+	return ""
+}
+
 func (r *Sqlite) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s%s%s)",
 		r.wrap.Table(blueprint.GetTableName()),
@@ -159,7 +169,7 @@ func (r *Sqlite) TypeDecimal(column schema.ColumnDefinition) string {
 	return "numeric"
 }
 
-func (r *Sqlite) TypeDouble() string {
+func (r *Sqlite) TypeDouble(column schema.ColumnDefinition) string {
 	return "double"
 }
 

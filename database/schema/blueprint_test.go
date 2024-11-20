@@ -145,6 +145,41 @@ func (s *BlueprintTestSuite) TestCreateIndexName() {
 	s.Equal("public_goravel_users_id_name_1_name_2_index", name)
 }
 
+func (s *BlueprintTestSuite) TestDecimal() {
+	name := "name"
+	s.blueprint.Decimal(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("decimal"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestDouble() {
+	name := "name"
+	s.blueprint.Double(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("double"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestFloat() {
+	name := "name"
+	s.blueprint.Float(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:      &name,
+		precision: convert.Pointer(53),
+		ttype:     convert.Pointer("float"),
+	})
+
+	s.blueprint.Float(name, 10)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:      &name,
+		precision: convert.Pointer(10),
+		ttype:     convert.Pointer("float"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
 	name := "name"
 	addedColumn := &ColumnDefinition{

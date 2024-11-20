@@ -32,12 +32,13 @@ func (s *MysqlSuite) TestCompileAdd() {
 	mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
 	mockColumn.EXPECT().GetNullable().Return(false).Once()
 	mockColumn.EXPECT().GetLength().Return(1).Once()
+	mockColumn.EXPECT().GetComment().Return("comment").Once()
 
 	sql := s.grammar.CompileAdd(mockBlueprint, &contractsschema.Command{
 		Column: mockColumn,
 	})
 
-	s.Equal("alter table `goravel_users` add `name` varchar(1) default 'goravel' not null", sql)
+	s.Equal("alter table `goravel_users` add `name` varchar(1) comment 'comment' default 'goravel' not null", sql)
 }
 
 func (s *MysqlSuite) TestCompileCreate() {
@@ -72,6 +73,7 @@ func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn1.EXPECT().GetType().Return("integer").Once()
 	// postgres.go::ModifyNullable
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
+	mockColumn1.EXPECT().GetComment().Return("id").Once()
 
 	// utils.go::getColumns
 	mockColumn2.EXPECT().GetName().Return("name").Once()
@@ -85,8 +87,9 @@ func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn2.EXPECT().GetType().Return("string").Once()
 	// postgres.go::ModifyNullable
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+	mockColumn2.EXPECT().GetComment().Return("name").Once()
 
-	s.Equal("create table `goravel_users` (`id` int auto_increment primary key not null, `name` varchar(100) null, primary key using btree(`role_id`, `user_id`))",
+	s.Equal("create table `goravel_users` (`id` int comment 'id' auto_increment primary key not null, `name` varchar(100) comment 'name' null, primary key using btree(`role_id`, `user_id`))",
 		s.grammar.CompileCreate(mockBlueprint))
 	s.True(primaryCommand.ShouldBeSkipped)
 }
@@ -219,14 +222,16 @@ func (s *MysqlSuite) TestGetColumns() {
 	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
+	mockColumn1.EXPECT().GetComment().Return("id").Once()
 
 	mockColumn2.EXPECT().GetName().Return("name").Once()
 	mockColumn2.EXPECT().GetType().Return("string").Twice()
 	mockColumn2.EXPECT().GetDefault().Return("goravel").Twice()
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
 	mockColumn2.EXPECT().GetLength().Return(10).Once()
+	mockColumn2.EXPECT().GetComment().Return("name").Once()
 
-	s.Equal([]string{"`id` int auto_increment primary key not null", "`name` varchar(10) default 'goravel' null"}, s.grammar.getColumns(mockBlueprint))
+	s.Equal([]string{"`id` int comment 'id' auto_increment primary key not null", "`name` varchar(10) comment 'name' default 'goravel' null"}, s.grammar.getColumns(mockBlueprint))
 }
 
 func (s *MysqlSuite) TestModifyDefault() {

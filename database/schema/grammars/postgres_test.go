@@ -41,6 +41,21 @@ func (s *PostgresSuite) TestCompileAdd() {
 	s.Equal(`alter table "goravel_users" add column "name" varchar(1) default 'goravel' not null`, sql)
 }
 
+func (s *PostgresSuite) TestCompileComment() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockColumnDefinition := mocksschema.NewColumnDefinition(s.T())
+	mockBlueprint.On("GetTableName").Return("users").Once()
+	mockColumnDefinition.On("GetName").Return("id").Once()
+	mockColumnDefinition.On("IsSetComment").Return(true).Once()
+	mockColumnDefinition.On("GetComment").Return("comment").Once()
+
+	sql := s.grammar.CompileComment(mockBlueprint, &contractsschema.Command{
+		Column: mockColumnDefinition,
+	})
+
+	s.Equal(`comment on column "goravel_users"."id" is 'comment'`, sql)
+}
+
 func (s *PostgresSuite) TestCompileCreate() {
 	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn2 := mocksschema.NewColumnDefinition(s.T())

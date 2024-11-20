@@ -297,6 +297,112 @@ func (_c *Schema_DropIfExists_Call) RunAndReturn(run func(string) error) *Schema
 	return _c
 }
 
+// GetColumnListing provides a mock function with given fields: table
+func (_m *Schema) GetColumnListing(table string) []string {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetColumnListing")
+	}
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(table)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	return r0
+}
+
+// Schema_GetColumnListing_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetColumnListing'
+type Schema_GetColumnListing_Call struct {
+	*mock.Call
+}
+
+// GetColumnListing is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) GetColumnListing(table interface{}) *Schema_GetColumnListing_Call {
+	return &Schema_GetColumnListing_Call{Call: _e.mock.On("GetColumnListing", table)}
+}
+
+func (_c *Schema_GetColumnListing_Call) Run(run func(table string)) *Schema_GetColumnListing_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_GetColumnListing_Call) Return(_a0 []string) *Schema_GetColumnListing_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_GetColumnListing_Call) RunAndReturn(run func(string) []string) *Schema_GetColumnListing_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetColumns provides a mock function with given fields: table
+func (_m *Schema) GetColumns(table string) ([]schema.Column, error) {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetColumns")
+	}
+
+	var r0 []schema.Column
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]schema.Column, error)); ok {
+		return rf(table)
+	}
+	if rf, ok := ret.Get(0).(func(string) []schema.Column); ok {
+		r0 = rf(table)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.Column)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(table)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Schema_GetColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetColumns'
+type Schema_GetColumns_Call struct {
+	*mock.Call
+}
+
+// GetColumns is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) GetColumns(table interface{}) *Schema_GetColumns_Call {
+	return &Schema_GetColumns_Call{Call: _e.mock.On("GetColumns", table)}
+}
+
+func (_c *Schema_GetColumns_Call) Run(run func(table string)) *Schema_GetColumns_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_GetColumns_Call) Return(_a0 []schema.Column, _a1 error) *Schema_GetColumns_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Schema_GetColumns_Call) RunAndReturn(run func(string) ([]schema.Column, error)) *Schema_GetColumns_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetConnection provides a mock function with given fields:
 func (_m *Schema) GetConnection() string {
 	ret := _m.Called()
@@ -615,6 +721,100 @@ func (_c *Schema_GetViews_Call) Return(_a0 []schema.View, _a1 error) *Schema_Get
 }
 
 func (_c *Schema_GetViews_Call) RunAndReturn(run func() ([]schema.View, error)) *Schema_GetViews_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasColumn provides a mock function with given fields: table, column
+func (_m *Schema) HasColumn(table string, column string) bool {
+	ret := _m.Called(table, column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasColumn")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
+		r0 = rf(table, column)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Schema_HasColumn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasColumn'
+type Schema_HasColumn_Call struct {
+	*mock.Call
+}
+
+// HasColumn is a helper method to define mock.On call
+//   - table string
+//   - column string
+func (_e *Schema_Expecter) HasColumn(table interface{}, column interface{}) *Schema_HasColumn_Call {
+	return &Schema_HasColumn_Call{Call: _e.mock.On("HasColumn", table, column)}
+}
+
+func (_c *Schema_HasColumn_Call) Run(run func(table string, column string)) *Schema_HasColumn_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_HasColumn_Call) Return(_a0 bool) *Schema_HasColumn_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_HasColumn_Call) RunAndReturn(run func(string, string) bool) *Schema_HasColumn_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasColumns provides a mock function with given fields: table, columns
+func (_m *Schema) HasColumns(table string, columns []string) bool {
+	ret := _m.Called(table, columns)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasColumns")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string, []string) bool); ok {
+		r0 = rf(table, columns)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Schema_HasColumns_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasColumns'
+type Schema_HasColumns_Call struct {
+	*mock.Call
+}
+
+// HasColumns is a helper method to define mock.On call
+//   - table string
+//   - columns []string
+func (_e *Schema_Expecter) HasColumns(table interface{}, columns interface{}) *Schema_HasColumns_Call {
+	return &Schema_HasColumns_Call{Call: _e.mock.On("HasColumns", table, columns)}
+}
+
+func (_c *Schema_HasColumns_Call) Run(run func(table string, columns []string)) *Schema_HasColumns_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].([]string))
+	})
+	return _c
+}
+
+func (_c *Schema_HasColumns_Call) Return(_a0 bool) *Schema_HasColumns_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_HasColumns_Call) RunAndReturn(run func(string, []string) bool) *Schema_HasColumns_Call {
 	_c.Call.Return(run)
 	return _c
 }

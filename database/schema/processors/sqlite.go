@@ -3,6 +3,8 @@ package processors
 import (
 	"strings"
 
+	"github.com/spf13/cast"
+
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/collect"
 )
@@ -12,6 +14,22 @@ type Sqlite struct {
 
 func NewSqlite() Sqlite {
 	return Sqlite{}
+}
+
+func (r Sqlite) ProcessColumns(dbColumns []DBColumn) []schema.Column {
+	var columns []schema.Column
+	for _, dbColumn := range dbColumns {
+		ttype := strings.ToLower(dbColumn.Type)
+		columns = append(columns, schema.Column{
+			Autoincrement: dbColumn.Primary && ttype == "integer",
+			Default:       dbColumn.Default,
+			Name:          dbColumn.Name,
+			Nullable:      cast.ToBool(dbColumn.Nullable),
+			Type:          ttype,
+		})
+	}
+
+	return columns
 }
 
 func (r Sqlite) ProcessIndexes(dbIndexes []DBIndex) []schema.Index {

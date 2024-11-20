@@ -80,6 +80,17 @@ func (r *MysqlSchema) DropAllViews() error {
 	return err
 }
 
+func (r *MysqlSchema) GetColumns(table string) ([]contractsschema.Column, error) {
+	table = r.prefix + table
+
+	var dbColumns []processors.DBColumn
+	if err := r.orm.Query().Raw(r.grammar.CompileColumns(r.orm.DatabaseName(), table)).Scan(&dbColumns); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessColumns(dbColumns), nil
+}
+
 func (r *MysqlSchema) GetIndexes(table string) ([]contractsschema.Index, error) {
 	table = r.prefix + table
 

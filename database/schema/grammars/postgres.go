@@ -36,6 +36,30 @@ func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Comman
 	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Postgres) CompileColumns(schema, table string) string {
+	return fmt.Sprintf(
+		"select a.attname as name, t.typname as type_name, format_type(a.atttypid, a.atttypmod) as type, "+
+			"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
+			"not a.attnotnull as nullable, "+
+			"(select pg_get_expr(adbin, adrelid) from pg_attrdef where c.oid = pg_attrdef.adrelid and pg_attrdef.adnum = a.attnum) as default, "+
+			"col_description(c.oid, a.attnum) as comment "+
+			"from pg_attribute a, pg_class c, pg_type t, pg_namespace n "+
+			"where c.relname = %s and n.nspname = %s and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid and n.oid = c.relnamespace "+
+			"order by a.attnum", r.wrap.Quote(table), r.wrap.Quote(schema))
+}
+
+func (r *Postgres) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+	comment := "NULL"
+	if command.Column.IsSetComment() {
+		comment = r.wrap.Quote(strings.ReplaceAll(command.Column.GetComment(), "'", "''"))
+	}
+
+	return fmt.Sprintf("comment on column %s.%s is %s",
+		r.wrap.Table(blueprint.GetTableName()),
+		r.wrap.Column(command.Column.GetName()),
+		comment)
+}
+
 func (r *Postgres) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
 }
@@ -192,7 +216,7 @@ func (r *Postgres) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
-func (r *Postgres) TypeDouble() string {
+func (r *Postgres) TypeDouble(column schema.ColumnDefinition) string {
 	return "double precision"
 }
 
@@ -217,16 +241,16 @@ func (r *Postgres) TypeMediumInteger(column schema.ColumnDefinition) string {
 	return r.TypeInteger(column)
 }
 
-func (r *Postgres) TypeTinyInteger(column schema.ColumnDefinition) string {
-	return r.TypeSmallInteger(column)
-}
-
 func (r *Postgres) TypeSmallInteger(column schema.ColumnDefinition) string {
 	if column.GetAutoIncrement() {
 		return "smallserial"
 	}
 
 	return "smallint"
+}
+
+func (r *Postgres) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return r.TypeSmallInteger(column)
 }
 
 func (r *Postgres) TypeString(column schema.ColumnDefinition) string {

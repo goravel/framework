@@ -100,6 +100,21 @@ func (r *Schema) DropIfExists(table string) error {
 	return nil
 }
 
+func (r *Schema) GetColumnListing(table string) []string {
+	columns, err := r.GetColumns(table)
+	if err != nil {
+		r.log.Errorf("failed to get %s columns: %v", table, err)
+		return nil
+	}
+
+	var names []string
+	for _, column := range columns {
+		names = append(names, column.Name)
+	}
+
+	return names
+}
+
 func (r *Schema) GetConnection() string {
 	return r.orm.Name()
 }
@@ -117,6 +132,21 @@ func (r *Schema) GetIndexListing(table string) []string {
 	}
 
 	return names
+}
+
+func (r *Schema) HasColumn(table, column string) bool {
+	return slices.Contains(r.GetColumnListing(table), column)
+}
+
+func (r *Schema) HasColumns(table string, columns []string) bool {
+	columnListing := r.GetColumnListing(table)
+	for _, column := range columns {
+		if !slices.Contains(columnListing, column) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *Schema) HasIndex(table, index string) bool {

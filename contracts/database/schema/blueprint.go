@@ -13,8 +13,14 @@ type Blueprint interface {
 	Build(query orm.Query, grammar Grammar) error
 	// Create Indicate that the table needs to be created.
 	Create()
+	// Decimal Create a new decimal column on the table.
+	Decimal(column string) ColumnDefinition
+	// Double Create a new double column on the table.
+	Double(column string) ColumnDefinition
 	// DropIfExists Indicate that the table should be dropped if it exists.
 	DropIfExists()
+	// Float Create a new float column on the table.
+	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
 	Foreign(column ...string) ForeignKeyDefinition
 	// GetAddedColumns Get the added columns.
