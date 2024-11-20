@@ -41,7 +41,7 @@ type Column struct {
 	Autoincrement bool
 	Collation     string
 	Comment       string
-	Default       any
+	Default       string
 	Name          string
 	Nullable      bool
 	Type          string

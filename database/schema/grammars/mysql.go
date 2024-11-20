@@ -168,8 +168,8 @@ func (r *Mysql) GetAttributeCommands() []string {
 }
 
 func (r *Mysql) ModifyComment(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if column.GetComment() != "" {
-		return fmt.Sprintf(" comment '%s'", column.GetComment())
+	if comment := column.GetComment(); comment != "" {
+		return fmt.Sprintf(" comment '%s'", comment)
 	}
 
 	return ""

@@ -46,13 +46,14 @@ func (s *PostgresSuite) TestCompileComment() {
 	mockColumnDefinition := mocksschema.NewColumnDefinition(s.T())
 	mockBlueprint.On("GetTableName").Return("users").Once()
 	mockColumnDefinition.On("GetName").Return("id").Once()
+	mockColumnDefinition.On("IsSetComment").Return(true).Once()
 	mockColumnDefinition.On("GetComment").Return("comment").Once()
 
 	sql := s.grammar.CompileComment(mockBlueprint, &contractsschema.Command{
 		Column: mockColumnDefinition,
 	})
 
-	s.Equal("comment on column users.id is 'comment'", sql)
+	s.Equal(`comment on column "goravel_users"."id" is 'comment'`, sql)
 }
 
 func (s *PostgresSuite) TestCompileCreate() {

@@ -8,6 +8,56 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
+func TestProcessColumns(t *testing.T) {
+	tests := []struct {
+		name      string
+		dbColumns []DBColumn
+		expected  []schema.Column
+	}{
+		{
+			name: "ValidInput",
+			dbColumns: []DBColumn{
+				{Name: "id", Type: "integer", Nullable: "false", Primary: true, Default: "1"},
+				{Name: "name", Type: "varchar", Nullable: "true", Default: "default_name"},
+			},
+			expected: []schema.Column{
+				{Autoincrement: true, Default: "1", Name: "id", Nullable: false, Type: "integer"},
+				{Autoincrement: false, Default: "default_name", Name: "name", Nullable: true, Type: "varchar"},
+			},
+		},
+		{
+			name:      "EmptyInput",
+			dbColumns: []DBColumn{},
+		},
+		{
+			name: "NullableColumn",
+			dbColumns: []DBColumn{
+				{Name: "description", Type: "text", Nullable: "true", Default: "default_description"},
+			},
+			expected: []schema.Column{
+				{Autoincrement: false, Default: "default_description", Name: "description", Nullable: true, Type: "text"},
+			},
+		},
+		{
+			name: "NonNullableColumn",
+			dbColumns: []DBColumn{
+				{Name: "created_at", Type: "timestamp", Nullable: "false", Default: "CURRENT_TIMESTAMP"},
+			},
+			expected: []schema.Column{
+				{Autoincrement: false, Default: "CURRENT_TIMESTAMP", Name: "created_at", Nullable: false, Type: "timestamp"},
+			},
+		},
+	}
+
+	sqlite := NewSqlite()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sqlite.ProcessColumns(tt.dbColumns)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestSqliteProcessIndexes(t *testing.T) {
 	// Test with valid indexes
 	input := []DBIndex{

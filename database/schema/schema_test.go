@@ -1283,7 +1283,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 			},
 			expectDefault:  `nextval('"goravel_ID_id_seq"'::regclass)`,
 			expectType:     "bigint",
-			expectTypeName: "int8",
+			expectTypeName: "bigint",
 		},
 		{
 			table: "MediumIncrements",
@@ -1293,8 +1293,8 @@ func (s *SchemaSuite) TestID_Mysql() {
 				})
 			},
 			expectDefault:  `nextval('"goravel_MediumIncrements_id_seq"'::regclass)`,
-			expectType:     "integer",
-			expectTypeName: "int4",
+			expectType:     "mediumint",
+			expectTypeName: "mediumint",
 		},
 		{
 			table: "IntegerIncrements",
@@ -1304,8 +1304,8 @@ func (s *SchemaSuite) TestID_Mysql() {
 				})
 			},
 			expectDefault:  `nextval('"goravel_IntegerIncrements_id_seq"'::regclass)`,
-			expectType:     "integer",
-			expectTypeName: "int4",
+			expectType:     "int",
+			expectTypeName: "int",
 		},
 		{
 			table: "SmallIncrements",
@@ -1316,7 +1316,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 			},
 			expectDefault:  `nextval('"goravel_SmallIncrements_id_seq"'::regclass)`,
 			expectType:     "smallint",
-			expectTypeName: "int2",
+			expectTypeName: "smallint",
 		},
 		{
 			table: "TinyIncrements",
@@ -1326,8 +1326,8 @@ func (s *SchemaSuite) TestID_Mysql() {
 				})
 			},
 			expectDefault:  `nextval('"goravel_TinyIncrements_id_seq"'::regclass)`,
-			expectType:     "smallint",
-			expectTypeName: "int2",
+			expectType:     "tinyint",
+			expectTypeName: "tinyint",
 		},
 	}
 
@@ -1342,6 +1342,87 @@ func (s *SchemaSuite) TestID_Mysql() {
 			s.True(columns[0].Autoincrement)
 			s.Empty(columns[0].Collation)
 			s.Equal("This is a id column", columns[0].Comment)
+			s.Empty(columns[0].Default)
+			s.False(columns[0].Nullable)
+			s.Equal(test.expectType, columns[0].Type)
+			s.Equal(test.expectTypeName, columns[0].TypeName)
+		})
+	}
+}
+
+func (s *SchemaSuite) TestID_Sqlserver() {
+	testQuery := s.driverToTestQuery[database.DriverSqlserver]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+
+	tests := []struct {
+		table          string
+		setup          func(table string) error
+		expectType     string
+		expectTypeName string
+	}{
+		{
+			table: "ID",
+			setup: func(table string) error {
+				return schema.Create(table, func(table contractsschema.Blueprint) {
+					table.ID("id").Comment("This is a id column")
+				})
+			},
+			expectType:     "bigint",
+			expectTypeName: "bigint",
+		},
+		{
+			table: "MediumIncrements",
+			setup: func(table string) error {
+				return schema.Create(table, func(table contractsschema.Blueprint) {
+					table.MediumIncrements("id").Comment("This is a id column")
+				})
+			},
+			expectType:     "int",
+			expectTypeName: "int",
+		},
+		{
+			table: "IntegerIncrements",
+			setup: func(table string) error {
+				return schema.Create(table, func(table contractsschema.Blueprint) {
+					table.IntegerIncrements("id").Comment("This is a id column")
+				})
+			},
+			expectType:     "int",
+			expectTypeName: "int",
+		},
+		{
+			table: "SmallIncrements",
+			setup: func(table string) error {
+				return schema.Create(table, func(table contractsschema.Blueprint) {
+					table.SmallIncrements("id").Comment("This is a id column")
+				})
+			},
+			expectType:     "smallint",
+			expectTypeName: "smallint",
+		},
+		{
+			table: "TinyIncrements",
+			setup: func(table string) error {
+				return schema.Create(table, func(table contractsschema.Blueprint) {
+					table.TinyIncrements("id").Comment("This is a id column")
+				})
+			},
+			expectType:     "tinyint",
+			expectTypeName: "tinyint",
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.table, func() {
+			s.Require().Nil(test.setup(test.table))
+			s.Require().True(schema.HasTable(test.table))
+
+			columns, err := schema.GetColumns(test.table)
+			s.Require().Nil(err)
+			s.Equal(1, len(columns))
+			s.True(columns[0].Autoincrement)
+			s.Empty(columns[0].Collation)
+			s.Empty(columns[0].Comment)
 			s.Empty(columns[0].Default)
 			s.False(columns[0].Nullable)
 			s.Equal(test.expectType, columns[0].Type)
@@ -1404,52 +1485,6 @@ func (s *SchemaSuite) TestTable_GetTables() {
 
 			s.NoError(err)
 			s.Len(tables, 1)
-
-			// Open this after implementing other methods
-			//s.Require().True(schema.HasColumn("changes", "name"))
-			//columns, err := schema.GetColumns("changes")
-			//s.Require().Nil(err)
-			//for _, column := range columns {
-			//	if column.Name == "name" {
-			//		s.False(column.Autoincrement)
-			//		s.Empty(column.Collation)
-			//		s.Empty(column.Comment)
-			//		s.Empty(column.Default)
-			//		s.False(column.Nullable)
-			//		s.Equal("character varying(255)", column.Type)
-			//		s.Equal("varchar", column.TypeName)
-			//	}
-			//}
-			//
-			//err = schema.Table("changes", func(table migration.Blueprint) {
-			//	table.Integer("age")
-			//	table.String("name").Comment("This is a name column").Default("goravel").Change()
-			//})
-			//s.Nil(err)
-			//s.True(schema.HasTable("changes"))
-			//s.Require().True(schema.HasColumns("changes", []string{"name", "age"}))
-			//columns, err = schema.GetColumns("changes")
-			//s.Require().Nil(err)
-			//for _, column := range columns {
-			//	if column.Name == "name" {
-			//		s.False(column.Autoincrement)
-			//		s.Empty(column.Collation)
-			//		s.Equal("This is a name column", column.Comment)
-			//		s.Equal("'goravel'::character varying", column.Default)
-			//		s.False(column.Nullable)
-			//		s.Equal("character varying(255)", column.Type)
-			//		s.Equal("varchar", column.TypeName)
-			//	}
-			//	if column.Name == "age" {
-			//		s.False(column.Autoincrement)
-			//		s.Empty(column.Collation)
-			//		s.Empty(column.Comment)
-			//		s.Empty(column.Default)
-			//		s.False(column.Nullable)
-			//		s.Equal("integer", column.Type)
-			//		s.Equal("int4", column.TypeName)
-			//	}
-			//}
 		})
 	}
 }
@@ -1504,6 +1539,8 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	s.Require().Nil(err)
 	s.Require().True(schema.HasTable(table))
+	s.True(schema.HasColumn(table, "big_integer"))
+	s.True(schema.HasColumns(table, []string{"big_integer", "decimal"}))
 
 	columnListing := schema.GetColumnListing(table)
 
