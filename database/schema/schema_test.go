@@ -59,6 +59,10 @@ func (s *SchemaSuite) TearDownTest() {
 }
 
 func (s *SchemaSuite) TestColumnMethods_Postgres() {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverPostgres]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "postgres_columns"
@@ -297,6 +301,10 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 }
 
 func (s *SchemaSuite) TestColumnMethods_Sqlite() {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverSqlite]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "sqlite_columns"
@@ -517,6 +525,10 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 }
 
 func (s *SchemaSuite) TestColumnMethods_Mysql() {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverMysql]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "mysql_columns"
@@ -755,6 +767,10 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 }
 
 func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverSqlserver]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "sqlserver_columns"
@@ -1102,6 +1118,10 @@ func (s *SchemaSuite) TestPrimary() {
 }
 
 func (s *SchemaSuite) TestID_Postgres() {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverPostgres]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
@@ -1190,6 +1210,10 @@ func (s *SchemaSuite) TestID_Postgres() {
 }
 
 func (s *SchemaSuite) TestID_Sqlite() {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverSqlite]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
@@ -1264,6 +1288,10 @@ func (s *SchemaSuite) TestID_Sqlite() {
 }
 
 func (s *SchemaSuite) TestID_Mysql() {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverMysql]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
@@ -1351,6 +1379,10 @@ func (s *SchemaSuite) TestID_Mysql() {
 }
 
 func (s *SchemaSuite) TestID_Sqlserver() {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
+		s.T().Skip("Skip test")
+	}
+
 	testQuery := s.driverToTestQuery[database.DriverSqlserver]
 	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
