@@ -585,15 +585,15 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("bigint", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
-		//if column.Name == "char" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a char column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character(255)", column.Type)
-		//	s.Equal("bpchar", column.TypeName)
-		//}
+		if column.Name == "char" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a char column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("char(255)", column.Type)
+			s.Equal("char", column.TypeName)
+		}
 		//if column.Name == "date" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -639,15 +639,15 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("double", column.Type)
 			s.Equal("double", column.TypeName)
 		}
-		//if column.Name == "enum" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a enum column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character varying(255)", column.Type)
-		//	s.Equal("varchar", column.TypeName)
-		//}
+		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("enum('a','b','c')", column.Type)
+			s.Equal("enum", column.TypeName)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -702,33 +702,60 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("varchar(255)", column.Type)
 			s.Equal("varchar", column.TypeName)
 		}
-		//if column.Name == "json" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a json column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("json", column.Type)
-		//	s.Equal("json", column.TypeName)
-		//}
-		//if column.Name == "jsonb" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a jsonb column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("jsonb", column.Type)
-		//	s.Equal("jsonb", column.TypeName)
-		//}
-		//if column.Name == "text" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a text column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("text", column.Type)
-		//	s.Equal("text", column.TypeName)
-		//}
+		if column.Name == "json" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a json column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("json", column.Type)
+			s.Equal("json", column.TypeName)
+		}
+		if column.Name == "jsonb" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a jsonb column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("json", column.Type)
+			s.Equal("json", column.TypeName)
+		}
+		if column.Name == "text" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
+		}
+		if column.Name == "long_text" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a long_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("longtext", column.Type)
+			s.Equal("longtext", column.TypeName)
+		}
+		if column.Name == "medium_text" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a medium_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("mediumtext", column.Type)
+			s.Equal("mediumtext", column.TypeName)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a tiny_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("tinytext", column.Type)
+			s.Equal("tinytext", column.TypeName)
+		}
 		//if column.Name == "time" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -827,15 +854,15 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("bigint", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
-		//if column.Name == "char" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character(255)", column.Type)
-		//	s.Equal("bpchar", column.TypeName)
-		//}
+		if column.Name == "char" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nchar(510)", column.Type)
+			s.Equal("nchar", column.TypeName)
+		}
 		//if column.Name == "date" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)
@@ -881,15 +908,15 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("float(53)", column.Type)
 			s.Equal("float", column.TypeName)
 		}
-		//if column.Name == "enum" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("character varying(255)", column.Type)
-		//	s.Equal("varchar", column.TypeName)
-		//}
+		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -944,33 +971,60 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("nvarchar(510)", column.Type)
 			s.Equal("nvarchar", column.TypeName)
 		}
-		//if column.Name == "json" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("json", column.Type)
-		//	s.Equal("json", column.TypeName)
-		//}
-		//if column.Name == "jsonb" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("jsonb", column.Type)
-		//	s.Equal("jsonb", column.TypeName)
-		//}
-		//if column.Name == "text" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("text", column.Type)
-		//	s.Equal("text", column.TypeName)
-		//}
+		if column.Name == "json" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(max)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "jsonb" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(max)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "text" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(max)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "long_text" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(max)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "medium_text" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(max)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
 		//if column.Name == "time" {
 		//	s.False(column.Autoincrement)
 		//	s.Empty(column.Collation)

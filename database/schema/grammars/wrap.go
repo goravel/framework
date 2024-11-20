@@ -2,10 +2,10 @@ package grammars
 
 import (
 	"fmt"
-	"github.com/goravel/framework/support/collect"
 	"strings"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/support/collect"
 )
 
 type Wrap struct {
