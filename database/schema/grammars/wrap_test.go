@@ -46,6 +46,15 @@ func (s *WrapTestSuite) TestQuoteWithEmptyValue() {
 	s.Equal("", result)
 }
 
+func (s *WrapTestSuite) TestQuotes() {
+	result := s.wrap.Quotes([]string{"value1", "value2"})
+	s.Equal([]string{"'value1'", "'value2'"}, result)
+
+	s.wrap.driver = database.DriverSqlserver
+	result = s.wrap.Quotes([]string{"value1", "value2"})
+	s.Equal([]string{"N'value1'", "N'value2'"}, result)
+}
+
 func (s *WrapTestSuite) TestSegmentsWithMultipleSegments() {
 	result := s.wrap.Segments([]string{"table", "column"})
 	s.Equal(`"prefix_table"."column"`, result)
