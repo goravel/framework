@@ -1035,6 +1035,100 @@ func (_c *ColumnDefinition_Unsigned_Call) RunAndReturn(run func() schema.ColumnD
 	return _c
 }
 
+// UseCurrent provides a mock function with given fields:
+func (_m *ColumnDefinition) UseCurrent() schema.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for UseCurrent")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_UseCurrent_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UseCurrent'
+type ColumnDefinition_UseCurrent_Call struct {
+	*mock.Call
+}
+
+// UseCurrent is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) UseCurrent() *ColumnDefinition_UseCurrent_Call {
+	return &ColumnDefinition_UseCurrent_Call{Call: _e.mock.On("UseCurrent")}
+}
+
+func (_c *ColumnDefinition_UseCurrent_Call) Run(run func()) *ColumnDefinition_UseCurrent_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_UseCurrent_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_UseCurrent_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_UseCurrent_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_UseCurrent_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UseCurrentOnUpdate provides a mock function with given fields:
+func (_m *ColumnDefinition) UseCurrentOnUpdate() schema.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for UseCurrentOnUpdate")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_UseCurrentOnUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UseCurrentOnUpdate'
+type ColumnDefinition_UseCurrentOnUpdate_Call struct {
+	*mock.Call
+}
+
+// UseCurrentOnUpdate is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) UseCurrentOnUpdate() *ColumnDefinition_UseCurrentOnUpdate_Call {
+	return &ColumnDefinition_UseCurrentOnUpdate_Call{Call: _e.mock.On("UseCurrentOnUpdate")}
+}
+
+func (_c *ColumnDefinition_UseCurrentOnUpdate_Call) Run(run func()) *ColumnDefinition_UseCurrentOnUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_UseCurrentOnUpdate_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_UseCurrentOnUpdate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_UseCurrentOnUpdate_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_UseCurrentOnUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewColumnDefinition creates a new instance of ColumnDefinition. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewColumnDefinition(t interface {
