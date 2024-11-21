@@ -136,6 +136,26 @@ func (s *BlueprintTestSuite) TestBuild() {
 	}
 }
 
+func (s *BlueprintTestSuite) TestChar() {
+	column := "name"
+	customLength := 100
+	length := constants.DefaultStringLength
+	ttype := "char"
+	s.blueprint.Char(column)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		length: &length,
+		name:   &column,
+		ttype:  &ttype,
+	})
+
+	s.blueprint.Char(column, customLength)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		length: &customLength,
+		name:   &column,
+		ttype:  &ttype,
+	})
+}
+
 func (s *BlueprintTestSuite) TestCreateIndexName() {
 	name := s.blueprint.createIndexName("index", []string{"id", "name-1", "name.2"})
 	s.Equal("goravel_users_id_name_1_name_2_index", name)

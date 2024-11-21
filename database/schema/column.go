@@ -6,6 +6,7 @@ import (
 )
 
 type ColumnDefinition struct {
+	allowed       []string
 	autoIncrement *bool
 	comment       *string
 	def           any
@@ -29,6 +30,10 @@ func (r *ColumnDefinition) Comment(comment string) schema.ColumnDefinition {
 	r.comment = &comment
 
 	return r
+}
+
+func (r *ColumnDefinition) GetAllowed() []string {
+	return r.allowed
 }
 
 func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {

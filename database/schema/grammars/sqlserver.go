@@ -211,12 +211,20 @@ func (r *Sqlserver) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Sqlserver) TypeChar(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("nchar(%d)", column.GetLength())
+}
+
 func (r *Sqlserver) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
 func (r *Sqlserver) TypeDouble(column schema.ColumnDefinition) string {
 	return "double precision"
+}
+
+func (r *Sqlserver) TypeEnum(column schema.ColumnDefinition) string {
+	return fmt.Sprintf(`nvarchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
 }
 
 func (r *Sqlserver) TypeFloat(column schema.ColumnDefinition) string {
@@ -232,12 +240,28 @@ func (r *Sqlserver) TypeInteger(column schema.ColumnDefinition) string {
 	return "int"
 }
 
+func (r *Sqlserver) TypeJson(column schema.ColumnDefinition) string {
+	return "nvarchar(max)"
+}
+
+func (r *Sqlserver) TypeJsonb(column schema.ColumnDefinition) string {
+	return "nvarchar(max)"
+}
+
+func (r *Sqlserver) TypeLongText(column schema.ColumnDefinition) string {
+	return "nvarchar(max)"
+}
+
 func (r *Sqlserver) TypeMediumInteger(column schema.ColumnDefinition) string {
 	return "int"
 }
 
-func (r *Sqlserver) TypeTinyInteger(column schema.ColumnDefinition) string {
-	return "tinyint"
+func (r *Sqlserver) TypeMediumText(column schema.ColumnDefinition) string {
+	return "nvarchar(max)"
+}
+
+func (r *Sqlserver) TypeText(column schema.ColumnDefinition) string {
+	return "nvarchar(max)"
 }
 
 func (r *Sqlserver) TypeSmallInteger(column schema.ColumnDefinition) string {
@@ -250,6 +274,14 @@ func (r *Sqlserver) TypeString(column schema.ColumnDefinition) string {
 		return fmt.Sprintf("nvarchar(%d)", length)
 	}
 
+	return "nvarchar(255)"
+}
+
+func (r *Sqlserver) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return "tinyint"
+}
+
+func (r *Sqlserver) TypeTinyText(column schema.ColumnDefinition) string {
 	return "nvarchar(255)"
 }
 

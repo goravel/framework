@@ -284,6 +284,14 @@ func (s *SqlserverSuite) TestTypeDecimal() {
 	s.Equal("decimal(4, 2)", s.grammar.TypeDecimal(mockColumn))
 }
 
+func (s *SqlserverSuite) TestTypeEnum() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetName().Return("a").Once()
+	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+
+	s.Equal(`nvarchar(255) check ("a" in (N'a', N'b'))`, s.grammar.TypeEnum(mockColumn))
+}
+
 func (s *SqlserverSuite) TestTypeFloat() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetPrecision().Return(0).Once()

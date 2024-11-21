@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/support/collect"
 )
 
 type Wrap struct {
@@ -47,6 +48,15 @@ func (r *Wrap) Quote(value string) string {
 	}
 
 	return fmt.Sprintf("'%s'", value)
+}
+
+func (r *Wrap) Quotes(value []string) []string {
+	return collect.Map(value, func(v string, _ int) string {
+		if r.driver == contractsdatabase.DriverSqlserver {
+			return "N" + r.Quote(v)
+		}
+		return r.Quote(v)
+	})
 }
 
 func (r *Wrap) Segments(segments []string) string {

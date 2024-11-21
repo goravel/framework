@@ -212,12 +212,25 @@ func (r *Postgres) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Postgres) TypeChar(column schema.ColumnDefinition) string {
+	length := column.GetLength()
+	if length > 0 {
+		return fmt.Sprintf("char(%d)", length)
+	}
+
+	return "char"
+}
+
 func (r *Postgres) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
 func (r *Postgres) TypeDouble(column schema.ColumnDefinition) string {
 	return "double precision"
+}
+
+func (r *Postgres) TypeEnum(column schema.ColumnDefinition) string {
+	return fmt.Sprintf(`varchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
 }
 
 func (r *Postgres) TypeFloat(column schema.ColumnDefinition) string {
@@ -237,8 +250,28 @@ func (r *Postgres) TypeInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 
+func (r *Postgres) TypeJson(column schema.ColumnDefinition) string {
+	return "json"
+}
+
+func (r *Postgres) TypeJsonb(column schema.ColumnDefinition) string {
+	return "jsonb"
+}
+
+func (r *Postgres) TypeLongText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
 func (r *Postgres) TypeMediumInteger(column schema.ColumnDefinition) string {
 	return r.TypeInteger(column)
+}
+
+func (r *Postgres) TypeMediumText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
+func (r *Postgres) TypeText(column schema.ColumnDefinition) string {
+	return "text"
 }
 
 func (r *Postgres) TypeSmallInteger(column schema.ColumnDefinition) string {
@@ -249,10 +282,6 @@ func (r *Postgres) TypeSmallInteger(column schema.ColumnDefinition) string {
 	return "smallint"
 }
 
-func (r *Postgres) TypeTinyInteger(column schema.ColumnDefinition) string {
-	return r.TypeSmallInteger(column)
-}
-
 func (r *Postgres) TypeString(column schema.ColumnDefinition) string {
 	length := column.GetLength()
 	if length > 0 {
@@ -260,6 +289,14 @@ func (r *Postgres) TypeString(column schema.ColumnDefinition) string {
 	}
 
 	return "varchar"
+}
+
+func (r *Postgres) TypeTinyInteger(column schema.ColumnDefinition) string {
+	return r.TypeSmallInteger(column)
+}
+
+func (r *Postgres) TypeTinyText(column schema.ColumnDefinition) string {
+	return "varchar(255)"
 }
 
 func (r *Postgres) getColumns(blueprint schema.Blueprint) []string {

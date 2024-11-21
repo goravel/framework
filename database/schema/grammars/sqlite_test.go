@@ -225,3 +225,11 @@ func (s *SqliteSuite) TestModifyIncrement() {
 
 	s.Equal(" primary key autoincrement", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
 }
+
+func (s *SqliteSuite) TestTypeEnum() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetName().Return("a").Once()
+	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+
+	s.Equal(`varchar check ("a" in ('a', 'b'))`, s.grammar.TypeEnum(mockColumn))
+}
