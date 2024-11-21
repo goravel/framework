@@ -115,6 +115,54 @@ func (_c *ColumnDefinition_Comment_Call) RunAndReturn(run func(string) schema.Co
 	return _c
 }
 
+// Default provides a mock function with given fields: def
+func (_m *ColumnDefinition) Default(def any) schema.ColumnDefinition {
+	ret := _m.Called(def)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Default")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(any) schema.ColumnDefinition); ok {
+		r0 = rf(def)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_Default_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Default'
+type ColumnDefinition_Default_Call struct {
+	*mock.Call
+}
+
+// Default is a helper method to define mock.On call
+//   - def any
+func (_e *ColumnDefinition_Expecter) Default(def interface{}) *ColumnDefinition_Default_Call {
+	return &ColumnDefinition_Default_Call{Call: _e.mock.On("Default", def)}
+}
+
+func (_c *ColumnDefinition_Default_Call) Run(run func(def any)) *ColumnDefinition_Default_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(any))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_Default_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Default_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(any) schema.ColumnDefinition) *ColumnDefinition_Default_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetAllowed provides a mock function with given fields:
 func (_m *ColumnDefinition) GetAllowed() []string {
 	ret := _m.Called()
@@ -614,6 +662,96 @@ func (_c *ColumnDefinition_GetType_Call) RunAndReturn(run func() string) *Column
 	return _c
 }
 
+// GetUseCurrent provides a mock function with given fields:
+func (_m *ColumnDefinition) GetUseCurrent() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUseCurrent")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetUseCurrent_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUseCurrent'
+type ColumnDefinition_GetUseCurrent_Call struct {
+	*mock.Call
+}
+
+// GetUseCurrent is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetUseCurrent() *ColumnDefinition_GetUseCurrent_Call {
+	return &ColumnDefinition_GetUseCurrent_Call{Call: _e.mock.On("GetUseCurrent")}
+}
+
+func (_c *ColumnDefinition_GetUseCurrent_Call) Run(run func()) *ColumnDefinition_GetUseCurrent_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetUseCurrent_Call) Return(_a0 bool) *ColumnDefinition_GetUseCurrent_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetUseCurrent_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetUseCurrent_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetUseCurrentOnUpdate provides a mock function with given fields:
+func (_m *ColumnDefinition) GetUseCurrentOnUpdate() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUseCurrentOnUpdate")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetUseCurrentOnUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUseCurrentOnUpdate'
+type ColumnDefinition_GetUseCurrentOnUpdate_Call struct {
+	*mock.Call
+}
+
+// GetUseCurrentOnUpdate is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetUseCurrentOnUpdate() *ColumnDefinition_GetUseCurrentOnUpdate_Call {
+	return &ColumnDefinition_GetUseCurrentOnUpdate_Call{Call: _e.mock.On("GetUseCurrentOnUpdate")}
+}
+
+func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) Run(run func()) *ColumnDefinition_GetUseCurrentOnUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) Return(_a0 bool) *ColumnDefinition_GetUseCurrentOnUpdate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetUseCurrentOnUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // IsSetComment provides a mock function with given fields:
 func (_m *ColumnDefinition) IsSetComment() bool {
 	ret := _m.Called()
@@ -702,6 +840,54 @@ func (_c *ColumnDefinition_Nullable_Call) Return(_a0 schema.ColumnDefinition) *C
 }
 
 func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_Nullable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OnUpdate provides a mock function with given fields: value
+func (_m *ColumnDefinition) OnUpdate(value string) schema.ColumnDefinition {
+	ret := _m.Called(value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OnUpdate")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_OnUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OnUpdate'
+type ColumnDefinition_OnUpdate_Call struct {
+	*mock.Call
+}
+
+// OnUpdate is a helper method to define mock.On call
+//   - value string
+func (_e *ColumnDefinition_Expecter) OnUpdate(value interface{}) *ColumnDefinition_OnUpdate_Call {
+	return &ColumnDefinition_OnUpdate_Call{Call: _e.mock.On("OnUpdate", value)}
+}
+
+func (_c *ColumnDefinition_OnUpdate_Call) Run(run func(value string)) *ColumnDefinition_OnUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_OnUpdate_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_OnUpdate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_OnUpdate_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *ColumnDefinition_OnUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }

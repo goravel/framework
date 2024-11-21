@@ -15,6 +15,12 @@ type Blueprint interface {
 	Char(column string, length ...int) ColumnDefinition
 	// Create Indicate that the table needs to be created.
 	Create()
+	// Date Create a new date column on the table.
+	Date(column string) ColumnDefinition
+	// DateTime Create a new date-time column on the table.
+	DateTime(column string, precision ...int) ColumnDefinition
+	// DateTimeTz Create a new date-time column (with time zone) on the table.
+	DateTimeTz(column string, precision ...int) ColumnDefinition
 	// Decimal Create a new decimal column on the table.
 	Decimal(column string) ColumnDefinition
 	// Double Create a new double column on the table.
@@ -65,10 +71,26 @@ type Blueprint interface {
 	SmallIncrements(column string) ColumnDefinition
 	// SmallInteger Create a new small integer (2-byte) column on the table.
 	SmallInteger(column string) ColumnDefinition
+	// SoftDeletes Add a "deleted at" timestamp for the table.
+	SoftDeletes(column ...string) ColumnDefinition
+	// SoftDeletesTz Add a "deleted at" timestampTz for the table.
+	SoftDeletesTz(column ...string) ColumnDefinition
 	// String Create a new string column on the table.
 	String(column string, length ...int) ColumnDefinition
 	// Text Create a new text column on the table.
 	Text(column string) ColumnDefinition
+	// Time Create a new time column on the table.
+	Time(column string, precision ...int) ColumnDefinition
+	// TimeTz Create a new time column (with time zone) on the table.
+	TimeTz(column string, precision ...int) ColumnDefinition
+	// Timestamp Create a new time column on the table.
+	Timestamp(column string, precision ...int) ColumnDefinition
+	// Timestamps Add nullable creation and update timestamps to the table.
+	Timestamps(precision ...int)
+	// TimestampsTz Add creation and update timestampTz columns to the table.
+	TimestampsTz(precision ...int)
+	// TimestampTz Create a new time column (with time zone) on the table.
+	TimestampTz(column string, precision ...int) ColumnDefinition
 	// TinyIncrements Create a new auto-incrementing tiny integer (1-byte) column on the table.
 	TinyIncrements(column string) ColumnDefinition
 	// TinyInteger Create a new tiny integer (1-byte) column on the table.

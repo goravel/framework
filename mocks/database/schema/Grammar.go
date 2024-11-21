@@ -901,6 +901,144 @@ func (_c *Grammar_TypeChar_Call) RunAndReturn(run func(schema.ColumnDefinition) 
 	return _c
 }
 
+// TypeDate provides a mock function with given fields: column
+func (_m *Grammar) TypeDate(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeDate")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeDate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeDate'
+type Grammar_TypeDate_Call struct {
+	*mock.Call
+}
+
+// TypeDate is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeDate(column interface{}) *Grammar_TypeDate_Call {
+	return &Grammar_TypeDate_Call{Call: _e.mock.On("TypeDate", column)}
+}
+
+func (_c *Grammar_TypeDate_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeDate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeDate_Call) Return(_a0 string) *Grammar_TypeDate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeDate_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeDate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeDateTime provides a mock function with given fields: column
+func (_m *Grammar) TypeDateTime(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeDateTime")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeDateTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeDateTime'
+type Grammar_TypeDateTime_Call struct {
+	*mock.Call
+}
+
+// TypeDateTime is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeDateTime(column interface{}) *Grammar_TypeDateTime_Call {
+	return &Grammar_TypeDateTime_Call{Call: _e.mock.On("TypeDateTime", column)}
+}
+
+func (_c *Grammar_TypeDateTime_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeDateTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeDateTime_Call) Return(_a0 string) *Grammar_TypeDateTime_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeDateTime_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeDateTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeDateTimeTz provides a mock function with given fields: column
+func (_m *Grammar) TypeDateTimeTz(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeDateTimeTz")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeDateTimeTz_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeDateTimeTz'
+type Grammar_TypeDateTimeTz_Call struct {
+	*mock.Call
+}
+
+// TypeDateTimeTz is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeDateTimeTz(column interface{}) *Grammar_TypeDateTimeTz_Call {
+	return &Grammar_TypeDateTimeTz_Call{Call: _e.mock.On("TypeDateTimeTz", column)}
+}
+
+func (_c *Grammar_TypeDateTimeTz_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeDateTimeTz_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeDateTimeTz_Call) Return(_a0 string) *Grammar_TypeDateTimeTz_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeDateTimeTz_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeDateTimeTz_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeDecimal provides a mock function with given fields: column
 func (_m *Grammar) TypeDecimal(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
@@ -1495,6 +1633,190 @@ func (_c *Grammar_TypeText_Call) Return(_a0 string) *Grammar_TypeText_Call {
 }
 
 func (_c *Grammar_TypeText_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeText_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeTime provides a mock function with given fields: column
+func (_m *Grammar) TypeTime(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeTime")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeTime'
+type Grammar_TypeTime_Call struct {
+	*mock.Call
+}
+
+// TypeTime is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeTime(column interface{}) *Grammar_TypeTime_Call {
+	return &Grammar_TypeTime_Call{Call: _e.mock.On("TypeTime", column)}
+}
+
+func (_c *Grammar_TypeTime_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeTime_Call) Return(_a0 string) *Grammar_TypeTime_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeTime_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeTimeTz provides a mock function with given fields: column
+func (_m *Grammar) TypeTimeTz(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeTimeTz")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeTimeTz_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeTimeTz'
+type Grammar_TypeTimeTz_Call struct {
+	*mock.Call
+}
+
+// TypeTimeTz is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeTimeTz(column interface{}) *Grammar_TypeTimeTz_Call {
+	return &Grammar_TypeTimeTz_Call{Call: _e.mock.On("TypeTimeTz", column)}
+}
+
+func (_c *Grammar_TypeTimeTz_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeTimeTz_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeTimeTz_Call) Return(_a0 string) *Grammar_TypeTimeTz_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeTimeTz_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTimeTz_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeTimestamp provides a mock function with given fields: column
+func (_m *Grammar) TypeTimestamp(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeTimestamp")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeTimestamp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeTimestamp'
+type Grammar_TypeTimestamp_Call struct {
+	*mock.Call
+}
+
+// TypeTimestamp is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeTimestamp(column interface{}) *Grammar_TypeTimestamp_Call {
+	return &Grammar_TypeTimestamp_Call{Call: _e.mock.On("TypeTimestamp", column)}
+}
+
+func (_c *Grammar_TypeTimestamp_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeTimestamp_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeTimestamp_Call) Return(_a0 string) *Grammar_TypeTimestamp_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeTimestamp_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTimestamp_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeTimestampTz provides a mock function with given fields: column
+func (_m *Grammar) TypeTimestampTz(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeTimestampTz")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeTimestampTz_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeTimestampTz'
+type Grammar_TypeTimestampTz_Call struct {
+	*mock.Call
+}
+
+// TypeTimestampTz is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeTimestampTz(column interface{}) *Grammar_TypeTimestampTz_Call {
+	return &Grammar_TypeTimestampTz_Call{Call: _e.mock.On("TypeTimestampTz", column)}
+}
+
+func (_c *Grammar_TypeTimestampTz_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeTimestampTz_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeTimestampTz_Call) Return(_a0 string) *Grammar_TypeTimestampTz_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeTimestampTz_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeTimestampTz_Call {
 	_c.Call.Return(run)
 	return _c
 }

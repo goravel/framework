@@ -90,33 +90,33 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("character(255)", column.Type)
 			s.Equal("bpchar", column.TypeName)
 		}
-		//if column.Name == "date" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("date", column.Type)
-		//	s.Equal("date", column.TypeName)
-		//}
-		//if column.Name == "date_time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date time column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "date_time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date time with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "date" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a date column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("date", column.Type)
+			s.Equal("date", column.TypeName)
+		}
+		if column.Name == "date_time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a date time column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp(3) without time zone", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "date_time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a date time with time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp(3) with time zone", column.Type)
+			s.Equal("timestamptz", column.TypeName)
+		}
 		if column.Name == "decimal" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -171,24 +171,24 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("integer", column.Type)
 			s.Equal("int4", column.TypeName)
 		}
-		//if column.Name == "deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "another_deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(0) without time zone", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "another_deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(0) with time zone", column.Type)
+			s.Equal("timestamptz", column.TypeName)
+		}
 		if column.Name == "string" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -252,60 +252,60 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("character varying(255)", column.Type)
 			s.Equal("varchar", column.TypeName)
 		}
-		//if column.Name == "time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a time column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) without time zone", column.Type)
-		//	s.Equal("time", column.TypeName)
-		//}
-		//if column.Name == "time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a time with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) with time zone", column.Type)
-		//	s.Equal("timetz", column.TypeName)
-		//}
-		//if column.Name == "timestamp" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a timestamp without time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "timestamp_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a timestamp with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
-		//if column.Name == "created_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "updated_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
+		if column.Name == "time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a time column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time(2) without time zone", column.Type)
+			s.Equal("time", column.TypeName)
+		}
+		if column.Name == "time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a time with time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time(2) with time zone", column.Type)
+			s.Equal("timetz", column.TypeName)
+		}
+		if column.Name == "timestamp" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a timestamp without time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp(2) without time zone", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "timestamp_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a timestamp with time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp(2) with time zone", column.Type)
+			s.Equal("timestamptz", column.TypeName)
+		}
+		if column.Name == "created_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(2) without time zone", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "updated_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(2) without time zone", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
 		if column.Name == "unsigned_integer" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -355,33 +355,27 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
 		}
-		//if column.Name == "date" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("date", column.Type)
-		//	s.Equal("date", column.TypeName)
-		//}
-		//if column.Name == "date_time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date time column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "date_time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date time with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "date" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("date", column.Type)
+		}
+		if column.Name == "date_time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
+		if column.Name == "date_time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
 		if column.Name == "decimal" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -424,24 +418,20 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
 		}
-		//if column.Name == "deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "another_deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
+		if column.Name == "another_deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
 		if column.Name == "string" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -491,60 +481,48 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
 		}
-		//if column.Name == "time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a time column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) without time zone", column.Type)
-		//	s.Equal("time", column.TypeName)
-		//}
-		//if column.Name == "time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a time with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) with time zone", column.Type)
-		//	s.Equal("timetz", column.TypeName)
-		//}
-		//if column.Name == "timestamp" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a timestamp without time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "timestamp_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a timestamp with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
-		//if column.Name == "created_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "updated_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
+		if column.Name == "time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time", column.Type)
+		}
+		if column.Name == "time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time", column.Type)
+		}
+		if column.Name == "timestamp" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
+		if column.Name == "timestamp_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
+		if column.Name == "created_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
+		if column.Name == "updated_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime", column.Type)
+		}
 		if column.Name == "unsigned_integer" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -594,33 +572,33 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("char(255)", column.Type)
 			s.Equal("char", column.TypeName)
 		}
-		//if column.Name == "date" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("date", column.Type)
-		//	s.Equal("date", column.TypeName)
-		//}
-		//if column.Name == "date_time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date time column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "date_time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a date time with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "date" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a date column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("date", column.Type)
+			s.Equal("date", column.TypeName)
+		}
+		if column.Name == "date_time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a date time column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime(3)", column.Type)
+			s.Equal("datetime", column.TypeName)
+		}
+		if column.Name == "date_time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a date time with time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime(3)", column.Type)
+			s.Equal("datetime", column.TypeName)
+		}
 		if column.Name == "decimal" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -675,24 +653,24 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("int", column.Type)
 			s.Equal("int", column.TypeName)
 		}
-		//if column.Name == "deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "another_deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "another_deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
 		if column.Name == "string" {
 			s.False(column.Autoincrement)
 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
@@ -756,60 +734,60 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("tinytext", column.Type)
 			s.Equal("tinytext", column.TypeName)
 		}
-		//if column.Name == "time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a time column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) without time zone", column.Type)
-		//	s.Equal("time", column.TypeName)
-		//}
-		//if column.Name == "time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a time with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) with time zone", column.Type)
-		//	s.Equal("timetz", column.TypeName)
-		//}
-		//if column.Name == "timestamp" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a timestamp without time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "timestamp_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Equal("This is a timestamp with time zone column", column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
-		//if column.Name == "created_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "updated_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
+		if column.Name == "time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a time column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time(2)", column.Type)
+			s.Equal("time", column.TypeName)
+		}
+		if column.Name == "time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a time with time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time(2)", column.Type)
+			s.Equal("time", column.TypeName)
+		}
+		if column.Name == "timestamp" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a timestamp without time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp(2)", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "timestamp_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a timestamp with time zone column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp(2)", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "created_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(2)", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "updated_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(2)", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
 		if column.Name == "unsigned_integer" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -863,33 +841,33 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("nchar(510)", column.Type)
 			s.Equal("nchar", column.TypeName)
 		}
-		//if column.Name == "date" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("date", column.Type)
-		//	s.Equal("date", column.TypeName)
-		//}
-		//if column.Name == "date_time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "date_time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(3) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "date" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("date", column.Type)
+			s.Equal("date", column.TypeName)
+		}
+		if column.Name == "date_time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime2(23)", column.Type)
+			s.Equal("datetime2", column.TypeName)
+		}
+		if column.Name == "date_time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetimeoffset(30)", column.Type)
+			s.Equal("datetimeoffset", column.TypeName)
+		}
 		if column.Name == "decimal" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -944,24 +922,24 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("int", column.Type)
 			s.Equal("int", column.TypeName)
 		}
-		//if column.Name == "deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "another_deleted_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(0) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
+		if column.Name == "deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
+		}
+		if column.Name == "another_deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetimeoffset(34)", column.Type)
+			s.Equal("datetimeoffset", column.TypeName)
+		}
 		if column.Name == "string" {
 			s.False(column.Autoincrement)
 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
@@ -1025,60 +1003,60 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("nvarchar(510)", column.Type)
 			s.Equal("nvarchar", column.TypeName)
 		}
-		//if column.Name == "time" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) without time zone", column.Type)
-		//	s.Equal("time", column.TypeName)
-		//}
-		//if column.Name == "time_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("time(2) with time zone", column.Type)
-		//	s.Equal("timetz", column.TypeName)
-		//}
-		//if column.Name == "timestamp" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "timestamp_tz" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.False(column.Nullable)
-		//	s.Equal("timestamp(2) with time zone", column.Type)
-		//	s.Equal("timestamptz", column.TypeName)
-		//}
-		//if column.Name == "created_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
-		//if column.Name == "updated_at" {
-		//	s.False(column.Autoincrement)
-		//	s.Empty(column.Collation)
-		//	s.Empty(column.Comment)
-		//	s.Empty(column.Default)
-		//	s.True(column.Nullable)
-		//	s.Equal("timestamp(2) without time zone", column.Type)
-		//	s.Equal("timestamp", column.TypeName)
-		//}
+		if column.Name == "time" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time(11)", column.Type)
+			s.Equal("time", column.TypeName)
+		}
+		if column.Name == "time_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("time(11)", column.Type)
+			s.Equal("time", column.TypeName)
+		}
+		if column.Name == "timestamp" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime2(22)", column.Type)
+			s.Equal("datetime2", column.TypeName)
+		}
+		if column.Name == "timestamp_tz" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetimeoffset(29)", column.Type)
+			s.Equal("datetimeoffset", column.TypeName)
+		}
+		if column.Name == "created_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime2(22)", column.Type)
+			s.Equal("datetime2", column.TypeName)
+		}
+		if column.Name == "updated_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime2(22)", column.Type)
+			s.Equal("datetime2", column.TypeName)
+		}
 		if column.Name == "unsigned_integer" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -1631,17 +1609,17 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	err := schema.Create(table, func(table contractsschema.Blueprint) {
 		table.BigInteger("big_integer").Comment("This is a big_integer column")
 		table.Char("char").Comment("This is a char column")
-		//table.Date("date").Comment("This is a date column")
-		//table.DateTime("date_time", 3).Comment("This is a date time column")
-		//table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
+		table.Date("date").Comment("This is a date column")
+		table.DateTime("date_time", 3).Comment("This is a date time column")
+		table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
 		table.Decimal("decimal").Places(1).Total(4).Comment("This is a decimal column")
 		table.Double("double").Comment("This is a double column")
 		table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
 		table.Float("float", 2).Comment("This is a float column")
 		table.ID().Comment("This is a id column")
 		table.Integer("integer").Comment("This is a integer column")
-		//table.SoftDeletes()
-		//table.SoftDeletesTz("another_deleted_at")
+		table.SoftDeletes()
+		table.SoftDeletesTz("another_deleted_at")
 		table.String("string").Comment("This is a string column")
 		table.Json("json").Comment("This is a json column")
 		table.Jsonb("jsonb").Comment("This is a jsonb column")
@@ -1649,11 +1627,11 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 		table.LongText("long_text").Comment("This is a long_text column")
 		table.MediumText("medium_text").Comment("This is a medium_text column")
 		table.TinyText("tiny_text").Comment("This is a tiny_text column")
-		//table.Time("time", 2).Comment("This is a time column")
-		//table.TimeTz("time_tz", 2).Comment("This is a time with time zone column")
-		//table.Timestamp("timestamp", 2).Comment("This is a timestamp without time zone column")
-		//table.TimestampTz("timestamp_tz", 2).Comment("This is a timestamp with time zone column")
-		//table.Timestamps(2)
+		table.Time("time", 2).Comment("This is a time column")
+		table.TimeTz("time_tz", 2).Comment("This is a time with time zone column")
+		table.Timestamp("timestamp", 2).Comment("This is a timestamp without time zone column")
+		table.TimestampTz("timestamp_tz", 2).Comment("This is a timestamp with time zone column")
+		table.Timestamps(2)
 		table.UnsignedInteger("unsigned_integer").Comment("This is a unsigned_integer column")
 		table.UnsignedBigInteger("unsigned_big_integer").Comment("This is a unsigned_big_integer column")
 	})
@@ -1665,19 +1643,20 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	columnListing := schema.GetColumnListing(table)
 
-	s.Equal(17, len(columnListing))
+	s.Equal(28, len(columnListing))
 	s.Contains(columnListing, "big_integer")
 	s.Contains(columnListing, "char")
-	//s.Contains(columnListing, "date")
-	//s.Contains(columnListing, "date_time")
-	//s.Contains(columnListing, "date_time_tz")
+	s.Contains(columnListing, "date")
+	s.Contains(columnListing, "date_time")
+	s.Contains(columnListing, "date_time_tz")
 	s.Contains(columnListing, "decimal")
 	s.Contains(columnListing, "double")
 	s.Contains(columnListing, "enum")
+	s.Contains(columnListing, "float")
 	s.Contains(columnListing, "id")
 	s.Contains(columnListing, "integer")
-	//s.Contains(columnListing, "deleted_at")
-	//s.Contains(columnListing, "another_deleted_at")
+	s.Contains(columnListing, "deleted_at")
+	s.Contains(columnListing, "another_deleted_at")
 	s.Contains(columnListing, "string")
 	s.Contains(columnListing, "json")
 	s.Contains(columnListing, "jsonb")
@@ -1685,13 +1664,12 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	s.Contains(columnListing, "long_text")
 	s.Contains(columnListing, "medium_text")
 	s.Contains(columnListing, "tiny_text")
-	//s.Contains(columnListing, "time")
-	//s.Contains(columnListing, "time_tz")
-	//s.Contains(columnListing, "timestamp")
-	//s.Contains(columnListing, "timestamp_tz")
-	//s.Contains(columnListing, "created_at")
-	//s.Contains(columnListing, "updated_at")
+	s.Contains(columnListing, "time")
+	s.Contains(columnListing, "time_tz")
+	s.Contains(columnListing, "timestamp")
+	s.Contains(columnListing, "timestamp_tz")
+	s.Contains(columnListing, "created_at")
+	s.Contains(columnListing, "updated_at")
 	s.Contains(columnListing, "unsigned_integer")
 	s.Contains(columnListing, "unsigned_big_integer")
-
 }

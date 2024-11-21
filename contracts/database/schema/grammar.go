@@ -39,6 +39,12 @@ type Grammar interface {
 	TypeBigInteger(column ColumnDefinition) string
 	// TypeChar Create the column definition for a char type.
 	TypeChar(column ColumnDefinition) string
+	// TypeDate Create the column definition for a date type.
+	TypeDate(column ColumnDefinition) string
+	// TypeDateTime Create the column definition for a date-time type.
+	TypeDateTime(column ColumnDefinition) string
+	// TypeDateTimeTz Create the column definition for a date-time (with time zone) type.
+	TypeDateTimeTz(column ColumnDefinition) string
 	// TypeDecimal Create the column definition for a decimal type.
 	TypeDecimal(column ColumnDefinition) string
 	// TypeDouble Create the column definition for a double type.
@@ -61,6 +67,14 @@ type Grammar interface {
 	TypeMediumText(column ColumnDefinition) string
 	// TypeText Create the column definition for a text type.
 	TypeText(column ColumnDefinition) string
+	// TypeTime Create the column definition for a time type.
+	TypeTime(column ColumnDefinition) string
+	// TypeTimeTz Create the column definition for a time (with time zone) type.
+	TypeTimeTz(column ColumnDefinition) string
+	// TypeTimestamp Create the column definition for a timestamp type.
+	TypeTimestamp(column ColumnDefinition) string
+	// TypeTimestampTz Create the column definition for a timestamp (with time zone) type.
+	TypeTimestampTz(column ColumnDefinition) string
 	// TypeTinyInteger Create the column definition for a tiny integer type.
 	TypeTinyInteger(column ColumnDefinition) string
 	// TypeTinyText Create the column definition for a tiny text type.

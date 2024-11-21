@@ -6,18 +6,21 @@ import (
 )
 
 type ColumnDefinition struct {
-	allowed       []string
-	autoIncrement *bool
-	comment       *string
-	def           any
-	length        *int
-	name          *string
-	nullable      *bool
-	places        *int
-	precision     *int
-	total         *int
-	ttype         *string
-	unsigned      *bool
+	allowed            []string
+	autoIncrement      *bool
+	comment            *string
+	def                any
+	length             *int
+	name               *string
+	nullable           *bool
+	onUpdate           *string
+	places             *int
+	precision          *int
+	total              *int
+	ttype              *string
+	unsigned           *bool
+	useCurrent         *bool
+	useCurrentOnUpdate *bool
 }
 
 func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
@@ -28,6 +31,12 @@ func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 
 func (r *ColumnDefinition) Comment(comment string) schema.ColumnDefinition {
 	r.comment = &comment
+
+	return r
+}
+
+func (r *ColumnDefinition) Default(def any) schema.ColumnDefinition {
+	r.def = def
 
 	return r
 }
@@ -112,12 +121,34 @@ func (r *ColumnDefinition) GetType() (ttype string) {
 	return
 }
 
+func (r *ColumnDefinition) GetUseCurrent() (useCurrent bool) {
+	if r.useCurrent != nil {
+		return *r.useCurrent
+	}
+
+	return
+}
+
+func (r *ColumnDefinition) GetUseCurrentOnUpdate() (useCurrentOnUpdate bool) {
+	if r.useCurrentOnUpdate != nil {
+		return *r.useCurrentOnUpdate
+	}
+
+	return
+}
+
 func (r *ColumnDefinition) IsSetComment() bool {
 	return r != nil && r.comment != nil
 }
 
 func (r *ColumnDefinition) Nullable() schema.ColumnDefinition {
 	r.nullable = convert.Pointer(true)
+
+	return r
+}
+
+func (r *ColumnDefinition) OnUpdate(value string) schema.ColumnDefinition {
+	r.onUpdate = convert.Pointer(value)
 
 	return r
 }

@@ -64,6 +64,28 @@ func (r *Blueprint) Decimal(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("decimal", column)
 }
 
+func (r *Blueprint) Date(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("date", column)
+}
+
+func (r *Blueprint) DateTime(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("dateTime", column)
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+
+	return columnImpl
+}
+
+func (r *Blueprint) DateTimeTz(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("dateTimeTz", column)
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+
+	return columnImpl
+}
+
 func (r *Blueprint) Double(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("double", column)
 }
@@ -192,6 +214,24 @@ func (r *Blueprint) SmallInteger(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("smallInteger", column)
 }
 
+func (r *Blueprint) SoftDeletes(column ...string) schema.ColumnDefinition {
+	newColumn := "deleted_at"
+	if len(column) > 0 {
+		newColumn = column[0]
+	}
+
+	return r.Timestamp(newColumn).Nullable()
+}
+
+func (r *Blueprint) SoftDeletesTz(column ...string) schema.ColumnDefinition {
+	newColumn := "deleted_at"
+	if len(column) > 0 {
+		newColumn = column[0]
+	}
+
+	return r.TimestampTz(newColumn).Nullable()
+}
+
 func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
 	defaultLength := constants.DefaultStringLength
 	if len(length) > 0 {
@@ -206,6 +246,52 @@ func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition
 
 func (r *Blueprint) Text(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("text", column)
+}
+
+func (r *Blueprint) Time(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("time", column)
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+
+	return columnImpl
+}
+
+func (r *Blueprint) TimeTz(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("timeTz", column)
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+
+	return columnImpl
+}
+
+func (r *Blueprint) Timestamp(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("timestamp", column)
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+
+	return columnImpl
+}
+
+func (r *Blueprint) Timestamps(precision ...int) {
+	r.Timestamp("created_at", precision...).Nullable()
+	r.Timestamp("updated_at", precision...).Nullable()
+}
+
+func (r *Blueprint) TimestampsTz(precision ...int) {
+	r.TimestampTz("created_at", precision...).Nullable()
+	r.TimestampTz("updated_at", precision...).Nullable()
+}
+
+func (r *Blueprint) TimestampTz(column string, precision ...int) schema.ColumnDefinition {
+	columnImpl := r.createAndAddColumn("timestampTz", column)
+	if len(precision) > 0 {
+		columnImpl.precision = &precision[0]
+	}
+
+	return columnImpl
 }
 
 func (r *Blueprint) TinyIncrements(column string) schema.ColumnDefinition {

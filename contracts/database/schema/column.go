@@ -5,6 +5,8 @@ type ColumnDefinition interface {
 	AutoIncrement() ColumnDefinition
 	// Comment sets the comment value
 	Comment(comment string) ColumnDefinition
+	// Default set the default value
+	Default(def any) ColumnDefinition
 	// GetAllowed returns the allowed value
 	GetAllowed() []string
 	// GetAutoIncrement returns the autoIncrement value
@@ -27,8 +29,14 @@ type ColumnDefinition interface {
 	GetTotal() int
 	// GetType returns the type value
 	GetType() string
+	// GetUseCurrent returns the useCurrent value
+	GetUseCurrent() bool
+	// GetUseCurrentOnUpdate returns the useCurrentOnUpdate value
+	GetUseCurrentOnUpdate() bool
 	// IsSetComment returns true if the comment value is set
 	IsSetComment() bool
+	// OnUpdate sets the column to use the value on update
+	OnUpdate(value string) ColumnDefinition
 	// Places set the decimal places
 	Places(places int) ColumnDefinition
 	// Total set the decimal total

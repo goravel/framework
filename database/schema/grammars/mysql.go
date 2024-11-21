@@ -214,6 +214,33 @@ func (r *Mysql) TypeChar(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("char(%d)", column.GetLength())
 }
 
+func (r *Mysql) TypeDate(column schema.ColumnDefinition) string {
+	return "date"
+}
+
+func (r *Mysql) TypeDateTime(column schema.ColumnDefinition) string {
+	current := "CURRENT_TIMESTAMP"
+	if column.GetPrecision() > 0 {
+		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
+	}
+	if column.GetUseCurrent() {
+		column.Default(current)
+	}
+	if column.GetUseCurrentOnUpdate() {
+		column.OnUpdate(current)
+	}
+
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("datetime(%d)", column.GetPrecision())
+	} else {
+		return "datetime"
+	}
+}
+
+func (r *Mysql) TypeDateTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeDateTime(column)
+}
+
 func (r *Mysql) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
@@ -259,10 +286,6 @@ func (r *Mysql) TypeMediumText(column schema.ColumnDefinition) string {
 	return "mediumtext"
 }
 
-func (r *Mysql) TypeText(column schema.ColumnDefinition) string {
-	return "text"
-}
-
 func (r *Mysql) TypeSmallInteger(column schema.ColumnDefinition) string {
 	return "smallint"
 }
@@ -274,6 +297,45 @@ func (r *Mysql) TypeString(column schema.ColumnDefinition) string {
 	}
 
 	return "varchar(255)"
+}
+
+func (r *Mysql) TypeText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
+func (r *Mysql) TypeTime(column schema.ColumnDefinition) string {
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("time(%d)", column.GetPrecision())
+	} else {
+		return "time"
+	}
+}
+
+func (r *Mysql) TypeTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeTime(column)
+}
+
+func (r *Mysql) TypeTimestamp(column schema.ColumnDefinition) string {
+	current := "CURRENT_TIMESTAMP"
+	if column.GetPrecision() > 0 {
+		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
+	}
+	if column.GetUseCurrent() {
+		column.Default(current)
+	}
+	if column.GetUseCurrentOnUpdate() {
+		column.OnUpdate(current)
+	}
+
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("timestamp(%d)", column.GetPrecision())
+	} else {
+		return "timestamp"
+	}
+}
+
+func (r *Mysql) TypeTimestampTz(column schema.ColumnDefinition) string {
+	return r.TypeTimestamp(column)
 }
 
 func (r *Mysql) TypeTinyInteger(column schema.ColumnDefinition) string {
