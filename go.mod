@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20241119235641-e7e76ffbce9f
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/gabriel-vasile/mimetype v1.4.6
+	github.com/gabriel-vasile/mimetype v1.4.7
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -38,7 +38,7 @@ require (
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	google.golang.org/grpc v1.68.0
 	gorm.io/driver/mysql v1.5.7
-	gorm.io/driver/postgres v1.5.9
+	gorm.io/driver/postgres v1.5.10
 	gorm.io/driver/sqlserver v1.5.4
 	gorm.io/gorm v1.25.12
 	gorm.io/plugin/dbresolver v1.5.3
@@ -148,7 +148,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
