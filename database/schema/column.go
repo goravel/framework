@@ -170,3 +170,15 @@ func (r *ColumnDefinition) Unsigned() schema.ColumnDefinition {
 
 	return r
 }
+
+func (r *ColumnDefinition) UseCurrent() schema.ColumnDefinition {
+	r.useCurrent = convert.Pointer(true)
+
+	return r
+}
+
+func (r *ColumnDefinition) UseCurrentOnUpdate() schema.ColumnDefinition {
+	r.useCurrentOnUpdate = convert.Pointer(true)
+
+	return r
+}

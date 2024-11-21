@@ -45,6 +45,10 @@ type ColumnDefinition interface {
 	Nullable() ColumnDefinition
 	// Unsigned set the column as unsigned
 	Unsigned() ColumnDefinition
+	// UseCurrent set the column to use the current timestamp
+	UseCurrent() ColumnDefinition
+	// UseCurrentOnUpdate set the column to use the current timestamp on update
+	UseCurrentOnUpdate() ColumnDefinition
 }
 
 type Column struct {
