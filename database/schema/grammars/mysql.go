@@ -206,6 +206,14 @@ func (r *Mysql) ModifyIncrement(blueprint schema.Blueprint, column schema.Column
 	return ""
 }
 
+func (r *Mysql) ModifyOnUpdate(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.GetOnUpdate() != "" {
+		return " on update " + column.GetOnUpdate()
+	}
+
+	return ""
+}
+
 func (r *Mysql) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }

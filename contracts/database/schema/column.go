@@ -21,6 +21,8 @@ type ColumnDefinition interface {
 	GetName() string
 	// GetNullable returns the nullable value
 	GetNullable() bool
+	// GetOnUpdate returns the onUpdate value
+	GetOnUpdate() string
 	// GetPlaces returns the places value
 	GetPlaces() int
 	// GetPrecision returns the precision value

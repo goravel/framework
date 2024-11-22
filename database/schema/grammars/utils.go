@@ -10,6 +10,8 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
+type Expression string
+
 func getCommandByName(commands []*schema.Command, name string) *schema.Command {
 	commands = getCommandsByName(commands, name)
 	if len(commands) == 0 {
@@ -34,6 +36,8 @@ func getDefaultValue(def any) string {
 	switch def.(type) {
 	case bool:
 		return "'" + cast.ToString(cast.ToInt(def)) + "'"
+	case Expression:
+		return string(def.(Expression))
 	}
 
 	return "'" + cast.ToString(def) + "'"

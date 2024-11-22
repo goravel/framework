@@ -89,6 +89,14 @@ func (r *ColumnDefinition) GetNullable() bool {
 	return false
 }
 
+func (r *ColumnDefinition) GetOnUpdate() string {
+	if r.onUpdate != nil {
+		return *r.onUpdate
+	}
+
+	return ""
+}
+
 func (r *ColumnDefinition) GetPlaces() (places int) {
 	if r.places != nil {
 		return *r.places

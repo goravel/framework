@@ -313,7 +313,7 @@ func (r *Postgres) TypeTimeTz(column schema.ColumnDefinition) string {
 
 func (r *Postgres) TypeTimestamp(column schema.ColumnDefinition) string {
 	if column.GetUseCurrent() {
-		column.Default("current_timestamp")
+		column.Default(Expression("CURRENT_TIMESTAMP"))
 	}
 
 	return fmt.Sprintf("timestamp(%d) without time zone", column.GetPrecision())
@@ -321,7 +321,7 @@ func (r *Postgres) TypeTimestamp(column schema.ColumnDefinition) string {
 
 func (r *Postgres) TypeTimestampTz(column schema.ColumnDefinition) string {
 	if column.GetUseCurrent() {
-		column.Default("current_timestamp")
+		column.Default(Expression("CURRENT_TIMESTAMP"))
 	}
 
 	return fmt.Sprintf("timestamp(%d) with time zone", column.GetPrecision())
