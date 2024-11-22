@@ -482,6 +482,51 @@ func (_c *ColumnDefinition_GetNullable_Call) RunAndReturn(run func() bool) *Colu
 	return _c
 }
 
+// GetOnUpdate provides a mock function with given fields:
+func (_m *ColumnDefinition) GetOnUpdate() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOnUpdate")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetOnUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOnUpdate'
+type ColumnDefinition_GetOnUpdate_Call struct {
+	*mock.Call
+}
+
+// GetOnUpdate is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetOnUpdate() *ColumnDefinition_GetOnUpdate_Call {
+	return &ColumnDefinition_GetOnUpdate_Call{Call: _e.mock.On("GetOnUpdate")}
+}
+
+func (_c *ColumnDefinition_GetOnUpdate_Call) Run(run func()) *ColumnDefinition_GetOnUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetOnUpdate_Call) Return(_a0 string) *ColumnDefinition_GetOnUpdate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetOnUpdate_Call) RunAndReturn(run func() string) *ColumnDefinition_GetOnUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPlaces provides a mock function with given fields:
 func (_m *ColumnDefinition) GetPlaces() int {
 	ret := _m.Called()
