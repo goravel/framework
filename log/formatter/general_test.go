@@ -200,16 +200,16 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 					"root": map[string]any{
 						"message": "error bad request", // root cause
 						"stack": []string{
-							"main.main:/dummy/examples/logging/example.go:143", // original calling method
-							"main.ProcessResource:/dummy/examples/logging/example.go:71",
-							"main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
-							"main.(*Request).Validate:/dummy/examples/logging/example.go:28", // location of the root
+							"/dummy/examples/logging/example.go:143 [main.main]", // original calling method
+							"/dummy/examples/logging/example.go:71 [main.ProcessResource]",
+							"/dummy/examples/logging/example.go:29 [main.(*Request).Validate]", // location of Wrap call
+							"/dummy/examples/logging/example.go:28 [main.(*Request).Validate]", // location of the root
 						},
 					},
 					"wrap": []map[string]any{
 						{
-							"message": "received a request with no ID",                                  // additional context
-							"stack":   "main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
+							"message": "received a request with no ID",                                    // additional context
+							"stack":   "/dummy/examples/logging/example.go:29 [main.(*Request).Validate]", // location of Wrap call
 						},
 					},
 				}
@@ -218,10 +218,10 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 				traces, err := general.formatStackTraces(stackTraces)
 				s.Nil(err)
 				stackTraces := []string{
-					"main.main:/dummy/examples/logging/example.go:143",
-					"main.ProcessResource:/dummy/examples/logging/example.go:71",
-					"main.(*Request).Validate:/dummy/examples/logging/example.go:29",
-					"main.(*Request).Validate:/dummy/examples/logging/example.go:28",
+					"/dummy/examples/logging/example.go:143 [main.main]",
+					"/dummy/examples/logging/example.go:71 [main.ProcessResource]",
+					"/dummy/examples/logging/example.go:29 [main.(*Request).Validate]",
+					"/dummy/examples/logging/example.go:28 [main.(*Request).Validate]",
 				}
 				formattedStackTraces := "trace:\n\t" + strings.Join(stackTraces, "\n\t") + "\n"
 
