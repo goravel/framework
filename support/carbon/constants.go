@@ -3,7 +3,7 @@ package carbon
 import (
 	stdtime "time"
 
-	"github.com/golang-module/carbon/v2"
+	"github.com/dromara/carbon/v2"
 )
 
 type Carbon = carbon.Carbon
