@@ -122,21 +122,24 @@ func (general *General) formatStackTraces(stackTraces any) (string, error) {
 	root := traces.Root
 	if len(root.Stack) > 0 {
 		for _, stackStr := range root.Stack {
-			lastColon := strings.LastIndex(stackStr, ":")
-			if lastColon > 0 && lastColon < len(stackStr)-1 {
-				secondLastColon := strings.LastIndex(stackStr[:lastColon], ":")
-				if secondLastColon > 0 {
-					fileLine := stackStr[secondLastColon+1:]
-					method := stackStr[:secondLastColon]
-					formattedTraces.WriteString(fmt.Sprintf("\t%s [%s]\n", fileLine, method))
-					continue
-				}
-			}
-			formattedTraces.WriteString(fmt.Sprintf("\t%s\n", stackStr))
+			formattedTraces.WriteString(formatStackTrace(stackStr))
 		}
 	}
 
 	return formattedTraces.String(), nil
+}
+
+func formatStackTrace(stackStr string) string {
+	lastColon := strings.LastIndex(stackStr, ":")
+	if lastColon > 0 && lastColon < len(stackStr)-1 {
+		secondLastColon := strings.LastIndex(stackStr[:lastColon], ":")
+		if secondLastColon > 0 {
+			fileLine := stackStr[secondLastColon+1:]
+			method := stackStr[:secondLastColon]
+			return fmt.Sprintf("\t%s [%s]\n", fileLine, method)
+		}
+	}
+	return fmt.Sprintf("\t%s\n", stackStr)
 }
 
 func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
