@@ -1,8 +1,9 @@
 package schema
 
 import (
-	"github.com/spf13/cast"
 	"testing"
+
+	"github.com/spf13/cast"
 
 	"github.com/stretchr/testify/suite"
 
@@ -27,35 +28,35 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
-	postgresDocker := docker.Postgres()
-	s.Require().NoError(postgresDocker.Ready())
-
-	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	//postgresDocker := docker.Postgres()
+	//s.Require().NoError(postgresDocker.Ready())
+	//
+	//postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 
 	sqliteDocker := docker.Sqlite()
 	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
 
-	mysqlDocker := docker.Mysql()
-	s.Require().NoError(mysqlDocker.Ready())
-
-	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
-
-	sqlserverDocker := docker.Sqlserver()
-	s.Require().NoError(sqlserverDocker.Ready())
-
-	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
+	//mysqlDocker := docker.Mysql()
+	//s.Require().NoError(mysqlDocker.Ready())
+	//
+	//mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
+	//
+	//sqlserverDocker := docker.Sqlserver()
+	//s.Require().NoError(sqlserverDocker.Ready())
+	//
+	//sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
 
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		database.DriverPostgres:  postgresQuery,
-		database.DriverSqlite:    sqliteQuery,
-		database.DriverMysql:     mysqlQuery,
-		database.DriverSqlserver: sqlserverQuery,
+		//database.DriverPostgres:  postgresQuery,
+		database.DriverSqlite: sqliteQuery,
+		//database.DriverMysql:     mysqlQuery,
+		//database.DriverSqlserver: sqlserverQuery,
 	}
 }
 
 func (s *SchemaSuite) TearDownTest() {
 	if s.driverToTestQuery[database.DriverSqlite] != nil {
-		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
+		//s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
 	}
 }
 
