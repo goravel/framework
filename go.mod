@@ -8,21 +8,21 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v7 v7.1.2
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20241119235641-e7e76ffbce9f
+	github.com/charmbracelet/huh/spinner v0.0.0-20241127125741-aad810dfbce6
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
+	github.com/dromara/carbon/v2 v2.5.1
 	github.com/gabriel-vasile/mimetype v1.4.7
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
-	github.com/golang-module/carbon/v2 v2.4.1
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.2
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/pterm/pterm v0.12.79
+	github.com/pterm/pterm v0.12.80
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
@@ -82,7 +82,7 @@ require (
 	github.com/go-redsync/redsync/v4 v4.8.1 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
