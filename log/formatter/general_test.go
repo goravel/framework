@@ -238,6 +238,67 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 	}
 }
 
+func TestFormatStackTrace(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Valid stack trace with file and method",
+			input:    "main.functionName:/path/to/file.go:42",
+			expected: "\t/path/to/file.go:42 [main.functionName]\n",
+		},
+		{
+			name:     "Valid stack trace without method",
+			input:    "/path/to/file.go:42",
+			expected: "\t/path/to/file.go:42\n",
+		},
+		{
+			name:     "No colons in stack trace",
+			input:    "invalidstacktrace",
+			expected: "\tinvalidstacktrace\n",
+		},
+		{
+			name:     "Single colon in stack trace",
+			input:    "file.go:42",
+			expected: "\tfile.go:42\n",
+		},
+		{
+			name:     "Edge case: Empty string",
+			input:    "",
+			expected: "\t\n",
+		},
+		{
+			name:     "Edge case: Colon at the end",
+			input:    "file.go:",
+			expected: "\tfile.go:\n",
+		},
+		{
+			name:     "Edge case: Colon at the beginning",
+			input:    ":file.go",
+			expected: "\t:file.go\n",
+		},
+		{
+			name:     "Edge case: Multiple colons with no method",
+			input:    "/path/to/file.go:100:200",
+			expected: "\t100:200 [/path/to/file.go]\n",
+		},
+		{
+			name:     "Valid stack trace with nested method and line",
+			input:    "pkg.subpkg.functionName:/path/to/file.go:55",
+			expected: "\t/path/to/file.go:55 [pkg.subpkg.functionName]\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatStackTrace(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestDeleteKey(t *testing.T) {
 	tests := []struct {
 		name   string
