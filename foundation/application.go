@@ -258,7 +258,6 @@ func (app *Application) setTimezone() {
 	}
 
 	carbon.SetTimezone(configFacade.GetString("app.timezone", carbon.UTC))
-
 }
 
 func setEnv() {

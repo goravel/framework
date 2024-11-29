@@ -37,7 +37,7 @@ type ColumnDefinition interface {
 	GetUseCurrentOnUpdate() bool
 	// IsSetComment returns true if the comment value is set
 	IsSetComment() bool
-	// OnUpdate sets the column to use the value on update
+	// OnUpdate sets the column to use the value on update (Mysql only)
 	OnUpdate(value any) ColumnDefinition
 	// Places set the decimal places
 	Places(places int) ColumnDefinition
@@ -49,7 +49,7 @@ type ColumnDefinition interface {
 	Unsigned() ColumnDefinition
 	// UseCurrent set the column to use the current timestamp
 	UseCurrent() ColumnDefinition
-	// UseCurrentOnUpdate set the column to use the current timestamp on update
+	// UseCurrentOnUpdate set the column to use the current timestamp on update (Mysql only)
 	UseCurrentOnUpdate() ColumnDefinition
 }
 

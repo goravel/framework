@@ -152,7 +152,7 @@ func (r *ColumnDefinition) Nullable() schema.ColumnDefinition {
 }
 
 func (r *ColumnDefinition) OnUpdate(value any) schema.ColumnDefinition {
-	r.onUpdate = convert.Pointer(value)
+	r.onUpdate = value
 
 	return r
 }

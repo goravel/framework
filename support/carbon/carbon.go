@@ -32,6 +32,7 @@ func IsTestNow() bool {
 // 设置时区
 func SetTimezone(timezone string) {
 	clock.timezone = timezone
+	carbon.SetDefault(carbon.Default{Timezone: timezone})
 }
 
 // Now return a Carbon object of now.
@@ -140,7 +141,7 @@ func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...
 
 // FromStdTime return a Carbon object of given time.Time object.
 func FromStdTime(time stdtime.Time) Carbon {
-	return carbon.CreateFromStdTime(time)
+	return carbon.CreateFromStdTime(time, getTimezone(nil))
 }
 
 func getTimezone(timezone []string) string {

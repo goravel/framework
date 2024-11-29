@@ -27,6 +27,7 @@ func NewMysql(tablePrefix string) *Mysql {
 		mysql.ModifyDefault,
 		mysql.ModifyIncrement,
 		mysql.ModifyNullable,
+		mysql.ModifyOnUpdate,
 	}
 
 	return mysql
@@ -207,8 +208,13 @@ func (r *Mysql) ModifyIncrement(blueprint schema.Blueprint, column schema.Column
 }
 
 func (r *Mysql) ModifyOnUpdate(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if column.GetOnUpdate() != "" {
-		return " on update " + column.GetOnUpdate().(string)
+	if column.GetOnUpdate() != nil {
+		switch column.GetOnUpdate().(type) {
+		case Expression:
+			return " on update " + string(column.GetOnUpdate().(Expression))
+		case string:
+			return " on update " + column.GetOnUpdate().(string)
+		}
 	}
 
 	return ""
