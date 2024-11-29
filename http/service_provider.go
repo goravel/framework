@@ -8,8 +8,10 @@ import (
 	"github.com/goravel/framework/http/console"
 )
 
-const BindingRateLimiter = "goravel.rate_limiter"
-const BindingView = "goravel.view"
+const (
+	BindingRateLimiter = "goravel.rate_limiter"
+	BindingView        = "goravel.view"
+)
 
 type ServiceProvider struct{}
 

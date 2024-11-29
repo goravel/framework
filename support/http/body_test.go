@@ -24,6 +24,7 @@ func TestBodySetFields(t *testing.T) {
 	assert.Equal(t, 22, body.GetField("age"))
 	assert.Equal(t, "admin", body.GetField("role"))
 }
+
 func TestBodySetField(t *testing.T) {
 	body := NewBody().
 		SetField("name", "krishan").

@@ -3,8 +3,9 @@ package schema
 import (
 	"testing"
 
-	"github.com/goravel/framework/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/errors"
 )
 
 func TestParseSchemaAndTable(t *testing.T) {

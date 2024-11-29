@@ -25,8 +25,10 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-var singleLog = "storage/logs/goravel.log"
-var dailyLog = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
+var (
+	singleLog = "storage/logs/goravel.log"
+	dailyLog  = fmt.Sprintf("storage/logs/goravel-%s.log", carbon.Now().ToDateString())
+)
 
 func TestLogrus(t *testing.T) {
 	var (

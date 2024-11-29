@@ -11,9 +11,11 @@ import (
 
 const Binding = "goravel.testing"
 
-var artisanFacade contractsconsole.Artisan
-var routeFacade contractsroute.Route
-var sessionFacade contractsession.Manager
+var (
+	artisanFacade contractsconsole.Artisan
+	routeFacade   contractsroute.Route
+	sessionFacade contractsession.Manager
+)
 
 type ServiceProvider struct {
 }

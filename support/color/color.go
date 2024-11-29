@@ -2,12 +2,12 @@ package color
 
 import (
 	"bytes"
-	"github.com/goravel/framework/support/env"
 	"io"
 
 	"github.com/pterm/pterm"
 
 	"github.com/goravel/framework/contracts/support"
+	"github.com/goravel/framework/support/env"
 )
 
 const (

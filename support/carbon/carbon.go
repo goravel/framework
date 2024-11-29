@@ -11,6 +11,7 @@ type Clock struct {
 }
 
 var testCarbon = carbon.NewCarbon()
+
 var clock = &Clock{}
 
 // SetTestNow Set the test time. Remember to unset after used.

@@ -5,7 +5,9 @@ import (
 )
 
 type Middleware func(Context)
+
 type HandlerFunc func(Context) Response
+
 type ResourceController interface {
 	// Index method for controller
 	Index(Context) Response
