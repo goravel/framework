@@ -9,8 +9,10 @@ import (
 
 const Binding = "goravel.filesystem"
 
-var ConfigFacade configcontract.Config
-var StorageFacade filesystemcontract.Storage
+var (
+	ConfigFacade  configcontract.Config
+	StorageFacade filesystemcontract.Storage
+)
 
 type ServiceProvider struct {
 }

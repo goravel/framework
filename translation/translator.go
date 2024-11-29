@@ -38,8 +38,10 @@ var loaded = make(map[string]map[string]map[string]any)
 // contextKey is an unexported type for keys defined in this package.
 type contextKey string
 
-const fallbackLocaleKey = contextKey("fallback_locale")
-const localeKey = contextKey("locale")
+const (
+	fallbackLocaleKey = contextKey("fallback_locale")
+	localeKey         = contextKey("locale")
+)
 
 func NewTranslator(ctx context.Context, loader translationcontract.Loader, locale string, fallback string, logger logcontract.Log) *Translator {
 	return &Translator{
