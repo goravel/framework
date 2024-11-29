@@ -483,18 +483,20 @@ func (_c *ColumnDefinition_GetNullable_Call) RunAndReturn(run func() bool) *Colu
 }
 
 // GetOnUpdate provides a mock function with given fields:
-func (_m *ColumnDefinition) GetOnUpdate() string {
+func (_m *ColumnDefinition) GetOnUpdate() any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetOnUpdate")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
+	var r0 any
+	if rf, ok := ret.Get(0).(func() any); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(any)
+		}
 	}
 
 	return r0
@@ -517,12 +519,12 @@ func (_c *ColumnDefinition_GetOnUpdate_Call) Run(run func()) *ColumnDefinition_G
 	return _c
 }
 
-func (_c *ColumnDefinition_GetOnUpdate_Call) Return(_a0 string) *ColumnDefinition_GetOnUpdate_Call {
+func (_c *ColumnDefinition_GetOnUpdate_Call) Return(_a0 any) *ColumnDefinition_GetOnUpdate_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetOnUpdate_Call) RunAndReturn(run func() string) *ColumnDefinition_GetOnUpdate_Call {
+func (_c *ColumnDefinition_GetOnUpdate_Call) RunAndReturn(run func() any) *ColumnDefinition_GetOnUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -890,7 +892,7 @@ func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() schema.ColumnD
 }
 
 // OnUpdate provides a mock function with given fields: value
-func (_m *ColumnDefinition) OnUpdate(value string) schema.ColumnDefinition {
+func (_m *ColumnDefinition) OnUpdate(value any) schema.ColumnDefinition {
 	ret := _m.Called(value)
 
 	if len(ret) == 0 {
@@ -898,7 +900,7 @@ func (_m *ColumnDefinition) OnUpdate(value string) schema.ColumnDefinition {
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+	if rf, ok := ret.Get(0).(func(any) schema.ColumnDefinition); ok {
 		r0 = rf(value)
 	} else {
 		if ret.Get(0) != nil {
@@ -915,14 +917,14 @@ type ColumnDefinition_OnUpdate_Call struct {
 }
 
 // OnUpdate is a helper method to define mock.On call
-//   - value string
+//   - value any
 func (_e *ColumnDefinition_Expecter) OnUpdate(value interface{}) *ColumnDefinition_OnUpdate_Call {
 	return &ColumnDefinition_OnUpdate_Call{Call: _e.mock.On("OnUpdate", value)}
 }
 
-func (_c *ColumnDefinition_OnUpdate_Call) Run(run func(value string)) *ColumnDefinition_OnUpdate_Call {
+func (_c *ColumnDefinition_OnUpdate_Call) Run(run func(value any)) *ColumnDefinition_OnUpdate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(any))
 	})
 	return _c
 }
@@ -932,7 +934,7 @@ func (_c *ColumnDefinition_OnUpdate_Call) Return(_a0 schema.ColumnDefinition) *C
 	return _c
 }
 
-func (_c *ColumnDefinition_OnUpdate_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *ColumnDefinition_OnUpdate_Call {
+func (_c *ColumnDefinition_OnUpdate_Call) RunAndReturn(run func(any) schema.ColumnDefinition) *ColumnDefinition_OnUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
