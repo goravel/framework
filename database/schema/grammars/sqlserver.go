@@ -303,7 +303,7 @@ func (r *Sqlserver) TypeTimeTz(column schema.ColumnDefinition) string {
 
 func (r *Sqlserver) TypeTimestamp(column schema.ColumnDefinition) string {
 	if column.GetUseCurrent() {
-		column.Default("current_timestamp")
+		column.Default(Expression("current_timestamp"))
 	}
 
 	if column.GetPrecision() > 0 {
@@ -315,7 +315,7 @@ func (r *Sqlserver) TypeTimestamp(column schema.ColumnDefinition) string {
 
 func (r *Sqlserver) TypeTimestampTz(column schema.ColumnDefinition) string {
 	if column.GetUseCurrent() {
-		column.Default("current_timestamp")
+		column.Default(Expression("current_timestamp"))
 	}
 
 	if column.GetPrecision() > 0 {

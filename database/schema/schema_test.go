@@ -1,9 +1,11 @@
 package schema
 
 import (
-	"testing"
-
+	"fmt"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/spf13/cast"
+	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -28,35 +30,35 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
-	//postgresDocker := docker.Postgres()
-	//s.Require().NoError(postgresDocker.Ready())
-	//
-	//postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
 
 	sqliteDocker := docker.Sqlite()
 	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
 
-	//mysqlDocker := docker.Mysql()
-	//s.Require().NoError(mysqlDocker.Ready())
-	//
-	//mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
-	//
-	//sqlserverDocker := docker.Sqlserver()
-	//s.Require().NoError(sqlserverDocker.Ready())
-	//
-	//sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
+	mysqlDocker := docker.Mysql()
+	s.Require().NoError(mysqlDocker.Ready())
+
+	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
+
+	sqlserverDocker := docker.Sqlserver()
+	s.Require().NoError(sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
 
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		//database.DriverPostgres:  postgresQuery,
-		database.DriverSqlite: sqliteQuery,
-		//database.DriverMysql:     mysqlQuery,
-		//database.DriverSqlserver: sqlserverQuery,
+		database.DriverPostgres:  postgresQuery,
+		database.DriverSqlite:    sqliteQuery,
+		database.DriverMysql:     mysqlQuery,
+		database.DriverSqlserver: sqlserverQuery,
 	}
 }
 
 func (s *SchemaSuite) TearDownTest() {
 	if s.driverToTestQuery[database.DriverSqlite] != nil {
-		//s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
+		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
 	}
 }
 
@@ -272,15 +274,6 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.Equal("text", column.Type)
 			s.Equal("text", column.TypeName)
 		}
-		if column.Name == "tiny_text" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Equal("This is a tiny_text column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("character varying(255)", column.Type)
-			s.Equal("varchar", column.TypeName)
-		}
 		if column.Name == "time" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -334,6 +327,15 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 			s.False(column.Nullable)
 			s.Equal("timestamp(0) without time zone", column.Type)
 			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a tiny_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
 		}
 		if column.Name == "updated_at" {
 			s.False(column.Autoincrement)
@@ -478,9 +480,11 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.Equal("integer", column.Type)
 		}
 		if column.Name == "integer_default" {
+			fmt.Printf("integer_default: %+v\n", column)
+			fmt.Println(column.Default)
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal(1, cast.ToInt(column.Default))
+			s.Equal("'1'", column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
 		}
@@ -571,14 +575,14 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 		if column.Name == "timestamp_use_current" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal("CURRENT_TIMESTAMP", column.Default)
+			s.Equal("'current_timestamp'", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 		}
 		if column.Name == "timestamp_use_current_on_update" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal("CURRENT_TIMESTAMP", column.Default)
+			s.Equal("'current_timestamp'", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 		}
@@ -620,6 +624,15 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 	s.Require().Nil(err)
 
 	for _, column := range columns {
+		if column.Name == "another_deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
 		if column.Name == "big_integer" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -637,6 +650,15 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.False(column.Nullable)
 			s.Equal("char(255)", column.Type)
 			s.Equal("char", column.TypeName)
+		}
+		if column.Name == "created_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp(2)", column.Type)
+			s.Equal("timestamp", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -673,6 +695,15 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.False(column.Nullable)
 			s.Equal("decimal(4,1)", column.Type)
 			s.Equal("decimal", column.TypeName)
+		}
+		if column.Name == "deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("timestamp", column.Type)
+			s.Equal("timestamp", column.TypeName)
 		}
 		if column.Name == "double" {
 			s.False(column.Autoincrement)
@@ -719,32 +750,14 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("int", column.Type)
 			s.Equal("int", column.TypeName)
 		}
-		if column.Name == "deleted_at" {
+		if column.Name == "integer_default" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "another_deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp", column.Type)
-			s.Equal("timestamp", column.TypeName)
-		}
-		if column.Name == "string" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a string column", column.Comment)
-			s.Empty(column.Default)
+			s.Equal("This is a integer_default column", column.Comment)
+			s.Equal(1, cast.ToInt(column.Default))
 			s.False(column.Nullable)
-			s.Equal("varchar(255)", column.Type)
-			s.Equal("varchar", column.TypeName)
+			s.Equal("int", column.Type)
+			s.Equal("int", column.TypeName)
 		}
 		if column.Name == "json" {
 			s.False(column.Autoincrement)
@@ -764,15 +777,6 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("json", column.Type)
 			s.Equal("json", column.TypeName)
 		}
-		if column.Name == "text" {
-			s.False(column.Autoincrement)
-			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a text column", column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("text", column.Type)
-			s.Equal("text", column.TypeName)
-		}
 		if column.Name == "long_text" {
 			s.False(column.Autoincrement)
 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
@@ -791,14 +795,32 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("mediumtext", column.Type)
 			s.Equal("mediumtext", column.TypeName)
 		}
-		if column.Name == "tiny_text" {
+		if column.Name == "string" {
 			s.False(column.Autoincrement)
 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
-			s.Equal("This is a tiny_text column", column.Comment)
+			s.Equal("This is a string column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("tinytext", column.Type)
-			s.Equal("tinytext", column.TypeName)
+			s.Equal("varchar(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
+		if column.Name == "string_default" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a string_default column", column.Comment)
+			s.Equal("goravel", column.Default)
+			s.False(column.Nullable)
+			s.Equal("varchar(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
+		if column.Name == "text" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "time" {
 			s.False(column.Autoincrement)
@@ -836,14 +858,32 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 			s.Equal("timestamp(2)", column.Type)
 			s.Equal("timestamp", column.TypeName)
 		}
-		if column.Name == "created_at" {
+		if column.Name == "timestamp_use_current" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("timestamp(2)", column.Type)
+			s.Equal("This is a timestamp_use_current column", column.Comment)
+			s.Equal("CURRENT_TIMESTAMP", column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp", column.Type)
 			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "timestamp_use_current_on_update" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a timestamp_use_current_on_update column", column.Comment)
+			s.Equal("CURRENT_TIMESTAMP", column.Default)
+			s.False(column.Nullable)
+			s.Equal("timestamp", column.Type)
+			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a tiny_text column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("tinytext", column.Type)
+			s.Equal("tinytext", column.TypeName)
 		}
 		if column.Name == "updated_at" {
 			s.False(column.Autoincrement)
@@ -889,6 +929,15 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 	s.Require().Nil(err)
 
 	for _, column := range columns {
+		if column.Name == "another_deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetimeoffset(34)", column.Type)
+			s.Equal("datetimeoffset", column.TypeName)
+		}
 		if column.Name == "big_integer" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -906,6 +955,15 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.False(column.Nullable)
 			s.Equal("nchar(510)", column.Type)
 			s.Equal("nchar", column.TypeName)
+		}
+		if column.Name == "created_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime2(22)", column.Type)
+			s.Equal("datetime2", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -942,6 +1000,15 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.False(column.Nullable)
 			s.Equal("decimal(4,1)", column.Type)
 			s.Equal("decimal", column.TypeName)
+		}
+		if column.Name == "deleted_at" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.True(column.Nullable)
+			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "double" {
 			s.False(column.Autoincrement)
@@ -988,32 +1055,15 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("int", column.Type)
 			s.Equal("int", column.TypeName)
 		}
-		if column.Name == "deleted_at" {
+		if column.Name == "integer_default" {
+			fmt.Printf("integer_default: %+v\n", column)
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
 			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime", column.Type)
-			s.Equal("datetime", column.TypeName)
-		}
-		if column.Name == "another_deleted_at" {
-			s.False(column.Autoincrement)
-			s.Empty(column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetimeoffset(34)", column.Type)
-			s.Equal("datetimeoffset", column.TypeName)
-		}
-		if column.Name == "string" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
+			s.Equal("('1')", column.Default)
 			s.False(column.Nullable)
-			s.Equal("nvarchar(510)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
+			s.Equal("int", column.Type)
+			s.Equal("int", column.TypeName)
 		}
 		if column.Name == "json" {
 			s.False(column.Autoincrement)
@@ -1025,15 +1075,6 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("nvarchar", column.TypeName)
 		}
 		if column.Name == "jsonb" {
-			s.False(column.Autoincrement)
-			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
-			s.Empty(column.Comment)
-			s.Empty(column.Default)
-			s.False(column.Nullable)
-			s.Equal("nvarchar(max)", column.Type)
-			s.Equal("nvarchar", column.TypeName)
-		}
-		if column.Name == "text" {
 			s.False(column.Autoincrement)
 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
 			s.Empty(column.Comment)
@@ -1060,13 +1101,31 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("nvarchar(max)", column.Type)
 			s.Equal("nvarchar", column.TypeName)
 		}
-		if column.Name == "tiny_text" {
+		if column.Name == "string" {
 			s.False(column.Autoincrement)
 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
 			s.Empty(column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "string_default" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Equal("('goravel')", column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "text" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(max)", column.Type)
 			s.Equal("nvarchar", column.TypeName)
 		}
 		if column.Name == "time" {
@@ -1105,14 +1164,32 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("datetimeoffset(29)", column.Type)
 			s.Equal("datetimeoffset", column.TypeName)
 		}
-		if column.Name == "created_at" {
+		if column.Name == "timestamp_use_current" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
 			s.Empty(column.Comment)
+			s.Equal("('current_timestamp')", column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
+		}
+		if column.Name == "timestamp_use_current_on_update" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Equal("('current_timestamp')", column.Default)
+			s.False(column.Nullable)
+			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
+		}
+		if column.Name == "tiny_text" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
 			s.Empty(column.Default)
-			s.True(column.Nullable)
-			s.Equal("datetime2(22)", column.Type)
-			s.Equal("datetime2", column.TypeName)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
 		}
 		if column.Name == "updated_at" {
 			s.False(column.Autoincrement)
@@ -1157,6 +1234,69 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 			s.True(schema.HasTable(table))
 			s.NoError(schema.DropIfExists(table))
 			s.False(schema.HasTable(table))
+		})
+	}
+}
+
+func (s *SchemaSuite) TestColumnExtraAttributes() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "column_extra_attribute"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.String("nullable").Nullable()
+				table.String("string_default").Default("goravel")
+				table.Integer("integer_default").Default(1)
+				table.TimestampTz("use_current").UseCurrent()
+				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
+			}))
+
+			type ColumnExtraAttribute struct {
+				ID                 uint            `gorm:"primaryKey" json:"id"`
+				Name               string          `json:"name"`
+				Nullable           *string         `json:"nullable"`
+				StringDefault      string          `json:"string_default"`
+				IntegerDefault     int             `json:"integer_default"`
+				UseCurrent         carbon.DateTime `json:"use_current"`
+				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
+			}
+
+			now := carbon.Now()
+
+			s.NoError(testQuery.Query().Model(&ColumnExtraAttribute{}).Create(map[string]any{
+				"name": "hello",
+			}))
+
+			interval := int64(1)
+			var columnExtraAttribute ColumnExtraAttribute
+			s.NoError(testQuery.Query().Where("name", "hello").First(&columnExtraAttribute))
+			s.True(columnExtraAttribute.ID > 0)
+			s.Equal("hello", columnExtraAttribute.Name)
+			s.Nil(columnExtraAttribute.Nullable)
+			s.Equal("goravel", columnExtraAttribute.StringDefault)
+			s.Equal(1, columnExtraAttribute.IntegerDefault)
+			s.True(now.Timestamp() <= columnExtraAttribute.UseCurrent.Timestamp() && now.Timestamp()+interval >= columnExtraAttribute.UseCurrent.Timestamp())
+			s.True(now.Timestamp() <= columnExtraAttribute.UseCurrentOnUpdate.Timestamp() && now.Timestamp()+interval >= columnExtraAttribute.UseCurrentOnUpdate.Timestamp())
+			fmt.Println(now.Timestamp(), columnExtraAttribute.UseCurrent.Timestamp(), columnExtraAttribute.UseCurrentOnUpdate.Timestamp())
+
+			time.Sleep(time.Duration(interval) * time.Second)
+
+			result, err := testQuery.Query().Model(&ColumnExtraAttribute{}).Where("id", columnExtraAttribute.ID).Update(map[string]any{
+				"name": "world",
+			})
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			var anotherColumnExtraAttribute ColumnExtraAttribute
+			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
+			s.Equal("world", anotherColumnExtraAttribute.Name)
+			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
+			s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+			s.True(now.Timestamp()+interval <= anotherColumnExtraAttribute.UseCurrentOnUpdate.Timestamp() && now.Timestamp()+interval+interval >= anotherColumnExtraAttribute.UseCurrentOnUpdate.Timestamp())
+			fmt.Println(now.Timestamp(), columnExtraAttribute.UseCurrentOnUpdate.Timestamp(), anotherColumnExtraAttribute.UseCurrentOnUpdate.Timestamp())
 		})
 	}
 }

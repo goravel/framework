@@ -22,7 +22,7 @@ type ColumnDefinition interface {
 	// GetNullable returns the nullable value
 	GetNullable() bool
 	// GetOnUpdate returns the onUpdate value
-	GetOnUpdate() string
+	GetOnUpdate() any
 	// GetPlaces returns the places value
 	GetPlaces() int
 	// GetPrecision returns the precision value
@@ -38,7 +38,7 @@ type ColumnDefinition interface {
 	// IsSetComment returns true if the comment value is set
 	IsSetComment() bool
 	// OnUpdate sets the column to use the value on update
-	OnUpdate(value string) ColumnDefinition
+	OnUpdate(value any) ColumnDefinition
 	// Places set the decimal places
 	Places(places int) ColumnDefinition
 	// Total set the decimal total

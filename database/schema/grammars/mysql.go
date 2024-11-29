@@ -208,7 +208,7 @@ func (r *Mysql) ModifyIncrement(blueprint schema.Blueprint, column schema.Column
 
 func (r *Mysql) ModifyOnUpdate(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetOnUpdate() != "" {
-		return " on update " + column.GetOnUpdate()
+		return " on update " + column.GetOnUpdate().(string)
 	}
 
 	return ""
@@ -232,10 +232,10 @@ func (r *Mysql) TypeDateTime(column schema.ColumnDefinition) string {
 		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
 	}
 	if column.GetUseCurrent() {
-		column.Default(current)
+		column.Default(Expression(current))
 	}
 	if column.GetUseCurrentOnUpdate() {
-		column.OnUpdate(current)
+		column.OnUpdate(Expression(current))
 	}
 
 	if column.GetPrecision() > 0 {
@@ -329,10 +329,10 @@ func (r *Mysql) TypeTimestamp(column schema.ColumnDefinition) string {
 		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
 	}
 	if column.GetUseCurrent() {
-		column.Default(current)
+		column.Default(Expression(current))
 	}
 	if column.GetUseCurrentOnUpdate() {
-		column.OnUpdate(current)
+		column.OnUpdate(Expression(current))
 	}
 
 	if column.GetPrecision() > 0 {

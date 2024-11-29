@@ -13,7 +13,7 @@ type ColumnDefinition struct {
 	length             *int
 	name               *string
 	nullable           *bool
-	onUpdate           *string
+	onUpdate           any
 	places             *int
 	precision          *int
 	total              *int
@@ -89,12 +89,8 @@ func (r *ColumnDefinition) GetNullable() bool {
 	return false
 }
 
-func (r *ColumnDefinition) GetOnUpdate() string {
-	if r.onUpdate != nil {
-		return *r.onUpdate
-	}
-
-	return ""
+func (r *ColumnDefinition) GetOnUpdate() any {
+	return r.onUpdate
 }
 
 func (r *ColumnDefinition) GetPlaces() (places int) {
@@ -155,7 +151,7 @@ func (r *ColumnDefinition) Nullable() schema.ColumnDefinition {
 	return r
 }
 
-func (r *ColumnDefinition) OnUpdate(value string) schema.ColumnDefinition {
+func (r *ColumnDefinition) OnUpdate(value any) schema.ColumnDefinition {
 	r.onUpdate = convert.Pointer(value)
 
 	return r
