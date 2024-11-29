@@ -4,7 +4,7 @@ import (
 	"testing"
 	stdtime "time"
 
-	"github.com/golang-module/carbon/v2"
+	"github.com/dromara/carbon/v2"
 	"github.com/stretchr/testify/assert"
 )
 

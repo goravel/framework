@@ -2,6 +2,7 @@ package color
 
 import (
 	"bytes"
+	"github.com/goravel/framework/support/env"
 	"io"
 
 	"github.com/pterm/pterm"
@@ -46,6 +47,14 @@ var (
 
 func init() {
 	pterm.EnableDebugMessages()
+	// Temporarily fix output issue including by https://github.com/pterm/pterm/commit/825931aa7ab264074e6c4045c3bdbca5482c758c
+	if env.IsTesting() {
+		info.Writer = nil
+		warning.Writer = nil
+		err.Writer = nil
+		debug.Writer = nil
+		success.Writer = nil
+	}
 }
 
 // New Functions to create Printer with specific color
