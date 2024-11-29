@@ -224,6 +224,7 @@ func (receiver *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([
 
 	return sourceFiles, nil
 }
+
 func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
 	content, err := os.ReadFile(sourceFile)
 	if err != nil {
