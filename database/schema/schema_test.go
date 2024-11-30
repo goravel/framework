@@ -6,14 +6,12 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
-
-	"github.com/goravel/framework/support/carbon"
-
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
 )
@@ -577,14 +575,14 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 		if column.Name == "timestamp_use_current" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal("current_timestamp", column.Default)
+			s.Equal("CURRENT_TIMESTAMP", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 		}
 		if column.Name == "timestamp_use_current_on_update" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal("current_timestamp", column.Default)
+			s.Equal("CURRENT_TIMESTAMP", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 		}

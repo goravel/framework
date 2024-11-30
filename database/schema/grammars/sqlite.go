@@ -243,7 +243,7 @@ func (r *Sqlite) TypeTimeTz(column schema.ColumnDefinition) string {
 
 func (r *Sqlite) TypeTimestamp(column schema.ColumnDefinition) string {
 	if column.GetUseCurrent() {
-		column.Default(Expression("current_timestamp"))
+		column.Default(Expression("CURRENT_TIMESTAMP"))
 	}
 
 	return "datetime"
