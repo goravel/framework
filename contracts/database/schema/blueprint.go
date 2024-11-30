@@ -25,14 +25,38 @@ type Blueprint interface {
 	Decimal(column string) ColumnDefinition
 	// Double Create a new double column on the table.
 	Double(column string) ColumnDefinition
+	// Drop Indicate that the table should be dropped.
+	Drop()
+	// DropColumn Indicate that the given columns should be dropped.
+	DropColumn(columns []string)
+	// DropForeign Indicate that the given foreign key should be dropped.
+	DropForeign(index string)
+	// DropFullText Indicate that the given fulltext index should be dropped.
+	DropFullText(index string)
 	// DropIfExists Indicate that the table should be dropped if it exists.
 	DropIfExists()
+	// DropIndex Indicate that the given index should be dropped.
+	DropIndex(index string)
+	// DropPrimary Indicate that the given primary key should be dropped.
+	DropPrimary(index ...string)
+	// DropSoftDeletes Indicate that the soft delete column should be dropped.
+	DropSoftDeletes(column ...string)
+	// DropSoftDeletesTz Indicate that the soft delete column should be dropped.
+	DropSoftDeletesTz(column ...string)
+	// DropTimestamps Indicate that the timestamp columns should be dropped.
+	DropTimestamps()
+	// DropTimestampsTz Indicate that the timestamp columns should be dropped.
+	DropTimestampsTz()
+	// DropUnique Indicate that the given unique key should be dropped.
+	DropUnique(index ...string)
 	// Enum Create a new enum column on the table.
 	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.
 	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
-	Foreign(column ...string) ForeignKeyDefinition
+	Foreign(columns []string, name ...string) ForeignKeyDefinition
+	// FullText Specify a fulltext for the table.
+	FullText(columns []string, config ...IndexConfig) IndexDefinition
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
 	// GetCommands Get the commands.
@@ -46,7 +70,7 @@ type Blueprint interface {
 	// Increments Create a new auto-incrementing integer (4-byte) column on the table.
 	Increments(column string) ColumnDefinition
 	// Index Specify an index for the table.
-	Index(column ...string) IndexDefinition
+	Index(columns []string, config ...IndexConfig) IndexDefinition
 	// Integer Create a new integer (4-byte) column on the table.
 	Integer(column string) ColumnDefinition
 	// IntegerIncrements Create a new auto-incrementing integer (4-byte) column on the table.
@@ -65,6 +89,8 @@ type Blueprint interface {
 	MediumText(column string) ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
 	Primary(column ...string)
+	// RenameIndex Indicate that the given indexes should be renamed.
+	RenameIndex(from, to string)
 	// SetTable Set the table that the blueprint operates on.
 	SetTable(name string)
 	// SmallIncrements Create a new auto-incrementing small integer (2-byte) column on the table.
@@ -99,6 +125,8 @@ type Blueprint interface {
 	TinyText(column string) ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(grammar Grammar) []string
+	// Unique Specify a unique index for the table.
+	Unique(columns []string, config ...IndexConfig) IndexDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
 	UnsignedBigInteger(column string) ColumnDefinition
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.

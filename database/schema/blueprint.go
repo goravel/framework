@@ -160,7 +160,7 @@ func (r *Blueprint) Increments(column string) schema.ColumnDefinition {
 	return r.IntegerIncrements(column)
 }
 
-func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
+func (r *Blueprint) Index(column []string) schema.IndexDefinition {
 	command := r.indexCommand(constants.CommandIndex, column)
 
 	return NewIndexDefinition(command)
