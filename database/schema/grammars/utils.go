@@ -33,11 +33,11 @@ func getCommandsByName(commands []*schema.Command, name string) []*schema.Comman
 }
 
 func getDefaultValue(def any) string {
-	switch def.(type) {
+	switch value := def.(type) {
 	case bool:
-		return "'" + cast.ToString(cast.ToInt(def)) + "'"
+		return "'" + cast.ToString(cast.ToInt(value)) + "'"
 	case Expression:
-		return string(def.(Expression))
+		return string(value)
 	}
 
 	return "'" + cast.ToString(def) + "'"

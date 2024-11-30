@@ -1252,6 +1252,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 				table.String("nullable").Nullable()
 				table.String("string_default").Default("goravel")
 				table.Integer("integer_default").Default(1)
+				table.Integer("bool_default").Default(true)
 				table.TimestampTz("use_current").UseCurrent()
 				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
 			}))
@@ -1262,6 +1263,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 				Nullable           *string         `json:"nullable"`
 				StringDefault      string          `json:"string_default"`
 				IntegerDefault     int             `json:"integer_default"`
+				BoolDefault        bool            `json:"bool_default"`
 				UseCurrent         carbon.DateTime `json:"use_current"`
 				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
 			}
@@ -1282,6 +1284,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			s.Nil(columnExtraAttribute.Nullable)
 			s.Equal("goravel", columnExtraAttribute.StringDefault)
 			s.Equal(1, columnExtraAttribute.IntegerDefault)
+			s.True(columnExtraAttribute.BoolDefault)
 			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now().AddSecond()))
 			s.True(columnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
 
