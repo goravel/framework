@@ -208,12 +208,15 @@ func (r *Mysql) ModifyIncrement(blueprint schema.Blueprint, column schema.Column
 }
 
 func (r *Mysql) ModifyOnUpdate(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if column.GetOnUpdate() != nil {
-		switch column.GetOnUpdate().(type) {
+	onUpdate := column.GetOnUpdate()
+	if onUpdate != nil {
+		switch onUpdate.(type) {
 		case Expression:
-			return " on update " + string(column.GetOnUpdate().(Expression))
+			return " on update " + string(onUpdate.(Expression))
 		case string:
-			return " on update " + column.GetOnUpdate().(string)
+			if onUpdate.(string) != "" {
+				return " on update " + onUpdate.(string)
+			}
 		}
 	}
 

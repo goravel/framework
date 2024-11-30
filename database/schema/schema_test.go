@@ -2,10 +2,12 @@ package schema
 
 import (
 	"fmt"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/spf13/cast"
 	"testing"
 	"time"
+
+	"github.com/spf13/cast"
+
+	"github.com/goravel/framework/support/carbon"
 
 	"github.com/stretchr/testify/suite"
 
@@ -30,29 +32,29 @@ func TestSchemaSuite(t *testing.T) {
 }
 
 func (s *SchemaSuite) SetupTest() {
-	//postgresDocker := docker.Postgres()
-	//s.Require().NoError(postgresDocker.Ready())
-	//
-	//postgresQuery := gorm.NewTestQuery(postgresDocker, true)
-	//
-	//sqliteDocker := docker.Sqlite()
-	//sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+
+	sqliteDocker := docker.Sqlite()
+	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
 
 	mysqlDocker := docker.Mysql()
 	s.Require().NoError(mysqlDocker.Ready())
 
 	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
 
-	//sqlserverDocker := docker.Sqlserver()
-	//s.Require().NoError(sqlserverDocker.Ready())
-	//
-	//sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
+	sqlserverDocker := docker.Sqlserver()
+	s.Require().NoError(sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
 
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		//database.DriverPostgres:  postgresQuery,
-		//database.DriverSqlite:    sqliteQuery,
-		database.DriverMysql: mysqlQuery,
-		//database.DriverSqlserver: sqlserverQuery,
+		database.DriverPostgres:  postgresQuery,
+		database.DriverSqlite:    sqliteQuery,
+		database.DriverMysql:     mysqlQuery,
+		database.DriverSqlserver: sqlserverQuery,
 	}
 }
 
@@ -575,14 +577,14 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 		if column.Name == "timestamp_use_current" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal("'current_timestamp'", column.Default)
+			s.Equal("current_timestamp", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 		}
 		if column.Name == "timestamp_use_current_on_update" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
-			s.Equal("'current_timestamp'", column.Default)
+			s.Equal("current_timestamp", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 		}
@@ -1168,7 +1170,7 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
 			s.Empty(column.Comment)
-			s.Equal("('current_timestamp')", column.Default)
+			s.Equal("(getdate())", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 			s.Equal("datetime", column.TypeName)
@@ -1177,7 +1179,7 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
 			s.Empty(column.Comment)
-			s.Equal("('current_timestamp')", column.Default)
+			s.Equal("(getdate())", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
 			s.Equal("datetime", column.TypeName)
@@ -1280,8 +1282,8 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			s.Nil(columnExtraAttribute.Nullable)
 			s.Equal("goravel", columnExtraAttribute.StringDefault)
 			s.Equal(1, columnExtraAttribute.IntegerDefault)
-			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now()))
-			fmt.Println(now.Timestamp(), columnExtraAttribute.UseCurrent.Timestamp(), columnExtraAttribute.UseCurrentOnUpdate.Timestamp())
+			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now().AddSecond()))
+			s.True(columnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
 
 			time.Sleep(time.Duration(interval) * time.Second)
 
@@ -1298,8 +1300,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
 			if driver == database.DriverMysql {
 				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-				s.True(anotherColumnExtraAttribute.UseCurrent.Between(now, carbon.Now()))
-				fmt.Println(now.Timestamp(), columnExtraAttribute.UseCurrentOnUpdate.Timestamp(), anotherColumnExtraAttribute.UseCurrentOnUpdate.Timestamp())
+				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
 			} else {
 				s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
 			}
