@@ -319,6 +319,22 @@ func (s *MysqlSuite) TestModifyOnUpdate() {
 	s.Empty(s.grammar.ModifyOnUpdate(mockBlueprint, mockColumn))
 }
 
+func (s *MysqlSuite) TestTypeDateTime() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(true).Once()
+	mockColumn.EXPECT().OnUpdate(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	s.Equal("datetime(3)", s.grammar.TypeDateTime(mockColumn))
+
+	mockColumn = mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(false).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(false).Once()
+	s.Equal("datetime", s.grammar.TypeDateTime(mockColumn))
+}
+
 func (s *MysqlSuite) TestTypeDecimal() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetTotal().Return(4).Once()
@@ -355,4 +371,20 @@ func (s *MysqlSuite) TestTypeString() {
 	mockColumn2.EXPECT().GetLength().Return(0).Once()
 
 	s.Equal("varchar(255)", s.grammar.TypeString(mockColumn2))
+}
+
+func (s *MysqlSuite) TestTypeTimestamp() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(true).Once()
+	mockColumn.EXPECT().OnUpdate(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	s.Equal("timestamp(3)", s.grammar.TypeTimestamp(mockColumn))
+
+	mockColumn = mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(false).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(false).Once()
+	s.Equal("timestamp", s.grammar.TypeTimestamp(mockColumn))
 }

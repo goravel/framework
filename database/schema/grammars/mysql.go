@@ -237,8 +237,9 @@ func (r *Mysql) TypeDate(column schema.ColumnDefinition) string {
 
 func (r *Mysql) TypeDateTime(column schema.ColumnDefinition) string {
 	current := "CURRENT_TIMESTAMP"
-	if column.GetPrecision() > 0 {
-		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
+	precision := column.GetPrecision()
+	if precision > 0 {
+		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", precision)
 	}
 	if column.GetUseCurrent() {
 		column.Default(Expression(current))
@@ -247,8 +248,8 @@ func (r *Mysql) TypeDateTime(column schema.ColumnDefinition) string {
 		column.OnUpdate(Expression(current))
 	}
 
-	if column.GetPrecision() > 0 {
-		return fmt.Sprintf("datetime(%d)", column.GetPrecision())
+	if precision > 0 {
+		return fmt.Sprintf("datetime(%d)", precision)
 	} else {
 		return "datetime"
 	}
@@ -334,8 +335,9 @@ func (r *Mysql) TypeTimeTz(column schema.ColumnDefinition) string {
 
 func (r *Mysql) TypeTimestamp(column schema.ColumnDefinition) string {
 	current := "CURRENT_TIMESTAMP"
-	if column.GetPrecision() > 0 {
-		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", column.GetPrecision())
+	precision := column.GetPrecision()
+	if precision > 0 {
+		current = fmt.Sprintf("CURRENT_TIMESTAMP(%d)", precision)
 	}
 	if column.GetUseCurrent() {
 		column.Default(Expression(current))
@@ -344,8 +346,8 @@ func (r *Mysql) TypeTimestamp(column schema.ColumnDefinition) string {
 		column.OnUpdate(Expression(current))
 	}
 
-	if column.GetPrecision() > 0 {
-		return fmt.Sprintf("timestamp(%d)", column.GetPrecision())
+	if precision > 0 {
+		return fmt.Sprintf("timestamp(%d)", precision)
 	} else {
 		return "timestamp"
 	}

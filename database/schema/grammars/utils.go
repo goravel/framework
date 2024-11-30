@@ -38,9 +38,9 @@ func getDefaultValue(def any) string {
 		return "'" + cast.ToString(cast.ToInt(value)) + "'"
 	case Expression:
 		return string(value)
+	default:
+		return "'" + cast.ToString(def) + "'"
 	}
-
-	return "'" + cast.ToString(def) + "'"
 }
 
 func getType(grammar schema.Grammar, column schema.ColumnDefinition) string {
