@@ -17,3 +17,8 @@ type IndexDefinition interface {
 	Algorithm(algorithm string) IndexDefinition
 	Name(name string) IndexDefinition
 }
+
+type IndexConfig struct {
+	Algorithm string
+	Name      string
+}

@@ -110,8 +110,3 @@ type Blueprint interface {
 	// UnsignedTinyInteger Create a new unsigned tiny integer (1-byte) column on the table.
 	UnsignedTinyInteger(column string) ColumnDefinition
 }
-
-type IndexConfig struct {
-	Algorithm string
-	Name      string
-}

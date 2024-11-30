@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -480,8 +479,6 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 			s.Equal("integer", column.Type)
 		}
 		if column.Name == "integer_default" {
-			fmt.Printf("integer_default: %+v\n", column)
-			fmt.Println(column.Default)
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
 			s.Equal("'1'", column.Default)
@@ -1056,7 +1053,6 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 			s.Equal("int", column.TypeName)
 		}
 		if column.Name == "integer_default" {
-			fmt.Printf("integer_default: %+v\n", column)
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
 			s.Empty(column.Comment)
