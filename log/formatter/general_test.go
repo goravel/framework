@@ -200,16 +200,16 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 					"root": map[string]any{
 						"message": "error bad request", // root cause
 						"stack": []string{
-							"main.main:/dummy/examples/logging/example.go:143", // original calling method
-							"main.ProcessResource:/dummy/examples/logging/example.go:71",
-							"main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
-							"main.(*Request).Validate:/dummy/examples/logging/example.go:28", // location of the root
+							"/dummy/examples/logging/example.go:143 [main.main]", // original calling method
+							"/dummy/examples/logging/example.go:71 [main.ProcessResource]",
+							"/dummy/examples/logging/example.go:29 [main.(*Request).Validate]", // location of Wrap call
+							"/dummy/examples/logging/example.go:28 [main.(*Request).Validate]", // location of the root
 						},
 					},
 					"wrap": []map[string]any{
 						{
-							"message": "received a request with no ID",                                  // additional context
-							"stack":   "main.(*Request).Validate:/dummy/examples/logging/example.go:29", // location of Wrap call
+							"message": "received a request with no ID",                                    // additional context
+							"stack":   "/dummy/examples/logging/example.go:29 [main.(*Request).Validate]", // location of Wrap call
 						},
 					},
 				}
@@ -218,10 +218,10 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 				traces, err := general.formatStackTraces(stackTraces)
 				s.Nil(err)
 				stackTraces := []string{
-					"main.main:/dummy/examples/logging/example.go:143",
-					"main.ProcessResource:/dummy/examples/logging/example.go:71",
-					"main.(*Request).Validate:/dummy/examples/logging/example.go:29",
-					"main.(*Request).Validate:/dummy/examples/logging/example.go:28",
+					"/dummy/examples/logging/example.go:143 [main.main]",
+					"/dummy/examples/logging/example.go:71 [main.ProcessResource]",
+					"/dummy/examples/logging/example.go:29 [main.(*Request).Validate]",
+					"/dummy/examples/logging/example.go:28 [main.(*Request).Validate]",
 				}
 				formattedStackTraces := "trace:\n\t" + strings.Join(stackTraces, "\n\t") + "\n"
 
@@ -234,6 +234,67 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 		s.Run(test.name, func() {
 			test.setup()
 			test.assert()
+		})
+	}
+}
+
+func TestFormatStackTrace(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Valid stack trace with file and method",
+			input:    "main.functionName:/path/to/file.go:42",
+			expected: "\t/path/to/file.go:42 [main.functionName]\n",
+		},
+		{
+			name:     "Valid stack trace without method",
+			input:    "/path/to/file.go:42",
+			expected: "\t/path/to/file.go:42\n",
+		},
+		{
+			name:     "No colons in stack trace",
+			input:    "invalidstacktrace",
+			expected: "\tinvalidstacktrace\n",
+		},
+		{
+			name:     "Single colon in stack trace",
+			input:    "file.go:42",
+			expected: "\tfile.go:42\n",
+		},
+		{
+			name:     "Edge case: Empty string",
+			input:    "",
+			expected: "\t\n",
+		},
+		{
+			name:     "Edge case: Colon at the end",
+			input:    "file.go:",
+			expected: "\tfile.go:\n",
+		},
+		{
+			name:     "Edge case: Colon at the beginning",
+			input:    ":file.go",
+			expected: "\t:file.go\n",
+		},
+		{
+			name:     "Edge case: Multiple colons with no method",
+			input:    "/path/to/file.go:100:200",
+			expected: "\t100:200 [/path/to/file.go]\n",
+		},
+		{
+			name:     "Valid stack trace with nested method and line",
+			input:    "pkg.subpkg.functionName:/path/to/file.go:55",
+			expected: "\t/path/to/file.go:55 [pkg.subpkg.functionName]\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatStackTrace(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

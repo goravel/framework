@@ -3,8 +3,9 @@ package docker
 import (
 	"testing"
 
-	"github.com/goravel/framework/support/env"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/support/env"
 )
 
 type ContainerManagerTestSuite struct {
