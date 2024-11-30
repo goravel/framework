@@ -38,6 +38,9 @@ func TestGetDefaultValue(t *testing.T) {
 
 	defString := "abc"
 	assert.Equal(t, "'abc'", getDefaultValue(defString))
+
+	defExpression := Expression("abc")
+	assert.Equal(t, "abc", getDefaultValue(defExpression))
 }
 
 func TestGetType(t *testing.T) {

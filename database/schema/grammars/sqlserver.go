@@ -215,6 +215,18 @@ func (r *Sqlserver) TypeChar(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("nchar(%d)", column.GetLength())
 }
 
+func (r *Sqlserver) TypeDate(column schema.ColumnDefinition) string {
+	return "date"
+}
+
+func (r *Sqlserver) TypeDateTime(column schema.ColumnDefinition) string {
+	return r.TypeTimestamp(column)
+}
+
+func (r *Sqlserver) TypeDateTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeTimestampTz(column)
+}
+
 func (r *Sqlserver) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
@@ -260,10 +272,6 @@ func (r *Sqlserver) TypeMediumText(column schema.ColumnDefinition) string {
 	return "nvarchar(max)"
 }
 
-func (r *Sqlserver) TypeText(column schema.ColumnDefinition) string {
-	return "nvarchar(max)"
-}
-
 func (r *Sqlserver) TypeSmallInteger(column schema.ColumnDefinition) string {
 	return "smallint"
 }
@@ -275,6 +283,46 @@ func (r *Sqlserver) TypeString(column schema.ColumnDefinition) string {
 	}
 
 	return "nvarchar(255)"
+}
+
+func (r *Sqlserver) TypeText(column schema.ColumnDefinition) string {
+	return "nvarchar(max)"
+}
+
+func (r *Sqlserver) TypeTime(column schema.ColumnDefinition) string {
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("time(%d)", column.GetPrecision())
+	} else {
+		return "time"
+	}
+}
+
+func (r *Sqlserver) TypeTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeTime(column)
+}
+
+func (r *Sqlserver) TypeTimestamp(column schema.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default(Expression("CURRENT_TIMESTAMP"))
+	}
+
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("datetime2(%d)", column.GetPrecision())
+	} else {
+		return "datetime"
+	}
+}
+
+func (r *Sqlserver) TypeTimestampTz(column schema.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default(Expression("CURRENT_TIMESTAMP"))
+	}
+
+	if column.GetPrecision() > 0 {
+		return fmt.Sprintf("datetimeoffset(%d)", column.GetPrecision())
+	} else {
+		return "datetimeoffset"
+	}
 }
 
 func (r *Sqlserver) TypeTinyInteger(column schema.ColumnDefinition) string {

@@ -390,3 +390,19 @@ func (s *PostgresSuite) TestTypeString() {
 
 	s.Equal("varchar", s.grammar.TypeString(mockColumn2))
 }
+
+func (s *PostgresSuite) TestTypeTimestamp() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	s.Equal("timestamp(3) without time zone", s.grammar.TypeTimestamp(mockColumn))
+}
+
+func (s *PostgresSuite) TestTypeTimestampTz() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	s.Equal("timestamp(3) with time zone", s.grammar.TypeTimestampTz(mockColumn))
+}

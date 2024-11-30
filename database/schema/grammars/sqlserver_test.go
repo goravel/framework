@@ -314,3 +314,31 @@ func (s *SqlserverSuite) TestTypeString() {
 
 	s.Equal("nvarchar(255)", s.grammar.TypeString(mockColumn2))
 }
+
+func (s *SqlserverSuite) TestTypeTimestamp() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(3).Twice()
+	s.Equal("datetime2(3)", s.grammar.TypeTimestamp(mockColumn))
+
+	mockColumn = mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+	s.Equal("datetime", s.grammar.TypeTimestamp(mockColumn))
+}
+
+func (s *SqlserverSuite) TestTypeTimestampTz() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(3).Twice()
+	s.Equal("datetimeoffset(3)", s.grammar.TypeTimestampTz(mockColumn))
+
+	mockColumn = mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+	s.Equal("datetimeoffset", s.grammar.TypeTimestampTz(mockColumn))
+}

@@ -32,6 +32,7 @@ func (s *MysqlSuite) TestCompileAdd() {
 	mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
 	mockColumn.EXPECT().GetNullable().Return(false).Once()
 	mockColumn.EXPECT().GetLength().Return(1).Once()
+	mockColumn.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn.EXPECT().GetComment().Return("comment").Once()
 
 	sql := s.grammar.CompileAdd(mockBlueprint, &contractsschema.Command{
@@ -73,6 +74,7 @@ func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn1.EXPECT().GetType().Return("integer").Once()
 	// postgres.go::ModifyNullable
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
+	mockColumn1.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn1.EXPECT().GetComment().Return("id").Once()
 
 	// utils.go::getColumns
@@ -87,6 +89,7 @@ func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn2.EXPECT().GetType().Return("string").Once()
 	// postgres.go::ModifyNullable
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+	mockColumn2.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn2.EXPECT().GetComment().Return("name").Once()
 
 	s.Equal("create table `goravel_users` (`id` int comment 'id' auto_increment primary key not null, `name` varchar(100) comment 'name' null, primary key using btree(`role_id`, `user_id`))",
@@ -221,6 +224,7 @@ func (s *MysqlSuite) TestGetColumns() {
 	mockColumn1.EXPECT().GetType().Return("integer").Twice()
 	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
+	mockColumn1.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
 	mockColumn1.EXPECT().GetComment().Return("id").Once()
 
@@ -228,6 +232,7 @@ func (s *MysqlSuite) TestGetColumns() {
 	mockColumn2.EXPECT().GetType().Return("string").Twice()
 	mockColumn2.EXPECT().GetDefault().Return("goravel").Twice()
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+	mockColumn2.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn2.EXPECT().GetLength().Return(10).Once()
 	mockColumn2.EXPECT().GetComment().Return("name").Once()
 
@@ -297,6 +302,39 @@ func (s *MysqlSuite) TestModifyIncrement() {
 	s.Equal(" auto_increment primary key", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
 }
 
+func (s *MysqlSuite) TestModifyOnUpdate() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetOnUpdate().Return(Expression("CURRENT_TIMESTAMP")).Once()
+
+	s.Equal(" on update CURRENT_TIMESTAMP", s.grammar.ModifyOnUpdate(mockBlueprint, mockColumn))
+
+	mockColumn.EXPECT().GetOnUpdate().Return("CURRENT_TIMESTAMP").Once()
+	s.Equal(" on update CURRENT_TIMESTAMP", s.grammar.ModifyOnUpdate(mockBlueprint, mockColumn))
+
+	mockColumn.EXPECT().GetOnUpdate().Return("").Once()
+	s.Empty(s.grammar.ModifyOnUpdate(mockBlueprint, mockColumn))
+
+	mockColumn.EXPECT().GetOnUpdate().Return(nil).Once()
+	s.Empty(s.grammar.ModifyOnUpdate(mockBlueprint, mockColumn))
+}
+
+func (s *MysqlSuite) TestTypeDateTime() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(true).Once()
+	mockColumn.EXPECT().OnUpdate(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	s.Equal("datetime(3)", s.grammar.TypeDateTime(mockColumn))
+
+	mockColumn = mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(false).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(false).Once()
+	s.Equal("datetime", s.grammar.TypeDateTime(mockColumn))
+}
+
 func (s *MysqlSuite) TestTypeDecimal() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetTotal().Return(4).Once()
@@ -333,4 +371,20 @@ func (s *MysqlSuite) TestTypeString() {
 	mockColumn2.EXPECT().GetLength().Return(0).Once()
 
 	s.Equal("varchar(255)", s.grammar.TypeString(mockColumn2))
+}
+
+func (s *MysqlSuite) TestTypeTimestamp() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(true).Once()
+	mockColumn.EXPECT().OnUpdate(Expression("CURRENT_TIMESTAMP(3)")).Return(mockColumn).Once()
+	s.Equal("timestamp(3)", s.grammar.TypeTimestamp(mockColumn))
+
+	mockColumn = mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+	mockColumn.EXPECT().GetUseCurrent().Return(false).Once()
+	mockColumn.EXPECT().GetUseCurrentOnUpdate().Return(false).Once()
+	s.Equal("timestamp", s.grammar.TypeTimestamp(mockColumn))
 }

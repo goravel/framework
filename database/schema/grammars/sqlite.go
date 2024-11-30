@@ -169,6 +169,18 @@ func (r *Sqlite) TypeChar(column schema.ColumnDefinition) string {
 	return "varchar"
 }
 
+func (r *Sqlite) TypeDate(column schema.ColumnDefinition) string {
+	return "date"
+}
+
+func (r *Sqlite) TypeDateTime(column schema.ColumnDefinition) string {
+	return r.TypeTimestamp(column)
+}
+
+func (r *Sqlite) TypeDateTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeDateTime(column)
+}
+
 func (r *Sqlite) TypeDecimal(column schema.ColumnDefinition) string {
 	return "numeric"
 }
@@ -209,8 +221,36 @@ func (r *Sqlite) TypeMediumText(column schema.ColumnDefinition) string {
 	return "text"
 }
 
+func (r *Sqlite) TypeSmallInteger(column schema.ColumnDefinition) string {
+	return "integer"
+}
+
+func (r *Sqlite) TypeString(column schema.ColumnDefinition) string {
+	return "varchar"
+}
+
 func (r *Sqlite) TypeText(column schema.ColumnDefinition) string {
 	return "text"
+}
+
+func (r *Sqlite) TypeTime(column schema.ColumnDefinition) string {
+	return "time"
+}
+
+func (r *Sqlite) TypeTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeTime(column)
+}
+
+func (r *Sqlite) TypeTimestamp(column schema.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default(Expression("CURRENT_TIMESTAMP"))
+	}
+
+	return "datetime"
+}
+
+func (r *Sqlite) TypeTimestampTz(column schema.ColumnDefinition) string {
+	return r.TypeTimestamp(column)
 }
 
 func (r *Sqlite) TypeTinyInteger(column schema.ColumnDefinition) string {
@@ -219,14 +259,6 @@ func (r *Sqlite) TypeTinyInteger(column schema.ColumnDefinition) string {
 
 func (r *Sqlite) TypeTinyText(column schema.ColumnDefinition) string {
 	return "text"
-}
-
-func (r *Sqlite) TypeSmallInteger(column schema.ColumnDefinition) string {
-	return "integer"
-}
-
-func (r *Sqlite) TypeString(column schema.ColumnDefinition) string {
-	return "varchar"
 }
 
 func (r *Sqlite) addForeignKeys(commands []*schema.Command) string {

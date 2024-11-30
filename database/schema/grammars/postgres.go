@@ -221,6 +221,18 @@ func (r *Postgres) TypeChar(column schema.ColumnDefinition) string {
 	return "char"
 }
 
+func (r *Postgres) TypeDate(column schema.ColumnDefinition) string {
+	return "date"
+}
+
+func (r *Postgres) TypeDateTime(column schema.ColumnDefinition) string {
+	return r.TypeTimestamp(column)
+}
+
+func (r *Postgres) TypeDateTimeTz(column schema.ColumnDefinition) string {
+	return r.TypeTimestampTz(column)
+}
+
 func (r *Postgres) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
@@ -270,10 +282,6 @@ func (r *Postgres) TypeMediumText(column schema.ColumnDefinition) string {
 	return "text"
 }
 
-func (r *Postgres) TypeText(column schema.ColumnDefinition) string {
-	return "text"
-}
-
 func (r *Postgres) TypeSmallInteger(column schema.ColumnDefinition) string {
 	if column.GetAutoIncrement() {
 		return "smallserial"
@@ -289,6 +297,34 @@ func (r *Postgres) TypeString(column schema.ColumnDefinition) string {
 	}
 
 	return "varchar"
+}
+
+func (r *Postgres) TypeText(column schema.ColumnDefinition) string {
+	return "text"
+}
+
+func (r *Postgres) TypeTime(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("time(%d) without time zone", column.GetPrecision())
+}
+
+func (r *Postgres) TypeTimeTz(column schema.ColumnDefinition) string {
+	return fmt.Sprintf("time(%d) with time zone", column.GetPrecision())
+}
+
+func (r *Postgres) TypeTimestamp(column schema.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default(Expression("CURRENT_TIMESTAMP"))
+	}
+
+	return fmt.Sprintf("timestamp(%d) without time zone", column.GetPrecision())
+}
+
+func (r *Postgres) TypeTimestampTz(column schema.ColumnDefinition) string {
+	if column.GetUseCurrent() {
+		column.Default(Expression("CURRENT_TIMESTAMP"))
+	}
+
+	return fmt.Sprintf("timestamp(%d) with time zone", column.GetPrecision())
 }
 
 func (r *Postgres) TypeTinyInteger(column schema.ColumnDefinition) string {
