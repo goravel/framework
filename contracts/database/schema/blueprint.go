@@ -52,7 +52,7 @@ type Blueprint interface {
 	// DropTimestampsTz Indicate that the timestamp columns should be dropped.
 	DropTimestampsTz()
 	// DropUnique Indicate that the given unique key should be dropped.
-	DropUnique(index ...string)
+	DropUnique(name ...string)
 	// Enum Create a new enum column on the table.
 	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.

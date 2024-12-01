@@ -163,8 +163,8 @@ func (r *Blueprint) DropTimestampsTz() {
 	r.DropTimestamps()
 }
 
-func (r *Blueprint) DropUnique(index ...string) {
-	r.indexCommand(constants.CommandDropUnique, index)
+func (r *Blueprint) DropUnique(name ...string) {
+	r.indexCommand(constants.CommandDropUnique, name)
 }
 
 func (r *Blueprint) Enum(column string, allowed []string) schema.ColumnDefinition {
@@ -414,19 +414,19 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 		case constants.CommandDrop:
 			statements = append(statements, grammar.CompileDrop(r))
 		case constants.CommandDropColumn:
-			statements = append(statements, grammar.CompileDropColumn(r)...)
+			statements = append(statements, grammar.CompileDropColumn(r, command)...)
 		case constants.CommandDropForeign:
-			statements = append(statements, grammar.CompileDropForeign(r))
+			statements = append(statements, grammar.CompileDropForeign(r, command))
 		case constants.CommandDropFullText:
-			statements = append(statements, grammar.CompileDropFullText(r))
+			statements = append(statements, grammar.CompileDropFullText(r, command))
 		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
 		case constants.CommandDropIndex:
-			statements = append(statements, grammar.CompileDropIndex(r))
+			statements = append(statements, grammar.CompileDropIndex(r, command))
 		case constants.CommandDropPrimary:
-			statements = append(statements, grammar.CompileDropPrimary(r))
+			statements = append(statements, grammar.CompileDropPrimary(r, command))
 		case constants.CommandDropUnique:
-			statements = append(statements, grammar.CompileDropUnique(r))
+			statements = append(statements, grammar.CompileDropUnique(r, command))
 		case constants.CommandForeign:
 			statements = append(statements, grammar.CompileForeign(r, command))
 		case constants.CommandFullText:
@@ -436,7 +436,7 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 		case constants.CommandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command))
 		case constants.CommandRenameIndex:
-			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command))
+			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command)...)
 		case constants.CommandUnique:
 			statements = append(statements, grammar.CompileUnique(r, command))
 		}
