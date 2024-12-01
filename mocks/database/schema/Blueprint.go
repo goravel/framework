@@ -561,9 +561,15 @@ func (_c *Blueprint_Drop_Call) RunAndReturn(run func()) *Blueprint_Drop_Call {
 	return _c
 }
 
-// DropColumn provides a mock function with given fields: columns
-func (_m *Blueprint) DropColumn(columns []string) {
-	_m.Called(columns)
+// DropColumn provides a mock function with given fields: column
+func (_m *Blueprint) DropColumn(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_DropColumn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropColumn'
@@ -572,14 +578,21 @@ type Blueprint_DropColumn_Call struct {
 }
 
 // DropColumn is a helper method to define mock.On call
-//   - columns []string
-func (_e *Blueprint_Expecter) DropColumn(columns interface{}) *Blueprint_DropColumn_Call {
-	return &Blueprint_DropColumn_Call{Call: _e.mock.On("DropColumn", columns)}
+//   - column ...string
+func (_e *Blueprint_Expecter) DropColumn(column ...interface{}) *Blueprint_DropColumn_Call {
+	return &Blueprint_DropColumn_Call{Call: _e.mock.On("DropColumn",
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropColumn_Call) Run(run func(columns []string)) *Blueprint_DropColumn_Call {
+func (_c *Blueprint_DropColumn_Call) Run(run func(column ...string)) *Blueprint_DropColumn_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -589,14 +602,20 @@ func (_c *Blueprint_DropColumn_Call) Return() *Blueprint_DropColumn_Call {
 	return _c
 }
 
-func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func([]string)) *Blueprint_DropColumn_Call {
+func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(...string)) *Blueprint_DropColumn_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// DropForeign provides a mock function with given fields: index
-func (_m *Blueprint) DropForeign(index string) {
-	_m.Called(index)
+// DropForeign provides a mock function with given fields: column
+func (_m *Blueprint) DropForeign(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_DropForeign_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropForeign'
@@ -605,14 +624,21 @@ type Blueprint_DropForeign_Call struct {
 }
 
 // DropForeign is a helper method to define mock.On call
-//   - index string
-func (_e *Blueprint_Expecter) DropForeign(index interface{}) *Blueprint_DropForeign_Call {
-	return &Blueprint_DropForeign_Call{Call: _e.mock.On("DropForeign", index)}
+//   - column ...string
+func (_e *Blueprint_Expecter) DropForeign(column ...interface{}) *Blueprint_DropForeign_Call {
+	return &Blueprint_DropForeign_Call{Call: _e.mock.On("DropForeign",
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropForeign_Call) Run(run func(index string)) *Blueprint_DropForeign_Call {
+func (_c *Blueprint_DropForeign_Call) Run(run func(column ...string)) *Blueprint_DropForeign_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -622,14 +648,53 @@ func (_c *Blueprint_DropForeign_Call) Return() *Blueprint_DropForeign_Call {
 	return _c
 }
 
-func (_c *Blueprint_DropForeign_Call) RunAndReturn(run func(string)) *Blueprint_DropForeign_Call {
+func (_c *Blueprint_DropForeign_Call) RunAndReturn(run func(...string)) *Blueprint_DropForeign_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// DropFullText provides a mock function with given fields: index
-func (_m *Blueprint) DropFullText(index string) {
-	_m.Called(index)
+// DropForeignByName provides a mock function with given fields: name
+func (_m *Blueprint) DropForeignByName(name string) {
+	_m.Called(name)
+}
+
+// Blueprint_DropForeignByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropForeignByName'
+type Blueprint_DropForeignByName_Call struct {
+	*mock.Call
+}
+
+// DropForeignByName is a helper method to define mock.On call
+//   - name string
+func (_e *Blueprint_Expecter) DropForeignByName(name interface{}) *Blueprint_DropForeignByName_Call {
+	return &Blueprint_DropForeignByName_Call{Call: _e.mock.On("DropForeignByName", name)}
+}
+
+func (_c *Blueprint_DropForeignByName_Call) Run(run func(name string)) *Blueprint_DropForeignByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropForeignByName_Call) Return() *Blueprint_DropForeignByName_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropForeignByName_Call) RunAndReturn(run func(string)) *Blueprint_DropForeignByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropFullText provides a mock function with given fields: column
+func (_m *Blueprint) DropFullText(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
 }
 
 // Blueprint_DropFullText_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropFullText'
@@ -638,14 +703,21 @@ type Blueprint_DropFullText_Call struct {
 }
 
 // DropFullText is a helper method to define mock.On call
-//   - index string
-func (_e *Blueprint_Expecter) DropFullText(index interface{}) *Blueprint_DropFullText_Call {
-	return &Blueprint_DropFullText_Call{Call: _e.mock.On("DropFullText", index)}
+//   - column ...string
+func (_e *Blueprint_Expecter) DropFullText(column ...interface{}) *Blueprint_DropFullText_Call {
+	return &Blueprint_DropFullText_Call{Call: _e.mock.On("DropFullText",
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropFullText_Call) Run(run func(index string)) *Blueprint_DropFullText_Call {
+func (_c *Blueprint_DropFullText_Call) Run(run func(column ...string)) *Blueprint_DropFullText_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -655,7 +727,40 @@ func (_c *Blueprint_DropFullText_Call) Return() *Blueprint_DropFullText_Call {
 	return _c
 }
 
-func (_c *Blueprint_DropFullText_Call) RunAndReturn(run func(string)) *Blueprint_DropFullText_Call {
+func (_c *Blueprint_DropFullText_Call) RunAndReturn(run func(...string)) *Blueprint_DropFullText_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DropFullTextByName provides a mock function with given fields: name
+func (_m *Blueprint) DropFullTextByName(name string) {
+	_m.Called(name)
+}
+
+// Blueprint_DropFullTextByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropFullTextByName'
+type Blueprint_DropFullTextByName_Call struct {
+	*mock.Call
+}
+
+// DropFullTextByName is a helper method to define mock.On call
+//   - name string
+func (_e *Blueprint_Expecter) DropFullTextByName(name interface{}) *Blueprint_DropFullTextByName_Call {
+	return &Blueprint_DropFullTextByName_Call{Call: _e.mock.On("DropFullTextByName", name)}
+}
+
+func (_c *Blueprint_DropFullTextByName_Call) Run(run func(name string)) *Blueprint_DropFullTextByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropFullTextByName_Call) Return() *Blueprint_DropFullTextByName_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropFullTextByName_Call) RunAndReturn(run func(string)) *Blueprint_DropFullTextByName_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -692,9 +797,9 @@ func (_c *Blueprint_DropIfExists_Call) RunAndReturn(run func()) *Blueprint_DropI
 	return _c
 }
 
-// DropIndex provides a mock function with given fields: index
-func (_m *Blueprint) DropIndex(index string) {
-	_m.Called(index)
+// DropIndex provides a mock function with given fields: name
+func (_m *Blueprint) DropIndex(name string) {
+	_m.Called(name)
 }
 
 // Blueprint_DropIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropIndex'
@@ -703,12 +808,12 @@ type Blueprint_DropIndex_Call struct {
 }
 
 // DropIndex is a helper method to define mock.On call
-//   - index string
-func (_e *Blueprint_Expecter) DropIndex(index interface{}) *Blueprint_DropIndex_Call {
-	return &Blueprint_DropIndex_Call{Call: _e.mock.On("DropIndex", index)}
+//   - name string
+func (_e *Blueprint_Expecter) DropIndex(name interface{}) *Blueprint_DropIndex_Call {
+	return &Blueprint_DropIndex_Call{Call: _e.mock.On("DropIndex", name)}
 }
 
-func (_c *Blueprint_DropIndex_Call) Run(run func(index string)) *Blueprint_DropIndex_Call {
+func (_c *Blueprint_DropIndex_Call) Run(run func(name string)) *Blueprint_DropIndex_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -725,11 +830,11 @@ func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func(string)) *Blueprint_Dr
 	return _c
 }
 
-// DropPrimary provides a mock function with given fields: index
-func (_m *Blueprint) DropPrimary(index ...string) {
-	_va := make([]interface{}, len(index))
-	for _i := range index {
-		_va[_i] = index[_i]
+// DropPrimary provides a mock function with given fields: name
+func (_m *Blueprint) DropPrimary(name ...string) {
+	_va := make([]interface{}, len(name))
+	for _i := range name {
+		_va[_i] = name[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -742,13 +847,13 @@ type Blueprint_DropPrimary_Call struct {
 }
 
 // DropPrimary is a helper method to define mock.On call
-//   - index ...string
-func (_e *Blueprint_Expecter) DropPrimary(index ...interface{}) *Blueprint_DropPrimary_Call {
+//   - name ...string
+func (_e *Blueprint_Expecter) DropPrimary(name ...interface{}) *Blueprint_DropPrimary_Call {
 	return &Blueprint_DropPrimary_Call{Call: _e.mock.On("DropPrimary",
-		append([]interface{}{}, index...)...)}
+		append([]interface{}{}, name...)...)}
 }
 
-func (_c *Blueprint_DropPrimary_Call) Run(run func(index ...string)) *Blueprint_DropPrimary_Call {
+func (_c *Blueprint_DropPrimary_Call) Run(run func(name ...string)) *Blueprint_DropPrimary_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
@@ -1085,14 +1190,13 @@ func (_c *Blueprint_Float_Call) RunAndReturn(run func(string, ...int) schema.Col
 	return _c
 }
 
-// Foreign provides a mock function with given fields: columns, name
-func (_m *Blueprint) Foreign(columns []string, name ...string) schema.ForeignKeyDefinition {
-	_va := make([]interface{}, len(name))
-	for _i := range name {
-		_va[_i] = name[_i]
+// Foreign provides a mock function with given fields: column
+func (_m *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, columns)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1101,8 +1205,8 @@ func (_m *Blueprint) Foreign(columns []string, name ...string) schema.ForeignKey
 	}
 
 	var r0 schema.ForeignKeyDefinition
-	if rf, ok := ret.Get(0).(func([]string, ...string) schema.ForeignKeyDefinition); ok {
-		r0 = rf(columns, name...)
+	if rf, ok := ret.Get(0).(func(...string) schema.ForeignKeyDefinition); ok {
+		r0 = rf(column...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.ForeignKeyDefinition)
@@ -1118,22 +1222,21 @@ type Blueprint_Foreign_Call struct {
 }
 
 // Foreign is a helper method to define mock.On call
-//   - columns []string
-//   - name ...string
-func (_e *Blueprint_Expecter) Foreign(columns interface{}, name ...interface{}) *Blueprint_Foreign_Call {
+//   - column ...string
+func (_e *Blueprint_Expecter) Foreign(column ...interface{}) *Blueprint_Foreign_Call {
 	return &Blueprint_Foreign_Call{Call: _e.mock.On("Foreign",
-		append([]interface{}{columns}, name...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_Foreign_Call) Run(run func(columns []string, name ...string)) *Blueprint_Foreign_Call {
+func (_c *Blueprint_Foreign_Call) Run(run func(column ...string)) *Blueprint_Foreign_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]string, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
 				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].([]string), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -1143,19 +1246,18 @@ func (_c *Blueprint_Foreign_Call) Return(_a0 schema.ForeignKeyDefinition) *Bluep
 	return _c
 }
 
-func (_c *Blueprint_Foreign_Call) RunAndReturn(run func([]string, ...string) schema.ForeignKeyDefinition) *Blueprint_Foreign_Call {
+func (_c *Blueprint_Foreign_Call) RunAndReturn(run func(...string) schema.ForeignKeyDefinition) *Blueprint_Foreign_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// FullText provides a mock function with given fields: columns, config
-func (_m *Blueprint) FullText(columns []string, config ...schema.IndexConfig) schema.IndexDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
+// FullText provides a mock function with given fields: column
+func (_m *Blueprint) FullText(column ...string) schema.IndexDefinition {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, columns)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1164,8 +1266,8 @@ func (_m *Blueprint) FullText(columns []string, config ...schema.IndexConfig) sc
 	}
 
 	var r0 schema.IndexDefinition
-	if rf, ok := ret.Get(0).(func([]string, ...schema.IndexConfig) schema.IndexDefinition); ok {
-		r0 = rf(columns, config...)
+	if rf, ok := ret.Get(0).(func(...string) schema.IndexDefinition); ok {
+		r0 = rf(column...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.IndexDefinition)
@@ -1181,22 +1283,21 @@ type Blueprint_FullText_Call struct {
 }
 
 // FullText is a helper method to define mock.On call
-//   - columns []string
-//   - config ...schema.IndexConfig
-func (_e *Blueprint_Expecter) FullText(columns interface{}, config ...interface{}) *Blueprint_FullText_Call {
+//   - column ...string
+func (_e *Blueprint_Expecter) FullText(column ...interface{}) *Blueprint_FullText_Call {
 	return &Blueprint_FullText_Call{Call: _e.mock.On("FullText",
-		append([]interface{}{columns}, config...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_FullText_Call) Run(run func(columns []string, config ...schema.IndexConfig)) *Blueprint_FullText_Call {
+func (_c *Blueprint_FullText_Call) Run(run func(column ...string)) *Blueprint_FullText_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IndexConfig, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(schema.IndexConfig)
+				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].([]string), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -1206,7 +1307,7 @@ func (_c *Blueprint_FullText_Call) Return(_a0 schema.IndexDefinition) *Blueprint
 	return _c
 }
 
-func (_c *Blueprint_FullText_Call) RunAndReturn(run func([]string, ...schema.IndexConfig) schema.IndexDefinition) *Blueprint_FullText_Call {
+func (_c *Blueprint_FullText_Call) RunAndReturn(run func(...string) schema.IndexDefinition) *Blueprint_FullText_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1505,14 +1606,13 @@ func (_c *Blueprint_Increments_Call) RunAndReturn(run func(string) schema.Column
 	return _c
 }
 
-// Index provides a mock function with given fields: columns, config
-func (_m *Blueprint) Index(columns []string, config ...schema.IndexConfig) schema.IndexDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
+// Index provides a mock function with given fields: column
+func (_m *Blueprint) Index(column ...string) schema.IndexDefinition {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, columns)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -1521,8 +1621,8 @@ func (_m *Blueprint) Index(columns []string, config ...schema.IndexConfig) schem
 	}
 
 	var r0 schema.IndexDefinition
-	if rf, ok := ret.Get(0).(func([]string, ...schema.IndexConfig) schema.IndexDefinition); ok {
-		r0 = rf(columns, config...)
+	if rf, ok := ret.Get(0).(func(...string) schema.IndexDefinition); ok {
+		r0 = rf(column...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.IndexDefinition)
@@ -1538,22 +1638,21 @@ type Blueprint_Index_Call struct {
 }
 
 // Index is a helper method to define mock.On call
-//   - columns []string
-//   - config ...schema.IndexConfig
-func (_e *Blueprint_Expecter) Index(columns interface{}, config ...interface{}) *Blueprint_Index_Call {
+//   - column ...string
+func (_e *Blueprint_Expecter) Index(column ...interface{}) *Blueprint_Index_Call {
 	return &Blueprint_Index_Call{Call: _e.mock.On("Index",
-		append([]interface{}{columns}, config...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_Index_Call) Run(run func(columns []string, config ...schema.IndexConfig)) *Blueprint_Index_Call {
+func (_c *Blueprint_Index_Call) Run(run func(column ...string)) *Blueprint_Index_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IndexConfig, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(schema.IndexConfig)
+				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].([]string), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -1563,7 +1662,7 @@ func (_c *Blueprint_Index_Call) Return(_a0 schema.IndexDefinition) *Blueprint_In
 	return _c
 }
 
-func (_c *Blueprint_Index_Call) RunAndReturn(run func([]string, ...schema.IndexConfig) schema.IndexDefinition) *Blueprint_Index_Call {
+func (_c *Blueprint_Index_Call) RunAndReturn(run func(...string) schema.IndexDefinition) *Blueprint_Index_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2930,14 +3029,13 @@ func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(schema.Grammar) []string) 
 	return _c
 }
 
-// Unique provides a mock function with given fields: columns, config
-func (_m *Blueprint) Unique(columns []string, config ...schema.IndexConfig) schema.IndexDefinition {
-	_va := make([]interface{}, len(config))
-	for _i := range config {
-		_va[_i] = config[_i]
+// Unique provides a mock function with given fields: column
+func (_m *Blueprint) Unique(column ...string) schema.IndexDefinition {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, columns)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
@@ -2946,8 +3044,8 @@ func (_m *Blueprint) Unique(columns []string, config ...schema.IndexConfig) sche
 	}
 
 	var r0 schema.IndexDefinition
-	if rf, ok := ret.Get(0).(func([]string, ...schema.IndexConfig) schema.IndexDefinition); ok {
-		r0 = rf(columns, config...)
+	if rf, ok := ret.Get(0).(func(...string) schema.IndexDefinition); ok {
+		r0 = rf(column...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.IndexDefinition)
@@ -2963,22 +3061,21 @@ type Blueprint_Unique_Call struct {
 }
 
 // Unique is a helper method to define mock.On call
-//   - columns []string
-//   - config ...schema.IndexConfig
-func (_e *Blueprint_Expecter) Unique(columns interface{}, config ...interface{}) *Blueprint_Unique_Call {
+//   - column ...string
+func (_e *Blueprint_Expecter) Unique(column ...interface{}) *Blueprint_Unique_Call {
 	return &Blueprint_Unique_Call{Call: _e.mock.On("Unique",
-		append([]interface{}{columns}, config...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_Unique_Call) Run(run func(columns []string, config ...schema.IndexConfig)) *Blueprint_Unique_Call {
+func (_c *Blueprint_Unique_Call) Run(run func(column ...string)) *Blueprint_Unique_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]schema.IndexConfig, len(args)-1)
-		for i, a := range args[1:] {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(schema.IndexConfig)
+				variadicArgs[i] = a.(string)
 			}
 		}
-		run(args[0].([]string), variadicArgs...)
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -2988,7 +3085,7 @@ func (_c *Blueprint_Unique_Call) Return(_a0 schema.IndexDefinition) *Blueprint_U
 	return _c
 }
 
-func (_c *Blueprint_Unique_Call) RunAndReturn(run func([]string, ...schema.IndexConfig) schema.IndexDefinition) *Blueprint_Unique_Call {
+func (_c *Blueprint_Unique_Call) RunAndReturn(run func(...string) schema.IndexDefinition) *Blueprint_Unique_Call {
 	_c.Call.Return(run)
 	return _c
 }
