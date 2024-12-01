@@ -42,6 +42,16 @@ func (r *Wrap) Columnize(columns []string) string {
 	return strings.Join(columns, ", ")
 }
 
+func (r *Wrap) GetPrefix() string {
+	return r.tablePrefix
+}
+
+func (r *Wrap) PrefixArray(prefix string, values []string) []string {
+	return collect.Map(values, func(value string, _ int) string {
+		return prefix + " " + value
+	})
+}
+
 func (r *Wrap) Quote(value string) string {
 	if value == "" {
 		return value

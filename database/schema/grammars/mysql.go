@@ -47,7 +47,7 @@ func (r *Mysql) CompileColumns(schema, table string) string {
 			"order by ordinal_position asc", r.wrap.Quote(schema), r.wrap.Quote(table))
 }
 
-func (r *Mysql) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Mysql) CompileComment(_ schema.Blueprint, command *schema.Command) string {
 	return ""
 }
 
@@ -71,6 +71,10 @@ func (r *Mysql) CompileDisableForeignKeyConstraints() string {
 	return "SET FOREIGN_KEY_CHECKS=0;"
 }
 
+func (r *Mysql) CompileDrop(blueprint schema.Blueprint) string {
+	return fmt.Sprintf("drop table %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
 func (r *Mysql) CompileDropAllDomains(domains []string) string {
 	return ""
 }
@@ -87,8 +91,36 @@ func (r *Mysql) CompileDropAllViews(views []string) string {
 	return fmt.Sprintf("drop view %s", r.wrap.Columnize(views))
 }
 
+func (r *Mysql) CompileDropColumn(blueprint schema.Blueprint, command *schema.Command) []string {
+	columns := r.wrap.PrefixArray("drop", r.wrap.Columns(command.Columns))
+
+	return []string{
+		fmt.Sprintf("alter table %s %s", r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, ", ")),
+	}
+}
+
+func (r *Mysql) CompileDropForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop foreign key %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
+}
+
+func (r *Mysql) CompileDropFullText(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.CompileDropIndex(blueprint, command)
+}
+
 func (r *Mysql) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
+func (r *Mysql) CompileDropIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop index %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
+}
+
+func (r *Mysql) CompileDropPrimary(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop primary key", r.wrap.Table(blueprint.GetTableName()))
+}
+
+func (r *Mysql) CompileDropUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.CompileDropIndex(blueprint, command)
 }
 
 func (r *Mysql) CompileEnableForeignKeyConstraints() string {
@@ -110,6 +142,10 @@ func (r *Mysql) CompileForeign(blueprint schema.Blueprint, command *schema.Comma
 	}
 
 	return sql
+}
+
+func (r *Mysql) CompileFullText(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.compileKey(blueprint, command, "fulltext")
 }
 
 func (r *Mysql) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
@@ -147,6 +183,12 @@ func (r *Mysql) CompilePrimary(blueprint schema.Blueprint, command *schema.Comma
 	return fmt.Sprintf("alter table %s add primary key %s(%s)", r.wrap.Table(blueprint.GetTableName()), algorithm, r.wrap.Columnize(command.Columns))
 }
 
+func (r *Mysql) CompileRenameIndex(_ schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
+	return []string{
+		fmt.Sprintf("alter table %s rename index %s to %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.From), r.wrap.Column(command.To)),
+	}
+}
+
 func (r *Mysql) CompileTables(database string) string {
 	return fmt.Sprintf("select table_name as `name`, (data_length + index_length) as `size`, "+
 		"table_comment as `comment`, engine as `engine`, table_collation as `collation` "+
@@ -156,6 +198,10 @@ func (r *Mysql) CompileTables(database string) string {
 
 func (r *Mysql) CompileTypes() string {
 	return ""
+}
+
+func (r *Mysql) CompileUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.compileKey(blueprint, command, "unique")
 }
 
 func (r *Mysql) CompileViews(database string) string {
@@ -363,6 +409,20 @@ func (r *Mysql) TypeTinyInteger(column schema.ColumnDefinition) string {
 
 func (r *Mysql) TypeTinyText(column schema.ColumnDefinition) string {
 	return "tinytext"
+}
+
+func (r *Mysql) compileKey(blueprint schema.Blueprint, command *schema.Command, ttype string) string {
+	var algorithm string
+	if command.Algorithm != "" {
+		algorithm = " using " + command.Algorithm
+	}
+
+	return fmt.Sprintf("alter table %s add %s %s%s(%s)",
+		r.wrap.Table(blueprint.GetTableName()),
+		ttype,
+		r.wrap.Column(command.Index),
+		algorithm,
+		r.wrap.Columnize(command.Columns))
 }
 
 func (r *Mysql) getColumns(blueprint schema.Blueprint) []string {

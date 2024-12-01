@@ -28,17 +28,21 @@ type Blueprint interface {
 	// Drop Indicate that the table should be dropped.
 	Drop()
 	// DropColumn Indicate that the given columns should be dropped.
-	DropColumn(columns []string)
+	DropColumn(column ...string)
 	// DropForeign Indicate that the given foreign key should be dropped.
-	DropForeign(index string)
+	DropForeign(column ...string)
+	// DropForeignByName Indicate that the given foreign key should be dropped.
+	DropForeignByName(name string)
 	// DropFullText Indicate that the given fulltext index should be dropped.
-	DropFullText(index string)
+	DropFullText(column ...string)
+	// DropFullTextByName Indicate that the given fulltext index should be dropped.
+	DropFullTextByName(name string)
 	// DropIfExists Indicate that the table should be dropped if it exists.
 	DropIfExists()
 	// DropIndex Indicate that the given index should be dropped.
-	DropIndex(index string)
+	DropIndex(name string)
 	// DropPrimary Indicate that the given primary key should be dropped.
-	DropPrimary(index ...string)
+	DropPrimary(name ...string)
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
 	DropSoftDeletes(column ...string)
 	// DropSoftDeletesTz Indicate that the soft delete column should be dropped.
@@ -54,9 +58,9 @@ type Blueprint interface {
 	// Float Create a new float column on the table.
 	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
-	Foreign(columns []string, name ...string) ForeignKeyDefinition
+	Foreign(column ...string) ForeignKeyDefinition
 	// FullText Specify a fulltext for the table.
-	FullText(columns []string, config ...IndexConfig) IndexDefinition
+	FullText(column ...string) IndexDefinition
 	// GetAddedColumns Get the added columns.
 	GetAddedColumns() []ColumnDefinition
 	// GetCommands Get the commands.
@@ -70,7 +74,7 @@ type Blueprint interface {
 	// Increments Create a new auto-incrementing integer (4-byte) column on the table.
 	Increments(column string) ColumnDefinition
 	// Index Specify an index for the table.
-	Index(columns []string, config ...IndexConfig) IndexDefinition
+	Index(column ...string) IndexDefinition
 	// Integer Create a new integer (4-byte) column on the table.
 	Integer(column string) ColumnDefinition
 	// IntegerIncrements Create a new auto-incrementing integer (4-byte) column on the table.
@@ -126,7 +130,7 @@ type Blueprint interface {
 	// ToSql Get the raw SQL statements for the blueprint.
 	ToSql(grammar Grammar) []string
 	// Unique Specify a unique index for the table.
-	Unique(columns []string, config ...IndexConfig) IndexDefinition
+	Unique(column ...string) IndexDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.
 	UnsignedBigInteger(column string) ColumnDefinition
 	// UnsignedInteger Create a new unsigned integer (4-byte) column on the table.

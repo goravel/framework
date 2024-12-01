@@ -8,6 +8,7 @@ import (
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
+	"github.com/goravel/framework/support/collect"
 )
 
 type Postgres struct {
@@ -64,6 +65,10 @@ func (r *Postgres) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
 }
 
+func (r *Postgres) CompileDrop(blueprint schema.Blueprint) string {
+	return fmt.Sprintf("drop table %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
 func (r *Postgres) CompileDropAllDomains(domains []string) string {
 	return fmt.Sprintf("drop domain %s cascade", strings.Join(r.EscapeNames(domains), ", "))
 }
@@ -80,8 +85,38 @@ func (r *Postgres) CompileDropAllViews(views []string) string {
 	return fmt.Sprintf("drop view %s cascade", strings.Join(r.EscapeNames(views), ", "))
 }
 
+func (r *Postgres) CompileDropColumn(blueprint schema.Blueprint, command *schema.Command) []string {
+	columns := r.wrap.PrefixArray("drop column", r.wrap.Columns(command.Columns))
+
+	return []string{
+		fmt.Sprintf("alter table %s %s", r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, ", ")),
+	}
+}
+
+func (r *Postgres) CompileDropForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
+}
+
+func (r *Postgres) CompileDropFullText(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.CompileDropIndex(blueprint, command)
+}
+
 func (r *Postgres) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
+func (r *Postgres) CompileDropIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("drop index %s", r.wrap.Column(command.Index))
+}
+
+func (r *Postgres) CompileDropPrimary(blueprint schema.Blueprint, command *schema.Command) string {
+	index := r.wrap.Column(fmt.Sprintf("%s%s_pkey", r.wrap.GetPrefix(), blueprint.GetTableName()))
+
+	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), index)
+}
+
+func (r *Postgres) CompileDropUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
 }
 
 func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
@@ -99,6 +134,19 @@ func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Co
 	}
 
 	return sql
+}
+
+func (r *Postgres) CompileFullText(blueprint schema.Blueprint, command *schema.Command) string {
+	language := "english"
+	if command.Language != "" {
+		language = command.Language
+	}
+
+	columns := collect.Map(command.Columns, func(column string, _ int) string {
+		return fmt.Sprintf("to_tsvector('%s', %s)", r.wrap.Quote(language), r.wrap.Column(column))
+	})
+
+	return fmt.Sprintf("create index %s on %s using gin(%s)", r.wrap.Column(command.Index), r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, " || "))
 }
 
 func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
@@ -137,7 +185,13 @@ func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Co
 	return fmt.Sprintf("alter table %s add primary key (%s)", r.wrap.Table(blueprint.GetTableName()), r.wrap.Columnize(command.Columns))
 }
 
-func (r *Postgres) CompileTables(database string) string {
+func (r *Postgres) CompileRenameIndex(_ schema.Schema, _ schema.Blueprint, command *schema.Command) []string {
+	return []string{
+		fmt.Sprintf("alter index %s rename to %s", r.wrap.Column(command.From), r.wrap.Column(command.To)),
+	}
+}
+
+func (r *Postgres) CompileTables(_ string) string {
 	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
 		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
 		"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
@@ -155,6 +209,30 @@ func (r *Postgres) CompileTypes() string {
 		where ((t.typrelid = 0 and (ce.relkind = 'c' or ce.relkind is null)) or c.relkind = 'c') 
 		and not exists (select 1 from pg_depend d where d.objid in (t.oid, t.typelem) and d.deptype = 'e') 
 		and n.nspname not in ('pg_catalog', 'information_schema')`
+}
+
+func (r *Postgres) CompileUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	sql := fmt.Sprintf("alter table %s add constraint %s unique (%s)",
+		r.wrap.Table(blueprint.GetTableName()),
+		r.wrap.Column(command.Index),
+		r.wrap.Columnize(command.Columns))
+
+	if command.Deferrable != nil {
+		if *command.Deferrable {
+			sql += " deferrable"
+		} else {
+			sql += " not deferrable"
+		}
+	}
+	if command.Deferrable != nil && command.InitiallyImmediate != nil {
+		if *command.InitiallyImmediate {
+			sql += " initially immediate"
+		} else {
+			sql += " initially deferred"
+		}
+	}
+
+	return sql
 }
 
 func (r *Postgres) CompileViews(database string) string {

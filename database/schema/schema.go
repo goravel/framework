@@ -215,5 +215,5 @@ func (r *Schema) build(blueprint contractsschema.Blueprint) error {
 }
 
 func (r *Schema) createBlueprint(table string) contractsschema.Blueprint {
-	return NewBlueprint(r.prefix, table)
+	return NewBlueprint(r, r.prefix, table)
 }

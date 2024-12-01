@@ -14,12 +14,14 @@ type Blueprint struct {
 	columns  []*ColumnDefinition
 	commands []*schema.Command
 	prefix   string
+	schema   schema.Schema
 	table    string
 }
 
-func NewBlueprint(prefix, table string) *Blueprint {
+func NewBlueprint(schema schema.Schema, prefix, table string) *Blueprint {
 	return &Blueprint{
 		prefix: prefix,
+		schema: schema,
 		table:  table,
 	}
 }
@@ -90,10 +92,79 @@ func (r *Blueprint) Double(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("double", column)
 }
 
+func (r *Blueprint) Drop() {
+	r.addCommand(&schema.Command{
+		Name: constants.CommandDrop,
+	})
+}
+
+func (r *Blueprint) DropColumn(column ...string) {
+	r.addCommand(&schema.Command{
+		Name:    constants.CommandDropColumn,
+		Columns: column,
+	})
+}
+
+func (r *Blueprint) DropForeign(column ...string) {
+	r.indexCommand(constants.CommandDropForeign, column)
+}
+
+func (r *Blueprint) DropForeignByName(name string) {
+	r.indexCommand(constants.CommandDropForeign, nil, schema.IndexConfig{
+		Name: name,
+	})
+}
+
+func (r *Blueprint) DropFullText(column ...string) {
+	r.indexCommand(constants.CommandDropFullText, column)
+}
+
+func (r *Blueprint) DropFullTextByName(name string) {
+	r.indexCommand(constants.CommandDropFullText, nil, schema.IndexConfig{
+		Name: name,
+	})
+}
+
 func (r *Blueprint) DropIfExists() {
 	r.addCommand(&schema.Command{
 		Name: constants.CommandDropIfExists,
 	})
+}
+
+func (r *Blueprint) DropIndex(name string) {
+	r.indexCommand(constants.CommandDropIndex, nil, schema.IndexConfig{
+		Name: name,
+	})
+}
+
+func (r *Blueprint) DropPrimary(column ...string) {
+	r.indexCommand(constants.CommandDropPrimary, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandPrimary, column),
+	})
+}
+
+func (r *Blueprint) DropSoftDeletes(column ...string) {
+	if len(column) > 0 {
+		r.DropColumn(column[0])
+	} else {
+		r.DropColumn("deleted_at")
+	}
+}
+
+func (r *Blueprint) DropSoftDeletesTz(column ...string) {
+	r.DropSoftDeletes(column...)
+}
+
+func (r *Blueprint) DropTimestamps() {
+	r.DropColumn("created_at", "updated_at")
+}
+
+func (r *Blueprint) DropTimestampsTz() {
+	r.DropTimestamps()
+}
+
+func (r *Blueprint) DropUnique(index ...string) {
+	r.indexCommand(constants.CommandDropUnique, index)
 }
 
 func (r *Blueprint) Enum(column string, allowed []string) schema.ColumnDefinition {
@@ -118,6 +189,12 @@ func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
 	command := r.indexCommand(constants.CommandForeign, column)
 
 	return NewForeignKeyDefinition(command)
+}
+
+func (r *Blueprint) FullText(column ...string) schema.IndexDefinition {
+	command := r.indexCommand(constants.CommandFullText, column)
+
+	return NewIndexDefinition(command)
 }
 
 func (r *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
@@ -160,7 +237,7 @@ func (r *Blueprint) Increments(column string) schema.ColumnDefinition {
 	return r.IntegerIncrements(column)
 }
 
-func (r *Blueprint) Index(column []string) schema.IndexDefinition {
+func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
 	command := r.indexCommand(constants.CommandIndex, column)
 
 	return NewIndexDefinition(command)
@@ -198,8 +275,18 @@ func (r *Blueprint) MediumText(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("mediumText", column)
 }
 
-func (r *Blueprint) Primary(columns ...string) {
-	r.indexCommand(constants.CommandPrimary, columns)
+func (r *Blueprint) Primary(column ...string) {
+	r.indexCommand(constants.CommandPrimary, column)
+}
+
+func (r *Blueprint) RenameIndex(from, to string) {
+	command := &schema.Command{
+		Name: constants.CommandRenameIndex,
+		From: from,
+		To:   to,
+	}
+
+	r.addCommand(command)
 }
 
 func (r *Blueprint) SetTable(name string) {
@@ -324,18 +411,44 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 			}
 		case constants.CommandCreate:
 			statements = append(statements, grammar.CompileCreate(r))
+		case constants.CommandDrop:
+			statements = append(statements, grammar.CompileDrop(r))
+		case constants.CommandDropColumn:
+			statements = append(statements, grammar.CompileDropColumn(r)...)
+		case constants.CommandDropForeign:
+			statements = append(statements, grammar.CompileDropForeign(r))
+		case constants.CommandDropFullText:
+			statements = append(statements, grammar.CompileDropFullText(r))
 		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
+		case constants.CommandDropIndex:
+			statements = append(statements, grammar.CompileDropIndex(r))
+		case constants.CommandDropPrimary:
+			statements = append(statements, grammar.CompileDropPrimary(r))
+		case constants.CommandDropUnique:
+			statements = append(statements, grammar.CompileDropUnique(r))
 		case constants.CommandForeign:
 			statements = append(statements, grammar.CompileForeign(r, command))
+		case constants.CommandFullText:
+			statements = append(statements, grammar.CompileFullText(r, command))
 		case constants.CommandIndex:
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case constants.CommandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command))
+		case constants.CommandRenameIndex:
+			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command))
+		case constants.CommandUnique:
+			statements = append(statements, grammar.CompileUnique(r, command))
 		}
 	}
 
 	return statements
+}
+
+func (r *Blueprint) Unique(column ...string) schema.IndexDefinition {
+	command := r.indexCommand(constants.CommandUnique, column)
+
+	return NewIndexDefinition(command)
 }
 
 func (r *Blueprint) UnsignedBigInteger(column string) schema.ColumnDefinition {
@@ -415,17 +528,18 @@ func (r *Blueprint) createIndexName(ttype string, columns []string) string {
 	return index
 }
 
-func (r *Blueprint) indexCommand(ttype string, columns []string, config ...schema.IndexConfig) *schema.Command {
+func (r *Blueprint) indexCommand(name string, columns []string, config ...schema.IndexConfig) *schema.Command {
 	command := &schema.Command{
 		Columns: columns,
-		Name:    ttype,
+		Name:    name,
 	}
 
 	if len(config) > 0 {
 		command.Algorithm = config[0].Algorithm
 		command.Index = config[0].Name
+		command.Language = config[0].Language
 	} else {
-		command.Index = r.createIndexName(ttype, columns)
+		command.Index = r.createIndexName(name, columns)
 	}
 
 	r.addCommand(command)
