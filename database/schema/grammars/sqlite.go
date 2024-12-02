@@ -93,11 +93,11 @@ func (r *Sqlite) CompileDropColumn(blueprint schema.Blueprint, command *schema.C
 	})
 }
 
-func (r *Sqlite) CompileDropForeign(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompileDropForeign(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
-func (r *Sqlite) CompileDropFullText(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompileDropFullText(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -105,11 +105,11 @@ func (r *Sqlite) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", r.wrap.Table(blueprint.GetTableName()))
 }
 
-func (r *Sqlite) CompileDropIndex(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompileDropIndex(_ schema.Blueprint, command *schema.Command) string {
 	return fmt.Sprintf("drop index %s", r.wrap.Column(command.Index))
 }
 
-func (r *Sqlite) CompileDropPrimary(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompileDropPrimary(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -121,7 +121,11 @@ func (r *Sqlite) CompileEnableWriteableSchema() string {
 	return r.pragma("writable_schema", "1")
 }
 
-func (r *Sqlite) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompileForeign(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
+func (r *Sqlite) CompileFullText(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -133,7 +137,7 @@ func (r *Sqlite) CompileIndex(blueprint schema.Blueprint, command *schema.Comman
 	)
 }
 
-func (r *Sqlite) CompileIndexes(schema, table string) string {
+func (r *Sqlite) CompileIndexes(_, table string) string {
 	quotedTable := r.wrap.Quote(strings.ReplaceAll(table, ".", "__"))
 
 	return fmt.Sprintf(
@@ -147,7 +151,7 @@ func (r *Sqlite) CompileIndexes(schema, table string) string {
 	)
 }
 
-func (r *Sqlite) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompilePrimary(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 

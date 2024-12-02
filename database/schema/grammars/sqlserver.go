@@ -168,6 +168,10 @@ func (r *Sqlserver) CompileForeign(blueprint schema.Blueprint, command *schema.C
 	return sql
 }
 
+func (r *Sqlserver) CompileFullText(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
 func (r *Sqlserver) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
 	return fmt.Sprintf("create index %s on %s (%s)",
 		r.wrap.Column(command.Index),

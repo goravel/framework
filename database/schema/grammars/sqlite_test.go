@@ -19,7 +19,7 @@ func TestSqliteSuite(t *testing.T) {
 }
 
 func (s *SqliteSuite) SetupTest() {
-	s.grammar = NewSqlite("goravel_")
+	s.grammar = NewSqlite(nil, "goravel_")
 }
 
 func (s *SqliteSuite) TestAddForeignKeys() {

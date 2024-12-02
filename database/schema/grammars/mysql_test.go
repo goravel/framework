@@ -105,6 +105,17 @@ func (s *MysqlSuite) TestCompileDropAllViews() {
 	s.Equal("drop view `domain`, `email`", s.grammar.CompileDropAllViews([]string{"domain", "email"}))
 }
 
+func (s *MysqlSuite) TestCompileDropColumn() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal([]string{
+		"alter table `goravel_users` drop `id`, drop `name`",
+	}, s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
+		Columns: []string{"id", "name"},
+	}))
+}
+
 func (s *MysqlSuite) TestCompileDropIfExists() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
@@ -207,6 +218,19 @@ func (s *MysqlSuite) TestCompilePrimary() {
 
 	s.Equal("alter table `goravel_users` add primary key (`role_id`, `user_id`)", s.grammar.CompilePrimary(mockBlueprint, &contractsschema.Command{
 		Columns: []string{"role_id", "user_id"},
+	}))
+}
+
+func (s *MysqlSuite) TestCompileKey() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal([]string{
+		"alter table `goravel_users` drop `id`, drop `name`",
+	}, s.grammar.compileKey(mockBlueprint, &contractsschema.Command{
+		Algorithm: "",
+		Columns:   []string{"id", "name"},
+		Index:     "index",
 	}))
 }
 
