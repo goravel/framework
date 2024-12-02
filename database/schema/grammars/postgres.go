@@ -110,9 +110,10 @@ func (r *Postgres) CompileDropIndex(blueprint schema.Blueprint, command *schema.
 }
 
 func (r *Postgres) CompileDropPrimary(blueprint schema.Blueprint, command *schema.Command) string {
-	index := r.wrap.Column(fmt.Sprintf("%s%s_pkey", r.wrap.GetPrefix(), blueprint.GetTableName()))
+	tableName := blueprint.GetTableName()
+	index := r.wrap.Column(fmt.Sprintf("%s%s_pkey", r.wrap.GetPrefix(), tableName))
 
-	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), index)
+	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(tableName), index)
 }
 
 func (r *Postgres) CompileDropUnique(blueprint schema.Blueprint, command *schema.Command) string {
@@ -143,7 +144,7 @@ func (r *Postgres) CompileFullText(blueprint schema.Blueprint, command *schema.C
 	}
 
 	columns := collect.Map(command.Columns, func(column string, _ int) string {
-		return fmt.Sprintf("to_tsvector('%s', %s)", r.wrap.Quote(language), r.wrap.Column(column))
+		return fmt.Sprintf("to_tsvector(%s, %s)", r.wrap.Column(language), r.wrap.Column(column))
 	})
 
 	return fmt.Sprintf("create index %s on %s using gin(%s)", r.wrap.Column(command.Index), r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, " || "))

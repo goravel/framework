@@ -47,7 +47,7 @@ func (r *Mysql) CompileColumns(schema, table string) string {
 			"order by ordinal_position asc", r.wrap.Quote(schema), r.wrap.Quote(table))
 }
 
-func (r *Mysql) CompileComment(_ schema.Blueprint, command *schema.Command) string {
+func (r *Mysql) CompileComment(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -75,7 +75,7 @@ func (r *Mysql) CompileDrop(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table %s", r.wrap.Table(blueprint.GetTableName()))
 }
 
-func (r *Mysql) CompileDropAllDomains(domains []string) string {
+func (r *Mysql) CompileDropAllDomains(_ []string) string {
 	return ""
 }
 
@@ -83,7 +83,7 @@ func (r *Mysql) CompileDropAllTables(tables []string) string {
 	return fmt.Sprintf("drop table %s", r.wrap.Columnize(tables))
 }
 
-func (r *Mysql) CompileDropAllTypes(types []string) string {
+func (r *Mysql) CompileDropAllTypes(_ []string) string {
 	return ""
 }
 
@@ -115,7 +115,7 @@ func (r *Mysql) CompileDropIndex(blueprint schema.Blueprint, command *schema.Com
 	return fmt.Sprintf("alter table %s drop index %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
 }
 
-func (r *Mysql) CompileDropPrimary(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Mysql) CompileDropPrimary(blueprint schema.Blueprint, _ *schema.Command) string {
 	return fmt.Sprintf("alter table %s drop primary key", r.wrap.Table(blueprint.GetTableName()))
 }
 
@@ -214,7 +214,7 @@ func (r *Mysql) GetAttributeCommands() []string {
 	return r.attributeCommands
 }
 
-func (r *Mysql) ModifyComment(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+func (r *Mysql) ModifyComment(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	if comment := column.GetComment(); comment != "" {
 		// Escape special characters to prevent SQL injection
 		comment = strings.ReplaceAll(comment, "'", "''")
@@ -226,7 +226,7 @@ func (r *Mysql) ModifyComment(blueprint schema.Blueprint, column schema.ColumnDe
 	return ""
 }
 
-func (r *Mysql) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+func (r *Mysql) ModifyDefault(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
 	}
@@ -234,7 +234,7 @@ func (r *Mysql) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDe
 	return ""
 }
 
-func (r *Mysql) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+func (r *Mysql) ModifyNullable(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetNullable() {
 		return " null"
 	} else {
@@ -253,7 +253,7 @@ func (r *Mysql) ModifyIncrement(blueprint schema.Blueprint, column schema.Column
 	return ""
 }
 
-func (r *Mysql) ModifyOnUpdate(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+func (r *Mysql) ModifyOnUpdate(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	onUpdate := column.GetOnUpdate()
 	if onUpdate != nil {
 		switch value := onUpdate.(type) {
@@ -269,7 +269,7 @@ func (r *Mysql) ModifyOnUpdate(blueprint schema.Blueprint, column schema.ColumnD
 	return ""
 }
 
-func (r *Mysql) TypeBigInteger(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeBigInteger(_ schema.ColumnDefinition) string {
 	return "bigint"
 }
 
@@ -277,7 +277,7 @@ func (r *Mysql) TypeChar(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("char(%d)", column.GetLength())
 }
 
-func (r *Mysql) TypeDate(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeDate(_ schema.ColumnDefinition) string {
 	return "date"
 }
 
@@ -309,7 +309,7 @@ func (r *Mysql) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
-func (r *Mysql) TypeDouble(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeDouble(_ schema.ColumnDefinition) string {
 	return "double"
 }
 
@@ -326,31 +326,31 @@ func (r *Mysql) TypeFloat(column schema.ColumnDefinition) string {
 	return "float"
 }
 
-func (r *Mysql) TypeInteger(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeInteger(_ schema.ColumnDefinition) string {
 	return "int"
 }
 
-func (r *Mysql) TypeJson(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeJson(_ schema.ColumnDefinition) string {
 	return "json"
 }
 
-func (r *Mysql) TypeJsonb(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeJsonb(_ schema.ColumnDefinition) string {
 	return "json"
 }
 
-func (r *Mysql) TypeLongText(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeLongText(_ schema.ColumnDefinition) string {
 	return "longtext"
 }
 
-func (r *Mysql) TypeMediumInteger(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeMediumInteger(_ schema.ColumnDefinition) string {
 	return "mediumint"
 }
 
-func (r *Mysql) TypeMediumText(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeMediumText(_ schema.ColumnDefinition) string {
 	return "mediumtext"
 }
 
-func (r *Mysql) TypeSmallInteger(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeSmallInteger(_ schema.ColumnDefinition) string {
 	return "smallint"
 }
 
@@ -363,7 +363,7 @@ func (r *Mysql) TypeString(column schema.ColumnDefinition) string {
 	return "varchar(255)"
 }
 
-func (r *Mysql) TypeText(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeText(_ schema.ColumnDefinition) string {
 	return "text"
 }
 
@@ -403,11 +403,11 @@ func (r *Mysql) TypeTimestampTz(column schema.ColumnDefinition) string {
 	return r.TypeTimestamp(column)
 }
 
-func (r *Mysql) TypeTinyInteger(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeTinyInteger(_ schema.ColumnDefinition) string {
 	return "tinyint"
 }
 
-func (r *Mysql) TypeTinyText(column schema.ColumnDefinition) string {
+func (r *Mysql) TypeTinyText(_ schema.ColumnDefinition) string {
 	return "tinytext"
 }
 

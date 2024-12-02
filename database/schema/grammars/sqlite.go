@@ -166,7 +166,7 @@ func (r *Sqlite) CompileRenameIndex(s schema.Schema, blueprint schema.Blueprint,
 		return nil
 	}
 
-	collect.Filter(indexes, func(index schema.Index, _ int) bool {
+	indexes = collect.Filter(indexes, func(index schema.Index, _ int) bool {
 		return index.Name == command.From
 	})
 

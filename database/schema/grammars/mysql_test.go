@@ -223,15 +223,19 @@ func (s *MysqlSuite) TestCompilePrimary() {
 
 func (s *MysqlSuite) TestCompileKey() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
-	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+	mockBlueprint.EXPECT().GetTableName().Return("users").Twice()
 
-	s.Equal([]string{
-		"alter table `goravel_users` drop `id`, drop `name`",
-	}, s.grammar.compileKey(mockBlueprint, &contractsschema.Command{
+	s.Equal("alter table `goravel_users` add unique `index`(`id`, `name`)", s.grammar.compileKey(mockBlueprint, &contractsschema.Command{
 		Algorithm: "",
 		Columns:   []string{"id", "name"},
 		Index:     "index",
-	}))
+	}, "unique"))
+
+	s.Equal("alter table `goravel_users` add unique `index` using btree(`id`, `name`)", s.grammar.compileKey(mockBlueprint, &contractsschema.Command{
+		Algorithm: "btree",
+		Columns:   []string{"id", "name"},
+		Index:     "index",
+	}, "unique"))
 }
 
 func (s *MysqlSuite) TestGetColumns() {

@@ -1,6 +1,8 @@
 package grammars
 
 import (
+	mockslog "github.com/goravel/framework/mocks/log"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -12,6 +14,7 @@ import (
 type SqliteSuite struct {
 	suite.Suite
 	grammar *Sqlite
+	mockLog *mockslog.Log
 }
 
 func TestSqliteSuite(t *testing.T) {
@@ -19,7 +22,9 @@ func TestSqliteSuite(t *testing.T) {
 }
 
 func (s *SqliteSuite) SetupTest() {
-	s.grammar = NewSqlite(nil, "goravel_")
+	s.mockLog = mockslog.NewLog(s.T())
+
+	s.grammar = NewSqlite(s.mockLog, "goravel_")
 }
 
 func (s *SqliteSuite) TestAddForeignKeys() {
@@ -121,6 +126,19 @@ func (s *SqliteSuite) TestCompileCreate() {
 		s.grammar.CompileCreate(mockBlueprint))
 }
 
+func (s *SqliteSuite) TestCompileDropColumn() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal([]string{
+		`alter table "goravel_users" drop column "id"`,
+		`alter table "goravel_users" drop column "name"x`,
+	}, s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
+		Name:    "name",
+		Columns: []string{"id", "name"},
+	}))
+}
+
 func (s *SqliteSuite) TestCompileDropIfExists() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
@@ -137,6 +155,120 @@ func (s *SqliteSuite) TestCompileIndex() {
 	}
 
 	s.Equal(`create index "users" on "goravel_users" ("role_id", "permission_id")`, s.grammar.CompileIndex(mockBlueprint, command))
+}
+
+func (s *SqliteSuite) TestCompileRenameIndex() {
+	var (
+		mockSchema    *mocksschema.Schema
+		mockBlueprint *mocksschema.Blueprint
+	)
+
+	beforeEach := func() {
+		mockSchema = mocksschema.NewSchema(s.T())
+		mockBlueprint = mocksschema.NewBlueprint(s.T())
+	}
+
+	tests := []struct {
+		name    string
+		command *contractsschema.Command
+		setup   func()
+		expect  []string
+	}{
+		{
+			name: "failed to get indexes",
+			setup: func() {
+				tableName := "users"
+				mockBlueprint.EXPECT().GetTableName().Return(tableName).Twice()
+				mockSchema.EXPECT().GetIndexes(tableName).Return(nil, assert.AnError).Once()
+				s.mockLog.EXPECT().Errorf("failed to get %s indexes: %v", tableName, assert.AnError).Once()
+			},
+		},
+		{
+			name: "index does not exist",
+			command: &contractsschema.Command{
+				From: "users",
+			},
+			setup: func() {
+				tableName := "users"
+				mockBlueprint.EXPECT().GetTableName().Return(tableName).Once()
+				mockSchema.EXPECT().GetIndexes(tableName).Return([]contractsschema.Index{
+					{
+						Name: "admins",
+					},
+				}, nil).Once()
+				s.mockLog.EXPECT().Warningf("index %s does not exist", "users").Once()
+			},
+		},
+		{
+			name: "index is primary",
+			command: &contractsschema.Command{
+				From: "users",
+			},
+			setup: func() {
+				tableName := "users"
+				mockBlueprint.EXPECT().GetTableName().Return(tableName).Once()
+				mockSchema.EXPECT().GetIndexes(tableName).Return([]contractsschema.Index{
+					{
+						Name:    "users",
+						Primary: true,
+					},
+				}, nil).Once()
+				s.mockLog.EXPECT().Warning("SQLite does not support altering primary keys").Once()
+			},
+		},
+		{
+			name: "index is unique",
+			command: &contractsschema.Command{
+				From: "users",
+				To:   "admins",
+			},
+			setup: func() {
+				tableName := "users"
+				mockBlueprint.EXPECT().GetTableName().Return(tableName).Twice()
+				mockSchema.EXPECT().GetIndexes(tableName).Return([]contractsschema.Index{
+					{
+						Columns: []string{"role_id", "permission_id"},
+						Name:    "users",
+						Unique:  true,
+					},
+				}, nil).Once()
+			},
+			expect: []string{
+				`drop index "users"`,
+				`create unique index "admins" on "goravel_users" ("role_id", "permission_id")`,
+			},
+		},
+		{
+			name: "success",
+			command: &contractsschema.Command{
+				From: "users",
+				To:   "admins",
+			},
+			setup: func() {
+				tableName := "users"
+				mockBlueprint.EXPECT().GetTableName().Return(tableName).Twice()
+				mockSchema.EXPECT().GetIndexes(tableName).Return([]contractsschema.Index{
+					{
+						Columns: []string{"role_id", "permission_id"},
+						Name:    "users",
+					},
+				}, nil).Once()
+			},
+			expect: []string{
+				`drop index "users"`,
+				`create index "admins" on "goravel_users" ("role_id", "permission_id")`,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			beforeEach()
+			test.setup()
+
+			s.Equal(test.expect, s.grammar.CompileRenameIndex(mockSchema, mockBlueprint, test.command))
+		})
+	}
 }
 
 func (s *SqliteSuite) TestGetColumns() {

@@ -29,11 +29,12 @@ func (r *Wrap) Column(column string) string {
 }
 
 func (r *Wrap) Columns(columns []string) []string {
+	formatedColumns := make([]string, len(columns))
 	for i, column := range columns {
-		columns[i] = r.Column(column)
+		formatedColumns[i] = r.Column(column)
 	}
 
-	return columns
+	return formatedColumns
 }
 
 func (r *Wrap) Columnize(columns []string) string {
