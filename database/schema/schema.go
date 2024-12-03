@@ -53,7 +53,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 		driverSchema = NewSqlserverSchema(sqlserverGrammar, orm, prefix)
 		grammar = sqlserverGrammar
 	case contractsdatabase.DriverSqlite:
-		sqliteGrammar := grammars.NewSqlite(prefix)
+		sqliteGrammar := grammars.NewSqlite(log, prefix)
 		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)
 		grammar = sqliteGrammar
 	default:

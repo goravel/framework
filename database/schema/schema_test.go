@@ -61,6 +61,77 @@ func (s *SchemaSuite) TearDownTest() {
 	}
 }
 
+func (s *SchemaSuite) TestColumnExtraAttributes() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "column_extra_attribute"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.String("nullable").Nullable()
+				table.String("string_default").Default("goravel")
+				table.Integer("integer_default").Default(1)
+				table.Integer("bool_default").Default(true)
+				table.TimestampTz("use_current").UseCurrent()
+				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
+			}))
+
+			type ColumnExtraAttribute struct {
+				ID                 uint            `gorm:"primaryKey" json:"id"`
+				Name               string          `json:"name"`
+				Nullable           *string         `json:"nullable"`
+				StringDefault      string          `json:"string_default"`
+				IntegerDefault     int             `json:"integer_default"`
+				BoolDefault        bool            `json:"bool_default"`
+				UseCurrent         carbon.DateTime `json:"use_current"`
+				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
+			}
+
+			// SubSecond: Avoid milliseconds difference
+			carbon.SetTimezone(carbon.UTC)
+			now := carbon.Now().SubSecond()
+
+			s.NoError(testQuery.Query().Model(&ColumnExtraAttribute{}).Create(map[string]any{
+				"name": "hello",
+			}))
+
+			interval := int64(1)
+			var columnExtraAttribute ColumnExtraAttribute
+			s.NoError(testQuery.Query().Where("name", "hello").First(&columnExtraAttribute))
+			s.True(columnExtraAttribute.ID > 0)
+			s.Equal("hello", columnExtraAttribute.Name)
+			s.Nil(columnExtraAttribute.Nullable)
+			s.Equal("goravel", columnExtraAttribute.StringDefault)
+			s.Equal(1, columnExtraAttribute.IntegerDefault)
+			s.True(columnExtraAttribute.BoolDefault)
+			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now().AddSecond()))
+			s.True(columnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
+
+			time.Sleep(time.Duration(interval) * time.Second)
+
+			now = carbon.Now().SubSecond()
+			result, err := testQuery.Query().Model(&ColumnExtraAttribute{}).Where("id", columnExtraAttribute.ID).Update(map[string]any{
+				"name": "world",
+			})
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			var anotherColumnExtraAttribute ColumnExtraAttribute
+			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
+			s.Equal("world", anotherColumnExtraAttribute.Name)
+			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
+			if driver == database.DriverMysql {
+				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
+			} else {
+				s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+			}
+		})
+	}
+}
+
 func (s *SchemaSuite) TestColumnMethods_Postgres() {
 	if s.driverToTestQuery[database.DriverPostgres] == nil {
 		s.T().Skip("Skip test")
@@ -1230,77 +1301,6 @@ func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
 			s.True(schema.HasTable(table))
 			s.NoError(schema.DropIfExists(table))
 			s.False(schema.HasTable(table))
-		})
-	}
-}
-
-func (s *SchemaSuite) TestColumnExtraAttributes() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			table := "column_extra_attribute"
-
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-				table.ID()
-				table.String("name")
-				table.String("nullable").Nullable()
-				table.String("string_default").Default("goravel")
-				table.Integer("integer_default").Default(1)
-				table.Integer("bool_default").Default(true)
-				table.TimestampTz("use_current").UseCurrent()
-				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
-			}))
-
-			type ColumnExtraAttribute struct {
-				ID                 uint            `gorm:"primaryKey" json:"id"`
-				Name               string          `json:"name"`
-				Nullable           *string         `json:"nullable"`
-				StringDefault      string          `json:"string_default"`
-				IntegerDefault     int             `json:"integer_default"`
-				BoolDefault        bool            `json:"bool_default"`
-				UseCurrent         carbon.DateTime `json:"use_current"`
-				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
-			}
-
-			// SubSecond: Avoid milliseconds difference
-			carbon.SetTimezone(carbon.UTC)
-			now := carbon.Now().SubSecond()
-
-			s.NoError(testQuery.Query().Model(&ColumnExtraAttribute{}).Create(map[string]any{
-				"name": "hello",
-			}))
-
-			interval := int64(1)
-			var columnExtraAttribute ColumnExtraAttribute
-			s.NoError(testQuery.Query().Where("name", "hello").First(&columnExtraAttribute))
-			s.True(columnExtraAttribute.ID > 0)
-			s.Equal("hello", columnExtraAttribute.Name)
-			s.Nil(columnExtraAttribute.Nullable)
-			s.Equal("goravel", columnExtraAttribute.StringDefault)
-			s.Equal(1, columnExtraAttribute.IntegerDefault)
-			s.True(columnExtraAttribute.BoolDefault)
-			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now().AddSecond()))
-			s.True(columnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
-
-			time.Sleep(time.Duration(interval) * time.Second)
-
-			now = carbon.Now().SubSecond()
-			result, err := testQuery.Query().Model(&ColumnExtraAttribute{}).Where("id", columnExtraAttribute.ID).Update(map[string]any{
-				"name": "world",
-			})
-			s.NoError(err)
-			s.Equal(int64(1), result.RowsAffected)
-
-			var anotherColumnExtraAttribute ColumnExtraAttribute
-			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
-			s.Equal("world", anotherColumnExtraAttribute.Name)
-			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
-			if driver == database.DriverMysql {
-				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
-			} else {
-				s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-			}
 		})
 	}
 }
