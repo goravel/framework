@@ -1,14 +1,14 @@
 package grammars
 
 import (
-	mockslog "github.com/goravel/framework/mocks/log"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
+	mockslog "github.com/goravel/framework/mocks/log"
+	"github.com/stretchr/testify/assert"
 )
 
 type SqliteSuite struct {
@@ -132,7 +132,7 @@ func (s *SqliteSuite) TestCompileDropColumn() {
 
 	s.Equal([]string{
 		`alter table "goravel_users" drop column "id"`,
-		`alter table "goravel_users" drop column "name"x`,
+		`alter table "goravel_users" drop column "name"`,
 	}, s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
 		Name:    "name",
 		Columns: []string{"id", "name"},
