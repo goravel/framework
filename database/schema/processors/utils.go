@@ -6,7 +6,7 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func processIndexes(dbIndexes []DBIndex) []schema.Index {
+func processIndexes(dbIndexes []schema.DBIndex) []schema.Index {
 	var indexes []schema.Index
 	for _, dbIndex := range dbIndexes {
 		indexes = append(indexes, schema.Index{

@@ -17,6 +17,8 @@ type Schema interface {
 	GetColumnListing(table string) []string
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
+	// GetForeignKeys Get the foreign keys for a given table.
+	GetForeignKeys(table string) ([]ForeignKey, error)
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
 	// HasColumn Determine if the given table has a given column.
@@ -96,6 +98,16 @@ type Command struct {
 	Value              string
 }
 
+type ForeignKey struct {
+	Name           string
+	Columns        []string
+	ForeignSchema  string
+	ForeignTable   string
+	ForeignColumns []string
+	OnUpdate       string
+	OnDelete       string
+}
+
 type Index struct {
 	Columns []string
 	Name    string
@@ -123,14 +135,4 @@ type View struct {
 	Name       string
 	Schema     string
 	Definition string
-}
-
-type ForeignKey struct {
-	Name           string
-	Columns        string
-	ForeignSchema  string
-	ForeignTable   string
-	ForeignColumns string
-	OnUpdate       string
-	OnDelete       string
 }

@@ -56,7 +56,7 @@ func (r *SqlserverSchema) GetColumns(table string) ([]contractsschema.Column, er
 
 	table = r.prefix + table
 
-	var dbColumns []processors.DBColumn
+	var dbColumns []contractsschema.DBColumn
 	if err := r.orm.Query().Raw(r.grammar.CompileColumns(schema, table)).Scan(&dbColumns); err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (r *SqlserverSchema) GetIndexes(table string) ([]contractsschema.Index, err
 
 	table = r.prefix + table
 
-	var dbIndexes []processors.DBIndex
+	var dbIndexes []contractsschema.DBIndex
 	if err := r.orm.Query().Raw(r.grammar.CompileIndexes(schema, table)).Scan(&dbIndexes); err != nil {
 		return nil, err
 	}

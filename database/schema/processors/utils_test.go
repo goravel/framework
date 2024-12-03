@@ -10,7 +10,7 @@ import (
 
 func TestProcessIndexes(t *testing.T) {
 	// Test with valid indexes
-	input := []DBIndex{
+	input := []schema.DBIndex{
 		{Name: "INDEX_A", Type: "BTREE", Columns: "a,b"},
 		{Name: "INDEX_B", Type: "HASH", Columns: "c,d"},
 	}
@@ -24,7 +24,7 @@ func TestProcessIndexes(t *testing.T) {
 	assert.Equal(t, expected, result)
 
 	// Test with empty input
-	input = []DBIndex{}
+	input = []schema.DBIndex{}
 
 	result = processIndexes(input)
 

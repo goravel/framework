@@ -10,6 +10,7 @@ import (
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/schema/grammars"
+	"github.com/goravel/framework/database/schema/processors"
 	"github.com/goravel/framework/errors"
 )
 
@@ -27,6 +28,8 @@ type Schema struct {
 	migrations []contractsschema.Migration
 	orm        contractsorm.Orm
 	prefix     string
+	processor  contractsschema.Processor
+	schema     string
 }
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []contractsschema.Migration) *Schema {
@@ -35,27 +38,35 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 	var (
 		driverSchema contractsschema.DriverSchema
 		grammar      contractsschema.Grammar
+		processor    contractsschema.Processor
+		schema       string
 	)
 
 	switch driver {
 	case contractsdatabase.DriverPostgres:
-		schema := config.GetString(fmt.Sprintf("database.connections.%s.search_path", orm.Name()), "public")
+		schema = config.GetString(fmt.Sprintf("database.connections.%s.search_path", orm.Name()), "public")
 
 		postgresGrammar := grammars.NewPostgres(prefix)
 		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)
 		grammar = postgresGrammar
+		processor = processors.NewPostgres()
 	case contractsdatabase.DriverMysql:
+		schema = config.GetString(fmt.Sprintf("database.connections.%s.database", orm.Name()))
+
 		mysqlGrammar := grammars.NewMysql(prefix)
 		driverSchema = NewMysqlSchema(mysqlGrammar, orm, prefix)
 		grammar = mysqlGrammar
+		processor = processors.NewMysql()
 	case contractsdatabase.DriverSqlserver:
 		sqlserverGrammar := grammars.NewSqlserver(prefix)
 		driverSchema = NewSqlserverSchema(sqlserverGrammar, orm, prefix)
 		grammar = sqlserverGrammar
+		processor = processors.NewSqlserver()
 	case contractsdatabase.DriverSqlite:
 		sqliteGrammar := grammars.NewSqlite(log, prefix)
 		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)
 		grammar = sqliteGrammar
+		processor = processors.NewSqlite()
 	default:
 		panic(errors.SchemaDriverNotSupported.Args(driver))
 	}
@@ -70,6 +81,8 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 		migrations: migrations,
 		orm:        orm,
 		prefix:     prefix,
+		processor:  processor,
+		schema:     schema,
 	}
 }
 
@@ -117,6 +130,17 @@ func (r *Schema) GetColumnListing(table string) []string {
 
 func (r *Schema) GetConnection() string {
 	return r.orm.Name()
+}
+
+func (r *Schema) GetForeignKeys(table string) ([]contractsschema.ForeignKey, error) {
+	table = r.prefix + table
+
+	var dbForeignKeys []contractsschema.DBForeignKey
+	if err := r.orm.Query().Raw(r.grammar.CompileForeignKeys(r.schema, table)).Scan(&dbForeignKeys); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessForeignKeys(dbForeignKeys), nil
 }
 
 func (r *Schema) GetIndexListing(table string) []string {

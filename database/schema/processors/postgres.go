@@ -1,6 +1,8 @@
 package processors
 
 import (
+	"strings"
+
 	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/database/schema"
@@ -14,7 +16,7 @@ func NewPostgres() Postgres {
 	return Postgres{}
 }
 
-func (r Postgres) ProcessColumns(dbColumns []DBColumn) []schema.Column {
+func (r Postgres) ProcessColumns(dbColumns []schema.DBColumn) []schema.Column {
 	var columns []schema.Column
 	for _, dbColumn := range dbColumns {
 		var autoincrement bool
@@ -37,7 +39,33 @@ func (r Postgres) ProcessColumns(dbColumns []DBColumn) []schema.Column {
 	return columns
 }
 
-func (r Postgres) ProcessIndexes(dbIndexes []DBIndex) []schema.Index {
+func (r Postgres) ProcessForeignKeys(dbForeignKeys []schema.DBForeignKey) []schema.ForeignKey {
+	var foreignKeys []schema.ForeignKey
+
+	short := map[string]string{
+		"a": "no action",
+		"c": "cascade",
+		"d": "set default",
+		"n": "set null",
+		"r": "restrict",
+	}
+
+	for _, dbForeignKey := range dbForeignKeys {
+		foreignKeys = append(foreignKeys, schema.ForeignKey{
+			Name:           dbForeignKey.Name,
+			Columns:        strings.Split(dbForeignKey.Columns, ","),
+			ForeignSchema:  dbForeignKey.ForeignSchema,
+			ForeignTable:   dbForeignKey.ForeignTable,
+			ForeignColumns: strings.Split(dbForeignKey.ForeignColumns, ","),
+			OnUpdate:       short[strings.ToLower(dbForeignKey.OnUpdate)],
+			OnDelete:       short[strings.ToLower(dbForeignKey.OnDelete)],
+		})
+	}
+
+	return foreignKeys
+}
+
+func (r Postgres) ProcessIndexes(dbIndexes []schema.DBIndex) []schema.Index {
 	return processIndexes(dbIndexes)
 }
 

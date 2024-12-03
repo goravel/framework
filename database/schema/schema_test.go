@@ -1386,13 +1386,20 @@ func (s *SchemaSuite) TestForeign() {
 			s.Require().Nil(err)
 			s.Require().True(schema.HasTable(table2))
 
-			switch driver {
-			case database.DriverPostgres:
-				s.True(schema.HasIndex(table2, "goravel_foreign2_pkey"))
-			case database.DriverMysql:
-				s.True(schema.HasIndex(table2, "goravel_foreign2_foreign1_id_foreign"))
-			case database.DriverSqlserver:
-				s.True(schema.HasIndex(table2, "goravel_foreign2_foreign1_id_foreign"))
+			foreignKeys, err := schema.GetForeignKeys(table2)
+			s.NoError(err)
+			s.Len(foreignKeys, 1)
+			s.ElementsMatch([]string{"foreign1_id"}, foreignKeys[0].Columns)
+			s.Equal("goravel_"+table1, foreignKeys[0].ForeignTable)
+			s.ElementsMatch([]string{"id"}, foreignKeys[0].ForeignColumns)
+			s.Equal("no action", foreignKeys[0].OnDelete)
+			s.Equal("no action", foreignKeys[0].OnUpdate)
+			if driver == database.DriverSqlite {
+				s.Empty(foreignKeys[0].Name)
+				s.Empty(foreignKeys[0].ForeignSchema)
+			} else {
+				s.Equal("goravel_foreign2_foreign1_id_foreign", foreignKeys[0].Name)
+				s.NotEmpty(foreignKeys[0].ForeignSchema)
 			}
 		})
 	}

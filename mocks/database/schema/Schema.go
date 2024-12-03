@@ -448,6 +448,64 @@ func (_c *Schema_GetConnection_Call) RunAndReturn(run func() string) *Schema_Get
 	return _c
 }
 
+// GetForeignKeys provides a mock function with given fields: table
+func (_m *Schema) GetForeignKeys(table string) ([]schema.ForeignKey, error) {
+	ret := _m.Called(table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetForeignKeys")
+	}
+
+	var r0 []schema.ForeignKey
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]schema.ForeignKey, error)); ok {
+		return rf(table)
+	}
+	if rf, ok := ret.Get(0).(func(string) []schema.ForeignKey); ok {
+		r0 = rf(table)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.ForeignKey)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(table)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Schema_GetForeignKeys_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetForeignKeys'
+type Schema_GetForeignKeys_Call struct {
+	*mock.Call
+}
+
+// GetForeignKeys is a helper method to define mock.On call
+//   - table string
+func (_e *Schema_Expecter) GetForeignKeys(table interface{}) *Schema_GetForeignKeys_Call {
+	return &Schema_GetForeignKeys_Call{Call: _e.mock.On("GetForeignKeys", table)}
+}
+
+func (_c *Schema_GetForeignKeys_Call) Run(run func(table string)) *Schema_GetForeignKeys_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_GetForeignKeys_Call) Return(_a0 []schema.ForeignKey, _a1 error) *Schema_GetForeignKeys_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Schema_GetForeignKeys_Call) RunAndReturn(run func(string) ([]schema.ForeignKey, error)) *Schema_GetForeignKeys_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetIndexListing provides a mock function with given fields: table
 func (_m *Schema) GetIndexListing(table string) []string {
 	ret := _m.Called(table)
