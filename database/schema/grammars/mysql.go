@@ -144,6 +144,34 @@ func (r *Mysql) CompileForeign(blueprint schema.Blueprint, command *schema.Comma
 	return sql
 }
 
+func (r *Mysql) CompileForeignKeys(schema, table string) string {
+	return fmt.Sprintf(
+		`SELECT 
+			kc.constraint_name AS name, 
+			GROUP_CONCAT(kc.column_name ORDER BY kc.ordinal_position) AS columns, 
+			kc.referenced_table_schema AS foreign_schema, 
+			kc.referenced_table_name AS foreign_table, 
+			GROUP_CONCAT(kc.referenced_column_name ORDER BY kc.ordinal_position) AS foreign_columns, 
+			rc.update_rule AS on_update, 
+			rc.delete_rule AS on_delete 
+		FROM information_schema.key_column_usage kc 
+		JOIN information_schema.referential_constraints rc 
+			ON kc.constraint_schema = rc.constraint_schema 
+			AND kc.constraint_name = rc.constraint_name 
+		WHERE kc.table_schema = %s 
+			AND kc.table_name = %s 
+			AND kc.referenced_table_name IS NOT NULL 
+		GROUP BY 
+			kc.constraint_name, 
+			kc.referenced_table_schema, 
+			kc.referenced_table_name, 
+			rc.update_rule, 
+			rc.delete_rule`,
+		r.wrap.Quote(schema),
+		r.wrap.Quote(table),
+	)
+}
+
 func (r *Mysql) CompileFullText(blueprint schema.Blueprint, command *schema.Command) string {
 	return r.compileKey(blueprint, command, "fulltext")
 }

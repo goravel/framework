@@ -38,7 +38,7 @@ type Schema interface {
 	// Sql Execute a sql directly.
 	Sql(sql string)
 	// Table Modify a table on the schema.
-	Table(table string, callback func(table Blueprint))
+	Table(table string, callback func(table Blueprint)) error
 }
 
 type CommonSchema interface {
@@ -123,4 +123,14 @@ type View struct {
 	Name       string
 	Schema     string
 	Definition string
+}
+
+type ForeignKey struct {
+	Name           string
+	Columns        string
+	ForeignSchema  string
+	ForeignTable   string
+	ForeignColumns string
+	OnUpdate       string
+	OnDelete       string
 }

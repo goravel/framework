@@ -114,15 +114,15 @@ func (r *Sqlserver) CompileDropColumn(blueprint schema.Blueprint, command *schem
 
 func (r *Sqlserver) CompileDropDefaultConstraint(blueprint schema.Blueprint, command *schema.Command) string {
 	// TODO Add change logic
-	columns := r.wrap.Columnize(command.Columns)
+	columns := fmt.Sprintf("'%s'", strings.Join(command.Columns, "','"))
 	table := r.wrap.Table(blueprint.GetTableName())
 	tableName := r.wrap.Quote(table)
 
 	return fmt.Sprintf("DECLARE @sql NVARCHAR(MAX) = '';"+
-		"SELECT @sql += 'ALTER TABLE $table DROP CONSTRAINT ' + OBJECT_NAME([default_object_id]) + ';' "+
+		"SELECT @sql += 'ALTER TABLE %s DROP CONSTRAINT ' + OBJECT_NAME([default_object_id]) + ';' "+
 		"FROM sys.columns "+
 		"WHERE [object_id] = OBJECT_ID(%s) AND [name] in (%s) AND [default_object_id] <> 0;"+
-		"EXEC(@sql);", tableName, columns)
+		"EXEC(@sql);", table, tableName, columns)
 }
 
 func (r *Sqlserver) CompileDropForeign(blueprint schema.Blueprint, command *schema.Command) string {
@@ -166,6 +166,36 @@ func (r *Sqlserver) CompileForeign(blueprint schema.Blueprint, command *schema.C
 	}
 
 	return sql
+}
+
+func (r *Sqlserver) CompileForeignKeys(schema, table string) string {
+	newSchema := "schema_name()"
+	if schema != "" {
+		newSchema = r.wrap.Quote(schema)
+	}
+
+	return fmt.Sprintf(
+		`SELECT 
+			fk.name AS name, 
+			string_agg(lc.name, ',') WITHIN GROUP (ORDER BY fkc.constraint_column_id) AS columns, 
+			fs.name AS foreign_schema, 
+			ft.name AS foreign_table, 
+			string_agg(fc.name, ',') WITHIN GROUP (ORDER BY fkc.constraint_column_id) AS foreign_columns, 
+			fk.update_referential_action_desc AS on_update, 
+			fk.delete_referential_action_desc AS on_delete 
+		FROM sys.foreign_keys AS fk 
+		JOIN sys.foreign_key_columns AS fkc ON fkc.constraint_object_id = fk.object_id 
+		JOIN sys.tables AS lt ON lt.object_id = fk.parent_object_id 
+		JOIN sys.schemas AS ls ON lt.schema_id = ls.schema_id 
+		JOIN sys.columns AS lc ON fkc.parent_object_id = lc.object_id AND fkc.parent_column_id = lc.column_id 
+		JOIN sys.tables AS ft ON ft.object_id = fk.referenced_object_id 
+		JOIN sys.schemas AS fs ON ft.schema_id = fs.schema_id 
+		JOIN sys.columns AS fc ON fkc.referenced_object_id = fc.object_id AND fkc.referenced_column_id = fc.column_id 
+		WHERE lt.name = %s AND ls.name = %s 
+		GROUP BY fk.name, fs.name, ft.name, fk.update_referential_action_desc, fk.delete_referential_action_desc`,
+		r.wrap.Quote(table),
+		newSchema,
+	)
 }
 
 func (r *Sqlserver) CompileFullText(_ schema.Blueprint, _ *schema.Command) string {

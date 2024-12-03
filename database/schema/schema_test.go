@@ -132,7 +132,27 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Postgres() {
+func (s *SchemaSuite) TestColumnMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "column_methods"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.String("weight")
+			}))
+			s.True(schema.HasColumns(table, []string{"name", "age"}))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropColumn("name", "age")
+			}))
+			s.False(schema.HasColumns(table, []string{"name", "age"}))
+		})
+	}
+}
+
+func (s *SchemaSuite) TestColumnTypes_Postgres() {
 	if s.driverToTestQuery[database.DriverPostgres] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -437,7 +457,7 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Sqlite() {
+func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 	if s.driverToTestQuery[database.DriverSqlite] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -678,7 +698,7 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Mysql() {
+func (s *SchemaSuite) TestColumnTypes_Mysql() {
 	if s.driverToTestQuery[database.DriverMysql] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -983,7 +1003,7 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
+func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 	if s.driverToTestQuery[database.DriverSqlserver] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -1288,45 +1308,45 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 	}
 }
 
-func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
+func (s *SchemaSuite) TestTableMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			table := "drop_if_exists"
+			tableOne := "table_one"
+			tableTwo := "table_two"
+			tableThree := "table_three"
 
-			s.NoError(schema.DropIfExists(table))
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-				table.String("name")
-			}))
-			s.True(schema.HasTable(table))
-			s.NoError(schema.DropIfExists(table))
-			s.False(schema.HasTable(table))
-		})
-	}
-}
-
-func (s *SchemaSuite) TestDropAllTables() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			tableOne := "drop_all1_tables"
-			tableTwo := "drop_all2_tables"
-
+			s.NoError(schema.DropIfExists(tableOne))
 			s.NoError(schema.Create(tableOne, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
 			s.NoError(schema.Create(tableTwo, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.NoError(schema.Create(tableThree, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
 			s.True(schema.HasTable(tableOne))
 			s.True(schema.HasTable(tableTwo))
+			s.True(schema.HasTable(tableThree))
+
+			tables, err := schema.GetTables()
+
+			s.NoError(err)
+			s.Len(tables, 3)
+
+			s.NoError(schema.DropIfExists(tableOne))
+			s.False(schema.HasTable(tableOne))
+
+			s.NoError(schema.Table(tableTwo, func(table contractsschema.Blueprint) {
+				table.Drop()
+			}))
+			s.False(schema.HasTable(tableTwo))
 
 			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
 
 			s.NoError(schema.DropAllTables())
-			s.False(schema.HasTable(tableOne))
-			s.False(schema.HasTable(tableTwo))
+			s.False(schema.HasTable(tableThree))
 		})
 	}
 }
@@ -1365,6 +1385,15 @@ func (s *SchemaSuite) TestForeign() {
 
 			s.Require().Nil(err)
 			s.Require().True(schema.HasTable(table2))
+
+			switch driver {
+			case database.DriverPostgres:
+				s.True(schema.HasIndex(table2, "goravel_foreign2_pkey"))
+			case database.DriverMysql:
+				s.True(schema.HasIndex(table2, "goravel_foreign2_foreign1_id_foreign"))
+			case database.DriverSqlserver:
+				s.True(schema.HasIndex(table2, "goravel_foreign2_foreign1_id_foreign"))
+			}
 		})
 	}
 }
@@ -1773,24 +1802,6 @@ func (s *SchemaSuite) TestIndexMethods() {
 					s.False(index.Unique)
 				}
 			}
-		})
-	}
-}
-
-func (s *SchemaSuite) TestTable_GetTables() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-
-			s.NoError(schema.Create("changes", func(table contractsschema.Blueprint) {
-				table.String("name")
-			}))
-			s.True(schema.HasTable("changes"))
-
-			tables, err := schema.GetTables()
-
-			s.NoError(err)
-			s.Len(tables, 1)
 		})
 	}
 }

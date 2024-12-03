@@ -137,6 +137,31 @@ func (r *Postgres) CompileForeign(blueprint schema.Blueprint, command *schema.Co
 	return sql
 }
 
+func (r *Postgres) CompileForeignKeys(schema, table string) string {
+	return fmt.Sprintf(
+		`SELECT 
+			c.conname AS name, 
+			string_agg(la.attname, ',' ORDER BY conseq.ord) AS columns, 
+			fn.nspname AS foreign_schema, 
+			fc.relname AS foreign_table, 
+			string_agg(fa.attname, ',' ORDER BY conseq.ord) AS foreign_columns, 
+			c.confupdtype AS on_update, 
+			c.confdeltype AS on_delete 
+		FROM pg_constraint c 
+		JOIN pg_class tc ON c.conrelid = tc.oid 
+		JOIN pg_namespace tn ON tn.oid = tc.relnamespace 
+		JOIN pg_class fc ON c.confrelid = fc.oid 
+		JOIN pg_namespace fn ON fn.oid = fc.relnamespace 
+		JOIN LATERAL unnest(c.conkey) WITH ORDINALITY AS conseq(num, ord) ON TRUE 
+		JOIN pg_attribute la ON la.attrelid = c.conrelid AND la.attnum = conseq.num 
+		JOIN pg_attribute fa ON fa.attrelid = c.confrelid AND fa.attnum = c.confkey[conseq.ord] 
+		WHERE c.contype = 'f' AND tc.relname = %s AND tn.nspname = %s 
+		GROUP BY c.conname, fn.nspname, fc.relname, c.confupdtype, c.confdeltype`,
+		r.wrap.Quote(table),
+		r.wrap.Quote(schema),
+	)
+}
+
 func (r *Postgres) CompileFullText(blueprint schema.Blueprint, command *schema.Command) string {
 	language := "english"
 	if command.Language != "" {

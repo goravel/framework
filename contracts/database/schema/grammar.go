@@ -35,6 +35,8 @@ type Grammar interface {
 	CompileDropUnique(blueprint Blueprint, command *Command) string
 	// CompileForeign Compile a foreign key command.
 	CompileForeign(blueprint Blueprint, command *Command) string
+	// CompileForeignKeys Compile the query to determine the foreign keys.
+	CompileForeignKeys(schema, table string) string
 	// CompileFullText Compile a fulltext index key command.
 	CompileFullText(blueprint Blueprint, command *Command) string
 	// CompileIndex Compile a plain index key command.

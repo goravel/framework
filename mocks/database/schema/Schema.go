@@ -1106,8 +1106,21 @@ func (_c *Schema_Sql_Call) RunAndReturn(run func(string)) *Schema_Sql_Call {
 }
 
 // Table provides a mock function with given fields: table, callback
-func (_m *Schema) Table(table string, callback func(schema.Blueprint)) {
-	_m.Called(table, callback)
+func (_m *Schema) Table(table string, callback func(schema.Blueprint)) error {
+	ret := _m.Called(table, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Table")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, func(schema.Blueprint)) error); ok {
+		r0 = rf(table, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Schema_Table_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Table'
@@ -1129,12 +1142,12 @@ func (_c *Schema_Table_Call) Run(run func(table string, callback func(schema.Blu
 	return _c
 }
 
-func (_c *Schema_Table_Call) Return() *Schema_Table_Call {
-	_c.Call.Return()
+func (_c *Schema_Table_Call) Return(_a0 error) *Schema_Table_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_Table_Call) RunAndReturn(run func(string, func(schema.Blueprint))) *Schema_Table_Call {
+func (_c *Schema_Table_Call) RunAndReturn(run func(string, func(schema.Blueprint)) error) *Schema_Table_Call {
 	_c.Call.Return(run)
 	return _c
 }

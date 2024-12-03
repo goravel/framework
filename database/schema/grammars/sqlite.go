@@ -125,6 +125,23 @@ func (r *Sqlite) CompileForeign(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
+func (r *Sqlite) CompileForeignKeys(_, table string) string {
+	return fmt.Sprintf(
+		`SELECT 
+			GROUP_CONCAT("from") AS columns, 
+			"table" AS foreign_table, 
+			GROUP_CONCAT("to") AS foreign_columns, 
+			on_update, 
+			on_delete 
+		FROM (
+			SELECT * FROM pragma_foreign_key_list(%s) 
+			ORDER BY id DESC, seq
+		) 
+		GROUP BY id, "table", on_update, on_delete`,
+		r.wrap.Quote(strings.ReplaceAll(table, ".", "__")),
+	)
+}
+
 func (r *Sqlite) CompileFullText(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }

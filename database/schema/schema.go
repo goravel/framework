@@ -195,13 +195,15 @@ func (r *Schema) Sql(sql string) {
 	}
 }
 
-func (r *Schema) Table(table string, callback func(table contractsschema.Blueprint)) {
+func (r *Schema) Table(table string, callback func(table contractsschema.Blueprint)) error {
 	blueprint := r.createBlueprint(table)
 	callback(blueprint)
 
 	if err := r.build(blueprint); err != nil {
-		r.log.Fatalf("failed to modify %s table: %v", table, err)
+		return errors.SchemaFailedToChangeTable.Args(table, err)
 	}
+
+	return nil
 }
 
 func (r *Schema) build(blueprint contractsschema.Blueprint) error {
