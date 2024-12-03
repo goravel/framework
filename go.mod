@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/huh/spinner v0.0.0-20241127125741-aad810dfbce6
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/dromara/carbon/v2 v2.5.1
+	github.com/dromara/carbon/v2 v2.5.2
 	github.com/gabriel-vasile/mimetype v1.4.7
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
