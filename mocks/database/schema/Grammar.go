@@ -814,6 +814,53 @@ func (_c *Grammar_CompileForeign_Call) RunAndReturn(run func(schema.Blueprint, *
 	return _c
 }
 
+// CompileForeignKeys provides a mock function with given fields: _a0, table
+func (_m *Grammar) CompileForeignKeys(_a0 string, table string) string {
+	ret := _m.Called(_a0, table)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileForeignKeys")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(_a0, table)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileForeignKeys_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileForeignKeys'
+type Grammar_CompileForeignKeys_Call struct {
+	*mock.Call
+}
+
+// CompileForeignKeys is a helper method to define mock.On call
+//   - _a0 string
+//   - table string
+func (_e *Grammar_Expecter) CompileForeignKeys(_a0 interface{}, table interface{}) *Grammar_CompileForeignKeys_Call {
+	return &Grammar_CompileForeignKeys_Call{Call: _e.mock.On("CompileForeignKeys", _a0, table)}
+}
+
+func (_c *Grammar_CompileForeignKeys_Call) Run(run func(_a0 string, table string)) *Grammar_CompileForeignKeys_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileForeignKeys_Call) Return(_a0 string) *Grammar_CompileForeignKeys_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileForeignKeys_Call) RunAndReturn(run func(string, string) string) *Grammar_CompileForeignKeys_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileFullText provides a mock function with given fields: blueprint, command
 func (_m *Grammar) CompileFullText(blueprint schema.Blueprint, command *schema.Command) string {
 	ret := _m.Called(blueprint, command)
