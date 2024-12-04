@@ -2,7 +2,7 @@ module github.com/goravel/framework
 
 go 1.22.7
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
