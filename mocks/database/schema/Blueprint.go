@@ -830,11 +830,11 @@ func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func(string)) *Blueprint_Dr
 	return _c
 }
 
-// DropPrimary provides a mock function with given fields: name
-func (_m *Blueprint) DropPrimary(name ...string) {
-	_va := make([]interface{}, len(name))
-	for _i := range name {
-		_va[_i] = name[_i]
+// DropPrimary provides a mock function with given fields: column
+func (_m *Blueprint) DropPrimary(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -847,13 +847,13 @@ type Blueprint_DropPrimary_Call struct {
 }
 
 // DropPrimary is a helper method to define mock.On call
-//   - name ...string
-func (_e *Blueprint_Expecter) DropPrimary(name ...interface{}) *Blueprint_DropPrimary_Call {
+//   - column ...string
+func (_e *Blueprint_Expecter) DropPrimary(column ...interface{}) *Blueprint_DropPrimary_Call {
 	return &Blueprint_DropPrimary_Call{Call: _e.mock.On("DropPrimary",
-		append([]interface{}{}, name...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropPrimary_Call) Run(run func(name ...string)) *Blueprint_DropPrimary_Call {
+func (_c *Blueprint_DropPrimary_Call) Run(run func(column ...string)) *Blueprint_DropPrimary_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
@@ -1032,11 +1032,11 @@ func (_c *Blueprint_DropTimestampsTz_Call) RunAndReturn(run func()) *Blueprint_D
 	return _c
 }
 
-// DropUnique provides a mock function with given fields: name
-func (_m *Blueprint) DropUnique(name ...string) {
-	_va := make([]interface{}, len(name))
-	for _i := range name {
-		_va[_i] = name[_i]
+// DropUnique provides a mock function with given fields: column
+func (_m *Blueprint) DropUnique(column ...string) {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
 	}
 	var _ca []interface{}
 	_ca = append(_ca, _va...)
@@ -1049,13 +1049,13 @@ type Blueprint_DropUnique_Call struct {
 }
 
 // DropUnique is a helper method to define mock.On call
-//   - name ...string
-func (_e *Blueprint_Expecter) DropUnique(name ...interface{}) *Blueprint_DropUnique_Call {
+//   - column ...string
+func (_e *Blueprint_Expecter) DropUnique(column ...interface{}) *Blueprint_DropUnique_Call {
 	return &Blueprint_DropUnique_Call{Call: _e.mock.On("DropUnique",
-		append([]interface{}{}, name...)...)}
+		append([]interface{}{}, column...)...)}
 }
 
-func (_c *Blueprint_DropUnique_Call) Run(run func(name ...string)) *Blueprint_DropUnique_Call {
+func (_c *Blueprint_DropUnique_Call) Run(run func(column ...string)) *Blueprint_DropUnique_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]string, len(args)-0)
 		for i, a := range args[0:] {
