@@ -1366,7 +1366,6 @@ func (s *SchemaSuite) TestForeign() {
 		s.Run(driver.String(), func() {
 			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table1 := "foreign1"
-
 			err := schema.Create(table1, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("name")
@@ -1379,28 +1378,106 @@ func (s *SchemaSuite) TestForeign() {
 			err = schema.Create(table2, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.BigInteger("foreign1_id")
-				table.Foreign("foreign1_id").References("id").On(table1)
 			})
 
 			s.Require().Nil(err)
 			s.Require().True(schema.HasTable(table2))
 
-			foreignKeys, err := schema.GetForeignKeys(table2)
+			table3 := "foreign3"
+			err = schema.Create(table3, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.BigInteger("foreign1_id")
+				table.BigInteger("foreign2_id")
+				table.Foreign("foreign1_id").References("id").On(table1)
+				table.Foreign("foreign2_id").References("id").On(table2).CascadeOnDelete().CascadeOnUpdate().Name("foreign3_foreign2_id_foreign")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.HasTable(table3))
+
+			foreignKeys, err := schema.GetForeignKeys(table3)
 			s.NoError(err)
-			s.Len(foreignKeys, 1)
-			s.ElementsMatch([]string{"foreign1_id"}, foreignKeys[0].Columns)
-			s.Equal("goravel_"+table1, foreignKeys[0].ForeignTable)
-			s.ElementsMatch([]string{"id"}, foreignKeys[0].ForeignColumns)
-			s.Equal("no action", foreignKeys[0].OnDelete)
-			s.Equal("no action", foreignKeys[0].OnUpdate)
-			if driver == database.DriverSqlite {
-				s.Empty(foreignKeys[0].Name)
-				s.Empty(foreignKeys[0].ForeignSchema)
-			} else {
-				s.Equal("goravel_foreign2_foreign1_id_foreign", foreignKeys[0].Name)
-				s.NotEmpty(foreignKeys[0].ForeignSchema)
+			s.Len(foreignKeys, 2)
+
+			for _, foreignKey := range foreignKeys {
+				if "goravel_"+table1 == foreignKey.ForeignTable {
+					s.ElementsMatch([]string{"foreign1_id"}, foreignKey.Columns)
+					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
+					s.Equal("no action", foreignKey.OnDelete)
+					s.Equal("no action", foreignKey.OnUpdate)
+					if driver == database.DriverSqlite {
+						s.Empty(foreignKey.Name)
+						s.Empty(foreignKey.ForeignSchema)
+					} else {
+						s.Equal("goravel_foreign3_foreign1_id_foreign", foreignKey.Name)
+						s.NotEmpty(foreignKey.ForeignSchema)
+					}
+				} else if "goravel_"+table2 == foreignKey.ForeignTable {
+					s.ElementsMatch([]string{"foreign2_id"}, foreignKey.Columns)
+					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
+					s.Equal("cascade", foreignKey.OnDelete)
+					s.Equal("cascade", foreignKey.OnUpdate)
+					if driver == database.DriverSqlite {
+						s.Empty(foreignKey.Name)
+						s.Empty(foreignKey.ForeignSchema)
+					} else {
+						s.Equal("foreign3_foreign2_id_foreign", foreignKey.Name)
+						s.NotEmpty(foreignKey.ForeignSchema)
+					}
+				} else {
+					s.Fail("Unexpected foreign key")
+				}
 			}
+
+			err = schema.Table(table3, func(table contractsschema.Blueprint) {
+				table.DropForeign("foreign1_id")
+				table.DropForeignByName("foreign3_foreign2_id_foreign")
+			})
+
+			s.NoError(err)
+
+			foreignKeys, err = schema.GetForeignKeys(table3)
+			s.NoError(err)
+			if driver == database.DriverSqlite {
+				s.Len(foreignKeys, 2)
+			} else {
+				s.Len(foreignKeys, 0)
+			}
+		})
+	}
+}
+
+func (s *SchemaSuite) TestFullText() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "fulltext"
+			err := schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("avatar")
+				table.FullText("name")
+				table.FullText("avatar").Name("fulltext_avatar_fulltext")
+			})
+
+			s.Require().Nil(err)
+
+			if driver == database.DriverMysql || driver == database.DriverPostgres {
+				s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+				s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
+			} else {
+				s.False(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+				s.False(schema.HasIndex(table, "fulltext_avatar_fulltext"))
+			}
+
+			err = schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropFullText("name")
+				table.DropFullTextByName("fulltext_avatar_fulltext")
+			})
+
+			s.Require().Nil(err)
+			s.False(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+			s.False(schema.HasIndex(table, "fulltext_avatar_fulltext"))
 		})
 	}
 }
@@ -1417,8 +1494,6 @@ func (s *SchemaSuite) TestPrimary() {
 				table.Primary("name", "age")
 			}))
 
-			s.Require().True(schema.HasTable(table))
-
 			// SQLite does not support set primary index separately
 			if driver == database.DriverPostgres {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
@@ -1428,6 +1503,19 @@ func (s *SchemaSuite) TestPrimary() {
 			}
 			if driver == database.DriverSqlserver {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
+			}
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropPrimary("name", "age")
+			}))
+			if driver == database.DriverPostgres {
+				s.Require().False(schema.HasIndex(table, "goravel_primaries_pkey"))
+			}
+			if driver == database.DriverMysql {
+				s.Require().False(schema.HasIndex(table, "primary"))
+			}
+			if driver == database.DriverSqlserver {
+				s.Require().False(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
 			}
 		})
 	}
@@ -1809,6 +1897,13 @@ func (s *SchemaSuite) TestIndexMethods() {
 					s.False(index.Unique)
 				}
 			}
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.RenameIndex("goravel_indexes_id_name_index", "id_name_index")
+				table.DropIndex("name_index")
+			}))
+			s.True(schema.HasIndex(table, "id_name_index"))
+			s.False(schema.HasIndex(table, "name_index"))
 		})
 	}
 }
@@ -1829,6 +1924,59 @@ func (s *SchemaSuite) TestSql() {
 
 			s.NoError(err)
 			s.Equal(int64(1), count)
+		})
+	}
+}
+
+func (s *SchemaSuite) TestTimestampMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "timestamp"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.Timestamps()
+				table.SoftDeletes()
+			}))
+			s.True(schema.HasColumns(table, []string{"created_at", "updated_at", "deleted_at"}))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropTimestamps()
+				table.DropSoftDeletes()
+			}))
+			s.False(schema.HasColumns(table, []string{"created_at", "updated_at", "deleted_at"}))
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.TimestampsTz()
+				table.SoftDeletesTz("delete_at")
+			}))
+			s.True(schema.HasColumns(table, []string{"created_at", "updated_at", "delete_at"}))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropTimestampsTz()
+				table.DropSoftDeletesTz("delete_at")
+			}))
+			s.False(schema.HasColumns(table, []string{"created_at", "updated_at", "delete_at"}))
+		})
+	}
+}
+
+func (s *SchemaSuite) TestUnique() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "uniques"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Unique("name", "age")
+			}))
+
+			s.Require().True(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropUnique("name", "age")
+			}))
+			s.Require().False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
 		})
 	}
 }

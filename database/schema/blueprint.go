@@ -106,7 +106,9 @@ func (r *Blueprint) DropColumn(column ...string) {
 }
 
 func (r *Blueprint) DropForeign(column ...string) {
-	r.indexCommand(constants.CommandDropForeign, column)
+	r.indexCommand(constants.CommandDropForeign, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandForeign, column),
+	})
 }
 
 func (r *Blueprint) DropForeignByName(name string) {
@@ -116,7 +118,9 @@ func (r *Blueprint) DropForeignByName(name string) {
 }
 
 func (r *Blueprint) DropFullText(column ...string) {
-	r.indexCommand(constants.CommandDropFullText, column)
+	r.indexCommand(constants.CommandDropFullText, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandFullText, column),
+	})
 }
 
 func (r *Blueprint) DropFullTextByName(name string) {
@@ -163,8 +167,10 @@ func (r *Blueprint) DropTimestampsTz() {
 	r.DropTimestamps()
 }
 
-func (r *Blueprint) DropUnique(name ...string) {
-	r.indexCommand(constants.CommandDropUnique, name)
+func (r *Blueprint) DropUnique(column ...string) {
+	r.indexCommand(constants.CommandDropUnique, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandUnique, column),
+	})
 }
 
 func (r *Blueprint) Enum(column string, allowed []string) schema.ColumnDefinition {

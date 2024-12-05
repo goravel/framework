@@ -42,7 +42,7 @@ type Blueprint interface {
 	// DropIndex Indicate that the given index should be dropped.
 	DropIndex(name string)
 	// DropPrimary Indicate that the given primary key should be dropped.
-	DropPrimary(name ...string)
+	DropPrimary(column ...string)
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
 	DropSoftDeletes(column ...string)
 	// DropSoftDeletesTz Indicate that the soft delete column should be dropped.
@@ -52,7 +52,7 @@ type Blueprint interface {
 	// DropTimestampsTz Indicate that the timestamp columns should be dropped.
 	DropTimestampsTz()
 	// DropUnique Indicate that the given unique key should be dropped.
-	DropUnique(name ...string)
+	DropUnique(column ...string)
 	// Enum Create a new enum column on the table.
 	Enum(column string, array []string) ColumnDefinition
 	// Float Create a new float column on the table.

@@ -169,7 +169,7 @@ func (r *Postgres) CompileFullText(blueprint schema.Blueprint, command *schema.C
 	}
 
 	columns := collect.Map(command.Columns, func(column string, _ int) string {
-		return fmt.Sprintf("to_tsvector(%s, %s)", r.wrap.Column(language), r.wrap.Column(column))
+		return fmt.Sprintf("to_tsvector(%s, %s)", r.wrap.Quote(language), r.wrap.Column(column))
 	})
 
 	return fmt.Sprintf("create index %s on %s using gin(%s)", r.wrap.Column(command.Index), r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, " || "))
