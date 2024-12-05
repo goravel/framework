@@ -68,6 +68,10 @@ func (r *Sqlserver) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
 }
 
+func (r *Sqlserver) CompileDrop(blueprint schema.Blueprint) string {
+	return fmt.Sprintf("drop table %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
 func (r *Sqlserver) CompileDropAllDomains(domains []string) string {
 	return ""
 }
@@ -98,10 +102,53 @@ func (r *Sqlserver) CompileDropAllViews(views []string) string {
 	EXEC sp_executesql @sql;`
 }
 
+func (r *Sqlserver) CompileDropColumn(blueprint schema.Blueprint, command *schema.Command) []string {
+	columns := r.wrap.Columns(command.Columns)
+
+	dropExistingConstraintsSql := r.CompileDropDefaultConstraint(blueprint, command)
+
+	return []string{
+		fmt.Sprintf("%s alter table %s drop column %s", dropExistingConstraintsSql, r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, ", ")),
+	}
+}
+
+func (r *Sqlserver) CompileDropDefaultConstraint(blueprint schema.Blueprint, command *schema.Command) string {
+	// TODO Add change logic
+	columns := fmt.Sprintf("'%s'", strings.Join(command.Columns, "','"))
+	table := r.wrap.Table(blueprint.GetTableName())
+	tableName := r.wrap.Quote(table)
+
+	return fmt.Sprintf("DECLARE @sql NVARCHAR(MAX) = '';"+
+		"SELECT @sql += 'ALTER TABLE %s DROP CONSTRAINT ' + OBJECT_NAME([default_object_id]) + ';' "+
+		"FROM sys.columns "+
+		"WHERE [object_id] = OBJECT_ID(%s) AND [name] in (%s) AND [default_object_id] <> 0;"+
+		"EXEC(@sql);", table, tableName, columns)
+}
+
+func (r *Sqlserver) CompileDropForeign(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
+}
+
+func (r *Sqlserver) CompileDropFullText(blueprint schema.Blueprint, command *schema.Command) string {
+	return ""
+}
+
 func (r *Sqlserver) CompileDropIfExists(blueprint schema.Blueprint) string {
 	table := r.wrap.Table(blueprint.GetTableName())
 
 	return fmt.Sprintf("if object_id(%s, 'U') is not null drop table %s", r.wrap.Quote(table), table)
+}
+
+func (r *Sqlserver) CompileDropIndex(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("drop index %s on %s", r.wrap.Column(command.Index), r.wrap.Table(blueprint.GetTableName()))
+}
+
+func (r *Sqlserver) CompileDropPrimary(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
+}
+
+func (r *Sqlserver) CompileDropUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.CompileDropIndex(blueprint, command)
 }
 
 func (r *Sqlserver) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
@@ -119,6 +166,40 @@ func (r *Sqlserver) CompileForeign(blueprint schema.Blueprint, command *schema.C
 	}
 
 	return sql
+}
+
+func (r *Sqlserver) CompileForeignKeys(schema, table string) string {
+	newSchema := "schema_name()"
+	if schema != "" {
+		newSchema = r.wrap.Quote(schema)
+	}
+
+	return fmt.Sprintf(
+		`SELECT 
+			fk.name AS name, 
+			string_agg(lc.name, ',') WITHIN GROUP (ORDER BY fkc.constraint_column_id) AS columns, 
+			fs.name AS foreign_schema, 
+			ft.name AS foreign_table, 
+			string_agg(fc.name, ',') WITHIN GROUP (ORDER BY fkc.constraint_column_id) AS foreign_columns, 
+			fk.update_referential_action_desc AS on_update, 
+			fk.delete_referential_action_desc AS on_delete 
+		FROM sys.foreign_keys AS fk 
+		JOIN sys.foreign_key_columns AS fkc ON fkc.constraint_object_id = fk.object_id 
+		JOIN sys.tables AS lt ON lt.object_id = fk.parent_object_id 
+		JOIN sys.schemas AS ls ON lt.schema_id = ls.schema_id 
+		JOIN sys.columns AS lc ON fkc.parent_object_id = lc.object_id AND fkc.parent_column_id = lc.column_id 
+		JOIN sys.tables AS ft ON ft.object_id = fk.referenced_object_id 
+		JOIN sys.schemas AS fs ON ft.schema_id = fs.schema_id 
+		JOIN sys.columns AS fc ON fkc.referenced_object_id = fc.object_id AND fkc.referenced_column_id = fc.column_id 
+		WHERE lt.name = %s AND ls.name = %s 
+		GROUP BY fk.name, fs.name, ft.name, fk.update_referential_action_desc, fk.delete_referential_action_desc`,
+		r.wrap.Quote(table),
+		newSchema,
+	)
+}
+
+func (r *Sqlserver) CompileFullText(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
 }
 
 func (r *Sqlserver) CompileIndex(blueprint schema.Blueprint, command *schema.Command) string {
@@ -157,6 +238,12 @@ func (r *Sqlserver) CompilePrimary(blueprint schema.Blueprint, command *schema.C
 		r.wrap.Columnize(command.Columns))
 }
 
+func (r *Sqlserver) CompileRenameIndex(_ schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
+	return []string{
+		fmt.Sprintf("sp_rename %s, %s, N'INDEX'", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)), r.wrap.Column(command.To)),
+	}
+}
+
 func (r *Sqlserver) CompileTables(database string) string {
 	return "select t.name as name, schema_name(t.schema_id) as [schema], sum(u.total_pages) * 8 * 1024 as size " +
 		"from sys.tables as t " +
@@ -168,6 +255,13 @@ func (r *Sqlserver) CompileTables(database string) string {
 
 func (r *Sqlserver) CompileTypes() string {
 	return ""
+}
+
+func (r *Sqlserver) CompileUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("create unique index %s on %s (%s)",
+		r.wrap.Column(command.Index),
+		r.wrap.Table(blueprint.GetTableName()),
+		r.wrap.Columnize(command.Columns))
 }
 
 func (r *Sqlserver) CompileViews(database string) string {

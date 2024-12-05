@@ -1,4 +1,10 @@
-package processors
+package schema
+
+type Processor interface {
+	ProcessColumns(dbColumns []DBColumn) []Column
+	ProcessForeignKeys(dbIndexes []DBForeignKey) []ForeignKey
+	ProcessIndexes(dbIndexes []DBIndex) []Index
+}
 
 type DBColumn struct {
 	Autoincrement bool
@@ -14,6 +20,16 @@ type DBColumn struct {
 	Primary       bool
 	Type          string
 	TypeName      string
+}
+
+type DBForeignKey struct {
+	Name           string
+	Columns        string
+	ForeignSchema  string
+	ForeignTable   string
+	ForeignColumns string
+	OnUpdate       string
+	OnDelete       string
 }
 
 type DBIndex struct {

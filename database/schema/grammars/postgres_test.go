@@ -7,6 +7,7 @@ import (
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
+	"github.com/goravel/framework/support/convert"
 )
 
 type PostgresSuite struct {
@@ -116,11 +117,27 @@ func (s *PostgresSuite) TestCompileDropAllViews() {
 	s.Equal(`drop view "domain", "user"."email" cascade`, s.grammar.CompileDropAllViews([]string{"domain", "user.email"}))
 }
 
+func (s *PostgresSuite) TestCompileDropColumn() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal([]string([]string{`alter table "goravel_users" drop column "id", drop column "email"`}), s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
+		Columns: []string{"id", "email"},
+	}))
+}
+
 func (s *PostgresSuite) TestCompileDropIfExists() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
 	s.Equal(`drop table if exists "goravel_users"`, s.grammar.CompileDropIfExists(mockBlueprint))
+}
+
+func (s *PostgresSuite) TestCompileDropPrimary() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal(`alter table "goravel_users" drop constraint "goravel_users_pkey"`, s.grammar.CompileDropPrimary(mockBlueprint, &contractsschema.Command{}))
 }
 
 func (s *PostgresSuite) TestCompileForeign() {
@@ -168,6 +185,16 @@ func (s *PostgresSuite) TestCompileForeign() {
 			s.Equal(test.expectSql, sql)
 		})
 	}
+}
+
+func (s *PostgresSuite) TestCompileFullText() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal(`create index "users_email_fulltext" on "goravel_users" using gin(to_tsvector('english', "id") || to_tsvector('english', "email"))`, s.grammar.CompileFullText(mockBlueprint, &contractsschema.Command{
+		Index:   "users_email_fulltext",
+		Columns: []string{"id", "email"},
+	}))
 }
 
 func (s *PostgresSuite) TestCompileIndex() {
@@ -219,6 +246,48 @@ func (s *PostgresSuite) TestCompilePrimary() {
 	s.Equal(`alter table "goravel_users" add primary key ("role_id", "user_id")`, s.grammar.CompilePrimary(mockBlueprint, &contractsschema.Command{
 		Columns: []string{"role_id", "user_id"},
 	}))
+}
+
+func (s *PostgresSuite) TestCompileUnique() {
+	tests := []struct {
+		name               string
+		deferrable         *bool
+		initiallyImmediate *bool
+		expectSql          string
+	}{
+		{
+			name:               "with deferrable and initially immediate",
+			deferrable:         convert.Pointer(true),
+			initiallyImmediate: convert.Pointer(true),
+			expectSql:          `alter table "goravel_users" add constraint "unique_users_email" unique ("id", "email") deferrable initially immediate`,
+		},
+		{
+			name:               "with deferrable and initially immediate, both false",
+			deferrable:         convert.Pointer(false),
+			initiallyImmediate: convert.Pointer(false),
+			expectSql:          `alter table "goravel_users" add constraint "unique_users_email" unique ("id", "email") not deferrable initially deferred`,
+		},
+		{
+			name:      "without deferrable and initially immediate",
+			expectSql: `alter table "goravel_users" add constraint "unique_users_email" unique ("id", "email")`,
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockBlueprint := mocksschema.NewBlueprint(s.T())
+			mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+			sql := s.grammar.CompileUnique(mockBlueprint, &contractsschema.Command{
+				Index:              "unique_users_email",
+				Columns:            []string{"id", "email"},
+				Deferrable:         test.deferrable,
+				InitiallyImmediate: test.initiallyImmediate,
+			})
+
+			s.Equal(test.expectSql, sql)
+		})
+	}
 }
 
 func (s *PostgresSuite) TestGetColumns() {

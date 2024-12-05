@@ -29,17 +29,28 @@ func (r *Wrap) Column(column string) string {
 }
 
 func (r *Wrap) Columns(columns []string) []string {
+	formatedColumns := make([]string, len(columns))
 	for i, column := range columns {
-		columns[i] = r.Column(column)
+		formatedColumns[i] = r.Column(column)
 	}
 
-	return columns
+	return formatedColumns
 }
 
 func (r *Wrap) Columnize(columns []string) string {
 	columns = r.Columns(columns)
 
 	return strings.Join(columns, ", ")
+}
+
+func (r *Wrap) GetPrefix() string {
+	return r.tablePrefix
+}
+
+func (r *Wrap) PrefixArray(prefix string, values []string) []string {
+	return collect.Map(values, func(value string, _ int) string {
+		return prefix + " " + value
+	})
 }
 
 func (r *Wrap) Quote(value string) string {

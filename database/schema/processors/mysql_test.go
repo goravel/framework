@@ -3,20 +3,33 @@ package processors
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-func TestMysqlProcessColumns(t *testing.T) {
+type MysqlTestSuite struct {
+	suite.Suite
+	mysql Mysql
+}
+
+func TestMysqlTestSuite(t *testing.T) {
+	suite.Run(t, new(MysqlTestSuite))
+}
+
+func (s *MysqlTestSuite) SetupTest() {
+	s.mysql = NewMysql()
+}
+
+func (s *MysqlTestSuite) TestProcessColumns() {
 	tests := []struct {
 		name      string
-		dbColumns []DBColumn
+		dbColumns []schema.DBColumn
 		expected  []schema.Column
 	}{
 		{
 			name: "ValidInput",
-			dbColumns: []DBColumn{
+			dbColumns: []schema.DBColumn{
 				{Name: "id", Type: "int", TypeName: "INT", Nullable: "NO", Extra: "auto_increment", Collation: "utf8_general_ci", Comment: "primary key", Default: "0"},
 				{Name: "name", Type: "varchar", TypeName: "VARCHAR", Nullable: "YES", Extra: "", Collation: "utf8_general_ci", Comment: "user name", Default: ""},
 			},
@@ -27,11 +40,11 @@ func TestMysqlProcessColumns(t *testing.T) {
 		},
 		{
 			name:      "EmptyInput",
-			dbColumns: []DBColumn{},
+			dbColumns: []schema.DBColumn{},
 		},
 		{
 			name: "NullableColumn",
-			dbColumns: []DBColumn{
+			dbColumns: []schema.DBColumn{
 				{Name: "description", Type: "text", TypeName: "TEXT", Nullable: "YES", Extra: "", Collation: "utf8_general_ci", Comment: "description", Default: ""},
 			},
 			expected: []schema.Column{
@@ -40,7 +53,7 @@ func TestMysqlProcessColumns(t *testing.T) {
 		},
 		{
 			name: "NonNullableColumn",
-			dbColumns: []DBColumn{
+			dbColumns: []schema.DBColumn{
 				{Name: "created_at", Type: "timestamp", TypeName: "TIMESTAMP", Nullable: "NO", Extra: "", Collation: "", Comment: "creation time", Default: "CURRENT_TIMESTAMP"},
 			},
 			expected: []schema.Column{
@@ -49,11 +62,39 @@ func TestMysqlProcessColumns(t *testing.T) {
 		},
 	}
 
-	mysql := NewMysql()
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := mysql.ProcessColumns(tt.dbColumns)
-			assert.Equal(t, tt.expected, result)
+		s.Run(tt.name, func() {
+			result := s.mysql.ProcessColumns(tt.dbColumns)
+			s.Equal(tt.expected, result)
+		})
+	}
+}
+
+func (s *MysqlTestSuite) TestProcessForeignKeys() {
+	tests := []struct {
+		name          string
+		dbForeignKeys []schema.DBForeignKey
+		expected      []schema.ForeignKey
+	}{
+		{
+			name: "ValidInput",
+			dbForeignKeys: []schema.DBForeignKey{
+				{Name: "fk_user_id", Columns: "user_id", ForeignSchema: "public", ForeignTable: "users", ForeignColumns: "id", OnUpdate: "CASCADE", OnDelete: "SET NULL"},
+			},
+			expected: []schema.ForeignKey{
+				{Name: "fk_user_id", Columns: []string{"user_id"}, ForeignSchema: "public", ForeignTable: "users", ForeignColumns: []string{"id"}, OnUpdate: "cascade", OnDelete: "set null"},
+			},
+		},
+		{
+			name:          "EmptyInput",
+			dbForeignKeys: []schema.DBForeignKey{},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			result := s.mysql.ProcessForeignKeys(tt.dbForeignKeys)
+			s.Equal(tt.expected, result)
 		})
 	}
 }

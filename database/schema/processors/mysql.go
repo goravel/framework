@@ -1,6 +1,8 @@
 package processors
 
 import (
+	"strings"
+
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -11,7 +13,7 @@ func NewMysql() Mysql {
 	return Mysql{}
 }
 
-func (r Mysql) ProcessColumns(dbColumns []DBColumn) []schema.Column {
+func (r Mysql) ProcessColumns(dbColumns []schema.DBColumn) []schema.Column {
 	var columns []schema.Column
 	for _, dbColumn := range dbColumns {
 		var nullable bool
@@ -38,6 +40,23 @@ func (r Mysql) ProcessColumns(dbColumns []DBColumn) []schema.Column {
 	return columns
 }
 
-func (r Mysql) ProcessIndexes(dbIndexes []DBIndex) []schema.Index {
+func (r Mysql) ProcessForeignKeys(dbForeignKeys []schema.DBForeignKey) []schema.ForeignKey {
+	var foreignKeys []schema.ForeignKey
+	for _, dbForeignKey := range dbForeignKeys {
+		foreignKeys = append(foreignKeys, schema.ForeignKey{
+			Name:           dbForeignKey.Name,
+			Columns:        strings.Split(dbForeignKey.Columns, ","),
+			ForeignSchema:  dbForeignKey.ForeignSchema,
+			ForeignTable:   dbForeignKey.ForeignTable,
+			ForeignColumns: strings.Split(dbForeignKey.ForeignColumns, ","),
+			OnUpdate:       strings.ToLower(dbForeignKey.OnUpdate),
+			OnDelete:       strings.ToLower(dbForeignKey.OnDelete),
+		})
+	}
+
+	return foreignKeys
+}
+
+func (r Mysql) ProcessIndexes(dbIndexes []schema.DBIndex) []schema.Index {
 	return processIndexes(dbIndexes)
 }

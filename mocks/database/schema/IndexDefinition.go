@@ -68,6 +68,148 @@ func (_c *IndexDefinition_Algorithm_Call) RunAndReturn(run func(string) schema.I
 	return _c
 }
 
+// Deferrable provides a mock function with given fields:
+func (_m *IndexDefinition) Deferrable() schema.IndexDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Deferrable")
+	}
+
+	var r0 schema.IndexDefinition
+	if rf, ok := ret.Get(0).(func() schema.IndexDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.IndexDefinition)
+		}
+	}
+
+	return r0
+}
+
+// IndexDefinition_Deferrable_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Deferrable'
+type IndexDefinition_Deferrable_Call struct {
+	*mock.Call
+}
+
+// Deferrable is a helper method to define mock.On call
+func (_e *IndexDefinition_Expecter) Deferrable() *IndexDefinition_Deferrable_Call {
+	return &IndexDefinition_Deferrable_Call{Call: _e.mock.On("Deferrable")}
+}
+
+func (_c *IndexDefinition_Deferrable_Call) Run(run func()) *IndexDefinition_Deferrable_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *IndexDefinition_Deferrable_Call) Return(_a0 schema.IndexDefinition) *IndexDefinition_Deferrable_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IndexDefinition_Deferrable_Call) RunAndReturn(run func() schema.IndexDefinition) *IndexDefinition_Deferrable_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InitiallyImmediate provides a mock function with given fields:
+func (_m *IndexDefinition) InitiallyImmediate() schema.IndexDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for InitiallyImmediate")
+	}
+
+	var r0 schema.IndexDefinition
+	if rf, ok := ret.Get(0).(func() schema.IndexDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.IndexDefinition)
+		}
+	}
+
+	return r0
+}
+
+// IndexDefinition_InitiallyImmediate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InitiallyImmediate'
+type IndexDefinition_InitiallyImmediate_Call struct {
+	*mock.Call
+}
+
+// InitiallyImmediate is a helper method to define mock.On call
+func (_e *IndexDefinition_Expecter) InitiallyImmediate() *IndexDefinition_InitiallyImmediate_Call {
+	return &IndexDefinition_InitiallyImmediate_Call{Call: _e.mock.On("InitiallyImmediate")}
+}
+
+func (_c *IndexDefinition_InitiallyImmediate_Call) Run(run func()) *IndexDefinition_InitiallyImmediate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *IndexDefinition_InitiallyImmediate_Call) Return(_a0 schema.IndexDefinition) *IndexDefinition_InitiallyImmediate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IndexDefinition_InitiallyImmediate_Call) RunAndReturn(run func() schema.IndexDefinition) *IndexDefinition_InitiallyImmediate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Language provides a mock function with given fields: name
+func (_m *IndexDefinition) Language(name string) schema.IndexDefinition {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Language")
+	}
+
+	var r0 schema.IndexDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.IndexDefinition); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.IndexDefinition)
+		}
+	}
+
+	return r0
+}
+
+// IndexDefinition_Language_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Language'
+type IndexDefinition_Language_Call struct {
+	*mock.Call
+}
+
+// Language is a helper method to define mock.On call
+//   - name string
+func (_e *IndexDefinition_Expecter) Language(name interface{}) *IndexDefinition_Language_Call {
+	return &IndexDefinition_Language_Call{Call: _e.mock.On("Language", name)}
+}
+
+func (_c *IndexDefinition_Language_Call) Run(run func(name string)) *IndexDefinition_Language_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *IndexDefinition_Language_Call) Return(_a0 schema.IndexDefinition) *IndexDefinition_Language_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IndexDefinition_Language_Call) RunAndReturn(run func(string) schema.IndexDefinition) *IndexDefinition_Language_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Name provides a mock function with given fields: name
 func (_m *IndexDefinition) Name(name string) schema.IndexDefinition {
 	ret := _m.Called(name)

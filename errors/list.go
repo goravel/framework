@@ -114,6 +114,7 @@ var (
 
 	SchemaDriverNotSupported   = New("driver %s is not supported")
 	SchemaFailedToCreateTable  = New("failed to create %s table: %v")
+	SchemaFailedToChangeTable  = New("failed to change %s table: %v")
 	SchemaFailedToDropTable    = New("failed to drop %s table: %v")
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
 	SchemaEmptyReferenceString = New("reference string can't be empty")

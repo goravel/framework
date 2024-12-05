@@ -61,7 +61,98 @@ func (s *SchemaSuite) TearDownTest() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Postgres() {
+func (s *SchemaSuite) TestColumnExtraAttributes() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "column_extra_attribute"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.String("nullable").Nullable()
+				table.String("string_default").Default("goravel")
+				table.Integer("integer_default").Default(1)
+				table.Integer("bool_default").Default(true)
+				table.TimestampTz("use_current").UseCurrent()
+				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
+			}))
+
+			type ColumnExtraAttribute struct {
+				ID                 uint            `gorm:"primaryKey" json:"id"`
+				Name               string          `json:"name"`
+				Nullable           *string         `json:"nullable"`
+				StringDefault      string          `json:"string_default"`
+				IntegerDefault     int             `json:"integer_default"`
+				BoolDefault        bool            `json:"bool_default"`
+				UseCurrent         carbon.DateTime `json:"use_current"`
+				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
+			}
+
+			// SubSecond: Avoid milliseconds difference
+			carbon.SetTimezone(carbon.UTC)
+			now := carbon.Now().SubSecond()
+
+			s.NoError(testQuery.Query().Model(&ColumnExtraAttribute{}).Create(map[string]any{
+				"name": "hello",
+			}))
+
+			interval := int64(1)
+			var columnExtraAttribute ColumnExtraAttribute
+			s.NoError(testQuery.Query().Where("name", "hello").First(&columnExtraAttribute))
+			s.True(columnExtraAttribute.ID > 0)
+			s.Equal("hello", columnExtraAttribute.Name)
+			s.Nil(columnExtraAttribute.Nullable)
+			s.Equal("goravel", columnExtraAttribute.StringDefault)
+			s.Equal(1, columnExtraAttribute.IntegerDefault)
+			s.True(columnExtraAttribute.BoolDefault)
+			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now().AddSecond()))
+			s.True(columnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
+
+			time.Sleep(time.Duration(interval) * time.Second)
+
+			now = carbon.Now().SubSecond()
+			result, err := testQuery.Query().Model(&ColumnExtraAttribute{}).Where("id", columnExtraAttribute.ID).Update(map[string]any{
+				"name": "world",
+			})
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			var anotherColumnExtraAttribute ColumnExtraAttribute
+			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
+			s.Equal("world", anotherColumnExtraAttribute.Name)
+			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
+			if driver == database.DriverMysql {
+				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
+			} else {
+				s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
+			}
+		})
+	}
+}
+
+func (s *SchemaSuite) TestColumnMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "column_methods"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.String("weight")
+			}))
+			s.True(schema.HasColumns(table, []string{"name", "age"}))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropColumn("name", "age")
+			}))
+			s.False(schema.HasColumns(table, []string{"name", "age"}))
+		})
+	}
+}
+
+func (s *SchemaSuite) TestColumnTypes_Postgres() {
 	if s.driverToTestQuery[database.DriverPostgres] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -366,7 +457,7 @@ func (s *SchemaSuite) TestColumnMethods_Postgres() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Sqlite() {
+func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 	if s.driverToTestQuery[database.DriverSqlite] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -607,7 +698,7 @@ func (s *SchemaSuite) TestColumnMethods_Sqlite() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Mysql() {
+func (s *SchemaSuite) TestColumnTypes_Mysql() {
 	if s.driverToTestQuery[database.DriverMysql] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -912,7 +1003,7 @@ func (s *SchemaSuite) TestColumnMethods_Mysql() {
 	}
 }
 
-func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
+func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 	if s.driverToTestQuery[database.DriverSqlserver] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -1217,116 +1308,45 @@ func (s *SchemaSuite) TestColumnMethods_Sqlserver() {
 	}
 }
 
-func (s *SchemaSuite) TestCreate_DropIfExists_HasTable() {
+func (s *SchemaSuite) TestTableMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
 			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			table := "drop_if_exists"
+			tableOne := "table_one"
+			tableTwo := "table_two"
+			tableThree := "table_three"
 
-			s.NoError(schema.DropIfExists(table))
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-				table.String("name")
-			}))
-			s.True(schema.HasTable(table))
-			s.NoError(schema.DropIfExists(table))
-			s.False(schema.HasTable(table))
-		})
-	}
-}
-
-func (s *SchemaSuite) TestColumnExtraAttributes() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			table := "column_extra_attribute"
-
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-				table.ID()
-				table.String("name")
-				table.String("nullable").Nullable()
-				table.String("string_default").Default("goravel")
-				table.Integer("integer_default").Default(1)
-				table.Integer("bool_default").Default(true)
-				table.TimestampTz("use_current").UseCurrent()
-				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
-			}))
-
-			type ColumnExtraAttribute struct {
-				ID                 uint            `gorm:"primaryKey" json:"id"`
-				Name               string          `json:"name"`
-				Nullable           *string         `json:"nullable"`
-				StringDefault      string          `json:"string_default"`
-				IntegerDefault     int             `json:"integer_default"`
-				BoolDefault        bool            `json:"bool_default"`
-				UseCurrent         carbon.DateTime `json:"use_current"`
-				UseCurrentOnUpdate carbon.DateTime `json:"use_current_on_update"`
-			}
-
-			// SubSecond: Avoid milliseconds difference
-			carbon.SetTimezone(carbon.UTC)
-			now := carbon.Now().SubSecond()
-
-			s.NoError(testQuery.Query().Model(&ColumnExtraAttribute{}).Create(map[string]any{
-				"name": "hello",
-			}))
-
-			interval := int64(1)
-			var columnExtraAttribute ColumnExtraAttribute
-			s.NoError(testQuery.Query().Where("name", "hello").First(&columnExtraAttribute))
-			s.True(columnExtraAttribute.ID > 0)
-			s.Equal("hello", columnExtraAttribute.Name)
-			s.Nil(columnExtraAttribute.Nullable)
-			s.Equal("goravel", columnExtraAttribute.StringDefault)
-			s.Equal(1, columnExtraAttribute.IntegerDefault)
-			s.True(columnExtraAttribute.BoolDefault)
-			s.True(columnExtraAttribute.UseCurrent.Between(now, carbon.Now().AddSecond()))
-			s.True(columnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
-
-			time.Sleep(time.Duration(interval) * time.Second)
-
-			now = carbon.Now().SubSecond()
-			result, err := testQuery.Query().Model(&ColumnExtraAttribute{}).Where("id", columnExtraAttribute.ID).Update(map[string]any{
-				"name": "world",
-			})
-			s.NoError(err)
-			s.Equal(int64(1), result.RowsAffected)
-
-			var anotherColumnExtraAttribute ColumnExtraAttribute
-			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
-			s.Equal("world", anotherColumnExtraAttribute.Name)
-			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
-			if driver == database.DriverMysql {
-				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
-			} else {
-				s.Equal(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
-			}
-		})
-	}
-}
-
-func (s *SchemaSuite) TestDropAllTables() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			tableOne := "drop_all1_tables"
-			tableTwo := "drop_all2_tables"
-
+			s.NoError(schema.DropIfExists(tableOne))
 			s.NoError(schema.Create(tableOne, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
 			s.NoError(schema.Create(tableTwo, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.NoError(schema.Create(tableThree, func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
 			s.True(schema.HasTable(tableOne))
 			s.True(schema.HasTable(tableTwo))
+			s.True(schema.HasTable(tableThree))
+
+			tables, err := schema.GetTables()
+
+			s.NoError(err)
+			s.Len(tables, 3)
+
+			s.NoError(schema.DropIfExists(tableOne))
+			s.False(schema.HasTable(tableOne))
+
+			s.NoError(schema.Table(tableTwo, func(table contractsschema.Blueprint) {
+				table.Drop()
+			}))
+			s.False(schema.HasTable(tableTwo))
 
 			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
 
 			s.NoError(schema.DropAllTables())
-			s.False(schema.HasTable(tableOne))
-			s.False(schema.HasTable(tableTwo))
+			s.False(schema.HasTable(tableThree))
 		})
 	}
 }
@@ -1346,7 +1366,6 @@ func (s *SchemaSuite) TestForeign() {
 		s.Run(driver.String(), func() {
 			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table1 := "foreign1"
-
 			err := schema.Create(table1, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("name")
@@ -1359,12 +1378,106 @@ func (s *SchemaSuite) TestForeign() {
 			err = schema.Create(table2, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.BigInteger("foreign1_id")
-				table.Foreign("foreign1_id").References("id").On(table1)
 			})
 
 			s.Require().Nil(err)
 			s.Require().True(schema.HasTable(table2))
+
+			table3 := "foreign3"
+			err = schema.Create(table3, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("name")
+				table.BigInteger("foreign1_id")
+				table.BigInteger("foreign2_id")
+				table.Foreign("foreign1_id").References("id").On(table1)
+				table.Foreign("foreign2_id").References("id").On(table2).CascadeOnDelete().CascadeOnUpdate().Name("foreign3_foreign2_id_foreign")
+			})
+
+			s.Require().Nil(err)
+			s.Require().True(schema.HasTable(table3))
+
+			foreignKeys, err := schema.GetForeignKeys(table3)
+			s.NoError(err)
+			s.Len(foreignKeys, 2)
+
+			for _, foreignKey := range foreignKeys {
+				if "goravel_"+table1 == foreignKey.ForeignTable {
+					s.ElementsMatch([]string{"foreign1_id"}, foreignKey.Columns)
+					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
+					s.Equal("no action", foreignKey.OnDelete)
+					s.Equal("no action", foreignKey.OnUpdate)
+					if driver == database.DriverSqlite {
+						s.Empty(foreignKey.Name)
+						s.Empty(foreignKey.ForeignSchema)
+					} else {
+						s.Equal("goravel_foreign3_foreign1_id_foreign", foreignKey.Name)
+						s.NotEmpty(foreignKey.ForeignSchema)
+					}
+				} else if "goravel_"+table2 == foreignKey.ForeignTable {
+					s.ElementsMatch([]string{"foreign2_id"}, foreignKey.Columns)
+					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
+					s.Equal("cascade", foreignKey.OnDelete)
+					s.Equal("cascade", foreignKey.OnUpdate)
+					if driver == database.DriverSqlite {
+						s.Empty(foreignKey.Name)
+						s.Empty(foreignKey.ForeignSchema)
+					} else {
+						s.Equal("foreign3_foreign2_id_foreign", foreignKey.Name)
+						s.NotEmpty(foreignKey.ForeignSchema)
+					}
+				} else {
+					s.Fail("Unexpected foreign key")
+				}
+			}
+
+			err = schema.Table(table3, func(table contractsschema.Blueprint) {
+				table.DropForeign("foreign1_id")
+				table.DropForeignByName("foreign3_foreign2_id_foreign")
+			})
+
+			s.NoError(err)
+
+			foreignKeys, err = schema.GetForeignKeys(table3)
+			s.NoError(err)
+			if driver == database.DriverSqlite {
+				s.Len(foreignKeys, 2)
+			} else {
+				s.Len(foreignKeys, 0)
+			}
+		})
+	}
+}
+
+func (s *SchemaSuite) TestFullText() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "fulltext"
+			err := schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("avatar")
+				table.FullText("name")
+				table.FullText("avatar").Name("fulltext_avatar_fulltext")
+			})
+
+			s.Require().Nil(err)
+
+			if driver == database.DriverMysql || driver == database.DriverPostgres {
+				s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+				s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
+			} else {
+				s.False(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+				s.False(schema.HasIndex(table, "fulltext_avatar_fulltext"))
+			}
+
+			err = schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropFullText("name")
+				table.DropFullTextByName("fulltext_avatar_fulltext")
+			})
+
+			s.Require().Nil(err)
+			s.False(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
+			s.False(schema.HasIndex(table, "fulltext_avatar_fulltext"))
 		})
 	}
 }
@@ -1381,8 +1494,6 @@ func (s *SchemaSuite) TestPrimary() {
 				table.Primary("name", "age")
 			}))
 
-			s.Require().True(schema.HasTable(table))
-
 			// SQLite does not support set primary index separately
 			if driver == database.DriverPostgres {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
@@ -1392,6 +1503,19 @@ func (s *SchemaSuite) TestPrimary() {
 			}
 			if driver == database.DriverSqlserver {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
+			}
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropPrimary("name", "age")
+			}))
+			if driver == database.DriverPostgres {
+				s.Require().False(schema.HasIndex(table, "goravel_primaries_pkey"))
+			}
+			if driver == database.DriverMysql {
+				s.Require().False(schema.HasIndex(table, "primary"))
+			}
+			if driver == database.DriverSqlserver {
+				s.Require().False(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
 			}
 		})
 	}
@@ -1773,24 +1897,17 @@ func (s *SchemaSuite) TestIndexMethods() {
 					s.False(index.Unique)
 				}
 			}
-		})
-	}
-}
 
-func (s *SchemaSuite) TestTable_GetTables() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-
-			s.NoError(schema.Create("changes", func(table contractsschema.Blueprint) {
-				table.String("name")
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropIndex("id", "name")
+				table.RenameIndex("name_index", "name")
 			}))
-			s.True(schema.HasTable("changes"))
-
-			tables, err := schema.GetTables()
-
-			s.NoError(err)
-			s.Len(tables, 1)
+			s.False(schema.HasIndex(table, "goravel_indexes_id_name_index"))
+			s.True(schema.HasIndex(table, "name"))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropIndexByName("name")
+			}))
+			s.False(schema.HasIndex(table, "name"))
 		})
 	}
 }
@@ -1811,6 +1928,59 @@ func (s *SchemaSuite) TestSql() {
 
 			s.NoError(err)
 			s.Equal(int64(1), count)
+		})
+	}
+}
+
+func (s *SchemaSuite) TestTimestampMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "timestamp"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.Timestamps()
+				table.SoftDeletes()
+			}))
+			s.True(schema.HasColumns(table, []string{"created_at", "updated_at", "deleted_at"}))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropTimestamps()
+				table.DropSoftDeletes()
+			}))
+			s.False(schema.HasColumns(table, []string{"created_at", "updated_at", "deleted_at"}))
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.TimestampsTz()
+				table.SoftDeletesTz("delete_at")
+			}))
+			s.True(schema.HasColumns(table, []string{"created_at", "updated_at", "delete_at"}))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropTimestampsTz()
+				table.DropSoftDeletesTz("delete_at")
+			}))
+			s.False(schema.HasColumns(table, []string{"created_at", "updated_at", "delete_at"}))
+		})
+	}
+}
+
+func (s *SchemaSuite) TestUnique() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "uniques"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+				table.String("age")
+				table.Unique("name", "age")
+			}))
+
+			s.Require().True(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropUnique("name", "age")
+			}))
+			s.Require().False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
 		})
 	}
 }

@@ -69,7 +69,7 @@ func (r *SqliteSchema) DropAllViews() error {
 func (r *SqliteSchema) GetColumns(table string) ([]schema.Column, error) {
 	table = r.prefix + table
 
-	var dbColumns []processors.DBColumn
+	var dbColumns []schema.DBColumn
 	if err := r.orm.Query().Raw(r.grammar.CompileColumns("", table)).Scan(&dbColumns); err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (r *SqliteSchema) GetColumns(table string) ([]schema.Column, error) {
 func (r *SqliteSchema) GetIndexes(table string) ([]schema.Index, error) {
 	table = r.prefix + table
 
-	var dbIndexes []processors.DBIndex
+	var dbIndexes []schema.DBIndex
 	if err := r.orm.Query().Raw(r.grammar.CompileIndexes("", table)).Scan(&dbIndexes); err != nil {
 		return nil, err
 	}

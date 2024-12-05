@@ -7,19 +7,23 @@ import (
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/support/collect"
 )
 
 type Sqlite struct {
 	attributeCommands []string
+	log               log.Log
 	modifiers         []func(schema.Blueprint, schema.ColumnDefinition) string
 	serials           []string
 	tablePrefix       string
 	wrap              *Wrap
 }
 
-func NewSqlite(tablePrefix string) *Sqlite {
+func NewSqlite(log log.Log, tablePrefix string) *Sqlite {
 	sqlite := &Sqlite{
 		attributeCommands: []string{},
+		log:               log,
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		tablePrefix:       tablePrefix,
 		wrap:              NewWrap(contractsdatabase.DriverSqlite, tablePrefix),
@@ -59,6 +63,10 @@ func (r *Sqlite) CompileDisableWriteableSchema() string {
 	return r.pragma("writable_schema", "0")
 }
 
+func (r *Sqlite) CompileDrop(blueprint schema.Blueprint) string {
+	return fmt.Sprintf("drop table %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
 func (r *Sqlite) CompileDropAllDomains(domains []string) string {
 	return ""
 }
@@ -75,15 +83,66 @@ func (r *Sqlite) CompileDropAllViews(views []string) string {
 	return "delete from sqlite_master where type in ('view')"
 }
 
+func (r *Sqlite) CompileDropColumn(blueprint schema.Blueprint, command *schema.Command) []string {
+	// TODO check Sqlite 3.35
+	table := r.wrap.Table(blueprint.GetTableName())
+	columns := r.wrap.PrefixArray("drop column", r.wrap.Columns(command.Columns))
+
+	return collect.Map(columns, func(column string, _ int) string {
+		return fmt.Sprintf("alter table %s %s", table, column)
+	})
+}
+
+func (r *Sqlite) CompileDropForeign(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
+func (r *Sqlite) CompileDropFullText(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
 func (r *Sqlite) CompileDropIfExists(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table if exists %s", r.wrap.Table(blueprint.GetTableName()))
+}
+
+func (r *Sqlite) CompileDropIndex(_ schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("drop index %s", r.wrap.Column(command.Index))
+}
+
+func (r *Sqlite) CompileDropPrimary(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
+func (r *Sqlite) CompileDropUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return r.CompileDropIndex(blueprint, command)
 }
 
 func (r *Sqlite) CompileEnableWriteableSchema() string {
 	return r.pragma("writable_schema", "1")
 }
 
-func (r *Sqlite) CompileForeign(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompileForeign(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
+func (r *Sqlite) CompileForeignKeys(_, table string) string {
+	return fmt.Sprintf(
+		`SELECT 
+			GROUP_CONCAT("from") AS columns, 
+			"table" AS foreign_table, 
+			GROUP_CONCAT("to") AS foreign_columns, 
+			on_update, 
+			on_delete 
+		FROM (
+			SELECT * FROM pragma_foreign_key_list(%s) 
+			ORDER BY id DESC, seq
+		) 
+		GROUP BY id, "table", on_update, on_delete`,
+		r.wrap.Quote(strings.ReplaceAll(table, ".", "__")),
+	)
+}
+
+func (r *Sqlite) CompileFullText(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -95,7 +154,7 @@ func (r *Sqlite) CompileIndex(blueprint schema.Blueprint, command *schema.Comman
 	)
 }
 
-func (r *Sqlite) CompileIndexes(schema, table string) string {
+func (r *Sqlite) CompileIndexes(_, table string) string {
 	quotedTable := r.wrap.Quote(strings.ReplaceAll(table, ".", "__"))
 
 	return fmt.Sprintf(
@@ -109,12 +168,54 @@ func (r *Sqlite) CompileIndexes(schema, table string) string {
 	)
 }
 
-func (r *Sqlite) CompilePrimary(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlite) CompilePrimary(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
 func (r *Sqlite) CompileRebuild() string {
 	return "vacuum"
+}
+
+func (r *Sqlite) CompileRenameIndex(s schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
+	indexes, err := s.GetIndexes(blueprint.GetTableName())
+	if err != nil {
+		r.log.Errorf("failed to get %s indexes: %v", blueprint.GetTableName(), err)
+		return nil
+	}
+
+	indexes = collect.Filter(indexes, func(index schema.Index, _ int) bool {
+		return index.Name == command.From
+	})
+
+	if len(indexes) == 0 {
+		r.log.Warningf("index %s does not exist", command.From)
+		return nil
+	}
+	if indexes[0].Primary {
+		r.log.Warning("SQLite does not support altering primary keys")
+		return nil
+	}
+	if indexes[0].Unique {
+		return []string{
+			r.CompileDropUnique(blueprint, &schema.Command{
+				Index: indexes[0].Name,
+			}),
+			r.CompileUnique(blueprint, &schema.Command{
+				Index:   command.To,
+				Columns: indexes[0].Columns,
+			}),
+		}
+	}
+
+	return []string{
+		r.CompileDropIndex(blueprint, &schema.Command{
+			Index: indexes[0].Name,
+		}),
+		r.CompileIndex(blueprint, &schema.Command{
+			Index:   command.To,
+			Columns: indexes[0].Columns,
+		}),
+	}
 }
 
 func (r *Sqlite) CompileTables(database string) string {
@@ -123,6 +224,13 @@ func (r *Sqlite) CompileTables(database string) string {
 
 func (r *Sqlite) CompileTypes() string {
 	return ""
+}
+
+func (r *Sqlite) CompileUnique(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("create unique index %s on %s (%s)",
+		r.wrap.Column(command.Index),
+		r.wrap.Table(blueprint.GetTableName()),
+		r.wrap.Columnize(command.Columns))
 }
 
 func (r *Sqlite) CompileViews(database string) string {

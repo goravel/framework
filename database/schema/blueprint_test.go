@@ -30,7 +30,7 @@ func TestBlueprintTestSuite(t *testing.T) {
 }
 
 func (s *BlueprintTestSuite) SetupTest() {
-	s.blueprint = NewBlueprint("goravel_", "users")
+	s.blueprint = NewBlueprint(nil, "goravel_", "users")
 }
 
 func (s *BlueprintTestSuite) TestAddAttributeCommands() {

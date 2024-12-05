@@ -17,6 +17,8 @@ type Schema interface {
 	GetColumnListing(table string) []string
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
+	// GetForeignKeys Get the foreign keys for a given table.
+	GetForeignKeys(table string) ([]ForeignKey, error)
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
 	// HasColumn Determine if the given table has a given column.
@@ -38,7 +40,7 @@ type Schema interface {
 	// Sql Execute a sql directly.
 	Sql(sql string)
 	// Table Modify a table on the schema.
-	Table(table string, callback func(table Blueprint))
+	Table(table string, callback func(table Blueprint)) error
 }
 
 type CommonSchema interface {
@@ -78,19 +80,32 @@ type Connection interface {
 }
 
 type Command struct {
-	Algorithm       string
-	Column          ColumnDefinition
-	Columns         []string
-	From            string
-	Index           string
-	On              string
-	OnDelete        string
-	OnUpdate        string
-	Name            string
-	To              string
-	References      []string
-	ShouldBeSkipped bool
-	Value           string
+	Algorithm          string
+	Column             ColumnDefinition
+	Columns            []string
+	Deferrable         *bool
+	From               string
+	Index              string
+	InitiallyImmediate *bool
+	Language           string
+	Name               string
+	On                 string
+	OnDelete           string
+	OnUpdate           string
+	References         []string
+	ShouldBeSkipped    bool
+	To                 string
+	Value              string
+}
+
+type ForeignKey struct {
+	Name           string
+	Columns        []string
+	ForeignSchema  string
+	ForeignTable   string
+	ForeignColumns []string
+	OnUpdate       string
+	OnDelete       string
 }
 
 type Index struct {
