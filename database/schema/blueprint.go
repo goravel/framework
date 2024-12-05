@@ -456,6 +456,8 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 			statements = append(statements, grammar.CompileIndex(r, command))
 		case constants.CommandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command))
+		case constants.CommandRename:
+			statements = append(statements, grammar.CompileRename(r, command))
 		case constants.CommandRenameIndex:
 			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command)...)
 		case constants.CommandUnique:

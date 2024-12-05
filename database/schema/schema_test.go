@@ -17,6 +17,7 @@ import (
 
 type SchemaSuite struct {
 	suite.Suite
+	prefix            string
 	driverToTestQuery map[database.Driver]*gorm.TestQuery
 }
 
@@ -47,6 +48,7 @@ func (s *SchemaSuite) SetupTest() {
 
 	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
 
+	s.prefix = "goravel_"
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
 		database.DriverPostgres:  postgresQuery,
 		database.DriverSqlite:    sqliteQuery,
@@ -142,12 +144,14 @@ func (s *SchemaSuite) TestColumnMethods() {
 				table.String("name")
 				table.String("age")
 				table.String("weight")
+				table.String("height")
 			}))
-			s.True(schema.HasColumns(table, []string{"name", "age"}))
+			s.True(schema.HasColumns(table, []string{"name", "age", "weight"}))
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.DropColumn("name", "age")
 			}))
-			s.False(schema.HasColumns(table, []string{"name", "age"}))
+			s.NoError(schema.DropColumns(table, []string{"weight"}))
+			s.False(schema.HasColumns(table, []string{"name", "age", "weight"}))
 		})
 	}
 }
@@ -1308,49 +1312,6 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 	}
 }
 
-func (s *SchemaSuite) TestTableMethods() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := GetTestSchema(testQuery, s.driverToTestQuery)
-			tableOne := "table_one"
-			tableTwo := "table_two"
-			tableThree := "table_three"
-
-			s.NoError(schema.DropIfExists(tableOne))
-			s.NoError(schema.Create(tableOne, func(table contractsschema.Blueprint) {
-				table.String("name")
-			}))
-			s.NoError(schema.Create(tableTwo, func(table contractsschema.Blueprint) {
-				table.String("name")
-			}))
-			s.NoError(schema.Create(tableThree, func(table contractsschema.Blueprint) {
-				table.String("name")
-			}))
-			s.True(schema.HasTable(tableOne))
-			s.True(schema.HasTable(tableTwo))
-			s.True(schema.HasTable(tableThree))
-
-			tables, err := schema.GetTables()
-
-			s.NoError(err)
-			s.Len(tables, 3)
-
-			s.NoError(schema.DropIfExists(tableOne))
-			s.False(schema.HasTable(tableOne))
-
-			s.NoError(schema.Table(tableTwo, func(table contractsschema.Blueprint) {
-				table.Drop()
-			}))
-			s.False(schema.HasTable(tableTwo))
-
-			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
-
-			s.NoError(schema.DropAllTables())
-			s.False(schema.HasTable(tableThree))
-		})
-	}
-}
-
 // TODO Implement this after implementing create type
 func (s *SchemaSuite) TestDropAllTypes() {
 
@@ -1401,7 +1362,7 @@ func (s *SchemaSuite) TestForeign() {
 			s.Len(foreignKeys, 2)
 
 			for _, foreignKey := range foreignKeys {
-				if "goravel_"+table1 == foreignKey.ForeignTable {
+				if s.prefix+table1 == foreignKey.ForeignTable {
 					s.ElementsMatch([]string{"foreign1_id"}, foreignKey.Columns)
 					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
 					s.Equal("no action", foreignKey.OnDelete)
@@ -1413,7 +1374,7 @@ func (s *SchemaSuite) TestForeign() {
 						s.Equal("goravel_foreign3_foreign1_id_foreign", foreignKey.Name)
 						s.NotEmpty(foreignKey.ForeignSchema)
 					}
-				} else if "goravel_"+table2 == foreignKey.ForeignTable {
+				} else if s.prefix+table2 == foreignKey.ForeignTable {
 					s.ElementsMatch([]string{"foreign2_id"}, foreignKey.Columns)
 					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
 					s.Equal("cascade", foreignKey.OnDelete)
@@ -1928,6 +1889,66 @@ func (s *SchemaSuite) TestSql() {
 
 			s.NoError(err)
 			s.Equal(int64(1), count)
+		})
+	}
+}
+
+func (s *SchemaSuite) TestTableMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			tableOne := "table_one"
+			tableTwo := "table_two"
+			tableThree := "table_three"
+			tableFour := "table_four"
+			tableFive := "table_five"
+
+			s.Error(schema.Drop(tableOne))
+			s.NoError(schema.DropIfExists(tableOne))
+			s.NoError(schema.Create(tableOne, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.NoError(schema.Create(tableTwo, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.NoError(schema.Create(tableThree, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.NoError(schema.Create(tableFour, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.True(schema.HasTable(tableOne))
+			s.True(schema.HasTable(tableTwo))
+			s.True(schema.HasTable(tableThree))
+			s.True(schema.HasTable(tableFour))
+
+			tables, err := schema.GetTables()
+
+			s.NoError(err)
+			s.Len(tables, 4)
+			s.ElementsMatch([]string{
+				s.prefix + tableOne, s.prefix + tableTwo, s.prefix + tableThree, s.prefix + tableFour,
+			}, schema.GetTableListing())
+
+			s.NoError(schema.Rename(tableOne, tableFive))
+			s.False(schema.HasTable(tableOne))
+			s.True(schema.HasTable(tableFive))
+
+			s.NoError(schema.DropIfExists(tableOne))
+			s.False(schema.HasTable(tableOne))
+
+			s.NoError(schema.Table(tableTwo, func(table contractsschema.Blueprint) {
+				table.Drop()
+			}))
+			s.False(schema.HasTable(tableTwo))
+
+			s.NoError(schema.Drop(tableThree))
+			s.False(schema.HasTable(tableThree))
+
+			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
+
+			s.NoError(schema.DropAllTables())
+			s.False(schema.HasTable(tableFour))
 		})
 	}
 }
