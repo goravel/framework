@@ -1899,11 +1899,15 @@ func (s *SchemaSuite) TestIndexMethods() {
 			}
 
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
-				table.RenameIndex("goravel_indexes_id_name_index", "id_name_index")
-				table.DropIndex("name_index")
+				table.DropIndex("id", "name")
+				table.RenameIndex("name_index", "name")
 			}))
-			s.True(schema.HasIndex(table, "id_name_index"))
-			s.False(schema.HasIndex(table, "name_index"))
+			s.False(schema.HasIndex(table, "goravel_indexes_id_name_index"))
+			s.True(schema.HasIndex(table, "name"))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropIndexByName("name")
+			}))
+			s.False(schema.HasIndex(table, "name"))
 		})
 	}
 }

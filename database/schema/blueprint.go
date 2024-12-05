@@ -135,7 +135,13 @@ func (r *Blueprint) DropIfExists() {
 	})
 }
 
-func (r *Blueprint) DropIndex(name string) {
+func (r *Blueprint) DropIndex(column ...string) {
+	r.indexCommand(constants.CommandDropIndex, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandIndex, column),
+	})
+}
+
+func (r *Blueprint) DropIndexByName(name string) {
 	r.indexCommand(constants.CommandDropIndex, nil, schema.IndexConfig{
 		Name: name,
 	})

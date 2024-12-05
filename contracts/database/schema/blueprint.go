@@ -40,7 +40,9 @@ type Blueprint interface {
 	// DropIfExists Indicate that the table should be dropped if it exists.
 	DropIfExists()
 	// DropIndex Indicate that the given index should be dropped.
-	DropIndex(name string)
+	DropIndex(column ...string)
+	// DropIndexByName Indicate that the given index should be dropped.
+	DropIndexByName(name string)
 	// DropPrimary Indicate that the given primary key should be dropped.
 	DropPrimary(column ...string)
 	// DropSoftDeletes Indicate that the soft delete column should be dropped.
