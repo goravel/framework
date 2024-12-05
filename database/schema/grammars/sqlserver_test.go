@@ -86,7 +86,7 @@ func (s *SqlserverSuite) TestCompileDropColumn() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Twice()
 
-	s.Equal([]string{`DECLARE @sql NVARCHAR(MAX) = '';SELECT @sql += 'ALTER TABLE $table DROP CONSTRAINT ' + OBJECT_NAME([default_object_id]) + ';' FROM sys.columns WHERE [object_id] = OBJECT_ID('"goravel_users"') AND [name] in ("id", "name") AND [default_object_id] <> 0;EXEC(@sql); alter table "goravel_users" drop column "id", "name"`}, s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
+	s.Equal([]string{`DECLARE @sql NVARCHAR(MAX) = '';SELECT @sql += 'ALTER TABLE "goravel_users" DROP CONSTRAINT ' + OBJECT_NAME([default_object_id]) + ';' FROM sys.columns WHERE [object_id] = OBJECT_ID('"goravel_users"') AND [name] in ('id','name') AND [default_object_id] <> 0;EXEC(@sql); alter table "goravel_users" drop column "id", "name"`}, s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
 		Columns: []string{"id", "name"},
 	}))
 }

@@ -190,7 +190,7 @@ func (s *PostgresSuite) TestCompileFullText() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
-	s.Equal(`create index "users_email_fulltext" on "goravel_users" using gin(to_tsvector("english", "id") || to_tsvector("english", "email"))`, s.grammar.CompileFullText(mockBlueprint, &contractsschema.Command{
+	s.Equal(`create index "users_email_fulltext" on "goravel_users" using gin(to_tsvector('english', "id") || to_tsvector('english', "email"))`, s.grammar.CompileFullText(mockBlueprint, &contractsschema.Command{
 		Index:   "users_email_fulltext",
 		Columns: []string{"id", "email"},
 	}))
