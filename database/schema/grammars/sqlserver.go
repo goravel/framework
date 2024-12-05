@@ -238,6 +238,10 @@ func (r *Sqlserver) CompilePrimary(blueprint schema.Blueprint, command *schema.C
 		r.wrap.Columnize(command.Columns))
 }
 
+func (r *Sqlserver) CompileRename(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("sp_rename %s, %s", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())), r.wrap.Table(command.To))
+}
+
 func (r *Sqlserver) CompileRenameIndex(_ schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
 	return []string{
 		fmt.Sprintf("sp_rename %s, %s, N'INDEX'", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)), r.wrap.Column(command.To)),

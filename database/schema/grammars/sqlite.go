@@ -176,6 +176,10 @@ func (r *Sqlite) CompileRebuild() string {
 	return "vacuum"
 }
 
+func (r *Sqlite) CompileRename(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s rename to %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Table(command.To))
+}
+
 func (r *Sqlite) CompileRenameIndex(s schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
 	indexes, err := s.GetIndexes(blueprint.GetTableName())
 	if err != nil {

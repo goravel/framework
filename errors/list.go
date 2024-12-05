@@ -116,7 +116,9 @@ var (
 	SchemaFailedToCreateTable  = New("failed to create %s table: %v")
 	SchemaFailedToChangeTable  = New("failed to change %s table: %v")
 	SchemaFailedToDropTable    = New("failed to drop %s table: %v")
+	SchemaFailedToDropColumns  = New("failed to drop %s table columns: %v")
 	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
+	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
 	SchemaEmptyReferenceString = New("reference string can't be empty")
 	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 

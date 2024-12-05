@@ -211,6 +211,10 @@ func (r *Postgres) CompilePrimary(blueprint schema.Blueprint, command *schema.Co
 	return fmt.Sprintf("alter table %s add primary key (%s)", r.wrap.Table(blueprint.GetTableName()), r.wrap.Columnize(command.Columns))
 }
 
+func (r *Postgres) CompileRename(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("alter table %s rename to %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Table(command.To))
+}
+
 func (r *Postgres) CompileRenameIndex(_ schema.Schema, _ schema.Blueprint, command *schema.Command) []string {
 	return []string{
 		fmt.Sprintf("alter index %s rename to %s", r.wrap.Column(command.From), r.wrap.Column(command.To)),

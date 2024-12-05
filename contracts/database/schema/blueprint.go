@@ -95,6 +95,8 @@ type Blueprint interface {
 	MediumText(column string) ColumnDefinition
 	// Primary Specify the primary key(s) for the table.
 	Primary(column ...string)
+	// Rename the table to a given name.
+	Rename(to string)
 	// RenameIndex Indicate that the given indexes should be renamed.
 	RenameIndex(from, to string)
 	// SetTable Set the table that the blueprint operates on.

@@ -11,6 +11,10 @@ type Schema interface {
 	Connection(name string) Schema
 	// Create a new table on the schema.
 	Create(table string, callback func(table Blueprint)) error
+	// Drop a table from the schema.
+	Drop(table string) error
+	// DropColumns Drop columns from a table on the schema.
+	DropColumns(table string, columns []string) error
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
 	// GetColumnListing Get the column listing for a given table.
@@ -21,6 +25,8 @@ type Schema interface {
 	GetForeignKeys(table string) ([]ForeignKey, error)
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
+	// GetTableListing Get the table listing for the database.
+	GetTableListing() []string
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -29,12 +35,16 @@ type Schema interface {
 	HasIndex(table, index string) bool
 	// HasTable Determine if the given table exists.
 	HasTable(table string) bool
+	// HasView Determine if the given view exists.
+	HasView(view string) bool
 	// Migrations Get the migrations.
 	Migrations() []Migration
 	// Orm Get the orm instance.
 	Orm() orm.Orm
 	// Register migrations.
 	Register([]Migration)
+	// Rename a table on the schema.
+	Rename(from, to string) error
 	// SetConnection Set the connection of the schema.
 	SetConnection(name string)
 	// Sql Execute a sql directly.

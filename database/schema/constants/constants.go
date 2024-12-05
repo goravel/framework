@@ -16,6 +16,7 @@ const (
 	CommandFullText     = "fullText"
 	CommandIndex        = "index"
 	CommandPrimary      = "primary"
+	CommandRename       = "rename"
 	CommandRenameIndex  = "renameIndex"
 	CommandUnique       = "unique"
 	DefaultStringLength = 255

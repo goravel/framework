@@ -291,6 +291,15 @@ func (r *Blueprint) Primary(column ...string) {
 	r.indexCommand(constants.CommandPrimary, column)
 }
 
+func (r *Blueprint) Rename(to string) {
+	command := &schema.Command{
+		Name: constants.CommandRename,
+		To:   to,
+	}
+
+	r.addCommand(command)
+}
+
 func (r *Blueprint) RenameIndex(from, to string) {
 	command := &schema.Command{
 		Name: constants.CommandRenameIndex,
