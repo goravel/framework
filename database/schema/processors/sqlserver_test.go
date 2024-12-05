@@ -3,7 +3,6 @@ package processors
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/schema"
@@ -102,7 +101,7 @@ func (s *SqlserverTestSuite) TestProcessForeignKeys() {
 	}
 }
 
-func TestGetType(t *testing.T) {
+func (s *SqlserverTestSuite) TestGetType() {
 	tests := []struct {
 		name     string
 		dbColumn schema.DBColumn
@@ -141,9 +140,9 @@ func TestGetType(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		s.Run(tt.name, func() {
 			result := getType(tt.dbColumn)
-			assert.Equal(t, tt.expected, result)
+			s.Equal(tt.expected, result)
 		})
 	}
 }

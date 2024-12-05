@@ -14,7 +14,7 @@ type MysqlTestSuite struct {
 }
 
 func TestMysqlTestSuite(t *testing.T) {
-	suite.Run(t, new(PostgresTestSuite))
+	suite.Run(t, new(MysqlTestSuite))
 }
 
 func (s *MysqlTestSuite) SetupTest() {

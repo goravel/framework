@@ -51,14 +51,23 @@ func (r Postgres) ProcessForeignKeys(dbForeignKeys []schema.DBForeignKey) []sche
 	}
 
 	for _, dbForeignKey := range dbForeignKeys {
+		onUpdate := short[strings.ToLower(dbForeignKey.OnUpdate)]
+		if onUpdate == "" {
+			onUpdate = strings.ToLower(dbForeignKey.OnUpdate)
+		}
+		onDelete := short[strings.ToLower(dbForeignKey.OnDelete)]
+		if onDelete == "" {
+			onDelete = strings.ToLower(dbForeignKey.OnDelete)
+		}
+
 		foreignKeys = append(foreignKeys, schema.ForeignKey{
 			Name:           dbForeignKey.Name,
 			Columns:        strings.Split(dbForeignKey.Columns, ","),
 			ForeignSchema:  dbForeignKey.ForeignSchema,
 			ForeignTable:   dbForeignKey.ForeignTable,
 			ForeignColumns: strings.Split(dbForeignKey.ForeignColumns, ","),
-			OnUpdate:       short[strings.ToLower(dbForeignKey.OnUpdate)],
-			OnDelete:       short[strings.ToLower(dbForeignKey.OnDelete)],
+			OnUpdate:       onUpdate,
+			OnDelete:       onDelete,
 		})
 	}
 
