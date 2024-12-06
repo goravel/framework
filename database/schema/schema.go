@@ -234,6 +234,22 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
+func (r *Schema) HasType(name string) bool {
+	types, err := r.GetTypes()
+	if err != nil {
+		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.orm.Name(), err).Error())
+		return false
+	}
+
+	for _, t := range types {
+		if t.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *Schema) HasView(name string) bool {
 	views, err := r.GetViews()
 	if err != nil {
@@ -277,10 +293,10 @@ func (r *Schema) SetConnection(name string) {
 	r.orm = r.orm.Connection(name)
 }
 
-func (r *Schema) Sql(sql string) {
-	if _, err := r.orm.Query().Exec(sql); err != nil {
-		r.log.Fatalf("failed to execute sql: %v", err)
-	}
+func (r *Schema) Sql(sql string) error {
+	_, err := r.orm.Query().Exec(sql)
+
+	return err
 }
 
 func (r *Schema) Table(table string, callback func(table contractsschema.Blueprint)) error {

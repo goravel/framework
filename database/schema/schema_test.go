@@ -1312,16 +1312,6 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 	}
 }
 
-// TODO Implement this after implementing create type
-func (s *SchemaSuite) TestDropAllTypes() {
-
-}
-
-// TODO Implement this after implementing create view
-func (s *SchemaSuite) TestDropAllViews() {
-
-}
-
 func (s *SchemaSuite) TestForeign() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
@@ -1881,14 +1871,45 @@ func (s *SchemaSuite) TestSql() {
 			s.NoError(schema.Create("sql", func(table contractsschema.Blueprint) {
 				table.String("name")
 			}))
-
-			schema.Sql("insert into goravel_sql (name) values ('goravel');")
+			s.NoError(schema.Sql("insert into goravel_sql (name) values ('goravel');"))
 
 			var count int64
 			err := testQuery.Query().Table("sql").Where("name", "goravel").Count(&count)
 
 			s.NoError(err)
 			s.Equal(int64(1), count)
+		})
+	}
+}
+
+func (s *SchemaSuite) TestTypeMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		if driver != database.DriverPostgres {
+			continue
+		}
+
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+
+			s.NoError(schema.Sql("CREATE TYPE person AS (name TEXT, age INT);"))
+
+			s.True(schema.HasType("person"))
+
+			types, err := schema.GetTypes()
+			s.NoError(err)
+			s.Len(types, 2)
+
+			for _, t := range types {
+				if t.Name == "person" {
+					s.Equal("person", t.Name)
+					s.Equal("composite", t.Type)
+					s.Equal("public", t.Schema)
+					s.False(t.Implicit)
+				}
+			}
+
+			s.NoError(schema.DropAllTypes())
+			s.False(schema.HasType("person"))
 		})
 	}
 }
@@ -2002,6 +2023,36 @@ func (s *SchemaSuite) TestUnique() {
 				table.DropUnique("name", "age")
 			}))
 			s.Require().False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+		})
+	}
+}
+
+func (s *SchemaSuite) TestViewMethods() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "views"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("name")
+			}))
+			s.NoError(schema.Sql("create view goravel_view as select * from goravel_views;"))
+			s.True(schema.HasView("goravel_view"))
+
+			views, err := schema.GetViews()
+			s.NoError(err)
+			s.Len(views, 1)
+			s.Equal("goravel_view", views[0].Name)
+			s.NotEmpty(views[0].Definition)
+
+			if driver == database.DriverPostgres || driver == database.DriverSqlserver {
+				s.NotEmpty(views[0].Schema)
+			} else {
+				s.Empty(views[0].Schema)
+			}
+
+			s.NoError(schema.DropAllViews())
+			s.False(schema.HasView("goravel_view"))
 		})
 	}
 }

@@ -1064,9 +1064,9 @@ func (_c *Schema_HasIndex_Call) RunAndReturn(run func(string, string) bool) *Sch
 	return _c
 }
 
-// HasTable provides a mock function with given fields: table
-func (_m *Schema) HasTable(table string) bool {
-	ret := _m.Called(table)
+// HasTable provides a mock function with given fields: name
+func (_m *Schema) HasTable(name string) bool {
+	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HasTable")
@@ -1074,7 +1074,7 @@ func (_m *Schema) HasTable(table string) bool {
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(table)
+		r0 = rf(name)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -1088,12 +1088,12 @@ type Schema_HasTable_Call struct {
 }
 
 // HasTable is a helper method to define mock.On call
-//   - table string
-func (_e *Schema_Expecter) HasTable(table interface{}) *Schema_HasTable_Call {
-	return &Schema_HasTable_Call{Call: _e.mock.On("HasTable", table)}
+//   - name string
+func (_e *Schema_Expecter) HasTable(name interface{}) *Schema_HasTable_Call {
+	return &Schema_HasTable_Call{Call: _e.mock.On("HasTable", name)}
 }
 
-func (_c *Schema_HasTable_Call) Run(run func(table string)) *Schema_HasTable_Call {
+func (_c *Schema_HasTable_Call) Run(run func(name string)) *Schema_HasTable_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -1110,9 +1110,55 @@ func (_c *Schema_HasTable_Call) RunAndReturn(run func(string) bool) *Schema_HasT
 	return _c
 }
 
-// HasView provides a mock function with given fields: view
-func (_m *Schema) HasView(view string) bool {
-	ret := _m.Called(view)
+// HasType provides a mock function with given fields: name
+func (_m *Schema) HasType(name string) bool {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasType")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(string) bool); ok {
+		r0 = rf(name)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Schema_HasType_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasType'
+type Schema_HasType_Call struct {
+	*mock.Call
+}
+
+// HasType is a helper method to define mock.On call
+//   - name string
+func (_e *Schema_Expecter) HasType(name interface{}) *Schema_HasType_Call {
+	return &Schema_HasType_Call{Call: _e.mock.On("HasType", name)}
+}
+
+func (_c *Schema_HasType_Call) Run(run func(name string)) *Schema_HasType_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Schema_HasType_Call) Return(_a0 bool) *Schema_HasType_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Schema_HasType_Call) RunAndReturn(run func(string) bool) *Schema_HasType_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// HasView provides a mock function with given fields: name
+func (_m *Schema) HasView(name string) bool {
+	ret := _m.Called(name)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HasView")
@@ -1120,7 +1166,7 @@ func (_m *Schema) HasView(view string) bool {
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(view)
+		r0 = rf(name)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -1134,12 +1180,12 @@ type Schema_HasView_Call struct {
 }
 
 // HasView is a helper method to define mock.On call
-//   - view string
-func (_e *Schema_Expecter) HasView(view interface{}) *Schema_HasView_Call {
-	return &Schema_HasView_Call{Call: _e.mock.On("HasView", view)}
+//   - name string
+func (_e *Schema_Expecter) HasView(name interface{}) *Schema_HasView_Call {
+	return &Schema_HasView_Call{Call: _e.mock.On("HasView", name)}
 }
 
-func (_c *Schema_HasView_Call) Run(run func(view string)) *Schema_HasView_Call {
+func (_c *Schema_HasView_Call) Run(run func(name string)) *Schema_HasView_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -1364,8 +1410,21 @@ func (_c *Schema_SetConnection_Call) RunAndReturn(run func(string)) *Schema_SetC
 }
 
 // Sql provides a mock function with given fields: sql
-func (_m *Schema) Sql(sql string) {
-	_m.Called(sql)
+func (_m *Schema) Sql(sql string) error {
+	ret := _m.Called(sql)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Sql")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(sql)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Schema_Sql_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Sql'
@@ -1386,12 +1445,12 @@ func (_c *Schema_Sql_Call) Run(run func(sql string)) *Schema_Sql_Call {
 	return _c
 }
 
-func (_c *Schema_Sql_Call) Return() *Schema_Sql_Call {
-	_c.Call.Return()
+func (_c *Schema_Sql_Call) Return(_a0 error) *Schema_Sql_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schema_Sql_Call) RunAndReturn(run func(string)) *Schema_Sql_Call {
+func (_c *Schema_Sql_Call) RunAndReturn(run func(string) error) *Schema_Sql_Call {
 	_c.Call.Return(run)
 	return _c
 }

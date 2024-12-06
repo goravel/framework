@@ -62,7 +62,6 @@ func (r *PostgresSchema) DropAllTables() error {
 }
 
 func (r *PostgresSchema) DropAllTypes() error {
-	schema := r.grammar.EscapeNames([]string{r.schema})[0]
 	types, err := r.GetTypes()
 	if err != nil {
 		return err
@@ -71,7 +70,7 @@ func (r *PostgresSchema) DropAllTypes() error {
 	var dropTypes, dropDomains []string
 
 	for _, t := range types {
-		if !t.Implicit && schema == t.Schema {
+		if !t.Implicit && r.schema == t.Schema {
 			if t.Type == "domain" {
 				dropDomains = append(dropDomains, fmt.Sprintf("%s.%s", t.Schema, t.Name))
 			} else {
@@ -98,8 +97,6 @@ func (r *PostgresSchema) DropAllTypes() error {
 }
 
 func (r *PostgresSchema) DropAllViews() error {
-	schema := r.grammar.EscapeNames([]string{r.schema})[0]
-
 	views, err := r.GetViews()
 	if err != nil {
 		return err
@@ -107,11 +104,10 @@ func (r *PostgresSchema) DropAllViews() error {
 
 	var dropViews []string
 	for _, view := range views {
-		if schema == view.Schema {
+		if r.schema == view.Schema {
 			dropViews = append(dropViews, fmt.Sprintf("%s.%s", view.Schema, view.Name))
 		}
 	}
-
 	if len(dropViews) == 0 {
 		return nil
 	}

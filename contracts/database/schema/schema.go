@@ -34,9 +34,11 @@ type Schema interface {
 	// HasIndex Determine if the given table has a given index.
 	HasIndex(table, index string) bool
 	// HasTable Determine if the given table exists.
-	HasTable(table string) bool
+	HasTable(name string) bool
+	// HasType Determine if the given type exists.
+	HasType(name string) bool
 	// HasView Determine if the given view exists.
-	HasView(view string) bool
+	HasView(name string) bool
 	// Migrations Get the migrations.
 	Migrations() []Migration
 	// Orm Get the orm instance.
@@ -48,7 +50,7 @@ type Schema interface {
 	// SetConnection Set the connection of the schema.
 	SetConnection(name string)
 	// Sql Execute a sql directly.
-	Sql(sql string)
+	Sql(sql string) error
 	// Table Modify a table on the schema.
 	Table(table string, callback func(table Blueprint)) error
 }
