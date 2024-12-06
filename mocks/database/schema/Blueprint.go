@@ -2143,6 +2143,39 @@ func (_c *Blueprint_Primary_Call) RunAndReturn(run func(...string)) *Blueprint_P
 	return _c
 }
 
+// Rename provides a mock function with given fields: to
+func (_m *Blueprint) Rename(to string) {
+	_m.Called(to)
+}
+
+// Blueprint_Rename_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rename'
+type Blueprint_Rename_Call struct {
+	*mock.Call
+}
+
+// Rename is a helper method to define mock.On call
+//   - to string
+func (_e *Blueprint_Expecter) Rename(to interface{}) *Blueprint_Rename_Call {
+	return &Blueprint_Rename_Call{Call: _e.mock.On("Rename", to)}
+}
+
+func (_c *Blueprint_Rename_Call) Run(run func(to string)) *Blueprint_Rename_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Rename_Call) Return() *Blueprint_Rename_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_Rename_Call) RunAndReturn(run func(string)) *Blueprint_Rename_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RenameIndex provides a mock function with given fields: from, to
 func (_m *Blueprint) RenameIndex(from string, to string) {
 	_m.Called(from, to)

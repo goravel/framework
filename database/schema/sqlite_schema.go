@@ -48,7 +48,7 @@ func (r *SqliteSchema) DropAllTypes() error {
 }
 
 func (r *SqliteSchema) DropAllViews() error {
-	return r.orm.Transaction(func(tx orm.Query) error {
+	if err := r.orm.Transaction(func(tx orm.Query) error {
 		if _, err := tx.Exec(r.grammar.CompileEnableWriteableSchema()); err != nil {
 			return err
 		}
@@ -58,12 +58,18 @@ func (r *SqliteSchema) DropAllViews() error {
 		if _, err := tx.Exec(r.grammar.CompileDisableWriteableSchema()); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(r.grammar.CompileRebuild()); err != nil {
-			return err
-		}
 
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// cannot VACUUM from within a transaction
+	if _, err := r.orm.Query().Exec(r.grammar.CompileRebuild()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *SqliteSchema) GetColumns(table string) ([]schema.Column, error) {

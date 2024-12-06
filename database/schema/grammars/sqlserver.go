@@ -60,7 +60,7 @@ func (r *Sqlserver) CompileColumns(schema, table string) string {
 			"order by col.column_id", r.wrap.Quote(table), newSchema)
 }
 
-func (r *Sqlserver) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlserver) CompileComment(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -72,7 +72,7 @@ func (r *Sqlserver) CompileDrop(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("drop table %s", r.wrap.Table(blueprint.GetTableName()))
 }
 
-func (r *Sqlserver) CompileDropAllDomains(domains []string) string {
+func (r *Sqlserver) CompileDropAllDomains(_ []string) string {
 	return ""
 }
 
@@ -86,15 +86,15 @@ func (r *Sqlserver) CompileDropAllForeignKeys() string {
             EXEC sp_executesql @sql;`
 }
 
-func (r *Sqlserver) CompileDropAllTables(tables []string) string {
+func (r *Sqlserver) CompileDropAllTables(_ []string) string {
 	return "EXEC sp_msforeachtable 'DROP TABLE ?'"
 }
 
-func (r *Sqlserver) CompileDropAllTypes(types []string) string {
+func (r *Sqlserver) CompileDropAllTypes(_ []string) string {
 	return ""
 }
 
-func (r *Sqlserver) CompileDropAllViews(views []string) string {
+func (r *Sqlserver) CompileDropAllViews(_ []string) string {
 	return `DECLARE @sql NVARCHAR(MAX) = N'';
 	SELECT @sql += 'DROP VIEW ' + QUOTENAME(OBJECT_SCHEMA_NAME(object_id)) + '.' + QUOTENAME(name) + ';'
 	FROM sys.views;
@@ -129,7 +129,7 @@ func (r *Sqlserver) CompileDropForeign(blueprint schema.Blueprint, command *sche
 	return fmt.Sprintf("alter table %s drop constraint %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.Index))
 }
 
-func (r *Sqlserver) CompileDropFullText(blueprint schema.Blueprint, command *schema.Command) string {
+func (r *Sqlserver) CompileDropFullText(_ schema.Blueprint, _ *schema.Command) string {
 	return ""
 }
 
@@ -238,13 +238,17 @@ func (r *Sqlserver) CompilePrimary(blueprint schema.Blueprint, command *schema.C
 		r.wrap.Columnize(command.Columns))
 }
 
+func (r *Sqlserver) CompileRename(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("sp_rename %s, %s", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())), r.wrap.Table(command.To))
+}
+
 func (r *Sqlserver) CompileRenameIndex(_ schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
 	return []string{
 		fmt.Sprintf("sp_rename %s, %s, N'INDEX'", r.wrap.Quote(r.wrap.Table(blueprint.GetTableName())+"."+r.wrap.Column(command.From)), r.wrap.Column(command.To)),
 	}
 }
 
-func (r *Sqlserver) CompileTables(database string) string {
+func (r *Sqlserver) CompileTables(_ string) string {
 	return "select t.name as name, schema_name(t.schema_id) as [schema], sum(u.total_pages) * 8 * 1024 as size " +
 		"from sys.tables as t " +
 		"join sys.partitions as p on p.object_id = t.object_id " +
@@ -264,7 +268,7 @@ func (r *Sqlserver) CompileUnique(blueprint schema.Blueprint, command *schema.Co
 		r.wrap.Columnize(command.Columns))
 }
 
-func (r *Sqlserver) CompileViews(database string) string {
+func (r *Sqlserver) CompileViews(_ string) string {
 	return "select name, schema_name(v.schema_id) as [schema], definition from sys.views as v " +
 		"inner join sys.sql_modules as m on v.object_id = m.object_id " +
 		"order by name"
@@ -274,7 +278,7 @@ func (r *Sqlserver) GetAttributeCommands() []string {
 	return r.attributeCommands
 }
 
-func (r *Sqlserver) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+func (r *Sqlserver) ModifyDefault(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
 	}
@@ -282,7 +286,7 @@ func (r *Sqlserver) ModifyDefault(blueprint schema.Blueprint, column schema.Colu
 	return ""
 }
 
-func (r *Sqlserver) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+func (r *Sqlserver) ModifyNullable(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetNullable() {
 		return " null"
 	} else {
@@ -301,7 +305,7 @@ func (r *Sqlserver) ModifyIncrement(blueprint schema.Blueprint, column schema.Co
 	return ""
 }
 
-func (r *Sqlserver) TypeBigInteger(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeBigInteger(_ schema.ColumnDefinition) string {
 	return "bigint"
 }
 
@@ -309,7 +313,7 @@ func (r *Sqlserver) TypeChar(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("nchar(%d)", column.GetLength())
 }
 
-func (r *Sqlserver) TypeDate(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeDate(_ schema.ColumnDefinition) string {
 	return "date"
 }
 
@@ -325,7 +329,7 @@ func (r *Sqlserver) TypeDecimal(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("decimal(%d, %d)", column.GetTotal(), column.GetPlaces())
 }
 
-func (r *Sqlserver) TypeDouble(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeDouble(_ schema.ColumnDefinition) string {
 	return "double precision"
 }
 
@@ -342,31 +346,31 @@ func (r *Sqlserver) TypeFloat(column schema.ColumnDefinition) string {
 	return "float"
 }
 
-func (r *Sqlserver) TypeInteger(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeInteger(_ schema.ColumnDefinition) string {
 	return "int"
 }
 
-func (r *Sqlserver) TypeJson(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeJson(_ schema.ColumnDefinition) string {
 	return "nvarchar(max)"
 }
 
-func (r *Sqlserver) TypeJsonb(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeJsonb(_ schema.ColumnDefinition) string {
 	return "nvarchar(max)"
 }
 
-func (r *Sqlserver) TypeLongText(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeLongText(_ schema.ColumnDefinition) string {
 	return "nvarchar(max)"
 }
 
-func (r *Sqlserver) TypeMediumInteger(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeMediumInteger(_ schema.ColumnDefinition) string {
 	return "int"
 }
 
-func (r *Sqlserver) TypeMediumText(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeMediumText(_ schema.ColumnDefinition) string {
 	return "nvarchar(max)"
 }
 
-func (r *Sqlserver) TypeSmallInteger(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeSmallInteger(_ schema.ColumnDefinition) string {
 	return "smallint"
 }
 
@@ -379,7 +383,7 @@ func (r *Sqlserver) TypeString(column schema.ColumnDefinition) string {
 	return "nvarchar(255)"
 }
 
-func (r *Sqlserver) TypeText(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeText(_ schema.ColumnDefinition) string {
 	return "nvarchar(max)"
 }
 
@@ -419,11 +423,11 @@ func (r *Sqlserver) TypeTimestampTz(column schema.ColumnDefinition) string {
 	}
 }
 
-func (r *Sqlserver) TypeTinyInteger(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeTinyInteger(_ schema.ColumnDefinition) string {
 	return "tinyint"
 }
 
-func (r *Sqlserver) TypeTinyText(column schema.ColumnDefinition) string {
+func (r *Sqlserver) TypeTinyText(_ schema.ColumnDefinition) string {
 	return "nvarchar(255)"
 }
 

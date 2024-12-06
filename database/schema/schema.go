@@ -102,6 +102,28 @@ func (r *Schema) Create(table string, callback func(table contractsschema.Bluepr
 	return nil
 }
 
+func (r *Schema) Drop(table string) error {
+	blueprint := r.createBlueprint(table)
+	blueprint.Drop()
+
+	if err := r.build(blueprint); err != nil {
+		return errors.SchemaFailedToDropTable.Args(table, err)
+	}
+
+	return nil
+}
+
+func (r *Schema) DropColumns(table string, columns []string) error {
+	blueprint := r.createBlueprint(table)
+	blueprint.DropColumn(columns...)
+
+	if err := r.build(blueprint); err != nil {
+		return errors.SchemaFailedToDropColumns.Args(table, err)
+	}
+
+	return nil
+}
+
 func (r *Schema) DropIfExists(table string) error {
 	blueprint := r.createBlueprint(table)
 	blueprint.DropIfExists()
@@ -158,6 +180,21 @@ func (r *Schema) GetIndexListing(table string) []string {
 	return names
 }
 
+func (r *Schema) GetTableListing() []string {
+	tables, err := r.GetTables()
+	if err != nil {
+		r.log.Errorf("failed to get tables: %v", err)
+		return nil
+	}
+
+	var names []string
+	for _, table := range tables {
+		names = append(names, table.Name)
+	}
+
+	return names
+}
+
 func (r *Schema) HasColumn(table, column string) bool {
 	return slices.Contains(r.GetColumnListing(table), column)
 }
@@ -197,6 +234,38 @@ func (r *Schema) HasTable(name string) bool {
 	return false
 }
 
+func (r *Schema) HasType(name string) bool {
+	types, err := r.GetTypes()
+	if err != nil {
+		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.orm.Name(), err).Error())
+		return false
+	}
+
+	for _, t := range types {
+		if t.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *Schema) HasView(name string) bool {
+	views, err := r.GetViews()
+	if err != nil {
+		r.log.Errorf(errors.SchemaFailedToGetTables.Args(r.orm.Name(), err).Error())
+		return false
+	}
+
+	for _, view := range views {
+		if view.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *Schema) Migrations() []contractsschema.Migration {
 	return r.migrations
 }
@@ -209,14 +278,25 @@ func (r *Schema) Register(migrations []contractsschema.Migration) {
 	r.migrations = migrations
 }
 
+func (r *Schema) Rename(from, to string) error {
+	blueprint := r.createBlueprint(from)
+	blueprint.Rename(to)
+
+	if err := r.build(blueprint); err != nil {
+		return errors.SchemaFailedToRenameTable.Args(from, err)
+	}
+
+	return nil
+}
+
 func (r *Schema) SetConnection(name string) {
 	r.orm = r.orm.Connection(name)
 }
 
-func (r *Schema) Sql(sql string) {
-	if _, err := r.orm.Query().Exec(sql); err != nil {
-		r.log.Fatalf("failed to execute sql: %v", err)
-	}
+func (r *Schema) Sql(sql string) error {
+	_, err := r.orm.Query().Exec(sql)
+
+	return err
 }
 
 func (r *Schema) Table(table string, callback func(table contractsschema.Blueprint)) error {

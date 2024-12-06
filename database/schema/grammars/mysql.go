@@ -211,6 +211,10 @@ func (r *Mysql) CompilePrimary(blueprint schema.Blueprint, command *schema.Comma
 	return fmt.Sprintf("alter table %s add primary key %s(%s)", r.wrap.Table(blueprint.GetTableName()), algorithm, r.wrap.Columnize(command.Columns))
 }
 
+func (r *Mysql) CompileRename(blueprint schema.Blueprint, command *schema.Command) string {
+	return fmt.Sprintf("rename table %s to %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Table(command.To))
+}
+
 func (r *Mysql) CompileRenameIndex(_ schema.Schema, blueprint schema.Blueprint, command *schema.Command) []string {
 	return []string{
 		fmt.Sprintf("alter table %s rename index %s to %s", r.wrap.Table(blueprint.GetTableName()), r.wrap.Column(command.From), r.wrap.Column(command.To)),
