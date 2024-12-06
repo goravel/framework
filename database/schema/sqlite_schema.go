@@ -61,7 +61,7 @@ func (r *SqliteSchema) DropAllViews() error {
 
 		return nil
 	}); err != nil {
-		return nil
+		return err
 	}
 
 	// cannot VACUUM from within a transaction
