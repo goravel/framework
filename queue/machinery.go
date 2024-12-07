@@ -1,14 +1,15 @@
 package queue
 
 import (
-	logcontract "github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/color"
 	"github.com/goravel/machinery"
 	redisbackend "github.com/goravel/machinery/backends/redis"
 	redisbroker "github.com/goravel/machinery/brokers/redis"
 	"github.com/goravel/machinery/config"
 	"github.com/goravel/machinery/locks/eager"
+
+	logcontract "github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 type Machinery struct {
