@@ -65,13 +65,13 @@ func (r *Database) Build() error {
 
 	r.config.Add(fmt.Sprintf("database.connections.%s.port", r.connection), r.DatabaseDriver.Config().Port)
 
-	if err := r.artisan.Call("migrate"); err != nil {
-		return err
-	}
-
 	r.orm.Refresh()
 
 	return nil
+}
+
+func (r *Database) Migrate() error {
+	return r.artisan.Call("migrate")
 }
 
 func (r *Database) Seed(seeders ...seeder.Seeder) error {

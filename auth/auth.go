@@ -76,7 +76,7 @@ func (a *Auth) User(user any) error {
 	return nil
 }
 
-func (a *Auth) Id() (string, error) {
+func (a *Auth) ID() (string, error) {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
 		return "", errors.AuthParseTokenFirst

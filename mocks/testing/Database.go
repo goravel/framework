@@ -295,6 +295,51 @@ func (_c *Database_Image_Call) RunAndReturn(run func(testing.Image)) *Database_I
 	return _c
 }
 
+// Migrate provides a mock function with given fields:
+func (_m *Database) Migrate() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Migrate")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Database_Migrate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Migrate'
+type Database_Migrate_Call struct {
+	*mock.Call
+}
+
+// Migrate is a helper method to define mock.On call
+func (_e *Database_Expecter) Migrate() *Database_Migrate_Call {
+	return &Database_Migrate_Call{Call: _e.mock.On("Migrate")}
+}
+
+func (_c *Database_Migrate_Call) Run(run func()) *Database_Migrate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Database_Migrate_Call) Return(_a0 error) *Database_Migrate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Database_Migrate_Call) RunAndReturn(run func() error) *Database_Migrate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Ready provides a mock function with given fields:
 func (_m *Database) Ready() error {
 	ret := _m.Called()

@@ -44,10 +44,14 @@ func (r *DummyMigration) Signature() string {
 
 // Up Run the migrations.
 func (r *DummyMigration) Up() error {
-	return facades.Schema().Create("DummyTable", func(table schema.Blueprint) {
- 		table.BigIncrements("id")
- 		table.Timestamps()
-	})
+	if !facades.Schema().HasTable("DummyTable") {
+		return facades.Schema().Create("DummyTable", func(table schema.Blueprint) {
+			table.BigIncrements("id")
+			table.Timestamps()
+		})
+	}
+
+	return nil
 }
 
 // Down Reverse the migrations.
