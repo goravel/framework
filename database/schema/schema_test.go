@@ -269,6 +269,24 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 			s.Equal("character varying(255)", column.Type)
 			s.Equal("varchar", column.TypeName)
 		}
+		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
+		if column.Name == "enum_int" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -552,6 +570,13 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
 		}
+		if column.Name == "enum_int" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("varchar", column.Type)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -813,6 +838,15 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("enum('a','b','c')", column.Type)
+			s.Equal("enum", column.TypeName)
+		}
+		if column.Name == "enum_int" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("enum('1','2','3')", column.Type)
 			s.Equal("enum", column.TypeName)
 		}
 		if column.Name == "float" {
@@ -1112,6 +1146,15 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 			s.Equal("float", column.TypeName)
 		}
 		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "enum_int" {
 			s.False(column.Autoincrement)
 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
 			s.Empty(column.Comment)
@@ -2066,7 +2109,8 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 		table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
 		table.Decimal("decimal").Places(1).Total(4).Comment("This is a decimal column")
 		table.Double("double").Comment("This is a double column")
-		table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
+		table.Enum("enum", []any{"a", "b", "c"}).Comment("This is a enum column")
+		table.Enum("enum_int", []any{1, 2, 3}).Comment("This is a enum column")
 		table.Float("float", 2).Comment("This is a float column")
 		table.LongText("long_text").Comment("This is a long_text column")
 		table.MediumText("medium_text").Comment("This is a medium_text column")
@@ -2099,7 +2143,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	columnListing := schema.GetColumnListing(table)
 
-	s.Equal(32, len(columnListing))
+	s.Equal(33, len(columnListing))
 	s.Contains(columnListing, "another_deleted_at")
 	s.Contains(columnListing, "big_integer")
 	s.Contains(columnListing, "char")
@@ -2111,6 +2155,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	s.Contains(columnListing, "deleted_at")
 	s.Contains(columnListing, "double")
 	s.Contains(columnListing, "enum")
+	s.Contains(columnListing, "enum_int")
 	s.Contains(columnListing, "float")
 	s.Contains(columnListing, "id")
 	s.Contains(columnListing, "integer")

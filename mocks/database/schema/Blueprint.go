@@ -1125,7 +1125,7 @@ func (_c *Blueprint_DropUnique_Call) RunAndReturn(run func(...string)) *Blueprin
 }
 
 // Enum provides a mock function with given fields: column, array
-func (_m *Blueprint) Enum(column string, array []string) schema.ColumnDefinition {
+func (_m *Blueprint) Enum(column string, array []any) schema.ColumnDefinition {
 	ret := _m.Called(column, array)
 
 	if len(ret) == 0 {
@@ -1133,7 +1133,7 @@ func (_m *Blueprint) Enum(column string, array []string) schema.ColumnDefinition
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, []string) schema.ColumnDefinition); ok {
+	if rf, ok := ret.Get(0).(func(string, []any) schema.ColumnDefinition); ok {
 		r0 = rf(column, array)
 	} else {
 		if ret.Get(0) != nil {
@@ -1151,14 +1151,14 @@ type Blueprint_Enum_Call struct {
 
 // Enum is a helper method to define mock.On call
 //   - column string
-//   - array []string
+//   - array []any
 func (_e *Blueprint_Expecter) Enum(column interface{}, array interface{}) *Blueprint_Enum_Call {
 	return &Blueprint_Enum_Call{Call: _e.mock.On("Enum", column, array)}
 }
 
-func (_c *Blueprint_Enum_Call) Run(run func(column string, array []string)) *Blueprint_Enum_Call {
+func (_c *Blueprint_Enum_Call) Run(run func(column string, array []any)) *Blueprint_Enum_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].([]string))
+		run(args[0].(string), args[1].([]any))
 	})
 	return _c
 }
@@ -1168,7 +1168,7 @@ func (_c *Blueprint_Enum_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_En
 	return _c
 }
 
-func (_c *Blueprint_Enum_Call) RunAndReturn(run func(string, []string) schema.ColumnDefinition) *Blueprint_Enum_Call {
+func (_c *Blueprint_Enum_Call) RunAndReturn(run func(string, []any) schema.ColumnDefinition) *Blueprint_Enum_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
@@ -334,7 +336,7 @@ func (r *Sqlserver) TypeDouble(_ schema.ColumnDefinition) string {
 }
 
 func (r *Sqlserver) TypeEnum(column schema.ColumnDefinition) string {
-	return fmt.Sprintf(`nvarchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
+	return fmt.Sprintf(`nvarchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(cast.ToStringSlice(column.GetAllowed())), ", "))
 }
 
 func (r *Sqlserver) TypeFloat(column schema.ColumnDefinition) string {

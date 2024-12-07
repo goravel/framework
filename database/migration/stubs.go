@@ -46,7 +46,7 @@ func (r *DummyMigration) Signature() string {
 func (r *DummyMigration) Up() error {
 	if !facades.Schema().HasTable("DummyTable") {
 		return facades.Schema().Create("DummyTable", func(table schema.Blueprint) {
-			table.BigIncrements("id")
+			table.ID()
 			table.Timestamps()
 		})
 	}

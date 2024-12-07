@@ -179,7 +179,7 @@ func (r *Blueprint) DropUnique(column ...string) {
 	})
 }
 
-func (r *Blueprint) Enum(column string, allowed []string) schema.ColumnDefinition {
+func (r *Blueprint) Enum(column string, allowed []any) schema.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("enum", column)
 	columnImpl.allowed = allowed
 

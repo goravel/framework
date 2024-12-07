@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 )
@@ -346,7 +348,7 @@ func (r *Mysql) TypeDouble(_ schema.ColumnDefinition) string {
 }
 
 func (r *Mysql) TypeEnum(column schema.ColumnDefinition) string {
-	return fmt.Sprintf(`enum(%s)`, strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
+	return fmt.Sprintf(`enum(%s)`, strings.Join(r.wrap.Quotes(cast.ToStringSlice(column.GetAllowed())), ", "))
 }
 
 func (r *Mysql) TypeFloat(column schema.ColumnDefinition) string {

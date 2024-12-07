@@ -164,19 +164,19 @@ func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(any) schema.Colum
 }
 
 // GetAllowed provides a mock function with given fields:
-func (_m *ColumnDefinition) GetAllowed() []string {
+func (_m *ColumnDefinition) GetAllowed() []any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllowed")
 	}
 
-	var r0 []string
-	if rf, ok := ret.Get(0).(func() []string); ok {
+	var r0 []any
+	if rf, ok := ret.Get(0).(func() []any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).([]any)
 		}
 	}
 
@@ -200,12 +200,12 @@ func (_c *ColumnDefinition_GetAllowed_Call) Run(run func()) *ColumnDefinition_Ge
 	return _c
 }
 
-func (_c *ColumnDefinition_GetAllowed_Call) Return(_a0 []string) *ColumnDefinition_GetAllowed_Call {
+func (_c *ColumnDefinition_GetAllowed_Call) Return(_a0 []any) *ColumnDefinition_GetAllowed_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetAllowed_Call) RunAndReturn(run func() []string) *ColumnDefinition_GetAllowed_Call {
+func (_c *ColumnDefinition_GetAllowed_Call) RunAndReturn(run func() []any) *ColumnDefinition_GetAllowed_Call {
 	_c.Call.Return(run)
 	return _c
 }

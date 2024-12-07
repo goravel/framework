@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
@@ -350,7 +352,7 @@ func (r *Postgres) TypeDouble(column schema.ColumnDefinition) string {
 }
 
 func (r *Postgres) TypeEnum(column schema.ColumnDefinition) string {
-	return fmt.Sprintf(`varchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
+	return fmt.Sprintf(`varchar(255) check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(cast.ToStringSlice(column.GetAllowed())), ", "))
 }
 
 func (r *Postgres) TypeFloat(column schema.ColumnDefinition) string {

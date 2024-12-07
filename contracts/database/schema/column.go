@@ -8,7 +8,7 @@ type ColumnDefinition interface {
 	// Default set the default value
 	Default(def any) ColumnDefinition
 	// GetAllowed returns the allowed value
-	GetAllowed() []string
+	GetAllowed() []any
 	// GetAutoIncrement returns the autoIncrement value
 	GetAutoIncrement() bool
 	// GetComment returns the comment value

@@ -56,7 +56,7 @@ type Blueprint interface {
 	// DropUnique Indicate that the given unique key should be dropped.
 	DropUnique(column ...string)
 	// Enum Create a new enum column on the table.
-	Enum(column string, array []string) ColumnDefinition
+	Enum(column string, array []any) ColumnDefinition
 	// Float Create a new float column on the table.
 	Float(column string, precision ...int) ColumnDefinition
 	// Foreign Specify a foreign key for the table.
