@@ -1,16 +1,14 @@
 package queue
 
 import (
-	"github.com/RichardKnop/machinery/v2"
-	redisbackend "github.com/RichardKnop/machinery/v2/backends/redis"
-	redisbroker "github.com/RichardKnop/machinery/v2/brokers/redis"
-	"github.com/RichardKnop/machinery/v2/config"
-	"github.com/RichardKnop/machinery/v2/locks/eager"
-	"github.com/RichardKnop/machinery/v2/log"
-
 	logcontract "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/machinery"
+	redisbackend "github.com/goravel/machinery/backends/redis"
+	redisbroker "github.com/goravel/machinery/brokers/redis"
+	"github.com/goravel/machinery/config"
+	"github.com/goravel/machinery/locks/eager"
 )
 
 type Machinery struct {
@@ -48,16 +46,16 @@ func (m *Machinery) redisServer(connection string, queue string) *machinery.Serv
 		Redis:        &config.RedisConfig{},
 	}
 
-	broker := redisbroker.NewGR(cnf, []string{redisConfig}, database)
-	backend := redisbackend.NewGR(cnf, []string{redisConfig}, database)
+	broker := redisbroker.New(cnf, []string{redisConfig}, database)
+	backend := redisbackend.New(cnf, []string{redisConfig}, database)
 	lock := eager.New()
 
-	debug := m.config.config.GetBool("app.debug")
+	/*debug := m.config.config.GetBool("app.debug")
 	log.DEBUG = NewDebug(debug, m.log)
 	log.INFO = NewInfo(debug, m.log)
 	log.WARNING = NewWarning(debug, m.log)
 	log.ERROR = NewError(debug, m.log)
-	log.FATAL = NewFatal(debug, m.log)
+	log.FATAL = NewFatal(debug, m.log)*/
 
 	return machinery.NewServer(cnf, broker, backend, lock)
 }

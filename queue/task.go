@@ -3,8 +3,8 @@ package queue
 import (
 	"time"
 
-	"github.com/RichardKnop/machinery/v2"
-	"github.com/RichardKnop/machinery/v2/tasks"
+	"github.com/goravel/machinery"
+	"github.com/goravel/machinery/tasks"
 
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
