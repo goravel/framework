@@ -1355,6 +1355,146 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 	}
 }
 
+func (s *SchemaSuite) TestEnum_Postgres() {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverPostgres]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "postgres_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type PostgresEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int string
+	}
+
+	postgresEnum := &PostgresEnum{
+		Str: "a",
+		Int: "4",
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&postgresEnum), `new row for relation "goravel_postgres_enum" violates check constraint "goravel_postgres_enum_int_check"`)
+
+	postgresEnum = &PostgresEnum{
+		Str: "a",
+		Int: "1",
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&postgresEnum))
+	s.True(postgresEnum.ID > 0)
+}
+
+func (s *SchemaSuite) TestEnum_Sqlite() {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverSqlite]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "sqlite_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type SqliteEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int string
+	}
+
+	sqliteEnum := &SqliteEnum{
+		Str: "a",
+		Int: "4",
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&sqliteEnum), `constraint failed: CHECK constraint failed: int`)
+
+	sqliteEnum = &SqliteEnum{
+		Str: "a",
+		Int: "1",
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&sqliteEnum))
+	s.True(sqliteEnum.ID > 0)
+}
+
+func (s *SchemaSuite) TestEnum_Mysql() {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverMysql]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "mysql_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type MysqlEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int int
+	}
+
+	mysqlEnum := &MysqlEnum{
+		Str: "a",
+		Int: 4,
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&mysqlEnum), "Data truncated for column 'int' at row 1")
+
+	mysqlEnum = &MysqlEnum{
+		Str: "a",
+		Int: 1,
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&mysqlEnum))
+	s.True(mysqlEnum.ID > 0)
+}
+
+func (s *SchemaSuite) TestEnum_Sqlserver() {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverSqlserver]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "sqlserver_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type SqlserverEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int string
+	}
+
+	sqlserverEnum := &SqlserverEnum{
+		Str: "a",
+		Int: "4",
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&sqlserverEnum), `The INSERT statement conflicted with the CHECK constraint`)
+
+	sqlserverEnum = &SqlserverEnum{
+		Str: "a",
+		Int: "1",
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&sqlserverEnum))
+	s.True(sqlserverEnum.ID > 0)
+}
+
 func (s *SchemaSuite) TestForeign() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
