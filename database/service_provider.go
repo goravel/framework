@@ -9,9 +9,9 @@ import (
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
-	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/database/schema"
-	"github.com/goravel/framework/database/seeder"
+	databaseorm "github.com/goravel/framework/database/orm"
+	databaseschema "github.com/goravel/framework/database/schema"
+	databaseseeder "github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/errors"
 )
 
@@ -19,7 +19,7 @@ type ServiceProvider struct {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(orm.BindingOrm, func(app foundation.Application) (any, error) {
+	app.Singleton(databaseorm.BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		if config == nil {
@@ -32,14 +32,14 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		connection := config.GetString("database.default")
-		orm, err := orm.BuildOrm(ctx, config, connection, log, app.Refresh)
+		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
 			return nil, errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm)
 		}
 
 		return orm, nil
 	})
-	app.Singleton(schema.BindingSchema, func(app foundation.Application) (any, error) {
+	app.Singleton(databaseschema.BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
@@ -55,10 +55,10 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleSchema)
 		}
 
-		return schema.NewSchema(config, log, orm, nil), nil
+		return databaseschema.NewSchema(config, log, orm, nil), nil
 	})
-	app.Singleton(seeder.BindingSeeder, func(app foundation.Application) (any, error) {
-		return seeder.NewSeederFacade(), nil
+	app.Singleton(databaseseeder.BindingSeeder, func(app foundation.Application) (any, error) {
+		return databaseseeder.NewSeederFacade(), nil
 	})
 }
 

@@ -164,19 +164,19 @@ func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(any) schema.Colum
 }
 
 // GetAllowed provides a mock function with given fields:
-func (_m *ColumnDefinition) GetAllowed() []string {
+func (_m *ColumnDefinition) GetAllowed() []any {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllowed")
 	}
 
-	var r0 []string
-	if rf, ok := ret.Get(0).(func() []string); ok {
+	var r0 []any
+	if rf, ok := ret.Get(0).(func() []any); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).([]any)
 		}
 	}
 
@@ -200,12 +200,12 @@ func (_c *ColumnDefinition_GetAllowed_Call) Run(run func()) *ColumnDefinition_Ge
 	return _c
 }
 
-func (_c *ColumnDefinition_GetAllowed_Call) Return(_a0 []string) *ColumnDefinition_GetAllowed_Call {
+func (_c *ColumnDefinition_GetAllowed_Call) Return(_a0 []any) *ColumnDefinition_GetAllowed_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetAllowed_Call) RunAndReturn(run func() []string) *ColumnDefinition_GetAllowed_Call {
+func (_c *ColumnDefinition_GetAllowed_Call) RunAndReturn(run func() []any) *ColumnDefinition_GetAllowed_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -705,6 +705,51 @@ func (_c *ColumnDefinition_GetType_Call) Return(_a0 string) *ColumnDefinition_Ge
 }
 
 func (_c *ColumnDefinition_GetType_Call) RunAndReturn(run func() string) *ColumnDefinition_GetType_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetUnsigned provides a mock function with given fields:
+func (_m *ColumnDefinition) GetUnsigned() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUnsigned")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetUnsigned_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUnsigned'
+type ColumnDefinition_GetUnsigned_Call struct {
+	*mock.Call
+}
+
+// GetUnsigned is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetUnsigned() *ColumnDefinition_GetUnsigned_Call {
+	return &ColumnDefinition_GetUnsigned_Call{Call: _e.mock.On("GetUnsigned")}
+}
+
+func (_c *ColumnDefinition_GetUnsigned_Call) Run(run func()) *ColumnDefinition_GetUnsigned_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetUnsigned_Call) Return(_a0 bool) *ColumnDefinition_GetUnsigned_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetUnsigned_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetUnsigned_Call {
 	_c.Call.Return(run)
 	return _c
 }

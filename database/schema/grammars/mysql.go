@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 )
@@ -28,6 +30,7 @@ func NewMysql(tablePrefix string) *Mysql {
 		mysql.ModifyIncrement,
 		mysql.ModifyNullable,
 		mysql.ModifyOnUpdate,
+		mysql.ModifyUnsigned,
 	}
 
 	return mysql
@@ -301,6 +304,14 @@ func (r *Mysql) ModifyOnUpdate(_ schema.Blueprint, column schema.ColumnDefinitio
 	return ""
 }
 
+func (r *Mysql) ModifyUnsigned(_ schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.GetUnsigned() {
+		return " unsigned"
+	}
+
+	return ""
+}
+
 func (r *Mysql) TypeBigInteger(_ schema.ColumnDefinition) string {
 	return "bigint"
 }
@@ -346,7 +357,7 @@ func (r *Mysql) TypeDouble(_ schema.ColumnDefinition) string {
 }
 
 func (r *Mysql) TypeEnum(column schema.ColumnDefinition) string {
-	return fmt.Sprintf(`enum(%s)`, strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
+	return fmt.Sprintf(`enum(%s)`, strings.Join(r.wrap.Quotes(cast.ToStringSlice(column.GetAllowed())), ", "))
 }
 
 func (r *Mysql) TypeFloat(column schema.ColumnDefinition) string {

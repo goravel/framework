@@ -1,23 +1,28 @@
 package event
 
 import (
+	"slices"
+
 	"github.com/goravel/framework/contracts/event"
-	queuecontract "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/contracts/queue"
 )
 
 type Application struct {
 	events map[event.Event][]event.Listener
-	queue  queuecontract.Queue
+	queue  queue.Queue
 }
 
-func NewApplication(queue queuecontract.Queue) *Application {
+func NewApplication(queue queue.Queue) *Application {
 	return &Application{
 		queue: queue,
 	}
 }
 
 func (app *Application) Register(events map[event.Event][]event.Listener) {
-	var jobs []queuecontract.Job
+	var (
+		jobs     []queue.Job
+		jobNames []string
+	)
 
 	if app.events == nil {
 		app.events = map[event.Event][]event.Listener{}
@@ -26,7 +31,10 @@ func (app *Application) Register(events map[event.Event][]event.Listener) {
 	for e, listeners := range events {
 		app.events[e] = listeners
 		for _, listener := range listeners {
-			jobs = append(jobs, listener)
+			if !slices.Contains(jobNames, listener.Signature()) {
+				jobs = append(jobs, listener)
+				jobNames = append(jobNames, listener.Signature())
+			}
 		}
 	}
 
