@@ -1124,6 +1124,39 @@ func (_c *Blueprint_DropUnique_Call) RunAndReturn(run func(...string)) *Blueprin
 	return _c
 }
 
+// DropUniqueByName provides a mock function with given fields: name
+func (_m *Blueprint) DropUniqueByName(name string) {
+	_m.Called(name)
+}
+
+// Blueprint_DropUniqueByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DropUniqueByName'
+type Blueprint_DropUniqueByName_Call struct {
+	*mock.Call
+}
+
+// DropUniqueByName is a helper method to define mock.On call
+//   - name string
+func (_e *Blueprint_Expecter) DropUniqueByName(name interface{}) *Blueprint_DropUniqueByName_Call {
+	return &Blueprint_DropUniqueByName_Call{Call: _e.mock.On("DropUniqueByName", name)}
+}
+
+func (_c *Blueprint_DropUniqueByName_Call) Run(run func(name string)) *Blueprint_DropUniqueByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_DropUniqueByName_Call) Return() *Blueprint_DropUniqueByName_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_DropUniqueByName_Call) RunAndReturn(run func(string)) *Blueprint_DropUniqueByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Enum provides a mock function with given fields: column, array
 func (_m *Blueprint) Enum(column string, array []any) schema.ColumnDefinition {
 	ret := _m.Called(column, array)

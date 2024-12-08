@@ -2201,11 +2201,21 @@ func (s *SchemaSuite) TestUnique() {
 				table.Unique("name", "age")
 			}))
 
-			s.Require().True(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+			s.True(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.DropUnique("name", "age")
 			}))
-			s.Require().False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+			s.False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.Unique("name", "age").Name("name_age_unique")
+			}))
+
+			s.True(schema.HasIndex(table, "name_age_unique"))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropUniqueByName("name_age_unique")
+			}))
+			s.False(schema.HasIndex(table, "name_age_unique"))
 		})
 	}
 }

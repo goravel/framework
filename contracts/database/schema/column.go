@@ -31,6 +31,8 @@ type ColumnDefinition interface {
 	GetTotal() int
 	// GetType returns the type value
 	GetType() string
+	// GetUnsigned returns the unsigned value
+	GetUnsigned() bool
 	// GetUseCurrent returns the useCurrent value
 	GetUseCurrent() bool
 	// GetUseCurrentOnUpdate returns the useCurrentOnUpdate value

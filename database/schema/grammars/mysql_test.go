@@ -373,7 +373,7 @@ func (s *MysqlSuite) TestTypeDecimal() {
 
 func (s *MysqlSuite) TestTypeEnum() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
-	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+	mockColumn.EXPECT().GetAllowed().Return([]any{"a", "b"}).Once()
 
 	s.Equal(`enum('a', 'b')`, s.grammar.TypeEnum(mockColumn))
 }

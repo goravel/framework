@@ -179,6 +179,12 @@ func (r *Blueprint) DropUnique(column ...string) {
 	})
 }
 
+func (r *Blueprint) DropUniqueByName(name string) {
+	r.indexCommand(constants.CommandDropUnique, nil, schema.IndexConfig{
+		Name: name,
+	})
+}
+
 func (r *Blueprint) Enum(column string, allowed []any) schema.ColumnDefinition {
 	columnImpl := r.createAndAddColumn("enum", column)
 	columnImpl.allowed = allowed

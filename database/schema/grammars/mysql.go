@@ -30,6 +30,7 @@ func NewMysql(tablePrefix string) *Mysql {
 		mysql.ModifyIncrement,
 		mysql.ModifyNullable,
 		mysql.ModifyOnUpdate,
+		mysql.ModifyUnsigned,
 	}
 
 	return mysql
@@ -298,6 +299,14 @@ func (r *Mysql) ModifyOnUpdate(_ schema.Blueprint, column schema.ColumnDefinitio
 				return " on update " + value
 			}
 		}
+	}
+
+	return ""
+}
+
+func (r *Mysql) ModifyUnsigned(_ schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.GetUnsigned() {
+		return " unsigned"
 	}
 
 	return ""
