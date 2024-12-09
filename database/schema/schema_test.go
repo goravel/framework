@@ -864,7 +864,7 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("This is a id column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
+			s.Equal("bigint unsigned", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
 		if column.Name == "integer" {
@@ -1026,7 +1026,7 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("This is a unsigned_integer column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("int", column.Type)
+			s.Equal("int unsigned", column.Type)
 			s.Equal("int", column.TypeName)
 		}
 		if column.Name == "unsigned_big_integer" {
@@ -1035,7 +1035,7 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("This is a unsigned_big_integer column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
+			s.Equal("bigint unsigned", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
 	}
@@ -1521,8 +1521,8 @@ func (s *SchemaSuite) TestForeign() {
 			err = schema.Create(table3, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.BigInteger("foreign1_id")
-				table.BigInteger("foreign2_id")
+				table.UnsignedBigInteger("foreign1_id")
+				table.UnsignedBigInteger("foreign2_id")
 				table.Foreign("foreign1_id").References("id").On(table1)
 				table.Foreign("foreign2_id").References("id").On(table2).CascadeOnDelete().CascadeOnUpdate().Name("foreign3_foreign2_id_foreign")
 			})
@@ -1846,7 +1846,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.ID("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "bigint",
+			expectType:     "bigint unsigned",
 			expectTypeName: "bigint",
 		},
 		{
@@ -1856,7 +1856,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.MediumIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "mediumint",
+			expectType:     "mediumint unsigned",
 			expectTypeName: "mediumint",
 		},
 		{
@@ -1866,7 +1866,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.IntegerIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "int",
+			expectType:     "int unsigned",
 			expectTypeName: "int",
 		},
 		{
@@ -1876,7 +1876,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.SmallIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "smallint",
+			expectType:     "smallint unsigned",
 			expectTypeName: "smallint",
 		},
 		{
@@ -1886,7 +1886,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.TinyIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "tinyint",
+			expectType:     "tinyint unsigned",
 			expectTypeName: "tinyint",
 		},
 	}

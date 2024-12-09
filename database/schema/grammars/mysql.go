@@ -25,12 +25,12 @@ func NewMysql(tablePrefix string) *Mysql {
 		wrap:              NewWrap(contractsdatabase.DriverMysql, tablePrefix),
 	}
 	mysql.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
-		mysql.ModifyComment,
-		mysql.ModifyDefault,
-		mysql.ModifyIncrement,
-		mysql.ModifyNullable,
-		mysql.ModifyOnUpdate,
 		mysql.ModifyUnsigned,
+		mysql.ModifyNullable,
+		mysql.ModifyDefault,
+		mysql.ModifyOnUpdate,
+		mysql.ModifyIncrement,
+		mysql.ModifyComment,
 	}
 
 	return mysql
