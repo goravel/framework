@@ -296,7 +296,7 @@ func (s *SqlserverSuite) TestTypeDecimal() {
 func (s *SqlserverSuite) TestTypeEnum() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetName().Return("a").Once()
-	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+	mockColumn.EXPECT().GetAllowed().Return([]any{"a", "b"}).Once()
 
 	s.Equal(`nvarchar(255) check ("a" in (N'a', N'b'))`, s.grammar.TypeEnum(mockColumn))
 }

@@ -269,6 +269,24 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 			s.Equal("character varying(255)", column.Type)
 			s.Equal("varchar", column.TypeName)
 		}
+		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
+		if column.Name == "enum_int" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("character varying(255)", column.Type)
+			s.Equal("varchar", column.TypeName)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -552,6 +570,13 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
 		}
+		if column.Name == "enum_int" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("varchar", column.Type)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -815,6 +840,15 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("enum('a','b','c')", column.Type)
 			s.Equal("enum", column.TypeName)
 		}
+		if column.Name == "enum_int" {
+			s.False(column.Autoincrement)
+			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
+			s.Equal("This is a enum column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("enum('1','2','3')", column.Type)
+			s.Equal("enum", column.TypeName)
+		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -830,7 +864,7 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("This is a id column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
+			s.Equal("bigint unsigned", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
 		if column.Name == "integer" {
@@ -992,7 +1026,7 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("This is a unsigned_integer column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("int", column.Type)
+			s.Equal("int unsigned", column.Type)
 			s.Equal("int", column.TypeName)
 		}
 		if column.Name == "unsigned_big_integer" {
@@ -1001,7 +1035,7 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("This is a unsigned_big_integer column", column.Comment)
 			s.Empty(column.Default)
 			s.False(column.Nullable)
-			s.Equal("bigint", column.Type)
+			s.Equal("bigint unsigned", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
 	}
@@ -1112,6 +1146,15 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 			s.Equal("float", column.TypeName)
 		}
 		if column.Name == "enum" {
+			s.False(column.Autoincrement)
+			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("nvarchar(510)", column.Type)
+			s.Equal("nvarchar", column.TypeName)
+		}
+		if column.Name == "enum_int" {
 			s.False(column.Autoincrement)
 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
 			s.Empty(column.Comment)
@@ -1312,6 +1355,146 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 	}
 }
 
+func (s *SchemaSuite) TestEnum_Postgres() {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverPostgres]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "postgres_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type PostgresEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int string
+	}
+
+	postgresEnum := &PostgresEnum{
+		Str: "a",
+		Int: "4",
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&postgresEnum), `new row for relation "goravel_postgres_enum" violates check constraint "goravel_postgres_enum_int_check"`)
+
+	postgresEnum = &PostgresEnum{
+		Str: "a",
+		Int: "1",
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&postgresEnum))
+	s.True(postgresEnum.ID > 0)
+}
+
+func (s *SchemaSuite) TestEnum_Sqlite() {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverSqlite]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "sqlite_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type SqliteEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int string
+	}
+
+	sqliteEnum := &SqliteEnum{
+		Str: "a",
+		Int: "4",
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&sqliteEnum), `constraint failed: CHECK constraint failed: int`)
+
+	sqliteEnum = &SqliteEnum{
+		Str: "a",
+		Int: "1",
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&sqliteEnum))
+	s.True(sqliteEnum.ID > 0)
+}
+
+func (s *SchemaSuite) TestEnum_Mysql() {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverMysql]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "mysql_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type MysqlEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int int
+	}
+
+	mysqlEnum := &MysqlEnum{
+		Str: "a",
+		Int: 4,
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&mysqlEnum), "Data truncated for column 'int' at row 1")
+
+	mysqlEnum = &MysqlEnum{
+		Str: "a",
+		Int: 1,
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&mysqlEnum))
+	s.True(mysqlEnum.ID > 0)
+}
+
+func (s *SchemaSuite) TestEnum_Sqlserver() {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
+		s.T().Skip("Skip test")
+	}
+
+	testQuery := s.driverToTestQuery[database.DriverSqlserver]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
+	table := "sqlserver_enum"
+
+	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+		table.ID()
+		table.Enum("str", []any{"a", "b", "c"})
+		table.Enum("int", []any{1, 2, 3})
+	}))
+
+	type SqlserverEnum struct {
+		ID  uint `gorm:"primaryKey"`
+		Str string
+		Int string
+	}
+
+	sqlserverEnum := &SqlserverEnum{
+		Str: "a",
+		Int: "4",
+	}
+	s.ErrorContains(testQuery.Query().Table(table).Create(&sqlserverEnum), `The INSERT statement conflicted with the CHECK constraint`)
+
+	sqlserverEnum = &SqlserverEnum{
+		Str: "a",
+		Int: "1",
+	}
+	s.NoError(testQuery.Query().Table(table).Create(&sqlserverEnum))
+	s.True(sqlserverEnum.ID > 0)
+}
+
 func (s *SchemaSuite) TestForeign() {
 	for driver, testQuery := range s.driverToTestQuery {
 		s.Run(driver.String(), func() {
@@ -1338,8 +1521,8 @@ func (s *SchemaSuite) TestForeign() {
 			err = schema.Create(table3, func(table contractsschema.Blueprint) {
 				table.ID()
 				table.String("name")
-				table.BigInteger("foreign1_id")
-				table.BigInteger("foreign2_id")
+				table.UnsignedBigInteger("foreign1_id")
+				table.UnsignedBigInteger("foreign2_id")
 				table.Foreign("foreign1_id").References("id").On(table1)
 				table.Foreign("foreign2_id").References("id").On(table2).CascadeOnDelete().CascadeOnUpdate().Name("foreign3_foreign2_id_foreign")
 			})
@@ -1663,7 +1846,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.ID("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "bigint",
+			expectType:     "bigint unsigned",
 			expectTypeName: "bigint",
 		},
 		{
@@ -1673,7 +1856,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.MediumIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "mediumint",
+			expectType:     "mediumint unsigned",
 			expectTypeName: "mediumint",
 		},
 		{
@@ -1683,7 +1866,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.IntegerIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "int",
+			expectType:     "int unsigned",
 			expectTypeName: "int",
 		},
 		{
@@ -1693,7 +1876,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.SmallIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "smallint",
+			expectType:     "smallint unsigned",
 			expectTypeName: "smallint",
 		},
 		{
@@ -1703,7 +1886,7 @@ func (s *SchemaSuite) TestID_Mysql() {
 					table.TinyIncrements("id").Comment("This is a id column")
 				})
 			},
-			expectType:     "tinyint",
+			expectType:     "tinyint unsigned",
 			expectTypeName: "tinyint",
 		},
 	}
@@ -2018,11 +2201,21 @@ func (s *SchemaSuite) TestUnique() {
 				table.Unique("name", "age")
 			}))
 
-			s.Require().True(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+			s.True(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.DropUnique("name", "age")
 			}))
-			s.Require().False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+			s.False(schema.HasIndex(table, "goravel_uniques_name_age_unique"))
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.Unique("name", "age").Name("name_age_unique")
+			}))
+
+			s.True(schema.HasIndex(table, "name_age_unique"))
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.DropUniqueByName("name_age_unique")
+			}))
+			s.False(schema.HasIndex(table, "name_age_unique"))
 		})
 	}
 }
@@ -2066,7 +2259,8 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 		table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
 		table.Decimal("decimal").Places(1).Total(4).Comment("This is a decimal column")
 		table.Double("double").Comment("This is a double column")
-		table.Enum("enum", []string{"a", "b", "c"}).Comment("This is a enum column")
+		table.Enum("enum", []any{"a", "b", "c"}).Comment("This is a enum column")
+		table.Enum("enum_int", []any{1, 2, 3}).Comment("This is a enum column")
 		table.Float("float", 2).Comment("This is a float column")
 		table.LongText("long_text").Comment("This is a long_text column")
 		table.MediumText("medium_text").Comment("This is a medium_text column")
@@ -2099,7 +2293,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	columnListing := schema.GetColumnListing(table)
 
-	s.Equal(32, len(columnListing))
+	s.Equal(33, len(columnListing))
 	s.Contains(columnListing, "another_deleted_at")
 	s.Contains(columnListing, "big_integer")
 	s.Contains(columnListing, "char")
@@ -2111,6 +2305,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	s.Contains(columnListing, "deleted_at")
 	s.Contains(columnListing, "double")
 	s.Contains(columnListing, "enum")
+	s.Contains(columnListing, "enum_int")
 	s.Contains(columnListing, "float")
 	s.Contains(columnListing, "id")
 	s.Contains(columnListing, "integer")

@@ -6,7 +6,7 @@ import (
 )
 
 type ColumnDefinition struct {
-	allowed            []string
+	allowed            []any
 	autoIncrement      *bool
 	comment            *string
 	def                any
@@ -41,44 +41,44 @@ func (r *ColumnDefinition) Default(def any) schema.ColumnDefinition {
 	return r
 }
 
-func (r *ColumnDefinition) GetAllowed() []string {
+func (r *ColumnDefinition) GetAllowed() []any {
 	return r.allowed
 }
 
-func (r *ColumnDefinition) GetAutoIncrement() (autoIncrement bool) {
+func (r *ColumnDefinition) GetAutoIncrement() bool {
 	if r.autoIncrement != nil {
 		return *r.autoIncrement
 	}
 
-	return
+	return false
 }
 
-func (r *ColumnDefinition) GetComment() (comment string) {
+func (r *ColumnDefinition) GetComment() string {
 	if r.comment != nil {
 		return *r.comment
 	}
 
-	return
+	return ""
 }
 
 func (r *ColumnDefinition) GetDefault() any {
 	return r.def
 }
 
-func (r *ColumnDefinition) GetName() (name string) {
+func (r *ColumnDefinition) GetName() string {
 	if r.name != nil {
 		return *r.name
 	}
 
-	return
+	return ""
 }
 
-func (r *ColumnDefinition) GetLength() (length int) {
+func (r *ColumnDefinition) GetLength() int {
 	if r.length != nil {
 		return *r.length
 	}
 
-	return
+	return 0
 }
 
 func (r *ColumnDefinition) GetNullable() bool {
@@ -93,7 +93,7 @@ func (r *ColumnDefinition) GetOnUpdate() any {
 	return r.onUpdate
 }
 
-func (r *ColumnDefinition) GetPlaces() (places int) {
+func (r *ColumnDefinition) GetPlaces() int {
 	if r.places != nil {
 		return *r.places
 	}
@@ -101,15 +101,15 @@ func (r *ColumnDefinition) GetPlaces() (places int) {
 	return 2
 }
 
-func (r *ColumnDefinition) GetPrecision() (precision int) {
+func (r *ColumnDefinition) GetPrecision() int {
 	if r.precision != nil {
 		return *r.precision
 	}
 
-	return
+	return 0
 }
 
-func (r *ColumnDefinition) GetTotal() (total int) {
+func (r *ColumnDefinition) GetTotal() int {
 	if r.total != nil {
 		return *r.total
 	}
@@ -117,28 +117,36 @@ func (r *ColumnDefinition) GetTotal() (total int) {
 	return 8
 }
 
-func (r *ColumnDefinition) GetType() (ttype string) {
+func (r *ColumnDefinition) GetType() string {
 	if r.ttype != nil {
 		return *r.ttype
 	}
 
-	return
+	return ""
 }
 
-func (r *ColumnDefinition) GetUseCurrent() (useCurrent bool) {
+func (r *ColumnDefinition) GetUnsigned() bool {
+	if r.unsigned != nil {
+		return *r.unsigned
+	}
+
+	return false
+}
+
+func (r *ColumnDefinition) GetUseCurrent() bool {
 	if r.useCurrent != nil {
 		return *r.useCurrent
 	}
 
-	return
+	return false
 }
 
-func (r *ColumnDefinition) GetUseCurrentOnUpdate() (useCurrentOnUpdate bool) {
+func (r *ColumnDefinition) GetUseCurrentOnUpdate() bool {
 	if r.useCurrentOnUpdate != nil {
 		return *r.useCurrentOnUpdate
 	}
 
-	return
+	return false
 }
 
 func (r *ColumnDefinition) IsSetComment() bool {

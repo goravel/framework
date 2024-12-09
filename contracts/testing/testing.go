@@ -17,6 +17,8 @@ type Docker interface {
 
 type Database interface {
 	DatabaseDriver
+	// Migrate runs the database migrations.
+	Migrate() error
 	// Seed runs the database seeds.
 	Seed(seeders ...seeder.Seeder) error
 }

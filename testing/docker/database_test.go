@@ -149,17 +149,10 @@ func (s *DatabaseTestSuite) TestBuild() {
 
 	// Call success
 	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
-	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
 	s.mockOrm.EXPECT().Refresh().Once()
 
 	s.Nil(s.database.Build())
 	s.True(s.database.Config().Port > 0)
-	s.Nil(s.database.Stop())
-
-	// Call error
-	s.mockConfig.EXPECT().Add("database.connections.postgres.port", mock.Anything).Once()
-	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
-	s.EqualError(s.database.Build(), assert.AnError.Error())
 	s.Nil(s.database.Stop())
 }
 

@@ -77,10 +77,14 @@ func (r *M202410131203CreateUsersTable) Signature() string {
 
 // Up Run the migrations.
 func (r *M202410131203CreateUsersTable) Up() error {
-	return facades.Schema().Create("users", func(table schema.Blueprint) {
- 		table.BigIncrements("id")
- 		table.Timestamps()
-	})
+	if !facades.Schema().HasTable("users") {
+		return facades.Schema().Create("users", func(table schema.Blueprint) {
+			table.ID()
+			table.Timestamps()
+		})
+	}
+
+	return nil
 }
 
 // Down Reverse the migrations.

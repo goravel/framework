@@ -5,10 +5,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/stretchr/testify/assert"
+
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	mockslog "github.com/goravel/framework/mocks/log"
-	"github.com/stretchr/testify/assert"
 )
 
 type SqliteSuite struct {
@@ -361,7 +362,7 @@ func (s *SqliteSuite) TestModifyIncrement() {
 func (s *SqliteSuite) TestTypeEnum() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetName().Return("a").Once()
-	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+	mockColumn.EXPECT().GetAllowed().Return([]any{"a", "b"}).Once()
 
 	s.Equal(`varchar check ("a" in ('a', 'b'))`, s.grammar.TypeEnum(mockColumn))
 }

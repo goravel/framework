@@ -8,7 +8,7 @@ type ColumnDefinition interface {
 	// Default set the default value
 	Default(def any) ColumnDefinition
 	// GetAllowed returns the allowed value
-	GetAllowed() []string
+	GetAllowed() []any
 	// GetAutoIncrement returns the autoIncrement value
 	GetAutoIncrement() bool
 	// GetComment returns the comment value
@@ -31,6 +31,8 @@ type ColumnDefinition interface {
 	GetTotal() int
 	// GetType returns the type value
 	GetType() string
+	// GetUnsigned returns the unsigned value
+	GetUnsigned() bool
 	// GetUseCurrent returns the useCurrent value
 	GetUseCurrent() bool
 	// GetUseCurrentOnUpdate returns the useCurrentOnUpdate value
