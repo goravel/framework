@@ -3,9 +3,8 @@ package grammars
 import (
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"

@@ -25,6 +25,7 @@ func NewMysql(tablePrefix string) *Mysql {
 		wrap:              NewWrap(contractsdatabase.DriverMysql, tablePrefix),
 	}
 	mysql.modifiers = []func(schema.Blueprint, schema.ColumnDefinition) string{
+		// The sort should not be changed, it effects the SQL output
 		mysql.ModifyUnsigned,
 		mysql.ModifyNullable,
 		mysql.ModifyDefault,
