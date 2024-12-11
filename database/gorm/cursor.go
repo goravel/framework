@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/support/carbon"
