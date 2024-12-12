@@ -8,7 +8,7 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v7 v7.1.2
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20241127125741-aad810dfbce6
+	github.com/charmbracelet/huh/spinner v0.0.0-20241211235322-ceae3bbcfbb4
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.5.2
@@ -19,7 +19,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
-	github.com/gookit/validate v1.5.2
+	github.com/gookit/validate v1.5.3
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/pterm/pterm v0.12.80
@@ -34,7 +34,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	go.uber.org/atomic v1.11.0
-	golang.org/x/crypto v0.30.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
 	google.golang.org/grpc v1.68.1
 	gorm.io/driver/mysql v1.5.7
@@ -93,7 +93,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gookit/filter v1.2.1 // indirect
-	github.com/gookit/goutil v0.6.17 // indirect
+	github.com/gookit/goutil v0.6.18 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
