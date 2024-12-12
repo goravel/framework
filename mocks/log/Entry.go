@@ -71,6 +71,53 @@ func (_c *Entry_Context_Call) RunAndReturn(run func() context.Context) *Entry_Co
 	return _c
 }
 
+// Data provides a mock function with given fields:
+func (_m *Entry) Data() log.Data {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Data")
+	}
+
+	var r0 log.Data
+	if rf, ok := ret.Get(0).(func() log.Data); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Data)
+		}
+	}
+
+	return r0
+}
+
+// Entry_Data_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Data'
+type Entry_Data_Call struct {
+	*mock.Call
+}
+
+// Data is a helper method to define mock.On call
+func (_e *Entry_Expecter) Data() *Entry_Data_Call {
+	return &Entry_Data_Call{Call: _e.mock.On("Data")}
+}
+
+func (_c *Entry_Data_Call) Run(run func()) *Entry_Data_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Data_Call) Return(_a0 log.Data) *Entry_Data_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Data_Call) RunAndReturn(run func() log.Data) *Entry_Data_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Level provides a mock function with given fields:
 func (_m *Entry) Level() log.Level {
 	ret := _m.Called()
