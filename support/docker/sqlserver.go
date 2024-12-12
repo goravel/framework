@@ -28,22 +28,19 @@ func NewSqlserver(database, username, password string) *Sqlserver {
 		username: username,
 		password: password,
 		image: &testing.Image{
-			Repository: "mcmoe/mssqldocker",
+			Repository: "mcr.microsoft.com/mssql/server",
 			Tag:        "latest",
 			Env: []string{
 				"ACCEPT_EULA=Y",
-				"MSSQL_DB=" + database,
-				"MSSQL_USER=" + username,
-				"MSSQL_PASSWORD=" + password,
-				"SA_PASSWORD=" + password,
+				"MSSQL_SA_PASSWORD=" + password,
 			},
 			ExposedPorts: []string{"1433"},
 		},
 	}
 }
 
-func (receiver *Sqlserver) Build() error {
-	command, exposedPorts := imageToCommand(receiver.image)
+func (r *Sqlserver) Build() error {
+	command, exposedPorts := imageToCommand(r.image)
 	containerID, err := run(command)
 	if err != nil {
 		return fmt.Errorf("init Sqlserver docker error: %v", err)
@@ -52,28 +49,24 @@ func (receiver *Sqlserver) Build() error {
 		return fmt.Errorf("no container id return when creating Sqlserver docker")
 	}
 
-	receiver.containerID = containerID
-	receiver.port = getExposedPort(exposedPorts, 1433)
-
-	if _, err := receiver.connect(); err != nil {
-		return fmt.Errorf("connect Sqlserver docker error: %v", err)
-	}
+	r.containerID = containerID
+	r.port = getExposedPort(exposedPorts, 1433)
 
 	return nil
 }
 
-func (receiver *Sqlserver) Config() testing.DatabaseConfig {
+func (r *Sqlserver) Config() testing.DatabaseConfig {
 	return testing.DatabaseConfig{
-		Host:     receiver.host,
-		Port:     receiver.port,
-		Database: receiver.database,
-		Username: receiver.username,
-		Password: receiver.password,
+		Host:     r.host,
+		Port:     r.port,
+		Database: r.database,
+		Username: r.username,
+		Password: r.password,
 	}
 }
 
-func (receiver *Sqlserver) Fresh() error {
-	instance, err := receiver.connect()
+func (r *Sqlserver) Fresh() error {
+	instance, err := r.connect()
 	if err != nil {
 		return fmt.Errorf("connect Sqlserver error when clearing: %v", err)
 	}
@@ -99,36 +92,77 @@ func (receiver *Sqlserver) Fresh() error {
 	return nil
 }
 
-func (receiver *Sqlserver) Image(image testing.Image) {
-	receiver.image = &image
+func (r *Sqlserver) Image(image testing.Image) {
+	r.image = &image
 }
 
-func (receiver *Sqlserver) Name() orm.Driver {
+func (r *Sqlserver) Name() orm.Driver {
 	return orm.DriverSqlserver
 }
 
-func (receiver *Sqlserver) Stop() error {
-	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+func (r *Sqlserver) Stop() error {
+	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Sqlserver error: %v", err)
 	}
 
 	return nil
 }
 
-func (receiver *Sqlserver) connect() (*gormio.DB, error) {
+func (r *Sqlserver) connect() (*gormio.DB, error) {
 	var (
 		instance *gormio.DB
 		err      error
 	)
 
 	// docker compose need time to start
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 100; i++ {
 		instance, err = gormio.Open(sqlserver.New(sqlserver.Config{
-			DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s",
-				receiver.username, receiver.password, receiver.host, receiver.port, receiver.database),
+			DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=master",
+				"sa", r.password, r.host, r.port),
 		}))
 
 		if err == nil {
+			// Check if database exists
+			var exists bool
+			query := fmt.Sprintf("SELECT CASE WHEN EXISTS (SELECT * FROM sys.databases WHERE name = '%s') THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END", r.database)
+			if err := instance.Raw(query).Scan(&exists).Error; err != nil {
+				return nil, err
+			}
+
+			if !exists {
+				// Create User database
+				if err := instance.Exec(fmt.Sprintf(`CREATE DATABASE "%s";`, r.database)).Error; err != nil {
+					return nil, err
+				}
+
+				query = fmt.Sprintf("SELECT 1 FROM sys.server_principals WHERE name = '%s' AND type = 'S'", r.username)
+				if err := instance.Raw(query).Scan(&exists).Error; err != nil {
+					return nil, err
+				}
+
+				if !exists {
+					// Create User account
+					if err := instance.Exec(fmt.Sprintf("CREATE LOGIN %s WITH PASSWORD = '%s'", r.username, r.password)).Error; err != nil {
+						return nil, err
+					}
+				}
+
+				// Create DB account for User
+				if err := instance.Exec(fmt.Sprintf("USE %s; CREATE USER %s FOR LOGIN %s", r.database, r.username, r.username)).Error; err != nil {
+					return nil, err
+				}
+
+				// Add permission
+				if err := instance.Exec(fmt.Sprintf("USE %s; ALTER ROLE db_owner ADD MEMBER %s", r.database, r.username)).Error; err != nil {
+					return nil, err
+				}
+			}
+
+			instance, err = gormio.Open(sqlserver.New(sqlserver.Config{
+				DSN: fmt.Sprintf("sqlserver://%s:%s@%s:%d?database=%s",
+					r.username, r.password, r.host, r.port, r.database),
+			}))
+
 			break
 		}
 

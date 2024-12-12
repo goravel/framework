@@ -1,7 +1,7 @@
 package docker
 
 const (
-	password = "Goravel123"
+	password = "Framework!123"
 	username = "goravel"
 	database = "goravel"
 )
