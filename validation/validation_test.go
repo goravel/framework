@@ -1,12 +1,12 @@
 package validation
 
 import (
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
