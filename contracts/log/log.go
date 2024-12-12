@@ -23,6 +23,8 @@ const (
 	DebugLevel
 )
 
+type Data map[string]any
+
 type Log interface {
 	// WithContext adds a context to the logger.
 	WithContext(ctx context.Context) Writer
@@ -98,6 +100,8 @@ type Hook interface {
 type Entry interface {
 	// Context returns the context of the entry.
 	Context() context.Context
+	// Data returns the data of the entry.
+	Data() Data
 	// Level returns the level of the entry.
 	Level() Level
 	// Time returns the timestamp of the entry.
