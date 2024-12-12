@@ -52,6 +52,10 @@ func (r *Sqlserver) Build() error {
 	r.containerID = containerID
 	r.port = getExposedPort(exposedPorts, 1433)
 
+	if _, err := r.connect(); err != nil {
+		return fmt.Errorf("connect Sqlserver docker error: %v", err)
+	}
+
 	return nil
 }
 
