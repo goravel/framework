@@ -79,8 +79,6 @@ func TestLogrus(t *testing.T) {
 			setup: func() {
 				mockConfig.On("GetString", "logging.channels.daily.level").Return("info").Once()
 				mockConfig.On("GetString", "logging.channels.single.level").Return("info").Once()
-				mockConfig.On("GetString", "app.timezone").Return("UTC").Once()
-				mockConfig.On("GetString", "app.env").Return("test").Once()
 				log, err = NewApplication(mockConfig, j)
 				log.Debug("No Debug Goravel")
 			},

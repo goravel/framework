@@ -19,9 +19,7 @@ type Application struct {
 }
 
 func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	if config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
 			if err := registerHook(config, json, instance, channel); err != nil {
@@ -47,9 +45,7 @@ func (r *Application) Channel(channel string) log.Writer {
 		return r.Writer
 	}
 
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	if err := registerHook(r.config, r.json, instance, channel); err != nil {
 		color.Errorln(err)
 		return nil
@@ -63,9 +59,7 @@ func (r *Application) Stack(channels []string) log.Writer {
 		return r.Writer
 	}
 
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	for _, channel := range channels {
 		if channel == "" {
 			continue
