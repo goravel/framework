@@ -9,6 +9,7 @@ import (
 
 type Entry struct {
 	ctx     context.Context
+	data    log.Data
 	level   log.Level
 	time    time.Time
 	message string
@@ -16,6 +17,10 @@ type Entry struct {
 
 func (r *Entry) Context() context.Context {
 	return r.ctx
+}
+
+func (r *Entry) Data() log.Data {
+	return r.data
 }
 
 func (r *Entry) Level() log.Level {
