@@ -223,7 +223,7 @@ func (s *GeneralTestSuite) TestFormatStackTraces() {
 					"/dummy/examples/logging/example.go:29 [main.(*Request).Validate]",
 					"/dummy/examples/logging/example.go:28 [main.(*Request).Validate]",
 				}
-				formattedStackTraces := "trace:\n\t" + strings.Join(stackTraces, "\n\t") + "\n"
+				formattedStackTraces := "trace:\n" + strings.Join(stackTraces, "\n") + "\n"
 
 				s.Equal(formattedStackTraces, traces)
 			},
@@ -247,47 +247,47 @@ func TestFormatStackTrace(t *testing.T) {
 		{
 			name:     "Valid stack trace with file and method",
 			input:    "main.functionName:/path/to/file.go:42",
-			expected: "\t/path/to/file.go:42 [main.functionName]\n",
+			expected: "/path/to/file.go:42 [main.functionName]\n",
 		},
 		{
 			name:     "Valid stack trace without method",
 			input:    "/path/to/file.go:42",
-			expected: "\t/path/to/file.go:42\n",
+			expected: "/path/to/file.go:42\n",
 		},
 		{
 			name:     "No colons in stack trace",
 			input:    "invalidstacktrace",
-			expected: "\tinvalidstacktrace\n",
+			expected: "invalidstacktrace\n",
 		},
 		{
 			name:     "Single colon in stack trace",
 			input:    "file.go:42",
-			expected: "\tfile.go:42\n",
+			expected: "file.go:42\n",
 		},
 		{
 			name:     "Edge case: Empty string",
 			input:    "",
-			expected: "\t\n",
+			expected: "\n",
 		},
 		{
 			name:     "Edge case: Colon at the end",
 			input:    "file.go:",
-			expected: "\tfile.go:\n",
+			expected: "file.go:\n",
 		},
 		{
 			name:     "Edge case: Colon at the beginning",
 			input:    ":file.go",
-			expected: "\t:file.go\n",
+			expected: ":file.go\n",
 		},
 		{
 			name:     "Edge case: Multiple colons with no method",
 			input:    "/path/to/file.go:100:200",
-			expected: "\t100:200 [/path/to/file.go]\n",
+			expected: "100:200 [/path/to/file.go]\n",
 		},
 		{
 			name:     "Valid stack trace with nested method and line",
 			input:    "pkg.subpkg.functionName:/path/to/file.go:55",
-			expected: "\t/path/to/file.go:55 [pkg.subpkg.functionName]\n",
+			expected: "/path/to/file.go:55 [pkg.subpkg.functionName]\n",
 		},
 	}
 

@@ -136,10 +136,10 @@ func formatStackTrace(stackStr string) string {
 		if secondLastColon > 0 {
 			fileLine := stackStr[secondLastColon+1:]
 			method := stackStr[:secondLastColon]
-			return fmt.Sprintf("\t%s [%s]\n", fileLine, method)
+			return fmt.Sprintf("%s [%s]\n", fileLine, method)
 		}
 	}
-	return fmt.Sprintf("\t%s\n", stackStr)
+	return fmt.Sprintf("%s\n", stackStr)
 }
 
 func deleteKey(data logrus.Fields, keyToDelete string) logrus.Fields {
