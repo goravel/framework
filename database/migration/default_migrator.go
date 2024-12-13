@@ -281,19 +281,20 @@ func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
 		r.schema.SetConnection(defaultConnection)
 	}()
 
-	return r.schema.Orm().Transaction(func(tx orm.Query) error {
+	if err := r.schema.Orm().Transaction(func(tx orm.Query) error {
 		r.schema.Orm().SetQuery(tx)
 
-		if err := migration.Down(); err != nil {
-			return err
-		}
+		return migration.Down()
+	}); err != nil {
+		return err
+	}
 
-		// repository.Log should be called in the default connection.
-		r.schema.Orm().SetQuery(defaultQuery)
-		r.schema.SetConnection(defaultConnection)
+	// repository.Log should be called in the default connection.
+	// The code below can't be set in the transaction, because the connection will conflict.
+	r.schema.Orm().SetQuery(defaultQuery)
+	r.schema.SetConnection(defaultConnection)
 
-		return r.repository.Delete(migration.Signature())
-	})
+	return r.repository.Delete(migration.Signature())
 }
 
 func (r *DefaultMigrator) runUp(migration contractsschema.Migration, batch int) error {
