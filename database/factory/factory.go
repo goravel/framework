@@ -3,7 +3,7 @@ package factory
 import (
 	"reflect"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/goravel/framework/contracts/database/factory"
 	ormcontract "github.com/goravel/framework/contracts/database/orm"

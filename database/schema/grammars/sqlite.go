@@ -5,6 +5,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
@@ -302,7 +304,7 @@ func (r *Sqlite) TypeDouble(column schema.ColumnDefinition) string {
 }
 
 func (r *Sqlite) TypeEnum(column schema.ColumnDefinition) string {
-	return fmt.Sprintf(`varchar check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(column.GetAllowed()), ", "))
+	return fmt.Sprintf(`varchar check ("%s" in (%s))`, column.GetName(), strings.Join(r.wrap.Quotes(cast.ToStringSlice(column.GetAllowed())), ", "))
 }
 
 func (r *Sqlite) TypeFloat(column schema.ColumnDefinition) string {

@@ -420,7 +420,7 @@ func (s *PostgresSuite) TestTypeDecimal() {
 func (s *PostgresSuite) TestTypeEnum() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetName().Return("a").Once()
-	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+	mockColumn.EXPECT().GetAllowed().Return([]any{"a", "b"}).Once()
 
 	s.Equal(`varchar(255) check ("a" in ('a', 'b'))`, s.grammar.TypeEnum(mockColumn))
 }

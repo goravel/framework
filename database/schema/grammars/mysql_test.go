@@ -34,12 +34,13 @@ func (s *MysqlSuite) TestCompileAdd() {
 	mockColumn.EXPECT().GetLength().Return(1).Once()
 	mockColumn.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn.EXPECT().GetComment().Return("comment").Once()
+	mockColumn.EXPECT().GetUnsigned().Return(false).Once()
 
 	sql := s.grammar.CompileAdd(mockBlueprint, &contractsschema.Command{
 		Column: mockColumn,
 	})
 
-	s.Equal("alter table `goravel_users` add `name` varchar(1) comment 'comment' default 'goravel' not null", sql)
+	s.Equal("alter table `goravel_users` add `name` varchar(1) not null default 'goravel' comment 'comment'", sql)
 }
 
 func (s *MysqlSuite) TestCompileCreate() {
@@ -76,6 +77,7 @@ func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
 	mockColumn1.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn1.EXPECT().GetComment().Return("id").Once()
+	mockColumn1.EXPECT().GetUnsigned().Return(true).Once()
 
 	// utils.go::getColumns
 	mockColumn2.EXPECT().GetName().Return("name").Once()
@@ -91,8 +93,9 @@ func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
 	mockColumn2.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn2.EXPECT().GetComment().Return("name").Once()
+	mockColumn2.EXPECT().GetUnsigned().Return(false).Once()
 
-	s.Equal("create table `goravel_users` (`id` int comment 'id' auto_increment primary key not null, `name` varchar(100) comment 'name' null, primary key using btree(`role_id`, `user_id`))",
+	s.Equal("create table `goravel_users` (`id` int unsigned not null auto_increment primary key comment 'id', `name` varchar(100) null comment 'name', primary key using btree(`role_id`, `user_id`))",
 		s.grammar.CompileCreate(mockBlueprint))
 	s.True(primaryCommand.ShouldBeSkipped)
 }
@@ -255,6 +258,7 @@ func (s *MysqlSuite) TestGetColumns() {
 	mockColumn1.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
 	mockColumn1.EXPECT().GetComment().Return("id").Once()
+	mockColumn1.EXPECT().GetUnsigned().Return(true).Once()
 
 	mockColumn2.EXPECT().GetName().Return("name").Once()
 	mockColumn2.EXPECT().GetType().Return("string").Twice()
@@ -263,8 +267,9 @@ func (s *MysqlSuite) TestGetColumns() {
 	mockColumn2.EXPECT().GetOnUpdate().Return(nil).Once()
 	mockColumn2.EXPECT().GetLength().Return(10).Once()
 	mockColumn2.EXPECT().GetComment().Return("name").Once()
+	mockColumn2.EXPECT().GetUnsigned().Return(false).Once()
 
-	s.Equal([]string{"`id` int comment 'id' auto_increment primary key not null", "`name` varchar(10) comment 'name' default 'goravel' null"}, s.grammar.getColumns(mockBlueprint))
+	s.Equal([]string{"`id` int unsigned not null auto_increment primary key comment 'id'", "`name` varchar(10) null default 'goravel' comment 'name'"}, s.grammar.getColumns(mockBlueprint))
 }
 
 func (s *MysqlSuite) TestModifyDefault() {
@@ -373,7 +378,7 @@ func (s *MysqlSuite) TestTypeDecimal() {
 
 func (s *MysqlSuite) TestTypeEnum() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
-	mockColumn.EXPECT().GetAllowed().Return([]string{"a", "b"}).Once()
+	mockColumn.EXPECT().GetAllowed().Return([]any{"a", "b"}).Once()
 
 	s.Equal(`enum('a', 'b')`, s.grammar.TypeEnum(mockColumn))
 }

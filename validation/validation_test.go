@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
@@ -192,6 +193,38 @@ func TestMake(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Fix: https://github.com/goravel/goravel/issues/533
+func TestBindWithNestedStruct(t *testing.T) {
+	type Data struct {
+		A map[string][]string `json:"a" form:"a"`
+		B map[string][]string `json:"b" form:"b"`
+	}
+	validation := NewValidation()
+	validator, err := validation.Make(map[string]any{
+		"a": map[string]any{
+			"b": []any{"c", "d"},
+		},
+		"b": map[string][]string{
+			"b": {"c", "d"},
+		},
+	}, map[string]string{"a": "required|map", "b": "required|map"})
+
+	require.NoError(t, err)
+	require.NotNil(t, validator)
+	require.False(t, validator.Fails())
+
+	var data Data
+	require.NoError(t, validator.Bind(&data))
+	require.Equal(t, Data{
+		A: map[string][]string{
+			"b": {"c", "d"},
+		},
+		B: map[string][]string{
+			"b": {"c", "d"},
+		},
+	}, data)
 }
 
 type Case struct {

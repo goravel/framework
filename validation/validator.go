@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"reflect"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/gookit/validate"
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cast"
 
 	httpvalidate "github.com/goravel/framework/contracts/validation"
@@ -145,19 +145,6 @@ func (v *Validator) castValue() mapstructure.DecodeHookFunc {
 				castedValue, err = cast.ToBoolSliceE(from.Interface())
 			default:
 				castedValue, err = cast.ToSliceE(from.Interface())
-			}
-		case reflect.Map:
-			switch to.Type().Key().Kind() {
-			case reflect.String:
-				castedValue, err = cast.ToStringMapStringE(from.Interface())
-			case reflect.Bool:
-				castedValue, err = cast.ToStringMapBoolE(from.Interface())
-			case reflect.Int:
-				castedValue, err = cast.ToStringMapIntE(from.Interface())
-			case reflect.Int64:
-				castedValue, err = cast.ToStringMapInt64E(from.Interface())
-			default:
-				castedValue, err = cast.ToStringMapE(from.Interface())
 			}
 		case reflect.Struct:
 			switch to.Type() {

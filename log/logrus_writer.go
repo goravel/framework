@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/rotisserie/eris"
 	"github.com/sirupsen/logrus"
@@ -16,6 +17,14 @@ import (
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/log/logger"
 )
+
+func NewLogrus() *logrus.Logger {
+	instance := logrus.New()
+	instance.SetLevel(logrus.DebugLevel)
+	instance.SetOutput(io.Discard)
+
+	return instance
+}
 
 type Writer struct {
 	code string
@@ -294,11 +303,14 @@ func (r *Writer) toMap() map[string]any {
 }
 
 func registerHook(config config.Config, json foundation.Json, instance *logrus.Logger, channel string) error {
-	channelPath := "logging.channels." + channel
-	driver := config.GetString(channelPath + ".driver")
+	var (
+		hook logrus.Hook
+		err  error
 
-	var hook logrus.Hook
-	var err error
+		channelPath = "logging.channels." + channel
+		driver      = config.GetString(channelPath + ".driver")
+	)
+
 	switch driver {
 	case log.StackDriver:
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
@@ -313,24 +325,26 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		return nil
 	case log.SingleDriver:
-		if !config.GetBool(channelPath + ".print") {
-			instance.SetOutput(io.Discard)
-		}
-
 		logLogger := logger.NewSingle(config, json)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
 		}
-	case log.DailyDriver:
-		if !config.GetBool(channelPath + ".print") {
-			instance.SetOutput(io.Discard)
-		}
 
+		if config.GetBool(channelPath + ".print") {
+			instance.SetOutput(os.Stdout)
+			instance.SetFormatter(formatter.NewGeneral(config, json))
+		}
+	case log.DailyDriver:
 		logLogger := logger.NewDaily(config, json)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
+		}
+
+		if config.GetBool(channelPath + ".print") {
+			instance.SetOutput(os.Stdout)
+			instance.SetFormatter(formatter.NewGeneral(config, json))
 		}
 	case log.CustomDriver:
 		logLogger := config.Get(channelPath + ".via").(log.Logger)
@@ -343,8 +357,6 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 	default:
 		return errors.LogDriverNotSupported.Args(channel)
 	}
-
-	instance.SetFormatter(formatter.NewGeneral(config, json))
 
 	instance.AddHook(hook)
 
@@ -368,6 +380,7 @@ func (h *Hook) Levels() []logrus.Level {
 func (h *Hook) Fire(entry *logrus.Entry) error {
 	e := &Entry{
 		ctx:     entry.Context,
+		data:    map[string]any(entry.Data),
 		level:   log.Level(entry.Level),
 		time:    entry.Time,
 		message: entry.Message,
