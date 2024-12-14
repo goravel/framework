@@ -94,12 +94,24 @@ type FormRequest interface {
 	Authorize(ctx Context) error
 	// Rules get the validation rules that apply to the request.
 	Rules(ctx Context) map[string]string
+}
+
+type FormRequestWithFilters interface {
 	// Filters get the custom filters that apply to the request.
 	Filters(ctx Context) map[string]string
+}
+
+type FormRequestWithMessages interface {
 	// Messages get the validation messages that apply to the request.
 	Messages(ctx Context) map[string]string
+}
+
+type FormRequestWithAttributes interface {
 	// Attributes get custom attributes for validator errors.
 	Attributes(ctx Context) map[string]string
+}
+
+type FormRequestWithPrepareForValidation interface {
 	// PrepareForValidation prepare the data for validation.
 	PrepareForValidation(ctx Context, data validation.Data) error
 }
