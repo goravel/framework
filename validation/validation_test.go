@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
 )
@@ -80,7 +81,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					return ErrInvalidData
 				}),
 			},
@@ -92,7 +93,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -115,7 +116,7 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"b": "B",
 				}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -134,7 +135,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"A": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"A": "trim"}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
 						return data.Set("A", "c")
 					}
@@ -157,7 +158,7 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"B": "b",
 				}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
