@@ -1,6 +1,7 @@
 package file
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,9 +19,11 @@ func ClientOriginalExtension(file string) string {
 func Contain(file string, search string) bool {
 	if Exists(file) {
 		data, err := os.ReadFile(file)
+		fmt.Println(string(data))
 		if err != nil {
 			return false
 		}
+
 		return strings.Contains(string(data), search)
 	}
 
