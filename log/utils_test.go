@@ -7,20 +7,22 @@ import (
 	"github.com/gookit/goutil/testutil/assert"
 )
 
+type testContextKey any
+
 func TestGetContextValues(t *testing.T) {
 	ctx := context.Background()
 	values := make(map[any]any)
 	getContextValues(ctx, values)
 	assert.Equal(t, make(map[any]any), values)
 
-	ctx = context.WithValue(ctx, "a", "b")
-	ctx = context.WithValue(ctx, 1, 2)
-	ctx = context.WithValue(ctx, "c", map[string]any{"d": "e"})
+	ctx = context.WithValue(ctx, testContextKey("a"), "b")
+	ctx = context.WithValue(ctx, testContextKey(1), 2)
+	ctx = context.WithValue(ctx, testContextKey("c"), map[string]any{"d": "e"})
 
 	type T struct {
 		A string
 	}
-	ctx = context.WithValue(ctx, "d", T{A: "a"})
+	ctx = context.WithValue(ctx, testContextKey("d"), T{A: "a"})
 
 	values = make(map[any]any)
 	getContextValues(ctx, values)

@@ -54,7 +54,7 @@ func TestLogrus(t *testing.T) {
 
 				log, err = NewApplication(mockConfig, j)
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, "key", "value")
+				ctx = context.WithValue(ctx, testContextKey("key"), "value")
 				log.WithContext(ctx).Info("Goravel")
 			},
 			assert: func() {

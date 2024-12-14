@@ -26,8 +26,8 @@ func (h *Hook) Fire(entry *logrus.Entry) error {
 		ctx:     entry.Context,
 		data:    map[string]any(entry.Data),
 		level:   log.Level(entry.Level),
-		time:    entry.Time,
 		message: entry.Message,
+		time:    entry.Time,
 	}
 
 	data := entry.Data

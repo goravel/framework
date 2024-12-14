@@ -5,14 +5,15 @@ import (
 	"io"
 	"os"
 
+	"github.com/rotisserie/eris"
+	"github.com/sirupsen/logrus"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/logger"
-	"github.com/rotisserie/eris"
-	"github.com/sirupsen/logrus"
 )
 
 func NewLogrus() *logrus.Logger {
