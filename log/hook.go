@@ -55,7 +55,7 @@ func (h *Hook) Fire(entry *logrus.Entry) error {
 		if response, err := cast.ToStringMapE(root["response"]); err == nil {
 			e.response = response
 		}
-		if stacktrace, ok := cast.ToStringMapE(root["stacktrace"]); ok == nil {
+		if stacktrace, err := cast.ToStringMapE(root["stacktrace"]); err == nil {
 			e.stacktrace = stacktrace
 		}
 		if tags, err := cast.ToStringSliceE(root["tags"]); err == nil {
@@ -64,7 +64,7 @@ func (h *Hook) Fire(entry *logrus.Entry) error {
 
 		e.user = root["user"]
 
-		if with, ok := cast.ToStringMapE(root["with"]); ok == nil {
+		if with, err := cast.ToStringMapE(root["with"]); err == nil {
 			e.with = with
 		}
 	}
