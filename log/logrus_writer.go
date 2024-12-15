@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/log/logger"
 )
 
@@ -308,6 +309,7 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		if config.GetBool(channelPath + ".print") {
 			instance.SetOutput(os.Stdout)
+			instance.SetFormatter(formatter.NewGeneral(config, json))
 		}
 	case log.DailyDriver:
 		logLogger := logger.NewDaily(config, json)
@@ -318,6 +320,7 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		if config.GetBool(channelPath + ".print") {
 			instance.SetOutput(os.Stdout)
+			instance.SetFormatter(formatter.NewGeneral(config, json))
 		}
 	case log.CustomDriver:
 		logLogger := config.Get(channelPath + ".via").(log.Logger)
