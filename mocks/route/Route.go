@@ -288,6 +288,54 @@ func (_c *Route_Listen_Call) RunAndReturn(run func(net.Listener) error) *Route_L
 	return _c
 }
 
+// ListenTLS provides a mock function with given fields: l, certFile, keyFile
+func (_m *Route) ListenTLS(l net.Listener, certFile string, keyFile string) error {
+	ret := _m.Called(l, certFile, keyFile)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListenTLS")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener, string, string) error); ok {
+		r0 = rf(l, certFile, keyFile)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_ListenTLS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListenTLS'
+type Route_ListenTLS_Call struct {
+	*mock.Call
+}
+
+// ListenTLS is a helper method to define mock.On call
+//   - l net.Listener
+//   - certFile string
+//   - keyFile string
+func (_e *Route_Expecter) ListenTLS(l interface{}, certFile interface{}, keyFile interface{}) *Route_ListenTLS_Call {
+	return &Route_ListenTLS_Call{Call: _e.mock.On("ListenTLS", l, certFile, keyFile)}
+}
+
+func (_c *Route_ListenTLS_Call) Run(run func(l net.Listener, certFile string, keyFile string)) *Route_ListenTLS_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Route_ListenTLS_Call) Return(_a0 error) *Route_ListenTLS_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_ListenTLS_Call) RunAndReturn(run func(net.Listener, string, string) error) *Route_ListenTLS_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Middleware provides a mock function with given fields: middlewares
 func (_m *Route) Middleware(middlewares ...http.Middleware) route.Router {
 	_va := make([]interface{}, len(middlewares))
