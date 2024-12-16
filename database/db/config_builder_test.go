@@ -105,6 +105,7 @@ func (s *ConfigTestSuite) TestWrites() {
 }
 
 func (s *ConfigTestSuite) TestFillDefault() {
+	dsn := "dsn"
 	host := "localhost"
 	port := 3306
 	database := "forge"
@@ -133,6 +134,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return("mysql").Once()
+				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", s.connection)).Return(dsn).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", s.connection)).Return(host).Once()
 				s.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", s.connection)).Return(port).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", s.connection)).Return(database).Once()
@@ -150,6 +152,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 					Charset:    charset,
 					Loc:        loc,
 					Config: contractsdatabase.Config{
+						Dsn:      dsn,
 						Host:     host,
 						Port:     port,
 						Database: database,
@@ -163,6 +166,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 			name: "success when configs have item",
 			configs: []contractsdatabase.Config{
 				{
+					Dsn:      dsn,
 					Host:     host,
 					Port:     port,
 					Database: database,
@@ -186,6 +190,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 					Charset:    charset,
 					Loc:        loc,
 					Config: contractsdatabase.Config{
+						Dsn:      dsn,
 						Database: database,
 						Host:     host,
 						Port:     port,
