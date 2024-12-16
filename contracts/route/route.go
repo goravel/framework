@@ -16,6 +16,10 @@ type Route interface {
 	Fallback(handler contractshttp.HandlerFunc)
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
+	// Listen starts the HTTP server and listens for incoming connections on the specified listener.
+	Listen(l net.Listener) error
+	// ListenTLS starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
+	ListenTLS(l net.Listener, certFile, keyFile string) error
 	// Run starts the HTTP server and listens for incoming connections on the specified host.
 	Run(host ...string) error
 	// RunTLS starts the HTTPS server with the provided TLS configuration and listens on the specified host.
@@ -24,10 +28,6 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
-	// Listen starts the HTTP server and listens for incoming connections on the specified listener.
-	Listen(l net.Listener) error
-	// ListenTLS starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
-	ListenTLS(l net.Listener, certFile, keyFile string) error
 	// Stop gracefully stop the serve.
 	Stop(ctx ...context.Context) error
 	// Test method to simulate HTTP requests (Fiber driver only)
