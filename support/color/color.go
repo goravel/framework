@@ -175,6 +175,11 @@ func Warningln(a ...any) { warning.Println(a...) }
 // CaptureOutput simulates capturing of os.stdout with a buffer and returns what was written to the screen
 func CaptureOutput(f func(w io.Writer)) string {
 	var outBuf bytes.Buffer
+	info.Writer = &outBuf
+	warn.Writer = &outBuf
+	err.Writer = &outBuf
+	debug.Writer = &outBuf
+	success.Writer = &outBuf
 	pterm.SetDefaultOutput(&outBuf)
 	f(&outBuf)
 

@@ -32,7 +32,7 @@ var commandTemplate = `{{ $cv := offsetCommands .VisibleCommands 5}}{{range .Vis
   {{$s := join .Names ", "}}{{green $s}}{{ $sp := subtract $cv (offset $s 3) }}{{ indent $sp ""}}{{wrap (colorize .Usage) $cv}}{{end}}{{end}}`
 
 var flagTemplate = `{{ $cv := offsetFlags .VisibleFlags 5}}{{range  .VisibleFlags}}
-   {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{wrap (capitalize .Usage) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
+   {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{$us := (capitalize .Usage)}}{{wrap (colorize $us) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
 
 var appHelpTemplate = `{{$v := offset .Usage 6}}{{wrap (colorize .Usage) 3}}{{if .Version}} {{green (wrap .Version $v)}}{{end}}
 
@@ -239,7 +239,7 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 
 func commandNotFound(ctx *cli.Context, command string) {
 	var (
-		msgTxt     = fmt.Sprintf("Command '%s'' is not defined.", command)
+		msgTxt     = fmt.Sprintf("Command '%s' is not defined.", command)
 		suggestion string
 	)
 	if alternatives := findAlternatives(command, func() (collection []string) {
@@ -257,7 +257,6 @@ func commandNotFound(ctx *cli.Context, command string) {
 	}
 	color.Errorln(msgTxt)
 	color.Gray().Println(suggestion)
-	os.Exit(0)
 }
 
 func onUsageError(_ *cli.Context, err error, _ bool) error {
