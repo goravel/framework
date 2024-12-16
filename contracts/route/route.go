@@ -2,6 +2,7 @@ package route
 
 import (
 	"context"
+	"net"
 	"net/http"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -23,6 +24,8 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
+	// Listen starts the HTTP server and listens for incoming connections on the specified listener.
+	Listen(l net.Listener) error
 	// Stop gracefully stop the serve.
 	Stop(ctx ...context.Context) error
 	// Test method to simulate HTTP requests (Fiber driver only)
