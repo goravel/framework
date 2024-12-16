@@ -13,8 +13,8 @@ type ServiceProvider struct {
 
 func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(Binding, func(app foundation.Application) (any, error) {
-		name := "Goravel Framework"
-		usage := app.Version()
+		name := "artisan"
+		usage := "Goravel Framework"
 		usageText := "artisan [global options] command [options] [arguments...]"
 		return NewApplication(name, usage, usageText, app.Version(), true), nil
 	})
