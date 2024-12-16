@@ -26,6 +26,8 @@ type Route interface {
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
 	// Listen starts the HTTP server and listens for incoming connections on the specified listener.
 	Listen(l net.Listener) error
+	// ListenTLS starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
+	ListenTLS(l net.Listener, certFile, keyFile string) error
 	// Stop gracefully stop the serve.
 	Stop(ctx ...context.Context) error
 	// Test method to simulate HTTP requests (Fiber driver only)
