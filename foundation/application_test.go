@@ -323,6 +323,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return(contractsdatabase.DriverPostgres.String()).Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.prefix").Return("").Twice()
 	mockConfig.EXPECT().GetBool("database.connections.postgres.singular").Return(true).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.dsn").Return("").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.host").Return("localhost").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(config.Username).Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(config.Password).Twice()
