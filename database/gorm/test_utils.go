@@ -276,6 +276,7 @@ func (r *MockMysql) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
@@ -302,6 +303,7 @@ func (r *MockMysql) single() {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
@@ -347,6 +349,7 @@ func (r *MockPostgres) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
@@ -373,6 +376,7 @@ func (r *MockPostgres) basic() {
 func (r *MockPostgres) single() {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
@@ -475,6 +479,7 @@ func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
@@ -498,6 +503,7 @@ func (r *MockSqlserver) basic() {
 func (r *MockSqlserver) single() {
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
 	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
