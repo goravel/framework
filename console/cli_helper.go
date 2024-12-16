@@ -20,6 +20,7 @@ func init() {
 	cli.HelpPrinterCustom = printHelpCustom
 	cli.AppHelpTemplate = appHelpTemplate
 	cli.CommandHelpTemplate = commandHelpTemplate
+	cli.VersionPrinter = printVersion
 	huh.ErrUserAborted = cli.Exit(color.Red().Sprint("Cancelled."), 0)
 }
 
@@ -188,6 +189,10 @@ func colorize(tpml string) string {
 	return tpml
 }
 
+func printVersion(ctx *cli.Context) {
+	_, _ = fmt.Fprintf(ctx.App.Writer, "%v %v\n", ctx.App.HelpName, color.Green().Sprint(ctx.App.Version))
+}
+
 func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string]interface{}) {
 
 	funcMap := template.FuncMap{
@@ -255,7 +260,7 @@ func commandNotFound(ctx *cli.Context, command string) {
 	os.Exit(0)
 }
 
-func onUsageError(ctx *cli.Context, err error, _ bool) error {
+func onUsageError(_ *cli.Context, err error, _ bool) error {
 	if flag, ok := strings.CutPrefix(err.Error(), "flag provided but not defined: -"); ok {
 		color.Red().Printfln("The '%s' option does not exist.", flag)
 		return nil

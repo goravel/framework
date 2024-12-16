@@ -18,6 +18,7 @@ type Application struct {
 func NewApplication(name, usage, usageText, version string, artisan ...bool) console.Artisan {
 	instance := cli.NewApp()
 	instance.Name = name
+	instance.HelpName = usage
 	instance.Usage = usage
 	instance.UsageText = usageText
 	instance.Version = version
