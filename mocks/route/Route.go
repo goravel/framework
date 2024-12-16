@@ -8,6 +8,8 @@ import (
 	http "github.com/goravel/framework/contracts/http"
 	mock "github.com/stretchr/testify/mock"
 
+	net "net"
+
 	nethttp "net/http"
 
 	route "github.com/goravel/framework/contracts/route"
@@ -236,6 +238,52 @@ func (_c *Route_Group_Call) Return() *Route_Group_Call {
 }
 
 func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Route_Group_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Listen provides a mock function with given fields: l
+func (_m *Route) Listen(l net.Listener) error {
+	ret := _m.Called(l)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Listen")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener) error); ok {
+		r0 = rf(l)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_Listen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listen'
+type Route_Listen_Call struct {
+	*mock.Call
+}
+
+// Listen is a helper method to define mock.On call
+//   - l net.Listener
+func (_e *Route_Expecter) Listen(l interface{}) *Route_Listen_Call {
+	return &Route_Listen_Call{Call: _e.mock.On("Listen", l)}
+}
+
+func (_c *Route_Listen_Call) Run(run func(l net.Listener)) *Route_Listen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener))
+	})
+	return _c
+}
+
+func (_c *Route_Listen_Call) Return(_a0 error) *Route_Listen_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_Listen_Call) RunAndReturn(run func(net.Listener) error) *Route_Listen_Call {
 	_c.Call.Return(run)
 	return _c
 }
