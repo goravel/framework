@@ -68,7 +68,7 @@ func (_c *Queue_Chain_Call) RunAndReturn(run func([]queue.Jobs) queue.Task) *Que
 	return _c
 }
 
-// GetJobs provides a mock function with given fields:
+// GetJobs provides a mock function with no fields
 func (_m *Queue) GetJobs() []queue.Job {
 	ret := _m.Called()
 
@@ -193,7 +193,7 @@ func (_c *Queue_Register_Call) Return() *Queue_Register_Call {
 }
 
 func (_c *Queue_Register_Call) RunAndReturn(run func([]queue.Job)) *Queue_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

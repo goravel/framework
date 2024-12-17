@@ -68,7 +68,7 @@ func (_c *IndexDefinition_Algorithm_Call) RunAndReturn(run func(string) schema.I
 	return _c
 }
 
-// Deferrable provides a mock function with given fields:
+// Deferrable provides a mock function with no fields
 func (_m *IndexDefinition) Deferrable() schema.IndexDefinition {
 	ret := _m.Called()
 
@@ -115,7 +115,7 @@ func (_c *IndexDefinition_Deferrable_Call) RunAndReturn(run func() schema.IndexD
 	return _c
 }
 
-// InitiallyImmediate provides a mock function with given fields:
+// InitiallyImmediate provides a mock function with no fields
 func (_m *IndexDefinition) InitiallyImmediate() schema.IndexDefinition {
 	ret := _m.Called()
 

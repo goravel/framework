@@ -50,7 +50,7 @@ func (_c *QueryWithSetContext_SetContext_Call) Return() *QueryWithSetContext_Set
 }
 
 func (_c *QueryWithSetContext_SetContext_Call) RunAndReturn(run func(context.Context)) *QueryWithSetContext_SetContext_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

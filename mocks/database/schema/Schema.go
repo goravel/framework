@@ -162,7 +162,7 @@ func (_c *Schema_Drop_Call) RunAndReturn(run func(string) error) *Schema_Drop_Ca
 	return _c
 }
 
-// DropAllTables provides a mock function with given fields:
+// DropAllTables provides a mock function with no fields
 func (_m *Schema) DropAllTables() error {
 	ret := _m.Called()
 
@@ -207,7 +207,7 @@ func (_c *Schema_DropAllTables_Call) RunAndReturn(run func() error) *Schema_Drop
 	return _c
 }
 
-// DropAllTypes provides a mock function with given fields:
+// DropAllTypes provides a mock function with no fields
 func (_m *Schema) DropAllTypes() error {
 	ret := _m.Called()
 
@@ -252,7 +252,7 @@ func (_c *Schema_DropAllTypes_Call) RunAndReturn(run func() error) *Schema_DropA
 	return _c
 }
 
-// DropAllViews provides a mock function with given fields:
+// DropAllViews provides a mock function with no fields
 func (_m *Schema) DropAllViews() error {
 	ret := _m.Called()
 
@@ -496,7 +496,7 @@ func (_c *Schema_GetColumns_Call) RunAndReturn(run func(string) ([]schema.Column
 	return _c
 }
 
-// GetConnection provides a mock function with given fields:
+// GetConnection provides a mock function with no fields
 func (_m *Schema) GetConnection() string {
 	ret := _m.Called()
 
@@ -705,7 +705,7 @@ func (_c *Schema_GetIndexes_Call) RunAndReturn(run func(string) ([]schema.Index,
 	return _c
 }
 
-// GetTableListing provides a mock function with given fields:
+// GetTableListing provides a mock function with no fields
 func (_m *Schema) GetTableListing() []string {
 	ret := _m.Called()
 
@@ -752,7 +752,7 @@ func (_c *Schema_GetTableListing_Call) RunAndReturn(run func() []string) *Schema
 	return _c
 }
 
-// GetTables provides a mock function with given fields:
+// GetTables provides a mock function with no fields
 func (_m *Schema) GetTables() ([]schema.Table, error) {
 	ret := _m.Called()
 
@@ -809,7 +809,7 @@ func (_c *Schema_GetTables_Call) RunAndReturn(run func() ([]schema.Table, error)
 	return _c
 }
 
-// GetTypes provides a mock function with given fields:
+// GetTypes provides a mock function with no fields
 func (_m *Schema) GetTypes() ([]schema.Type, error) {
 	ret := _m.Called()
 
@@ -866,7 +866,7 @@ func (_c *Schema_GetTypes_Call) RunAndReturn(run func() ([]schema.Type, error)) 
 	return _c
 }
 
-// GetViews provides a mock function with given fields:
+// GetViews provides a mock function with no fields
 func (_m *Schema) GetViews() ([]schema.View, error) {
 	ret := _m.Called()
 
@@ -1202,7 +1202,7 @@ func (_c *Schema_HasView_Call) RunAndReturn(run func(string) bool) *Schema_HasVi
 	return _c
 }
 
-// Migrations provides a mock function with given fields:
+// Migrations provides a mock function with no fields
 func (_m *Schema) Migrations() []schema.Migration {
 	ret := _m.Called()
 
@@ -1249,7 +1249,7 @@ func (_c *Schema_Migrations_Call) RunAndReturn(run func() []schema.Migration) *S
 	return _c
 }
 
-// Orm provides a mock function with given fields:
+// Orm provides a mock function with no fields
 func (_m *Schema) Orm() orm.Orm {
 	ret := _m.Called()
 
@@ -1325,7 +1325,7 @@ func (_c *Schema_Register_Call) Return() *Schema_Register_Call {
 }
 
 func (_c *Schema_Register_Call) RunAndReturn(run func([]schema.Migration)) *Schema_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1405,7 +1405,7 @@ func (_c *Schema_SetConnection_Call) Return() *Schema_SetConnection_Call {
 }
 
 func (_c *Schema_SetConnection_Call) RunAndReturn(run func(string)) *Schema_SetConnection_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

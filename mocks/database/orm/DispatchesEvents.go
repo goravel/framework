@@ -20,7 +20,7 @@ func (_m *DispatchesEvents) EXPECT() *DispatchesEvents_Expecter {
 	return &DispatchesEvents_Expecter{mock: &_m.Mock}
 }
 
-// DispatchesEvents provides a mock function with given fields:
+// DispatchesEvents provides a mock function with no fields
 func (_m *DispatchesEvents) DispatchesEvents() map[orm.EventType]func(orm.Event) error {
 	ret := _m.Called()
 

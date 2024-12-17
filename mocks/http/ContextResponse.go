@@ -217,7 +217,7 @@ func (_c *ContextResponse_File_Call) RunAndReturn(run func(string) http.Response
 	return _c
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *ContextResponse) Flush() {
 	_m.Called()
 }
@@ -245,7 +245,7 @@ func (_c *ContextResponse_Flush_Call) Return() *ContextResponse_Flush_Call {
 }
 
 func (_c *ContextResponse_Flush_Call) RunAndReturn(run func()) *ContextResponse_Flush_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -299,7 +299,7 @@ func (_c *ContextResponse_Header_Call) RunAndReturn(run func(string, string) htt
 }
 
 // Json provides a mock function with given fields: code, obj
-func (_m *ContextResponse) Json(code int, obj any) http.Response {
+func (_m *ContextResponse) Json(code int, obj interface{}) http.Response {
 	ret := _m.Called(code, obj)
 
 	if len(ret) == 0 {
@@ -307,7 +307,7 @@ func (_m *ContextResponse) Json(code int, obj any) http.Response {
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, any) http.Response); ok {
+	if rf, ok := ret.Get(0).(func(int, interface{}) http.Response); ok {
 		r0 = rf(code, obj)
 	} else {
 		if ret.Get(0) != nil {
@@ -325,14 +325,14 @@ type ContextResponse_Json_Call struct {
 
 // Json is a helper method to define mock.On call
 //   - code int
-//   - obj any
+//   - obj interface{}
 func (_e *ContextResponse_Expecter) Json(code interface{}, obj interface{}) *ContextResponse_Json_Call {
 	return &ContextResponse_Json_Call{Call: _e.mock.On("Json", code, obj)}
 }
 
-func (_c *ContextResponse_Json_Call) Run(run func(code int, obj any)) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) Run(run func(code int, obj interface{})) *ContextResponse_Json_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(any))
+		run(args[0].(int), args[1].(interface{}))
 	})
 	return _c
 }
@@ -342,7 +342,7 @@ func (_c *ContextResponse_Json_Call) Return(_a0 http.Response) *ContextResponse_
 	return _c
 }
 
-func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, any) http.Response) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, interface{}) http.Response) *ContextResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -408,7 +408,7 @@ func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(...int) http.Res
 	return _c
 }
 
-// Origin provides a mock function with given fields:
+// Origin provides a mock function with no fields
 func (_m *ContextResponse) Origin() http.ResponseOrigin {
 	ret := _m.Called()
 
@@ -602,7 +602,7 @@ func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(int, func(http.Stre
 }
 
 // String provides a mock function with given fields: code, format, values
-func (_m *ContextResponse) String(code int, format string, values ...any) http.Response {
+func (_m *ContextResponse) String(code int, format string, values ...interface{}) http.Response {
 	var _ca []interface{}
 	_ca = append(_ca, code, format)
 	_ca = append(_ca, values...)
@@ -613,7 +613,7 @@ func (_m *ContextResponse) String(code int, format string, values ...any) http.R
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, string, ...any) http.Response); ok {
+	if rf, ok := ret.Get(0).(func(int, string, ...interface{}) http.Response); ok {
 		r0 = rf(code, format, values...)
 	} else {
 		if ret.Get(0) != nil {
@@ -632,18 +632,18 @@ type ContextResponse_String_Call struct {
 // String is a helper method to define mock.On call
 //   - code int
 //   - format string
-//   - values ...any
+//   - values ...interface{}
 func (_e *ContextResponse_Expecter) String(code interface{}, format interface{}, values ...interface{}) *ContextResponse_String_Call {
 	return &ContextResponse_String_Call{Call: _e.mock.On("String",
 		append([]interface{}{code, format}, values...)...)}
 }
 
-func (_c *ContextResponse_String_Call) Run(run func(code int, format string, values ...any)) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) Run(run func(code int, format string, values ...interface{})) *ContextResponse_String_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-2)
+		variadicArgs := make([]interface{}, len(args)-2)
 		for i, a := range args[2:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(int), args[1].(string), variadicArgs...)
@@ -656,12 +656,12 @@ func (_c *ContextResponse_String_Call) Return(_a0 http.Response) *ContextRespons
 	return _c
 }
 
-func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...any) http.Response) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...interface{}) http.Response) *ContextResponse_String_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Success provides a mock function with given fields:
+// Success provides a mock function with no fields
 func (_m *ContextResponse) Success() http.ResponseStatus {
 	ret := _m.Called()
 
@@ -708,7 +708,7 @@ func (_c *ContextResponse_Success_Call) RunAndReturn(run func() http.ResponseSta
 	return _c
 }
 
-// View provides a mock function with given fields:
+// View provides a mock function with no fields
 func (_m *ContextResponse) View() http.ResponseView {
 	ret := _m.Called()
 
@@ -803,7 +803,7 @@ func (_c *ContextResponse_WithoutCookie_Call) RunAndReturn(run func(string) http
 	return _c
 }
 
-// Writer provides a mock function with given fields:
+// Writer provides a mock function with no fields
 func (_m *ContextResponse) Writer() nethttp.ResponseWriter {
 	ret := _m.Called()
 

@@ -70,7 +70,7 @@ func (_c *Task_Delay_Call) RunAndReturn(run func(time.Time) queue.Task) *Task_De
 	return _c
 }
 
-// Dispatch provides a mock function with given fields:
+// Dispatch provides a mock function with no fields
 func (_m *Task) Dispatch() error {
 	ret := _m.Called()
 
@@ -115,7 +115,7 @@ func (_c *Task_Dispatch_Call) RunAndReturn(run func() error) *Task_Dispatch_Call
 	return _c
 }
 
-// DispatchSync provides a mock function with given fields:
+// DispatchSync provides a mock function with no fields
 func (_m *Task) DispatchSync() error {
 	ret := _m.Called()
 

@@ -17,7 +17,7 @@ func (_m *Migration) EXPECT() *Migration_Expecter {
 	return &Migration_Expecter{mock: &_m.Mock}
 }
 
-// Down provides a mock function with given fields:
+// Down provides a mock function with no fields
 func (_m *Migration) Down() error {
 	ret := _m.Called()
 
@@ -62,7 +62,7 @@ func (_c *Migration_Down_Call) RunAndReturn(run func() error) *Migration_Down_Ca
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Migration) Signature() string {
 	ret := _m.Called()
 
@@ -107,7 +107,7 @@ func (_c *Migration_Signature_Call) RunAndReturn(run func() string) *Migration_S
 	return _c
 }
 
-// Up provides a mock function with given fields:
+// Up provides a mock function with no fields
 func (_m *Migration) Up() error {
 	ret := _m.Called()
 

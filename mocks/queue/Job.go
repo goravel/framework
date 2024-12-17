@@ -18,7 +18,7 @@ func (_m *Job) EXPECT() *Job_Expecter {
 }
 
 // Handle provides a mock function with given fields: args
-func (_m *Job) Handle(args ...any) error {
+func (_m *Job) Handle(args ...interface{}) error {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
@@ -28,7 +28,7 @@ func (_m *Job) Handle(args ...any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...any) error); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
 		r0 = rf(args...)
 	} else {
 		r0 = ret.Error(0)
@@ -43,18 +43,18 @@ type Job_Handle_Call struct {
 }
 
 // Handle is a helper method to define mock.On call
-//   - args ...any
+//   - args ...interface{}
 func (_e *Job_Expecter) Handle(args ...interface{}) *Job_Handle_Call {
 	return &Job_Handle_Call{Call: _e.mock.On("Handle",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Job_Handle_Call) Run(run func(args ...any)) *Job_Handle_Call {
+func (_c *Job_Handle_Call) Run(run func(args ...interface{})) *Job_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-0)
+		variadicArgs := make([]interface{}, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(variadicArgs...)
@@ -67,12 +67,12 @@ func (_c *Job_Handle_Call) Return(_a0 error) *Job_Handle_Call {
 	return _c
 }
 
-func (_c *Job_Handle_Call) RunAndReturn(run func(...any) error) *Job_Handle_Call {
+func (_c *Job_Handle_Call) RunAndReturn(run func(...interface{}) error) *Job_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Job) Signature() string {
 	ret := _m.Called()
 

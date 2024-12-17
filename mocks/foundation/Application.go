@@ -128,7 +128,7 @@ func (_c *Application_BasePath_Call) RunAndReturn(run func(...string) string) *A
 }
 
 // Bind provides a mock function with given fields: key, callback
-func (_m *Application) Bind(key any, callback func(foundation.Application) (any, error)) {
+func (_m *Application) Bind(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
 }
 
@@ -138,15 +138,15 @@ type Application_Bind_Call struct {
 }
 
 // Bind is a helper method to define mock.On call
-//   - key any
-//   - callback func(foundation.Application)(any , error)
+//   - key interface{}
+//   - callback func(foundation.Application)(interface{} , error)
 func (_e *Application_Expecter) Bind(key interface{}, callback interface{}) *Application_Bind_Call {
 	return &Application_Bind_Call{Call: _e.mock.On("Bind", key, callback)}
 }
 
-func (_c *Application_Bind_Call) Run(run func(key any, callback func(foundation.Application) (any, error))) *Application_Bind_Call {
+func (_c *Application_Bind_Call) Run(run func(key interface{}, callback func(foundation.Application) (interface{}, error))) *Application_Bind_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(func(foundation.Application) (any, error)))
+		run(args[0].(interface{}), args[1].(func(foundation.Application) (interface{}, error)))
 	})
 	return _c
 }
@@ -156,13 +156,13 @@ func (_c *Application_Bind_Call) Return() *Application_Bind_Call {
 	return _c
 }
 
-func (_c *Application_Bind_Call) RunAndReturn(run func(any, func(foundation.Application) (any, error))) *Application_Bind_Call {
-	_c.Call.Return(run)
+func (_c *Application_Bind_Call) RunAndReturn(run func(interface{}, func(foundation.Application) (interface{}, error))) *Application_Bind_Call {
+	_c.Run(run)
 	return _c
 }
 
 // BindWith provides a mock function with given fields: key, callback
-func (_m *Application) BindWith(key any, callback func(foundation.Application, map[string]any) (any, error)) {
+func (_m *Application) BindWith(key interface{}, callback func(foundation.Application, map[string]interface{}) (interface{}, error)) {
 	_m.Called(key, callback)
 }
 
@@ -172,15 +172,15 @@ type Application_BindWith_Call struct {
 }
 
 // BindWith is a helper method to define mock.On call
-//   - key any
-//   - callback func(foundation.Application , map[string]any)(any , error)
+//   - key interface{}
+//   - callback func(foundation.Application , map[string]interface{})(interface{} , error)
 func (_e *Application_Expecter) BindWith(key interface{}, callback interface{}) *Application_BindWith_Call {
 	return &Application_BindWith_Call{Call: _e.mock.On("BindWith", key, callback)}
 }
 
-func (_c *Application_BindWith_Call) Run(run func(key any, callback func(foundation.Application, map[string]any) (any, error))) *Application_BindWith_Call {
+func (_c *Application_BindWith_Call) Run(run func(key interface{}, callback func(foundation.Application, map[string]interface{}) (interface{}, error))) *Application_BindWith_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(func(foundation.Application, map[string]any) (any, error)))
+		run(args[0].(interface{}), args[1].(func(foundation.Application, map[string]interface{}) (interface{}, error)))
 	})
 	return _c
 }
@@ -190,12 +190,12 @@ func (_c *Application_BindWith_Call) Return() *Application_BindWith_Call {
 	return _c
 }
 
-func (_c *Application_BindWith_Call) RunAndReturn(run func(any, func(foundation.Application, map[string]any) (any, error))) *Application_BindWith_Call {
-	_c.Call.Return(run)
+func (_c *Application_BindWith_Call) RunAndReturn(run func(interface{}, func(foundation.Application, map[string]interface{}) (interface{}, error))) *Application_BindWith_Call {
+	_c.Run(run)
 	return _c
 }
 
-// Boot provides a mock function with given fields:
+// Boot provides a mock function with no fields
 func (_m *Application) Boot() {
 	_m.Called()
 }
@@ -223,7 +223,7 @@ func (_c *Application_Boot_Call) Return() *Application_Boot_Call {
 }
 
 func (_c *Application_Boot_Call) RunAndReturn(run func()) *Application_Boot_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -256,7 +256,7 @@ func (_c *Application_Commands_Call) Return() *Application_Commands_Call {
 }
 
 func (_c *Application_Commands_Call) RunAndReturn(run func([]console.Command)) *Application_Commands_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -483,7 +483,7 @@ func (_c *Application_ExecutablePath_Call) RunAndReturn(run func(...string) stri
 	return _c
 }
 
-// GetJson provides a mock function with given fields:
+// GetJson provides a mock function with no fields
 func (_m *Application) GetJson() foundation.Json {
 	ret := _m.Called()
 
@@ -531,7 +531,7 @@ func (_c *Application_GetJson_Call) RunAndReturn(run func() foundation.Json) *Ap
 }
 
 // Instance provides a mock function with given fields: key, instance
-func (_m *Application) Instance(key any, instance any) {
+func (_m *Application) Instance(key interface{}, instance interface{}) {
 	_m.Called(key, instance)
 }
 
@@ -541,15 +541,15 @@ type Application_Instance_Call struct {
 }
 
 // Instance is a helper method to define mock.On call
-//   - key any
-//   - instance any
+//   - key interface{}
+//   - instance interface{}
 func (_e *Application_Expecter) Instance(key interface{}, instance interface{}) *Application_Instance_Call {
 	return &Application_Instance_Call{Call: _e.mock.On("Instance", key, instance)}
 }
 
-func (_c *Application_Instance_Call) Run(run func(key any, instance any)) *Application_Instance_Call {
+func (_c *Application_Instance_Call) Run(run func(key interface{}, instance interface{})) *Application_Instance_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(any))
+		run(args[0].(interface{}), args[1].(interface{}))
 	})
 	return _c
 }
@@ -559,8 +559,8 @@ func (_c *Application_Instance_Call) Return() *Application_Instance_Call {
 	return _c
 }
 
-func (_c *Application_Instance_Call) RunAndReturn(run func(any, any)) *Application_Instance_Call {
-	_c.Call.Return(run)
+func (_c *Application_Instance_Call) RunAndReturn(run func(interface{}, interface{})) *Application_Instance_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -671,27 +671,27 @@ func (_c *Application_LangPath_Call) RunAndReturn(run func(...string) string) *A
 }
 
 // Make provides a mock function with given fields: key
-func (_m *Application) Make(key any) (any, error) {
+func (_m *Application) Make(key interface{}) (interface{}, error) {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Make")
 	}
 
-	var r0 any
+	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(any) (any, error)); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) (interface{}, error)); ok {
 		return rf(key)
 	}
-	if rf, ok := ret.Get(0).(func(any) any); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) interface{}); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(any) error); ok {
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
 		r1 = rf(key)
 	} else {
 		r1 = ret.Error(1)
@@ -706,29 +706,29 @@ type Application_Make_Call struct {
 }
 
 // Make is a helper method to define mock.On call
-//   - key any
+//   - key interface{}
 func (_e *Application_Expecter) Make(key interface{}) *Application_Make_Call {
 	return &Application_Make_Call{Call: _e.mock.On("Make", key)}
 }
 
-func (_c *Application_Make_Call) Run(run func(key any)) *Application_Make_Call {
+func (_c *Application_Make_Call) Run(run func(key interface{})) *Application_Make_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
 
-func (_c *Application_Make_Call) Return(_a0 any, _a1 error) *Application_Make_Call {
+func (_c *Application_Make_Call) Return(_a0 interface{}, _a1 error) *Application_Make_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Application_Make_Call) RunAndReturn(run func(any) (any, error)) *Application_Make_Call {
+func (_c *Application_Make_Call) RunAndReturn(run func(interface{}) (interface{}, error)) *Application_Make_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// MakeArtisan provides a mock function with given fields:
+// MakeArtisan provides a mock function with no fields
 func (_m *Application) MakeArtisan() console.Artisan {
 	ret := _m.Called()
 
@@ -823,7 +823,7 @@ func (_c *Application_MakeAuth_Call) RunAndReturn(run func(http.Context) auth.Au
 	return _c
 }
 
-// MakeCache provides a mock function with given fields:
+// MakeCache provides a mock function with no fields
 func (_m *Application) MakeCache() cache.Cache {
 	ret := _m.Called()
 
@@ -870,7 +870,7 @@ func (_c *Application_MakeCache_Call) RunAndReturn(run func() cache.Cache) *Appl
 	return _c
 }
 
-// MakeConfig provides a mock function with given fields:
+// MakeConfig provides a mock function with no fields
 func (_m *Application) MakeConfig() config.Config {
 	ret := _m.Called()
 
@@ -917,7 +917,7 @@ func (_c *Application_MakeConfig_Call) RunAndReturn(run func() config.Config) *A
 	return _c
 }
 
-// MakeCrypt provides a mock function with given fields:
+// MakeCrypt provides a mock function with no fields
 func (_m *Application) MakeCrypt() crypt.Crypt {
 	ret := _m.Called()
 
@@ -964,7 +964,7 @@ func (_c *Application_MakeCrypt_Call) RunAndReturn(run func() crypt.Crypt) *Appl
 	return _c
 }
 
-// MakeEvent provides a mock function with given fields:
+// MakeEvent provides a mock function with no fields
 func (_m *Application) MakeEvent() event.Instance {
 	ret := _m.Called()
 
@@ -1011,7 +1011,7 @@ func (_c *Application_MakeEvent_Call) RunAndReturn(run func() event.Instance) *A
 	return _c
 }
 
-// MakeGate provides a mock function with given fields:
+// MakeGate provides a mock function with no fields
 func (_m *Application) MakeGate() access.Gate {
 	ret := _m.Called()
 
@@ -1058,7 +1058,7 @@ func (_c *Application_MakeGate_Call) RunAndReturn(run func() access.Gate) *Appli
 	return _c
 }
 
-// MakeGrpc provides a mock function with given fields:
+// MakeGrpc provides a mock function with no fields
 func (_m *Application) MakeGrpc() grpc.Grpc {
 	ret := _m.Called()
 
@@ -1105,7 +1105,7 @@ func (_c *Application_MakeGrpc_Call) RunAndReturn(run func() grpc.Grpc) *Applica
 	return _c
 }
 
-// MakeHash provides a mock function with given fields:
+// MakeHash provides a mock function with no fields
 func (_m *Application) MakeHash() hash.Hash {
 	ret := _m.Called()
 
@@ -1200,7 +1200,7 @@ func (_c *Application_MakeLang_Call) RunAndReturn(run func(context.Context) tran
 	return _c
 }
 
-// MakeLog provides a mock function with given fields:
+// MakeLog provides a mock function with no fields
 func (_m *Application) MakeLog() log.Log {
 	ret := _m.Called()
 
@@ -1247,7 +1247,7 @@ func (_c *Application_MakeLog_Call) RunAndReturn(run func() log.Log) *Applicatio
 	return _c
 }
 
-// MakeMail provides a mock function with given fields:
+// MakeMail provides a mock function with no fields
 func (_m *Application) MakeMail() mail.Mail {
 	ret := _m.Called()
 
@@ -1294,7 +1294,7 @@ func (_c *Application_MakeMail_Call) RunAndReturn(run func() mail.Mail) *Applica
 	return _c
 }
 
-// MakeOrm provides a mock function with given fields:
+// MakeOrm provides a mock function with no fields
 func (_m *Application) MakeOrm() orm.Orm {
 	ret := _m.Called()
 
@@ -1341,7 +1341,7 @@ func (_c *Application_MakeOrm_Call) RunAndReturn(run func() orm.Orm) *Applicatio
 	return _c
 }
 
-// MakeQueue provides a mock function with given fields:
+// MakeQueue provides a mock function with no fields
 func (_m *Application) MakeQueue() queue.Queue {
 	ret := _m.Called()
 
@@ -1388,7 +1388,7 @@ func (_c *Application_MakeQueue_Call) RunAndReturn(run func() queue.Queue) *Appl
 	return _c
 }
 
-// MakeRateLimiter provides a mock function with given fields:
+// MakeRateLimiter provides a mock function with no fields
 func (_m *Application) MakeRateLimiter() http.RateLimiter {
 	ret := _m.Called()
 
@@ -1435,7 +1435,7 @@ func (_c *Application_MakeRateLimiter_Call) RunAndReturn(run func() http.RateLim
 	return _c
 }
 
-// MakeRoute provides a mock function with given fields:
+// MakeRoute provides a mock function with no fields
 func (_m *Application) MakeRoute() route.Route {
 	ret := _m.Called()
 
@@ -1482,7 +1482,7 @@ func (_c *Application_MakeRoute_Call) RunAndReturn(run func() route.Route) *Appl
 	return _c
 }
 
-// MakeSchedule provides a mock function with given fields:
+// MakeSchedule provides a mock function with no fields
 func (_m *Application) MakeSchedule() schedule.Schedule {
 	ret := _m.Called()
 
@@ -1529,7 +1529,7 @@ func (_c *Application_MakeSchedule_Call) RunAndReturn(run func() schedule.Schedu
 	return _c
 }
 
-// MakeSchema provides a mock function with given fields:
+// MakeSchema provides a mock function with no fields
 func (_m *Application) MakeSchema() schema.Schema {
 	ret := _m.Called()
 
@@ -1576,7 +1576,7 @@ func (_c *Application_MakeSchema_Call) RunAndReturn(run func() schema.Schema) *A
 	return _c
 }
 
-// MakeSeeder provides a mock function with given fields:
+// MakeSeeder provides a mock function with no fields
 func (_m *Application) MakeSeeder() seeder.Facade {
 	ret := _m.Called()
 
@@ -1623,7 +1623,7 @@ func (_c *Application_MakeSeeder_Call) RunAndReturn(run func() seeder.Facade) *A
 	return _c
 }
 
-// MakeSession provides a mock function with given fields:
+// MakeSession provides a mock function with no fields
 func (_m *Application) MakeSession() session.Manager {
 	ret := _m.Called()
 
@@ -1670,7 +1670,7 @@ func (_c *Application_MakeSession_Call) RunAndReturn(run func() session.Manager)
 	return _c
 }
 
-// MakeStorage provides a mock function with given fields:
+// MakeStorage provides a mock function with no fields
 func (_m *Application) MakeStorage() filesystem.Storage {
 	ret := _m.Called()
 
@@ -1717,7 +1717,7 @@ func (_c *Application_MakeStorage_Call) RunAndReturn(run func() filesystem.Stora
 	return _c
 }
 
-// MakeTesting provides a mock function with given fields:
+// MakeTesting provides a mock function with no fields
 func (_m *Application) MakeTesting() testing.Testing {
 	ret := _m.Called()
 
@@ -1764,7 +1764,7 @@ func (_c *Application_MakeTesting_Call) RunAndReturn(run func() testing.Testing)
 	return _c
 }
 
-// MakeValidation provides a mock function with given fields:
+// MakeValidation provides a mock function with no fields
 func (_m *Application) MakeValidation() validation.Validation {
 	ret := _m.Called()
 
@@ -1811,7 +1811,7 @@ func (_c *Application_MakeValidation_Call) RunAndReturn(run func() validation.Va
 	return _c
 }
 
-// MakeView provides a mock function with given fields:
+// MakeView provides a mock function with no fields
 func (_m *Application) MakeView() http.View {
 	ret := _m.Called()
 
@@ -1859,27 +1859,27 @@ func (_c *Application_MakeView_Call) RunAndReturn(run func() http.View) *Applica
 }
 
 // MakeWith provides a mock function with given fields: key, parameters
-func (_m *Application) MakeWith(key any, parameters map[string]any) (any, error) {
+func (_m *Application) MakeWith(key interface{}, parameters map[string]interface{}) (interface{}, error) {
 	ret := _m.Called(key, parameters)
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeWith")
 	}
 
-	var r0 any
+	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(any, map[string]any) (any, error)); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, map[string]interface{}) (interface{}, error)); ok {
 		return rf(key, parameters)
 	}
-	if rf, ok := ret.Get(0).(func(any, map[string]any) any); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, map[string]interface{}) interface{}); ok {
 		r0 = rf(key, parameters)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(any, map[string]any) error); ok {
+	if rf, ok := ret.Get(1).(func(interface{}, map[string]interface{}) error); ok {
 		r1 = rf(key, parameters)
 	} else {
 		r1 = ret.Error(1)
@@ -1894,25 +1894,25 @@ type Application_MakeWith_Call struct {
 }
 
 // MakeWith is a helper method to define mock.On call
-//   - key any
-//   - parameters map[string]any
+//   - key interface{}
+//   - parameters map[string]interface{}
 func (_e *Application_Expecter) MakeWith(key interface{}, parameters interface{}) *Application_MakeWith_Call {
 	return &Application_MakeWith_Call{Call: _e.mock.On("MakeWith", key, parameters)}
 }
 
-func (_c *Application_MakeWith_Call) Run(run func(key any, parameters map[string]any)) *Application_MakeWith_Call {
+func (_c *Application_MakeWith_Call) Run(run func(key interface{}, parameters map[string]interface{})) *Application_MakeWith_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(map[string]any))
+		run(args[0].(interface{}), args[1].(map[string]interface{}))
 	})
 	return _c
 }
 
-func (_c *Application_MakeWith_Call) Return(_a0 any, _a1 error) *Application_MakeWith_Call {
+func (_c *Application_MakeWith_Call) Return(_a0 interface{}, _a1 error) *Application_MakeWith_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Application_MakeWith_Call) RunAndReturn(run func(any, map[string]any) (any, error)) *Application_MakeWith_Call {
+func (_c *Application_MakeWith_Call) RunAndReturn(run func(interface{}, map[string]interface{}) (interface{}, error)) *Application_MakeWith_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2080,12 +2080,12 @@ func (_c *Application_Publishes_Call) Return() *Application_Publishes_Call {
 }
 
 func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]string, ...string)) *Application_Publishes_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
 // Refresh provides a mock function with given fields: key
-func (_m *Application) Refresh(key any) {
+func (_m *Application) Refresh(key interface{}) {
 	_m.Called(key)
 }
 
@@ -2095,14 +2095,14 @@ type Application_Refresh_Call struct {
 }
 
 // Refresh is a helper method to define mock.On call
-//   - key any
+//   - key interface{}
 func (_e *Application_Expecter) Refresh(key interface{}) *Application_Refresh_Call {
 	return &Application_Refresh_Call{Call: _e.mock.On("Refresh", key)}
 }
 
-func (_c *Application_Refresh_Call) Run(run func(key any)) *Application_Refresh_Call {
+func (_c *Application_Refresh_Call) Run(run func(key interface{})) *Application_Refresh_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -2112,8 +2112,8 @@ func (_c *Application_Refresh_Call) Return() *Application_Refresh_Call {
 	return _c
 }
 
-func (_c *Application_Refresh_Call) RunAndReturn(run func(any)) *Application_Refresh_Call {
-	_c.Call.Return(run)
+func (_c *Application_Refresh_Call) RunAndReturn(run func(interface{})) *Application_Refresh_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -2146,7 +2146,7 @@ func (_c *Application_SetJson_Call) Return() *Application_SetJson_Call {
 }
 
 func (_c *Application_SetJson_Call) RunAndReturn(run func(foundation.Json)) *Application_SetJson_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2200,7 +2200,7 @@ func (_c *Application_SetLocale_Call) RunAndReturn(run func(context.Context, str
 }
 
 // Singleton provides a mock function with given fields: key, callback
-func (_m *Application) Singleton(key any, callback func(foundation.Application) (any, error)) {
+func (_m *Application) Singleton(key interface{}, callback func(foundation.Application) (interface{}, error)) {
 	_m.Called(key, callback)
 }
 
@@ -2210,15 +2210,15 @@ type Application_Singleton_Call struct {
 }
 
 // Singleton is a helper method to define mock.On call
-//   - key any
-//   - callback func(foundation.Application)(any , error)
+//   - key interface{}
+//   - callback func(foundation.Application)(interface{} , error)
 func (_e *Application_Expecter) Singleton(key interface{}, callback interface{}) *Application_Singleton_Call {
 	return &Application_Singleton_Call{Call: _e.mock.On("Singleton", key, callback)}
 }
 
-func (_c *Application_Singleton_Call) Run(run func(key any, callback func(foundation.Application) (any, error))) *Application_Singleton_Call {
+func (_c *Application_Singleton_Call) Run(run func(key interface{}, callback func(foundation.Application) (interface{}, error))) *Application_Singleton_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(func(foundation.Application) (any, error)))
+		run(args[0].(interface{}), args[1].(func(foundation.Application) (interface{}, error)))
 	})
 	return _c
 }
@@ -2228,8 +2228,8 @@ func (_c *Application_Singleton_Call) Return() *Application_Singleton_Call {
 	return _c
 }
 
-func (_c *Application_Singleton_Call) RunAndReturn(run func(any, func(foundation.Application) (any, error))) *Application_Singleton_Call {
-	_c.Call.Return(run)
+func (_c *Application_Singleton_Call) RunAndReturn(run func(interface{}, func(foundation.Application) (interface{}, error))) *Application_Singleton_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -2292,7 +2292,7 @@ func (_c *Application_StoragePath_Call) RunAndReturn(run func(...string) string)
 	return _c
 }
 
-// Version provides a mock function with given fields:
+// Version provides a mock function with no fields
 func (_m *Application) Version() string {
 	ret := _m.Called()
 

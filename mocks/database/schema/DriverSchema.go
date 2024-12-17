@@ -20,7 +20,7 @@ func (_m *DriverSchema) EXPECT() *DriverSchema_Expecter {
 	return &DriverSchema_Expecter{mock: &_m.Mock}
 }
 
-// DropAllTables provides a mock function with given fields:
+// DropAllTables provides a mock function with no fields
 func (_m *DriverSchema) DropAllTables() error {
 	ret := _m.Called()
 
@@ -65,7 +65,7 @@ func (_c *DriverSchema_DropAllTables_Call) RunAndReturn(run func() error) *Drive
 	return _c
 }
 
-// DropAllTypes provides a mock function with given fields:
+// DropAllTypes provides a mock function with no fields
 func (_m *DriverSchema) DropAllTypes() error {
 	ret := _m.Called()
 
@@ -110,7 +110,7 @@ func (_c *DriverSchema_DropAllTypes_Call) RunAndReturn(run func() error) *Driver
 	return _c
 }
 
-// DropAllViews provides a mock function with given fields:
+// DropAllViews provides a mock function with no fields
 func (_m *DriverSchema) DropAllViews() error {
 	ret := _m.Called()
 
@@ -271,7 +271,7 @@ func (_c *DriverSchema_GetIndexes_Call) RunAndReturn(run func(string) ([]schema.
 	return _c
 }
 
-// GetTypes provides a mock function with given fields:
+// GetTypes provides a mock function with no fields
 func (_m *DriverSchema) GetTypes() ([]schema.Type, error) {
 	ret := _m.Called()
 

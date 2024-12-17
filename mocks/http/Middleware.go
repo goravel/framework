@@ -49,7 +49,7 @@ func (_c *Middleware_Execute_Call) Return() *Middleware_Execute_Call {
 }
 
 func (_c *Middleware_Execute_Call) RunAndReturn(run func(http.Context)) *Middleware_Execute_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

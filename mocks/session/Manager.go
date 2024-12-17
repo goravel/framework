@@ -240,7 +240,7 @@ func (_c *Manager_ReleaseSession_Call) Return() *Manager_ReleaseSession_Call {
 }
 
 func (_c *Manager_ReleaseSession_Call) RunAndReturn(run func(session.Session)) *Manager_ReleaseSession_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
