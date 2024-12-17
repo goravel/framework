@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/color"
 )
@@ -37,6 +38,10 @@ func NewApplication(config config.Config, json foundation.Json) (*Application, e
 }
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
+	if httpCtx, ok := ctx.(http.Context); ok {
+		return NewWriter(r.instance.WithContext(httpCtx.Context()))
+	}
+
 	return NewWriter(r.instance.WithContext(ctx))
 }
 
