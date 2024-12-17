@@ -21,6 +21,8 @@ func NewApplication(name, usage, usageText, version string, artisan ...bool) con
 	instance.Usage = usage
 	instance.UsageText = usageText
 	instance.Version = version
+	instance.CommandNotFound = commandNotFound
+	instance.OnUsageError = onUsageError
 	isArtisan := len(artisan) > 0 && artisan[0]
 
 	return &Application{
@@ -38,8 +40,9 @@ func (r *Application) Register(commands []console.Command) {
 			Action: func(ctx *cli.Context) error {
 				return item.Handle(NewCliContext(ctx))
 			},
-			Category: item.Extend().Category,
-			Flags:    flagsToCliFlags(item.Extend().Flags),
+			Category:     item.Extend().Category,
+			Flags:        flagsToCliFlags(item.Extend().Flags),
+			OnUsageError: onUsageError,
 		}
 		r.instance.Commands = append(r.instance.Commands, &cliCommand)
 	}
@@ -105,7 +108,7 @@ func (r *Application) Run(args []string, exitIfArtisan bool) error {
 		}
 
 		if exitIfArtisan {
-			os.Exit(1)
+			os.Exit(0)
 		}
 	}
 
