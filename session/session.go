@@ -244,10 +244,13 @@ func (s *Session) readFromHandler() map[string]any {
 		return nil
 	}
 	var data map[string]any
-	if err := s.json.Unmarshal([]byte(value), &data); err != nil {
-		color.Errorln(err)
-		return nil
+	if value != "" {
+		if err := s.json.Unmarshal([]byte(value), &data); err != nil {
+			color.Errorln(err)
+			return nil
+		}
 	}
+
 	return data
 }
 

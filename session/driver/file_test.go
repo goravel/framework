@@ -39,7 +39,7 @@ func (f *FileTestSuite) TestDestroy() {
 	f.Nil(driver.Destroy("foo"))
 
 	value, err = driver.Read("foo")
-	f.NotNil(err)
+	f.Nil(err)
 	f.Equal("", value)
 }
 
@@ -58,7 +58,7 @@ func (f *FileTestSuite) TestGc() {
 	f.Nil(driver.Gc(300))
 
 	value, err = driver.Read("foo")
-	f.NotNil(err)
+	f.Nil(err)
 	f.Equal("", value)
 	carbon.UnsetTestNow()
 
@@ -88,7 +88,7 @@ func (f *FileTestSuite) TestRead() {
 
 	carbon.SetTestNow(carbon.Now(carbon.UTC).AddMinutes(f.getMinutes()).AddSecond())
 	value, err = driver.Read("foo")
-	f.NotNil(err)
+	f.Nil(err)
 	f.Equal("", value)
 	carbon.UnsetTestNow()
 }
