@@ -8,6 +8,8 @@ import (
 	http "github.com/goravel/framework/contracts/http"
 	mock "github.com/stretchr/testify/mock"
 
+	net "net"
+
 	nethttp "net/http"
 
 	route "github.com/goravel/framework/contracts/route"
@@ -236,6 +238,146 @@ func (_c *Route_Group_Call) Return() *Route_Group_Call {
 }
 
 func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Route_Group_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Listen provides a mock function with given fields: l
+func (_m *Route) Listen(l net.Listener) error {
+	ret := _m.Called(l)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Listen")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener) error); ok {
+		r0 = rf(l)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_Listen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listen'
+type Route_Listen_Call struct {
+	*mock.Call
+}
+
+// Listen is a helper method to define mock.On call
+//   - l net.Listener
+func (_e *Route_Expecter) Listen(l interface{}) *Route_Listen_Call {
+	return &Route_Listen_Call{Call: _e.mock.On("Listen", l)}
+}
+
+func (_c *Route_Listen_Call) Run(run func(l net.Listener)) *Route_Listen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener))
+	})
+	return _c
+}
+
+func (_c *Route_Listen_Call) Return(_a0 error) *Route_Listen_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_Listen_Call) RunAndReturn(run func(net.Listener) error) *Route_Listen_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListenTLS provides a mock function with given fields: l
+func (_m *Route) ListenTLS(l net.Listener) error {
+	ret := _m.Called(l)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListenTLS")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener) error); ok {
+		r0 = rf(l)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_ListenTLS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListenTLS'
+type Route_ListenTLS_Call struct {
+	*mock.Call
+}
+
+// ListenTLS is a helper method to define mock.On call
+//   - l net.Listener
+func (_e *Route_Expecter) ListenTLS(l interface{}) *Route_ListenTLS_Call {
+	return &Route_ListenTLS_Call{Call: _e.mock.On("ListenTLS", l)}
+}
+
+func (_c *Route_ListenTLS_Call) Run(run func(l net.Listener)) *Route_ListenTLS_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener))
+	})
+	return _c
+}
+
+func (_c *Route_ListenTLS_Call) Return(_a0 error) *Route_ListenTLS_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_ListenTLS_Call) RunAndReturn(run func(net.Listener) error) *Route_ListenTLS_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListenTLSWithCert provides a mock function with given fields: l, certFile, keyFile
+func (_m *Route) ListenTLSWithCert(l net.Listener, certFile string, keyFile string) error {
+	ret := _m.Called(l, certFile, keyFile)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListenTLSWithCert")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener, string, string) error); ok {
+		r0 = rf(l, certFile, keyFile)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_ListenTLSWithCert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListenTLSWithCert'
+type Route_ListenTLSWithCert_Call struct {
+	*mock.Call
+}
+
+// ListenTLSWithCert is a helper method to define mock.On call
+//   - l net.Listener
+//   - certFile string
+//   - keyFile string
+func (_e *Route_Expecter) ListenTLSWithCert(l interface{}, certFile interface{}, keyFile interface{}) *Route_ListenTLSWithCert_Call {
+	return &Route_ListenTLSWithCert_Call{Call: _e.mock.On("ListenTLSWithCert", l, certFile, keyFile)}
+}
+
+func (_c *Route_ListenTLSWithCert_Call) Run(run func(l net.Listener, certFile string, keyFile string)) *Route_ListenTLSWithCert_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Route_ListenTLSWithCert_Call) Return(_a0 error) *Route_ListenTLSWithCert_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_ListenTLSWithCert_Call) RunAndReturn(run func(net.Listener, string, string) error) *Route_ListenTLSWithCert_Call {
 	_c.Call.Return(run)
 	return _c
 }
