@@ -8,19 +8,21 @@ import (
 )
 
 type Entry struct {
+	code       string
 	ctx        context.Context
 	data       log.Data
+	domain     string
+	hint       string
 	level      log.Level
-	time       time.Time
 	message    string
-	code       string
-	user       any
-	tags       []string
 	owner      any
 	request    map[string]any
 	response   map[string]any
-	with       map[string]any
 	stacktrace map[string]any
+	tags       []string
+	time       time.Time
+	user       any
+	with       map[string]any
 }
 
 func (r *Entry) Code() string {
@@ -33,6 +35,14 @@ func (r *Entry) Context() context.Context {
 
 func (r *Entry) Data() log.Data {
 	return r.data
+}
+
+func (r *Entry) Domain() string {
+	return r.domain
+}
+
+func (r *Entry) Hint() string {
+	return r.hint
 }
 
 func (r *Entry) Level() log.Level {

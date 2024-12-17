@@ -104,6 +104,10 @@ type Entry interface {
 	Context() context.Context
 	// Data returns the data of the entry.
 	Data() Data
+	// Domain returns the domain of the entry.
+	Domain() string
+	// Hint returns the hint of the entry.
+	Hint() string
 	// Level returns the level of the entry.
 	Level() Level
 	// Message returns the message of the entry.
