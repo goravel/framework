@@ -2,6 +2,7 @@ package route
 
 import (
 	"context"
+	"net"
 	"net/http"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -15,7 +16,13 @@ type Route interface {
 	Fallback(handler contractshttp.HandlerFunc)
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
-	// Run starts the HTTP server and listens for incoming connections on the specified host.
+	// Listen starts the HTTP server and listens on the specified listener.
+	Listen(l net.Listener) error
+	// ListenTLS starts the HTTPS server and listens on the specified listener.
+	ListenTLS(l net.Listener) error
+	// ListenTLSWithCert starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
+	ListenTLSWithCert(l net.Listener, certFile, keyFile string) error
+	// Run starts the HTTP server and listens on the specified host.
 	Run(host ...string) error
 	// RunTLS starts the HTTPS server with the provided TLS configuration and listens on the specified host.
 	RunTLS(host ...string) error

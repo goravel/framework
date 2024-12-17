@@ -163,6 +163,96 @@ func (_c *Entry_Data_Call) RunAndReturn(run func() log.Data) *Entry_Data_Call {
 	return _c
 }
 
+// Domain provides a mock function with given fields:
+func (_m *Entry) Domain() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Domain")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Entry_Domain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Domain'
+type Entry_Domain_Call struct {
+	*mock.Call
+}
+
+// Domain is a helper method to define mock.On call
+func (_e *Entry_Expecter) Domain() *Entry_Domain_Call {
+	return &Entry_Domain_Call{Call: _e.mock.On("Domain")}
+}
+
+func (_c *Entry_Domain_Call) Run(run func()) *Entry_Domain_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Domain_Call) Return(_a0 string) *Entry_Domain_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Domain_Call) RunAndReturn(run func() string) *Entry_Domain_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Hint provides a mock function with given fields:
+func (_m *Entry) Hint() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Hint")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Entry_Hint_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Hint'
+type Entry_Hint_Call struct {
+	*mock.Call
+}
+
+// Hint is a helper method to define mock.On call
+func (_e *Entry_Expecter) Hint() *Entry_Hint_Call {
+	return &Entry_Hint_Call{Call: _e.mock.On("Hint")}
+}
+
+func (_c *Entry_Hint_Call) Run(run func()) *Entry_Hint_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Hint_Call) Return(_a0 string) *Entry_Hint_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Hint_Call) RunAndReturn(run func() string) *Entry_Hint_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Level provides a mock function with given fields:
 func (_m *Entry) Level() log.Level {
 	ret := _m.Called()

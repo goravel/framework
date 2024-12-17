@@ -11,6 +11,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/support/str"
 )
 
 type General struct {
@@ -82,14 +83,9 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 			return "", err
 		}
 
-		for _, key := range []string{"code", "context", "domain", "hint", "owner", "request", "response", "tags", "user"} {
+		for _, key := range []string{"hint", "tags", "owner", "context", "with", "domain", "code", "request", "response", "user"} {
 			if value, exists := root[key]; exists && value != nil {
-				v, err := general.json.Marshal(value)
-				if err != nil {
-					return "", err
-				}
-
-				builder.WriteString(fmt.Sprintf("%s: %v\n", key, string(v)))
+				builder.WriteString(fmt.Sprintf("%s: %+v\n", str.Of(key).UcFirst().String(), value))
 			}
 		}
 
@@ -118,7 +114,7 @@ func (general *General) formatStackTraces(stackTraces any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	formattedTraces.WriteString("trace:\n")
+	formattedTraces.WriteString("Trace:\n")
 	root := traces.Root
 	if len(root.Stack) > 0 {
 		for _, stackStr := range root.Stack {
