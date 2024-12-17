@@ -173,6 +173,9 @@ func getFlagDefaultText(flag cli.DocGenerationFlag) string {
 
 func capitalize(s string) string {
     s = strings.TrimSpace(s)
+    if s == "" {
+        return s
+    }
     return strings.ToUpper(s[:1]) + s[1:]
 }
 
