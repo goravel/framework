@@ -15,6 +15,7 @@ func (d Driver) String() string {
 
 // Config Used in config/database.go
 type Config struct {
+	Dsn      string
 	Host     string
 	Port     int
 	Database string

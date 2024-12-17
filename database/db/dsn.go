@@ -7,6 +7,10 @@ import (
 )
 
 func Dsn(config database.FullConfig) string {
+	if config.Dsn != "" {
+		return config.Dsn
+	}
+
 	if config.Host == "" && config.Driver != database.DriverSqlite {
 		return ""
 	}

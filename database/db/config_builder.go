@@ -55,6 +55,9 @@ func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullCo
 			Singular:   c.config.GetBool(fmt.Sprintf("database.connections.%s.singular", c.connection)),
 		}
 		if driver != database.DriverSqlite {
+			if fullConfig.Dsn == "" {
+				fullConfig.Dsn = c.config.GetString(fmt.Sprintf("database.connections.%s.dsn", c.connection))
+			}
 			if fullConfig.Host == "" {
 				fullConfig.Host = c.config.GetString(fmt.Sprintf("database.connections.%s.host", c.connection))
 			}
