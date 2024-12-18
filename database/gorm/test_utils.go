@@ -351,7 +351,8 @@ func (r *MockMysql) basic() {
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("UTC")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
-
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
 	mockPool(r.mockConfig)
 }
 
@@ -433,6 +434,9 @@ func (r *MockPostgres) basic() {
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.search_path", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
 
 	mockPool(r.mockConfig)
 }
@@ -497,6 +501,8 @@ func (r *MockSqlite) WithSchema(schema string) {
 func (r *MockSqlite) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
 	mockPool(r.mockConfig)
 }
 
@@ -565,6 +571,8 @@ func (r *MockSqlserver) basic() {
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
 	mockPool(r.mockConfig)
 }
 

@@ -48,11 +48,17 @@ func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullCo
 
 	for _, config := range configs {
 		fullConfig := database.FullConfig{
-			Config:     config,
-			Connection: c.connection,
-			Driver:     driver,
-			Prefix:     c.config.GetString(fmt.Sprintf("database.connections.%s.prefix", c.connection)),
-			Singular:   c.config.GetBool(fmt.Sprintf("database.connections.%s.singular", c.connection)),
+			Config:      config,
+			Connection:  c.connection,
+			Driver:      driver,
+			Prefix:      c.config.GetString(fmt.Sprintf("database.connections.%s.prefix", c.connection)),
+			Singular:    c.config.GetBool(fmt.Sprintf("database.connections.%s.singular", c.connection)),
+			NoLowerCase: c.config.GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", c.connection)),
+		}
+		if nameReplacer := c.config.Get(fmt.Sprintf("database.connections.%s.name_replacer", c.connection)); nameReplacer != nil {
+			if replacer, ok := nameReplacer.(database.Replacer); ok {
+				fullConfig.NameReplacer = replacer
+			}
 		}
 		if driver != database.DriverSqlite {
 			if fullConfig.Dsn == "" {
