@@ -47,6 +47,7 @@ type ContextResponse interface {
 
 type Response interface {
 	Render() error
+	Abort() error
 }
 
 type StreamWriter interface {
