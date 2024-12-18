@@ -127,7 +127,7 @@ func (r *PostgresImpl) Ready() error {
 	return r.close(gormDB)
 }
 
-func (r *PostgresImpl) Stop() error {
+func (r *PostgresImpl) Shutdown() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Postgres error: %v", err)
 	}

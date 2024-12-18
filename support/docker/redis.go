@@ -52,7 +52,7 @@ func (receiver *Redis) Config() RedisConfig {
 	}
 }
 
-func (receiver *Redis) Stop() error {
+func (receiver *Redis) Shutdown() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Redis docker error: %v", err)
 	}

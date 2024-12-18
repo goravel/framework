@@ -49,7 +49,7 @@ func (r *SqliteImpl) Driver() database.Driver {
 }
 
 func (r *SqliteImpl) Fresh() error {
-	if err := r.Stop(); err != nil {
+	if err := r.Shutdown(); err != nil {
 		return err
 	}
 
@@ -69,7 +69,7 @@ func (r *SqliteImpl) Ready() error {
 	return err
 }
 
-func (r *SqliteImpl) Stop() error {
+func (r *SqliteImpl) Shutdown() error {
 	if err := file.Remove(r.database); err != nil {
 		return fmt.Errorf("stop Sqlite error: %v", err)
 	}

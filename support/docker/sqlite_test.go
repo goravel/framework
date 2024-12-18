@@ -69,9 +69,9 @@ INSERT INTO users (name) VALUES ('goravel');
 	databaseDriver, err := s.sqlite.Database("another")
 	s.NoError(err)
 	s.NotNil(databaseDriver)
-	s.NoError(databaseDriver.Stop())
+	s.NoError(databaseDriver.Shutdown())
 
-	s.Nil(s.sqlite.Stop())
+	s.Nil(s.sqlite.Shutdown())
 }
 
 func (s *SqliteTestSuite) TestDriver() {

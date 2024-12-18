@@ -30,8 +30,8 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
-	// Stop gracefully stop the serve.
-	Stop(ctx ...context.Context) error
+	// Shutdown gracefully stop the serve.
+	Shutdown(ctx ...context.Context) error
 	// Test method to simulate HTTP requests (Fiber driver only)
 	Test(request *http.Request) (*http.Response, error)
 }

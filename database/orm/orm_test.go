@@ -62,7 +62,7 @@ func (s *OrmSuite) SetupTest() {
 
 func (s *OrmSuite) TearDownSuite() {
 	if s.testQueries[database.DriverSqlite] != nil {
-		s.NoError(s.testQueries[database.DriverSqlite].Docker().Stop())
+		s.NoError(s.testQueries[database.DriverSqlite].Docker().Shutdown())
 	}
 }
 

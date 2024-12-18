@@ -76,7 +76,7 @@ func (s *SqlserverTestSuite) TestBuild() {
 	s.NoError(err)
 	s.NotNil(databaseDriver)
 
-	s.Nil(s.sqlserver.Stop())
+	s.Nil(s.sqlserver.Shutdown())
 }
 
 func (s *SqlserverTestSuite) TestDriver() {

@@ -73,7 +73,7 @@ INSERT INTO users (name) VALUES ('goravel');
 	s.NoError(err)
 	s.NotNil(databaseDriver)
 
-	s.Nil(s.mysql.Stop())
+	s.Nil(s.mysql.Shutdown())
 }
 
 func (s *MysqlTestSuite) TestDriver() {

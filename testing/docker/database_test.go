@@ -110,7 +110,7 @@ func TestNewDatabase(t *testing.T) {
 
 			assert.Nil(t, err)
 			assert.NotNil(t, gotDatabase)
-			assert.NoError(t, gotDatabase.Stop())
+			assert.NoError(t, gotDatabase.Shutdown())
 		})
 	}
 }
@@ -153,7 +153,7 @@ func (s *DatabaseTestSuite) TestBuild() {
 
 	s.Nil(s.database.Build())
 	s.True(s.database.Config().Port > 0)
-	s.Nil(s.database.Stop())
+	s.Nil(s.database.Shutdown())
 }
 
 func (s *DatabaseTestSuite) TestConfig() {

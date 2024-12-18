@@ -54,7 +54,7 @@ func (s *QueryTestSuite) SetupTest() {}
 
 func (s *QueryTestSuite) TearDownSuite() {
 	if s.queries[database.DriverSqlite] != nil {
-		s.NoError(s.queries[database.DriverSqlite].Docker().Stop())
+		s.NoError(s.queries[database.DriverSqlite].Docker().Shutdown())
 	}
 }
 
@@ -3638,7 +3638,7 @@ func TestCustomConnection(t *testing.T) {
 	assert.NotNil(t, query.Create(&person))
 	assert.True(t, person.ID == 0)
 
-	assert.NoError(t, sqliteDocker.Stop())
+	assert.NoError(t, sqliteDocker.Shutdown())
 }
 
 func TestFilterFindConditions(t *testing.T) {
@@ -3801,8 +3801,8 @@ func TestReadWriteSeparate(t *testing.T) {
 		})
 	}
 
-	assert.NoError(t, dbs[database.DriverSqlite]["read"].Docker().Stop())
-	assert.NoError(t, dbs[database.DriverSqlite]["write"].Docker().Stop())
+	assert.NoError(t, dbs[database.DriverSqlite]["read"].Docker().Shutdown())
+	assert.NoError(t, dbs[database.DriverSqlite]["write"].Docker().Shutdown())
 }
 
 func TestTablePrefixAndSingular(t *testing.T) {
@@ -3827,7 +3827,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 
 	if dbs[database.DriverSqlite] != nil {
-		assert.NoError(t, dbs[database.DriverSqlite].Docker().Stop())
+		assert.NoError(t, dbs[database.DriverSqlite].Docker().Shutdown())
 	}
 }
 

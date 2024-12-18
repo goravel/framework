@@ -81,7 +81,7 @@ func (s *PostgresTestSuite) TestBuild() {
 	s.NoError(err)
 	s.NotNil(databaseDriver)
 
-	s.Nil(s.postgres.Stop())
+	s.Nil(s.postgres.Shutdown())
 }
 
 func (s *PostgresTestSuite) TestDriver() {

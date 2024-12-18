@@ -59,7 +59,7 @@ func (s *SchemaSuite) SetupTest() {
 
 func (s *SchemaSuite) TearDownTest() {
 	if s.driverToTestQuery[database.DriverSqlite] != nil {
-		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Stop())
+		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Shutdown())
 	}
 }
 
