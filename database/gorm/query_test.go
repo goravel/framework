@@ -3831,6 +3831,22 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 }
 
+func TestSchema(t *testing.T) {
+	postgresDocker := supportdocker.Postgres()
+	require.NoError(t, postgresDocker.Ready())
+
+	testQuery := NewTestQueryWithSchema(postgresDocker, "goravel")
+	testQuery.CreateTable(TestTableUsers)
+
+	user := User{Name: "first_user"}
+	assert.Nil(t, testQuery.Query().Create(&user))
+	assert.True(t, user.ID > 0)
+
+	var user1 User
+	assert.Nil(t, testQuery.Query().Where("name", "first_user").First(&user1))
+	assert.True(t, user1.ID > 0)
+}
+
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
 	return func(query contractsorm.Query) contractsorm.Query {
 		page, _ := strconv.Atoi(page)
