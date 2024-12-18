@@ -643,6 +643,47 @@ func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	return r.new(r.instance.Raw(sql, values...))
 }
 
+func (r *Query) Restore(model ...any) (*contractsorm.Result, error) {
+	var (
+		realModel any
+		err       error
+	)
+
+	query := r.buildConditions()
+
+	if len(model) > 0 {
+		realModel = model[0]
+		query, err = query.refreshConnection(realModel)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var (
+		deletedAtColumnName string
+
+		tx = query.instance
+	)
+	if realModel != nil {
+		deletedAtColumnName = getDeletedAtColumn(realModel)
+		tx = query.instance.Model(realModel)
+	} else if query.conditions.model != nil {
+		deletedAtColumnName = getDeletedAtColumn(query.conditions.model)
+	}
+	if deletedAtColumnName == "" {
+		return nil, errors.OrmDeletedAtColumnNotFound
+	}
+
+	res := tx.Update(deletedAtColumnName, nil)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return &contractsorm.Result{
+		RowsAffected: res.RowsAffected,
+	}, res.Error
+}
+
 func (r *Query) Rollback() error {
 	return r.instance.Rollback().Error
 }
@@ -803,7 +844,7 @@ func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
 		}
 	}
 
-	res, err := query.updates(query.instance.Statement.Dest)
+	res, err := query.update(query.instance.Statement.Dest)
 
 	if singleUpdate && err == nil {
 		if err := query.updated(query.instance.Statement.Dest); err != nil {
@@ -1233,22 +1274,6 @@ func (r *Query) creating(dest any) error {
 	return r.event(contractsorm.EventCreating, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) deleting(dest any) error {
-	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
-}
-
-func (r *Query) deleted(dest any) error {
-	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
-}
-
-func (r *Query) forceDeleting(dest any) error {
-	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
-}
-
-func (r *Query) forceDeleted(dest any) error {
-	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
-}
-
 func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	if r.conditions.withoutEvents {
 		return nil
@@ -1295,6 +1320,22 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	}
 
 	return nil
+}
+
+func (r *Query) deleting(dest any) error {
+	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) deleted(dest any) error {
+	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) forceDeleting(dest any) error {
+	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) forceDeleted(dest any) error {
+	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) getObserver(dest any) contractsorm.Observer {
@@ -1477,7 +1518,7 @@ func (r *Query) updated(dest any) error {
 	return r.event(contractsorm.EventUpdated, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) updates(values any) (*contractsorm.Result, error) {
+func (r *Query) update(values any) (*contractsorm.Result, error) {
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return nil, errors.OrmQuerySelectAndOmitsConflict
 	}
@@ -1541,6 +1582,44 @@ func filterFindConditions(conds ...any) error {
 	}
 
 	return nil
+}
+
+func getDeletedAtColumn(model any) string {
+	if model == nil {
+		return ""
+	}
+
+	t := reflect.TypeOf(model)
+	v := reflect.ValueOf(model)
+
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+		v = v.Elem()
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
+		if t.Field(i).Type.Kind() == reflect.Struct {
+			if t.Field(i).Type == reflect.TypeOf(gormio.DeletedAt{}) {
+				return t.Field(i).Name
+			}
+
+			structField := t.Field(i).Type
+			for j := 0; j < structField.NumField(); j++ {
+				if !structField.Field(j).IsExported() {
+					continue
+				}
+
+				if structField.Field(j).Type == reflect.TypeOf(gormio.DeletedAt{}) {
+					return structField.Field(j).Name
+				}
+			}
+		}
+	}
+
+	return ""
 }
 
 func getModelConnection(model any) (string, error) {
