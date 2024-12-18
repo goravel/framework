@@ -2332,6 +2332,10 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 }
 
 func TestSpecificSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
 	schema := "goravel"
 	table := "table"
 	postgresDocker := docker.Postgres()

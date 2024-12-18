@@ -3832,6 +3832,10 @@ func TestTablePrefixAndSingular(t *testing.T) {
 }
 
 func TestSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
 	postgresDocker := supportdocker.Postgres()
 	require.NoError(t, postgresDocker.Ready())
 

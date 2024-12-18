@@ -88,13 +88,47 @@ func (s *DefaultMigratorWithDBSuite) TestRun() {
 
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
+			s.NoError(migrator.Status())
 		})
 	}
 }
 
-// TODO Add rollback test cases after implementing Sqlite driver, to test migrating different databases.
-func (s *DefaultMigratorWithDBSuite) TestRollback() {
+func (s *DefaultMigratorWithDBSuite) TestReset() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
+			testMigration := NewTestMigration(schema)
+			schema.Register([]contractsschema.Migration{
+				testMigration,
+			})
 
+			migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+			s.NoError(migrator.Run())
+			s.True(schema.HasTable("users"))
+
+			s.NoError(migrator.Reset())
+		})
+	}
+}
+
+func (s *DefaultMigratorWithDBSuite) TestRollback() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
+			testMigration := NewTestMigration(schema)
+			schema.Register([]contractsschema.Migration{
+				testMigration,
+			})
+
+			migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+			s.NoError(migrator.Run())
+			s.True(schema.HasTable("users"))
+
+			s.NoError(migrator.Rollback(1, 0))
+		})
+	}
 }
 
 func (s *DefaultMigratorWithDBSuite) TestStatus() {
@@ -118,6 +152,10 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 }
 
 func TestDefaultMigratorWithWithSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
 	postgresDocker := docker.Postgres()
 	require.NoError(t, postgresDocker.Ready())
 
