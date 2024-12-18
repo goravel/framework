@@ -126,6 +126,8 @@ type Query interface {
 	Pluck(column string, dest any) error
 	// Raw creates a raw query.
 	Raw(sql string, values ...any) Query
+	// Restore restores a soft deleted model.
+	Restore(model ...any) (*Result, error)
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database

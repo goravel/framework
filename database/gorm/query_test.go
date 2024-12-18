@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
+	gormio "gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
@@ -3002,6 +3003,52 @@ func (s *QueryTestSuite) TestSoftDelete() {
 	}
 }
 
+func (s *QueryTestSuite) TestRestore() {
+	for driver, query := range s.queries {
+		s.Run(driver.String(), func() {
+			users := []User{
+				{Name: "restore_user1", Avatar: "restore_avatar"},
+				{Name: "restore_user2", Avatar: "restore_avatar"},
+				{Name: "restore_user3", Avatar: "restore_avatar"},
+				{Name: "restore_user4", Avatar: "restore_avatar"},
+			}
+			s.NoError(query.Query().Create(&users))
+			s.True(users[0].ID > 0)
+			s.True(users[1].ID > 0)
+			s.True(users[2].ID > 0)
+			s.True(users[3].ID > 0)
+
+			res, err := query.Query().Where("avatar", "restore_avatar").Delete(&User{})
+			s.Equal(int64(4), res.RowsAffected)
+			s.NoError(err)
+
+			res, err = query.Query().Where("name = ?", "restore_user1").Restore(&User{})
+			s.Equal(int64(0), res.RowsAffected)
+			s.NoError(err)
+
+			res, err = query.Query().WithTrashed().Where("name = ?", "restore_user1").Restore(&User{})
+			s.Equal(int64(1), res.RowsAffected)
+			s.NoError(err)
+
+			res, err = query.Query().Model(&User{}).WithTrashed().Where("name = ?", "restore_user2").Restore()
+			s.Equal(int64(1), res.RowsAffected)
+			s.NoError(err)
+
+			res, err = query.Query().Model(users[2]).WithTrashed().Restore()
+			s.Equal(int64(1), res.RowsAffected)
+			s.NoError(err)
+
+			res, err = query.Query().WithTrashed().Restore(&users[3])
+			s.Equal(int64(1), res.RowsAffected)
+			s.NoError(err)
+
+			var count int64
+			s.NoError(query.Query().Model(&User{}).Where("avatar", "restore_avatar").Count(&count))
+			s.Equal(int64(4), count)
+		})
+	}
+}
+
 func (s *QueryTestSuite) TestSum() {
 	for driver, query := range s.queries {
 		s.Run(driver.String(), func() {
@@ -3676,6 +3723,22 @@ func TestFilterFindConditions(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetDeletedAtColumnName(t *testing.T) {
+	type Test1 struct {
+		Deleted gormio.DeletedAt
+	}
+
+	assert.Equal(t, "Deleted", getDeletedAtColumn(Test1{}))
+	assert.Equal(t, "Deleted", getDeletedAtColumn(&Test1{}))
+
+	type Test2 struct {
+		Test1
+	}
+
+	assert.Equal(t, "Deleted", getDeletedAtColumn(Test2{}))
+	assert.Equal(t, "Deleted", getDeletedAtColumn(&Test2{}))
 }
 
 func TestGetModelConnection(t *testing.T) {

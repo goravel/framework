@@ -15,7 +15,7 @@ type Model struct {
 }
 
 type SoftDeletes struct {
-	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+	Deleted gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
 type Timestamps struct {
