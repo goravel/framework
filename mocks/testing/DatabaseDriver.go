@@ -338,12 +338,12 @@ func (_c *DatabaseDriver_Ready_Call) RunAndReturn(run func() error) *DatabaseDri
 	return _c
 }
 
-// Stop provides a mock function with given fields:
-func (_m *DatabaseDriver) Stop() error {
+// Shutdown provides a mock function with given fields:
+func (_m *DatabaseDriver) Shutdown() error {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Stop")
+		panic("no return value specified for Shutdown")
 	}
 
 	var r0 error
@@ -356,29 +356,29 @@ func (_m *DatabaseDriver) Stop() error {
 	return r0
 }
 
-// DatabaseDriver_Stop_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stop'
-type DatabaseDriver_Stop_Call struct {
+// DatabaseDriver_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type DatabaseDriver_Shutdown_Call struct {
 	*mock.Call
 }
 
-// Stop is a helper method to define mock.On call
-func (_e *DatabaseDriver_Expecter) Stop() *DatabaseDriver_Stop_Call {
-	return &DatabaseDriver_Stop_Call{Call: _e.mock.On("Stop")}
+// Shutdown is a helper method to define mock.On call
+func (_e *DatabaseDriver_Expecter) Shutdown() *DatabaseDriver_Shutdown_Call {
+	return &DatabaseDriver_Shutdown_Call{Call: _e.mock.On("Shutdown")}
 }
 
-func (_c *DatabaseDriver_Stop_Call) Run(run func()) *DatabaseDriver_Stop_Call {
+func (_c *DatabaseDriver_Shutdown_Call) Run(run func()) *DatabaseDriver_Shutdown_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *DatabaseDriver_Stop_Call) Return(_a0 error) *DatabaseDriver_Stop_Call {
+func (_c *DatabaseDriver_Shutdown_Call) Return(_a0 error) *DatabaseDriver_Shutdown_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *DatabaseDriver_Stop_Call) RunAndReturn(run func() error) *DatabaseDriver_Stop_Call {
+func (_c *DatabaseDriver_Shutdown_Call) RunAndReturn(run func() error) *DatabaseDriver_Shutdown_Call {
 	_c.Call.Return(run)
 	return _c
 }

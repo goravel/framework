@@ -39,7 +39,7 @@ func (s *SqlMigratorSuite) SetupTest() {
 func (s *SqlMigratorSuite) TearDownTest() {
 	s.NoError(file.Remove("database"))
 	if s.driverToTestQuery[contractsdatabase.DriverSqlite] != nil {
-		s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Stop())
+		s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Shutdown())
 	}
 }
 

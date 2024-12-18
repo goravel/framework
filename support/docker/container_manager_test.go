@@ -37,7 +37,7 @@ func (s *ContainerManagerTestSuite) TestGet() {
 	driver, err = s.containerManager.Get(ContainerTypeSqlite)
 	s.NoError(err)
 	s.NotNil(driver)
-	s.NoError(driver.Stop())
+	s.NoError(driver.Shutdown())
 
 	driver, err = s.containerManager.Get(ContainerTypeSqlserver)
 	s.NoError(err)

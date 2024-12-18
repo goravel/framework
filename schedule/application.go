@@ -49,7 +49,7 @@ func (app *Application) Run() {
 	app.cron.Run()
 }
 
-func (app *Application) Stop(ctx ...context.Context) error {
+func (app *Application) Shutdown(ctx ...context.Context) error {
 	if len(ctx) == 0 {
 		ctx = append(ctx, context.Background())
 	}

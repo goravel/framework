@@ -90,7 +90,7 @@ func TestDatabase(t *testing.T) {
 
 				if test.containerType == ContainerTypeSqlite {
 					for _, driver := range drivers {
-						assert.NoError(t, driver.Stop())
+						assert.NoError(t, driver.Shutdown())
 					}
 				}
 			}
