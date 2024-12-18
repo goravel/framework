@@ -122,6 +122,8 @@ func (r *Builder) init(fullConfig database.FullConfig) error {
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   fullConfig.Prefix,
 			SingularTable: fullConfig.Singular,
+			NoLowerCase:   fullConfig.NoLowerCase,
+			NameReplacer:  fullConfig.NameReplacer,
 		},
 	})
 	if err != nil {
