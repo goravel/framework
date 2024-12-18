@@ -299,19 +299,19 @@ func (_c *ContextResponse_Header_Call) RunAndReturn(run func(string, string) htt
 }
 
 // Json provides a mock function with given fields: code, obj
-func (_m *ContextResponse) Json(code int, obj any) http.Response {
+func (_m *ContextResponse) Json(code int, obj any) http.AbortResponse {
 	ret := _m.Called(code, obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, any) http.Response); ok {
+	var r0 http.AbortResponse
+	if rf, ok := ret.Get(0).(func(int, any) http.AbortResponse); ok {
 		r0 = rf(code, obj)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortResponse)
 		}
 	}
 
@@ -337,12 +337,12 @@ func (_c *ContextResponse_Json_Call) Run(run func(code int, obj any)) *ContextRe
 	return _c
 }
 
-func (_c *ContextResponse_Json_Call) Return(_a0 http.Response) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) Return(_a0 http.AbortResponse) *ContextResponse_Json_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, any) http.Response) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, any) http.AbortResponse) *ContextResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -602,7 +602,7 @@ func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(int, func(http.Stre
 }
 
 // String provides a mock function with given fields: code, format, values
-func (_m *ContextResponse) String(code int, format string, values ...any) http.Response {
+func (_m *ContextResponse) String(code int, format string, values ...any) http.AbortResponse {
 	var _ca []interface{}
 	_ca = append(_ca, code, format)
 	_ca = append(_ca, values...)
@@ -612,12 +612,12 @@ func (_m *ContextResponse) String(code int, format string, values ...any) http.R
 		panic("no return value specified for String")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, string, ...any) http.Response); ok {
+	var r0 http.AbortResponse
+	if rf, ok := ret.Get(0).(func(int, string, ...any) http.AbortResponse); ok {
 		r0 = rf(code, format, values...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortResponse)
 		}
 	}
 
@@ -651,12 +651,12 @@ func (_c *ContextResponse_String_Call) Run(run func(code int, format string, val
 	return _c
 }
 
-func (_c *ContextResponse_String_Call) Return(_a0 http.Response) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) Return(_a0 http.AbortResponse) *ContextResponse_String_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...any) http.Response) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...any) http.AbortResponse) *ContextResponse_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -70,19 +70,19 @@ func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) http.R
 }
 
 // Json provides a mock function with given fields: obj
-func (_m *ResponseStatus) Json(obj any) http.Response {
+func (_m *ResponseStatus) Json(obj any) http.AbortResponse {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(any) http.Response); ok {
+	var r0 http.AbortResponse
+	if rf, ok := ret.Get(0).(func(any) http.AbortResponse); ok {
 		r0 = rf(obj)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortResponse)
 		}
 	}
 
@@ -107,12 +107,12 @@ func (_c *ResponseStatus_Json_Call) Run(run func(obj any)) *ResponseStatus_Json_
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) Return(_a0 http.Response) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) Return(_a0 http.AbortResponse) *ResponseStatus_Json_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(any) http.Response) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(any) http.AbortResponse) *ResponseStatus_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -166,7 +166,7 @@ func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWrit
 }
 
 // String provides a mock function with given fields: format, values
-func (_m *ResponseStatus) String(format string, values ...any) http.Response {
+func (_m *ResponseStatus) String(format string, values ...any) http.AbortResponse {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, values...)
@@ -176,12 +176,12 @@ func (_m *ResponseStatus) String(format string, values ...any) http.Response {
 		panic("no return value specified for String")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(string, ...any) http.Response); ok {
+	var r0 http.AbortResponse
+	if rf, ok := ret.Get(0).(func(string, ...any) http.AbortResponse); ok {
 		r0 = rf(format, values...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortResponse)
 		}
 	}
 
@@ -214,12 +214,12 @@ func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...any)
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) Return(_a0 http.Response) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) Return(_a0 http.AbortResponse) *ResponseStatus_String_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...any) http.Response) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...any) http.AbortResponse) *ResponseStatus_String_Call {
 	_c.Call.Return(run)
 	return _c
 }
