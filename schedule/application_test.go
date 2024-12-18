@@ -103,7 +103,7 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 	s.Equal(1, immediatelyCall)
 }
 
-func (s *ApplicationTestSuite) TestStop() {
+func (s *ApplicationTestSuite) TestShutdown() {
 	immediatelyCall := 0
 
 	app := NewApplication(nil, nil, nil, false)
@@ -122,7 +122,7 @@ func (s *ApplicationTestSuite) TestStop() {
 	s.Equal(1, immediatelyCall)
 }
 
-func (s *ApplicationTestSuite) TestStopWithContext() {
+func (s *ApplicationTestSuite) TestShutdownWithContext() {
 	immediatelyCall := 0
 
 	app := NewApplication(nil, nil, nil, false)
