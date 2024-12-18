@@ -17,6 +17,51 @@ func (_m *Response) EXPECT() *Response_Expecter {
 	return &Response_Expecter{mock: &_m.Mock}
 }
 
+// Abort provides a mock function with given fields:
+func (_m *Response) Abort() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Abort")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Response_Abort_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Abort'
+type Response_Abort_Call struct {
+	*mock.Call
+}
+
+// Abort is a helper method to define mock.On call
+func (_e *Response_Expecter) Abort() *Response_Abort_Call {
+	return &Response_Abort_Call{Call: _e.mock.On("Abort")}
+}
+
+func (_c *Response_Abort_Call) Run(run func()) *Response_Abort_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Response_Abort_Call) Return(_a0 error) *Response_Abort_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Response_Abort_Call) RunAndReturn(run func() error) *Response_Abort_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Render provides a mock function with given fields:
 func (_m *Response) Render() error {
 	ret := _m.Called()
