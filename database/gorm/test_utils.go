@@ -341,7 +341,9 @@ func (r *MockMysql) WithPrefixAndSingular() {
 	r.basic()
 }
 
-func (r *MockMysql) WithSchema(schema string) {}
+func (r *MockMysql) WithSchema(schema string) {
+	panic("mysql does not support schema")
+}
 
 func (r *MockMysql) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
@@ -488,7 +490,9 @@ func (r *MockSqlite) WithPrefixAndSingular() {
 	r.basic()
 }
 
-func (r *MockSqlite) WithSchema(schema string) {}
+func (r *MockSqlite) WithSchema(schema string) {
+	panic("sqlite does not support schema")
+}
 
 func (r *MockSqlite) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)
@@ -552,7 +556,9 @@ func (r *MockSqlserver) WithPrefixAndSingular() {
 	r.basic()
 }
 
-func (r *MockSqlserver) WithSchema(schema string) {}
+func (r *MockSqlserver) WithSchema(schema string) {
+	panic("sqlserver does not support schema for now")
+}
 
 func (r *MockSqlserver) basic() {
 	r.mockConfig.On("GetBool", "app.debug").Return(true)

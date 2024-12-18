@@ -21,7 +21,7 @@ type Config struct {
 	Database string
 	Username string
 	Password string
-	// Only for Postgres and Sqlserver
+	// Only for Postgres
 	Schema string
 }
 
