@@ -21,6 +21,8 @@ type Config struct {
 	Database string
 	Username string
 	Password string
+	// Only for Postgres
+	Schema string
 }
 
 // FullConfig Fill the default value for Config

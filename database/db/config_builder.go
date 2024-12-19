@@ -73,6 +73,9 @@ func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullCo
 			if driver == database.DriverMysql || driver == database.DriverSqlserver {
 				fullConfig.Charset = c.config.GetString(fmt.Sprintf("database.connections.%s.charset", c.connection))
 			}
+			if fullConfig.Schema == "" && driver == database.DriverPostgres {
+				fullConfig.Schema = c.config.GetString(fmt.Sprintf("database.connections.%s.schema", c.connection), "public")
+			}
 			if driver == database.DriverMysql {
 				fullConfig.Loc = c.config.GetString(fmt.Sprintf("database.connections.%s.loc", c.connection))
 			}

@@ -35,6 +35,7 @@ type testMockDriver interface {
 	Common()
 	ReadWrite(readDatabaseConfig testing.DatabaseConfig)
 	WithPrefixAndSingular()
+	WithSchema(schema string)
 }
 
 type TestQueries struct {
@@ -145,7 +146,13 @@ func (r *TestQueries) queries(withPrefixAndSingular bool) map[contractsdatabase.
 	}
 
 	for driver, docker := range driverToDocker {
-		query := NewTestQuery(docker, withPrefixAndSingular)
+		var query *TestQuery
+		if withPrefixAndSingular {
+			query = NewTestQueryWithPrefixAndSingular(docker)
+		} else {
+			query = NewTestQuery(docker)
+		}
+
 		driverToTestQuery[driver] = query
 	}
 
@@ -159,28 +166,75 @@ type TestQuery struct {
 	query      orm.Query
 }
 
-func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) *TestQuery {
+func NewTestQuery(docker testing.DatabaseDriver) *TestQuery {
 	mockConfig := &mocksconfig.Config{}
 	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
-
 	testQuery := &TestQuery{
 		docker:     docker,
 		mockConfig: mockConfig,
 		mockDriver: mockDriver,
 	}
 
-	var (
-		query *Query
-		err   error
-	)
-	if len(withPrefixAndSingular) > 0 && withPrefixAndSingular[0] {
-		mockDriver.WithPrefixAndSingular()
-		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
-	} else {
-		mockDriver.Common()
-		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	mockDriver.Common()
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	if err != nil {
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
 
+	testQuery.query = query
+
+	return testQuery
+}
+
+func NewTestQueryWithPrefixAndSingular(docker testing.DatabaseDriver) *TestQuery {
+	mockConfig := &mocksconfig.Config{}
+	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
+	testQuery := &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+	}
+
+	mockDriver.WithPrefixAndSingular()
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	if err != nil {
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
+	}
+
+	testQuery.query = query
+
+	return testQuery
+}
+
+func NewTestQueryWithSchema(docker testing.DatabaseDriver, schema string) *TestQuery {
+	if docker.Driver() != contractsdatabase.DriverPostgres && docker.Driver() != contractsdatabase.DriverSqlserver {
+		panic(fmt.Sprintf("%s does not support schema", docker.Driver().String()))
+	}
+
+	// Create schema before build query with the schema
+	mockConfig := &mocksconfig.Config{}
+	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
+	mockDriver.WithPrefixAndSingular()
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	if err != nil {
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
+	}
+
+	if _, err := query.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema)); err != nil {
+		panic(fmt.Sprintf("create schema %s failed: %v", schema, err))
+	}
+
+	mockConfig = &mocksconfig.Config{}
+	mockDriver = getMockDriver(docker, mockConfig, docker.Driver().String())
+	testQuery := &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+	}
+
+	mockDriver.WithSchema(schema)
+
+	query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
@@ -261,8 +315,6 @@ func NewMockMysql(mockConfig *mocksconfig.Config, connection, database, username
 }
 
 func (r *MockMysql) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("mysql")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
@@ -287,6 +339,10 @@ func (r *MockMysql) WithPrefixAndSingular() {
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
+}
+
+func (r *MockMysql) WithSchema(schema string) {
+	panic("mysql does not support schema")
 }
 
 func (r *MockMysql) basic() {
@@ -334,10 +390,9 @@ func NewMockPostgres(mockConfig *mocksconfig.Config, connection, database, usern
 }
 
 func (r *MockPostgres) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("postgres")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.single()
 	r.basic()
 }
@@ -352,12 +407,22 @@ func (r *MockPostgres) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.basic()
 }
 
 func (r *MockPostgres) WithPrefixAndSingular() {
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.single()
+	r.basic()
+}
+
+func (r *MockPostgres) WithSchema(schema string) {
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return(schema)
 	r.single()
 	r.basic()
 }
@@ -368,7 +433,6 @@ func (r *MockPostgres) basic() {
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.search_path", r.connection), "public").Return("public")
 
 	mockPool(r.mockConfig)
 }
@@ -401,8 +465,6 @@ func NewMockSqlite(mockConfig *mocksconfig.Config, connection, database string) 
 }
 
 func (r *MockSqlite) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("sqlite")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
@@ -426,6 +488,10 @@ func (r *MockSqlite) WithPrefixAndSingular() {
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
+}
+
+func (r *MockSqlite) WithSchema(schema string) {
+	panic("sqlite does not support schema")
 }
 
 func (r *MockSqlite) basic() {
@@ -464,8 +530,6 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 }
 
 func (r *MockSqlserver) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("sqlserver")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
 	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
@@ -490,6 +554,10 @@ func (r *MockSqlserver) WithPrefixAndSingular() {
 	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
+}
+
+func (r *MockSqlserver) WithSchema(schema string) {
+	panic("sqlserver does not support schema for now")
 }
 
 func (r *MockSqlserver) basic() {
