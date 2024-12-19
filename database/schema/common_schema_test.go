@@ -28,7 +28,7 @@ func (s *CommonSchemaSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
 	s.Require().NoError(postgresDocker.Ready())
 
-	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
 		database.DriverPostgres: postgresQuery,
 	}
