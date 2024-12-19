@@ -612,11 +612,11 @@ func (r *TestResponse) Header(key, value string) contractshttp.ContextResponse {
 	return r
 }
 
-func (r *TestResponse) Json(code int, obj any) contractshttp.Response {
+func (r *TestResponse) Json(code int, obj any) contractshttp.AbortResponse {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) NoContent(...int) contractshttp.Response {
+func (r *TestResponse) NoContent(...int) contractshttp.AbortResponse {
 	panic("do not need to implement it")
 }
 
@@ -628,7 +628,7 @@ func (r *TestResponse) Redirect(code int, location string) contractshttp.Respons
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) String(code int, format string, values ...any) contractshttp.Response {
+func (r *TestResponse) String(code int, format string, values ...any) contractshttp.AbortResponse {
 	panic("do not need to implement it")
 }
 

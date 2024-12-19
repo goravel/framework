@@ -19,16 +19,16 @@ type ContextResponse interface {
 	// Header sets an HTTP header field with the given key and value.
 	Header(key, value string) ContextResponse
 	// Json sends a JSON response with the specified status code and data object.
-	Json(code int, obj any) Response
+	Json(code int, obj any) AbortResponse
 	// NoContent sends a response with no-body and the specified status code.
-	NoContent(code ...int) Response
+	NoContent(code ...int) AbortResponse
 	// Origin returns the ResponseOrigin
 	Origin() ResponseOrigin
 	// Redirect performs an HTTP redirect to the specified location with the given status code.
 	Redirect(code int, location string) Response
 	// String writes a string response with the specified status code and format.
 	// The 'values' parameter can be used to replace placeholders in the format string.
-	String(code int, format string, values ...any) Response
+	String(code int, format string, values ...any) AbortResponse
 	// Success returns ResponseStatus with a 200 status code.
 	Success() ResponseStatus
 	// Status sets the HTTP response status code and returns the ResponseStatus.
@@ -49,6 +49,11 @@ type Response interface {
 	Render() error
 }
 
+type AbortResponse interface {
+	Response
+	Abort() error
+}
+
 type StreamWriter interface {
 	// Write writes the specified data to the response.
 	Write(data []byte) (int, error)
@@ -63,10 +68,10 @@ type StreamWriter interface {
 type ResponseStatus interface {
 	// Data write the given data to the Response.
 	Data(contentType string, data []byte) Response
-	// Json sends a JSON Response with the specified data object.
-	Json(obj any) Response
-	// String writes a string Response with the specified format and values.
-	String(format string, values ...any) Response
+	// Json sends a JSON AbortResponse with the specified data object.
+	Json(obj any) AbortResponse
+	// String writes a string AbortResponse with the specified format and values.
+	String(format string, values ...any) AbortResponse
 	// Stream sends a streaming response with the specified status code and the given reader.
 	Stream(step func(w StreamWriter) error) Response
 }
