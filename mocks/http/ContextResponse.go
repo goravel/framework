@@ -348,7 +348,7 @@ func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, any) http.AbortR
 }
 
 // NoContent provides a mock function with given fields: code
-func (_m *ContextResponse) NoContent(code ...int) http.Response {
+func (_m *ContextResponse) NoContent(code ...int) http.AbortResponse {
 	_va := make([]interface{}, len(code))
 	for _i := range code {
 		_va[_i] = code[_i]
@@ -361,12 +361,12 @@ func (_m *ContextResponse) NoContent(code ...int) http.Response {
 		panic("no return value specified for NoContent")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(...int) http.Response); ok {
+	var r0 http.AbortResponse
+	if rf, ok := ret.Get(0).(func(...int) http.AbortResponse); ok {
 		r0 = rf(code...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortResponse)
 		}
 	}
 
@@ -398,12 +398,12 @@ func (_c *ContextResponse_NoContent_Call) Run(run func(code ...int)) *ContextRes
 	return _c
 }
 
-func (_c *ContextResponse_NoContent_Call) Return(_a0 http.Response) *ContextResponse_NoContent_Call {
+func (_c *ContextResponse_NoContent_Call) Return(_a0 http.AbortResponse) *ContextResponse_NoContent_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(...int) http.Response) *ContextResponse_NoContent_Call {
+func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(...int) http.AbortResponse) *ContextResponse_NoContent_Call {
 	_c.Call.Return(run)
 	return _c
 }
