@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	contractsdatabase "github.com/goravel/framework/contracts/database"
@@ -42,13 +43,35 @@ func TestDefaultMigratorWithDBSuite(t *testing.T) {
 }
 
 func (s *DefaultMigratorWithDBSuite) SetupTest() {
-	// TODO Add other drivers
 	postgresDocker := docker.Postgres()
-	s.NoError(postgresDocker.Ready())
+	s.Require().NoError(postgresDocker.Ready())
 
-	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
+
+	sqliteDocker := docker.Sqlite()
+	sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
+
+	mysqlDocker := docker.Mysql()
+	s.Require().NoError(mysqlDocker.Ready())
+
+	mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
+
+	sqlserverDocker := docker.Sqlserver()
+	s.Require().NoError(sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
+
 	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
-		contractsdatabase.DriverPostgres: postgresQuery,
+		contractsdatabase.DriverPostgres:  postgresQuery,
+		contractsdatabase.DriverSqlite:    sqliteQuery,
+		contractsdatabase.DriverMysql:     mysqlQuery,
+		contractsdatabase.DriverSqlserver: sqlserverQuery,
+	}
+}
+
+func (s *DefaultMigratorWithDBSuite) TearDownTest() {
+	if s.driverToTestQuery[contractsdatabase.DriverSqlite] != nil {
+		s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Shutdown())
 	}
 }
 
@@ -65,13 +88,47 @@ func (s *DefaultMigratorWithDBSuite) TestRun() {
 
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
+			s.NoError(migrator.Status())
 		})
 	}
 }
 
-// TODO Add rollback test cases after implementing Sqlite driver, to test migrating different databases.
-func (s *DefaultMigratorWithDBSuite) TestRollback() {
+func (s *DefaultMigratorWithDBSuite) TestReset() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
+			testMigration := NewTestMigration(schema)
+			schema.Register([]contractsschema.Migration{
+				testMigration,
+			})
 
+			migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+			s.NoError(migrator.Run())
+			s.True(schema.HasTable("users"))
+
+			s.NoError(migrator.Reset())
+		})
+	}
+}
+
+func (s *DefaultMigratorWithDBSuite) TestRollback() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver.String(), func() {
+			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
+			testMigration := NewTestMigration(schema)
+			schema.Register([]contractsschema.Migration{
+				testMigration,
+			})
+
+			migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+			s.NoError(migrator.Run())
+			s.True(schema.HasTable("users"))
+
+			s.NoError(migrator.Rollback(1, 0))
+		})
+	}
 }
 
 func (s *DefaultMigratorWithDBSuite) TestStatus() {
@@ -92,6 +149,28 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 			s.NoError(migrator.Status())
 		})
 	}
+}
+
+func TestDefaultMigratorWithWithSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	postgresDocker := docker.Postgres()
+	require.NoError(t, postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQueryWithSchema(postgresDocker, "goravel")
+	schema := databaseschema.GetTestSchema(postgresQuery, map[contractsdatabase.Driver]*gorm.TestQuery{
+		contractsdatabase.DriverPostgres: postgresQuery,
+	})
+	testMigration := NewTestMigration(schema)
+	schema.Register([]contractsschema.Migration{
+		testMigration,
+	})
+	migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+	assert.NoError(t, migrator.Run())
+	assert.True(t, schema.HasTable("users"))
 }
 
 type DefaultMigratorSuite struct {

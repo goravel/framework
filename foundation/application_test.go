@@ -331,6 +331,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.EXPECT().GetString("database.connections.postgres.sslmode").Return("disable").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.timezone").Return("UTC").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(config.Database).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.schema", "public").Return("public").Twice()
 	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
 	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()

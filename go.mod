@@ -30,14 +30,14 @@ require (
 	github.com/rotisserie/eris v0.5.4
 	github.com/samber/lo v1.47.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cast v1.7.0
+	github.com/spf13/cast v1.7.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
-	google.golang.org/grpc v1.69.0
+	google.golang.org/grpc v1.69.2
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/driver/sqlserver v1.5.4

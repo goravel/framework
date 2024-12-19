@@ -44,7 +44,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 
 	switch driver {
 	case contractsdatabase.DriverPostgres:
-		schema = config.GetString(fmt.Sprintf("database.connections.%s.search_path", orm.Name()), "public")
+		schema = config.GetString(fmt.Sprintf("database.connections.%s.schema", orm.Name()), "public")
 
 		postgresGrammar := grammars.NewPostgres(prefix)
 		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)

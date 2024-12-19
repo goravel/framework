@@ -370,13 +370,10 @@ func (s *BlueprintTestSuite) TestToSql() {
 	for driver, grammar := range s.grammars {
 		// Create a table
 		s.blueprint.Create()
-		s.blueprint.String("name")
-		// TODO Add below when implementing the comment method
-		//s.blueprint.String("name").Comment("comment")
-		//s.blueprint.Comment("comment")
+		s.blueprint.String("name").Comment("comment")
 
 		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(grammar), 1)
+			s.Len(s.blueprint.ToSql(grammar), 2)
 		} else {
 			s.Empty(s.blueprint.ToSql(grammar))
 		}

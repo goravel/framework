@@ -229,7 +229,6 @@ func (r *Blueprint) GetCommands() []*schema.Command {
 }
 
 func (r *Blueprint) GetTableName() string {
-	// TODO Add schema for Postgres
 	return r.table
 }
 

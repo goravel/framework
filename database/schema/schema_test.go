@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/spf13/cast"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
@@ -33,20 +35,20 @@ func (s *SchemaSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
 	s.Require().NoError(postgresDocker.Ready())
 
-	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
 
 	sqliteDocker := docker.Sqlite()
-	sqliteQuery := gorm.NewTestQuery(sqliteDocker, true)
+	sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
 
 	mysqlDocker := docker.Mysql()
 	s.Require().NoError(mysqlDocker.Ready())
 
-	mysqlQuery := gorm.NewTestQuery(mysqlDocker, true)
+	mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
 
 	sqlserverDocker := docker.Sqlserver()
 	s.Require().NoError(sqlserverDocker.Ready())
 
-	sqlserverQuery := gorm.NewTestQuery(sqlserverDocker, true)
+	sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
 
 	s.prefix = "goravel_"
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
@@ -2149,7 +2151,7 @@ func (s *SchemaSuite) TestTableMethods() {
 			s.NoError(schema.Drop(tableThree))
 			s.False(schema.HasTable(tableThree))
 
-			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.search_path").Return("").Once()
+			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.schema").Return("").Once()
 
 			s.NoError(schema.DropAllTables())
 			s.False(schema.HasTable(tableFour))
@@ -2327,4 +2329,30 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	s.Contains(columnListing, "unsigned_integer")
 	s.Contains(columnListing, "unsigned_big_integer")
 	s.Contains(columnListing, "updated_at")
+}
+
+func TestSpecificSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	schema := "goravel"
+	table := "table"
+	postgresDocker := docker.Postgres()
+	require.NoError(t, postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQueryWithSchema(postgresDocker, schema)
+	testSchema := GetTestSchema(postgresQuery, map[database.Driver]*gorm.TestQuery{
+		database.DriverPostgres: postgresQuery,
+	})
+
+	assert.NoError(t, testSchema.Create(table, func(table contractsschema.Blueprint) {
+		table.String("name")
+	}))
+	tables, err := testSchema.GetTables()
+
+	assert.NoError(t, err)
+	assert.Len(t, tables, 1)
+	assert.Equal(t, "table", tables[0].Name)
+	assert.Equal(t, schema, tables[0].Schema)
 }
