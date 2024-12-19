@@ -616,7 +616,7 @@ func (r *TestResponse) Json(code int, obj any) contractshttp.AbortResponse {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) NoContent(...int) contractshttp.Response {
+func (r *TestResponse) NoContent(...int) contractshttp.AbortResponse {
 	panic("do not need to implement it")
 }
 
