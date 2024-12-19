@@ -11,7 +11,7 @@ type ContextResponse interface {
 	// Cookie adds a cookie to the response.
 	Cookie(cookie Cookie) ContextResponse
 	// Data write the given data to the response.
-	Data(code int, contentType string, data []byte) Response
+	Data(code int, contentType string, data []byte) ResponseWithAbort
 	// Download initiates a file download by specifying the file path and the desired filename
 	Download(filepath, filename string) Response
 	// File serves a file located at the specified file path as the response.
@@ -19,16 +19,16 @@ type ContextResponse interface {
 	// Header sets an HTTP header field with the given key and value.
 	Header(key, value string) ContextResponse
 	// Json sends a JSON response with the specified status code and data object.
-	Json(code int, obj any) AbortResponse
+	Json(code int, obj any) ResponseWithAbort
 	// NoContent sends a response with no-body and the specified status code.
-	NoContent(code ...int) AbortResponse
+	NoContent(code ...int) ResponseWithAbort
 	// Origin returns the ResponseOrigin
 	Origin() ResponseOrigin
 	// Redirect performs an HTTP redirect to the specified location with the given status code.
-	Redirect(code int, location string) Response
+	Redirect(code int, location string) ResponseWithAbort
 	// String writes a string response with the specified status code and format.
 	// The 'values' parameter can be used to replace placeholders in the format string.
-	String(code int, format string, values ...any) AbortResponse
+	String(code int, format string, values ...any) ResponseWithAbort
 	// Success returns ResponseStatus with a 200 status code.
 	Success() ResponseStatus
 	// Status sets the HTTP response status code and returns the ResponseStatus.
@@ -49,7 +49,7 @@ type Response interface {
 	Render() error
 }
 
-type AbortResponse interface {
+type ResponseWithAbort interface {
 	Response
 	Abort() error
 }
@@ -67,11 +67,11 @@ type StreamWriter interface {
 
 type ResponseStatus interface {
 	// Data write the given data to the Response.
-	Data(contentType string, data []byte) Response
+	Data(contentType string, data []byte) ResponseWithAbort
 	// Json sends a JSON AbortResponse with the specified data object.
-	Json(obj any) AbortResponse
+	Json(obj any) ResponseWithAbort
 	// String writes a string AbortResponse with the specified format and values.
-	String(format string, values ...any) AbortResponse
+	String(format string, values ...any) ResponseWithAbort
 	// Stream sends a streaming response with the specified status code and the given reader.
 	Stream(step func(w StreamWriter) error) Response
 }

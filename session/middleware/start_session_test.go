@@ -338,7 +338,7 @@ func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.Context
 	return r
 }
 
-func (r *TestResponse) Data(int, string, []byte) contractshttp.Response {
+func (r *TestResponse) Data(int, string, []byte) contractshttp.ResponseWithAbort {
 	panic("do not need to implement it")
 }
 
@@ -354,11 +354,11 @@ func (r *TestResponse) Header(string, string) contractshttp.ContextResponse {
 	return r
 }
 
-func (r *TestResponse) Json(int, any) contractshttp.AbortResponse {
+func (r *TestResponse) Json(int, any) contractshttp.ResponseWithAbort {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) NoContent(...int) contractshttp.AbortResponse {
+func (r *TestResponse) NoContent(...int) contractshttp.ResponseWithAbort {
 	panic("do not need to implement it")
 }
 
@@ -366,11 +366,11 @@ func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Redirect(int, string) contractshttp.Response {
+func (r *TestResponse) Redirect(int, string) contractshttp.ResponseWithAbort {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) String(int, string, ...any) contractshttp.AbortResponse {
+func (r *TestResponse) String(int, string, ...any) contractshttp.ResponseWithAbort {
 	panic("do not need to implement it")
 }
 
