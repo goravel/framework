@@ -70,7 +70,7 @@ func (_c *File_Disk_Call) RunAndReturn(run func(string) filesystem.File) *File_D
 	return _c
 }
 
-// Extension provides a mock function with given fields:
+// Extension provides a mock function with no fields
 func (_m *File) Extension() (string, error) {
 	ret := _m.Called()
 
@@ -125,7 +125,7 @@ func (_c *File_Extension_Call) RunAndReturn(run func() (string, error)) *File_Ex
 	return _c
 }
 
-// File provides a mock function with given fields:
+// File provides a mock function with no fields
 func (_m *File) File() string {
 	ret := _m.Called()
 
@@ -170,7 +170,7 @@ func (_c *File_File_Call) RunAndReturn(run func() string) *File_File_Call {
 	return _c
 }
 
-// GetClientOriginalExtension provides a mock function with given fields:
+// GetClientOriginalExtension provides a mock function with no fields
 func (_m *File) GetClientOriginalExtension() string {
 	ret := _m.Called()
 
@@ -215,7 +215,7 @@ func (_c *File_GetClientOriginalExtension_Call) RunAndReturn(run func() string) 
 	return _c
 }
 
-// GetClientOriginalName provides a mock function with given fields:
+// GetClientOriginalName provides a mock function with no fields
 func (_m *File) GetClientOriginalName() string {
 	ret := _m.Called()
 
@@ -319,7 +319,7 @@ func (_c *File_HashName_Call) RunAndReturn(run func(...string) string) *File_Has
 	return _c
 }
 
-// LastModified provides a mock function with given fields:
+// LastModified provides a mock function with no fields
 func (_m *File) LastModified() (time.Time, error) {
 	ret := _m.Called()
 
@@ -374,7 +374,7 @@ func (_c *File_LastModified_Call) RunAndReturn(run func() (time.Time, error)) *F
 	return _c
 }
 
-// MimeType provides a mock function with given fields:
+// MimeType provides a mock function with no fields
 func (_m *File) MimeType() (string, error) {
 	ret := _m.Called()
 
@@ -429,7 +429,7 @@ func (_c *File_MimeType_Call) RunAndReturn(run func() (string, error)) *File_Mim
 	return _c
 }
 
-// Size provides a mock function with given fields:
+// Size provides a mock function with no fields
 func (_m *File) Size() (int64, error) {
 	ret := _m.Called()
 

@@ -22,7 +22,7 @@ func (_m *TestResponse) EXPECT() *TestResponse_Expecter {
 	return &TestResponse_Expecter{mock: &_m.Mock}
 }
 
-// AssertAccepted provides a mock function with given fields:
+// AssertAccepted provides a mock function with no fields
 func (_m *TestResponse) AssertAccepted() testing.TestResponse {
 	ret := _m.Called()
 
@@ -69,7 +69,7 @@ func (_c *TestResponse_AssertAccepted_Call) RunAndReturn(run func() testing.Test
 	return _c
 }
 
-// AssertBadRequest provides a mock function with given fields:
+// AssertBadRequest provides a mock function with no fields
 func (_m *TestResponse) AssertBadRequest() testing.TestResponse {
 	ret := _m.Called()
 
@@ -116,7 +116,7 @@ func (_c *TestResponse_AssertBadRequest_Call) RunAndReturn(run func() testing.Te
 	return _c
 }
 
-// AssertConflict provides a mock function with given fields:
+// AssertConflict provides a mock function with no fields
 func (_m *TestResponse) AssertConflict() testing.TestResponse {
 	ret := _m.Called()
 
@@ -356,7 +356,7 @@ func (_c *TestResponse_AssertCookieNotExpired_Call) RunAndReturn(run func(string
 	return _c
 }
 
-// AssertCreated provides a mock function with given fields:
+// AssertCreated provides a mock function with no fields
 func (_m *TestResponse) AssertCreated() testing.TestResponse {
 	ret := _m.Called()
 
@@ -467,7 +467,7 @@ func (_c *TestResponse_AssertDontSee_Call) RunAndReturn(run func([]string, ...bo
 }
 
 // AssertExactJson provides a mock function with given fields: _a0
-func (_m *TestResponse) AssertExactJson(_a0 map[string]any) testing.TestResponse {
+func (_m *TestResponse) AssertExactJson(_a0 map[string]interface{}) testing.TestResponse {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -475,7 +475,7 @@ func (_m *TestResponse) AssertExactJson(_a0 map[string]any) testing.TestResponse
 	}
 
 	var r0 testing.TestResponse
-	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestResponse); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) testing.TestResponse); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -492,14 +492,14 @@ type TestResponse_AssertExactJson_Call struct {
 }
 
 // AssertExactJson is a helper method to define mock.On call
-//   - _a0 map[string]any
+//   - _a0 map[string]interface{}
 func (_e *TestResponse_Expecter) AssertExactJson(_a0 interface{}) *TestResponse_AssertExactJson_Call {
 	return &TestResponse_AssertExactJson_Call{Call: _e.mock.On("AssertExactJson", _a0)}
 }
 
-func (_c *TestResponse_AssertExactJson_Call) Run(run func(_a0 map[string]any)) *TestResponse_AssertExactJson_Call {
+func (_c *TestResponse_AssertExactJson_Call) Run(run func(_a0 map[string]interface{})) *TestResponse_AssertExactJson_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]any))
+		run(args[0].(map[string]interface{}))
 	})
 	return _c
 }
@@ -509,7 +509,7 @@ func (_c *TestResponse_AssertExactJson_Call) Return(_a0 testing.TestResponse) *T
 	return _c
 }
 
-func (_c *TestResponse_AssertExactJson_Call) RunAndReturn(run func(map[string]any) testing.TestResponse) *TestResponse_AssertExactJson_Call {
+func (_c *TestResponse_AssertExactJson_Call) RunAndReturn(run func(map[string]interface{}) testing.TestResponse) *TestResponse_AssertExactJson_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -562,7 +562,7 @@ func (_c *TestResponse_AssertFluentJson_Call) RunAndReturn(run func(func(testing
 	return _c
 }
 
-// AssertForbidden provides a mock function with given fields:
+// AssertForbidden provides a mock function with no fields
 func (_m *TestResponse) AssertForbidden() testing.TestResponse {
 	ret := _m.Called()
 
@@ -609,7 +609,7 @@ func (_c *TestResponse_AssertForbidden_Call) RunAndReturn(run func() testing.Tes
 	return _c
 }
 
-// AssertFound provides a mock function with given fields:
+// AssertFound provides a mock function with no fields
 func (_m *TestResponse) AssertFound() testing.TestResponse {
 	ret := _m.Called()
 
@@ -656,7 +656,7 @@ func (_c *TestResponse_AssertFound_Call) RunAndReturn(run func() testing.TestRes
 	return _c
 }
 
-// AssertGone provides a mock function with given fields:
+// AssertGone provides a mock function with no fields
 func (_m *TestResponse) AssertGone() testing.TestResponse {
 	ret := _m.Called()
 
@@ -800,7 +800,7 @@ func (_c *TestResponse_AssertHeaderMissing_Call) RunAndReturn(run func(string) t
 	return _c
 }
 
-// AssertInternalServerError provides a mock function with given fields:
+// AssertInternalServerError provides a mock function with no fields
 func (_m *TestResponse) AssertInternalServerError() testing.TestResponse {
 	ret := _m.Called()
 
@@ -848,7 +848,7 @@ func (_c *TestResponse_AssertInternalServerError_Call) RunAndReturn(run func() t
 }
 
 // AssertJson provides a mock function with given fields: _a0
-func (_m *TestResponse) AssertJson(_a0 map[string]any) testing.TestResponse {
+func (_m *TestResponse) AssertJson(_a0 map[string]interface{}) testing.TestResponse {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -856,7 +856,7 @@ func (_m *TestResponse) AssertJson(_a0 map[string]any) testing.TestResponse {
 	}
 
 	var r0 testing.TestResponse
-	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestResponse); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) testing.TestResponse); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -873,14 +873,14 @@ type TestResponse_AssertJson_Call struct {
 }
 
 // AssertJson is a helper method to define mock.On call
-//   - _a0 map[string]any
+//   - _a0 map[string]interface{}
 func (_e *TestResponse_Expecter) AssertJson(_a0 interface{}) *TestResponse_AssertJson_Call {
 	return &TestResponse_AssertJson_Call{Call: _e.mock.On("AssertJson", _a0)}
 }
 
-func (_c *TestResponse_AssertJson_Call) Run(run func(_a0 map[string]any)) *TestResponse_AssertJson_Call {
+func (_c *TestResponse_AssertJson_Call) Run(run func(_a0 map[string]interface{})) *TestResponse_AssertJson_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]any))
+		run(args[0].(map[string]interface{}))
 	})
 	return _c
 }
@@ -890,13 +890,13 @@ func (_c *TestResponse_AssertJson_Call) Return(_a0 testing.TestResponse) *TestRe
 	return _c
 }
 
-func (_c *TestResponse_AssertJson_Call) RunAndReturn(run func(map[string]any) testing.TestResponse) *TestResponse_AssertJson_Call {
+func (_c *TestResponse_AssertJson_Call) RunAndReturn(run func(map[string]interface{}) testing.TestResponse) *TestResponse_AssertJson_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // AssertJsonMissing provides a mock function with given fields: _a0
-func (_m *TestResponse) AssertJsonMissing(_a0 map[string]any) testing.TestResponse {
+func (_m *TestResponse) AssertJsonMissing(_a0 map[string]interface{}) testing.TestResponse {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -904,7 +904,7 @@ func (_m *TestResponse) AssertJsonMissing(_a0 map[string]any) testing.TestRespon
 	}
 
 	var r0 testing.TestResponse
-	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestResponse); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) testing.TestResponse); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -921,14 +921,14 @@ type TestResponse_AssertJsonMissing_Call struct {
 }
 
 // AssertJsonMissing is a helper method to define mock.On call
-//   - _a0 map[string]any
+//   - _a0 map[string]interface{}
 func (_e *TestResponse_Expecter) AssertJsonMissing(_a0 interface{}) *TestResponse_AssertJsonMissing_Call {
 	return &TestResponse_AssertJsonMissing_Call{Call: _e.mock.On("AssertJsonMissing", _a0)}
 }
 
-func (_c *TestResponse_AssertJsonMissing_Call) Run(run func(_a0 map[string]any)) *TestResponse_AssertJsonMissing_Call {
+func (_c *TestResponse_AssertJsonMissing_Call) Run(run func(_a0 map[string]interface{})) *TestResponse_AssertJsonMissing_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]any))
+		run(args[0].(map[string]interface{}))
 	})
 	return _c
 }
@@ -938,12 +938,12 @@ func (_c *TestResponse_AssertJsonMissing_Call) Return(_a0 testing.TestResponse) 
 	return _c
 }
 
-func (_c *TestResponse_AssertJsonMissing_Call) RunAndReturn(run func(map[string]any) testing.TestResponse) *TestResponse_AssertJsonMissing_Call {
+func (_c *TestResponse_AssertJsonMissing_Call) RunAndReturn(run func(map[string]interface{}) testing.TestResponse) *TestResponse_AssertJsonMissing_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// AssertMethodNotAllowed provides a mock function with given fields:
+// AssertMethodNotAllowed provides a mock function with no fields
 func (_m *TestResponse) AssertMethodNotAllowed() testing.TestResponse {
 	ret := _m.Called()
 
@@ -990,7 +990,7 @@ func (_c *TestResponse_AssertMethodNotAllowed_Call) RunAndReturn(run func() test
 	return _c
 }
 
-// AssertMovedPermanently provides a mock function with given fields:
+// AssertMovedPermanently provides a mock function with no fields
 func (_m *TestResponse) AssertMovedPermanently() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1098,7 +1098,7 @@ func (_c *TestResponse_AssertNoContent_Call) RunAndReturn(run func(...int) testi
 	return _c
 }
 
-// AssertNotAcceptable provides a mock function with given fields:
+// AssertNotAcceptable provides a mock function with no fields
 func (_m *TestResponse) AssertNotAcceptable() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1145,7 +1145,7 @@ func (_c *TestResponse_AssertNotAcceptable_Call) RunAndReturn(run func() testing
 	return _c
 }
 
-// AssertNotFound provides a mock function with given fields:
+// AssertNotFound provides a mock function with no fields
 func (_m *TestResponse) AssertNotFound() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1192,7 +1192,7 @@ func (_c *TestResponse_AssertNotFound_Call) RunAndReturn(run func() testing.Test
 	return _c
 }
 
-// AssertNotModified provides a mock function with given fields:
+// AssertNotModified provides a mock function with no fields
 func (_m *TestResponse) AssertNotModified() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1239,7 +1239,7 @@ func (_c *TestResponse_AssertNotModified_Call) RunAndReturn(run func() testing.T
 	return _c
 }
 
-// AssertOk provides a mock function with given fields:
+// AssertOk provides a mock function with no fields
 func (_m *TestResponse) AssertOk() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1286,7 +1286,7 @@ func (_c *TestResponse_AssertOk_Call) RunAndReturn(run func() testing.TestRespon
 	return _c
 }
 
-// AssertPartialContent provides a mock function with given fields:
+// AssertPartialContent provides a mock function with no fields
 func (_m *TestResponse) AssertPartialContent() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1333,7 +1333,7 @@ func (_c *TestResponse_AssertPartialContent_Call) RunAndReturn(run func() testin
 	return _c
 }
 
-// AssertPaymentRequired provides a mock function with given fields:
+// AssertPaymentRequired provides a mock function with no fields
 func (_m *TestResponse) AssertPaymentRequired() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1380,7 +1380,7 @@ func (_c *TestResponse_AssertPaymentRequired_Call) RunAndReturn(run func() testi
 	return _c
 }
 
-// AssertRequestTimeout provides a mock function with given fields:
+// AssertRequestTimeout provides a mock function with no fields
 func (_m *TestResponse) AssertRequestTimeout() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1553,7 +1553,7 @@ func (_c *TestResponse_AssertSeeInOrder_Call) RunAndReturn(run func([]string, ..
 	return _c
 }
 
-// AssertServerError provides a mock function with given fields:
+// AssertServerError provides a mock function with no fields
 func (_m *TestResponse) AssertServerError() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1600,7 +1600,7 @@ func (_c *TestResponse_AssertServerError_Call) RunAndReturn(run func() testing.T
 	return _c
 }
 
-// AssertServiceUnavailable provides a mock function with given fields:
+// AssertServiceUnavailable provides a mock function with no fields
 func (_m *TestResponse) AssertServiceUnavailable() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1695,7 +1695,7 @@ func (_c *TestResponse_AssertStatus_Call) RunAndReturn(run func(int) testing.Tes
 	return _c
 }
 
-// AssertSuccessful provides a mock function with given fields:
+// AssertSuccessful provides a mock function with no fields
 func (_m *TestResponse) AssertSuccessful() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1742,7 +1742,7 @@ func (_c *TestResponse_AssertSuccessful_Call) RunAndReturn(run func() testing.Te
 	return _c
 }
 
-// AssertTemporaryRedirect provides a mock function with given fields:
+// AssertTemporaryRedirect provides a mock function with no fields
 func (_m *TestResponse) AssertTemporaryRedirect() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1789,7 +1789,7 @@ func (_c *TestResponse_AssertTemporaryRedirect_Call) RunAndReturn(run func() tes
 	return _c
 }
 
-// AssertTooManyRequests provides a mock function with given fields:
+// AssertTooManyRequests provides a mock function with no fields
 func (_m *TestResponse) AssertTooManyRequests() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1836,7 +1836,7 @@ func (_c *TestResponse_AssertTooManyRequests_Call) RunAndReturn(run func() testi
 	return _c
 }
 
-// AssertUnauthorized provides a mock function with given fields:
+// AssertUnauthorized provides a mock function with no fields
 func (_m *TestResponse) AssertUnauthorized() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1883,7 +1883,7 @@ func (_c *TestResponse_AssertUnauthorized_Call) RunAndReturn(run func() testing.
 	return _c
 }
 
-// AssertUnprocessableEntity provides a mock function with given fields:
+// AssertUnprocessableEntity provides a mock function with no fields
 func (_m *TestResponse) AssertUnprocessableEntity() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1930,7 +1930,7 @@ func (_c *TestResponse_AssertUnprocessableEntity_Call) RunAndReturn(run func() t
 	return _c
 }
 
-// AssertUnsupportedMediaType provides a mock function with given fields:
+// AssertUnsupportedMediaType provides a mock function with no fields
 func (_m *TestResponse) AssertUnsupportedMediaType() testing.TestResponse {
 	ret := _m.Called()
 
@@ -1977,7 +1977,7 @@ func (_c *TestResponse_AssertUnsupportedMediaType_Call) RunAndReturn(run func() 
 	return _c
 }
 
-// Content provides a mock function with given fields:
+// Content provides a mock function with no fields
 func (_m *TestResponse) Content() (string, error) {
 	ret := _m.Called()
 
@@ -2080,7 +2080,7 @@ func (_c *TestResponse_Cookie_Call) RunAndReturn(run func(string) *http.Cookie) 
 	return _c
 }
 
-// Cookies provides a mock function with given fields:
+// Cookies provides a mock function with no fields
 func (_m *TestResponse) Cookies() []*http.Cookie {
 	ret := _m.Called()
 
@@ -2127,7 +2127,7 @@ func (_c *TestResponse_Cookies_Call) RunAndReturn(run func() []*http.Cookie) *Te
 	return _c
 }
 
-// Headers provides a mock function with given fields:
+// Headers provides a mock function with no fields
 func (_m *TestResponse) Headers() http.Header {
 	ret := _m.Called()
 
@@ -2174,7 +2174,7 @@ func (_c *TestResponse_Headers_Call) RunAndReturn(run func() http.Header) *TestR
 	return _c
 }
 
-// IsServerError provides a mock function with given fields:
+// IsServerError provides a mock function with no fields
 func (_m *TestResponse) IsServerError() bool {
 	ret := _m.Called()
 
@@ -2219,7 +2219,7 @@ func (_c *TestResponse_IsServerError_Call) RunAndReturn(run func() bool) *TestRe
 	return _c
 }
 
-// IsSuccessful provides a mock function with given fields:
+// IsSuccessful provides a mock function with no fields
 func (_m *TestResponse) IsSuccessful() bool {
 	ret := _m.Called()
 
@@ -2264,24 +2264,24 @@ func (_c *TestResponse_IsSuccessful_Call) RunAndReturn(run func() bool) *TestRes
 	return _c
 }
 
-// Json provides a mock function with given fields:
-func (_m *TestResponse) Json() (map[string]any, error) {
+// Json provides a mock function with no fields
+func (_m *TestResponse) Json() (map[string]interface{}, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 map[string]any
+	var r0 map[string]interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (map[string]any, error)); ok {
+	if rf, ok := ret.Get(0).(func() (map[string]interface{}, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -2311,34 +2311,34 @@ func (_c *TestResponse_Json_Call) Run(run func()) *TestResponse_Json_Call {
 	return _c
 }
 
-func (_c *TestResponse_Json_Call) Return(_a0 map[string]any, _a1 error) *TestResponse_Json_Call {
+func (_c *TestResponse_Json_Call) Return(_a0 map[string]interface{}, _a1 error) *TestResponse_Json_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *TestResponse_Json_Call) RunAndReturn(run func() (map[string]any, error)) *TestResponse_Json_Call {
+func (_c *TestResponse_Json_Call) RunAndReturn(run func() (map[string]interface{}, error)) *TestResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Session provides a mock function with given fields:
-func (_m *TestResponse) Session() (map[string]any, error) {
+// Session provides a mock function with no fields
+func (_m *TestResponse) Session() (map[string]interface{}, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Session")
 	}
 
-	var r0 map[string]any
+	var r0 map[string]interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (map[string]any, error)); ok {
+	if rf, ok := ret.Get(0).(func() (map[string]interface{}, error)); ok {
 		return rf()
 	}
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -2368,12 +2368,12 @@ func (_c *TestResponse_Session_Call) Run(run func()) *TestResponse_Session_Call 
 	return _c
 }
 
-func (_c *TestResponse_Session_Call) Return(_a0 map[string]any, _a1 error) *TestResponse_Session_Call {
+func (_c *TestResponse_Session_Call) Return(_a0 map[string]interface{}, _a1 error) *TestResponse_Session_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *TestResponse_Session_Call) RunAndReturn(run func() (map[string]any, error)) *TestResponse_Session_Call {
+func (_c *TestResponse_Session_Call) RunAndReturn(run func() (map[string]interface{}, error)) *TestResponse_Session_Call {
 	_c.Call.Return(run)
 	return _c
 }

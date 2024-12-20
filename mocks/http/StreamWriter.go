@@ -17,7 +17,7 @@ func (_m *StreamWriter) EXPECT() *StreamWriter_Expecter {
 	return &StreamWriter_Expecter{mock: &_m.Mock}
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *StreamWriter) Flush() error {
 	ret := _m.Called()
 

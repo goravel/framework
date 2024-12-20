@@ -20,7 +20,7 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 	return &Repository_Expecter{mock: &_m.Mock}
 }
 
-// CreateRepository provides a mock function with given fields:
+// CreateRepository provides a mock function with no fields
 func (_m *Repository) CreateRepository() error {
 	ret := _m.Called()
 
@@ -111,7 +111,7 @@ func (_c *Repository_Delete_Call) RunAndReturn(run func(string) error) *Reposito
 	return _c
 }
 
-// DeleteRepository provides a mock function with given fields:
+// DeleteRepository provides a mock function with no fields
 func (_m *Repository) DeleteRepository() error {
 	ret := _m.Called()
 
@@ -156,7 +156,7 @@ func (_c *Repository_DeleteRepository_Call) RunAndReturn(run func() error) *Repo
 	return _c
 }
 
-// GetLast provides a mock function with given fields:
+// GetLast provides a mock function with no fields
 func (_m *Repository) GetLast() ([]migration.File, error) {
 	ret := _m.Called()
 
@@ -213,7 +213,7 @@ func (_c *Repository_GetLast_Call) RunAndReturn(run func() ([]migration.File, er
 	return _c
 }
 
-// GetMigrations provides a mock function with given fields:
+// GetMigrations provides a mock function with no fields
 func (_m *Repository) GetMigrations() ([]migration.File, error) {
 	ret := _m.Called()
 
@@ -386,7 +386,7 @@ func (_c *Repository_GetMigrationsByStep_Call) RunAndReturn(run func(int) ([]mig
 	return _c
 }
 
-// GetNextBatchNumber provides a mock function with given fields:
+// GetNextBatchNumber provides a mock function with no fields
 func (_m *Repository) GetNextBatchNumber() (int, error) {
 	ret := _m.Called()
 
@@ -441,7 +441,7 @@ func (_c *Repository_GetNextBatchNumber_Call) RunAndReturn(run func() (int, erro
 	return _c
 }
 
-// GetRan provides a mock function with given fields:
+// GetRan provides a mock function with no fields
 func (_m *Repository) GetRan() ([]string, error) {
 	ret := _m.Called()
 
@@ -545,7 +545,7 @@ func (_c *Repository_Log_Call) RunAndReturn(run func(string, int) error) *Reposi
 	return _c
 }
 
-// RepositoryExists provides a mock function with given fields:
+// RepositoryExists provides a mock function with no fields
 func (_m *Repository) RepositoryExists() bool {
 	ret := _m.Called()
 

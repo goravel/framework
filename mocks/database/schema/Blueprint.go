@@ -227,7 +227,7 @@ func (_c *Blueprint_Char_Call) RunAndReturn(run func(string, ...int) schema.Colu
 	return _c
 }
 
-// Create provides a mock function with given fields:
+// Create provides a mock function with no fields
 func (_m *Blueprint) Create() {
 	_m.Called()
 }
@@ -255,7 +255,7 @@ func (_c *Blueprint_Create_Call) Return() *Blueprint_Create_Call {
 }
 
 func (_c *Blueprint_Create_Call) RunAndReturn(run func()) *Blueprint_Create_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -529,7 +529,7 @@ func (_c *Blueprint_Double_Call) RunAndReturn(run func(string) schema.ColumnDefi
 	return _c
 }
 
-// Drop provides a mock function with given fields:
+// Drop provides a mock function with no fields
 func (_m *Blueprint) Drop() {
 	_m.Called()
 }
@@ -557,7 +557,7 @@ func (_c *Blueprint_Drop_Call) Return() *Blueprint_Drop_Call {
 }
 
 func (_c *Blueprint_Drop_Call) RunAndReturn(run func()) *Blueprint_Drop_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -603,7 +603,7 @@ func (_c *Blueprint_DropColumn_Call) Return() *Blueprint_DropColumn_Call {
 }
 
 func (_c *Blueprint_DropColumn_Call) RunAndReturn(run func(...string)) *Blueprint_DropColumn_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -649,7 +649,7 @@ func (_c *Blueprint_DropForeign_Call) Return() *Blueprint_DropForeign_Call {
 }
 
 func (_c *Blueprint_DropForeign_Call) RunAndReturn(run func(...string)) *Blueprint_DropForeign_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -682,7 +682,7 @@ func (_c *Blueprint_DropForeignByName_Call) Return() *Blueprint_DropForeignByNam
 }
 
 func (_c *Blueprint_DropForeignByName_Call) RunAndReturn(run func(string)) *Blueprint_DropForeignByName_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -728,7 +728,7 @@ func (_c *Blueprint_DropFullText_Call) Return() *Blueprint_DropFullText_Call {
 }
 
 func (_c *Blueprint_DropFullText_Call) RunAndReturn(run func(...string)) *Blueprint_DropFullText_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -761,11 +761,11 @@ func (_c *Blueprint_DropFullTextByName_Call) Return() *Blueprint_DropFullTextByN
 }
 
 func (_c *Blueprint_DropFullTextByName_Call) RunAndReturn(run func(string)) *Blueprint_DropFullTextByName_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// DropIfExists provides a mock function with given fields:
+// DropIfExists provides a mock function with no fields
 func (_m *Blueprint) DropIfExists() {
 	_m.Called()
 }
@@ -793,7 +793,7 @@ func (_c *Blueprint_DropIfExists_Call) Return() *Blueprint_DropIfExists_Call {
 }
 
 func (_c *Blueprint_DropIfExists_Call) RunAndReturn(run func()) *Blueprint_DropIfExists_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -839,7 +839,7 @@ func (_c *Blueprint_DropIndex_Call) Return() *Blueprint_DropIndex_Call {
 }
 
 func (_c *Blueprint_DropIndex_Call) RunAndReturn(run func(...string)) *Blueprint_DropIndex_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -872,7 +872,7 @@ func (_c *Blueprint_DropIndexByName_Call) Return() *Blueprint_DropIndexByName_Ca
 }
 
 func (_c *Blueprint_DropIndexByName_Call) RunAndReturn(run func(string)) *Blueprint_DropIndexByName_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -918,7 +918,7 @@ func (_c *Blueprint_DropPrimary_Call) Return() *Blueprint_DropPrimary_Call {
 }
 
 func (_c *Blueprint_DropPrimary_Call) RunAndReturn(run func(...string)) *Blueprint_DropPrimary_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -964,7 +964,7 @@ func (_c *Blueprint_DropSoftDeletes_Call) Return() *Blueprint_DropSoftDeletes_Ca
 }
 
 func (_c *Blueprint_DropSoftDeletes_Call) RunAndReturn(run func(...string)) *Blueprint_DropSoftDeletes_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1010,11 +1010,11 @@ func (_c *Blueprint_DropSoftDeletesTz_Call) Return() *Blueprint_DropSoftDeletesT
 }
 
 func (_c *Blueprint_DropSoftDeletesTz_Call) RunAndReturn(run func(...string)) *Blueprint_DropSoftDeletesTz_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// DropTimestamps provides a mock function with given fields:
+// DropTimestamps provides a mock function with no fields
 func (_m *Blueprint) DropTimestamps() {
 	_m.Called()
 }
@@ -1042,11 +1042,11 @@ func (_c *Blueprint_DropTimestamps_Call) Return() *Blueprint_DropTimestamps_Call
 }
 
 func (_c *Blueprint_DropTimestamps_Call) RunAndReturn(run func()) *Blueprint_DropTimestamps_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// DropTimestampsTz provides a mock function with given fields:
+// DropTimestampsTz provides a mock function with no fields
 func (_m *Blueprint) DropTimestampsTz() {
 	_m.Called()
 }
@@ -1074,7 +1074,7 @@ func (_c *Blueprint_DropTimestampsTz_Call) Return() *Blueprint_DropTimestampsTz_
 }
 
 func (_c *Blueprint_DropTimestampsTz_Call) RunAndReturn(run func()) *Blueprint_DropTimestampsTz_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1120,7 +1120,7 @@ func (_c *Blueprint_DropUnique_Call) Return() *Blueprint_DropUnique_Call {
 }
 
 func (_c *Blueprint_DropUnique_Call) RunAndReturn(run func(...string)) *Blueprint_DropUnique_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1153,12 +1153,12 @@ func (_c *Blueprint_DropUniqueByName_Call) Return() *Blueprint_DropUniqueByName_
 }
 
 func (_c *Blueprint_DropUniqueByName_Call) RunAndReturn(run func(string)) *Blueprint_DropUniqueByName_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
 // Enum provides a mock function with given fields: column, array
-func (_m *Blueprint) Enum(column string, array []any) schema.ColumnDefinition {
+func (_m *Blueprint) Enum(column string, array []interface{}) schema.ColumnDefinition {
 	ret := _m.Called(column, array)
 
 	if len(ret) == 0 {
@@ -1166,7 +1166,7 @@ func (_m *Blueprint) Enum(column string, array []any) schema.ColumnDefinition {
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(string, []any) schema.ColumnDefinition); ok {
+	if rf, ok := ret.Get(0).(func(string, []interface{}) schema.ColumnDefinition); ok {
 		r0 = rf(column, array)
 	} else {
 		if ret.Get(0) != nil {
@@ -1184,14 +1184,14 @@ type Blueprint_Enum_Call struct {
 
 // Enum is a helper method to define mock.On call
 //   - column string
-//   - array []any
+//   - array []interface{}
 func (_e *Blueprint_Expecter) Enum(column interface{}, array interface{}) *Blueprint_Enum_Call {
 	return &Blueprint_Enum_Call{Call: _e.mock.On("Enum", column, array)}
 }
 
-func (_c *Blueprint_Enum_Call) Run(run func(column string, array []any)) *Blueprint_Enum_Call {
+func (_c *Blueprint_Enum_Call) Run(run func(column string, array []interface{})) *Blueprint_Enum_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].([]any))
+		run(args[0].(string), args[1].([]interface{}))
 	})
 	return _c
 }
@@ -1201,7 +1201,7 @@ func (_c *Blueprint_Enum_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_En
 	return _c
 }
 
-func (_c *Blueprint_Enum_Call) RunAndReturn(run func(string, []any) schema.ColumnDefinition) *Blueprint_Enum_Call {
+func (_c *Blueprint_Enum_Call) RunAndReturn(run func(string, []interface{}) schema.ColumnDefinition) *Blueprint_Enum_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1391,7 +1391,7 @@ func (_c *Blueprint_FullText_Call) RunAndReturn(run func(...string) schema.Index
 	return _c
 }
 
-// GetAddedColumns provides a mock function with given fields:
+// GetAddedColumns provides a mock function with no fields
 func (_m *Blueprint) GetAddedColumns() []schema.ColumnDefinition {
 	ret := _m.Called()
 
@@ -1438,7 +1438,7 @@ func (_c *Blueprint_GetAddedColumns_Call) RunAndReturn(run func() []schema.Colum
 	return _c
 }
 
-// GetCommands provides a mock function with given fields:
+// GetCommands provides a mock function with no fields
 func (_m *Blueprint) GetCommands() []*schema.Command {
 	ret := _m.Called()
 
@@ -1485,7 +1485,7 @@ func (_c *Blueprint_GetCommands_Call) RunAndReturn(run func() []*schema.Command)
 	return _c
 }
 
-// GetTableName provides a mock function with given fields:
+// GetTableName provides a mock function with no fields
 func (_m *Blueprint) GetTableName() string {
 	ret := _m.Called()
 
@@ -2172,7 +2172,7 @@ func (_c *Blueprint_Primary_Call) Return() *Blueprint_Primary_Call {
 }
 
 func (_c *Blueprint_Primary_Call) RunAndReturn(run func(...string)) *Blueprint_Primary_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2205,7 +2205,7 @@ func (_c *Blueprint_Rename_Call) Return() *Blueprint_Rename_Call {
 }
 
 func (_c *Blueprint_Rename_Call) RunAndReturn(run func(string)) *Blueprint_Rename_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2239,7 +2239,7 @@ func (_c *Blueprint_RenameIndex_Call) Return() *Blueprint_RenameIndex_Call {
 }
 
 func (_c *Blueprint_RenameIndex_Call) RunAndReturn(run func(string, string)) *Blueprint_RenameIndex_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2272,7 +2272,7 @@ func (_c *Blueprint_SetTable_Call) Return() *Blueprint_SetTable_Call {
 }
 
 func (_c *Blueprint_SetTable_Call) RunAndReturn(run func(string)) *Blueprint_SetTable_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2899,7 +2899,7 @@ func (_c *Blueprint_Timestamps_Call) Return() *Blueprint_Timestamps_Call {
 }
 
 func (_c *Blueprint_Timestamps_Call) RunAndReturn(run func(...int)) *Blueprint_Timestamps_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2945,7 +2945,7 @@ func (_c *Blueprint_TimestampsTz_Call) Return() *Blueprint_TimestampsTz_Call {
 }
 
 func (_c *Blueprint_TimestampsTz_Call) RunAndReturn(run func(...int)) *Blueprint_TimestampsTz_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

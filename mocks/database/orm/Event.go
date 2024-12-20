@@ -22,7 +22,7 @@ func (_m *Event) EXPECT() *Event_Expecter {
 	return &Event_Expecter{mock: &_m.Mock}
 }
 
-// Context provides a mock function with given fields:
+// Context provides a mock function with no fields
 func (_m *Event) Context() context.Context {
 	ret := _m.Called()
 
@@ -70,19 +70,19 @@ func (_c *Event_Context_Call) RunAndReturn(run func() context.Context) *Event_Co
 }
 
 // GetAttribute provides a mock function with given fields: key
-func (_m *Event) GetAttribute(key string) any {
+func (_m *Event) GetAttribute(key string) interface{} {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAttribute")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func(string) any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -107,18 +107,18 @@ func (_c *Event_GetAttribute_Call) Run(run func(key string)) *Event_GetAttribute
 	return _c
 }
 
-func (_c *Event_GetAttribute_Call) Return(_a0 any) *Event_GetAttribute_Call {
+func (_c *Event_GetAttribute_Call) Return(_a0 interface{}) *Event_GetAttribute_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Event_GetAttribute_Call) RunAndReturn(run func(string) any) *Event_GetAttribute_Call {
+func (_c *Event_GetAttribute_Call) RunAndReturn(run func(string) interface{}) *Event_GetAttribute_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetOriginal provides a mock function with given fields: key, def
-func (_m *Event) GetOriginal(key string, def ...any) any {
+func (_m *Event) GetOriginal(key string, def ...interface{}) interface{} {
 	var _ca []interface{}
 	_ca = append(_ca, key)
 	_ca = append(_ca, def...)
@@ -128,12 +128,12 @@ func (_m *Event) GetOriginal(key string, def ...any) any {
 		panic("no return value specified for GetOriginal")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
 		r0 = rf(key, def...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -147,18 +147,18 @@ type Event_GetOriginal_Call struct {
 
 // GetOriginal is a helper method to define mock.On call
 //   - key string
-//   - def ...any
+//   - def ...interface{}
 func (_e *Event_Expecter) GetOriginal(key interface{}, def ...interface{}) *Event_GetOriginal_Call {
 	return &Event_GetOriginal_Call{Call: _e.mock.On("GetOriginal",
 		append([]interface{}{key}, def...)...)}
 }
 
-func (_c *Event_GetOriginal_Call) Run(run func(key string, def ...any)) *Event_GetOriginal_Call {
+func (_c *Event_GetOriginal_Call) Run(run func(key string, def ...interface{})) *Event_GetOriginal_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-1)
+		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -166,12 +166,12 @@ func (_c *Event_GetOriginal_Call) Run(run func(key string, def ...any)) *Event_G
 	return _c
 }
 
-func (_c *Event_GetOriginal_Call) Return(_a0 any) *Event_GetOriginal_Call {
+func (_c *Event_GetOriginal_Call) Return(_a0 interface{}) *Event_GetOriginal_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Event_GetOriginal_Call) RunAndReturn(run func(string, ...any) any) *Event_GetOriginal_Call {
+func (_c *Event_GetOriginal_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Event_GetOriginal_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -294,7 +294,7 @@ func (_c *Event_IsDirty_Call) RunAndReturn(run func(...string) bool) *Event_IsDi
 	return _c
 }
 
-// Query provides a mock function with given fields:
+// Query provides a mock function with no fields
 func (_m *Event) Query() orm.Query {
 	ret := _m.Called()
 
@@ -342,7 +342,7 @@ func (_c *Event_Query_Call) RunAndReturn(run func() orm.Query) *Event_Query_Call
 }
 
 // SetAttribute provides a mock function with given fields: key, value
-func (_m *Event) SetAttribute(key string, value any) {
+func (_m *Event) SetAttribute(key string, value interface{}) {
 	_m.Called(key, value)
 }
 
@@ -353,14 +353,14 @@ type Event_SetAttribute_Call struct {
 
 // SetAttribute is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 func (_e *Event_Expecter) SetAttribute(key interface{}, value interface{}) *Event_SetAttribute_Call {
 	return &Event_SetAttribute_Call{Call: _e.mock.On("SetAttribute", key, value)}
 }
 
-func (_c *Event_SetAttribute_Call) Run(run func(key string, value any)) *Event_SetAttribute_Call {
+func (_c *Event_SetAttribute_Call) Run(run func(key string, value interface{})) *Event_SetAttribute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -370,8 +370,8 @@ func (_c *Event_SetAttribute_Call) Return() *Event_SetAttribute_Call {
 	return _c
 }
 
-func (_c *Event_SetAttribute_Call) RunAndReturn(run func(string, any)) *Event_SetAttribute_Call {
-	_c.Call.Return(run)
+func (_c *Event_SetAttribute_Call) RunAndReturn(run func(string, interface{})) *Event_SetAttribute_Call {
+	_c.Run(run)
 	return _c
 }
 

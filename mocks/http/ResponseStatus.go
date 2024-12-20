@@ -95,14 +95,14 @@ type ResponseStatus_Json_Call struct {
 }
 
 // Json is a helper method to define mock.On call
-//   - obj any
+//   - obj interface{}
 func (_e *ResponseStatus_Expecter) Json(obj interface{}) *ResponseStatus_Json_Call {
 	return &ResponseStatus_Json_Call{Call: _e.mock.On("Json", obj)}
 }
 
-func (_c *ResponseStatus_Json_Call) Run(run func(obj any)) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) Run(run func(obj interface{})) *ResponseStatus_Json_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -195,18 +195,18 @@ type ResponseStatus_String_Call struct {
 
 // String is a helper method to define mock.On call
 //   - format string
-//   - values ...any
+//   - values ...interface{}
 func (_e *ResponseStatus_Expecter) String(format interface{}, values ...interface{}) *ResponseStatus_String_Call {
 	return &ResponseStatus_String_Call{Call: _e.mock.On("String",
 		append([]interface{}{format}, values...)...)}
 }
 
-func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...any)) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...interface{})) *ResponseStatus_String_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-1)
+		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)

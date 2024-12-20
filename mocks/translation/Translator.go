@@ -84,7 +84,7 @@ func (_c *Translator_Choice_Call) RunAndReturn(run func(string, int, ...translat
 	return _c
 }
 
-// CurrentLocale provides a mock function with given fields:
+// CurrentLocale provides a mock function with no fields
 func (_m *Translator) CurrentLocale() string {
 	ret := _m.Called()
 
@@ -190,7 +190,7 @@ func (_c *Translator_Get_Call) RunAndReturn(run func(string, ...translation.Opti
 	return _c
 }
 
-// GetFallback provides a mock function with given fields:
+// GetFallback provides a mock function with no fields
 func (_m *Translator) GetFallback() string {
 	ret := _m.Called()
 

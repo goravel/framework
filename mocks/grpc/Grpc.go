@@ -141,7 +141,7 @@ func (_c *Grpc_Run_Call) RunAndReturn(run func(...string) error) *Grpc_Run_Call 
 	return _c
 }
 
-// Server provides a mock function with given fields:
+// Server provides a mock function with no fields
 func (_m *Grpc) Server() *grpc.Server {
 	ret := _m.Called()
 
@@ -217,7 +217,7 @@ func (_c *Grpc_UnaryClientInterceptorGroups_Call) Return() *Grpc_UnaryClientInte
 }
 
 func (_c *Grpc_UnaryClientInterceptorGroups_Call) RunAndReturn(run func(map[string][]grpc.UnaryClientInterceptor)) *Grpc_UnaryClientInterceptorGroups_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -250,7 +250,7 @@ func (_c *Grpc_UnaryServerInterceptors_Call) Return() *Grpc_UnaryServerIntercept
 }
 
 func (_c *Grpc_UnaryServerInterceptors_Call) RunAndReturn(run func([]grpc.UnaryServerInterceptor)) *Grpc_UnaryServerInterceptors_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

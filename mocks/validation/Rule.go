@@ -20,7 +20,7 @@ func (_m *Rule) EXPECT() *Rule_Expecter {
 	return &Rule_Expecter{mock: &_m.Mock}
 }
 
-// Message provides a mock function with given fields:
+// Message provides a mock function with no fields
 func (_m *Rule) Message() string {
 	ret := _m.Called()
 
@@ -66,7 +66,7 @@ func (_c *Rule_Message_Call) RunAndReturn(run func() string) *Rule_Message_Call 
 }
 
 // Passes provides a mock function with given fields: data, val, options
-func (_m *Rule) Passes(data validation.Data, val any, options ...any) bool {
+func (_m *Rule) Passes(data validation.Data, val interface{}, options ...interface{}) bool {
 	var _ca []interface{}
 	_ca = append(_ca, data, val)
 	_ca = append(_ca, options...)
@@ -77,7 +77,7 @@ func (_m *Rule) Passes(data validation.Data, val any, options ...any) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(validation.Data, any, ...any) bool); ok {
+	if rf, ok := ret.Get(0).(func(validation.Data, interface{}, ...interface{}) bool); ok {
 		r0 = rf(data, val, options...)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -93,22 +93,22 @@ type Rule_Passes_Call struct {
 
 // Passes is a helper method to define mock.On call
 //   - data validation.Data
-//   - val any
-//   - options ...any
+//   - val interface{}
+//   - options ...interface{}
 func (_e *Rule_Expecter) Passes(data interface{}, val interface{}, options ...interface{}) *Rule_Passes_Call {
 	return &Rule_Passes_Call{Call: _e.mock.On("Passes",
 		append([]interface{}{data, val}, options...)...)}
 }
 
-func (_c *Rule_Passes_Call) Run(run func(data validation.Data, val any, options ...any)) *Rule_Passes_Call {
+func (_c *Rule_Passes_Call) Run(run func(data validation.Data, val interface{}, options ...interface{})) *Rule_Passes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-2)
+		variadicArgs := make([]interface{}, len(args)-2)
 		for i, a := range args[2:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
-		run(args[0].(validation.Data), args[1].(any), variadicArgs...)
+		run(args[0].(validation.Data), args[1].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -118,12 +118,12 @@ func (_c *Rule_Passes_Call) Return(_a0 bool) *Rule_Passes_Call {
 	return _c
 }
 
-func (_c *Rule_Passes_Call) RunAndReturn(run func(validation.Data, any, ...any) bool) *Rule_Passes_Call {
+func (_c *Rule_Passes_Call) RunAndReturn(run func(validation.Data, interface{}, ...interface{}) bool) *Rule_Passes_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Rule) Signature() string {
 	ret := _m.Called()
 

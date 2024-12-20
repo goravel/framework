@@ -21,7 +21,7 @@ func (_m *QueryWithObserver) EXPECT() *QueryWithObserver_Expecter {
 }
 
 // Observe provides a mock function with given fields: model, observer
-func (_m *QueryWithObserver) Observe(model any, observer orm.Observer) {
+func (_m *QueryWithObserver) Observe(model interface{}, observer orm.Observer) {
 	_m.Called(model, observer)
 }
 
@@ -31,15 +31,15 @@ type QueryWithObserver_Observe_Call struct {
 }
 
 // Observe is a helper method to define mock.On call
-//   - model any
+//   - model interface{}
 //   - observer orm.Observer
 func (_e *QueryWithObserver_Expecter) Observe(model interface{}, observer interface{}) *QueryWithObserver_Observe_Call {
 	return &QueryWithObserver_Observe_Call{Call: _e.mock.On("Observe", model, observer)}
 }
 
-func (_c *QueryWithObserver_Observe_Call) Run(run func(model any, observer orm.Observer)) *QueryWithObserver_Observe_Call {
+func (_c *QueryWithObserver_Observe_Call) Run(run func(model interface{}, observer orm.Observer)) *QueryWithObserver_Observe_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(orm.Observer))
+		run(args[0].(interface{}), args[1].(orm.Observer))
 	})
 	return _c
 }
@@ -49,8 +49,8 @@ func (_c *QueryWithObserver_Observe_Call) Return() *QueryWithObserver_Observe_Ca
 	return _c
 }
 
-func (_c *QueryWithObserver_Observe_Call) RunAndReturn(run func(any, orm.Observer)) *QueryWithObserver_Observe_Call {
-	_c.Call.Return(run)
+func (_c *QueryWithObserver_Observe_Call) RunAndReturn(run func(interface{}, orm.Observer)) *QueryWithObserver_Observe_Call {
+	_c.Run(run)
 	return _c
 }
 

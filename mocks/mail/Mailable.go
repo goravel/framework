@@ -20,7 +20,7 @@ func (_m *Mailable) EXPECT() *Mailable_Expecter {
 	return &Mailable_Expecter{mock: &_m.Mock}
 }
 
-// Attachments provides a mock function with given fields:
+// Attachments provides a mock function with no fields
 func (_m *Mailable) Attachments() []string {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *Mailable_Attachments_Call) RunAndReturn(run func() []string) *Mailable
 	return _c
 }
 
-// Content provides a mock function with given fields:
+// Content provides a mock function with no fields
 func (_m *Mailable) Content() *mail.Content {
 	ret := _m.Called()
 
@@ -114,7 +114,7 @@ func (_c *Mailable_Content_Call) RunAndReturn(run func() *mail.Content) *Mailabl
 	return _c
 }
 
-// Envelope provides a mock function with given fields:
+// Envelope provides a mock function with no fields
 func (_m *Mailable) Envelope() *mail.Envelope {
 	ret := _m.Called()
 
@@ -161,7 +161,7 @@ func (_c *Mailable_Envelope_Call) RunAndReturn(run func() *mail.Envelope) *Maila
 	return _c
 }
 
-// Queue provides a mock function with given fields:
+// Queue provides a mock function with no fields
 func (_m *Mailable) Queue() *mail.Queue {
 	ret := _m.Called()
 

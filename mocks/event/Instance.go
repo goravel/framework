@@ -20,7 +20,7 @@ func (_m *Instance) EXPECT() *Instance_Expecter {
 	return &Instance_Expecter{mock: &_m.Mock}
 }
 
-// GetEvents provides a mock function with given fields:
+// GetEvents provides a mock function with no fields
 func (_m *Instance) GetEvents() map[event.Event][]event.Listener {
 	ret := _m.Called()
 
@@ -145,7 +145,7 @@ func (_c *Instance_Register_Call) Return() *Instance_Register_Call {
 }
 
 func (_c *Instance_Register_Call) RunAndReturn(run func(map[event.Event][]event.Listener)) *Instance_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

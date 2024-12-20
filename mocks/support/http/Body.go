@@ -20,7 +20,7 @@ func (_m *Body) EXPECT() *Body_Expecter {
 	return &Body_Expecter{mock: &_m.Mock}
 }
 
-// Build provides a mock function with given fields:
+// Build provides a mock function with no fields
 func (_m *Body) Build() (http.Reader, error) {
 	ret := _m.Called()
 
@@ -78,19 +78,19 @@ func (_c *Body_Build_Call) RunAndReturn(run func() (http.Reader, error)) *Body_B
 }
 
 // GetField provides a mock function with given fields: key
-func (_m *Body) GetField(key string) any {
+func (_m *Body) GetField(key string) interface{} {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetField")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func(string) any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -115,18 +115,18 @@ func (_c *Body_GetField_Call) Run(run func(key string)) *Body_GetField_Call {
 	return _c
 }
 
-func (_c *Body_GetField_Call) Return(_a0 any) *Body_GetField_Call {
+func (_c *Body_GetField_Call) Return(_a0 interface{}) *Body_GetField_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Body_GetField_Call) RunAndReturn(run func(string) any) *Body_GetField_Call {
+func (_c *Body_GetField_Call) RunAndReturn(run func(string) interface{}) *Body_GetField_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // SetField provides a mock function with given fields: key, value
-func (_m *Body) SetField(key string, value any) http.Body {
+func (_m *Body) SetField(key string, value interface{}) http.Body {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -134,7 +134,7 @@ func (_m *Body) SetField(key string, value any) http.Body {
 	}
 
 	var r0 http.Body
-	if rf, ok := ret.Get(0).(func(string, any) http.Body); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) http.Body); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -152,14 +152,14 @@ type Body_SetField_Call struct {
 
 // SetField is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 func (_e *Body_Expecter) SetField(key interface{}, value interface{}) *Body_SetField_Call {
 	return &Body_SetField_Call{Call: _e.mock.On("SetField", key, value)}
 }
 
-func (_c *Body_SetField_Call) Run(run func(key string, value any)) *Body_SetField_Call {
+func (_c *Body_SetField_Call) Run(run func(key string, value interface{})) *Body_SetField_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -169,13 +169,13 @@ func (_c *Body_SetField_Call) Return(_a0 http.Body) *Body_SetField_Call {
 	return _c
 }
 
-func (_c *Body_SetField_Call) RunAndReturn(run func(string, any) http.Body) *Body_SetField_Call {
+func (_c *Body_SetField_Call) RunAndReturn(run func(string, interface{}) http.Body) *Body_SetField_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // SetFields provides a mock function with given fields: fields
-func (_m *Body) SetFields(fields map[string]any) http.Body {
+func (_m *Body) SetFields(fields map[string]interface{}) http.Body {
 	ret := _m.Called(fields)
 
 	if len(ret) == 0 {
@@ -183,7 +183,7 @@ func (_m *Body) SetFields(fields map[string]any) http.Body {
 	}
 
 	var r0 http.Body
-	if rf, ok := ret.Get(0).(func(map[string]any) http.Body); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) http.Body); ok {
 		r0 = rf(fields)
 	} else {
 		if ret.Get(0) != nil {
@@ -200,14 +200,14 @@ type Body_SetFields_Call struct {
 }
 
 // SetFields is a helper method to define mock.On call
-//   - fields map[string]any
+//   - fields map[string]interface{}
 func (_e *Body_Expecter) SetFields(fields interface{}) *Body_SetFields_Call {
 	return &Body_SetFields_Call{Call: _e.mock.On("SetFields", fields)}
 }
 
-func (_c *Body_SetFields_Call) Run(run func(fields map[string]any)) *Body_SetFields_Call {
+func (_c *Body_SetFields_Call) Run(run func(fields map[string]interface{})) *Body_SetFields_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]any))
+		run(args[0].(map[string]interface{}))
 	})
 	return _c
 }
@@ -217,7 +217,7 @@ func (_c *Body_SetFields_Call) Return(_a0 http.Body) *Body_SetFields_Call {
 	return _c
 }
 
-func (_c *Body_SetFields_Call) RunAndReturn(run func(map[string]any) http.Body) *Body_SetFields_Call {
+func (_c *Body_SetFields_Call) RunAndReturn(run func(map[string]interface{}) http.Body) *Body_SetFields_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -20,7 +20,7 @@ func (_m *Model) EXPECT() *Model_Expecter {
 	return &Model_Expecter{mock: &_m.Mock}
 }
 
-// Factory provides a mock function with given fields:
+// Factory provides a mock function with no fields
 func (_m *Model) Factory() factory.Factory {
 	ret := _m.Called()
 
