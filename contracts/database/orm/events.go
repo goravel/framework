@@ -7,17 +7,30 @@ import (
 type EventType string
 
 const (
-	EventRetrieved     EventType = "retrieved"
-	EventCreating      EventType = "creating"
-	EventCreated       EventType = "created"
-	EventUpdating      EventType = "updating"
-	EventUpdated       EventType = "Updated"
-	EventSaving        EventType = "saving"
-	EventSaved         EventType = "saved"
+	// Create events
+	EventCreating EventType = "creating"
+	EventCreated  EventType = "created"
+
+	// Update events
+	EventUpdating EventType = "updating"
+	EventUpdated  EventType = "updated"
+
+	// Save events
+	EventSaving EventType = "saving"
+	EventSaved  EventType = "saved"
+
+	// Delete events
 	EventDeleting      EventType = "deleting"
 	EventDeleted       EventType = "deleted"
 	EventForceDeleting EventType = "force_deleting"
 	EventForceDeleted  EventType = "force_deleted"
+
+	// Restore events
+	EventRestoring EventType = "restoring"
+	EventRestored  EventType = "restored"
+
+	// Retrieve events
+	EventRetrieved EventType = "retrieved"
 )
 
 type Event interface {

@@ -2390,6 +2390,73 @@ func (_c *Query_Raw_Call) RunAndReturn(run func(string, ...interface{}) orm.Quer
 	return _c
 }
 
+// Restore provides a mock function with given fields: model
+func (_m *Query) Restore(model ...interface{}) (*orm.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, model...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Restore")
+	}
+
+	var r0 *orm.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(...interface{}) (*orm.Result, error)); ok {
+		return rf(model...)
+	}
+	if rf, ok := ret.Get(0).(func(...interface{}) *orm.Result); ok {
+		r0 = rf(model...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*orm.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
+		r1 = rf(model...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Restore_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Restore'
+type Query_Restore_Call struct {
+	*mock.Call
+}
+
+// Restore is a helper method to define mock.On call
+//   - model ...interface{}
+func (_e *Query_Expecter) Restore(model ...interface{}) *Query_Restore_Call {
+	return &Query_Restore_Call{Call: _e.mock.On("Restore",
+		append([]interface{}{}, model...)...)}
+}
+
+func (_c *Query_Restore_Call) Run(run func(model ...interface{})) *Query_Restore_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Restore_Call) Return(_a0 *orm.Result, _a1 error) *Query_Restore_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Restore_Call) RunAndReturn(run func(...interface{}) (*orm.Result, error)) *Query_Restore_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Rollback provides a mock function with no fields
 func (_m *Query) Rollback() error {
 	ret := _m.Called()
