@@ -643,6 +643,55 @@ func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	return r.new(r.instance.Raw(sql, values...))
 }
 
+func (r *Query) Restore(model ...any) (*contractsorm.Result, error) {
+	var (
+		realModel any
+		err       error
+	)
+
+	query := r.buildConditions()
+
+	if len(model) > 0 {
+		realModel = model[0]
+		query, err = query.refreshConnection(realModel)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var (
+		deletedAtColumnName string
+
+		tx = query.instance
+	)
+	if realModel != nil {
+		deletedAtColumnName = getDeletedAtColumn(realModel)
+		tx = query.instance.Model(realModel)
+	} else if query.conditions.model != nil {
+		deletedAtColumnName = getDeletedAtColumn(query.conditions.model)
+	}
+	if deletedAtColumnName == "" {
+		return nil, errors.OrmDeletedAtColumnNotFound
+	}
+
+	if err := r.restoring(realModel); err != nil {
+		return nil, err
+	}
+
+	res := tx.Update(deletedAtColumnName, nil)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	if err := r.restored(realModel); err != nil {
+		return nil, err
+	}
+
+	return &contractsorm.Result{
+		RowsAffected: res.RowsAffected,
+	}, res.Error
+}
+
 func (r *Query) Rollback() error {
 	return r.instance.Rollback().Error
 }
@@ -803,7 +852,7 @@ func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
 		}
 	}
 
-	res, err := query.updates(query.instance.Statement.Dest)
+	res, err := query.update(query.instance.Statement.Dest)
 
 	if singleUpdate && err == nil {
 		if err := query.updated(query.instance.Statement.Dest); err != nil {
@@ -1233,22 +1282,6 @@ func (r *Query) creating(dest any) error {
 	return r.event(contractsorm.EventCreating, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) deleting(dest any) error {
-	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
-}
-
-func (r *Query) deleted(dest any) error {
-	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
-}
-
-func (r *Query) forceDeleting(dest any) error {
-	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
-}
-
-func (r *Query) forceDeleted(dest any) error {
-	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
-}
-
 func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	if r.conditions.withoutEvents {
 		return nil
@@ -1295,6 +1328,22 @@ func (r *Query) event(event contractsorm.EventType, model, dest any) error {
 	}
 
 	return nil
+}
+
+func (r *Query) deleting(dest any) error {
+	return r.event(contractsorm.EventDeleting, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) deleted(dest any) error {
+	return r.event(contractsorm.EventDeleted, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) forceDeleting(dest any) error {
+	return r.event(contractsorm.EventForceDeleting, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) forceDeleted(dest any) error {
+	return r.event(contractsorm.EventForceDeleted, r.instance.Statement.Model, dest)
 }
 
 func (r *Query) getObserver(dest any) contractsorm.Observer {
@@ -1398,6 +1447,14 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	return query, nil
 }
 
+func (r *Query) restored(dest any) error {
+	return r.event(contractsorm.EventRestored, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) restoring(dest any) error {
+	return r.event(contractsorm.EventRestoring, r.instance.Statement.Model, dest)
+}
+
 func (r *Query) retrieved(dest any) error {
 	return r.event(contractsorm.EventRetrieved, nil, dest)
 }
@@ -1477,7 +1534,7 @@ func (r *Query) updated(dest any) error {
 	return r.event(contractsorm.EventUpdated, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) updates(values any) (*contractsorm.Result, error) {
+func (r *Query) update(values any) (*contractsorm.Result, error) {
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return nil, errors.OrmQuerySelectAndOmitsConflict
 	}
@@ -1543,6 +1600,41 @@ func filterFindConditions(conds ...any) error {
 	return nil
 }
 
+func getDeletedAtColumn(model any) string {
+	if model == nil {
+		return ""
+	}
+
+	t := reflect.TypeOf(model)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
+		if t.Field(i).Type.Kind() == reflect.Struct {
+			if t.Field(i).Type == reflect.TypeOf(gormio.DeletedAt{}) {
+				return t.Field(i).Name
+			}
+
+			structField := t.Field(i).Type
+			for j := 0; j < structField.NumField(); j++ {
+				if !structField.Field(j).IsExported() {
+					continue
+				}
+
+				if structField.Field(j).Type == reflect.TypeOf(gormio.DeletedAt{}) {
+					return structField.Field(j).Name
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
 func getModelConnection(model any) (string, error) {
 	modelValue := reflect.ValueOf(model)
 	if modelValue.Kind() == reflect.Ptr && modelValue.IsNil() {
@@ -1581,28 +1673,50 @@ func getModelConnection(model any) (string, error) {
 
 func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
 	switch event {
-	case contractsorm.EventRetrieved:
-		return observer.Retrieved
-	case contractsorm.EventCreating:
-		return observer.Creating
 	case contractsorm.EventCreated:
 		return observer.Created
-	case contractsorm.EventUpdating:
-		return observer.Updating
-	case contractsorm.EventUpdated:
-		return observer.Updated
-	case contractsorm.EventSaving:
-		return observer.Saving
-	case contractsorm.EventSaved:
-		return observer.Saved
-	case contractsorm.EventDeleting:
-		return observer.Deleting
+	case contractsorm.EventCreating:
+		if o, ok := observer.(contractsorm.ObserverWithCreating); ok {
+			return o.Creating
+		}
 	case contractsorm.EventDeleted:
 		return observer.Deleted
-	case contractsorm.EventForceDeleting:
-		return observer.ForceDeleting
+	case contractsorm.EventDeleting:
+		if o, ok := observer.(contractsorm.ObserverWithDeleting); ok {
+			return o.Deleting
+		}
 	case contractsorm.EventForceDeleted:
 		return observer.ForceDeleted
+	case contractsorm.EventForceDeleting:
+		if o, ok := observer.(contractsorm.ObserverWithForceDeleting); ok {
+			return o.ForceDeleting
+		}
+	case contractsorm.EventRestored:
+		if o, ok := observer.(contractsorm.ObserverWithRestored); ok {
+			return o.Restored
+		}
+	case contractsorm.EventRestoring:
+		if o, ok := observer.(contractsorm.ObserverWithRestoring); ok {
+			return o.Restoring
+		}
+	case contractsorm.EventRetrieved:
+		if o, ok := observer.(contractsorm.ObserverWithRetrieved); ok {
+			return o.Retrieved
+		}
+	case contractsorm.EventSaved:
+		if o, ok := observer.(contractsorm.ObserverWithSaved); ok {
+			return o.Saved
+		}
+	case contractsorm.EventSaving:
+		if o, ok := observer.(contractsorm.ObserverWithSaving); ok {
+			return o.Saving
+		}
+	case contractsorm.EventUpdated:
+		return observer.Updated
+	case contractsorm.EventUpdating:
+		if o, ok := observer.(contractsorm.ObserverWithUpdating); ok {
+			return o.Updating
+		}
 	}
 
 	return nil

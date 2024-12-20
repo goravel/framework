@@ -102,7 +102,7 @@ var (
 	OrmQueryModelNotPointer        = New("model must be pointer")
 	OrmQuerySelectAndOmitsConflict = New("cannot set Select and Omits at the same time")
 	OrmRecordNotFound              = New("record not found")
-	OrmUnexpectedQueryType         = New("unexpected Query type %T, expected *gorm.Query")
+	OrmDeletedAtColumnNotFound     = New("deleted at column not found")
 
 	QueueDriverNotSupported     = New("unknown queue driver: %s")
 	QueueDuplicateJobSignature  = New("job signature duplicate: %s, the names of Job and Listener cannot be duplicated")
