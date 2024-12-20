@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	supportdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/testing/utils"
 )
 
 type TestTable int
@@ -176,7 +177,7 @@ func NewTestQuery(docker testing.DatabaseDriver) *TestQuery {
 	}
 
 	mockDriver.Common()
-	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
@@ -196,7 +197,7 @@ func NewTestQueryWithPrefixAndSingular(docker testing.DatabaseDriver) *TestQuery
 	}
 
 	mockDriver.WithPrefixAndSingular()
-	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
@@ -215,7 +216,7 @@ func NewTestQueryWithSchema(docker testing.DatabaseDriver, schema string) *TestQ
 	mockConfig := &mocksconfig.Config{}
 	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
 	mockDriver.WithPrefixAndSingular()
-	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
@@ -234,7 +235,7 @@ func NewTestQueryWithSchema(docker testing.DatabaseDriver, schema string) *TestQ
 
 	mockDriver.WithSchema(schema)
 
-	query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil, nil)
+	query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
@@ -271,7 +272,7 @@ func (r *TestQuery) QueryOfReadWrite(readDatabaseConfig testing.DatabaseConfig) 
 	mockDriver := getMockDriver(r.Docker(), mockConfig, r.Docker().Driver().String())
 	mockDriver.ReadWrite(readDatabaseConfig)
 
-	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), nil, nil)
+	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), utils.NewTestLog(), nil)
 }
 
 func getMockDriver(docker testing.DatabaseDriver, mockConfig *mocksconfig.Config, connection string) testMockDriver {

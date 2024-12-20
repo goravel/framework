@@ -71,7 +71,7 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
-	gorm, err := NewGorm(config, configBuilder)
+	gorm, err := NewGorm(config, configBuilder, log)
 	if err != nil {
 		return nil, err
 	}
