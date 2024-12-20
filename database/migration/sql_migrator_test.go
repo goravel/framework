@@ -133,16 +133,18 @@ func (s *SqlMigratorSuite) TestStatus() {
 			migrator, _ := getTestSqlMigrator(s.T(), driver, testQuery)
 
 			s.Equal("\x1b[30;43m\x1b[30;43m WARNING \x1b[0m\x1b[0m \x1b[33m\x1b[33mNo migrations found\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
-				err := migrator.Status()
+				status, err := migrator.Status()
 				s.NoError(err)
+				s.Nil(status)
 			}))
 
 			err := migrator.Run()
 			s.NoError(err)
 
 			s.Equal("\x1b[30;42m\x1b[30;42m SUCCESS \x1b[0m\x1b[0m \x1b[32m\x1b[32mMigration version: 20230311160527\x1b[0m\x1b[0m\n", color.CaptureOutput(func(w io.Writer) {
-				err := migrator.Status()
+				status, err := migrator.Status()
 				s.NoError(err)
+				s.Nil(status)
 			}))
 		})
 	}

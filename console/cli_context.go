@@ -1,9 +1,13 @@
 package console
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
+	"github.com/pterm/pterm"
 	"github.com/urfave/cli/v2"
 
 	"github.com/goravel/framework/contracts/console"
@@ -273,4 +277,32 @@ func (r *CliContext) WithProgressBar(items []any, callback func(any) error) ([]a
 	}
 
 	return items, nil
+}
+
+func (r *CliContext) TwoColumnDetail(first, second string, filler ...rune) {
+	margin := func(s string, left, right int) string {
+		var builder strings.Builder
+		if left > 0 {
+			builder.WriteString(strings.Repeat(" ", left))
+		}
+		builder.WriteString(s)
+		if right > 0 {
+			builder.WriteString(strings.Repeat(" ", right))
+		}
+		return builder.String()
+	}
+	width := func(s string) int {
+		return runewidth.StringWidth(pterm.RemoveColorFromString(s))
+	}
+	first = margin(first, 2, 1)
+	if w := width(second); w > 0 {
+		second = margin(second, 1, 2)
+	} else {
+		second = margin(second, 0, 2)
+	}
+	fillingText := ""
+	if w := pterm.GetTerminalWidth() - width(first) - width(second); w > 0 {
+		fillingText = color.Gray().Sprint(strings.Repeat(string(append(filler, '.')[0]), w))
+	}
+	r.Line(first + fillingText + second)
 }

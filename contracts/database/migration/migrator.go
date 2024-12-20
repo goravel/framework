@@ -5,6 +5,12 @@ const (
 	MigratorSql     = "sql"
 )
 
+type Status struct {
+	Name  string
+	Batch int
+	Ran   bool
+}
+
 type Migrator interface {
 	// Create a new migration file.
 	Create(name string) error
@@ -17,5 +23,5 @@ type Migrator interface {
 	// Run the migrations according to paths.
 	Run() error
 	// Status get the migration's status.
-	Status() error
+	Status() ([]Status, error)
 }
