@@ -316,28 +316,28 @@ func NewMockMysql(mockConfig *mocksconfig.Config, connection, database, username
 }
 
 func (r *MockMysql) Common() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockMysql) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockMysql) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
@@ -347,25 +347,25 @@ func (r *MockMysql) WithSchema(schema string) {
 }
 
 func (r *MockMysql) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("UTC")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("UTC")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
 	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockMysql) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockPostgres struct {
@@ -392,64 +392,64 @@ func NewMockPostgres(mockConfig *mocksconfig.Config, connection, database, usern
 }
 
 func (r *MockPostgres) Common() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.single()
 	r.basic()
 }
 
 func (r *MockPostgres) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.basic()
 }
 
 func (r *MockPostgres) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.single()
 	r.basic()
 }
 
 func (r *MockPostgres) WithSchema(schema string) {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return(schema)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return(schema)
 	r.single()
 	r.basic()
 }
 
 func (r *MockPostgres) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.search_path", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.search_path", r.connection), "public").Return("public")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
 	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
-
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockPostgres) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockSqlite struct {
@@ -470,27 +470,27 @@ func NewMockSqlite(mockConfig *mocksconfig.Config, connection, database string) 
 }
 
 func (r *MockSqlite) Common() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlite) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Database: readDatabaseConfig.Database},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Database: r.database},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockSqlite) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
@@ -500,17 +500,18 @@ func (r *MockSqlite) WithSchema(schema string) {
 }
 
 func (r *MockSqlite) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
 	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlite) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 }
 
 type MockSqlserver struct {
@@ -537,28 +538,28 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 }
 
 func (r *MockSqlserver) Common() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockSqlserver) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
@@ -568,23 +569,24 @@ func (r *MockSqlserver) WithSchema(schema string) {
 }
 
 func (r *MockSqlserver) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
 	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlserver) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type testTables struct {
@@ -1239,8 +1241,8 @@ CREATE TABLE role_user (
 }
 
 func mockPool(mockConfig *mocksconfig.Config) {
-	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
-	mockConfig.On("GetInt", "database.pool.max_open_conns", 100).Return(100)
-	mockConfig.On("GetInt", "database.pool.conn_max_idletime", 3600).Return(3600)
-	mockConfig.On("GetInt", "database.pool.conn_max_lifetime", 3600).Return(3600)
+	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
+	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
 }

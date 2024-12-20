@@ -11,15 +11,26 @@ import (
 
 	"gorm.io/gorm/logger"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
 )
 
-func NewLogger(log log.Log) logger.Interface {
+func NewLogger(config config.Config, log log.Log) logger.Interface {
+	level := logger.Warn
+	if config.GetBool("app.debug") {
+		level = logger.Info
+	}
+
+	slowThreshold := config.GetInt("database.slow_threshold", 200)
+	if slowThreshold <= 0 {
+		slowThreshold = 200
+	}
+
 	return &Logger{
 		log:           log,
-		level:         logger.Info,
-		slowThreshold: 200 * time.Millisecond,
+		level:         level,
+		slowThreshold: time.Duration(slowThreshold) * time.Millisecond,
 	}
 }
 

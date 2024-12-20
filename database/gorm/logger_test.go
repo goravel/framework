@@ -7,12 +7,65 @@ import (
 	"testing"
 	"time"
 
-	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm/logger"
+
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mockslog "github.com/goravel/framework/mocks/log"
 )
+
+func TestNewLogger(t *testing.T) {
+	var (
+		mockConfig *mocksconfig.Config
+	)
+	tests := []struct {
+		name      string
+		setup     func()
+		wantLevel logger.LogLevel
+		wantSlow  time.Duration
+	}{
+		{
+			name: "debug mode enabled",
+			setup: func() {
+				mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(300).Once()
+			},
+			wantLevel: logger.Info,
+			wantSlow:  300 * time.Millisecond,
+		},
+		{
+			name: "debug mode disabled",
+			setup: func() {
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(300).Once()
+			},
+			wantLevel: logger.Warn,
+			wantSlow:  300 * time.Millisecond,
+		},
+		{
+			name: "negative slow threshold",
+			setup: func() {
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(0).Once()
+			},
+			wantLevel: logger.Warn,
+			wantSlow:  200 * time.Millisecond,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockConfig = mocksconfig.NewConfig(t)
+			tt.setup()
+			logger := NewLogger(mockConfig, nil)
+
+			assert.Equal(t, tt.wantLevel, logger.(*Logger).level)
+			assert.Equal(t, tt.wantSlow, logger.(*Logger).slowThreshold)
+		})
+	}
+}
 
 type LoggerTestSuite struct {
 	suite.Suite
@@ -31,12 +84,6 @@ func (s *LoggerTestSuite) SetupTest() {
 		level:         logger.Info,
 		slowThreshold: 200 * time.Millisecond,
 	}
-}
-
-func (s *LoggerTestSuite) TestNewLogger() {
-	s.NotNil(s.logger)
-	s.Equal(logger.Info, s.logger.level)
-	s.Equal(200*time.Millisecond, s.logger.slowThreshold)
 }
 
 func (s *LoggerTestSuite) TestLogMode() {

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	gormio "gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
@@ -100,18 +99,11 @@ func (r *Builder) init(fullConfig database.FullConfig) error {
 		return errors.OrmNoDialectorsFound
 	}
 
-	var logLevel gormlogger.LogLevel
-	if r.config.GetBool("app.debug") {
-		logLevel = gormlogger.Info
-	} else {
-		logLevel = gormlogger.Warn
-	}
-
-	logger := NewLogger(r.log)
+	logger := NewLogger(r.config, r.log)
 	instance, err := gormio.Open(dialectors[0], &gormio.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
-		Logger:                                   logger.LogMode(logLevel),
+		Logger:                                   logger,
 		NowFunc: func() time.Time {
 			return carbon.Now().StdTime()
 		},
