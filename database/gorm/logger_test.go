@@ -93,14 +93,12 @@ func (s *LoggerTestSuite) TestLogMode() {
 }
 
 func (s *LoggerTestSuite) TestInfo() {
-	s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 	s.mockLog.EXPECT().Infof("test message", mock.Anything).Return().Once()
 
 	s.logger.Info(context.Background(), "test message")
 }
 
 func (s *LoggerTestSuite) TestWarn() {
-	s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 	s.mockLog.EXPECT().Warningf("test warning", mock.Anything).Return().Once()
 
 	s.logger.Warn(context.Background(), "test warning")
@@ -132,7 +130,6 @@ func (s *LoggerTestSuite) TestError() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			if tt.shouldLog {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Return().Once()
 			}
 
@@ -159,7 +156,6 @@ func (s *LoggerTestSuite) TestTrace() {
 			err:     assert.AnError,
 			level:   logger.Error,
 			setup: func() {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Errorf("[%.3fms] [rows:%v] %s\t%s", mock.Anything, rows, sql, assert.AnError).Return().Once()
 			},
 		},
@@ -170,7 +166,6 @@ func (s *LoggerTestSuite) TestTrace() {
 			err:     assert.AnError,
 			level:   logger.Error,
 			setup: func() {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Errorf("[%.3fms] [rows:%v] %s\t%s", mock.Anything, "-", sql, assert.AnError).Return().Once()
 			},
 		},
@@ -180,7 +175,6 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 300 * time.Millisecond,
 			level:   logger.Warn,
 			setup: func() {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Warningf("[%.3fms] [rows:%v] [SLOW] %s", mock.Anything, rows, sql).Return().Once()
 			},
 		},
@@ -190,7 +184,6 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 300 * time.Millisecond,
 			level:   logger.Warn,
 			setup: func() {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Warningf("[%.3fms] [rows:%v] [SLOW] %s", mock.Anything, "-", sql).Return().Once()
 			},
 		},
@@ -200,7 +193,6 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 50 * time.Millisecond,
 			level:   logger.Info,
 			setup: func() {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Infof("[%.3fms] [rows:%v] %s", mock.Anything, rows, sql).Return().Once()
 			},
 		},
@@ -210,7 +202,6 @@ func (s *LoggerTestSuite) TestTrace() {
 			elapsed: 50 * time.Millisecond,
 			level:   logger.Info,
 			setup: func() {
-				s.mockLog.EXPECT().With(mock.Anything).Return(s.mockLog).Once()
 				s.mockLog.EXPECT().Infof("[%.3fms] [rows:%v] %s", mock.Anything, "-", sql).Return().Once()
 			},
 		},
