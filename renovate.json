@@ -7,6 +7,11 @@
     "🤖 Dependencies"
   ],
   "commitMessagePrefix": "chore(deps): ",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "platformAutomerge": true,
   "postUpdateOptions": [
     "gomodTidy"
   ],
@@ -14,15 +19,12 @@
     {
       "groupName": "all dependencies",
       "groupSlug": "all",
-      "description": "Automerge updates",
-      "matchPackageNames": [
-        "*"
-      ],
+      "description": "Automerge non-major updates",
       "matchUpdateTypes": [
         "digest",
+        "pin",
         "patch",
-        "minor",
-        "major"
+        "minor"
       ],
       "automerge": true
     }
