@@ -116,7 +116,7 @@ func (_c *Event_Cron_Call) RunAndReturn(run func(string) schedule.Event) *Event_
 	return _c
 }
 
-// Daily provides a mock function with given fields:
+// Daily provides a mock function with no fields
 func (_m *Event) Daily() schedule.Event {
 	ret := _m.Called()
 
@@ -211,7 +211,7 @@ func (_c *Event_DailyAt_Call) RunAndReturn(run func(string) schedule.Event) *Eve
 	return _c
 }
 
-// DelayIfStillRunning provides a mock function with given fields:
+// DelayIfStillRunning provides a mock function with no fields
 func (_m *Event) DelayIfStillRunning() schedule.Event {
 	ret := _m.Called()
 
@@ -258,7 +258,7 @@ func (_c *Event_DelayIfStillRunning_Call) RunAndReturn(run func() schedule.Event
 	return _c
 }
 
-// EveryFifteenMinutes provides a mock function with given fields:
+// EveryFifteenMinutes provides a mock function with no fields
 func (_m *Event) EveryFifteenMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -305,7 +305,7 @@ func (_c *Event_EveryFifteenMinutes_Call) RunAndReturn(run func() schedule.Event
 	return _c
 }
 
-// EveryFiveMinutes provides a mock function with given fields:
+// EveryFiveMinutes provides a mock function with no fields
 func (_m *Event) EveryFiveMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -352,7 +352,7 @@ func (_c *Event_EveryFiveMinutes_Call) RunAndReturn(run func() schedule.Event) *
 	return _c
 }
 
-// EveryFourHours provides a mock function with given fields:
+// EveryFourHours provides a mock function with no fields
 func (_m *Event) EveryFourHours() schedule.Event {
 	ret := _m.Called()
 
@@ -399,7 +399,7 @@ func (_c *Event_EveryFourHours_Call) RunAndReturn(run func() schedule.Event) *Ev
 	return _c
 }
 
-// EveryFourMinutes provides a mock function with given fields:
+// EveryFourMinutes provides a mock function with no fields
 func (_m *Event) EveryFourMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -446,7 +446,7 @@ func (_c *Event_EveryFourMinutes_Call) RunAndReturn(run func() schedule.Event) *
 	return _c
 }
 
-// EveryMinute provides a mock function with given fields:
+// EveryMinute provides a mock function with no fields
 func (_m *Event) EveryMinute() schedule.Event {
 	ret := _m.Called()
 
@@ -493,7 +493,7 @@ func (_c *Event_EveryMinute_Call) RunAndReturn(run func() schedule.Event) *Event
 	return _c
 }
 
-// EverySixHours provides a mock function with given fields:
+// EverySixHours provides a mock function with no fields
 func (_m *Event) EverySixHours() schedule.Event {
 	ret := _m.Called()
 
@@ -540,7 +540,7 @@ func (_c *Event_EverySixHours_Call) RunAndReturn(run func() schedule.Event) *Eve
 	return _c
 }
 
-// EveryTenMinutes provides a mock function with given fields:
+// EveryTenMinutes provides a mock function with no fields
 func (_m *Event) EveryTenMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -587,7 +587,7 @@ func (_c *Event_EveryTenMinutes_Call) RunAndReturn(run func() schedule.Event) *E
 	return _c
 }
 
-// EveryThirtyMinutes provides a mock function with given fields:
+// EveryThirtyMinutes provides a mock function with no fields
 func (_m *Event) EveryThirtyMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -634,7 +634,7 @@ func (_c *Event_EveryThirtyMinutes_Call) RunAndReturn(run func() schedule.Event)
 	return _c
 }
 
-// EveryThreeHours provides a mock function with given fields:
+// EveryThreeHours provides a mock function with no fields
 func (_m *Event) EveryThreeHours() schedule.Event {
 	ret := _m.Called()
 
@@ -681,7 +681,7 @@ func (_c *Event_EveryThreeHours_Call) RunAndReturn(run func() schedule.Event) *E
 	return _c
 }
 
-// EveryThreeMinutes provides a mock function with given fields:
+// EveryThreeMinutes provides a mock function with no fields
 func (_m *Event) EveryThreeMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -728,7 +728,7 @@ func (_c *Event_EveryThreeMinutes_Call) RunAndReturn(run func() schedule.Event) 
 	return _c
 }
 
-// EveryTwoHours provides a mock function with given fields:
+// EveryTwoHours provides a mock function with no fields
 func (_m *Event) EveryTwoHours() schedule.Event {
 	ret := _m.Called()
 
@@ -775,7 +775,7 @@ func (_c *Event_EveryTwoHours_Call) RunAndReturn(run func() schedule.Event) *Eve
 	return _c
 }
 
-// EveryTwoMinutes provides a mock function with given fields:
+// EveryTwoMinutes provides a mock function with no fields
 func (_m *Event) EveryTwoMinutes() schedule.Event {
 	ret := _m.Called()
 
@@ -822,7 +822,7 @@ func (_c *Event_EveryTwoMinutes_Call) RunAndReturn(run func() schedule.Event) *E
 	return _c
 }
 
-// GetCallback provides a mock function with given fields:
+// GetCallback provides a mock function with no fields
 func (_m *Event) GetCallback() func() {
 	ret := _m.Called()
 
@@ -869,7 +869,7 @@ func (_c *Event_GetCallback_Call) RunAndReturn(run func() func()) *Event_GetCall
 	return _c
 }
 
-// GetCommand provides a mock function with given fields:
+// GetCommand provides a mock function with no fields
 func (_m *Event) GetCommand() string {
 	ret := _m.Called()
 
@@ -914,7 +914,7 @@ func (_c *Event_GetCommand_Call) RunAndReturn(run func() string) *Event_GetComma
 	return _c
 }
 
-// GetCron provides a mock function with given fields:
+// GetCron provides a mock function with no fields
 func (_m *Event) GetCron() string {
 	ret := _m.Called()
 
@@ -959,7 +959,7 @@ func (_c *Event_GetCron_Call) RunAndReturn(run func() string) *Event_GetCron_Cal
 	return _c
 }
 
-// GetDelayIfStillRunning provides a mock function with given fields:
+// GetDelayIfStillRunning provides a mock function with no fields
 func (_m *Event) GetDelayIfStillRunning() bool {
 	ret := _m.Called()
 
@@ -1004,7 +1004,7 @@ func (_c *Event_GetDelayIfStillRunning_Call) RunAndReturn(run func() bool) *Even
 	return _c
 }
 
-// GetName provides a mock function with given fields:
+// GetName provides a mock function with no fields
 func (_m *Event) GetName() string {
 	ret := _m.Called()
 
@@ -1049,7 +1049,7 @@ func (_c *Event_GetName_Call) RunAndReturn(run func() string) *Event_GetName_Cal
 	return _c
 }
 
-// GetSkipIfStillRunning provides a mock function with given fields:
+// GetSkipIfStillRunning provides a mock function with no fields
 func (_m *Event) GetSkipIfStillRunning() bool {
 	ret := _m.Called()
 
@@ -1094,7 +1094,7 @@ func (_c *Event_GetSkipIfStillRunning_Call) RunAndReturn(run func() bool) *Event
 	return _c
 }
 
-// Hourly provides a mock function with given fields:
+// Hourly provides a mock function with no fields
 func (_m *Event) Hourly() schedule.Event {
 	ret := _m.Called()
 
@@ -1189,7 +1189,7 @@ func (_c *Event_HourlyAt_Call) RunAndReturn(run func([]string) schedule.Event) *
 	return _c
 }
 
-// IsOnOneServer provides a mock function with given fields:
+// IsOnOneServer provides a mock function with no fields
 func (_m *Event) IsOnOneServer() bool {
 	ret := _m.Called()
 
@@ -1282,7 +1282,7 @@ func (_c *Event_Name_Call) RunAndReturn(run func(string) schedule.Event) *Event_
 	return _c
 }
 
-// OnOneServer provides a mock function with given fields:
+// OnOneServer provides a mock function with no fields
 func (_m *Event) OnOneServer() schedule.Event {
 	ret := _m.Called()
 
@@ -1329,7 +1329,7 @@ func (_c *Event_OnOneServer_Call) RunAndReturn(run func() schedule.Event) *Event
 	return _c
 }
 
-// SkipIfStillRunning provides a mock function with given fields:
+// SkipIfStillRunning provides a mock function with no fields
 func (_m *Event) SkipIfStillRunning() schedule.Event {
 	ret := _m.Called()
 

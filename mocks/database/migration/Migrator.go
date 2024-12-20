@@ -63,7 +63,7 @@ func (_c *Migrator_Create_Call) RunAndReturn(run func(string) error) *Migrator_C
 	return _c
 }
 
-// Fresh provides a mock function with given fields:
+// Fresh provides a mock function with no fields
 func (_m *Migrator) Fresh() error {
 	ret := _m.Called()
 
@@ -108,7 +108,7 @@ func (_c *Migrator_Fresh_Call) RunAndReturn(run func() error) *Migrator_Fresh_Ca
 	return _c
 }
 
-// Reset provides a mock function with given fields:
+// Reset provides a mock function with no fields
 func (_m *Migrator) Reset() error {
 	ret := _m.Called()
 
@@ -200,7 +200,7 @@ func (_c *Migrator_Rollback_Call) RunAndReturn(run func(int, int) error) *Migrat
 	return _c
 }
 
-// Run provides a mock function with given fields:
+// Run provides a mock function with no fields
 func (_m *Migrator) Run() error {
 	ret := _m.Called()
 
@@ -245,7 +245,7 @@ func (_c *Migrator_Run_Call) RunAndReturn(run func() error) *Migrator_Run_Call {
 	return _c
 }
 
-// Status provides a mock function with given fields:
+// Status provides a mock function with no fields
 func (_m *Migrator) Status() error {
 	ret := _m.Called()
 

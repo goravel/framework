@@ -50,7 +50,7 @@ func (_c *RateLimiter_For_Call) Return() *RateLimiter_For_Call {
 }
 
 func (_c *RateLimiter_For_Call) RunAndReturn(run func(string, func(http.Context) http.Limit)) *RateLimiter_For_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -84,7 +84,7 @@ func (_c *RateLimiter_ForWithLimits_Call) Return() *RateLimiter_ForWithLimits_Ca
 }
 
 func (_c *RateLimiter_ForWithLimits_Call) RunAndReturn(run func(string, func(http.Context) []http.Limit)) *RateLimiter_ForWithLimits_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

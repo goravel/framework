@@ -20,7 +20,7 @@ func (_m *ForeignKeyDefinition) EXPECT() *ForeignKeyDefinition_Expecter {
 	return &ForeignKeyDefinition_Expecter{mock: &_m.Mock}
 }
 
-// CascadeOnDelete provides a mock function with given fields:
+// CascadeOnDelete provides a mock function with no fields
 func (_m *ForeignKeyDefinition) CascadeOnDelete() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *ForeignKeyDefinition_CascadeOnDelete_Call) RunAndReturn(run func() sch
 	return _c
 }
 
-// CascadeOnUpdate provides a mock function with given fields:
+// CascadeOnUpdate provides a mock function with no fields
 func (_m *ForeignKeyDefinition) CascadeOnUpdate() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 
@@ -162,7 +162,7 @@ func (_c *ForeignKeyDefinition_Name_Call) RunAndReturn(run func(string) schema.F
 	return _c
 }
 
-// NoActionOnDelete provides a mock function with given fields:
+// NoActionOnDelete provides a mock function with no fields
 func (_m *ForeignKeyDefinition) NoActionOnDelete() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 
@@ -209,7 +209,7 @@ func (_c *ForeignKeyDefinition_NoActionOnDelete_Call) RunAndReturn(run func() sc
 	return _c
 }
 
-// NoActionOnUpdate provides a mock function with given fields:
+// NoActionOnUpdate provides a mock function with no fields
 func (_m *ForeignKeyDefinition) NoActionOnUpdate() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 
@@ -256,7 +256,7 @@ func (_c *ForeignKeyDefinition_NoActionOnUpdate_Call) RunAndReturn(run func() sc
 	return _c
 }
 
-// NullOnDelete provides a mock function with given fields:
+// NullOnDelete provides a mock function with no fields
 func (_m *ForeignKeyDefinition) NullOnDelete() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 
@@ -412,7 +412,7 @@ func (_c *ForeignKeyDefinition_References_Call) RunAndReturn(run func(...string)
 	return _c
 }
 
-// RestrictOnDelete provides a mock function with given fields:
+// RestrictOnDelete provides a mock function with no fields
 func (_m *ForeignKeyDefinition) RestrictOnDelete() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 
@@ -459,7 +459,7 @@ func (_c *ForeignKeyDefinition_RestrictOnDelete_Call) RunAndReturn(run func() sc
 	return _c
 }
 
-// RestrictOnUpdate provides a mock function with given fields:
+// RestrictOnUpdate provides a mock function with no fields
 func (_m *ForeignKeyDefinition) RestrictOnUpdate() schema.ForeignKeyDefinition {
 	ret := _m.Called()
 

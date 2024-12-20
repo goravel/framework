@@ -1192,7 +1192,7 @@ func (_c *Grammar_CompileTables_Call) RunAndReturn(run func(string) string) *Gra
 	return _c
 }
 
-// CompileTypes provides a mock function with given fields:
+// CompileTypes provides a mock function with no fields
 func (_m *Grammar) CompileTypes() string {
 	ret := _m.Called()
 
@@ -1330,7 +1330,7 @@ func (_c *Grammar_CompileViews_Call) RunAndReturn(run func(string) string) *Gram
 	return _c
 }
 
-// GetAttributeCommands provides a mock function with given fields:
+// GetAttributeCommands provides a mock function with no fields
 func (_m *Grammar) GetAttributeCommands() []string {
 	ret := _m.Called()
 

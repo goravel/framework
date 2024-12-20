@@ -17,7 +17,7 @@ func (_m *Response) EXPECT() *Response_Expecter {
 	return &Response_Expecter{mock: &_m.Mock}
 }
 
-// Allowed provides a mock function with given fields:
+// Allowed provides a mock function with no fields
 func (_m *Response) Allowed() bool {
 	ret := _m.Called()
 
@@ -62,7 +62,7 @@ func (_c *Response_Allowed_Call) RunAndReturn(run func() bool) *Response_Allowed
 	return _c
 }
 
-// Message provides a mock function with given fields:
+// Message provides a mock function with no fields
 func (_m *Response) Message() string {
 	ret := _m.Called()
 

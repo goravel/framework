@@ -63,20 +63,20 @@ func (_c *View_Exists_Call) RunAndReturn(run func(string) bool) *View_Exists_Cal
 	return _c
 }
 
-// GetShared provides a mock function with given fields:
-func (_m *View) GetShared() map[string]any {
+// GetShared provides a mock function with no fields
+func (_m *View) GetShared() map[string]interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetShared")
 	}
 
-	var r0 map[string]any
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -100,18 +100,18 @@ func (_c *View_GetShared_Call) Run(run func()) *View_GetShared_Call {
 	return _c
 }
 
-func (_c *View_GetShared_Call) Return(_a0 map[string]any) *View_GetShared_Call {
+func (_c *View_GetShared_Call) Return(_a0 map[string]interface{}) *View_GetShared_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *View_GetShared_Call) RunAndReturn(run func() map[string]any) *View_GetShared_Call {
+func (_c *View_GetShared_Call) RunAndReturn(run func() map[string]interface{}) *View_GetShared_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Share provides a mock function with given fields: key, value
-func (_m *View) Share(key string, value any) {
+func (_m *View) Share(key string, value interface{}) {
 	_m.Called(key, value)
 }
 
@@ -122,14 +122,14 @@ type View_Share_Call struct {
 
 // Share is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 func (_e *View_Expecter) Share(key interface{}, value interface{}) *View_Share_Call {
 	return &View_Share_Call{Call: _e.mock.On("Share", key, value)}
 }
 
-func (_c *View_Share_Call) Run(run func(key string, value any)) *View_Share_Call {
+func (_c *View_Share_Call) Run(run func(key string, value interface{})) *View_Share_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -139,13 +139,13 @@ func (_c *View_Share_Call) Return() *View_Share_Call {
 	return _c
 }
 
-func (_c *View_Share_Call) RunAndReturn(run func(string, any)) *View_Share_Call {
-	_c.Call.Return(run)
+func (_c *View_Share_Call) RunAndReturn(run func(string, interface{})) *View_Share_Call {
+	_c.Run(run)
 	return _c
 }
 
 // Shared provides a mock function with given fields: key, def
-func (_m *View) Shared(key string, def ...any) any {
+func (_m *View) Shared(key string, def ...interface{}) interface{} {
 	var _ca []interface{}
 	_ca = append(_ca, key)
 	_ca = append(_ca, def...)
@@ -155,12 +155,12 @@ func (_m *View) Shared(key string, def ...any) any {
 		panic("no return value specified for Shared")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
 		r0 = rf(key, def...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -174,18 +174,18 @@ type View_Shared_Call struct {
 
 // Shared is a helper method to define mock.On call
 //   - key string
-//   - def ...any
+//   - def ...interface{}
 func (_e *View_Expecter) Shared(key interface{}, def ...interface{}) *View_Shared_Call {
 	return &View_Shared_Call{Call: _e.mock.On("Shared",
 		append([]interface{}{key}, def...)...)}
 }
 
-func (_c *View_Shared_Call) Run(run func(key string, def ...any)) *View_Shared_Call {
+func (_c *View_Shared_Call) Run(run func(key string, def ...interface{})) *View_Shared_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-1)
+		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -193,12 +193,12 @@ func (_c *View_Shared_Call) Run(run func(key string, def ...any)) *View_Shared_C
 	return _c
 }
 
-func (_c *View_Shared_Call) Return(_a0 any) *View_Shared_Call {
+func (_c *View_Shared_Call) Return(_a0 interface{}) *View_Shared_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *View_Shared_Call) RunAndReturn(run func(string, ...any) any) *View_Shared_Call {
+func (_c *View_Shared_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *View_Shared_Call {
 	_c.Call.Return(run)
 	return _c
 }

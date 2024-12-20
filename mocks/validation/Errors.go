@@ -17,7 +17,7 @@ func (_m *Errors) EXPECT() *Errors_Expecter {
 	return &Errors_Expecter{mock: &_m.Mock}
 }
 
-// All provides a mock function with given fields:
+// All provides a mock function with no fields
 func (_m *Errors) All() map[string]map[string]string {
 	ret := _m.Called()
 

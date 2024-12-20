@@ -69,7 +69,7 @@ func (_c *Factory_Count_Call) RunAndReturn(run func(int) orm.Factory) *Factory_C
 }
 
 // Create provides a mock function with given fields: value, attributes
-func (_m *Factory) Create(value any, attributes ...map[string]any) error {
+func (_m *Factory) Create(value interface{}, attributes ...map[string]interface{}) error {
 	_va := make([]interface{}, len(attributes))
 	for _i := range attributes {
 		_va[_i] = attributes[_i]
@@ -84,7 +84,7 @@ func (_m *Factory) Create(value any, attributes ...map[string]any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(any, ...map[string]any) error); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, ...map[string]interface{}) error); ok {
 		r0 = rf(value, attributes...)
 	} else {
 		r0 = ret.Error(0)
@@ -99,22 +99,22 @@ type Factory_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - value any
-//   - attributes ...map[string]any
+//   - value interface{}
+//   - attributes ...map[string]interface{}
 func (_e *Factory_Expecter) Create(value interface{}, attributes ...interface{}) *Factory_Create_Call {
 	return &Factory_Create_Call{Call: _e.mock.On("Create",
 		append([]interface{}{value}, attributes...)...)}
 }
 
-func (_c *Factory_Create_Call) Run(run func(value any, attributes ...map[string]any)) *Factory_Create_Call {
+func (_c *Factory_Create_Call) Run(run func(value interface{}, attributes ...map[string]interface{})) *Factory_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]map[string]any, len(args)-1)
+		variadicArgs := make([]map[string]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(map[string]any)
+				variadicArgs[i] = a.(map[string]interface{})
 			}
 		}
-		run(args[0].(any), variadicArgs...)
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -124,13 +124,13 @@ func (_c *Factory_Create_Call) Return(_a0 error) *Factory_Create_Call {
 	return _c
 }
 
-func (_c *Factory_Create_Call) RunAndReturn(run func(any, ...map[string]any) error) *Factory_Create_Call {
+func (_c *Factory_Create_Call) RunAndReturn(run func(interface{}, ...map[string]interface{}) error) *Factory_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CreateQuietly provides a mock function with given fields: value, attributes
-func (_m *Factory) CreateQuietly(value any, attributes ...map[string]any) error {
+func (_m *Factory) CreateQuietly(value interface{}, attributes ...map[string]interface{}) error {
 	_va := make([]interface{}, len(attributes))
 	for _i := range attributes {
 		_va[_i] = attributes[_i]
@@ -145,7 +145,7 @@ func (_m *Factory) CreateQuietly(value any, attributes ...map[string]any) error 
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(any, ...map[string]any) error); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, ...map[string]interface{}) error); ok {
 		r0 = rf(value, attributes...)
 	} else {
 		r0 = ret.Error(0)
@@ -160,22 +160,22 @@ type Factory_CreateQuietly_Call struct {
 }
 
 // CreateQuietly is a helper method to define mock.On call
-//   - value any
-//   - attributes ...map[string]any
+//   - value interface{}
+//   - attributes ...map[string]interface{}
 func (_e *Factory_Expecter) CreateQuietly(value interface{}, attributes ...interface{}) *Factory_CreateQuietly_Call {
 	return &Factory_CreateQuietly_Call{Call: _e.mock.On("CreateQuietly",
 		append([]interface{}{value}, attributes...)...)}
 }
 
-func (_c *Factory_CreateQuietly_Call) Run(run func(value any, attributes ...map[string]any)) *Factory_CreateQuietly_Call {
+func (_c *Factory_CreateQuietly_Call) Run(run func(value interface{}, attributes ...map[string]interface{})) *Factory_CreateQuietly_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]map[string]any, len(args)-1)
+		variadicArgs := make([]map[string]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(map[string]any)
+				variadicArgs[i] = a.(map[string]interface{})
 			}
 		}
-		run(args[0].(any), variadicArgs...)
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -185,13 +185,13 @@ func (_c *Factory_CreateQuietly_Call) Return(_a0 error) *Factory_CreateQuietly_C
 	return _c
 }
 
-func (_c *Factory_CreateQuietly_Call) RunAndReturn(run func(any, ...map[string]any) error) *Factory_CreateQuietly_Call {
+func (_c *Factory_CreateQuietly_Call) RunAndReturn(run func(interface{}, ...map[string]interface{}) error) *Factory_CreateQuietly_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Make provides a mock function with given fields: value, attributes
-func (_m *Factory) Make(value any, attributes ...map[string]any) error {
+func (_m *Factory) Make(value interface{}, attributes ...map[string]interface{}) error {
 	_va := make([]interface{}, len(attributes))
 	for _i := range attributes {
 		_va[_i] = attributes[_i]
@@ -206,7 +206,7 @@ func (_m *Factory) Make(value any, attributes ...map[string]any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(any, ...map[string]any) error); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, ...map[string]interface{}) error); ok {
 		r0 = rf(value, attributes...)
 	} else {
 		r0 = ret.Error(0)
@@ -221,22 +221,22 @@ type Factory_Make_Call struct {
 }
 
 // Make is a helper method to define mock.On call
-//   - value any
-//   - attributes ...map[string]any
+//   - value interface{}
+//   - attributes ...map[string]interface{}
 func (_e *Factory_Expecter) Make(value interface{}, attributes ...interface{}) *Factory_Make_Call {
 	return &Factory_Make_Call{Call: _e.mock.On("Make",
 		append([]interface{}{value}, attributes...)...)}
 }
 
-func (_c *Factory_Make_Call) Run(run func(value any, attributes ...map[string]any)) *Factory_Make_Call {
+func (_c *Factory_Make_Call) Run(run func(value interface{}, attributes ...map[string]interface{})) *Factory_Make_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]map[string]any, len(args)-1)
+		variadicArgs := make([]map[string]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(map[string]any)
+				variadicArgs[i] = a.(map[string]interface{})
 			}
 		}
-		run(args[0].(any), variadicArgs...)
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -246,7 +246,7 @@ func (_c *Factory_Make_Call) Return(_a0 error) *Factory_Make_Call {
 	return _c
 }
 
-func (_c *Factory_Make_Call) RunAndReturn(run func(any, ...map[string]any) error) *Factory_Make_Call {
+func (_c *Factory_Make_Call) RunAndReturn(run func(interface{}, ...map[string]interface{}) error) *Factory_Make_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -70,7 +70,7 @@ func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) http.R
 }
 
 // Json provides a mock function with given fields: obj
-func (_m *ResponseStatus) Json(obj any) http.Response {
+func (_m *ResponseStatus) Json(obj interface{}) http.Response {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
@@ -78,7 +78,7 @@ func (_m *ResponseStatus) Json(obj any) http.Response {
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(any) http.Response); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) http.Response); ok {
 		r0 = rf(obj)
 	} else {
 		if ret.Get(0) != nil {
@@ -95,14 +95,14 @@ type ResponseStatus_Json_Call struct {
 }
 
 // Json is a helper method to define mock.On call
-//   - obj any
+//   - obj interface{}
 func (_e *ResponseStatus_Expecter) Json(obj interface{}) *ResponseStatus_Json_Call {
 	return &ResponseStatus_Json_Call{Call: _e.mock.On("Json", obj)}
 }
 
-func (_c *ResponseStatus_Json_Call) Run(run func(obj any)) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) Run(run func(obj interface{})) *ResponseStatus_Json_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -112,7 +112,7 @@ func (_c *ResponseStatus_Json_Call) Return(_a0 http.Response) *ResponseStatus_Js
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(any) http.Response) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) http.Response) *ResponseStatus_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -166,7 +166,7 @@ func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWrit
 }
 
 // String provides a mock function with given fields: format, values
-func (_m *ResponseStatus) String(format string, values ...any) http.Response {
+func (_m *ResponseStatus) String(format string, values ...interface{}) http.Response {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, values...)
@@ -177,7 +177,7 @@ func (_m *ResponseStatus) String(format string, values ...any) http.Response {
 	}
 
 	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(string, ...any) http.Response); ok {
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) http.Response); ok {
 		r0 = rf(format, values...)
 	} else {
 		if ret.Get(0) != nil {
@@ -195,18 +195,18 @@ type ResponseStatus_String_Call struct {
 
 // String is a helper method to define mock.On call
 //   - format string
-//   - values ...any
+//   - values ...interface{}
 func (_e *ResponseStatus_Expecter) String(format interface{}, values ...interface{}) *ResponseStatus_String_Call {
 	return &ResponseStatus_String_Call{Call: _e.mock.On("String",
 		append([]interface{}{format}, values...)...)}
 }
 
-func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...any)) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...interface{})) *ResponseStatus_String_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-1)
+		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -219,7 +219,7 @@ func (_c *ResponseStatus_String_Call) Return(_a0 http.Response) *ResponseStatus_
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...any) http.Response) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...interface{}) http.Response) *ResponseStatus_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -17,7 +17,7 @@ func (_m *Worker) EXPECT() *Worker_Expecter {
 	return &Worker_Expecter{mock: &_m.Mock}
 }
 
-// Run provides a mock function with given fields:
+// Run provides a mock function with no fields
 func (_m *Worker) Run() error {
 	ret := _m.Called()
 

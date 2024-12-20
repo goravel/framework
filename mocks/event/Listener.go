@@ -21,7 +21,7 @@ func (_m *Listener) EXPECT() *Listener_Expecter {
 }
 
 // Handle provides a mock function with given fields: args
-func (_m *Listener) Handle(args ...any) error {
+func (_m *Listener) Handle(args ...interface{}) error {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
@@ -31,7 +31,7 @@ func (_m *Listener) Handle(args ...any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(...any) error); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) error); ok {
 		r0 = rf(args...)
 	} else {
 		r0 = ret.Error(0)
@@ -46,18 +46,18 @@ type Listener_Handle_Call struct {
 }
 
 // Handle is a helper method to define mock.On call
-//   - args ...any
+//   - args ...interface{}
 func (_e *Listener_Expecter) Handle(args ...interface{}) *Listener_Handle_Call {
 	return &Listener_Handle_Call{Call: _e.mock.On("Handle",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Listener_Handle_Call) Run(run func(args ...any)) *Listener_Handle_Call {
+func (_c *Listener_Handle_Call) Run(run func(args ...interface{})) *Listener_Handle_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-0)
+		variadicArgs := make([]interface{}, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(variadicArgs...)
@@ -70,13 +70,13 @@ func (_c *Listener_Handle_Call) Return(_a0 error) *Listener_Handle_Call {
 	return _c
 }
 
-func (_c *Listener_Handle_Call) RunAndReturn(run func(...any) error) *Listener_Handle_Call {
+func (_c *Listener_Handle_Call) RunAndReturn(run func(...interface{}) error) *Listener_Handle_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Queue provides a mock function with given fields: args
-func (_m *Listener) Queue(args ...any) event.Queue {
+func (_m *Listener) Queue(args ...interface{}) event.Queue {
 	var _ca []interface{}
 	_ca = append(_ca, args...)
 	ret := _m.Called(_ca...)
@@ -86,7 +86,7 @@ func (_m *Listener) Queue(args ...any) event.Queue {
 	}
 
 	var r0 event.Queue
-	if rf, ok := ret.Get(0).(func(...any) event.Queue); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) event.Queue); ok {
 		r0 = rf(args...)
 	} else {
 		r0 = ret.Get(0).(event.Queue)
@@ -101,18 +101,18 @@ type Listener_Queue_Call struct {
 }
 
 // Queue is a helper method to define mock.On call
-//   - args ...any
+//   - args ...interface{}
 func (_e *Listener_Expecter) Queue(args ...interface{}) *Listener_Queue_Call {
 	return &Listener_Queue_Call{Call: _e.mock.On("Queue",
 		append([]interface{}{}, args...)...)}
 }
 
-func (_c *Listener_Queue_Call) Run(run func(args ...any)) *Listener_Queue_Call {
+func (_c *Listener_Queue_Call) Run(run func(args ...interface{})) *Listener_Queue_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-0)
+		variadicArgs := make([]interface{}, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(variadicArgs...)
@@ -125,12 +125,12 @@ func (_c *Listener_Queue_Call) Return(_a0 event.Queue) *Listener_Queue_Call {
 	return _c
 }
 
-func (_c *Listener_Queue_Call) RunAndReturn(run func(...any) event.Queue) *Listener_Queue_Call {
+func (_c *Listener_Queue_Call) RunAndReturn(run func(...interface{}) event.Queue) *Listener_Queue_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Listener) Signature() string {
 	ret := _m.Called()
 
