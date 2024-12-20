@@ -143,7 +143,7 @@ func (receiver *TestFooCommand) Extend() command.Extend {
 			&command.IntFlag{
 				Name:    "int",
 				Aliases: []string{"i"},
-				Usage:   "{{ blue \"int\" }} flag",
+				Usage:   "<fg=blue>int</> flag",
 			},
 		},
 	}
