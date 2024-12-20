@@ -50,14 +50,14 @@ func (r *Logger) LogMode(level logger.LogLevel) logger.Interface {
 // Info print info
 func (r *Logger) Info(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Info {
-		r.log.With(map[string]any{"File": FileWithLineNum()}).Infof(msg, data...)
+		r.log.Infof(msg, data...)
 	}
 }
 
 // Warn print warn messages
 func (r *Logger) Warn(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Warn {
-		r.log.With(map[string]any{"File": FileWithLineNum()}).Warningf(msg, data...)
+		r.log.Warningf(msg, data...)
 	}
 }
 
@@ -85,7 +85,7 @@ func (r *Logger) Error(ctx context.Context, msg string, data ...any) {
 	}
 
 	if r.level >= logger.Error {
-		r.log.With(map[string]any{"File": FileWithLineNum()}).Errorf(msg, data...)
+		r.log.Errorf(msg, data...)
 	}
 }
 
@@ -99,8 +99,6 @@ func (r *Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, 
 		traceStr     = "[%.3fms] [rows:%v] %s"
 		traceWarnStr = "[%.3fms] [rows:%v] [SLOW] %s"
 		traceErrStr  = "[%.3fms] [rows:%v] %s\t%s"
-
-		fileWithLineNum = FileWithLineNum()
 	)
 
 	elapsed := time.Since(begin)
@@ -108,23 +106,23 @@ func (r *Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, 
 	case err != nil && r.level >= logger.Error && !errors.Is(err, logger.ErrRecordNotFound):
 		sql, rows := fc()
 		if rows == -1 {
-			r.log.With(map[string]any{"File": fileWithLineNum}).Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, "-", sql, err)
+			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, "-", sql, err)
 		} else {
-			r.log.With(map[string]any{"File": fileWithLineNum}).Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, rows, sql, err)
+			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, rows, sql, err)
 		}
 	case elapsed > r.slowThreshold && r.slowThreshold != 0 && r.level >= logger.Warn:
 		sql, rows := fc()
 		if rows == -1 {
-			r.log.With(map[string]any{"File": fileWithLineNum}).Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			r.log.With(map[string]any{"File": fileWithLineNum}).Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	case r.level == logger.Info:
 		sql, rows := fc()
 		if rows == -1 {
-			r.log.With(map[string]any{"File": fileWithLineNum}).Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			r.log.With(map[string]any{"File": fileWithLineNum}).Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	}
 }
