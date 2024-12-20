@@ -674,9 +674,17 @@ func (r *Query) Restore(model ...any) (*contractsorm.Result, error) {
 		return nil, errors.OrmDeletedAtColumnNotFound
 	}
 
+	if err := r.restoring(realModel); err != nil {
+		return nil, err
+	}
+
 	res := tx.Update(deletedAtColumnName, nil)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	if err := r.restored(realModel); err != nil {
+		return nil, err
 	}
 
 	return &contractsorm.Result{
@@ -1439,6 +1447,14 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	return query, nil
 }
 
+func (r *Query) restored(dest any) error {
+	return r.event(contractsorm.EventRestored, r.instance.Statement.Model, dest)
+}
+
+func (r *Query) restoring(dest any) error {
+	return r.event(contractsorm.EventRestoring, r.instance.Statement.Model, dest)
+}
+
 func (r *Query) retrieved(dest any) error {
 	return r.event(contractsorm.EventRetrieved, nil, dest)
 }
@@ -1590,11 +1606,8 @@ func getDeletedAtColumn(model any) string {
 	}
 
 	t := reflect.TypeOf(model)
-	v := reflect.ValueOf(model)
-
 	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
-		v = v.Elem()
 	}
 
 	for i := 0; i < t.NumField(); i++ {
@@ -1660,28 +1673,50 @@ func getModelConnection(model any) (string, error) {
 
 func getObserverEvent(event contractsorm.EventType, observer contractsorm.Observer) func(contractsorm.Event) error {
 	switch event {
-	case contractsorm.EventRetrieved:
-		return observer.Retrieved
-	case contractsorm.EventCreating:
-		return observer.Creating
 	case contractsorm.EventCreated:
 		return observer.Created
-	case contractsorm.EventUpdating:
-		return observer.Updating
-	case contractsorm.EventUpdated:
-		return observer.Updated
-	case contractsorm.EventSaving:
-		return observer.Saving
-	case contractsorm.EventSaved:
-		return observer.Saved
-	case contractsorm.EventDeleting:
-		return observer.Deleting
+	case contractsorm.EventCreating:
+		if o, ok := observer.(contractsorm.ObserverWithCreating); ok {
+			return o.Creating
+		}
 	case contractsorm.EventDeleted:
 		return observer.Deleted
-	case contractsorm.EventForceDeleting:
-		return observer.ForceDeleting
+	case contractsorm.EventDeleting:
+		if o, ok := observer.(contractsorm.ObserverWithDeleting); ok {
+			return o.Deleting
+		}
 	case contractsorm.EventForceDeleted:
 		return observer.ForceDeleted
+	case contractsorm.EventForceDeleting:
+		if o, ok := observer.(contractsorm.ObserverWithForceDeleting); ok {
+			return o.ForceDeleting
+		}
+	case contractsorm.EventRestored:
+		if o, ok := observer.(contractsorm.ObserverWithRestored); ok {
+			return o.Restored
+		}
+	case contractsorm.EventRestoring:
+		if o, ok := observer.(contractsorm.ObserverWithRestoring); ok {
+			return o.Restoring
+		}
+	case contractsorm.EventRetrieved:
+		if o, ok := observer.(contractsorm.ObserverWithRetrieved); ok {
+			return o.Retrieved
+		}
+	case contractsorm.EventSaved:
+		if o, ok := observer.(contractsorm.ObserverWithSaved); ok {
+			return o.Saved
+		}
+	case contractsorm.EventSaving:
+		if o, ok := observer.(contractsorm.ObserverWithSaving); ok {
+			return o.Saving
+		}
+	case contractsorm.EventUpdated:
+		return observer.Updated
+	case contractsorm.EventUpdating:
+		if o, ok := observer.(contractsorm.ObserverWithUpdating); ok {
+			return o.Updating
+		}
 	}
 
 	return nil

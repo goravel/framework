@@ -1444,6 +1444,50 @@ func (s *QueryTestSuite) TestEvent_ForceDeleted() {
 	}
 }
 
+func (s *QueryTestSuite) TestEvent_Restored() {
+	for _, query := range s.queries {
+		user := User{Name: "event_restored_name", Avatar: "event_restored_avatar"}
+		s.Nil(query.Query().Create(&user))
+
+		res, err := query.Query().Delete(&user)
+		s.NoError(err)
+		s.Equal(int64(1), res.RowsAffected)
+
+		res, err = query.Query().WithTrashed().Restore(&user)
+		s.NoError(err)
+		s.Equal(int64(1), res.RowsAffected)
+		s.Equal("event_restored_name1", user.Name)
+
+		var user1 User
+		s.Nil(query.Query().Find(&user1, user.ID))
+		s.True(user1.ID > 0)
+		s.Equal("event_restored_name", user1.Name)
+		s.Equal("event_restored_avatar", user1.Avatar)
+	}
+}
+
+func (s *QueryTestSuite) TestEvent_Restoring() {
+	for _, query := range s.queries {
+		user := User{Name: "event_restoring_name", Avatar: "event_restoring_avatar"}
+		s.Nil(query.Query().Create(&user))
+
+		res, err := query.Query().Delete(&user)
+		s.NoError(err)
+		s.Equal(int64(1), res.RowsAffected)
+
+		res, err = query.Query().WithTrashed().Restore(&user)
+		s.NoError(err)
+		s.Equal(int64(1), res.RowsAffected)
+		s.Equal("event_restoring_name1", user.Name)
+
+		var user1 User
+		s.Nil(query.Query().Find(&user1, user.ID))
+		s.True(user1.ID > 0)
+		s.Equal("event_restoring_name", user1.Name)
+		s.Equal("event_restoring_avatar", user1.Avatar)
+	}
+}
+
 func (s *QueryTestSuite) TestEvent_Retrieved() {
 	for _, query := range s.queries {
 		tests := []struct {

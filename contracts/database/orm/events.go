@@ -18,6 +18,8 @@ const (
 	EventDeleted       EventType = "deleted"
 	EventForceDeleting EventType = "force_deleting"
 	EventForceDeleted  EventType = "force_deleted"
+	EventRestored      EventType = "restored"
+	EventRestoring     EventType = "restoring"
 )
 
 type Event interface {
