@@ -66,7 +66,6 @@ var colorsFuncMap = template.FuncMap{
     "magenta": color.Magenta().Sprint,
 }
 
-var colorizeTemp = template.New("colorize").Funcs(colorsFuncMap)
 
 func subtract(a, b int) int {
     return a - b
@@ -179,17 +178,11 @@ func capitalize(s string) string {
     return strings.ToUpper(s[:1]) + s[1:]
 }
 
-func colorize(tpml string) string {
-    if strings.Contains(tpml, "{{") && strings.Contains(tpml, "}}") {
-        if tp, err := colorizeTemp.Parse(tpml); err == nil {
-            var out strings.Builder
-            if err = tp.Execute(&out, tpml); err == nil {
-                return out.String()
-            }
-        }
-    }
-
-    return tpml
+// colorize wraps the text in the default color
+// support style tags like <fg=red>text</>
+// more details in https://gookit.github.io/color/#/?id=tag-attributes
+func colorize(text string) string {
+    return color.Default().Sprint(text)
 }
 
 func printVersion(ctx *cli.Context) {
