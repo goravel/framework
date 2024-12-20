@@ -17,9 +17,7 @@
   ],
   "packageRules": [
     {
-      "groupName": "all dependencies",
-      "groupSlug": "all",
-      "description": "Automerge non-major updates",
+      "groupName": "non-major dependencies",
       "matchUpdateTypes": [
         "digest",
         "pin",
