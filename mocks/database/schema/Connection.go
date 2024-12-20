@@ -17,7 +17,7 @@ func (_m *Connection) EXPECT() *Connection_Expecter {
 	return &Connection_Expecter{mock: &_m.Mock}
 }
 
-// Connection provides a mock function with given fields:
+// Connection provides a mock function with no fields
 func (_m *Connection) Connection() string {
 	ret := _m.Called()
 

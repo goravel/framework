@@ -361,20 +361,20 @@ func (_c *AssertableJSON_HasWithScope_Call) RunAndReturn(run func(string, int, f
 	return _c
 }
 
-// Json provides a mock function with given fields:
-func (_m *AssertableJSON) Json() map[string]any {
+// Json provides a mock function with no fields
+func (_m *AssertableJSON) Json() map[string]interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 map[string]any
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -398,12 +398,12 @@ func (_c *AssertableJSON_Json_Call) Run(run func()) *AssertableJSON_Json_Call {
 	return _c
 }
 
-func (_c *AssertableJSON_Json_Call) Return(_a0 map[string]any) *AssertableJSON_Json_Call {
+func (_c *AssertableJSON_Json_Call) Return(_a0 map[string]interface{}) *AssertableJSON_Json_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *AssertableJSON_Json_Call) RunAndReturn(run func() map[string]any) *AssertableJSON_Json_Call {
+func (_c *AssertableJSON_Json_Call) RunAndReturn(run func() map[string]interface{}) *AssertableJSON_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -505,7 +505,7 @@ func (_c *AssertableJSON_MissingAll_Call) RunAndReturn(run func([]string) testin
 }
 
 // Where provides a mock function with given fields: key, value
-func (_m *AssertableJSON) Where(key string, value any) testing.AssertableJSON {
+func (_m *AssertableJSON) Where(key string, value interface{}) testing.AssertableJSON {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -513,7 +513,7 @@ func (_m *AssertableJSON) Where(key string, value any) testing.AssertableJSON {
 	}
 
 	var r0 testing.AssertableJSON
-	if rf, ok := ret.Get(0).(func(string, any) testing.AssertableJSON); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) testing.AssertableJSON); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -531,14 +531,14 @@ type AssertableJSON_Where_Call struct {
 
 // Where is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 func (_e *AssertableJSON_Expecter) Where(key interface{}, value interface{}) *AssertableJSON_Where_Call {
 	return &AssertableJSON_Where_Call{Call: _e.mock.On("Where", key, value)}
 }
 
-func (_c *AssertableJSON_Where_Call) Run(run func(key string, value any)) *AssertableJSON_Where_Call {
+func (_c *AssertableJSON_Where_Call) Run(run func(key string, value interface{})) *AssertableJSON_Where_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -548,13 +548,13 @@ func (_c *AssertableJSON_Where_Call) Return(_a0 testing.AssertableJSON) *Asserta
 	return _c
 }
 
-func (_c *AssertableJSON_Where_Call) RunAndReturn(run func(string, any) testing.AssertableJSON) *AssertableJSON_Where_Call {
+func (_c *AssertableJSON_Where_Call) RunAndReturn(run func(string, interface{}) testing.AssertableJSON) *AssertableJSON_Where_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // WhereNot provides a mock function with given fields: key, value
-func (_m *AssertableJSON) WhereNot(key string, value any) testing.AssertableJSON {
+func (_m *AssertableJSON) WhereNot(key string, value interface{}) testing.AssertableJSON {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -562,7 +562,7 @@ func (_m *AssertableJSON) WhereNot(key string, value any) testing.AssertableJSON
 	}
 
 	var r0 testing.AssertableJSON
-	if rf, ok := ret.Get(0).(func(string, any) testing.AssertableJSON); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) testing.AssertableJSON); ok {
 		r0 = rf(key, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -580,14 +580,14 @@ type AssertableJSON_WhereNot_Call struct {
 
 // WhereNot is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 func (_e *AssertableJSON_Expecter) WhereNot(key interface{}, value interface{}) *AssertableJSON_WhereNot_Call {
 	return &AssertableJSON_WhereNot_Call{Call: _e.mock.On("WhereNot", key, value)}
 }
 
-func (_c *AssertableJSON_WhereNot_Call) Run(run func(key string, value any)) *AssertableJSON_WhereNot_Call {
+func (_c *AssertableJSON_WhereNot_Call) Run(run func(key string, value interface{})) *AssertableJSON_WhereNot_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -597,7 +597,7 @@ func (_c *AssertableJSON_WhereNot_Call) Return(_a0 testing.AssertableJSON) *Asse
 	return _c
 }
 
-func (_c *AssertableJSON_WhereNot_Call) RunAndReturn(run func(string, any) testing.AssertableJSON) *AssertableJSON_WhereNot_Call {
+func (_c *AssertableJSON_WhereNot_Call) RunAndReturn(run func(string, interface{}) testing.AssertableJSON) *AssertableJSON_WhereNot_Call {
 	_c.Call.Return(run)
 	return _c
 }

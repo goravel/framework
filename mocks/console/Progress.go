@@ -62,11 +62,11 @@ func (_c *Progress_Advance_Call) Return() *Progress_Advance_Call {
 }
 
 func (_c *Progress_Advance_Call) RunAndReturn(run func(...int)) *Progress_Advance_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Finish provides a mock function with given fields:
+// Finish provides a mock function with no fields
 func (_m *Progress) Finish() error {
 	ret := _m.Called()
 
@@ -140,7 +140,7 @@ func (_c *Progress_SetTitle_Call) Return() *Progress_SetTitle_Call {
 }
 
 func (_c *Progress_SetTitle_Call) RunAndReturn(run func(string)) *Progress_SetTitle_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -266,7 +266,7 @@ func (_c *Progress_ShowTitle_Call) RunAndReturn(run func(...bool) console.Progre
 	return _c
 }
 
-// Start provides a mock function with given fields:
+// Start provides a mock function with no fields
 func (_m *Progress) Start() error {
 	ret := _m.Called()
 

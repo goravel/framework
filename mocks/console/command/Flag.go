@@ -17,7 +17,7 @@ func (_m *Flag) EXPECT() *Flag_Expecter {
 	return &Flag_Expecter{mock: &_m.Mock}
 }
 
-// Type provides a mock function with given fields:
+// Type provides a mock function with no fields
 func (_m *Flag) Type() string {
 	ret := _m.Called()
 

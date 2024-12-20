@@ -22,7 +22,7 @@ func (_m *Command) EXPECT() *Command_Expecter {
 	return &Command_Expecter{mock: &_m.Mock}
 }
 
-// Description provides a mock function with given fields:
+// Description provides a mock function with no fields
 func (_m *Command) Description() string {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *Command_Description_Call) RunAndReturn(run func() string) *Command_Des
 	return _c
 }
 
-// Extend provides a mock function with given fields:
+// Extend provides a mock function with no fields
 func (_m *Command) Extend() command.Extend {
 	ret := _m.Called()
 
@@ -158,7 +158,7 @@ func (_c *Command_Handle_Call) RunAndReturn(run func(console.Context) error) *Co
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Command) Signature() string {
 	ret := _m.Called()
 

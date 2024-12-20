@@ -17,7 +17,7 @@ func (_m *Response) EXPECT() *Response_Expecter {
 	return &Response_Expecter{mock: &_m.Mock}
 }
 
-// Render provides a mock function with given fields:
+// Render provides a mock function with no fields
 func (_m *Response) Render() error {
 	ret := _m.Called()
 

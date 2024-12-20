@@ -20,7 +20,7 @@ func (_m *Testing) EXPECT() *Testing_Expecter {
 	return &Testing_Expecter{mock: &_m.Mock}
 }
 
-// Docker provides a mock function with given fields:
+// Docker provides a mock function with no fields
 func (_m *Testing) Docker() testing.Docker {
 	ret := _m.Called()
 

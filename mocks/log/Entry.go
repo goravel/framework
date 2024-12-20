@@ -24,7 +24,7 @@ func (_m *Entry) EXPECT() *Entry_Expecter {
 	return &Entry_Expecter{mock: &_m.Mock}
 }
 
-// Code provides a mock function with given fields:
+// Code provides a mock function with no fields
 func (_m *Entry) Code() string {
 	ret := _m.Called()
 
@@ -69,7 +69,7 @@ func (_c *Entry_Code_Call) RunAndReturn(run func() string) *Entry_Code_Call {
 	return _c
 }
 
-// Context provides a mock function with given fields:
+// Context provides a mock function with no fields
 func (_m *Entry) Context() context.Context {
 	ret := _m.Called()
 
@@ -116,7 +116,7 @@ func (_c *Entry_Context_Call) RunAndReturn(run func() context.Context) *Entry_Co
 	return _c
 }
 
-// Data provides a mock function with given fields:
+// Data provides a mock function with no fields
 func (_m *Entry) Data() log.Data {
 	ret := _m.Called()
 
@@ -163,7 +163,7 @@ func (_c *Entry_Data_Call) RunAndReturn(run func() log.Data) *Entry_Data_Call {
 	return _c
 }
 
-// Domain provides a mock function with given fields:
+// Domain provides a mock function with no fields
 func (_m *Entry) Domain() string {
 	ret := _m.Called()
 
@@ -208,7 +208,7 @@ func (_c *Entry_Domain_Call) RunAndReturn(run func() string) *Entry_Domain_Call 
 	return _c
 }
 
-// Hint provides a mock function with given fields:
+// Hint provides a mock function with no fields
 func (_m *Entry) Hint() string {
 	ret := _m.Called()
 
@@ -253,7 +253,7 @@ func (_c *Entry_Hint_Call) RunAndReturn(run func() string) *Entry_Hint_Call {
 	return _c
 }
 
-// Level provides a mock function with given fields:
+// Level provides a mock function with no fields
 func (_m *Entry) Level() log.Level {
 	ret := _m.Called()
 
@@ -298,7 +298,7 @@ func (_c *Entry_Level_Call) RunAndReturn(run func() log.Level) *Entry_Level_Call
 	return _c
 }
 
-// Message provides a mock function with given fields:
+// Message provides a mock function with no fields
 func (_m *Entry) Message() string {
 	ret := _m.Called()
 
@@ -343,20 +343,20 @@ func (_c *Entry_Message_Call) RunAndReturn(run func() string) *Entry_Message_Cal
 	return _c
 }
 
-// Owner provides a mock function with given fields:
-func (_m *Entry) Owner() any {
+// Owner provides a mock function with no fields
+func (_m *Entry) Owner() interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Owner")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func() any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -380,30 +380,30 @@ func (_c *Entry_Owner_Call) Run(run func()) *Entry_Owner_Call {
 	return _c
 }
 
-func (_c *Entry_Owner_Call) Return(_a0 any) *Entry_Owner_Call {
+func (_c *Entry_Owner_Call) Return(_a0 interface{}) *Entry_Owner_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Entry_Owner_Call) RunAndReturn(run func() any) *Entry_Owner_Call {
+func (_c *Entry_Owner_Call) RunAndReturn(run func() interface{}) *Entry_Owner_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Request provides a mock function with given fields:
-func (_m *Entry) Request() map[string]any {
+// Request provides a mock function with no fields
+func (_m *Entry) Request() map[string]interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Request")
 	}
 
-	var r0 map[string]any
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -427,30 +427,30 @@ func (_c *Entry_Request_Call) Run(run func()) *Entry_Request_Call {
 	return _c
 }
 
-func (_c *Entry_Request_Call) Return(_a0 map[string]any) *Entry_Request_Call {
+func (_c *Entry_Request_Call) Return(_a0 map[string]interface{}) *Entry_Request_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Entry_Request_Call) RunAndReturn(run func() map[string]any) *Entry_Request_Call {
+func (_c *Entry_Request_Call) RunAndReturn(run func() map[string]interface{}) *Entry_Request_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Response provides a mock function with given fields:
-func (_m *Entry) Response() map[string]any {
+// Response provides a mock function with no fields
+func (_m *Entry) Response() map[string]interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Response")
 	}
 
-	var r0 map[string]any
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -474,17 +474,17 @@ func (_c *Entry_Response_Call) Run(run func()) *Entry_Response_Call {
 	return _c
 }
 
-func (_c *Entry_Response_Call) Return(_a0 map[string]any) *Entry_Response_Call {
+func (_c *Entry_Response_Call) Return(_a0 map[string]interface{}) *Entry_Response_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Entry_Response_Call) RunAndReturn(run func() map[string]any) *Entry_Response_Call {
+func (_c *Entry_Response_Call) RunAndReturn(run func() map[string]interface{}) *Entry_Response_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Tags provides a mock function with given fields:
+// Tags provides a mock function with no fields
 func (_m *Entry) Tags() []string {
 	ret := _m.Called()
 
@@ -531,7 +531,7 @@ func (_c *Entry_Tags_Call) RunAndReturn(run func() []string) *Entry_Tags_Call {
 	return _c
 }
 
-// Time provides a mock function with given fields:
+// Time provides a mock function with no fields
 func (_m *Entry) Time() time.Time {
 	ret := _m.Called()
 
@@ -576,20 +576,20 @@ func (_c *Entry_Time_Call) RunAndReturn(run func() time.Time) *Entry_Time_Call {
 	return _c
 }
 
-// Trace provides a mock function with given fields:
-func (_m *Entry) Trace() map[string]any {
+// Trace provides a mock function with no fields
+func (_m *Entry) Trace() map[string]interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Trace")
 	}
 
-	var r0 map[string]any
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -613,30 +613,30 @@ func (_c *Entry_Trace_Call) Run(run func()) *Entry_Trace_Call {
 	return _c
 }
 
-func (_c *Entry_Trace_Call) Return(_a0 map[string]any) *Entry_Trace_Call {
+func (_c *Entry_Trace_Call) Return(_a0 map[string]interface{}) *Entry_Trace_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Entry_Trace_Call) RunAndReturn(run func() map[string]any) *Entry_Trace_Call {
+func (_c *Entry_Trace_Call) RunAndReturn(run func() map[string]interface{}) *Entry_Trace_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// User provides a mock function with given fields:
-func (_m *Entry) User() any {
+// User provides a mock function with no fields
+func (_m *Entry) User() interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for User")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func() any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -660,30 +660,30 @@ func (_c *Entry_User_Call) Run(run func()) *Entry_User_Call {
 	return _c
 }
 
-func (_c *Entry_User_Call) Return(_a0 any) *Entry_User_Call {
+func (_c *Entry_User_Call) Return(_a0 interface{}) *Entry_User_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Entry_User_Call) RunAndReturn(run func() any) *Entry_User_Call {
+func (_c *Entry_User_Call) RunAndReturn(run func() interface{}) *Entry_User_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// With provides a mock function with given fields:
-func (_m *Entry) With() map[string]any {
+// With provides a mock function with no fields
+func (_m *Entry) With() map[string]interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for With")
 	}
 
-	var r0 map[string]any
-	if rf, ok := ret.Get(0).(func() map[string]any); ok {
+	var r0 map[string]interface{}
+	if rf, ok := ret.Get(0).(func() map[string]interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -707,12 +707,12 @@ func (_c *Entry_With_Call) Run(run func()) *Entry_With_Call {
 	return _c
 }
 
-func (_c *Entry_With_Call) Return(_a0 map[string]any) *Entry_With_Call {
+func (_c *Entry_With_Call) Return(_a0 map[string]interface{}) *Entry_With_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Entry_With_Call) RunAndReturn(run func() map[string]any) *Entry_With_Call {
+func (_c *Entry_With_Call) RunAndReturn(run func() map[string]interface{}) *Entry_With_Call {
 	_c.Call.Return(run)
 	return _c
 }

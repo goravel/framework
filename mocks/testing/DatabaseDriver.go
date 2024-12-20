@@ -22,7 +22,7 @@ func (_m *DatabaseDriver) EXPECT() *DatabaseDriver_Expecter {
 	return &DatabaseDriver_Expecter{mock: &_m.Mock}
 }
 
-// Build provides a mock function with given fields:
+// Build provides a mock function with no fields
 func (_m *DatabaseDriver) Build() error {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *DatabaseDriver_Build_Call) RunAndReturn(run func() error) *DatabaseDri
 	return _c
 }
 
-// Config provides a mock function with given fields:
+// Config provides a mock function with no fields
 func (_m *DatabaseDriver) Config() testing.DatabaseConfig {
 	ret := _m.Called()
 
@@ -170,7 +170,7 @@ func (_c *DatabaseDriver_Database_Call) RunAndReturn(run func(string) (testing.D
 	return _c
 }
 
-// Driver provides a mock function with given fields:
+// Driver provides a mock function with no fields
 func (_m *DatabaseDriver) Driver() database.Driver {
 	ret := _m.Called()
 
@@ -215,7 +215,7 @@ func (_c *DatabaseDriver_Driver_Call) RunAndReturn(run func() database.Driver) *
 	return _c
 }
 
-// Fresh provides a mock function with given fields:
+// Fresh provides a mock function with no fields
 func (_m *DatabaseDriver) Fresh() error {
 	ret := _m.Called()
 
@@ -289,11 +289,11 @@ func (_c *DatabaseDriver_Image_Call) Return() *DatabaseDriver_Image_Call {
 }
 
 func (_c *DatabaseDriver_Image_Call) RunAndReturn(run func(testing.Image)) *DatabaseDriver_Image_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Ready provides a mock function with given fields:
+// Ready provides a mock function with no fields
 func (_m *DatabaseDriver) Ready() error {
 	ret := _m.Called()
 
@@ -338,7 +338,7 @@ func (_c *DatabaseDriver_Ready_Call) RunAndReturn(run func() error) *DatabaseDri
 	return _c
 }
 
-// Shutdown provides a mock function with given fields:
+// Shutdown provides a mock function with no fields
 func (_m *DatabaseDriver) Shutdown() error {
 	ret := _m.Called()
 

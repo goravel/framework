@@ -17,7 +17,7 @@ func (_m *Seeder) EXPECT() *Seeder_Expecter {
 	return &Seeder_Expecter{mock: &_m.Mock}
 }
 
-// Run provides a mock function with given fields:
+// Run provides a mock function with no fields
 func (_m *Seeder) Run() error {
 	ret := _m.Called()
 
@@ -62,7 +62,7 @@ func (_c *Seeder_Run_Call) RunAndReturn(run func() error) *Seeder_Run_Call {
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Seeder) Signature() string {
 	ret := _m.Called()
 

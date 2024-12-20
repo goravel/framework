@@ -147,11 +147,11 @@ func (_c *Schedule_Register_Call) Return() *Schedule_Register_Call {
 }
 
 func (_c *Schedule_Register_Call) RunAndReturn(run func([]schedule.Event)) *Schedule_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Run provides a mock function with given fields:
+// Run provides a mock function with no fields
 func (_m *Schedule) Run() {
 	_m.Called()
 }
@@ -179,7 +179,7 @@ func (_c *Schedule_Run_Call) Return() *Schedule_Run_Call {
 }
 
 func (_c *Schedule_Run_Call) RunAndReturn(run func()) *Schedule_Run_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

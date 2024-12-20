@@ -83,7 +83,7 @@ func (_c *TestRequest_Delete_Call) RunAndReturn(run func(string, io.Reader) (tes
 	return _c
 }
 
-// FlushHeaders provides a mock function with given fields:
+// FlushHeaders provides a mock function with no fields
 func (_m *TestRequest) FlushHeaders() testing.TestRequest {
 	ret := _m.Called()
 
@@ -773,7 +773,7 @@ func (_c *TestRequest_WithHeaders_Call) RunAndReturn(run func(map[string]string)
 }
 
 // WithSession provides a mock function with given fields: attributes
-func (_m *TestRequest) WithSession(attributes map[string]any) testing.TestRequest {
+func (_m *TestRequest) WithSession(attributes map[string]interface{}) testing.TestRequest {
 	ret := _m.Called(attributes)
 
 	if len(ret) == 0 {
@@ -781,7 +781,7 @@ func (_m *TestRequest) WithSession(attributes map[string]any) testing.TestReques
 	}
 
 	var r0 testing.TestRequest
-	if rf, ok := ret.Get(0).(func(map[string]any) testing.TestRequest); ok {
+	if rf, ok := ret.Get(0).(func(map[string]interface{}) testing.TestRequest); ok {
 		r0 = rf(attributes)
 	} else {
 		if ret.Get(0) != nil {
@@ -798,14 +798,14 @@ type TestRequest_WithSession_Call struct {
 }
 
 // WithSession is a helper method to define mock.On call
-//   - attributes map[string]any
+//   - attributes map[string]interface{}
 func (_e *TestRequest_Expecter) WithSession(attributes interface{}) *TestRequest_WithSession_Call {
 	return &TestRequest_WithSession_Call{Call: _e.mock.On("WithSession", attributes)}
 }
 
-func (_c *TestRequest_WithSession_Call) Run(run func(attributes map[string]any)) *TestRequest_WithSession_Call {
+func (_c *TestRequest_WithSession_Call) Run(run func(attributes map[string]interface{})) *TestRequest_WithSession_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]any))
+		run(args[0].(map[string]interface{}))
 	})
 	return _c
 }
@@ -815,7 +815,7 @@ func (_c *TestRequest_WithSession_Call) Return(_a0 testing.TestRequest) *TestReq
 	return _c
 }
 
-func (_c *TestRequest_WithSession_Call) RunAndReturn(run func(map[string]any) testing.TestRequest) *TestRequest_WithSession_Call {
+func (_c *TestRequest_WithSession_Call) RunAndReturn(run func(map[string]interface{}) testing.TestRequest) *TestRequest_WithSession_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -931,7 +931,7 @@ func (_c *TestRequest_WithoutHeader_Call) RunAndReturn(run func(string) testing.
 	return _c
 }
 
-// WithoutToken provides a mock function with given fields:
+// WithoutToken provides a mock function with no fields
 func (_m *TestRequest) WithoutToken() testing.TestRequest {
 	ret := _m.Called()
 
