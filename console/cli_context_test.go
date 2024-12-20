@@ -1,7 +1,14 @@
 package console
 
 import (
+	"io"
+	"strings"
 	"testing"
+
+	"github.com/pterm/pterm"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/goravel/framework/support/color"
 )
 
 func TestAsk(_ *testing.T) {
@@ -255,4 +262,37 @@ func TestWithProgressBar(_ *testing.T) {
 
 		ctx.Info("Task completed successfully.")
 	*/
+}
+
+func TestTwoColumnDetail(t *testing.T) {
+
+	tests := []struct {
+		name   string
+		first  string
+		second string
+		output string
+	}{
+		{
+			name:  "only has first column",
+			first: color.Yellow().Sprint("Name"),
+			output: color.Default().Sprintln("  " + color.Yellow().Sprint("Name") + " " +
+					color.Gray().Sprint(strings.Repeat(".", pterm.GetTerminalWidth()-len("Name")-5)) + "  "),
+		},
+		{
+			name:   "has first and second column",
+			first:  "Test",
+			second: color.Green().Sprint("Passed"),
+			output: color.Default().Sprintln("  Test " + color.Gray().Sprint(
+				strings.Repeat(".", pterm.GetTerminalWidth()-len("Test")-len("Passed")-6),
+			) + " " + color.Green().Sprint("Passed") + "  "),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.output, color.CaptureOutput(func(io.Writer) {
+				(&CliContext{}).TwoColumnDetail(tt.first, tt.second)
+			}))
+
+		})
+	}
 }
