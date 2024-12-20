@@ -2391,7 +2391,7 @@ func (_c *Query_Raw_Call) RunAndReturn(run func(string, ...interface{}) orm.Quer
 }
 
 // Restore provides a mock function with given fields: model
-func (_m *Query) Restore(model ...any) (*orm.Result, error) {
+func (_m *Query) Restore(model ...interface{}) (*orm.Result, error) {
 	var _ca []interface{}
 	_ca = append(_ca, model...)
 	ret := _m.Called(_ca...)
@@ -2402,10 +2402,10 @@ func (_m *Query) Restore(model ...any) (*orm.Result, error) {
 
 	var r0 *orm.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...any) (*orm.Result, error)); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) (*orm.Result, error)); ok {
 		return rf(model...)
 	}
-	if rf, ok := ret.Get(0).(func(...any) *orm.Result); ok {
+	if rf, ok := ret.Get(0).(func(...interface{}) *orm.Result); ok {
 		r0 = rf(model...)
 	} else {
 		if ret.Get(0) != nil {
@@ -2413,7 +2413,7 @@ func (_m *Query) Restore(model ...any) (*orm.Result, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(...any) error); ok {
+	if rf, ok := ret.Get(1).(func(...interface{}) error); ok {
 		r1 = rf(model...)
 	} else {
 		r1 = ret.Error(1)
@@ -2428,18 +2428,18 @@ type Query_Restore_Call struct {
 }
 
 // Restore is a helper method to define mock.On call
-//   - model ...any
+//   - model ...interface{}
 func (_e *Query_Expecter) Restore(model ...interface{}) *Query_Restore_Call {
 	return &Query_Restore_Call{Call: _e.mock.On("Restore",
 		append([]interface{}{}, model...)...)}
 }
 
-func (_c *Query_Restore_Call) Run(run func(model ...any)) *Query_Restore_Call {
+func (_c *Query_Restore_Call) Run(run func(model ...interface{})) *Query_Restore_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-0)
+		variadicArgs := make([]interface{}, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(variadicArgs...)
@@ -2452,12 +2452,12 @@ func (_c *Query_Restore_Call) Return(_a0 *orm.Result, _a1 error) *Query_Restore_
 	return _c
 }
 
-func (_c *Query_Restore_Call) RunAndReturn(run func(...any) (*orm.Result, error)) *Query_Restore_Call {
+func (_c *Query_Restore_Call) RunAndReturn(run func(...interface{}) (*orm.Result, error)) *Query_Restore_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Rollback provides a mock function with given fields:
+// Rollback provides a mock function with no fields
 func (_m *Query) Rollback() error {
 	ret := _m.Called()
 
