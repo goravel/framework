@@ -299,7 +299,7 @@ func (_c *ContextResponse_Header_Call) RunAndReturn(run func(string, string) htt
 }
 
 // Json provides a mock function with given fields: code, obj
-func (_m *ContextResponse) Json(code int, obj any) http.ResponseWithAbort {
+func (_m *ContextResponse) Json(code int, obj interface{}) http.ResponseWithAbort {
 	ret := _m.Called(code, obj)
 
 	if len(ret) == 0 {
@@ -307,7 +307,7 @@ func (_m *ContextResponse) Json(code int, obj any) http.ResponseWithAbort {
 	}
 
 	var r0 http.ResponseWithAbort
-	if rf, ok := ret.Get(0).(func(int, any) http.ResponseWithAbort); ok {
+	if rf, ok := ret.Get(0).(func(int, interface{}) http.ResponseWithAbort); ok {
 		r0 = rf(code, obj)
 	} else {
 		if ret.Get(0) != nil {
@@ -342,7 +342,7 @@ func (_c *ContextResponse_Json_Call) Return(_a0 http.ResponseWithAbort) *Context
 	return _c
 }
 
-func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, any) http.ResponseWithAbort) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, interface{}) http.ResponseWithAbort) *ContextResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -602,7 +602,7 @@ func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(int, func(http.Stre
 }
 
 // String provides a mock function with given fields: code, format, values
-func (_m *ContextResponse) String(code int, format string, values ...any) http.ResponseWithAbort {
+func (_m *ContextResponse) String(code int, format string, values ...interface{}) http.ResponseWithAbort {
 	var _ca []interface{}
 	_ca = append(_ca, code, format)
 	_ca = append(_ca, values...)
@@ -613,7 +613,7 @@ func (_m *ContextResponse) String(code int, format string, values ...any) http.R
 	}
 
 	var r0 http.ResponseWithAbort
-	if rf, ok := ret.Get(0).(func(int, string, ...any) http.ResponseWithAbort); ok {
+	if rf, ok := ret.Get(0).(func(int, string, ...interface{}) http.ResponseWithAbort); ok {
 		r0 = rf(code, format, values...)
 	} else {
 		if ret.Get(0) != nil {
@@ -656,7 +656,7 @@ func (_c *ContextResponse_String_Call) Return(_a0 http.ResponseWithAbort) *Conte
 	return _c
 }
 
-func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...any) http.ResponseWithAbort) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...interface{}) http.ResponseWithAbort) *ContextResponse_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

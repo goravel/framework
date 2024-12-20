@@ -70,7 +70,7 @@ func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) http.R
 }
 
 // Json provides a mock function with given fields: obj
-func (_m *ResponseStatus) Json(obj any) http.ResponseWithAbort {
+func (_m *ResponseStatus) Json(obj interface{}) http.ResponseWithAbort {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
@@ -78,7 +78,7 @@ func (_m *ResponseStatus) Json(obj any) http.ResponseWithAbort {
 	}
 
 	var r0 http.ResponseWithAbort
-	if rf, ok := ret.Get(0).(func(any) http.ResponseWithAbort); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) http.ResponseWithAbort); ok {
 		r0 = rf(obj)
 	} else {
 		if ret.Get(0) != nil {
@@ -112,7 +112,7 @@ func (_c *ResponseStatus_Json_Call) Return(_a0 http.ResponseWithAbort) *Response
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(any) http.ResponseWithAbort) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) http.ResponseWithAbort) *ResponseStatus_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -166,7 +166,7 @@ func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWrit
 }
 
 // String provides a mock function with given fields: format, values
-func (_m *ResponseStatus) String(format string, values ...any) http.ResponseWithAbort {
+func (_m *ResponseStatus) String(format string, values ...interface{}) http.ResponseWithAbort {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, values...)
@@ -177,7 +177,7 @@ func (_m *ResponseStatus) String(format string, values ...any) http.ResponseWith
 	}
 
 	var r0 http.ResponseWithAbort
-	if rf, ok := ret.Get(0).(func(string, ...any) http.ResponseWithAbort); ok {
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) http.ResponseWithAbort); ok {
 		r0 = rf(format, values...)
 	} else {
 		if ret.Get(0) != nil {
@@ -219,7 +219,7 @@ func (_c *ResponseStatus_String_Call) Return(_a0 http.ResponseWithAbort) *Respon
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...any) http.ResponseWithAbort) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...interface{}) http.ResponseWithAbort) *ResponseStatus_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

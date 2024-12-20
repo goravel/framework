@@ -17,7 +17,7 @@ func (_m *ResponseWithAbort) EXPECT() *ResponseWithAbort_Expecter {
 	return &ResponseWithAbort_Expecter{mock: &_m.Mock}
 }
 
-// Abort provides a mock function with given fields:
+// Abort provides a mock function with no fields
 func (_m *ResponseWithAbort) Abort() error {
 	ret := _m.Called()
 
@@ -62,7 +62,7 @@ func (_c *ResponseWithAbort_Abort_Call) RunAndReturn(run func() error) *Response
 	return _c
 }
 
-// Render provides a mock function with given fields:
+// Render provides a mock function with no fields
 func (_m *ResponseWithAbort) Render() error {
 	ret := _m.Called()
 
