@@ -18,23 +18,23 @@ func (_m *Data) EXPECT() *Data_Expecter {
 }
 
 // Get provides a mock function with given fields: key
-func (_m *Data) Get(key string) (any, bool) {
+func (_m *Data) Get(key string) (interface{}, bool) {
 	ret := _m.Called(key)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
 	}
 
-	var r0 any
+	var r0 interface{}
 	var r1 bool
-	if rf, ok := ret.Get(0).(func(string) (any, bool)); ok {
+	if rf, ok := ret.Get(0).(func(string) (interface{}, bool)); ok {
 		return rf(key)
 	}
-	if rf, ok := ret.Get(0).(func(string) any); ok {
+	if rf, ok := ret.Get(0).(func(string) interface{}); ok {
 		r0 = rf(key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -65,18 +65,18 @@ func (_c *Data_Get_Call) Run(run func(key string)) *Data_Get_Call {
 	return _c
 }
 
-func (_c *Data_Get_Call) Return(val any, exist bool) *Data_Get_Call {
+func (_c *Data_Get_Call) Return(val interface{}, exist bool) *Data_Get_Call {
 	_c.Call.Return(val, exist)
 	return _c
 }
 
-func (_c *Data_Get_Call) RunAndReturn(run func(string) (any, bool)) *Data_Get_Call {
+func (_c *Data_Get_Call) RunAndReturn(run func(string) (interface{}, bool)) *Data_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Set provides a mock function with given fields: key, val
-func (_m *Data) Set(key string, val any) error {
+func (_m *Data) Set(key string, val interface{}) error {
 	ret := _m.Called(key, val)
 
 	if len(ret) == 0 {
@@ -84,7 +84,7 @@ func (_m *Data) Set(key string, val any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, any) error); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
 		r0 = rf(key, val)
 	} else {
 		r0 = ret.Error(0)
@@ -100,14 +100,14 @@ type Data_Set_Call struct {
 
 // Set is a helper method to define mock.On call
 //   - key string
-//   - val any
+//   - val interface{}
 func (_e *Data_Expecter) Set(key interface{}, val interface{}) *Data_Set_Call {
 	return &Data_Set_Call{Call: _e.mock.On("Set", key, val)}
 }
 
-func (_c *Data_Set_Call) Run(run func(key string, val any)) *Data_Set_Call {
+func (_c *Data_Set_Call) Run(run func(key string, val interface{})) *Data_Set_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -117,7 +117,7 @@ func (_c *Data_Set_Call) Return(_a0 error) *Data_Set_Call {
 	return _c
 }
 
-func (_c *Data_Set_Call) RunAndReturn(run func(string, any) error) *Data_Set_Call {
+func (_c *Data_Set_Call) RunAndReturn(run func(string, interface{}) error) *Data_Set_Call {
 	_c.Call.Return(run)
 	return _c
 }

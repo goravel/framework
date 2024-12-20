@@ -54,7 +54,7 @@ func (_c *Router_Any_Call) Return() *Router_Any_Call {
 }
 
 func (_c *Router_Any_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Any_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -88,7 +88,7 @@ func (_c *Router_Delete_Call) Return() *Router_Delete_Call {
 }
 
 func (_c *Router_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Delete_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -122,7 +122,7 @@ func (_c *Router_Get_Call) Return() *Router_Get_Call {
 }
 
 func (_c *Router_Get_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Get_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -155,7 +155,7 @@ func (_c *Router_Group_Call) Return() *Router_Group_Call {
 }
 
 func (_c *Router_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Router_Group_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -250,7 +250,7 @@ func (_c *Router_Options_Call) Return() *Router_Options_Call {
 }
 
 func (_c *Router_Options_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Options_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -284,7 +284,7 @@ func (_c *Router_Patch_Call) Return() *Router_Patch_Call {
 }
 
 func (_c *Router_Patch_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Patch_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -318,7 +318,7 @@ func (_c *Router_Post_Call) Return() *Router_Post_Call {
 }
 
 func (_c *Router_Post_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Post_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -400,7 +400,7 @@ func (_c *Router_Put_Call) Return() *Router_Put_Call {
 }
 
 func (_c *Router_Put_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Router_Put_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -434,7 +434,7 @@ func (_c *Router_Resource_Call) Return() *Router_Resource_Call {
 }
 
 func (_c *Router_Resource_Call) RunAndReturn(run func(string, http.ResourceController)) *Router_Resource_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -468,7 +468,7 @@ func (_c *Router_Static_Call) Return() *Router_Static_Call {
 }
 
 func (_c *Router_Static_Call) RunAndReturn(run func(string, string)) *Router_Static_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -502,7 +502,7 @@ func (_c *Router_StaticFS_Call) Return() *Router_StaticFS_Call {
 }
 
 func (_c *Router_StaticFS_Call) RunAndReturn(run func(string, nethttp.FileSystem)) *Router_StaticFS_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -536,7 +536,7 @@ func (_c *Router_StaticFile_Call) Return() *Router_StaticFile_Call {
 }
 
 func (_c *Router_StaticFile_Call) RunAndReturn(run func(string, string)) *Router_StaticFile_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

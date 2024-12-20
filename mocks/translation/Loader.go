@@ -18,23 +18,23 @@ func (_m *Loader) EXPECT() *Loader_Expecter {
 }
 
 // Load provides a mock function with given fields: locale, group
-func (_m *Loader) Load(locale string, group string) (map[string]any, error) {
+func (_m *Loader) Load(locale string, group string) (map[string]interface{}, error) {
 	ret := _m.Called(locale, group)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Load")
 	}
 
-	var r0 map[string]any
+	var r0 map[string]interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (map[string]any, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, string) (map[string]interface{}, error)); ok {
 		return rf(locale, group)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) map[string]any); ok {
+	if rf, ok := ret.Get(0).(func(string, string) map[string]interface{}); ok {
 		r0 = rf(locale, group)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]any)
+			r0 = ret.Get(0).(map[string]interface{})
 		}
 	}
 
@@ -66,12 +66,12 @@ func (_c *Loader_Load_Call) Run(run func(locale string, group string)) *Loader_L
 	return _c
 }
 
-func (_c *Loader_Load_Call) Return(_a0 map[string]any, _a1 error) *Loader_Load_Call {
+func (_c *Loader_Load_Call) Return(_a0 map[string]interface{}, _a1 error) *Loader_Load_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Loader_Load_Call) RunAndReturn(run func(string, string) (map[string]any, error)) *Loader_Load_Call {
+func (_c *Loader_Load_Call) RunAndReturn(run func(string, string) (map[string]interface{}, error)) *Loader_Load_Call {
 	_c.Call.Return(run)
 	return _c
 }

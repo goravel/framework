@@ -24,7 +24,7 @@ func (_m *Database) EXPECT() *Database_Expecter {
 	return &Database_Expecter{mock: &_m.Mock}
 }
 
-// Build provides a mock function with given fields:
+// Build provides a mock function with no fields
 func (_m *Database) Build() error {
 	ret := _m.Called()
 
@@ -69,7 +69,7 @@ func (_c *Database_Build_Call) RunAndReturn(run func() error) *Database_Build_Ca
 	return _c
 }
 
-// Config provides a mock function with given fields:
+// Config provides a mock function with no fields
 func (_m *Database) Config() testing.DatabaseConfig {
 	ret := _m.Called()
 
@@ -172,7 +172,7 @@ func (_c *Database_Database_Call) RunAndReturn(run func(string) (testing.Databas
 	return _c
 }
 
-// Driver provides a mock function with given fields:
+// Driver provides a mock function with no fields
 func (_m *Database) Driver() database.Driver {
 	ret := _m.Called()
 
@@ -217,7 +217,7 @@ func (_c *Database_Driver_Call) RunAndReturn(run func() database.Driver) *Databa
 	return _c
 }
 
-// Fresh provides a mock function with given fields:
+// Fresh provides a mock function with no fields
 func (_m *Database) Fresh() error {
 	ret := _m.Called()
 
@@ -291,11 +291,11 @@ func (_c *Database_Image_Call) Return() *Database_Image_Call {
 }
 
 func (_c *Database_Image_Call) RunAndReturn(run func(testing.Image)) *Database_Image_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Migrate provides a mock function with given fields:
+// Migrate provides a mock function with no fields
 func (_m *Database) Migrate() error {
 	ret := _m.Called()
 
@@ -340,7 +340,7 @@ func (_c *Database_Migrate_Call) RunAndReturn(run func() error) *Database_Migrat
 	return _c
 }
 
-// Ready provides a mock function with given fields:
+// Ready provides a mock function with no fields
 func (_m *Database) Ready() error {
 	ret := _m.Called()
 
@@ -444,7 +444,7 @@ func (_c *Database_Seed_Call) RunAndReturn(run func(...seeder.Seeder) error) *Da
 	return _c
 }
 
-// Shutdown provides a mock function with given fields:
+// Shutdown provides a mock function with no fields
 func (_m *Database) Shutdown() error {
 	ret := _m.Called()
 

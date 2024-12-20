@@ -20,7 +20,7 @@ func (_m *CommonSchema) EXPECT() *CommonSchema_Expecter {
 	return &CommonSchema_Expecter{mock: &_m.Mock}
 }
 
-// GetTables provides a mock function with given fields:
+// GetTables provides a mock function with no fields
 func (_m *CommonSchema) GetTables() ([]schema.Table, error) {
 	ret := _m.Called()
 
@@ -77,7 +77,7 @@ func (_c *CommonSchema_GetTables_Call) RunAndReturn(run func() ([]schema.Table, 
 	return _c
 }
 
-// GetViews provides a mock function with given fields:
+// GetViews provides a mock function with no fields
 func (_m *CommonSchema) GetViews() ([]schema.View, error) {
 	ret := _m.Called()
 

@@ -26,7 +26,7 @@ func (_m *Driver) EXPECT() *Driver_Expecter {
 }
 
 // Add provides a mock function with given fields: key, value, t
-func (_m *Driver) Add(key string, value any, t time.Duration) bool {
+func (_m *Driver) Add(key string, value interface{}, t time.Duration) bool {
 	ret := _m.Called(key, value, t)
 
 	if len(ret) == 0 {
@@ -34,7 +34,7 @@ func (_m *Driver) Add(key string, value any, t time.Duration) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, any, time.Duration) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}, time.Duration) bool); ok {
 		r0 = rf(key, value, t)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -50,15 +50,15 @@ type Driver_Add_Call struct {
 
 // Add is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 //   - t time.Duration
 func (_e *Driver_Expecter) Add(key interface{}, value interface{}, t interface{}) *Driver_Add_Call {
 	return &Driver_Add_Call{Call: _e.mock.On("Add", key, value, t)}
 }
 
-func (_c *Driver_Add_Call) Run(run func(key string, value any, t time.Duration)) *Driver_Add_Call {
+func (_c *Driver_Add_Call) Run(run func(key string, value interface{}, t time.Duration)) *Driver_Add_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any), args[2].(time.Duration))
+		run(args[0].(string), args[1].(interface{}), args[2].(time.Duration))
 	})
 	return _c
 }
@@ -68,7 +68,7 @@ func (_c *Driver_Add_Call) Return(_a0 bool) *Driver_Add_Call {
 	return _c
 }
 
-func (_c *Driver_Add_Call) RunAndReturn(run func(string, any, time.Duration) bool) *Driver_Add_Call {
+func (_c *Driver_Add_Call) RunAndReturn(run func(string, interface{}, time.Duration) bool) *Driver_Add_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -144,7 +144,7 @@ func (_c *Driver_Decrement_Call) RunAndReturn(run func(string, ...int64) (int64,
 	return _c
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *Driver) Flush() bool {
 	ret := _m.Called()
 
@@ -190,7 +190,7 @@ func (_c *Driver_Flush_Call) RunAndReturn(run func() bool) *Driver_Flush_Call {
 }
 
 // Forever provides a mock function with given fields: key, value
-func (_m *Driver) Forever(key string, value any) bool {
+func (_m *Driver) Forever(key string, value interface{}) bool {
 	ret := _m.Called(key, value)
 
 	if len(ret) == 0 {
@@ -198,7 +198,7 @@ func (_m *Driver) Forever(key string, value any) bool {
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string, any) bool); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}) bool); ok {
 		r0 = rf(key, value)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -214,14 +214,14 @@ type Driver_Forever_Call struct {
 
 // Forever is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 func (_e *Driver_Expecter) Forever(key interface{}, value interface{}) *Driver_Forever_Call {
 	return &Driver_Forever_Call{Call: _e.mock.On("Forever", key, value)}
 }
 
-func (_c *Driver_Forever_Call) Run(run func(key string, value any)) *Driver_Forever_Call {
+func (_c *Driver_Forever_Call) Run(run func(key string, value interface{})) *Driver_Forever_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any))
+		run(args[0].(string), args[1].(interface{}))
 	})
 	return _c
 }
@@ -231,7 +231,7 @@ func (_c *Driver_Forever_Call) Return(_a0 bool) *Driver_Forever_Call {
 	return _c
 }
 
-func (_c *Driver_Forever_Call) RunAndReturn(run func(string, any) bool) *Driver_Forever_Call {
+func (_c *Driver_Forever_Call) RunAndReturn(run func(string, interface{}) bool) *Driver_Forever_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -283,7 +283,7 @@ func (_c *Driver_Forget_Call) RunAndReturn(run func(string) bool) *Driver_Forget
 }
 
 // Get provides a mock function with given fields: key, def
-func (_m *Driver) Get(key string, def ...any) any {
+func (_m *Driver) Get(key string, def ...interface{}) interface{} {
 	var _ca []interface{}
 	_ca = append(_ca, key)
 	_ca = append(_ca, def...)
@@ -293,12 +293,12 @@ func (_m *Driver) Get(key string, def ...any) any {
 		panic("no return value specified for Get")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
 		r0 = rf(key, def...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -312,18 +312,18 @@ type Driver_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - key string
-//   - def ...any
+//   - def ...interface{}
 func (_e *Driver_Expecter) Get(key interface{}, def ...interface{}) *Driver_Get_Call {
 	return &Driver_Get_Call{Call: _e.mock.On("Get",
 		append([]interface{}{key}, def...)...)}
 }
 
-func (_c *Driver_Get_Call) Run(run func(key string, def ...any)) *Driver_Get_Call {
+func (_c *Driver_Get_Call) Run(run func(key string, def ...interface{})) *Driver_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-1)
+		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -331,12 +331,12 @@ func (_c *Driver_Get_Call) Run(run func(key string, def ...any)) *Driver_Get_Cal
 	return _c
 }
 
-func (_c *Driver_Get_Call) Return(_a0 any) *Driver_Get_Call {
+func (_c *Driver_Get_Call) Return(_a0 interface{}) *Driver_Get_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Driver_Get_Call) RunAndReturn(run func(string, ...any) any) *Driver_Get_Call {
+func (_c *Driver_Get_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Driver_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -766,7 +766,7 @@ func (_c *Driver_Lock_Call) RunAndReturn(run func(string, ...time.Duration) cach
 }
 
 // Pull provides a mock function with given fields: key, def
-func (_m *Driver) Pull(key string, def ...any) any {
+func (_m *Driver) Pull(key string, def ...interface{}) interface{} {
 	var _ca []interface{}
 	_ca = append(_ca, key)
 	_ca = append(_ca, def...)
@@ -776,12 +776,12 @@ func (_m *Driver) Pull(key string, def ...any) any {
 		panic("no return value specified for Pull")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func(string, ...any) any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) interface{}); ok {
 		r0 = rf(key, def...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -795,18 +795,18 @@ type Driver_Pull_Call struct {
 
 // Pull is a helper method to define mock.On call
 //   - key string
-//   - def ...any
+//   - def ...interface{}
 func (_e *Driver_Expecter) Pull(key interface{}, def ...interface{}) *Driver_Pull_Call {
 	return &Driver_Pull_Call{Call: _e.mock.On("Pull",
 		append([]interface{}{key}, def...)...)}
 }
 
-func (_c *Driver_Pull_Call) Run(run func(key string, def ...any)) *Driver_Pull_Call {
+func (_c *Driver_Pull_Call) Run(run func(key string, def ...interface{})) *Driver_Pull_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]any, len(args)-1)
+		variadicArgs := make([]interface{}, len(args)-1)
 		for i, a := range args[1:] {
 			if a != nil {
-				variadicArgs[i] = a.(any)
+				variadicArgs[i] = a.(interface{})
 			}
 		}
 		run(args[0].(string), variadicArgs...)
@@ -814,18 +814,18 @@ func (_c *Driver_Pull_Call) Run(run func(key string, def ...any)) *Driver_Pull_C
 	return _c
 }
 
-func (_c *Driver_Pull_Call) Return(_a0 any) *Driver_Pull_Call {
+func (_c *Driver_Pull_Call) Return(_a0 interface{}) *Driver_Pull_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Driver_Pull_Call) RunAndReturn(run func(string, ...any) any) *Driver_Pull_Call {
+func (_c *Driver_Pull_Call) RunAndReturn(run func(string, ...interface{}) interface{}) *Driver_Pull_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Put provides a mock function with given fields: key, value, t
-func (_m *Driver) Put(key string, value any, t time.Duration) error {
+func (_m *Driver) Put(key string, value interface{}, t time.Duration) error {
 	ret := _m.Called(key, value, t)
 
 	if len(ret) == 0 {
@@ -833,7 +833,7 @@ func (_m *Driver) Put(key string, value any, t time.Duration) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, any, time.Duration) error); ok {
+	if rf, ok := ret.Get(0).(func(string, interface{}, time.Duration) error); ok {
 		r0 = rf(key, value, t)
 	} else {
 		r0 = ret.Error(0)
@@ -849,15 +849,15 @@ type Driver_Put_Call struct {
 
 // Put is a helper method to define mock.On call
 //   - key string
-//   - value any
+//   - value interface{}
 //   - t time.Duration
 func (_e *Driver_Expecter) Put(key interface{}, value interface{}, t interface{}) *Driver_Put_Call {
 	return &Driver_Put_Call{Call: _e.mock.On("Put", key, value, t)}
 }
 
-func (_c *Driver_Put_Call) Run(run func(key string, value any, t time.Duration)) *Driver_Put_Call {
+func (_c *Driver_Put_Call) Run(run func(key string, value interface{}, t time.Duration)) *Driver_Put_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(any), args[2].(time.Duration))
+		run(args[0].(string), args[1].(interface{}), args[2].(time.Duration))
 	})
 	return _c
 }
@@ -867,33 +867,33 @@ func (_c *Driver_Put_Call) Return(_a0 error) *Driver_Put_Call {
 	return _c
 }
 
-func (_c *Driver_Put_Call) RunAndReturn(run func(string, any, time.Duration) error) *Driver_Put_Call {
+func (_c *Driver_Put_Call) RunAndReturn(run func(string, interface{}, time.Duration) error) *Driver_Put_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Remember provides a mock function with given fields: key, ttl, callback
-func (_m *Driver) Remember(key string, ttl time.Duration, callback func() (any, error)) (any, error) {
+func (_m *Driver) Remember(key string, ttl time.Duration, callback func() (interface{}, error)) (interface{}, error) {
 	ret := _m.Called(key, ttl, callback)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Remember")
 	}
 
-	var r0 any
+	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, time.Duration, func() (any, error)) (any, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, time.Duration, func() (interface{}, error)) (interface{}, error)); ok {
 		return rf(key, ttl, callback)
 	}
-	if rf, ok := ret.Get(0).(func(string, time.Duration, func() (any, error)) any); ok {
+	if rf, ok := ret.Get(0).(func(string, time.Duration, func() (interface{}, error)) interface{}); ok {
 		r0 = rf(key, ttl, callback)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, time.Duration, func() (any, error)) error); ok {
+	if rf, ok := ret.Get(1).(func(string, time.Duration, func() (interface{}, error)) error); ok {
 		r1 = rf(key, ttl, callback)
 	} else {
 		r1 = ret.Error(1)
@@ -910,50 +910,50 @@ type Driver_Remember_Call struct {
 // Remember is a helper method to define mock.On call
 //   - key string
 //   - ttl time.Duration
-//   - callback func()(any , error)
+//   - callback func()(interface{} , error)
 func (_e *Driver_Expecter) Remember(key interface{}, ttl interface{}, callback interface{}) *Driver_Remember_Call {
 	return &Driver_Remember_Call{Call: _e.mock.On("Remember", key, ttl, callback)}
 }
 
-func (_c *Driver_Remember_Call) Run(run func(key string, ttl time.Duration, callback func() (any, error))) *Driver_Remember_Call {
+func (_c *Driver_Remember_Call) Run(run func(key string, ttl time.Duration, callback func() (interface{}, error))) *Driver_Remember_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(time.Duration), args[2].(func() (any, error)))
+		run(args[0].(string), args[1].(time.Duration), args[2].(func() (interface{}, error)))
 	})
 	return _c
 }
 
-func (_c *Driver_Remember_Call) Return(_a0 any, _a1 error) *Driver_Remember_Call {
+func (_c *Driver_Remember_Call) Return(_a0 interface{}, _a1 error) *Driver_Remember_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Driver_Remember_Call) RunAndReturn(run func(string, time.Duration, func() (any, error)) (any, error)) *Driver_Remember_Call {
+func (_c *Driver_Remember_Call) RunAndReturn(run func(string, time.Duration, func() (interface{}, error)) (interface{}, error)) *Driver_Remember_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // RememberForever provides a mock function with given fields: key, callback
-func (_m *Driver) RememberForever(key string, callback func() (any, error)) (any, error) {
+func (_m *Driver) RememberForever(key string, callback func() (interface{}, error)) (interface{}, error) {
 	ret := _m.Called(key, callback)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RememberForever")
 	}
 
-	var r0 any
+	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, func() (any, error)) (any, error)); ok {
+	if rf, ok := ret.Get(0).(func(string, func() (interface{}, error)) (interface{}, error)); ok {
 		return rf(key, callback)
 	}
-	if rf, ok := ret.Get(0).(func(string, func() (any, error)) any); ok {
+	if rf, ok := ret.Get(0).(func(string, func() (interface{}, error)) interface{}); ok {
 		r0 = rf(key, callback)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, func() (any, error)) error); ok {
+	if rf, ok := ret.Get(1).(func(string, func() (interface{}, error)) error); ok {
 		r1 = rf(key, callback)
 	} else {
 		r1 = ret.Error(1)
@@ -969,24 +969,24 @@ type Driver_RememberForever_Call struct {
 
 // RememberForever is a helper method to define mock.On call
 //   - key string
-//   - callback func()(any , error)
+//   - callback func()(interface{} , error)
 func (_e *Driver_Expecter) RememberForever(key interface{}, callback interface{}) *Driver_RememberForever_Call {
 	return &Driver_RememberForever_Call{Call: _e.mock.On("RememberForever", key, callback)}
 }
 
-func (_c *Driver_RememberForever_Call) Run(run func(key string, callback func() (any, error))) *Driver_RememberForever_Call {
+func (_c *Driver_RememberForever_Call) Run(run func(key string, callback func() (interface{}, error))) *Driver_RememberForever_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(func() (any, error)))
+		run(args[0].(string), args[1].(func() (interface{}, error)))
 	})
 	return _c
 }
 
-func (_c *Driver_RememberForever_Call) Return(_a0 any, _a1 error) *Driver_RememberForever_Call {
+func (_c *Driver_RememberForever_Call) Return(_a0 interface{}, _a1 error) *Driver_RememberForever_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Driver_RememberForever_Call) RunAndReturn(run func(string, func() (any, error)) (any, error)) *Driver_RememberForever_Call {
+func (_c *Driver_RememberForever_Call) RunAndReturn(run func(string, func() (interface{}, error)) (interface{}, error)) *Driver_RememberForever_Call {
 	_c.Call.Return(run)
 	return _c
 }

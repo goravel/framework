@@ -20,7 +20,7 @@ func (_m *ColumnDefinition) EXPECT() *ColumnDefinition_Expecter {
 	return &ColumnDefinition_Expecter{mock: &_m.Mock}
 }
 
-// AutoIncrement provides a mock function with given fields:
+// AutoIncrement provides a mock function with no fields
 func (_m *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	ret := _m.Called()
 
@@ -116,7 +116,7 @@ func (_c *ColumnDefinition_Comment_Call) RunAndReturn(run func(string) schema.Co
 }
 
 // Default provides a mock function with given fields: def
-func (_m *ColumnDefinition) Default(def any) schema.ColumnDefinition {
+func (_m *ColumnDefinition) Default(def interface{}) schema.ColumnDefinition {
 	ret := _m.Called(def)
 
 	if len(ret) == 0 {
@@ -124,7 +124,7 @@ func (_m *ColumnDefinition) Default(def any) schema.ColumnDefinition {
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(any) schema.ColumnDefinition); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) schema.ColumnDefinition); ok {
 		r0 = rf(def)
 	} else {
 		if ret.Get(0) != nil {
@@ -141,14 +141,14 @@ type ColumnDefinition_Default_Call struct {
 }
 
 // Default is a helper method to define mock.On call
-//   - def any
+//   - def interface{}
 func (_e *ColumnDefinition_Expecter) Default(def interface{}) *ColumnDefinition_Default_Call {
 	return &ColumnDefinition_Default_Call{Call: _e.mock.On("Default", def)}
 }
 
-func (_c *ColumnDefinition_Default_Call) Run(run func(def any)) *ColumnDefinition_Default_Call {
+func (_c *ColumnDefinition_Default_Call) Run(run func(def interface{})) *ColumnDefinition_Default_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -158,25 +158,25 @@ func (_c *ColumnDefinition_Default_Call) Return(_a0 schema.ColumnDefinition) *Co
 	return _c
 }
 
-func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(any) schema.ColumnDefinition) *ColumnDefinition_Default_Call {
+func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(interface{}) schema.ColumnDefinition) *ColumnDefinition_Default_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetAllowed provides a mock function with given fields:
-func (_m *ColumnDefinition) GetAllowed() []any {
+// GetAllowed provides a mock function with no fields
+func (_m *ColumnDefinition) GetAllowed() []interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllowed")
 	}
 
-	var r0 []any
-	if rf, ok := ret.Get(0).(func() []any); ok {
+	var r0 []interface{}
+	if rf, ok := ret.Get(0).(func() []interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]any)
+			r0 = ret.Get(0).([]interface{})
 		}
 	}
 
@@ -200,17 +200,17 @@ func (_c *ColumnDefinition_GetAllowed_Call) Run(run func()) *ColumnDefinition_Ge
 	return _c
 }
 
-func (_c *ColumnDefinition_GetAllowed_Call) Return(_a0 []any) *ColumnDefinition_GetAllowed_Call {
+func (_c *ColumnDefinition_GetAllowed_Call) Return(_a0 []interface{}) *ColumnDefinition_GetAllowed_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetAllowed_Call) RunAndReturn(run func() []any) *ColumnDefinition_GetAllowed_Call {
+func (_c *ColumnDefinition_GetAllowed_Call) RunAndReturn(run func() []interface{}) *ColumnDefinition_GetAllowed_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetAutoIncrement provides a mock function with given fields:
+// GetAutoIncrement provides a mock function with no fields
 func (_m *ColumnDefinition) GetAutoIncrement() bool {
 	ret := _m.Called()
 
@@ -255,7 +255,7 @@ func (_c *ColumnDefinition_GetAutoIncrement_Call) RunAndReturn(run func() bool) 
 	return _c
 }
 
-// GetComment provides a mock function with given fields:
+// GetComment provides a mock function with no fields
 func (_m *ColumnDefinition) GetComment() string {
 	ret := _m.Called()
 
@@ -300,20 +300,20 @@ func (_c *ColumnDefinition_GetComment_Call) RunAndReturn(run func() string) *Col
 	return _c
 }
 
-// GetDefault provides a mock function with given fields:
-func (_m *ColumnDefinition) GetDefault() any {
+// GetDefault provides a mock function with no fields
+func (_m *ColumnDefinition) GetDefault() interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDefault")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func() any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -337,17 +337,17 @@ func (_c *ColumnDefinition_GetDefault_Call) Run(run func()) *ColumnDefinition_Ge
 	return _c
 }
 
-func (_c *ColumnDefinition_GetDefault_Call) Return(_a0 any) *ColumnDefinition_GetDefault_Call {
+func (_c *ColumnDefinition_GetDefault_Call) Return(_a0 interface{}) *ColumnDefinition_GetDefault_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetDefault_Call) RunAndReturn(run func() any) *ColumnDefinition_GetDefault_Call {
+func (_c *ColumnDefinition_GetDefault_Call) RunAndReturn(run func() interface{}) *ColumnDefinition_GetDefault_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetLength provides a mock function with given fields:
+// GetLength provides a mock function with no fields
 func (_m *ColumnDefinition) GetLength() int {
 	ret := _m.Called()
 
@@ -392,7 +392,7 @@ func (_c *ColumnDefinition_GetLength_Call) RunAndReturn(run func() int) *ColumnD
 	return _c
 }
 
-// GetName provides a mock function with given fields:
+// GetName provides a mock function with no fields
 func (_m *ColumnDefinition) GetName() string {
 	ret := _m.Called()
 
@@ -437,7 +437,7 @@ func (_c *ColumnDefinition_GetName_Call) RunAndReturn(run func() string) *Column
 	return _c
 }
 
-// GetNullable provides a mock function with given fields:
+// GetNullable provides a mock function with no fields
 func (_m *ColumnDefinition) GetNullable() bool {
 	ret := _m.Called()
 
@@ -482,20 +482,20 @@ func (_c *ColumnDefinition_GetNullable_Call) RunAndReturn(run func() bool) *Colu
 	return _c
 }
 
-// GetOnUpdate provides a mock function with given fields:
-func (_m *ColumnDefinition) GetOnUpdate() any {
+// GetOnUpdate provides a mock function with no fields
+func (_m *ColumnDefinition) GetOnUpdate() interface{} {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetOnUpdate")
 	}
 
-	var r0 any
-	if rf, ok := ret.Get(0).(func() any); ok {
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func() interface{}); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(any)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -519,17 +519,17 @@ func (_c *ColumnDefinition_GetOnUpdate_Call) Run(run func()) *ColumnDefinition_G
 	return _c
 }
 
-func (_c *ColumnDefinition_GetOnUpdate_Call) Return(_a0 any) *ColumnDefinition_GetOnUpdate_Call {
+func (_c *ColumnDefinition_GetOnUpdate_Call) Return(_a0 interface{}) *ColumnDefinition_GetOnUpdate_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ColumnDefinition_GetOnUpdate_Call) RunAndReturn(run func() any) *ColumnDefinition_GetOnUpdate_Call {
+func (_c *ColumnDefinition_GetOnUpdate_Call) RunAndReturn(run func() interface{}) *ColumnDefinition_GetOnUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetPlaces provides a mock function with given fields:
+// GetPlaces provides a mock function with no fields
 func (_m *ColumnDefinition) GetPlaces() int {
 	ret := _m.Called()
 
@@ -574,7 +574,7 @@ func (_c *ColumnDefinition_GetPlaces_Call) RunAndReturn(run func() int) *ColumnD
 	return _c
 }
 
-// GetPrecision provides a mock function with given fields:
+// GetPrecision provides a mock function with no fields
 func (_m *ColumnDefinition) GetPrecision() int {
 	ret := _m.Called()
 
@@ -619,7 +619,7 @@ func (_c *ColumnDefinition_GetPrecision_Call) RunAndReturn(run func() int) *Colu
 	return _c
 }
 
-// GetTotal provides a mock function with given fields:
+// GetTotal provides a mock function with no fields
 func (_m *ColumnDefinition) GetTotal() int {
 	ret := _m.Called()
 
@@ -664,7 +664,7 @@ func (_c *ColumnDefinition_GetTotal_Call) RunAndReturn(run func() int) *ColumnDe
 	return _c
 }
 
-// GetType provides a mock function with given fields:
+// GetType provides a mock function with no fields
 func (_m *ColumnDefinition) GetType() string {
 	ret := _m.Called()
 
@@ -709,7 +709,7 @@ func (_c *ColumnDefinition_GetType_Call) RunAndReturn(run func() string) *Column
 	return _c
 }
 
-// GetUnsigned provides a mock function with given fields:
+// GetUnsigned provides a mock function with no fields
 func (_m *ColumnDefinition) GetUnsigned() bool {
 	ret := _m.Called()
 
@@ -754,7 +754,7 @@ func (_c *ColumnDefinition_GetUnsigned_Call) RunAndReturn(run func() bool) *Colu
 	return _c
 }
 
-// GetUseCurrent provides a mock function with given fields:
+// GetUseCurrent provides a mock function with no fields
 func (_m *ColumnDefinition) GetUseCurrent() bool {
 	ret := _m.Called()
 
@@ -799,7 +799,7 @@ func (_c *ColumnDefinition_GetUseCurrent_Call) RunAndReturn(run func() bool) *Co
 	return _c
 }
 
-// GetUseCurrentOnUpdate provides a mock function with given fields:
+// GetUseCurrentOnUpdate provides a mock function with no fields
 func (_m *ColumnDefinition) GetUseCurrentOnUpdate() bool {
 	ret := _m.Called()
 
@@ -844,7 +844,7 @@ func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) RunAndReturn(run func() b
 	return _c
 }
 
-// IsSetComment provides a mock function with given fields:
+// IsSetComment provides a mock function with no fields
 func (_m *ColumnDefinition) IsSetComment() bool {
 	ret := _m.Called()
 
@@ -889,7 +889,7 @@ func (_c *ColumnDefinition_IsSetComment_Call) RunAndReturn(run func() bool) *Col
 	return _c
 }
 
-// Nullable provides a mock function with given fields:
+// Nullable provides a mock function with no fields
 func (_m *ColumnDefinition) Nullable() schema.ColumnDefinition {
 	ret := _m.Called()
 
@@ -937,7 +937,7 @@ func (_c *ColumnDefinition_Nullable_Call) RunAndReturn(run func() schema.ColumnD
 }
 
 // OnUpdate provides a mock function with given fields: value
-func (_m *ColumnDefinition) OnUpdate(value any) schema.ColumnDefinition {
+func (_m *ColumnDefinition) OnUpdate(value interface{}) schema.ColumnDefinition {
 	ret := _m.Called(value)
 
 	if len(ret) == 0 {
@@ -945,7 +945,7 @@ func (_m *ColumnDefinition) OnUpdate(value any) schema.ColumnDefinition {
 	}
 
 	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func(any) schema.ColumnDefinition); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) schema.ColumnDefinition); ok {
 		r0 = rf(value)
 	} else {
 		if ret.Get(0) != nil {
@@ -962,14 +962,14 @@ type ColumnDefinition_OnUpdate_Call struct {
 }
 
 // OnUpdate is a helper method to define mock.On call
-//   - value any
+//   - value interface{}
 func (_e *ColumnDefinition_Expecter) OnUpdate(value interface{}) *ColumnDefinition_OnUpdate_Call {
 	return &ColumnDefinition_OnUpdate_Call{Call: _e.mock.On("OnUpdate", value)}
 }
 
-func (_c *ColumnDefinition_OnUpdate_Call) Run(run func(value any)) *ColumnDefinition_OnUpdate_Call {
+func (_c *ColumnDefinition_OnUpdate_Call) Run(run func(value interface{})) *ColumnDefinition_OnUpdate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -979,7 +979,7 @@ func (_c *ColumnDefinition_OnUpdate_Call) Return(_a0 schema.ColumnDefinition) *C
 	return _c
 }
 
-func (_c *ColumnDefinition_OnUpdate_Call) RunAndReturn(run func(any) schema.ColumnDefinition) *ColumnDefinition_OnUpdate_Call {
+func (_c *ColumnDefinition_OnUpdate_Call) RunAndReturn(run func(interface{}) schema.ColumnDefinition) *ColumnDefinition_OnUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1080,7 +1080,7 @@ func (_c *ColumnDefinition_Total_Call) RunAndReturn(run func(int) schema.ColumnD
 	return _c
 }
 
-// Unsigned provides a mock function with given fields:
+// Unsigned provides a mock function with no fields
 func (_m *ColumnDefinition) Unsigned() schema.ColumnDefinition {
 	ret := _m.Called()
 
@@ -1127,7 +1127,7 @@ func (_c *ColumnDefinition_Unsigned_Call) RunAndReturn(run func() schema.ColumnD
 	return _c
 }
 
-// UseCurrent provides a mock function with given fields:
+// UseCurrent provides a mock function with no fields
 func (_m *ColumnDefinition) UseCurrent() schema.ColumnDefinition {
 	ret := _m.Called()
 
@@ -1174,7 +1174,7 @@ func (_c *ColumnDefinition_UseCurrent_Call) RunAndReturn(run func() schema.Colum
 	return _c
 }
 
-// UseCurrentOnUpdate provides a mock function with given fields:
+// UseCurrentOnUpdate provides a mock function with no fields
 func (_m *ColumnDefinition) UseCurrentOnUpdate() schema.ColumnDefinition {
 	ret := _m.Called()
 
