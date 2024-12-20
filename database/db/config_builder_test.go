@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -45,6 +46,8 @@ func (s *ConfigTestSuite) TestReads() {
 	}).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
+	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(false).Once()
+	s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nil).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return(contractsdatabase.DriverSqlite.String()).Once()
 
 	s.Equal([]contractsdatabase.FullConfig{
@@ -70,6 +73,8 @@ func (s *ConfigTestSuite) TestWrites() {
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", s.connection)).Return(database).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
+	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(false).Once()
+	s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nil).Once()
 
 	s.Equal([]contractsdatabase.FullConfig{
 		{
@@ -91,6 +96,8 @@ func (s *ConfigTestSuite) TestWrites() {
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return(contractsdatabase.DriverSqlite.String()).Once()
 	s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
+	s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(false).Once()
+	s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nil).Once()
 
 	s.Equal([]contractsdatabase.FullConfig{
 		{
@@ -115,6 +122,7 @@ func (s *ConfigTestSuite) TestFillDefault() {
 	singular := false
 	charset := "utf8mb4"
 	loc := "Local"
+	nameReplacer := strings.NewReplacer("a", "b")
 
 	tests := []struct {
 		name          string
@@ -133,6 +141,8 @@ func (s *ConfigTestSuite) TestFillDefault() {
 			setup: func() {
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
+				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(true).Once()
+				s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nameReplacer).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return("mysql").Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", s.connection)).Return(dsn).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", s.connection)).Return(host).Once()
@@ -145,12 +155,14 @@ func (s *ConfigTestSuite) TestFillDefault() {
 			},
 			expectConfigs: []contractsdatabase.FullConfig{
 				{
-					Connection: s.connection,
-					Driver:     contractsdatabase.DriverMysql,
-					Prefix:     prefix,
-					Singular:   singular,
-					Charset:    charset,
-					Loc:        loc,
+					Connection:   s.connection,
+					Driver:       contractsdatabase.DriverMysql,
+					Prefix:       prefix,
+					Singular:     singular,
+					Charset:      charset,
+					Loc:          loc,
+					NoLowerCase:  true,
+					NameReplacer: nameReplacer,
 					Config: contractsdatabase.Config{
 						Dsn:      dsn,
 						Host:     host,
@@ -178,17 +190,21 @@ func (s *ConfigTestSuite) TestFillDefault() {
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return("mysql").Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
+				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(true).Once()
+				s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nameReplacer).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", s.connection)).Return(charset).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.loc", s.connection)).Return(loc).Once()
 			},
 			expectConfigs: []contractsdatabase.FullConfig{
 				{
-					Connection: s.connection,
-					Driver:     contractsdatabase.DriverMysql,
-					Prefix:     prefix,
-					Singular:   singular,
-					Charset:    charset,
-					Loc:        loc,
+					Connection:   s.connection,
+					Driver:       contractsdatabase.DriverMysql,
+					Prefix:       prefix,
+					Singular:     singular,
+					Charset:      charset,
+					Loc:          loc,
+					NoLowerCase:  true,
+					NameReplacer: nameReplacer,
 					Config: contractsdatabase.Config{
 						Dsn:      dsn,
 						Database: database,
@@ -210,14 +226,18 @@ func (s *ConfigTestSuite) TestFillDefault() {
 			setup: func() {
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", s.connection)).Return(prefix).Once()
 				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", s.connection)).Return(singular).Once()
+				s.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", s.connection)).Return(true).Once()
+				s.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", s.connection)).Return(nameReplacer).Once()
 				s.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", s.connection)).Return("sqlite").Once()
 			},
 			expectConfigs: []contractsdatabase.FullConfig{
 				{
-					Connection: s.connection,
-					Driver:     contractsdatabase.DriverSqlite,
-					Prefix:     prefix,
-					Singular:   singular,
+					Connection:   s.connection,
+					Driver:       contractsdatabase.DriverSqlite,
+					Prefix:       prefix,
+					Singular:     singular,
+					NoLowerCase:  true,
+					NameReplacer: nameReplacer,
 					Config: contractsdatabase.Config{
 						Database: database,
 					},
