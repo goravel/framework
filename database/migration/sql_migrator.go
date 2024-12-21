@@ -13,6 +13,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/database/console/driver"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/errors"
@@ -113,15 +114,15 @@ func (r *SqlMigrator) Run() error {
 	return nil
 }
 
-func (r *SqlMigrator) Status() error {
+func (r *SqlMigrator) Status() ([]migration.Status, error) {
 	version, dirty, err := r.migrator.Version()
 	if err != nil {
 		if errors.Is(err, migrate.ErrNilVersion) {
 			color.Warningln("No migrations found")
 
-			return nil
+			return nil, nil
 		} else {
-			return errors.MigrationGetStatusFailed.Args(err)
+			return nil, errors.MigrationGetStatusFailed.Args(err)
 		}
 	}
 	if dirty {
@@ -130,7 +131,7 @@ func (r *SqlMigrator) Status() error {
 
 	color.Successln(fmt.Sprintf("Migration version: %d", version))
 
-	return nil
+	return nil, nil
 }
 
 func getMigrator(configBuilder *databasedb.ConfigBuilder, table string) (*migrate.Migrate, error) {

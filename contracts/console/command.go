@@ -70,6 +70,8 @@ type Context interface {
 	Warning(message string)
 	// WithProgressBar executes a callback with a progress bar.
 	WithProgressBar(items []any, callback func(any) error) ([]any, error)
+	// TwoColumnDetail writes a two column detail to the console.
+	TwoColumnDetail(first, second string, filler ...rune)
 }
 
 type Progress interface {
