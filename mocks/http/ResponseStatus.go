@@ -21,19 +21,19 @@ func (_m *ResponseStatus) EXPECT() *ResponseStatus_Expecter {
 }
 
 // Data provides a mock function with given fields: contentType, data
-func (_m *ResponseStatus) Data(contentType string, data []byte) http.Response {
+func (_m *ResponseStatus) Data(contentType string, data []byte) http.ResponseWithAbort {
 	ret := _m.Called(contentType, data)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Data")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(string, []byte) http.Response); ok {
+	var r0 http.ResponseWithAbort
+	if rf, ok := ret.Get(0).(func(string, []byte) http.ResponseWithAbort); ok {
 		r0 = rf(contentType, data)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.ResponseWithAbort)
 		}
 	}
 
@@ -59,30 +59,30 @@ func (_c *ResponseStatus_Data_Call) Run(run func(contentType string, data []byte
 	return _c
 }
 
-func (_c *ResponseStatus_Data_Call) Return(_a0 http.Response) *ResponseStatus_Data_Call {
+func (_c *ResponseStatus_Data_Call) Return(_a0 http.ResponseWithAbort) *ResponseStatus_Data_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) http.Response) *ResponseStatus_Data_Call {
+func (_c *ResponseStatus_Data_Call) RunAndReturn(run func(string, []byte) http.ResponseWithAbort) *ResponseStatus_Data_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Json provides a mock function with given fields: obj
-func (_m *ResponseStatus) Json(obj interface{}) http.Response {
+func (_m *ResponseStatus) Json(obj interface{}) http.ResponseWithAbort {
 	ret := _m.Called(obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(interface{}) http.Response); ok {
+	var r0 http.ResponseWithAbort
+	if rf, ok := ret.Get(0).(func(interface{}) http.ResponseWithAbort); ok {
 		r0 = rf(obj)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.ResponseWithAbort)
 		}
 	}
 
@@ -107,12 +107,12 @@ func (_c *ResponseStatus_Json_Call) Run(run func(obj interface{})) *ResponseStat
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) Return(_a0 http.Response) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) Return(_a0 http.ResponseWithAbort) *ResponseStatus_Json_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) http.Response) *ResponseStatus_Json_Call {
+func (_c *ResponseStatus_Json_Call) RunAndReturn(run func(interface{}) http.ResponseWithAbort) *ResponseStatus_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -166,7 +166,7 @@ func (_c *ResponseStatus_Stream_Call) RunAndReturn(run func(func(http.StreamWrit
 }
 
 // String provides a mock function with given fields: format, values
-func (_m *ResponseStatus) String(format string, values ...interface{}) http.Response {
+func (_m *ResponseStatus) String(format string, values ...interface{}) http.ResponseWithAbort {
 	var _ca []interface{}
 	_ca = append(_ca, format)
 	_ca = append(_ca, values...)
@@ -176,12 +176,12 @@ func (_m *ResponseStatus) String(format string, values ...interface{}) http.Resp
 		panic("no return value specified for String")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) http.Response); ok {
+	var r0 http.ResponseWithAbort
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) http.ResponseWithAbort); ok {
 		r0 = rf(format, values...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.ResponseWithAbort)
 		}
 	}
 
@@ -214,12 +214,12 @@ func (_c *ResponseStatus_String_Call) Run(run func(format string, values ...inte
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) Return(_a0 http.Response) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) Return(_a0 http.ResponseWithAbort) *ResponseStatus_String_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...interface{}) http.Response) *ResponseStatus_String_Call {
+func (_c *ResponseStatus_String_Call) RunAndReturn(run func(string, ...interface{}) http.ResponseWithAbort) *ResponseStatus_String_Call {
 	_c.Call.Return(run)
 	return _c
 }

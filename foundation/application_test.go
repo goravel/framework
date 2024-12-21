@@ -334,6 +334,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.EXPECT().GetString("database.connections.postgres.schema", "public").Return("public").Twice()
 	mockConfig.EXPECT().GetBool("database.connections.postgres.no_lower_case").Return(false).Twice()
 	mockConfig.EXPECT().Get("database.connections.postgres.name_replacer").Return(nil).Twice()
+	mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
 	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()
