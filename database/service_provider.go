@@ -34,8 +34,6 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		connection := config.GetString("database.default")
 		if connection == "" {
-			color.Infoln(errors.OrmDisabledDueToEmptyConnection.SetModule(errors.ModuleOrm))
-
 			return nil, nil
 		}
 
