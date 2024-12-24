@@ -28,6 +28,7 @@ const (
 	TestTableRoleUser
 	TestTableUsers
 	TestTableGoravelUser
+	TestTableSchema
 )
 
 var testContext = context.Background()
@@ -215,39 +216,48 @@ func NewTestQueryWithSchema(docker testing.DatabaseDriver, schema string) *TestQ
 	// Create schema before build query with the schema
 	mockConfig := &mocksconfig.Config{}
 	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
-	mockDriver.WithPrefixAndSingular()
+	mockDriver.Common()
 	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
+	}
+
+	testQuery := &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+		query:      query,
 	}
 
 	if _, err := query.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema)); err != nil {
 		panic(fmt.Sprintf("create schema %s failed: %v", schema, err))
 	}
 
-	mockConfig = &mocksconfig.Config{}
-	mockDriver = getMockDriver(docker, mockConfig, docker.Driver().String())
-	testQuery := &TestQuery{
-		docker:     docker,
-		mockConfig: mockConfig,
-		mockDriver: mockDriver,
+	if docker.Driver() == contractsdatabase.DriverSqlserver {
+		return testQuery
 	}
 
+	mockConfig = &mocksconfig.Config{}
+	mockDriver = getMockDriver(docker, mockConfig, docker.Driver().String())
 	mockDriver.WithSchema(schema)
-
 	query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
 
-	testQuery.query = query
+	testQuery = &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+		query:      query,
+	}
 
 	return testQuery
 }
 
 func (r *TestQuery) CreateTable(testTables ...TestTable) {
 	for table, sql := range newTestTables(r.docker.Driver()).All() {
-		if len(testTables) == 0 || slices.Contains(testTables, table) {
+		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
 			if _, err := r.query.Exec(sql()); err != nil {
 				panic(fmt.Sprintf("create table %v failed: %v", table, err))
 			}
@@ -540,6 +550,8 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 func (r *MockSqlserver) Common() {
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+
 	r.single()
 	r.basic()
 }
@@ -554,18 +566,26 @@ func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+
 	r.basic()
 }
 
 func (r *MockSqlserver) WithPrefixAndSingular() {
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlserver) WithSchema(schema string) {
-	panic("sqlserver does not support schema for now")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return(schema)
+	r.single()
+	r.basic()
 }
 
 func (r *MockSqlserver) basic() {
@@ -611,6 +631,7 @@ func (r *testTables) All() map[TestTable]func() string {
 		TestTableRoleUser:    r.roleUser,
 		TestTableUsers:       r.users,
 		TestTableGoravelUser: r.goravelUser,
+		TestTableSchema:      r.schema,
 	}
 }
 
@@ -1232,6 +1253,53 @@ CREATE TABLE role_user (
   id bigint NOT NULL IDENTITY(1,1),
   role_id bigint NOT NULL,
   user_id bigint NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
+func (r *testTables) schema() string {
+	switch r.driver {
+	case contractsdatabase.DriverMysql:
+		return `
+CREATE TABLE goravel.schemas (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_schemas_created_at (created_at),
+  KEY idx_schemas_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case contractsdatabase.DriverPostgres:
+		return `
+CREATE TABLE goravel.schemas (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL
+);
+`
+	case contractsdatabase.DriverSqlite:
+		return `
+CREATE TABLE goravel.schemas (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
+);
+`
+	case contractsdatabase.DriverSqlserver:
+		return `
+CREATE TABLE goravel.schemas (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
   PRIMARY KEY (id)
 );
 `
