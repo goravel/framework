@@ -102,6 +102,9 @@ func (c *Container) MakeAuth(ctx contractshttp.Context) contractsauth.Auth {
 		color.Errorln(err)
 		return nil
 	}
+	if instance == nil {
+		return nil
+	}
 
 	return instance.(contractsauth.Auth)
 }
@@ -214,6 +217,9 @@ func (c *Container) MakeOrm() contractsorm.Orm {
 		color.Errorln(err)
 		return nil
 	}
+	if instance == nil {
+		return nil
+	}
 
 	return instance.(contractsorm.Orm)
 }
@@ -262,6 +268,9 @@ func (c *Container) MakeSchema() contractsmigration.Schema {
 	instance, err := c.Make(schema.BindingSchema)
 	if err != nil {
 		color.Errorln(err)
+		return nil
+	}
+	if instance == nil {
 		return nil
 	}
 

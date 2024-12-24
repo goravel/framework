@@ -148,7 +148,7 @@ func getMigrator(configBuilder *databasedb.ConfigBuilder, table string) (*migrat
 	writeConfig := writeConfigs[0]
 	dsn := databasedb.Dsn(writeConfigs[0])
 	if dsn == "" {
-		return nil, errors.OrmFailedToGenerateDNS.Args(writeConfig.Connection)
+		return nil, errors.OrmFailedToGenerateDNS
 	}
 
 	var (
