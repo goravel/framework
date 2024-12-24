@@ -68,6 +68,40 @@ func (_m *Application) EXPECT() *Application_Expecter {
 	return &Application_Expecter{mock: &_m.Mock}
 }
 
+// About provides a mock function with given fields: section, items
+func (_m *Application) About(section string, items []foundation.AboutItem) {
+	_m.Called(section, items)
+}
+
+// Application_About_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'About'
+type Application_About_Call struct {
+	*mock.Call
+}
+
+// About is a helper method to define mock.On call
+//   - section string
+//   - items []foundation.AboutItem
+func (_e *Application_Expecter) About(section interface{}, items interface{}) *Application_About_Call {
+	return &Application_About_Call{Call: _e.mock.On("About", section, items)}
+}
+
+func (_c *Application_About_Call) Run(run func(section string, items []foundation.AboutItem)) *Application_About_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].([]foundation.AboutItem))
+	})
+	return _c
+}
+
+func (_c *Application_About_Call) Return() *Application_About_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_About_Call) RunAndReturn(run func(string, []foundation.AboutItem)) *Application_About_Call {
+	_c.Run(run)
+	return _c
+}
+
 // BasePath provides a mock function with given fields: path
 func (_m *Application) BasePath(path ...string) string {
 	_va := make([]interface{}, len(path))
