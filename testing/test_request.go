@@ -18,6 +18,7 @@ import (
 type TestRequest struct {
 	t                 *testing.T
 	ctx               context.Context
+	bind              any
 	defaultHeaders    map[string]string
 	defaultCookies    map[string]string
 	sessionAttributes map[string]any
@@ -31,6 +32,39 @@ func NewTestRequest(t *testing.T) contractstesting.TestRequest {
 		defaultCookies:    make(map[string]string),
 		sessionAttributes: make(map[string]any),
 	}
+}
+
+func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodGet, uri, nil)
+}
+
+func (r *TestRequest) Post(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodPost, uri, body)
+}
+
+func (r *TestRequest) Put(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodPut, uri, body)
+}
+
+func (r *TestRequest) Delete(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodDelete, uri, body)
+}
+
+func (r *TestRequest) Patch(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodPatch, uri, body)
+}
+
+func (r *TestRequest) Head(uri string) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodHead, uri, nil)
+}
+
+func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error) {
+	return r.call(http.MethodOptions, uri, nil)
+}
+
+func (r *TestRequest) Bind(value any) contractstesting.TestRequest {
+	r.bind = value
+	return r
 }
 
 func (r *TestRequest) FlushHeaders() contractstesting.TestRequest {
@@ -90,34 +124,6 @@ func (r *TestRequest) WithSession(attributes map[string]any) contractstesting.Te
 	return r
 }
 
-func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodGet, uri, nil)
-}
-
-func (r *TestRequest) Post(uri string, body io.Reader) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodPost, uri, body)
-}
-
-func (r *TestRequest) Put(uri string, body io.Reader) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodPut, uri, body)
-}
-
-func (r *TestRequest) Patch(uri string, body io.Reader) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodPatch, uri, body)
-}
-
-func (r *TestRequest) Delete(uri string, body io.Reader) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodDelete, uri, body)
-}
-
-func (r *TestRequest) Head(uri string) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodHead, uri, nil)
-}
-
-func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error) {
-	return r.call(http.MethodOptions, uri, nil)
-}
-
 func (r *TestRequest) call(method string, uri string, body io.Reader) (contractstesting.TestResponse, error) {
 	err := r.setSession()
 	if err != nil {
@@ -144,7 +150,19 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 		return nil, err
 	}
 
-	return NewTestResponse(r.t, response), nil
+	testResponse := NewTestResponse(r.t, response)
+	if r.bind != nil {
+		body, err := testResponse.Content()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal([]byte(body), r.bind); err != nil {
+			return nil, err
+		}
+	}
+
+	return testResponse, nil
 }
 
 func (r *TestRequest) setSession() error {

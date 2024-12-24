@@ -28,6 +28,14 @@ func (s *TestRequestSuite) TearDownTest() {
 	sessionFacade = nil
 }
 
+func (s *TestRequestSuite) TestBind() {
+
+}
+
+func (s *TestRequestSuite) TestCall() {
+
+}
+
 func (s *TestRequestSuite) TestSetSessionErrors() {
 	type testCase struct {
 		name              string

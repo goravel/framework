@@ -12,6 +12,7 @@ import (
 const Binding = "goravel.testing"
 
 var (
+	json          foundation.Json
 	artisanFacade contractsconsole.Artisan
 	routeFacade   contractsroute.Route
 	sessionFacade contractsession.Manager
@@ -41,4 +42,6 @@ func (receiver *ServiceProvider) Boot(app foundation.Application) {
 	if sessionFacade == nil {
 		color.Errorln(errors.SessionFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
+
+	json = app.GetJson()
 }
