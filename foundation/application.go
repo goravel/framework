@@ -55,6 +55,7 @@ func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
 	app.registerCommands([]contractsconsole.Command{
+		console.NewAboutCommand(app),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
@@ -155,6 +156,10 @@ func (app *Application) SetJson(j foundation.Json) {
 
 func (app *Application) GetJson() foundation.Json {
 	return app.json
+}
+
+func (app *Application) About(section string, items []foundation.AboutItem) {
+	console.AddAboutInformation(section, items...)
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
