@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	consolemocks "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
@@ -29,12 +30,29 @@ func TestAboutCommand(t *testing.T) {
 	mockContext.EXPECT().NewLine().Return()
 	mockContext.EXPECT().Option("only").Return("").Once()
 	mockContext.EXPECT().TwoColumnDetail(mock.Anything, mock.Anything).Return()
-	AddAboutInformation("Custom", "Test Info", "<fg=cyan>OK</>")
+	AddAboutInformation("Custom", foundation.AboutInfo{Key: "Test Info", Value: "<fg=cyan>OK</>"})
 	color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, aboutCommand.Handle(mockContext))
 	})
-	appInformation.Range("", func(section string, details []kv) {
+	appInformation.Range("", func(section string, details []foundation.AboutInfo) {
 		assert.Contains(t, []string{"Environment", "Drivers", "Custom"}, section)
 		assert.NotEmpty(t, details)
+	})
+}
+
+func TestAddToSection(t *testing.T) {
+	appInformation = &information{section: make(map[string]int)}
+	appInformation.addToSection("Test", []foundation.AboutInfo{{Key: "Test Info", Value: "OK"}})
+	assert.Equal(t, appInformation.section, map[string]int{"Test": 0})
+	assert.Len(t, appInformation.details, 1)
+}
+
+func TestInformationRange(t *testing.T) {
+	appInformation = &information{section: make(map[string]int)}
+	appInformation.addToSection("Test", []foundation.AboutInfo{{Key: "Test Info", Value: "OK"}, {Key: "Test Info", Value: "OK"}})
+	appInformation.Range("Test", func(section string, details []foundation.AboutInfo) {
+		assert.Equal(t, "Test", section)
+		assert.Len(t, details, 2)
+		assert.Subset(t, details, []foundation.AboutInfo{{Key: "Test Info", Value: "OK"}})
 	})
 }

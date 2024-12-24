@@ -39,7 +39,6 @@ func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 	}
 
 	artisanFacade.Register([]consolecontract.Command{
-		console.NewAboutCommand(app),
 		console.NewListCommand(artisanFacade),
 		console.NewKeyGenerateCommand(configFacade),
 		console.NewMakeCommand(),

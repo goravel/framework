@@ -28,6 +28,11 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
+type AboutInfo struct {
+	Key   string
+	Value string
+}
+
 type Application interface {
 	// Boot register and bootstrap configured service providers.
 	Boot()
@@ -63,6 +68,8 @@ type Application interface {
 	SetJson(json Json)
 	// GetJson get the JSON implementation.
 	GetJson() Json
+	// About add information to the application's about command.
+	About(section string, details []AboutInfo)
 
 	// Container
 	// Bind registers a binding with the container.
