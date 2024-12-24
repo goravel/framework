@@ -17,7 +17,7 @@ type AboutCommand struct {
 
 type information struct {
 	section map[string]int
-	details [][]foundation.AboutInfo
+	details [][]foundation.AboutItem
 }
 
 var appInformation = &information{section: make(map[string]int)}
@@ -55,10 +55,10 @@ func (r *AboutCommand) Extend() command.Extend {
 func (r *AboutCommand) Handle(ctx console.Context) error {
 	r.gatherApplicationInformation()
 	ctx.NewLine()
-	appInformation.Range(ctx.Option("only"), func(section string, details []foundation.AboutInfo) {
+	appInformation.Range(ctx.Option("only"), func(section string, items []foundation.AboutItem) {
 		ctx.TwoColumnDetail("<fg=green;op=bold>"+section+"</>", "")
-		for i := range details {
-			ctx.TwoColumnDetail(details[i].Key, details[i].Value)
+		for i := range items {
+			ctx.TwoColumnDetail(items[i].Key, items[i].Value)
 		}
 		ctx.NewLine()
 	})
@@ -68,7 +68,7 @@ func (r *AboutCommand) Handle(ctx console.Context) error {
 // gatherApplicationInformation Gather information about the application.
 func (r *AboutCommand) gatherApplicationInformation() {
 	configFacade := r.app.MakeConfig()
-	appInformation.addToSection("Environment", []foundation.AboutInfo{
+	appInformation.addToSection("Environment", []foundation.AboutItem{
 		{Key: "Application Name", Value: configFacade.GetString("app.name")},
 		{Key: "Goravel Version", Value: strings.TrimPrefix(r.app.Version(), "v")},
 		{Key: "Go Version", Value: strings.TrimPrefix(runtime.Version(), "go")},
@@ -83,8 +83,10 @@ func (r *AboutCommand) gatherApplicationInformation() {
 		{Key: "URL", Value: configFacade.GetString("http.url")},
 		{Key: "HTTP Host", Value: configFacade.GetString("http.host")},
 		{Key: "HTTP Port", Value: configFacade.GetString("http.port")},
+		{Key: "GRPC Host", Value: configFacade.GetString("grpc.host")},
+		{Key: "GRPC Port", Value: configFacade.GetString("grpc.port")},
 	})
-	appInformation.addToSection("Drivers", []foundation.AboutInfo{
+	appInformation.addToSection("Drivers", []foundation.AboutItem{
 		{Key: "Cache", Value: configFacade.GetString("cache.default")},
 		{Key: "Database", Value: configFacade.GetString("database.default")},
 		{Key: "Hashing", Value: configFacade.GetString("hashing.driver")},
@@ -108,18 +110,18 @@ func (r *AboutCommand) gatherApplicationInformation() {
 }
 
 // addToSection Add a new section to the application information.
-func (info *information) addToSection(section string, details []foundation.AboutInfo) {
+func (info *information) addToSection(section string, items []foundation.AboutItem) {
 	index, ok := info.section[section]
 	if !ok {
 		index = len(info.details)
 		info.section[section] = index
-		info.details = append(info.details, make([]foundation.AboutInfo, 0))
+		info.details = append(info.details, make([]foundation.AboutItem, 0))
 	}
-	info.details[index] = append(info.details[index], details...)
+	info.details[index] = append(info.details[index], items...)
 }
 
 // Range Iterate over the application information sections.
-func (info *information) Range(section string, ranger func(s string, details []foundation.AboutInfo)) {
+func (info *information) Range(section string, ranger func(s string, items []foundation.AboutItem)) {
 	var sections []string
 	for s := range info.section {
 		if len(section) == 0 || strings.EqualFold(section, s) {
@@ -138,8 +140,8 @@ func (info *information) Range(section string, ranger func(s string, details []f
 }
 
 // AddAboutInformation Add custom information to the application information.
-func AddAboutInformation(section string, details ...foundation.AboutInfo) {
+func AddAboutInformation(section string, items ...foundation.AboutItem) {
 	customInformationResolvers = append(customInformationResolvers, func() {
-		appInformation.addToSection(section, details)
+		appInformation.addToSection(section, items)
 	})
 }

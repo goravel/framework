@@ -158,8 +158,8 @@ func (app *Application) GetJson() foundation.Json {
 	return app.json
 }
 
-func (app *Application) About(section string, details []foundation.AboutInfo) {
-	console.AddAboutInformation(section, details...)
+func (app *Application) About(section string, items []foundation.AboutItem) {
+	console.AddAboutInformation(section, items...)
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
