@@ -69,7 +69,7 @@ type Application interface {
 	// GetJson get the JSON implementation.
 	GetJson() Json
 	// About add information to the application's about command.
-	About(section string, details []AboutInfo)
+About(section string, items []AboutItem)
 
 	// Container
 	// Bind registers a binding with the container.
