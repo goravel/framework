@@ -12,6 +12,6 @@ type Body interface {
 }
 
 type Reader interface {
-	Reader() io.Reader
+	io.Reader
 	ContentType() string
 }
