@@ -104,6 +104,7 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),
 			console.NewFactoryMakeCommand(),
+			console.NewShowCommand(config, schema),
 			console.NewWipeCommand(config, schema),
 		})
 	}
