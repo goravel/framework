@@ -43,7 +43,7 @@ func TestBuildJSONBody(t *testing.T) {
 	assert.NoError(t, err)
 
 	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(reader)
+	_, err = buf.ReadFrom(reader.Reader())
 	assert.NoError(t, err)
 
 	var result map[string]any
@@ -62,7 +62,7 @@ func TestBuildFormBody(t *testing.T) {
 	assert.NoError(t, err)
 
 	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(reader)
+	_, err = buf.ReadFrom(reader.Reader())
 	assert.NoError(t, err)
 
 	formData, err := url.ParseQuery(buf.String())
@@ -87,7 +87,7 @@ func TestBuildMultipartBody(t *testing.T) {
 	assert.NoError(t, err)
 
 	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(reader)
+	_, err = buf.ReadFrom(reader.Reader())
 	assert.NoError(t, err)
 
 	contentType := reader.ContentType()
@@ -139,7 +139,7 @@ func TestBuildFormBodyWithSpecialCharacters(t *testing.T) {
 	assert.NoError(t, err)
 
 	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(reader)
+	_, err = buf.ReadFrom(reader.Reader())
 	assert.NoError(t, err)
 
 	formData, err := url.ParseQuery(buf.String())

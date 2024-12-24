@@ -18,8 +18,8 @@ func newReader(body io.Reader, contentType string) http.Reader {
 	}
 }
 
-func (r *readerImpl) Read(p []byte) (n int, err error) {
-	return r.body.Read(p)
+func (r *readerImpl) Reader() io.Reader {
+	return r.body
 }
 
 func (r *readerImpl) ContentType() string {
