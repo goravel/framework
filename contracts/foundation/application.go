@@ -28,7 +28,7 @@ import (
 	"github.com/goravel/framework/contracts/validation"
 )
 
-type AboutInfo struct {
+type AboutItem struct {
 	Key   string
 	Value string
 }
