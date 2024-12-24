@@ -229,7 +229,7 @@ func NewTestQueryWithSchema(docker testing.DatabaseDriver, schema string) *TestQ
 		query:      query,
 	}
 
-	if _, err := query.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema)); err != nil {
+	if _, err := query.Exec(fmt.Sprintf(`CREATE SCHEMA "%s"`, schema)); err != nil {
 		panic(fmt.Sprintf("create schema %s failed: %v", schema, err))
 	}
 
@@ -550,7 +550,7 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 func (r *MockSqlserver) Common() {
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
-	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "dbo").Return("dbo")
 
 	r.single()
 	r.basic()
@@ -566,7 +566,7 @@ func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
-	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "dbo").Return("dbo")
 
 	r.basic()
 }
@@ -574,7 +574,7 @@ func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
 func (r *MockSqlserver) WithPrefixAndSingular() {
 	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
-	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "dbo").Return("dbo")
 
 	r.single()
 	r.basic()
