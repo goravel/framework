@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -2331,7 +2332,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 	s.Contains(columnListing, "updated_at")
 }
 
-func TestSpecificSchema(t *testing.T) {
+func TestPostgresSchema(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skip test that using Docker")
 	}
@@ -2355,4 +2356,33 @@ func TestSpecificSchema(t *testing.T) {
 	assert.Len(t, tables, 1)
 	assert.Equal(t, "table", tables[0].Name)
 	assert.Equal(t, schema, tables[0].Schema)
+	assert.True(t, testSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
+	assert.True(t, testSchema.HasTable(table))
+}
+
+func TestSqlserverSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	schema := "goravel"
+	table := "table"
+	sqlserverDocker := docker.Sqlserver()
+	require.NoError(t, sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQueryWithSchema(sqlserverDocker, schema)
+	testSchema := GetTestSchema(sqlserverQuery, map[database.Driver]*gorm.TestQuery{
+		database.DriverSqlserver: sqlserverQuery,
+	})
+
+	assert.NoError(t, testSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
+		table.String("name")
+	}))
+	tables, err := testSchema.GetTables()
+
+	assert.NoError(t, err)
+	assert.Len(t, tables, 1)
+	assert.Equal(t, "table", tables[0].Name)
+	assert.Equal(t, schema, tables[0].Schema)
+	assert.True(t, testSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
 }

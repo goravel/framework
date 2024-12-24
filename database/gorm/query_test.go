@@ -3938,7 +3938,7 @@ func TestTablePrefixAndSingular(t *testing.T) {
 	}
 }
 
-func TestSchema(t *testing.T) {
+func TestPostgresSchema(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skip test that using Docker")
 	}
@@ -3956,6 +3956,26 @@ func TestSchema(t *testing.T) {
 	var user1 User
 	assert.Nil(t, testQuery.Query().Where("name", "first_user").First(&user1))
 	assert.True(t, user1.ID > 0)
+}
+
+func TestSqlserverSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	sqlserverDocker := supportdocker.Sqlserver()
+	require.NoError(t, sqlserverDocker.Ready())
+
+	testQuery := NewTestQueryWithSchema(sqlserverDocker, "goravel")
+	testQuery.CreateTable(TestTableSchema)
+
+	schema := Schema{Name: "first_schema"}
+	assert.Nil(t, testQuery.Query().Create(&schema))
+	assert.True(t, schema.ID > 0)
+
+	var schema1 Schema
+	assert.Nil(t, testQuery.Query().Where("name", "first_schema").First(&schema1))
+	assert.True(t, schema1.ID > 0)
 }
 
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {

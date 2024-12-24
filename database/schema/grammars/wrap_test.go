@@ -21,28 +21,28 @@ func (s *WrapTestSuite) SetupTest() {
 	s.wrap = NewWrap(database.DriverPostgres, "prefix_")
 }
 
-func (s *WrapTestSuite) TestColumnWithAlias() {
+func (s *WrapTestSuite) TestColumn() {
+	// With alias
 	result := s.wrap.Column("column as alias")
 	s.Equal(`"column" as "prefix_alias"`, result)
-}
 
-func (s *WrapTestSuite) TestColumnWithoutAlias() {
-	result := s.wrap.Column("column")
+	// Without alias
+	result = s.wrap.Column("column")
 	s.Equal(`"column"`, result)
 }
 
-func (s *WrapTestSuite) TestColumnsWithMultipleColumns() {
+func (s *WrapTestSuite) TestColumnize() {
 	result := s.wrap.Columnize([]string{"column1", "column2 as alias2"})
 	s.Equal(`"column1", "column2" as "prefix_alias2"`, result)
 }
 
-func (s *WrapTestSuite) TestQuoteWithNonEmptyValue() {
+func (s *WrapTestSuite) TestQuote() {
+	// With non empty value
 	result := s.wrap.Quote("value")
 	s.Equal("'value'", result)
-}
 
-func (s *WrapTestSuite) TestQuoteWithEmptyValue() {
-	result := s.wrap.Quote("")
+	// With empty value
+	result = s.wrap.Quote("")
 	s.Equal("", result)
 }
 
@@ -60,28 +60,31 @@ func (s *WrapTestSuite) TestSegmentsWithMultipleSegments() {
 	s.Equal(`"prefix_table"."column"`, result)
 }
 
-func (s *WrapTestSuite) TestTableWithAlias() {
+func (s *WrapTestSuite) TestTable() {
+	// With alias
 	result := s.wrap.Table("table as alias")
 	s.Equal(`"prefix_table" as "prefix_alias"`, result)
-}
 
-func (s *WrapTestSuite) TestTableWithoutAlias() {
-	result := s.wrap.Table("table")
+	// With schema
+	result = s.wrap.Table("goravel.table")
+	s.Equal(`"goravel"."prefix_table"`, result)
+
+	// Without alias
+	result = s.wrap.Table("table")
 	s.Equal(`"prefix_table"`, result)
 }
 
-func (s *WrapTestSuite) TestValueWithAsterisk() {
+func (s *WrapTestSuite) TestValue() {
+	// With asterisk
 	result := s.wrap.Value("*")
 	s.Equal("*", result)
-}
 
-func (s *WrapTestSuite) TestValueWithNonAsterisk() {
-	result := s.wrap.Value("value")
+	// Without asterisk
+	result = s.wrap.Value("value")
 	s.Equal(`"value"`, result)
-}
 
-func (s *WrapTestSuite) TestValueOfMysql() {
+	// With mysql
 	s.wrap.driver = database.DriverMysql
-	result := s.wrap.Value("value")
+	result = s.wrap.Value("value")
 	s.Equal("`value`", result)
 }

@@ -420,3 +420,12 @@ type Box struct {
 func (p *Box) Connection() string {
 	return "postgres"
 }
+
+type Schema struct {
+	Model
+	Name string
+}
+
+func (r *Schema) TableName() string {
+	return "goravel.schemas"
+}
