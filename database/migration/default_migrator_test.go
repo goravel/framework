@@ -162,7 +162,7 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 	}
 }
 
-func TestDefaultMigratorWithWithSchema(t *testing.T) {
+func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 	if env.IsWindows() {
 		t.Skip("Skip test that using Docker")
 	}
@@ -182,6 +182,32 @@ func TestDefaultMigratorWithWithSchema(t *testing.T) {
 
 	assert.NoError(t, migrator.Run())
 	assert.True(t, schema.HasTable("users"))
+	assert.NoError(t, migrator.Rollback(1, 0))
+	assert.False(t, schema.HasTable("users"))
+}
+
+func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	sqlserverDocker := docker.Sqlserver()
+	require.NoError(t, sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQueryWithSchema(sqlserverDocker, "goravel")
+	schema := databaseschema.GetTestSchema(sqlserverQuery, map[contractsdatabase.Driver]*gorm.TestQuery{
+		contractsdatabase.DriverSqlserver: sqlserverQuery,
+	})
+	testMigration := NewTestMigrationWithSqlserverSchema(schema)
+	schema.Register([]contractsschema.Migration{
+		testMigration,
+	})
+	migrator := NewDefaultMigrator(nil, schema, "migrations")
+
+	assert.NoError(t, migrator.Run())
+	assert.True(t, schema.HasTable("goravel.users"))
+	assert.NoError(t, migrator.Rollback(1, 0))
+	assert.False(t, schema.HasTable("goravel.users"))
 }
 
 type DefaultMigratorSuite struct {
@@ -861,9 +887,9 @@ func (s *DefaultMigratorSuite) TestStatus() {
 }
 
 func (s *DefaultMigratorSuite) mockRunDown(
-		mockOrm *mocksorm.Orm,
-		previousConnection, migrationSignature, table string,
-		err error,
+	mockOrm *mocksorm.Orm,
+	previousConnection, migrationSignature, table string,
+	err error,
 ) {
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
@@ -888,10 +914,10 @@ func (s *DefaultMigratorSuite) mockRunDown(
 }
 
 func (s *DefaultMigratorSuite) mockRunUp(
-		mockOrm *mocksorm.Orm,
-		previousConnection, migrationSignature, table string,
-		batch int,
-		err error,
+	mockOrm *mocksorm.Orm,
+	previousConnection, migrationSignature, table string,
+	batch int,
+	err error,
 ) {
 	s.mockSchema.EXPECT().GetConnection().Return(previousConnection).Once()
 	s.mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
@@ -935,6 +961,28 @@ func (r *TestMigration) Up() error {
 
 func (r *TestMigration) Down() error {
 	return r.schema.DropIfExists("users")
+}
+
+type TestMigrationWithSqlserverSchema struct {
+	schema contractsschema.Schema
+}
+
+func NewTestMigrationWithSqlserverSchema(schema contractsschema.Schema) *TestMigrationWithSqlserverSchema {
+	return &TestMigrationWithSqlserverSchema{schema: schema}
+}
+
+func (r *TestMigrationWithSqlserverSchema) Signature() string {
+	return "20240817214501_create_users_table"
+}
+
+func (r *TestMigrationWithSqlserverSchema) Up() error {
+	return r.schema.Create("goravel.users", func(table contractsschema.Blueprint) {
+		table.String("name")
+	})
+}
+
+func (r *TestMigrationWithSqlserverSchema) Down() error {
+	return r.schema.DropIfExists("goravel.users")
 }
 
 type TestConnectionMigration struct {

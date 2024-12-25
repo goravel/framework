@@ -88,9 +88,8 @@ func (r *Wrap) Table(table string) string {
 	}
 	if strings.Contains(table, ".") {
 		lastDotIndex := strings.LastIndex(table, ".")
-		newTable := table[:lastDotIndex] + "." + r.tablePrefix + table[lastDotIndex+1:]
 
-		return r.Value(newTable)
+		return r.Value(table[:lastDotIndex]) + "." + r.Value(r.tablePrefix+table[lastDotIndex+1:])
 	}
 
 	return r.Value(r.tablePrefix + table)

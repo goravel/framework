@@ -3,6 +3,7 @@ package color
 import (
 	"bytes"
 	"io"
+	"os"
 
 	"github.com/pterm/pterm"
 
@@ -38,7 +39,14 @@ const (
 )
 
 var (
-	info    = pterm.Info
+	info = pterm.PrefixPrinter{
+		MessageStyle: &pterm.ThemeDefault.DefaultText,
+		Prefix: pterm.Prefix{
+			Style: &pterm.Style{pterm.FgBlack, pterm.BgLightWhite},
+			Text:  " INFO  ",
+		},
+		Writer: os.Stdout,
+	}
 	warning = pterm.Warning
 	err     = pterm.Error
 	debug   = pterm.Debug
