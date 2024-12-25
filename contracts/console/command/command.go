@@ -13,8 +13,9 @@ const (
 )
 
 type Extend struct {
-	Category string
-	Flags    []Flag
+	Category  string
+	ArgsUsage string
+	Flags     []Flag
 }
 
 type Flag interface {
