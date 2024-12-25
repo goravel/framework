@@ -3,43 +3,61 @@ package testing
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
 )
 
-func TestNewAssertableJSON(t *testing.T) {
+type AssertableJsonTestSuite struct {
+	suite.Suite
+}
+
+func TestAssertableJsonTestSuite(t *testing.T) {
+	json = &testJson{}
+
+	suite.Run(t, new(AssertableJsonTestSuite))
+}
+
+func (s *AssertableJsonTestSuite) SetupTest() {
+
+}
+
+func (s *AssertableJsonTestSuite) TearDownSuite() {
+	json = nil
+}
+
+func (s *AssertableJsonTestSuite) TestNewAssertableJSON() {
 	validJSON := `{"key1": "value1", "key2": [1, 2, 3]}`
 	invalidJSON := `{"key1": "value1", "key2": [1, 2, 3]`
 
-	assertable, err := NewAssertableJSON(t, validJSON)
-	assert.NoError(t, err)
-	assert.NotNil(t, assertable)
+	assertable, err := NewAssertableJSON(s.T(), validJSON)
+	s.NoError(err)
+	s.NotNil(assertable)
 
-	assertable, err = NewAssertableJSON(t, invalidJSON)
-	assert.Error(t, err)
-	assert.Nil(t, assertable)
+	assertable, err = NewAssertableJSON(s.T(), invalidJSON)
+	s.Error(err)
+	s.Nil(assertable)
 }
 
-func TestCount(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestCount() {
 	jsonStr := `{"items": [1, 2, 3], "otherKey": "value"}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	assertable.Count("items", 3)
 
 	//assertable.Count("items", 4)
 }
 
-func TestHas(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestHas() {
 	jsonStr := `{
 		"key1": "value1",
 		"key2": [1, 2, 3],
 		"nested": {"deep": "value"},
 		"nullKey": null
 	}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	assertable.Has("key1")
 	assertable.Has("nullKey")
@@ -47,10 +65,10 @@ func TestHas(t *testing.T) {
 	//assertable.Has("nonExistingKey")
 }
 
-func TestHasAll(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestHasAll() {
 	jsonStr := `{"key1": "value1", "key2": [1, 2, 3]}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test all keys exist
 	assertable.HasAll([]string{"key1", "key2"})
@@ -59,10 +77,10 @@ func TestHasAll(t *testing.T) {
 	//assertable.HasAll([]string{"key1", "nonExistingKey"})
 }
 
-func TestHasAny(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestHasAny() {
 	jsonStr := `{"key1": "value1", "key2": [1, 2, 3]}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test at least one key exists
 	assertable.HasAny([]string{"key1", "key2"})
@@ -71,10 +89,10 @@ func TestHasAny(t *testing.T) {
 	//assertable.HasAny([]string{"nonExistingKey1", "nonExistingKey2"})
 }
 
-func TestMissing(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestMissing() {
 	jsonStr := `{"key1": "value1"}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test key is missing
 	assertable.Missing("nonExistingKey")
@@ -83,10 +101,10 @@ func TestMissing(t *testing.T) {
 	//assertable.Missing("key1")
 }
 
-func TestMissingAll(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestMissingAll() {
 	jsonStr := `{"key1": "value1"}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test all keys are missing
 	assertable.MissingAll([]string{"nonExistingKey1", "nonExistingKey2"})
@@ -95,7 +113,7 @@ func TestMissingAll(t *testing.T) {
 	//assertable.MissingAll([]string{"key1"})
 }
 
-func TestWhere(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestWhere() {
 	jsonStr := `{
 		"key1": "value1",
 		"intKey": 42,
@@ -104,8 +122,8 @@ func TestWhere(t *testing.T) {
 		"objKey": {"nested": "value"},
 		"arrayKey": [1, 2, 3]
 	}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test correct value
 	assertable.Where("key1", "value1")
@@ -123,10 +141,10 @@ func TestWhere(t *testing.T) {
 	//assertable.Where("key1", "wrongValue")
 }
 
-func TestWhereNot(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestWhereNot() {
 	jsonStr := `{"key1": "value1", "key2": [1, 2, 3]}`
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test value is not as expected
 	assertable.WhereNot("key1", "wrongValue")
@@ -135,11 +153,11 @@ func TestWhereNot(t *testing.T) {
 	//assertable.WhereNot("key1", "value1")
 }
 
-func TestFirst(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestFirst() {
 	jsonStr := `{"items": [{"id": 1}, {"id": 2}]}`
 
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test fetching the first item
 	assertable.First("items", func(item contractstesting.AssertableJSON) {
@@ -155,11 +173,11 @@ func TestFirst(t *testing.T) {
 	//emptyAssertable.First("items", func(item contractstesting.AssertableJSON) {})
 }
 
-func TestHasWithScope(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestHasWithScope() {
 	jsonStr := `{"items": [{"id": 1}, {"id": 2}]}`
 
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test has with correct length
 	assertable.HasWithScope("items", 2, func(item contractstesting.AssertableJSON) {
@@ -173,15 +191,15 @@ func TestHasWithScope(t *testing.T) {
 	//assertable.HasWithScope("nonExistingKey", 0, func(item contractstesting.AssertableJSON) {})
 }
 
-func TestEach(t *testing.T) {
+func (s *AssertableJsonTestSuite) TestEach() {
 	jsonStr := `{
 		"items": [{"id": 1}, {"id": 2}],
 		"mixedTypes": [42, "string", {"key": "value"}],
 		"nonArray": "value"
 	}`
 
-	assertable, err := NewAssertableJSON(t, jsonStr)
-	assert.NoError(t, err)
+	assertable, err := NewAssertableJSON(s.T(), jsonStr)
+	s.NoError(err)
 
 	// Test iterating over each item
 	callCount := 0
@@ -189,18 +207,19 @@ func TestEach(t *testing.T) {
 		item.Where("id", float64(callCount+1))
 		callCount++
 	})
-	assert.Equal(t, 2, callCount)
+	s.Equal(2, callCount)
 
 	// Test with a non-existing key
 	//assertable.Each("nonExistingKey", func(item contractstesting.AssertableJSON) {})
 
 	// Test with an empty array
 	emptyJsonStr := `{"items": []}`
-	emptyAssertable, err := NewAssertableJSON(t, emptyJsonStr)
-	assert.NoError(t, err)
+	emptyAssertable, err := NewAssertableJSON(s.T(), emptyJsonStr)
+	s.NoError(err)
+
 	emptyCallCount := 0
 	emptyAssertable.Each("items", func(item contractstesting.AssertableJSON) {
 		emptyCallCount++
 	})
-	assert.Equal(t, 0, emptyCallCount)
+	s.Equal(0, emptyCallCount)
 }

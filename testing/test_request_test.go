@@ -1,16 +1,25 @@
 package testing
 
 import (
+	"bytes"
+	"context"
+	encodingjson "encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
+	mocksroute "github.com/goravel/framework/mocks/route"
 	mockssession "github.com/goravel/framework/mocks/session"
 )
 
 type TestRequestSuite struct {
 	suite.Suite
+	testRequest        *TestRequest
+	mockRoute          *mocksroute.Route
 	mockSessionManager *mockssession.Manager
 }
 
@@ -20,18 +29,53 @@ func TestTestRequestSuite(t *testing.T) {
 
 // SetupTest will run before each test in the suite.
 func (s *TestRequestSuite) SetupTest() {
+	s.mockRoute = mocksroute.NewRoute(s.T())
 	s.mockSessionManager = mockssession.NewManager(s.T())
+	json = &testJson{}
+	routeFacade = s.mockRoute
 	sessionFacade = s.mockSessionManager
+	s.testRequest = &TestRequest{
+		t:                 s.T(),
+		ctx:               context.Background(),
+		defaultHeaders:    make(map[string]string),
+		defaultCookies:    make(map[string]string),
+		sessionAttributes: make(map[string]any),
+	}
 }
 
 func (s *TestRequestSuite) TearDownTest() {
+	json = nil
+	routeFacade = nil
 	sessionFacade = nil
 }
 
+func (s *TestRequestSuite) TestBindAndCall() {
+	s.mockRoute.EXPECT().Test(httptest.NewRequest("GET", "/", nil).WithContext(context.Background())).Return(&http.Response{
+		Body: io.NopCloser(bytes.NewBufferString(`{"name": "John", "age": 30}`)),
+	}, nil).Once()
+
+	var user struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	response, err := s.testRequest.Bind(&user).Get("/")
+
+	s.NoError(err)
+	s.NotNil(response)
+	s.Equal(user.Name, "John")
+	s.Equal(user.Age, 30)
+}
+
 func (s *TestRequestSuite) TestSetSessionErrors() {
+	var (
+		mockDriver  *mockssession.Driver
+		mockSession *mockssession.Session
+	)
+
 	type testCase struct {
 		name              string
-		mockBehavior      func(mockDriver *mockssession.Driver, mockSession *mockssession.Session)
+		setup             func()
 		expectedError     string
 		sessionAttributes map[string]any
 	}
@@ -39,7 +83,7 @@ func (s *TestRequestSuite) TestSetSessionErrors() {
 	cases := []testCase{
 		{
 			name: "DriverError",
-			mockBehavior: func(mockDriver *mockssession.Driver, mockSession *mockssession.Session) {
+			setup: func() {
 				s.mockSessionManager.On("Driver").Return(nil, errors.New("driver retrieval error")).Once()
 			},
 			expectedError:     "driver retrieval error",
@@ -47,7 +91,7 @@ func (s *TestRequestSuite) TestSetSessionErrors() {
 		},
 		{
 			name: "BuildSessionError",
-			mockBehavior: func(mockDriver *mockssession.Driver, mockSession *mockssession.Session) {
+			setup: func() {
 				s.mockSessionManager.On("Driver").Return(mockDriver, nil).Once()
 				s.mockSessionManager.On("BuildSession", mockDriver).Return(nil, errors.New("build session error")).Once()
 			},
@@ -56,7 +100,7 @@ func (s *TestRequestSuite) TestSetSessionErrors() {
 		},
 		{
 			name: "SaveError",
-			mockBehavior: func(mockDriver *mockssession.Driver, mockSession *mockssession.Session) {
+			setup: func() {
 				s.mockSessionManager.On("Driver").Return(mockDriver, nil).Once()
 				s.mockSessionManager.On("BuildSession", mockDriver).Return(mockSession, nil).Once()
 
@@ -74,12 +118,12 @@ func (s *TestRequestSuite) TestSetSessionErrors() {
 
 	for _, tc := range cases {
 		s.Run(tc.name, func() {
-			mockDriver := mockssession.NewDriver(s.T())
-			mockSession := mockssession.NewSession(s.T())
+			mockDriver = mockssession.NewDriver(s.T())
+			mockSession = mockssession.NewSession(s.T())
 
-			tc.mockBehavior(mockDriver, mockSession)
+			tc.setup()
 
-			request := NewTestRequest(s.T()).WithSession(tc.sessionAttributes)
+			request := s.testRequest.WithSession(tc.sessionAttributes)
 
 			err := request.(*TestRequest).setSession()
 
@@ -115,7 +159,7 @@ func (s *TestRequestSuite) TestSetSessionUsingWithSession() {
 	mockSession.On("Save").Return(nil).Once()
 	s.mockSessionManager.On("ReleaseSession", mockSession).Once()
 
-	request := NewTestRequest(s.T()).WithSession(sessionAttributes)
+	request := s.testRequest.WithSession(sessionAttributes)
 
 	err := request.(*TestRequest).setSession()
 
@@ -123,12 +167,19 @@ func (s *TestRequestSuite) TestSetSessionUsingWithSession() {
 }
 
 func (s *TestRequestSuite) TestSetSessionUsingWithoutSession() {
-	request := NewTestRequest(s.T())
-
-	err := request.(*TestRequest).setSession()
-
-	s.NoError(err)
+	s.NoError(s.testRequest.setSession())
 
 	s.mockSessionManager.AssertNotCalled(s.T(), "Driver")
 	s.mockSessionManager.AssertNotCalled(s.T(), "BuildSession", mockssession.NewDriver(s.T()))
+}
+
+type testJson struct {
+}
+
+func (t *testJson) Marshal(v any) ([]byte, error) {
+	return encodingjson.Marshal(v)
+}
+
+func (t *testJson) Unmarshal(data []byte, v any) error {
+	return encodingjson.Unmarshal(data, v)
 }
