@@ -13,6 +13,7 @@ import (
 	databaseschema "github.com/goravel/framework/database/schema"
 	databaseseeder "github.com/goravel/framework/database/seeder"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
 
 type ServiceProvider struct {
@@ -32,9 +33,15 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		}
 
 		connection := config.GetString("database.default")
+		if connection == "" {
+			return nil, nil
+		}
+
 		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
-			return nil, errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm)
+			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm))
+
+			return nil, nil
 		}
 
 		return orm, nil
@@ -52,7 +59,8 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		orm := app.MakeOrm()
 		if orm == nil {
-			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleSchema)
+			// The Orm module will print the error message, so it's safe to return an empty schema.
+			return &databaseschema.Schema{}, nil
 		}
 
 		return databaseschema.NewSchema(config, log, orm, nil), nil

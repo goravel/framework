@@ -87,7 +87,7 @@ var (
 
 	OrmDatabaseConfigNotFound      = New("not found database configuration")
 	OrmDriverNotSupported          = New("invalid driver: %s, only support mysql, postgres, sqlite and sqlserver")
-	OrmFailedToGenerateDNS         = New("failed to generate DSN for connection: %s")
+	OrmFailedToGenerateDNS         = New("failed to generate DSN, please check the database configuration")
 	OrmFactoryMissingAttributes    = New("failed to get raw attributes")
 	OrmFactoryMissingMethod        = New("%s does not find factory method")
 	OrmInitConnection              = New("init %s connection error: %v")
