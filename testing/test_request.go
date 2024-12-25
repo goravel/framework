@@ -13,6 +13,7 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
+	"github.com/goravel/framework/support/str"
 )
 
 type TestRequest struct {
@@ -39,10 +40,18 @@ func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
 }
 
 func (r *TestRequest) Post(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	if r.defaultHeaders["Content-Type"] == "" {
+		r.WithHeader("Content-Type", "application/json")
+	}
+
 	return r.call(http.MethodPost, uri, body)
 }
 
 func (r *TestRequest) Put(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+	if r.defaultHeaders["Content-Type"] == "" {
+		r.WithHeader("Content-Type", "application/json")
+	}
+
 	return r.call(http.MethodPut, uri, body)
 }
 
@@ -128,6 +137,9 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 	err := r.setSession()
 	if err != nil {
 		return nil, err
+	}
+	if !str.Of(uri).StartsWith("/", "http://", "https://") {
+		uri = "/" + uri
 	}
 
 	req := httptest.NewRequest(method, uri, body).WithContext(r.ctx)

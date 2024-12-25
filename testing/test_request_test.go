@@ -35,8 +35,11 @@ func (s *TestRequestSuite) SetupTest() {
 	routeFacade = s.mockRoute
 	sessionFacade = s.mockSessionManager
 	s.testRequest = &TestRequest{
-		t:   s.T(),
-		ctx: context.Background(),
+		t:                 s.T(),
+		ctx:               context.Background(),
+		defaultHeaders:    make(map[string]string),
+		defaultCookies:    make(map[string]string),
+		sessionAttributes: make(map[string]any),
 	}
 }
 

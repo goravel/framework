@@ -271,6 +271,11 @@ func TestAssertSeeInOrder(t *testing.T) {
 }
 
 func TestAssertJson(t *testing.T) {
+	json = &testJson{}
+	defer func() {
+		json = nil
+	}()
+
 	res := createTestResponse(http.StatusOK)
 	res.Body = io.NopCloser(strings.NewReader(`{"key1": "value1", "key2": 42}`))
 
@@ -279,6 +284,11 @@ func TestAssertJson(t *testing.T) {
 }
 
 func TestAssertExactJson(t *testing.T) {
+	json = &testJson{}
+	defer func() {
+		json = nil
+	}()
+
 	res := createTestResponse(http.StatusOK)
 	res.Body = io.NopCloser(strings.NewReader(`{"key1": "value1", "key2": 42}`))
 
@@ -287,6 +297,11 @@ func TestAssertExactJson(t *testing.T) {
 }
 
 func TestAssertJsonMissing(t *testing.T) {
+	json = &testJson{}
+	defer func() {
+		json = nil
+	}()
+
 	res := createTestResponse(http.StatusOK)
 	res.Body = io.NopCloser(strings.NewReader(`{"key1": "value1", "key2": 42}`))
 
@@ -295,6 +310,11 @@ func TestAssertJsonMissing(t *testing.T) {
 }
 
 func TestAssertFluentJson(t *testing.T) {
+	json = &testJson{}
+	defer func() {
+		json = nil
+	}()
+
 	sampleJson := `{"name": "krishan", "age": 22, "email": "krishan@example.com"}`
 	res := createTestResponse(http.StatusOK)
 	res.Body = io.NopCloser(strings.NewReader(sampleJson))
