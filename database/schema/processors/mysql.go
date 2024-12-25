@@ -58,5 +58,17 @@ func (r Mysql) ProcessForeignKeys(dbForeignKeys []schema.DBForeignKey) []schema.
 }
 
 func (r Mysql) ProcessIndexes(dbIndexes []schema.DBIndex) []schema.Index {
-	return processIndexes(dbIndexes)
+	var indexes []schema.Index
+	for _, dbIndex := range dbIndexes {
+		name := strings.ToLower(dbIndex.Name)
+		indexes = append(indexes, schema.Index{
+			Columns: strings.Split(dbIndex.Columns, ","),
+			Name:    name,
+			Type:    strings.ToLower(dbIndex.Type),
+			Primary: name == "primary",
+			Unique:  dbIndex.Unique,
+		})
+	}
+
+	return indexes
 }

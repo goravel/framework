@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -2032,6 +2033,40 @@ func (s *SchemaSuite) TestIndexMethods() {
 						s.Equal("btree", index.Type)
 					}
 					s.False(index.Unique)
+				}
+				if index.Name == "name_index" {
+					s.ElementsMatch(index.Columns, []string{"name"})
+					s.False(index.Primary)
+					if driver == database.DriverSqlite {
+						s.Empty(index.Type)
+					} else if driver == database.DriverSqlserver {
+						s.Equal("nonclustered", index.Type)
+					} else {
+						s.Equal("btree", index.Type)
+					}
+					s.False(index.Unique)
+				}
+				if strings.HasPrefix(index.Name, "pk_") {
+					s.ElementsMatch(index.Columns, []string{"id"})
+					s.True(index.Primary)
+					s.Equal("clustered", index.Type)
+					s.True(index.Unique)
+				}
+				if index.Name == "primary" {
+					s.ElementsMatch(index.Columns, []string{"id"})
+					s.True(index.Primary)
+					if driver == database.DriverSqlite {
+						s.Empty(index.Type)
+					} else {
+						s.Equal("btree", index.Type)
+					}
+					s.True(index.Unique)
+				}
+				if index.Name == "goravel_indexes_pkey" {
+					s.ElementsMatch(index.Columns, []string{"id"})
+					s.True(index.Primary)
+					s.Equal("btree", index.Type)
+					s.True(index.Unique)
 				}
 			}
 
