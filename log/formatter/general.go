@@ -85,7 +85,7 @@ func (general *General) formatData(data logrus.Fields) (string, error) {
 
 		for _, key := range []string{"hint", "tags", "owner", "context", "with", "domain", "code", "request", "response", "user"} {
 			if value, exists := root[key]; exists && value != nil {
-				builder.WriteString(fmt.Sprintf("%s: %+v\n", str.Of(key).UcFirst().String(), value))
+				builder.WriteString(fmt.Sprintf("[%s] %+v\n", str.Of(key).UcFirst().String(), value))
 			}
 		}
 
@@ -114,7 +114,7 @@ func (general *General) formatStackTraces(stackTraces any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	formattedTraces.WriteString("Trace:\n")
+	formattedTraces.WriteString("[Trace]\n")
 	root := traces.Root
 	if len(root.Stack) > 0 {
 		for _, stackStr := range root.Stack {

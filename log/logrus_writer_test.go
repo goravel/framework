@@ -58,8 +58,8 @@ func TestLogrus(t *testing.T) {
 				log.WithContext(ctx).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nContext: map[key:value]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nContext: map[key:value]"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Context] map[key:value]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Context] map[key:value]"))
 			},
 		},
 		{
@@ -218,8 +218,8 @@ func TestLogrus(t *testing.T) {
 				log.Code("code").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nCode: code"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nCode: code"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Code] code"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Code] code"))
 			},
 		},
 		{
@@ -231,8 +231,8 @@ func TestLogrus(t *testing.T) {
 				log.Hint("hint").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nHint: hint"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nHint: hint"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Hint] hint"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Hint] hint"))
 			},
 		},
 		{
@@ -244,8 +244,8 @@ func TestLogrus(t *testing.T) {
 				log.In("domain").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nDomain: domain"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nDomain: domain"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Domain] domain"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Domain] domain"))
 			},
 		},
 		{
@@ -257,8 +257,8 @@ func TestLogrus(t *testing.T) {
 				log.Owner("team@goravel.dev").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nOwner: team@goravel.dev"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nOwner: team@goravel.dev"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Owner] team@goravel.dev"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Owner] team@goravel.dev"))
 			},
 		},
 		{
@@ -272,7 +272,7 @@ func TestLogrus(t *testing.T) {
 			assert: func() {
 				expectedParts := []string{
 					`test.info: Goravel`,
-					`Request: `,
+					`[Request] map[`,
 					`method:GET`,
 					`uri:http://localhost:3000/`,
 					`Sec-Fetch-User:[?1]`,
@@ -297,7 +297,7 @@ func TestLogrus(t *testing.T) {
 			assert: func() {
 				expectedParts := []string{
 					`test.info: Goravel`,
-					`Response: map[`,
+					`[Response] map[`,
 					`status:200`,
 					`header:map[Content-Type:[text/plain; charset=utf-8]]`,
 					`body:body`,
@@ -319,8 +319,8 @@ func TestLogrus(t *testing.T) {
 				log.Tags("tag").Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nTags: [tag]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nTags: [tag]"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Tags] [tag]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Tags] [tag]"))
 			},
 		},
 		{
@@ -332,8 +332,8 @@ func TestLogrus(t *testing.T) {
 				log.User(map[string]any{"name": "kkumar-gcc"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nUser: map[name:kkumar-gcc]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nUser: map[name:kkumar-gcc]"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[User] map[name:kkumar-gcc]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[User] map[name:kkumar-gcc]"))
 			},
 		},
 		{
@@ -345,8 +345,8 @@ func TestLogrus(t *testing.T) {
 				log.With(map[string]any{"key": "value"}).Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nWith: map[key:value]"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nWith: map[key:value]"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[With] map[key:value]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[With] map[key:value]"))
 			},
 		},
 		{
@@ -358,8 +358,8 @@ func TestLogrus(t *testing.T) {
 				log.WithTrace().Info("Goravel")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.info: Goravel\nTrace:"))
-				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\nTrace:"))
+				assert.True(t, file.Contain(singleLog, "test.info: Goravel\n[Trace]"))
+				assert.True(t, file.Contain(dailyLog, "test.info: Goravel\n[Trace]"))
 			},
 		},
 		{
@@ -372,12 +372,12 @@ func TestLogrus(t *testing.T) {
 				log.Info("test info")
 			},
 			assert: func() {
-				assert.True(t, file.Contain(singleLog, "test.error: test error\nTrace:"))
+				assert.True(t, file.Contain(singleLog, "test.error: test error\n[Trace]"))
 				assert.True(t, file.Contain(singleLog, "test.info: test info"))
-				assert.False(t, file.Contain(dailyLog, "test.info: test info\nTrace:"))
+				assert.False(t, file.Contain(dailyLog, "test.info: test info\n[Trace]"))
 				assert.True(t, file.Contain(dailyLog, "test.error: test error"))
 				assert.True(t, file.Contain(dailyLog, "test.info: test info"))
-				assert.False(t, file.Contain(singleLog, "test.info: test info\nTrace:"))
+				assert.False(t, file.Contain(singleLog, "test.info: test info\n[Trace]"))
 			},
 		},
 	}
