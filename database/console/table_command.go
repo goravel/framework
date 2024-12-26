@@ -39,8 +39,9 @@ func (r *TableCommand) Extend() command.Extend {
 		ArgsUsage: "  [--] [<table>]",
 		Flags: []command.Flag{
 			&command.StringFlag{
-				Name:  "database",
-				Usage: "The database connection",
+				Name:    "database",
+				Aliases: []string{"d"},
+				Usage:   "The database connection",
 			},
 		},
 	}
