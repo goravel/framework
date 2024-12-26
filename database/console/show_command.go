@@ -54,12 +54,14 @@ func (r *ShowCommand) Extend() command.Extend {
 		Category: "db",
 		Flags: []command.Flag{
 			&command.StringFlag{
-				Name:  "database",
-				Usage: "The database connection",
+				Name:    "database",
+				Aliases: []string{"d"},
+				Usage:   "The database connection",
 			},
 			&command.BoolFlag{
-				Name:  "views",
-				Usage: "Show the database views",
+				Name:    "views",
+				Aliases: []string{"v"},
+				Usage:   "Show the database views",
 			},
 		},
 	}
@@ -72,8 +74,9 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 	r.schema = r.schema.Connection(ctx.Option("database"))
+	connection := r.schema.GetConnection()
 	getConfigValue := func(k string) string {
-		return r.config.GetString("database.connections." + r.schema.GetConnection() + "." + k)
+		return r.config.GetString("database.connections." + connection + "." + k)
 	}
 	info := databaseInfo{
 		Database: getConfigValue("database"),
@@ -81,8 +84,12 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 		Port:     getConfigValue("port"),
 		Username: getConfigValue("username"),
 	}
-	info.Name, info.Version, info.OpenConnections = r.getDataBaseInfo()
 	var err error
+	info.Name, info.Version, info.OpenConnections, err = r.getDataBaseInfo()
+	if err != nil {
+		ctx.Error(err.Error())
+		return nil
+	}
 	if info.Tables, err = r.schema.GetTables(); err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -97,9 +104,8 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string) {
+func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string, err error) {
 	var (
-		result  queryResult
 		drivers = map[database.Driver]struct {
 			name                 string
 			versionQuery         string
@@ -129,14 +135,18 @@ func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string) 
 	name = string(r.schema.Orm().Query().Driver())
 	if driver, ok := drivers[r.schema.Orm().Query().Driver()]; ok {
 		name = driver.name
-		_ = r.schema.Orm().Query().Raw(driver.versionQuery).Scan(&result)
-		version = result.Value
-		if strings.Contains(version, "MariaDB") {
-			name = "MariaDB"
-		}
-		if len(driver.openConnectionsQuery) > 0 {
-			_ = r.schema.Orm().Query().Raw(driver.openConnectionsQuery).Scan(&result)
-			openConnections = result.Value
+		var versionResult queryResult
+		if err = r.schema.Orm().Query().Raw(driver.versionQuery).Scan(&versionResult); err == nil {
+			version = versionResult.Value
+			if strings.Contains(version, "MariaDB") {
+				name = "MariaDB"
+			}
+			if len(driver.openConnectionsQuery) > 0 {
+				var openConnectionsResult queryResult
+				if err = r.schema.Orm().Query().Raw(driver.openConnectionsQuery).Scan(&openConnectionsResult); err == nil {
+					openConnections = openConnectionsResult.Value
+				}
+			}
 		}
 	}
 	return
@@ -172,7 +182,10 @@ func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
 		for i := range info.Views {
 			if !str.Of(info.Views[i].Name).StartsWith("pg_catalog", "information_schema", "spt_") {
 				var rows int64
-				_ = r.schema.Orm().Query().Table(info.Views[i].Name).Count(&rows)
+				if err := r.schema.Orm().Query().Table(info.Views[i].Name).Count(&rows); err != nil {
+					ctx.Error(err.Error())
+					return
+				}
 				ctx.TwoColumnDetail(info.Views[i].Name, fmt.Sprintf("%d", rows))
 			}
 		}
