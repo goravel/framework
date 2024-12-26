@@ -34,8 +34,8 @@ func (s *SqliteTestSuite) TestProcessColumns() {
 				{Name: "name", Type: "varchar", Nullable: "true", Default: "default_name"},
 			},
 			expected: []schema.Column{
-				{Autoincrement: true, Default: "1", Name: "id", Nullable: false, Type: "integer"},
-				{Autoincrement: false, Default: "default_name", Name: "name", Nullable: true, Type: "varchar"},
+				{Autoincrement: true, Default: "1", Name: "id", Nullable: false, Type: "integer", TypeName: "integer"},
+				{Autoincrement: false, Default: "default_name", Name: "name", Nullable: true, Type: "varchar", TypeName: "varchar"},
 			},
 		},
 		{
@@ -48,7 +48,7 @@ func (s *SqliteTestSuite) TestProcessColumns() {
 				{Name: "description", Type: "text", Nullable: "true", Default: "default_description"},
 			},
 			expected: []schema.Column{
-				{Autoincrement: false, Default: "default_description", Name: "description", Nullable: true, Type: "text"},
+				{Autoincrement: false, Default: "default_description", Name: "description", Nullable: true, Type: "text", TypeName: "text"},
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func (s *SqliteTestSuite) TestProcessColumns() {
 				{Name: "created_at", Type: "timestamp", Nullable: "false", Default: "CURRENT_TIMESTAMP"},
 			},
 			expected: []schema.Column{
-				{Autoincrement: false, Default: "CURRENT_TIMESTAMP", Name: "created_at", Nullable: false, Type: "timestamp"},
+				{Autoincrement: false, Default: "CURRENT_TIMESTAMP", Name: "created_at", Nullable: false, Type: "timestamp", TypeName: "timestamp"},
 			},
 		},
 	}
