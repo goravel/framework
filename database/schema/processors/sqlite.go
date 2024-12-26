@@ -17,15 +17,31 @@ func NewSqlite() Sqlite {
 }
 
 func (r Sqlite) ProcessColumns(dbColumns []schema.DBColumn) []schema.Column {
+	var primaryKeyNum int
+	collect.Map(dbColumns, func(dbColumn schema.DBColumn, _ int) bool {
+		if dbColumn.Primary {
+			primaryKeyNum++
+		}
+
+		return true
+	})
+
 	var columns []schema.Column
 	for _, dbColumn := range dbColumns {
 		ttype := strings.ToLower(dbColumn.Type)
+		typeNameParts := strings.SplitN(ttype, "(", 2)
+		typeName := ""
+		if len(typeNameParts) > 0 {
+			typeName = typeNameParts[0]
+		}
+
 		columns = append(columns, schema.Column{
-			Autoincrement: dbColumn.Primary && ttype == "integer",
+			Autoincrement: primaryKeyNum == 1 && dbColumn.Primary && ttype == "integer",
 			Default:       dbColumn.Default,
 			Name:          dbColumn.Name,
 			Nullable:      cast.ToBool(dbColumn.Nullable),
 			Type:          ttype,
+			TypeName:      typeName,
 		})
 	}
 

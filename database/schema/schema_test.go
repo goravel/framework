@@ -503,6 +503,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.True(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "big_integer" {
 			s.False(column.Autoincrement)
@@ -510,6 +511,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
+			s.Equal("integer", column.TypeName)
 		}
 		if column.Name == "char" {
 			s.False(column.Autoincrement)
@@ -517,6 +519,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
+			s.Equal("varchar", column.TypeName)
 		}
 		if column.Name == "created_at" {
 			s.False(column.Autoincrement)
@@ -524,6 +527,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.True(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -531,6 +535,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("date", column.Type)
+			s.Equal("date", column.TypeName)
 		}
 		if column.Name == "date_time" {
 			s.False(column.Autoincrement)
@@ -538,6 +543,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "date_time_tz" {
 			s.False(column.Autoincrement)
@@ -545,6 +551,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "decimal" {
 			s.False(column.Autoincrement)
@@ -552,6 +559,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("numeric", column.Type)
+			s.Equal("numeric", column.TypeName)
 		}
 		if column.Name == "deleted_at" {
 			s.False(column.Autoincrement)
@@ -559,6 +567,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.True(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "double" {
 			s.False(column.Autoincrement)
@@ -566,6 +575,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("double", column.Type)
+			s.Equal("double", column.TypeName)
 		}
 		if column.Name == "enum" {
 			s.False(column.Autoincrement)
@@ -573,6 +583,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
+			s.Equal("varchar", column.TypeName)
 		}
 		if column.Name == "enum_int" {
 			s.False(column.Autoincrement)
@@ -580,6 +591,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
+			s.Equal("varchar", column.TypeName)
 		}
 		if column.Name == "float" {
 			s.False(column.Autoincrement)
@@ -587,6 +599,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("float", column.Type)
+			s.Equal("float", column.TypeName)
 		}
 		if column.Name == "id" {
 			s.True(column.Autoincrement)
@@ -594,6 +607,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
+			s.Equal("integer", column.TypeName)
 		}
 		if column.Name == "integer" {
 			s.False(column.Autoincrement)
@@ -601,6 +615,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
+			s.Equal("integer", column.TypeName)
 		}
 		if column.Name == "integer_default" {
 			s.False(column.Autoincrement)
@@ -608,6 +623,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("'1'", column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
+			s.Equal("integer", column.TypeName)
 		}
 		if column.Name == "json" {
 			s.False(column.Autoincrement)
@@ -615,6 +631,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "jsonb" {
 			s.False(column.Autoincrement)
@@ -622,6 +639,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "long_text" {
 			s.False(column.Autoincrement)
@@ -629,6 +647,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "medium_text" {
 			s.False(column.Autoincrement)
@@ -636,6 +655,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "string" {
 			s.False(column.Autoincrement)
@@ -643,6 +663,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
+			s.Equal("varchar", column.TypeName)
 		}
 		if column.Name == "string_default" {
 			s.False(column.Autoincrement)
@@ -650,6 +671,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("'goravel'", column.Default)
 			s.False(column.Nullable)
 			s.Equal("varchar", column.Type)
+			s.Equal("varchar", column.TypeName)
 		}
 		if column.Name == "text" {
 			s.False(column.Autoincrement)
@@ -657,6 +679,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "tiny_text" {
 			s.False(column.Autoincrement)
@@ -664,6 +687,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("text", column.Type)
+			s.Equal("text", column.TypeName)
 		}
 		if column.Name == "time" {
 			s.False(column.Autoincrement)
@@ -671,6 +695,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("time", column.Type)
+			s.Equal("time", column.TypeName)
 		}
 		if column.Name == "time_tz" {
 			s.False(column.Autoincrement)
@@ -678,6 +703,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("time", column.Type)
+			s.Equal("time", column.TypeName)
 		}
 		if column.Name == "timestamp" {
 			s.False(column.Autoincrement)
@@ -685,6 +711,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "timestamp_tz" {
 			s.False(column.Autoincrement)
@@ -692,6 +719,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "timestamp_use_current" {
 			s.False(column.Autoincrement)
@@ -699,6 +727,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("CURRENT_TIMESTAMP", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "timestamp_use_current_on_update" {
 			s.False(column.Autoincrement)
@@ -706,6 +735,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("CURRENT_TIMESTAMP", column.Default)
 			s.False(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "updated_at" {
 			s.False(column.Autoincrement)
@@ -713,6 +743,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.True(column.Nullable)
 			s.Equal("datetime", column.Type)
+			s.Equal("datetime", column.TypeName)
 		}
 		if column.Name == "unsigned_integer" {
 			s.False(column.Autoincrement)
@@ -720,6 +751,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
+			s.Equal("integer", column.TypeName)
 		}
 		if column.Name == "unsigned_big_integer" {
 			s.False(column.Autoincrement)
@@ -727,6 +759,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Empty(column.Default)
 			s.False(column.Nullable)
 			s.Equal("integer", column.Type)
+			s.Equal("integer", column.TypeName)
 		}
 	}
 }
