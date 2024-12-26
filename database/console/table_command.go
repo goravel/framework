@@ -121,7 +121,7 @@ func (r *TableCommand) display(ctx console.Context, table schema.Table) {
 			}
 			key = fmt.Sprintf("%s <fg=gray>%s</>", key, strings.Join(attributes, ", "))
 			if columns[i].Default != "" {
-				value = fmt.Sprintf("<fg=gray>%s</> %s ", columns[i].Default, value)
+				value = fmt.Sprintf("<fg=gray>%s</> %s", columns[i].Default, value)
 			}
 			ctx.TwoColumnDetail(key, value)
 		}

@@ -13,8 +13,8 @@ const (
 )
 
 type Extend struct {
-	Category  string
 	ArgsUsage string
+	Category  string
 	Flags     []Flag
 }
 
