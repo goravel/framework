@@ -112,6 +112,8 @@ func (r *ServiceProvider) registerCommands(app foundation.Application) {
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),
 			console.NewFactoryMakeCommand(),
+			console.NewTableCommand(config, schema),
+			console.NewShowCommand(config, schema),
 			console.NewWipeCommand(config, schema),
 		})
 	}

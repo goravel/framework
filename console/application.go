@@ -41,6 +41,7 @@ func (r *Application) Register(commands []console.Command) {
 				return item.Handle(NewCliContext(ctx))
 			},
 			Category:     item.Extend().Category,
+			ArgsUsage:    item.Extend().ArgsUsage,
 			Flags:        flagsToCliFlags(item.Extend().Flags),
 			OnUsageError: onUsageError,
 		}
