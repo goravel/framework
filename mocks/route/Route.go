@@ -627,6 +627,39 @@ func (_c *Route_Put_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Rout
 	return _c
 }
 
+// Recover provides a mock function with given fields: recoverFunc
+func (_m *Route) Recover(recoverFunc func(http.Context, interface{})) {
+	_m.Called(recoverFunc)
+}
+
+// Route_Recover_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Recover'
+type Route_Recover_Call struct {
+	*mock.Call
+}
+
+// Recover is a helper method to define mock.On call
+//   - recoverFunc func(http.Context , interface{})
+func (_e *Route_Expecter) Recover(recoverFunc interface{}) *Route_Recover_Call {
+	return &Route_Recover_Call{Call: _e.mock.On("Recover", recoverFunc)}
+}
+
+func (_c *Route_Recover_Call) Run(run func(recoverFunc func(http.Context, interface{}))) *Route_Recover_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(http.Context, interface{})))
+	})
+	return _c
+}
+
+func (_c *Route_Recover_Call) Return() *Route_Recover_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Route_Recover_Call) RunAndReturn(run func(func(http.Context, interface{}))) *Route_Recover_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Resource provides a mock function with given fields: relativePath, controller
 func (_m *Route) Resource(relativePath string, controller http.ResourceController) {
 	_m.Called(relativePath, controller)
