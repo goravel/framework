@@ -21,6 +21,7 @@ func Contain(file string, search string) bool {
 		if err != nil {
 			return false
 		}
+
 		return strings.Contains(string(data), search)
 	}
 

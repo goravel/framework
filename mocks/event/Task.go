@@ -17,7 +17,7 @@ func (_m *Task) EXPECT() *Task_Expecter {
 	return &Task_Expecter{mock: &_m.Mock}
 }
 
-// Dispatch provides a mock function with given fields:
+// Dispatch provides a mock function with no fields
 func (_m *Task) Dispatch() error {
 	ret := _m.Called()
 

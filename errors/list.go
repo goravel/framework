@@ -13,6 +13,7 @@ var (
 	StorageFacadeNotSet  = New("storage facade is not initialized")
 	InvalidHttpContext   = New("invalid http context")
 	RouteFacadeNotSet    = New("route facade is not initialized")
+	SessionFacadeNotSet  = New("session facade is not initialized")
 
 	AuthEmptySecret         = New("authentication secret is missing or required")
 	AuthInvalidClaims       = New("authentication token contains invalid claims")
@@ -86,7 +87,7 @@ var (
 
 	OrmDatabaseConfigNotFound      = New("not found database configuration")
 	OrmDriverNotSupported          = New("invalid driver: %s, only support mysql, postgres, sqlite and sqlserver")
-	OrmFailedToGenerateDNS         = New("failed to generate DSN for connection: %s")
+	OrmFailedToGenerateDNS         = New("failed to generate DSN, please check the database configuration")
 	OrmFactoryMissingAttributes    = New("failed to get raw attributes")
 	OrmFactoryMissingMethod        = New("%s does not find factory method")
 	OrmInitConnection              = New("init %s connection error: %v")
@@ -101,7 +102,7 @@ var (
 	OrmQueryModelNotPointer        = New("model must be pointer")
 	OrmQuerySelectAndOmitsConflict = New("cannot set Select and Omits at the same time")
 	OrmRecordNotFound              = New("record not found")
-	OrmUnexpectedQueryType         = New("unexpected Query type %T, expected *gorm.Query")
+	OrmDeletedAtColumnNotFound     = New("deleted at column not found")
 
 	QueueDriverNotSupported     = New("unknown queue driver: %s")
 	QueueDuplicateJobSignature  = New("job signature duplicate: %s, the names of Job and Listener cannot be duplicated")
@@ -111,16 +112,20 @@ var (
 	RouteDefaultDriverNotSet = New("please set default driver")
 	RouteInvalidDriver       = New("init %s route driver fail: route must be implement route.Route or func() (route.Route, error)")
 
-	SchemaDriverNotSupported  = New("driver %s is not supported")
-	SchemaFailedToCreateTable = New("failed to create %s table: %v")
-	SchemaFailedToDropTable   = New("failed to drop %s table: %v")
-	SchemaFailedToGetTables   = New("failed to get %s tables: %v")
+	SchemaDriverNotSupported   = New("driver %s is not supported")
+	SchemaFailedToCreateTable  = New("failed to create %s table: %v")
+	SchemaFailedToChangeTable  = New("failed to change %s table: %v")
+	SchemaFailedToDropTable    = New("failed to drop %s table: %v")
+	SchemaFailedToDropColumns  = New("failed to drop %s table columns: %v")
+	SchemaFailedToGetTables    = New("failed to get %s tables: %v")
+	SchemaFailedToRenameTable  = New("failed to rename %s table: %v")
+	SchemaEmptyReferenceString = New("reference string can't be empty")
+	SchemaErrorReferenceFormat = New("invalid format: too many dots in reference")
 
 	SessionDriverAlreadyExists   = New("session driver [%s] already exists")
 	SessionDriverExtensionFailed = New("session failed to extend session [%s] driver [%v]")
 	SessionDriverIsNotSet        = New("session driver is not set")
 	SessionDriverNotSupported    = New("session driver [%s] not supported")
-	SessionNotFound              = New("session [%s] not found")
 
 	UnknownFileExtension = New("unknown file extension")
 

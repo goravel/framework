@@ -306,6 +306,22 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
+		ormcontract.EventRestored: func(event ormcontract.Event) error {
+			name := event.GetAttribute("name")
+			if name != nil && name.(string) == "event_restored_name" {
+				event.SetAttribute("name", "event_restored_name1")
+			}
+
+			return nil
+		},
+		ormcontract.EventRestoring: func(event ormcontract.Event) error {
+			name := event.GetAttribute("name")
+			if name != nil && name.(string) == "event_restoring_name" {
+				event.SetAttribute("name", "event_restoring_name1")
+			}
+
+			return nil
+		},
 	}
 }
 
@@ -403,4 +419,13 @@ type Box struct {
 
 func (p *Box) Connection() string {
 	return "postgres"
+}
+
+type Schema struct {
+	Model
+	Name string
+}
+
+func (r *Schema) TableName() string {
+	return "goravel.schemas"
 }

@@ -14,6 +14,8 @@ type Orm interface {
 	DB() (*sql.DB, error)
 	// Factory gets a new factory instance for the given model name.
 	Factory() Factory
+	// DatabaseName gets the current database name.
+	DatabaseName() string
 	// Name gets the current connection name.
 	Name() string
 	// Observe registers an observer with the Orm.
@@ -124,6 +126,8 @@ type Query interface {
 	Pluck(column string, dest any) error
 	// Raw creates a raw query.
 	Raw(sql string, values ...any) Query
+	// Restore restores a soft deleted model.
+	Restore(model ...any) (*Result, error)
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database

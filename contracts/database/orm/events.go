@@ -6,17 +6,32 @@ import (
 
 type EventType string
 
-const EventRetrieved EventType = "retrieved"
-const EventCreating EventType = "creating"
-const EventCreated EventType = "created"
-const EventUpdating EventType = "updating"
-const EventUpdated EventType = "Updated"
-const EventSaving EventType = "saving"
-const EventSaved EventType = "saved"
-const EventDeleting EventType = "deleting"
-const EventDeleted EventType = "deleted"
-const EventForceDeleting EventType = "force_deleting"
-const EventForceDeleted EventType = "force_deleted"
+const (
+	// Create events
+	EventCreating EventType = "creating"
+	EventCreated  EventType = "created"
+
+	// Update events
+	EventUpdating EventType = "updating"
+	EventUpdated  EventType = "updated"
+
+	// Save events
+	EventSaving EventType = "saving"
+	EventSaved  EventType = "saved"
+
+	// Delete events
+	EventDeleting      EventType = "deleting"
+	EventDeleted       EventType = "deleted"
+	EventForceDeleting EventType = "force_deleting"
+	EventForceDeleted  EventType = "force_deleted"
+
+	// Restore events
+	EventRestoring EventType = "restoring"
+	EventRestored  EventType = "restored"
+
+	// Retrieve events
+	EventRetrieved EventType = "retrieved"
+)
 
 type Event interface {
 	// Context returns the event context.

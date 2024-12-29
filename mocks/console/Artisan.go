@@ -95,7 +95,7 @@ func (_c *Artisan_CallAndExit_Call) Return() *Artisan_CallAndExit_Call {
 }
 
 func (_c *Artisan_CallAndExit_Call) RunAndReturn(run func(string)) *Artisan_CallAndExit_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -128,7 +128,7 @@ func (_c *Artisan_Register_Call) Return() *Artisan_Register_Call {
 }
 
 func (_c *Artisan_Register_Call) RunAndReturn(run func([]console.Command)) *Artisan_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

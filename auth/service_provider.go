@@ -11,8 +11,10 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-const BindingAuth = "goravel.auth"
-const BindingGate = "goravel.gate"
+const (
+	BindingAuth = "goravel.auth"
+	BindingGate = "goravel.gate"
+)
 
 type ServiceProvider struct {
 }
@@ -30,7 +32,8 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 
 		ormFacade := app.MakeOrm()
 		if ormFacade == nil {
-			return nil, errors.OrmFacadeNotSet.SetModule(errors.ModuleAuth)
+			// The Orm module will print the error message, so it's safe to return nil.
+			return nil, nil
 		}
 
 		ctx, ok := parameters["ctx"].(http.Context)

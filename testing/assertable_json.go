@@ -1,7 +1,6 @@
 package testing
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 

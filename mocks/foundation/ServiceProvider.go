@@ -49,7 +49,7 @@ func (_c *ServiceProvider_Boot_Call) Return() *ServiceProvider_Boot_Call {
 }
 
 func (_c *ServiceProvider_Boot_Call) RunAndReturn(run func(foundation.Application)) *ServiceProvider_Boot_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -82,7 +82,7 @@ func (_c *ServiceProvider_Register_Call) Return() *ServiceProvider_Register_Call
 }
 
 func (_c *ServiceProvider_Register_Call) RunAndReturn(run func(foundation.Application)) *ServiceProvider_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

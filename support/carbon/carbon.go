@@ -3,7 +3,7 @@ package carbon
 import (
 	stdtime "time"
 
-	"github.com/golang-module/carbon/v2"
+	"github.com/dromara/carbon/v2"
 )
 
 type Clock struct {
@@ -11,6 +11,7 @@ type Clock struct {
 }
 
 var testCarbon = carbon.NewCarbon()
+
 var clock = &Clock{}
 
 // SetTestNow Set the test time. Remember to unset after used.
@@ -32,6 +33,7 @@ func IsTestNow() bool {
 // 设置时区
 func SetTimezone(timezone string) {
 	clock.timezone = timezone
+	carbon.SetDefault(carbon.Default{Timezone: timezone})
 }
 
 // Now return a Carbon object of now.
@@ -140,7 +142,7 @@ func FromTimeNano(hour int, minute int, second int, nanosecond int, timezone ...
 
 // FromStdTime return a Carbon object of given time.Time object.
 func FromStdTime(time stdtime.Time) Carbon {
-	return carbon.CreateFromStdTime(time)
+	return carbon.CreateFromStdTime(time, getTimezone(nil))
 }
 
 func getTimezone(timezone []string) string {

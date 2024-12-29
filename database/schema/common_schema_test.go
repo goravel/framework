@@ -18,7 +18,7 @@ type CommonSchemaSuite struct {
 
 func TestCommonSchemaSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &CommonSchemaSuite{})
@@ -26,7 +26,9 @@ func TestCommonSchemaSuite(t *testing.T) {
 
 func (s *CommonSchemaSuite) SetupTest() {
 	postgresDocker := docker.Postgres()
-	postgresQuery := gorm.NewTestQuery(postgresDocker, true)
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
 	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
 		database.DriverPostgres: postgresQuery,
 	}

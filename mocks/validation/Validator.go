@@ -21,7 +21,7 @@ func (_m *Validator) EXPECT() *Validator_Expecter {
 }
 
 // Bind provides a mock function with given fields: ptr
-func (_m *Validator) Bind(ptr any) error {
+func (_m *Validator) Bind(ptr interface{}) error {
 	ret := _m.Called(ptr)
 
 	if len(ret) == 0 {
@@ -29,7 +29,7 @@ func (_m *Validator) Bind(ptr any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(any) error); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
 		r0 = rf(ptr)
 	} else {
 		r0 = ret.Error(0)
@@ -44,14 +44,14 @@ type Validator_Bind_Call struct {
 }
 
 // Bind is a helper method to define mock.On call
-//   - ptr any
+//   - ptr interface{}
 func (_e *Validator_Expecter) Bind(ptr interface{}) *Validator_Bind_Call {
 	return &Validator_Bind_Call{Call: _e.mock.On("Bind", ptr)}
 }
 
-func (_c *Validator_Bind_Call) Run(run func(ptr any)) *Validator_Bind_Call {
+func (_c *Validator_Bind_Call) Run(run func(ptr interface{})) *Validator_Bind_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -61,12 +61,12 @@ func (_c *Validator_Bind_Call) Return(_a0 error) *Validator_Bind_Call {
 	return _c
 }
 
-func (_c *Validator_Bind_Call) RunAndReturn(run func(any) error) *Validator_Bind_Call {
+func (_c *Validator_Bind_Call) RunAndReturn(run func(interface{}) error) *Validator_Bind_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Errors provides a mock function with given fields:
+// Errors provides a mock function with no fields
 func (_m *Validator) Errors() validation.Errors {
 	ret := _m.Called()
 
@@ -113,7 +113,7 @@ func (_c *Validator_Errors_Call) RunAndReturn(run func() validation.Errors) *Val
 	return _c
 }
 
-// Fails provides a mock function with given fields:
+// Fails provides a mock function with no fields
 func (_m *Validator) Fails() bool {
 	ret := _m.Called()
 

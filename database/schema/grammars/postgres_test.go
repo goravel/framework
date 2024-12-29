@@ -7,6 +7,7 @@ import (
 
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
+	"github.com/goravel/framework/support/convert"
 )
 
 type PostgresSuite struct {
@@ -39,6 +40,21 @@ func (s *PostgresSuite) TestCompileAdd() {
 	})
 
 	s.Equal(`alter table "goravel_users" add column "name" varchar(1) default 'goravel' not null`, sql)
+}
+
+func (s *PostgresSuite) TestCompileComment() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockColumnDefinition := mocksschema.NewColumnDefinition(s.T())
+	mockBlueprint.On("GetTableName").Return("users").Once()
+	mockColumnDefinition.On("GetName").Return("id").Once()
+	mockColumnDefinition.On("IsSetComment").Return(true).Once()
+	mockColumnDefinition.On("GetComment").Return("comment").Once()
+
+	sql := s.grammar.CompileComment(mockBlueprint, &contractsschema.Command{
+		Column: mockColumnDefinition,
+	})
+
+	s.Equal(`comment on column "goravel_users"."id" is 'comment'`, sql)
 }
 
 func (s *PostgresSuite) TestCompileCreate() {
@@ -101,11 +117,27 @@ func (s *PostgresSuite) TestCompileDropAllViews() {
 	s.Equal(`drop view "domain", "user"."email" cascade`, s.grammar.CompileDropAllViews([]string{"domain", "user.email"}))
 }
 
+func (s *PostgresSuite) TestCompileDropColumn() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal([]string([]string{`alter table "goravel_users" drop column "id", drop column "email"`}), s.grammar.CompileDropColumn(mockBlueprint, &contractsschema.Command{
+		Columns: []string{"id", "email"},
+	}))
+}
+
 func (s *PostgresSuite) TestCompileDropIfExists() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
 
 	s.Equal(`drop table if exists "goravel_users"`, s.grammar.CompileDropIfExists(mockBlueprint))
+}
+
+func (s *PostgresSuite) TestCompileDropPrimary() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal(`alter table "goravel_users" drop constraint "goravel_users_pkey"`, s.grammar.CompileDropPrimary(mockBlueprint, &contractsschema.Command{}))
 }
 
 func (s *PostgresSuite) TestCompileForeign() {
@@ -153,6 +185,16 @@ func (s *PostgresSuite) TestCompileForeign() {
 			s.Equal(test.expectSql, sql)
 		})
 	}
+}
+
+func (s *PostgresSuite) TestCompileFullText() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	s.Equal(`create index "users_email_fulltext" on "goravel_users" using gin(to_tsvector('english', "id") || to_tsvector('english', "email"))`, s.grammar.CompileFullText(mockBlueprint, &contractsschema.Command{
+		Index:   "users_email_fulltext",
+		Columns: []string{"id", "email"},
+	}))
 }
 
 func (s *PostgresSuite) TestCompileIndex() {
@@ -204,6 +246,48 @@ func (s *PostgresSuite) TestCompilePrimary() {
 	s.Equal(`alter table "goravel_users" add primary key ("role_id", "user_id")`, s.grammar.CompilePrimary(mockBlueprint, &contractsschema.Command{
 		Columns: []string{"role_id", "user_id"},
 	}))
+}
+
+func (s *PostgresSuite) TestCompileUnique() {
+	tests := []struct {
+		name               string
+		deferrable         *bool
+		initiallyImmediate *bool
+		expectSql          string
+	}{
+		{
+			name:               "with deferrable and initially immediate",
+			deferrable:         convert.Pointer(true),
+			initiallyImmediate: convert.Pointer(true),
+			expectSql:          `alter table "goravel_users" add constraint "unique_users_email" unique ("id", "email") deferrable initially immediate`,
+		},
+		{
+			name:               "with deferrable and initially immediate, both false",
+			deferrable:         convert.Pointer(false),
+			initiallyImmediate: convert.Pointer(false),
+			expectSql:          `alter table "goravel_users" add constraint "unique_users_email" unique ("id", "email") not deferrable initially deferred`,
+		},
+		{
+			name:      "without deferrable and initially immediate",
+			expectSql: `alter table "goravel_users" add constraint "unique_users_email" unique ("id", "email")`,
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockBlueprint := mocksschema.NewBlueprint(s.T())
+			mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+			sql := s.grammar.CompileUnique(mockBlueprint, &contractsschema.Command{
+				Index:              "unique_users_email",
+				Columns:            []string{"id", "email"},
+				Deferrable:         test.deferrable,
+				InitiallyImmediate: test.initiallyImmediate,
+			})
+
+			s.Equal(test.expectSql, sql)
+		})
+	}
 }
 
 func (s *PostgresSuite) TestGetColumns() {
@@ -325,6 +409,33 @@ func (s *PostgresSuite) TestTypeBigInteger() {
 	s.Equal("bigint", s.grammar.TypeBigInteger(mockColumn2))
 }
 
+func (s *PostgresSuite) TestTypeDecimal() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetTotal().Return(4).Once()
+	mockColumn.EXPECT().GetPlaces().Return(2).Once()
+
+	s.Equal("decimal(4, 2)", s.grammar.TypeDecimal(mockColumn))
+}
+
+func (s *PostgresSuite) TestTypeEnum() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetName().Return("a").Once()
+	mockColumn.EXPECT().GetAllowed().Return([]any{"a", "b"}).Once()
+
+	s.Equal(`varchar(255) check ("a" in ('a', 'b'))`, s.grammar.TypeEnum(mockColumn))
+}
+
+func (s *PostgresSuite) TestTypeFloat() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetPrecision().Return(0).Once()
+
+	s.Equal("float", s.grammar.TypeFloat(mockColumn))
+
+	mockColumn.EXPECT().GetPrecision().Return(2).Once()
+
+	s.Equal("float(2)", s.grammar.TypeFloat(mockColumn))
+}
+
 func (s *PostgresSuite) TestTypeInteger() {
 	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
@@ -347,4 +458,20 @@ func (s *PostgresSuite) TestTypeString() {
 	mockColumn2.EXPECT().GetLength().Return(0).Once()
 
 	s.Equal("varchar", s.grammar.TypeString(mockColumn2))
+}
+
+func (s *PostgresSuite) TestTypeTimestamp() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	s.Equal("timestamp(3) without time zone", s.grammar.TypeTimestamp(mockColumn))
+}
+
+func (s *PostgresSuite) TestTypeTimestampTz() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	mockColumn.EXPECT().GetUseCurrent().Return(true).Once()
+	mockColumn.EXPECT().Default(Expression("CURRENT_TIMESTAMP")).Return(mockColumn).Once()
+	mockColumn.EXPECT().GetPrecision().Return(3).Once()
+	s.Equal("timestamp(3) with time zone", s.grammar.TypeTimestampTz(mockColumn))
 }

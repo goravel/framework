@@ -15,6 +15,7 @@ const (
 	testDatabase = "forge"
 	testUsername = "root"
 	testPassword = "123123"
+	testSchema   = "public"
 )
 
 var testConfig = database.Config{
@@ -23,6 +24,7 @@ var testConfig = database.Config{
 	Database: testDatabase,
 	Username: testUsername,
 	Password: testPassword,
+	Schema:   testSchema,
 }
 
 func TestDsn(t *testing.T) {
@@ -36,6 +38,15 @@ func TestDsn(t *testing.T) {
 			config: database.FullConfig{
 				Config: database.Config{},
 			},
+		},
+		{
+			name: "dsn is not empty",
+			config: database.FullConfig{
+				Config: database.Config{
+					Dsn: "dsn",
+				},
+			},
+			expectDsn: "dsn",
 		},
 		{
 			name: "mysql",
@@ -56,8 +67,8 @@ func TestDsn(t *testing.T) {
 				Sslmode:  "disable",
 				Timezone: "UTC",
 			},
-			expectDsn: fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s",
-				testUsername, testPassword, testHost, testPort, testDatabase, "disable", "UTC"),
+			expectDsn: fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&timezone=%s&search_path=%s",
+				testUsername, testPassword, testHost, testPort, testDatabase, "disable", "UTC", testSchema),
 		},
 		{
 			name: "sqlite",

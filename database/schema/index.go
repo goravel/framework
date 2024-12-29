@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/support/convert"
 )
 
 type ForeignKeyDefinition struct {
@@ -14,64 +15,64 @@ func NewForeignKeyDefinition(command *schema.Command) schema.ForeignKeyDefinitio
 	}
 }
 
-func (f *ForeignKeyDefinition) CascadeOnDelete() schema.ForeignKeyDefinition {
-	f.command.OnDelete = "cascade"
+func (r *ForeignKeyDefinition) CascadeOnDelete() schema.ForeignKeyDefinition {
+	r.command.OnDelete = "cascade"
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) CascadeOnUpdate() schema.ForeignKeyDefinition {
-	f.command.OnUpdate = "cascade"
+func (r *ForeignKeyDefinition) CascadeOnUpdate() schema.ForeignKeyDefinition {
+	r.command.OnUpdate = "cascade"
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) On(table string) schema.ForeignKeyDefinition {
-	f.command.On = table
+func (r *ForeignKeyDefinition) On(table string) schema.ForeignKeyDefinition {
+	r.command.On = table
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) Name(name string) schema.ForeignKeyDefinition {
-	f.command.Index = name
+func (r *ForeignKeyDefinition) Name(name string) schema.ForeignKeyDefinition {
+	r.command.Index = name
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) NoActionOnDelete() schema.ForeignKeyDefinition {
-	f.command.OnDelete = "no action"
+func (r *ForeignKeyDefinition) NoActionOnDelete() schema.ForeignKeyDefinition {
+	r.command.OnDelete = "no action"
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) NoActionOnUpdate() schema.ForeignKeyDefinition {
-	f.command.OnUpdate = "no action"
+func (r *ForeignKeyDefinition) NoActionOnUpdate() schema.ForeignKeyDefinition {
+	r.command.OnUpdate = "no action"
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) NullOnDelete() schema.ForeignKeyDefinition {
-	f.command.OnDelete = "set null"
+func (r *ForeignKeyDefinition) NullOnDelete() schema.ForeignKeyDefinition {
+	r.command.OnDelete = "set null"
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) References(columns ...string) schema.ForeignKeyDefinition {
-	f.command.References = columns
+func (r *ForeignKeyDefinition) References(columns ...string) schema.ForeignKeyDefinition {
+	r.command.References = columns
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) RestrictOnDelete() schema.ForeignKeyDefinition {
-	f.command.OnDelete = "restrict"
+func (r *ForeignKeyDefinition) RestrictOnDelete() schema.ForeignKeyDefinition {
+	r.command.OnDelete = "restrict"
 
-	return f
+	return r
 }
 
-func (f *ForeignKeyDefinition) RestrictOnUpdate() schema.ForeignKeyDefinition {
-	f.command.OnUpdate = "restrict"
+func (r *ForeignKeyDefinition) RestrictOnUpdate() schema.ForeignKeyDefinition {
+	r.command.OnUpdate = "restrict"
 
-	return f
+	return r
 }
 
 type IndexDefinition struct {
@@ -84,14 +85,32 @@ func NewIndexDefinition(command *schema.Command) schema.IndexDefinition {
 	}
 }
 
-func (f *IndexDefinition) Algorithm(algorithm string) schema.IndexDefinition {
-	f.command.Algorithm = algorithm
+func (r *IndexDefinition) Algorithm(algorithm string) schema.IndexDefinition {
+	r.command.Algorithm = algorithm
 
-	return f
+	return r
 }
 
-func (f *IndexDefinition) Name(name string) schema.IndexDefinition {
-	f.command.Index = name
+func (r *IndexDefinition) Deferrable() schema.IndexDefinition {
+	r.command.Deferrable = convert.Pointer(true)
 
-	return f
+	return r
+}
+
+func (r *IndexDefinition) InitiallyImmediate() schema.IndexDefinition {
+	r.command.InitiallyImmediate = convert.Pointer(true)
+
+	return r
+}
+
+func (r *IndexDefinition) Language(name string) schema.IndexDefinition {
+	r.command.Language = name
+
+	return r
+}
+
+func (r *IndexDefinition) Name(name string) schema.IndexDefinition {
+	r.command.Index = name
+
+	return r
 }

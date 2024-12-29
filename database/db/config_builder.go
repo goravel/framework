@@ -48,13 +48,22 @@ func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullCo
 
 	for _, config := range configs {
 		fullConfig := database.FullConfig{
-			Config:     config,
-			Connection: c.connection,
-			Driver:     driver,
-			Prefix:     c.config.GetString(fmt.Sprintf("database.connections.%s.prefix", c.connection)),
-			Singular:   c.config.GetBool(fmt.Sprintf("database.connections.%s.singular", c.connection)),
+			Config:      config,
+			Connection:  c.connection,
+			Driver:      driver,
+			Prefix:      c.config.GetString(fmt.Sprintf("database.connections.%s.prefix", c.connection)),
+			Singular:    c.config.GetBool(fmt.Sprintf("database.connections.%s.singular", c.connection)),
+			NoLowerCase: c.config.GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", c.connection)),
+		}
+		if nameReplacer := c.config.Get(fmt.Sprintf("database.connections.%s.name_replacer", c.connection)); nameReplacer != nil {
+			if replacer, ok := nameReplacer.(database.Replacer); ok {
+				fullConfig.NameReplacer = replacer
+			}
 		}
 		if driver != database.DriverSqlite {
+			if fullConfig.Dsn == "" {
+				fullConfig.Dsn = c.config.GetString(fmt.Sprintf("database.connections.%s.dsn", c.connection))
+			}
 			if fullConfig.Host == "" {
 				fullConfig.Host = c.config.GetString(fmt.Sprintf("database.connections.%s.host", c.connection))
 			}
@@ -69,6 +78,9 @@ func (c *ConfigBuilder) fillDefault(configs []database.Config) []database.FullCo
 			}
 			if driver == database.DriverMysql || driver == database.DriverSqlserver {
 				fullConfig.Charset = c.config.GetString(fmt.Sprintf("database.connections.%s.charset", c.connection))
+			}
+			if fullConfig.Schema == "" && driver == database.DriverPostgres {
+				fullConfig.Schema = c.config.GetString(fmt.Sprintf("database.connections.%s.schema", c.connection), "public")
 			}
 			if driver == database.DriverMysql {
 				fullConfig.Loc = c.config.GetString(fmt.Sprintf("database.connections.%s.loc", c.connection))

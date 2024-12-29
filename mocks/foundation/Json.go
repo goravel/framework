@@ -18,7 +18,7 @@ func (_m *Json) EXPECT() *Json_Expecter {
 }
 
 // Marshal provides a mock function with given fields: _a0
-func (_m *Json) Marshal(_a0 any) ([]byte, error) {
+func (_m *Json) Marshal(_a0 interface{}) ([]byte, error) {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -27,10 +27,10 @@ func (_m *Json) Marshal(_a0 any) ([]byte, error) {
 
 	var r0 []byte
 	var r1 error
-	if rf, ok := ret.Get(0).(func(any) ([]byte, error)); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) ([]byte, error)); ok {
 		return rf(_a0)
 	}
-	if rf, ok := ret.Get(0).(func(any) []byte); ok {
+	if rf, ok := ret.Get(0).(func(interface{}) []byte); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -38,7 +38,7 @@ func (_m *Json) Marshal(_a0 any) ([]byte, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(any) error); ok {
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
@@ -53,14 +53,14 @@ type Json_Marshal_Call struct {
 }
 
 // Marshal is a helper method to define mock.On call
-//   - _a0 any
+//   - _a0 interface{}
 func (_e *Json_Expecter) Marshal(_a0 interface{}) *Json_Marshal_Call {
 	return &Json_Marshal_Call{Call: _e.mock.On("Marshal", _a0)}
 }
 
-func (_c *Json_Marshal_Call) Run(run func(_a0 any)) *Json_Marshal_Call {
+func (_c *Json_Marshal_Call) Run(run func(_a0 interface{})) *Json_Marshal_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any))
+		run(args[0].(interface{}))
 	})
 	return _c
 }
@@ -70,13 +70,13 @@ func (_c *Json_Marshal_Call) Return(_a0 []byte, _a1 error) *Json_Marshal_Call {
 	return _c
 }
 
-func (_c *Json_Marshal_Call) RunAndReturn(run func(any) ([]byte, error)) *Json_Marshal_Call {
+func (_c *Json_Marshal_Call) RunAndReturn(run func(interface{}) ([]byte, error)) *Json_Marshal_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Unmarshal provides a mock function with given fields: _a0, _a1
-func (_m *Json) Unmarshal(_a0 []byte, _a1 any) error {
+func (_m *Json) Unmarshal(_a0 []byte, _a1 interface{}) error {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
@@ -84,7 +84,7 @@ func (_m *Json) Unmarshal(_a0 []byte, _a1 any) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func([]byte, any) error); ok {
+	if rf, ok := ret.Get(0).(func([]byte, interface{}) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
@@ -100,14 +100,14 @@ type Json_Unmarshal_Call struct {
 
 // Unmarshal is a helper method to define mock.On call
 //   - _a0 []byte
-//   - _a1 any
+//   - _a1 interface{}
 func (_e *Json_Expecter) Unmarshal(_a0 interface{}, _a1 interface{}) *Json_Unmarshal_Call {
 	return &Json_Unmarshal_Call{Call: _e.mock.On("Unmarshal", _a0, _a1)}
 }
 
-func (_c *Json_Unmarshal_Call) Run(run func(_a0 []byte, _a1 any)) *Json_Unmarshal_Call {
+func (_c *Json_Unmarshal_Call) Run(run func(_a0 []byte, _a1 interface{})) *Json_Unmarshal_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]byte), args[1].(any))
+		run(args[0].([]byte), args[1].(interface{}))
 	})
 	return _c
 }
@@ -117,7 +117,7 @@ func (_c *Json_Unmarshal_Call) Return(_a0 error) *Json_Unmarshal_Call {
 	return _c
 }
 
-func (_c *Json_Unmarshal_Call) RunAndReturn(run func([]byte, any) error) *Json_Unmarshal_Call {
+func (_c *Json_Unmarshal_Call) RunAndReturn(run func([]byte, interface{}) error) *Json_Unmarshal_Call {
 	_c.Call.Return(run)
 	return _c
 }

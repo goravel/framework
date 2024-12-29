@@ -309,10 +309,12 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 
 func (s *ApplicationTestSuite) TestMakeOrm() {
 	if env.IsWindows() {
-		s.T().Skip("Skipping tests that use Docker")
+		s.T().Skip("Skip test that using Docker")
 	}
 
 	postgresDocker := supportdocker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
 	config := postgresDocker.Config()
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
@@ -321,6 +323,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return(contractsdatabase.DriverPostgres.String()).Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.prefix").Return("").Twice()
 	mockConfig.EXPECT().GetBool("database.connections.postgres.singular").Return(true).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.dsn").Return("").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.host").Return("localhost").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(config.Username).Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(config.Password).Twice()
@@ -328,6 +331,10 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.EXPECT().GetString("database.connections.postgres.sslmode").Return("disable").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.timezone").Return("UTC").Twice()
 	mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(config.Database).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.schema", "public").Return("public").Twice()
+	mockConfig.EXPECT().GetBool("database.connections.postgres.no_lower_case").Return(false).Twice()
+	mockConfig.EXPECT().Get("database.connections.postgres.name_replacer").Return(nil).Twice()
+	mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
 	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()

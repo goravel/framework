@@ -66,7 +66,7 @@ func (_c *Context_Argument_Call) RunAndReturn(run func(int) string) *Context_Arg
 	return _c
 }
 
-// Arguments provides a mock function with given fields:
+// Arguments provides a mock function with no fields
 func (_m *Context) Arguments() []string {
 	ret := _m.Called()
 
@@ -285,7 +285,7 @@ func (_c *Context_Comment_Call) Return() *Context_Comment_Call {
 }
 
 func (_c *Context_Comment_Call) RunAndReturn(run func(string)) *Context_Comment_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -437,7 +437,7 @@ func (_c *Context_Error_Call) Return() *Context_Error_Call {
 }
 
 func (_c *Context_Error_Call) RunAndReturn(run func(string)) *Context_Error_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -470,7 +470,7 @@ func (_c *Context_Info_Call) Return() *Context_Info_Call {
 }
 
 func (_c *Context_Info_Call) RunAndReturn(run func(string)) *Context_Info_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -503,7 +503,7 @@ func (_c *Context_Line_Call) Return() *Context_Line_Call {
 }
 
 func (_c *Context_Line_Call) RunAndReturn(run func(string)) *Context_Line_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -623,7 +623,7 @@ func (_c *Context_NewLine_Call) Return() *Context_NewLine_Call {
 }
 
 func (_c *Context_NewLine_Call) RunAndReturn(run func(...int)) *Context_NewLine_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1196,7 +1196,56 @@ func (_c *Context_Success_Call) Return() *Context_Success_Call {
 }
 
 func (_c *Context_Success_Call) RunAndReturn(run func(string)) *Context_Success_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
+	return _c
+}
+
+// TwoColumnDetail provides a mock function with given fields: first, second, filler
+func (_m *Context) TwoColumnDetail(first string, second string, filler ...rune) {
+	_va := make([]interface{}, len(filler))
+	for _i := range filler {
+		_va[_i] = filler[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, first, second)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Context_TwoColumnDetail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TwoColumnDetail'
+type Context_TwoColumnDetail_Call struct {
+	*mock.Call
+}
+
+// TwoColumnDetail is a helper method to define mock.On call
+//   - first string
+//   - second string
+//   - filler ...rune
+func (_e *Context_Expecter) TwoColumnDetail(first interface{}, second interface{}, filler ...interface{}) *Context_TwoColumnDetail_Call {
+	return &Context_TwoColumnDetail_Call{Call: _e.mock.On("TwoColumnDetail",
+		append([]interface{}{first, second}, filler...)...)}
+}
+
+func (_c *Context_TwoColumnDetail_Call) Run(run func(first string, second string, filler ...rune)) *Context_TwoColumnDetail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]rune, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(rune)
+			}
+		}
+		run(args[0].(string), args[1].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Context_TwoColumnDetail_Call) Return() *Context_TwoColumnDetail_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_TwoColumnDetail_Call) RunAndReturn(run func(string, string, ...rune)) *Context_TwoColumnDetail_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -1229,32 +1278,32 @@ func (_c *Context_Warning_Call) Return() *Context_Warning_Call {
 }
 
 func (_c *Context_Warning_Call) RunAndReturn(run func(string)) *Context_Warning_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
 // WithProgressBar provides a mock function with given fields: items, callback
-func (_m *Context) WithProgressBar(items []any, callback func(any) error) ([]any, error) {
+func (_m *Context) WithProgressBar(items []interface{}, callback func(interface{}) error) ([]interface{}, error) {
 	ret := _m.Called(items, callback)
 
 	if len(ret) == 0 {
 		panic("no return value specified for WithProgressBar")
 	}
 
-	var r0 []any
+	var r0 []interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func([]any, func(any) error) ([]any, error)); ok {
+	if rf, ok := ret.Get(0).(func([]interface{}, func(interface{}) error) ([]interface{}, error)); ok {
 		return rf(items, callback)
 	}
-	if rf, ok := ret.Get(0).(func([]any, func(any) error) []any); ok {
+	if rf, ok := ret.Get(0).(func([]interface{}, func(interface{}) error) []interface{}); ok {
 		r0 = rf(items, callback)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]any)
+			r0 = ret.Get(0).([]interface{})
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func([]any, func(any) error) error); ok {
+	if rf, ok := ret.Get(1).(func([]interface{}, func(interface{}) error) error); ok {
 		r1 = rf(items, callback)
 	} else {
 		r1 = ret.Error(1)
@@ -1269,25 +1318,25 @@ type Context_WithProgressBar_Call struct {
 }
 
 // WithProgressBar is a helper method to define mock.On call
-//   - items []any
-//   - callback func(any) error
+//   - items []interface{}
+//   - callback func(interface{}) error
 func (_e *Context_Expecter) WithProgressBar(items interface{}, callback interface{}) *Context_WithProgressBar_Call {
 	return &Context_WithProgressBar_Call{Call: _e.mock.On("WithProgressBar", items, callback)}
 }
 
-func (_c *Context_WithProgressBar_Call) Run(run func(items []any, callback func(any) error)) *Context_WithProgressBar_Call {
+func (_c *Context_WithProgressBar_Call) Run(run func(items []interface{}, callback func(interface{}) error)) *Context_WithProgressBar_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]any), args[1].(func(any) error))
+		run(args[0].([]interface{}), args[1].(func(interface{}) error))
 	})
 	return _c
 }
 
-func (_c *Context_WithProgressBar_Call) Return(_a0 []any, _a1 error) *Context_WithProgressBar_Call {
+func (_c *Context_WithProgressBar_Call) Return(_a0 []interface{}, _a1 error) *Context_WithProgressBar_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Context_WithProgressBar_Call) RunAndReturn(run func([]any, func(any) error) ([]any, error)) *Context_WithProgressBar_Call {
+func (_c *Context_WithProgressBar_Call) RunAndReturn(run func([]interface{}, func(interface{}) error) ([]interface{}, error)) *Context_WithProgressBar_Call {
 	_c.Call.Return(run)
 	return _c
 }

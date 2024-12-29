@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/color"
 )
@@ -19,9 +20,7 @@ type Application struct {
 }
 
 func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	if config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
 			if err := registerHook(config, json, instance, channel); err != nil {
@@ -39,6 +38,10 @@ func NewApplication(config config.Config, json foundation.Json) (*Application, e
 }
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
+	if httpCtx, ok := ctx.(http.Context); ok {
+		return NewWriter(r.instance.WithContext(httpCtx.Context()))
+	}
+
 	return NewWriter(r.instance.WithContext(ctx))
 }
 
@@ -47,9 +50,7 @@ func (r *Application) Channel(channel string) log.Writer {
 		return r.Writer
 	}
 
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	if err := registerHook(r.config, r.json, instance, channel); err != nil {
 		color.Errorln(err)
 		return nil
@@ -63,9 +64,7 @@ func (r *Application) Stack(channels []string) log.Writer {
 		return r.Writer
 	}
 
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	for _, channel := range channels {
 		if channel == "" {
 			continue

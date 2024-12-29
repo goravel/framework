@@ -1,10 +1,17 @@
 package testing
 
+import "net/http"
+
 type TestResponse interface {
-	IsSuccessful() bool
-	IsServerError() bool
 	Content() (string, error)
+	Cookie(name string) *http.Cookie
+	Cookies() []*http.Cookie
+	Headers() http.Header
+	IsServerError() bool
+	IsSuccessful() bool
 	Json() (map[string]any, error)
+	Session() (map[string]any, error)
+
 	AssertStatus(status int) TestResponse
 	AssertOk() TestResponse
 	AssertCreated() TestResponse

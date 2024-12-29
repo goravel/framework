@@ -30,7 +30,7 @@ func TestBlueprintTestSuite(t *testing.T) {
 }
 
 func (s *BlueprintTestSuite) SetupTest() {
-	s.blueprint = NewBlueprint("goravel_", "users")
+	s.blueprint = NewBlueprint(nil, "goravel_", "users")
 }
 
 func (s *BlueprintTestSuite) TestAddAttributeCommands() {
@@ -136,6 +136,26 @@ func (s *BlueprintTestSuite) TestBuild() {
 	}
 }
 
+func (s *BlueprintTestSuite) TestChar() {
+	column := "name"
+	customLength := 100
+	length := constants.DefaultStringLength
+	ttype := "char"
+	s.blueprint.Char(column)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		length: &length,
+		name:   &column,
+		ttype:  &ttype,
+	})
+
+	s.blueprint.Char(column, customLength)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		length: &customLength,
+		name:   &column,
+		ttype:  &ttype,
+	})
+}
+
 func (s *BlueprintTestSuite) TestCreateIndexName() {
 	name := s.blueprint.createIndexName("index", []string{"id", "name-1", "name.2"})
 	s.Equal("goravel_users_id_name_1_name_2_index", name)
@@ -143,6 +163,41 @@ func (s *BlueprintTestSuite) TestCreateIndexName() {
 	s.blueprint.table = "public.users"
 	name = s.blueprint.createIndexName("index", []string{"id", "name-1", "name.2"})
 	s.Equal("public_goravel_users_id_name_1_name_2_index", name)
+}
+
+func (s *BlueprintTestSuite) TestDecimal() {
+	name := "name"
+	s.blueprint.Decimal(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("decimal"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestDouble() {
+	name := "name"
+	s.blueprint.Double(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("double"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestFloat() {
+	name := "name"
+	s.blueprint.Float(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:      &name,
+		precision: convert.Pointer(53),
+		ttype:     convert.Pointer("float"),
+	})
+
+	s.blueprint.Float(name, 10)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:      &name,
+		precision: convert.Pointer(10),
+		ttype:     convert.Pointer("float"),
+	})
 }
 
 func (s *BlueprintTestSuite) TestGetAddedColumns() {
@@ -161,6 +216,17 @@ func (s *BlueprintTestSuite) TestHasCommand() {
 	s.False(s.blueprint.HasCommand(constants.CommandCreate))
 	s.blueprint.Create()
 	s.True(s.blueprint.HasCommand(constants.CommandCreate))
+}
+
+func (s *BlueprintTestSuite) TestIntegerIncrements() {
+	name := "name"
+	s.blueprint.IntegerIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("integer"),
+	})
 }
 
 func (s *BlueprintTestSuite) TestIndexCommand() {
@@ -218,13 +284,45 @@ func (s *BlueprintTestSuite) TestInteger() {
 		name:  &name,
 		ttype: convert.Pointer("integer"),
 	})
+}
 
-	s.blueprint.Integer(name).AutoIncrement().Unsigned()
+func (s *BlueprintTestSuite) TestMediumIncrements() {
+	name := "name"
+	s.blueprint.MediumIncrements(name)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
 		autoIncrement: convert.Pointer(true),
 		name:          &name,
 		unsigned:      convert.Pointer(true),
-		ttype:         convert.Pointer("integer"),
+		ttype:         convert.Pointer("mediumInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestMediumInteger() {
+	name := "name"
+	s.blueprint.MediumInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("mediumInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestSmallIncrements() {
+	name := "name"
+	s.blueprint.SmallIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("smallInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestSmallInteger() {
+	name := "name"
+	s.blueprint.SmallInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("smallInteger"),
 	})
 }
 
@@ -248,17 +346,34 @@ func (s *BlueprintTestSuite) TestString() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestTinyIncrements() {
+	name := "name"
+	s.blueprint.TinyIncrements(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		autoIncrement: convert.Pointer(true),
+		name:          &name,
+		unsigned:      convert.Pointer(true),
+		ttype:         convert.Pointer("tinyInteger"),
+	})
+}
+
+func (s *BlueprintTestSuite) TestTinyInteger() {
+	name := "name"
+	s.blueprint.TinyInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("tinyInteger"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestToSql() {
 	for driver, grammar := range s.grammars {
 		// Create a table
 		s.blueprint.Create()
-		s.blueprint.String("name")
-		// TODO Add below when implementing the comment method
-		//s.blueprint.String("name").Comment("comment")
-		//s.blueprint.Comment("comment")
+		s.blueprint.String("name").Comment("comment")
 
 		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(grammar), 1)
+			s.Len(s.blueprint.ToSql(grammar), 2)
 		} else {
 			s.Empty(s.blueprint.ToSql(grammar))
 		}
@@ -280,6 +395,46 @@ func (s *BlueprintTestSuite) TestUnsignedBigInteger() {
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
 		name:     &name,
 		ttype:    convert.Pointer("bigInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedInteger() {
+	name := "name"
+	s.blueprint.UnsignedInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("integer"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedMediumInteger() {
+	name := "name"
+	s.blueprint.UnsignedMediumInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("mediumInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedSmallInteger() {
+	name := "name"
+	s.blueprint.UnsignedSmallInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("smallInteger"),
+		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestUnsignedTinyInteger() {
+	name := "name"
+	s.blueprint.UnsignedTinyInteger(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:     &name,
+		ttype:    convert.Pointer("tinyInteger"),
 		unsigned: convert.Pointer(true),
 	})
 }

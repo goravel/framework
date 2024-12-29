@@ -23,6 +23,7 @@ type TestEventModel struct {
 }
 
 var testNow = time.Now().Add(-1 * time.Second)
+
 var testEventModel = TestEventModel{
 	Model: Model{
 		ID: 1,
@@ -38,6 +39,7 @@ var testEventModel = TestEventModel{
 	ManageAt: testNow,
 	high:     1,
 }
+
 var testQuery = &Query{
 	instance: &gorm.DB{
 		Statement: &gorm.Statement{

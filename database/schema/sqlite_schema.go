@@ -48,15 +48,23 @@ func (r *SqliteSchema) DropAllTypes() error {
 }
 
 func (r *SqliteSchema) DropAllViews() error {
-	if _, err := r.orm.Query().Exec(r.grammar.CompileEnableWriteableSchema()); err != nil {
+	if err := r.orm.Transaction(func(tx orm.Query) error {
+		if _, err := tx.Exec(r.grammar.CompileEnableWriteableSchema()); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(r.grammar.CompileDropAllViews(nil)); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(r.grammar.CompileDisableWriteableSchema()); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
-	if _, err := r.orm.Query().Exec(r.grammar.CompileDropAllViews(nil)); err != nil {
-		return err
-	}
-	if _, err := r.orm.Query().Exec(r.grammar.CompileDisableWriteableSchema()); err != nil {
-		return err
-	}
+
+	// cannot VACUUM from within a transaction
 	if _, err := r.orm.Query().Exec(r.grammar.CompileRebuild()); err != nil {
 		return err
 	}
@@ -64,10 +72,21 @@ func (r *SqliteSchema) DropAllViews() error {
 	return nil
 }
 
+func (r *SqliteSchema) GetColumns(table string) ([]schema.Column, error) {
+	table = r.prefix + table
+
+	var dbColumns []schema.DBColumn
+	if err := r.orm.Query().Raw(r.grammar.CompileColumns("", table)).Scan(&dbColumns); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessColumns(dbColumns), nil
+}
+
 func (r *SqliteSchema) GetIndexes(table string) ([]schema.Index, error) {
 	table = r.prefix + table
 
-	var dbIndexes []processors.DBIndex
+	var dbIndexes []schema.DBIndex
 	if err := r.orm.Query().Raw(r.grammar.CompileIndexes("", table)).Scan(&dbIndexes); err != nil {
 		return nil, err
 	}

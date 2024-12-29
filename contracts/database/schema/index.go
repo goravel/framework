@@ -15,5 +15,14 @@ type ForeignKeyDefinition interface {
 
 type IndexDefinition interface {
 	Algorithm(algorithm string) IndexDefinition
+	Deferrable() IndexDefinition
+	InitiallyImmediate() IndexDefinition
+	Language(name string) IndexDefinition
 	Name(name string) IndexDefinition
+}
+
+type IndexConfig struct {
+	Algorithm string
+	Name      string
+	Language  string
 }

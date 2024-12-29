@@ -15,6 +15,7 @@ import (
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/env"
 )
 
 var (
@@ -54,6 +55,7 @@ func (app *Application) Boot() {
 	app.registerConfiguredServiceProviders()
 	app.bootConfiguredServiceProviders()
 	app.registerCommands([]contractsconsole.Command{
+		console.NewAboutCommand(app),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
@@ -154,6 +156,10 @@ func (app *Application) SetJson(j foundation.Json) {
 
 func (app *Application) GetJson() foundation.Json {
 	return app.json
+}
+
+func (app *Application) About(section string, items []foundation.AboutItem) {
+	console.AddAboutInformation(section, items...)
 }
 
 func (app *Application) IsLocale(ctx context.Context, locale string) bool {
@@ -257,7 +263,6 @@ func (app *Application) setTimezone() {
 	}
 
 	carbon.SetTimezone(configFacade.GetString("app.timezone", carbon.UTC))
-
 }
 
 func setEnv() {
@@ -305,7 +310,7 @@ func setEnv() {
 }
 
 func setRootPath() {
-	support.RootPath = getCurrentAbsolutePath()
+	support.RootPath = env.CurrentAbsolutePath()
 }
 
 func getEnvPath() string {

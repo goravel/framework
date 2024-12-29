@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -76,7 +77,7 @@ func (a *Auth) User(user any) error {
 	return nil
 }
 
-func (a *Auth) Id() (string, error) {
+func (a *Auth) ID() (string, error) {
 	auth, ok := a.ctx.Value(ctxKey).(Guards)
 	if !ok || auth[a.guard] == nil {
 		return "", errors.AuthParseTokenFirst
@@ -157,12 +158,7 @@ func (a *Auth) LoginUsingID(id any) (token string, err error) {
 	}
 
 	nowTime := carbon.Now()
-	ttl := a.config.GetInt("jwt.ttl")
-	if ttl == 0 {
-		// 100 years
-		ttl = 60 * 24 * 365 * 100
-	}
-	expireTime := nowTime.AddMinutes(ttl).StdTime()
+	expireTime := nowTime.AddMinutes(a.getTtl()).StdTime()
 	key := cast.ToString(id)
 	if key == "" {
 		return "", errors.AuthInvalidKey
@@ -222,24 +218,34 @@ func (a *Auth) Logout() error {
 		return errors.CacheSupportRequired.SetModule(errors.ModuleAuth)
 	}
 
-	ttl := a.config.GetInt("jwt.ttl")
-	if ttl == 0 {
-		if ok := a.cache.Forever(getDisabledCacheKey(auth[a.guard].Token), true); !ok {
-			return errors.CacheForeverFailed.SetModule(errors.ModuleAuth)
-		}
-	} else {
-		if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
-			true,
-			time.Duration(ttl)*time.Minute,
-		); err != nil {
-			return err
-		}
+	if err := a.cache.Put(getDisabledCacheKey(auth[a.guard].Token),
+		true,
+		time.Duration(a.getTtl())*time.Minute,
+	); err != nil {
+		return err
 	}
 
 	delete(auth, a.guard)
 	a.ctx.WithValue(ctxKey, auth)
 
 	return nil
+}
+
+func (a *Auth) getTtl() int {
+	var ttl int
+	guardTtl := a.config.Get(fmt.Sprintf("auth.guards.%s.ttl", a.guard))
+	if guardTtl == nil {
+		ttl = a.config.GetInt("jwt.ttl")
+	} else {
+		ttl = cast.ToInt(guardTtl)
+	}
+
+	if ttl == 0 {
+		// 100 years
+		ttl = 60 * 24 * 365 * 100
+	}
+
+	return ttl
 }
 
 func (a *Auth) makeAuthContext(claims *Claims, token string) {

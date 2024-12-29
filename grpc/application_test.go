@@ -17,8 +17,10 @@ import (
 
 type contextKey int
 
-const server contextKey = 0
-const client contextKey = 1
+const (
+	server contextKey = 0
+	client contextKey = 1
+)
 
 func TestRun(t *testing.T) {
 	var (

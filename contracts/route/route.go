@@ -2,6 +2,7 @@ package route
 
 import (
 	"context"
+	"net"
 	"net/http"
 
 	contractshttp "github.com/goravel/framework/contracts/http"
@@ -15,9 +16,16 @@ type Route interface {
 	Fallback(handler contractshttp.HandlerFunc)
 	// GlobalMiddleware registers global middleware to be applied to all routes of the router.
 	GlobalMiddleware(middlewares ...contractshttp.Middleware)
-	// Recover allows you to set a custom recovery when a request panics
-	Recover(recoverFunc func(ctx contractshttp.Context, err any))
 	// Run starts the HTTP server and listens for incoming connections on the specified host.
+	// Listen starts the HTTP server and listens on the specified listener.
+	Listen(l net.Listener) error
+	// ListenTLS starts the HTTPS server and listens on the specified listener.
+	ListenTLS(l net.Listener) error
+	// ListenTLSWithCert starts the HTTPS server with the provided TLS configuration and listens on the specified listener.
+	ListenTLSWithCert(l net.Listener, certFile, keyFile string) error
+  // Recover allows you to set a custom recovery when a request panics
+	Recover(recoverFunc func(ctx contractshttp.Context, err any))
+	// Run starts the HTTP server and listens on the specified host.
 	Run(host ...string) error
 	// RunTLS starts the HTTPS server with the provided TLS configuration and listens on the specified host.
 	RunTLS(host ...string) error
@@ -25,8 +33,8 @@ type Route interface {
 	RunTLSWithCert(host, certFile, keyFile string) error
 	// ServeHTTP serves HTTP requests.
 	ServeHTTP(writer http.ResponseWriter, request *http.Request)
-	// Stop gracefully stop the serve.
-	Stop(ctx ...context.Context) error
+	// Shutdown gracefully stop the serve.
+	Shutdown(ctx ...context.Context) error
 	// Test method to simulate HTTP requests (Fiber driver only)
 	Test(request *http.Request) (*http.Response, error)
 }

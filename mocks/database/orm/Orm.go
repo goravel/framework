@@ -72,7 +72,7 @@ func (_c *Orm_Connection_Call) RunAndReturn(run func(string) orm.Orm) *Orm_Conne
 	return _c
 }
 
-// DB provides a mock function with given fields:
+// DB provides a mock function with no fields
 func (_m *Orm) DB() (*sql.DB, error) {
 	ret := _m.Called()
 
@@ -129,7 +129,52 @@ func (_c *Orm_DB_Call) RunAndReturn(run func() (*sql.DB, error)) *Orm_DB_Call {
 	return _c
 }
 
-// Factory provides a mock function with given fields:
+// DatabaseName provides a mock function with no fields
+func (_m *Orm) DatabaseName() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for DatabaseName")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Orm_DatabaseName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DatabaseName'
+type Orm_DatabaseName_Call struct {
+	*mock.Call
+}
+
+// DatabaseName is a helper method to define mock.On call
+func (_e *Orm_Expecter) DatabaseName() *Orm_DatabaseName_Call {
+	return &Orm_DatabaseName_Call{Call: _e.mock.On("DatabaseName")}
+}
+
+func (_c *Orm_DatabaseName_Call) Run(run func()) *Orm_DatabaseName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Orm_DatabaseName_Call) Return(_a0 string) *Orm_DatabaseName_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Orm_DatabaseName_Call) RunAndReturn(run func() string) *Orm_DatabaseName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Factory provides a mock function with no fields
 func (_m *Orm) Factory() orm.Factory {
 	ret := _m.Called()
 
@@ -176,7 +221,7 @@ func (_c *Orm_Factory_Call) RunAndReturn(run func() orm.Factory) *Orm_Factory_Ca
 	return _c
 }
 
-// Name provides a mock function with given fields:
+// Name provides a mock function with no fields
 func (_m *Orm) Name() string {
 	ret := _m.Called()
 
@@ -222,7 +267,7 @@ func (_c *Orm_Name_Call) RunAndReturn(run func() string) *Orm_Name_Call {
 }
 
 // Observe provides a mock function with given fields: model, observer
-func (_m *Orm) Observe(model any, observer orm.Observer) {
+func (_m *Orm) Observe(model interface{}, observer orm.Observer) {
 	_m.Called(model, observer)
 }
 
@@ -232,15 +277,15 @@ type Orm_Observe_Call struct {
 }
 
 // Observe is a helper method to define mock.On call
-//   - model any
+//   - model interface{}
 //   - observer orm.Observer
 func (_e *Orm_Expecter) Observe(model interface{}, observer interface{}) *Orm_Observe_Call {
 	return &Orm_Observe_Call{Call: _e.mock.On("Observe", model, observer)}
 }
 
-func (_c *Orm_Observe_Call) Run(run func(model any, observer orm.Observer)) *Orm_Observe_Call {
+func (_c *Orm_Observe_Call) Run(run func(model interface{}, observer orm.Observer)) *Orm_Observe_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(any), args[1].(orm.Observer))
+		run(args[0].(interface{}), args[1].(orm.Observer))
 	})
 	return _c
 }
@@ -250,12 +295,12 @@ func (_c *Orm_Observe_Call) Return() *Orm_Observe_Call {
 	return _c
 }
 
-func (_c *Orm_Observe_Call) RunAndReturn(run func(any, orm.Observer)) *Orm_Observe_Call {
-	_c.Call.Return(run)
+func (_c *Orm_Observe_Call) RunAndReturn(run func(interface{}, orm.Observer)) *Orm_Observe_Call {
+	_c.Run(run)
 	return _c
 }
 
-// Query provides a mock function with given fields:
+// Query provides a mock function with no fields
 func (_m *Orm) Query() orm.Query {
 	ret := _m.Called()
 
@@ -302,7 +347,7 @@ func (_c *Orm_Query_Call) RunAndReturn(run func() orm.Query) *Orm_Query_Call {
 	return _c
 }
 
-// Refresh provides a mock function with given fields:
+// Refresh provides a mock function with no fields
 func (_m *Orm) Refresh() {
 	_m.Called()
 }
@@ -330,7 +375,7 @@ func (_c *Orm_Refresh_Call) Return() *Orm_Refresh_Call {
 }
 
 func (_c *Orm_Refresh_Call) RunAndReturn(run func()) *Orm_Refresh_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -363,7 +408,7 @@ func (_c *Orm_SetQuery_Call) Return() *Orm_SetQuery_Call {
 }
 
 func (_c *Orm_SetQuery_Call) RunAndReturn(run func(orm.Query)) *Orm_SetQuery_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

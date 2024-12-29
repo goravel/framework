@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/file"
 )
@@ -80,7 +79,7 @@ func (f *File) Read(id string) (string, error) {
 		}
 	}
 
-	return "", errors.SessionNotFound.Args(id)
+	return "", nil
 }
 
 func (f *File) Write(id string, data string) error {

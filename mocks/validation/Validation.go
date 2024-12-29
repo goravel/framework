@@ -112,7 +112,7 @@ func (_c *Validation_AddRules_Call) RunAndReturn(run func([]validation.Rule) err
 	return _c
 }
 
-// Filters provides a mock function with given fields:
+// Filters provides a mock function with no fields
 func (_m *Validation) Filters() []validation.Filter {
 	ret := _m.Called()
 
@@ -160,7 +160,7 @@ func (_c *Validation_Filters_Call) RunAndReturn(run func() []validation.Filter) 
 }
 
 // Make provides a mock function with given fields: data, rules, options
-func (_m *Validation) Make(data any, rules map[string]string, options ...validation.Option) (validation.Validator, error) {
+func (_m *Validation) Make(data interface{}, rules map[string]string, options ...validation.Option) (validation.Validator, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -176,10 +176,10 @@ func (_m *Validation) Make(data any, rules map[string]string, options ...validat
 
 	var r0 validation.Validator
 	var r1 error
-	if rf, ok := ret.Get(0).(func(any, map[string]string, ...validation.Option) (validation.Validator, error)); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, map[string]string, ...validation.Option) (validation.Validator, error)); ok {
 		return rf(data, rules, options...)
 	}
-	if rf, ok := ret.Get(0).(func(any, map[string]string, ...validation.Option) validation.Validator); ok {
+	if rf, ok := ret.Get(0).(func(interface{}, map[string]string, ...validation.Option) validation.Validator); ok {
 		r0 = rf(data, rules, options...)
 	} else {
 		if ret.Get(0) != nil {
@@ -187,7 +187,7 @@ func (_m *Validation) Make(data any, rules map[string]string, options ...validat
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(any, map[string]string, ...validation.Option) error); ok {
+	if rf, ok := ret.Get(1).(func(interface{}, map[string]string, ...validation.Option) error); ok {
 		r1 = rf(data, rules, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -202,7 +202,7 @@ type Validation_Make_Call struct {
 }
 
 // Make is a helper method to define mock.On call
-//   - data any
+//   - data interface{}
 //   - rules map[string]string
 //   - options ...validation.Option
 func (_e *Validation_Expecter) Make(data interface{}, rules interface{}, options ...interface{}) *Validation_Make_Call {
@@ -210,7 +210,7 @@ func (_e *Validation_Expecter) Make(data interface{}, rules interface{}, options
 		append([]interface{}{data, rules}, options...)...)}
 }
 
-func (_c *Validation_Make_Call) Run(run func(data any, rules map[string]string, options ...validation.Option)) *Validation_Make_Call {
+func (_c *Validation_Make_Call) Run(run func(data interface{}, rules map[string]string, options ...validation.Option)) *Validation_Make_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]validation.Option, len(args)-2)
 		for i, a := range args[2:] {
@@ -218,7 +218,7 @@ func (_c *Validation_Make_Call) Run(run func(data any, rules map[string]string, 
 				variadicArgs[i] = a.(validation.Option)
 			}
 		}
-		run(args[0].(any), args[1].(map[string]string), variadicArgs...)
+		run(args[0].(interface{}), args[1].(map[string]string), variadicArgs...)
 	})
 	return _c
 }
@@ -228,12 +228,12 @@ func (_c *Validation_Make_Call) Return(_a0 validation.Validator, _a1 error) *Val
 	return _c
 }
 
-func (_c *Validation_Make_Call) RunAndReturn(run func(any, map[string]string, ...validation.Option) (validation.Validator, error)) *Validation_Make_Call {
+func (_c *Validation_Make_Call) RunAndReturn(run func(interface{}, map[string]string, ...validation.Option) (validation.Validator, error)) *Validation_Make_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Rules provides a mock function with given fields:
+// Rules provides a mock function with no fields
 func (_m *Validation) Rules() []validation.Rule {
 	ret := _m.Called()
 

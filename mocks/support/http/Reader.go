@@ -21,7 +21,7 @@ func (_m *Reader) EXPECT() *Reader_Expecter {
 	return &Reader_Expecter{mock: &_m.Mock}
 }
 
-// ContentType provides a mock function with given fields:
+// ContentType provides a mock function with no fields
 func (_m *Reader) ContentType() string {
 	ret := _m.Called()
 
@@ -66,7 +66,7 @@ func (_c *Reader_ContentType_Call) RunAndReturn(run func() string) *Reader_Conte
 	return _c
 }
 
-// Reader provides a mock function with given fields:
+// Reader provides a mock function with no fields
 func (_m *Reader) Reader() io.Reader {
 	ret := _m.Called()
 

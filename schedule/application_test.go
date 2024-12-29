@@ -59,7 +59,7 @@ func (s *ApplicationTestSuite) TestCallAndCommand() {
 
 	time.Sleep(60 * time.Second)
 
-	s.NoError(app.Stop())
+	s.NoError(app.Shutdown())
 	s.Equal(1, immediatelyCall)
 	s.Equal(30, delayIfStillRunningCall)
 	s.Equal(15, skipIfStillRunningCall)
@@ -97,13 +97,13 @@ func (s *ApplicationTestSuite) TestOnOneServer() {
 
 	time.Sleep(2 * time.Second)
 
-	s.NoError(app.Stop())
-	s.NoError(app1.Stop())
+	s.NoError(app.Shutdown())
+	s.NoError(app1.Shutdown())
 
 	s.Equal(1, immediatelyCall)
 }
 
-func (s *ApplicationTestSuite) TestStop() {
+func (s *ApplicationTestSuite) TestShutdown() {
 	immediatelyCall := 0
 
 	app := NewApplication(nil, nil, nil, false)
@@ -118,11 +118,11 @@ func (s *ApplicationTestSuite) TestStop() {
 
 	time.Sleep(2 * time.Second)
 
-	s.NoError(app.Stop())
+	s.NoError(app.Shutdown())
 	s.Equal(1, immediatelyCall)
 }
 
-func (s *ApplicationTestSuite) TestStopWithContext() {
+func (s *ApplicationTestSuite) TestShutdownWithContext() {
 	immediatelyCall := 0
 
 	app := NewApplication(nil, nil, nil, false)
@@ -140,6 +140,6 @@ func (s *ApplicationTestSuite) TestStopWithContext() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	s.EqualError(app.Stop(ctx), "context deadline exceeded")
+	s.EqualError(app.Shutdown(ctx), "context deadline exceeded")
 	s.Equal(0, immediatelyCall)
 }

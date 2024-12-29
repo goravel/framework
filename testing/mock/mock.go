@@ -23,6 +23,7 @@ import (
 	queuemock "github.com/goravel/framework/mocks/queue"
 	translationmock "github.com/goravel/framework/mocks/translation"
 	validatemock "github.com/goravel/framework/mocks/validation"
+	"github.com/goravel/framework/testing/utils"
 )
 
 func Factory() *factory {
@@ -137,7 +138,7 @@ func (r *factory) Lang(ctx context.Context) *translationmock.Translator {
 }
 
 func (r *factory) Log() {
-	r.app.On("MakeLog").Return(NewTestLog())
+	r.app.On("MakeLog").Return(utils.NewTestLog())
 }
 
 func (r *factory) Mail() *mailmock.Mail {

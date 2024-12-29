@@ -19,7 +19,7 @@ type RedisTestSuite struct {
 
 func TestRedisTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests that use Docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, new(RedisTestSuite))
@@ -43,5 +43,5 @@ func (s *RedisTestSuite) TestBuild() {
 	s.Nil(instance.Set(ctx, "hello", "goravel", 10*time.Second).Err())
 	s.Equal("goravel", instance.Get(ctx, "hello").Val())
 
-	s.Nil(s.redis.Stop())
+	s.Nil(s.redis.Shutdown())
 }

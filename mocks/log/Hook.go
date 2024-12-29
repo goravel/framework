@@ -66,7 +66,7 @@ func (_c *Hook_Fire_Call) RunAndReturn(run func(log.Entry) error) *Hook_Fire_Cal
 	return _c
 }
 
-// Levels provides a mock function with given fields:
+// Levels provides a mock function with no fields
 func (_m *Hook) Levels() []log.Level {
 	ret := _m.Called()
 

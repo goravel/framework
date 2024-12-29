@@ -9,6 +9,7 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
+	"github.com/goravel/framework/support/env"
 )
 
 type DockerTestSuite struct {
@@ -18,6 +19,9 @@ type DockerTestSuite struct {
 }
 
 func TestDockerTestSuite(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
 	suite.Run(t, new(DockerTestSuite))
 }
 
@@ -47,6 +51,7 @@ func (s *DockerTestSuite) TestDatabase() {
 
 	databaseImpl := database.(*Database)
 	s.Equal("mysql", databaseImpl.connection)
+	s.NoError(database.Shutdown())
 
 	mockConfig = mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return("postgres").Once()
@@ -67,4 +72,5 @@ func (s *DockerTestSuite) TestDatabase() {
 
 	databaseImpl = database.(*Database)
 	s.Equal("postgres", databaseImpl.connection)
+	s.NoError(database.Shutdown())
 }
