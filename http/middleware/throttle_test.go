@@ -594,7 +594,7 @@ func (r *TestResponse) Cookie(cookie contractshttp.Cookie) contractshttp.Context
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Data(code int, contentType string, data []byte) contractshttp.ResponseWithAbort {
+func (r *TestResponse) Data(code int, contentType string, data []byte) contractshttp.AbortableResponse {
 	panic("do not need to implement it")
 }
 
@@ -612,11 +612,11 @@ func (r *TestResponse) Header(key, value string) contractshttp.ContextResponse {
 	return r
 }
 
-func (r *TestResponse) Json(code int, obj any) contractshttp.ResponseWithAbort {
+func (r *TestResponse) Json(code int, obj any) contractshttp.AbortableResponse {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) NoContent(...int) contractshttp.ResponseWithAbort {
+func (r *TestResponse) NoContent(...int) contractshttp.AbortableResponse {
 	panic("do not need to implement it")
 }
 
@@ -624,11 +624,11 @@ func (r *TestResponse) Origin() contractshttp.ResponseOrigin {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) Redirect(code int, location string) contractshttp.ResponseWithAbort {
+func (r *TestResponse) Redirect(code int, location string) contractshttp.AbortableResponse {
 	panic("do not need to implement it")
 }
 
-func (r *TestResponse) String(code int, format string, values ...any) contractshttp.ResponseWithAbort {
+func (r *TestResponse) String(code int, format string, values ...any) contractshttp.AbortableResponse {
 	panic("do not need to implement it")
 }
 
