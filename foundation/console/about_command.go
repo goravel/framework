@@ -22,6 +22,7 @@ type information struct {
 
 var appInformation = &information{section: make(map[string]int)}
 var customInformationResolvers []func()
+var getGoVersion = runtime.Version
 
 func NewAboutCommand(app foundation.Application) *AboutCommand {
 	return &AboutCommand{
@@ -71,7 +72,7 @@ func (r *AboutCommand) gatherApplicationInformation() {
 	appInformation.addToSection("Environment", []foundation.AboutItem{
 		{Key: "Application Name", Value: configFacade.GetString("app.name")},
 		{Key: "Goravel Version", Value: strings.TrimPrefix(r.app.Version(), "v")},
-		{Key: "Go Version", Value: strings.TrimPrefix(runtime.Version(), "go")},
+		{Key: "Go Version", Value: strings.TrimPrefix(getGoVersion(), "go")},
 		{Key: "Environment", Value: configFacade.GetString("app.env")},
 		{Key: "Debug Mode", Value: func() string {
 			mode := "OFF"
