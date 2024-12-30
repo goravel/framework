@@ -2,9 +2,11 @@ package console
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -19,7 +21,10 @@ func TestKeyGenerateCommand(t *testing.T) {
 
 	keyGenerateCommand := NewKeyGenerateCommand(mockConfig)
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Error("open .env: no such file or directory").Once()
+	// Linux and Windows error message are different
+	mockContext.EXPECT().Error(mock.MatchedBy(func(s string) bool {
+		return strings.Contains(s, "open .env:")
+	})).Once()
 
 	assert.False(t, file.Exists(".env"))
 
@@ -60,7 +65,10 @@ func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
 
 	keyGenerateCommand := NewKeyGenerateCommand(mockConfig)
 	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Error("open config.conf: no such file or directory").Once()
+	// Linux and Windows error message are different
+	mockContext.EXPECT().Error(mock.MatchedBy(func(s string) bool {
+		return strings.Contains(s, "open config.conf:")
+	})).Once()
 	assert.False(t, file.Exists("config.conf"))
 
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
