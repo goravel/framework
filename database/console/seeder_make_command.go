@@ -54,7 +54,7 @@ func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Successln("Seeder created successfully")
+	ctx.Success("Seeder created successfully")
 
 	return nil
 }

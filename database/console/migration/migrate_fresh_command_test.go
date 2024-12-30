@@ -34,7 +34,7 @@ func TestMigrateFreshCommand(t *testing.T) {
 				mockContext.EXPECT().OptionBool("seed").Return(true).Once()
 				mockContext.EXPECT().OptionSlice("seeder").Return([]string{"UserSeeder", "AgentSeeder"}).Once()
 				mockArtisan.EXPECT().Call("db:seed --seeder UserSeeder,AgentSeeder").Return(nil).Once()
-				mockContext.EXPECT().Info("Migration fresh success").Once()
+				mockContext.EXPECT().Success("Migration fresh success").Once()
 			},
 		},
 		{

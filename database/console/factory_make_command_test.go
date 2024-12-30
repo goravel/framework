@@ -16,28 +16,31 @@ import (
 func TestFactoryMakeCommand(t *testing.T) {
 	factoryMakeCommand := &FactoryMakeCommand{}
 	mockContext := &consolemocks.Context{}
-	mockContext.On("Argument", 0).Return("").Once()
-	mockContext.On("Ask", "Enter the factory name", mock.Anything).Return("", errors.New("the factory name cannot be empty")).Once()
+	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Ask("Enter the factory name", mock.Anything).Return("", errors.New("the factory name cannot be empty")).Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, factoryMakeCommand.Handle(mockContext))
 	}), "the factory name cannot be empty")
 
-	mockContext.On("Argument", 0).Return("UserFactory").Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
+	mockContext.EXPECT().Argument(0).Return("UserFactory").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.Nil(t, factoryMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("database/factories/user_factory.go"))
 	assert.True(t, file.Contain("database/factories/user_factory.go", "package factories"))
 	assert.True(t, file.Contain("database/factories/user_factory.go", "type UserFactory struct"))
 
-	mockContext.On("Argument", 0).Return("UserFactory").Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
+	mockContext.EXPECT().Argument(0).Return("UserFactory").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
 		assert.Nil(t, factoryMakeCommand.Handle(mockContext))
 	}), "the factory already exists. Use the --force or -f flag to overwrite")
 	assert.Nil(t, file.Remove("database"))
 
-	mockContext.On("Argument", 0).Return("subdir/DemoFactory").Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
+	mockContext.EXPECT().Argument(0).Return("subdir/DemoFactory").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Factory created successfully").Once()
 	assert.Nil(t, factoryMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("database/factories/subdir/demo_factory.go"))
 	assert.True(t, file.Contain("database/factories/subdir/demo_factory.go", "package subdir"))

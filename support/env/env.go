@@ -25,6 +25,16 @@ func IsArm() bool {
 	return runtime.GOARCH == "arm" || runtime.GOARCH == "arm64"
 }
 
+func IsArtisan() bool {
+	for _, arg := range os.Args {
+		if arg == "artisan" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsDarwin returns whether the current operating system is Darwin.
 // IsDarwin 返回当前操作系统是否为 Darwin。
 func IsDarwin() bool {

@@ -54,7 +54,7 @@ func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Successln("Observer created successfully")
+	ctx.Success("Observer created successfully")
 
 	return nil
 }

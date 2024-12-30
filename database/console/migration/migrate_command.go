@@ -41,7 +41,7 @@ func (r *MigrateCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Info("Migration success")
+	ctx.Success("Migration success")
 
 	return nil
 }

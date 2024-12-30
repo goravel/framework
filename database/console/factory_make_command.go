@@ -54,7 +54,7 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Successln("Factory created successfully")
+	ctx.Success("Factory created successfully")
 
 	return nil
 }

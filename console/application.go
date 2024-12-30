@@ -11,11 +11,10 @@ import (
 )
 
 type Application struct {
-	instance  *cli.App
-	isArtisan bool
+	instance *cli.App
 }
 
-func NewApplication(name, usage, usageText, version string, artisan ...bool) console.Artisan {
+func NewApplication(name, usage, usageText, version string) console.Artisan {
 	instance := cli.NewApp()
 	instance.Name = name
 	instance.Usage = usage
@@ -23,11 +22,9 @@ func NewApplication(name, usage, usageText, version string, artisan ...bool) con
 	instance.Version = version
 	instance.CommandNotFound = commandNotFound
 	instance.OnUsageError = onUsageError
-	isArtisan := len(artisan) > 0 && artisan[0]
 
 	return &Application{
-		instance:  instance,
-		isArtisan: isArtisan,
+		instance: instance,
 	}
 }
 
@@ -55,11 +52,7 @@ func (r *Application) Call(command string) error {
 		return nil
 	}
 
-	commands := []string{os.Args[0]}
-
-	if r.isArtisan {
-		commands = append(commands, "artisan")
-	}
+	commands := []string{os.Args[0], "artisan"}
 
 	return r.Run(append(commands, strings.Split(command, " ")...), false)
 }
@@ -70,11 +63,7 @@ func (r *Application) CallAndExit(command string) {
 		return
 	}
 
-	commands := []string{os.Args[0]}
-
-	if r.isArtisan {
-		commands = append(commands, "artisan")
-	}
+	commands := []string{os.Args[0], "artisan"}
 
 	_ = r.Run(append(commands, strings.Split(command, " ")...), true)
 }
@@ -82,15 +71,11 @@ func (r *Application) CallAndExit(command string) {
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	artisanIndex := -1
-	if r.isArtisan {
-		for i, arg := range args {
-			if arg == "artisan" {
-				artisanIndex = i
-				break
-			}
+	for i, arg := range args {
+		if arg == "artisan" {
+			artisanIndex = i
+			break
 		}
-	} else {
-		artisanIndex = 0
 	}
 
 	if artisanIndex != -1 {
