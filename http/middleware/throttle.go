@@ -65,7 +65,7 @@ func response(ctx httpcontract.Context, limit *httplimit.Limit) {
 		limit.ResponseCallback(ctx)
 	} else {
 		if ctx.Request() != nil {
-			ctx.Request().AbortWithStatus(httpcontract.StatusTooManyRequests)
+			ctx.Request().Abort(httpcontract.StatusTooManyRequests)
 		}
 	}
 }
