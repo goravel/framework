@@ -11,10 +11,13 @@ import (
 )
 
 type Application struct {
-	instance *cli.App
+	instance  *cli.App
+	isArtisan bool
 }
 
-func NewApplication(name, usage, usageText, version string) console.Artisan {
+// NewApplication Create a new Artisan application.
+// The artisan parameter is used by goravel/installer.
+func NewApplication(name, usage, usageText, version string, artisan ...bool) console.Artisan {
 	instance := cli.NewApp()
 	instance.Name = name
 	instance.Usage = usage
@@ -22,9 +25,11 @@ func NewApplication(name, usage, usageText, version string) console.Artisan {
 	instance.Version = version
 	instance.CommandNotFound = commandNotFound
 	instance.OnUsageError = onUsageError
+	isArtisan := len(artisan) > 0 && artisan[0]
 
 	return &Application{
-		instance: instance,
+		instance:  instance,
+		isArtisan: isArtisan,
 	}
 }
 
@@ -52,7 +57,11 @@ func (r *Application) Call(command string) error {
 		return nil
 	}
 
-	commands := []string{os.Args[0], "artisan"}
+	commands := []string{os.Args[0]}
+
+	if r.isArtisan {
+		commands = append(commands, "artisan")
+	}
 
 	return r.Run(append(commands, strings.Split(command, " ")...), false)
 }
@@ -63,7 +72,11 @@ func (r *Application) CallAndExit(command string) {
 		return
 	}
 
-	commands := []string{os.Args[0], "artisan"}
+	commands := []string{os.Args[0]}
+
+	if r.isArtisan {
+		commands = append(commands, "artisan")
+	}
 
 	_ = r.Run(append(commands, strings.Split(command, " ")...), true)
 }
@@ -71,11 +84,15 @@ func (r *Application) CallAndExit(command string) {
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	artisanIndex := -1
-	for i, arg := range args {
-		if arg == "artisan" {
-			artisanIndex = i
-			break
+	if r.isArtisan {
+		for i, arg := range args {
+			if arg == "artisan" {
+				artisanIndex = i
+				break
+			}
 		}
+	} else {
+		artisanIndex = 0
 	}
 
 	if artisanIndex != -1 {

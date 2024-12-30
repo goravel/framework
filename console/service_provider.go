@@ -17,7 +17,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 		name := "artisan"
 		usage := "Goravel Framework"
 		usageText := "artisan [global options] command [options] [arguments...]"
-		return NewApplication(name, usage, usageText, app.Version()), nil
+		return NewApplication(name, usage, usageText, app.Version(), true), nil
 	})
 }
 
