@@ -66,7 +66,7 @@ func TestNewMake(t *testing.T) {
 	var (
 		name string
 
-		mockCtx = &mocksconsole.Context{}
+		mockCtx = mocksconsole.NewContext(t)
 		ttype   = "rule"
 		root    = filepath.Join("app", "rules")
 	)
@@ -128,8 +128,6 @@ func TestNewMake(t *testing.T) {
 				assert.NotNil(t, m)
 				assert.Nil(t, file.Remove("app"))
 			}
-
-			mockCtx.AssertExpectations(t)
 		})
 	}
 }
@@ -140,7 +138,7 @@ func TestConfirmToProceed(t *testing.T) {
 	)
 
 	beforeEach := func() {
-		mockCtx = &mocksconsole.Context{}
+		mockCtx = mocksconsole.NewContext(t)
 	}
 
 	tests := []struct {

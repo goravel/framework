@@ -1,7 +1,6 @@
 package console
 
 import (
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +11,6 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
-	"github.com/goravel/framework/support/color"
 )
 
 func TestShowCommand(t *testing.T) {
@@ -46,9 +44,8 @@ func TestShowCommand(t *testing.T) {
 		{"test", "0"},
 	}
 	tests := []struct {
-		name     string
-		setup    func()
-		expected string
+		name  string
+		setup func()
 	}{
 		{
 			name: "invalid argument",
@@ -56,7 +53,6 @@ func TestShowCommand(t *testing.T) {
 				mockContext.EXPECT().Argument(0).Return("test").Once()
 				mockContext.EXPECT().Error("No arguments expected for 'db:show' command, got 'test'.").Once()
 			},
-			expected: "No arguments expected for 'db:show' command, got 'test'.",
 		},
 		{
 			name: "get tables failed",
@@ -78,8 +74,8 @@ func TestShowCommand(t *testing.T) {
 				mockSchema.EXPECT().GetTables().Return(nil, assert.AnError).Once()
 				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
-			expected: assert.AnError.Error(),
-		}, {
+		},
+		{
 			name: "get views failed",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("").Once()
@@ -101,8 +97,8 @@ func TestShowCommand(t *testing.T) {
 				mockSchema.EXPECT().GetViews().Return(nil, assert.AnError).Once()
 				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
-			expected: assert.AnError.Error(),
-		}, {
+		},
+		{
 			name: "success",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("").Once()
@@ -143,13 +139,6 @@ func TestShowCommand(t *testing.T) {
 					mockContext.EXPECT().TwoColumnDetail(successCaseExpected[i][0], successCaseExpected[i][1]).Once()
 				}
 			},
-			expected: func() string {
-				var result string
-				for i := range successCaseExpected {
-					result += color.Default().Sprintf("%s %s\n", successCaseExpected[i][0], successCaseExpected[i][1])
-				}
-				return result
-			}(),
 		},
 	}
 
@@ -158,9 +147,7 @@ func TestShowCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 			command := NewShowCommand(mockConfig, mockSchema)
-			assert.Contains(t, color.CaptureOutput(func(_ io.Writer) {
-				assert.NoError(t, command.Handle(mockContext))
-			}), test.expected)
+			assert.NoError(t, command.Handle(mockContext))
 		})
 	}
 }

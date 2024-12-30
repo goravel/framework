@@ -50,7 +50,8 @@ func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
 	ctx.Success("Factory created successfully")
