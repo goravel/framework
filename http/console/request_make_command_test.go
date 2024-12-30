@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestRequestMakeCommand(t *testing.T) {
 	requestMakeCommand := &RequestMakeCommand{}
-	mockContext := consolemocks.NewContext(t)
+	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the request name", mock.Anything).Return("", errors.New("the request name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the request name cannot be empty").Once()

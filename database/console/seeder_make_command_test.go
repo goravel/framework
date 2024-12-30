@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestSeederMakeCommand(t *testing.T) {
 	seederMakeCommand := &SeederMakeCommand{}
-	mockContext := &consolemocks.Context{}
+	mockContext := &mocksconsole.Context{}
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the seeder name", mock.Anything).Return("", errors.New("the seeder name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the seeder name cannot be empty").Once()

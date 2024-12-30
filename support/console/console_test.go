@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -66,7 +66,7 @@ func TestNewMake(t *testing.T) {
 	var (
 		name string
 
-		mockCtx = &consolemocks.Context{}
+		mockCtx = &mocksconsole.Context{}
 		ttype   = "rule"
 		root    = filepath.Join("app", "rules")
 	)
@@ -136,11 +136,11 @@ func TestNewMake(t *testing.T) {
 
 func TestConfirmToProceed(t *testing.T) {
 	var (
-		mockCtx *consolemocks.Context
+		mockCtx *mocksconsole.Context
 	)
 
 	beforeEach := func() {
-		mockCtx = &consolemocks.Context{}
+		mockCtx = &mocksconsole.Context{}
 	}
 
 	tests := []struct {

@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestControllerMakeCommand(t *testing.T) {
 	controllerMakeCommand := &ControllerMakeCommand{}
-	mockContext := consolemocks.NewContext(t)
+	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the controller name", mock.Anything).Return("", errors.New("the controller name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the controller name cannot be empty").Once()
@@ -45,7 +45,7 @@ func TestControllerMakeCommand(t *testing.T) {
 
 func TestResourceControllerMakeCommand(t *testing.T) {
 	controllerMakeCommand := &ControllerMakeCommand{}
-	mockContext := consolemocks.NewContext(t)
+	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("User/AuthController").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
 	mockContext.EXPECT().OptionBool("resource").Return(true).Once()

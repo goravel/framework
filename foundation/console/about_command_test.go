@@ -9,7 +9,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/color"
 )
@@ -38,7 +38,7 @@ func TestAboutCommand(t *testing.T) {
 	mockConfig.EXPECT().GetString("queue.default").Return("test_queue").Once()
 	mockConfig.EXPECT().GetString("session.driver").Return("test_session").Once()
 	aboutCommand := NewAboutCommand(mockApp)
-	mockContext := &consolemocks.Context{}
+	mockContext := &mocksconsole.Context{}
 	mockContext.EXPECT().NewLine().Return().Times(4)
 	mockContext.EXPECT().Option("only").Return("").Once()
 	getGoVersion = func() string {
@@ -70,10 +70,10 @@ func TestAboutCommand(t *testing.T) {
 		{"Test Info", "<fg=cyan>OK</>"},
 	} {
 		mockContext.EXPECT().TwoColumnDetail(ex[0], ex[1]).
-				Run(func(first string, second string, _ ...rune) {
-					expected = append(expected, color.Default().Sprintf("%s %s\n", first, second))
-					color.Default().Printf("%s %s\n", first, second)
-				}).Return().Once()
+			Run(func(first string, second string, _ ...rune) {
+				expected = append(expected, color.Default().Sprintf("%s %s\n", first, second))
+				color.Default().Printf("%s %s\n", first, second)
+			}).Return().Once()
 	}
 	AddAboutInformation("Custom", foundation.AboutItem{Key: "Test Info", Value: "<fg=cyan>OK</>"})
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {

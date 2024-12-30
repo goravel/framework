@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestPackageMakeCommand(t *testing.T) {
 	var (
-		mockContext *consolemocks.Context
+		mockContext *mocksconsole.Context
 	)
 
 	beforeEach := func() {
-		mockContext = consolemocks.NewContext(t)
+		mockContext = mocksconsole.NewContext(t)
 	}
 
 	tests := []struct {
