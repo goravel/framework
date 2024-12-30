@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -43,7 +42,7 @@ func (receiver *ListenerMakeCommand) Extend() command.Extend {
 func (receiver *ListenerMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "listener", ctx.Argument(0), filepath.Join("app", "listeners"))
 	if err != nil {
-		color.Errorln(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -51,7 +50,7 @@ func (receiver *ListenerMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Successln("Listener created successfully")
+	ctx.Success("Listener created successfully")
 
 	return nil
 }

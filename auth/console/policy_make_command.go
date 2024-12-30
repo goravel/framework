@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -46,7 +45,7 @@ func (receiver *PolicyMakeCommand) Extend() command.Extend {
 func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), filepath.Join("app", "policies"))
 	if err != nil {
-		color.Errorln(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -54,7 +53,7 @@ func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Successln("Policy created successfully")
+	ctx.Success("Policy created successfully")
 
 	return nil
 }

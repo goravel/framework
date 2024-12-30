@@ -54,9 +54,7 @@ func TestShowCommand(t *testing.T) {
 			name: "invalid argument",
 			setup: func() {
 				mockContext.EXPECT().Argument(0).Return("test").Once()
-				mockContext.EXPECT().Error("No arguments expected for 'db:show' command, got 'test'.").Run(func(message string) {
-					color.Errorln(message)
-				}).Once()
+				mockContext.EXPECT().Error("No arguments expected for 'db:show' command, got 'test'.").Once()
 			},
 			expected: "No arguments expected for 'db:show' command, got 'test'.",
 		},
@@ -78,9 +76,7 @@ func TestShowCommand(t *testing.T) {
 				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
 				mockQuery.EXPECT().Scan(&queryResult{}).Return(nil).Twice()
 				mockSchema.EXPECT().GetTables().Return(nil, assert.AnError).Once()
-				mockContext.EXPECT().Error(assert.AnError.Error()).Run(func(message string) {
-					color.Errorln(message)
-				}).Once()
+				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
 			expected: assert.AnError.Error(),
 		}, {
@@ -102,10 +98,8 @@ func TestShowCommand(t *testing.T) {
 				mockQuery.EXPECT().Scan(&queryResult{}).Return(nil).Twice()
 				mockSchema.EXPECT().GetTables().Return(nil, nil).Once()
 				mockContext.EXPECT().OptionBool("views").Return(true).Once()
-				mockSchema.EXPECT().GetViews().Return(nil, assert.AnError)
-				mockContext.EXPECT().Error(assert.AnError.Error()).Run(func(message string) {
-					color.Errorln(message)
-				})
+				mockSchema.EXPECT().GetViews().Return(nil, assert.AnError).Once()
+				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
 			expected: assert.AnError.Error(),
 		}, {
@@ -146,9 +140,7 @@ func TestShowCommand(t *testing.T) {
 				mockQuery.EXPECT().Count(&rows).Return(nil).Once()
 				mockContext.EXPECT().NewLine().Times(4)
 				for i := range successCaseExpected {
-					mockContext.EXPECT().TwoColumnDetail(successCaseExpected[i][0], successCaseExpected[i][1]).Run(func(first string, second string, filler ...rune) {
-						color.Default().Printf("%s %s\n", first, second)
-					}).Once()
+					mockContext.EXPECT().TwoColumnDetail(successCaseExpected[i][0], successCaseExpected[i][1]).Once()
 				}
 			},
 			expected: func() string {
@@ -171,5 +163,4 @@ func TestShowCommand(t *testing.T) {
 			}), test.expected)
 		})
 	}
-
 }

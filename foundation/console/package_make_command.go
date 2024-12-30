@@ -7,7 +7,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -57,7 +56,8 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 			},
 		})
 		if err != nil {
-			return err
+			ctx.Error(err.Error())
+			return nil
 		}
 	}
 
@@ -65,7 +65,7 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 	root := ctx.Option("root") + "/" + pkg
 
 	if file.Exists(root) {
-		color.Errorf("Package %s already exists\n", pkg)
+		ctx.Error("Package " + pkg + " already exists")
 		return nil
 	}
 
@@ -82,11 +82,12 @@ func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
 
 	for path, content := range files {
 		if err := file.Create(filepath.Join(root, path), content()); err != nil {
-			return err
+			ctx.Error(err.Error())
+			return nil
 		}
 	}
 
-	color.Successf("Package created successfully: %s\n", root)
+	ctx.Success("Package created successfully: " + root)
 
 	return nil
 }

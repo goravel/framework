@@ -13,7 +13,7 @@ import (
 
 func TestModelMakeCommand(t *testing.T) {
 	modelMakeCommand := &ModelMakeCommand{}
-	mockContext := &consolemocks.Context{}
+	mockContext := consolemocks.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the model name", mock.Anything).Return("", errors.New("the model name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the model name cannot be empty").Once()
@@ -40,6 +40,4 @@ func TestModelMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/models/User/phone.go", "type Phone struct"))
 
 	assert.Nil(t, file.Remove("app"))
-
-	mockContext.AssertExpectations(t)
 }

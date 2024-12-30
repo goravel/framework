@@ -13,11 +13,12 @@ import (
 )
 
 func TestJwtSecretCommand(t *testing.T) {
-	mockConfig := &configmock.Config{}
+	mockConfig := configmock.NewConfig(t)
 	mockConfig.On("GetString", "jwt.secret").Return("").Twice()
 
 	jwtSecretCommand := NewJwtSecretCommand(mockConfig)
-	mockContext := &consolemocks.Context{}
+	mockContext := consolemocks.NewContext(t)
+	mockContext.EXPECT().Success("Jwt Secret set successfully").Once()
 
 	assert.False(t, file.Exists(".env"))
 	err := file.Create(".env", "JWT_SECRET=\n")
@@ -30,18 +31,17 @@ func TestJwtSecretCommand(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, len(env) > 10)
 	assert.Nil(t, file.Remove(".env"))
-
-	mockConfig.AssertExpectations(t)
 }
 
 func TestJwtSecretCommandWithCustomEnvFile(t *testing.T) {
 	support.EnvPath = "config.conf"
 
-	mockConfig := &configmock.Config{}
+	mockConfig := configmock.NewConfig(t)
 	mockConfig.On("GetString", "jwt.secret").Return("").Twice()
 
 	jwtSecretCommand := NewJwtSecretCommand(mockConfig)
-	mockContext := &consolemocks.Context{}
+	mockContext := consolemocks.NewContext(t)
+	mockContext.EXPECT().Success("Jwt Secret set successfully").Once()
 
 	assert.False(t, file.Exists("config.conf"))
 	err := file.Create("config.conf", "JWT_SECRET=\n")
@@ -56,6 +56,4 @@ func TestJwtSecretCommandWithCustomEnvFile(t *testing.T) {
 	assert.Nil(t, file.Remove("config.conf"))
 
 	support.EnvPath = ".env"
-
-	mockConfig.AssertExpectations(t)
 }

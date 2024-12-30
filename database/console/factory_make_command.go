@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -46,7 +45,7 @@ func (receiver *FactoryMakeCommand) Extend() command.Extend {
 func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "factory", ctx.Argument(0), filepath.Join("database", "factories"))
 	if err != nil {
-		color.Errorln(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 

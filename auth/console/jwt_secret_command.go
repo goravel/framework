@@ -9,7 +9,6 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support"
-	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -43,12 +42,12 @@ func (receiver *JwtSecretCommand) Handle(ctx console.Context) error {
 	key := receiver.generateRandomKey()
 
 	if err := receiver.setSecretInEnvironmentFile(key); err != nil {
-		color.Errorln(err.Error())
+		ctx.Error(err.Error())
 
 		return nil
 	}
 
-	color.Successln("Jwt Secret set successfully")
+	ctx.Success("Jwt Secret set successfully")
 
 	return nil
 }

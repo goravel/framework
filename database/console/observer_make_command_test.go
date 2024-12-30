@@ -13,7 +13,7 @@ import (
 
 func TestObserverMakeCommand(t *testing.T) {
 	observerMakeCommand := &ObserverMakeCommand{}
-	mockContext := &consolemocks.Context{}
+	mockContext := consolemocks.NewContext(t)
 	mockContext.EXPECT().Argument(0).Return("").Once()
 	mockContext.EXPECT().Ask("Enter the observer name", mock.Anything).Return("", errors.New("the observer name cannot be empty")).Once()
 	mockContext.EXPECT().Error("the observer name cannot be empty").Once()
@@ -40,6 +40,4 @@ func TestObserverMakeCommand(t *testing.T) {
 	assert.True(t, file.Contain("app/observers/User/phone_observer.go", "type PhoneObserver struct"))
 
 	assert.Nil(t, file.Remove("app"))
-
-	mockContext.AssertExpectations(t)
 }

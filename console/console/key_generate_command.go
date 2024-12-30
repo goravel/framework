@@ -48,23 +48,24 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 
 		answer, err := ctx.Confirm("Do you really wish to run this command?")
 		if err != nil {
-			return err
+			ctx.Error(err.Error())
+			return nil
 		}
 
 		if !answer {
-			color.Warningln("Command cancelled!")
+			ctx.Warning("Command cancelled!")
 			return nil
 		}
 	}
 
 	key := receiver.generateRandomKey()
 	if err := receiver.writeNewEnvironmentFileWith(key); err != nil {
-		color.Errorln(err.Error())
+		ctx.Error(err.Error())
 
 		return nil
 	}
 
-	color.Successln("Application key set successfully")
+	ctx.Success("Application key set successfully")
 
 	return nil
 }
