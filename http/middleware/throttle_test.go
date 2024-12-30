@@ -562,7 +562,12 @@ func (r *TestRequest) File(name string) (filesystem.File, error) {
 	panic("do not need to implement it")
 }
 
-func (r *TestRequest) AbortWithStatus(code int) {}
+func (r *TestRequest) Abort(code ...int) {
+}
+
+func (r *TestRequest) AbortWithStatus(code int) {
+	panic("do not need to implement it")
+}
 
 func (r *TestRequest) AbortWithStatusJson(code int, jsonObj any) {
 

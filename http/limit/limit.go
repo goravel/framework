@@ -49,7 +49,7 @@ func NewLimit(maxAttempts, decayMinutes int) *Limit {
 	return &Limit{
 		Store: instance,
 		ResponseCallback: func(ctx http.Context) {
-			ctx.Request().AbortWithStatus(http.StatusTooManyRequests)
+			ctx.Request().Abort(http.StatusTooManyRequests)
 		},
 	}
 }
