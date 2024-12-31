@@ -8,6 +8,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support/env"
 )
 
 type Application struct {
@@ -17,7 +18,7 @@ type Application struct {
 
 // NewApplication Create a new Artisan application.
 // The artisan parameter is used by goravel/installer.
-func NewApplication(name, usage, usageText, version string, artisan ...bool) console.Artisan {
+func NewApplication(name, usage, usageText, version string) console.Artisan {
 	instance := cli.NewApp()
 	instance.Name = name
 	instance.Usage = usage
@@ -25,11 +26,10 @@ func NewApplication(name, usage, usageText, version string, artisan ...bool) con
 	instance.Version = version
 	instance.CommandNotFound = commandNotFound
 	instance.OnUsageError = onUsageError
-	isArtisan := len(artisan) > 0 && artisan[0]
 
 	return &Application{
 		instance:  instance,
-		isArtisan: isArtisan,
+		isArtisan: env.IsArtisan(),
 	}
 }
 
