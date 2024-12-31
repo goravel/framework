@@ -13,7 +13,7 @@ import (
 )
 
 func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
-	cliApp := NewApplication("test", "test", "test", "test", true)
+	cliApp := NewApplication("test", "test", "test", "test")
 	cliApp.Register([]console.Command{
 		&TestFooCommand{},
 		&TestBarCommand{},
