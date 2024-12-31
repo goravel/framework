@@ -129,10 +129,12 @@ type Index struct {
 }
 
 type Table struct {
-	Comment string
-	Name    string
-	Schema  string
-	Size    int
+	Collation string
+	Comment   string
+	Engine    string
+	Name      string
+	Schema    string
+	Size      int
 }
 
 type Type struct {

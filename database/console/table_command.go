@@ -101,24 +101,33 @@ func (r *TableCommand) display(ctx console.Context, table schema.Table) {
 		ctx.Error(fmt.Sprintf("Failed to get foreign keys: %s", err.Error()))
 		return
 	}
-	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", table.Name), "")
+	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", table.Name), fmt.Sprintf("<fg=gray>%s</>", table.Comment))
 	ctx.TwoColumnDetail("Columns", fmt.Sprintf("%d", len(columns)))
-	ctx.TwoColumnDetail("Size", fmt.Sprintf("%.3fMiB", float64(table.Size)/1024/1024))
+	ctx.TwoColumnDetail("Size", fmt.Sprintf("%.3f MB", float64(table.Size)/1024/1024))
+	if len(table.Engine) > 0 {
+		ctx.TwoColumnDetail("Engine", table.Engine)
+	}
+	if len(table.Collation) > 0 {
+		ctx.TwoColumnDetail("Collation", table.Collation)
+	}
 	if len(columns) > 0 {
 		ctx.NewLine()
 		ctx.TwoColumnDetail("<fg=green;op=bold>Column</>", "Type")
 		for i := range columns {
 			var (
 				key        = columns[i].Name
-				value      = columns[i].TypeName
+				value      = columns[i].Type
 				attributes []string
 			)
 			if columns[i].Autoincrement {
 				attributes = append(attributes, "autoincrement")
 			}
-			attributes = append(attributes, columns[i].Type)
+			attributes = append(attributes, columns[i].TypeName)
 			if columns[i].Nullable {
 				attributes = append(attributes, "nullable")
+			}
+			if len(columns[i].Collation) > 0 {
+				attributes = append(attributes, columns[i].Collation)
 			}
 			key = fmt.Sprintf("%s <fg=gray>%s</>", key, strings.Join(attributes, ", "))
 			if columns[i].Default != "" {
@@ -131,7 +140,7 @@ func (r *TableCommand) display(ctx console.Context, table schema.Table) {
 		ctx.NewLine()
 		ctx.TwoColumnDetail("<fg=green;op=bold>Index</>", "")
 		for i := range indexes {
-			var attributes []string
+			attributes := []string{indexes[i].Type}
 			if len(indexes[i].Columns) > 1 {
 				attributes = append(attributes, "compound")
 			}

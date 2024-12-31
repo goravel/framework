@@ -140,6 +140,7 @@ func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string, 
 			version = versionResult.Value
 			if strings.Contains(version, "MariaDB") {
 				name = "MariaDB"
+				version = strings.Trim(version[:strings.Index(version, "MariaDB")], "-")
 			}
 			if len(driver.openConnectionsQuery) > 0 {
 				var openConnectionsResult queryResult
@@ -167,11 +168,11 @@ func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
 		}
 		return
 	}(); size > 0 {
-		ctx.TwoColumnDetail("Total Size", fmt.Sprintf("%.3fMiB", float64(size)/1024/1024))
+		ctx.TwoColumnDetail("Total Size", fmt.Sprintf("%.3f MB", float64(size)/1024/1024))
 	}
 	ctx.NewLine()
 	if len(info.Tables) > 0 {
-		ctx.TwoColumnDetail("<fg=green;op=bold>Tables</>", "<fg=yellow;op=bold>Size (MiB)</>")
+		ctx.TwoColumnDetail("<fg=green;op=bold>Tables</>", "<fg=yellow;op=bold>Size (MB)</>")
 		for i := range info.Tables {
 			ctx.TwoColumnDetail(info.Tables[i].Name, fmt.Sprintf("%.3f", float64(info.Tables[i].Size)/1024/1024))
 		}

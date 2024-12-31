@@ -25,13 +25,16 @@ func TestTableCommand(t *testing.T) {
 		mockSchema = mocksschema.NewSchema(t)
 	}
 	successCaseExpected := [][2]string{
-		{"<fg=green;op=bold>test</>", ""},
-		{"Columns", "1"},
-		{"Size", "0.000MiB"},
+		{"<fg=green;op=bold>test</>", "<fg=gray>test_comment</>"},
+		{"Columns", "2"},
+		{"Size", "0.000 MB"},
+		{"Engine", "InnoDB"},
+		{"Collation", "utf8mb4_general_ci"},
 		{"<fg=green;op=bold>Column</>", "Type"},
-		{"foo <fg=gray>autoincrement, int, nullable</>", "<fg=gray>bar</> int"},
+		{"foo <fg=gray>autoincrement, int, nullable, utf8mb4_general_ci</>", "<fg=gray>bar</> int(11)"},
+		{"bar <fg=gray>varchar, utf8mb4_general_ci</>", "varchar(32)"},
 		{"<fg=green;op=bold>Index</>", ""},
-		{"index_foo <fg=gray>foo, bar</>", "compound, unique, primary"},
+		{"index_foo <fg=gray>foo, bar</>", "btree, compound, unique, primary"},
 		{"<fg=green;op=bold>Foreign Key</>", "On Update / On Delete"},
 		{"fk_foo <fg=gray>foo references baz on bar</>", "restrict / cascade"},
 	}
@@ -126,14 +129,17 @@ func TestTableCommand(t *testing.T) {
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
-				mockSchema.EXPECT().GetTables().Return([]schema.Table{{Name: "test"}}, nil).Once()
+				mockSchema.EXPECT().GetTables().Return([]schema.Table{
+					{Name: "test", Comment: "test_comment", Collation: "utf8mb4_general_ci", Engine: "InnoDB"},
+				}, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
 				mockSchema.EXPECT().GetColumns("test").Return([]schema.Column{
-					{Name: "foo", Type: "int", TypeName: "int", Autoincrement: true, Nullable: true, Default: "bar"},
+					{Name: "foo", Type: "int(11)", TypeName: "int", Autoincrement: true, Nullable: true, Default: "bar", Collation: "utf8mb4_general_ci"},
+					{Name: "bar", Type: "varchar(32)", TypeName: "varchar", Collation: "utf8mb4_general_ci"},
 				}, nil).Once()
 				mockSchema.EXPECT().GetIndexes("test").Return([]schema.Index{
-					{Name: "index_foo", Columns: []string{"foo", "bar"}, Unique: true, Primary: true},
+					{Name: "index_foo", Type: "btree", Columns: []string{"foo", "bar"}, Unique: true, Primary: true},
 				}, nil).Once()
 				mockSchema.EXPECT().GetForeignKeys("test").Return([]schema.ForeignKey{
 					{

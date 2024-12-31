@@ -30,15 +30,15 @@ func TestShowCommand(t *testing.T) {
 		mockQuery = mocksorm.NewQuery(t)
 	}
 	successCaseExpected := [][2]string{
-		{"<fg=green;op=bold>MariaDB</>", "MariaDB"},
+		{"<fg=green;op=bold>MariaDB</>", "test-version"},
 		{"Database", "db"},
 		{"Host", "host"},
 		{"Port", "port"},
 		{"Username", "username"},
 		{"Open Connections", "2"},
 		{"Tables", "1"},
-		{"Total Size", "0.000MiB"},
-		{"<fg=green;op=bold>Tables</>", "<fg=yellow;op=bold>Size (MiB)</>"},
+		{"Total Size", "0.000 MB"},
+		{"<fg=green;op=bold>Tables</>", "<fg=yellow;op=bold>Size (MB)</>"},
 		{"test", "0.000"},
 		{"<fg=green;op=bold>Views</>", "<fg=yellow;op=bold>Rows</>"},
 		{"test", "0"},
@@ -116,7 +116,7 @@ func TestShowCommand(t *testing.T) {
 				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
 				mockQuery.EXPECT().Scan(&queryResult{}).Run(func(dest interface{}) {
 					if d, ok := dest.(*queryResult); ok {
-						d.Value = "MariaDB"
+						d.Value = "test-version-MariaDB"
 					}
 				}).Return(nil).Once()
 				mockQuery.EXPECT().Scan(&queryResult{}).Run(func(dest interface{}) {
