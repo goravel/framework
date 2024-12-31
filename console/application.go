@@ -15,6 +15,8 @@ type Application struct {
 	isArtisan bool
 }
 
+// NewApplication Create a new Artisan application.
+// The artisan parameter is used by goravel/installer.
 func NewApplication(name, usage, usageText, version string, artisan ...bool) console.Artisan {
 	instance := cli.NewApp()
 	instance.Name = name

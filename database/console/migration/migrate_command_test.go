@@ -29,7 +29,7 @@ func TestMigrateCommand(t *testing.T) {
 			name: "Happy path",
 			setup: func() {
 				mockMigrator.EXPECT().Run().Return(nil).Once()
-				mockContext.EXPECT().Info("Migration success").Once()
+				mockContext.EXPECT().Success("Migration success").Once()
 			},
 		},
 		{

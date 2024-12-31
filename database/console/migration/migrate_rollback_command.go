@@ -75,7 +75,7 @@ func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Info("Migration rollback success")
+	ctx.Success("Migration rollback success")
 
 	return nil
 }

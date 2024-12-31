@@ -5,7 +5,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -45,17 +44,18 @@ func (receiver *TestMakeCommand) Extend() command.Extend {
 func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), "tests")
 	if err != nil {
-		color.Errorln(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
 	stub := receiver.getStub()
 
 	if err := file.Create(m.GetFilePath(), receiver.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
-	color.Successln("Test created successfully")
+	ctx.Success("Test created successfully")
 
 	return nil
 }

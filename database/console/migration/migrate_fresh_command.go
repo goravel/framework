@@ -69,7 +69,7 @@ func (r *MigrateFreshCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	ctx.Info("Migration fresh success")
+	ctx.Success("Migration fresh success")
 
 	return nil
 }

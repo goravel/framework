@@ -39,5 +39,7 @@ func (r *MigrateResetCommand) Handle(ctx console.Context) error {
 		ctx.Error(err.Error())
 	}
 
+	ctx.Success("Migration reset success")
+
 	return nil
 }

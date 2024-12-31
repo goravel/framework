@@ -75,7 +75,7 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 
-		ctx.Info("Dropped all views successfully")
+		ctx.Success("Dropped all views successfully")
 	}
 
 	if err := r.dropAllTables(database); err != nil {
@@ -83,7 +83,7 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Info("Dropped all tables successfully")
+	ctx.Success("Dropped all tables successfully")
 
 	if ctx.OptionBool("drop-types") {
 		if err := r.dropAllTypes(database); err != nil {
@@ -91,7 +91,7 @@ func (r *WipeCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 
-		ctx.Info("Dropped all types successfully")
+		ctx.Success("Dropped all types successfully")
 	}
 
 	return nil

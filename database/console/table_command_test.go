@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +11,6 @@ import (
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
-	"github.com/goravel/framework/support/color"
 )
 
 func TestTableCommand(t *testing.T) {
@@ -38,9 +36,8 @@ func TestTableCommand(t *testing.T) {
 		{"fk_foo <fg=gray>foo references baz on bar</>", "restrict / cascade"},
 	}
 	tests := []struct {
-		name     string
-		setup    func()
-		expected string
+		name  string
+		setup func()
 	}{
 		{
 			name: "get tables failed",
@@ -50,11 +47,8 @@ func TestTableCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockSchema.EXPECT().GetTables().Return(nil, assert.AnError).Once()
-				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get tables: %s", assert.AnError.Error())).Run(func(message string) {
-					color.Errorln(message)
-				}).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get tables: %s", assert.AnError.Error())).Once()
 			},
-			expected: assert.AnError.Error(),
 		},
 		{
 			name: "table not found",
@@ -64,11 +58,8 @@ func TestTableCommand(t *testing.T) {
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
 				mockContext.EXPECT().Argument(0).Return("test").Once()
 				mockSchema.EXPECT().GetTables().Return(nil, nil).Once()
-				mockContext.EXPECT().Warning("Table 'test' doesn't exist.").Run(func(message string) {
-					color.Warningln(message)
-				}).Once()
+				mockContext.EXPECT().Warning("Table 'test' doesn't exist.").Once()
 			},
-			expected: "Table 'test' doesn't exist",
 		},
 		{
 			name: "choice table canceled",
@@ -80,11 +71,8 @@ func TestTableCommand(t *testing.T) {
 				mockSchema.EXPECT().GetTables().Return(nil, nil).Once()
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice(nil)).Return("", assert.AnError).Once()
-				mockContext.EXPECT().Line(assert.AnError.Error()).Run(func(message string) {
-					color.Default().Println(message)
-				}).Once()
+				mockContext.EXPECT().Line(assert.AnError.Error()).Once()
 			},
-			expected: assert.AnError.Error(),
 		},
 		{
 			name: "get columns failed",
@@ -97,11 +85,8 @@ func TestTableCommand(t *testing.T) {
 				mockContext.EXPECT().Choice("Which table would you like to inspect?",
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
 				mockSchema.EXPECT().GetColumns("test").Return(nil, assert.AnError).Once()
-				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get columns: %s", assert.AnError.Error())).Run(func(message string) {
-					color.Errorln(message)
-				}).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get columns: %s", assert.AnError.Error())).Once()
 			},
-			expected: assert.AnError.Error(),
 		},
 		{
 			name: "get indexes failed",
@@ -115,11 +100,8 @@ func TestTableCommand(t *testing.T) {
 					[]console.Choice{{Key: "test", Value: "test"}}).Return("test", nil).Once()
 				mockSchema.EXPECT().GetColumns("test").Return(nil, nil).Once()
 				mockSchema.EXPECT().GetIndexes("test").Return(nil, assert.AnError).Once()
-				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get indexes: %s", assert.AnError.Error())).Run(func(message string) {
-					color.Errorln(message)
-				}).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get indexes: %s", assert.AnError.Error())).Once()
 			},
-			expected: assert.AnError.Error(),
 		},
 		{
 			name: "get foreign keys failed",
@@ -134,11 +116,8 @@ func TestTableCommand(t *testing.T) {
 				mockSchema.EXPECT().GetColumns("test").Return(nil, nil).Once()
 				mockSchema.EXPECT().GetIndexes("test").Return(nil, nil).Once()
 				mockSchema.EXPECT().GetForeignKeys("test").Return(nil, assert.AnError).Once()
-				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get foreign keys: %s", assert.AnError.Error())).Run(func(message string) {
-					color.Errorln(message)
-				}).Once()
+				mockContext.EXPECT().Error(fmt.Sprintf("Failed to get foreign keys: %s", assert.AnError.Error())).Once()
 			},
-			expected: assert.AnError.Error(),
 		},
 		{
 			name: "success",
@@ -167,18 +146,9 @@ func TestTableCommand(t *testing.T) {
 					},
 				}, nil).Once()
 				for i := range successCaseExpected {
-					mockContext.EXPECT().TwoColumnDetail(successCaseExpected[i][0], successCaseExpected[i][1]).Run(func(first string, second string, filler ...rune) {
-						color.Default().Printf("%s %s\n", first, second)
-					}).Once()
+					mockContext.EXPECT().TwoColumnDetail(successCaseExpected[i][0], successCaseExpected[i][1]).Once()
 				}
 			},
-			expected: func() string {
-				var result string
-				for i := range successCaseExpected {
-					result += color.Default().Sprintf("%s %s\n", successCaseExpected[i][0], successCaseExpected[i][1])
-				}
-				return result
-			}(),
 		},
 	}
 
@@ -187,10 +157,7 @@ func TestTableCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 			command := NewTableCommand(mockConfig, mockSchema)
-			assert.Contains(t, color.CaptureOutput(func(_ io.Writer) {
-				assert.NoError(t, command.Handle(mockContext))
-			}), test.expected)
+			assert.NoError(t, command.Handle(mockContext))
 		})
 	}
-
 }

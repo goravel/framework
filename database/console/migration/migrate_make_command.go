@@ -62,7 +62,7 @@ func (r *MigrateMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	ctx.Info(fmt.Sprintf("Created Migration: %s", name))
+	ctx.Success(fmt.Sprintf("Created Migration: %s", name))
 
 	return nil
 }

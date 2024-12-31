@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -46,7 +45,7 @@ func (receiver *SeederMakeCommand) Extend() command.Extend {
 func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "seeder", ctx.Argument(0), filepath.Join("database", "seeders"))
 	if err != nil {
-		color.Errorln(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -54,7 +53,7 @@ func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Successln("Seeder created successfully")
+	ctx.Success("Seeder created successfully")
 
 	return nil
 }
