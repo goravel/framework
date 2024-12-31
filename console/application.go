@@ -8,17 +8,16 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/env"
 )
 
 type Application struct {
-	instance  *cli.App
-	isArtisan bool
+	instance   *cli.App
+	useArtisan bool
 }
 
 // NewApplication Create a new Artisan application.
-// The artisan parameter is used by goravel/installer.
-func NewApplication(name, usage, usageText, version string) console.Artisan {
+// Will add artisan flag to the command if useArtisan is true.
+func NewApplication(name, usage, usageText, version string, useArtisan bool) console.Artisan {
 	instance := cli.NewApp()
 	instance.Name = name
 	instance.Usage = usage
@@ -28,8 +27,8 @@ func NewApplication(name, usage, usageText, version string) console.Artisan {
 	instance.OnUsageError = onUsageError
 
 	return &Application{
-		instance:  instance,
-		isArtisan: env.IsArtisan(),
+		instance:   instance,
+		useArtisan: useArtisan,
 	}
 }
 
@@ -59,7 +58,7 @@ func (r *Application) Call(command string) error {
 
 	commands := []string{os.Args[0]}
 
-	if r.isArtisan {
+	if r.useArtisan {
 		commands = append(commands, "artisan")
 	}
 
@@ -74,7 +73,7 @@ func (r *Application) CallAndExit(command string) {
 
 	commands := []string{os.Args[0]}
 
-	if r.isArtisan {
+	if r.useArtisan {
 		commands = append(commands, "artisan")
 	}
 
@@ -84,7 +83,7 @@ func (r *Application) CallAndExit(command string) {
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	artisanIndex := -1
-	if r.isArtisan {
+	if r.useArtisan {
 		for i, arg := range args {
 			if arg == "artisan" {
 				artisanIndex = i
