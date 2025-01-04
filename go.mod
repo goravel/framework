@@ -12,7 +12,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.5.2
-	github.com/gabriel-vasile/mimetype v1.4.7
+	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-viper/mapstructure/v2 v2.2.1
@@ -36,7 +36,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.5
 	go.uber.org/atomic v1.11.0
 	golang.org/x/crypto v0.31.0
-	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
+	golang.org/x/exp v0.0.0-20250103183323-7d7fa50e5329
 	google.golang.org/grpc v1.69.2
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/driver/postgres v1.5.11
@@ -149,7 +149,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.31.0 // indirect
 	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
