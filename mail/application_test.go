@@ -182,16 +182,11 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 func mockConfig(mailPort, redisPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetBool", "app.debug").Return(false)
-	mockConfig.On("GetString", "queue.default").Return("redis")
-	mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync")
-	mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis")
-	mockConfig.On("GetString", "queue.connections.redis.connection").Return("default")
-	mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default")
-	mockConfig.On("GetString", "database.redis.default.host").Return("localhost")
-	mockConfig.On("GetString", "database.redis.default.password").Return("")
-	mockConfig.On("GetInt", "database.redis.default.port").Return(redisPort)
-	mockConfig.On("GetInt", "database.redis.default.database").Return(0)
+	mockConfig.On("GetString", "queue.default").Return("async")
+	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.connections.async.driver").Return("async")
+	mockConfig.On("GetString", "queue.failed.database").Return("database")
+	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
 
 	if file.Exists("../.env") {
 		vip := viper.New()
