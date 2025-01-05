@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/event"
-	queuecontract "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	queuemock "github.com/goravel/framework/mocks/queue"
 )
