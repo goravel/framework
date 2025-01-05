@@ -58,7 +58,7 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(2)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetString", "queue.connections.async.size").Return(10).Twice()
+	s.mockConfig.On("GetInt", "queue.connections.async.size").Return(10).Twice()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
@@ -85,7 +85,7 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetString", "queue.connections.async.size").Return(10).Twice()
+	s.mockConfig.On("GetInt", "queue.connections.async.size").Return(10).Twice()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
@@ -146,7 +146,7 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetString", "queue.connections.async.size").Return(10).Twice()
+	s.mockConfig.On("GetInt", "queue.connections.async.size").Return(10).Twice()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
@@ -175,7 +175,7 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetString", "queue.connections.async.size").Return(10).Twice()
+	s.mockConfig.On("GetInt", "queue.connections.async.size").Return(10).Twice()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
