@@ -116,6 +116,7 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
 	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("async").Times(2)
+	s.mockConfig.On("GetInt", "queue.connections.custom.size", 100).Return(10).Twice()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
