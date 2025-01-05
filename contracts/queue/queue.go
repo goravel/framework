@@ -3,7 +3,7 @@ package queue
 type Queue interface {
 	Worker(payloads ...Args) Worker
 	// Register register jobs
-	Register(jobs []Job) error
+	Register(jobs []Job)
 	// GetJobs get all jobs
 	GetJobs() []Job
 	// GetJob get job by signature

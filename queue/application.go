@@ -33,12 +33,8 @@ func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
 	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue), app.job)
 }
 
-func (app *Application) Register(jobs []queue.Job) error {
-	if err := app.job.Register(jobs); err != nil {
-		return err
-	}
-
-	return nil
+func (app *Application) Register(jobs []queue.Job) {
+	app.job.Register(jobs)
 }
 
 func (app *Application) GetJobs() []queue.Job {

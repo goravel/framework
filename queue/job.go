@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -32,12 +33,10 @@ func NewJobImpl() *JobImpl {
 }
 
 // Register registers jobs to the job manager
-func (r *JobImpl) Register(jobs []contractsqueue.Job) error {
+func (r *JobImpl) Register(jobs []contractsqueue.Job) {
 	for _, job := range jobs {
 		r.jobs.Store(job.Signature(), job)
 	}
-
-	return nil
 }
 
 // Call calls a registered job using its signature
@@ -56,7 +55,7 @@ func (r *JobImpl) Get(signature string) (contractsqueue.Job, error) {
 		return job.(contractsqueue.Job), nil
 	}
 
-	return nil, nil
+	return nil, errors.New("job not found")
 }
 
 // GetJobs gets all registered jobs

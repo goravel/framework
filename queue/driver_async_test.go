@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -42,7 +41,7 @@ func TestDriverAsyncTestSuite(t *testing.T) {
 
 	OrmFacade = mockOrm
 
-	assert.Nil(t, app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}}))
+	app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}})
 	suite.Run(t, &DriverAsyncTestSuite{
 		app:        app,
 		mockConfig: mockConfig,
@@ -148,7 +147,6 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
 	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
 	s.mockConfig.On("GetString", "queue.connections.async.size").Return(10).Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("").Once()
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 

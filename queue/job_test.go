@@ -22,13 +22,10 @@ func (s *JobTestSuite) SetupTest() {
 }
 
 func (s *JobTestSuite) RegisterJobsSuccessfully() {
-	jobs := []queue.Job{
+	s.jobManager.Register([]queue.Job{
 		&MockJob{signature: "job1"},
 		&MockJob{signature: "job2"},
-	}
-
-	err := s.jobManager.Register(jobs)
-	s.NoError(err)
+	})
 
 	registeredJobs := s.jobManager.GetJobs()
 	s.Len(registeredJobs, 2)
@@ -36,7 +33,7 @@ func (s *JobTestSuite) RegisterJobsSuccessfully() {
 
 func (s *JobTestSuite) CallRegisteredJobSuccessfully() {
 	job := &MockJob{signature: "job1"}
-	s.NoError(s.jobManager.Register([]queue.Job{job}))
+	s.jobManager.Register([]queue.Job{job})
 
 	err := s.jobManager.Call("job1", []any{"arg1"})
 	s.NoError(err)
@@ -50,7 +47,7 @@ func (s *JobTestSuite) CallUnregisteredJobFails() {
 
 func (s *JobTestSuite) GetRegisteredJobSuccessfully() {
 	job := &MockJob{signature: "job1"}
-	s.NoError(s.jobManager.Register([]queue.Job{job}))
+	s.jobManager.Register([]queue.Job{job})
 
 	retrievedJob, err := s.jobManager.Get("job1")
 	s.NoError(err)

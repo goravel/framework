@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
@@ -29,7 +28,7 @@ func TestDriverSyncTestSuite(t *testing.T) {
 	mockQueue := &queuemock.Queue{}
 	app := NewApplication(mockConfig)
 
-	assert.Nil(t, app.Register([]queue.Job{&TestSyncJob{}, &TestChainSyncJob{}}))
+	app.Register([]queue.Job{&TestSyncJob{}, &TestChainSyncJob{}})
 	suite.Run(t, &DriverSyncTestSuite{
 		app:        app,
 		mockConfig: mockConfig,
