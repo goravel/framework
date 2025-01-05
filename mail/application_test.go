@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/mail"
@@ -15,8 +14,6 @@ import (
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/support/color"
-	testingdocker "github.com/goravel/framework/support/docker"
-	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -24,33 +21,19 @@ var testBcc, testCc, testTo, testFromAddress, testFromName string
 
 type ApplicationTestSuite struct {
 	suite.Suite
-	redisPort int
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
 	if !file.Exists("../.env") && os.Getenv("MAIL_HOST") == "" {
 		color.Errorln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
-
-	redisDocker := testingdocker.NewRedis()
-	assert.Nil(t, redisDocker.Build())
-
-	suite.Run(t, &ApplicationTestSuite{
-		redisPort: redisDocker.Config().Port,
-	})
-
-	assert.Nil(t, redisDocker.Shutdown())
 }
 
 func (s *ApplicationTestSuite) SetupTest() {}
 
 func (s *ApplicationTestSuite) TestSendMailBy465Port() {
-	mockConfig := mockConfig(465, s.redisPort)
+	mockConfig := mockConfig(465)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -62,7 +45,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailBy587Port() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -74,7 +57,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.From(Address(testFromAddress, testFromName)).
 		To([]string{testTo}).
@@ -87,13 +70,13 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithMailable() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 	app := NewApplication(mockConfig, nil)
 	s.Nil(app.Send(NewTestMailable()))
 }
 
 func (s *ApplicationTestSuite) TestQueueMail() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 
 	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
@@ -123,7 +106,7 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 
 	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
@@ -156,7 +139,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
-	mockConfig := mockConfig(587, s.redisPort)
+	mockConfig := mockConfig(587)
 
 	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
@@ -179,7 +162,7 @@ func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	time.Sleep(3 * time.Second)
 }
 
-func mockConfig(mailPort, redisPort int) *configmock.Config {
+func mockConfig(mailPort int) *configmock.Config {
 	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "app.name").Return("goravel")
 	mockConfig.On("GetString", "queue.default").Return("async")
