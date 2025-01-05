@@ -1,61 +1,83 @@
 package queue
 
 import (
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/contracts/queue"
-)
+	"fmt"
+	"time"
 
-const (
-	DriverSync  string = "sync"
-	DriverRedis string = "redis"
+	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/support/carbon"
 )
 
 type Worker struct {
-	concurrent int
-	connection string
-	machinery  *Machinery
-	jobs       []queue.Job
-	queue      string
+	concurrent    int
+	driver        *DriverImpl
+	job           *JobImpl
+	failedJobs    orm.Query
+	queue         string
+	failedJobChan chan FailedJob
+	isShutdown    bool
 }
 
-func NewWorker(config *Config, log log.Log, concurrent int, connection string, jobs []queue.Job, queue string) *Worker {
+func NewWorker(config *Config, concurrent int, connection string, queue string, job *JobImpl) *Worker {
 	return &Worker{
-		concurrent: concurrent,
-		connection: connection,
-		machinery:  NewMachinery(config, log),
-		jobs:       jobs,
-		queue:      queue,
+		concurrent:    concurrent,
+		driver:        NewDriverImpl(connection, config),
+		job:           job,
+		failedJobs:    config.FailedJobsQuery(),
+		queue:         queue,
+		failedJobChan: make(chan FailedJob),
 	}
 }
 
-func (receiver *Worker) Run() error {
-	server, err := receiver.machinery.Server(receiver.connection, receiver.queue)
+func (r *Worker) Run() error {
+	r.isShutdown = false
+
+	driver, err := r.driver.New()
 	if err != nil {
 		return err
 	}
-	if server == nil {
-		return nil
+	if driver.Driver() == DriverSync {
+		return fmt.Errorf("queue %s driver not need run", r.queue)
 	}
 
-	jobTasks, err := jobs2Tasks(receiver.jobs)
-	if err != nil {
-		return err
+	for i := 0; i < r.concurrent; i++ {
+		go func() {
+			for {
+				if r.isShutdown {
+					return
+				}
+
+				job, args, err := driver.Pop(r.queue)
+				if err != nil {
+					// This error not need to be reported.
+					// It is usually caused by the queue being empty.
+					time.Sleep(1 * time.Second)
+					continue
+				}
+
+				if err = r.job.Call(job.Signature(), args); err != nil {
+					r.failedJobChan <- FailedJob{
+						Queue:     r.queue,
+						Signature: job.Signature(),
+						Payloads:  args,
+						Exception: err.Error(),
+						FailedAt:  carbon.DateTime{Carbon: carbon.Now()},
+					}
+				}
+			}
+		}()
 	}
 
-	if err := server.RegisterTasks(jobTasks); err != nil {
-		return err
-	}
+	go func() {
+		for job := range r.failedJobChan {
+			_ = r.failedJobs.Create(&job)
+		}
+	}()
 
-	if receiver.queue == "" {
-		receiver.queue = server.GetConfig().DefaultQueue
-	}
-	if receiver.concurrent == 0 {
-		receiver.concurrent = 1
-	}
-	worker := server.NewWorker(receiver.queue, receiver.concurrent)
-	if err := worker.Launch(); err != nil {
-		return err
-	}
+	return nil
+}
 
+func (r *Worker) Shutdown() error {
+	r.isShutdown = true
 	return nil
 }

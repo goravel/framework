@@ -1,5 +1,7 @@
 package queue
 
+import "time"
+
 type Job interface {
 	// Signature set the unique signature of the job.
 	Signature() string
@@ -8,6 +10,7 @@ type Job interface {
 }
 
 type Jobs struct {
-	Job  Job
-	Args []Arg
+	Job   Job
+	Args  []any
+	Delay time.Duration
 }

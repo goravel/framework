@@ -1,3 +1,5 @@
+// TODO: Will be removed in v1.17
+
 package queue
 
 import (

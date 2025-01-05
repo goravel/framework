@@ -2,49 +2,57 @@ package queue
 
 import (
 	configcontract "github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
 type Application struct {
 	config *Config
-	jobs   []queue.Job
-	log    log.Log
+	job    *JobImpl
 }
 
-func NewApplication(config configcontract.Config, log log.Log) *Application {
+func NewApplication(config configcontract.Config) *Application {
 	return &Application{
 		config: NewConfig(config),
-		log:    log,
+		job:    NewJobImpl(),
 	}
 }
 
-func (app *Application) Worker(args ...queue.Args) queue.Worker {
+func (app *Application) Worker(payloads ...*queue.Args) queue.Worker {
 	defaultConnection := app.config.DefaultConnection()
 
-	if len(args) == 0 {
-		return NewWorker(app.config, app.log, 1, defaultConnection, app.jobs, app.config.Queue(defaultConnection, ""))
+	if len(payloads) == 0 || payloads[0] == nil {
+		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""), app.job)
+	}
+	if payloads[0].Connection == "" {
+		payloads[0].Connection = defaultConnection
+	}
+	if payloads[0].Concurrent == 0 {
+		payloads[0].Concurrent = 1
 	}
 
-	if args[0].Connection == "" {
-		args[0].Connection = defaultConnection
-	}
-
-	return NewWorker(app.config, app.log, args[0].Concurrent, args[0].Connection, app.jobs, app.config.Queue(args[0].Connection, args[0].Queue))
+	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue), app.job)
 }
 
-func (app *Application) Register(jobs []queue.Job) {
-	app.jobs = append(app.jobs, jobs...)
+func (app *Application) Register(jobs []queue.Job) error {
+	if err := app.job.Register(jobs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (app *Application) GetJobs() []queue.Job {
-	return app.jobs
+	return app.job.GetJobs()
 }
 
-func (app *Application) Job(job queue.Job, args []queue.Arg) queue.Task {
-	return NewTask(app.config, app.log, job, args)
+func (app *Application) GetJob(signature string) (queue.Job, error) {
+	return app.job.Get(signature)
+}
+
+func (app *Application) Job(job queue.Job, args []any) queue.Task {
+	return NewTask(app.config, job, args)
 }
 
 func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
-	return NewChainTask(app.config, app.log, jobs)
+	return NewChainTask(app.config, jobs)
 }

@@ -1,3 +1,5 @@
+// TODO: Will be removed in v1.17
+
 package queue
 
 import (
@@ -23,7 +25,6 @@ func TestMachineryTestSuite(t *testing.T) {
 func (s *MachineryTestSuite) SetupTest() {
 	s.mockConfig = &configmock.Config{}
 	s.mockLog = &logmock.Log{}
-	s.machinery = NewMachinery(NewConfig(s.mockConfig), s.mockLog)
 }
 
 func (s *MachineryTestSuite) TestServer() {
@@ -35,13 +36,6 @@ func (s *MachineryTestSuite) TestServer() {
 		expectServer bool
 		expectErr    bool
 	}{
-		{
-			name:       "sync",
-			connection: "sync",
-			setup: func() {
-				s.mockConfig.On("GetString", "queue.connections.sync.driver").Return("sync").Once()
-			},
-		},
 		{
 			name:       "redis",
 			connection: "redis",
@@ -58,23 +52,14 @@ func (s *MachineryTestSuite) TestServer() {
 			},
 			expectServer: true,
 		},
-		{
-			name:       "error",
-			connection: "custom",
-			setup: func() {
-				s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("custom").Once()
-
-			},
-			expectErr: true,
-		},
 	}
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
+			s.machinery = NewMachinery(test.connection, NewConfig(s.mockConfig), s.mockLog)
 			test.setup()
-			server, err := s.machinery.Server(test.connection, test.queue)
+			server := s.machinery.server(test.queue)
 			s.Equal(test.expectServer, server != nil)
-			s.Equal(test.expectErr, err != nil)
 			s.mockConfig.AssertExpectations(s.T())
 		})
 	}

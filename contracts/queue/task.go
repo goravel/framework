@@ -10,7 +10,7 @@ type Task interface {
 	// DispatchSync dispatches the task synchronously.
 	DispatchSync() error
 	// Delay dispatches the task after the given delay.
-	Delay(time time.Time) Task
+	Delay(time time.Duration) Task
 	// OnConnection sets the connection of the task.
 	OnConnection(connection string) Task
 	// OnQueue sets the queue of the task.

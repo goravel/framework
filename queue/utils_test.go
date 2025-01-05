@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/event"
-	queuecontract "github.com/goravel/framework/contracts/queue"
+	contractsqueue "github.com/goravel/framework/contracts/queue"
 )
 
 type TestJob struct {
@@ -43,20 +43,20 @@ func (receiver *TestJobEmpty) Handle(args ...any) error {
 }
 
 func TestJobs2Tasks(t *testing.T) {
-	_, err := jobs2Tasks([]queuecontract.Job{
+	_, err := jobs2Tasks([]contractsqueue.Job{
 		&TestJob{},
 	})
 
 	assert.Nil(t, err, "success")
 
-	_, err = jobs2Tasks([]queuecontract.Job{
+	_, err = jobs2Tasks([]contractsqueue.Job{
 		&TestJob{},
 		&TestJobDuplicate{},
 	})
 
 	assert.NotNil(t, err, "Signature duplicate")
 
-	_, err = jobs2Tasks([]queuecontract.Job{
+	_, err = jobs2Tasks([]contractsqueue.Job{
 		&TestJobEmpty{},
 	})
 
