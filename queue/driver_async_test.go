@@ -65,7 +65,7 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		worker := s.app.Worker(nil)
+		worker := s.app.Worker()
 		s.Nil(worker.Run())
 
 		<-ctx.Done()
