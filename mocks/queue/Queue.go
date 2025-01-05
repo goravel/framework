@@ -269,7 +269,7 @@ func (_c *Queue_Register_Call) RunAndReturn(run func([]queue.Job) error) *Queue_
 }
 
 // Worker provides a mock function with given fields: payloads
-func (_m *Queue) Worker(payloads ...*queue.Args) queue.Worker {
+func (_m *Queue) Worker(payloads ...queue.Args) queue.Worker {
 	_va := make([]interface{}, len(payloads))
 	for _i := range payloads {
 		_va[_i] = payloads[_i]
@@ -283,7 +283,7 @@ func (_m *Queue) Worker(payloads ...*queue.Args) queue.Worker {
 	}
 
 	var r0 queue.Worker
-	if rf, ok := ret.Get(0).(func(...*queue.Args) queue.Worker); ok {
+	if rf, ok := ret.Get(0).(func(...queue.Args) queue.Worker); ok {
 		r0 = rf(payloads...)
 	} else {
 		if ret.Get(0) != nil {
@@ -300,18 +300,18 @@ type Queue_Worker_Call struct {
 }
 
 // Worker is a helper method to define mock.On call
-//   - payloads ...*queue.Args
+//   - payloads ...queue.Args
 func (_e *Queue_Expecter) Worker(payloads ...interface{}) *Queue_Worker_Call {
 	return &Queue_Worker_Call{Call: _e.mock.On("Worker",
 		append([]interface{}{}, payloads...)...)}
 }
 
-func (_c *Queue_Worker_Call) Run(run func(payloads ...*queue.Args)) *Queue_Worker_Call {
+func (_c *Queue_Worker_Call) Run(run func(payloads ...queue.Args)) *Queue_Worker_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]*queue.Args, len(args)-0)
+		variadicArgs := make([]queue.Args, len(args)-0)
 		for i, a := range args[0:] {
 			if a != nil {
-				variadicArgs[i] = a.(*queue.Args)
+				variadicArgs[i] = a.(queue.Args)
 			}
 		}
 		run(variadicArgs...)
@@ -324,7 +324,7 @@ func (_c *Queue_Worker_Call) Return(_a0 queue.Worker) *Queue_Worker_Call {
 	return _c
 }
 
-func (_c *Queue_Worker_Call) RunAndReturn(run func(...*queue.Args) queue.Worker) *Queue_Worker_Call {
+func (_c *Queue_Worker_Call) RunAndReturn(run func(...queue.Args) queue.Worker) *Queue_Worker_Call {
 	_c.Call.Return(run)
 	return _c
 }
