@@ -17,10 +17,10 @@ func NewApplication(config configcontract.Config) *Application {
 	}
 }
 
-func (app *Application) Worker(payloads ...*queue.Args) queue.Worker {
+func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
 	defaultConnection := app.config.DefaultConnection()
 
-	if len(payloads) == 0 || payloads[0] == nil {
+	if len(payloads) == 0 {
 		return NewWorker(app.config, 1, defaultConnection, app.config.Queue(defaultConnection, ""), app.job)
 	}
 	if payloads[0].Connection == "" {

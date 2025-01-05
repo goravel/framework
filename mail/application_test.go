@@ -13,7 +13,6 @@ import (
 	"github.com/goravel/framework/contracts/mail"
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
-	logmock "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/support/color"
 	testingdocker "github.com/goravel/framework/support/docker"
@@ -95,9 +94,8 @@ func (s *ApplicationTestSuite) TestSendMailWithMailable() {
 
 func (s *ApplicationTestSuite) TestQueueMail() {
 	mockConfig := mockConfig(587, s.redisPort)
-	mockLog := &logmock.Log{}
 
-	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})
@@ -126,9 +124,8 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 
 func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 	mockConfig := mockConfig(587, s.redisPort)
-	mockLog := &logmock.Log{}
 
-	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})
@@ -160,9 +157,8 @@ func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
 	mockConfig := mockConfig(587, s.redisPort)
-	mockLog := &logmock.Log{}
 
-	queueFacade := queue.NewApplication(mockConfig, mockLog)
+	queueFacade := queue.NewApplication(mockConfig)
 	queueFacade.Register([]queuecontract.Job{
 		NewSendMailJob(mockConfig),
 	})

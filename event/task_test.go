@@ -32,9 +32,7 @@ func TestDispatch(t *testing.T) {
 				listener := &TestListener{}
 				mockTask := &queuemock.Task{}
 
-				mockQueue.On("Job", listener, []queuecontract.Arg{
-					{Type: "string", Value: "test"},
-				}).Return(mockTask).Once()
+				mockQueue.On("Job", listener, []any{"test"}).Return(mockTask).Once()
 				mockTask.On("DispatchSync").Return(nil).Once()
 
 				task = NewTask(mockQueue, []event.Arg{
@@ -51,9 +49,7 @@ func TestDispatch(t *testing.T) {
 				listener := &TestListenerHandleError{}
 				mockTask := &queuemock.Task{}
 
-				mockQueue.On("Job", listener, []queuecontract.Arg{
-					{Type: "string", Value: "test"},
-				}).Return(mockTask).Once()
+				mockQueue.On("Job", listener, []any{"test"}).Return(mockTask).Once()
 				mockTask.On("DispatchSync").Return(errors.New("error")).Once()
 
 				task = NewTask(mockQueue, []event.Arg{

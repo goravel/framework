@@ -91,7 +91,7 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		worker := s.app.Worker(&queue.Args{
+		worker := s.app.Worker(queue.Args{
 			Queue: "delay",
 		})
 		s.Nil(worker.Run())
@@ -121,7 +121,7 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		worker := s.app.Worker(&queue.Args{
+		worker := s.app.Worker(queue.Args{
 			Connection: "custom",
 			Queue:      "custom1",
 			Concurrent: 2,
@@ -152,7 +152,7 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		worker := s.app.Worker(&queue.Args{
+		worker := s.app.Worker(queue.Args{
 			Queue: "error",
 		})
 		s.Nil(worker.Run())
@@ -180,7 +180,7 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
-		worker := s.app.Worker(&queue.Args{
+		worker := s.app.Worker(queue.Args{
 			Queue: "chain",
 		})
 		s.Nil(worker.Run())
