@@ -40,7 +40,6 @@ func (s *MachineryTestSuite) TestServer() {
 			name:       "redis",
 			connection: "redis",
 			setup: func() {
-				s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("redis").Once()
 				s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
 				s.mockConfig.On("GetString", "database.redis.default.host").Return("127.0.0.1").Once()
 				s.mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
