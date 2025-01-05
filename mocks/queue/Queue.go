@@ -223,21 +223,8 @@ func (_c *Queue_Job_Call) RunAndReturn(run func(queue.Job, []interface{}) queue.
 }
 
 // Register provides a mock function with given fields: jobs
-func (_m *Queue) Register(jobs []queue.Job) error {
-	ret := _m.Called(jobs)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Register")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func([]queue.Job) error); ok {
-		r0 = rf(jobs)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Queue) Register(jobs []queue.Job) {
+	_m.Called(jobs)
 }
 
 // Queue_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
@@ -258,13 +245,13 @@ func (_c *Queue_Register_Call) Run(run func(jobs []queue.Job)) *Queue_Register_C
 	return _c
 }
 
-func (_c *Queue_Register_Call) Return(_a0 error) *Queue_Register_Call {
-	_c.Call.Return(_a0)
+func (_c *Queue_Register_Call) Return() *Queue_Register_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *Queue_Register_Call) RunAndReturn(run func([]queue.Job) error) *Queue_Register_Call {
-	_c.Call.Return(run)
+func (_c *Queue_Register_Call) RunAndReturn(run func([]queue.Job)) *Queue_Register_Call {
+	_c.Run(run)
 	return _c
 }
 
