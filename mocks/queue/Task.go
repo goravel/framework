@@ -23,7 +23,7 @@ func (_m *Task) EXPECT() *Task_Expecter {
 }
 
 // Delay provides a mock function with given fields: _a0
-func (_m *Task) Delay(_a0 time.Duration) queue.Task {
+func (_m *Task) Delay(_a0 time.Time) queue.Task {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
@@ -31,7 +31,7 @@ func (_m *Task) Delay(_a0 time.Duration) queue.Task {
 	}
 
 	var r0 queue.Task
-	if rf, ok := ret.Get(0).(func(time.Duration) queue.Task); ok {
+	if rf, ok := ret.Get(0).(func(time.Time) queue.Task); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -48,14 +48,14 @@ type Task_Delay_Call struct {
 }
 
 // Delay is a helper method to define mock.On call
-//   - _a0 time.Duration
+//   - _a0 time.Time
 func (_e *Task_Expecter) Delay(_a0 interface{}) *Task_Delay_Call {
 	return &Task_Delay_Call{Call: _e.mock.On("Delay", _a0)}
 }
 
-func (_c *Task_Delay_Call) Run(run func(_a0 time.Duration)) *Task_Delay_Call {
+func (_c *Task_Delay_Call) Run(run func(_a0 time.Time)) *Task_Delay_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Duration))
+		run(args[0].(time.Time))
 	})
 	return _c
 }
@@ -65,7 +65,7 @@ func (_c *Task_Delay_Call) Return(_a0 queue.Task) *Task_Delay_Call {
 	return _c
 }
 
-func (_c *Task_Delay_Call) RunAndReturn(run func(time.Duration) queue.Task) *Task_Delay_Call {
+func (_c *Task_Delay_Call) RunAndReturn(run func(time.Time) queue.Task) *Task_Delay_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -160,7 +160,7 @@ func (_c *Driver_Driver_Call) RunAndReturn(run func() string) *Driver_Driver_Cal
 }
 
 // Later provides a mock function with given fields: delay, job, args, _a3
-func (_m *Driver) Later(delay time.Duration, job queue.Job, args []interface{}, _a3 string) error {
+func (_m *Driver) Later(delay time.Time, job queue.Job, args []interface{}, _a3 string) error {
 	ret := _m.Called(delay, job, args, _a3)
 
 	if len(ret) == 0 {
@@ -168,7 +168,7 @@ func (_m *Driver) Later(delay time.Duration, job queue.Job, args []interface{}, 
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(time.Duration, queue.Job, []interface{}, string) error); ok {
+	if rf, ok := ret.Get(0).(func(time.Time, queue.Job, []interface{}, string) error); ok {
 		r0 = rf(delay, job, args, _a3)
 	} else {
 		r0 = ret.Error(0)
@@ -183,7 +183,7 @@ type Driver_Later_Call struct {
 }
 
 // Later is a helper method to define mock.On call
-//   - delay time.Duration
+//   - delay time.Time
 //   - job queue.Job
 //   - args []interface{}
 //   - _a3 string
@@ -191,9 +191,9 @@ func (_e *Driver_Expecter) Later(delay interface{}, job interface{}, args interf
 	return &Driver_Later_Call{Call: _e.mock.On("Later", delay, job, args, _a3)}
 }
 
-func (_c *Driver_Later_Call) Run(run func(delay time.Duration, job queue.Job, args []interface{}, _a3 string)) *Driver_Later_Call {
+func (_c *Driver_Later_Call) Run(run func(delay time.Time, job queue.Job, args []interface{}, _a3 string)) *Driver_Later_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Duration), args[1].(queue.Job), args[2].([]interface{}), args[3].(string))
+		run(args[0].(time.Time), args[1].(queue.Job), args[2].([]interface{}), args[3].(string))
 	})
 	return _c
 }
@@ -203,7 +203,7 @@ func (_c *Driver_Later_Call) Return(_a0 error) *Driver_Later_Call {
 	return _c
 }
 
-func (_c *Driver_Later_Call) RunAndReturn(run func(time.Duration, queue.Job, []interface{}, string) error) *Driver_Later_Call {
+func (_c *Driver_Later_Call) RunAndReturn(run func(time.Time, queue.Job, []interface{}, string) error) *Driver_Later_Call {
 	_c.Call.Return(run)
 	return _c
 }
