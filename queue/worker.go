@@ -2,6 +2,7 @@ package queue
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,10 +17,11 @@ type Worker struct {
 	config        queue.Config
 	connection    string
 	failedJobChan chan FailedJob
-	isShutdown    bool
+	isShutdown    atomic.Bool
 	job           queue.JobRepository
 	queue         string
 	wg            sync.WaitGroup
+	failedWg      sync.WaitGroup
 }
 
 func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
@@ -29,12 +31,12 @@ func NewWorker(config queue.Config, concurrent int, connection string, queue str
 		connection:    connection,
 		job:           job,
 		queue:         queue,
-		failedJobChan: make(chan FailedJob),
+		failedJobChan: make(chan FailedJob, concurrent),
 	}
 }
 
 func (r *Worker) Run() error {
-	r.isShutdown = false
+	r.isShutdown.Store(false)
 
 	driver, err := NewDriver(r.connection, r.config)
 	if err != nil {
@@ -49,7 +51,7 @@ func (r *Worker) Run() error {
 		go func() {
 			defer r.wg.Done()
 			for {
-				if r.isShutdown {
+				if r.isShutdown.Load() {
 					return
 				}
 
@@ -60,20 +62,26 @@ func (r *Worker) Run() error {
 				}
 
 				if err = r.job.Call(job.Signature(), args); err != nil {
-					r.failedJobChan <- FailedJob{
+					select {
+					case r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
 						Queue:      r.queue,
 						Payload:    args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
+					}:
+					default:
+						LogFacade.Error(errors.New("failed to send failed job to channel"))
 					}
 				}
 			}
 		}()
 	}
 
+	r.failedWg.Add(1)
 	go func() {
+		defer r.failedWg.Done()
 		for job := range r.failedJobChan {
 			if err = r.config.FailedJobsQuery().Create(&job); err != nil {
 				LogFacade.Error(errors.QueueFailedToSaveFailedJob.Args(err))
@@ -85,8 +93,9 @@ func (r *Worker) Run() error {
 }
 
 func (r *Worker) Shutdown() error {
-	r.isShutdown = true
+	r.isShutdown.Store(true)
 	r.wg.Wait()
 	close(r.failedJobChan)
+	r.failedWg.Wait()
 	return nil
 }
