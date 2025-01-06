@@ -15,7 +15,6 @@ type Worker struct {
 	concurrent    int
 	config        queue.Config
 	connection    string
-	driver        queue.Driver
 	failedJobChan chan FailedJob
 	isShutdown    bool
 	job           queue.JobRepository

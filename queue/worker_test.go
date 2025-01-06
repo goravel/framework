@@ -16,7 +16,6 @@ import (
 
 type WorkerTestSuite struct {
 	suite.Suite
-	failedJobChan chan FailedJob
 }
 
 func TestWorkerTestSuite(t *testing.T) {
