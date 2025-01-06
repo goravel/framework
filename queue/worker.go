@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ type Worker struct {
 	isShutdown    bool
 	job           queue.JobRepository
 	queue         string
+	wg            sync.WaitGroup
 }
 
 func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
@@ -44,7 +46,9 @@ func (r *Worker) Run() error {
 	}
 
 	for i := 0; i < r.concurrent; i++ {
+		r.wg.Add(1)
 		go func() {
+			defer r.wg.Done()
 			for {
 				if r.isShutdown {
 					return
@@ -52,8 +56,6 @@ func (r *Worker) Run() error {
 
 				job, args, err := driver.Pop(r.queue)
 				if err != nil {
-					// This error not need to be reported.
-					// It is usually caused by the queue being empty.
 					time.Sleep(1 * time.Second)
 					continue
 				}
@@ -85,5 +87,7 @@ func (r *Worker) Run() error {
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown = true
+	r.wg.Wait()
+	close(r.failedJobChan)
 	return nil
 }

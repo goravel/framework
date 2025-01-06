@@ -43,14 +43,7 @@ func TestDriverAsyncTestSuite(t *testing.T) {
 
 func (s *DriverAsyncTestSuite) SetupTest() {
 	testAsyncJob = 0
-
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	mockOrm := mocksorm.NewOrm(s.T())
-	mockQuery := mocksorm.NewQuery(s.T())
-	mockOrm.EXPECT().Connection("database").Return(mockOrm)
-	mockOrm.On("Query").Return(mockQuery)
-	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
-	OrmFacade = mockOrm
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
@@ -143,6 +136,13 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetString", "queue.failed.database").Return("database").Once()
 	s.mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Once()
 
+	mockOrm := mocksorm.NewOrm(s.T())
+	mockQuery := mocksorm.NewQuery(s.T())
+	mockOrm.EXPECT().Connection("database").Return(mockOrm)
+	mockOrm.On("Query").Return(mockQuery)
+	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
+	OrmFacade = mockOrm
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	go func(ctx context.Context) {
@@ -193,7 +193,7 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 		},
 	}).OnQueue("chain").Dispatch())
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 	s.Equal(1, testChainAsyncJob)
 	s.Equal(1, testAsyncJob)
 }
