@@ -84,7 +84,7 @@ func (s *DefaultMigratorWithDBSuite) TestRun() {
 				testMigration,
 			})
 
-			migrator := NewDefaultMigrator(nil, schema, "migrations")
+			migrator := NewMigrator(nil, schema, "migrations")
 
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
@@ -104,7 +104,7 @@ func (s *DefaultMigratorWithDBSuite) TestReset() {
 				testMigration,
 			})
 
-			migrator := NewDefaultMigrator(nil, schema, "migrations")
+			migrator := NewMigrator(nil, schema, "migrations")
 
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
@@ -123,7 +123,7 @@ func (s *DefaultMigratorWithDBSuite) TestRollback() {
 				testMigration,
 			})
 
-			migrator := NewDefaultMigrator(nil, schema, "migrations")
+			migrator := NewMigrator(nil, schema, "migrations")
 
 			s.NoError(migrator.Run())
 			s.True(schema.HasTable("users"))
@@ -138,7 +138,7 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 		s.Run(driver.String(), func() {
 			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
 			testMigration := NewTestMigration(schema)
-			migrator := NewDefaultMigrator(nil, schema, "migrations")
+			migrator := NewMigrator(nil, schema, "migrations")
 			status, err := migrator.Status()
 			s.NoError(err)
 			s.Len(status, 0)
@@ -178,7 +178,7 @@ func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 	schema.Register([]contractsschema.Migration{
 		testMigration,
 	})
-	migrator := NewDefaultMigrator(nil, schema, "migrations")
+	migrator := NewMigrator(nil, schema, "migrations")
 
 	assert.NoError(t, migrator.Run())
 	assert.True(t, schema.HasTable("users"))
@@ -202,7 +202,7 @@ func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
 	schema.Register([]contractsschema.Migration{
 		testMigration,
 	})
-	migrator := NewDefaultMigrator(nil, schema, "migrations")
+	migrator := NewMigrator(nil, schema, "migrations")
 
 	assert.NoError(t, migrator.Run())
 	assert.True(t, schema.HasTable("goravel.users"))
@@ -215,7 +215,7 @@ type DefaultMigratorSuite struct {
 	mockArtisan    *mocksconsole.Artisan
 	mockRepository *mocksmigration.Repository
 	mockSchema     *mocksschema.Schema
-	migrator       *DefaultMigrator
+	migrator       *Migrator
 }
 
 func TestDefaultMigratorSuite(t *testing.T) {
@@ -227,9 +227,9 @@ func (s *DefaultMigratorSuite) SetupTest() {
 	s.mockRepository = mocksmigration.NewRepository(s.T())
 	s.mockSchema = mocksschema.NewSchema(s.T())
 
-	s.migrator = &DefaultMigrator{
+	s.migrator = &Migrator{
 		artisan:    s.mockArtisan,
-		creator:    NewDefaultCreator(),
+		creator:    NewCreator(),
 		repository: s.mockRepository,
 		schema:     s.mockSchema,
 	}
@@ -254,25 +254,6 @@ func (s *DefaultMigratorSuite) TestCreate() {
 		carbon.UnsetTestNow()
 		s.NoError(file.Remove("database"))
 	}()
-}
-
-func (s *DefaultMigratorSuite) TestFresh() {
-	// Success
-	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
-	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
-
-	s.NoError(s.migrator.Fresh())
-
-	// db:wipe returns error
-	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(assert.AnError).Once()
-
-	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
-
-	// migrate returns error
-	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
-	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
-
-	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
 }
 
 func (s *DefaultMigratorSuite) TestGetFilesForRollback() {

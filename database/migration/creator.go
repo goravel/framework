@@ -10,15 +10,15 @@ import (
 	"github.com/goravel/framework/support/str"
 )
 
-type DefaultCreator struct {
+type Creator struct {
 }
 
-func NewDefaultCreator() *DefaultCreator {
-	return &DefaultCreator{}
+func NewCreator() *Creator {
+	return &Creator{}
 }
 
 // GetStub Get the migration stub file.
-func (r *DefaultCreator) GetStub(table string, create bool) string {
+func (r *Creator) GetStub(table string, create bool) string {
 	if table == "" {
 		return Stubs{}.Empty()
 	}
@@ -31,7 +31,7 @@ func (r *DefaultCreator) GetStub(table string, create bool) string {
 }
 
 // PopulateStub Populate the place-holders in the migration stub.
-func (r *DefaultCreator) PopulateStub(stub, signature, table string) string {
+func (r *Creator) PopulateStub(stub, signature, table string) string {
 	stub = strings.ReplaceAll(stub, "DummyMigration", str.Of(signature).Prepend("m_").Studly().String())
 	stub = strings.ReplaceAll(stub, "DummySignature", signature)
 	stub = strings.ReplaceAll(stub, "DummyTable", table)
@@ -40,13 +40,13 @@ func (r *DefaultCreator) PopulateStub(stub, signature, table string) string {
 }
 
 // GetPath Get the full path to the migration.
-func (r *DefaultCreator) GetPath(name string) string {
+func (r *Creator) GetPath(name string) string {
 	pwd, _ := os.Getwd()
 
 	return filepath.Join(pwd, "database", "migrations", name+".go")
 }
 
 // GetFileName Get the full path to the migration.
-func (r *DefaultCreator) GetFileName(name string) string {
+func (r *Creator) GetFileName(name string) string {
 	return fmt.Sprintf("%s_%s", carbon.Now().ToShortDateTimeString(), name)
 }
