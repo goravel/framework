@@ -7,14 +7,14 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	configmock "github.com/goravel/framework/mocks/config"
-	logmock "github.com/goravel/framework/mocks/log"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mockslog "github.com/goravel/framework/mocks/log"
 )
 
 type MachineryTestSuite struct {
 	suite.Suite
-	mockConfig *configmock.Config
-	mockLog    *logmock.Log
+	mockConfig *mocksconfig.Config
+	mockLog    *mockslog.Log
 	machinery  *Machinery
 }
 
@@ -23,8 +23,8 @@ func TestMachineryTestSuite(t *testing.T) {
 }
 
 func (s *MachineryTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
-	s.mockLog = &logmock.Log{}
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockLog = mockslog.NewLog(s.T())
 }
 
 func (s *MachineryTestSuite) TestServer() {
@@ -59,7 +59,6 @@ func (s *MachineryTestSuite) TestServer() {
 			test.setup()
 			server := s.machinery.server(test.queue)
 			s.Equal(test.expectServer, server != nil)
-			s.mockConfig.AssertExpectations(s.T())
 		})
 	}
 }

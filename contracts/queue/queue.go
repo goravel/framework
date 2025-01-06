@@ -1,17 +1,18 @@
 package queue
 
 type Queue interface {
-	Worker(payloads ...Args) Worker
-	// Register register jobs
-	Register(jobs []Job)
-	// GetJobs get all jobs
-	GetJobs() []Job
+	// All get all jobs
+	All() []Job
+	// Chain creates a chain of jobs to be processed one by one, passing
+	Chain(jobs []Jobs) Task
 	// GetJob get job by signature
 	GetJob(signature string) (Job, error)
 	// Job add a job to queue
 	Job(job Job, args []any) Task
-	// Chain creates a chain of jobs to be processed one by one, passing
-	Chain(jobs []Jobs) Task
+	// Register register jobs
+	Register(jobs []Job)
+	// Worker create a queue worker
+	Worker(payloads ...Args) Worker
 }
 
 type Worker interface {

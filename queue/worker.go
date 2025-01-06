@@ -1,29 +1,32 @@
 package queue
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/google/uuid"
+
+	"github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type Worker struct {
 	concurrent    int
-	driver        *DriverImpl
-	job           *JobImpl
-	failedJobs    orm.Query
-	queue         string
+	config        queue.Config
+	connection    string
+	driver        queue.Driver
 	failedJobChan chan FailedJob
 	isShutdown    bool
+	job           queue.JobRepository
+	queue         string
 }
 
-func NewWorker(config *Config, concurrent int, connection string, queue string, job *JobImpl) *Worker {
+func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
 	return &Worker{
 		concurrent:    concurrent,
-		driver:        NewDriverImpl(connection, config),
+		config:        config,
+		connection:    connection,
 		job:           job,
-		failedJobs:    config.FailedJobsQuery(),
 		queue:         queue,
 		failedJobChan: make(chan FailedJob),
 	}
@@ -32,12 +35,12 @@ func NewWorker(config *Config, concurrent int, connection string, queue string, 
 func (r *Worker) Run() error {
 	r.isShutdown = false
 
-	driver, err := r.driver.New()
+	driver, err := NewDriver(r.connection, r.config)
 	if err != nil {
 		return err
 	}
-	if driver.Driver() == DriverSync {
-		return fmt.Errorf("queue %s driver not need run", r.queue)
+	if driver.Driver() == queue.DriverSync {
+		return errors.QueueDriverSyncNotNeedRun.Args(r.queue)
 	}
 
 	for i := 0; i < r.concurrent; i++ {
@@ -57,11 +60,12 @@ func (r *Worker) Run() error {
 
 				if err = r.job.Call(job.Signature(), args); err != nil {
 					r.failedJobChan <- FailedJob{
-						Queue:     r.queue,
-						Signature: job.Signature(),
-						Payloads:  args,
-						Exception: err.Error(),
-						FailedAt:  carbon.DateTime{Carbon: carbon.Now()},
+						UUID:       uuid.New(),
+						Connection: r.connection,
+						Queue:      r.queue,
+						Payload:    args,
+						Exception:  err.Error(),
+						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
 					}
 				}
 			}
@@ -70,7 +74,9 @@ func (r *Worker) Run() error {
 
 	go func() {
 		for job := range r.failedJobChan {
-			_ = r.failedJobs.Create(&job)
+			if err = r.config.FailedJobsQuery().Create(&job); err != nil {
+				LogFacade.Error(errors.QueueFailedToSaveFailedJob.Args(err))
+			}
 		}
 	}()
 

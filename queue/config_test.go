@@ -5,13 +5,14 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	configmock "github.com/goravel/framework/mocks/config"
+	"github.com/goravel/framework/contracts/queue"
+	mocksconfig "github.com/goravel/framework/mocks/config"
 )
 
 type ConfigTestSuite struct {
 	suite.Suite
-	config     *Config
-	mockConfig *configmock.Config
+	config     queue.Config
+	mockConfig *mocksconfig.Config
 }
 
 func TestConfigTestSuite(t *testing.T) {
@@ -19,7 +20,7 @@ func TestConfigTestSuite(t *testing.T) {
 }
 
 func (s *ConfigTestSuite) SetupTest() {
-	s.mockConfig = &configmock.Config{}
+	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.config = NewConfig(s.mockConfig)
 }
 

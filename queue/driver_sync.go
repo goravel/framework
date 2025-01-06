@@ -21,7 +21,7 @@ func (r *Sync) Connection() string {
 }
 
 func (r *Sync) Driver() string {
-	return DriverSync
+	return queue.DriverSync
 }
 
 func (r *Sync) Push(job queue.Job, args []any, _ string) error {
@@ -41,8 +41,8 @@ func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 	return nil
 }
 
-func (r *Sync) Later(delay time.Duration, job queue.Job, args []any, _ string) error {
-	time.Sleep(delay)
+func (r *Sync) Later(delay time.Time, job queue.Job, args []any, _ string) error {
+	time.Sleep(time.Until(delay))
 	return job.Handle(args...)
 }
 

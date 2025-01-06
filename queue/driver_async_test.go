@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
-	configmock "github.com/goravel/framework/mocks/config"
-	ormmock "github.com/goravel/framework/mocks/database/orm"
-	queuemock "github.com/goravel/framework/mocks/queue"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
 )
 
 var (
@@ -24,22 +24,14 @@ var (
 type DriverAsyncTestSuite struct {
 	suite.Suite
 	app        *Application
-	mockConfig *configmock.Config
-	mockQueue  *queuemock.Queue
+	mockConfig *mocksconfig.Config
+	mockQueue  *mocksqueue.Queue
 }
 
 func TestDriverAsyncTestSuite(t *testing.T) {
-	mockConfig := &configmock.Config{}
-	mockQueue := &queuemock.Queue{}
+	mockConfig := mocksconfig.NewConfig(t)
+	mockQueue := mocksqueue.NewQueue(t)
 	app := NewApplication(mockConfig)
-
-	mockOrm := &ormmock.Orm{}
-	mockQuery := &ormmock.Query{}
-	mockOrm.On("Connection", "database").Return(mockOrm)
-	mockOrm.On("Query").Return(mockQuery)
-	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
-
-	OrmFacade = mockOrm
 
 	app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}})
 	suite.Run(t, &DriverAsyncTestSuite{
@@ -51,6 +43,14 @@ func TestDriverAsyncTestSuite(t *testing.T) {
 
 func (s *DriverAsyncTestSuite) SetupTest() {
 	testAsyncJob = 0
+
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	mockOrm := mocksorm.NewOrm(s.T())
+	mockQuery := mocksorm.NewQuery(s.T())
+	mockOrm.EXPECT().Connection("database").Return(mockOrm)
+	mockOrm.On("Query").Return(mockQuery)
+	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
+	OrmFacade = mockOrm
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
@@ -75,9 +75,6 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 	s.Nil(s.app.Job(&TestAsyncJob{}, []any{"TestDefaultAsyncQueue", 1}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testAsyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockQueue.AssertExpectations(s.T())
 }
 
 func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
@@ -101,14 +98,11 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 		s.Nil(worker.Shutdown())
 	}(ctx)
 	time.Sleep(1 * time.Second)
-	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []any{"TestDelayAsyncQueue", 1}).OnQueue("delay").Delay(3 * time.Second).Dispatch())
+	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []any{"TestDelayAsyncQueue", 1}).OnQueue("delay").Delay(time.Now().Add(3 * time.Second)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(3 * time.Second)
 	s.Equal(1, testDelayAsyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockQueue.AssertExpectations(s.T())
 }
 
 func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
@@ -137,9 +131,6 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []any{"TestCustomAsyncQueue", 1}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomAsyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockQueue.AssertExpectations(s.T())
 }
 
 func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
@@ -167,9 +158,6 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	s.Error(s.app.Job(&TestErrorAsyncJob{}, []any{"TestErrorAsyncQueue", 1}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorAsyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockQueue.AssertExpectations(s.T())
 }
 
 func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
@@ -208,8 +196,6 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainAsyncJob)
 	s.Equal(1, testAsyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 type TestAsyncJob struct {

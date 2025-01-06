@@ -12,17 +12,17 @@ import (
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/RichardKnop/machinery/v2/log"
 
-	logcontract "github.com/goravel/framework/contracts/log"
+	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
 )
 
 type Machinery struct {
 	connection string
-	config     *Config
-	log        logcontract.Log
+	config     queue.Config
+	log        contractslog.Log
 }
 
-func NewMachinery(connection string, config *Config, log logcontract.Log) *Machinery {
+func NewMachinery(connection string, config queue.Config, log contractslog.Log) *Machinery {
 	return &Machinery{
 		connection: connection,
 		config:     config,
@@ -49,7 +49,7 @@ func (m *Machinery) Bulk(jobs []queue.Jobs, queue string) error {
 	panic("implement me")
 }
 
-func (m *Machinery) Later(delay time.Duration, job queue.Job, args []any, queue string) error {
+func (m *Machinery) Later(delay time.Time, job queue.Job, args []any, queue string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -74,7 +74,7 @@ func (m *Machinery) server(queue string) *machinery.Server {
 	backend := redisbackend.NewGR(cnf, []string{redisConfig}, database)
 	lock := eager.New()
 
-	debug := m.config.config.GetBool("app.debug")
+	debug := m.config.Debug()
 	log.DEBUG = NewDebug(debug, m.log)
 	log.INFO = NewInfo(debug, m.log)
 	log.WARNING = NewWarning(debug, m.log)

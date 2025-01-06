@@ -27,7 +27,7 @@ func (s *JobTestSuite) RegisterJobsSuccessfully() {
 		&MockJob{signature: "job2"},
 	})
 
-	registeredJobs := s.jobManager.GetJobs()
+	registeredJobs := s.jobManager.All()
 	s.Len(registeredJobs, 2)
 }
 

@@ -6,8 +6,8 @@ import (
 )
 
 type Application struct {
-	config *Config
-	job    *JobImpl
+	config queue.Config
+	job    queue.JobRepository
 }
 
 func NewApplication(config configcontract.Config) *Application {
@@ -15,6 +15,25 @@ func NewApplication(config configcontract.Config) *Application {
 		config: NewConfig(config),
 		job:    NewJobImpl(),
 	}
+}
+
+func (app *Application) All() []queue.Job {
+	return app.job.All()
+}
+func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
+	return NewChainTask(app.config, jobs)
+}
+
+func (app *Application) GetJob(signature string) (queue.Job, error) {
+	return app.job.Get(signature)
+}
+
+func (app *Application) Job(job queue.Job, args []any) queue.Task {
+	return NewTask(app.config, job, args)
+}
+
+func (app *Application) Register(jobs []queue.Job) {
+	app.job.Register(jobs)
 }
 
 func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
@@ -31,24 +50,4 @@ func (app *Application) Worker(payloads ...queue.Args) queue.Worker {
 	}
 
 	return NewWorker(app.config, payloads[0].Concurrent, payloads[0].Connection, app.config.Queue(payloads[0].Connection, payloads[0].Queue), app.job)
-}
-
-func (app *Application) Register(jobs []queue.Job) {
-	app.job.Register(jobs)
-}
-
-func (app *Application) GetJobs() []queue.Job {
-	return app.job.GetJobs()
-}
-
-func (app *Application) GetJob(signature string) (queue.Job, error) {
-	return app.job.Get(signature)
-}
-
-func (app *Application) Job(job queue.Job, args []any) queue.Task {
-	return NewTask(app.config, job, args)
-}
-
-func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
-	return NewChainTask(app.config, jobs)
 }

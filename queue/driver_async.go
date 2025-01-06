@@ -1,41 +1,41 @@
 package queue
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
+	"github.com/goravel/framework/errors"
 )
 
 var asyncQueues sync.Map
 
-type ASync struct {
+type Async struct {
 	connection string
 	size       int
 }
 
-func NewASync(connection string, size int) *ASync {
-	return &ASync{
+func NewAsync(connection string, size int) *Async {
+	return &Async{
 		connection: connection,
 		size:       size,
 	}
 }
 
-func (r *ASync) Connection() string {
+func (r *Async) Connection() string {
 	return r.connection
 }
 
-func (r *ASync) Driver() string {
-	return DriverASync
+func (r *Async) Driver() string {
+	return contractsqueue.DriverAsync
 }
 
-func (r *ASync) Push(job contractsqueue.Job, args []any, queue string) error {
+func (r *Async) Push(job contractsqueue.Job, args []any, queue string) error {
 	r.getQueue(queue) <- contractsqueue.Jobs{Job: job, Args: args}
 	return nil
 }
 
-func (r *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
+func (r *Async) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	for _, job := range jobs {
 		if job.Delay > 0 {
 			go func(j contractsqueue.Jobs) {
@@ -51,19 +51,19 @@ func (r *ASync) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	return nil
 }
 
-func (r *ASync) Later(delay time.Duration, job contractsqueue.Job, args []any, queue string) error {
+func (r *Async) Later(delay time.Time, job contractsqueue.Job, args []any, queue string) error {
 	go func() {
-		time.Sleep(delay)
+		time.Sleep(time.Until(delay))
 		r.getQueue(queue) <- contractsqueue.Jobs{Job: job, Args: args}
 	}()
 
 	return nil
 }
 
-func (r *ASync) Pop(queue string) (contractsqueue.Job, []any, error) {
+func (r *Async) Pop(queue string) (contractsqueue.Job, []any, error) {
 	ch, ok := asyncQueues.Load(queue)
 	if !ok {
-		return nil, nil, fmt.Errorf("no queue found: %s", queue)
+		return nil, nil, errors.QueueDriverAsyncNoJobFound.Args(queue)
 	}
 
 	queueChan := ch.(chan contractsqueue.Jobs)
@@ -71,11 +71,11 @@ func (r *ASync) Pop(queue string) (contractsqueue.Job, []any, error) {
 	case job := <-queueChan:
 		return job.Job, job.Args, nil
 	default:
-		return nil, nil, fmt.Errorf("no job found in %s queue", queue)
+		return nil, nil, errors.QueueDriverAsyncNoJobFound.Args(queue)
 	}
 }
 
-func (r *ASync) getQueue(queue string) chan contractsqueue.Jobs {
+func (r *Async) getQueue(queue string) chan contractsqueue.Jobs {
 	ch, ok := asyncQueues.Load(queue)
 	if !ok {
 		ch = make(chan contractsqueue.Jobs, r.size)

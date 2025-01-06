@@ -3,25 +3,21 @@ package queue
 import (
 	"sync"
 
+	"github.com/google/uuid"
+
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type FailedJob struct {
-	ID        uint            `gorm:"primaryKey"`               // The unique ID of the job.
-	Queue     string          `gorm:"not null"`                 // The name of the queue the job belongs to.
-	Signature string          `gorm:"not null"`                 // The signature of the handler for this job.
-	Payloads  []any           `gorm:"not null;serializer:json"` // The arguments passed to the job.
-	Exception string          `gorm:"not null"`                 // The exception that caused the job to fail.
-	FailedAt  carbon.DateTime `gorm:"not null"`                 // The timestamp when the job failed.
-}
-
-type Job interface {
-	Register(jobs []contractsqueue.Job) error
-	Call(signature string, args []any) error
-	Get(signature string) (contractsqueue.Job, error)
-	GetJobs() []contractsqueue.Job
+	ID         uint            `gorm:"primaryKey"`               // The unique ID of the job.
+	UUID       uuid.UUID       `gorm:"not null;unique"`          // The UUID of the job.
+	Connection string          `gorm:"not null"`                 // The name of the connection the job belongs to.
+	Queue      string          `gorm:"not null"`                 // The name of the queue the job belongs to.
+	Payload    []any           `gorm:"not null;serializer:json"` // The arguments passed to the job.
+	Exception  string          `gorm:"not null"`                 // The exception that caused the job to fail.
+	FailedAt   carbon.DateTime `gorm:"not null"`                 // The timestamp when the job failed.
 }
 
 type JobImpl struct {
@@ -32,11 +28,15 @@ func NewJobImpl() *JobImpl {
 	return &JobImpl{}
 }
 
-// Register registers jobs to the job manager
-func (r *JobImpl) Register(jobs []contractsqueue.Job) {
-	for _, job := range jobs {
-		r.jobs.Store(job.Signature(), job)
-	}
+// All gets all registered jobs
+func (r *JobImpl) All() []contractsqueue.Job {
+	var jobs []contractsqueue.Job
+	r.jobs.Range(func(_, value any) bool {
+		jobs = append(jobs, value.(contractsqueue.Job))
+		return true
+	})
+
+	return jobs
 }
 
 // Call calls a registered job using its signature
@@ -55,16 +55,12 @@ func (r *JobImpl) Get(signature string) (contractsqueue.Job, error) {
 		return job.(contractsqueue.Job), nil
 	}
 
-	return nil, errors.New("job not found")
+	return nil, errors.QueueJobNotFound.Args(signature)
 }
 
-// GetJobs gets all registered jobs
-func (r *JobImpl) GetJobs() []contractsqueue.Job {
-	var jobs []contractsqueue.Job
-	r.jobs.Range(func(_, value any) bool {
-		jobs = append(jobs, value.(contractsqueue.Job))
-		return true
-	})
-
-	return jobs
+// Register registers jobs to the job manager
+func (r *JobImpl) Register(jobs []contractsqueue.Job) {
+	for _, job := range jobs {
+		r.jobs.Store(job.Signature(), job)
+	}
 }

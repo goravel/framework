@@ -7,20 +7,18 @@ import (
 )
 
 type Task struct {
-	config     *Config
+	config     queue.Config
 	connection string
 	chain      bool
-	delay      time.Duration
-	driver     *DriverImpl
+	delay      time.Time
 	jobs       []queue.Jobs
 	queue      string
 }
 
-func NewTask(config *Config, job queue.Job, args []any) *Task {
+func NewTask(config queue.Config, job queue.Job, args []any) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
-		driver:     NewDriverImpl(config.DefaultConnection(), config),
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
@@ -31,70 +29,63 @@ func NewTask(config *Config, job queue.Job, args []any) *Task {
 	}
 }
 
-func NewChainTask(config *Config, jobs []queue.Jobs) *Task {
+func NewChainTask(config queue.Config, jobs []queue.Jobs) *Task {
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
 		chain:      true,
-		driver:     NewDriverImpl(config.DefaultConnection(), config),
 		jobs:       jobs,
 		queue:      config.Queue(config.DefaultConnection(), ""),
 	}
 }
 
 // Delay sets a delay time for the task
-func (receiver *Task) Delay(delay time.Duration) queue.Task {
-	receiver.delay = delay
-
-	return receiver
+func (r *Task) Delay(delay time.Time) queue.Task {
+	r.delay = delay
+	return r
 }
 
 // Dispatch dispatches the task
-func (receiver *Task) Dispatch() error {
-	driver, err := receiver.driver.New()
+func (r *Task) Dispatch() error {
+	driver, err := NewDriver(r.connection, r.config)
 	if err != nil {
 		return err
 	}
 
-	if receiver.chain {
-		return driver.Bulk(receiver.jobs, receiver.queue)
+	if r.chain {
+		return driver.Bulk(r.jobs, r.queue)
 	} else {
-		job := receiver.jobs[0]
-		if receiver.delay > 0 {
-			return driver.Later(receiver.delay, job.Job, job.Args, receiver.queue)
+		job := r.jobs[0]
+		if !r.delay.IsZero() {
+			return driver.Later(r.delay, job.Job, job.Args, r.queue)
 		}
-		return driver.Push(job.Job, job.Args, receiver.queue)
+		return driver.Push(job.Job, job.Args, r.queue)
 	}
 }
 
 // DispatchSync dispatches the task synchronously
-func (receiver *Task) DispatchSync() error {
-	if receiver.chain {
-		for _, job := range receiver.jobs {
+func (r *Task) DispatchSync() error {
+	if r.chain {
+		for _, job := range r.jobs {
 			if err := job.Job.Handle(job.Args...); err != nil {
 				return err
 			}
 		}
-
 		return nil
 	} else {
-		job := receiver.jobs[0]
-
+		job := r.jobs[0]
 		return job.Job.Handle(job.Args...)
 	}
 }
 
 // OnConnection sets the connection name
-func (receiver *Task) OnConnection(connection string) queue.Task {
-	receiver.connection = connection
-	receiver.driver = NewDriverImpl(connection, receiver.config)
-
-	return receiver
+func (r *Task) OnConnection(connection string) queue.Task {
+	r.connection = connection
+	return r
 }
 
 // OnQueue sets the queue name
-func (receiver *Task) OnQueue(queue string) queue.Task {
-	receiver.queue = receiver.config.Queue(receiver.connection, queue)
-
-	return receiver
+func (r *Task) OnQueue(queue string) queue.Task {
+	r.queue = r.config.Queue(r.connection, queue)
+	return r
 }

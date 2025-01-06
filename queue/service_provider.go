@@ -12,7 +12,7 @@ import (
 const Binding = "goravel.queue"
 
 var (
-	LogFacade log.Log // TODO: Will be removed in v1.17
+	LogFacade log.Log
 	OrmFacade orm.Orm
 )
 
@@ -31,7 +31,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 }
 
 func (receiver *ServiceProvider) Boot(app foundation.Application) {
-	LogFacade = app.MakeLog() // TODO: Will be removed in v1.17
+	LogFacade = app.MakeLog()
 	OrmFacade = app.MakeOrm()
 
 	receiver.registerCommands(app)

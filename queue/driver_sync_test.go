@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/queue"
-	configmock "github.com/goravel/framework/mocks/config"
-	queuemock "github.com/goravel/framework/mocks/queue"
+	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksqueue "github.com/goravel/framework/mocks/queue"
 )
 
 var (
@@ -19,13 +19,13 @@ var (
 type DriverSyncTestSuite struct {
 	suite.Suite
 	app        *Application
-	mockConfig *configmock.Config
-	mockQueue  *queuemock.Queue
+	mockConfig *mocksconfig.Config
+	mockQueue  *mocksqueue.Queue
 }
 
 func TestDriverSyncTestSuite(t *testing.T) {
-	mockConfig := &configmock.Config{}
-	mockQueue := &queuemock.Queue{}
+	mockConfig := mocksconfig.NewConfig(t)
+	mockQueue := mocksqueue.NewQueue(t)
 	app := NewApplication(mockConfig)
 
 	app.Register([]queue.Job{&TestSyncJob{}, &TestChainSyncJob{}})
