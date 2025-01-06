@@ -256,6 +256,25 @@ func (s *DefaultMigratorSuite) TestCreate() {
 	}()
 }
 
+func (s *DefaultMigratorSuite) TestFresh() {
+	// Success
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
+
+	s.NoError(s.migrator.Fresh())
+
+	// db:wipe returns error
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(assert.AnError).Once()
+
+	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
+
+	// migrate returns error
+	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
+	s.mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
+
+	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
+}
+
 func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
 	tests := []struct {
 		name        string
