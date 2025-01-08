@@ -26,9 +26,9 @@ func (s *WorkerTestSuite) SetupTest() {}
 
 func (s *WorkerTestSuite) TestRun_Success() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.On("GetString", "queue.default").Return("async")
-	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.default").Return("async").Times(4)
+	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
 	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
 	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
 	app := NewApplication(mockConfig)
@@ -52,9 +52,9 @@ func (s *WorkerTestSuite) TestRun_Success() {
 
 func (s *WorkerTestSuite) TestRun_FailedJob() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.On("GetString", "queue.default").Return("async")
-	mockConfig.On("GetString", "app.name").Return("goravel")
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
+	mockConfig.On("GetString", "queue.default").Return("async").Times(4)
+	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
 	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
 	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
 

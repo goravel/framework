@@ -50,8 +50,8 @@ func (s *DriverSyncTestSuite) TestSyncQueue() {
 }
 
 func (s *DriverSyncTestSuite) TestChainSyncQueue() {
-	s.mockConfig.EXPECT().GetString("queue.default").Return("sync").Twice()
 	s.mockConfig.EXPECT().GetString("queue.default").Return("sync").Once()
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Once()
 	s.mockConfig.EXPECT().GetString("queue.connections.sync.driver").Return("sync").Once()
 
 	s.Nil(s.app.Chain([]queue.Jobs{
