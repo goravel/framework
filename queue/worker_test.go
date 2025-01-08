@@ -16,22 +16,24 @@ import (
 
 type WorkerTestSuite struct {
 	suite.Suite
+	mockConfig *mocksconfig.Config
 }
 
 func TestWorkerTestSuite(t *testing.T) {
 	suite.Run(t, new(WorkerTestSuite))
 }
 
-func (s *WorkerTestSuite) SetupTest() {}
+func (s *WorkerTestSuite) SetupTest() {
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(4)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
+	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
+}
 
 func (s *WorkerTestSuite) TestRun_Success() {
-	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.On("GetString", "queue.default").Return("async").Times(4)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
-	app := NewApplication(mockConfig)
+	app := NewApplication(s.mockConfig)
 	testJob := new(MockJob)
 	app.Register([]contractsqueue.Job{testJob})
 
@@ -51,15 +53,8 @@ func (s *WorkerTestSuite) TestRun_Success() {
 }
 
 func (s *WorkerTestSuite) TestRun_FailedJob() {
-	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.On("GetString", "queue.default").Return("async").Times(4)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
-
-	mockConfig.On("GetString", "queue.failed.database").Return("database").Times(1)
-	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs").Times(1)
+	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("database").Times(1)
+	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Times(1)
 
 	mockOrm := mocksorm.NewOrm(s.T())
 	mockQuery := mocksorm.NewQuery(s.T())
@@ -69,7 +64,7 @@ func (s *WorkerTestSuite) TestRun_FailedJob() {
 	mockQuery.EXPECT().Create(mock.Anything).Return(nil)
 	OrmFacade = mockOrm
 
-	app := NewApplication(mockConfig)
+	app := NewApplication(s.mockConfig)
 	testJob := new(MockFailedJob)
 	app.Register([]contractsqueue.Job{testJob})
 

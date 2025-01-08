@@ -40,11 +40,11 @@ func (s *DriverAsyncTestSuite) SetupTest() {
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(3)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(2)
-	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Twice()
+	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
+	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -62,11 +62,11 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(3)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
+	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -88,11 +88,11 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("custom").Times(3)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("async").Times(2)
-	s.mockConfig.On("GetInt", "queue.connections.custom.size", 100).Return(10).Twice()
+	s.mockConfig.EXPECT().GetString("queue.default").Return("custom").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.connections.custom.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.custom.driver").Return("async").Times(2)
+	s.mockConfig.EXPECT().GetInt("queue.connections.custom.size", 100).Return(10).Twice()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -114,12 +114,12 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(3)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Once()
-	s.mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Once()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("").Twice()
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Once()
+	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.redis.driver").Return("").Twice()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -139,11 +139,11 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 }
 
 func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("async").Times(3)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
-	s.mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Once()
+	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
+	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
