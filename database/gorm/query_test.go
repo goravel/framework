@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	_ "gorm.io/driver/postgres"
 	gormio "gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/database"
@@ -2765,7 +2764,7 @@ func (s *QueryTestSuite) TestRefreshConnection() {
 			if test.expectConnection == "" {
 				s.Nil(query)
 			} else {
-				s.Equal(test.expectConnection, query.fullConfig.Connection)
+				s.Equal(test.expectConnection, query.dbConfig.Connection)
 			}
 		})
 	}

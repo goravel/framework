@@ -2,9 +2,7 @@ package docker
 
 import (
 	"fmt"
-	"time"
 
-	"gorm.io/driver/postgres"
 	gormio "gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/database"
@@ -142,17 +140,17 @@ func (r *PostgresImpl) connect() (*gormio.DB, error) {
 	)
 
 	// docker compose need time to start
-	for i := 0; i < 60; i++ {
-		instance, err = gormio.Open(postgres.New(postgres.Config{
-			DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s", r.username, r.password, r.host, r.port, r.database),
-		}))
+	// for i := 0; i < 60; i++ {
+	// 	instance, err = gormio.Open(postgres.New(postgres.Config{
+	// 		DSN: fmt.Sprintf("postgres://%s:%s@%s:%d/%s", r.username, r.password, r.host, r.port, r.database),
+	// 	}))
 
-		if err == nil {
-			break
-		}
+	// 	if err == nil {
+	// 		break
+	// 	}
 
-		time.Sleep(2 * time.Second)
-	}
+	// 	time.Sleep(2 * time.Second)
+	// }
 
 	return instance, err
 }

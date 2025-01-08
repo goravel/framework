@@ -6,7 +6,6 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
@@ -45,21 +44,6 @@ func TestGetDialectors(t *testing.T) {
 			},
 			expectDialectors: func(dialector gorm.Dialector) bool {
 				_, ok := dialector.(*mysql.Dialector)
-
-				return ok
-			},
-		},
-		{
-			name: "Happy path - postgres",
-			configs: []database.FullConfig{
-				{
-					Connection: "postgres",
-					Driver:     database.DriverPostgres,
-					Config:     config,
-				},
-			},
-			expectDialectors: func(dialector gorm.Dialector) bool {
-				_, ok := dialector.(*postgres.Dialector)
 
 				return ok
 			},

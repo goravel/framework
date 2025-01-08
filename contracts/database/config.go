@@ -13,6 +13,12 @@ func (d Driver) String() string {
 	return string(d)
 }
 
+type Config1 struct {
+	Connection string
+	Driver     string
+	Prefix     string
+}
+
 // Config Used in config/database.go
 type Config struct {
 	Dsn      string

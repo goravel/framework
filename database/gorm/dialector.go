@@ -3,7 +3,6 @@ package gorm
 import (
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
@@ -25,10 +24,6 @@ func getDialectors(configs []database.FullConfig) ([]gorm.Dialector, error) {
 		switch config.Driver {
 		case database.DriverMysql:
 			dialector = mysql.New(mysql.Config{
-				DSN: dsn,
-			})
-		case database.DriverPostgres:
-			dialector = postgres.New(postgres.Config{
 				DSN: dsn,
 			})
 		case database.DriverSqlite:
