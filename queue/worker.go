@@ -74,7 +74,9 @@ func (r *Worker) Run() error {
 		}()
 	}
 
+	r.wg.Add(1)
 	go func() {
+		defer r.wg.Done()
 		for job := range r.failedJobChan {
 			if err = r.config.FailedJobsQuery().Create(&job); err != nil {
 				LogFacade.Error(errors.QueueFailedToSaveFailedJob.Args(err))
