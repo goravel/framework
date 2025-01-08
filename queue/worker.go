@@ -21,7 +21,6 @@ type Worker struct {
 	job           queue.JobRepository
 	queue         string
 	wg            sync.WaitGroup
-	failedWg      sync.WaitGroup
 }
 
 func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
@@ -62,26 +61,20 @@ func (r *Worker) Run() error {
 				}
 
 				if err = r.job.Call(job.Signature(), args); err != nil {
-					select {
-					case r.failedJobChan <- FailedJob{
+					r.failedJobChan <- FailedJob{
 						UUID:       uuid.New(),
 						Connection: r.connection,
 						Queue:      r.queue,
 						Payload:    args,
 						Exception:  err.Error(),
 						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
-					}:
-					default:
-						LogFacade.Error(errors.New("failed to send failed job to channel"))
 					}
 				}
 			}
 		}()
 	}
 
-	r.failedWg.Add(1)
 	go func() {
-		defer r.failedWg.Done()
 		for job := range r.failedJobChan {
 			if err = r.config.FailedJobsQuery().Create(&job); err != nil {
 				LogFacade.Error(errors.QueueFailedToSaveFailedJob.Args(err))
@@ -96,6 +89,5 @@ func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
 	r.wg.Wait()
 	close(r.failedJobChan)
-	r.failedWg.Wait()
 	return nil
 }

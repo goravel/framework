@@ -3,16 +3,16 @@ package queue
 import (
 	"fmt"
 
-	configcontract "github.com/goravel/framework/contracts/config"
+	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/queue"
 )
 
 type Config struct {
-	config configcontract.Config
+	config contractsconfig.Config
 }
 
-func NewConfig(config configcontract.Config) queue.Config {
+func NewConfig(config contractsconfig.Config) queue.Config {
 	return &Config{
 		config: config,
 	}

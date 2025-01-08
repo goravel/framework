@@ -26,9 +26,9 @@ func (s *WorkerTestSuite) SetupTest() {}
 
 func (s *WorkerTestSuite) TestRun_Success() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.On("GetString", "queue.default").Return("async").Times(4)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
+	mockConfig.On("GetString", "queue.default").Return("async")
+	mockConfig.On("GetString", "app.name").Return("goravel")
+	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
 	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
 	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
 	app := NewApplication(mockConfig)
@@ -36,7 +36,6 @@ func (s *WorkerTestSuite) TestRun_Success() {
 	app.Register([]contractsqueue.Job{testJob})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	go func(ctx context.Context) {
 		s.NoError(app.Worker().Run())
 		<-ctx.Done()
@@ -47,13 +46,15 @@ func (s *WorkerTestSuite) TestRun_Success() {
 	s.NoError(app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
+	cancel()
+	time.Sleep(2 * time.Second)
 }
 
 func (s *WorkerTestSuite) TestRun_FailedJob() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	mockConfig.On("GetString", "queue.default").Return("async").Times(4)
-	mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
-	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default").Times(3)
+	mockConfig.On("GetString", "queue.default").Return("async")
+	mockConfig.On("GetString", "app.name").Return("goravel")
+	mockConfig.On("GetString", "queue.connections.async.queue", "default").Return("default")
 	mockConfig.On("GetString", "queue.connections.async.driver").Return("async").Twice()
 	mockConfig.On("GetInt", "queue.connections.async.size", 100).Return(10).Twice()
 
@@ -73,7 +74,6 @@ func (s *WorkerTestSuite) TestRun_FailedJob() {
 	app.Register([]contractsqueue.Job{testJob})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	go func(ctx context.Context) {
 		s.NoError(app.Worker().Run())
 		<-ctx.Done()
@@ -84,6 +84,8 @@ func (s *WorkerTestSuite) TestRun_FailedJob() {
 	s.NoError(app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
+	cancel()
+	time.Sleep(2 * time.Second)
 }
 
 type MockFailedJob struct {

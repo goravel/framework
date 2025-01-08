@@ -1,7 +1,7 @@
 package queue
 
 import (
-	configcontract "github.com/goravel/framework/contracts/config"
+	contractsconfig "github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/queue"
 )
 
@@ -10,22 +10,23 @@ type Application struct {
 	job    queue.JobRepository
 }
 
-func NewApplication(config configcontract.Config) *Application {
+func NewApplication(config contractsconfig.Config) *Application {
 	return &Application{
 		config: NewConfig(config),
 		job:    NewJobImpl(),
 	}
 }
 
-func (app *Application) All() []queue.Job {
-	return app.job.All()
-}
 func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
 	return NewChainTask(app.config, jobs)
 }
 
 func (app *Application) GetJob(signature string) (queue.Job, error) {
 	return app.job.Get(signature)
+}
+
+func (app *Application) GetJobs() []queue.Job {
+	return app.job.All()
 }
 
 func (app *Application) Job(job queue.Job, args []any) queue.Task {

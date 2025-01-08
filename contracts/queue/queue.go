@@ -1,12 +1,12 @@
 package queue
 
 type Queue interface {
-	// All get all jobs
-	All() []Job
 	// Chain creates a chain of jobs to be processed one by one, passing
 	Chain(jobs []Jobs) Task
 	// GetJob get job by signature
 	GetJob(signature string) (Job, error)
+	// GetJobs get all jobs
+	GetJobs() []Job
 	// Job add a job to queue
 	Job(job Job, args []any) Task
 	// Register register jobs

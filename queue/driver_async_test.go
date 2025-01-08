@@ -29,21 +29,15 @@ type DriverAsyncTestSuite struct {
 }
 
 func TestDriverAsyncTestSuite(t *testing.T) {
-	mockConfig := mocksconfig.NewConfig(t)
-	mockQueue := mocksqueue.NewQueue(t)
-	app := NewApplication(mockConfig)
-
-	app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}})
-	suite.Run(t, &DriverAsyncTestSuite{
-		app:        app,
-		mockConfig: mockConfig,
-		mockQueue:  mockQueue,
-	})
+	suite.Run(t, new(DriverAsyncTestSuite))
 }
 
 func (s *DriverAsyncTestSuite) SetupTest() {
 	testAsyncJob = 0
+	s.mockQueue = mocksqueue.NewQueue(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.app = NewApplication(s.mockConfig)
+	s.app.Register([]queue.Job{&TestAsyncJob{}, &TestDelayAsyncJob{}, &TestCustomAsyncJob{}, &TestErrorAsyncJob{}, &TestChainAsyncJob{}})
 }
 
 func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
@@ -139,8 +133,8 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	mockOrm := mocksorm.NewOrm(s.T())
 	mockQuery := mocksorm.NewQuery(s.T())
 	mockOrm.EXPECT().Connection("database").Return(mockOrm)
-	mockOrm.On("Query").Return(mockQuery)
-	mockQuery.On("Table", "failed_jobs").Return(mockQuery)
+	mockOrm.EXPECT().Query().Return(mockQuery).Once()
+	mockQuery.EXPECT().Table("failed_jobs").Return(mockQuery).Once()
 	OrmFacade = mockOrm
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
