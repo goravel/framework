@@ -20,53 +20,6 @@ func (_m *Queue) EXPECT() *Queue_Expecter {
 	return &Queue_Expecter{mock: &_m.Mock}
 }
 
-// All provides a mock function with no fields
-func (_m *Queue) All() []queue.Job {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for All")
-	}
-
-	var r0 []queue.Job
-	if rf, ok := ret.Get(0).(func() []queue.Job); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]queue.Job)
-		}
-	}
-
-	return r0
-}
-
-// Queue_All_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'All'
-type Queue_All_Call struct {
-	*mock.Call
-}
-
-// All is a helper method to define mock.On call
-func (_e *Queue_Expecter) All() *Queue_All_Call {
-	return &Queue_All_Call{Call: _e.mock.On("All")}
-}
-
-func (_c *Queue_All_Call) Run(run func()) *Queue_All_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Queue_All_Call) Return(_a0 []queue.Job) *Queue_All_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Queue_All_Call) RunAndReturn(run func() []queue.Job) *Queue_All_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Chain provides a mock function with given fields: jobs
 func (_m *Queue) Chain(jobs []queue.Jobs) queue.Task {
 	ret := _m.Called(jobs)
@@ -169,6 +122,53 @@ func (_c *Queue_GetJob_Call) Return(_a0 queue.Job, _a1 error) *Queue_GetJob_Call
 }
 
 func (_c *Queue_GetJob_Call) RunAndReturn(run func(string) (queue.Job, error)) *Queue_GetJob_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetJobs provides a mock function with no fields
+func (_m *Queue) GetJobs() []queue.Job {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetJobs")
+	}
+
+	var r0 []queue.Job
+	if rf, ok := ret.Get(0).(func() []queue.Job); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]queue.Job)
+		}
+	}
+
+	return r0
+}
+
+// Queue_GetJobs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetJobs'
+type Queue_GetJobs_Call struct {
+	*mock.Call
+}
+
+// GetJobs is a helper method to define mock.On call
+func (_e *Queue_Expecter) GetJobs() *Queue_GetJobs_Call {
+	return &Queue_GetJobs_Call{Call: _e.mock.On("GetJobs")}
+}
+
+func (_c *Queue_GetJobs_Call) Run(run func()) *Queue_GetJobs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Queue_GetJobs_Call) Return(_a0 []queue.Job) *Queue_GetJobs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Queue_GetJobs_Call) RunAndReturn(run func() []queue.Job) *Queue_GetJobs_Call {
 	_c.Call.Return(run)
 	return _c
 }
