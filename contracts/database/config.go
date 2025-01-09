@@ -13,6 +13,7 @@ func (d Driver) String() string {
 	return string(d)
 }
 
+// TODO Rename to Config
 type Config1 struct {
 	Connection string
 	Driver     string
