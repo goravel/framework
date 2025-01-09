@@ -1,4 +1,4 @@
-package testing
+package http
 
 import (
 	"context"
@@ -9,6 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/route"
+	"github.com/goravel/framework/contracts/session"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
@@ -22,15 +25,21 @@ type TestRequest struct {
 	bind              any
 	defaultHeaders    map[string]string
 	defaultCookies    map[string]string
+	json              foundation.Json
+	route             route.Route
+	session           session.Manager
 	sessionAttributes map[string]any
 }
 
-func NewTestRequest(t *testing.T) contractstesting.TestRequest {
+func NewTestRequest(t *testing.T, json foundation.Json, route route.Route, session session.Manager) contractstesting.TestRequest {
 	return &TestRequest{
 		t:                 t,
 		ctx:               context.Background(),
 		defaultHeaders:    make(map[string]string),
 		defaultCookies:    make(map[string]string),
+		json:              json,
+		route:             route,
+		session:           session,
 		sessionAttributes: make(map[string]any),
 	}
 }
@@ -153,23 +162,23 @@ func (r *TestRequest) call(method string, uri string, body io.Reader) (contracts
 		req.AddCookie(&cookie)
 	}
 
-	if routeFacade == nil {
+	if r.route == nil {
 		r.t.Fatal(errors.RouteFacadeNotSet.SetModule(errors.ModuleTesting))
 	}
 
-	response, err := routeFacade.Test(req)
+	response, err := r.route.Test(req)
 	if err != nil {
 		return nil, err
 	}
 
-	testResponse := NewTestResponse(r.t, response)
+	testResponse := NewTestResponse(r.t, response, r.json, r.session)
 	if r.bind != nil {
 		body, err := testResponse.Content()
 		if err != nil {
 			return nil, err
 		}
 
-		if err := json.Unmarshal([]byte(body), r.bind); err != nil {
+		if err := r.json.Unmarshal([]byte(body), r.bind); err != nil {
 			return nil, err
 		}
 	}
@@ -182,18 +191,18 @@ func (r *TestRequest) setSession() error {
 		return nil
 	}
 
-	if sessionFacade == nil {
+	if r.session == nil {
 		return errors.SessionFacadeNotSet
 	}
 
 	// Retrieve session driver
-	driver, err := sessionFacade.Driver()
+	driver, err := r.session.Driver()
 	if err != nil {
 		return err
 	}
 
 	// Build session
-	session, err := sessionFacade.BuildSession(driver)
+	session, err := r.session.BuildSession(driver)
 	if err != nil {
 		return err
 	}
@@ -209,6 +218,6 @@ func (r *TestRequest) setSession() error {
 	}
 
 	// Release session
-	sessionFacade.ReleaseSession(session)
+	r.session.ReleaseSession(session)
 	return nil
 }
