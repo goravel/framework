@@ -311,7 +311,7 @@ func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.Colum
 		if column.GetDefault() != nil {
 			return fmt.Sprintf(" set default %s", getDefaultValue(column.GetDefault()))
 		}
-		return fmt.Sprintf(" drop default")
+		return " drop default"
 	}
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
