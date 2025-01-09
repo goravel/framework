@@ -1,4 +1,4 @@
-package testing
+package http
 
 import (
 	"bytes"
@@ -31,22 +31,16 @@ func TestTestRequestSuite(t *testing.T) {
 func (s *TestRequestSuite) SetupTest() {
 	s.mockRoute = mocksroute.NewRoute(s.T())
 	s.mockSessionManager = mockssession.NewManager(s.T())
-	json = &testJson{}
-	routeFacade = s.mockRoute
-	sessionFacade = s.mockSessionManager
 	s.testRequest = &TestRequest{
 		t:                 s.T(),
 		ctx:               context.Background(),
 		defaultHeaders:    make(map[string]string),
 		defaultCookies:    make(map[string]string),
+		json:              &testJson{},
+		route:             s.mockRoute,
+		session:           s.mockSessionManager,
 		sessionAttributes: make(map[string]any),
 	}
-}
-
-func (s *TestRequestSuite) TearDownTest() {
-	json = nil
-	routeFacade = nil
-	sessionFacade = nil
 }
 
 func (s *TestRequestSuite) TestBindAndCall() {
