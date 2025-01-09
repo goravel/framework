@@ -39,16 +39,29 @@ func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Comman
 	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Postgres) CompileChange(blueprint schema.Blueprint, command *schema.Command) []string {
+	changes := []string{fmt.Sprintf("alter column %s type %s", r.wrap.Column(command.Column.GetName()), getType(r, command.Column))}
+	for _, modifier := range r.modifiers {
+		if change := modifier(blueprint, command.Column); change != "" {
+			changes = append(changes, fmt.Sprintf("alter column %s%s", r.wrap.Column(command.Column.GetName()), change))
+		}
+	}
+
+	return []string{
+		fmt.Sprintf("alter table %s %s", r.wrap.Table(blueprint.GetTableName()), strings.Join(changes, ", ")),
+	}
+}
+
 func (r *Postgres) CompileColumns(schema, table string) string {
 	return fmt.Sprintf(
 		"select a.attname as name, t.typname as type_name, format_type(a.atttypid, a.atttypmod) as type, "+
-			"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
-			"not a.attnotnull as nullable, "+
-			"(select pg_get_expr(adbin, adrelid) from pg_attrdef where c.oid = pg_attrdef.adrelid and pg_attrdef.adnum = a.attnum) as default, "+
-			"col_description(c.oid, a.attnum) as comment "+
-			"from pg_attribute a, pg_class c, pg_type t, pg_namespace n "+
-			"where c.relname = %s and n.nspname = %s and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid and n.oid = c.relnamespace "+
-			"order by a.attnum", r.wrap.Quote(table), r.wrap.Quote(schema))
+				"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
+				"not a.attnotnull as nullable, "+
+				"(select pg_get_expr(adbin, adrelid) from pg_attrdef where c.oid = pg_attrdef.adrelid and pg_attrdef.adnum = a.attnum) as default, "+
+				"col_description(c.oid, a.attnum) as comment "+
+				"from pg_attribute a, pg_class c, pg_type t, pg_namespace n "+
+				"where c.relname = %s and n.nspname = %s and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid and n.oid = c.relnamespace "+
+				"order by a.attnum", r.wrap.Quote(table), r.wrap.Quote(schema))
 }
 
 func (r *Postgres) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
@@ -194,16 +207,16 @@ func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Comm
 func (r *Postgres) CompileIndexes(schema, table string) string {
 	return fmt.Sprintf(
 		"select ic.relname as name, string_agg(a.attname, ',' order by indseq.ord) as columns, "+
-			"am.amname as \"type\", i.indisunique as \"unique\", i.indisprimary as \"primary\" "+
-			"from pg_index i "+
-			"join pg_class tc on tc.oid = i.indrelid "+
-			"join pg_namespace tn on tn.oid = tc.relnamespace "+
-			"join pg_class ic on ic.oid = i.indexrelid "+
-			"join pg_am am on am.oid = ic.relam "+
-			"join lateral unnest(i.indkey) with ordinality as indseq(num, ord) on true "+
-			"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
-			"where tc.relname = %s and tn.nspname = %s "+
-			"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
+				"am.amname as \"type\", i.indisunique as \"unique\", i.indisprimary as \"primary\" "+
+				"from pg_index i "+
+				"join pg_class tc on tc.oid = i.indrelid "+
+				"join pg_namespace tn on tn.oid = tc.relnamespace "+
+				"join pg_class ic on ic.oid = i.indexrelid "+
+				"join pg_am am on am.oid = ic.relam "+
+				"join lateral unnest(i.indkey) with ordinality as indseq(num, ord) on true "+
+				"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
+				"where tc.relname = %s and tn.nspname = %s "+
+				"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
 		r.wrap.Quote(table),
 		r.wrap.Quote(schema),
 	)
@@ -225,9 +238,9 @@ func (r *Postgres) CompileRenameIndex(_ schema.Schema, _ schema.Blueprint, comma
 
 func (r *Postgres) CompileTables(_ string) string {
 	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
-		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
-		"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
-		"order by c.relname"
+			"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
+			"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
+			"order by c.relname"
 }
 
 func (r *Postgres) CompileTypes() string {
@@ -291,6 +304,15 @@ func (r *Postgres) GetAttributeCommands() []string {
 }
 
 func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.IsChange() {
+		if column.GetAutoIncrement() {
+			return ""
+		}
+		if column.GetDefault() != nil {
+			return fmt.Sprintf(" set default %s", getDefaultValue(column.GetDefault()))
+		}
+		return fmt.Sprintf(" drop default")
+	}
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
 	}
@@ -299,15 +321,20 @@ func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.Colum
 }
 
 func (r *Postgres) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.IsChange() {
+		if column.GetNullable() {
+			return " drop not null"
+		}
+		return " set not null"
+	}
 	if column.GetNullable() {
 		return " null"
-	} else {
-		return " not null"
 	}
+	return " not null"
 }
 
 func (r *Postgres) ModifyIncrement(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+	if !column.IsChange() && !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
 		return " primary key"
 	}
 

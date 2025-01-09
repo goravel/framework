@@ -32,12 +32,34 @@ func (s *SqlserverSuite) TestCompileAdd() {
 	mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
 	mockColumn.EXPECT().GetNullable().Return(false).Once()
 	mockColumn.EXPECT().GetLength().Return(1).Once()
+	mockColumn.EXPECT().IsChange().Return(false).Twice()
 
 	sql := s.grammar.CompileAdd(mockBlueprint, &contractsschema.Command{
 		Column: mockColumn,
 	})
 
 	s.Equal(`alter table "goravel_users" add "name" nvarchar(1) default 'goravel' not null`, sql)
+}
+
+func (s *SqlserverSuite) TestCompileChange() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+
+	mockBlueprint.EXPECT().GetTableName().Return("users").Twice()
+	mockColumn.EXPECT().GetName().Return("name").Twice()
+	mockColumn.EXPECT().GetType().Return("string").Once()
+	mockColumn.EXPECT().GetNullable().Return(false).Once()
+	mockColumn.EXPECT().GetLength().Return(1).Once()
+	mockColumn.EXPECT().IsChange().Return(true).Times(3)
+
+	sql := s.grammar.CompileChange(mockBlueprint, &contractsschema.Command{
+		Column: mockColumn,
+	})
+
+	s.Equal([]string{
+		`DECLARE @sql NVARCHAR(MAX) = '';SELECT @sql += 'ALTER TABLE "goravel_users" DROP CONSTRAINT ' + OBJECT_NAME([default_object_id]) + ';' FROM sys.columns WHERE [object_id] = OBJECT_ID('"goravel_users"') AND [name] in ('name') AND [default_object_id] <> 0;EXEC(@sql);`,
+		`alter table "goravel_users" alter column "name" nvarchar(1) not null`,
+	}, sql)
 }
 
 func (s *SqlserverSuite) TestCompileCreate() {
@@ -64,6 +86,7 @@ func (s *SqlserverSuite) TestCompileCreate() {
 	mockColumn1.EXPECT().GetType().Return("integer").Once()
 	// postgres.go::ModifyNullable
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
+	mockColumn1.EXPECT().IsChange().Return(false).Twice()
 
 	// utils.go::getColumns
 	mockColumn2.EXPECT().GetName().Return("name").Once()
@@ -77,6 +100,7 @@ func (s *SqlserverSuite) TestCompileCreate() {
 	mockColumn2.EXPECT().GetType().Return("string").Once()
 	// postgres.go::ModifyNullable
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
+	mockColumn2.EXPECT().IsChange().Return(false).Twice()
 
 	s.Equal(`create table "goravel_users" ("id" int identity primary key not null, "name" nvarchar(100) null)`,
 		s.grammar.CompileCreate(mockBlueprint))
@@ -212,12 +236,14 @@ func (s *SqlserverSuite) TestGetColumns() {
 	mockColumn1.EXPECT().GetDefault().Return(nil).Once()
 	mockColumn1.EXPECT().GetNullable().Return(false).Once()
 	mockColumn1.EXPECT().GetAutoIncrement().Return(true).Once()
+	mockColumn1.EXPECT().IsChange().Return(false).Twice()
 
 	mockColumn2.EXPECT().GetName().Return("name").Once()
 	mockColumn2.EXPECT().GetType().Return("string").Twice()
 	mockColumn2.EXPECT().GetDefault().Return("goravel").Twice()
 	mockColumn2.EXPECT().GetNullable().Return(true).Once()
 	mockColumn2.EXPECT().GetLength().Return(10).Once()
+	mockColumn2.EXPECT().IsChange().Return(false).Twice()
 
 	s.Equal([]string{`"id" int identity primary key not null`, `"name" nvarchar(10) default 'goravel' null`}, s.grammar.getColumns(mockBlueprint))
 }
@@ -236,12 +262,14 @@ func (s *SqlserverSuite) TestModifyDefault() {
 		{
 			name: "without change and default is nil",
 			setup: func() {
+				mockColumn.EXPECT().IsChange().Return(false).Once()
 				mockColumn.EXPECT().GetDefault().Return(nil).Once()
 			},
 		},
 		{
 			name: "without change and default is not nil",
 			setup: func() {
+				mockColumn.EXPECT().IsChange().Return(false).Once()
 				mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
 			},
 			expectSql: " default 'goravel'",
@@ -281,6 +309,7 @@ func (s *SqlserverSuite) TestModifyIncrement() {
 	mockBlueprint.EXPECT().HasCommand("primary").Return(false).Once()
 	mockColumn.EXPECT().GetType().Return("bigInteger").Once()
 	mockColumn.EXPECT().GetAutoIncrement().Return(true).Once()
+	mockColumn.EXPECT().IsChange().Return(false).Once()
 
 	s.Equal(" identity primary key", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
 }

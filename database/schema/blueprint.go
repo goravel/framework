@@ -430,6 +430,12 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 
 		switch command.Name {
 		case constants.CommandAdd:
+			if command.Column.IsChange() {
+				if statement := grammar.CompileChange(r, command); statement != nil {
+					statements = append(statements, statement...)
+				}
+				continue
+			}
 			statements = append(statements, grammar.CompileAdd(r, command))
 		case constants.CommandComment:
 			if statement := grammar.CompileComment(r, command); statement != "" {

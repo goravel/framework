@@ -3,6 +3,8 @@ package schema
 type Grammar interface {
 	// CompileAdd Compile an add column command.
 	CompileAdd(blueprint Blueprint, command *Command) string
+	// CompileChange Compile a change column command.
+	CompileChange(blueprint Blueprint, command *Command) []string
 	// CompileColumns Compile the query to determine the columns.
 	CompileColumns(schema, table string) string
 	// CompileComment Compile a column comment command.
