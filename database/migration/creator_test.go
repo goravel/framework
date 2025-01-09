@@ -10,7 +10,7 @@ import (
 
 type DefaultCreatorSuite struct {
 	suite.Suite
-	defaultCreator *DefaultCreator
+	defaultCreator *Creator
 }
 
 func TestDefaultCreatorSuite(t *testing.T) {
@@ -18,7 +18,7 @@ func TestDefaultCreatorSuite(t *testing.T) {
 }
 
 func (s *DefaultCreatorSuite) SetupTest() {
-	s.defaultCreator = NewDefaultCreator()
+	s.defaultCreator = NewCreator()
 }
 
 func (s *DefaultCreatorSuite) TestPopulateStub() {
