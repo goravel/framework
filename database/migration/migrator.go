@@ -13,23 +13,23 @@ import (
 	supportfile "github.com/goravel/framework/support/file"
 )
 
-type DefaultMigrator struct {
+type Migrator struct {
 	artisan    console.Artisan
-	creator    *DefaultCreator
+	creator    *Creator
 	repository contractsmigration.Repository
 	schema     contractsschema.Schema
 }
 
-func NewDefaultMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *DefaultMigrator {
-	return &DefaultMigrator{
+func NewMigrator(artisan console.Artisan, schema contractsschema.Schema, table string) *Migrator {
+	return &Migrator{
 		artisan:    artisan,
-		creator:    NewDefaultCreator(),
+		creator:    NewCreator(),
 		repository: NewRepository(schema, table),
 		schema:     schema,
 	}
 }
 
-func (r *DefaultMigrator) Create(name string) error {
+func (r *Migrator) Create(name string) error {
 	table, create := TableGuesser{}.Guess(name)
 
 	stub := r.creator.GetStub(table, create)
@@ -45,8 +45,7 @@ func (r *DefaultMigrator) Create(name string) error {
 	return nil
 }
 
-// TODO Remove this function and move the logic to the migrate:fresh command when the sql migrator is removed.
-func (r *DefaultMigrator) Fresh() error {
+func (r *Migrator) Fresh() error {
 	if err := r.artisan.Call("db:wipe --force"); err != nil {
 		return err
 	}
@@ -57,7 +56,7 @@ func (r *DefaultMigrator) Fresh() error {
 	return nil
 }
 
-func (r *DefaultMigrator) Reset() error {
+func (r *Migrator) Reset() error {
 	ran, err := r.repository.GetRan()
 	if err != nil {
 		return err
@@ -66,7 +65,7 @@ func (r *DefaultMigrator) Reset() error {
 	return r.Rollback(len(ran), 0)
 }
 
-func (r *DefaultMigrator) Rollback(step, batch int) error {
+func (r *Migrator) Rollback(step, batch int) error {
 	files, err := r.getFilesForRollback(step, batch)
 	if err != nil {
 		return err
@@ -97,7 +96,7 @@ func (r *DefaultMigrator) Rollback(step, batch int) error {
 	return nil
 }
 
-func (r *DefaultMigrator) Run() error {
+func (r *Migrator) Run() error {
 	if err := r.prepareDatabase(); err != nil {
 		return err
 	}
@@ -112,7 +111,7 @@ func (r *DefaultMigrator) Run() error {
 	return r.runPending(pendingMigrations)
 }
 
-func (r *DefaultMigrator) Status() ([]contractsmigration.Status, error) {
+func (r *Migrator) Status() ([]contractsmigration.Status, error) {
 	if !r.repository.RepositoryExists() {
 		color.Warningln("Migration table not found")
 
@@ -134,7 +133,7 @@ func (r *DefaultMigrator) Status() ([]contractsmigration.Status, error) {
 	return migrationStatus, nil
 }
 
-func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigration.File, error) {
+func (r *Migrator) getFilesForRollback(step, batch int) ([]contractsmigration.File, error) {
 	if step > 0 {
 		return r.repository.GetMigrationsByStep(step)
 	}
@@ -146,7 +145,7 @@ func (r *DefaultMigrator) getFilesForRollback(step, batch int) ([]contractsmigra
 	return r.repository.GetLast()
 }
 
-func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) contractsschema.Migration {
+func (r *Migrator) getMigrationViaFile(file contractsmigration.File) contractsschema.Migration {
 	for _, migration := range r.schema.Migrations() {
 		if migration.Signature() == file.Migration {
 			return migration
@@ -156,7 +155,7 @@ func (r *DefaultMigrator) getMigrationViaFile(file contractsmigration.File) cont
 	return nil
 }
 
-func (r *DefaultMigrator) getStatusForMigrations(batches []contractsmigration.File) []contractsmigration.Status {
+func (r *Migrator) getStatusForMigrations(batches []contractsmigration.File) []contractsmigration.Status {
 	var migrationStatus []contractsmigration.Status
 
 	for _, migration := range r.schema.Migrations() {
@@ -185,7 +184,7 @@ func (r *DefaultMigrator) getStatusForMigrations(batches []contractsmigration.Fi
 	return migrationStatus
 }
 
-func (r *DefaultMigrator) pendingMigrations(ran []string) []contractsschema.Migration {
+func (r *Migrator) pendingMigrations(ran []string) []contractsschema.Migration {
 	var pendingMigrations []contractsschema.Migration
 	for _, migration := range r.schema.Migrations() {
 		if !slices.Contains(ran, migration.Signature()) {
@@ -196,7 +195,7 @@ func (r *DefaultMigrator) pendingMigrations(ran []string) []contractsschema.Migr
 	return pendingMigrations
 }
 
-func (r *DefaultMigrator) prepareDatabase() error {
+func (r *Migrator) prepareDatabase() error {
 	if r.repository.RepositoryExists() {
 		return nil
 	}
@@ -204,7 +203,7 @@ func (r *DefaultMigrator) prepareDatabase() error {
 	return r.repository.CreateRepository()
 }
 
-func (r *DefaultMigrator) printTitle(maxNameLength int) {
+func (r *Migrator) printTitle(maxNameLength int) {
 	color.Default().Print(fmt.Sprintf("%-*s", maxNameLength, "Migration name"))
 	color.Default().Println(" | Batch / Status")
 	for i := 0; i < maxNameLength+17; i++ {
@@ -213,7 +212,7 @@ func (r *DefaultMigrator) printTitle(maxNameLength int) {
 	color.Default().Println()
 }
 
-func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) error {
+func (r *Migrator) runPending(migrations []contractsschema.Migration) error {
 	if len(migrations) == 0 {
 		color.Infoln("Nothing to migrate")
 
@@ -238,7 +237,7 @@ func (r *DefaultMigrator) runPending(migrations []contractsschema.Migration) err
 	return nil
 }
 
-func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
+func (r *Migrator) runDown(migration contractsschema.Migration) error {
 	defaultConnection := r.schema.GetConnection()
 	defaultQuery := r.schema.Orm().Query()
 	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
@@ -267,7 +266,7 @@ func (r *DefaultMigrator) runDown(migration contractsschema.Migration) error {
 	return r.repository.Delete(migration.Signature())
 }
 
-func (r *DefaultMigrator) runUp(migration contractsschema.Migration, batch int) error {
+func (r *Migrator) runUp(migration contractsschema.Migration, batch int) error {
 	defaultConnection := r.schema.GetConnection()
 	defaultQuery := r.schema.Orm().Query()
 	if connectionMigration, ok := migration.(contractsschema.Connection); ok {
