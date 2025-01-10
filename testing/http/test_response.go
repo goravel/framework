@@ -1,4 +1,4 @@
-package testing
+package http
 
 import (
 	"fmt"
@@ -12,6 +12,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/contracts/foundation"
+	contractssession "github.com/goravel/framework/contracts/session"
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
@@ -22,11 +24,18 @@ type TestResponseImpl struct {
 	mu                sync.Mutex
 	response          *http.Response
 	content           string
+	json              foundation.Json
+	session           contractssession.Manager
 	sessionAttributes map[string]any
 }
 
-func NewTestResponse(t *testing.T, response *http.Response) contractstesting.TestResponse {
-	return &TestResponseImpl{t: t, response: response}
+func NewTestResponse(t *testing.T, response *http.Response, json foundation.Json, session contractssession.Manager) contractstesting.TestResponse {
+	return &TestResponseImpl{
+		t:        t,
+		response: response,
+		json:     json,
+		session:  session,
+	}
 }
 
 func (r *TestResponseImpl) Json() (map[string]any, error) {
@@ -35,7 +44,7 @@ func (r *TestResponseImpl) Json() (map[string]any, error) {
 		return nil, err
 	}
 
-	testAble, err := NewAssertableJSON(r.t, content)
+	testAble, err := NewAssertableJSON(r.t, r.json, content)
 	if err != nil {
 		return nil, err
 	}
@@ -60,24 +69,24 @@ func (r *TestResponseImpl) Session() (map[string]any, error) {
 		return r.sessionAttributes, nil
 	}
 
-	if sessionFacade == nil {
+	if r.session == nil {
 		return nil, errors.SessionFacadeNotSet
 	}
 
 	// Retrieve session driver
-	driver, err := sessionFacade.Driver()
+	driver, err := r.session.Driver()
 	if err != nil {
 		return nil, err
 	}
 
 	// Build session
-	session, err := sessionFacade.BuildSession(driver)
+	session, err := r.session.BuildSession(driver)
 	if err != nil {
 		return nil, err
 	}
 
 	r.sessionAttributes = session.All()
-	sessionFacade.ReleaseSession(session)
+	r.session.ReleaseSession(session)
 
 	return r.sessionAttributes, nil
 }
@@ -352,7 +361,7 @@ func (r *TestResponseImpl) AssertJson(data map[string]any) contractstesting.Test
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 
-	assertableJson, err := NewAssertableJSON(r.t, content)
+	assertableJson, err := NewAssertableJSON(r.t, r.json, content)
 	assert.Nil(r.t, err)
 
 	for key, value := range data {
@@ -386,7 +395,7 @@ func (r *TestResponseImpl) AssertFluentJson(callback func(json contractstesting.
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 
-	assertableJson, err := NewAssertableJSON(r.t, content)
+	assertableJson, err := NewAssertableJSON(r.t, r.json, content)
 	assert.Nil(r.t, err)
 
 	callback(assertableJson)
