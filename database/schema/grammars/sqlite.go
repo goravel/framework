@@ -65,6 +65,10 @@ func (r *Sqlite) CompileCreate(blueprint schema.Blueprint) string {
 		r.addPrimaryKeys(getCommandByName(blueprint.GetCommands(), "primary")))
 }
 
+func (r *Sqlite) CompileDefault(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
 func (r *Sqlite) CompileDisableWriteableSchema() string {
 	return r.pragma("writable_schema", "0")
 }

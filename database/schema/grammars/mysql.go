@@ -77,6 +77,10 @@ func (r *Mysql) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, ", "))
 }
 
+func (r *Mysql) CompileDefault(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
+}
+
 func (r *Mysql) CompileDisableForeignKeyConstraints() string {
 	return "SET FOREIGN_KEY_CHECKS=0;"
 }

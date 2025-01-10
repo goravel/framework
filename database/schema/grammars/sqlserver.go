@@ -21,7 +21,7 @@ type Sqlserver struct {
 
 func NewSqlserver(tablePrefix string) *Sqlserver {
 	sqlserver := &Sqlserver{
-		attributeCommands: []string{constants.CommandComment},
+		attributeCommands: []string{constants.CommandComment, constants.CommandDefault},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		wrap:              NewWrap(database.DriverSqlserver, tablePrefix),
 	}
@@ -75,6 +75,18 @@ func (r *Sqlserver) CompileComment(_ schema.Blueprint, _ *schema.Command) string
 
 func (r *Sqlserver) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
+}
+
+func (r *Sqlserver) CompileDefault(blueprint schema.Blueprint, command *schema.Command) string {
+	if command.Column.IsChange() && command.Column.GetDefault() != nil {
+		return fmt.Sprintf("alter table %s add default %s for %s",
+			r.wrap.Table(blueprint.GetTableName()),
+			getDefaultValue(command.Column.GetDefault()),
+			r.wrap.Column(command.Column.GetName()),
+		)
+	}
+
+	return ""
 }
 
 func (r *Sqlserver) CompileDrop(blueprint schema.Blueprint) string {

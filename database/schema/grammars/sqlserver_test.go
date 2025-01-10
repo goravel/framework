@@ -106,6 +106,22 @@ func (s *SqlserverSuite) TestCompileCreate() {
 		s.grammar.CompileCreate(mockBlueprint))
 }
 
+func (s *SqlserverSuite) TestCompileDefault() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockColumnDefinition := mocksschema.NewColumnDefinition(s.T())
+
+	mockColumnDefinition.EXPECT().IsChange().Return(true).Once()
+	mockColumnDefinition.EXPECT().GetDefault().Return("default").Twice()
+	mockColumnDefinition.EXPECT().GetName().Return("id").Once()
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+
+	sql := s.grammar.CompileDefault(mockBlueprint, &contractsschema.Command{
+		Column: mockColumnDefinition,
+	})
+
+	s.Equal(`alter table "goravel_users" add default 'default' for "id"`, sql)
+}
+
 func (s *SqlserverSuite) TestCompileDropColumn() {
 	mockBlueprint := mocksschema.NewBlueprint(s.T())
 	mockBlueprint.EXPECT().GetTableName().Return("users").Twice()

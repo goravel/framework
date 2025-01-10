@@ -79,10 +79,12 @@ func (s *SchemaSuite) TestColumnChange() {
 			expectedDefaultStringLength := constants.DefaultStringLength
 			customStringLength := 100
 			expectedCustomStringLength := customStringLength
+			expectedColumnType := "text"
 
 			if driver == database.DriverSqlserver {
 				expectedDefaultStringLength = constants.DefaultStringLength * 2
 				expectedCustomStringLength = customStringLength * 2
+				expectedColumnType = "nvarchar"
 			}
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
@@ -117,7 +119,7 @@ func (s *SchemaSuite) TestColumnChange() {
 			}
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.String("change_length", customStringLength).Change()
-				table.Integer("change_type").Change()
+				table.Text("change_type").Change()
 				table.String("change_to_nullable").Nullable().Change()
 				table.String("change_to_not_nullable").Change()
 				table.String("change_add_default").Default("goravel").Change()
@@ -130,7 +132,7 @@ func (s *SchemaSuite) TestColumnChange() {
 					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedCustomStringLength))
 				}
 				if column.Name == "change_type" {
-					s.Contains(column.TypeName, "int")
+					s.Contains(column.TypeName, expectedColumnType)
 				}
 				if column.Name == "change_to_nullable" {
 					s.True(column.Nullable)

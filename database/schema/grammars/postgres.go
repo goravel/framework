@@ -55,13 +55,13 @@ func (r *Postgres) CompileChange(blueprint schema.Blueprint, command *schema.Com
 func (r *Postgres) CompileColumns(schema, table string) string {
 	return fmt.Sprintf(
 		"select a.attname as name, t.typname as type_name, format_type(a.atttypid, a.atttypmod) as type, "+
-				"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
-				"not a.attnotnull as nullable, "+
-				"(select pg_get_expr(adbin, adrelid) from pg_attrdef where c.oid = pg_attrdef.adrelid and pg_attrdef.adnum = a.attnum) as default, "+
-				"col_description(c.oid, a.attnum) as comment "+
-				"from pg_attribute a, pg_class c, pg_type t, pg_namespace n "+
-				"where c.relname = %s and n.nspname = %s and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid and n.oid = c.relnamespace "+
-				"order by a.attnum", r.wrap.Quote(table), r.wrap.Quote(schema))
+			"(select tc.collcollate from pg_catalog.pg_collation tc where tc.oid = a.attcollation) as collation, "+
+			"not a.attnotnull as nullable, "+
+			"(select pg_get_expr(adbin, adrelid) from pg_attrdef where c.oid = pg_attrdef.adrelid and pg_attrdef.adnum = a.attnum) as default, "+
+			"col_description(c.oid, a.attnum) as comment "+
+			"from pg_attribute a, pg_class c, pg_type t, pg_namespace n "+
+			"where c.relname = %s and n.nspname = %s and a.attnum > 0 and a.attrelid = c.oid and a.atttypid = t.oid and n.oid = c.relnamespace "+
+			"order by a.attnum", r.wrap.Quote(table), r.wrap.Quote(schema))
 }
 
 func (r *Postgres) CompileComment(blueprint schema.Blueprint, command *schema.Command) string {
@@ -78,6 +78,10 @@ func (r *Postgres) CompileComment(blueprint schema.Blueprint, command *schema.Co
 
 func (r *Postgres) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
+}
+
+func (r *Postgres) CompileDefault(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
 }
 
 func (r *Postgres) CompileDrop(blueprint schema.Blueprint) string {
@@ -207,16 +211,16 @@ func (r *Postgres) CompileIndex(blueprint schema.Blueprint, command *schema.Comm
 func (r *Postgres) CompileIndexes(schema, table string) string {
 	return fmt.Sprintf(
 		"select ic.relname as name, string_agg(a.attname, ',' order by indseq.ord) as columns, "+
-				"am.amname as \"type\", i.indisunique as \"unique\", i.indisprimary as \"primary\" "+
-				"from pg_index i "+
-				"join pg_class tc on tc.oid = i.indrelid "+
-				"join pg_namespace tn on tn.oid = tc.relnamespace "+
-				"join pg_class ic on ic.oid = i.indexrelid "+
-				"join pg_am am on am.oid = ic.relam "+
-				"join lateral unnest(i.indkey) with ordinality as indseq(num, ord) on true "+
-				"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
-				"where tc.relname = %s and tn.nspname = %s "+
-				"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
+			"am.amname as \"type\", i.indisunique as \"unique\", i.indisprimary as \"primary\" "+
+			"from pg_index i "+
+			"join pg_class tc on tc.oid = i.indrelid "+
+			"join pg_namespace tn on tn.oid = tc.relnamespace "+
+			"join pg_class ic on ic.oid = i.indexrelid "+
+			"join pg_am am on am.oid = ic.relam "+
+			"join lateral unnest(i.indkey) with ordinality as indseq(num, ord) on true "+
+			"left join pg_attribute a on a.attrelid = i.indrelid and a.attnum = indseq.num "+
+			"where tc.relname = %s and tn.nspname = %s "+
+			"group by ic.relname, am.amname, i.indisunique, i.indisprimary",
 		r.wrap.Quote(table),
 		r.wrap.Quote(schema),
 	)
@@ -238,9 +242,9 @@ func (r *Postgres) CompileRenameIndex(_ schema.Schema, _ schema.Blueprint, comma
 
 func (r *Postgres) CompileTables(_ string) string {
 	return "select c.relname as name, n.nspname as schema, pg_total_relation_size(c.oid) as size, " +
-			"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
-			"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
-			"order by c.relname"
+		"obj_description(c.oid, 'pg_class') as comment from pg_class c, pg_namespace n " +
+		"where c.relkind in ('r', 'p') and n.oid = c.relnamespace and n.nspname not in ('pg_catalog', 'information_schema') " +
+		"order by c.relname"
 }
 
 func (r *Postgres) CompileTypes() string {

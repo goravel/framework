@@ -391,7 +391,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 		s.SetupTest()
 		s.blueprint.String("name", 100).Change()
 		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(grammar), 1)
+			s.Len(s.blueprint.ToSql(grammar), 2)
 		} else {
 			s.Empty(s.blueprint.ToSql(grammar))
 		}

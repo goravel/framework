@@ -11,6 +11,8 @@ type Grammar interface {
 	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
 	CompileCreate(blueprint Blueprint) string
+	// CompileDefault Compile a default value command.
+	CompileDefault(blueprint Blueprint, command *Command) string
 	// CompileDrop Compile a drop table command.
 	CompileDrop(blueprint Blueprint) string
 	// CompileDropAllDomains Compile the SQL needed to drop all domains.
