@@ -3,38 +3,19 @@ package tests
 import (
 	"testing"
 
-	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/foundation"
 	supportdocker "github.com/goravel/framework/support/docker"
 	"github.com/goravel/postgres"
 	"github.com/stretchr/testify/assert"
+
+	"tests/config"
 )
 
 func TestCount(t *testing.T) {
 	app := foundation.NewApplication()
 	app.Boot()
-	app.MakeConfig().Add("app", map[string]any{
-		"name": "goravel",
-		"env":  "testing",
-		"key":  "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
-	})
-	app.MakeConfig().Add("database", map[string]any{
-		"default": "postgres",
-		"connections": map[string]any{
-			"postgres": map[string]any{
-				"driver":   "postgres",
-				"host":     "127.0.0.1",
-				"port":     5432,
-				"database": "goravel_test",
-				"username": "goravel",
-				"password": "Framework!123",
-				"via": func() (orm.Driver, error) {
-					return postgres.NewPostgres(postgres.NewConfigBuilder(app.MakeConfig(), "postgres"), app.MakeLog()), nil
-				},
-			},
-		},
-	})
+	config.Boot()
 
 	driver := postgres.NewPostgres(postgres.NewConfigBuilder(app.MakeConfig(), "postgres"), app.MakeLog())
 	docker, err := driver.Docker()

@@ -1,12 +1,11 @@
-module github.com/goravel/framework/tests
+module tests
 
 go 1.23.4
 
 require (
-	github.com/goravel/framework v1.15.2
+	github.com/goravel/framework v1.15.2-0.20250110030145-225df7670fcf
 	github.com/goravel/postgres v0.0.0
 	github.com/stretchr/testify v1.10.0
-
 )
 
 require (
@@ -159,9 +158,4 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.1 // indirect
 	modernc.org/sqlite v1.34.4 // indirect
-)
-
-replace (
-	github.com/goravel/framework => ../
-	github.com/goravel/postgres => ../../../postgres
 )
