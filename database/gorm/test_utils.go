@@ -449,6 +449,9 @@ func (r *MockPostgres) basic() {
 	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
 	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
 	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.via", r.connection)).Return(func() (orm.Driver, error) {
+		return nil, nil
+	})
 	mockPool(r.mockConfig)
 }
 
