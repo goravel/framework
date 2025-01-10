@@ -431,7 +431,7 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 		switch command.Name {
 		case constants.CommandAdd:
 			if command.Column.IsChange() {
-				if statement := grammar.CompileChange(r, command); statement != nil {
+				if statement := grammar.CompileChange(r, command); len(statement) > 0 {
 					statements = append(statements, statement...)
 				}
 				continue

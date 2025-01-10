@@ -427,18 +427,62 @@ func (s *PostgresSuite) TestModifyDefault() {
 }
 
 func (s *PostgresSuite) TestModifyNullable() {
-	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	var (
+		mockBlueprint *mocksschema.Blueprint
+		mockColumn    *mocksschema.ColumnDefinition
+	)
 
-	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	tests := []struct {
+		name      string
+		setup     func()
+		expectSql string
+	}{
+		{
+			name: "without change and nullable",
+			setup: func() {
+				mockColumn.EXPECT().IsChange().Return(false).Once()
+				mockColumn.EXPECT().GetNullable().Return(true).Once()
+			},
+			expectSql: " null",
+		},
+		{
+			name: "with change and and nullable",
+			setup: func() {
+				mockColumn.EXPECT().IsChange().Return(true).Once()
+				mockColumn.EXPECT().GetNullable().Return(true).Once()
+			},
+			expectSql: " drop not null",
+		},
+		{
+			name: "without change and not nullable",
+			setup: func() {
+				mockColumn.EXPECT().IsChange().Return(false).Once()
+				mockColumn.EXPECT().GetNullable().Return(false).Once()
+			},
+			expectSql: " not null",
+		},
+		{
+			name: "with change and not nullable",
+			setup: func() {
+				mockColumn.EXPECT().IsChange().Return(true).Once()
+				mockColumn.EXPECT().GetNullable().Return(false).Once()
+			},
+			expectSql: " set not null",
+		},
+	}
 
-	mockColumn.EXPECT().IsChange().Return(false).Twice()
-	mockColumn.EXPECT().GetNullable().Return(true).Once()
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			mockBlueprint = mocksschema.NewBlueprint(s.T())
+			mockColumn = mocksschema.NewColumnDefinition(s.T())
 
-	s.Equal(" null", s.grammar.ModifyNullable(mockBlueprint, mockColumn))
+			test.setup()
 
-	mockColumn.EXPECT().GetNullable().Return(false).Once()
+			sql := s.grammar.ModifyNullable(mockBlueprint, mockColumn)
 
-	s.Equal(" not null", s.grammar.ModifyNullable(mockBlueprint, mockColumn))
+			s.Equal(test.expectSql, sql)
+		})
+	}
 }
 
 func (s *PostgresSuite) TestModifyIncrement() {
