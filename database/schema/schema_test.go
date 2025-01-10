@@ -94,6 +94,11 @@ func (s *SchemaSuite) TestColumnChange() {
 				table.String("change_to_not_nullable").Nullable()
 				table.String("change_add_default")
 				table.String("change_remove_default").Default("goravel")
+				table.String("change_modify_default").Default("goravel")
+				table.String("change_add_comment")
+				table.String("change_remove_comment").Comment("goravel")
+				table.String("change_modify_comment").Comment("goravel")
+
 			}))
 			columns, err := schema.GetColumns(table)
 			s.Require().Nil(err)
@@ -113,9 +118,18 @@ func (s *SchemaSuite) TestColumnChange() {
 				if column.Name == "change_add_default" {
 					s.Empty(column.Default)
 				}
-				if column.Name == "change_remove_default" {
+				if column.Name == "change_remove_default" || column.Name == "change_modify_default" {
 					s.Contains(column.Default, "goravel")
 				}
+				if driver != database.DriverSqlserver {
+					if column.Name == "change_add_comment" {
+						s.Empty(column.Comment)
+					}
+					if column.Name == "change_remove_comment" || column.Name == "change_modify_comment" {
+						s.Contains(column.Comment, "goravel")
+					}
+				}
+
 			}
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.String("change_length", customStringLength).Change()
@@ -124,6 +138,10 @@ func (s *SchemaSuite) TestColumnChange() {
 				table.String("change_to_not_nullable").Change()
 				table.String("change_add_default").Default("goravel").Change()
 				table.String("change_remove_default").Change()
+				table.String("change_modify_default").Default("goravel_again").Change()
+				table.String("change_add_comment").Comment("goravel").Change()
+				table.String("change_remove_comment").Change()
+				table.String("change_modify_comment").Comment("goravel_again").Change()
 			}))
 			columns, err = schema.GetColumns(table)
 			s.Require().Nil(err)
@@ -145,6 +163,20 @@ func (s *SchemaSuite) TestColumnChange() {
 				}
 				if column.Name == "change_remove_default" {
 					s.Empty(column.Default)
+				}
+				if column.Name == "change_modify_default" {
+					s.Contains(column.Default, "goravel_again")
+				}
+				if driver != database.DriverSqlserver {
+					if column.Name == "change_add_comment" {
+						s.Contains(column.Comment, "goravel")
+					}
+					if column.Name == "change_remove_comment" {
+						s.Empty(column.Comment)
+					}
+					if column.Name == "change_modify_comment" {
+						s.Contains(column.Comment, "goravel_again")
+					}
 				}
 			}
 		})
