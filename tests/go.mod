@@ -1,10 +1,10 @@
-module tests
+module github.com/goravel/framework/tests
 
 go 1.23.4
 
 require (
 	github.com/goravel/framework v1.15.2-0.20250110030145-225df7670fcf
-	github.com/goravel/postgres v0.0.0
+	github.com/goravel/postgres v0.0.1
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -70,9 +70,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgx/v5 v5.5.5 // indirect
-	github.com/jackc/puddle/v2 v2.2.1 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/pgx/v5 v5.7.2 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -159,3 +159,5 @@ require (
 	modernc.org/memory v1.8.1 // indirect
 	modernc.org/sqlite v1.34.4 // indirect
 )
+
+replace github.com/goravel/framework => ../

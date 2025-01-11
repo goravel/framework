@@ -40,7 +40,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 		if err != nil {
 			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm))
 
-			return nil, nil
+			return orm, nil
 		}
 
 		return orm, nil

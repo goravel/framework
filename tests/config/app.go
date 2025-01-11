@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/database"
 	"github.com/goravel/framework/facades"
 	"github.com/goravel/framework/log"
 	"github.com/goravel/framework/support/carbon"
@@ -71,6 +72,7 @@ func init() {
 		// this array to grant expanded functionality to your applications.
 		"providers": []foundation.ServiceProvider{
 			&log.ServiceProvider{},
+			&database.ServiceProvider{},
 			&postgres.ServiceProvider{},
 		},
 	})

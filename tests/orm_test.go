@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/postgres"
 	"github.com/stretchr/testify/assert"
 
-	"tests/config"
+	"github.com/goravel/framework/tests/config"
 )
 
 func TestCount(t *testing.T) {
@@ -17,7 +17,8 @@ func TestCount(t *testing.T) {
 	app.Boot()
 	config.Boot()
 
-	driver := postgres.NewPostgres(postgres.NewConfigBuilder(app.MakeConfig(), "postgres"), app.MakeLog())
+	configFacade := app.MakeConfig()
+	driver := postgres.NewPostgres(postgres.NewConfigBuilder(configFacade, "postgres"), app.MakeLog())
 	docker, err := driver.Docker()
 	if err != nil {
 		panic(err)
@@ -31,7 +32,10 @@ func TestCount(t *testing.T) {
 		panic(err)
 	}
 
-	query := gorm.NewTestQuery(docker)
+	configFacade.Add("database.connections.postgres.port", docker.Config().Port)
+	app.MakeOrm().Refresh()
+	query := gorm.NewTestQuery1(docker, configFacade)
+	query.CreateTable(gorm.TestTableUsers)
 
 	user := gorm.User{Name: "count_user", Avatar: "count_avatar"}
 	assert.Nil(t, query.Query().Create(&user))
