@@ -63,6 +63,13 @@ func (s *ColumnDefinitionTestSuite) GetType() {
 	s.Equal("string", s.columnDefinition.GetType())
 }
 
+func (s *ColumnDefinitionTestSuite) IsChange() {
+	s.False(s.columnDefinition.IsChange())
+
+	s.columnDefinition.Change()
+	s.True(s.columnDefinition.IsChange())
+}
+
 func (s *ColumnDefinitionTestSuite) Unsigned() {
 	s.columnDefinition.Unsigned()
 	s.True(*s.columnDefinition.unsigned)

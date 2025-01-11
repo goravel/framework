@@ -43,6 +43,10 @@ func (r *Sqlite) CompileAdd(blueprint schema.Blueprint, command *schema.Command)
 	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Sqlite) CompileChange(blueprint schema.Blueprint, command *schema.Command) []string {
+	return nil
+}
+
 func (r *Sqlite) CompileColumns(schema, table string) string {
 	return fmt.Sprintf(
 		`select name, type, not "notnull" as "nullable", dflt_value as "default", pk as "primary", hidden as "extra" `+
@@ -59,6 +63,10 @@ func (r *Sqlite) CompileCreate(blueprint schema.Blueprint) string {
 		strings.Join(r.getColumns(blueprint), ", "),
 		r.addForeignKeys(getCommandsByName(blueprint.GetCommands(), "foreign")),
 		r.addPrimaryKeys(getCommandByName(blueprint.GetCommands(), "primary")))
+}
+
+func (r *Sqlite) CompileDefault(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
 }
 
 func (r *Sqlite) CompileDisableWriteableSchema() string {

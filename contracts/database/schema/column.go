@@ -3,6 +3,8 @@ package schema
 type ColumnDefinition interface {
 	// AutoIncrement set the column as auto increment
 	AutoIncrement() ColumnDefinition
+	// Change the column
+	Change() ColumnDefinition
 	// Comment sets the comment value
 	Comment(comment string) ColumnDefinition
 	// Default set the default value
@@ -37,6 +39,8 @@ type ColumnDefinition interface {
 	GetUseCurrent() bool
 	// GetUseCurrentOnUpdate returns the useCurrentOnUpdate value
 	GetUseCurrentOnUpdate() bool
+	// IsChange returns true if the column has changed
+	IsChange() bool
 	// IsSetComment returns true if the comment value is set
 	IsSetComment() bool
 	// OnUpdate sets the column to use the value on update (Mysql only)

@@ -4,6 +4,7 @@ const (
 	CommandAdd          = "add"
 	CommandComment      = "comment"
 	CommandCreate       = "create"
+	CommandDefault      = "default"
 	CommandDrop         = "drop"
 	CommandDropColumn   = "dropColumn"
 	CommandDropForeign  = "dropForeign"

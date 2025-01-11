@@ -39,6 +39,19 @@ func (r *Postgres) CompileAdd(blueprint schema.Blueprint, command *schema.Comman
 	return fmt.Sprintf("alter table %s add column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Postgres) CompileChange(blueprint schema.Blueprint, command *schema.Command) []string {
+	changes := []string{fmt.Sprintf("alter column %s type %s", r.wrap.Column(command.Column.GetName()), getType(r, command.Column))}
+	for _, modifier := range r.modifiers {
+		if change := modifier(blueprint, command.Column); change != "" {
+			changes = append(changes, fmt.Sprintf("alter column %s%s", r.wrap.Column(command.Column.GetName()), change))
+		}
+	}
+
+	return []string{
+		fmt.Sprintf("alter table %s %s", r.wrap.Table(blueprint.GetTableName()), strings.Join(changes, ", ")),
+	}
+}
+
 func (r *Postgres) CompileColumns(schema, table string) string {
 	return fmt.Sprintf(
 		"select a.attname as name, t.typname as type_name, format_type(a.atttypid, a.atttypmod) as type, "+
@@ -65,6 +78,10 @@ func (r *Postgres) CompileComment(blueprint schema.Blueprint, command *schema.Co
 
 func (r *Postgres) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
+}
+
+func (r *Postgres) CompileDefault(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
 }
 
 func (r *Postgres) CompileDrop(blueprint schema.Blueprint) string {
@@ -291,6 +308,15 @@ func (r *Postgres) GetAttributeCommands() []string {
 }
 
 func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.IsChange() {
+		if column.GetAutoIncrement() {
+			return ""
+		}
+		if column.GetDefault() != nil {
+			return fmt.Sprintf(" set default %s", getDefaultValue(column.GetDefault()))
+		}
+		return " drop default"
+	}
 	if column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
 	}
@@ -299,15 +325,20 @@ func (r *Postgres) ModifyDefault(blueprint schema.Blueprint, column schema.Colum
 }
 
 func (r *Postgres) ModifyNullable(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
+	if column.IsChange() {
+		if column.GetNullable() {
+			return " drop not null"
+		}
+		return " set not null"
+	}
 	if column.GetNullable() {
 		return " null"
-	} else {
-		return " not null"
 	}
+	return " not null"
 }
 
 func (r *Postgres) ModifyIncrement(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+	if !column.IsChange() && !blueprint.HasCommand("primary") && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
 		return " primary key"
 	}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/schema/constants"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -64,6 +65,121 @@ func (s *SchemaSuite) SetupTest() {
 func (s *SchemaSuite) TearDownTest() {
 	if s.driverToTestQuery[database.DriverSqlite] != nil {
 		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Shutdown())
+	}
+}
+
+func (s *SchemaSuite) TestColumnChange() {
+	for driver, testQuery := range s.driverToTestQuery {
+		if driver == database.DriverSqlite {
+			continue
+		}
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
+			table := "column_change"
+			expectedDefaultStringLength := constants.DefaultStringLength
+			customStringLength := 100
+			expectedCustomStringLength := customStringLength
+			expectedColumnType := "text"
+
+			if driver == database.DriverSqlserver {
+				expectedDefaultStringLength = constants.DefaultStringLength * 2
+				expectedCustomStringLength = customStringLength * 2
+				expectedColumnType = "nvarchar"
+			}
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.ID()
+				table.String("change_length")
+				table.String("change_type")
+				table.String("change_to_nullable")
+				table.String("change_to_not_nullable").Nullable()
+				table.String("change_add_default")
+				table.String("change_remove_default").Default("goravel")
+				table.String("change_modify_default").Default("goravel")
+				table.String("change_add_comment")
+				table.String("change_remove_comment").Comment("goravel")
+				table.String("change_modify_comment").Comment("goravel")
+
+			}))
+			columns, err := schema.GetColumns(table)
+			s.Require().Nil(err)
+			for _, column := range columns {
+				if column.Name == "change_length" {
+					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedDefaultStringLength))
+				}
+				if column.Name == "change_type" {
+					s.Contains(column.TypeName, "varchar")
+				}
+				if column.Name == "change_to_nullable" {
+					s.False(column.Nullable)
+				}
+				if column.Name == "change_to_not_nullable" {
+					s.True(column.Nullable)
+				}
+				if column.Name == "change_add_default" {
+					s.Empty(column.Default)
+				}
+				if column.Name == "change_remove_default" || column.Name == "change_modify_default" {
+					s.Contains(column.Default, "goravel")
+				}
+				if driver != database.DriverSqlserver {
+					if column.Name == "change_add_comment" {
+						s.Empty(column.Comment)
+					}
+					if column.Name == "change_remove_comment" || column.Name == "change_modify_comment" {
+						s.Contains(column.Comment, "goravel")
+					}
+				}
+
+			}
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.String("change_length", customStringLength).Change()
+				table.Text("change_type").Change()
+				table.String("change_to_nullable").Nullable().Change()
+				table.String("change_to_not_nullable").Change()
+				table.String("change_add_default").Default("goravel").Change()
+				table.String("change_remove_default").Change()
+				table.String("change_modify_default").Default("goravel_again").Change()
+				table.String("change_add_comment").Comment("goravel").Change()
+				table.String("change_remove_comment").Change()
+				table.String("change_modify_comment").Comment("goravel_again").Change()
+			}))
+			columns, err = schema.GetColumns(table)
+			s.Require().Nil(err)
+			for _, column := range columns {
+				if column.Name == "change_length" {
+					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedCustomStringLength))
+				}
+				if column.Name == "change_type" {
+					s.Contains(column.TypeName, expectedColumnType)
+				}
+				if column.Name == "change_to_nullable" {
+					s.True(column.Nullable)
+				}
+				if column.Name == "change_to_not_nullable" {
+					s.False(column.Nullable)
+				}
+				if column.Name == "change_add_default" {
+					s.Contains(column.Default, "goravel")
+				}
+				if column.Name == "change_remove_default" {
+					s.Empty(column.Default)
+				}
+				if column.Name == "change_modify_default" {
+					s.Contains(column.Default, "goravel_again")
+				}
+				if driver != database.DriverSqlserver {
+					if column.Name == "change_add_comment" {
+						s.Contains(column.Comment, "goravel")
+					}
+					if column.Name == "change_remove_comment" {
+						s.Empty(column.Comment)
+					}
+					if column.Name == "change_modify_comment" {
+						s.Contains(column.Comment, "goravel_again")
+					}
+				}
+			}
+		})
 	}
 }
 
