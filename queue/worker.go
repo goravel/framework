@@ -84,12 +84,13 @@ func (r *Worker) Run() error {
 		}
 	}()
 
+	r.wg.Wait()
+
 	return nil
 }
 
 func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
-	r.wg.Wait()
 	close(r.failedJobChan)
 	return nil
 }

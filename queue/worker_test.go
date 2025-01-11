@@ -16,6 +16,7 @@ import (
 
 type WorkerTestSuite struct {
 	suite.Suite
+	app        *Application
 	mockConfig *mocksconfig.Config
 }
 
@@ -25,27 +26,27 @@ func TestWorkerTestSuite(t *testing.T) {
 
 func (s *WorkerTestSuite) SetupTest() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
-	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(4)
-	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(3)
-	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Times(3)
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Times(2)
 	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
 	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
+	s.app = NewApplication(s.mockConfig)
 }
 
 func (s *WorkerTestSuite) TestRun_Success() {
-	app := NewApplication(s.mockConfig)
 	testJob := new(MockJob)
-	app.Register([]contractsqueue.Job{testJob})
+	s.app.Register([]contractsqueue.Job{testJob})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	go func(ctx context.Context) {
-		s.NoError(app.Worker().Run())
+		s.NoError(s.app.Worker().Run())
 		<-ctx.Done()
-		s.NoError(app.Worker().Shutdown())
+		s.NoError(s.app.Worker().Shutdown())
 	}(ctx)
 
 	time.Sleep(1 * time.Second)
-	s.NoError(app.Job(testJob, []any{}).Dispatch())
+	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
 	cancel()
@@ -64,19 +65,18 @@ func (s *WorkerTestSuite) TestRun_FailedJob() {
 	mockQuery.EXPECT().Create(mock.Anything).Return(nil)
 	OrmFacade = mockOrm
 
-	app := NewApplication(s.mockConfig)
 	testJob := new(MockFailedJob)
-	app.Register([]contractsqueue.Job{testJob})
+	s.app.Register([]contractsqueue.Job{testJob})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	go func(ctx context.Context) {
-		s.NoError(app.Worker().Run())
+		s.NoError(s.app.Worker().Run())
 		<-ctx.Done()
-		s.NoError(app.Worker().Shutdown())
+		s.NoError(s.app.Worker().Shutdown())
 	}(ctx)
 
 	time.Sleep(1 * time.Second)
-	s.NoError(app.Job(testJob, []any{}).Dispatch())
+	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
 	cancel()
