@@ -45,6 +45,12 @@ func (r *Worker) Run() error {
 		return errors.QueueDriverSyncNotNeedRun.Args(r.queue)
 	}
 
+	// special cases for Machinery
+	// TODO: will remove in v1.17
+	if driver.Driver() == queue.DriverMachinery {
+		return r.runMachinery(driver)
+	}
+
 	for i := 0; i < r.concurrent; i++ {
 		r.wg.Add(1)
 		go func() {
@@ -93,4 +99,11 @@ func (r *Worker) Shutdown() error {
 	r.isShutdown.Store(true)
 	close(r.failedJobChan)
 	return nil
+}
+
+// runMachinery is a special case for Machinery
+// TODO: will remove in v1.17
+func (r *Worker) runMachinery(driver queue.Driver) error {
+	m := driver.(*Machinery)
+	return m.Run(r.job.All(), r.queue, r.concurrent)
 }

@@ -3,6 +3,7 @@
 package queue
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/RichardKnop/machinery/v2"
@@ -11,6 +12,7 @@ import (
 	"github.com/RichardKnop/machinery/v2/config"
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/RichardKnop/machinery/v2/log"
+	"github.com/RichardKnop/machinery/v2/tasks"
 
 	contractslog "github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
@@ -35,28 +37,74 @@ func (m *Machinery) Connection() string {
 }
 
 func (m *Machinery) Driver() string {
-	//TODO implement me
-	panic("implement me")
+	return queue.DriverMachinery
 }
 
 func (m *Machinery) Push(job queue.Job, args []any, queue string) error {
-	//TODO implement me
-	panic("implement me")
+	server := m.server(queue)
+	_, err := server.SendTask(&tasks.Signature{
+		Name: job.Signature(),
+		Args: m.argsToMachineryArgs(args),
+	})
+	return err
 }
 
 func (m *Machinery) Bulk(jobs []queue.Jobs, queue string) error {
-	//TODO implement me
-	panic("implement me")
+	var signatures []*tasks.Signature
+	for _, job := range jobs {
+		signatures = append(signatures, &tasks.Signature{
+			Name: job.Job.Signature(),
+			Args: m.argsToMachineryArgs(job.Args),
+			ETA:  &job.Delay,
+		})
+	}
+
+	chain, err := tasks.NewChain(signatures...)
+	if err != nil {
+		return err
+	}
+
+	server := m.server(queue)
+	_, err = server.SendChain(chain)
+
+	return err
 }
 
 func (m *Machinery) Later(delay time.Time, job queue.Job, args []any, queue string) error {
-	//TODO implement me
-	panic("implement me")
+	server := m.server(queue)
+	_, err := server.SendTask(&tasks.Signature{
+		Name: job.Signature(),
+		Args: m.argsToMachineryArgs(args),
+		ETA:  &delay,
+	})
+	return err
 }
 
 func (m *Machinery) Pop(queue string) (queue.Job, []any, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, nil, nil
+}
+
+func (m *Machinery) Run(jobs []queue.Job, queue string, concurrent int) error {
+	server := m.server(queue)
+	if server == nil {
+		return nil
+	}
+
+	jobTasks, err := jobs2Tasks(jobs)
+	if err != nil {
+		return err
+	}
+
+	if err = server.RegisterTasks(jobTasks); err != nil {
+		return err
+	}
+
+	if queue == "" {
+		queue = server.GetConfig().DefaultQueue
+	}
+
+	worker := server.NewWorker(queue, concurrent)
+	return worker.Launch()
 }
 
 func (m *Machinery) server(queue string) *machinery.Server {
@@ -82,4 +130,16 @@ func (m *Machinery) server(queue string) *machinery.Server {
 	log.FATAL = NewFatal(debug, m.log)
 
 	return machinery.NewServer(cnf, broker, backend, lock)
+}
+
+func (m *Machinery) argsToMachineryArgs(args []any) []tasks.Arg {
+	var realArgs []tasks.Arg
+	for _, arg := range args {
+		reflected := reflect.ValueOf(arg)
+		realArgs = append(realArgs, tasks.Arg{
+			Type:  reflected.Type().String(),
+			Value: reflected.Interface(),
+		})
+	}
+	return realArgs
 }

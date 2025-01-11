@@ -37,15 +37,10 @@ func (r *Async) Push(job contractsqueue.Job, args []any, queue string) error {
 
 func (r *Async) Bulk(jobs []contractsqueue.Jobs, queue string) error {
 	for _, job := range jobs {
-		if job.Delay > 0 {
-			go func(j contractsqueue.Jobs) {
-				time.Sleep(j.Delay)
-				r.getQueue(queue) <- j
-			}(job)
-			continue
-		}
-
-		r.getQueue(queue) <- job
+		go func() {
+			time.Sleep(time.Until(job.Delay))
+			r.getQueue(queue) <- job
+		}()
 	}
 
 	return nil

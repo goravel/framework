@@ -30,9 +30,7 @@ func (r *Sync) Push(job queue.Job, args []any, _ string) error {
 
 func (r *Sync) Bulk(jobs []queue.Jobs, _ string) error {
 	for _, job := range jobs {
-		if job.Delay > 0 {
-			time.Sleep(job.Delay)
-		}
+		time.Sleep(time.Until(job.Delay))
 		if err := job.Job.Handle(job.Args...); err != nil {
 			return err
 		}
