@@ -430,6 +430,12 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 
 		switch command.Name {
 		case constants.CommandAdd:
+			if command.Column.IsChange() {
+				if statement := grammar.CompileChange(r, command); len(statement) > 0 {
+					statements = append(statements, statement...)
+				}
+				continue
+			}
 			statements = append(statements, grammar.CompileAdd(r, command))
 		case constants.CommandComment:
 			if statement := grammar.CompileComment(r, command); statement != "" {
@@ -437,6 +443,10 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 			}
 		case constants.CommandCreate:
 			statements = append(statements, grammar.CompileCreate(r))
+		case constants.CommandDefault:
+			if statement := grammar.CompileDefault(r, command); statement != "" {
+				statements = append(statements, statement)
+			}
 		case constants.CommandDrop:
 			statements = append(statements, grammar.CompileDrop(r))
 		case constants.CommandDropColumn:
@@ -503,10 +513,16 @@ func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
 	attributeCommands := grammar.GetAttributeCommands()
 	for _, column := range r.columns {
 		for _, command := range attributeCommands {
-			if command == constants.CommandComment && column.comment != nil {
+			if command == constants.CommandComment && (column.comment != nil || column.change) {
 				r.addCommand(&schema.Command{
 					Column: column,
 					Name:   constants.CommandComment,
+				})
+			}
+			if command == constants.CommandDefault && column.def != nil {
+				r.addCommand(&schema.Command{
+					Column: column,
+					Name:   constants.CommandDefault,
 				})
 			}
 		}
