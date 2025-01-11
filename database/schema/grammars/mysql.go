@@ -41,6 +41,12 @@ func (r *Mysql) CompileAdd(blueprint schema.Blueprint, command *schema.Command) 
 	return fmt.Sprintf("alter table %s add %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
 }
 
+func (r *Mysql) CompileChange(blueprint schema.Blueprint, command *schema.Command) []string {
+	return []string{
+		fmt.Sprintf("alter table %s modify %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column)),
+	}
+}
+
 func (r *Mysql) CompileColumns(schema, table string) string {
 	return fmt.Sprintf(
 		"select column_name as `name`, data_type as `type_name`, column_type as `type`, "+
@@ -69,6 +75,10 @@ func (r *Mysql) CompileCreate(blueprint schema.Blueprint) string {
 	}
 
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(columns, ", "))
+}
+
+func (r *Mysql) CompileDefault(_ schema.Blueprint, _ *schema.Command) string {
+	return ""
 }
 
 func (r *Mysql) CompileDisableForeignKeyConstraints() string {

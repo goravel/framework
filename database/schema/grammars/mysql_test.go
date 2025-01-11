@@ -43,6 +43,27 @@ func (s *MysqlSuite) TestCompileAdd() {
 	s.Equal("alter table `goravel_users` add `name` varchar(1) not null default 'goravel' comment 'comment'", sql)
 }
 
+func (s *MysqlSuite) TestCompileChange() {
+	mockBlueprint := mocksschema.NewBlueprint(s.T())
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+
+	mockBlueprint.EXPECT().GetTableName().Return("users").Once()
+	mockColumn.EXPECT().GetName().Return("name").Once()
+	mockColumn.EXPECT().GetType().Return("string").Twice()
+	mockColumn.EXPECT().GetDefault().Return("goravel").Twice()
+	mockColumn.EXPECT().GetNullable().Return(false).Once()
+	mockColumn.EXPECT().GetLength().Return(1).Once()
+	mockColumn.EXPECT().GetOnUpdate().Return(nil).Once()
+	mockColumn.EXPECT().GetComment().Return("comment").Once()
+	mockColumn.EXPECT().GetUnsigned().Return(false).Once()
+
+	sql := s.grammar.CompileChange(mockBlueprint, &contractsschema.Command{
+		Column: mockColumn,
+	})
+
+	s.Equal([]string{"alter table `goravel_users` modify `name` varchar(1) not null default 'goravel' comment 'comment'"}, sql)
+}
+
 func (s *MysqlSuite) TestCompileCreate() {
 	mockColumn1 := mocksschema.NewColumnDefinition(s.T())
 	mockColumn2 := mocksschema.NewColumnDefinition(s.T())

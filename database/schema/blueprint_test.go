@@ -395,6 +395,15 @@ func (s *BlueprintTestSuite) TestToSql() {
 		} else {
 			s.Empty(s.blueprint.ToSql(grammar))
 		}
+
+		// Change column
+		s.SetupTest()
+		s.blueprint.String("name", 100).Change()
+		if driver == database.DriverPostgres {
+			s.Len(s.blueprint.ToSql(grammar), 2)
+		} else {
+			s.Empty(s.blueprint.ToSql(grammar))
+		}
 	}
 }
 
@@ -445,5 +454,17 @@ func (s *BlueprintTestSuite) TestUnsignedTinyInteger() {
 		name:     &name,
 		ttype:    convert.Pointer("tinyInteger"),
 		unsigned: convert.Pointer(true),
+	})
+}
+
+func (s *BlueprintTestSuite) TestChange() {
+	column := "name"
+	customLength := 100
+	s.blueprint.String(column, customLength).Change()
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		length: &customLength,
+		name:   &column,
+		change: true,
+		ttype:  convert.Pointer("string"),
 	})
 }

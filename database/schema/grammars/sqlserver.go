@@ -21,7 +21,7 @@ type Sqlserver struct {
 
 func NewSqlserver(tablePrefix string) *Sqlserver {
 	sqlserver := &Sqlserver{
-		attributeCommands: []string{constants.CommandComment},
+		attributeCommands: []string{constants.CommandComment, constants.CommandDefault},
 		serials:           []string{"bigInteger", "integer", "mediumInteger", "smallInteger", "tinyInteger"},
 		wrap:              NewWrap(database.DriverSqlserver, tablePrefix),
 	}
@@ -36,6 +36,13 @@ func NewSqlserver(tablePrefix string) *Sqlserver {
 
 func (r *Sqlserver) CompileAdd(blueprint schema.Blueprint, command *schema.Command) string {
 	return fmt.Sprintf("alter table %s add %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column))
+}
+
+func (r *Sqlserver) CompileChange(blueprint schema.Blueprint, command *schema.Command) []string {
+	return []string{
+		r.CompileDropDefaultConstraint(blueprint, command),
+		fmt.Sprintf("alter table %s alter column %s", r.wrap.Table(blueprint.GetTableName()), r.getColumn(blueprint, command.Column)),
+	}
 }
 
 func (r *Sqlserver) CompileColumns(schema, table string) string {
@@ -68,6 +75,18 @@ func (r *Sqlserver) CompileComment(_ schema.Blueprint, _ *schema.Command) string
 
 func (r *Sqlserver) CompileCreate(blueprint schema.Blueprint) string {
 	return fmt.Sprintf("create table %s (%s)", r.wrap.Table(blueprint.GetTableName()), strings.Join(r.getColumns(blueprint), ", "))
+}
+
+func (r *Sqlserver) CompileDefault(blueprint schema.Blueprint, command *schema.Command) string {
+	if command.Column.IsChange() && command.Column.GetDefault() != nil {
+		return fmt.Sprintf("alter table %s add default %s for %s",
+			r.wrap.Table(blueprint.GetTableName()),
+			getDefaultValue(command.Column.GetDefault()),
+			r.wrap.Column(command.Column.GetName()),
+		)
+	}
+
+	return ""
 }
 
 func (r *Sqlserver) CompileDrop(blueprint schema.Blueprint) string {
@@ -115,8 +134,10 @@ func (r *Sqlserver) CompileDropColumn(blueprint schema.Blueprint, command *schem
 }
 
 func (r *Sqlserver) CompileDropDefaultConstraint(blueprint schema.Blueprint, command *schema.Command) string {
-	// TODO Add change logic
 	columns := fmt.Sprintf("'%s'", strings.Join(command.Columns, "','"))
+	if command.Column != nil && command.Column.IsChange() {
+		columns = fmt.Sprintf("'%s'", command.Column.GetName())
+	}
 	table := r.wrap.Table(blueprint.GetTableName())
 	tableName := r.wrap.Quote(table)
 
@@ -281,7 +302,7 @@ func (r *Sqlserver) GetAttributeCommands() []string {
 }
 
 func (r *Sqlserver) ModifyDefault(_ schema.Blueprint, column schema.ColumnDefinition) string {
-	if column.GetDefault() != nil {
+	if !column.IsChange() && column.GetDefault() != nil {
 		return fmt.Sprintf(" default %s", getDefaultValue(column.GetDefault()))
 	}
 
@@ -291,13 +312,13 @@ func (r *Sqlserver) ModifyDefault(_ schema.Blueprint, column schema.ColumnDefini
 func (r *Sqlserver) ModifyNullable(_ schema.Blueprint, column schema.ColumnDefinition) string {
 	if column.GetNullable() {
 		return " null"
-	} else {
-		return " not null"
 	}
+
+	return " not null"
 }
 
 func (r *Sqlserver) ModifyIncrement(blueprint schema.Blueprint, column schema.ColumnDefinition) string {
-	if slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
+	if !column.IsChange() && slices.Contains(r.serials, column.GetType()) && column.GetAutoIncrement() {
 		if blueprint.HasCommand("primary") {
 			return " identity"
 		}
