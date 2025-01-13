@@ -42,6 +42,10 @@ func (r *TestQuery1) CreateTable(testTables ...TestTable) {
 	}
 }
 
+func (r *TestQuery1) Driver() orm.Driver {
+	return r.driver
+}
+
 func (r *TestQuery1) Query() orm.Query {
 	return r.query
 }

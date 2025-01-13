@@ -13,10 +13,7 @@ func (d Driver) String() string {
 	return string(d)
 }
 
-<<<<<<< HEAD
 // TODO Rename to Config
-=======
->>>>>>> 9bf7a25 (optimize)
 type Config1 struct {
 	Connection string
 	Driver     string
@@ -48,11 +45,6 @@ type FullConfig struct {
 	Timezone     string // Postgres
 	NoLowerCase  bool
 	NameReplacer Replacer
-}
-
-type ConfigBuilder interface {
-	Reads() []FullConfig
-	Writes() []FullConfig
 }
 
 // Replacer replacer interface like strings.Replacer
