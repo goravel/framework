@@ -1,6 +1,6 @@
 module github.com/goravel/framework/tests
 
-go 1.23.4
+go 1.22.7
 
 require (
 	github.com/goravel/framework v1.15.2-0.20250110030145-225df7670fcf
@@ -159,5 +159,3 @@ require (
 	modernc.org/memory v1.8.1 // indirect
 	modernc.org/sqlite v1.34.4 // indirect
 )
-
-replace github.com/goravel/framework => ../

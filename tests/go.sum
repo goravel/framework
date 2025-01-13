@@ -355,6 +355,8 @@ github.com/gookit/validate v1.5.4 h1:nwBo6vULnVUeNFCOde6RKFRbOCKJXVMnWR0ghedacLg
 github.com/gookit/validate v1.5.4/go.mod h1:p9sRPfpvYB4vXICBpEPzv8FoAky+XhUOhWQghgmmat4=
 github.com/goravel/file-rotatelogs/v2 v2.4.2 h1:g68AzbePXcm0V2CpUMc9j4qVzcDn7+7aoWSjZ51C0m4=
 github.com/goravel/file-rotatelogs/v2 v2.4.2/go.mod h1:23VuSW8cBS4ax5cmbV+5AaiLpq25b8UJ96IhbAkdo8I=
+github.com/goravel/framework v1.15.2-0.20250110030145-225df7670fcf h1:DdfzHE+ij8EPwsUjfZKelXlbBXAEyrXFiRBcpPw/hTI=
+github.com/goravel/framework v1.15.2-0.20250110030145-225df7670fcf/go.mod h1:LqNOCOo1zL8/qBAB9UWX4uHcrRlIs0vmhphud+BIrF8=
 github.com/goravel/postgres v0.0.1 h1:M4KVxgdLmjMTlTz8iit5qMSihahWH6e8d0p4203r2kc=
 github.com/goravel/postgres v0.0.1/go.mod h1:mBQwCDm/rcNZV6BiQoXeyDJiP/zZkVhWlX7PYdkEtG8=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/testing"
@@ -180,26 +179,6 @@ func NewTestQuery(docker testing.DatabaseDriver) *TestQuery {
 
 	mockDriver.Common()
 	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
-	if err != nil {
-		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
-	}
-
-	testQuery.query = query
-
-	return testQuery
-}
-
-func NewTestQuery1(docker testing.DatabaseDriver, config config.Config) *TestQuery {
-	mockConfig := &mocksconfig.Config{}
-	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
-	testQuery := &TestQuery{
-		docker:     docker,
-		mockConfig: mockConfig,
-		mockDriver: mockDriver,
-	}
-
-	mockDriver.Common()
-	query, err := BuildQuery(testContext, config, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}

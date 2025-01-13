@@ -39,6 +39,8 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
+require github.com/rogpeppe/go-internal v1.13.1 // indirect
+
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
