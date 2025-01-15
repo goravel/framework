@@ -5,41 +5,97 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/file"
+	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 )
 
 func TestMigrateRollbackCommand(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+	var (
+		mockContext  *mocksconsole.Context
+		mockMigrator *mocksmigration.Migrator
+	)
+
+	beforeEach := func() {
+		mockContext = mocksconsole.NewContext(t)
+		mockMigrator = mocksmigration.NewMigrator(t)
 	}
 
-	testQueries := gorm.NewTestQueries().Queries()
-	for driver, testQuery := range testQueries {
-		query := testQuery.Query()
-		mockConfig := testQuery.MockConfig()
-		createMigrations(driver)
-
-		mockContext := mocksconsole.NewContext(t)
-		mockContext.On("Option", "step").Return("1").Once()
-
-		migrateCommand := NewMigrateCommand(mockConfig)
-		assert.Nil(t, migrateCommand.Handle(mockContext))
-
-		var agent Agent
-		err := query.Where("name", "goravel").FirstOrFail(&agent)
-		assert.Nil(t, err)
-		assert.True(t, agent.ID > 0)
-
-		migrateRollbackCommand := NewMigrateRollbackCommand(mockConfig)
-		assert.Nil(t, migrateRollbackCommand.Handle(mockContext))
-
-		var agent1 Agent
-		err = query.Where("name", "goravel").FirstOrFail(&agent1)
-		assert.Error(t, err)
+	tests := []struct {
+		name  string
+		setup func()
+	}{
+		{
+			name: "Default value",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
+				mockMigrator.EXPECT().Rollback(1, 0).Return(nil).Once()
+				mockContext.EXPECT().Success("Migration rollback success").Once()
+			},
+		},
+		{
+			name: "step < 0",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(-1).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
+				mockContext.EXPECT().Error("The step option should be a positive integer").Once()
+			},
+		},
+		{
+			name: "batch < 0",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(-1).Once()
+				mockContext.EXPECT().Error("The batch option should be a positive integer").Once()
+			},
+		},
+		{
+			name: "step > 0 && batch > 0",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(1).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(1).Once()
+				mockContext.EXPECT().Error("The step and batch options cannot be used together").Once()
+			},
+		},
+		{
+			name: "With step",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(2).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
+				mockMigrator.EXPECT().Rollback(2, 0).Return(nil).Once()
+				mockContext.EXPECT().Success("Migration rollback success").Once()
+			},
+		},
+		{
+			name: "With batch",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(2).Once()
+				mockMigrator.EXPECT().Rollback(0, 2).Return(nil).Once()
+				mockContext.EXPECT().Success("Migration rollback success").Once()
+			},
+		},
+		{
+			name: "Rollback failed",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockContext.EXPECT().OptionInt("batch").Return(0).Once()
+				mockMigrator.EXPECT().Rollback(1, 0).Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationMigrateFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
 	}
 
-	defer assert.Nil(t, file.Remove("database"))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
+
+			command := NewMigrateRollbackCommand(mockMigrator)
+			err := command.Handle(mockContext)
+
+			assert.NoError(t, err)
+		})
+	}
 }

@@ -5,8 +5,10 @@ import (
 	"github.com/goravel/framework/contracts/queue"
 )
 
-const DriverSync string = "sync"
-const DriverRedis string = "redis"
+const (
+	DriverSync  string = "sync"
+	DriverRedis string = "redis"
+)
 
 type Worker struct {
 	concurrent int

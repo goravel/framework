@@ -1,85 +1,81 @@
 package migration
 
 import (
-	"errors"
-	"strconv"
-
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateRollbackCommand struct {
-	config config.Config
+	migrator migration.Migrator
 }
 
-func NewMigrateRollbackCommand(config config.Config) *MigrateRollbackCommand {
+func NewMigrateRollbackCommand(migrator migration.Migrator) *MigrateRollbackCommand {
 	return &MigrateRollbackCommand{
-		config: config,
+		migrator: migrator,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateRollbackCommand) Signature() string {
+func (r *MigrateRollbackCommand) Signature() string {
 	return "migrate:rollback"
 }
 
 // Description The console command description.
-func (receiver *MigrateRollbackCommand) Description() string {
+func (r *MigrateRollbackCommand) Description() string {
 	return "Rollback the database migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateRollbackCommand) Extend() command.Extend {
+func (r *MigrateRollbackCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 		Flags: []command.Flag{
-			&command.StringFlag{
+			&command.IntFlag{
 				Name:  "step",
-				Value: "1",
+				Value: 0,
 				Usage: "rollback steps",
+			},
+			&command.IntFlag{
+				Name:  "batch",
+				Value: 0,
+				Usage: "rollback batch number (only can be used in default driver)",
 			},
 		},
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateRollbackCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
-	if err != nil {
-		return err
-	}
-	if m == nil {
-		color.Yellow().Println("Please fill database config first")
+func (r *MigrateRollbackCommand) Handle(ctx console.Context) error {
+	step := ctx.OptionInt("step")
+	batch := ctx.OptionInt("batch")
 
+	// Validate inputs
+	if step < 0 {
+		ctx.Error("The step option should be a positive integer")
+		return nil
+	}
+	if batch < 0 {
+		ctx.Error("The batch option should be a positive integer")
+		return nil
+	}
+	if step > 0 && batch > 0 {
+		ctx.Error("The step and batch options cannot be used together")
 		return nil
 	}
 
-	stepString := "-" + ctx.Option("step")
-	step, err := strconv.Atoi(stepString)
-	if err != nil {
-		color.Red().Println("Migration rollback failed: invalid step", ctx.Option("step"))
+	// Set defaults if neither option is provided
+	if step == 0 && batch == 0 {
+		step = 1
+	}
 
+	if err := r.migrator.Rollback(step, batch); err != nil {
+		ctx.Error(errors.MigrationMigrateFailed.Args(err).Error())
 		return nil
 	}
 
-	if err = m.Steps(step); err != nil && !errors.Is(err, migrate.ErrNoChange) && !errors.Is(err, migrate.ErrNilVersion) {
-		var errShortLimit migrate.ErrShortLimit
-		switch {
-		case errors.As(err, &errShortLimit):
-		default:
-			color.Red().Println("Migration rollback failed:", err.Error())
-
-			return nil
-		}
-	}
-
-	color.Green().Println("Migration rollback success")
+	ctx.Success("Migration rollback success")
 
 	return nil
 }

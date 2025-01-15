@@ -1,27 +1,31 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "labels": [
     "🤖 Dependencies"
   ],
   "commitMessagePrefix": "chore(deps): ",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "platformAutomerge": true,
   "postUpdateOptions": [
     "gomodTidy"
   ],
   "packageRules": [
     {
-      "description": "Automerge non-major updates",
+      "groupName": "non-major dependencies",
       "matchUpdateTypes": [
-        "minor",
-        "patch"
+        "digest",
+        "pin",
+        "patch",
+        "minor"
       ],
-      "matchCurrentVersion": "!/^0/",
       "automerge": true
     }
   ],
-  "ignoreDeps": [
-    "github.com/brianvoe/gofakeit/v6"
-  ]
+  "ignoreDeps": []
 }

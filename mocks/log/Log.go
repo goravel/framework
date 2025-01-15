@@ -158,7 +158,7 @@ func (_c *Log_Debug_Call) Return() *Log_Debug_Call {
 }
 
 func (_c *Log_Debug_Call) RunAndReturn(run func(...interface{})) *Log_Debug_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -202,7 +202,7 @@ func (_c *Log_Debugf_Call) Return() *Log_Debugf_Call {
 }
 
 func (_c *Log_Debugf_Call) RunAndReturn(run func(string, ...interface{})) *Log_Debugf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -244,7 +244,7 @@ func (_c *Log_Error_Call) Return() *Log_Error_Call {
 }
 
 func (_c *Log_Error_Call) RunAndReturn(run func(...interface{})) *Log_Error_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -288,7 +288,7 @@ func (_c *Log_Errorf_Call) Return() *Log_Errorf_Call {
 }
 
 func (_c *Log_Errorf_Call) RunAndReturn(run func(string, ...interface{})) *Log_Errorf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -330,7 +330,7 @@ func (_c *Log_Fatal_Call) Return() *Log_Fatal_Call {
 }
 
 func (_c *Log_Fatal_Call) RunAndReturn(run func(...interface{})) *Log_Fatal_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -374,7 +374,7 @@ func (_c *Log_Fatalf_Call) Return() *Log_Fatalf_Call {
 }
 
 func (_c *Log_Fatalf_Call) RunAndReturn(run func(string, ...interface{})) *Log_Fatalf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -512,7 +512,7 @@ func (_c *Log_Info_Call) Return() *Log_Info_Call {
 }
 
 func (_c *Log_Info_Call) RunAndReturn(run func(...interface{})) *Log_Info_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -556,7 +556,7 @@ func (_c *Log_Infof_Call) Return() *Log_Infof_Call {
 }
 
 func (_c *Log_Infof_Call) RunAndReturn(run func(string, ...interface{})) *Log_Infof_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -646,7 +646,7 @@ func (_c *Log_Panic_Call) Return() *Log_Panic_Call {
 }
 
 func (_c *Log_Panic_Call) RunAndReturn(run func(...interface{})) *Log_Panic_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -690,7 +690,7 @@ func (_c *Log_Panicf_Call) Return() *Log_Panicf_Call {
 }
 
 func (_c *Log_Panicf_Call) RunAndReturn(run func(string, ...interface{})) *Log_Panicf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -985,7 +985,7 @@ func (_c *Log_Warning_Call) Return() *Log_Warning_Call {
 }
 
 func (_c *Log_Warning_Call) RunAndReturn(run func(...interface{})) *Log_Warning_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1029,7 +1029,7 @@ func (_c *Log_Warningf_Call) Return() *Log_Warningf_Call {
 }
 
 func (_c *Log_Warningf_Call) RunAndReturn(run func(string, ...interface{})) *Log_Warningf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1129,7 +1129,7 @@ func (_c *Log_WithContext_Call) RunAndReturn(run func(context.Context) log.Write
 	return _c
 }
 
-// WithTrace provides a mock function with given fields:
+// WithTrace provides a mock function with no fields
 func (_m *Log) WithTrace() log.Writer {
 	ret := _m.Called()
 

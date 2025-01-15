@@ -20,7 +20,7 @@ func (_m *Session) EXPECT() *Session_Expecter {
 	return &Session_Expecter{mock: &_m.Mock}
 }
 
-// All provides a mock function with given fields:
+// All provides a mock function with no fields
 func (_m *Session) All() map[string]interface{} {
 	ret := _m.Called()
 
@@ -162,7 +162,7 @@ func (_c *Session_Flash_Call) RunAndReturn(run func(string, interface{}) session
 	return _c
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *Session) Flush() session.Session {
 	ret := _m.Called()
 
@@ -329,7 +329,7 @@ func (_c *Session_Get_Call) RunAndReturn(run func(string, ...interface{}) interf
 	return _c
 }
 
-// GetID provides a mock function with given fields:
+// GetID provides a mock function with no fields
 func (_m *Session) GetID() string {
 	ret := _m.Called()
 
@@ -374,7 +374,7 @@ func (_c *Session_GetID_Call) RunAndReturn(run func() string) *Session_GetID_Cal
 	return _c
 }
 
-// GetName provides a mock function with given fields:
+// GetName provides a mock function with no fields
 func (_m *Session) GetName() string {
 	ret := _m.Called()
 
@@ -465,7 +465,7 @@ func (_c *Session_Has_Call) RunAndReturn(run func(string) bool) *Session_Has_Cal
 	return _c
 }
 
-// Invalidate provides a mock function with given fields:
+// Invalidate provides a mock function with no fields
 func (_m *Session) Invalidate() error {
 	ret := _m.Called()
 
@@ -822,7 +822,7 @@ func (_c *Session_Put_Call) RunAndReturn(run func(string, interface{}) session.S
 	return _c
 }
 
-// Reflash provides a mock function with given fields:
+// Reflash provides a mock function with no fields
 func (_m *Session) Reflash() session.Session {
 	ret := _m.Called()
 
@@ -976,7 +976,7 @@ func (_c *Session_Remove_Call) RunAndReturn(run func(string) interface{}) *Sessi
 	return _c
 }
 
-// Save provides a mock function with given fields:
+// Save provides a mock function with no fields
 func (_m *Session) Save() error {
 	ret := _m.Called()
 
@@ -1165,7 +1165,7 @@ func (_c *Session_SetName_Call) RunAndReturn(run func(string) session.Session) *
 	return _c
 }
 
-// Start provides a mock function with given fields:
+// Start provides a mock function with no fields
 func (_m *Session) Start() bool {
 	ret := _m.Called()
 
@@ -1210,7 +1210,7 @@ func (_c *Session_Start_Call) RunAndReturn(run func() bool) *Session_Start_Call 
 	return _c
 }
 
-// Token provides a mock function with given fields:
+// Token provides a mock function with no fields
 func (_m *Session) Token() string {
 	ret := _m.Called()
 

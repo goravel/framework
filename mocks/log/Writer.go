@@ -108,7 +108,7 @@ func (_c *Writer_Debug_Call) Return() *Writer_Debug_Call {
 }
 
 func (_c *Writer_Debug_Call) RunAndReturn(run func(...interface{})) *Writer_Debug_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -152,7 +152,7 @@ func (_c *Writer_Debugf_Call) Return() *Writer_Debugf_Call {
 }
 
 func (_c *Writer_Debugf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Debugf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -194,7 +194,7 @@ func (_c *Writer_Error_Call) Return() *Writer_Error_Call {
 }
 
 func (_c *Writer_Error_Call) RunAndReturn(run func(...interface{})) *Writer_Error_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -238,7 +238,7 @@ func (_c *Writer_Errorf_Call) Return() *Writer_Errorf_Call {
 }
 
 func (_c *Writer_Errorf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Errorf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -280,7 +280,7 @@ func (_c *Writer_Fatal_Call) Return() *Writer_Fatal_Call {
 }
 
 func (_c *Writer_Fatal_Call) RunAndReturn(run func(...interface{})) *Writer_Fatal_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -324,7 +324,7 @@ func (_c *Writer_Fatalf_Call) Return() *Writer_Fatalf_Call {
 }
 
 func (_c *Writer_Fatalf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Fatalf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -462,7 +462,7 @@ func (_c *Writer_Info_Call) Return() *Writer_Info_Call {
 }
 
 func (_c *Writer_Info_Call) RunAndReturn(run func(...interface{})) *Writer_Info_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -506,7 +506,7 @@ func (_c *Writer_Infof_Call) Return() *Writer_Infof_Call {
 }
 
 func (_c *Writer_Infof_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Infof_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -596,7 +596,7 @@ func (_c *Writer_Panic_Call) Return() *Writer_Panic_Call {
 }
 
 func (_c *Writer_Panic_Call) RunAndReturn(run func(...interface{})) *Writer_Panic_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -640,7 +640,7 @@ func (_c *Writer_Panicf_Call) Return() *Writer_Panicf_Call {
 }
 
 func (_c *Writer_Panicf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Panicf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -887,7 +887,7 @@ func (_c *Writer_Warning_Call) Return() *Writer_Warning_Call {
 }
 
 func (_c *Writer_Warning_Call) RunAndReturn(run func(...interface{})) *Writer_Warning_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -931,7 +931,7 @@ func (_c *Writer_Warningf_Call) Return() *Writer_Warningf_Call {
 }
 
 func (_c *Writer_Warningf_Call) RunAndReturn(run func(string, ...interface{})) *Writer_Warningf_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -983,7 +983,7 @@ func (_c *Writer_With_Call) RunAndReturn(run func(map[string]interface{}) log.Wr
 	return _c
 }
 
-// WithTrace provides a mock function with given fields:
+// WithTrace provides a mock function with no fields
 func (_m *Writer) WithTrace() log.Writer {
 	ret := _m.Called()
 

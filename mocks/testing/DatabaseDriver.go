@@ -22,7 +22,7 @@ func (_m *DatabaseDriver) EXPECT() *DatabaseDriver_Expecter {
 	return &DatabaseDriver_Expecter{mock: &_m.Mock}
 }
 
-// Build provides a mock function with given fields:
+// Build provides a mock function with no fields
 func (_m *DatabaseDriver) Build() error {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *DatabaseDriver_Build_Call) RunAndReturn(run func() error) *DatabaseDri
 	return _c
 }
 
-// Config provides a mock function with given fields:
+// Config provides a mock function with no fields
 func (_m *DatabaseDriver) Config() testing.DatabaseConfig {
 	ret := _m.Called()
 
@@ -112,7 +112,65 @@ func (_c *DatabaseDriver_Config_Call) RunAndReturn(run func() testing.DatabaseCo
 	return _c
 }
 
-// Driver provides a mock function with given fields:
+// Database provides a mock function with given fields: name
+func (_m *DatabaseDriver) Database(name string) (testing.DatabaseDriver, error) {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Database")
+	}
+
+	var r0 testing.DatabaseDriver
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (testing.DatabaseDriver, error)); ok {
+		return rf(name)
+	}
+	if rf, ok := ret.Get(0).(func(string) testing.DatabaseDriver); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(testing.DatabaseDriver)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DatabaseDriver_Database_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Database'
+type DatabaseDriver_Database_Call struct {
+	*mock.Call
+}
+
+// Database is a helper method to define mock.On call
+//   - name string
+func (_e *DatabaseDriver_Expecter) Database(name interface{}) *DatabaseDriver_Database_Call {
+	return &DatabaseDriver_Database_Call{Call: _e.mock.On("Database", name)}
+}
+
+func (_c *DatabaseDriver_Database_Call) Run(run func(name string)) *DatabaseDriver_Database_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *DatabaseDriver_Database_Call) Return(_a0 testing.DatabaseDriver, _a1 error) *DatabaseDriver_Database_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DatabaseDriver_Database_Call) RunAndReturn(run func(string) (testing.DatabaseDriver, error)) *DatabaseDriver_Database_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Driver provides a mock function with no fields
 func (_m *DatabaseDriver) Driver() database.Driver {
 	ret := _m.Called()
 
@@ -157,7 +215,7 @@ func (_c *DatabaseDriver_Driver_Call) RunAndReturn(run func() database.Driver) *
 	return _c
 }
 
-// Fresh provides a mock function with given fields:
+// Fresh provides a mock function with no fields
 func (_m *DatabaseDriver) Fresh() error {
 	ret := _m.Called()
 
@@ -231,16 +289,16 @@ func (_c *DatabaseDriver_Image_Call) Return() *DatabaseDriver_Image_Call {
 }
 
 func (_c *DatabaseDriver_Image_Call) RunAndReturn(run func(testing.Image)) *DatabaseDriver_Image_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Stop provides a mock function with given fields:
-func (_m *DatabaseDriver) Stop() error {
+// Ready provides a mock function with no fields
+func (_m *DatabaseDriver) Ready() error {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Stop")
+		panic("no return value specified for Ready")
 	}
 
 	var r0 error
@@ -253,29 +311,74 @@ func (_m *DatabaseDriver) Stop() error {
 	return r0
 }
 
-// DatabaseDriver_Stop_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stop'
-type DatabaseDriver_Stop_Call struct {
+// DatabaseDriver_Ready_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Ready'
+type DatabaseDriver_Ready_Call struct {
 	*mock.Call
 }
 
-// Stop is a helper method to define mock.On call
-func (_e *DatabaseDriver_Expecter) Stop() *DatabaseDriver_Stop_Call {
-	return &DatabaseDriver_Stop_Call{Call: _e.mock.On("Stop")}
+// Ready is a helper method to define mock.On call
+func (_e *DatabaseDriver_Expecter) Ready() *DatabaseDriver_Ready_Call {
+	return &DatabaseDriver_Ready_Call{Call: _e.mock.On("Ready")}
 }
 
-func (_c *DatabaseDriver_Stop_Call) Run(run func()) *DatabaseDriver_Stop_Call {
+func (_c *DatabaseDriver_Ready_Call) Run(run func()) *DatabaseDriver_Ready_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *DatabaseDriver_Stop_Call) Return(_a0 error) *DatabaseDriver_Stop_Call {
+func (_c *DatabaseDriver_Ready_Call) Return(_a0 error) *DatabaseDriver_Ready_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *DatabaseDriver_Stop_Call) RunAndReturn(run func() error) *DatabaseDriver_Stop_Call {
+func (_c *DatabaseDriver_Ready_Call) RunAndReturn(run func() error) *DatabaseDriver_Ready_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Shutdown provides a mock function with no fields
+func (_m *DatabaseDriver) Shutdown() error {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Shutdown")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DatabaseDriver_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type DatabaseDriver_Shutdown_Call struct {
+	*mock.Call
+}
+
+// Shutdown is a helper method to define mock.On call
+func (_e *DatabaseDriver_Expecter) Shutdown() *DatabaseDriver_Shutdown_Call {
+	return &DatabaseDriver_Shutdown_Call{Call: _e.mock.On("Shutdown")}
+}
+
+func (_c *DatabaseDriver_Shutdown_Call) Run(run func()) *DatabaseDriver_Shutdown_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *DatabaseDriver_Shutdown_Call) Return(_a0 error) *DatabaseDriver_Shutdown_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DatabaseDriver_Shutdown_Call) RunAndReturn(run func() error) *DatabaseDriver_Shutdown_Call {
 	_c.Call.Return(run)
 	return _c
 }

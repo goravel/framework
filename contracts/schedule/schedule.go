@@ -13,6 +13,6 @@ type Schedule interface {
 	Register(events []Event)
 	// Run schedules.
 	Run()
-	// Stop schedules.
-	Stop(ctx ...context.Context) error
+	// Shutdown schedules.
+	Shutdown(ctx ...context.Context) error
 }

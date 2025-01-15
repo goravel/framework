@@ -130,7 +130,7 @@ func (_c *Listener_Queue_Call) RunAndReturn(run func(...interface{}) event.Queue
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Listener) Signature() string {
 	ret := _m.Called()
 

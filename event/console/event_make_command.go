@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -42,7 +41,7 @@ func (receiver *EventMakeCommand) Extend() command.Extend {
 func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), filepath.Join("app", "events"))
 	if err != nil {
-		color.Red().Println(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -50,7 +49,7 @@ func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Event created successfully")
+	ctx.Success("Event created successfully")
 
 	return nil
 }

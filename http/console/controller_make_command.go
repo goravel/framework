@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -47,7 +46,7 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), filepath.Join("app", "http", "controllers"))
 	if err != nil {
-		color.Red().Println(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -57,10 +56,11 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err := file.Create(m.GetFilePath(), receiver.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
-	color.Green().Println("Controller created successfully")
+	ctx.Success("Controller created successfully")
 
 	return nil
 }

@@ -32,8 +32,6 @@ import (
 
 	mail "github.com/goravel/framework/contracts/mail"
 
-	migration "github.com/goravel/framework/contracts/database/migration"
-
 	mock "github.com/stretchr/testify/mock"
 
 	orm "github.com/goravel/framework/contracts/database/orm"
@@ -43,6 +41,8 @@ import (
 	route "github.com/goravel/framework/contracts/route"
 
 	schedule "github.com/goravel/framework/contracts/schedule"
+
+	schema "github.com/goravel/framework/contracts/database/schema"
 
 	seeder "github.com/goravel/framework/contracts/database/seeder"
 
@@ -66,6 +66,40 @@ type Application_Expecter struct {
 
 func (_m *Application) EXPECT() *Application_Expecter {
 	return &Application_Expecter{mock: &_m.Mock}
+}
+
+// About provides a mock function with given fields: section, items
+func (_m *Application) About(section string, items []foundation.AboutItem) {
+	_m.Called(section, items)
+}
+
+// Application_About_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'About'
+type Application_About_Call struct {
+	*mock.Call
+}
+
+// About is a helper method to define mock.On call
+//   - section string
+//   - items []foundation.AboutItem
+func (_e *Application_Expecter) About(section interface{}, items interface{}) *Application_About_Call {
+	return &Application_About_Call{Call: _e.mock.On("About", section, items)}
+}
+
+func (_c *Application_About_Call) Run(run func(section string, items []foundation.AboutItem)) *Application_About_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].([]foundation.AboutItem))
+	})
+	return _c
+}
+
+func (_c *Application_About_Call) Return() *Application_About_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Application_About_Call) RunAndReturn(run func(string, []foundation.AboutItem)) *Application_About_Call {
+	_c.Run(run)
+	return _c
 }
 
 // BasePath provides a mock function with given fields: path
@@ -157,7 +191,7 @@ func (_c *Application_Bind_Call) Return() *Application_Bind_Call {
 }
 
 func (_c *Application_Bind_Call) RunAndReturn(run func(interface{}, func(foundation.Application) (interface{}, error))) *Application_Bind_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -191,11 +225,11 @@ func (_c *Application_BindWith_Call) Return() *Application_BindWith_Call {
 }
 
 func (_c *Application_BindWith_Call) RunAndReturn(run func(interface{}, func(foundation.Application, map[string]interface{}) (interface{}, error))) *Application_BindWith_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Boot provides a mock function with given fields:
+// Boot provides a mock function with no fields
 func (_m *Application) Boot() {
 	_m.Called()
 }
@@ -223,7 +257,7 @@ func (_c *Application_Boot_Call) Return() *Application_Boot_Call {
 }
 
 func (_c *Application_Boot_Call) RunAndReturn(run func()) *Application_Boot_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -256,7 +290,7 @@ func (_c *Application_Commands_Call) Return() *Application_Commands_Call {
 }
 
 func (_c *Application_Commands_Call) RunAndReturn(run func([]console.Command)) *Application_Commands_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -483,7 +517,7 @@ func (_c *Application_ExecutablePath_Call) RunAndReturn(run func(...string) stri
 	return _c
 }
 
-// GetJson provides a mock function with given fields:
+// GetJson provides a mock function with no fields
 func (_m *Application) GetJson() foundation.Json {
 	ret := _m.Called()
 
@@ -560,7 +594,7 @@ func (_c *Application_Instance_Call) Return() *Application_Instance_Call {
 }
 
 func (_c *Application_Instance_Call) RunAndReturn(run func(interface{}, interface{})) *Application_Instance_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -728,7 +762,7 @@ func (_c *Application_Make_Call) RunAndReturn(run func(interface{}) (interface{}
 	return _c
 }
 
-// MakeArtisan provides a mock function with given fields:
+// MakeArtisan provides a mock function with no fields
 func (_m *Application) MakeArtisan() console.Artisan {
 	ret := _m.Called()
 
@@ -823,7 +857,7 @@ func (_c *Application_MakeAuth_Call) RunAndReturn(run func(http.Context) auth.Au
 	return _c
 }
 
-// MakeCache provides a mock function with given fields:
+// MakeCache provides a mock function with no fields
 func (_m *Application) MakeCache() cache.Cache {
 	ret := _m.Called()
 
@@ -870,7 +904,7 @@ func (_c *Application_MakeCache_Call) RunAndReturn(run func() cache.Cache) *Appl
 	return _c
 }
 
-// MakeConfig provides a mock function with given fields:
+// MakeConfig provides a mock function with no fields
 func (_m *Application) MakeConfig() config.Config {
 	ret := _m.Called()
 
@@ -917,7 +951,7 @@ func (_c *Application_MakeConfig_Call) RunAndReturn(run func() config.Config) *A
 	return _c
 }
 
-// MakeCrypt provides a mock function with given fields:
+// MakeCrypt provides a mock function with no fields
 func (_m *Application) MakeCrypt() crypt.Crypt {
 	ret := _m.Called()
 
@@ -964,7 +998,7 @@ func (_c *Application_MakeCrypt_Call) RunAndReturn(run func() crypt.Crypt) *Appl
 	return _c
 }
 
-// MakeEvent provides a mock function with given fields:
+// MakeEvent provides a mock function with no fields
 func (_m *Application) MakeEvent() event.Instance {
 	ret := _m.Called()
 
@@ -1011,7 +1045,7 @@ func (_c *Application_MakeEvent_Call) RunAndReturn(run func() event.Instance) *A
 	return _c
 }
 
-// MakeGate provides a mock function with given fields:
+// MakeGate provides a mock function with no fields
 func (_m *Application) MakeGate() access.Gate {
 	ret := _m.Called()
 
@@ -1058,7 +1092,7 @@ func (_c *Application_MakeGate_Call) RunAndReturn(run func() access.Gate) *Appli
 	return _c
 }
 
-// MakeGrpc provides a mock function with given fields:
+// MakeGrpc provides a mock function with no fields
 func (_m *Application) MakeGrpc() grpc.Grpc {
 	ret := _m.Called()
 
@@ -1105,7 +1139,7 @@ func (_c *Application_MakeGrpc_Call) RunAndReturn(run func() grpc.Grpc) *Applica
 	return _c
 }
 
-// MakeHash provides a mock function with given fields:
+// MakeHash provides a mock function with no fields
 func (_m *Application) MakeHash() hash.Hash {
 	ret := _m.Called()
 
@@ -1200,7 +1234,7 @@ func (_c *Application_MakeLang_Call) RunAndReturn(run func(context.Context) tran
 	return _c
 }
 
-// MakeLog provides a mock function with given fields:
+// MakeLog provides a mock function with no fields
 func (_m *Application) MakeLog() log.Log {
 	ret := _m.Called()
 
@@ -1247,7 +1281,7 @@ func (_c *Application_MakeLog_Call) RunAndReturn(run func() log.Log) *Applicatio
 	return _c
 }
 
-// MakeMail provides a mock function with given fields:
+// MakeMail provides a mock function with no fields
 func (_m *Application) MakeMail() mail.Mail {
 	ret := _m.Called()
 
@@ -1294,7 +1328,7 @@ func (_c *Application_MakeMail_Call) RunAndReturn(run func() mail.Mail) *Applica
 	return _c
 }
 
-// MakeOrm provides a mock function with given fields:
+// MakeOrm provides a mock function with no fields
 func (_m *Application) MakeOrm() orm.Orm {
 	ret := _m.Called()
 
@@ -1341,7 +1375,7 @@ func (_c *Application_MakeOrm_Call) RunAndReturn(run func() orm.Orm) *Applicatio
 	return _c
 }
 
-// MakeQueue provides a mock function with given fields:
+// MakeQueue provides a mock function with no fields
 func (_m *Application) MakeQueue() queue.Queue {
 	ret := _m.Called()
 
@@ -1388,7 +1422,7 @@ func (_c *Application_MakeQueue_Call) RunAndReturn(run func() queue.Queue) *Appl
 	return _c
 }
 
-// MakeRateLimiter provides a mock function with given fields:
+// MakeRateLimiter provides a mock function with no fields
 func (_m *Application) MakeRateLimiter() http.RateLimiter {
 	ret := _m.Called()
 
@@ -1435,7 +1469,7 @@ func (_c *Application_MakeRateLimiter_Call) RunAndReturn(run func() http.RateLim
 	return _c
 }
 
-// MakeRoute provides a mock function with given fields:
+// MakeRoute provides a mock function with no fields
 func (_m *Application) MakeRoute() route.Route {
 	ret := _m.Called()
 
@@ -1482,7 +1516,7 @@ func (_c *Application_MakeRoute_Call) RunAndReturn(run func() route.Route) *Appl
 	return _c
 }
 
-// MakeSchedule provides a mock function with given fields:
+// MakeSchedule provides a mock function with no fields
 func (_m *Application) MakeSchedule() schedule.Schedule {
 	ret := _m.Called()
 
@@ -1529,20 +1563,20 @@ func (_c *Application_MakeSchedule_Call) RunAndReturn(run func() schedule.Schedu
 	return _c
 }
 
-// MakeSchema provides a mock function with given fields:
-func (_m *Application) MakeSchema() migration.Schema {
+// MakeSchema provides a mock function with no fields
+func (_m *Application) MakeSchema() schema.Schema {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for MakeSchema")
 	}
 
-	var r0 migration.Schema
-	if rf, ok := ret.Get(0).(func() migration.Schema); ok {
+	var r0 schema.Schema
+	if rf, ok := ret.Get(0).(func() schema.Schema); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(migration.Schema)
+			r0 = ret.Get(0).(schema.Schema)
 		}
 	}
 
@@ -1566,17 +1600,17 @@ func (_c *Application_MakeSchema_Call) Run(run func()) *Application_MakeSchema_C
 	return _c
 }
 
-func (_c *Application_MakeSchema_Call) Return(_a0 migration.Schema) *Application_MakeSchema_Call {
+func (_c *Application_MakeSchema_Call) Return(_a0 schema.Schema) *Application_MakeSchema_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Application_MakeSchema_Call) RunAndReturn(run func() migration.Schema) *Application_MakeSchema_Call {
+func (_c *Application_MakeSchema_Call) RunAndReturn(run func() schema.Schema) *Application_MakeSchema_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// MakeSeeder provides a mock function with given fields:
+// MakeSeeder provides a mock function with no fields
 func (_m *Application) MakeSeeder() seeder.Facade {
 	ret := _m.Called()
 
@@ -1623,7 +1657,7 @@ func (_c *Application_MakeSeeder_Call) RunAndReturn(run func() seeder.Facade) *A
 	return _c
 }
 
-// MakeSession provides a mock function with given fields:
+// MakeSession provides a mock function with no fields
 func (_m *Application) MakeSession() session.Manager {
 	ret := _m.Called()
 
@@ -1670,7 +1704,7 @@ func (_c *Application_MakeSession_Call) RunAndReturn(run func() session.Manager)
 	return _c
 }
 
-// MakeStorage provides a mock function with given fields:
+// MakeStorage provides a mock function with no fields
 func (_m *Application) MakeStorage() filesystem.Storage {
 	ret := _m.Called()
 
@@ -1717,7 +1751,7 @@ func (_c *Application_MakeStorage_Call) RunAndReturn(run func() filesystem.Stora
 	return _c
 }
 
-// MakeTesting provides a mock function with given fields:
+// MakeTesting provides a mock function with no fields
 func (_m *Application) MakeTesting() testing.Testing {
 	ret := _m.Called()
 
@@ -1764,7 +1798,7 @@ func (_c *Application_MakeTesting_Call) RunAndReturn(run func() testing.Testing)
 	return _c
 }
 
-// MakeValidation provides a mock function with given fields:
+// MakeValidation provides a mock function with no fields
 func (_m *Application) MakeValidation() validation.Validation {
 	ret := _m.Called()
 
@@ -1811,7 +1845,7 @@ func (_c *Application_MakeValidation_Call) RunAndReturn(run func() validation.Va
 	return _c
 }
 
-// MakeView provides a mock function with given fields:
+// MakeView provides a mock function with no fields
 func (_m *Application) MakeView() http.View {
 	ret := _m.Called()
 
@@ -2080,7 +2114,7 @@ func (_c *Application_Publishes_Call) Return() *Application_Publishes_Call {
 }
 
 func (_c *Application_Publishes_Call) RunAndReturn(run func(string, map[string]string, ...string)) *Application_Publishes_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2113,7 +2147,7 @@ func (_c *Application_Refresh_Call) Return() *Application_Refresh_Call {
 }
 
 func (_c *Application_Refresh_Call) RunAndReturn(run func(interface{})) *Application_Refresh_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2146,7 +2180,7 @@ func (_c *Application_SetJson_Call) Return() *Application_SetJson_Call {
 }
 
 func (_c *Application_SetJson_Call) RunAndReturn(run func(foundation.Json)) *Application_SetJson_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2229,7 +2263,7 @@ func (_c *Application_Singleton_Call) Return() *Application_Singleton_Call {
 }
 
 func (_c *Application_Singleton_Call) RunAndReturn(run func(interface{}, func(foundation.Application) (interface{}, error))) *Application_Singleton_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -2292,7 +2326,7 @@ func (_c *Application_StoragePath_Call) RunAndReturn(run func(...string) string)
 	return _c
 }
 
-// Version provides a mock function with given fields:
+// Version provides a mock function with no fields
 func (_m *Application) Version() string {
 	ret := _m.Called()
 

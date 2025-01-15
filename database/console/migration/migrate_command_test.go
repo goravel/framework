@@ -5,37 +5,51 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/file"
+	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 )
 
-type Agent struct {
-	orm.Model
-	Name string
-}
-
 func TestMigrateCommand(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+	var (
+		mockContext  *mocksconsole.Context
+		mockMigrator *mocksmigration.Migrator
+	)
+
+	beforeEach := func() {
+		mockContext = mocksconsole.NewContext(t)
+		mockMigrator = mocksmigration.NewMigrator(t)
 	}
 
-	testQueries := gorm.NewTestQueries().Queries()
-	for driver, testQuery := range testQueries {
-		query := testQuery.Query()
-		mockConfig := testQuery.MockConfig()
-		createMigrations(driver)
-
-		migrateCommand := NewMigrateCommand(mockConfig)
-		mockContext := &mocksconsole.Context{}
-		assert.Nil(t, migrateCommand.Handle(mockContext))
-
-		var agent Agent
-		assert.Nil(t, query.Where("name", "goravel").First(&agent))
-		assert.True(t, agent.ID > 0)
+	tests := []struct {
+		name  string
+		setup func()
+	}{
+		{
+			name: "Happy path",
+			setup: func() {
+				mockMigrator.EXPECT().Run().Return(nil).Once()
+				mockContext.EXPECT().Success("Migration success").Once()
+			},
+		},
+		{
+			name: "Sad path - run failed",
+			setup: func() {
+				mockMigrator.EXPECT().Run().Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationMigrateFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
 	}
 
-	defer assert.Nil(t, file.Remove("database"))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
+
+			command := NewMigrateCommand(mockMigrator)
+			err := command.Handle(mockContext)
+
+			assert.NoError(t, err)
+		})
+	}
 }

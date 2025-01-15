@@ -1,12 +1,12 @@
 package gorm
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/errors"
 	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/env"
@@ -20,14 +20,17 @@ type ToSqlTestSuite struct {
 
 func TestToSqlTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	suite.Run(t, &ToSqlTestSuite{})
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	postgresQuery := NewTestQuery(docker.Postgres())
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	postgresQuery := NewTestQuery(postgresDocker)
 	postgresQuery.CreateTable(TestTableUsers)
 
 	s.query = postgresQuery.Query()
@@ -120,7 +123,7 @@ func (s *ToSqlTestSuite) TestGet() {
 }
 
 func (s *ToSqlTestSuite) TestInvalidModel() {
-	s.mockLog.EXPECT().Errorf("failed to get sql: %v", errors.New("invalid model")).Once()
+	s.mockLog.EXPECT().Errorf("failed to get sql: %v", errors.OrmQueryInvalidModel.Args("")).Once()
 	toSql := NewToSql(s.query.Model("invalid").Where("id", 1).(*Query), s.mockLog, false)
 	s.Empty(toSql.Get([]User{}))
 }

@@ -72,10 +72,14 @@ type ContextRequest interface {
 	// File retrieves a file by its key from the request.
 	File(name string) (filesystem.File, error)
 
+	// Abort aborts the request with the specified HTTP status code, default is 400.
+	Abort(code ...int)
 	// AbortWithStatus aborts the request with the specified HTTP status code.
+	// DEPRECATED: Use Abort instead.
 	AbortWithStatus(code int)
 	// AbortWithStatusJson aborts the request with the specified HTTP status code
 	// and returns a JSON response object.
+	// DEPRECATED: Use Response().Json().Abort() instead.
 	AbortWithStatusJson(code int, jsonObj any)
 	// Next skips the current request handler, allowing the next middleware or handler to be executed.
 	Next()
@@ -94,12 +98,24 @@ type FormRequest interface {
 	Authorize(ctx Context) error
 	// Rules get the validation rules that apply to the request.
 	Rules(ctx Context) map[string]string
+}
+
+type FormRequestWithFilters interface {
 	// Filters get the custom filters that apply to the request.
 	Filters(ctx Context) map[string]string
+}
+
+type FormRequestWithMessages interface {
 	// Messages get the validation messages that apply to the request.
 	Messages(ctx Context) map[string]string
+}
+
+type FormRequestWithAttributes interface {
 	// Attributes get custom attributes for validator errors.
 	Attributes(ctx Context) map[string]string
+}
+
+type FormRequestWithPrepareForValidation interface {
 	// PrepareForValidation prepare the data for validation.
 	PrepareForValidation(ctx Context, data validation.Data) error
 }

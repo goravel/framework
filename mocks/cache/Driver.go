@@ -144,7 +144,7 @@ func (_c *Driver_Decrement_Call) RunAndReturn(run func(string, ...int64) (int64,
 	return _c
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *Driver) Flush() bool {
 	ret := _m.Called()
 

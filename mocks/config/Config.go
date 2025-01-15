@@ -47,7 +47,7 @@ func (_c *Config_Add_Call) Return() *Config_Add_Call {
 }
 
 func (_c *Config_Add_Call) RunAndReturn(run func(string, interface{})) *Config_Add_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

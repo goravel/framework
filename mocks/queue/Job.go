@@ -72,7 +72,7 @@ func (_c *Job_Handle_Call) RunAndReturn(run func(...interface{}) error) *Job_Han
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Job) Signature() string {
 	ret := _m.Called()
 

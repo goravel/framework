@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,7 +9,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/errors"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -66,7 +66,7 @@ func TestNewMake(t *testing.T) {
 	var (
 		name string
 
-		mockCtx = &consolemocks.Context{}
+		mockCtx = mocksconsole.NewContext(t)
 		ttype   = "rule"
 		root    = filepath.Join("app", "rules")
 	)
@@ -81,10 +81,10 @@ func TestNewMake(t *testing.T) {
 			name: "Sad path - name is empty",
 			setup: func() {
 				name = ""
-				mockCtx.EXPECT().Ask("Enter the rule name", mock.Anything).Return("", errors.New("the rule name cannot be empty")).Once()
+				mockCtx.EXPECT().Ask("Enter the rule name", mock.Anything).Return("", errors.ConsoleEmptyFieldValue.Args("rule")).Once()
 			},
 			expectMake:  nil,
-			expectError: errors.New("the rule name cannot be empty"),
+			expectError: errors.ConsoleEmptyFieldValue.Args("rule"),
 		},
 		{
 			name: "Sad path - name already exists",
@@ -94,7 +94,7 @@ func TestNewMake(t *testing.T) {
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
 			},
 			expectMake:  nil,
-			expectError: errors.New("the rule already exists. Use the --force or -f flag to overwrite"),
+			expectError: errors.ConsoleFileAlreadyExists.Args("rule"),
 		},
 		{
 			name: "Happy path - name already exists, but force is true",
@@ -128,8 +128,66 @@ func TestNewMake(t *testing.T) {
 				assert.NotNil(t, m)
 				assert.Nil(t, file.Remove("app"))
 			}
+		})
+	}
+}
 
-			mockCtx.AssertExpectations(t)
+func TestConfirmToProceed(t *testing.T) {
+	var (
+		mockCtx *mocksconsole.Context
+	)
+
+	beforeEach := func() {
+		mockCtx = mocksconsole.NewContext(t)
+	}
+
+	tests := []struct {
+		name         string
+		env          string
+		setup        func()
+		expectResult bool
+	}{
+		{
+			name:         "env is not production",
+			setup:        func() {},
+			expectResult: true,
+		},
+		{
+			name: "the force option is true",
+			env:  "production",
+			setup: func() {
+				mockCtx.EXPECT().OptionBool("force").Return(true).Once()
+			},
+			expectResult: true,
+		},
+		{
+			name: "confirm returns err",
+			env:  "production",
+			setup: func() {
+				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
+				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(false, assert.AnError).Once()
+				mockCtx.EXPECT().Error(errors.ConsoleFailedToConfirm.Args(assert.AnError).Error()).Once()
+			},
+			expectResult: false,
+		},
+		{
+			name: "confirm returns true",
+			env:  "production",
+			setup: func() {
+				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
+				mockCtx.EXPECT().Confirm("Are you sure you want to run this command?").Return(true, nil).Once()
+			},
+			expectResult: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			beforeEach()
+			tt.setup()
+			result := ConfirmToProceed(mockCtx, tt.env)
+
+			assert.Equal(t, tt.expectResult, result)
 		})
 	}
 }

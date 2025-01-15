@@ -144,7 +144,7 @@ func (_c *Cache_Decrement_Call) RunAndReturn(run func(string, ...int64) (int64, 
 	return _c
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *Cache) Flush() bool {
 	ret := _m.Called()
 

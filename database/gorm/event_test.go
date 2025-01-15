@@ -8,12 +8,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/support/carbon"
 )
 
 type TestEventModel struct {
-	orm.Model
+	Model
 	Name     string
 	Avatar   string
 	IsAdmin  bool
@@ -24,10 +23,11 @@ type TestEventModel struct {
 }
 
 var testNow = time.Now().Add(-1 * time.Second)
+
 var testEventModel = TestEventModel{
-	Model: orm.Model{
+	Model: Model{
 		ID: 1,
-		Timestamps: orm.Timestamps{
+		Timestamps: Timestamps{
 			CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
 		},
 	},
@@ -39,6 +39,7 @@ var testEventModel = TestEventModel{
 	ManageAt: testNow,
 	high:     1,
 }
+
 var testQuery = &Query{
 	instance: &gorm.DB{
 		Statement: &gorm.Statement{
@@ -62,18 +63,18 @@ func (s *EventTestSuite) SetupTest() {
 		NewEvent(testQuery, &testEventModel, map[string]any{"i_d": 1, "created_at": carbon.NewDateTime(carbon.FromStdTime(testNow)), "updated_at": carbon.NewDateTime(carbon.FromStdTime(testNow)), "avatar": "avatar1", "is_admin": false, "manage": 1, "admin_at": time.Now(), "manage_at": testNow}),
 		NewEvent(testQuery, &testEventModel, map[string]any{"ID": 1, "CreatedAt": carbon.NewDateTime(carbon.FromStdTime(testNow)), "UpdatedAt": carbon.NewDateTime(carbon.FromStdTime(testNow)), "Avatar": "avatar1", "IsAdmin": false, "IsManage": 1, "AdminAt": time.Now(), "ManageAt": testNow}),
 		NewEvent(testQuery, &testEventModel, TestEventModel{
-			Model: orm.Model{
+			Model: Model{
 				ID: 1,
-				Timestamps: orm.Timestamps{
+				Timestamps: Timestamps{
 					CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
 					UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
 				},
 			},
 			Avatar: "avatar1", IsAdmin: false, IsManage: 1, AdminAt: time.Now(), ManageAt: testNow}),
 		NewEvent(testQuery, &testEventModel, &TestEventModel{
-			Model: orm.Model{
+			Model: Model{
 				ID: 1,
-				Timestamps: orm.Timestamps{
+				Timestamps: Timestamps{
 					CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
 					UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
 				},
@@ -148,9 +149,9 @@ func (s *EventTestSuite) TestGetAttribute() {
 			"Avatar":    "avatar1",
 		}),
 		NewEvent(testQuery, &testEventModel, TestEventModel{
-			Model: orm.Model{
+			Model: Model{
 				ID: 2,
-				Timestamps: orm.Timestamps{
+				Timestamps: Timestamps{
 					CreatedAt: carbon.NewDateTime(now),
 				},
 			},

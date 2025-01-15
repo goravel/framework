@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -43,15 +42,16 @@ func (receiver *FilterMakeCommand) Extend() command.Extend {
 func (receiver *FilterMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), filepath.Join("app", "filters"))
 	if err != nil {
-		color.Red().Println(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
 	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
-	color.Green().Println("Filter created successfully")
+	ctx.Success("Filter created successfully")
 
 	return nil
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/crypt"
-	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/event"
 	"github.com/goravel/framework/contracts/filesystem"
@@ -27,6 +27,11 @@ import (
 	"github.com/goravel/framework/contracts/translation"
 	"github.com/goravel/framework/contracts/validation"
 )
+
+type AboutItem struct {
+	Key   string
+	Value string
+}
 
 type Application interface {
 	// Boot register and bootstrap configured service providers.
@@ -63,6 +68,8 @@ type Application interface {
 	SetJson(json Json)
 	// GetJson get the JSON implementation.
 	GetJson() Json
+	// About add information to the application's about command.
+	About(section string, items []AboutItem)
 
 	// Container
 	// Bind registers a binding with the container.
@@ -108,7 +115,7 @@ type Application interface {
 	// MakeSchedule resolves the schedule instance.
 	MakeSchedule() schedule.Schedule
 	// MakeSchema resolves the schema instance.
-	MakeSchema() migration.Schema
+	MakeSchema() schema.Schema
 	// MakeSession resolves the session instance.
 	MakeSession() session.Manager
 	// MakeStorage resolves the storage instance.

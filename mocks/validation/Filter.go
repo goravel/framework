@@ -17,7 +17,7 @@ func (_m *Filter) EXPECT() *Filter_Expecter {
 	return &Filter_Expecter{mock: &_m.Mock}
 }
 
-// Handle provides a mock function with given fields:
+// Handle provides a mock function with no fields
 func (_m *Filter) Handle() interface{} {
 	ret := _m.Called()
 
@@ -64,7 +64,7 @@ func (_c *Filter_Handle_Call) RunAndReturn(run func() interface{}) *Filter_Handl
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Filter) Signature() string {
 	ret := _m.Called()
 

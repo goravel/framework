@@ -1,62 +1,47 @@
 package migration
 
 import (
-	"errors"
-
-	"github.com/golang-migrate/migrate/v4"
-
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/contracts/database/migration"
+	"github.com/goravel/framework/errors"
 )
 
 type MigrateCommand struct {
-	config config.Config
+	migrator migration.Migrator
 }
 
-func NewMigrateCommand(config config.Config) *MigrateCommand {
+func NewMigrateCommand(migrator migration.Migrator) *MigrateCommand {
 	return &MigrateCommand{
-		config: config,
+		migrator: migrator,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateCommand) Signature() string {
+func (r *MigrateCommand) Signature() string {
 	return "migrate"
 }
 
 // Description The console command description.
-func (receiver *MigrateCommand) Description() string {
+func (r *MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateCommand) Extend() command.Extend {
+func (r *MigrateCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
-	if err != nil {
-		return err
-	}
-	if m == nil {
-		color.Yellow().Println("Please fill database config first")
-
+func (r *MigrateCommand) Handle(ctx console.Context) error {
+	if err := r.migrator.Run(); err != nil {
+		ctx.Error(errors.MigrationMigrateFailed.Args(err).Error())
 		return nil
 	}
 
-	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		color.Red().Println("Migration failed:", err.Error())
-
-		return nil
-	}
-
-	color.Green().Println("Migration success")
+	ctx.Success("Migration success")
 
 	return nil
 }

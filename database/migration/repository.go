@@ -2,25 +2,23 @@ package migration
 
 import (
 	"github.com/goravel/framework/contracts/database/migration"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/schema"
 )
 
 type Repository struct {
-	query  orm.Query
-	schema migration.Schema
+	schema schema.Schema
 	table  string
 }
 
-func NewRepository(query orm.Query, schema migration.Schema, table string) *Repository {
+func NewRepository(schema schema.Schema, table string) *Repository {
 	return &Repository{
-		query:  query,
 		schema: schema,
 		table:  table,
 	}
 }
 
 func (r *Repository) CreateRepository() error {
-	return r.schema.Create(r.table, func(table migration.Blueprint) {
+	return r.schema.Create(r.table, func(table schema.Blueprint) {
 		table.ID()
 		table.String("migration")
 		table.Integer("batch")
@@ -28,7 +26,7 @@ func (r *Repository) CreateRepository() error {
 }
 
 func (r *Repository) Delete(migration string) error {
-	_, err := r.query.Table(r.table).Where("migration", migration).Delete()
+	_, err := r.schema.Orm().Query().Table(r.table).Where("migration", migration).Delete()
 
 	return err
 }
@@ -44,16 +42,16 @@ func (r *Repository) GetLast() ([]migration.File, error) {
 		return nil, err
 	}
 
-	if err := r.query.Table(r.table).Where("batch", lastBatchNumber).OrderByDesc("migration").Get(&files); err != nil {
+	if err := r.schema.Orm().Query().Table(r.table).Where("batch", lastBatchNumber).OrderByDesc("migration").Get(&files); err != nil {
 		return nil, err
 	}
 
 	return files, nil
 }
 
-func (r *Repository) GetMigrations(steps int) ([]migration.File, error) {
+func (r *Repository) GetMigrations() ([]migration.File, error) {
 	var files []migration.File
-	if err := r.query.Table(r.table).Where("batch >= 1").OrderByDesc("batch").OrderByDesc("migration").Limit(steps).Get(&files); err != nil {
+	if err := r.schema.Orm().Query().Table(r.table).OrderByDesc("batch").OrderByDesc("migration").Get(&files); err != nil {
 		return nil, err
 	}
 
@@ -62,7 +60,16 @@ func (r *Repository) GetMigrations(steps int) ([]migration.File, error) {
 
 func (r *Repository) GetMigrationsByBatch(batch int) ([]migration.File, error) {
 	var files []migration.File
-	if err := r.query.Table(r.table).Where("batch", batch).OrderByDesc("migration").Get(&files); err != nil {
+	if err := r.schema.Orm().Query().Table(r.table).Where("batch", batch).OrderByDesc("migration").Get(&files); err != nil {
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func (r *Repository) GetMigrationsByStep(steps int) ([]migration.File, error) {
+	var files []migration.File
+	if err := r.schema.Orm().Query().Table(r.table).Where("batch >= 1").OrderByDesc("batch").OrderByDesc("migration").Limit(steps).Get(&files); err != nil {
 		return nil, err
 	}
 
@@ -80,7 +87,7 @@ func (r *Repository) GetNextBatchNumber() (int, error) {
 
 func (r *Repository) GetRan() ([]string, error) {
 	var migrations []string
-	if err := r.query.Table(r.table).OrderBy("batch").OrderBy("migration").Pluck("migration", &migrations); err != nil {
+	if err := r.schema.Orm().Query().Table(r.table).OrderBy("batch").OrderBy("migration").Pluck("migration", &migrations); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +95,7 @@ func (r *Repository) GetRan() ([]string, error) {
 }
 
 func (r *Repository) Log(file string, batch int) error {
-	return r.query.Table(r.table).Create(map[string]any{
+	return r.schema.Orm().Query().Table(r.table).Create(map[string]any{
 		"migration": file,
 		"batch":     batch,
 	})
@@ -100,7 +107,7 @@ func (r *Repository) RepositoryExists() bool {
 
 func (r *Repository) getLastBatchNumber() (int, error) {
 	var batch int
-	if err := r.query.Table(r.table).OrderByDesc("batch").Limit(1).Pluck("batch", &batch); err != nil {
+	if err := r.schema.Orm().Query().Table(r.table).OrderByDesc("batch").Limit(1).Pluck("batch", &batch); err != nil {
 		return 0, err
 	}
 

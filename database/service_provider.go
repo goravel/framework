@@ -2,46 +2,70 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
 	"github.com/goravel/framework/database/migration"
+	databaseorm "github.com/goravel/framework/database/orm"
+	databaseschema "github.com/goravel/framework/database/schema"
+	databaseseeder "github.com/goravel/framework/database/seeder"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/color"
 )
-
-const BindingOrm = "goravel.orm"
-const BindingSchema = "goravel.schema"
-const BindingSeeder = "goravel.seeder"
 
 type ServiceProvider struct {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(BindingOrm, func(app foundation.Application) (any, error) {
+	app.Singleton(databaseorm.BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleOrm)
+		}
+
 		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleOrm)
+		}
+
 		connection := config.GetString("database.default")
-		orm, err := BuildOrm(ctx, config, connection, log, app.Refresh)
+		if connection == "" {
+			return nil, nil
+		}
+
+		orm, err := databaseorm.BuildOrm(ctx, config, connection, log, app.Refresh)
 		if err != nil {
-			return nil, fmt.Errorf("[Orm] Init %s connection error: %v", connection, err)
+			color.Warningln(errors.OrmInitConnection.Args(connection, err).SetModule(errors.ModuleOrm))
+
+			return nil, nil
 		}
 
 		return orm, nil
 	})
-	app.Singleton(BindingSchema, func(app foundation.Application) (any, error) {
-		orm := app.MakeOrm()
+	app.Singleton(databaseschema.BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
+
 		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleSchema)
+		}
 
-		connection := config.GetString("database.default")
+		orm := app.MakeOrm()
+		if orm == nil {
+			// The Orm module will print the error message, so it's safe to return an empty schema.
+			return &databaseschema.Schema{}, nil
+		}
 
-		return migration.NewSchema(config, connection, log, orm), nil
+		return databaseschema.NewSchema(config, log, orm, nil), nil
 	})
-	app.Singleton(BindingSeeder, func(app foundation.Application) (any, error) {
-		return NewSeederFacade(), nil
+	app.Singleton(databaseseeder.BindingSeeder, func(app foundation.Application) (any, error) {
+		return databaseseeder.NewSeederFacade(), nil
 	})
 }
 
@@ -50,22 +74,30 @@ func (r *ServiceProvider) Boot(app foundation.Application) {
 }
 
 func (r *ServiceProvider) registerCommands(app foundation.Application) {
-	if artisanFacade := app.MakeArtisan(); artisanFacade != nil {
-		config := app.MakeConfig()
-		seeder := app.MakeSeeder()
-		artisanFacade.Register([]contractsconsole.Command{
-			consolemigration.NewMigrateMakeCommand(config),
-			consolemigration.NewMigrateCommand(config),
-			consolemigration.NewMigrateRollbackCommand(config),
-			consolemigration.NewMigrateResetCommand(config),
-			consolemigration.NewMigrateRefreshCommand(config, artisanFacade),
-			consolemigration.NewMigrateFreshCommand(config, artisanFacade),
-			consolemigration.NewMigrateStatusCommand(config),
+	artisan := app.MakeArtisan()
+	config := app.MakeConfig()
+	log := app.MakeLog()
+	schema := app.MakeSchema()
+	seeder := app.MakeSeeder()
+
+	if artisan != nil && config != nil && log != nil && schema != nil && seeder != nil {
+		migrator := migration.NewMigrator(artisan, schema, config.GetString("database.migrations.table"))
+		artisan.Register([]contractsconsole.Command{
+			consolemigration.NewMigrateMakeCommand(migrator),
+			consolemigration.NewMigrateCommand(migrator),
+			consolemigration.NewMigrateRollbackCommand(migrator),
+			consolemigration.NewMigrateResetCommand(migrator),
+			consolemigration.NewMigrateRefreshCommand(artisan),
+			consolemigration.NewMigrateFreshCommand(artisan, migrator),
+			consolemigration.NewMigrateStatusCommand(migrator),
 			console.NewModelMakeCommand(),
 			console.NewObserverMakeCommand(),
 			console.NewSeedCommand(config, seeder),
 			console.NewSeederMakeCommand(),
 			console.NewFactoryMakeCommand(),
+			console.NewTableCommand(config, schema),
+			console.NewShowCommand(config, schema),
+			console.NewWipeCommand(config, schema),
 		})
 	}
 }

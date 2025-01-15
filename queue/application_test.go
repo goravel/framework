@@ -42,7 +42,7 @@ type QueueTestSuite struct {
 
 func TestQueueTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	redisDocker := testingdocker.NewRedis()
@@ -52,7 +52,7 @@ func TestQueueTestSuite(t *testing.T) {
 		port: redisDocker.Config().Port,
 	})
 
-	assert.Nil(t, redisDocker.Stop())
+	assert.Nil(t, redisDocker.Shutdown())
 }
 
 func (s *QueueTestSuite) SetupTest() {

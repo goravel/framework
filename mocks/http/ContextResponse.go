@@ -71,19 +71,19 @@ func (_c *ContextResponse_Cookie_Call) RunAndReturn(run func(http.Cookie) http.C
 }
 
 // Data provides a mock function with given fields: code, contentType, data
-func (_m *ContextResponse) Data(code int, contentType string, data []byte) http.Response {
+func (_m *ContextResponse) Data(code int, contentType string, data []byte) http.AbortableResponse {
 	ret := _m.Called(code, contentType, data)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Data")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, string, []byte) http.Response); ok {
+	var r0 http.AbortableResponse
+	if rf, ok := ret.Get(0).(func(int, string, []byte) http.AbortableResponse); ok {
 		r0 = rf(code, contentType, data)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortableResponse)
 		}
 	}
 
@@ -110,12 +110,12 @@ func (_c *ContextResponse_Data_Call) Run(run func(code int, contentType string, 
 	return _c
 }
 
-func (_c *ContextResponse_Data_Call) Return(_a0 http.Response) *ContextResponse_Data_Call {
+func (_c *ContextResponse_Data_Call) Return(_a0 http.AbortableResponse) *ContextResponse_Data_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_Data_Call) RunAndReturn(run func(int, string, []byte) http.Response) *ContextResponse_Data_Call {
+func (_c *ContextResponse_Data_Call) RunAndReturn(run func(int, string, []byte) http.AbortableResponse) *ContextResponse_Data_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -217,7 +217,7 @@ func (_c *ContextResponse_File_Call) RunAndReturn(run func(string) http.Response
 	return _c
 }
 
-// Flush provides a mock function with given fields:
+// Flush provides a mock function with no fields
 func (_m *ContextResponse) Flush() {
 	_m.Called()
 }
@@ -245,7 +245,7 @@ func (_c *ContextResponse_Flush_Call) Return() *ContextResponse_Flush_Call {
 }
 
 func (_c *ContextResponse_Flush_Call) RunAndReturn(run func()) *ContextResponse_Flush_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -299,19 +299,19 @@ func (_c *ContextResponse_Header_Call) RunAndReturn(run func(string, string) htt
 }
 
 // Json provides a mock function with given fields: code, obj
-func (_m *ContextResponse) Json(code int, obj interface{}) http.Response {
+func (_m *ContextResponse) Json(code int, obj interface{}) http.AbortableResponse {
 	ret := _m.Called(code, obj)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Json")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, interface{}) http.Response); ok {
+	var r0 http.AbortableResponse
+	if rf, ok := ret.Get(0).(func(int, interface{}) http.AbortableResponse); ok {
 		r0 = rf(code, obj)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortableResponse)
 		}
 	}
 
@@ -337,18 +337,18 @@ func (_c *ContextResponse_Json_Call) Run(run func(code int, obj interface{})) *C
 	return _c
 }
 
-func (_c *ContextResponse_Json_Call) Return(_a0 http.Response) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) Return(_a0 http.AbortableResponse) *ContextResponse_Json_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, interface{}) http.Response) *ContextResponse_Json_Call {
+func (_c *ContextResponse_Json_Call) RunAndReturn(run func(int, interface{}) http.AbortableResponse) *ContextResponse_Json_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // NoContent provides a mock function with given fields: code
-func (_m *ContextResponse) NoContent(code ...int) http.Response {
+func (_m *ContextResponse) NoContent(code ...int) http.AbortableResponse {
 	_va := make([]interface{}, len(code))
 	for _i := range code {
 		_va[_i] = code[_i]
@@ -361,12 +361,12 @@ func (_m *ContextResponse) NoContent(code ...int) http.Response {
 		panic("no return value specified for NoContent")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(...int) http.Response); ok {
+	var r0 http.AbortableResponse
+	if rf, ok := ret.Get(0).(func(...int) http.AbortableResponse); ok {
 		r0 = rf(code...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortableResponse)
 		}
 	}
 
@@ -398,17 +398,17 @@ func (_c *ContextResponse_NoContent_Call) Run(run func(code ...int)) *ContextRes
 	return _c
 }
 
-func (_c *ContextResponse_NoContent_Call) Return(_a0 http.Response) *ContextResponse_NoContent_Call {
+func (_c *ContextResponse_NoContent_Call) Return(_a0 http.AbortableResponse) *ContextResponse_NoContent_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(...int) http.Response) *ContextResponse_NoContent_Call {
+func (_c *ContextResponse_NoContent_Call) RunAndReturn(run func(...int) http.AbortableResponse) *ContextResponse_NoContent_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Origin provides a mock function with given fields:
+// Origin provides a mock function with no fields
 func (_m *ContextResponse) Origin() http.ResponseOrigin {
 	ret := _m.Called()
 
@@ -456,19 +456,19 @@ func (_c *ContextResponse_Origin_Call) RunAndReturn(run func() http.ResponseOrig
 }
 
 // Redirect provides a mock function with given fields: code, location
-func (_m *ContextResponse) Redirect(code int, location string) http.Response {
+func (_m *ContextResponse) Redirect(code int, location string) http.AbortableResponse {
 	ret := _m.Called(code, location)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Redirect")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, string) http.Response); ok {
+	var r0 http.AbortableResponse
+	if rf, ok := ret.Get(0).(func(int, string) http.AbortableResponse); ok {
 		r0 = rf(code, location)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortableResponse)
 		}
 	}
 
@@ -494,12 +494,12 @@ func (_c *ContextResponse_Redirect_Call) Run(run func(code int, location string)
 	return _c
 }
 
-func (_c *ContextResponse_Redirect_Call) Return(_a0 http.Response) *ContextResponse_Redirect_Call {
+func (_c *ContextResponse_Redirect_Call) Return(_a0 http.AbortableResponse) *ContextResponse_Redirect_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_Redirect_Call) RunAndReturn(run func(int, string) http.Response) *ContextResponse_Redirect_Call {
+func (_c *ContextResponse_Redirect_Call) RunAndReturn(run func(int, string) http.AbortableResponse) *ContextResponse_Redirect_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -602,7 +602,7 @@ func (_c *ContextResponse_Stream_Call) RunAndReturn(run func(int, func(http.Stre
 }
 
 // String provides a mock function with given fields: code, format, values
-func (_m *ContextResponse) String(code int, format string, values ...interface{}) http.Response {
+func (_m *ContextResponse) String(code int, format string, values ...interface{}) http.AbortableResponse {
 	var _ca []interface{}
 	_ca = append(_ca, code, format)
 	_ca = append(_ca, values...)
@@ -612,12 +612,12 @@ func (_m *ContextResponse) String(code int, format string, values ...interface{}
 		panic("no return value specified for String")
 	}
 
-	var r0 http.Response
-	if rf, ok := ret.Get(0).(func(int, string, ...interface{}) http.Response); ok {
+	var r0 http.AbortableResponse
+	if rf, ok := ret.Get(0).(func(int, string, ...interface{}) http.AbortableResponse); ok {
 		r0 = rf(code, format, values...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(http.Response)
+			r0 = ret.Get(0).(http.AbortableResponse)
 		}
 	}
 
@@ -651,17 +651,17 @@ func (_c *ContextResponse_String_Call) Run(run func(code int, format string, val
 	return _c
 }
 
-func (_c *ContextResponse_String_Call) Return(_a0 http.Response) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) Return(_a0 http.AbortableResponse) *ContextResponse_String_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...interface{}) http.Response) *ContextResponse_String_Call {
+func (_c *ContextResponse_String_Call) RunAndReturn(run func(int, string, ...interface{}) http.AbortableResponse) *ContextResponse_String_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Success provides a mock function with given fields:
+// Success provides a mock function with no fields
 func (_m *ContextResponse) Success() http.ResponseStatus {
 	ret := _m.Called()
 
@@ -708,7 +708,7 @@ func (_c *ContextResponse_Success_Call) RunAndReturn(run func() http.ResponseSta
 	return _c
 }
 
-// View provides a mock function with given fields:
+// View provides a mock function with no fields
 func (_m *ContextResponse) View() http.ResponseView {
 	ret := _m.Called()
 
@@ -803,7 +803,7 @@ func (_c *ContextResponse_WithoutCookie_Call) RunAndReturn(run func(string) http
 	return _c
 }
 
-// Writer provides a mock function with given fields:
+// Writer provides a mock function with no fields
 func (_m *ContextResponse) Writer() nethttp.ResponseWriter {
 	ret := _m.Called()
 

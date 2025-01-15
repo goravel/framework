@@ -82,7 +82,7 @@ func (_c *Lock_Block_Call) RunAndReturn(run func(time.Duration, ...func()) bool)
 	return _c
 }
 
-// ForceRelease provides a mock function with given fields:
+// ForceRelease provides a mock function with no fields
 func (_m *Lock) ForceRelease() bool {
 	ret := _m.Called()
 
@@ -186,7 +186,7 @@ func (_c *Lock_Get_Call) RunAndReturn(run func(...func()) bool) *Lock_Get_Call {
 	return _c
 }
 
-// Release provides a mock function with given fields:
+// Release provides a mock function with no fields
 func (_m *Lock) Release() bool {
 	ret := _m.Called()
 

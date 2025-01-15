@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/testing"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	supportdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/testing/utils"
 )
 
 type TestTable int
@@ -27,144 +28,83 @@ const (
 	TestTableRoleUser
 	TestTableUsers
 	TestTableGoravelUser
+	TestTableSchema
 )
 
 var testContext = context.Background()
 
-type TestReadWriteConfig struct {
-	ReadPort  int
-	WritePort int
-
-	// Used by Sqlite
-	ReadDatabase string
-}
-
 type testMockDriver interface {
 	Common()
-	ReadWrite(config TestReadWriteConfig)
+	ReadWrite(readDatabaseConfig testing.DatabaseConfig)
 	WithPrefixAndSingular()
+	WithSchema(schema string)
 }
 
 type TestQueries struct {
-	mysqlDockers     []testing.DatabaseDriver
-	postgresDockers  []testing.DatabaseDriver
-	sqliteDockers    []testing.DatabaseDriver
-	sqlserverDockers []testing.DatabaseDriver
 }
 
 func NewTestQueries() *TestQueries {
-	if supportdocker.TestModel == supportdocker.TestModelMinimum {
-		return &TestQueries{
-			sqliteDockers:   supportdocker.Sqlites(2),
-			postgresDockers: supportdocker.Postgreses(2),
-		}
-	}
-
-	return &TestQueries{
-		mysqlDockers:     supportdocker.Mysqls(2),
-		postgresDockers:  supportdocker.Postgreses(2),
-		sqliteDockers:    supportdocker.Sqlites(2),
-		sqlserverDockers: supportdocker.Sqlservers(2),
-	}
+	return &TestQueries{}
 }
 
 func (r *TestQueries) Queries() map[contractsdatabase.Driver]*TestQuery {
 	return r.queries(false)
 }
 
-func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[string]orm.Query {
-	readPostgresQuery := NewTestQuery(r.postgresDockers[0])
-	readPostgresQuery.CreateTable(TestTableUsers)
-
-	writePostgresQuery := NewTestQuery(r.postgresDockers[1])
-	writePostgresQuery.CreateTable(TestTableUsers)
-
-	postgresQuery, err := writePostgresQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readPostgresQuery.Docker().Config().Port,
-		WritePort: writePostgresQuery.Docker().Config().Port,
-	})
-	if err != nil {
+func (r *TestQueries) QueriesOfReadWrite() map[contractsdatabase.Driver]map[string]*TestQuery {
+	postgresDockers := supportdocker.Postgreses(2)
+	sqliteDockers := supportdocker.Sqlites(2)
+	if err := supportdocker.Ready(postgresDockers...); err != nil {
 		panic(err)
 	}
 
-	readSqliteQuery := NewTestQuery(r.sqliteDockers[0])
-	readSqliteQuery.CreateTable(TestTableUsers)
+	readPostgresQuery := NewTestQuery(postgresDockers[0])
+	writePostgresQuery := NewTestQuery(postgresDockers[1])
 
-	writeSqliteQuery := NewTestQuery(r.sqliteDockers[1])
-	writeSqliteQuery.CreateTable(TestTableUsers)
+	readSqliteQuery := NewTestQuery(sqliteDockers[0])
+	writeSqliteQuery := NewTestQuery(sqliteDockers[1])
 
-	sqliteQuery, err := writeSqliteQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadDatabase: readSqliteQuery.Docker().Config().Database,
-	})
-	if err != nil {
-		panic(err)
+	queries := map[contractsdatabase.Driver]map[string]*TestQuery{
+		contractsdatabase.DriverPostgres: {
+			"read":  readPostgresQuery,
+			"write": writePostgresQuery,
+		},
+		contractsdatabase.DriverSqlite: {
+			"read":  readSqliteQuery,
+			"write": writeSqliteQuery,
+		},
 	}
 
 	if supportdocker.TestModel == supportdocker.TestModelMinimum {
-		return map[contractsdatabase.Driver]map[string]orm.Query{
-			contractsdatabase.DriverPostgres: {
-				"mix":   postgresQuery,
-				"read":  readPostgresQuery.Query(),
-				"write": writePostgresQuery.Query(),
-			},
-			contractsdatabase.DriverSqlite: {
-				"mix":   sqliteQuery,
-				"read":  readSqliteQuery.Query(),
-				"write": writeSqliteQuery.Query(),
-			},
-		}
+		return queries
 	}
 
-	readMysqlQuery := NewTestQuery(r.mysqlDockers[0])
-	readMysqlQuery.CreateTable(TestTableUsers)
-
-	writeMysqlQuery := NewTestQuery(r.mysqlDockers[1])
-	writeMysqlQuery.CreateTable(TestTableUsers)
-
-	mysqlQuery, err := writeMysqlQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readMysqlQuery.Docker().Config().Port,
-		WritePort: writeMysqlQuery.Docker().Config().Port,
-	})
-	if err != nil {
+	// Create all containers first, containers will be returned directly, then check containers status, the speed will be faster.
+	mysqlDockers := supportdocker.Mysqls(2)
+	sqlserverDockers := supportdocker.Sqlservers(2)
+	if err := supportdocker.Ready(mysqlDockers...); err != nil {
+		panic(err)
+	}
+	if err := supportdocker.Ready(sqlserverDockers...); err != nil {
 		panic(err)
 	}
 
-	readSqlserverQuery := NewTestQuery(r.sqlserverDockers[0])
-	readSqlserverQuery.CreateTable(TestTableUsers)
+	readMysqlQuery := NewTestQuery(mysqlDockers[0])
+	writeMysqlQuery := NewTestQuery(mysqlDockers[1])
 
-	writeSqlserverQuery := NewTestQuery(r.sqlserverDockers[1])
-	writeSqlserverQuery.CreateTable(TestTableUsers)
+	readSqlserverQuery := NewTestQuery(sqlserverDockers[0])
+	writeSqlserverQuery := NewTestQuery(sqlserverDockers[1])
 
-	sqlserverQuery, err := writeSqlserverQuery.QueryOfReadWrite(TestReadWriteConfig{
-		ReadPort:  readSqlserverQuery.Docker().Config().Port,
-		WritePort: writeSqlserverQuery.Docker().Config().Port,
-	})
-	if err != nil {
-		panic(err)
+	queries[contractsdatabase.DriverMysql] = map[string]*TestQuery{
+		"read":  readMysqlQuery,
+		"write": writeMysqlQuery,
+	}
+	queries[contractsdatabase.DriverSqlserver] = map[string]*TestQuery{
+		"read":  readSqlserverQuery,
+		"write": writeSqlserverQuery,
 	}
 
-	return map[contractsdatabase.Driver]map[string]orm.Query{
-		contractsdatabase.DriverMysql: {
-			"mix":   mysqlQuery,
-			"read":  readMysqlQuery.Query(),
-			"write": writeMysqlQuery.Query(),
-		},
-		contractsdatabase.DriverPostgres: {
-			"mix":   postgresQuery,
-			"read":  readPostgresQuery.Query(),
-			"write": writePostgresQuery.Query(),
-		},
-		contractsdatabase.DriverSqlite: {
-			"mix":   sqliteQuery,
-			"read":  readSqliteQuery.Query(),
-			"write": writeSqliteQuery.Query(),
-		},
-		contractsdatabase.DriverSqlserver: {
-			"mix":   sqlserverQuery,
-			"read":  readSqlserverQuery.Query(),
-			"write": writeSqlserverQuery.Query(),
-		},
-	}
+	return queries
 }
 
 func (r *TestQueries) QueriesWithPrefixAndSingular() map[contractsdatabase.Driver]*TestQuery {
@@ -172,28 +112,49 @@ func (r *TestQueries) QueriesWithPrefixAndSingular() map[contractsdatabase.Drive
 }
 
 func (r *TestQueries) QueryOfAdditional() *TestQuery {
-	postgresQuery := NewTestQuery(r.postgresDockers[1])
-	postgresQuery.CreateTable()
+	postgresDocker := supportdocker.Postgres()
+	if err := supportdocker.Ready(postgresDocker); err != nil {
+		panic(err)
+	}
+	postgresQuery := NewTestQuery(postgresDocker)
 
 	return postgresQuery
 }
 
 func (r *TestQueries) queries(withPrefixAndSingular bool) map[contractsdatabase.Driver]*TestQuery {
 	driverToTestQuery := make(map[contractsdatabase.Driver]*TestQuery)
+	postgresDocker := supportdocker.Postgres()
+	if err := supportdocker.Ready(postgresDocker); err != nil {
+		panic(err)
+	}
 
 	driverToDocker := map[contractsdatabase.Driver]testing.DatabaseDriver{
-		contractsdatabase.DriverPostgres: r.postgresDockers[0],
-		contractsdatabase.DriverSqlite:   r.sqliteDockers[0],
+		contractsdatabase.DriverPostgres: postgresDocker,
+		contractsdatabase.DriverSqlite:   supportdocker.Sqlite(),
 	}
 
 	if supportdocker.TestModel != supportdocker.TestModelMinimum {
-		driverToDocker[contractsdatabase.DriverMysql] = r.mysqlDockers[0]
-		driverToDocker[contractsdatabase.DriverSqlserver] = r.sqlserverDockers[0]
+		mysqlDocker := supportdocker.Mysql()
+		sqlserverDocker := supportdocker.Sqlserver()
+		if err := supportdocker.Ready(mysqlDocker); err != nil {
+			panic(err)
+		}
+		if err := supportdocker.Ready(sqlserverDocker); err != nil {
+			panic(err)
+		}
+
+		driverToDocker[contractsdatabase.DriverMysql] = mysqlDocker
+		driverToDocker[contractsdatabase.DriverSqlserver] = sqlserverDocker
 	}
 
 	for driver, docker := range driverToDocker {
-		query := NewTestQuery(docker, withPrefixAndSingular)
-		query.CreateTable()
+		var query *TestQuery
+		if withPrefixAndSingular {
+			query = NewTestQueryWithPrefixAndSingular(docker)
+		} else {
+			query = NewTestQuery(docker)
+		}
+
 		driverToTestQuery[driver] = query
 	}
 
@@ -207,28 +168,17 @@ type TestQuery struct {
 	query      orm.Query
 }
 
-func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) *TestQuery {
+func NewTestQuery(docker testing.DatabaseDriver) *TestQuery {
 	mockConfig := &mocksconfig.Config{}
 	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
-
 	testQuery := &TestQuery{
 		docker:     docker,
 		mockConfig: mockConfig,
 		mockDriver: mockDriver,
 	}
 
-	var (
-		query *Query
-		err   error
-	)
-	if len(withPrefixAndSingular) > 0 && withPrefixAndSingular[0] {
-		mockDriver.WithPrefixAndSingular()
-		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil)
-	} else {
-		mockDriver.Common()
-		query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), nil)
-	}
-
+	mockDriver.Common()
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
 	}
@@ -238,9 +188,76 @@ func NewTestQuery(docker testing.DatabaseDriver, withPrefixAndSingular ...bool) 
 	return testQuery
 }
 
+func NewTestQueryWithPrefixAndSingular(docker testing.DatabaseDriver) *TestQuery {
+	mockConfig := &mocksconfig.Config{}
+	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
+	testQuery := &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+	}
+
+	mockDriver.WithPrefixAndSingular()
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
+	if err != nil {
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
+	}
+
+	testQuery.query = query
+
+	return testQuery
+}
+
+func NewTestQueryWithSchema(docker testing.DatabaseDriver, schema string) *TestQuery {
+	if docker.Driver() != contractsdatabase.DriverPostgres && docker.Driver() != contractsdatabase.DriverSqlserver {
+		panic(fmt.Sprintf("%s does not support schema", docker.Driver().String()))
+	}
+
+	// Create schema before build query with the schema
+	mockConfig := &mocksconfig.Config{}
+	mockDriver := getMockDriver(docker, mockConfig, docker.Driver().String())
+	mockDriver.Common()
+	query, err := BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
+	if err != nil {
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
+	}
+
+	testQuery := &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+		query:      query,
+	}
+
+	if _, err := query.Exec(fmt.Sprintf(`CREATE SCHEMA "%s"`, schema)); err != nil {
+		panic(fmt.Sprintf("create schema %s failed: %v", schema, err))
+	}
+
+	if docker.Driver() == contractsdatabase.DriverSqlserver {
+		return testQuery
+	}
+
+	mockConfig = &mocksconfig.Config{}
+	mockDriver = getMockDriver(docker, mockConfig, docker.Driver().String())
+	mockDriver.WithSchema(schema)
+	query, err = BuildQuery(testContext, mockConfig, docker.Driver().String(), utils.NewTestLog(), nil)
+	if err != nil {
+		panic(fmt.Sprintf("connect to %s failed: %v", docker.Driver().String(), err))
+	}
+
+	testQuery = &TestQuery{
+		docker:     docker,
+		mockConfig: mockConfig,
+		mockDriver: mockDriver,
+		query:      query,
+	}
+
+	return testQuery
+}
+
 func (r *TestQuery) CreateTable(testTables ...TestTable) {
 	for table, sql := range newTestTables(r.docker.Driver()).All() {
-		if len(testTables) == 0 || slices.Contains(testTables, table) {
+		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
 			if _, err := r.query.Exec(sql()); err != nil {
 				panic(fmt.Sprintf("create table %v failed: %v", table, err))
 			}
@@ -260,12 +277,12 @@ func (r *TestQuery) Query() orm.Query {
 	return r.query
 }
 
-func (r *TestQuery) QueryOfReadWrite(config TestReadWriteConfig) (orm.Query, error) {
+func (r *TestQuery) QueryOfReadWrite(readDatabaseConfig testing.DatabaseConfig) (orm.Query, error) {
 	mockConfig := &mocksconfig.Config{}
 	mockDriver := getMockDriver(r.Docker(), mockConfig, r.Docker().Driver().String())
-	mockDriver.ReadWrite(config)
+	mockDriver.ReadWrite(readDatabaseConfig)
 
-	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), nil)
+	return BuildQuery(testContext, mockConfig, r.docker.Driver().String(), utils.NewTestLog(), nil)
 }
 
 func getMockDriver(docker testing.DatabaseDriver, mockConfig *mocksconfig.Config, connection string) testMockDriver {
@@ -309,51 +326,56 @@ func NewMockMysql(mockConfig *mocksconfig.Config, connection, database, username
 }
 
 func (r *MockMysql) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("mysql")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
-func (r *MockMysql) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
+func (r *MockMysql) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockMysql) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
 
-func (r *MockMysql) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("Local")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+func (r *MockMysql) WithSchema(schema string) {
+	panic("mysql does not support schema")
+}
 
+func (r *MockMysql) basic() {
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.loc", r.connection)).Return("UTC")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockMysql) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockPostgres struct {
@@ -380,50 +402,64 @@ func NewMockPostgres(mockConfig *mocksconfig.Config, connection, database, usern
 }
 
 func (r *MockPostgres) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("postgres")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.single()
 	r.basic()
 }
 
-func (r *MockPostgres) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
+func (r *MockPostgres) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
 	r.basic()
 }
 
 func (r *MockPostgres) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return("public")
+	r.single()
+	r.basic()
+}
+
+func (r *MockPostgres) WithSchema(schema string) {
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return(schema)
 	r.single()
 	r.basic()
 }
 
 func (r *MockPostgres) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
-
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.sslmode", r.connection)).Return("disable")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.timezone", r.connection)).Return("UTC")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.search_path", r.connection), "public").Return("public")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockPostgres) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type MockSqlite struct {
@@ -444,43 +480,48 @@ func NewMockSqlite(mockConfig *mocksconfig.Config, connection, database string) 
 }
 
 func (r *MockSqlite) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("sqlite")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.single()
 	r.basic()
 }
 
-func (r *MockSqlite) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Database: config.ReadDatabase},
+func (r *MockSqlite) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+		{Database: readDatabaseConfig.Database},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
 		{Database: r.database},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
 	r.basic()
 }
 
 func (r *MockSqlite) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
 	r.single()
 	r.basic()
 }
 
+func (r *MockSqlite) WithSchema(schema string) {
+	panic("sqlite does not support schema")
+}
+
 func (r *MockSqlite) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlite) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
 }
 
 type MockSqlserver struct {
@@ -507,48 +548,65 @@ func NewMockSqlserver(mockConfig *mocksconfig.Config, connection, database, user
 }
 
 func (r *MockSqlserver) Common() {
-	r.mockConfig.On("GetString", "database.default").Return("sqlserver")
-	r.mockConfig.On("GetString", "database.migrations.table").Return("migrations")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "dbo").Return("dbo")
+
 	r.single()
 	r.basic()
 }
 
-func (r *MockSqlserver) ReadWrite(config TestReadWriteConfig) {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.ReadPort, Username: r.user, Password: r.password},
+func (r *MockSqlserver) ReadWrite(readDatabaseConfig testing.DatabaseConfig) {
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return([]contractsdatabase.Config{
+		{Host: "127.0.0.1", Database: readDatabaseConfig.Database, Port: readDatabaseConfig.Port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
-		{Host: "127.0.0.1", Port: config.WritePort, Username: r.user, Password: r.password},
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return([]contractsdatabase.Config{
+		{Host: "127.0.0.1", Database: r.database, Port: r.port, Username: r.user, Password: r.password},
 	})
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "dbo").Return("dbo")
+
 	r.basic()
 }
 
 func (r *MockSqlserver) WithPrefixAndSingular() {
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
-	r.mockConfig.On("GetBool", fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("goravel_")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "dbo").Return("dbo")
+
+	r.single()
+	r.basic()
+}
+
+func (r *MockSqlserver) WithSchema(schema string) {
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.prefix", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.singular", r.connection)).Return(false)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.schema", r.connection), "public").Return(schema)
 	r.single()
 	r.basic()
 }
 
 func (r *MockSqlserver) basic() {
-	r.mockConfig.On("GetBool", "app.debug").Return(true)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.EXPECT().GetBool("app.debug").Return(true)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.driver", r.connection)).Return(r.driver.String())
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.database", r.connection)).Return(r.database)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.charset", r.connection)).Return("utf8mb4")
+	r.mockConfig.EXPECT().GetBool(fmt.Sprintf("database.connections.%s.no_lower_case", r.connection)).Return(false)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.name_replacer", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockPool(r.mockConfig)
 }
 
 func (r *MockSqlserver) single() {
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
-	r.mockConfig.On("Get", fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
-	r.mockConfig.On("GetString", fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
-	r.mockConfig.On("GetInt", fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", r.connection)).Return(nil)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.dsn", r.connection)).Return("")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", r.connection)).Return("127.0.0.1")
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", r.connection)).Return(r.user)
+	r.mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.password", r.connection)).Return(r.password)
+	r.mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", r.connection)).Return(r.port)
 }
 
 type testTables struct {
@@ -573,6 +631,7 @@ func (r *testTables) All() map[TestTable]func() string {
 		TestTableRoleUser:    r.roleUser,
 		TestTableUsers:       r.users,
 		TestTableGoravelUser: r.goravelUser,
+		TestTableSchema:      r.schema,
 	}
 }
 
@@ -737,7 +796,7 @@ CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   deleted_at datetime(3) DEFAULT NULL,
@@ -752,7 +811,7 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL,
   deleted_at timestamp DEFAULT NULL
@@ -764,7 +823,7 @@ CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL
@@ -776,7 +835,7 @@ CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL,
@@ -796,7 +855,7 @@ CREATE TABLE goravel_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   deleted_at datetime(3) DEFAULT NULL,
@@ -811,7 +870,7 @@ CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL,
   deleted_at timestamp DEFAULT NULL
@@ -823,7 +882,7 @@ CREATE TABLE goravel_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL
@@ -835,7 +894,7 @@ CREATE TABLE goravel_user (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
   bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   deleted_at datetime DEFAULT NULL,
@@ -855,7 +914,7 @@ CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   user_id bigint(20) unsigned DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   PRIMARY KEY (id),
@@ -869,7 +928,7 @@ CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
   user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL
 );
@@ -880,7 +939,7 @@ CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   user_id int DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL
 );
@@ -891,7 +950,7 @@ CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
   user_id bigint DEFAULT NULL,
   name varchar(255) NOT NULL,
-  province varchar(255) NOT NULL,
+  province varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   PRIMARY KEY (id)
@@ -1202,9 +1261,56 @@ CREATE TABLE role_user (
 	}
 }
 
+func (r *testTables) schema() string {
+	switch r.driver {
+	case contractsdatabase.DriverMysql:
+		return `
+CREATE TABLE goravel.schemas (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(255) NOT NULL,
+  created_at datetime(3) NOT NULL,
+  updated_at datetime(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_schemas_created_at (created_at),
+  KEY idx_schemas_updated_at (updated_at)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+`
+	case contractsdatabase.DriverPostgres:
+		return `
+CREATE TABLE goravel.schemas (
+  id SERIAL PRIMARY KEY NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at timestamp NOT NULL,
+  updated_at timestamp NOT NULL
+);
+`
+	case contractsdatabase.DriverSqlite:
+		return `
+CREATE TABLE goravel.schemas (
+  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL
+);
+`
+	case contractsdatabase.DriverSqlserver:
+		return `
+CREATE TABLE goravel.schemas (
+  id bigint NOT NULL IDENTITY(1,1),
+  name varchar(255) NOT NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY (id)
+);
+`
+	default:
+		return ""
+	}
+}
+
 func mockPool(mockConfig *mocksconfig.Config) {
-	mockConfig.On("GetInt", "database.pool.max_idle_conns", 10).Return(10)
-	mockConfig.On("GetInt", "database.pool.max_open_conns", 100).Return(100)
-	mockConfig.On("GetInt", "database.pool.conn_max_idletime", 3600).Return(3600)
-	mockConfig.On("GetInt", "database.pool.conn_max_lifetime", 3600).Return(3600)
+	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
+	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
 }

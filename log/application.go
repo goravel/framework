@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/support/color"
 )
@@ -18,15 +19,12 @@ type Application struct {
 	json     foundation.Json
 }
 
-func NewApplication(config config.Config, json foundation.Json) *Application {
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+func NewApplication(config config.Config, json foundation.Json) (*Application, error) {
+	instance := NewLogrus()
 	if config != nil {
 		if channel := config.GetString("logging.default"); channel != "" {
 			if err := registerHook(config, json, instance, channel); err != nil {
-				color.Red().Println("Init facades.Log error: " + err.Error())
-				return nil
+				return nil, err
 			}
 		}
 	}
@@ -36,10 +34,14 @@ func NewApplication(config config.Config, json foundation.Json) *Application {
 		Writer:   NewWriter(instance.WithContext(context.Background())),
 		config:   config,
 		json:     json,
-	}
+	}, nil
 }
 
 func (r *Application) WithContext(ctx context.Context) log.Writer {
+	if httpCtx, ok := ctx.(http.Context); ok {
+		return NewWriter(r.instance.WithContext(httpCtx.Context()))
+	}
+
 	return NewWriter(r.instance.WithContext(ctx))
 }
 
@@ -48,11 +50,9 @@ func (r *Application) Channel(channel string) log.Writer {
 		return r.Writer
 	}
 
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	if err := registerHook(r.config, r.json, instance, channel); err != nil {
-		color.Red().Println("Init facades.Log error: " + err.Error())
+		color.Errorln(err)
 		return nil
 	}
 
@@ -64,16 +64,14 @@ func (r *Application) Stack(channels []string) log.Writer {
 		return r.Writer
 	}
 
-	instance := logrus.New()
-	instance.SetLevel(logrus.DebugLevel)
-
+	instance := NewLogrus()
 	for _, channel := range channels {
 		if channel == "" {
 			continue
 		}
 
 		if err := registerHook(r.config, r.json, instance, channel); err != nil {
-			color.Red().Println("Init facades.Log error: " + err.Error())
+			color.Errorln(err)
 			return nil
 		}
 	}

@@ -52,7 +52,7 @@ func (_c *Gate_After_Call) Return() *Gate_After_Call {
 }
 
 func (_c *Gate_After_Call) RunAndReturn(run func(func(context.Context, string, map[string]interface{}, access.Response) access.Response)) *Gate_After_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -179,7 +179,7 @@ func (_c *Gate_Before_Call) Return() *Gate_Before_Call {
 }
 
 func (_c *Gate_Before_Call) RunAndReturn(run func(func(context.Context, string, map[string]interface{}) access.Response)) *Gate_Before_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -213,7 +213,7 @@ func (_c *Gate_Define_Call) Return() *Gate_Define_Call {
 }
 
 func (_c *Gate_Define_Call) RunAndReturn(run func(string, func(context.Context, map[string]interface{}) access.Response)) *Gate_Define_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

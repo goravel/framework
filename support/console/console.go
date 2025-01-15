@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
 )
@@ -22,7 +23,7 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 		name, err = ctx.Ask(fmt.Sprintf("Enter the %s name", ttype), console.AskOption{
 			Validate: func(s string) error {
 				if s == "" {
-					return fmt.Errorf("the %s name cannot be empty", ttype)
+					return errors.ConsoleEmptyFieldValue.Args(ttype)
 				}
 
 				return nil
@@ -33,16 +34,16 @@ func NewMake(ctx console.Context, ttype, name, root string) (*Make, error) {
 		}
 	}
 
-	make := &Make{
+	m := &Make{
 		name: name,
 		root: root,
 	}
 
-	if !ctx.OptionBool("force") && file.Exists(make.GetFilePath()) {
-		return nil, fmt.Errorf("the %s already exists. Use the --force or -f flag to overwrite", ttype)
+	if !ctx.OptionBool("force") && file.Exists(m.GetFilePath()) {
+		return nil, errors.ConsoleFileAlreadyExists.Args(ttype)
 	}
 
-	return make, nil
+	return m, nil
 }
 
 func (m *Make) GetFilePath() string {
@@ -80,4 +81,21 @@ func (m *Make) GetFolderPath() string {
 	}
 
 	return folderPath
+}
+
+func ConfirmToProceed(ctx console.Context, env string) bool {
+	if env != "production" {
+		return true
+	}
+	if ctx.OptionBool("force") {
+		return true
+	}
+
+	confirmed, err := ctx.Confirm("Are you sure you want to run this command?")
+	if err != nil {
+		ctx.Error(errors.ConsoleFailedToConfirm.Args(err).Error())
+		return false
+	}
+
+	return confirmed
 }

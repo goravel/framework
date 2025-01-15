@@ -72,7 +72,7 @@ func (_c *Association_Append_Call) RunAndReturn(run func(...interface{}) error) 
 	return _c
 }
 
-// Clear provides a mock function with given fields:
+// Clear provides a mock function with no fields
 func (_m *Association) Clear() error {
 	ret := _m.Called()
 
@@ -117,7 +117,7 @@ func (_c *Association_Clear_Call) RunAndReturn(run func() error) *Association_Cl
 	return _c
 }
 
-// Count provides a mock function with given fields:
+// Count provides a mock function with no fields
 func (_m *Association) Count() int64 {
 	ret := _m.Called()
 

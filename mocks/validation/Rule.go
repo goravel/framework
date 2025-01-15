@@ -20,7 +20,7 @@ func (_m *Rule) EXPECT() *Rule_Expecter {
 	return &Rule_Expecter{mock: &_m.Mock}
 }
 
-// Message provides a mock function with given fields:
+// Message provides a mock function with no fields
 func (_m *Rule) Message() string {
 	ret := _m.Called()
 
@@ -123,7 +123,7 @@ func (_c *Rule_Passes_Call) RunAndReturn(run func(validation.Data, interface{}, 
 	return _c
 }
 
-// Signature provides a mock function with given fields:
+// Signature provides a mock function with no fields
 func (_m *Rule) Signature() string {
 	ret := _m.Called()
 

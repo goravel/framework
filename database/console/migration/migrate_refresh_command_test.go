@@ -5,70 +5,81 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/errors"
 	mocksconsole "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/env"
-	"github.com/goravel/framework/support/file"
 )
 
 func TestMigrateRefreshCommand(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+	var (
+		mockArtisan *mocksconsole.Artisan
+		mockContext *mocksconsole.Context
+	)
+
+	beforeEach := func() {
+		mockArtisan = mocksconsole.NewArtisan(t)
+		mockContext = mocksconsole.NewContext(t)
 	}
 
-	testQueries := gorm.NewTestQueries().Queries()
-	for driver, testQuery := range testQueries {
-		query := testQuery.Query()
-		mockConfig := testQuery.MockConfig()
-		createMigrations(driver)
-
-		mockArtisan := mocksconsole.NewArtisan(t)
-		mockContext := mocksconsole.NewContext(t)
-		mockContext.On("Option", "step").Return("").Once()
-
-		migrateCommand := NewMigrateCommand(mockConfig)
-		assert.Nil(t, migrateCommand.Handle(mockContext))
-
-		// Test MigrateRefreshCommand without --seed flag
-		mockContext.On("OptionBool", "seed").Return(false).Once()
-		migrateRefreshCommand := NewMigrateRefreshCommand(mockConfig, mockArtisan)
-		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
-
-		var agent Agent
-		err := query.Where("name", "goravel").First(&agent)
-		assert.Nil(t, err)
-		assert.True(t, agent.ID > 0)
-
-		mockArtisan = &mocksconsole.Artisan{}
-		mockContext = &mocksconsole.Context{}
-		mockContext.On("Option", "step").Return("5").Once()
-
-		migrateCommand = NewMigrateCommand(mockConfig)
-		assert.Nil(t, migrateCommand.Handle(mockContext))
-
-		// Test MigrateRefreshCommand with --seed flag and --seeder specified
-		mockContext.On("OptionBool", "seed").Return(true).Once()
-		mockContext.On("OptionSlice", "seeder").Return([]string{"UserSeeder"}).Once()
-		mockArtisan.On("Call", "db:seed --seeder UserSeeder").Return(nil).Once()
-		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
-		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
-
-		mockArtisan = &mocksconsole.Artisan{}
-		mockContext = &mocksconsole.Context{}
-
-		// Test MigrateRefreshCommand with --seed flag and no --seeder specified
-		mockContext.On("Option", "step").Return("").Once()
-		mockContext.On("OptionBool", "seed").Return(true).Once()
-		mockContext.On("OptionSlice", "seeder").Return([]string{}).Once()
-		mockArtisan.On("Call", "db:seed").Return(nil).Once()
-		migrateRefreshCommand = NewMigrateRefreshCommand(mockConfig, mockArtisan)
-		assert.Nil(t, migrateRefreshCommand.Handle(mockContext))
-
-		var agent1 Agent
-		err = query.Where("name", "goravel").First(&agent1)
-		assert.Nil(t, err)
-		assert.True(t, agent1.ID > 0)
+	tests := []struct {
+		name  string
+		setup func()
+	}{
+		{
+			name: "step is 0, call migrate reset command failed",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockArtisan.EXPECT().Call("migrate:reset").Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationRefreshFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
+		{
+			name: "step > 0, call migrate rollback command failed",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(2).Once()
+				mockArtisan.EXPECT().Call("migrate:rollback --step 2").Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationRefreshFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
+		{
+			name: "call migrate command failed",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockArtisan.EXPECT().Call("migrate:reset").Return(nil).Once()
+				mockArtisan.EXPECT().Call("migrate").Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationRefreshFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
+		{
+			name: "call db:seed failed",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockArtisan.EXPECT().Call("migrate:reset").Return(nil).Once()
+				mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
+				mockContext.EXPECT().OptionBool("seed").Return(true).Once()
+				mockContext.EXPECT().OptionSlice("seeder").Return([]string{"a", "b"}).Once()
+				mockArtisan.EXPECT().Call("db:seed --seeder a,b").Return(assert.AnError).Once()
+				mockContext.EXPECT().Error(errors.MigrationRefreshFailed.Args(assert.AnError).Error()).Once()
+			},
+		},
+		{
+			name: "success",
+			setup: func() {
+				mockContext.EXPECT().OptionInt("step").Return(0).Once()
+				mockArtisan.EXPECT().Call("migrate:reset").Return(nil).Once()
+				mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
+				mockContext.EXPECT().OptionBool("seed").Return(false).Once()
+				mockContext.EXPECT().Success("Migration refresh success").Once()
+			},
+		},
 	}
 
-	defer assert.Nil(t, file.Remove("database"))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
+
+			command := NewMigrateRefreshCommand(mockArtisan)
+			assert.NoError(t, command.Handle(mockContext))
+		})
+	}
 }

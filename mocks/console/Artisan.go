@@ -21,8 +21,21 @@ func (_m *Artisan) EXPECT() *Artisan_Expecter {
 }
 
 // Call provides a mock function with given fields: command
-func (_m *Artisan) Call(command string) {
-	_m.Called(command)
+func (_m *Artisan) Call(command string) error {
+	ret := _m.Called(command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Call")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string) error); ok {
+		r0 = rf(command)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Artisan_Call_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Call'
@@ -43,12 +56,12 @@ func (_c *Artisan_Call_Call) Run(run func(command string)) *Artisan_Call_Call {
 	return _c
 }
 
-func (_c *Artisan_Call_Call) Return() *Artisan_Call_Call {
-	_c.Call.Return()
+func (_c *Artisan_Call_Call) Return(_a0 error) *Artisan_Call_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Artisan_Call_Call) RunAndReturn(run func(string)) *Artisan_Call_Call {
+func (_c *Artisan_Call_Call) RunAndReturn(run func(string) error) *Artisan_Call_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -82,7 +95,7 @@ func (_c *Artisan_CallAndExit_Call) Return() *Artisan_CallAndExit_Call {
 }
 
 func (_c *Artisan_CallAndExit_Call) RunAndReturn(run func(string)) *Artisan_CallAndExit_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -115,13 +128,26 @@ func (_c *Artisan_Register_Call) Return() *Artisan_Register_Call {
 }
 
 func (_c *Artisan_Register_Call) RunAndReturn(run func([]console.Command)) *Artisan_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
 // Run provides a mock function with given fields: args, exitIfArtisan
-func (_m *Artisan) Run(args []string, exitIfArtisan bool) {
-	_m.Called(args, exitIfArtisan)
+func (_m *Artisan) Run(args []string, exitIfArtisan bool) error {
+	ret := _m.Called(args, exitIfArtisan)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Run")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]string, bool) error); ok {
+		r0 = rf(args, exitIfArtisan)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Artisan_Run_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Run'
@@ -143,12 +169,12 @@ func (_c *Artisan_Run_Call) Run(run func(args []string, exitIfArtisan bool)) *Ar
 	return _c
 }
 
-func (_c *Artisan_Run_Call) Return() *Artisan_Run_Call {
-	_c.Call.Return()
+func (_c *Artisan_Run_Call) Return(_a0 error) *Artisan_Run_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Artisan_Run_Call) RunAndReturn(run func([]string, bool)) *Artisan_Run_Call {
+func (_c *Artisan_Run_Call) RunAndReturn(run func([]string, bool) error) *Artisan_Run_Call {
 	_c.Call.Return(run)
 	return _c
 }

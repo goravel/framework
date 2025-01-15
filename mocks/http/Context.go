@@ -24,7 +24,7 @@ func (_m *Context) EXPECT() *Context_Expecter {
 	return &Context_Expecter{mock: &_m.Mock}
 }
 
-// Context provides a mock function with given fields:
+// Context provides a mock function with no fields
 func (_m *Context) Context() context.Context {
 	ret := _m.Called()
 
@@ -71,7 +71,7 @@ func (_c *Context_Context_Call) RunAndReturn(run func() context.Context) *Contex
 	return _c
 }
 
-// Deadline provides a mock function with given fields:
+// Deadline provides a mock function with no fields
 func (_m *Context) Deadline() (time.Time, bool) {
 	ret := _m.Called()
 
@@ -126,7 +126,7 @@ func (_c *Context_Deadline_Call) RunAndReturn(run func() (time.Time, bool)) *Con
 	return _c
 }
 
-// Done provides a mock function with given fields:
+// Done provides a mock function with no fields
 func (_m *Context) Done() <-chan struct{} {
 	ret := _m.Called()
 
@@ -173,7 +173,7 @@ func (_c *Context_Done_Call) RunAndReturn(run func() <-chan struct{}) *Context_D
 	return _c
 }
 
-// Err provides a mock function with given fields:
+// Err provides a mock function with no fields
 func (_m *Context) Err() error {
 	ret := _m.Called()
 
@@ -218,7 +218,7 @@ func (_c *Context_Err_Call) RunAndReturn(run func() error) *Context_Err_Call {
 	return _c
 }
 
-// Request provides a mock function with given fields:
+// Request provides a mock function with no fields
 func (_m *Context) Request() http.ContextRequest {
 	ret := _m.Called()
 
@@ -265,7 +265,7 @@ func (_c *Context_Request_Call) RunAndReturn(run func() http.ContextRequest) *Co
 	return _c
 }
 
-// Response provides a mock function with given fields:
+// Response provides a mock function with no fields
 func (_m *Context) Response() http.ContextResponse {
 	ret := _m.Called()
 
@@ -360,6 +360,39 @@ func (_c *Context_Value_Call) RunAndReturn(run func(interface{}) interface{}) *C
 	return _c
 }
 
+// WithContext provides a mock function with given fields: ctx
+func (_m *Context) WithContext(ctx context.Context) {
+	_m.Called(ctx)
+}
+
+// Context_WithContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithContext'
+type Context_WithContext_Call struct {
+	*mock.Call
+}
+
+// WithContext is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Context_Expecter) WithContext(ctx interface{}) *Context_WithContext_Call {
+	return &Context_WithContext_Call{Call: _e.mock.On("WithContext", ctx)}
+}
+
+func (_c *Context_WithContext_Call) Run(run func(ctx context.Context)) *Context_WithContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Context_WithContext_Call) Return() *Context_WithContext_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_WithContext_Call) RunAndReturn(run func(context.Context)) *Context_WithContext_Call {
+	_c.Run(run)
+	return _c
+}
+
 // WithValue provides a mock function with given fields: key, value
 func (_m *Context) WithValue(key interface{}, value interface{}) {
 	_m.Called(key, value)
@@ -390,7 +423,7 @@ func (_c *Context_WithValue_Call) Return() *Context_WithValue_Call {
 }
 
 func (_c *Context_WithValue_Call) RunAndReturn(run func(interface{}, interface{})) *Context_WithValue_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

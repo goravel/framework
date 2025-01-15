@@ -1,69 +1,59 @@
 package migration
 
 import (
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-
-	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/support/color"
 )
 
 type MigrateStatusCommand struct {
-	config config.Config
+	migrator migration.Migrator
 }
 
-func NewMigrateStatusCommand(config config.Config) *MigrateStatusCommand {
+func NewMigrateStatusCommand(migrator migration.Migrator) *MigrateStatusCommand {
 	return &MigrateStatusCommand{
-		config: config,
+		migrator: migrator,
 	}
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MigrateStatusCommand) Signature() string {
+func (r *MigrateStatusCommand) Signature() string {
 	return "migrate:status"
 }
 
 // Description The console command description.
-func (receiver *MigrateStatusCommand) Description() string {
+func (r *MigrateStatusCommand) Description() string {
 	return "Show the status of each migration"
 }
 
 // Extend The console command extend.
-func (receiver *MigrateStatusCommand) Extend() command.Extend {
+func (r *MigrateStatusCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *MigrateStatusCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate(receiver.config)
+func (r *MigrateStatusCommand) Handle(ctx console.Context) error {
+	migrationStatus, err := r.migrator.Status()
 	if err != nil {
-		return err
+		ctx.Error(err.Error())
 	}
-	if m == nil {
-		color.Yellow().Println("Please fill database config first")
-		return nil
+	if len(migrationStatus) > 0 {
+		ctx.NewLine()
+		ctx.TwoColumnDetail(color.Gray().Sprint("Migration name"), color.Gray().Sprint("Batch / Status"))
+		for i := range migrationStatus {
+			var status string
+			if migrationStatus[i].Ran {
+				status = color.Default().Sprintf("[%d] <fg=green;op=bold>Ran</>", migrationStatus[i].Batch)
+			} else {
+				status = color.Yellow().Sprint("<op=bold>Pending</>")
+			}
+			ctx.TwoColumnDetail(migrationStatus[i].Name, status)
+		}
+		ctx.NewLine()
 	}
-
-	version, dirty, err := m.Version()
-	if err != nil {
-		color.Red().Println("Migration status failed:", err.Error())
-
-		return nil
-	}
-
-	if dirty {
-		color.Yellow().Println("Migration status: dirty")
-		color.Green().Println("Migration version:", version)
-
-		return nil
-	}
-
-	color.Green().Println("Migration status: clean")
-	color.Green().Println("Migration version:", version)
 
 	return nil
 }

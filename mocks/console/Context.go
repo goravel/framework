@@ -66,7 +66,7 @@ func (_c *Context_Argument_Call) RunAndReturn(run func(int) string) *Context_Arg
 	return _c
 }
 
-// Arguments provides a mock function with given fields:
+// Arguments provides a mock function with no fields
 func (_m *Context) Arguments() []string {
 	ret := _m.Called()
 
@@ -285,7 +285,7 @@ func (_c *Context_Comment_Call) Return() *Context_Comment_Call {
 }
 
 func (_c *Context_Comment_Call) RunAndReturn(run func(string)) *Context_Comment_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -437,7 +437,7 @@ func (_c *Context_Error_Call) Return() *Context_Error_Call {
 }
 
 func (_c *Context_Error_Call) RunAndReturn(run func(string)) *Context_Error_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -470,7 +470,7 @@ func (_c *Context_Info_Call) Return() *Context_Info_Call {
 }
 
 func (_c *Context_Info_Call) RunAndReturn(run func(string)) *Context_Info_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -503,7 +503,7 @@ func (_c *Context_Line_Call) Return() *Context_Line_Call {
 }
 
 func (_c *Context_Line_Call) RunAndReturn(run func(string)) *Context_Line_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -623,7 +623,7 @@ func (_c *Context_NewLine_Call) Return() *Context_NewLine_Call {
 }
 
 func (_c *Context_NewLine_Call) RunAndReturn(run func(...int)) *Context_NewLine_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -1167,6 +1167,88 @@ func (_c *Context_Spinner_Call) RunAndReturn(run func(string, console.SpinnerOpt
 	return _c
 }
 
+// Success provides a mock function with given fields: message
+func (_m *Context) Success(message string) {
+	_m.Called(message)
+}
+
+// Context_Success_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Success'
+type Context_Success_Call struct {
+	*mock.Call
+}
+
+// Success is a helper method to define mock.On call
+//   - message string
+func (_e *Context_Expecter) Success(message interface{}) *Context_Success_Call {
+	return &Context_Success_Call{Call: _e.mock.On("Success", message)}
+}
+
+func (_c *Context_Success_Call) Run(run func(message string)) *Context_Success_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Context_Success_Call) Return() *Context_Success_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_Success_Call) RunAndReturn(run func(string)) *Context_Success_Call {
+	_c.Run(run)
+	return _c
+}
+
+// TwoColumnDetail provides a mock function with given fields: first, second, filler
+func (_m *Context) TwoColumnDetail(first string, second string, filler ...rune) {
+	_va := make([]interface{}, len(filler))
+	for _i := range filler {
+		_va[_i] = filler[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, first, second)
+	_ca = append(_ca, _va...)
+	_m.Called(_ca...)
+}
+
+// Context_TwoColumnDetail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TwoColumnDetail'
+type Context_TwoColumnDetail_Call struct {
+	*mock.Call
+}
+
+// TwoColumnDetail is a helper method to define mock.On call
+//   - first string
+//   - second string
+//   - filler ...rune
+func (_e *Context_Expecter) TwoColumnDetail(first interface{}, second interface{}, filler ...interface{}) *Context_TwoColumnDetail_Call {
+	return &Context_TwoColumnDetail_Call{Call: _e.mock.On("TwoColumnDetail",
+		append([]interface{}{first, second}, filler...)...)}
+}
+
+func (_c *Context_TwoColumnDetail_Call) Run(run func(first string, second string, filler ...rune)) *Context_TwoColumnDetail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]rune, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(rune)
+			}
+		}
+		run(args[0].(string), args[1].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Context_TwoColumnDetail_Call) Return() *Context_TwoColumnDetail_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Context_TwoColumnDetail_Call) RunAndReturn(run func(string, string, ...rune)) *Context_TwoColumnDetail_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Warning provides a mock function with given fields: message
 func (_m *Context) Warning(message string) {
 	_m.Called(message)
@@ -1196,7 +1278,7 @@ func (_c *Context_Warning_Call) Return() *Context_Warning_Call {
 }
 
 func (_c *Context_Warning_Call) RunAndReturn(run func(string)) *Context_Warning_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

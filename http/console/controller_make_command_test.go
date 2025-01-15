@@ -2,42 +2,39 @@ package console
 
 import (
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
-	"github.com/goravel/framework/support/color"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestControllerMakeCommand(t *testing.T) {
 	controllerMakeCommand := &ControllerMakeCommand{}
-	mockContext := &consolemocks.Context{}
-	mockContext.On("Argument", 0).Return("").Once()
-	mockContext.On("Ask", "Enter the controller name", mock.Anything).Return("", errors.New("the controller name cannot be empty")).Once()
-	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, controllerMakeCommand.Handle(mockContext))
-	}), "the controller name cannot be empty")
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Argument(0).Return("").Once()
+	mockContext.EXPECT().Ask("Enter the controller name", mock.Anything).Return("", errors.New("the controller name cannot be empty")).Once()
+	mockContext.EXPECT().Error("the controller name cannot be empty").Once()
+	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 
-	mockContext.On("Argument", 0).Return("UsersController").Once()
-	mockContext.On("OptionBool", "resource").Return(false).Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
+	mockContext.EXPECT().Argument(0).Return("UsersController").Once()
+	mockContext.EXPECT().OptionBool("resource").Return(false).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Controller created successfully").Once()
 	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/http/controllers/users_controller.go"))
 
-	mockContext.On("Argument", 0).Return("UsersController").Once()
-	mockContext.On("OptionBool", "resource").Return(false).Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
-	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, controllerMakeCommand.Handle(mockContext))
-	}), "the controller already exists. Use the --force or -f flag to overwrite")
+	mockContext.EXPECT().Argument(0).Return("UsersController").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Error("the controller already exists. Use the --force or -f flag to overwrite").Once()
+	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 
-	mockContext.On("Argument", 0).Return("User/AuthController").Once()
-	mockContext.On("OptionBool", "resource").Return(false).Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
+	mockContext.EXPECT().Argument(0).Return("User/AuthController").Once()
+	mockContext.EXPECT().OptionBool("resource").Return(false).Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().Success("Controller created successfully").Once()
 	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "package User"))
@@ -48,10 +45,11 @@ func TestControllerMakeCommand(t *testing.T) {
 
 func TestResourceControllerMakeCommand(t *testing.T) {
 	controllerMakeCommand := &ControllerMakeCommand{}
-	mockContext := &consolemocks.Context{}
-	mockContext.On("Argument", 0).Return("User/AuthController").Once()
-	mockContext.On("OptionBool", "force").Return(false).Once()
-	mockContext.On("OptionBool", "resource").Return(true).Once()
+	mockContext := mocksconsole.NewContext(t)
+	mockContext.EXPECT().Argument(0).Return("User/AuthController").Once()
+	mockContext.EXPECT().OptionBool("force").Return(false).Once()
+	mockContext.EXPECT().OptionBool("resource").Return(true).Once()
+	mockContext.EXPECT().Success("Controller created successfully").Once()
 	assert.Nil(t, controllerMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
 	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "package User"))

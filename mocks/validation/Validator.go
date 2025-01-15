@@ -66,7 +66,7 @@ func (_c *Validator_Bind_Call) RunAndReturn(run func(interface{}) error) *Valida
 	return _c
 }
 
-// Errors provides a mock function with given fields:
+// Errors provides a mock function with no fields
 func (_m *Validator) Errors() validation.Errors {
 	ret := _m.Called()
 
@@ -113,7 +113,7 @@ func (_c *Validator_Errors_Call) RunAndReturn(run func() validation.Errors) *Val
 	return _c
 }
 
-// Fails provides a mock function with given fields:
+// Fails provides a mock function with no fields
 func (_m *Validator) Fails() bool {
 	ret := _m.Called()
 

@@ -1,20 +1,24 @@
 package validation
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
+	"github.com/goravel/framework/errors"
 )
 
 func TestMake(t *testing.T) {
 	type Data struct {
 		A string
 	}
+
+	ErrInvalidData := errors.New("error")
 
 	tests := []struct {
 		description        string
@@ -54,7 +58,7 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.New("data must be map[string]any or map[string][]string or struct"),
+			expectErr: errors.ValidationDataInvalidType,
 		},
 		{
 			description: "error when data is empty map",
@@ -63,13 +67,13 @@ func TestMake(t *testing.T) {
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
 			},
-			expectErr: errors.New("data can't be empty"),
+			expectErr: errors.ValidationEmptyData,
 		},
 		{
 			description: "error when rule is empty map",
 			data:        map[string]any{"a": "b"},
 			rules:       map[string]string{},
-			expectErr:   errors.New("rules can't be empty"),
+			expectErr:   errors.ValidationEmptyRules,
 		},
 		{
 			description: "error when PrepareForValidation returns error",
@@ -77,11 +81,11 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
-					return errors.New("error")
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
+					return ErrInvalidData
 				}),
 			},
-			expectErr: errors.New("error"),
+			expectErr: ErrInvalidData,
 		},
 		{
 			description: "success when data is map[string]any and with PrepareForValidation",
@@ -89,7 +93,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -112,7 +116,7 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"b": "B",
 				}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -131,7 +135,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"A": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"A": "trim"}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
 						return data.Set("A", "c")
 					}
@@ -154,7 +158,7 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"B": "b",
 				}),
-				PrepareForValidation(func(data httpvalidate.Data) error {
+				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -174,7 +178,9 @@ func TestMake(t *testing.T) {
 			validation := NewValidation()
 			validator, err := validation.Make(test.data, test.rules, test.options...)
 			assert.Equal(t, test.expectValidator, validator != nil, test.description)
-			assert.Equal(t, test.expectErr, err, test.description)
+			if test.expectErr != nil {
+				assert.ErrorIs(t, err, test.expectErr, test.description)
+			}
 
 			if validator != nil {
 				var data Data
@@ -188,6 +194,38 @@ func TestMake(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Fix: https://github.com/goravel/goravel/issues/533
+func TestBindWithNestedStruct(t *testing.T) {
+	type Data struct {
+		A map[string][]string `json:"a" form:"a"`
+		B map[string][]string `json:"b" form:"b"`
+	}
+	validation := NewValidation()
+	validator, err := validation.Make(map[string]any{
+		"a": map[string]any{
+			"b": []any{"c", "d"},
+		},
+		"b": map[string][]string{
+			"b": {"c", "d"},
+		},
+	}, map[string]string{"a": "required|map", "b": "required|map"})
+
+	require.NoError(t, err)
+	require.NotNil(t, validator)
+	require.False(t, validator.Fails())
+
+	var data Data
+	require.NoError(t, validator.Bind(&data))
+	require.Equal(t, Data{
+		A: map[string][]string{
+			"b": {"c", "d"},
+		},
+		B: map[string][]string{
+			"b": {"c", "d"},
+		},
+	}, data)
 }
 
 type Case struct {

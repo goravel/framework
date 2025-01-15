@@ -1,17 +1,16 @@
 package auth
 
-import (
-	"errors"
-)
+import "github.com/goravel/framework/errors"
 
+// These errors may be used by user's project, so we can't remove them.
 var (
-	ErrorRefreshTimeExceeded = errors.New("refresh time exceeded")
-	ErrorTokenExpired        = errors.New("token expired")
-	ErrorNoPrimaryKeyField   = errors.New("the primaryKey field was not found in the model, set primaryKey like orm.Model")
-	ErrorEmptySecret         = errors.New("secret is required")
-	ErrorTokenDisabled       = errors.New("token is disabled")
-	ErrorParseTokenFirst     = errors.New("parse token first")
-	ErrorInvalidClaims       = errors.New("invalid claims")
-	ErrorInvalidToken        = errors.New("invalid token")
-	ErrorInvalidKey          = errors.New("invalid key")
+	ErrorRefreshTimeExceeded = errors.AuthRefreshTimeExceeded
+	ErrorTokenExpired        = errors.AuthTokenExpired
+	ErrorNoPrimaryKeyField   = errors.AuthNoPrimaryKeyField
+	ErrorEmptySecret         = errors.AuthEmptySecret
+	ErrorTokenDisabled       = errors.AuthTokenDisabled
+	ErrorParseTokenFirst     = errors.AuthParseTokenFirst
+	ErrorInvalidClaims       = errors.AuthInvalidClaims
+	ErrorInvalidToken        = errors.AuthInvalidToken
+	ErrorInvalidKey          = errors.AuthInvalidKey
 )

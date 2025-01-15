@@ -1,19 +1,16 @@
 package gorm
 
 import (
-	"errors"
-	"fmt"
-	"log"
-	"os"
 	"time"
 
 	gormio "gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -21,12 +18,14 @@ type Builder struct {
 	config        config.Config
 	configBuilder database.ConfigBuilder
 	instance      *gormio.DB
+	log           log.Log
 }
 
-func NewGorm(config config.Config, configBuilder database.ConfigBuilder) (*gormio.DB, error) {
+func NewGorm(config config.Config, configBuilder database.ConfigBuilder, log log.Log) (*gormio.DB, error) {
 	builder := &Builder{
 		config:        config,
 		configBuilder: configBuilder,
+		log:           log,
 	}
 
 	return builder.Build()
@@ -36,7 +35,7 @@ func (r *Builder) Build() (*gormio.DB, error) {
 	readConfigs := r.configBuilder.Reads()
 	writeConfigs := r.configBuilder.Writes()
 	if len(writeConfigs) == 0 {
-		return nil, errors.New("not found database configuration")
+		return nil, errors.OrmDatabaseConfigNotFound
 	}
 
 	if err := r.init(writeConfigs[0]); err != nil {
@@ -94,35 +93,25 @@ func (r *Builder) configureReadWriteSeparate(readConfigs, writeConfigs []databas
 func (r *Builder) init(fullConfig database.FullConfig) error {
 	dialectors, err := getDialectors([]database.FullConfig{fullConfig})
 	if err != nil {
-		return fmt.Errorf("init gorm dialector error: %v", err)
+		return err
 	}
 	if len(dialectors) == 0 {
-		return errors.New("no dialectors found")
+		return errors.OrmNoDialectorsFound
 	}
 
-	var logLevel gormlogger.LogLevel
-	if r.config.GetBool("app.debug") {
-		logLevel = gormlogger.Info
-	} else {
-		logLevel = gormlogger.Error
-	}
-
-	logger := NewLogger(log.New(os.Stdout, "\r\n", log.LstdFlags), gormlogger.Config{
-		SlowThreshold:             200 * time.Millisecond,
-		LogLevel:                  gormlogger.Info,
-		IgnoreRecordNotFoundError: true,
-		Colorful:                  true,
-	})
+	logger := NewLogger(r.config, r.log)
 	instance, err := gormio.Open(dialectors[0], &gormio.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		SkipDefaultTransaction:                   true,
-		Logger:                                   logger.LogMode(logLevel),
+		Logger:                                   logger,
 		NowFunc: func() time.Time {
 			return carbon.Now().StdTime()
 		},
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   fullConfig.Prefix,
 			SingularTable: fullConfig.Singular,
+			NoLowerCase:   fullConfig.NoLowerCase,
+			NameReplacer:  fullConfig.NameReplacer,
 		},
 	})
 	if err != nil {

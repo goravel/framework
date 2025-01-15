@@ -112,7 +112,7 @@ func (_c *Validation_AddRules_Call) RunAndReturn(run func([]validation.Rule) err
 	return _c
 }
 
-// Filters provides a mock function with given fields:
+// Filters provides a mock function with no fields
 func (_m *Validation) Filters() []validation.Filter {
 	ret := _m.Called()
 
@@ -233,7 +233,7 @@ func (_c *Validation_Make_Call) RunAndReturn(run func(interface{}, map[string]st
 	return _c
 }
 
-// Rules provides a mock function with given fields:
+// Rules provides a mock function with no fields
 func (_m *Validation) Rules() []validation.Rule {
 	ret := _m.Called()
 

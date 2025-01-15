@@ -35,7 +35,7 @@ func NewManager(config config.Config, json foundation.Json) *Manager {
 
 func (m *Manager) BuildSession(handler sessioncontract.Driver, sessionID ...string) (sessioncontract.Session, error) {
 	if handler == nil {
-		return nil, errors.ErrSessionDriverIsNotSet
+		return nil, errors.SessionDriverIsNotSet
 	}
 
 	session := m.acquireSession()
@@ -60,11 +60,11 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 	}
 
 	if driverName == "" {
-		return nil, errors.ErrSessionDriverIsNotSet
+		return nil, errors.SessionDriverIsNotSet
 	}
 
 	if m.drivers[driverName] == nil {
-		return nil, errors.ErrSessionDriverNotSupported.Args(driverName)
+		return nil, errors.SessionDriverNotSupported.Args(driverName)
 	}
 
 	return m.drivers[driverName], nil
@@ -72,7 +72,7 @@ func (m *Manager) Driver(name ...string) (sessioncontract.Driver, error) {
 
 func (m *Manager) Extend(driver string, handler func() sessioncontract.Driver) error {
 	if m.drivers[driver] != nil {
-		return errors.ErrSessionDriverAlreadyExists.Args(driver)
+		return errors.SessionDriverAlreadyExists.Args(driver)
 	}
 	m.drivers[driver] = handler()
 	m.startGcTimer(m.drivers[driver])
@@ -98,7 +98,7 @@ func (m *Manager) getDefaultDriver() string {
 
 func (m *Manager) extendDefaultDrivers() {
 	if err := m.Extend("file", m.createFileDriver); err != nil {
-		panic(errors.ErrSessionDriverExtensionFailed.Args("file", err))
+		panic(errors.SessionDriverExtensionFailed.SetModule(errors.ModuleSession).Args("file", err))
 	}
 }
 
@@ -121,7 +121,7 @@ func (m *Manager) startGcTimer(driver sessioncontract.Driver) {
 		for range ticker.C {
 			lifetime := ConfigFacade.GetInt("session.lifetime") * 60
 			if err := driver.Gc(lifetime); err != nil {
-				color.Red().Printf("Error performing garbage collection: %s\n", err)
+				color.Errorf("Error performing garbage collection: %s\n", err)
 			}
 		}
 	}()

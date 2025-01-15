@@ -63,7 +63,7 @@ func (_c *View_Exists_Call) RunAndReturn(run func(string) bool) *View_Exists_Cal
 	return _c
 }
 
-// GetShared provides a mock function with given fields:
+// GetShared provides a mock function with no fields
 func (_m *View) GetShared() map[string]interface{} {
 	ret := _m.Called()
 
@@ -140,7 +140,7 @@ func (_c *View_Share_Call) Return() *View_Share_Call {
 }
 
 func (_c *View_Share_Call) RunAndReturn(run func(string, interface{})) *View_Share_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

@@ -3,10 +3,12 @@ package color
 import (
 	"bytes"
 	"io"
+	"os"
 
 	"github.com/pterm/pterm"
 
 	"github.com/goravel/framework/contracts/support"
+	"github.com/goravel/framework/support/env"
 )
 
 const (
@@ -37,12 +39,31 @@ const (
 )
 
 var (
-	info    = pterm.Info
-	warn    = pterm.Warning
+	info = pterm.PrefixPrinter{
+		MessageStyle: &pterm.ThemeDefault.DefaultText,
+		Prefix: pterm.Prefix{
+			Style: &pterm.Style{pterm.FgBlack, pterm.BgLightWhite},
+			Text:  " INFO  ",
+		},
+		Writer: os.Stdout,
+	}
+	warning = pterm.Warning
 	err     = pterm.Error
 	debug   = pterm.Debug
 	success = pterm.Success
 )
+
+func init() {
+	pterm.EnableDebugMessages()
+	// Temporarily fix output issue including by https://github.com/pterm/pterm/commit/825931aa7ab264074e6c4045c3bdbca5482c758c
+	if env.IsTesting() {
+		info.Writer = nil
+		warning.Writer = nil
+		err.Writer = nil
+		debug.Writer = nil
+		success.Writer = nil
+	}
+}
 
 // New Functions to create Printer with specific color
 func New(color Color) support.Printer {
@@ -149,13 +170,24 @@ func Successf(format string, a ...any) { success.Printf(format, a...) }
 
 func Successln(a ...any) { success.Println(a...) }
 
-func Warnf(format string, a ...any) { warn.Printf(format, a...) }
+// DEPRECATED: Use Warningf instead
+func Warnf(format string, a ...any) { warning.Printf(format, a...) }
 
-func Warnln(a ...any) { warn.Println(a...) }
+// DEPRECATED: Use Warningln instead
+func Warnln(a ...any) { warning.Println(a...) }
+
+func Warningf(format string, a ...any) { warning.Printf(format, a...) }
+
+func Warningln(a ...any) { warning.Println(a...) }
 
 // CaptureOutput simulates capturing of os.stdout with a buffer and returns what was written to the screen
 func CaptureOutput(f func(w io.Writer)) string {
 	var outBuf bytes.Buffer
+	info.Writer = &outBuf
+	warning.Writer = &outBuf
+	err.Writer = &outBuf
+	debug.Writer = &outBuf
+	success.Writer = &outBuf
 	pterm.SetDefaultOutput(&outBuf)
 	f(&outBuf)
 

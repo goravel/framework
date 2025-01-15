@@ -22,7 +22,7 @@ func (_m *Event) EXPECT() *Event_Expecter {
 	return &Event_Expecter{mock: &_m.Mock}
 }
 
-// Context provides a mock function with given fields:
+// Context provides a mock function with no fields
 func (_m *Event) Context() context.Context {
 	ret := _m.Called()
 
@@ -294,7 +294,7 @@ func (_c *Event_IsDirty_Call) RunAndReturn(run func(...string) bool) *Event_IsDi
 	return _c
 }
 
-// Query provides a mock function with given fields:
+// Query provides a mock function with no fields
 func (_m *Event) Query() orm.Query {
 	ret := _m.Called()
 
@@ -371,7 +371,7 @@ func (_c *Event_SetAttribute_Call) Return() *Event_SetAttribute_Call {
 }
 
 func (_c *Event_SetAttribute_Call) RunAndReturn(run func(string, interface{})) *Event_SetAttribute_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

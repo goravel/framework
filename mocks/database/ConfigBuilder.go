@@ -20,7 +20,7 @@ func (_m *ConfigBuilder) EXPECT() *ConfigBuilder_Expecter {
 	return &ConfigBuilder_Expecter{mock: &_m.Mock}
 }
 
-// Reads provides a mock function with given fields:
+// Reads provides a mock function with no fields
 func (_m *ConfigBuilder) Reads() []database.FullConfig {
 	ret := _m.Called()
 
@@ -67,7 +67,7 @@ func (_c *ConfigBuilder_Reads_Call) RunAndReturn(run func() []database.FullConfi
 	return _c
 }
 
-// Writes provides a mock function with given fields:
+// Writes provides a mock function with no fields
 func (_m *ConfigBuilder) Writes() []database.FullConfig {
 	ret := _m.Called()
 

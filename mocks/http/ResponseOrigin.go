@@ -23,7 +23,7 @@ func (_m *ResponseOrigin) EXPECT() *ResponseOrigin_Expecter {
 	return &ResponseOrigin_Expecter{mock: &_m.Mock}
 }
 
-// Body provides a mock function with given fields:
+// Body provides a mock function with no fields
 func (_m *ResponseOrigin) Body() *bytes.Buffer {
 	ret := _m.Called()
 
@@ -70,7 +70,7 @@ func (_c *ResponseOrigin_Body_Call) RunAndReturn(run func() *bytes.Buffer) *Resp
 	return _c
 }
 
-// Header provides a mock function with given fields:
+// Header provides a mock function with no fields
 func (_m *ResponseOrigin) Header() nethttp.Header {
 	ret := _m.Called()
 
@@ -117,7 +117,7 @@ func (_c *ResponseOrigin_Header_Call) RunAndReturn(run func() nethttp.Header) *R
 	return _c
 }
 
-// Size provides a mock function with given fields:
+// Size provides a mock function with no fields
 func (_m *ResponseOrigin) Size() int {
 	ret := _m.Called()
 
@@ -162,7 +162,7 @@ func (_c *ResponseOrigin_Size_Call) RunAndReturn(run func() int) *ResponseOrigin
 	return _c
 }
 
-// Status provides a mock function with given fields:
+// Status provides a mock function with no fields
 func (_m *ResponseOrigin) Status() int {
 	ret := _m.Called()
 

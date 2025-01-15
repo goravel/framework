@@ -11,80 +11,82 @@ type DummyMigration struct {
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
-	return "DummyName"
-}
-
-// Connection The database connection that should be used by the migration.
-func (r *DummyMigration) Connection() string {
-	return ""
+	return "DummySignature"
 }
 
 // Up Run the migrations.
-func (r *DummyMigration) Up() {
-
+func (r *DummyMigration) Up() error {
+	return nil
 }
 
 // Down Reverse the migrations.
-func (r *DummyMigration) Down() {
-
+func (r *DummyMigration) Down() error {
+	return nil
 }
 `
 }
 
-// TODO add the facades.Schema().Create() method
 func (receiver Stubs) Create() string {
 	return `package migrations
 
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/facades"
+)
+
 type DummyMigration struct {
 }
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
-	return "DummyName"
-}
-
-// Connection The database connection that should be used by the migration.
-func (r *DummyMigration) Connection() string {
-	return ""
+	return "DummySignature"
 }
 
 // Up Run the migrations.
-func (r *DummyMigration) Up() {
+func (r *DummyMigration) Up() error {
+	if !facades.Schema().HasTable("DummyTable") {
+		return facades.Schema().Create("DummyTable", func(table schema.Blueprint) {
+			table.ID()
+			table.Timestamps()
+		})
+	}
 
+	return nil
 }
 
 // Down Reverse the migrations.
-func (r *DummyMigration) Down() {
-
+func (r *DummyMigration) Down() error {
+ 	return facades.Schema().DropIfExists("DummyTable")
 }
 `
 }
 
-// TODO add the facades.Schema().Table() method
 func (receiver Stubs) Update() string {
 	return `package migrations
+
+import (
+	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/facades"
+)
 
 type DummyMigration struct {
 }
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
-	return "DummyName"
-}
-
-// Connection The database connection that should be used by the migration.
-func (r *DummyMigration) Connection() string {
-	return ""
+	return "DummySignature"
 }
 
 // Up Run the migrations.
-func (r *DummyMigration) Up() {
+func (r *DummyMigration) Up() error {
+	return facades.Schema().Table("DummyTable", func(table schema.Blueprint) {
 
+	})
 }
 
 // Down Reverse the migrations.
-func (r *DummyMigration) Down() {
-
+func (r *DummyMigration) Down() error {
+	return nil
 }
 `
 }

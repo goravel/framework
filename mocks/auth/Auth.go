@@ -68,12 +68,12 @@ func (_c *Auth_Guard_Call) RunAndReturn(run func(string) auth.Auth) *Auth_Guard_
 	return _c
 }
 
-// Id provides a mock function with given fields:
-func (_m *Auth) Id() (string, error) {
+// ID provides a mock function with no fields
+func (_m *Auth) ID() (string, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for Id")
+		panic("no return value specified for ID")
 	}
 
 	var r0 string
@@ -96,29 +96,29 @@ func (_m *Auth) Id() (string, error) {
 	return r0, r1
 }
 
-// Auth_Id_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Id'
-type Auth_Id_Call struct {
+// Auth_ID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ID'
+type Auth_ID_Call struct {
 	*mock.Call
 }
 
-// Id is a helper method to define mock.On call
-func (_e *Auth_Expecter) Id() *Auth_Id_Call {
-	return &Auth_Id_Call{Call: _e.mock.On("Id")}
+// ID is a helper method to define mock.On call
+func (_e *Auth_Expecter) ID() *Auth_ID_Call {
+	return &Auth_ID_Call{Call: _e.mock.On("ID")}
 }
 
-func (_c *Auth_Id_Call) Run(run func()) *Auth_Id_Call {
+func (_c *Auth_ID_Call) Run(run func()) *Auth_ID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run()
 	})
 	return _c
 }
 
-func (_c *Auth_Id_Call) Return(_a0 string, _a1 error) *Auth_Id_Call {
+func (_c *Auth_ID_Call) Return(_a0 string, _a1 error) *Auth_ID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Auth_Id_Call) RunAndReturn(run func() (string, error)) *Auth_Id_Call {
+func (_c *Auth_ID_Call) RunAndReturn(run func() (string, error)) *Auth_ID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -235,7 +235,7 @@ func (_c *Auth_LoginUsingID_Call) RunAndReturn(run func(interface{}) (string, er
 	return _c
 }
 
-// Logout provides a mock function with given fields:
+// Logout provides a mock function with no fields
 func (_m *Auth) Logout() error {
 	ret := _m.Called()
 
@@ -338,7 +338,7 @@ func (_c *Auth_Parse_Call) RunAndReturn(run func(string) (*auth.Payload, error))
 	return _c
 }
 
-// Refresh provides a mock function with given fields:
+// Refresh provides a mock function with no fields
 func (_m *Auth) Refresh() (string, error) {
 	ret := _m.Called()
 

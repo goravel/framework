@@ -1,73 +1,61 @@
 package log
 
 import (
-	"errors"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/rotisserie/eris"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/log/formatter"
 	"github.com/goravel/framework/log/logger"
 )
 
+func NewLogrus() *logrus.Logger {
+	instance := logrus.New()
+	instance.SetLevel(logrus.DebugLevel)
+	instance.SetOutput(io.Discard)
+
+	return instance
+}
+
 type Writer struct {
-	code string
-
-	// context
-	context map[string]any
-	domain  string
-
-	hint     string
-	instance *logrus.Entry
-	message  string
-	owner    any
-
-	// http
-	request  http.ContextRequest
-	response http.ContextResponse
-
-	// stacktrace
+	code         string
+	domain       string
+	hint         string
+	instance     *logrus.Entry
+	message      string
+	owner        any
+	request      http.ContextRequest
+	response     http.ContextResponse
 	stackEnabled bool
 	stacktrace   map[string]any
-
-	tags []string
-
-	// user
-	user any
+	tags         []string
+	user         any
+	with         map[string]any
 }
 
 func NewWriter(instance *logrus.Entry) log.Writer {
 	return &Writer{
-		code: "",
-
-		// context
-		context: map[string]any{},
-		domain:  "",
-
-		hint:     "",
-		instance: instance,
-		message:  "",
-		owner:    nil,
-
-		// http
-		request:  nil,
-		response: nil,
-
-		// stacktrace
+		code:         "",
+		domain:       "",
+		hint:         "",
+		instance:     instance,
+		message:      "",
+		owner:        nil,
+		request:      nil,
+		response:     nil,
 		stackEnabled: false,
 		stacktrace:   nil,
-
-		tags: []string{},
-
-		// user
-		user: nil,
+		tags:         []string{},
+		user:         nil,
+		with:         map[string]any{},
 	}
 }
 
@@ -185,7 +173,7 @@ func (r *Writer) User(user any) log.Writer {
 // With adds key-value pairs to the context of the log entry
 func (r *Writer) With(data map[string]any) log.Writer {
 	for k, v := range data {
-		r.context[k] = v
+		r.with[k] = v
 	}
 
 	return r
@@ -216,55 +204,45 @@ func (r *Writer) withStackTrace(message string) {
 // resetAll resets all properties of the log.Writer for a new log entry.
 func (r *Writer) resetAll() {
 	r.code = ""
-	r.context = map[string]any{}
 	r.domain = ""
 	r.hint = ""
 	r.message = ""
 	r.owner = nil
 	r.request = nil
 	r.response = nil
-	r.tags = []string{}
-	r.user = nil
 	r.stacktrace = nil
 	r.stackEnabled = false
+	r.tags = []string{}
+	r.user = nil
+	r.with = map[string]any{}
 }
 
 // toMap returns a map representation of the error.
 func (r *Writer) toMap() map[string]any {
 	payload := map[string]any{}
 
-	if message := r.message; message != "" {
-		payload["message"] = message
-	}
-
 	if code := r.code; code != "" {
 		payload["code"] = code
 	}
-
+	if ctx := r.instance.Context; ctx != nil {
+		values := make(map[any]any)
+		getContextValues(ctx, values)
+		if len(values) > 0 {
+			payload["context"] = values
+		}
+	}
 	if domain := r.domain; domain != "" {
 		payload["domain"] = domain
 	}
-
-	if tags := r.tags; len(tags) > 0 {
-		payload["tags"] = tags
-	}
-
-	if context := r.context; len(context) > 0 {
-		payload["context"] = context
-	}
-
 	if hint := r.hint; hint != "" {
 		payload["hint"] = hint
 	}
-
+	if message := r.message; message != "" {
+		payload["message"] = message
+	}
 	if owner := r.owner; owner != nil {
 		payload["owner"] = owner
 	}
-
-	if r.user != nil {
-		payload["user"] = r.user
-	}
-
 	if req := r.request; req != nil {
 		payload["request"] = map[string]any{
 			"method": req.Method(),
@@ -273,7 +251,6 @@ func (r *Writer) toMap() map[string]any {
 			"body":   req.All(),
 		}
 	}
-
 	if res := r.response; res != nil {
 		payload["response"] = map[string]any{
 			"status": res.Origin().Status(),
@@ -282,9 +259,17 @@ func (r *Writer) toMap() map[string]any {
 			"size":   res.Origin().Size(),
 		}
 	}
-
 	if stacktrace := r.stacktrace; stacktrace != nil || r.stackEnabled {
 		payload["stacktrace"] = stacktrace
+	}
+	if tags := r.tags; len(tags) > 0 {
+		payload["tags"] = tags
+	}
+	if r.user != nil {
+		payload["user"] = r.user
+	}
+	if with := r.with; len(with) > 0 {
+		payload["with"] = with
 	}
 
 	// reset all properties for a new log entry
@@ -294,16 +279,19 @@ func (r *Writer) toMap() map[string]any {
 }
 
 func registerHook(config config.Config, json foundation.Json, instance *logrus.Logger, channel string) error {
-	channelPath := "logging.channels." + channel
-	driver := config.GetString(channelPath + ".driver")
+	var (
+		hook logrus.Hook
+		err  error
 
-	var hook logrus.Hook
-	var err error
+		channelPath = "logging.channels." + channel
+		driver      = config.GetString(channelPath + ".driver")
+	)
+
 	switch driver {
 	case log.StackDriver:
 		for _, stackChannel := range config.Get(channelPath + ".channels").([]string) {
 			if stackChannel == channel {
-				return errors.New("stack driver can't include self channel")
+				return errors.LogDriverCircularReference.Args("stack")
 			}
 
 			if err := registerHook(config, json, instance, stackChannel); err != nil {
@@ -313,24 +301,26 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		return nil
 	case log.SingleDriver:
-		if !config.GetBool(channelPath + ".print") {
-			instance.SetOutput(io.Discard)
-		}
-
 		logLogger := logger.NewSingle(config, json)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
 		}
-	case log.DailyDriver:
-		if !config.GetBool(channelPath + ".print") {
-			instance.SetOutput(io.Discard)
-		}
 
+		if config.GetBool(channelPath + ".print") {
+			instance.SetOutput(os.Stdout)
+			instance.SetFormatter(formatter.NewGeneral(config, json))
+		}
+	case log.DailyDriver:
 		logLogger := logger.NewDaily(config, json)
 		hook, err = logLogger.Handle(channelPath)
 		if err != nil {
 			return err
+		}
+
+		if config.GetBool(channelPath + ".print") {
+			instance.SetOutput(os.Stdout)
+			instance.SetFormatter(formatter.NewGeneral(config, json))
 		}
 	case log.CustomDriver:
 		logLogger := config.Get(channelPath + ".via").(log.Logger)
@@ -341,73 +331,10 @@ func registerHook(config config.Config, json foundation.Json, instance *logrus.L
 
 		hook = &Hook{logHook}
 	default:
-		return errors.New("Error logging channel: " + channel)
+		return errors.LogDriverNotSupported.Args(channel)
 	}
-
-	instance.SetFormatter(formatter.NewGeneral(config, json))
 
 	instance.AddHook(hook)
 
 	return nil
-}
-
-type Hook struct {
-	instance log.Hook
-}
-
-func (h *Hook) Levels() []logrus.Level {
-	levels := h.instance.Levels()
-	var logrusLevels []logrus.Level
-	for _, item := range levels {
-		logrusLevels = append(logrusLevels, logrus.Level(item))
-	}
-
-	return logrusLevels
-}
-
-func (h *Hook) Fire(entry *logrus.Entry) error {
-	e := &Entry{
-		ctx:     entry.Context,
-		level:   log.Level(entry.Level),
-		time:    entry.Time,
-		message: entry.Message,
-	}
-
-	data := entry.Data
-	if len(data) > 0 {
-		root, err := cast.ToStringMapE(data["root"])
-		if err != nil {
-			return err
-		}
-
-		if code, ok := cast.ToStringE(root["code"]); ok == nil {
-			e.code = code
-		}
-
-		e.user = root["user"]
-
-		if tags, ok := cast.ToStringSliceE(root["tags"]); ok == nil {
-			e.tags = tags
-		}
-
-		e.owner = root["owner"]
-
-		if req, err := cast.ToStringMapE(root["tags"]); err == nil {
-			e.request = req
-		}
-
-		if res, err := cast.ToStringMapE(root["tags"]); err == nil {
-			e.response = res
-		}
-
-		if context, ok := cast.ToStringMapE(root["context"]); ok == nil {
-			e.with = context
-		}
-
-		if stacktrace, ok := cast.ToStringMapE(root["stacktrace"]); ok == nil {
-			e.stacktrace = stacktrace
-		}
-	}
-
-	return h.instance.Fire(e)
 }

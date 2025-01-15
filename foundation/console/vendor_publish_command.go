@@ -1,7 +1,6 @@
 package console
 
 import (
-	"errors"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -69,12 +68,14 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 	packageName := ctx.Option("package")
 	paths := receiver.pathsForPackageOrGroup(packageName, ctx.Option("tag"))
 	if len(paths) == 0 {
-		return errors.New("no vendor found")
+		ctx.Error("no vendor found")
+		return nil
 	}
 
 	packageDir, err := receiver.packageDir(packageName)
 	if err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
 	for sourcePath, targetValue := range paths {
@@ -83,7 +84,8 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 
 		res, err := receiver.publish(packagePath, targetValue, ctx.OptionBool("existing"), ctx.OptionBool("force"))
 		if err != nil {
-			return err
+			ctx.Error(err.Error())
+			return nil
 		}
 
 		if len(res) > 0 {
@@ -96,7 +98,7 @@ func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	color.Green().Println("Publishing complete")
+	ctx.Success("Publishing complete")
 
 	return nil
 }
@@ -224,6 +226,7 @@ func (receiver *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([
 
 	return sourceFiles, nil
 }
+
 func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
 	content, err := os.ReadFile(sourceFile)
 	if err != nil {

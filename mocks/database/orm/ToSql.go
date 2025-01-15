@@ -17,7 +17,7 @@ func (_m *ToSql) EXPECT() *ToSql_Expecter {
 	return &ToSql_Expecter{mock: &_m.Mock}
 }
 
-// Count provides a mock function with given fields:
+// Count provides a mock function with no fields
 func (_m *ToSql) Count() string {
 	ret := _m.Called()
 

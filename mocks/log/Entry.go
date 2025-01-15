@@ -24,7 +24,7 @@ func (_m *Entry) EXPECT() *Entry_Expecter {
 	return &Entry_Expecter{mock: &_m.Mock}
 }
 
-// Code provides a mock function with given fields:
+// Code provides a mock function with no fields
 func (_m *Entry) Code() string {
 	ret := _m.Called()
 
@@ -69,7 +69,7 @@ func (_c *Entry_Code_Call) RunAndReturn(run func() string) *Entry_Code_Call {
 	return _c
 }
 
-// Context provides a mock function with given fields:
+// Context provides a mock function with no fields
 func (_m *Entry) Context() context.Context {
 	ret := _m.Called()
 
@@ -116,7 +116,144 @@ func (_c *Entry_Context_Call) RunAndReturn(run func() context.Context) *Entry_Co
 	return _c
 }
 
-// Level provides a mock function with given fields:
+// Data provides a mock function with no fields
+func (_m *Entry) Data() log.Data {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Data")
+	}
+
+	var r0 log.Data
+	if rf, ok := ret.Get(0).(func() log.Data); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(log.Data)
+		}
+	}
+
+	return r0
+}
+
+// Entry_Data_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Data'
+type Entry_Data_Call struct {
+	*mock.Call
+}
+
+// Data is a helper method to define mock.On call
+func (_e *Entry_Expecter) Data() *Entry_Data_Call {
+	return &Entry_Data_Call{Call: _e.mock.On("Data")}
+}
+
+func (_c *Entry_Data_Call) Run(run func()) *Entry_Data_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Data_Call) Return(_a0 log.Data) *Entry_Data_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Data_Call) RunAndReturn(run func() log.Data) *Entry_Data_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Domain provides a mock function with no fields
+func (_m *Entry) Domain() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Domain")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Entry_Domain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Domain'
+type Entry_Domain_Call struct {
+	*mock.Call
+}
+
+// Domain is a helper method to define mock.On call
+func (_e *Entry_Expecter) Domain() *Entry_Domain_Call {
+	return &Entry_Domain_Call{Call: _e.mock.On("Domain")}
+}
+
+func (_c *Entry_Domain_Call) Run(run func()) *Entry_Domain_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Domain_Call) Return(_a0 string) *Entry_Domain_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Domain_Call) RunAndReturn(run func() string) *Entry_Domain_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Hint provides a mock function with no fields
+func (_m *Entry) Hint() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Hint")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Entry_Hint_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Hint'
+type Entry_Hint_Call struct {
+	*mock.Call
+}
+
+// Hint is a helper method to define mock.On call
+func (_e *Entry_Expecter) Hint() *Entry_Hint_Call {
+	return &Entry_Hint_Call{Call: _e.mock.On("Hint")}
+}
+
+func (_c *Entry_Hint_Call) Run(run func()) *Entry_Hint_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Entry_Hint_Call) Return(_a0 string) *Entry_Hint_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Entry_Hint_Call) RunAndReturn(run func() string) *Entry_Hint_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Level provides a mock function with no fields
 func (_m *Entry) Level() log.Level {
 	ret := _m.Called()
 
@@ -161,7 +298,7 @@ func (_c *Entry_Level_Call) RunAndReturn(run func() log.Level) *Entry_Level_Call
 	return _c
 }
 
-// Message provides a mock function with given fields:
+// Message provides a mock function with no fields
 func (_m *Entry) Message() string {
 	ret := _m.Called()
 
@@ -206,7 +343,7 @@ func (_c *Entry_Message_Call) RunAndReturn(run func() string) *Entry_Message_Cal
 	return _c
 }
 
-// Owner provides a mock function with given fields:
+// Owner provides a mock function with no fields
 func (_m *Entry) Owner() interface{} {
 	ret := _m.Called()
 
@@ -253,7 +390,7 @@ func (_c *Entry_Owner_Call) RunAndReturn(run func() interface{}) *Entry_Owner_Ca
 	return _c
 }
 
-// Request provides a mock function with given fields:
+// Request provides a mock function with no fields
 func (_m *Entry) Request() map[string]interface{} {
 	ret := _m.Called()
 
@@ -300,7 +437,7 @@ func (_c *Entry_Request_Call) RunAndReturn(run func() map[string]interface{}) *E
 	return _c
 }
 
-// Response provides a mock function with given fields:
+// Response provides a mock function with no fields
 func (_m *Entry) Response() map[string]interface{} {
 	ret := _m.Called()
 
@@ -347,7 +484,7 @@ func (_c *Entry_Response_Call) RunAndReturn(run func() map[string]interface{}) *
 	return _c
 }
 
-// Tags provides a mock function with given fields:
+// Tags provides a mock function with no fields
 func (_m *Entry) Tags() []string {
 	ret := _m.Called()
 
@@ -394,7 +531,7 @@ func (_c *Entry_Tags_Call) RunAndReturn(run func() []string) *Entry_Tags_Call {
 	return _c
 }
 
-// Time provides a mock function with given fields:
+// Time provides a mock function with no fields
 func (_m *Entry) Time() time.Time {
 	ret := _m.Called()
 
@@ -439,7 +576,7 @@ func (_c *Entry_Time_Call) RunAndReturn(run func() time.Time) *Entry_Time_Call {
 	return _c
 }
 
-// Trace provides a mock function with given fields:
+// Trace provides a mock function with no fields
 func (_m *Entry) Trace() map[string]interface{} {
 	ret := _m.Called()
 
@@ -486,7 +623,7 @@ func (_c *Entry_Trace_Call) RunAndReturn(run func() map[string]interface{}) *Ent
 	return _c
 }
 
-// User provides a mock function with given fields:
+// User provides a mock function with no fields
 func (_m *Entry) User() interface{} {
 	ret := _m.Called()
 
@@ -533,7 +670,7 @@ func (_c *Entry_User_Call) RunAndReturn(run func() interface{}) *Entry_User_Call
 	return _c
 }
 
-// With provides a mock function with given fields:
+// With provides a mock function with no fields
 func (_m *Entry) With() map[string]interface{} {
 	ret := _m.Called()
 

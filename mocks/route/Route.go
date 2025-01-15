@@ -8,6 +8,8 @@ import (
 	http "github.com/goravel/framework/contracts/http"
 	mock "github.com/stretchr/testify/mock"
 
+	net "net"
+
 	nethttp "net/http"
 
 	route "github.com/goravel/framework/contracts/route"
@@ -56,7 +58,7 @@ func (_c *Route_Any_Call) Return() *Route_Any_Call {
 }
 
 func (_c *Route_Any_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Any_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -90,7 +92,7 @@ func (_c *Route_Delete_Call) Return() *Route_Delete_Call {
 }
 
 func (_c *Route_Delete_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Delete_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -123,7 +125,7 @@ func (_c *Route_Fallback_Call) Return() *Route_Fallback_Call {
 }
 
 func (_c *Route_Fallback_Call) RunAndReturn(run func(http.HandlerFunc)) *Route_Fallback_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -157,7 +159,7 @@ func (_c *Route_Get_Call) Return() *Route_Get_Call {
 }
 
 func (_c *Route_Get_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Get_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -203,7 +205,7 @@ func (_c *Route_GlobalMiddleware_Call) Return() *Route_GlobalMiddleware_Call {
 }
 
 func (_c *Route_GlobalMiddleware_Call) RunAndReturn(run func(...http.Middleware)) *Route_GlobalMiddleware_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -236,6 +238,146 @@ func (_c *Route_Group_Call) Return() *Route_Group_Call {
 }
 
 func (_c *Route_Group_Call) RunAndReturn(run func(route.GroupFunc)) *Route_Group_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Listen provides a mock function with given fields: l
+func (_m *Route) Listen(l net.Listener) error {
+	ret := _m.Called(l)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Listen")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener) error); ok {
+		r0 = rf(l)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_Listen_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Listen'
+type Route_Listen_Call struct {
+	*mock.Call
+}
+
+// Listen is a helper method to define mock.On call
+//   - l net.Listener
+func (_e *Route_Expecter) Listen(l interface{}) *Route_Listen_Call {
+	return &Route_Listen_Call{Call: _e.mock.On("Listen", l)}
+}
+
+func (_c *Route_Listen_Call) Run(run func(l net.Listener)) *Route_Listen_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener))
+	})
+	return _c
+}
+
+func (_c *Route_Listen_Call) Return(_a0 error) *Route_Listen_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_Listen_Call) RunAndReturn(run func(net.Listener) error) *Route_Listen_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListenTLS provides a mock function with given fields: l
+func (_m *Route) ListenTLS(l net.Listener) error {
+	ret := _m.Called(l)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListenTLS")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener) error); ok {
+		r0 = rf(l)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_ListenTLS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListenTLS'
+type Route_ListenTLS_Call struct {
+	*mock.Call
+}
+
+// ListenTLS is a helper method to define mock.On call
+//   - l net.Listener
+func (_e *Route_Expecter) ListenTLS(l interface{}) *Route_ListenTLS_Call {
+	return &Route_ListenTLS_Call{Call: _e.mock.On("ListenTLS", l)}
+}
+
+func (_c *Route_ListenTLS_Call) Run(run func(l net.Listener)) *Route_ListenTLS_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener))
+	})
+	return _c
+}
+
+func (_c *Route_ListenTLS_Call) Return(_a0 error) *Route_ListenTLS_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_ListenTLS_Call) RunAndReturn(run func(net.Listener) error) *Route_ListenTLS_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListenTLSWithCert provides a mock function with given fields: l, certFile, keyFile
+func (_m *Route) ListenTLSWithCert(l net.Listener, certFile string, keyFile string) error {
+	ret := _m.Called(l, certFile, keyFile)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListenTLSWithCert")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(net.Listener, string, string) error); ok {
+		r0 = rf(l, certFile, keyFile)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Route_ListenTLSWithCert_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListenTLSWithCert'
+type Route_ListenTLSWithCert_Call struct {
+	*mock.Call
+}
+
+// ListenTLSWithCert is a helper method to define mock.On call
+//   - l net.Listener
+//   - certFile string
+//   - keyFile string
+func (_e *Route_Expecter) ListenTLSWithCert(l interface{}, certFile interface{}, keyFile interface{}) *Route_ListenTLSWithCert_Call {
+	return &Route_ListenTLSWithCert_Call{Call: _e.mock.On("ListenTLSWithCert", l, certFile, keyFile)}
+}
+
+func (_c *Route_ListenTLSWithCert_Call) Run(run func(l net.Listener, certFile string, keyFile string)) *Route_ListenTLSWithCert_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(net.Listener), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Route_ListenTLSWithCert_Call) Return(_a0 error) *Route_ListenTLSWithCert_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Route_ListenTLSWithCert_Call) RunAndReturn(run func(net.Listener, string, string) error) *Route_ListenTLSWithCert_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -331,7 +473,7 @@ func (_c *Route_Options_Call) Return() *Route_Options_Call {
 }
 
 func (_c *Route_Options_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Options_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -365,7 +507,7 @@ func (_c *Route_Patch_Call) Return() *Route_Patch_Call {
 }
 
 func (_c *Route_Patch_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Patch_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -399,7 +541,7 @@ func (_c *Route_Post_Call) Return() *Route_Post_Call {
 }
 
 func (_c *Route_Post_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Post_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -481,7 +623,40 @@ func (_c *Route_Put_Call) Return() *Route_Put_Call {
 }
 
 func (_c *Route_Put_Call) RunAndReturn(run func(string, http.HandlerFunc)) *Route_Put_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
+	return _c
+}
+
+// Recover provides a mock function with given fields: recoverFunc
+func (_m *Route) Recover(recoverFunc func(http.Context, interface{})) {
+	_m.Called(recoverFunc)
+}
+
+// Route_Recover_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Recover'
+type Route_Recover_Call struct {
+	*mock.Call
+}
+
+// Recover is a helper method to define mock.On call
+//   - recoverFunc func(http.Context , interface{})
+func (_e *Route_Expecter) Recover(recoverFunc interface{}) *Route_Recover_Call {
+	return &Route_Recover_Call{Call: _e.mock.On("Recover", recoverFunc)}
+}
+
+func (_c *Route_Recover_Call) Run(run func(recoverFunc func(http.Context, interface{}))) *Route_Recover_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(func(http.Context, interface{})))
+	})
+	return _c
+}
+
+func (_c *Route_Recover_Call) Return() *Route_Recover_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Route_Recover_Call) RunAndReturn(run func(func(http.Context, interface{}))) *Route_Recover_Call {
+	_c.Run(run)
 	return _c
 }
 
@@ -515,7 +690,7 @@ func (_c *Route_Resource_Call) Return() *Route_Resource_Call {
 }
 
 func (_c *Route_Resource_Call) RunAndReturn(run func(string, http.ResourceController)) *Route_Resource_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -715,7 +890,7 @@ func (_c *Route_ServeHTTP_Call) Return() *Route_ServeHTTP_Call {
 }
 
 func (_c *Route_ServeHTTP_Call) RunAndReturn(run func(nethttp.ResponseWriter, *nethttp.Request)) *Route_ServeHTTP_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -808,7 +983,7 @@ func (_c *Route_Static_Call) Return() *Route_Static_Call {
 }
 
 func (_c *Route_Static_Call) RunAndReturn(run func(string, string)) *Route_Static_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -842,7 +1017,7 @@ func (_c *Route_StaticFS_Call) Return() *Route_StaticFS_Call {
 }
 
 func (_c *Route_StaticFS_Call) RunAndReturn(run func(string, nethttp.FileSystem)) *Route_StaticFS_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
@@ -876,65 +1051,64 @@ func (_c *Route_StaticFile_Call) Return() *Route_StaticFile_Call {
 }
 
 func (_c *Route_StaticFile_Call) RunAndReturn(run func(string, string)) *Route_StaticFile_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Stop provides a mock function with given fields: ctx
-func (_m *Route) Stop(ctx ...context.Context) error {
-	_va := make([]interface{}, len(ctx))
-	for _i := range ctx {
-		_va[_i] = ctx[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// Test provides a mock function with given fields: request
+func (_m *Route) Test(request *nethttp.Request) (*nethttp.Response, error) {
+	ret := _m.Called(request)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Stop")
+		panic("no return value specified for Test")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(...context.Context) error); ok {
-		r0 = rf(ctx...)
+	var r0 *nethttp.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*nethttp.Request) (*nethttp.Response, error)); ok {
+		return rf(request)
+	}
+	if rf, ok := ret.Get(0).(func(*nethttp.Request) *nethttp.Response); ok {
+		r0 = rf(request)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*nethttp.Response)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(*nethttp.Request) error); ok {
+		r1 = rf(request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// Route_Stop_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stop'
-type Route_Stop_Call struct {
+// Route_Test_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Test'
+type Route_Test_Call struct {
 	*mock.Call
 }
 
-// Stop is a helper method to define mock.On call
-//   - ctx ...context.Context
-func (_e *Route_Expecter) Stop(ctx ...interface{}) *Route_Stop_Call {
-	return &Route_Stop_Call{Call: _e.mock.On("Stop",
-		append([]interface{}{}, ctx...)...)}
+// Test is a helper method to define mock.On call
+//   - request *nethttp.Request
+func (_e *Route_Expecter) Test(request interface{}) *Route_Test_Call {
+	return &Route_Test_Call{Call: _e.mock.On("Test", request)}
 }
 
-func (_c *Route_Stop_Call) Run(run func(ctx ...context.Context)) *Route_Stop_Call {
+func (_c *Route_Test_Call) Run(run func(request *nethttp.Request)) *Route_Test_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]context.Context, len(args)-0)
-		for i, a := range args[0:] {
-			if a != nil {
-				variadicArgs[i] = a.(context.Context)
-			}
-		}
-		run(variadicArgs...)
+		run(args[0].(*nethttp.Request))
 	})
 	return _c
 }
 
-func (_c *Route_Stop_Call) Return(_a0 error) *Route_Stop_Call {
-	_c.Call.Return(_a0)
+func (_c *Route_Test_Call) Return(_a0 *nethttp.Response, _a1 error) *Route_Test_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Route_Stop_Call) RunAndReturn(run func(...context.Context) error) *Route_Stop_Call {
+func (_c *Route_Test_Call) RunAndReturn(run func(*nethttp.Request) (*nethttp.Response, error)) *Route_Test_Call {
 	_c.Call.Return(run)
 	return _c
 }

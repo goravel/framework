@@ -147,11 +147,11 @@ func (_c *Schedule_Register_Call) Return() *Schedule_Register_Call {
 }
 
 func (_c *Schedule_Register_Call) RunAndReturn(run func([]schedule.Event)) *Schedule_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Run provides a mock function with given fields:
+// Run provides a mock function with no fields
 func (_m *Schedule) Run() {
 	_m.Called()
 }
@@ -179,12 +179,12 @@ func (_c *Schedule_Run_Call) Return() *Schedule_Run_Call {
 }
 
 func (_c *Schedule_Run_Call) RunAndReturn(run func()) *Schedule_Run_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 
-// Stop provides a mock function with given fields: ctx
-func (_m *Schedule) Stop(ctx ...context.Context) error {
+// Shutdown provides a mock function with given fields: ctx
+func (_m *Schedule) Shutdown(ctx ...context.Context) error {
 	_va := make([]interface{}, len(ctx))
 	for _i := range ctx {
 		_va[_i] = ctx[_i]
@@ -194,7 +194,7 @@ func (_m *Schedule) Stop(ctx ...context.Context) error {
 	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Stop")
+		panic("no return value specified for Shutdown")
 	}
 
 	var r0 error
@@ -207,19 +207,19 @@ func (_m *Schedule) Stop(ctx ...context.Context) error {
 	return r0
 }
 
-// Schedule_Stop_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Stop'
-type Schedule_Stop_Call struct {
+// Schedule_Shutdown_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Shutdown'
+type Schedule_Shutdown_Call struct {
 	*mock.Call
 }
 
-// Stop is a helper method to define mock.On call
+// Shutdown is a helper method to define mock.On call
 //   - ctx ...context.Context
-func (_e *Schedule_Expecter) Stop(ctx ...interface{}) *Schedule_Stop_Call {
-	return &Schedule_Stop_Call{Call: _e.mock.On("Stop",
+func (_e *Schedule_Expecter) Shutdown(ctx ...interface{}) *Schedule_Shutdown_Call {
+	return &Schedule_Shutdown_Call{Call: _e.mock.On("Shutdown",
 		append([]interface{}{}, ctx...)...)}
 }
 
-func (_c *Schedule_Stop_Call) Run(run func(ctx ...context.Context)) *Schedule_Stop_Call {
+func (_c *Schedule_Shutdown_Call) Run(run func(ctx ...context.Context)) *Schedule_Shutdown_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		variadicArgs := make([]context.Context, len(args)-0)
 		for i, a := range args[0:] {
@@ -232,12 +232,12 @@ func (_c *Schedule_Stop_Call) Run(run func(ctx ...context.Context)) *Schedule_St
 	return _c
 }
 
-func (_c *Schedule_Stop_Call) Return(_a0 error) *Schedule_Stop_Call {
+func (_c *Schedule_Shutdown_Call) Return(_a0 error) *Schedule_Shutdown_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Schedule_Stop_Call) RunAndReturn(run func(...context.Context) error) *Schedule_Stop_Call {
+func (_c *Schedule_Shutdown_Call) RunAndReturn(run func(...context.Context) error) *Schedule_Shutdown_Call {
 	_c.Call.Return(run)
 	return _c
 }

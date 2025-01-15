@@ -160,7 +160,7 @@ func (_c *Facade_GetSeeder_Call) RunAndReturn(run func(string) seeder.Seeder) *F
 	return _c
 }
 
-// GetSeeders provides a mock function with given fields:
+// GetSeeders provides a mock function with no fields
 func (_m *Facade) GetSeeders() []seeder.Seeder {
 	ret := _m.Called()
 
@@ -236,7 +236,7 @@ func (_c *Facade_Register_Call) Return() *Facade_Register_Call {
 }
 
 func (_c *Facade_Register_Call) RunAndReturn(run func([]seeder.Seeder)) *Facade_Register_Call {
-	_c.Call.Return(run)
+	_c.Run(run)
 	return _c
 }
 

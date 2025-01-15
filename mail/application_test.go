@@ -30,11 +30,11 @@ type ApplicationTestSuite struct {
 
 func TestApplicationTestSuite(t *testing.T) {
 	if env.IsWindows() {
-		t.Skip("Skipping tests of using docker")
+		t.Skip("Skip test that using Docker")
 	}
 
 	if !file.Exists("../.env") && os.Getenv("MAIL_HOST") == "" {
-		color.Red().Println("No mail tests run, need create .env based on .env.example, then initialize it")
+		color.Errorln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
 
@@ -45,7 +45,7 @@ func TestApplicationTestSuite(t *testing.T) {
 		redisPort: redisDocker.Config().Port,
 	})
 
-	assert.Nil(t, redisDocker.Stop())
+	assert.Nil(t, redisDocker.Shutdown())
 }
 
 func (s *ApplicationTestSuite) SetupTest() {}

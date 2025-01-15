@@ -18,7 +18,7 @@ func TestRun(t *testing.T) {
 		&TestCommand{},
 	})
 
-	cliApp.Call("test")
+	assert.NoError(t, cliApp.Call("test"))
 	assert.Equal(t, 1, testCommand)
 }
 

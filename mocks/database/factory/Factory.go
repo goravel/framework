@@ -17,7 +17,7 @@ func (_m *Factory) EXPECT() *Factory_Expecter {
 	return &Factory_Expecter{mock: &_m.Mock}
 }
 
-// Definition provides a mock function with given fields:
+// Definition provides a mock function with no fields
 func (_m *Factory) Definition() map[string]interface{} {
 	ret := _m.Called()
 

@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	consolemocks "github.com/goravel/framework/mocks/console"
+	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
 func TestPackageMakeCommand(t *testing.T) {
 	var (
-		mockContext *consolemocks.Context
+		mockContext *mocksconsole.Context
 	)
 
 	beforeEach := func() {
-		mockContext = &consolemocks.Context{}
+		mockContext = mocksconsole.NewContext(t)
 	}
 
 	tests := []struct {
@@ -28,21 +28,23 @@ func TestPackageMakeCommand(t *testing.T) {
 		{
 			name: "name is empty",
 			setup: func() {
-				mockContext.On("Argument", 0).Return("").Once()
-				mockContext.On("Ask", "Enter the package name", mock.Anything).Return("", errors.New("the package name cannot be empty")).Once()
+				mockContext.EXPECT().Argument(0).Return("").Once()
+				mockContext.EXPECT().Ask("Enter the package name", mock.Anything).Return("", errors.New("the package name cannot be empty")).Once()
+				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
 			assert: func() {
-				assert.EqualError(t, NewPackageMakeCommand().Handle(mockContext), "the package name cannot be empty")
+				assert.NoError(t, NewPackageMakeCommand().Handle(mockContext))
 			},
 		},
 		{
 			name: "name is sms and use default root",
 			setup: func() {
-				mockContext.On("Argument", 0).Return("sms").Once()
-				mockContext.On("Option", "root").Return("packages").Once()
+				mockContext.EXPECT().Argument(0).Return("sms").Once()
+				mockContext.EXPECT().Option("root").Return("packages").Once()
+				mockContext.EXPECT().Success("Package created successfully: packages/sms").Once()
 			},
 			assert: func() {
-				assert.Nil(t, NewPackageMakeCommand().Handle(mockContext))
+				assert.NoError(t, NewPackageMakeCommand().Handle(mockContext))
 				assert.True(t, file.Exists("packages/sms/README.md"))
 				assert.True(t, file.Exists("packages/sms/service_provider.go"))
 				assert.True(t, file.Exists("packages/sms/sms.go"))
@@ -51,24 +53,25 @@ func TestPackageMakeCommand(t *testing.T) {
 				assert.True(t, file.Exists("packages/sms/facades/sms.go"))
 				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
 				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
-				assert.Nil(t, file.Remove("packages"))
+				assert.NoError(t, file.Remove("packages"))
 			},
 		},
 		{
 			name: "name is github.com/goravel/sms and use other root",
 			setup: func() {
-				mockContext.On("Argument", 0).Return("github.com/goravel/sms-aws").Once()
-				mockContext.On("Option", "root").Return("package").Once()
+				mockContext.EXPECT().Argument(0).Return("github.com/goravel/sms-aws").Once()
+				mockContext.EXPECT().Option("root").Return("package").Once()
+				mockContext.EXPECT().Success("Package created successfully: package/github_com_goravel_sms_aws").Once()
 			},
 			assert: func() {
-				assert.Nil(t, NewPackageMakeCommand().Handle(mockContext))
+				assert.NoError(t, NewPackageMakeCommand().Handle(mockContext))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/README.md"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/service_provider.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/github_com_goravel_sms_aws.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/config/github_com_goravel_sms_aws.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/contracts/github_com_goravel_sms_aws.go"))
 				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/facades/github_com_goravel_sms_aws.go"))
-				assert.Nil(t, file.Remove("package"))
+				assert.NoError(t, file.Remove("package"))
 			},
 		},
 	}
@@ -77,7 +80,6 @@ func TestPackageMakeCommand(t *testing.T) {
 			beforeEach()
 			test.setup()
 			test.assert()
-			mockContext.AssertExpectations(t)
 		})
 	}
 }

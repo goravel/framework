@@ -77,7 +77,7 @@ func (_c *Error_Args_Call) RunAndReturn(run func(...interface{}) errors.Error) *
 	return _c
 }
 
-// Error provides a mock function with given fields:
+// Error provides a mock function with no fields
 func (_m *Error) Error() string {
 	ret := _m.Called()
 

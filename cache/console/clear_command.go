@@ -4,7 +4,6 @@ import (
 	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 )
 
 type ClearCommand struct {
@@ -35,9 +34,9 @@ func (receiver *ClearCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (receiver *ClearCommand) Handle(ctx console.Context) error {
 	if receiver.cache.Flush() {
-		color.Green().Println("Application cache cleared")
+		ctx.Success("Application cache cleared")
 	} else {
-		color.Red().Println("Clear Application cache Failed")
+		ctx.Error("Clear Application cache Failed")
 	}
 
 	return nil

@@ -3,7 +3,10 @@ package docker
 import (
 	"fmt"
 
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/str"
 )
 
 // Define different test model, to improve the local testing speed.
@@ -17,28 +20,12 @@ const (
 	TestModel = TestModelNormal
 )
 
-type ContainerType string
-
-const (
-	testDatabase = "goravel"
-	testUsername = "goravel"
-	testPassword = "Framework!123"
-
-	ContainerTypeMysql     ContainerType = "mysql"
-	ContainerTypePostgres  ContainerType = "postgres"
-	ContainerTypeSqlite    ContainerType = "sqlite"
-	ContainerTypeSqlserver ContainerType = "sqlserver"
-	ContainerTypeRedis     ContainerType = "redis"
-)
-
-var containers = make(map[ContainerType][]testing.DatabaseDriver)
-
 func Mysql() testing.DatabaseDriver {
 	return Mysqls(1)[0]
 }
 
 func Mysqls(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeMysql, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypeMysql, num)
 }
 
 func Postgres() testing.DatabaseDriver {
@@ -46,7 +33,7 @@ func Postgres() testing.DatabaseDriver {
 }
 
 func Postgreses(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypePostgres, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypePostgres, num)
 }
 
 func Sqlserver() testing.DatabaseDriver {
@@ -54,7 +41,7 @@ func Sqlserver() testing.DatabaseDriver {
 }
 
 func Sqlservers(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeSqlserver, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypeSqlserver, num)
 }
 
 func Sqlite() testing.DatabaseDriver {
@@ -62,74 +49,50 @@ func Sqlite() testing.DatabaseDriver {
 }
 
 func Sqlites(num int) []testing.DatabaseDriver {
-	return Database(ContainerTypeSqlite, testDatabase, testUsername, testPassword, num)
+	return Database(ContainerTypeSqlite, num)
 }
 
-func Database(containerType ContainerType, database, username, password string, num int) []testing.DatabaseDriver {
-	if num <= 0 {
-		panic("the number of database container must be greater than 0")
-	}
-
-	var drivers []testing.DatabaseDriver
-	if len(containers[containerType]) >= num {
-		drivers = containers[containerType][:num]
-	} else {
-		drivers = containers[containerType]
-	}
-
-	newDatabase := database
-	driverLength := len(drivers)
-	surplus := num - driverLength
-	for i := 0; i < surplus; i++ {
-		if containerType == ContainerTypeSqlite {
-			newDatabase = fmt.Sprintf("%s%d", database, driverLength+i)
-		}
-		databaseDriver := DatabaseDriver(containerType, newDatabase, username, password)
-
-		if err := databaseDriver.Build(); err != nil {
-			panic(err)
-		}
-
-		containers[containerType] = append(containers[containerType], databaseDriver)
-		drivers = append(drivers, databaseDriver)
-	}
-
-	if len(drivers) != num {
-		panic(fmt.Sprintf("the number of database container is not enough, expect: %d, got: %d", num, len(drivers)))
-	}
-
+func Ready(drivers ...testing.DatabaseDriver) error {
 	for _, driver := range drivers {
-		if err := driver.Fresh(); err != nil {
-			panic(err)
-		}
-	}
-
-	return drivers
-}
-
-func DatabaseDriver(containerType ContainerType, database, username, password string) testing.DatabaseDriver {
-	switch containerType {
-	case ContainerTypeMysql:
-		return NewMysqlImpl(database, username, password)
-	case ContainerTypePostgres:
-		return NewPostgresImpl(database, username, password)
-	case ContainerTypeSqlserver:
-		return NewSqlserverImpl(database, username, password)
-	case ContainerTypeSqlite:
-		return NewSqliteImpl(database)
-	default:
-		panic("unknown container type")
-	}
-}
-
-func Stop() error {
-	for _, drivers := range containers {
-		for _, driver := range drivers {
-			if err := driver.Stop(); err != nil {
-				return err
-			}
+		if err := driver.Ready(); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func Database(containerType ContainerType, num int) []testing.DatabaseDriver {
+	if num <= 0 {
+		panic(errors.DockerDatabaseContainerCountZero)
+	}
+
+	containerManager := NewContainerManager()
+	databaseDriver, err := containerManager.Get(containerType)
+	if err != nil {
+		panic(err)
+	}
+
+	var databaseDrivers []testing.DatabaseDriver
+
+	// Create new database in the exist docker container
+	for i := 0; i < num; i++ {
+		// Sqlite should be a new database, so we can return it directly.
+		if i == 0 && databaseDriver.Driver() == database.DriverSqlite {
+			databaseDrivers = append(databaseDrivers, databaseDriver)
+		} else {
+			databaseName := fmt.Sprintf("goravel_%s", str.Random(6))
+			if newDatabaseDriver, err := databaseDriver.Database(databaseName); err != nil {
+				panic(err)
+			} else {
+				databaseDrivers = append(databaseDrivers, newDatabaseDriver)
+			}
+		}
+	}
+
+	if len(databaseDrivers) != num {
+		panic(errors.DockerInsufficientDatabaseContainers)
+	}
+
+	return databaseDrivers
 }

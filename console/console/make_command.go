@@ -6,7 +6,6 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/color"
 	supportconsole "github.com/goravel/framework/support/console"
 	"github.com/goravel/framework/support/file"
 )
@@ -39,7 +38,7 @@ func (receiver *MakeCommand) Extend() command.Extend {
 func (receiver *MakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "command", ctx.Argument(0), filepath.Join("app", "console", "commands"))
 	if err != nil {
-		color.Red().Println(err)
+		ctx.Error(err.Error())
 		return nil
 	}
 
@@ -47,7 +46,7 @@ func (receiver *MakeCommand) Handle(ctx console.Context) error {
 		return err
 	}
 
-	color.Green().Println("Console command created successfully")
+	ctx.Success("Console command created successfully")
 
 	return nil
 }

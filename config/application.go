@@ -28,7 +28,7 @@ func NewApplication(envPath string) *Application {
 		app.vip.SetConfigFile(envPath)
 
 		if err := app.vip.ReadInConfig(); err != nil {
-			color.Red().Println("Invalid Config error: " + err.Error())
+			color.Errorln("Invalid Config error: " + err.Error())
 			os.Exit(0)
 		}
 	}
@@ -36,15 +36,15 @@ func NewApplication(envPath string) *Application {
 	appKey := app.Env("APP_KEY")
 	if !support.IsKeyGenerateCommand {
 		if appKey == nil {
-			color.Red().Println("Please initialize APP_KEY first.")
+			color.Errorln("Please initialize APP_KEY first.")
 			color.Default().Println("Create a .env file and run command: go run . artisan key:generate")
 			color.Default().Println("Or set a system variable: APP_KEY={32-bit number} go run .")
 			os.Exit(0)
 		}
 
 		if len(appKey.(string)) != 32 {
-			color.Red().Println("Invalid APP_KEY, the length must be 32, please reset it.")
-			color.Warnln("Example command: \ngo run . artisan key:generate")
+			color.Errorln("Invalid APP_KEY, the length must be 32, please reset it.")
+			color.Warningln("Example command: \ngo run . artisan key:generate")
 			os.Exit(0)
 		}
 	}
