@@ -327,54 +327,43 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 type UserObserver struct{}
 
-func (u *UserObserver) Retrieved(event contractsorm.Event) error {
-	return errors.New("retrieved")
-}
-
 func (u *UserObserver) Creating(event contractsorm.Event) error {
-	return errors.New("creating")
+	name := event.GetAttribute("name")
+	if name != nil {
+		if name.(string) == "observer_name" {
+			return errors.New("error")
+		}
+		if name.(string) == "with_context_name" {
+			if avatar := event.Context().Value(testContextKey); avatar != nil {
+				event.SetAttribute("avatar", avatar.(string))
+			}
+		}
+	}
+
+	return nil
 }
 
 func (u *UserObserver) Created(event contractsorm.Event) error {
-	return errors.New("created")
-}
-
-func (u *UserObserver) Updating(event contractsorm.Event) error {
-	return errors.New("updating")
+	return nil
 }
 
 func (u *UserObserver) Updated(event contractsorm.Event) error {
-	return errors.New("updated")
-}
-
-func (u *UserObserver) Saving(event contractsorm.Event) error {
-	return errors.New("saving")
-}
-
-func (u *UserObserver) Saved(event contractsorm.Event) error {
-	return errors.New("saved")
-}
-
-func (u *UserObserver) Deleting(event contractsorm.Event) error {
-	return errors.New("deleting")
+	return nil
 }
 
 func (u *UserObserver) Deleted(event contractsorm.Event) error {
-	return errors.New("deleted")
-}
-
-func (u *UserObserver) ForceDeleting(event contractsorm.Event) error {
-	return errors.New("forceDeleting")
+	return nil
 }
 
 func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
-	return errors.New("forceDeleted")
+	return nil
 }
 
 type Role struct {
 	Model
-	Name  string
-	Users []*User `gorm:"many2many:role_user"`
+	Name   string
+	Avatar string
+	Users  []*User `gorm:"many2many:role_user"`
 }
 
 type Address struct {

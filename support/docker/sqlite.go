@@ -69,6 +69,10 @@ func (r *SqliteImpl) Ready() error {
 	return err
 }
 
+func (r *SqliteImpl) Reuse(containerID string, port int) error {
+	return nil
+}
+
 func (r *SqliteImpl) Shutdown() error {
 	if err := file.Remove(r.database); err != nil {
 		return fmt.Errorf("stop Sqlite error: %v", err)

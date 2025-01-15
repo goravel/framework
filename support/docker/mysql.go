@@ -154,6 +154,10 @@ func (r *MysqlImpl) Ready() error {
 	return err
 }
 
+func (r *MysqlImpl) Reuse(containerID string, port int) error {
+	return nil
+}
+
 func (r *MysqlImpl) Shutdown() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Mysql error: %v", err)

@@ -1073,6 +1073,7 @@ func (r *testTables) roles() string {
 CREATE TABLE roles (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime(3) NOT NULL,
   updated_at datetime(3) NOT NULL,
   PRIMARY KEY (id),
@@ -1085,6 +1086,7 @@ CREATE TABLE roles (
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at timestamp NOT NULL,
   updated_at timestamp NOT NULL
 );
@@ -1094,6 +1096,7 @@ CREATE TABLE roles (
 CREATE TABLE roles (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL
 );
@@ -1103,6 +1106,7 @@ CREATE TABLE roles (
 CREATE TABLE roles (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
+  avatar varchar(255) DEFAULT NULL,
   created_at datetime NOT NULL,
   updated_at datetime NOT NULL,
   PRIMARY KEY (id)

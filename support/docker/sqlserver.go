@@ -115,6 +115,10 @@ func (r *SqlserverImpl) Ready() error {
 	return err
 }
 
+func (r *SqlserverImpl) Reuse(containerID string, port int) error {
+	return nil
+}
+
 func (r *SqlserverImpl) Shutdown() error {
 	if _, err := run(fmt.Sprintf("docker stop %s", r.containerID)); err != nil {
 		return fmt.Errorf("stop Sqlserver error: %v", err)

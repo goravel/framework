@@ -39,6 +39,8 @@ type DatabaseDriver interface {
 	Image(image Image)
 	// Ready checks if the database is ready, the Build method needs to be called first.
 	Ready() error
+	// Reuse the existing database container.
+	Reuse(containerID string, port int) error
 	// Shutdown the database.
 	Shutdown() error
 }

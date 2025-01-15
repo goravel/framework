@@ -1,5 +1,6 @@
 package database
 
+// TODO Remove this
 const (
 	DriverMysql     Driver = "mysql"
 	DriverPostgres  Driver = "postgres"

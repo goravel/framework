@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/goravel/framework/contracts/testing"
-	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -24,10 +23,21 @@ const (
 )
 
 type ContainerManager struct {
-	file     string
-	lockFile string
-	username string
-	password string
+	databaseDriver testing.DatabaseDriver
+	file           string
+	lockFile       string
+	username       string
+	password       string
+}
+
+func NewBuilder(databaseDriver testing.DatabaseDriver) *ContainerManager {
+	return &ContainerManager{
+		databaseDriver: databaseDriver,
+		file:           filepath.Join(os.TempDir(), "goravel_docker.txt"),
+		lockFile:       filepath.Join(os.TempDir(), "goravel_docker.lock"),
+		username:       "goravel",
+		password:       "Framework!123",
+	}
 }
 
 func NewContainerManager() *ContainerManager {
@@ -42,18 +52,18 @@ func NewContainerManager() *ContainerManager {
 func (r *ContainerManager) Create(containerType ContainerType, database, username, password string) (testing.DatabaseDriver, error) {
 	var databaseDriver testing.DatabaseDriver
 
-	switch containerType {
-	case ContainerTypeMysql:
-		databaseDriver = NewMysqlImpl(database, username, password)
-	case ContainerTypePostgres:
-		databaseDriver = NewPostgresImpl(database, username, password)
-	case ContainerTypeSqlserver:
-		databaseDriver = NewSqlserverImpl(database, username, password)
-	case ContainerTypeSqlite:
-		databaseDriver = NewSqliteImpl(database)
-	default:
-		return nil, errors.DockerUnknownContainerType
-	}
+	// switch containerType {
+	// case ContainerTypeMysql:
+	// 	databaseDriver = NewMysqlImpl(database, username, password)
+	// case ContainerTypePostgres:
+	// 	databaseDriver = NewPostgresImpl(database, username, password)
+	// case ContainerTypeSqlserver:
+	// 	databaseDriver = NewSqlserverImpl(database, username, password)
+	// case ContainerTypeSqlite:
+	// 	databaseDriver = NewSqliteImpl(database)
+	// default:
+	// 	return nil, errors.DockerUnknownContainerType
+	// }
 
 	if err := databaseDriver.Build(); err != nil {
 		return nil, err
@@ -100,6 +110,65 @@ func (r *ContainerManager) Get(containerType ContainerType) (testing.DatabaseDri
 	}
 
 	return databaseDriver, nil
+}
+
+func (r *ContainerManager) Build() (testing.DatabaseDriver, error) {
+	fmt.Println(r.lockFile)
+	var (
+		isReused bool
+		err      error
+
+		driverName = ContainerType(r.databaseDriver.Driver())
+	)
+
+	r.lock()
+	defer r.unlock()
+
+	containerTypeToDatabaseConfig, err := r.all()
+	if err != nil {
+		return nil, err
+	}
+
+	// If the port is not occupied, provide the container is released.
+	if containerTypeToDatabaseConfig != nil {
+		if _, exist := containerTypeToDatabaseConfig[driverName]; exist && isPortUsing(containerTypeToDatabaseConfig[driverName].Port) {
+			if err := r.databaseDriver.Reuse(containerTypeToDatabaseConfig[driverName].ContainerID, containerTypeToDatabaseConfig[driverName].Port); err == nil {
+				isReused = true
+			}
+		}
+	}
+
+	if !isReused {
+		if err := r.databaseDriver.Build(); err != nil {
+			return nil, err
+		}
+
+		if err := r.add(driverName, r.databaseDriver); err != nil {
+			return nil, err
+		}
+	}
+
+	database := fmt.Sprintf("goravel_%s", str.Random(6))
+
+	return r.databaseDriver.Database(database)
+}
+
+func (r *ContainerManager) Builds(num int) ([]testing.DatabaseDriver, error) {
+	var databaseDrivers []testing.DatabaseDriver
+	for i := 0; i < num; i++ {
+		databaseDriver, err := r.Build()
+		if err != nil {
+			return nil, err
+		}
+
+		databaseDrivers = append(databaseDrivers, databaseDriver)
+	}
+
+	return databaseDrivers, nil
+}
+
+func (r *ContainerManager) Ready() error {
+	return r.databaseDriver.Ready()
 }
 
 func (r *ContainerManager) Remove() error {
@@ -163,30 +232,32 @@ func (r *ContainerManager) all() (map[ContainerType]testing.DatabaseConfig, erro
 }
 
 func (r *ContainerManager) databaseConfigToDatabaseDriver(containerType ContainerType, databaseConfig testing.DatabaseConfig) testing.DatabaseDriver {
-	switch containerType {
-	case ContainerTypeMysql:
-		driver := NewMysqlImpl(databaseConfig.Database, databaseConfig.Username, databaseConfig.Password)
-		driver.containerID = databaseConfig.ContainerID
-		driver.port = databaseConfig.Port
+	// switch containerType {
+	// case ContainerTypeMysql:
+	// 	driver := NewMysqlImpl(databaseConfig.Database, databaseConfig.Username, databaseConfig.Password)
+	// 	driver.containerID = databaseConfig.ContainerID
+	// 	driver.port = databaseConfig.Port
 
-		return driver
-	case ContainerTypePostgres:
-		driver := NewPostgresImpl(databaseConfig.Database, databaseConfig.Username, databaseConfig.Password)
-		driver.containerID = databaseConfig.ContainerID
-		driver.port = databaseConfig.Port
+	// 	return driver
+	// case ContainerTypePostgres:
+	// 	driver := NewPostgresImpl(databaseConfig.Database, databaseConfig.Username, databaseConfig.Password)
+	// 	driver.containerID = databaseConfig.ContainerID
+	// 	driver.port = databaseConfig.Port
 
-		return driver
-	case ContainerTypeSqlserver:
-		driver := NewSqlserverImpl(databaseConfig.Database, databaseConfig.Username, databaseConfig.Password)
-		driver.containerID = databaseConfig.ContainerID
-		driver.port = databaseConfig.Port
+	// 	return driver
+	// case ContainerTypeSqlserver:
+	// 	driver := NewSqlserverImpl(databaseConfig.Database, databaseConfig.Username, databaseConfig.Password)
+	// 	driver.containerID = databaseConfig.ContainerID
+	// 	driver.port = databaseConfig.Port
 
-		return driver
-	case ContainerTypeSqlite:
-		return NewSqliteImpl(databaseConfig.Database)
-	default:
-		panic(errors.DockerUnknownContainerType)
-	}
+	// 	return driver
+	// case ContainerTypeSqlite:
+	// 	return NewSqliteImpl(databaseConfig.Database)
+	// default:
+	// 	panic(errors.DockerUnknownContainerType)
+	// }
+
+	return nil
 }
 
 func (r *ContainerManager) lock() {
