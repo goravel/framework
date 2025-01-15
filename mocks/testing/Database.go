@@ -385,6 +385,53 @@ func (_c *Database_Ready_Call) RunAndReturn(run func() error) *Database_Ready_Ca
 	return _c
 }
 
+// Reuse provides a mock function with given fields: containerID, port
+func (_m *Database) Reuse(containerID string, port int) error {
+	ret := _m.Called(containerID, port)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Reuse")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, int) error); ok {
+		r0 = rf(containerID, port)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Database_Reuse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reuse'
+type Database_Reuse_Call struct {
+	*mock.Call
+}
+
+// Reuse is a helper method to define mock.On call
+//   - containerID string
+//   - port int
+func (_e *Database_Expecter) Reuse(containerID interface{}, port interface{}) *Database_Reuse_Call {
+	return &Database_Reuse_Call{Call: _e.mock.On("Reuse", containerID, port)}
+}
+
+func (_c *Database_Reuse_Call) Run(run func(containerID string, port int)) *Database_Reuse_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *Database_Reuse_Call) Return(_a0 error) *Database_Reuse_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Database_Reuse_Call) RunAndReturn(run func(string, int) error) *Database_Reuse_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Seed provides a mock function with given fields: seeders
 func (_m *Database) Seed(seeders ...seeder.Seeder) error {
 	_va := make([]interface{}, len(seeders))

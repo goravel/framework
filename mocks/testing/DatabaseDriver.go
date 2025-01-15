@@ -338,6 +338,53 @@ func (_c *DatabaseDriver_Ready_Call) RunAndReturn(run func() error) *DatabaseDri
 	return _c
 }
 
+// Reuse provides a mock function with given fields: containerID, port
+func (_m *DatabaseDriver) Reuse(containerID string, port int) error {
+	ret := _m.Called(containerID, port)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Reuse")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, int) error); ok {
+		r0 = rf(containerID, port)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DatabaseDriver_Reuse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reuse'
+type DatabaseDriver_Reuse_Call struct {
+	*mock.Call
+}
+
+// Reuse is a helper method to define mock.On call
+//   - containerID string
+//   - port int
+func (_e *DatabaseDriver_Expecter) Reuse(containerID interface{}, port interface{}) *DatabaseDriver_Reuse_Call {
+	return &DatabaseDriver_Reuse_Call{Call: _e.mock.On("Reuse", containerID, port)}
+}
+
+func (_c *DatabaseDriver_Reuse_Call) Run(run func(containerID string, port int)) *DatabaseDriver_Reuse_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *DatabaseDriver_Reuse_Call) Return(_a0 error) *DatabaseDriver_Reuse_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DatabaseDriver_Reuse_Call) RunAndReturn(run func(string, int) error) *DatabaseDriver_Reuse_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Shutdown provides a mock function with no fields
 func (_m *DatabaseDriver) Shutdown() error {
 	ret := _m.Called()
