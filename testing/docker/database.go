@@ -5,6 +5,7 @@ import (
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
@@ -35,7 +36,7 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 		return nil, errors.ArtisanFacadeNotSet
 	}
 
-	databaseDriverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (contractsorm.Driver, error))
+	databaseDriverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
 	if !exist {
 		return nil, errors.OrmDatabaseConfigNotFound
 	}

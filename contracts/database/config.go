@@ -18,7 +18,10 @@ func (d Driver) String() string {
 type Config1 struct {
 	Connection string
 	Driver     string
-	Prefix     string
+	// TODO Check if it can be removed
+	Prefix string
+	// TODO Check if it can be removed
+	Schema string
 }
 
 // Config Used in config/database.go

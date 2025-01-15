@@ -11,6 +11,16 @@ import (
 	"github.com/goravel/framework/support/carbon"
 )
 
+type Model struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	Timestamps
+}
+
+type Timestamps struct {
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+}
+
 type TestEventModel struct {
 	Model
 	Name     string

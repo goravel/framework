@@ -95,8 +95,8 @@ func TestGetModelConnection(t *testing.T) {
 		{
 			name: "not ConnectionModel",
 			model: func() any {
-				var phone Phone
-				return phone
+				var user User
+				return user
 			}(),
 		},
 		{
@@ -158,6 +158,10 @@ func TestObserverEvent(t *testing.T) {
 	assert.Nil(t, getObserverEvent("error", &UserObserver{}))
 }
 
+type User struct {
+	Name string
+}
+
 type UserObserver struct{}
 
 func (u *UserObserver) Retrieved(event contractsorm.Event) error {
@@ -202,4 +206,20 @@ func (u *UserObserver) ForceDeleting(event contractsorm.Event) error {
 
 func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
 	return errors.New("forceDeleted")
+}
+
+type Product struct {
+	Name string
+}
+
+func (p *Product) Connection() string {
+	return "sqlite"
+}
+
+type Review struct {
+	Body string
+}
+
+func (r *Review) Connection() string {
+	return ""
 }

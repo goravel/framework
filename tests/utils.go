@@ -3,16 +3,14 @@ package tests
 import (
 	"context"
 
+	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/gorm"
 	databaseorm "github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/database/schema"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mockslog "github.com/goravel/framework/mocks/log"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/testing/utils"
 	"github.com/goravel/postgres"
-	"github.com/stretchr/testify/mock"
 )
 
 const (
@@ -22,7 +20,7 @@ const (
 	testSchema   = "goravel"
 )
 
-func postgresTestQuery(prefix string, singular bool) *gorm.TestQuery1 {
+func postgresTestQuery(prefix string, singular bool) *TestQuery {
 	postgresImage := postgres.NewDocker(testDatabase, testUsername, testPassword)
 	builder := docker.NewBuilder(postgresImage)
 	postgresContainer, err := builder.Build()
@@ -57,12 +55,15 @@ func postgresTestQuery(prefix string, singular bool) *gorm.TestQuery1 {
 	mockConfig.EXPECT().GetString("database.connections.postgres.dsn").Return("")
 	mockConfig.EXPECT().GetString("database.connections.postgres.schema", "public").Return("public")
 	mockConfig.EXPECT().Get("database.connections.postgres.name_replacer").Return(nil)
+	mockConfig.EXPECT().Get("database.connections.postgres.via").Return(func() (driver.Driver, error) {
+		return nil, nil
+	})
 
 	mockConfig.EXPECT().Add("database.connections.postgres.schema", testSchema)
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
-	postgresDriver := postgres.NewPostgres(mockConfig, utils.NewTestLog(), "postgres")
-	testQuery, err := gorm.NewTestQuery1(ctx, postgresDriver, mockConfig)
+	postgresDriver := postgres.NewPostgres(mockConfig, utils.NewTestLog(), nil, "postgres")
+	testQuery, err := NewTestQuery(ctx, postgresDriver, mockConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -72,16 +73,16 @@ func postgresTestQuery(prefix string, singular bool) *gorm.TestQuery1 {
 	return testQuery
 }
 
-func newSchema(testQuery *gorm.TestQuery1, connectionToTestQuery map[string]*gorm.TestQuery1) *schema.Schema {
+func newSchema(testQuery *TestQuery, connectionToTestQuery map[string]*TestQuery) *schema.Schema {
 	queries := make(map[string]contractsorm.Query)
 	for connection, testQuery := range connectionToTestQuery {
 		queries[connection] = testQuery.Query()
 	}
 
-	mockLog := &mockslog.Log{}
-	mockLog.EXPECT().Errorf(mock.Anything).Maybe()
-	orm := databaseorm.NewOrm(context.Background(), testQuery.Config(), testQuery.Driver().Config().Driver, testQuery.Query(), queries, mockLog, nil, nil)
-	schema := schema.NewSchema(testQuery.Config(), mockLog, orm, nil)
+	log := utils.NewTestLog()
+	orm := databaseorm.NewOrm(context.Background(), testQuery.Config(), testQuery.Driver().Config().Driver, testQuery.Query(), queries, log, nil, nil)
+	// TODO Use a common method instead
+	postgresDriver := postgres.NewPostgres(testQuery.Config(), log, orm, "postgres")
 
-	return schema
+	return schema.NewSchema(testQuery.Config(), log, orm, postgresDriver, nil)
 }

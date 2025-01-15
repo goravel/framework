@@ -13,7 +13,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/gorm/hints"
@@ -62,7 +62,7 @@ func NewQuery(
 }
 
 func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, error) {
-	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (orm.Driver, error))
+	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
 	if !exist {
 		return nil, errors.OrmDatabaseConfigNotFound
 	}

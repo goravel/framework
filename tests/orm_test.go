@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/orm"
 )
 
@@ -16,12 +15,12 @@ type OrmSuite struct {
 	suite.Suite
 	orm           *orm.Orm
 	defaultDriver string
-	queries       map[string]*gorm.TestQuery1
+	queries       map[string]*TestQuery
 }
 
 func TestOrmSuite(t *testing.T) {
 	suite.Run(t, &OrmSuite{
-		queries: make(map[string]*gorm.TestQuery1),
+		queries: make(map[string]*TestQuery),
 	})
 }
 

@@ -1,43 +1,33 @@
-package migration
+package tests
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/schema"
-	"github.com/goravel/framework/support/docker"
-	"github.com/goravel/framework/support/env"
+	"github.com/goravel/framework/database/migration"
 )
 
 type RepositoryTestSuite struct {
 	suite.Suite
-	driverToTestQuery map[database.Driver]*gorm.TestQuery
+	driverToTestQuery map[string]*TestQuery
 }
 
 func TestRepositoryTestSuite(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
 	suite.Run(t, &RepositoryTestSuite{})
 }
 
 func (s *RepositoryTestSuite) SetupTest() {
-	postgresDocker := docker.Postgres()
-	s.Require().NoError(postgresDocker.Ready())
+	postgresTestQuery := postgresTestQuery("goravel_", true)
 
-	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
-	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
-		database.DriverPostgres: postgresQuery,
+	s.driverToTestQuery = map[string]*TestQuery{
+		postgresTestQuery.Driver().Config().Driver: postgresTestQuery,
 	}
 }
 
 func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
+		s.Run(driver, func() {
 			repository := s.initRepository(testQuery)
 
 			s.NoError(repository.CreateRepository())
@@ -50,7 +40,7 @@ func (s *RepositoryTestSuite) TestCreate_Delete_Exists() {
 
 func (s *RepositoryTestSuite) TestRecord() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
+		s.Run(driver, func() {
 			repository := s.initRepository(testQuery)
 
 			if !repository.RepositoryExists() {
@@ -66,7 +56,7 @@ func (s *RepositoryTestSuite) TestRecord() {
 			err = repository.Log("migration3", 2)
 			s.NoError(err)
 
-			lastBatchNumber, err := repository.getLastBatchNumber()
+			lastBatchNumber, err := repository.GetLastBatchNumber()
 			s.NoError(err)
 			s.Equal(2, lastBatchNumber)
 
@@ -124,8 +114,8 @@ func (s *RepositoryTestSuite) TestRecord() {
 	}
 }
 
-func (s *RepositoryTestSuite) initRepository(testQuery *gorm.TestQuery) *Repository {
-	testSchema := schema.GetTestSchema(testQuery, s.driverToTestQuery)
+func (s *RepositoryTestSuite) initRepository(testQuery *TestQuery) *migration.Repository {
+	testSchema := newSchema(testQuery, s.driverToTestQuery)
 
-	return NewRepository(testSchema, "migrations")
+	return migration.NewRepository(testSchema, "migrations")
 }

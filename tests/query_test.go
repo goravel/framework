@@ -22,12 +22,12 @@ const (
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries map[string]*gorm.TestQuery1
+	queries map[string]*TestQuery
 }
 
 func TestQueryTestSuite(t *testing.T) {
 	suite.Run(t, &QueryTestSuite{
-		queries: make(map[string]*gorm.TestQuery1),
+		queries: make(map[string]*TestQuery),
 	})
 }
 

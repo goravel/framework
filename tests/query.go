@@ -1,4 +1,4 @@
-package gorm
+package tests
 
 import (
 	"context"
@@ -8,32 +8,34 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/testing/utils"
 )
 
-type TestQuery1 struct {
+type TestQuery struct {
 	config config.Config
-	driver orm.Driver
+	driver driver.Driver
 	query  orm.Query
 }
 
-func NewTestQuery1(ctx context.Context, driver orm.Driver, config config.Config) (*TestQuery1, error) {
+func NewTestQuery(ctx context.Context, driver driver.Driver, config config.Config) (*TestQuery, error) {
 	db, err := driver.Gorm()
 	if err != nil {
 		return nil, err
 	}
 
-	testQuery := &TestQuery1{
+	testQuery := &TestQuery{
 		config: config,
 		driver: driver,
-		query:  NewQuery(ctx, config, driver.Config(), db, utils.NewTestLog(), nil, nil),
+		query:  gorm.NewQuery(ctx, config, driver.Config(), db, utils.NewTestLog(), nil, nil),
 	}
 
 	return testQuery, nil
 }
 
-func (r *TestQuery1) CreateTable(testTables ...TestTable) {
+func (r *TestQuery) CreateTable(testTables ...TestTable) {
 	driverName := database.Driver(r.driver.Config().Driver)
 
 	for table, sql := range newTestTables(driverName).All() {
@@ -45,19 +47,19 @@ func (r *TestQuery1) CreateTable(testTables ...TestTable) {
 	}
 }
 
-func (r *TestQuery1) Config() config.Config {
+func (r *TestQuery) Config() config.Config {
 	return r.config
 }
 
-func (r *TestQuery1) Driver() orm.Driver {
+func (r *TestQuery) Driver() driver.Driver {
 	return r.driver
 }
 
-func (r *TestQuery1) Query() orm.Query {
+func (r *TestQuery) Query() orm.Query {
 	return r.query
 }
 
-func (r *TestQuery1) WithSchema(schema string) {
+func (r *TestQuery) WithSchema(schema string) {
 	if r.driver.Config().Driver != contractsdatabase.DriverPostgres.String() && r.driver.Config().Driver != contractsdatabase.DriverSqlserver.String() {
 		panic(fmt.Sprintf("%s does not support schema", r.driver.Config().Driver))
 	}
@@ -71,7 +73,7 @@ func (r *TestQuery1) WithSchema(schema string) {
 	}
 
 	r.config.Add("database.connections.postgres.schema", schema)
-	query, err := BuildQuery(context.Background(), r.config, r.driver.Config().Driver, utils.NewTestLog(), nil)
+	query, err := gorm.BuildQuery(context.Background(), r.config, r.driver.Config().Driver, utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", r.driver.Config().Driver, err))
 	}

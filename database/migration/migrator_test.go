@@ -9,208 +9,21 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/database/gorm"
-	databaseschema "github.com/goravel/framework/database/schema"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksmigration "github.com/goravel/framework/mocks/database/migration"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/color"
-	"github.com/goravel/framework/support/docker"
-	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 )
 
-type DefaultMigratorWithDBSuite struct {
-	suite.Suite
-	driverToTestQuery map[contractsdatabase.Driver]*gorm.TestQuery
-}
-
-func TestDefaultMigratorWithDBSuite(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
-	suite.Run(t, &DefaultMigratorWithDBSuite{})
-}
-
-func (s *DefaultMigratorWithDBSuite) SetupTest() {
-	postgresDocker := docker.Postgres()
-	s.Require().NoError(postgresDocker.Ready())
-
-	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
-
-	sqliteDocker := docker.Sqlite()
-	sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
-
-	mysqlDocker := docker.Mysql()
-	s.Require().NoError(mysqlDocker.Ready())
-
-	mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
-
-	sqlserverDocker := docker.Sqlserver()
-	s.Require().NoError(sqlserverDocker.Ready())
-
-	sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
-
-	s.driverToTestQuery = map[contractsdatabase.Driver]*gorm.TestQuery{
-		contractsdatabase.DriverPostgres:  postgresQuery,
-		contractsdatabase.DriverSqlite:    sqliteQuery,
-		contractsdatabase.DriverMysql:     mysqlQuery,
-		contractsdatabase.DriverSqlserver: sqlserverQuery,
-	}
-}
-
-func (s *DefaultMigratorWithDBSuite) TearDownTest() {
-	if s.driverToTestQuery[contractsdatabase.DriverSqlite] != nil {
-		s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Shutdown())
-	}
-}
-
-func (s *DefaultMigratorWithDBSuite) TestRun() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
-			testMigration := NewTestMigration(schema)
-			schema.Register([]contractsschema.Migration{
-				testMigration,
-			})
-
-			migrator := NewMigrator(nil, schema, "migrations")
-
-			s.NoError(migrator.Run())
-			s.True(schema.HasTable("users"))
-			status, err := migrator.Status()
-			s.NoError(err)
-			s.Len(status, 1)
-		})
-	}
-}
-
-func (s *DefaultMigratorWithDBSuite) TestReset() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
-			testMigration := NewTestMigration(schema)
-			schema.Register([]contractsschema.Migration{
-				testMigration,
-			})
-
-			migrator := NewMigrator(nil, schema, "migrations")
-
-			s.NoError(migrator.Run())
-			s.True(schema.HasTable("users"))
-
-			s.NoError(migrator.Reset())
-		})
-	}
-}
-
-func (s *DefaultMigratorWithDBSuite) TestRollback() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
-			testMigration := NewTestMigration(schema)
-			schema.Register([]contractsschema.Migration{
-				testMigration,
-			})
-
-			migrator := NewMigrator(nil, schema, "migrations")
-
-			s.NoError(migrator.Run())
-			s.True(schema.HasTable("users"))
-
-			s.NoError(migrator.Rollback(1, 0))
-		})
-	}
-}
-
-func (s *DefaultMigratorWithDBSuite) TestStatus() {
-	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver.String(), func() {
-			schema := databaseschema.GetTestSchema(testQuery, s.driverToTestQuery)
-			testMigration := NewTestMigration(schema)
-			migrator := NewMigrator(nil, schema, "migrations")
-			status, err := migrator.Status()
-			s.NoError(err)
-			s.Len(status, 0)
-
-			schema.Register([]contractsschema.Migration{
-				testMigration,
-			})
-
-			s.NoError(migrator.Run())
-			s.True(schema.HasTable("users"))
-			status, err = migrator.Status()
-			s.NoError(err)
-			s.Equal(status, []migration.Status{
-				{
-					Name:  testMigration.Signature(),
-					Batch: 1,
-					Ran:   true,
-				},
-			})
-		})
-	}
-}
-
-func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
-	postgresDocker := docker.Postgres()
-	require.NoError(t, postgresDocker.Ready())
-
-	postgresQuery := gorm.NewTestQueryWithSchema(postgresDocker, "goravel")
-	schema := databaseschema.GetTestSchema(postgresQuery, map[contractsdatabase.Driver]*gorm.TestQuery{
-		contractsdatabase.DriverPostgres: postgresQuery,
-	})
-	testMigration := NewTestMigration(schema)
-	schema.Register([]contractsschema.Migration{
-		testMigration,
-	})
-	migrator := NewMigrator(nil, schema, "migrations")
-
-	assert.NoError(t, migrator.Run())
-	assert.True(t, schema.HasTable("users"))
-	assert.NoError(t, migrator.Rollback(1, 0))
-	assert.False(t, schema.HasTable("users"))
-}
-
-func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
-	sqlserverDocker := docker.Sqlserver()
-	require.NoError(t, sqlserverDocker.Ready())
-
-	sqlserverQuery := gorm.NewTestQueryWithSchema(sqlserverDocker, "goravel")
-	schema := databaseschema.GetTestSchema(sqlserverQuery, map[contractsdatabase.Driver]*gorm.TestQuery{
-		contractsdatabase.DriverSqlserver: sqlserverQuery,
-	})
-	testMigration := NewTestMigrationWithSqlserverSchema(schema)
-	schema.Register([]contractsschema.Migration{
-		testMigration,
-	})
-	migrator := NewMigrator(nil, schema, "migrations")
-
-	assert.NoError(t, migrator.Run())
-	assert.True(t, schema.HasTable("goravel.users"))
-	assert.NoError(t, migrator.Rollback(1, 0))
-	assert.False(t, schema.HasTable("goravel.users"))
-}
-
-type DefaultMigratorSuite struct {
+type MigratorSuite struct {
 	suite.Suite
 	mockArtisan    *mocksconsole.Artisan
 	mockRepository *mocksmigration.Repository
@@ -218,11 +31,11 @@ type DefaultMigratorSuite struct {
 	migrator       *Migrator
 }
 
-func TestDefaultMigratorSuite(t *testing.T) {
-	suite.Run(t, &DefaultMigratorSuite{})
+func TestMigratorSuite(t *testing.T) {
+	suite.Run(t, &MigratorSuite{})
 }
 
-func (s *DefaultMigratorSuite) SetupTest() {
+func (s *MigratorSuite) SetupTest() {
 	s.mockArtisan = mocksconsole.NewArtisan(s.T())
 	s.mockRepository = mocksmigration.NewRepository(s.T())
 	s.mockSchema = mocksschema.NewSchema(s.T())
@@ -235,7 +48,7 @@ func (s *DefaultMigratorSuite) SetupTest() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestCreate() {
+func (s *MigratorSuite) TestCreate() {
 	now := carbon.FromDateTime(2024, 8, 17, 21, 45, 1)
 	carbon.SetTestNow(now)
 
@@ -256,7 +69,7 @@ func (s *DefaultMigratorSuite) TestCreate() {
 	}()
 }
 
-func (s *DefaultMigratorSuite) TestFresh() {
+func (s *MigratorSuite) TestFresh() {
 	// Success
 	s.mockArtisan.EXPECT().Call("db:wipe --force").Return(nil).Once()
 	s.mockArtisan.EXPECT().Call("migrate").Return(nil).Once()
@@ -275,7 +88,7 @@ func (s *DefaultMigratorSuite) TestFresh() {
 	s.EqualError(s.migrator.Fresh(), assert.AnError.Error())
 }
 
-func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
+func (s *MigratorSuite) TestGetFilesForRollback() {
 	tests := []struct {
 		name        string
 		step        int
@@ -356,7 +169,7 @@ func (s *DefaultMigratorSuite) TestGetFilesForRollback() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestPendingMigrations() {
+func (s *MigratorSuite) TestPendingMigrations() {
 	testMigration := NewTestMigration(s.mockSchema)
 	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
 	testErrorMigration := NewTestErrorMigration()
@@ -377,7 +190,7 @@ func (s *DefaultMigratorSuite) TestPendingMigrations() {
 	s.Equal(testErrorMigration, pendingMigrations[1])
 }
 
-func (s *DefaultMigratorSuite) TestPrepareDatabase() {
+func (s *MigratorSuite) TestPrepareDatabase() {
 	s.mockRepository.EXPECT().RepositoryExists().Return(true).Once()
 	s.NoError(s.migrator.prepareDatabase())
 
@@ -386,13 +199,13 @@ func (s *DefaultMigratorSuite) TestPrepareDatabase() {
 	s.NoError(s.migrator.prepareDatabase())
 }
 
-func (s *DefaultMigratorSuite) TestPrintTitle() {
+func (s *MigratorSuite) TestPrintTitle() {
 	s.Equal("\x1b[39mMigration name      \x1b[0m\x1b[39m | Batch / Status\x1b[0m\n\x1b[39m\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m-\x1b[0m\x1b[39m\x1b[0m\n\x1b[39m\x1b[0m", color.CaptureOutput(func(w io.Writer) {
 		s.migrator.printTitle(20)
 	}))
 }
 
-func (s *DefaultMigratorSuite) TestReset() {
+func (s *MigratorSuite) TestReset() {
 	tests := []struct {
 		name      string
 		setup     func()
@@ -438,7 +251,7 @@ func (s *DefaultMigratorSuite) TestReset() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestRollback() {
+func (s *MigratorSuite) TestRollback() {
 	tests := []struct {
 		name      string
 		setup     func()
@@ -504,7 +317,7 @@ func (s *DefaultMigratorSuite) TestRollback() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestRun() {
+func (s *MigratorSuite) TestRun() {
 	testMigration := NewTestMigration(s.mockSchema)
 	testConnectionMigration := NewTestConnectionMigration(s.mockSchema)
 
@@ -585,7 +398,7 @@ func (s *DefaultMigratorSuite) TestRun() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestRunDown() {
+func (s *MigratorSuite) TestRunDown() {
 	var (
 		previousConnection      = "postgres"
 		testMigration           = NewTestMigration(s.mockSchema)
@@ -657,7 +470,7 @@ func (s *DefaultMigratorSuite) TestRunDown() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestRunPending() {
+func (s *MigratorSuite) TestRunPending() {
 	testMigration := NewTestMigration(s.mockSchema)
 
 	tests := []struct {
@@ -724,7 +537,7 @@ func (s *DefaultMigratorSuite) TestRunPending() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestRunUp() {
+func (s *MigratorSuite) TestRunUp() {
 	var (
 		batch                   = 1
 		previousConnection      = "postgres"
@@ -797,7 +610,7 @@ func (s *DefaultMigratorSuite) TestRunUp() {
 	}
 }
 
-func (s *DefaultMigratorSuite) TestStatus() {
+func (s *MigratorSuite) TestStatus() {
 	tests := []struct {
 		name        string
 		setup       func()
@@ -886,7 +699,7 @@ func (s *DefaultMigratorSuite) TestStatus() {
 	}
 }
 
-func (s *DefaultMigratorSuite) mockRunDown(
+func (s *MigratorSuite) mockRunDown(
 	mockOrm *mocksorm.Orm,
 	previousConnection, migrationSignature, table string,
 	err error,
@@ -913,7 +726,7 @@ func (s *DefaultMigratorSuite) mockRunDown(
 	}).Once()
 }
 
-func (s *DefaultMigratorSuite) mockRunUp(
+func (s *MigratorSuite) mockRunUp(
 	mockOrm *mocksorm.Orm,
 	previousConnection, migrationSignature, table string,
 	batch int,
@@ -961,28 +774,6 @@ func (r *TestMigration) Up() error {
 
 func (r *TestMigration) Down() error {
 	return r.schema.DropIfExists("users")
-}
-
-type TestMigrationWithSqlserverSchema struct {
-	schema contractsschema.Schema
-}
-
-func NewTestMigrationWithSqlserverSchema(schema contractsschema.Schema) *TestMigrationWithSqlserverSchema {
-	return &TestMigrationWithSqlserverSchema{schema: schema}
-}
-
-func (r *TestMigrationWithSqlserverSchema) Signature() string {
-	return "20240817214501_create_users_table"
-}
-
-func (r *TestMigrationWithSqlserverSchema) Up() error {
-	return r.schema.Create("goravel.users", func(table contractsschema.Blueprint) {
-		table.String("name")
-	})
-}
-
-func (r *TestMigrationWithSqlserverSchema) Down() error {
-	return r.schema.DropIfExists("goravel.users")
 }
 
 type TestConnectionMigration struct {

@@ -5,7 +5,6 @@ import (
 )
 
 type Schema interface {
-	CommonSchema
 	DriverSchema
 	// Connection Get the connection for the schema.
 	Connection(name string) Schema
@@ -73,8 +72,12 @@ type DriverSchema interface {
 	GetColumns(table string) ([]Column, error)
 	// GetIndexes Get the indexes for a given table.
 	GetIndexes(table string) ([]Index, error)
+	// GetTables Get the tables that belong to the database.
+	GetTables() ([]Table, error)
 	// GetTypes Get the types that belong to the database.
 	GetTypes() ([]Type, error)
+	// GetViews Get the views that belong to the database.
+	GetViews() ([]View, error)
 }
 
 type Migration interface {

@@ -6,6 +6,8 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/goravel/framework/contracts/database/factory"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -40,6 +42,10 @@ type User struct {
 	Phones  []*Phone `gorm:"polymorphic:Phoneable"`
 	Roles   []*Role  `gorm:"many2many:role_user"`
 	age     int
+}
+
+func (u *User) Factory() factory.Factory {
+	return &UserFactory{}
 }
 
 func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
@@ -327,7 +333,7 @@ func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.E
 
 type UserObserver struct{}
 
-func (u *UserObserver) Creating(event contractsorm.Event) error {
+func (r *UserObserver) Creating(event contractsorm.Event) error {
 	name := event.GetAttribute("name")
 	if name != nil {
 		if name.(string) == "observer_name" {
@@ -343,20 +349,33 @@ func (u *UserObserver) Creating(event contractsorm.Event) error {
 	return nil
 }
 
-func (u *UserObserver) Created(event contractsorm.Event) error {
+func (r *UserObserver) Created(event contractsorm.Event) error {
 	return nil
 }
 
-func (u *UserObserver) Updated(event contractsorm.Event) error {
+func (r *UserObserver) Updated(event contractsorm.Event) error {
 	return nil
 }
 
-func (u *UserObserver) Deleted(event contractsorm.Event) error {
+func (r *UserObserver) Deleted(event contractsorm.Event) error {
 	return nil
 }
 
-func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
+func (r *UserObserver) ForceDeleted(event contractsorm.Event) error {
 	return nil
+}
+
+type UserFactory struct {
+}
+
+func (r *UserFactory) Definition() map[string]any {
+	faker := gofakeit.New(0)
+	return map[string]any{
+		"Name":      faker.Name(),
+		"Avatar":    faker.Email(),
+		"CreatedAt": carbon.NewDateTime(carbon.Now()),
+		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+	}
 }
 
 type Role struct {
@@ -386,6 +405,24 @@ type Author struct {
 	Model
 	BookID uint
 	Name   string
+}
+
+func (r *Author) Factory() factory.Factory {
+	return &AuthorFactory{}
+}
+
+type AuthorFactory struct {
+}
+
+func (r *AuthorFactory) Definition() map[string]any {
+	faker := gofakeit.New(0)
+	return map[string]any{
+		"ID":        1,
+		"BookID":    2,
+		"Name":      faker.Name(),
+		"CreatedAt": carbon.NewDateTime(carbon.Now()),
+		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+	}
 }
 
 type House struct {

@@ -12,7 +12,6 @@ import (
 
 	"github.com/goravel/framework/contracts/database"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/database/schema/constants"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -20,12 +19,12 @@ import (
 type SchemaSuite struct {
 	suite.Suite
 	prefix            string
-	driverToTestQuery map[string]*gorm.TestQuery1
+	driverToTestQuery map[string]*TestQuery
 }
 
 func TestSchemaSuite(t *testing.T) {
 	suite.Run(t, &SchemaSuite{
-		driverToTestQuery: make(map[string]*gorm.TestQuery1),
+		driverToTestQuery: make(map[string]*TestQuery),
 	})
 }
 
@@ -2492,7 +2491,7 @@ func TestPostgresSchema(t *testing.T) {
 	table := "table"
 	postgresTestQuery := postgresTestQuery("", false)
 	postgresTestQuery.WithSchema(testSchema)
-	newSchema := newSchema(postgresTestQuery, map[string]*gorm.TestQuery1{
+	newSchema := newSchema(postgresTestQuery, map[string]*TestQuery{
 		postgresTestQuery.Driver().Config().Connection: postgresTestQuery,
 	})
 
