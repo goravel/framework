@@ -26,7 +26,7 @@ func (r *DummyCommand) Description() string {
 
 // Extend The console command extend.
 func (r *DummyCommand) Extend() command.Extend {
-	return command.Extend{}
+	return command.Extend{Category: "app"}
 }
 
 // Handle Execute the console command.
