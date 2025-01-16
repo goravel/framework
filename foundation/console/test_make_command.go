@@ -17,17 +17,17 @@ func NewTestMakeCommand() *TestMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *TestMakeCommand) Signature() string {
+func (r *TestMakeCommand) Signature() string {
 	return "make:test"
 }
 
 // Description The console command description.
-func (receiver *TestMakeCommand) Description() string {
+func (r *TestMakeCommand) Description() string {
 	return "Create a new test class"
 }
 
 // Extend The console command extend.
-func (receiver *TestMakeCommand) Extend() command.Extend {
+func (r *TestMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -41,16 +41,16 @@ func (receiver *TestMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
+func (r *TestMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "test", ctx.Argument(0), "tests")
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	stub := receiver.getStub()
+	stub := r.getStub()
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -60,12 +60,12 @@ func (receiver *TestMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *TestMakeCommand) getStub() string {
+func (r *TestMakeCommand) getStub() string {
 	return Stubs{}.Test()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *TestMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *TestMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyTest", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

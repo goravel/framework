@@ -21,27 +21,27 @@ func NewJwtSecretCommand(config config.Config) *JwtSecretCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *JwtSecretCommand) Signature() string {
+func (r *JwtSecretCommand) Signature() string {
 	return "jwt:secret"
 }
 
 // Description The console command description.
-func (receiver *JwtSecretCommand) Description() string {
+func (r *JwtSecretCommand) Description() string {
 	return "Set the JWTAuth secret key used to sign the tokens"
 }
 
 // Extend The console command extend.
-func (receiver *JwtSecretCommand) Extend() command.Extend {
+func (r *JwtSecretCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "jwt",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *JwtSecretCommand) Handle(ctx console.Context) error {
-	key := receiver.generateRandomKey()
+func (r *JwtSecretCommand) Handle(ctx console.Context) error {
+	key := r.generateRandomKey()
 
-	if err := receiver.setSecretInEnvironmentFile(key); err != nil {
+	if err := r.setSecretInEnvironmentFile(key); err != nil {
 		ctx.Error(err.Error())
 
 		return nil
@@ -53,19 +53,19 @@ func (receiver *JwtSecretCommand) Handle(ctx console.Context) error {
 }
 
 // generateRandomKey Generate a random key for the application.
-func (receiver *JwtSecretCommand) generateRandomKey() string {
+func (r *JwtSecretCommand) generateRandomKey() string {
 	return str.Random(32)
 }
 
 // setSecretInEnvironmentFile Set the application key in the environment file.
-func (receiver *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
-	currentKey := receiver.config.GetString("jwt.secret")
+func (r *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
+	currentKey := r.config.GetString("jwt.secret")
 
 	if currentKey != "" {
 		return errors.New("exist jwt secret")
 	}
 
-	err := receiver.writeNewEnvironmentFileWith(key)
+	err := r.writeNewEnvironmentFileWith(key)
 
 	if err != nil {
 		return err
@@ -75,13 +75,13 @@ func (receiver *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
 }
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
-func (receiver *JwtSecretCommand) writeNewEnvironmentFileWith(key string) error {
+func (r *JwtSecretCommand) writeNewEnvironmentFileWith(key string) error {
 	content, err := os.ReadFile(support.EnvPath)
 	if err != nil {
 		return err
 	}
 
-	newContent := strings.Replace(string(content), "JWT_SECRET="+receiver.config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
+	newContent := strings.Replace(string(content), "JWT_SECRET="+r.config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
 
 	err = os.WriteFile(support.EnvPath, []byte(newContent), 0644)
 	if err != nil {

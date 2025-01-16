@@ -17,17 +17,17 @@ func NewPackageMakeCommand() *PackageMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *PackageMakeCommand) Signature() string {
+func (r *PackageMakeCommand) Signature() string {
 	return "make:package"
 }
 
 // Description The console command description.
-func (receiver *PackageMakeCommand) Description() string {
+func (r *PackageMakeCommand) Description() string {
 	return "Create a package template"
 }
 
 // Extend The console command extend.
-func (receiver *PackageMakeCommand) Extend() command.Extend {
+func (r *PackageMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,7 +42,7 @@ func (receiver *PackageMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *PackageMakeCommand) Handle(ctx console.Context) error {
+func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 	pkg := ctx.Argument(0)
 	if pkg == "" {
 		var err error
