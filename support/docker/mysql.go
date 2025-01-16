@@ -7,7 +7,6 @@ import (
 	"gorm.io/driver/mysql"
 	gormio "gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/color"
@@ -105,8 +104,8 @@ func (r *MysqlImpl) Database(name string) (testing.DatabaseDriver, error) {
 	return mysqlImpl, nil
 }
 
-func (r *MysqlImpl) Driver() database.Driver {
-	return database.DriverMysql
+func (r *MysqlImpl) Driver() string {
+	return "mysql"
 }
 
 func (r *MysqlImpl) Fresh() error {

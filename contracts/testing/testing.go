@@ -1,7 +1,6 @@
 package testing
 
 import (
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/seeder"
 )
 
@@ -32,7 +31,7 @@ type DatabaseDriver interface {
 	// Database returns a new instance with a new database, the Build method needs to be called first.
 	Database(name string) (DatabaseDriver, error)
 	// Driver gets the database driver name.
-	Driver() database.Driver
+	Driver() string
 	// Fresh the database.
 	Fresh() error
 	// Image gets the database image.

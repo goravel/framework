@@ -14,41 +14,13 @@ func (d Driver) String() string {
 	return string(d)
 }
 
-// TODO Rename to Config
-type Config1 struct {
+type Config struct {
 	Connection string
 	Driver     string
 	// TODO Check if it can be removed
 	Prefix string
 	// TODO Check if it can be removed
 	Schema string
-}
-
-// Config Used in config/database.go
-type Config struct {
-	Dsn      string
-	Host     string
-	Port     int
-	Database string
-	Username string
-	Password string
-	// Only for Postgres
-	Schema string
-}
-
-// FullConfig Fill the default value for Config
-type FullConfig struct {
-	Config
-	Driver       Driver
-	Connection   string
-	Prefix       string
-	Singular     bool
-	Charset      string // Mysql, Sqlserver
-	Loc          string // Mysql
-	Sslmode      string // Postgres
-	Timezone     string // Postgres
-	NoLowerCase  bool
-	NameReplacer Replacer
 }
 
 // Replacer replacer interface like strings.Replacer

@@ -28,18 +28,18 @@ func (_m *Driver) EXPECT() *Driver_Expecter {
 }
 
 // Config provides a mock function with no fields
-func (_m *Driver) Config() database.Config1 {
+func (_m *Driver) Config() database.Config {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Config")
 	}
 
-	var r0 database.Config1
-	if rf, ok := ret.Get(0).(func() database.Config1); ok {
+	var r0 database.Config
+	if rf, ok := ret.Get(0).(func() database.Config); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(database.Config1)
+		r0 = ret.Get(0).(database.Config)
 	}
 
 	return r0
@@ -62,12 +62,12 @@ func (_c *Driver_Config_Call) Run(run func()) *Driver_Config_Call {
 	return _c
 }
 
-func (_c *Driver_Config_Call) Return(_a0 database.Config1) *Driver_Config_Call {
+func (_c *Driver_Config_Call) Return(_a0 database.Config) *Driver_Config_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Driver_Config_Call) RunAndReturn(run func() database.Config1) *Driver_Config_Call {
+func (_c *Driver_Config_Call) RunAndReturn(run func() database.Config) *Driver_Config_Call {
 	_c.Call.Return(run)
 	return _c
 }

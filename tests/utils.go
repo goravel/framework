@@ -22,8 +22,8 @@ const (
 
 func postgresTestQuery(prefix string, singular bool) *TestQuery {
 	postgresImage := postgres.NewDocker(testDatabase, testUsername, testPassword)
-	builder := docker.NewBuilder(postgresImage)
-	postgresContainer, err := builder.Build()
+	container := docker.NewContainer(postgresImage)
+	postgresContainer, err := container.Build()
 	if err != nil {
 		panic(err)
 	}

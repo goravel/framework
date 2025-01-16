@@ -27,7 +27,7 @@ type Query struct {
 	conditions      Conditions
 	config          config.Config
 	ctx             context.Context
-	dbConfig        contractsdatabase.Config1
+	dbConfig        contractsdatabase.Config
 	instance        *gormio.DB
 	log             log.Log
 	modelToObserver []contractsorm.ModelToObserver
@@ -38,7 +38,7 @@ type Query struct {
 func NewQuery(
 	ctx context.Context,
 	config config.Config,
-	dbConfig contractsdatabase.Config1,
+	dbConfig contractsdatabase.Config,
 	db *gormio.DB,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,

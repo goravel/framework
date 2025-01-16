@@ -9,7 +9,7 @@ import (
 )
 
 type Driver interface {
-	Config() database.Config1
+	Config() database.Config
 	Docker() (testing.DatabaseDriver, error)
 	Gorm() (*gorm.DB, error)
 	Grammar() schema.Grammar
