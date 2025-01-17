@@ -13,16 +13,12 @@ import (
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
+	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	mockstesting "github.com/goravel/framework/mocks/testing"
-	"github.com/goravel/framework/support/env"
 )
 
 func TestNewDatabase(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
 	var (
 		mockApp            *mocksfoundation.Application
 		mockArtisan        *mocksconsole.Artisan
@@ -51,7 +47,6 @@ func TestNewDatabase(t *testing.T) {
 			name: "success when connection is empty",
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(mockDockerDriver, nil).Once()
-				mockDockerDriver.EXPECT().Ready().Return(nil).Once()
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return mockDatabaseDriver, nil
@@ -66,7 +61,6 @@ func TestNewDatabase(t *testing.T) {
 			connection: "mysql",
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(mockDockerDriver, nil).Once()
-				mockDockerDriver.EXPECT().Ready().Return(nil).Once()
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return mockDatabaseDriver, nil
 				}).Once()
@@ -79,7 +73,6 @@ func TestNewDatabase(t *testing.T) {
 			name: "error when docker is not ready",
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(mockDockerDriver, nil).Once()
-				mockDockerDriver.EXPECT().Ready().Return(assert.AnError).Once()
 				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
 				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
 					return mockDatabaseDriver, nil
@@ -190,15 +183,15 @@ func (s *DatabaseTestSuite) SetupTest() {
 	}
 }
 
-func (s *DatabaseTestSuite) TestBuild() {
+func (s *DatabaseTestSuite) TestReady() {
 	s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
 		Port: 1234,
 	}).Once()
 	s.mockConfig.EXPECT().Add("database.connections.postgres.port", 1234).Once()
 	s.mockOrm.EXPECT().Refresh().Once()
-	s.mockDatabaseDriver.EXPECT().Build().Return(nil).Once()
+	s.mockDatabaseDriver.EXPECT().Ready().Return(nil).Once()
 
-	s.Nil(s.database.Build())
+	s.Nil(s.database.Ready())
 }
 
 func (s *DatabaseTestSuite) TestSeed() {
@@ -206,18 +199,10 @@ func (s *DatabaseTestSuite) TestSeed() {
 	s.NoError(s.database.Seed())
 
 	s.mockArtisan.EXPECT().Call("db:seed --seeder mock").Return(nil).Once()
-	s.NoError(s.database.Seed(&MockSeeder{}))
+	mockSeeder := mocksseeder.NewSeeder(s.T())
+	mockSeeder.EXPECT().Signature().Return("mock").Once()
+	s.NoError(s.database.Seed(mockSeeder))
 
 	s.mockArtisan.EXPECT().Call("db:seed").Return(assert.AnError).Once()
 	s.EqualError(s.database.Seed(), assert.AnError.Error())
-}
-
-type MockSeeder struct{}
-
-func (m *MockSeeder) Signature() string {
-	return "mock"
-}
-
-func (m *MockSeeder) Run() error {
-	return nil
 }

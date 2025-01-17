@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/testing"
 )
@@ -14,5 +15,5 @@ type Driver interface {
 	Gorm() (*gorm.DB, error)
 	Grammar() schema.Grammar
 	Processor() schema.Processor
-	Schema() schema.DriverSchema
+	Schema(orm.Orm) schema.DriverSchema
 }

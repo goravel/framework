@@ -49,9 +49,6 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 	if err != nil {
 		return nil, err
 	}
-	if err = databaseDocker.Ready(); err != nil {
-		return nil, err
-	}
 
 	return &Database{
 		DatabaseDriver: databaseDocker,
@@ -62,8 +59,12 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 	}, nil
 }
 
-func (r *Database) Build() error {
-	if err := r.DatabaseDriver.Build(); err != nil {
+func (r *Database) Migrate() error {
+	return r.artisan.Call("migrate")
+}
+
+func (r *Database) Ready() error {
+	if err := r.DatabaseDriver.Ready(); err != nil {
 		return err
 	}
 
@@ -72,10 +73,6 @@ func (r *Database) Build() error {
 	r.orm.Refresh()
 
 	return nil
-}
-
-func (r *Database) Migrate() error {
-	return r.artisan.Call("migrate")
 }
 
 func (r *Database) Seed(seeders ...seeder.Seeder) error {

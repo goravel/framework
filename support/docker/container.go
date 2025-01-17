@@ -17,6 +17,7 @@ type Container struct {
 	databaseDriver testing.DatabaseDriver
 	file           string
 	lockFile       string
+	name           string
 	username       string
 	password       string
 }
@@ -26,6 +27,7 @@ func NewContainer(databaseDriver testing.DatabaseDriver) *Container {
 		databaseDriver: databaseDriver,
 		file:           filepath.Join(os.TempDir(), "goravel_docker.txt"),
 		lockFile:       filepath.Join(os.TempDir(), "goravel_docker.lock"),
+		name:           databaseDriver.Driver(),
 		username:       "goravel",
 		password:       "Framework!123",
 	}
@@ -35,22 +37,20 @@ func (r *Container) Build() (testing.DatabaseDriver, error) {
 	var (
 		isReused bool
 		err      error
-
-		driverName = r.databaseDriver.Driver()
 	)
 
 	r.lock()
 	defer r.unlock()
 
-	containerTypeToDatabaseConfig, err := r.all()
+	databaseConfigs, err := r.all()
 	if err != nil {
 		return nil, err
 	}
 
 	// If the port is not occupied, provide the container is released.
-	if containerTypeToDatabaseConfig != nil {
-		if _, exist := containerTypeToDatabaseConfig[driverName]; exist && isPortUsing(containerTypeToDatabaseConfig[driverName].Port) {
-			if err := r.databaseDriver.Reuse(containerTypeToDatabaseConfig[driverName].ContainerID, containerTypeToDatabaseConfig[driverName].Port); err == nil {
+	if databaseConfigs != nil {
+		if _, exist := databaseConfigs[r.name]; exist && isPortUsing(databaseConfigs[r.name].Port) {
+			if err := r.databaseDriver.Reuse(databaseConfigs[r.name].ContainerID, databaseConfigs[r.name].Port); err == nil {
 				isReused = true
 			}
 		}
@@ -61,7 +61,7 @@ func (r *Container) Build() (testing.DatabaseDriver, error) {
 			return nil, err
 		}
 
-		if err := r.add(driverName, r.databaseDriver); err != nil {
+		if err := r.add(); err != nil {
 			return nil, err
 		}
 	}
@@ -97,23 +97,23 @@ func (r *Container) Remove() error {
 	return file.Remove(r.file)
 }
 
-func (r *Container) add(containerType string, databaseDriver testing.DatabaseDriver) error {
-	containerTypeToDatabaseConfig, err := r.all()
+func (r *Container) add() error {
+	databaseConfigs, err := r.all()
 	if err != nil {
 		return err
 	}
 
-	if containerTypeToDatabaseConfig == nil {
-		containerTypeToDatabaseConfig = make(map[string]testing.DatabaseConfig)
+	if databaseConfigs == nil {
+		databaseConfigs = make(map[string]testing.DatabaseConfig)
 	}
-	containerTypeToDatabaseConfig[containerType] = databaseDriver.Config()
+	databaseConfigs[r.name] = r.databaseDriver.Config()
 	f, err := os.OpenFile(r.file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	content, err := json.NewJson().Marshal(containerTypeToDatabaseConfig)
+	content, err := json.NewJson().Marshal(databaseConfigs)
 	if err != nil {
 		return err
 	}
@@ -127,9 +127,9 @@ func (r *Container) add(containerType string, databaseDriver testing.DatabaseDri
 }
 
 func (r *Container) all() (map[string]testing.DatabaseConfig, error) {
-	containerTypeToDatabaseConfig := make(map[string]testing.DatabaseConfig)
+	databaseConfigs := make(map[string]testing.DatabaseConfig)
 	if !file.Exists(r.file) {
-		return containerTypeToDatabaseConfig, nil
+		return databaseConfigs, nil
 	}
 
 	f, err := os.OpenFile(r.file, os.O_RDONLY, 0666)
@@ -142,11 +142,11 @@ func (r *Container) all() (map[string]testing.DatabaseConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := json.NewJson().Unmarshal(content, &containerTypeToDatabaseConfig); err != nil {
+	if err := json.NewJson().Unmarshal(content, &databaseConfigs); err != nil {
 		return nil, err
 	}
 
-	return containerTypeToDatabaseConfig, nil
+	return databaseConfigs, nil
 }
 
 func (r *Container) lock() {

@@ -1,84 +1,107 @@
 package docker
 
 import (
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	contractstesting "github.com/goravel/framework/contracts/testing"
-	"github.com/goravel/framework/support/env"
+	mockstesting "github.com/goravel/framework/mocks/testing"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-type ContainerManagerTestSuite struct {
+type ContainerTestSuite struct {
 	suite.Suite
-	container *Container
+	mockDatabaseDriver *mockstesting.DatabaseDriver
+	container          *Container
 }
 
-func TestContainerMangerTestSuite(t *testing.T) {
-	if env.IsWindows() {
-		t.Skip("Skip test that using Docker")
-	}
-
-	suite.Run(t, new(ContainerManagerTestSuite))
+func TestContainerTestSuite(t *testing.T) {
+	suite.Run(t, new(ContainerTestSuite))
 }
 
-func (s *ContainerManagerTestSuite) SetupTest() {
-	s.container = NewContainer(&testDatabaseDriver{})
+func (s *ContainerTestSuite) SetupTest() {
+	testPortUsing = false
+	s.mockDatabaseDriver = mockstesting.NewDatabaseDriver(s.T())
+	s.mockDatabaseDriver.EXPECT().Driver().Return("test").Once()
+	s.container = NewContainer(s.mockDatabaseDriver)
+	s.container.Remove()
 }
 
-func (s *ContainerManagerTestSuite) TestAddAndAll() {
-	driver := &testDatabaseDriver{}
+func (s *ContainerTestSuite) TestAddAndAll() {
+	s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+		ContainerID: "test-container",
+		Port:        5432,
+		Database:    "test",
+		Username:    "test",
+		Password:    "test",
+	}).Once()
 
-	s.NoError(s.container.add("test", driver))
+	s.NoError(s.container.add())
 
 	containers, err := s.container.all()
 	s.NoError(err)
 	s.Len(containers, 1)
-	s.Equal(driver.Config(), containers["test"])
+	s.Equal(contractstesting.DatabaseConfig{
+		ContainerID: "test-container",
+		Port:        5432,
+		Database:    "test",
+		Username:    "test",
+		Password:    "test",
+	}, containers["test"])
 }
 
-type testDatabaseDriver struct {
+func (s *ContainerTestSuite) TestBuild() {
+	s.Run("Test reusing existing container", func() {
+		testPortUsing = true
+
+		s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+			ContainerID: "test-container",
+			Port:        5432,
+		}).Once()
+		s.mockDatabaseDriver.EXPECT().Reuse("test-container", 5432).Return(nil).Once()
+		s.mockDatabaseDriver.EXPECT().Database(mock.MatchedBy(func(database string) bool {
+			return strings.HasPrefix(database, "goravel_")
+		})).Return(s.mockDatabaseDriver, nil).Once()
+
+		// Add existing container config
+		s.NoError(s.container.add())
+
+		// Build should reuse existing container
+		result, err := s.container.Build()
+		s.NoError(err)
+		s.NotNil(result)
+	})
+
+	s.Run("Test creating new container", func() {
+		s.SetupTest()
+
+		s.mockDatabaseDriver.EXPECT().Build().Return(nil).Once()
+		s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+			ContainerID: "test-container",
+			Port:        5432,
+		}).Once()
+		s.mockDatabaseDriver.EXPECT().Database(mock.MatchedBy(func(database string) bool {
+			return strings.HasPrefix(database, "goravel_")
+		})).Return(s.mockDatabaseDriver, nil).Once()
+
+		result, err := s.container.Build()
+		s.NoError(err)
+		s.NotNil(result)
+	})
 }
 
-func (r *testDatabaseDriver) Build() error {
-	return nil
-}
+func (s *ContainerTestSuite) TestBuilds() {
+	s.mockDatabaseDriver.EXPECT().Build().Return(nil).Times(3)
+	s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+		ContainerID: "test-container",
+		Port:        5432,
+	}).Times(3)
+	s.mockDatabaseDriver.EXPECT().Database(mock.MatchedBy(func(database string) bool {
+		return strings.HasPrefix(database, "goravel_")
+	})).Return(s.mockDatabaseDriver, nil).Times(3)
 
-func (r *testDatabaseDriver) Config() contractstesting.DatabaseConfig {
-	return contractstesting.DatabaseConfig{
-		ContainerID: "container_id",
-		Host:        "host",
-		Port:        1234,
-		Database:    "database",
-		Username:    "username",
-		Password:    "password",
-	}
-}
-
-func (r *testDatabaseDriver) Database(name string) (contractstesting.DatabaseDriver, error) {
-	return nil, nil
-}
-
-func (r *testDatabaseDriver) Driver() string {
-	return "test"
-}
-
-func (r *testDatabaseDriver) Fresh() error {
-	return nil
-}
-
-func (r *testDatabaseDriver) Image(image contractstesting.Image) {
-
-}
-
-func (r *testDatabaseDriver) Ready() error {
-	return nil
-}
-
-func (r *testDatabaseDriver) Reuse(containerID string, port int) error {
-	return nil
-}
-
-func (r *testDatabaseDriver) Shutdown() error {
-	return nil
+	result, err := s.container.Builds(3)
+	s.NoError(err)
+	s.Len(result, 3)
 }

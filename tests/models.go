@@ -44,11 +44,11 @@ type User struct {
 	age     int
 }
 
-func (u *User) Factory() factory.Factory {
+func (r *User) Factory() factory.Factory {
 	return &UserFactory{}
 }
 
-func (u *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
+func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
 	return map[contractsorm.EventType]func(contractsorm.Event) error{
 		contractsorm.EventCreating: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
@@ -432,7 +432,7 @@ type House struct {
 	HouseableType string
 }
 
-func (h *House) Factory() string {
+func (r *House) Factory() string {
 	return "house"
 }
 
@@ -449,7 +449,7 @@ type Product struct {
 	Name string
 }
 
-func (p *Product) Connection() string {
+func (r *Product) Connection() string {
 	return "sqlite"
 }
 
@@ -469,7 +469,7 @@ type People struct {
 	Body string
 }
 
-func (p *People) Connection() string {
+func (r *People) Connection() string {
 	return "dummy"
 }
 
@@ -479,7 +479,7 @@ type Person struct {
 	Name string
 }
 
-func (p *Person) Connection() string {
+func (r *Person) Connection() string {
 	return "dummy"
 }
 
@@ -489,7 +489,7 @@ type Box struct {
 	Name string
 }
 
-func (p *Box) Connection() string {
+func (r *Box) Connection() string {
 	return "postgres"
 }
 
