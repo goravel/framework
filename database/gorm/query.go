@@ -1051,6 +1051,7 @@ func (r *Query) buildLockForUpdate(db *gormio.DB) *gormio.DB {
 	}
 
 	driver := r.instance.Name()
+	// TODO To Check if the hardcoded driver names can be optimized
 	if driver == "mysql" || driver == "postgres" {
 		return db.Clauses(clause.Locking{Strength: "UPDATE"})
 	} else if driver == "sqlserver" {
@@ -1155,6 +1156,7 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 	}
 
 	driver := r.instance.Name()
+	// TODO To Check if the hardcoded driver names can be optimized
 	if driver == "mysql" || driver == "postgres" {
 		return db.Clauses(clause.Locking{Strength: "SHARE"})
 	} else if driver == "sqlserver" {

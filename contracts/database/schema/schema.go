@@ -61,6 +61,7 @@ type CommonSchema interface {
 	GetViews() ([]View, error)
 }
 
+// TODO To Check if this can be removed or reduced
 type DriverSchema interface {
 	// DropAllTables Drop all tables from the schema.
 	DropAllTables() error

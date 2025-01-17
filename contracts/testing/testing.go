@@ -14,6 +14,7 @@ type Docker interface {
 	Database(connection ...string) (Database, error)
 }
 
+// TODO Move to contracts/testing/database
 type Database interface {
 	DatabaseDriver
 	// Migrate runs the database migrations.
