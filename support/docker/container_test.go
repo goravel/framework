@@ -24,7 +24,6 @@ func TestContainerMangerTestSuite(t *testing.T) {
 
 func (s *ContainerManagerTestSuite) SetupTest() {
 	s.container = NewContainer(&testDatabaseDriver{})
-	s.container.Remove()
 }
 
 func (s *ContainerManagerTestSuite) TestAddAndAll() {
