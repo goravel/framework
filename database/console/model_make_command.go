@@ -18,17 +18,17 @@ func NewModelMakeCommand() *ModelMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *ModelMakeCommand) Signature() string {
+func (r *ModelMakeCommand) Signature() string {
 	return "make:model"
 }
 
 // Description The console command description.
-func (receiver *ModelMakeCommand) Description() string {
+func (r *ModelMakeCommand) Description() string {
 	return "Create a new model class"
 }
 
 // Extend The console command extend.
-func (receiver *ModelMakeCommand) Extend() command.Extend {
+func (r *ModelMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,14 +42,14 @@ func (receiver *ModelMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
+func (r *ModelMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "model", ctx.Argument(0), filepath.Join("app", "models"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -58,12 +58,12 @@ func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *ModelMakeCommand) getStub() string {
+func (r *ModelMakeCommand) getStub() string {
 	return Stubs{}.Model()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *ModelMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *ModelMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyModel", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

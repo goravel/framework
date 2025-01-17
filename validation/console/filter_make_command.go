@@ -15,17 +15,17 @@ type FilterMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *FilterMakeCommand) Signature() string {
+func (r *FilterMakeCommand) Signature() string {
 	return "make:filter"
 }
 
 // Description The console command description.
-func (receiver *FilterMakeCommand) Description() string {
+func (r *FilterMakeCommand) Description() string {
 	return "Create a new filter class"
 }
 
 // Extend The console command extend.
-func (receiver *FilterMakeCommand) Extend() command.Extend {
+func (r *FilterMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -39,14 +39,14 @@ func (receiver *FilterMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *FilterMakeCommand) Handle(ctx console.Context) error {
+func (r *FilterMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "filter", ctx.Argument(0), filepath.Join("app", "filters"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -56,12 +56,12 @@ func (receiver *FilterMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *FilterMakeCommand) getStub() string {
+func (r *FilterMakeCommand) getStub() string {
 	return Stubs{}.Filter()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *FilterMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *FilterMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyFilter", structName)
 	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)

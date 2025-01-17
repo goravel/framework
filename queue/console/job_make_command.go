@@ -15,17 +15,17 @@ type JobMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *JobMakeCommand) Signature() string {
+func (r *JobMakeCommand) Signature() string {
 	return "make:job"
 }
 
 // Description The console command description.
-func (receiver *JobMakeCommand) Description() string {
+func (r *JobMakeCommand) Description() string {
 	return "Create a new job class"
 }
 
 // Extend The console command extend.
-func (receiver *JobMakeCommand) Extend() command.Extend {
+func (r *JobMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -39,14 +39,14 @@ func (receiver *JobMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *JobMakeCommand) Handle(ctx console.Context) error {
+func (r *JobMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "job", ctx.Argument(0), filepath.Join("app", "jobs"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -56,12 +56,12 @@ func (receiver *JobMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *JobMakeCommand) getStub() string {
+func (r *JobMakeCommand) getStub() string {
 	return JobStubs{}.Job()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *JobMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *JobMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyJob", structName)
 	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)

@@ -18,17 +18,17 @@ func NewObserverMakeCommand() *ObserverMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *ObserverMakeCommand) Signature() string {
+func (r *ObserverMakeCommand) Signature() string {
 	return "make:observer"
 }
 
 // Description The console command description.
-func (receiver *ObserverMakeCommand) Description() string {
+func (r *ObserverMakeCommand) Description() string {
 	return "Create a new observer class"
 }
 
 // Extend The console command extend.
-func (receiver *ObserverMakeCommand) Extend() command.Extend {
+func (r *ObserverMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,14 +42,14 @@ func (receiver *ObserverMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
+func (r *ObserverMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "observer", ctx.Argument(0), filepath.Join("app", "observers"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -58,12 +58,12 @@ func (receiver *ObserverMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *ObserverMakeCommand) getStub() string {
+func (r *ObserverMakeCommand) getStub() string {
 	return Stubs{}.Observer()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *ObserverMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *ObserverMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyObserver", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
