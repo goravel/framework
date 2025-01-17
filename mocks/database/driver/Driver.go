@@ -9,6 +9,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	orm "github.com/goravel/framework/contracts/database/orm"
+
 	schema "github.com/goravel/framework/contracts/database/schema"
 
 	testing "github.com/goravel/framework/contracts/testing"
@@ -280,17 +282,17 @@ func (_c *Driver_Processor_Call) RunAndReturn(run func() schema.Processor) *Driv
 	return _c
 }
 
-// Schema provides a mock function with no fields
-func (_m *Driver) Schema() schema.DriverSchema {
-	ret := _m.Called()
+// Schema provides a mock function with given fields: _a0
+func (_m *Driver) Schema(_a0 orm.Orm) schema.DriverSchema {
+	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Schema")
 	}
 
 	var r0 schema.DriverSchema
-	if rf, ok := ret.Get(0).(func() schema.DriverSchema); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(orm.Orm) schema.DriverSchema); ok {
+		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(schema.DriverSchema)
@@ -306,13 +308,14 @@ type Driver_Schema_Call struct {
 }
 
 // Schema is a helper method to define mock.On call
-func (_e *Driver_Expecter) Schema() *Driver_Schema_Call {
-	return &Driver_Schema_Call{Call: _e.mock.On("Schema")}
+//   - _a0 orm.Orm
+func (_e *Driver_Expecter) Schema(_a0 interface{}) *Driver_Schema_Call {
+	return &Driver_Schema_Call{Call: _e.mock.On("Schema", _a0)}
 }
 
-func (_c *Driver_Schema_Call) Run(run func()) *Driver_Schema_Call {
+func (_c *Driver_Schema_Call) Run(run func(_a0 orm.Orm)) *Driver_Schema_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(orm.Orm))
 	})
 	return _c
 }
@@ -322,7 +325,7 @@ func (_c *Driver_Schema_Call) Return(_a0 schema.DriverSchema) *Driver_Schema_Cal
 	return _c
 }
 
-func (_c *Driver_Schema_Call) RunAndReturn(run func() schema.DriverSchema) *Driver_Schema_Call {
+func (_c *Driver_Schema_Call) RunAndReturn(run func(orm.Orm) schema.DriverSchema) *Driver_Schema_Call {
 	_c.Call.Return(run)
 	return _c
 }
