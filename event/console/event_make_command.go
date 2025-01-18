@@ -14,17 +14,17 @@ type EventMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *EventMakeCommand) Signature() string {
+func (r *EventMakeCommand) Signature() string {
 	return "make:event"
 }
 
 // Description The console command description.
-func (receiver *EventMakeCommand) Description() string {
+func (r *EventMakeCommand) Description() string {
 	return "Create a new event class"
 }
 
 // Extend The console command extend.
-func (receiver *EventMakeCommand) Extend() command.Extend {
+func (r *EventMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -38,14 +38,14 @@ func (receiver *EventMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
+func (r *EventMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "event", ctx.Argument(0), filepath.Join("app", "events"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -54,12 +54,12 @@ func (receiver *EventMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *EventMakeCommand) getStub() string {
+func (r *EventMakeCommand) getStub() string {
 	return Stubs{}.Event()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *EventMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *EventMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyEvent", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

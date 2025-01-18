@@ -15,17 +15,17 @@ type RuleMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *RuleMakeCommand) Signature() string {
+func (r *RuleMakeCommand) Signature() string {
 	return "make:rule"
 }
 
 // Description The console command description.
-func (receiver *RuleMakeCommand) Description() string {
+func (r *RuleMakeCommand) Description() string {
 	return "Create a new rule class"
 }
 
 // Extend The console command extend.
-func (receiver *RuleMakeCommand) Extend() command.Extend {
+func (r *RuleMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -39,14 +39,14 @@ func (receiver *RuleMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
+func (r *RuleMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), filepath.Join("app", "rules"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -56,12 +56,12 @@ func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *RuleMakeCommand) getStub() string {
+func (r *RuleMakeCommand) getStub() string {
 	return Stubs{}.Rule()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *RuleMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *RuleMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyRule", structName)
 	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)

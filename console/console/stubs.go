@@ -3,7 +3,7 @@ package console
 type Stubs struct {
 }
 
-func (receiver Stubs) Command() string {
+func (r Stubs) Command() string {
 	return `package DummyPackage
 
 import (
@@ -15,22 +15,22 @@ type DummyCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *DummyCommand) Signature() string {
-	return "command:name"
+func (r *DummyCommand) Signature() string {
+	return "DummySignature"
 }
 
 // Description The console command description.
-func (receiver *DummyCommand) Description() string {
+func (r *DummyCommand) Description() string {
 	return "Command description"
 }
 
 // Extend The console command extend.
-func (receiver *DummyCommand) Extend() command.Extend {
-	return command.Extend{}
+func (r *DummyCommand) Extend() command.Extend {
+	return command.Extend{Category: "app"}
 }
 
 // Handle Execute the console command.
-func (receiver *DummyCommand) Handle(ctx console.Context) error {
+func (r *DummyCommand) Handle(ctx console.Context) error {
 	
 	return nil
 }
