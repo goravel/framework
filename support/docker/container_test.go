@@ -25,7 +25,6 @@ func (s *ContainerTestSuite) SetupTest() {
 	s.mockDatabaseDriver = mockstesting.NewDatabaseDriver(s.T())
 	s.mockDatabaseDriver.EXPECT().Driver().Return("test").Once()
 	s.container = NewContainer(s.mockDatabaseDriver)
-	s.container.Remove()
 }
 
 func (s *ContainerTestSuite) TestAddAndAll() {
