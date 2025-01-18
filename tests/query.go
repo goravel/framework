@@ -12,6 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/testing/utils"
+	"github.com/goravel/postgres"
 )
 
 type TestQuery struct {
@@ -60,7 +61,8 @@ func (r *TestQuery) Query() orm.Query {
 }
 
 func (r *TestQuery) WithSchema(schema string) {
-	if r.driver.Config().Driver != contractsdatabase.DriverPostgres.String() && r.driver.Config().Driver != contractsdatabase.DriverSqlserver.String() {
+	// TODO: Add Sqlserver
+	if r.driver.Config().Driver != postgres.Name {
 		panic(fmt.Sprintf("%s does not support schema", r.driver.Config().Driver))
 	}
 
