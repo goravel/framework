@@ -22,8 +22,3 @@ type Config struct {
 	// TODO Check if it can be removed
 	Schema string
 }
-
-// Replacer replacer interface like strings.Replacer
-type Replacer interface {
-	Replace(name string) string
-}

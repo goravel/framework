@@ -62,7 +62,7 @@ func postgresTestQuery(prefix string, singular bool) *TestQuery {
 	mockConfig.EXPECT().Add("database.connections.postgres.schema", testSchema)
 
 	ctx := context.WithValue(context.Background(), testContextKey, "goravel")
-	postgresDriver := postgres.NewPostgres(mockConfig, utils.NewTestLog(), nil, "postgres")
+	postgresDriver := postgres.NewPostgres(mockConfig, utils.NewTestLog(), "postgres")
 	testQuery, err := NewTestQuery(ctx, postgresDriver, mockConfig)
 	if err != nil {
 		panic(err)
@@ -82,7 +82,7 @@ func newSchema(testQuery *TestQuery, connectionToTestQuery map[string]*TestQuery
 	log := utils.NewTestLog()
 	orm := databaseorm.NewOrm(context.Background(), testQuery.Config(), testQuery.Driver().Config().Driver, testQuery.Query(), queries, log, nil, nil)
 	// TODO Use a common method instead
-	postgresDriver := postgres.NewPostgres(testQuery.Config(), log, orm, "postgres")
+	postgresDriver := postgres.NewPostgres(testQuery.Config(), log, "postgres")
 
 	return schema.NewSchema(testQuery.Config(), log, orm, postgresDriver, nil)
 }

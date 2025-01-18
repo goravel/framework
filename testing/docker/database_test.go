@@ -70,19 +70,6 @@ func TestNewDatabase(t *testing.T) {
 			},
 		},
 		{
-			name: "error when docker is not ready",
-			setup: func() {
-				mockDatabaseDriver.EXPECT().Docker().Return(mockDockerDriver, nil).Once()
-				mockConfig.EXPECT().GetString("database.default").Return("mysql").Once()
-				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(func() (contractsdriver.Driver, error) {
-					return mockDatabaseDriver, nil
-				}).Once()
-				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
-				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
-			},
-			wantErr: assert.AnError,
-		},
-		{
 			name: "error when Docker returns an error",
 			setup: func() {
 				mockDatabaseDriver.EXPECT().Docker().Return(nil, assert.AnError).Once()

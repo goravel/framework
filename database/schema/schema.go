@@ -33,7 +33,7 @@ type Schema struct {
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) *Schema {
 	prefix := driver.Config().Prefix
 	schema := driver.Config().Schema
-	driverSchema := driver.Schema()
+	driverSchema := driver.Schema(orm)
 	grammar := driver.Grammar()
 	processor := driver.Processor()
 
