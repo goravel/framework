@@ -15,6 +15,8 @@ type Repository interface {
 	DeleteRepository() error
 	// GetLast Get the last migration batch.
 	GetLast() ([]File, error)
+	// GetLastBatchNumber Get the last migration batch number.
+	GetLastBatchNumber() (int, error)
 	// GetMigrations Get the completed migrations.
 	GetMigrations() ([]File, error)
 	// GetMigrationsByBatch Get the list of the migrations by batch.

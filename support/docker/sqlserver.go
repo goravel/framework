@@ -7,7 +7,6 @@ import (
 	"gorm.io/driver/sqlserver"
 	gormio "gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 )
 
@@ -74,8 +73,8 @@ func (r *SqlserverImpl) Database(name string) (testing.DatabaseDriver, error) {
 	return sqlserverImpl, nil
 }
 
-func (r *SqlserverImpl) Driver() database.Driver {
-	return database.DriverSqlserver
+func (r *SqlserverImpl) Driver() string {
+	return "sqlserver"
 }
 
 func (r *SqlserverImpl) Fresh() error {
@@ -113,6 +112,10 @@ func (r *SqlserverImpl) Ready() error {
 	_, err := r.connect()
 
 	return err
+}
+
+func (r *SqlserverImpl) Reuse(containerID string, port int) error {
+	return nil
 }
 
 func (r *SqlserverImpl) Shutdown() error {

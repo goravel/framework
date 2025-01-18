@@ -1,4 +1,4 @@
-package gorm
+package tests
 
 import (
 	"errors"
@@ -6,7 +6,9 @@ import (
 
 	"gorm.io/gorm"
 
-	ormcontract "github.com/goravel/framework/contracts/database/orm"
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/goravel/framework/contracts/database/factory"
+	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/support/carbon"
 )
 
@@ -42,9 +44,13 @@ type User struct {
 	age     int
 }
 
-func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Event) error {
-	return map[ormcontract.EventType]func(ormcontract.Event) error{
-		ormcontract.EventCreating: func(event ormcontract.Event) error {
+func (r *User) Factory() factory.Factory {
+	return &UserFactory{}
+}
+
+func (r *User) DispatchesEvents() map[contractsorm.EventType]func(contractsorm.Event) error {
+	return map[contractsorm.EventType]func(contractsorm.Event) error{
+		contractsorm.EventCreating: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_creating_name" {
@@ -81,7 +87,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventCreated: func(event ormcontract.Event) error {
+		contractsorm.EventCreated: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil {
 				if name.(string) == "event_created_name" {
@@ -111,7 +117,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventSaving: func(event ormcontract.Event) error {
+		contractsorm.EventSaving: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -153,7 +159,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventSaved: func(event ormcontract.Event) error {
+		contractsorm.EventSaved: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -190,7 +196,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventUpdating: func(event ormcontract.Event) error {
+		contractsorm.EventUpdating: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -242,7 +248,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventUpdated: func(event ormcontract.Event) error {
+		contractsorm.EventUpdated: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			switch name.(type) {
 			case string:
@@ -266,7 +272,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventDeleting: func(event ormcontract.Event) error {
+		contractsorm.EventDeleting: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleting_name" {
 				return errors.New("deleting error")
@@ -274,7 +280,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventDeleted: func(event ormcontract.Event) error {
+		contractsorm.EventDeleted: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_deleted_name" {
 				return errors.New("deleted error")
@@ -282,7 +288,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventForceDeleting: func(event ormcontract.Event) error {
+		contractsorm.EventForceDeleting: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleting_name" {
 				return errors.New("force deleting error")
@@ -290,7 +296,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventForceDeleted: func(event ormcontract.Event) error {
+		contractsorm.EventForceDeleted: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_force_deleted_name" {
 				return errors.New("force deleted error")
@@ -298,7 +304,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventRetrieved: func(event ormcontract.Event) error {
+		contractsorm.EventRetrieved: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_retrieved_name" {
 				event.SetAttribute("name", "event_retrieved_name1")
@@ -306,7 +312,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventRestored: func(event ormcontract.Event) error {
+		contractsorm.EventRestored: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_restored_name" {
 				event.SetAttribute("name", "event_restored_name1")
@@ -314,7 +320,7 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 
 			return nil
 		},
-		ormcontract.EventRestoring: func(event ormcontract.Event) error {
+		contractsorm.EventRestoring: func(event contractsorm.Event) error {
 			name := event.GetAttribute("name")
 			if name != nil && name.(string) == "event_restoring_name" {
 				event.SetAttribute("name", "event_restoring_name1")
@@ -325,10 +331,58 @@ func (u *User) DispatchesEvents() map[ormcontract.EventType]func(ormcontract.Eve
 	}
 }
 
+type UserObserver struct{}
+
+func (r *UserObserver) Creating(event contractsorm.Event) error {
+	name := event.GetAttribute("name")
+	if name != nil {
+		if name.(string) == "observer_name" {
+			return errors.New("error")
+		}
+		if name.(string) == "with_context_name" {
+			if avatar := event.Context().Value(testContextKey); avatar != nil {
+				event.SetAttribute("avatar", avatar.(string))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *UserObserver) Created(event contractsorm.Event) error {
+	return nil
+}
+
+func (r *UserObserver) Updated(event contractsorm.Event) error {
+	return nil
+}
+
+func (r *UserObserver) Deleted(event contractsorm.Event) error {
+	return nil
+}
+
+func (r *UserObserver) ForceDeleted(event contractsorm.Event) error {
+	return nil
+}
+
+type UserFactory struct {
+}
+
+func (r *UserFactory) Definition() map[string]any {
+	faker := gofakeit.New(0)
+	return map[string]any{
+		"Name":      faker.Name(),
+		"Avatar":    faker.Email(),
+		"CreatedAt": carbon.NewDateTime(carbon.Now()),
+		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+	}
+}
+
 type Role struct {
 	Model
-	Name  string
-	Users []*User `gorm:"many2many:role_user"`
+	Name   string
+	Avatar string
+	Users  []*User `gorm:"many2many:role_user"`
 }
 
 type Address struct {
@@ -353,6 +407,24 @@ type Author struct {
 	Name   string
 }
 
+func (r *Author) Factory() factory.Factory {
+	return &AuthorFactory{}
+}
+
+type AuthorFactory struct {
+}
+
+func (r *AuthorFactory) Definition() map[string]any {
+	faker := gofakeit.New(0)
+	return map[string]any{
+		"ID":        1,
+		"BookID":    2,
+		"Name":      faker.Name(),
+		"CreatedAt": carbon.NewDateTime(carbon.Now()),
+		"UpdatedAt": carbon.NewDateTime(carbon.Now()),
+	}
+}
+
 type House struct {
 	Model
 	Name          string
@@ -360,7 +432,7 @@ type House struct {
 	HouseableType string
 }
 
-func (h *House) Factory() string {
+func (r *House) Factory() string {
 	return "house"
 }
 
@@ -377,7 +449,7 @@ type Product struct {
 	Name string
 }
 
-func (p *Product) Connection() string {
+func (r *Product) Connection() string {
 	return "sqlite"
 }
 
@@ -397,7 +469,7 @@ type People struct {
 	Body string
 }
 
-func (p *People) Connection() string {
+func (r *People) Connection() string {
 	return "dummy"
 }
 
@@ -407,7 +479,7 @@ type Person struct {
 	Name string
 }
 
-func (p *Person) Connection() string {
+func (r *Person) Connection() string {
 	return "dummy"
 }
 
@@ -417,7 +489,7 @@ type Box struct {
 	Name string
 }
 
-func (p *Box) Connection() string {
+func (r *Box) Connection() string {
 	return "postgres"
 }
 

@@ -5,12 +5,12 @@ import (
 
 	contractsconfig "github.com/goravel/framework/contracts/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
+	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
-	supportdocker "github.com/goravel/framework/support/docker"
 )
 
 type Database struct {
@@ -36,21 +36,22 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 		return nil, errors.ArtisanFacadeNotSet
 	}
 
-	driver := config.GetString(fmt.Sprintf("database.connections.%s.driver", connection))
-	database := config.GetString(fmt.Sprintf("database.connections.%s.database", connection))
-	username := config.GetString(fmt.Sprintf("database.connections.%s.username", connection))
-	password := config.GetString(fmt.Sprintf("database.connections.%s.password", connection))
-	containerManager := supportdocker.NewContainerManager()
-	databaseDriver, err := containerManager.Create(supportdocker.ContainerType(driver), database, username, password)
+	databaseDriverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
+	if !exist {
+		return nil, errors.OrmDatabaseConfigNotFound
+	}
+	databaseDriver, err := databaseDriverCallback()
 	if err != nil {
 		return nil, err
 	}
-	if err = databaseDriver.Ready(); err != nil {
+
+	databaseDocker, err := databaseDriver.Docker()
+	if err != nil {
 		return nil, err
 	}
 
 	return &Database{
-		DatabaseDriver: databaseDriver,
+		DatabaseDriver: databaseDocker,
 		artisan:        artisanFacade,
 		config:         config,
 		connection:     connection,
@@ -58,8 +59,12 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 	}, nil
 }
 
-func (r *Database) Build() error {
-	if err := r.DatabaseDriver.Build(); err != nil {
+func (r *Database) Migrate() error {
+	return r.artisan.Call("migrate")
+}
+
+func (r *Database) Ready() error {
+	if err := r.DatabaseDriver.Ready(); err != nil {
 		return err
 	}
 
@@ -68,10 +73,6 @@ func (r *Database) Build() error {
 	r.orm.Refresh()
 
 	return nil
-}
-
-func (r *Database) Migrate() error {
-	return r.artisan.Call("migrate")
 }
 
 func (r *Database) Seed(seeders ...seeder.Seeder) error {

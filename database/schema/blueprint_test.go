@@ -1,15 +1,13 @@
 package schema
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/schema/constants"
-	"github.com/goravel/framework/database/schema/grammars"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/convert"
@@ -18,15 +16,10 @@ import (
 type BlueprintTestSuite struct {
 	suite.Suite
 	blueprint *Blueprint
-	grammars  map[database.Driver]schema.Grammar
 }
 
 func TestBlueprintTestSuite(t *testing.T) {
-	suite.Run(t, &BlueprintTestSuite{
-		grammars: map[database.Driver]schema.Grammar{
-			database.DriverPostgres: grammars.NewPostgres("goravel_"),
-		},
-	})
+	suite.Run(t, new(BlueprintTestSuite))
 }
 
 func (s *BlueprintTestSuite) SetupTest() {
@@ -116,23 +109,86 @@ func (s *BlueprintTestSuite) TestBigInteger() {
 }
 
 func (s *BlueprintTestSuite) TestBuild() {
-	for _, grammar := range s.grammars {
-		mockQuery := mocksorm.NewQuery(s.T())
+	mockQuery := mocksorm.NewQuery(s.T())
+	mockGrammar := mocksschema.NewGrammar(s.T())
 
-		s.blueprint.Create()
-		s.blueprint.String("name")
+	tests := []struct {
+		name        string
+		setup       func()
+		expectError string
+	}{
+		{
+			name: "Successfully execute single SQL statement",
+			setup: func() {
+				// Create a table with a string column
+				s.blueprint.Create()
+				s.blueprint.String("name")
 
-		sqlStatements := s.blueprint.ToSql(grammar)
-		s.NotEmpty(sqlStatements)
+				// Mock the grammar to return SQL statements
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileCreate(s.blueprint).
+					Return("CREATE TABLE users (name VARCHAR(255))").Once()
 
-		mockQuery.EXPECT().Exec(sqlStatements[0]).Return(nil, nil).Once()
-		s.Nil(s.blueprint.Build(mockQuery, grammar))
+				// Mock successful query execution
+				mockQuery.EXPECT().Exec("CREATE TABLE users (name VARCHAR(255))").
+					Return(nil, nil).Once()
+			},
+		},
+		{
+			name: "Successfully execute multiple SQL statements",
+			setup: func() {
+				// Create a table with multiple columns
+				s.blueprint.Create()
+				s.blueprint.String("name")
+				s.blueprint.Integer("age")
 
-		sqlStatements = s.blueprint.ToSql(grammar)
-		s.NotEmpty(sqlStatements)
+				// Mock the grammar to return multiple SQL statements
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileCreate(s.blueprint).
+					Return("CREATE TABLE users (name VARCHAR(255), age INTEGER)").Once()
 
-		mockQuery.EXPECT().Exec(sqlStatements[0]).Return(nil, errors.New("error")).Once()
-		s.EqualError(s.blueprint.Build(mockQuery, grammar), "error")
+				// Mock successful query execution
+				mockQuery.EXPECT().Exec("CREATE TABLE users (name VARCHAR(255), age INTEGER)").
+					Return(nil, nil).Once()
+			},
+		},
+		{
+			name: "Return error when query execution fails",
+			setup: func() {
+				s.blueprint.Create()
+				s.blueprint.String("name")
+
+				// Mock the grammar to return SQL statements
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileCreate(s.blueprint).
+					Return("CREATE TABLE users (name VARCHAR(255))").Once()
+
+				// Mock failed query execution
+				mockQuery.EXPECT().Exec("CREATE TABLE users (name VARCHAR(255))").
+					Return(nil, assert.AnError).Once()
+			},
+			expectError: assert.AnError.Error(),
+		},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			// Reset blueprint for each test
+			s.SetupTest()
+
+			// Setup test case
+			test.setup()
+
+			// Execute Build
+			err := s.blueprint.Build(mockQuery, mockGrammar)
+
+			// Verify results
+			if test.expectError == "" {
+				s.Nil(err)
+			} else {
+				s.EqualError(err, test.expectError)
+			}
+		})
 	}
 }
 
@@ -367,34 +423,241 @@ func (s *BlueprintTestSuite) TestTinyInteger() {
 }
 
 func (s *BlueprintTestSuite) TestToSql() {
-	for driver, grammar := range s.grammars {
-		// Create a table
-		s.blueprint.Create()
-		s.blueprint.String("name").Comment("comment")
+	mockGrammar := mocksschema.NewGrammar(s.T())
 
-		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(grammar), 2)
-		} else {
-			s.Empty(s.blueprint.ToSql(grammar))
-		}
+	tests := []struct {
+		name        string
+		setup       func()
+		expectedSQL []string
+	}{
+		{
+			name: "Add command with change",
+			setup: func() {
+				s.blueprint.String("name").Change()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileChange(s.blueprint, s.blueprint.commands[0]).
+					Return([]string{"ALTER TABLE users MODIFY name VARCHAR(255)"}).Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users MODIFY name VARCHAR(255)"},
+		},
+		{
+			name: "Add command without change",
+			setup: func() {
+				s.blueprint.String("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileAdd(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users ADD name VARCHAR(255)").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users ADD name VARCHAR(255)"},
+		},
+		{
+			name: "Comment command",
+			setup: func() {
+				s.blueprint.String("name").Comment("test comment")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"comment"}).Once()
+				mockGrammar.EXPECT().CompileAdd(s.blueprint, s.blueprint.commands[0]).
+					Return("sql1").Once()
+				mockGrammar.EXPECT().CompileComment(s.blueprint, &schema.Command{
+					Column: s.blueprint.columns[0],
+					Name:   constants.CommandComment,
+				}).Return("sql2").Once()
+			},
+			expectedSQL: []string{"sql1", "sql2"},
+		},
+		{
+			name: "Default command",
+			setup: func() {
+				s.blueprint.String("name").Default("test")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{"default"}).Once()
+				mockGrammar.EXPECT().CompileAdd(s.blueprint, s.blueprint.commands[0]).
+					Return("sql1").Once()
+				mockGrammar.EXPECT().CompileDefault(s.blueprint, &schema.Command{
+					Column: s.blueprint.columns[0],
+					Name:   constants.CommandDefault,
+				}).Return("sql2").Once()
+			},
+			expectedSQL: []string{"sql1", "sql2"},
+		},
+		{
+			name: "Drop command",
+			setup: func() {
+				s.blueprint.Drop()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDrop(s.blueprint).
+					Return("DROP TABLE users").Once()
+			},
+			expectedSQL: []string{"DROP TABLE users"},
+		},
+		{
+			name: "Drop column command",
+			setup: func() {
+				s.blueprint.DropColumn("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropColumn(s.blueprint, s.blueprint.commands[0]).
+					Return([]string{"ALTER TABLE users DROP COLUMN name"}).Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users DROP COLUMN name"},
+		},
+		{
+			name: "Drop foreign command",
+			setup: func() {
+				s.blueprint.DropForeign("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropForeign(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users DROP FOREIGN KEY name").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users DROP FOREIGN KEY name"},
+		},
+		{
+			name: "Drop full text command",
+			setup: func() {
+				s.blueprint.DropFullText("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropFullText(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users DROP FULLTEXT INDEX name").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users DROP FULLTEXT INDEX name"},
+		},
+		{
+			name: "Drop if exists command",
+			setup: func() {
+				s.blueprint.DropIfExists()
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropIfExists(s.blueprint).
+					Return("DROP TABLE IF EXISTS users").Once()
+			},
+			expectedSQL: []string{"DROP TABLE IF EXISTS users"},
+		},
+		{
+			name: "Drop index command",
+			setup: func() {
+				s.blueprint.DropIndex("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropIndex(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users DROP INDEX name").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users DROP INDEX name"},
+		},
+		{
+			name: "Drop primary command",
+			setup: func() {
+				s.blueprint.DropPrimary("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropPrimary(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users DROP PRIMARY KEY name").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users DROP PRIMARY KEY name"},
+		},
+		{
+			name: "Drop unique command",
+			setup: func() {
+				s.blueprint.DropUnique("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileDropUnique(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users DROP UNIQUE name").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users DROP UNIQUE name"},
+		},
+		{
+			name: "Foreign key command",
+			setup: func() {
+				s.blueprint.Foreign("user_id").References("id").On("users")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileForeign(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id)").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users ADD CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id)"},
+		},
+		{
+			name: "Index command",
+			setup: func() {
+				s.blueprint.Index("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileIndex(s.blueprint, s.blueprint.commands[0]).
+					Return("CREATE INDEX goravel_users_name_index ON users (name)").Once()
+			},
+			expectedSQL: []string{"CREATE INDEX goravel_users_name_index ON users (name)"},
+		},
+		{
+			name: "Primary key command",
+			setup: func() {
+				s.blueprint.Primary("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompilePrimary(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users ADD PRIMARY KEY (name)").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users ADD PRIMARY KEY (name)"},
+		},
+		{
+			name: "Rename command",
+			setup: func() {
+				s.blueprint.Rename("new_users")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileRename(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users RENAME TO new_users").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users RENAME TO new_users"},
+		},
+		{
+			name: "Rename index command",
+			setup: func() {
+				s.blueprint.RenameIndex("old_index", "new_index")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileRenameIndex(s.blueprint.schema, s.blueprint, s.blueprint.commands[0]).
+					Return([]string{"ALTER INDEX old_index RENAME TO new_index"}).Once()
+			},
+			expectedSQL: []string{"ALTER INDEX old_index RENAME TO new_index"},
+		},
+		{
+			name: "Unique command",
+			setup: func() {
+				s.blueprint.Unique("name")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileUnique(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users ADD CONSTRAINT unique_name UNIQUE (name)").Once()
+			},
+			expectedSQL: []string{"ALTER TABLE users ADD CONSTRAINT unique_name UNIQUE (name)"},
+		},
+		{
+			name: "Multiple commands",
+			setup: func() {
+				s.blueprint.String("name")
+				s.blueprint.Primary("id")
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+				mockGrammar.EXPECT().CompileAdd(s.blueprint, s.blueprint.commands[0]).
+					Return("ALTER TABLE users ADD name VARCHAR(255)").Once()
+				mockGrammar.EXPECT().CompilePrimary(s.blueprint, s.blueprint.commands[1]).
+					Return("ALTER TABLE users ADD PRIMARY KEY (id)").Once()
+			},
+			expectedSQL: []string{
+				"ALTER TABLE users ADD name VARCHAR(255)",
+				"ALTER TABLE users ADD PRIMARY KEY (id)",
+			},
+		},
+		{
+			name: "Skip command",
+			setup: func() {
+				s.blueprint.Create()
+				s.blueprint.commands[0].ShouldBeSkipped = true
+				mockGrammar.EXPECT().GetAttributeCommands().Return([]string{}).Once()
+			},
+		},
+	}
 
-		// Update a table
-		s.SetupTest()
-		s.blueprint.String("avatar")
-		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(grammar), 1)
-		} else {
-			s.Empty(s.blueprint.ToSql(grammar))
-		}
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			// Reset blueprint for each test
+			s.SetupTest()
 
-		// Change column
-		s.SetupTest()
-		s.blueprint.String("name", 100).Change()
-		if driver == database.DriverPostgres {
-			s.Len(s.blueprint.ToSql(grammar), 2)
-		} else {
-			s.Empty(s.blueprint.ToSql(grammar))
-		}
+			// Setup test case
+			test.setup()
+
+			// Execute ToSql
+			statements := s.blueprint.ToSql(mockGrammar)
+
+			// Verify results
+			s.Equal(test.expectedSQL, statements)
+		})
 	}
 }
 

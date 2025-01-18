@@ -6,7 +6,6 @@ import (
 	"github.com/glebarez/sqlite"
 	gormio "gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/support/file"
 )
@@ -44,8 +43,8 @@ func (r *SqliteImpl) Database(name string) (testing.DatabaseDriver, error) {
 	return sqliteImpl, nil
 }
 
-func (r *SqliteImpl) Driver() database.Driver {
-	return database.DriverSqlite
+func (r *SqliteImpl) Driver() string {
+	return "sqlite"
 }
 
 func (r *SqliteImpl) Fresh() error {
@@ -67,6 +66,10 @@ func (r *SqliteImpl) Ready() error {
 	_, err := r.connect()
 
 	return err
+}
+
+func (r *SqliteImpl) Reuse(containerID string, port int) error {
+	return nil
 }
 
 func (r *SqliteImpl) Shutdown() error {

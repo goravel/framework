@@ -271,6 +271,63 @@ func (_c *DriverSchema_GetIndexes_Call) RunAndReturn(run func(string) ([]schema.
 	return _c
 }
 
+// GetTables provides a mock function with no fields
+func (_m *DriverSchema) GetTables() ([]schema.Table, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTables")
+	}
+
+	var r0 []schema.Table
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]schema.Table, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []schema.Table); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.Table)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DriverSchema_GetTables_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTables'
+type DriverSchema_GetTables_Call struct {
+	*mock.Call
+}
+
+// GetTables is a helper method to define mock.On call
+func (_e *DriverSchema_Expecter) GetTables() *DriverSchema_GetTables_Call {
+	return &DriverSchema_GetTables_Call{Call: _e.mock.On("GetTables")}
+}
+
+func (_c *DriverSchema_GetTables_Call) Run(run func()) *DriverSchema_GetTables_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *DriverSchema_GetTables_Call) Return(_a0 []schema.Table, _a1 error) *DriverSchema_GetTables_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DriverSchema_GetTables_Call) RunAndReturn(run func() ([]schema.Table, error)) *DriverSchema_GetTables_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetTypes provides a mock function with no fields
 func (_m *DriverSchema) GetTypes() ([]schema.Type, error) {
 	ret := _m.Called()
@@ -324,6 +381,63 @@ func (_c *DriverSchema_GetTypes_Call) Return(_a0 []schema.Type, _a1 error) *Driv
 }
 
 func (_c *DriverSchema_GetTypes_Call) RunAndReturn(run func() ([]schema.Type, error)) *DriverSchema_GetTypes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetViews provides a mock function with no fields
+func (_m *DriverSchema) GetViews() ([]schema.View, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetViews")
+	}
+
+	var r0 []schema.View
+	var r1 error
+	if rf, ok := ret.Get(0).(func() ([]schema.View, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() []schema.View); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]schema.View)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DriverSchema_GetViews_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetViews'
+type DriverSchema_GetViews_Call struct {
+	*mock.Call
+}
+
+// GetViews is a helper method to define mock.On call
+func (_e *DriverSchema_Expecter) GetViews() *DriverSchema_GetViews_Call {
+	return &DriverSchema_GetViews_Call{Call: _e.mock.On("GetViews")}
+}
+
+func (_c *DriverSchema_GetViews_Call) Run(run func()) *DriverSchema_GetViews_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *DriverSchema_GetViews_Call) Return(_a0 []schema.View, _a1 error) *DriverSchema_GetViews_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *DriverSchema_GetViews_Call) RunAndReturn(run func() ([]schema.View, error)) *DriverSchema_GetViews_Call {
 	_c.Call.Return(run)
 	return _c
 }
