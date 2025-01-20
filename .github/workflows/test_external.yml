@@ -1,4 +1,4 @@
-name: Test
+name: Test External
 on:
   workflow_call:
 jobs:
