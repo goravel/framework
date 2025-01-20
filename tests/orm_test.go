@@ -26,6 +26,7 @@ func TestOrmSuite(t *testing.T) {
 
 func (s *OrmSuite) SetupSuite() {
 	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery.CreateTable(TestTableRoles)
 	s.queries[postgresTestQuery.Driver().Config().Connection] = postgresTestQuery
 	s.defaultDriver = postgresTestQuery.Driver().Config().Driver
 }

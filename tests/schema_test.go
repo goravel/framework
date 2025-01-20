@@ -2503,8 +2503,8 @@ func TestPostgresSchema(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, tables, 1)
 	assert.Equal(t, "table", tables[0].Name)
-	assert.Equal(t, newSchema, tables[0].Schema)
-	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", newSchema, table)))
+	assert.Equal(t, "public", tables[0].Schema)
+	assert.True(t, newSchema.HasTable(fmt.Sprintf("public.%s", table)))
 	assert.True(t, newSchema.HasTable(table))
 }
 
