@@ -106,34 +106,34 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 
 func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string, err error) {
 	var (
-		drivers = map[database.Driver]struct {
+		drivers = map[string]struct {
 			name                 string
 			versionQuery         string
 			openConnectionsQuery string
 		}{
-			database.DriverSqlite: {
+			database.DriverSqlite.String(): {
 				name:         "SQLite",
 				versionQuery: "SELECT sqlite_version() AS value;",
 			},
-			database.DriverMysql: {
+			database.DriverMysql.String(): {
 				name:                 "MySQL",
 				versionQuery:         "SELECT VERSION() AS value;",
 				openConnectionsQuery: "SHOW status WHERE variable_name = 'threads_connected';",
 			},
-			database.DriverPostgres: {
+			database.DriverPostgres.String(): {
 				name:                 "PostgresSQL",
 				versionQuery:         "SELECT current_setting('server_version') AS value;",
 				openConnectionsQuery: "SELECT COUNT(*) AS value FROM pg_stat_activity;",
 			},
-			database.DriverSqlserver: {
+			database.DriverSqlserver.String(): {
 				name:                 "SQL Server",
 				versionQuery:         "SELECT SERVERPROPERTY('productversion') AS value;",
 				openConnectionsQuery: "SELECT COUNT(*) Value FROM sys.dm_exec_sessions WHERE status = 'running';",
 			},
 		}
 	)
-	name = string(r.schema.Orm().Query().Driver())
-	if driver, ok := drivers[r.schema.Orm().Query().Driver()]; ok {
+	name = r.schema.Orm().Query().Driver()
+	if driver, ok := drivers[name]; ok {
 		name = driver.name
 		var versionResult queryResult
 		if err = r.schema.Orm().Query().Raw(driver.versionQuery).Scan(&versionResult); err == nil {

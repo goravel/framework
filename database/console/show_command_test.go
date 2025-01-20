@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -65,7 +64,7 @@ func TestShowCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
+				mockQuery.EXPECT().Driver().Return("mysql").Twice()
 				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
 				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
 				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
@@ -86,7 +85,7 @@ func TestShowCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
+				mockQuery.EXPECT().Driver().Return("mysql").Twice()
 				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
 				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
 				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
@@ -109,7 +108,7 @@ func TestShowCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
+				mockQuery.EXPECT().Driver().Return("mysql").Twice()
 				mockOrm.EXPECT().Query().Return(mockQuery).Times(5)
 				mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
 				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/database/schema/constants"
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksschema "github.com/goravel/framework/mocks/database/schema"
 	"github.com/goravel/framework/support/convert"
@@ -195,7 +194,7 @@ func (s *BlueprintTestSuite) TestBuild() {
 func (s *BlueprintTestSuite) TestChar() {
 	column := "name"
 	customLength := 100
-	length := constants.DefaultStringLength
+	length := DefaultStringLength
 	ttype := "char"
 	s.blueprint.Char(column)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
@@ -269,9 +268,9 @@ func (s *BlueprintTestSuite) TestGetAddedColumns() {
 }
 
 func (s *BlueprintTestSuite) TestHasCommand() {
-	s.False(s.blueprint.HasCommand(constants.CommandCreate))
+	s.False(s.blueprint.HasCommand(CommandCreate))
 	s.blueprint.Create()
-	s.True(s.blueprint.HasCommand(constants.CommandCreate))
+	s.True(s.blueprint.HasCommand(CommandCreate))
 }
 
 func (s *BlueprintTestSuite) TestIntegerIncrements() {
@@ -309,7 +308,7 @@ func (s *BlueprintTestSuite) TestIsCreate() {
 	s.False(s.blueprint.isCreate())
 	s.blueprint.commands = []*schema.Command{
 		{
-			Name: constants.CommandCreate,
+			Name: CommandCreate,
 		},
 	}
 	s.True(s.blueprint.isCreate())
@@ -385,7 +384,7 @@ func (s *BlueprintTestSuite) TestSmallInteger() {
 func (s *BlueprintTestSuite) TestString() {
 	column := "name"
 	customLength := 100
-	length := constants.DefaultStringLength
+	length := DefaultStringLength
 	ttype := "string"
 	s.blueprint.String(column)
 	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
@@ -459,7 +458,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 					Return("sql1").Once()
 				mockGrammar.EXPECT().CompileComment(s.blueprint, &schema.Command{
 					Column: s.blueprint.columns[0],
-					Name:   constants.CommandComment,
+					Name:   CommandComment,
 				}).Return("sql2").Once()
 			},
 			expectedSQL: []string{"sql1", "sql2"},
@@ -473,7 +472,7 @@ func (s *BlueprintTestSuite) TestToSql() {
 					Return("sql1").Once()
 				mockGrammar.EXPECT().CompileDefault(s.blueprint, &schema.Command{
 					Column: s.blueprint.columns[0],
-					Name:   constants.CommandDefault,
+					Name:   CommandDefault,
 				}).Return("sql2").Once()
 			},
 			expectedSQL: []string{"sql1", "sql2"},
