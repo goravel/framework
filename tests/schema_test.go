@@ -6,14 +6,13 @@ import (
 	"testing"
 	"time"
 
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	databaseschema "github.com/goravel/framework/database/schema"
+	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/postgres"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-
-	contractsschema "github.com/goravel/framework/contracts/database/schema"
-	"github.com/goravel/framework/database/schema/constants"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/postgres"
 )
 
 type SchemaSuite struct {
@@ -50,14 +49,14 @@ func (s *SchemaSuite) TestColumnChange() {
 		s.Run(driver, func() {
 			schema := newSchema(testQuery, s.driverToTestQuery)
 			table := "column_change"
-			expectedDefaultStringLength := constants.DefaultStringLength
+			expectedDefaultStringLength := databaseschema.DefaultStringLength
 			customStringLength := 100
 			expectedCustomStringLength := customStringLength
 			expectedColumnType := "text"
 
 			// TODO Replace with sqlserver.Name
 			if driver == "sqlserver" {
-				expectedDefaultStringLength = constants.DefaultStringLength * 2
+				expectedDefaultStringLength = databaseschema.DefaultStringLength * 2
 				expectedCustomStringLength = customStringLength * 2
 				expectedColumnType = "nvarchar"
 			}
