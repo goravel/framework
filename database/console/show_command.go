@@ -134,7 +134,6 @@ func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string, 
 	)
 	name = r.schema.Orm().Query().Driver()
 	if driver, ok := drivers[name]; ok {
-		name = driver.name
 		var versionResult queryResult
 		if err = r.schema.Orm().Query().Raw(driver.versionQuery).Scan(&versionResult); err == nil {
 			version = versionResult.Value
