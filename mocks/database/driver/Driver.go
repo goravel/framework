@@ -4,6 +4,7 @@ package driver
 
 import (
 	database "github.com/goravel/framework/contracts/database"
+	driver "github.com/goravel/framework/contracts/database/driver"
 
 	gorm "gorm.io/gorm"
 
@@ -132,7 +133,7 @@ func (_c *Driver_Docker_Call) RunAndReturn(run func() (testing.DatabaseDriver, e
 }
 
 // Gorm provides a mock function with no fields
-func (_m *Driver) Gorm() (*gorm.DB, error) {
+func (_m *Driver) Gorm() (*gorm.DB, driver.GormQuery, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
@@ -140,8 +141,9 @@ func (_m *Driver) Gorm() (*gorm.DB, error) {
 	}
 
 	var r0 *gorm.DB
-	var r1 error
-	if rf, ok := ret.Get(0).(func() (*gorm.DB, error)); ok {
+	var r1 driver.GormQuery
+	var r2 error
+	if rf, ok := ret.Get(0).(func() (*gorm.DB, driver.GormQuery, error)); ok {
 		return rf()
 	}
 	if rf, ok := ret.Get(0).(func() *gorm.DB); ok {
@@ -152,13 +154,21 @@ func (_m *Driver) Gorm() (*gorm.DB, error) {
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
+	if rf, ok := ret.Get(1).(func() driver.GormQuery); ok {
 		r1 = rf()
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(driver.GormQuery)
+		}
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func() error); ok {
+		r2 = rf()
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // Driver_Gorm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Gorm'
@@ -178,12 +188,12 @@ func (_c *Driver_Gorm_Call) Run(run func()) *Driver_Gorm_Call {
 	return _c
 }
 
-func (_c *Driver_Gorm_Call) Return(_a0 *gorm.DB, _a1 error) *Driver_Gorm_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *Driver_Gorm_Call) Return(_a0 *gorm.DB, _a1 driver.GormQuery, _a2 error) *Driver_Gorm_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *Driver_Gorm_Call) RunAndReturn(run func() (*gorm.DB, error)) *Driver_Gorm_Call {
+func (_c *Driver_Gorm_Call) RunAndReturn(run func() (*gorm.DB, driver.GormQuery, error)) *Driver_Gorm_Call {
 	_c.Call.Return(run)
 	return _c
 }
