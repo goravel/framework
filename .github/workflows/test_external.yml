@@ -1,6 +1,9 @@
 name: Test External
 on:
-  workflow_call:
+  push:
+    branches:
+      - master
+  pull_request:
 jobs:
   ubuntu:
     strategy:

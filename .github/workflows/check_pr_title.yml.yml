@@ -1,7 +1,8 @@
-name: PR Check Title
+name: Check PR Title
 on:
   pull_request:
 jobs:
   check:
     uses: goravel/.github/.github/workflows/check_pr_title.yml@master
     secrets: inherit
+    
