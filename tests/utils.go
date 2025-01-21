@@ -39,13 +39,12 @@ func postgresTestQuery(prefix string, singular bool) *TestQuery {
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
 	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
 	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
-
 	mockConfig.EXPECT().Get("database.connections.postgres.read").Return(nil)
 	mockConfig.EXPECT().Get("database.connections.postgres.write").Return(nil)
-	mockConfig.EXPECT().GetString("database.connections.postgres.host").Return("localhost")
+	mockConfig.EXPECT().GetString("database.connections.postgres.host").Return(postgresContainer.Config().Host)
 	mockConfig.EXPECT().GetInt("database.connections.postgres.port").Return(postgresContainer.Config().Port)
-	mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(testUsername)
-	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(testPassword)
+	mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(postgresContainer.Config().Username)
+	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(postgresContainer.Config().Password)
 	mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(postgresContainer.Config().Database)
 	mockConfig.EXPECT().GetString("database.connections.postgres.sslmode").Return("disable")
 	mockConfig.EXPECT().GetString("database.connections.postgres.timezone").Return("UTC")
@@ -56,7 +55,7 @@ func postgresTestQuery(prefix string, singular bool) *TestQuery {
 	mockConfig.EXPECT().GetString("database.connections.postgres.schema", "public").Return("public")
 	mockConfig.EXPECT().Get("database.connections.postgres.name_replacer").Return(nil)
 	mockConfig.EXPECT().Get("database.connections.postgres.via").Return(func() (driver.Driver, error) {
-		return nil, nil
+		return postgres.NewPostgres(mockConfig, utils.NewTestLog(), "postgres"), nil
 	})
 
 	mockConfig.EXPECT().Add("database.connections.postgres.schema", testSchema)
@@ -67,8 +66,6 @@ func postgresTestQuery(prefix string, singular bool) *TestQuery {
 	if err != nil {
 		panic(err)
 	}
-
-	testQuery.CreateTable()
 
 	return testQuery
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -65,9 +64,9 @@ func TestShowCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
-				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+				mockOrm.EXPECT().Query().Return(mockQuery).Times(3)
+				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
+				mockQuery.EXPECT().Driver().Return("mysql").Once()
 				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
 				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
 				mockQuery.EXPECT().Scan(&queryResult{}).Return(nil).Twice()
@@ -86,9 +85,9 @@ func TestShowCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
-				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+				mockOrm.EXPECT().Query().Return(mockQuery).Times(3)
+				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
+				mockQuery.EXPECT().Driver().Return("mysql").Once()
 				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
 				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
 				mockQuery.EXPECT().Scan(&queryResult{}).Return(nil).Twice()
@@ -109,9 +108,9 @@ func TestShowCommand(t *testing.T) {
 				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
 				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
-				mockOrm.EXPECT().Query().Return(mockQuery).Times(5)
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
+				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
+				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
+				mockQuery.EXPECT().Driver().Return("mysql").Once()
 				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
 				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
 				mockQuery.EXPECT().Scan(&queryResult{}).Run(func(dest interface{}) {

@@ -6,12 +6,11 @@ import (
 	"slices"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database"
-	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/testing/utils"
+	"github.com/goravel/postgres"
 )
 
 type TestQuery struct {
@@ -21,7 +20,7 @@ type TestQuery struct {
 }
 
 func NewTestQuery(ctx context.Context, driver driver.Driver, config config.Config) (*TestQuery, error) {
-	db, err := driver.Gorm()
+	db, gormQuery, err := driver.Gorm()
 	if err != nil {
 		return nil, err
 	}
@@ -29,14 +28,14 @@ func NewTestQuery(ctx context.Context, driver driver.Driver, config config.Confi
 	testQuery := &TestQuery{
 		config: config,
 		driver: driver,
-		query:  gorm.NewQuery(ctx, config, driver.Config(), db, utils.NewTestLog(), nil, nil),
+		query:  gorm.NewQuery(ctx, config, driver.Config(), db, gormQuery, utils.NewTestLog(), nil, nil),
 	}
 
 	return testQuery, nil
 }
 
 func (r *TestQuery) CreateTable(testTables ...TestTable) {
-	driverName := database.Driver(r.driver.Config().Driver)
+	driverName := r.driver.Config().Driver
 
 	for table, sql := range newTestTables(driverName).All() {
 		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
@@ -60,7 +59,8 @@ func (r *TestQuery) Query() orm.Query {
 }
 
 func (r *TestQuery) WithSchema(schema string) {
-	if r.driver.Config().Driver != contractsdatabase.DriverPostgres.String() && r.driver.Config().Driver != contractsdatabase.DriverSqlserver.String() {
+	// TODO: Add Sqlserver
+	if r.driver.Config().Driver != postgres.Name {
 		panic(fmt.Sprintf("%s does not support schema", r.driver.Config().Driver))
 	}
 
@@ -68,7 +68,8 @@ func (r *TestQuery) WithSchema(schema string) {
 		panic(fmt.Sprintf("create schema %s failed: %v", schema, err))
 	}
 
-	if r.driver.Config().Driver == contractsdatabase.DriverSqlserver.String() {
+	// TODO Replace with sqlserver.Name
+	if r.driver.Config().Driver == "sqlserver" {
 		return
 	}
 

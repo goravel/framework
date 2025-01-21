@@ -1,9 +1,5 @@
 package tests
 
-import (
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-)
-
 type TestTable int
 
 const (
@@ -23,10 +19,10 @@ const (
 )
 
 type testTables struct {
-	driver contractsdatabase.Driver
+	driver string
 }
 
-func newTestTables(driver contractsdatabase.Driver) *testTables {
+func newTestTables(driver string) *testTables {
 	return &testTables{driver: driver}
 }
 
@@ -50,7 +46,8 @@ func (r *testTables) All() map[TestTable]func() string {
 
 func (r *testTables) peoples() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE peoples (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -63,7 +60,7 @@ CREATE TABLE peoples (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE peoples (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -73,7 +70,8 @@ CREATE TABLE peoples (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE peoples (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -83,7 +81,8 @@ CREATE TABLE peoples (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE peoples (
   id bigint NOT NULL IDENTITY(1,1),
@@ -101,7 +100,8 @@ CREATE TABLE peoples (
 
 func (r *testTables) reviews() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE reviews (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -114,7 +114,7 @@ CREATE TABLE reviews (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE reviews (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -124,7 +124,8 @@ CREATE TABLE reviews (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE reviews (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -134,7 +135,8 @@ CREATE TABLE reviews (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE reviews (
   id bigint NOT NULL IDENTITY(1,1),
@@ -152,7 +154,8 @@ CREATE TABLE reviews (
 
 func (r *testTables) products() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE products (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -165,7 +168,7 @@ CREATE TABLE products (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE products (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -175,7 +178,8 @@ CREATE TABLE products (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE products (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -185,7 +189,8 @@ CREATE TABLE products (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE products (
   id bigint NOT NULL IDENTITY(1,1),
@@ -203,7 +208,8 @@ CREATE TABLE products (
 
 func (r *testTables) users() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE users (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -218,7 +224,7 @@ CREATE TABLE users (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE users (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -230,7 +236,8 @@ CREATE TABLE users (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -242,7 +249,8 @@ CREATE TABLE users (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE users (
   id bigint NOT NULL IDENTITY(1,1),
@@ -262,7 +270,8 @@ CREATE TABLE users (
 
 func (r *testTables) goravelUser() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE goravel_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -277,7 +286,7 @@ CREATE TABLE goravel_user (
   KEY idx_users_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE goravel_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -289,7 +298,8 @@ CREATE TABLE goravel_user (
   deleted_at timestamp DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE goravel_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -301,7 +311,8 @@ CREATE TABLE goravel_user (
   deleted_at datetime DEFAULT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE goravel_user (
   id bigint NOT NULL IDENTITY(1,1),
@@ -321,7 +332,8 @@ CREATE TABLE goravel_user (
 
 func (r *testTables) addresses() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE addresses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -335,7 +347,7 @@ CREATE TABLE addresses (
   KEY idx_addresses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE addresses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -346,7 +358,8 @@ CREATE TABLE addresses (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE addresses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -357,7 +370,8 @@ CREATE TABLE addresses (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE addresses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -376,7 +390,8 @@ CREATE TABLE addresses (
 
 func (r *testTables) books() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE books (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -389,7 +404,7 @@ CREATE TABLE books (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE books (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -399,7 +414,8 @@ CREATE TABLE books (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE books (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -409,7 +425,8 @@ CREATE TABLE books (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE books (
   id bigint NOT NULL IDENTITY(1,1),
@@ -427,7 +444,8 @@ CREATE TABLE books (
 
 func (r *testTables) authors() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE authors (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -440,7 +458,7 @@ CREATE TABLE authors (
   KEY idx_books_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE authors (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -450,7 +468,8 @@ CREATE TABLE authors (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE authors (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -460,7 +479,8 @@ CREATE TABLE authors (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE authors (
   id bigint NOT NULL IDENTITY(1,1),
@@ -478,7 +498,8 @@ CREATE TABLE authors (
 
 func (r *testTables) roles() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE roles (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -491,7 +512,7 @@ CREATE TABLE roles (
   KEY idx_roles_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -501,7 +522,8 @@ CREATE TABLE roles (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE roles (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -511,7 +533,8 @@ CREATE TABLE roles (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE roles (
   id bigint NOT NULL IDENTITY(1,1),
@@ -529,7 +552,8 @@ CREATE TABLE roles (
 
 func (r *testTables) houses() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE houses (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -543,7 +567,7 @@ CREATE TABLE houses (
   KEY idx_houses_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE houses (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -554,7 +578,8 @@ CREATE TABLE houses (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE houses (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -565,7 +590,8 @@ CREATE TABLE houses (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE houses (
   id bigint NOT NULL IDENTITY(1,1),
@@ -584,7 +610,8 @@ CREATE TABLE houses (
 
 func (r *testTables) phones() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE phones (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -598,7 +625,7 @@ CREATE TABLE phones (
   KEY idx_phones_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE phones (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -609,7 +636,8 @@ CREATE TABLE phones (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE phones (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -620,7 +648,8 @@ CREATE TABLE phones (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE phones (
   id bigint NOT NULL IDENTITY(1,1),
@@ -639,7 +668,8 @@ CREATE TABLE phones (
 
 func (r *testTables) roleUser() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE role_user (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -648,7 +678,7 @@ CREATE TABLE role_user (
   PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE role_user (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -656,7 +686,8 @@ CREATE TABLE role_user (
   user_id int NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE role_user (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -664,7 +695,8 @@ CREATE TABLE role_user (
   user_id int NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE role_user (
   id bigint NOT NULL IDENTITY(1,1),
@@ -680,7 +712,8 @@ CREATE TABLE role_user (
 
 func (r *testTables) schema() string {
 	switch r.driver {
-	case contractsdatabase.DriverMysql:
+	// TODO Replace with mysql.Name
+	case "mysql":
 		return `
 CREATE TABLE goravel.schemas (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -692,7 +725,7 @@ CREATE TABLE goravel.schemas (
   KEY idx_schemas_updated_at (updated_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 `
-	case contractsdatabase.DriverPostgres:
+	case "postgres":
 		return `
 CREATE TABLE goravel.schemas (
   id SERIAL PRIMARY KEY NOT NULL,
@@ -701,7 +734,8 @@ CREATE TABLE goravel.schemas (
   updated_at timestamp NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlite:
+	// TODO Replace with sqlite.Name
+	case "sqlite":
 		return `
 CREATE TABLE goravel.schemas (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -710,7 +744,8 @@ CREATE TABLE goravel.schemas (
   updated_at datetime NOT NULL
 );
 `
-	case contractsdatabase.DriverSqlserver:
+	// TODO Replace with sqlserver.Name
+	case "sqlserver":
 		return `
 CREATE TABLE goravel.schemas (
   id bigint NOT NULL IDENTITY(1,1),

@@ -4,10 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	contractstesting "github.com/goravel/framework/contracts/testing"
-	mockstesting "github.com/goravel/framework/mocks/testing"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	contractstesting "github.com/goravel/framework/contracts/testing"
+	mockstesting "github.com/goravel/framework/mocks/testing"
 )
 
 type ContainerTestSuite struct {
