@@ -11,28 +11,6 @@ import (
 	"github.com/goravel/framework/errors"
 )
 
-// Option represents an option for FilePutContents
-type Option func(*fileOptions)
-
-type fileOptions struct {
-	mode   os.FileMode
-	append bool
-}
-
-// WithMode sets the file mode for FilePutContents
-func WithMode(mode os.FileMode) Option {
-	return func(opts *fileOptions) {
-		opts.mode = mode
-	}
-}
-
-// WithAppend sets the append mode for FilePutContents
-func WithAppend(append bool) Option {
-	return func(opts *fileOptions) {
-		opts.append = append
-	}
-}
-
 func ClientOriginalExtension(file string) string {
 	return strings.ReplaceAll(filepath.Ext(file), ".", "")
 }
@@ -95,6 +73,16 @@ func Extension(file string, originalWhenUnknown ...bool) (string, error) {
 	return strings.TrimPrefix(mtype.Extension(), "."), nil
 }
 
+func GetContent(file string) (string, error) {
+	// Read the entire file
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
 func LastModified(file, timezone string) (time.Time, error) {
 	fileInfo, err := os.Stat(file)
 	if err != nil {
@@ -118,47 +106,9 @@ func MimeType(file string) (string, error) {
 	return mtype.String(), nil
 }
 
-func Remove(file string) error {
-	_, err := os.Stat(file)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-
-		return err
-	}
-
-	return os.RemoveAll(file)
-}
-
-func Size(file string) (int64, error) {
-	fileInfo, err := os.Open(file)
-	if err != nil {
-		return 0, err
-	}
-	defer fileInfo.Close()
-
-	fi, err := fileInfo.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	return fi.Size(), nil
-}
-
-func GetContent(file string) (string, error) {
-	// Read the entire file
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return "", err
-	}
-
-	return string(data), nil
-}
-
 func PutContent(file string, content string, options ...Option) error {
 	// Default options
-	opts := &fileOptions{
+	opts := &option{
 		mode:   os.ModePerm,
 		append: false,
 	}
@@ -194,4 +144,32 @@ func PutContent(file string, content string, options ...Option) error {
 	}
 
 	return nil
+}
+
+func Remove(file string) error {
+	_, err := os.Stat(file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return err
+	}
+
+	return os.RemoveAll(file)
+}
+
+func Size(file string) (int64, error) {
+	fileInfo, err := os.Open(file)
+	if err != nil {
+		return 0, err
+	}
+	defer fileInfo.Close()
+
+	fi, err := fileInfo.Stat()
+	if err != nil {
+		return 0, err
+	}
+
+	return fi.Size(), nil
 }

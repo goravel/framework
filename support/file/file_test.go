@@ -75,16 +75,22 @@ func TestGetContent(t *testing.T) {
 }
 
 func TestPutContent(t *testing.T) {
+	// directory creation failure
+	assert.Error(t, PutContent("/proc/invalid/file.txt", "content"))
+	// write failure (create read-only dir)
+	readOnlyDir := path.Join(t.TempDir(), "readonly")
+	assert.NoError(t, os.Mkdir(readOnlyDir, 0444))
+	assert.Error(t, PutContent(path.Join(readOnlyDir, "file.txt"), "content"))
+	// create a file and put content
 	filePath := path.Join(t.TempDir(), "goravel.txt")
-	// Create a file and put content
 	assert.NoError(t, PutContent(filePath, "goravel"))
 	assert.True(t, Contain(filePath, "goravel"))
 	assert.Equal(t, 1, file.GetLineNum(filePath))
-	// Append content
+	// append content
 	assert.NoError(t, PutContent(filePath, "\nframework", WithAppend(true)))
 	assert.True(t, Contain(filePath, "goravel\nframework"))
 	assert.Equal(t, 2, file.GetLineNum(filePath))
-	// Overwrite content
+	// overwrite content
 	assert.NoError(t, PutContent(filePath, "welcome", WithMode(0644)))
 	assert.False(t, Contain(filePath, "goravel\nframework"))
 	assert.True(t, Contain(filePath, "welcome"))
