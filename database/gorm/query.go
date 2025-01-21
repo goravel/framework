@@ -63,23 +63,23 @@ func NewQuery(
 	return queryImpl
 }
 
-func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, error) {
+func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, contractsdatabase.Config, error) {
 	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
 	if !exist {
-		return nil, errors.OrmDatabaseConfigNotFound
+		return nil, contractsdatabase.Config{}, errors.OrmDatabaseConfigNotFound
 	}
 
 	driver, err := driverCallback()
 	if err != nil {
-		return nil, err
+		return nil, contractsdatabase.Config{}, err
 	}
 
 	gorm, gormQuery, err := driver.Gorm()
 	if err != nil {
-		return nil, err
+		return nil, contractsdatabase.Config{}, err
 	}
 
-	return NewQuery(ctx, config, driver.Config(), gorm, gormQuery, log, modelToObserver, nil), nil
+	return NewQuery(ctx, config, driver.Config(), gorm, gormQuery, log, modelToObserver, nil), driver.Config(), nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -1411,7 +1411,7 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	query, ok := r.queries[connection]
 	if !ok {
 		var err error
-		query, err = BuildQuery(r.ctx, r.config, connection, r.log, r.modelToObserver)
+		query, _, err = BuildQuery(r.ctx, r.config, connection, r.log, r.modelToObserver)
 		if err != nil {
 			return nil, err
 		}

@@ -74,7 +74,7 @@ func (r *TestQuery) WithSchema(schema string) {
 	}
 
 	r.config.Add("database.connections.postgres.schema", schema)
-	query, err := gorm.BuildQuery(context.Background(), r.config, r.driver.Config().Driver, utils.NewTestLog(), nil)
+	query, _, err := gorm.BuildQuery(context.Background(), r.config, r.driver.Config().Driver, utils.NewTestLog(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("connect to %s failed: %v", r.driver.Config().Driver, err))
 	}
