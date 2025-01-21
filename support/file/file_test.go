@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/testing/file"
 )
 
@@ -75,12 +76,14 @@ func TestGetContent(t *testing.T) {
 }
 
 func TestPutContent(t *testing.T) {
-	// directory creation failure
-	assert.Error(t, PutContent("/proc/invalid/file.txt", "content"))
-	// write failure (create read-only dir)
-	readOnlyDir := path.Join(t.TempDir(), "readonly")
-	assert.NoError(t, os.Mkdir(readOnlyDir, 0444))
-	assert.Error(t, PutContent(path.Join(readOnlyDir, "file.txt"), "content"))
+	if !env.IsWindows() {
+		// directory creation failure
+		assert.Error(t, PutContent("/proc/invalid/file.txt", "content"))
+		// write failure (create read-only dir)
+		readOnlyDir := path.Join(t.TempDir(), "readonly")
+		assert.NoError(t, os.Mkdir(readOnlyDir, 0444))
+		assert.Error(t, PutContent(path.Join(readOnlyDir, "file.txt"), "content"))
+	}
 	// create a file and put content
 	filePath := path.Join(t.TempDir(), "goravel.txt")
 	assert.NoError(t, PutContent(filePath, "goravel"))
