@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -33,15 +34,18 @@ type Schema struct {
 	schema     string
 }
 
-func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []contractsschema.Migration) *Schema {
-	driver := contractsdatabase.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", orm.Name())))
-	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", orm.Name()))
+func NewSchema(config config.Config, log log.Log, originOrm contractsorm.Orm, migrations []contractsschema.Migration) *Schema {
+	driver := contractsdatabase.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", originOrm.Name())))
+	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", originOrm.Name()))
 	var (
 		driverSchema contractsschema.DriverSchema
 		grammar      contractsschema.Grammar
 		processor    contractsschema.Processor
 		schema       string
 	)
+
+	orm := originOrm.WithContext(context.Background())
+	orm.SetQuery(orm.Query().Silent())
 
 	switch driver {
 	case contractsdatabase.DriverPostgres:

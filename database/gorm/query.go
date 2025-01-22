@@ -963,6 +963,13 @@ func (r *Query) WithTrashed() contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+func (r *Query) Silent() contractsorm.Query {
+	silentInstance := r.instance.Session(&gormio.Session{
+		Logger: NewSilentLogger(),
+	})
+	return r.new(silentInstance)
+}
+
 func (r *Query) buildConditions() *Query {
 	query := r.buildModel()
 	db := query.instance

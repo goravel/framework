@@ -175,6 +175,8 @@ type Query interface {
 	WithTrashed() Query
 	// With returns a new query instance with the given relationships eager loaded.
 	With(query string, args ...any) Query
+	// Silent hide log
+	Silent() Query
 }
 
 type QueryWithSetContext interface {

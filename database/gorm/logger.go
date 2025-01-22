@@ -14,16 +14,12 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/env"
 )
 
 func NewLogger(config config.Config, log log.Log) logger.Interface {
 	level := logger.Warn
 	if config.GetBool("app.debug") {
 		level = logger.Info
-	}
-	if env.IsArtisan() {
-		level = logger.Error
 	}
 
 	slowThreshold := config.GetInt("database.slow_threshold", 200)
@@ -146,4 +142,27 @@ func FileWithLineNum() string {
 	}
 
 	return ""
+}
+
+type SilentLogger struct{}
+
+func NewSilentLogger() logger.Interface {
+	return &SilentLogger{}
+}
+
+func (s SilentLogger) LogMode(level logger.LogLevel) logger.Interface {
+	return s
+}
+
+func (s SilentLogger) Info(ctx context.Context, s2 string, i ...interface{}) {
+
+}
+
+func (s SilentLogger) Warn(ctx context.Context, s2 string, i ...interface{}) {
+}
+
+func (s SilentLogger) Error(ctx context.Context, s2 string, i ...interface{}) {
+}
+
+func (s SilentLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
 }
