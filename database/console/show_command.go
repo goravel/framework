@@ -28,8 +28,6 @@ type databaseInfo struct {
 	Views           []schema.View  `gorm:"-"`
 }
 
-type queryResult struct{ Value string }
-
 func NewShowCommand(config config.Config, schema schema.Schema) *ShowCommand {
 	return &ShowCommand{
 		config: config,
