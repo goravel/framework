@@ -3,9 +3,13 @@ package orm
 import (
 	"context"
 	"database/sql"
+
+	"github.com/goravel/framework/contracts/database"
 )
 
 type Orm interface {
+	// Config gets the database config.
+	Config() database.Config
 	// Connection gets an Orm instance from the connection pool.
 	Connection(name string) Orm
 	// DB gets the underlying database connection.
@@ -26,6 +30,8 @@ type Orm interface {
 	SetQuery(query Query)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Query) error) error
+	// Version gets the current database version.
+	Version() string
 	// WithContext sets the context to be used by the Orm.
 	WithContext(ctx context.Context) Orm
 }

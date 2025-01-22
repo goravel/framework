@@ -5,8 +5,10 @@ package orm
 import (
 	context "context"
 
-	orm "github.com/goravel/framework/contracts/database/orm"
+	database "github.com/goravel/framework/contracts/database"
 	mock "github.com/stretchr/testify/mock"
+
+	orm "github.com/goravel/framework/contracts/database/orm"
 
 	sql "database/sql"
 )
@@ -22,6 +24,51 @@ type Orm_Expecter struct {
 
 func (_m *Orm) EXPECT() *Orm_Expecter {
 	return &Orm_Expecter{mock: &_m.Mock}
+}
+
+// Config provides a mock function with no fields
+func (_m *Orm) Config() database.Config {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Config")
+	}
+
+	var r0 database.Config
+	if rf, ok := ret.Get(0).(func() database.Config); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(database.Config)
+	}
+
+	return r0
+}
+
+// Orm_Config_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Config'
+type Orm_Config_Call struct {
+	*mock.Call
+}
+
+// Config is a helper method to define mock.On call
+func (_e *Orm_Expecter) Config() *Orm_Config_Call {
+	return &Orm_Config_Call{Call: _e.mock.On("Config")}
+}
+
+func (_c *Orm_Config_Call) Run(run func()) *Orm_Config_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Orm_Config_Call) Return(_a0 database.Config) *Orm_Config_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Orm_Config_Call) RunAndReturn(run func() database.Config) *Orm_Config_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Connection provides a mock function with given fields: name
@@ -454,6 +501,51 @@ func (_c *Orm_Transaction_Call) Return(_a0 error) *Orm_Transaction_Call {
 }
 
 func (_c *Orm_Transaction_Call) RunAndReturn(run func(func(orm.Query) error) error) *Orm_Transaction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Version provides a mock function with no fields
+func (_m *Orm) Version() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Version")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Orm_Version_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Version'
+type Orm_Version_Call struct {
+	*mock.Call
+}
+
+// Version is a helper method to define mock.On call
+func (_e *Orm_Expecter) Version() *Orm_Version_Call {
+	return &Orm_Version_Call{Call: _e.mock.On("Version")}
+}
+
+func (_c *Orm_Version_Call) Run(run func()) *Orm_Version_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Orm_Version_Call) Return(_a0 string) *Orm_Version_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Orm_Version_Call) RunAndReturn(run func() string) *Orm_Version_Call {
 	_c.Call.Return(run)
 	return _c
 }
