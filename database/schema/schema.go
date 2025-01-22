@@ -17,8 +17,6 @@ const BindingSchema = "goravel.schema"
 var _ contractsschema.Schema = (*Schema)(nil)
 
 type Schema struct {
-	contractsschema.DriverSchema
-
 	config     config.Config
 	driver     driver.Driver
 	grammar    contractsschema.Grammar
@@ -33,13 +31,10 @@ type Schema struct {
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) *Schema {
 	prefix := driver.Config().Prefix
 	schema := driver.Config().Schema
-	driverSchema := driver.Schema(orm)
 	grammar := driver.Grammar()
 	processor := driver.Processor()
 
 	return &Schema{
-		DriverSchema: driverSchema,
-
 		config:     config,
 		driver:     driver,
 		grammar:    grammar,
@@ -79,6 +74,54 @@ func (r *Schema) Drop(table string) error {
 	return nil
 }
 
+func (r *Schema) DropAllTables() error {
+	tables, err := r.GetTables()
+	if err != nil {
+		return err
+	}
+
+	sql := r.grammar.CompileDropAllTables(r.schema, tables)
+	if sql == "" {
+		return nil
+	}
+	_, err = r.orm.Query().Exec(sql)
+
+	return err
+}
+
+func (r *Schema) DropAllTypes() error {
+	types, err := r.GetTypes()
+	if err != nil {
+		return err
+	}
+
+	return r.orm.Transaction(func(tx contractsorm.Query) error {
+		for _, sql := range r.grammar.CompileDropAllTypes(r.schema, types) {
+			if _, err := tx.Exec(sql); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *Schema) DropAllViews() error {
+	views, err := r.GetViews()
+	if err != nil {
+		return err
+	}
+
+	sql := r.grammar.CompileDropAllViews(r.schema, views)
+	if sql == "" {
+		return nil
+	}
+
+	_, err = r.orm.Query().Exec(sql)
+
+	return err
+}
+
 func (r *Schema) DropColumns(table string, columns []string) error {
 	blueprint := r.createBlueprint(table)
 	blueprint.DropColumn(columns...)
@@ -116,6 +159,20 @@ func (r *Schema) GetColumnListing(table string) []string {
 	return names
 }
 
+func (r *Schema) GetColumns(table string) ([]contractsschema.Column, error) {
+	var dbColumns []contractsschema.DBColumn
+	sql, err := r.grammar.CompileColumns(r.schema, table)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.orm.Query().Raw(sql).Scan(&dbColumns); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessColumns(dbColumns), nil
+}
+
 func (r *Schema) GetConnection() string {
 	return r.orm.Name()
 }
@@ -146,6 +203,20 @@ func (r *Schema) GetIndexListing(table string) []string {
 	return names
 }
 
+func (r *Schema) GetIndexes(table string) ([]contractsschema.Index, error) {
+	var dbIndexes []contractsschema.DBIndex
+	sql, err := r.grammar.CompileIndexes(r.schema, table)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.orm.Query().Raw(sql).Scan(&dbIndexes); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessIndexes(dbIndexes), nil
+}
+
 func (r *Schema) GetTableListing() []string {
 	tables, err := r.GetTables()
 	if err != nil {
@@ -159,6 +230,33 @@ func (r *Schema) GetTableListing() []string {
 	}
 
 	return names
+}
+
+func (r *Schema) GetTables() ([]contractsschema.Table, error) {
+	var tables []contractsschema.Table
+	if err := r.orm.Query().Raw(r.grammar.CompileTables(r.orm.DatabaseName())).Scan(&tables); err != nil {
+		return nil, err
+	}
+
+	return tables, nil
+}
+
+func (r *Schema) GetTypes() ([]contractsschema.Type, error) {
+	var types []contractsschema.Type
+	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessTypes(types), nil
+}
+
+func (r *Schema) GetViews() ([]contractsschema.View, error) {
+	var views []contractsschema.View
+	if err := r.orm.Query().Raw(r.grammar.CompileViews(r.orm.DatabaseName())).Scan(&views); err != nil {
+		return nil, err
+	}
+
+	return views, nil
 }
 
 func (r *Schema) HasColumn(table, column string) bool {
