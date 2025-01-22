@@ -285,6 +285,12 @@ func (s *SqlserverSuite) TestModifyIncrement() {
 	s.Equal(" identity primary key", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
 }
 
+func (s *SqlserverSuite) TestTypeBoolean() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+
+	s.Equal("bit", s.grammar.TypeBoolean(mockColumn))
+}
+
 func (s *SqlserverSuite) TestTypeDecimal() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetTotal().Return(4).Once()

@@ -279,6 +279,10 @@ func (r *Sqlite) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "integer"
 }
 
+func (r *Sqlite) TypeBoolean(_ schema.ColumnDefinition) string {
+	return "tinyint(1)"
+}
+
 func (r *Sqlite) TypeChar(column schema.ColumnDefinition) string {
 	return "varchar"
 }

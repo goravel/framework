@@ -34,6 +34,10 @@ func (r *Blueprint) BigInteger(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("bigInteger", column)
 }
 
+func (r *Blueprint) Boolean(column string) schema.ColumnDefinition {
+	return r.createAndAddColumn("boolean", column)
+}
+
 func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error {
 	for _, sql := range r.ToSql(grammar) {
 		if _, err := query.Exec(sql); err != nil {

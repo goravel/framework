@@ -117,6 +117,54 @@ func (_c *Blueprint_BigInteger_Call) RunAndReturn(run func(string) schema.Column
 	return _c
 }
 
+// Boolean provides a mock function with given fields: column
+func (_m *Blueprint) Boolean(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Boolean")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Boolean_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Boolean'
+type Blueprint_Boolean_Call struct {
+	*mock.Call
+}
+
+// Boolean is a helper method to define mock.On call
+//   - column string
+func (_e *Blueprint_Expecter) Boolean(column interface{}) *Blueprint_Boolean_Call {
+	return &Blueprint_Boolean_Call{Call: _e.mock.On("Boolean", column)}
+}
+
+func (_c *Blueprint_Boolean_Call) Run(run func(column string)) *Blueprint_Boolean_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Boolean_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Boolean_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Boolean_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *Blueprint_Boolean_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Build provides a mock function with given fields: query, grammar
 func (_m *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
 	ret := _m.Called(query, grammar)

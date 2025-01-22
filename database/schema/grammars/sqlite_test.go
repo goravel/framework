@@ -358,6 +358,12 @@ func (s *SqliteSuite) TestModifyIncrement() {
 	s.Equal(" primary key autoincrement", s.grammar.ModifyIncrement(mockBlueprint, mockColumn))
 }
 
+func (s *SqliteSuite) TestTypeBoolean() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+
+	s.Equal("tinyint(1)", s.grammar.TypeBoolean(mockColumn))
+}
+
 func (s *SqliteSuite) TestTypeEnum() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetName().Return("a").Once()

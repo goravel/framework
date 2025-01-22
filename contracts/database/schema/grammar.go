@@ -61,6 +61,8 @@ type Grammar interface {
 	GetAttributeCommands() []string
 	// TypeBigInteger Create the column definition for a big integer type.
 	TypeBigInteger(column ColumnDefinition) string
+	// TypeBoolean Create the column definition for a boolean type.
+	TypeBoolean(column ColumnDefinition) string
 	// TypeChar Create the column definition for a char type.
 	TypeChar(column ColumnDefinition) string
 	// TypeDate Create the column definition for a date type.

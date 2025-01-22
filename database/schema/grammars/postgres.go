@@ -322,6 +322,10 @@ func (r *Postgres) TypeBigInteger(column schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Postgres) TypeBoolean(_ schema.ColumnDefinition) string {
+	return "boolean"
+}
+
 func (r *Postgres) TypeChar(column schema.ColumnDefinition) string {
 	length := column.GetLength()
 	if length > 0 {

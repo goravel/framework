@@ -352,6 +352,12 @@ func (s *MysqlSuite) TestModifyOnUpdate() {
 	s.Empty(s.grammar.ModifyOnUpdate(mockBlueprint, mockColumn))
 }
 
+func (s *MysqlSuite) TestTypeBoolean() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	
+	s.Equal("tinyint(1)", s.grammar.TypeBoolean(mockColumn))
+}
+
 func (s *MysqlSuite) TestTypeDateTime() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetPrecision().Return(3).Once()

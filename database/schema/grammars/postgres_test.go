@@ -409,6 +409,12 @@ func (s *PostgresSuite) TestTypeBigInteger() {
 	s.Equal("bigint", s.grammar.TypeBigInteger(mockColumn2))
 }
 
+func (s *PostgresSuite) TestTypeBoolean() {
+	mockColumn := mocksschema.NewColumnDefinition(s.T())
+	
+	s.Equal("boolean", s.grammar.TypeBoolean(mockColumn))
+}
+
 func (s *PostgresSuite) TestTypeDecimal() {
 	mockColumn := mocksschema.NewColumnDefinition(s.T())
 	mockColumn.EXPECT().GetTotal().Return(4).Once()
