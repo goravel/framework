@@ -68,8 +68,6 @@ func (r *Database) Ready() error {
 		return err
 	}
 
-	r.config.Add(fmt.Sprintf("database.connections.%s.port", r.connection), r.DatabaseDriver.Config().Port)
-
 	r.orm.Refresh()
 
 	return nil

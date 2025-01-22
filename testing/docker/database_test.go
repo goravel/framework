@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
-	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -171,10 +170,6 @@ func (s *DatabaseTestSuite) SetupTest() {
 }
 
 func (s *DatabaseTestSuite) TestReady() {
-	s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
-		Port: 1234,
-	}).Once()
-	s.mockConfig.EXPECT().Add("database.connections.postgres.port", 1234).Once()
 	s.mockOrm.EXPECT().Refresh().Once()
 	s.mockDatabaseDriver.EXPECT().Ready().Return(nil).Once()
 
