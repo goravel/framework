@@ -317,6 +317,10 @@ func (r *Mysql) TypeBigInteger(_ schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Mysql) TypeBoolean(_ schema.ColumnDefinition) string {
+	return "tinyint(1)"
+}
+
 func (r *Mysql) TypeChar(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("char(%d)", column.GetLength())
 }

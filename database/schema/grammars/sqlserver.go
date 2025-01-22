@@ -311,6 +311,10 @@ func (r *Sqlserver) TypeBigInteger(_ schema.ColumnDefinition) string {
 	return "bigint"
 }
 
+func (r *Sqlserver) TypeBoolean(_ schema.ColumnDefinition) string {
+	return "bit"
+}
+
 func (r *Sqlserver) TypeChar(column schema.ColumnDefinition) string {
 	return fmt.Sprintf("nchar(%d)", column.GetLength())
 }
