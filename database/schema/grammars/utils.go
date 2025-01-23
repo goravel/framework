@@ -59,5 +59,5 @@ func getType(grammar schema.Grammar, column schema.ColumnDefinition) string {
 		return callResult[0].String()
 	}
 
-	return ""
+	return column.GetType()
 }

@@ -55,9 +55,9 @@ func TestGetType(t *testing.T) {
 
 	// invalid type
 	mockColumn1 := mocksschema.NewColumnDefinition(t)
-	mockColumn1.EXPECT().GetType().Return("invalid").Once()
+	mockColumn1.EXPECT().GetType().Return("invalid").Twice()
 
 	mockGrammar1 := mocksschema.NewGrammar(t)
 
-	assert.Empty(t, getType(mockGrammar1, mockColumn1))
+	assert.Equal(t, "invalid", getType(mockGrammar1, mockColumn1))
 }
