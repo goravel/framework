@@ -60,6 +60,10 @@ func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
 	return columnImpl
 }
 
+func (r *Blueprint) Column(column, ttype string) schema.ColumnDefinition {
+	return r.createAndAddColumn(ttype, column)
+}
+
 func (r *Blueprint) Create() {
 	r.addCommand(&schema.Command{
 		Name: constants.CommandCreate,

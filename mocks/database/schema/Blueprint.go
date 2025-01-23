@@ -275,6 +275,55 @@ func (_c *Blueprint_Char_Call) RunAndReturn(run func(string, ...int) schema.Colu
 	return _c
 }
 
+// Column provides a mock function with given fields: column, ttype
+func (_m *Blueprint) Column(column string, ttype string) schema.ColumnDefinition {
+	ret := _m.Called(column, ttype)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Column")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string, string) schema.ColumnDefinition); ok {
+		r0 = rf(column, ttype)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// Blueprint_Column_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Column'
+type Blueprint_Column_Call struct {
+	*mock.Call
+}
+
+// Column is a helper method to define mock.On call
+//   - column string
+//   - ttype string
+func (_e *Blueprint_Expecter) Column(column interface{}, ttype interface{}) *Blueprint_Column_Call {
+	return &Blueprint_Column_Call{Call: _e.mock.On("Column", column, ttype)}
+}
+
+func (_c *Blueprint_Column_Call) Run(run func(column string, ttype string)) *Blueprint_Column_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Column_Call) Return(_a0 schema.ColumnDefinition) *Blueprint_Column_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Blueprint_Column_Call) RunAndReturn(run func(string, string) schema.ColumnDefinition) *Blueprint_Column_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Create provides a mock function with no fields
 func (_m *Blueprint) Create() {
 	_m.Called()

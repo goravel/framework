@@ -219,6 +219,14 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 			s.Equal("timestamp(2) without time zone", column.Type)
 			s.Equal("timestamp", column.TypeName)
 		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Equal("This is a custom type column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("macaddr", column.Type)
+			s.Equal("macaddr", column.TypeName)
+		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -547,6 +555,14 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("datetime", column.Type)
 			s.Equal("datetime", column.TypeName)
 		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("geometry", column.Type)
+			s.Equal("geometry", column.TypeName)
+		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -840,6 +856,14 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.True(column.Nullable)
 			s.Equal("timestamp(2)", column.Type)
 			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Equal("This is a custom type column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("geometry", column.Type)
+			s.Equal("geometry", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -1163,6 +1187,14 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 			s.True(column.Nullable)
 			s.Equal("datetime2(22)", column.Type)
 			s.Equal("datetime2", column.TypeName)
+		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("geometry", column.Type)
+			s.Equal("geometry", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -2362,6 +2394,11 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 		table.BigInteger("big_integer").Comment("This is a big_integer column")
 		table.Boolean("boolean_default").Default(true).Comment("This is a boolean column with default value")
 		table.Char("char").Comment("This is a char column")
+		if schema.GetConnection() != database.DriverPostgres.String() {
+			table.Column("custom_type", "geometry").Comment("This is a custom type column")
+		} else {
+			table.Column("custom_type", "macaddr").Comment("This is a custom type column")
+		}
 		table.Date("date").Comment("This is a date column")
 		table.DateTime("date_time", 3).Comment("This is a date time column")
 		table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
@@ -2401,11 +2438,13 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	columnListing := schema.GetColumnListing(table)
 
-	s.Equal(34, len(columnListing))
+	s.Equal(35, len(columnListing))
 	s.Contains(columnListing, "another_deleted_at")
 	s.Contains(columnListing, "big_integer")
+	s.Contains(columnListing, "boolean_default")
 	s.Contains(columnListing, "char")
 	s.Contains(columnListing, "created_at")
+	s.Contains(columnListing, "custom_type")
 	s.Contains(columnListing, "date")
 	s.Contains(columnListing, "date_time")
 	s.Contains(columnListing, "date_time_tz")
