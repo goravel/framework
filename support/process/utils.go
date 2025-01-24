@@ -2,9 +2,8 @@ package process
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
-
-	"golang.org/x/exp/rand"
 )
 
 // Used by TestContainer, to simulate the port is using.
