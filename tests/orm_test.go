@@ -13,9 +13,9 @@ import (
 
 type OrmSuite struct {
 	suite.Suite
-	orm           *orm.Orm
-	defaultDriver string
-	queries       map[string]*TestQuery
+	orm               *orm.Orm
+	defaultConnection string
+	queries           map[string]*TestQuery
 }
 
 func TestOrmSuite(t *testing.T) {
@@ -27,8 +27,9 @@ func TestOrmSuite(t *testing.T) {
 func (s *OrmSuite) SetupSuite() {
 	postgresTestQuery := postgresTestQuery("", false)
 	postgresTestQuery.CreateTable(TestTableRoles)
-	s.queries[postgresTestQuery.Driver().Config().Connection] = postgresTestQuery
-	s.defaultDriver = postgresTestQuery.Driver().Config().Driver
+	connection := postgresTestQuery.Driver().Config().Connection
+	s.queries[connection] = postgresTestQuery
+	s.defaultConnection = connection
 }
 
 func (s *OrmSuite) SetupTest() {
@@ -38,7 +39,7 @@ func (s *OrmSuite) SetupTest() {
 		queries[driver] = query.Query()
 	}
 
-	s.orm = orm.NewOrm(context.Background(), nil, s.defaultDriver, queries[s.defaultDriver], queries, nil, nil, nil)
+	s.orm = orm.NewOrm(context.Background(), nil, s.defaultConnection, s.queries[s.defaultConnection].Driver().Config(), queries[s.defaultConnection], queries, nil, nil, nil)
 }
 
 func (s *OrmSuite) TearDownSuite() {
