@@ -26,13 +26,9 @@ func IsPortUsing(port int) bool {
 func ValidPort() int {
 	for i := 0; i < 60; i++ {
 		random := rand.Intn(10000) + 10000
-		l, err := net.Listen("tcp", fmt.Sprintf(":%d", random))
-		if err != nil {
-			continue
+		if !IsPortUsing(random) {
+			return random
 		}
-		defer l.Close()
-
-		return random
 	}
 
 	return 0
