@@ -9,7 +9,7 @@ import (
 	contractstesting "github.com/goravel/framework/contracts/testing"
 )
 
-func TestGetExposedPort(t *testing.T) {
+func TestExposedPort(t *testing.T) {
 	assert.Equal(t, 1, ExposedPort([]string{"1:2"}, 2))
 }
 
