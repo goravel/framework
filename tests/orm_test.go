@@ -19,6 +19,7 @@ type OrmSuite struct {
 }
 
 func TestOrmSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, &OrmSuite{
 		queries: make(map[string]*TestQuery),
 	})

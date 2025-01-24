@@ -26,6 +26,7 @@ type QueryTestSuite struct {
 }
 
 func TestQueryTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, &QueryTestSuite{
 		queries: make(map[string]*TestQuery),
 	})

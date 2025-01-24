@@ -22,6 +22,7 @@ type SchemaSuite struct {
 }
 
 func TestSchemaSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, &SchemaSuite{
 		driverToTestQuery: make(map[string]*TestQuery),
 	})

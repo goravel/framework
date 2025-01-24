@@ -9,6 +9,7 @@ import (
 
 	contractstesting "github.com/goravel/framework/contracts/testing"
 	mockstesting "github.com/goravel/framework/mocks/testing"
+	"github.com/goravel/framework/support/process"
 )
 
 type ContainerTestSuite struct {
@@ -22,7 +23,7 @@ func TestContainerTestSuite(t *testing.T) {
 }
 
 func (s *ContainerTestSuite) SetupTest() {
-	testPortUsing = false
+	process.TestPortUsing = false
 	s.mockDatabaseDriver = mockstesting.NewDatabaseDriver(s.T())
 	s.mockDatabaseDriver.EXPECT().Driver().Return("test").Once()
 	s.container = NewContainer(s.mockDatabaseDriver)
@@ -53,7 +54,7 @@ func (s *ContainerTestSuite) TestAddAndAll() {
 
 func (s *ContainerTestSuite) TestBuild() {
 	s.Run("Test reusing existing container", func() {
-		testPortUsing = true
+		process.TestPortUsing = true
 
 		s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
 			ContainerID: "test-container",

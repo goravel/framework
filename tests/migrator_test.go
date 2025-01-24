@@ -17,6 +17,7 @@ type DefaultMigratorWithDBSuite struct {
 }
 
 func TestDefaultMigratorWithDBSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, &DefaultMigratorWithDBSuite{})
 }
 
