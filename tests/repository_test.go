@@ -14,6 +14,7 @@ type RepositoryTestSuite struct {
 }
 
 func TestRepositoryTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, &RepositoryTestSuite{})
 }
 

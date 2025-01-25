@@ -8,6 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/support/process"
 )
 
 type Redis struct {
@@ -27,8 +28,8 @@ func NewRedis() *Redis {
 }
 
 func (receiver *Redis) Build() error {
-	command, exposedPorts := imageToCommand(receiver.image)
-	containerID, err := run(command)
+	command, exposedPorts := ImageToCommand(receiver.image)
+	containerID, err := process.Run(command)
 	if err != nil {
 		return fmt.Errorf("init Redis docker error: %v", err)
 	}
@@ -37,7 +38,7 @@ func (receiver *Redis) Build() error {
 	}
 
 	receiver.containerID = containerID
-	receiver.port = getExposedPort(exposedPorts, 6379)
+	receiver.port = ExposedPort(exposedPorts, 6379)
 
 	if _, err := receiver.connect(); err != nil {
 		return fmt.Errorf("connect Redis docker error: %v", err)
@@ -53,7 +54,7 @@ func (receiver *Redis) Config() RedisConfig {
 }
 
 func (receiver *Redis) Shutdown() error {
-	if _, err := run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
+	if _, err := process.Run(fmt.Sprintf("docker stop %s", receiver.containerID)); err != nil {
 		return fmt.Errorf("stop Redis docker error: %v", err)
 	}
 

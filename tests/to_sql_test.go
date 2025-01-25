@@ -18,6 +18,7 @@ type ToSqlTestSuite struct {
 }
 
 func TestToSqlTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, &ToSqlTestSuite{})
 }
 

@@ -6,7 +6,7 @@ type Grammar interface {
 	// CompileChange Compile a change column command.
 	CompileChange(blueprint Blueprint, command *Command) []string
 	// CompileColumns Compile the query to determine the columns.
-	CompileColumns(schema, table string) string
+	CompileColumns(schema, table string) (string, error)
 	// CompileComment Compile a column comment command.
 	CompileComment(blueprint Blueprint, command *Command) string
 	// CompileCreate Compile a create table command.
@@ -15,14 +15,12 @@ type Grammar interface {
 	CompileDefault(blueprint Blueprint, command *Command) string
 	// CompileDrop Compile a drop table command.
 	CompileDrop(blueprint Blueprint) string
-	// CompileDropAllDomains Compile the SQL needed to drop all domains.
-	CompileDropAllDomains(domains []string) string
 	// CompileDropAllTables Compile the SQL needed to drop all tables.
-	CompileDropAllTables(tables []string) string
+	CompileDropAllTables(schema string, tables []Table) string
 	// CompileDropAllTypes Compile the SQL needed to drop all types.
-	CompileDropAllTypes(types []string) string
+	CompileDropAllTypes(schema string, types []Type) []string
 	// CompileDropAllViews Compile the SQL needed to drop all views.
-	CompileDropAllViews(views []string) string
+	CompileDropAllViews(schema string, views []View) string
 	// CompileDropColumn Compile a drop column command.
 	CompileDropColumn(blueprint Blueprint, command *Command) []string
 	// CompileDropForeign Compile a drop foreign key command.
@@ -46,7 +44,7 @@ type Grammar interface {
 	// CompileIndex Compile a plain index key command.
 	CompileIndex(blueprint Blueprint, command *Command) string
 	// CompileIndexes Compile the query to determine the indexes.
-	CompileIndexes(schema, table string) string
+	CompileIndexes(schema, table string) (string, error)
 	// CompilePrimary Compile a primary key command.
 	CompilePrimary(blueprint Blueprint, command *Command) string
 	// CompileRename Compile a rename table command.

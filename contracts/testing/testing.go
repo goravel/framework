@@ -59,4 +59,5 @@ type Image struct {
 	ExposedPorts []string
 	Repository   string
 	Tag          string
+	Args         []string
 }
