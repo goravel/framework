@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"github.com/goravel/framework/contracts/cache"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/http"
@@ -11,7 +12,7 @@ type JWTDriver struct {
 	auth *Auth
 }
 
-func NewJWTDriver(config config.Config, cache Cache, ctx http.Context, orm orm.Orm) *JWTDriver {
+func NewJWTDriver(config config.Config, cache cache.Cache, ctx http.Context, orm orm.Orm) *JWTDriver {
 	return &JWTDriver{
 		auth: NewAuth("jwt", cache, config, ctx, orm),
 	}
