@@ -2,6 +2,7 @@ package collect
 
 import (
 	"github.com/samber/lo"
+	"github.com/samber/lo/mutable"
 	"golang.org/x/exp/constraints"
 )
 
@@ -57,12 +58,14 @@ func Min[T constraints.Ordered](collection []T) T {
 
 // Reverse reverses array so that the first element becomes the last, the second element becomes the second to last, and so on.
 func Reverse[T any](collection []T) []T {
-	return lo.Reverse(collection)
+	mutable.Reverse(collection)
+	return collection
 }
 
 // Shuffle returns an array of shuffled values. Uses the Fisher-Yates shuffle algorithm.
 func Shuffle[T any](collection []T) []T {
-	return lo.Shuffle(collection)
+	mutable.Shuffle(collection)
+	return collection
 }
 
 // Split returns an array of elements split into groups the length of size. If array can't be split evenly,
