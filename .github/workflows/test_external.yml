@@ -16,7 +16,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Install dependencies
-        run: go mod tidy
+        run: go mod tidy && cd tests && go mod tidy
       - name: Run tests
         run: cd tests && go test -timeout 1h ./...
         
