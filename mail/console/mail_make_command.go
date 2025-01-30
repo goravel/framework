@@ -18,17 +18,17 @@ func NewMailMakeCommand() *MailMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *MailMakeCommand) Signature() string {
+func (r *MailMakeCommand) Signature() string {
 	return "make:mail"
 }
 
 // Description The console command description.
-func (receiver *MailMakeCommand) Description() string {
+func (r *MailMakeCommand) Description() string {
 	return "Create a new mail class"
 }
 
 // Extend The console command extend.
-func (receiver *MailMakeCommand) Extend() command.Extend {
+func (r *MailMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,14 +42,14 @@ func (receiver *MailMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *MailMakeCommand) Handle(ctx console.Context) error {
+func (r *MailMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "mail", ctx.Argument(0), filepath.Join("app", "mails"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -59,12 +59,12 @@ func (receiver *MailMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *MailMakeCommand) getStub() string {
+func (r *MailMakeCommand) getStub() string {
 	return Stubs{}.Mail()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *MailMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *MailMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyMail", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

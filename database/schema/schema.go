@@ -1,17 +1,14 @@
 package schema
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/goravel/framework/contracts/config"
-	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/schema/grammars"
-	"github.com/goravel/framework/database/schema/processors"
 	"github.com/goravel/framework/errors"
 )
 
@@ -20,10 +17,8 @@ const BindingSchema = "goravel.schema"
 var _ contractsschema.Schema = (*Schema)(nil)
 
 type Schema struct {
-	contractsschema.CommonSchema
-	contractsschema.DriverSchema
-
 	config     config.Config
+	driver     driver.Driver
 	grammar    contractsschema.Grammar
 	log        log.Log
 	migrations []contractsschema.Migration
@@ -33,50 +28,15 @@ type Schema struct {
 	schema     string
 }
 
-func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migrations []contractsschema.Migration) *Schema {
-	driver := contractsdatabase.Driver(config.GetString(fmt.Sprintf("database.connections.%s.driver", orm.Name())))
-	prefix := config.GetString(fmt.Sprintf("database.connections.%s.prefix", orm.Name()))
-	var (
-		driverSchema contractsschema.DriverSchema
-		grammar      contractsschema.Grammar
-		processor    contractsschema.Processor
-		schema       string
-	)
-
-	switch driver {
-	case contractsdatabase.DriverPostgres:
-		schema = config.GetString(fmt.Sprintf("database.connections.%s.schema", orm.Name()), "public")
-
-		postgresGrammar := grammars.NewPostgres(prefix)
-		driverSchema = NewPostgresSchema(postgresGrammar, orm, schema, prefix)
-		grammar = postgresGrammar
-		processor = processors.NewPostgres()
-	case contractsdatabase.DriverMysql:
-		schema = config.GetString(fmt.Sprintf("database.connections.%s.database", orm.Name()))
-
-		mysqlGrammar := grammars.NewMysql(prefix)
-		driverSchema = NewMysqlSchema(mysqlGrammar, orm, prefix)
-		grammar = mysqlGrammar
-		processor = processors.NewMysql()
-	case contractsdatabase.DriverSqlserver:
-		sqlserverGrammar := grammars.NewSqlserver(prefix)
-		driverSchema = NewSqlserverSchema(sqlserverGrammar, orm, prefix)
-		grammar = sqlserverGrammar
-		processor = processors.NewSqlserver()
-	case contractsdatabase.DriverSqlite:
-		sqliteGrammar := grammars.NewSqlite(log, prefix)
-		driverSchema = NewSqliteSchema(sqliteGrammar, orm, prefix)
-		grammar = sqliteGrammar
-		processor = processors.NewSqlite()
-	default:
-		panic(errors.SchemaDriverNotSupported.Args(driver))
-	}
+func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) *Schema {
+	prefix := driver.Config().Prefix
+	schema := driver.Config().Schema
+	grammar := driver.Grammar()
+	processor := driver.Processor()
 
 	return &Schema{
-		DriverSchema: driverSchema,
-		CommonSchema: NewCommonSchema(grammar, orm),
-
 		config:     config,
+		driver:     driver,
 		grammar:    grammar,
 		log:        log,
 		migrations: migrations,
@@ -88,7 +48,7 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, migratio
 }
 
 func (r *Schema) Connection(name string) contractsschema.Schema {
-	return NewSchema(r.config, r.log, r.orm.Connection(name), r.migrations)
+	return NewSchema(r.config, r.log, r.orm.Connection(name), r.driver, r.migrations)
 }
 
 func (r *Schema) Create(table string, callback func(table contractsschema.Blueprint)) error {
@@ -112,6 +72,54 @@ func (r *Schema) Drop(table string) error {
 	}
 
 	return nil
+}
+
+func (r *Schema) DropAllTables() error {
+	tables, err := r.GetTables()
+	if err != nil {
+		return err
+	}
+
+	sql := r.grammar.CompileDropAllTables(r.schema, tables)
+	if sql == "" {
+		return nil
+	}
+	_, err = r.orm.Query().Exec(sql)
+
+	return err
+}
+
+func (r *Schema) DropAllTypes() error {
+	types, err := r.GetTypes()
+	if err != nil {
+		return err
+	}
+
+	return r.orm.Transaction(func(tx contractsorm.Query) error {
+		for _, sql := range r.grammar.CompileDropAllTypes(r.schema, types) {
+			if _, err := tx.Exec(sql); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *Schema) DropAllViews() error {
+	views, err := r.GetViews()
+	if err != nil {
+		return err
+	}
+
+	sql := r.grammar.CompileDropAllViews(r.schema, views)
+	if sql == "" {
+		return nil
+	}
+
+	_, err = r.orm.Query().Exec(sql)
+
+	return err
 }
 
 func (r *Schema) DropColumns(table string, columns []string) error {
@@ -151,6 +159,20 @@ func (r *Schema) GetColumnListing(table string) []string {
 	return names
 }
 
+func (r *Schema) GetColumns(table string) ([]contractsschema.Column, error) {
+	var dbColumns []contractsschema.DBColumn
+	sql, err := r.grammar.CompileColumns(r.schema, table)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.orm.Query().Raw(sql).Scan(&dbColumns); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessColumns(dbColumns), nil
+}
+
 func (r *Schema) GetConnection() string {
 	return r.orm.Name()
 }
@@ -181,6 +203,20 @@ func (r *Schema) GetIndexListing(table string) []string {
 	return names
 }
 
+func (r *Schema) GetIndexes(table string) ([]contractsschema.Index, error) {
+	var dbIndexes []contractsschema.DBIndex
+	sql, err := r.grammar.CompileIndexes(r.schema, table)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.orm.Query().Raw(sql).Scan(&dbIndexes); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessIndexes(dbIndexes), nil
+}
+
 func (r *Schema) GetTableListing() []string {
 	tables, err := r.GetTables()
 	if err != nil {
@@ -194,6 +230,33 @@ func (r *Schema) GetTableListing() []string {
 	}
 
 	return names
+}
+
+func (r *Schema) GetTables() ([]contractsschema.Table, error) {
+	var tables []contractsschema.Table
+	if err := r.orm.Query().Raw(r.grammar.CompileTables(r.orm.DatabaseName())).Scan(&tables); err != nil {
+		return nil, err
+	}
+
+	return tables, nil
+}
+
+func (r *Schema) GetTypes() ([]contractsschema.Type, error) {
+	var types []contractsschema.Type
+	if err := r.orm.Query().Raw(r.grammar.CompileTypes()).Scan(&types); err != nil {
+		return nil, err
+	}
+
+	return r.processor.ProcessTypes(types), nil
+}
+
+func (r *Schema) GetViews() ([]contractsschema.View, error) {
+	var views []contractsschema.View
+	if err := r.orm.Query().Raw(r.grammar.CompileViews(r.orm.DatabaseName())).Scan(&views); err != nil {
+		return nil, err
+	}
+
+	return views, nil
 }
 
 func (r *Schema) HasColumn(table, column string) bool {

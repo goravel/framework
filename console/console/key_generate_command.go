@@ -23,25 +23,25 @@ func NewKeyGenerateCommand(config config.Config) *KeyGenerateCommand {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *KeyGenerateCommand) Signature() string {
+func (r *KeyGenerateCommand) Signature() string {
 	return "key:generate"
 }
 
 // Description The console command description.
-func (receiver *KeyGenerateCommand) Description() string {
+func (r *KeyGenerateCommand) Description() string {
 	return "Set the application key"
 }
 
 // Extend The console command extend.
-func (receiver *KeyGenerateCommand) Extend() command.Extend {
+func (r *KeyGenerateCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "key",
 	}
 }
 
 // Handle Execute the console command.
-func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
-	if receiver.config.GetString("app.env") == "production" {
+func (r *KeyGenerateCommand) Handle(ctx console.Context) error {
+	if r.config.GetString("app.env") == "production" {
 		color.Warningln("**************************************")
 		color.Warningln("*     Application In Production!     *")
 		color.Warningln("**************************************")
@@ -58,8 +58,8 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 		}
 	}
 
-	key := receiver.generateRandomKey()
-	if err := receiver.writeNewEnvironmentFileWith(key); err != nil {
+	key := r.generateRandomKey()
+	if err := r.writeNewEnvironmentFileWith(key); err != nil {
 		ctx.Error(err.Error())
 
 		return nil
@@ -71,18 +71,18 @@ func (receiver *KeyGenerateCommand) Handle(ctx console.Context) error {
 }
 
 // generateRandomKey Generate a random key for the application.
-func (receiver *KeyGenerateCommand) generateRandomKey() string {
+func (r *KeyGenerateCommand) generateRandomKey() string {
 	return str.Random(32)
 }
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
-func (receiver *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
+func (r *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
 	content, err := os.ReadFile(support.EnvPath)
 	if err != nil {
 		return err
 	}
 
-	newContent := strings.Replace(string(content), "APP_KEY="+receiver.config.GetString("app.key"), "APP_KEY="+key, 1)
+	newContent := strings.Replace(string(content), "APP_KEY="+r.config.GetString("app.key"), "APP_KEY="+key, 1)
 
 	err = os.WriteFile(support.EnvPath, []byte(newContent), 0644)
 	if err != nil {

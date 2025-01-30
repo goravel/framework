@@ -5,28 +5,42 @@ import (
 )
 
 type Schema interface {
-	CommonSchema
-	DriverSchema
 	// Connection Get the connection for the schema.
 	Connection(name string) Schema
 	// Create a new table on the schema.
 	Create(table string, callback func(table Blueprint)) error
 	// Drop a table from the schema.
 	Drop(table string) error
+	// DropAllTables Drop all tables from the schema.
+	DropAllTables() error
+	// DropAllTypes Drop all types from the schema.
+	DropAllTypes() error
+	// DropAllViews Drop all views from the schema.
+	DropAllViews() error
 	// DropColumns Drop columns from a table on the schema.
 	DropColumns(table string, columns []string) error
 	// DropIfExists Drop a table from the schema if exists.
 	DropIfExists(table string) error
 	// GetColumnListing Get the column listing for a given table.
 	GetColumnListing(table string) []string
+	// GetColumns Get the columns for a given table.
+	GetColumns(table string) ([]Column, error)
 	// GetConnection Get the connection of the schema.
 	GetConnection() string
 	// GetForeignKeys Get the foreign keys for a given table.
 	GetForeignKeys(table string) ([]ForeignKey, error)
 	// GetIndexListing Get the names of the indexes for a given table.
 	GetIndexListing(table string) []string
+	// GetIndexes Get the indexes for a given table.
+	GetIndexes(table string) ([]Index, error)
 	// GetTableListing Get the table listing for the database.
 	GetTableListing() []string
+	// GetTables Get the tables that belong to the database.
+	GetTables() ([]Table, error)
+	// GetTypes Get the types that belong to the database.
+	GetTypes() ([]Type, error)
+	// GetViews Get the views that belong to the database.
+	GetViews() ([]View, error)
 	// HasColumn Determine if the given table has a given column.
 	HasColumn(table, column string) bool
 	// HasColumns Determine if the given table has given columns.
@@ -53,28 +67,6 @@ type Schema interface {
 	Sql(sql string) error
 	// Table Modify a table on the schema.
 	Table(table string, callback func(table Blueprint)) error
-}
-
-type CommonSchema interface {
-	// GetTables Get the tables that belong to the database.
-	GetTables() ([]Table, error)
-	// GetViews Get the views that belong to the database.
-	GetViews() ([]View, error)
-}
-
-type DriverSchema interface {
-	// DropAllTables Drop all tables from the schema.
-	DropAllTables() error
-	// DropAllTypes Drop all types from the schema.
-	DropAllTypes() error
-	// DropAllViews Drop all views from the schema.
-	DropAllViews() error
-	// GetColumns Get the columns for a given table.
-	GetColumns(table string) ([]Column, error)
-	// GetIndexes Get the indexes for a given table.
-	GetIndexes(table string) ([]Index, error)
-	// GetTypes Get the types that belong to the database.
-	GetTypes() ([]Type, error)
 }
 
 type Migration interface {

@@ -14,17 +14,17 @@ type ControllerMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (receiver *ControllerMakeCommand) Signature() string {
+func (r *ControllerMakeCommand) Signature() string {
 	return "make:controller"
 }
 
 // Description The console command description.
-func (receiver *ControllerMakeCommand) Description() string {
+func (r *ControllerMakeCommand) Description() string {
 	return "Create a new controller class"
 }
 
 // Extend The console command extend.
-func (receiver *ControllerMakeCommand) Extend() command.Extend {
+func (r *ControllerMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -43,19 +43,19 @@ func (receiver *ControllerMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
+func (r *ControllerMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "controller", ctx.Argument(0), filepath.Join("app", "http", "controllers"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	stub := receiver.getStub()
+	stub := r.getStub()
 	if ctx.OptionBool("resource") {
-		stub = receiver.getResourceStub()
+		stub = r.getResourceStub()
 	}
 
-	if err := file.Create(m.GetFilePath(), receiver.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), r.populateStub(stub, m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -65,16 +65,16 @@ func (receiver *ControllerMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (receiver *ControllerMakeCommand) getStub() string {
+func (r *ControllerMakeCommand) getStub() string {
 	return Stubs{}.Controller()
 }
 
-func (receiver *ControllerMakeCommand) getResourceStub() string {
+func (r *ControllerMakeCommand) getResourceStub() string {
 	return Stubs{}.ResourceController()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (receiver *ControllerMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (r *ControllerMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyController", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

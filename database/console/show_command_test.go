@@ -1,6 +1,7 @@
 package console
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,16 +31,16 @@ func TestShowCommand(t *testing.T) {
 		mockQuery = mocksorm.NewQuery(t)
 	}
 	successCaseExpected := [][2]string{
-		{"<fg=green;op=bold>MariaDB</>", "test-version"},
+		{"<fg=green;op=bold>test</>", "version"},
 		{"Database", "db"},
 		{"Host", "host"},
-		{"Port", "port"},
+		{"Port", "1234"},
 		{"Username", "username"},
-		{"Open Connections", "2"},
+		{"Open Connections", "0"},
 		{"Tables", "1"},
-		{"Total Size", "0.000 MB"},
+		{"Total Size", "0.001 MB"},
 		{"<fg=green;op=bold>Tables</>", "<fg=yellow;op=bold>Size (MB)</>"},
-		{"test", "0.000"},
+		{"test", "0.001"},
 		{"<fg=green;op=bold>Views</>", "<fg=yellow;op=bold>Rows</>"},
 		{"test", "0"},
 	}
@@ -57,20 +58,25 @@ func TestShowCommand(t *testing.T) {
 		{
 			name: "get tables failed",
 			setup: func() {
+				// Handle
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
-				mockSchema.EXPECT().GetConnection().Return("test").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.database").Return("db").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
-				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
-				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
-				mockQuery.EXPECT().Scan(&queryResult{}).Return(nil).Twice()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Config().Return(database.Config{
+					Database: "db",
+					Host:     "host",
+					Port:     1234,
+					Username: "username",
+				}).Once()
+
+				// getDataBaseInfo
+				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
+				mockOrm.EXPECT().Name().Return("test").Once()
+				mockOrm.EXPECT().Version().Return("version").Once()
+				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
+
+				// Handle
 				mockSchema.EXPECT().GetTables().Return(nil, assert.AnError).Once()
 				mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 			},
@@ -81,17 +87,21 @@ func TestShowCommand(t *testing.T) {
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
-				mockSchema.EXPECT().GetConnection().Return("test").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.database").Return("db").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
-				mockOrm.EXPECT().Query().Return(mockQuery).Times(4)
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(4)
-				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
-				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
-				mockQuery.EXPECT().Scan(&queryResult{}).Return(nil).Twice()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Config().Return(database.Config{
+					Database: "db",
+					Host:     "host",
+					Port:     1234,
+					Username: "username",
+				}).Once()
+
+				// getDataBaseInfo
+				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
+				mockOrm.EXPECT().Name().Return("test").Once()
+				mockOrm.EXPECT().Version().Return("version").Once()
+				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
+
+				// Handle
 				mockSchema.EXPECT().GetTables().Return(nil, nil).Once()
 				mockContext.EXPECT().OptionBool("views").Return(true).Once()
 				mockSchema.EXPECT().GetViews().Return(nil, assert.AnError).Once()
@@ -104,34 +114,32 @@ func TestShowCommand(t *testing.T) {
 				mockContext.EXPECT().Argument(0).Return("").Once()
 				mockContext.EXPECT().Option("database").Return("test").Once()
 				mockSchema.EXPECT().Connection("test").Return(mockSchema).Once()
-				mockSchema.EXPECT().GetConnection().Return("test").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.database").Return("db").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.host").Return("host").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.port").Return("port").Once()
-				mockConfig.EXPECT().GetString("database.connections.test.username").Return("username").Once()
-				mockQuery.EXPECT().Driver().Return(database.DriverMysql).Twice()
-				mockOrm.EXPECT().Query().Return(mockQuery).Times(5)
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(5)
-				mockQuery.EXPECT().Raw("SELECT VERSION() AS value;").Return(mockQuery).Once()
-				mockQuery.EXPECT().Raw("SHOW status WHERE variable_name = 'threads_connected';").Return(mockQuery).Once()
-				mockQuery.EXPECT().Scan(&queryResult{}).Run(func(dest interface{}) {
-					if d, ok := dest.(*queryResult); ok {
-						d.Value = "test-version-MariaDB"
-					}
-				}).Return(nil).Once()
-				mockQuery.EXPECT().Scan(&queryResult{}).Run(func(dest interface{}) {
-					if d, ok := dest.(*queryResult); ok {
-						d.Value = "2"
-					}
-				}).Return(nil).Once()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Config().Return(database.Config{
+					Database: "db",
+					Host:     "host",
+					Port:     1234,
+					Username: "username",
+				}).Once()
+
+				// getDataBaseInfo
+				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
+				mockOrm.EXPECT().Name().Return("test").Once()
+				mockOrm.EXPECT().Version().Return("version").Once()
+				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
+
+				// Handle
 				mockSchema.EXPECT().GetTables().Return([]schema.Table{
-					{Name: "test", Size: 100},
+					{Name: "test", Size: 1024},
 				}, nil).Once()
 				mockContext.EXPECT().OptionBool("views").Return(true).Once()
 				mockSchema.EXPECT().GetViews().Return([]schema.View{
 					{Name: "test"},
 				}, nil).Once()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
+				mockOrm.EXPECT().Query().Return(mockQuery).Once()
 				mockQuery.EXPECT().Table("test").Return(mockQuery).Once()
+
 				var rows int64
 				mockQuery.EXPECT().Count(&rows).Return(nil).Once()
 				mockContext.EXPECT().NewLine().Times(4)

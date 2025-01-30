@@ -107,26 +107,22 @@ func (s *ApplicationTestSuite) TestGet() {
 func (s *ApplicationTestSuite) TestGetString() {
 	s.config.Add("database", map[string]any{
 		"default": s.config.Env("DB_CONNECTION", "mysql"),
-		"connections": map[string]any{
-			"mysql": map[string]any{
-				"host": s.config.Env("DB_HOST", "127.0.0.1"),
-			},
+		"migrations": map[string]any{
+			"table": "migrations",
 		},
 	})
 	s.customConfig.Add("database", map[string]any{
 		"default": s.customConfig.Env("DB_CONNECTION", "mysql"),
-		"connections": map[string]any{
-			"mysql": map[string]any{
-				"host": s.customConfig.Env("DB_HOST", "127.0.0.1"),
-			},
+		"migrations": map[string]any{
+			"table": "migrations",
 		},
 	})
 
 	s.Equal("goravel", s.config.GetString("APP_NAME", "goravel"))
-	s.Equal("127.0.0.1", s.config.GetString("database.connections.mysql.host"))
+	s.Equal("migrations", s.config.GetString("database.migrations.table"))
 	s.Equal("mysql", s.config.GetString("database.default"))
 	s.Equal("goravel", s.customConfig.GetString("APP_NAME", "goravel"))
-	s.Equal("127.0.0.1", s.customConfig.GetString("database.connections.mysql.host"))
+	s.Equal("migrations", s.customConfig.GetString("database.migrations.table"))
 	s.Equal("mysql", s.customConfig.GetString("database.default"))
 }
 

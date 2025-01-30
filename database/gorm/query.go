@@ -8,18 +8,14 @@ import (
 	"sync"
 
 	"github.com/spf13/cast"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlserver"
 	gormio "gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/database/db"
-	"github.com/goravel/framework/database/gorm/hints"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/database"
 )
@@ -30,8 +26,9 @@ type Query struct {
 	conditions      Conditions
 	config          config.Config
 	ctx             context.Context
-	fullConfig      contractsdatabase.FullConfig
+	dbConfig        contractsdatabase.Config
 	instance        *gormio.DB
+	gormQuery       driver.GormQuery
 	log             log.Log
 	modelToObserver []contractsorm.ModelToObserver
 	mutex           sync.Mutex
@@ -41,8 +38,9 @@ type Query struct {
 func NewQuery(
 	ctx context.Context,
 	config config.Config,
-	fullConfig contractsdatabase.FullConfig,
+	dbConfig contractsdatabase.Config,
 	db *gormio.DB,
+	gormQuery driver.GormQuery,
 	log log.Log,
 	modelToObserver []contractsorm.ModelToObserver,
 	conditions *Conditions,
@@ -50,8 +48,9 @@ func NewQuery(
 	queryImpl := &Query{
 		config:          config,
 		ctx:             ctx,
-		fullConfig:      fullConfig,
+		dbConfig:        dbConfig,
 		instance:        db,
+		gormQuery:       gormQuery,
 		log:             log,
 		modelToObserver: modelToObserver,
 		queries:         make(map[string]*Query),
@@ -64,19 +63,23 @@ func NewQuery(
 	return queryImpl
 }
 
-func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, error) {
-	configBuilder := db.NewConfigBuilder(config, connection)
-	writeConfigs := configBuilder.Writes()
-	if len(writeConfigs) == 0 {
-		return nil, errors.OrmDatabaseConfigNotFound
+func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, contractsdatabase.Config, error) {
+	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
+	if !exist {
+		return nil, contractsdatabase.Config{}, errors.OrmDatabaseConfigNotFound
 	}
 
-	gorm, err := NewGorm(config, configBuilder, log)
+	driver, err := driverCallback()
 	if err != nil {
-		return nil, err
+		return nil, contractsdatabase.Config{}, err
 	}
 
-	return NewQuery(ctx, config, writeConfigs[0], gorm, log, modelToObserver, nil), nil
+	gorm, gormQuery, err := driver.Gorm()
+	if err != nil {
+		return nil, contractsdatabase.Config{}, err
+	}
+
+	return NewQuery(ctx, config, driver.Config(), gorm, gormQuery, log, modelToObserver, nil), driver.Config(), nil
 }
 
 func (r *Query) Association(association string) contractsorm.Association {
@@ -203,8 +206,8 @@ func (r *Query) Distinct(args ...any) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
-func (r *Query) Driver() contractsdatabase.Driver {
-	return contractsdatabase.Driver(r.instance.Dialector.Name())
+func (r *Query) Driver() string {
+	return r.dbConfig.Driver
 }
 
 func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
@@ -578,18 +581,7 @@ func (r *Query) Instance() *gormio.DB {
 }
 
 func (r *Query) InRandomOrder() contractsorm.Query {
-	order := ""
-	switch r.Driver() {
-	case contractsdatabase.DriverMysql:
-		order = "RAND()"
-	case contractsdatabase.DriverSqlserver:
-		order = "NEWID()"
-	case contractsdatabase.DriverPostgres:
-		order = "RANDOM()"
-	case contractsdatabase.DriverSqlite:
-		order = "RANDOM()"
-	}
-	return r.Order(order)
+	return r.Order(r.gormQuery.RandomOrder())
 }
 
 func (r *Query) InTransaction() bool {
@@ -807,7 +799,7 @@ func (r *Query) Sum(column string, dest any) error {
 func (r *Query) Table(name string, args ...any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.table = &Table{
-		name: r.fullConfig.Prefix + name,
+		name: r.dbConfig.Prefix + name,
 		args: args,
 	}
 
@@ -1049,15 +1041,9 @@ func (r *Query) buildLockForUpdate(db *gormio.DB) *gormio.DB {
 		return db
 	}
 
-	driver := r.instance.Name()
-	mysqlDialector := mysql.Dialector{}
-	postgresDialector := postgres.Dialector{}
-	sqlserverDialector := sqlserver.Dialector{}
-
-	if driver == mysqlDialector.Name() || driver == postgresDialector.Name() {
-		return db.Clauses(clause.Locking{Strength: "UPDATE"})
-	} else if driver == sqlserverDialector.Name() {
-		return db.Clauses(hints.With("rowlock", "updlock", "holdlock"))
+	lockForUpdate := r.gormQuery.LockForUpdate()
+	if lockForUpdate != nil {
+		return db.Clauses(lockForUpdate)
 	}
 
 	r.conditions.lockForUpdate = false
@@ -1157,15 +1143,9 @@ func (r *Query) buildSharedLock(db *gormio.DB) *gormio.DB {
 		return db
 	}
 
-	driver := r.instance.Name()
-	mysqlDialector := mysql.Dialector{}
-	postgresDialector := postgres.Dialector{}
-	sqlserverDialector := sqlserver.Dialector{}
-
-	if driver == mysqlDialector.Name() || driver == postgresDialector.Name() {
-		return db.Clauses(clause.Locking{Strength: "SHARE"})
-	} else if driver == sqlserverDialector.Name() {
-		return db.Clauses(hints.With("rowlock", "holdlock"))
+	sharedLock := r.gormQuery.SharedLock()
+	if sharedLock != nil {
+		return db.Clauses(sharedLock)
 	}
 
 	r.conditions.sharedLock = false
@@ -1213,7 +1193,7 @@ func (r *Query) buildWith(db *gormio.DB) *gormio.DB {
 			if arg, ok := item.args[0].(func(contractsorm.Query) contractsorm.Query); ok {
 				newArgs := []any{
 					func(tx *gormio.DB) *gormio.DB {
-						queryImpl := NewQuery(r.ctx, r.config, r.fullConfig, tx, r.log, r.modelToObserver, nil)
+						queryImpl := NewQuery(r.ctx, r.config, r.dbConfig, tx, r.gormQuery, r.log, r.modelToObserver, nil)
 						query := arg(queryImpl)
 						queryImpl = query.(*Query)
 						queryImpl = queryImpl.buildConditions()
@@ -1366,7 +1346,7 @@ func (r *Query) getObserver(dest any) contractsorm.Observer {
 }
 
 func (r *Query) new(db *gormio.DB) *Query {
-	return NewQuery(r.ctx, r.config, r.fullConfig, db, r.log, r.modelToObserver, &r.conditions)
+	return NewQuery(r.ctx, r.config, r.dbConfig, db, r.gormQuery, r.log, r.modelToObserver, &r.conditions)
 }
 
 func (r *Query) omitCreate(value any) error {
@@ -1424,14 +1404,14 @@ func (r *Query) refreshConnection(model any) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	if connection == "" || connection == r.fullConfig.Connection {
+	if connection == "" || connection == r.dbConfig.Connection {
 		return r, nil
 	}
 
 	query, ok := r.queries[connection]
 	if !ok {
 		var err error
-		query, err = BuildQuery(r.ctx, r.config, connection, r.log, r.modelToObserver)
+		query, _, err = BuildQuery(r.ctx, r.config, connection, r.log, r.modelToObserver)
 		if err != nil {
 			return nil, err
 		}
