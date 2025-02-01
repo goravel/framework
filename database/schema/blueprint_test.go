@@ -107,6 +107,15 @@ func (s *BlueprintTestSuite) TestBigInteger() {
 	})
 }
 
+func (s *BlueprintTestSuite) TestBoolean() {
+	name := "name"
+	s.blueprint.Boolean(name)
+	s.Contains(s.blueprint.GetAddedColumns(), &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer("boolean"),
+	})
+}
+
 func (s *BlueprintTestSuite) TestBuild() {
 	mockQuery := mocksorm.NewQuery(s.T())
 	mockGrammar := mocksschema.NewGrammar(s.T())

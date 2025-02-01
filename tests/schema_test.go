@@ -172,7 +172,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 				table.String("nullable").Nullable()
 				table.String("string_default").Default("goravel")
 				table.Integer("integer_default").Default(1)
-				table.Integer("bool_default").Default(true)
+				table.Boolean("bool_default").Default(true)
 				table.TimestampTz("use_current").UseCurrent()
 				table.TimestampTz("use_current_on_update").UseCurrent().UseCurrentOnUpdate()
 			}))
@@ -286,6 +286,15 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 			s.Equal("bigint", column.Type)
 			s.Equal("int8", column.TypeName)
 		}
+		if column.Name == "boolean_default" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a boolean column with default value", column.Comment)
+			s.Equal("true", column.Default)
+			s.False(column.Nullable)
+			s.Equal("boolean", column.Type)
+			s.Equal("bool", column.TypeName)
+		}
 		if column.Name == "char" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Collation)
@@ -303,6 +312,14 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 			s.True(column.Nullable)
 			s.Equal("timestamp(2) without time zone", column.Type)
 			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Equal("This is a custom type column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("macaddr", column.Type)
+			s.Equal("macaddr", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -608,6 +625,14 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("integer", column.Type)
 			s.Equal("integer", column.TypeName)
 		}
+		if column.Name == "boolean_default" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Equal("'1'", column.Default)
+			s.False(column.Nullable)
+			s.Equal("tinyint(1)", column.Type)
+			s.Equal("tinyint", column.TypeName)
+		}
 		if column.Name == "char" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -623,6 +648,14 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.True(column.Nullable)
 			s.Equal("datetime", column.Type)
 			s.Equal("datetime", column.TypeName)
+		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("geometry", column.Type)
+			s.Equal("geometry", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -892,6 +925,15 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.Equal("bigint", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
+		if column.Name == "boolean_default" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Equal("This is a boolean column with default value", column.Comment)
+			s.Equal("1", column.Default)
+			s.False(column.Nullable)
+			s.Equal("tinyint(1)", column.Type)
+			s.Equal("tinyint", column.TypeName)
+		}
 		if column.Name == "char" {
 			s.False(column.Autoincrement)
 			s.Equal("utf8mb4_0900_ai_ci", column.Collation)
@@ -909,6 +951,14 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 			s.True(column.Nullable)
 			s.Equal("timestamp(2)", column.Type)
 			s.Equal("timestamp", column.TypeName)
+		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Equal("This is a custom type column", column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("geometry", column.Type)
+			s.Equal("geometry", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -1207,6 +1257,15 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 			s.Equal("bigint", column.Type)
 			s.Equal("bigint", column.TypeName)
 		}
+		if column.Name == "boolean_default" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Collation)
+			s.Empty(column.Comment)
+			s.Equal("('1')", column.Default)
+			s.False(column.Nullable)
+			s.Equal("bit", column.Type)
+			s.Equal("bit", column.TypeName)
+		}
 		if column.Name == "char" {
 			s.False(column.Autoincrement)
 			s.Equal("SQL_Latin1_General_CP1_CI_AS", column.Collation)
@@ -1224,6 +1283,14 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 			s.True(column.Nullable)
 			s.Equal("datetime2(22)", column.Type)
 			s.Equal("datetime2", column.TypeName)
+		}
+		if column.Name == "custom_type" {
+			s.False(column.Autoincrement)
+			s.Empty(column.Comment)
+			s.Empty(column.Default)
+			s.False(column.Nullable)
+			s.Equal("geometry", column.Type)
+			s.Equal("geometry", column.TypeName)
 		}
 		if column.Name == "date" {
 			s.False(column.Autoincrement)
@@ -2436,7 +2503,13 @@ func (s *SchemaSuite) TestViewMethods() {
 func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contractsschema.Schema, table string) {
 	err := schema.Create(table, func(table contractsschema.Blueprint) {
 		table.BigInteger("big_integer").Comment("This is a big_integer column")
+		table.Boolean("boolean_default").Default(true).Comment("This is a boolean column with default value")
 		table.Char("char").Comment("This is a char column")
+		if schema.GetConnection() != postgres.Name {
+			table.Column("custom_type", "geometry").Comment("This is a custom type column")
+		} else {
+			table.Column("custom_type", "macaddr").Comment("This is a custom type column")
+		}
 		table.Date("date").Comment("This is a date column")
 		table.DateTime("date_time", 3).Comment("This is a date time column")
 		table.DateTimeTz("date_time_tz", 3).Comment("This is a date time with time zone column")
@@ -2476,11 +2549,13 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 	columnListing := schema.GetColumnListing(table)
 
-	s.Equal(33, len(columnListing))
+	s.Equal(35, len(columnListing))
 	s.Contains(columnListing, "another_deleted_at")
 	s.Contains(columnListing, "big_integer")
+	s.Contains(columnListing, "boolean_default")
 	s.Contains(columnListing, "char")
 	s.Contains(columnListing, "created_at")
+	s.Contains(columnListing, "custom_type")
 	s.Contains(columnListing, "date")
 	s.Contains(columnListing, "date_time")
 	s.Contains(columnListing, "date_time_tz")
