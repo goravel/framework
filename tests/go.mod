@@ -6,8 +6,8 @@ toolchain go1.23.4
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/goravel/framework v1.15.2-0.20250125130010-463cb241792f
-	github.com/goravel/postgres v0.0.2-0.20250125132206-b7b9517c53ac
+	github.com/goravel/framework v1.15.2-0.20250201145925-219c1fd077ee
+	github.com/goravel/postgres v0.0.2-0.20250201151054-89092fd392cc
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -49,7 +49,7 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250124145028-65684f501c47 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
