@@ -1498,6 +1498,52 @@ func (_c *Grammar_TypeBigInteger_Call) RunAndReturn(run func(schema.ColumnDefini
 	return _c
 }
 
+// TypeBoolean provides a mock function with given fields: column
+func (_m *Grammar) TypeBoolean(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeBoolean")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeBoolean_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeBoolean'
+type Grammar_TypeBoolean_Call struct {
+	*mock.Call
+}
+
+// TypeBoolean is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeBoolean(column interface{}) *Grammar_TypeBoolean_Call {
+	return &Grammar_TypeBoolean_Call{Call: _e.mock.On("TypeBoolean", column)}
+}
+
+func (_c *Grammar_TypeBoolean_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeBoolean_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeBoolean_Call) Return(_a0 string) *Grammar_TypeBoolean_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeBoolean_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeBoolean_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TypeChar provides a mock function with given fields: column
 func (_m *Grammar) TypeChar(column schema.ColumnDefinition) string {
 	ret := _m.Called(column)
