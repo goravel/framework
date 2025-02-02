@@ -31,6 +31,11 @@ func (s *OrmSuite) SetupSuite() {
 	connection := postgresTestQuery.Driver().Config().Connection
 	s.queries[connection] = postgresTestQuery
 	s.defaultConnection = connection
+
+	mysqlTestQuery := mysqlTestQuery("", false)
+	mysqlTestQuery.CreateTable(TestTableRoles)
+	connection = mysqlTestQuery.Driver().Config().Connection
+	s.queries[connection] = mysqlTestQuery
 }
 
 func (s *OrmSuite) SetupTest() {

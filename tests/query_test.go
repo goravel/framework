@@ -36,6 +36,10 @@ func (s *QueryTestSuite) SetupSuite() {
 	postgresTestQuery := postgresTestQuery("", false)
 	postgresTestQuery.CreateTable()
 	s.queries[postgresTestQuery.Driver().Config().Driver] = postgresTestQuery
+
+	mysqlTestQuery := mysqlTestQuery("", false)
+	mysqlTestQuery.CreateTable()
+	s.queries[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
 }
 
 func (s *QueryTestSuite) SetupTest() {

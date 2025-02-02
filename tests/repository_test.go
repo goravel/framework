@@ -20,9 +20,10 @@ func TestRepositoryTestSuite(t *testing.T) {
 
 func (s *RepositoryTestSuite) SetupTest() {
 	postgresTestQuery := postgresTestQuery("goravel_", true)
-
+	mysqlTestQuery := mysqlTestQuery("goravel_", true)
 	s.driverToTestQuery = map[string]*TestQuery{
 		postgresTestQuery.Driver().Config().Driver: postgresTestQuery,
+		mysqlTestQuery.Driver().Config().Driver:    mysqlTestQuery,
 	}
 }
 

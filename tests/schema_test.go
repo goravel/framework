@@ -31,7 +31,9 @@ func TestSchemaSuite(t *testing.T) {
 func (s *SchemaSuite) SetupTest() {
 	s.prefix = "goravel_"
 	postgresTestQuery := postgresTestQuery(s.prefix, true)
+	mysqlTestQuery := mysqlTestQuery(s.prefix, true)
 	s.driverToTestQuery[postgresTestQuery.Driver().Config().Driver] = postgresTestQuery
+	s.driverToTestQuery[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
 }
 
 func (s *SchemaSuite) TearDownTest() {
