@@ -360,18 +360,20 @@ func (_c *Grammar_CompileDrop_Call) RunAndReturn(run func(schema.Blueprint) stri
 }
 
 // CompileDropAllTables provides a mock function with given fields: _a0, tables
-func (_m *Grammar) CompileDropAllTables(_a0 string, tables []schema.Table) string {
+func (_m *Grammar) CompileDropAllTables(_a0 string, tables []schema.Table) []string {
 	ret := _m.Called(_a0, tables)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropAllTables")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, []schema.Table) string); ok {
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, []schema.Table) []string); ok {
 		r0 = rf(_a0, tables)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
 	return r0
@@ -396,12 +398,12 @@ func (_c *Grammar_CompileDropAllTables_Call) Run(run func(_a0 string, tables []s
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllTables_Call) Return(_a0 string) *Grammar_CompileDropAllTables_Call {
+func (_c *Grammar_CompileDropAllTables_Call) Return(_a0 []string) *Grammar_CompileDropAllTables_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllTables_Call) RunAndReturn(run func(string, []schema.Table) string) *Grammar_CompileDropAllTables_Call {
+func (_c *Grammar_CompileDropAllTables_Call) RunAndReturn(run func(string, []schema.Table) []string) *Grammar_CompileDropAllTables_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -456,18 +458,20 @@ func (_c *Grammar_CompileDropAllTypes_Call) RunAndReturn(run func(string, []sche
 }
 
 // CompileDropAllViews provides a mock function with given fields: _a0, views
-func (_m *Grammar) CompileDropAllViews(_a0 string, views []schema.View) string {
+func (_m *Grammar) CompileDropAllViews(_a0 string, views []schema.View) []string {
 	ret := _m.Called(_a0, views)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropAllViews")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, []schema.View) string); ok {
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, []schema.View) []string); ok {
 		r0 = rf(_a0, views)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
 	return r0
@@ -492,12 +496,12 @@ func (_c *Grammar_CompileDropAllViews_Call) Run(run func(_a0 string, views []sch
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllViews_Call) Return(_a0 string) *Grammar_CompileDropAllViews_Call {
+func (_c *Grammar_CompileDropAllViews_Call) Return(_a0 []string) *Grammar_CompileDropAllViews_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllViews_Call) RunAndReturn(run func(string, []schema.View) string) *Grammar_CompileDropAllViews_Call {
+func (_c *Grammar_CompileDropAllViews_Call) RunAndReturn(run func(string, []schema.View) []string) *Grammar_CompileDropAllViews_Call {
 	_c.Call.Return(run)
 	return _c
 }
