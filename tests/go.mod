@@ -6,8 +6,9 @@ toolchain go1.23.4
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/goravel/framework v1.15.2-0.20250201145925-219c1fd077ee
-	github.com/goravel/postgres v0.0.2-0.20250201151054-89092fd392cc
+	github.com/goravel/framework v1.15.2-0.20250202111117-cbb806d1e8de
+	github.com/goravel/mysql v0.0.0-20250202150522-4e41e0908557
+	github.com/goravel/postgres v0.0.2-0.20250202145044-bfeb31ead351
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -24,6 +25,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dromara/carbon/v2 v2.5.2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
+	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -53,6 +55,7 @@ require (
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
 	gorm.io/plugin/dbresolver v1.5.3 // indirect
 )

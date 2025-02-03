@@ -30,9 +30,12 @@ type Schema struct {
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) *Schema {
 	prefix := driver.Config().Prefix
-	schema := driver.Config().Schema
 	grammar := driver.Grammar()
 	processor := driver.Processor()
+	schema := driver.Config().Schema
+	if schema == "" {
+		schema = driver.Config().Database
+	}
 
 	return &Schema{
 		config:     config,

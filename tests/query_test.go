@@ -10,14 +10,8 @@ import (
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/postgres"
 	"github.com/stretchr/testify/suite"
-)
-
-const (
-	DriverPostgres  = "postgres"
-	DriverMysql     = "mysql"
-	DriverSqlite    = "sqlite"
-	DriverSqlserver = "sqlserver"
 )
 
 type QueryTestSuite struct {
@@ -36,6 +30,10 @@ func (s *QueryTestSuite) SetupSuite() {
 	postgresTestQuery := postgresTestQuery("", false)
 	postgresTestQuery.CreateTable()
 	s.queries[postgresTestQuery.Driver().Config().Driver] = postgresTestQuery
+
+	mysqlTestQuery := mysqlTestQuery("", false)
+	mysqlTestQuery.CreateTable()
+	s.queries[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
 }
 
 func (s *QueryTestSuite) SetupTest() {
@@ -2089,7 +2087,7 @@ func (s *QueryTestSuite) TestJoin() {
 
 func (s *QueryTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
-		if driver != DriverSqlite {
+		if driver != "sqlite" {
 			s.Run(driver, func() {
 				user := User{Name: "lock_for_update_user"}
 				s.Nil(query.Query().Create(&user))
@@ -2963,7 +2961,7 @@ func (s *QueryTestSuite) TestSelect() {
 
 func (s *QueryTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
-		if driver != DriverSqlite {
+		if driver != "sqlite" {
 			s.Run(driver, func() {
 				user := User{Name: "shared_lock_user"}
 				s.Nil(query.Query().Create(&user))
@@ -3091,9 +3089,9 @@ func (s *QueryTestSuite) TestToSql() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			switch driver {
-			case DriverPostgres:
+			case postgres.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
-			case DriverSqlserver:
+			case "sqlserver":
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
@@ -3106,9 +3104,9 @@ func (s *QueryTestSuite) TestToRawSql() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			switch driver {
-			case DriverPostgres:
+			case postgres.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
-			case DriverSqlserver:
+			case "sqlserver":
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))

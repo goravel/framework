@@ -9,6 +9,7 @@ import (
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	databaseschema "github.com/goravel/framework/database/schema"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,9 @@ func TestSchemaSuite(t *testing.T) {
 func (s *SchemaSuite) SetupTest() {
 	s.prefix = "goravel_"
 	postgresTestQuery := postgresTestQuery(s.prefix, true)
+	mysqlTestQuery := mysqlTestQuery(s.prefix, true)
 	s.driverToTestQuery[postgresTestQuery.Driver().Config().Driver] = postgresTestQuery
+	s.driverToTestQuery[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
 }
 
 func (s *SchemaSuite) TearDownTest() {
@@ -221,8 +224,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
 			s.Equal("world", anotherColumnExtraAttribute.Name)
 			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
-			// TODO Replace with mysql.Name
-			if driver == "mysql" {
+			if driver == mysql.Name {
 				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
 				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
 			} else {
@@ -893,12 +895,11 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 }
 
 func (s *SchemaSuite) TestColumnTypes_Mysql() {
-	// TODO Replace with mysql.Name
-	if s.driverToTestQuery["mysql"] == nil {
+	if s.driverToTestQuery[mysql.Name] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery["mysql"]
+	testQuery := s.driverToTestQuery[mysql.Name]
 	schema := newSchema(testQuery, s.driverToTestQuery)
 	table := "mysql_columns"
 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
@@ -1628,12 +1629,11 @@ func (s *SchemaSuite) TestEnum_Sqlite() {
 }
 
 func (s *SchemaSuite) TestEnum_Mysql() {
-	// TODO Replace with mysql.Name
-	if s.driverToTestQuery["mysql"] == nil {
+	if s.driverToTestQuery[mysql.Name] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery["mysql"]
+	testQuery := s.driverToTestQuery[mysql.Name]
 	schema := newSchema(testQuery, s.driverToTestQuery)
 	table := "mysql_enum"
 
@@ -1803,8 +1803,7 @@ func (s *SchemaSuite) TestFullText() {
 
 			s.Require().Nil(err)
 
-			// TODO Replace with mysql.Name
-			if driver == "msyql" || driver == postgres.Name {
+			if driver == mysql.Name || driver == postgres.Name {
 				s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
 				s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
 			} else {
@@ -1840,8 +1839,7 @@ func (s *SchemaSuite) TestPrimary() {
 			if driver == postgres.Name {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			// TODO Replace with mysql.Name
-			if driver == "mysql" {
+			if driver == mysql.Name {
 				s.Require().True(schema.HasIndex(table, "primary"))
 			}
 			// TODO Replace with sqlserver.Name
@@ -1855,8 +1853,7 @@ func (s *SchemaSuite) TestPrimary() {
 			if driver == postgres.Name {
 				s.Require().False(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			// TODO Replace with mysql.Name
-			if driver == "mysql" {
+			if driver == mysql.Name {
 				s.Require().False(schema.HasIndex(table, "primary"))
 			}
 			// TODO Replace with sqlserver.Name
@@ -2039,12 +2036,11 @@ func (s *SchemaSuite) TestID_Sqlite() {
 }
 
 func (s *SchemaSuite) TestID_Mysql() {
-	// TODO Replace with mysql.Name
-	if s.driverToTestQuery["mysql"] == nil {
+	if s.driverToTestQuery[mysql.Name] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery["mysql"]
+	testQuery := s.driverToTestQuery[mysql.Name]
 	schema := newSchema(testQuery, s.driverToTestQuery)
 
 	tests := []struct {
@@ -2317,7 +2313,6 @@ func (s *SchemaSuite) TestSql() {
 
 func (s *SchemaSuite) TestTypeMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		// TODO Add other drivers
 		if driver != postgres.Name {
 			continue
 		}
