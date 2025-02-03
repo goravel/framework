@@ -7,16 +7,22 @@ import (
 	"time"
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/mysql"
 	"github.com/goravel/postgres"
+	"github.com/goravel/sqlite"
+	"github.com/goravel/sqlserver"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type QueryTestSuite struct {
 	suite.Suite
-	queries map[string]*TestQuery
+	queries         map[string]*TestQuery
+	additionalQuery *TestQuery
 }
 
 func TestQueryTestSuite(t *testing.T) {
@@ -27,23 +33,35 @@ func TestQueryTestSuite(t *testing.T) {
 }
 
 func (s *QueryTestSuite) SetupSuite() {
-	postgresTestQuery := postgresTestQuery("", false)
-	postgresTestQuery.CreateTable()
-	s.queries[postgresTestQuery.Driver().Config().Driver] = postgresTestQuery
+	postgresTestQueryOne := postgresTestQuery("", false)
+	postgresTestQueryOne.CreateTable()
+	s.queries[postgresTestQueryOne.Driver().Config().Driver] = postgresTestQueryOne
 
 	mysqlTestQuery := mysqlTestQuery("", false)
 	mysqlTestQuery.CreateTable()
 	s.queries[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
+
+	sqlserverTestQuery := sqlserverTestQuery("", false)
+	sqlserverTestQuery.CreateTable()
+	s.queries[sqlserverTestQuery.Driver().Config().Driver] = sqlserverTestQuery
+
+	sqliteTestQuery := sqliteTestQuery("", false)
+	sqliteTestQuery.CreateTable()
+	s.queries[sqliteTestQuery.Driver().Config().Driver] = sqliteTestQuery
+
+	s.additionalQuery = postgresTestQuery("", false)
+	s.additionalQuery.CreateTable()
 }
 
 func (s *QueryTestSuite) SetupTest() {
 }
 
 func (s *QueryTestSuite) TearDownSuite() {
-	// TODO Shutdown Sqlite
-	// if s.queries[database.DriverSqlite] != nil {
-	// 	s.NoError(s.queries[database.DriverSqlite].Docker().Shutdown())
-	// }
+	if s.queries[sqlite.Name] != nil {
+		docker, err := s.queries[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
+	}
 }
 
 func (s *QueryTestSuite) TestAssociation() {
@@ -414,35 +432,35 @@ func (s *QueryTestSuite) TestCreate() {
 					s.Len(users2, 2)
 				},
 			},
-			// {
-			// 	name: "success when refresh connection",
-			// 	setup: func() {
-			// 		mockCommonConnection(query.MockConfig(), s.additionalQuery, "dummy")
+			{
+				name: "success when refresh connection",
+				setup: func() {
+					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
 
-			// 		people := People{Body: "create_people"}
-			// 		s.Nil(query.Query().Create(&people))
-			// 		s.True(people.ID > 0)
+					people := People{Body: "create_people"}
+					s.Nil(query.Query().Create(&people))
+					s.True(people.ID > 0)
 
-			// 		var count int64
-			// 		err := query.Query().Table("peoples").Where("body", "create_people").Count(&count)
-			// 		s.NoError(err)
-			// 		s.True(count == 0)
+					var count int64
+					err := query.Query().Table("peoples").Where("body", "create_people").Count(&count)
+					s.NoError(err)
+					s.True(count == 0)
 
-			// 		s.Nil(query.Query().Model(&People{}).Create(map[string]any{
-			// 			"body":       "create_people1",
-			// 			"created_at": carbon.Now(),
-			// 			"updated_at": carbon.Now(),
-			// 		}))
+					s.Nil(query.Query().Model(&People{}).Create(map[string]any{
+						"body":       "create_people1",
+						"created_at": carbon.Now(),
+						"updated_at": carbon.Now(),
+					}))
 
-			// 		var people1 People
-			// 		s.Nil(query.Query().Where("body", "create_people1").First(&people1))
-			// 		s.True(people1.ID > 0)
+					var people1 People
+					s.Nil(query.Query().Where("body", "create_people1").First(&people1))
+					s.True(people1.ID > 0)
 
-			// 		err = query.Query().Table("peoples").Where("body", "create_people1").Count(&count)
-			// 		s.NoError(err)
-			// 		s.True(count == 0)
-			// 	},
-			// },
+					err = query.Query().Table("peoples").Where("body", "create_people1").Count(&count)
+					s.NoError(err)
+					s.True(count == 0)
+				},
+			},
 			{
 				name: "success when create with no relationships",
 				setup: func() {
@@ -599,32 +617,32 @@ func (s *QueryTestSuite) TestCursor() {
 	}
 }
 
-// func (s *OrmTestSuite) TestDBRaw() {
-// 	userName := "db_raw"
-// 	for driver, query := range s.queries {
-// 		s.Run(driver, func() {
-// 			user := User{Name: userName}
+func (s *QueryTestSuite) TestDBRaw() {
+	userName := "db_raw"
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: userName}
 
-// 			s.Nil(query.Query().Create(&user))
-// 			s.True(user.ID > 0)
-// 			switch driver {
-// 			case database.DriverSqlserver, database.DriverMysql:
-// 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver))
-// 				s.Nil(err)
-// 				s.Equal(int64(1), res.RowsAffected)
-// 			default:
-// 				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver))
-// 				s.Nil(err)
-// 				s.Equal(int64(1), res.RowsAffected)
-// 			}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
+			switch driver {
+			case sqlserver.Name, mysql.Name:
+				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("concat(name, ?)", driver))
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+			default:
+				res, err := query.Query().Model(&user).Update("Name", databasedb.Raw("name || ?", driver))
+				s.Nil(err)
+				s.Equal(int64(1), res.RowsAffected)
+			}
 
-// 			var user1 User
-// 			s.Nil(query.Query().Find(&user1, user.ID))
-// 			s.True(user1.ID > 0)
-// 			s.True(user1.Name == userName+driver)
-// 		})
-// 	}
-// }
+			var user1 User
+			s.Nil(query.Query().Find(&user1, user.ID))
+			s.True(user1.ID > 0)
+			s.True(user1.Name == userName+driver)
+		})
+	}
+}
 
 func (s *QueryTestSuite) TestDelete() {
 	for _, query := range s.queries {
@@ -680,37 +698,37 @@ func (s *QueryTestSuite) TestDelete() {
 					s.Equal(uint(0), user1.ID)
 				},
 			},
-			// {
-			// 	name: "success when refresh connection",
-			// 	setup: func() {
-			// 		user := User{Name: "delete_user", Avatar: "delete_avatar"}
-			// 		s.Nil(query.Query().Create(&user))
-			// 		s.True(user.ID > 0)
+			{
+				name: "success when refresh connection",
+				setup: func() {
+					user := User{Name: "delete_user", Avatar: "delete_avatar"}
+					s.Nil(query.Query().Create(&user))
+					s.True(user.ID > 0)
 
-			// 		res, err := query.Query().Delete(&user)
-			// 		s.Equal(int64(1), res.RowsAffected)
-			// 		s.Nil(err)
+					res, err := query.Query().Delete(&user)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
 
-			// 		var user1 User
-			// 		s.Nil(query.Query().Find(&user1, user.ID))
-			// 		s.Equal(uint(0), user1.ID)
+					var user1 User
+					s.Nil(query.Query().Find(&user1, user.ID))
+					s.Equal(uint(0), user1.ID)
 
-			// 		// refresh connection
-			// 		mockCommonConnection(query.MockConfig(), query, "dummy")
+					// refresh connection
+					mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
 
-			// 		people := People{Body: "delete_people"}
-			// 		s.Nil(query.Query().Create(&people))
-			// 		s.True(people.ID > 0)
+					people := People{Body: "delete_people"}
+					s.Nil(query.Query().Create(&people))
+					s.True(people.ID > 0)
 
-			// 		res, err = query.Query().Delete(&people)
-			// 		s.Equal(int64(1), res.RowsAffected)
-			// 		s.Nil(err)
+					res, err = query.Query().Delete(&people)
+					s.Equal(int64(1), res.RowsAffected)
+					s.Nil(err)
 
-			// 		var people1 People
-			// 		s.Nil(query.Query().Find(&people1, people.ID))
-			// 		s.Equal(uint(0), people1.ID)
-			// 	},
-			// },
+					var people1 People
+					s.Nil(query.Query().Find(&people1, people.ID))
+					s.Equal(uint(0), people1.ID)
+				},
+			},
 			{
 				name: "success by id",
 				setup: func() {
@@ -1776,28 +1794,28 @@ func (s *QueryTestSuite) TestFindOrFail() {
 	}
 }
 
-// func (s *OrmTestSuite) TestFirst() {
-// 	for _, query := range s.queries {
-// 		user := User{Name: "first_user"}
-// 		s.Nil(query.Query().Create(&user))
-// 		s.True(user.ID > 0)
+func (s *QueryTestSuite) TestFirst() {
+	for _, query := range s.queries {
+		user := User{Name: "first_user"}
+		s.Nil(query.Query().Create(&user))
+		s.True(user.ID > 0)
 
-// 		var user1 User
-// 		s.Nil(query.Query().Where("name", "first_user").First(&user1))
-// 		s.True(user1.ID > 0)
+		var user1 User
+		s.Nil(query.Query().Where("name", "first_user").First(&user1))
+		s.True(user1.ID > 0)
 
-// 		// refresh connection
-// 		mockCommonConnection(query.MockConfig(), query, "dummy")
+		// refresh connection
+		mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
 
-// 		people := People{Body: "first_people"}
-// 		s.Nil(query.Query().Create(&people))
-// 		s.True(people.ID > 0)
+		people := People{Body: "first_people"}
+		s.Nil(query.Query().Create(&people))
+		s.True(people.ID > 0)
 
-// 		var people1 People
-// 		s.Nil(query.Query().Where("id in ?", []uint{people.ID}).First(&people1))
-// 		s.True(people1.ID > 0)
-// 	}
-// }
+		var people1 People
+		s.Nil(query.Query().Where("id in ?", []uint{people.ID}).First(&people1))
+		s.True(people1.ID > 0)
+	}
+}
 
 func (s *QueryTestSuite) TestFirstOr() {
 	for _, query := range s.queries {
@@ -2031,34 +2049,34 @@ func (s *QueryTestSuite) TestForceDelete() {
 	}
 }
 
-// func (s *OrmTestSuite) TestGet() {
-// 	for driver, query := range s.queries {
-// 		s.Run(driver, func() {
-// 			user := User{Name: "get_user"}
-// 			s.Nil(query.Query().Create(&user))
-// 			s.True(user.ID > 0)
+func (s *QueryTestSuite) TestGet() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			user := User{Name: "get_user"}
+			s.Nil(query.Query().Create(&user))
+			s.True(user.ID > 0)
 
-// 			var user1 []User
-// 			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user1))
-// 			s.Equal(1, len(user1))
+			var user1 []User
+			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user1))
+			s.Equal(1, len(user1))
 
-// 			// refresh connection
-// 			mockCommonConnection(query.MockConfig(), query, "dummy")
+			// refresh connection
+			mockDatabaseConfig(query.MockConfig(), s.additionalQuery.Driver().Config(), "dummy", "", false)
 
-// 			people := People{Body: "get_people"}
-// 			s.Nil(query.Query().Create(&people))
-// 			s.True(people.ID > 0)
+			people := People{Body: "get_people"}
+			s.Nil(query.Query().Create(&people))
+			s.True(people.ID > 0)
 
-// 			var people1 []People
-// 			s.Nil(query.Query().Where("id in ?", []uint{people.ID}).Get(&people1))
-// 			s.Equal(1, len(people1))
+			var people1 []People
+			s.Nil(query.Query().Where("id in ?", []uint{people.ID}).Get(&people1))
+			s.Equal(1, len(people1))
 
-// 			var user2 []User
-// 			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user2))
-// 			s.Equal(1, len(user2))
-// 		})
-// 	}
-// }
+			var user2 []User
+			s.Nil(query.Query().Where("id in ?", []uint{user.ID}).Get(&user2))
+			s.Equal(1, len(user2))
+		})
+	}
+}
 
 func (s *QueryTestSuite) TestJoin() {
 	for driver, query := range s.queries {
@@ -2087,7 +2105,7 @@ func (s *QueryTestSuite) TestJoin() {
 
 func (s *QueryTestSuite) TestLockForUpdate() {
 	for driver, query := range s.queries {
-		if driver != "sqlite" {
+		if driver != sqlite.Name {
 			s.Run(driver, func() {
 				user := User{Name: "lock_for_update_user"}
 				s.Nil(query.Query().Create(&user))
@@ -2666,84 +2684,6 @@ func (s *QueryTestSuite) TestReuse() {
 	}
 }
 
-// func (s *OrmTestSuite) TestRefreshConnection() {
-// 	tests := []struct {
-// 		name             string
-// 		model            any
-// 		setup            func()
-// 		expectConnection string
-// 		expectErr        string
-// 	}{
-// 		{
-// 			name: "invalid model",
-// 			model: func() any {
-// 				var product string
-// 				return product
-// 			}(),
-// 			setup:     func() {},
-// 			expectErr: errors.OrmQueryInvalidModel.Args("").Error(),
-// 		},
-// 		{
-// 			name: "the connection of model is empty",
-// 			model: func() any {
-// 				var review Review
-// 				return review
-// 			}(),
-// 			setup:            func() {},
-// 			expectConnection: "postgres",
-// 		},
-// 		{
-// 			name: "the connection of model is same as current connection",
-// 			model: func() any {
-// 				var box Box
-// 				return box
-// 			}(),
-// 			setup:            func() {},
-// 			expectConnection: "postgres",
-// 		},
-// 		{
-// 			name: "connections are different, but drivers are same",
-// 			model: func() any {
-// 				var people People
-// 				return people
-// 			}(),
-// 			setup: func() {
-// 				mockCommonConnection(s.queries[database.DriverPostgres].MockConfig(), s.additionalQuery, "dummy")
-// 			},
-// 			expectConnection: "dummy",
-// 		},
-// 		{
-// 			name: "connections and drivers are different",
-// 			model: func() any {
-// 				var product Product
-// 				return product
-// 			}(),
-// 			setup: func() {
-// 				mockCommonConnection(s.queries[database.DriverPostgres].MockConfig(), s.queries[database.DriverSqlite], "sqlite")
-// 			},
-// 			expectConnection: "sqlite",
-// 		},
-// 	}
-
-// 	for _, test := range tests {
-// 		s.Run(test.name, func() {
-// 			test.setup()
-// 			testQuery := s.queries[database.DriverPostgres]
-// 			query, err := testQuery.Query().(*Query).refreshConnection(test.model)
-// 			if test.expectErr != "" {
-// 				s.EqualError(err, test.expectErr)
-// 			} else {
-// 				s.Nil(err)
-// 			}
-// 			if test.expectConnection == "" {
-// 				s.Nil(query)
-// 			} else {
-// 				s.Equal(test.expectConnection, query.dbConfig.Connection)
-// 			}
-// 		})
-// 	}
-// }
-
 func (s *QueryTestSuite) TestSave() {
 	for _, query := range s.queries {
 		tests := []struct {
@@ -2961,7 +2901,7 @@ func (s *QueryTestSuite) TestSelect() {
 
 func (s *QueryTestSuite) TestSharedLock() {
 	for driver, query := range s.queries {
-		if driver != "sqlite" {
+		if driver != sqlite.Name {
 			s.Run(driver, func() {
 				user := User{Name: "shared_lock_user"}
 				s.Nil(query.Query().Create(&user))
@@ -3091,7 +3031,7 @@ func (s *QueryTestSuite) TestToSql() {
 			switch driver {
 			case postgres.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
-			case "sqlserver":
+			case sqlserver.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = @p1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = ? AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToSql().Find(User{}))
@@ -3106,7 +3046,7 @@ func (s *QueryTestSuite) TestToRawSql() {
 			switch driver {
 			case postgres.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = 1 AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
-			case "sqlserver":
+			case sqlserver.Name:
 				s.Equal("SELECT * FROM \"users\" WHERE \"id\" = $1$ AND \"users\".\"deleted_at\" IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
 			default:
 				s.Equal("SELECT * FROM `users` WHERE `id` = 1 AND `users`.`deleted_at` IS NULL", query.Query().Where("id", 1).ToRawSql().Find(User{}))
@@ -3657,59 +3597,49 @@ func (s *QueryTestSuite) TestWithNesting() {
 	}
 }
 
-// func TestCustomConnection(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
+func TestCustomConnection(t *testing.T) {
+	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
-// 	postgresDocker := supportdocker.Postgres()
-// 	require.NoError(t, postgresDocker.Ready())
+	sqliteTestQuery := sqliteTestQuery("", false)
+	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
-// 	postgresQuery := NewTestQuery(postgresDocker)
-// 	postgresQuery.CreateTable(TestTableReviews, TestTableProducts)
+	query := postgresTestQuery.Query()
 
-// 	sqliteDocker := supportdocker.Sqlite()
-// 	sqliteQuery := NewTestQuery(sqliteDocker)
-// 	sqliteQuery.CreateTable(TestTableReviews, TestTableProducts)
+	review := Review{Body: "create_review"}
+	assert.Nil(t, query.Create(&review))
+	assert.True(t, review.ID > 0)
 
-// 	query := postgresQuery.Query()
+	var review1 Review
+	assert.Nil(t, query.Where("body", "create_review").First(&review1))
+	assert.True(t, review1.ID > 0)
 
-// 	review := Review{Body: "create_review"}
-// 	assert.Nil(t, query.Create(&review))
-// 	assert.True(t, review.ID > 0)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), "sqlite", "", false)
 
-// 	var review1 Review
-// 	assert.Nil(t, query.Where("body", "create_review").First(&review1))
-// 	assert.True(t, review1.ID > 0)
+	product := Product{Name: "create_product"}
+	assert.Nil(t, query.Create(&product))
+	assert.True(t, product.ID > 0)
 
-// 	mockCommonConnection(postgresQuery.MockConfig(), sqliteQuery, "sqlite")
+	var product1 Product
+	assert.Nil(t, query.Where("name", "create_product").First(&product1))
+	assert.True(t, product1.ID > 0)
 
-// 	product := Product{Name: "create_product"}
-// 	assert.Nil(t, query.Create(&product))
-// 	assert.True(t, product.ID > 0)
+	var product2 Product
+	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
+	assert.True(t, product2.ID == 0)
 
-// 	var product1 Product
-// 	assert.Nil(t, query.Where("name", "create_product").First(&product1))
-// 	assert.True(t, product1.ID > 0)
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), postgresTestQuery.Driver().Config(), "dummy", "", false)
 
-// 	var product2 Product
-// 	assert.Nil(t, query.Where("name", "create_product1").First(&product2))
-// 	assert.True(t, product2.ID == 0)
+	person := Person{Name: "create_person"}
+	assert.NotNil(t, query.Create(&person))
+	assert.True(t, person.ID == 0)
 
-// 	mockCommonConnection(postgresQuery.MockConfig(), postgresQuery, "dummy")
-
-// 	person := Person{Name: "create_person"}
-// 	assert.NotNil(t, query.Create(&person))
-// 	assert.True(t, person.ID == 0)
-
-// 	assert.NoError(t, sqliteDocker.Shutdown())
-// }
+	docker, err := sqliteTestQuery.Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
+}
 
 // func TestReadWriteSeparate(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
-
 // 	dbs := NewTestQueries().QueriesOfReadWrite()
 
 // 	for drive, db := range dbs {
@@ -3751,71 +3681,67 @@ func (s *QueryTestSuite) TestWithNesting() {
 // 	assert.NoError(t, dbs[database.DriverSqlite]["write"].Docker().Shutdown())
 // }
 
-// func TestTablePrefixAndSingular(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
+func TestTablePrefixAndSingular(t *testing.T) {
+	postgresTestQueryOne := postgresTestQuery("goravel_", true)
+	mysqlTestQuery := mysqlTestQuery("goravel_", true)
+	sqlserverTestQuery := sqlserverTestQuery("goravel_", true)
+	sqliteTestQuery := sqliteTestQuery("goravel_", true)
 
-// 	dbs := NewTestQueries().QueriesWithPrefixAndSingular()
+	queries := map[string]*TestQuery{
+		postgresTestQueryOne.Driver().Config().Driver: postgresTestQueryOne,
+		mysqlTestQuery.Driver().Config().Driver:       mysqlTestQuery,
+		sqlserverTestQuery.Driver().Config().Driver:   sqlserverTestQuery,
+		sqliteTestQuery.Driver().Config().Driver:      sqliteTestQuery,
+	}
 
-// 	for drive, db := range dbs {
-// 		t.Run(drive.String(), func(t *testing.T) {
-// 			db.CreateTable(TestTableGoravelUser)
+	for drive, query := range queries {
+		t.Run(drive, func(t *testing.T) {
+			query.CreateTable(TestTableUser)
 
-// 			user := User{Name: "user"}
-// 			assert.Nil(t, db.Query().Create(&user))
-// 			assert.True(t, user.ID > 0)
+			user := User{Name: "user"}
+			assert.Nil(t, query.Query().Create(&user))
+			assert.True(t, user.ID > 0)
 
-// 			var user1 User
-// 			assert.Nil(t, db.Query().Find(&user1, user.ID))
-// 			assert.True(t, user1.ID > 0)
-// 		})
-// 	}
+			var user1 User
+			assert.Nil(t, query.Query().Find(&user1, user.ID))
+			assert.True(t, user1.ID > 0)
+		})
+	}
 
-// 	if dbs[database.DriverSqlite] != nil {
-// 		assert.NoError(t, dbs[database.DriverSqlite].Docker().Shutdown())
-// 	}
-// }
+	if queries[sqliteTestQuery.Driver().Config().Driver] != nil {
+		docker, err := queries[sqliteTestQuery.Driver().Config().Driver].Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}
+}
 
-// func TestPostgresSchema(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
+func TestPostgresWithSchema(t *testing.T) {
+	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery.WithSchema(testSchema)
+	postgresTestQuery.CreateTable(TestTableUsers)
 
-// 	postgresDocker := supportdocker.Postgres()
-// 	require.NoError(t, postgresDocker.Ready())
+	user := User{Name: "first_user"}
+	assert.Nil(t, postgresTestQuery.Query().Create(&user))
+	assert.True(t, user.ID > 0)
 
-// 	testQuery := NewTestQueryWithSchema(postgresDocker, "goravel")
-// 	testQuery.CreateTable(TestTableUsers)
+	var user1 User
+	assert.Nil(t, postgresTestQuery.Query().Where("name", "first_user").First(&user1))
+	assert.True(t, user1.ID > 0)
+}
 
-// 	user := User{Name: "first_user"}
-// 	assert.Nil(t, testQuery.Query().Create(&user))
-// 	assert.True(t, user.ID > 0)
+func TestSqlserverWithSchema(t *testing.T) {
+	sqlserverTestQuery := sqlserverTestQuery("", false)
+	sqlserverTestQuery.WithSchema(testSchema)
+	sqlserverTestQuery.CreateTable(TestTableSchema)
 
-// 	var user1 User
-// 	assert.Nil(t, testQuery.Query().Where("name", "first_user").First(&user1))
-// 	assert.True(t, user1.ID > 0)
-// }
+	schema := Schema{Name: "first_schema"}
+	assert.Nil(t, sqlserverTestQuery.Query().Create(&schema))
+	assert.True(t, schema.ID > 0)
 
-// func TestSqlserverSchema(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
-
-// 	sqlserverDocker := supportdocker.Sqlserver()
-// 	require.NoError(t, sqlserverDocker.Ready())
-
-// 	testQuery := NewTestQueryWithSchema(sqlserverDocker, "goravel")
-// 	testQuery.CreateTable(TestTableSchema)
-
-// 	schema := Schema{Name: "first_schema"}
-// 	assert.Nil(t, testQuery.Query().Create(&schema))
-// 	assert.True(t, schema.ID > 0)
-
-// 	var schema1 Schema
-// 	assert.Nil(t, testQuery.Query().Where("name", "first_schema").First(&schema1))
-// 	assert.True(t, schema1.ID > 0)
-// }
+	var schema1 Schema
+	assert.Nil(t, sqlserverTestQuery.Query().Where("name", "first_schema").First(&schema1))
+	assert.True(t, schema1.ID > 0)
+}
 
 func paginator(page string, limit string) func(methods contractsorm.Query) contractsorm.Query {
 	return func(query contractsorm.Query) contractsorm.Query {
@@ -3826,8 +3752,3 @@ func paginator(page string, limit string) func(methods contractsorm.Query) contr
 		return query.Offset(offset).Limit(limit)
 	}
 }
-
-// func mockCommonConnection(mockConfig *mocksconfig.Config, testQuery *TestQuery, connection string) {
-// 	mockDriver := getMockDriver(testQuery.Docker(), mockConfig, connection)
-// 	mockDriver.Common()
-// }

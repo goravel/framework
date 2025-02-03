@@ -46,6 +46,8 @@ type DatabaseDriver interface {
 }
 
 type DatabaseConfig struct {
+	// TODO: Fill this field
+	Driver      string
 	Host        string
 	Port        int
 	Database    string

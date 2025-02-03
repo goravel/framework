@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/sqlite"
 )
 
 type RepositoryTestSuite struct {
@@ -21,9 +22,21 @@ func TestRepositoryTestSuite(t *testing.T) {
 func (s *RepositoryTestSuite) SetupTest() {
 	postgresTestQuery := postgresTestQuery("goravel_", true)
 	mysqlTestQuery := mysqlTestQuery("goravel_", true)
+	sqlserverTestQuery := sqlserverTestQuery("goravel_", true)
+	sqliteTestQuery := sqliteTestQuery("goravel_", true)
 	s.driverToTestQuery = map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Driver: postgresTestQuery,
-		mysqlTestQuery.Driver().Config().Driver:    mysqlTestQuery,
+		postgresTestQuery.Driver().Config().Driver:  postgresTestQuery,
+		mysqlTestQuery.Driver().Config().Driver:     mysqlTestQuery,
+		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
+		sqliteTestQuery.Driver().Config().Driver:    sqliteTestQuery,
+	}
+}
+
+func (s *RepositoryTestSuite) TearDownTest() {
+	if s.driverToTestQuery[sqlite.Name] != nil {
+		docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
 	}
 }
 
