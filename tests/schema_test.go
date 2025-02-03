@@ -1629,7 +1629,6 @@ func (s *SchemaSuite) TestEnum_Sqlite() {
 }
 
 func (s *SchemaSuite) TestEnum_Mysql() {
-	// TODO Replace with mysql.Name
 	if s.driverToTestQuery[mysql.Name] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -1804,7 +1803,6 @@ func (s *SchemaSuite) TestFullText() {
 
 			s.Require().Nil(err)
 
-			// TODO Replace with mysql.Name
 			if driver == mysql.Name || driver == postgres.Name {
 				s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
 				s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
@@ -1855,7 +1853,6 @@ func (s *SchemaSuite) TestPrimary() {
 			if driver == postgres.Name {
 				s.Require().False(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			// TODO Replace with mysql.Name
 			if driver == mysql.Name {
 				s.Require().False(schema.HasIndex(table, "primary"))
 			}
@@ -2039,7 +2036,6 @@ func (s *SchemaSuite) TestID_Sqlite() {
 }
 
 func (s *SchemaSuite) TestID_Mysql() {
-	// TODO Replace with mysql.Name
 	if s.driverToTestQuery[mysql.Name] == nil {
 		s.T().Skip("Skip test")
 	}
@@ -2317,7 +2313,6 @@ func (s *SchemaSuite) TestSql() {
 
 func (s *SchemaSuite) TestTypeMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		// TODO Add other drivers
 		if driver != postgres.Name {
 			continue
 		}
