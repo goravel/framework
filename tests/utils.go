@@ -23,7 +23,7 @@ const (
 )
 
 func postgresTestQuery(prefix string, singular bool) *TestQuery {
-	connection := "postgres"
+	connection := postgres.Name
 	mockConfig := &mocksconfig.Config{}
 	image := postgres.NewDocker(postgres.NewConfig(mockConfig, connection), testDatabase, testUsername, testPassword)
 	container := docker.NewContainer(image)
@@ -77,7 +77,7 @@ func postgresTestQuery(prefix string, singular bool) *TestQuery {
 }
 
 func mysqlTestQuery(prefix string, singular bool) *TestQuery {
-	connection := "mysql"
+	connection := mysql.Name
 	mockConfig := &mocksconfig.Config{}
 	image := mysql.NewDocker(mysql.NewConfig(mockConfig, connection), testDatabase, testUsername, testPassword)
 	container := docker.NewContainer(image)

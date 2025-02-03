@@ -37,7 +37,7 @@ func NewTestQuery(ctx context.Context, driver driver.Driver, config config.Confi
 func (r *TestQuery) CreateTable(testTables ...TestTable) {
 	driverName := r.driver.Config().Driver
 
-	for table, sql := range newTestTables(driverName).All() {
+	for table, sql := range newTestTables(driverName, r.Driver().Grammar()).All() {
 		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
 			if _, err := r.query.Exec(sql()); err != nil {
 				panic(fmt.Sprintf("create table %v failed: %v", table, err))

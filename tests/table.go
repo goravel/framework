@@ -1,5 +1,10 @@
 package tests
 
+import (
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/schema"
+)
+
 type TestTable int
 
 const (
@@ -19,11 +24,12 @@ const (
 )
 
 type testTables struct {
-	driver string
+	driver  string
+	grammar contractsschema.Grammar
 }
 
-func newTestTables(driver string) *testTables {
-	return &testTables{driver: driver}
+func newTestTables(driver string, grammar contractsschema.Grammar) *testTables {
+	return &testTables{driver: driver, grammar: grammar}
 }
 
 func (r *testTables) All() map[TestTable]func() string {
@@ -45,717 +51,157 @@ func (r *testTables) All() map[TestTable]func() string {
 }
 
 func (r *testTables) peoples() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE peoples (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  body varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL,
-  PRIMARY KEY (id),
-  KEY idx_users_created_at (created_at),
-  KEY idx_users_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE peoples (
-  id SERIAL PRIMARY KEY NOT NULL,
-  body varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL,
-  deleted_at timestamp DEFAULT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE peoples (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  body varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE peoples (
-  id bigint NOT NULL IDENTITY(1,1),
-  body varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "peoples")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("body")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) reviews() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE reviews (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  body varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL,
-  PRIMARY KEY (id),
-  KEY idx_users_created_at (created_at),
-  KEY idx_users_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE reviews (
-  id SERIAL PRIMARY KEY NOT NULL,
-  body varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL,
-  deleted_at timestamp DEFAULT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE reviews (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  body varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE reviews (
-  id bigint NOT NULL IDENTITY(1,1),
-  body varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "reviews")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("body")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) products() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE products (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL,
-  PRIMARY KEY (id),
-  KEY idx_users_created_at (created_at),
-  KEY idx_users_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE products (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL,
-  deleted_at timestamp DEFAULT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE products (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE products (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "products")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) users() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE users (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL,
-  PRIMARY KEY (id),
-  KEY idx_users_created_at (created_at),
-  KEY idx_users_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL,
-  deleted_at timestamp DEFAULT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE users (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE users (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "users")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("bio").Nullable()
+	blueprint.String("avatar").Nullable()
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) goravelUser() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE goravel_user (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  deleted_at datetime(3) DEFAULT NULL,
-  PRIMARY KEY (id),
-  KEY idx_users_created_at (created_at),
-  KEY idx_users_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE goravel_user (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL,
-  deleted_at timestamp DEFAULT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE goravel_user (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE goravel_user (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  bio varchar(255) DEFAULT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  deleted_at datetime DEFAULT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "goravel_user")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("bio").Nullable()
+	blueprint.String("avatar").Nullable()
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) addresses() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE addresses (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  user_id bigint(20) unsigned DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  province varchar(255) DEFAULT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_addresses_created_at (created_at),
-  KEY idx_addresses_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE addresses (
-  id SERIAL PRIMARY KEY NOT NULL,
-  user_id int DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  province varchar(255) DEFAULT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE addresses (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  user_id int DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  province varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE addresses (
-  id bigint NOT NULL IDENTITY(1,1),
-  user_id bigint DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  province varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "addresses")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.UnsignedBigInteger("user_id").Nullable()
+	blueprint.String("name")
+	blueprint.String("province").Nullable()
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) books() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE books (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  user_id bigint(20) unsigned DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_books_created_at (created_at),
-  KEY idx_books_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE books (
-  id SERIAL PRIMARY KEY NOT NULL,
-  user_id int DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE books (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  user_id int DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE books (
-  id bigint NOT NULL IDENTITY(1,1),
-  user_id bigint DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "books")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.UnsignedBigInteger("user_id").Nullable()
+	blueprint.String("name")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) authors() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE authors (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  book_id bigint(20) unsigned DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_books_created_at (created_at),
-  KEY idx_books_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE authors (
-  id SERIAL PRIMARY KEY NOT NULL,
-  book_id int DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE authors (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  book_id int DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE authors (
-  id bigint NOT NULL IDENTITY(1,1),
-  book_id bigint DEFAULT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "authors")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.UnsignedBigInteger("book_id").Nullable()
+	blueprint.String("name")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) roles() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE roles (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_roles_created_at (created_at),
-  KEY idx_roles_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE roles (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE roles (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE roles (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  avatar varchar(255) DEFAULT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "roles")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.String("avatar").Nullable()
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) houses() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE houses (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  houseable_id bigint(20) unsigned NOT NULL,
-  houseable_type varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_houses_created_at (created_at),
-  KEY idx_houses_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE houses (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  houseable_id int NOT NULL,
-  houseable_type varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE houses (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  houseable_id int NOT NULL,
-  houseable_type varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE houses (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  houseable_id bigint NOT NULL,
-  houseable_type varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "houses")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.UnsignedBigInteger("houseable_id")
+	blueprint.String("houseable_type")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) phones() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE phones (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  phoneable_id bigint(20) unsigned NOT NULL,
-  phoneable_type varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_phones_created_at (created_at),
-  KEY idx_phones_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE phones (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  phoneable_id int NOT NULL,
-  phoneable_type varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE phones (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  phoneable_id int NOT NULL,
-  phoneable_type varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE phones (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  phoneable_id bigint NOT NULL,
-  phoneable_type varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "phones")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.UnsignedBigInteger("phoneable_id")
+	blueprint.String("phoneable_type")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) roleUser() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE role_user (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  role_id bigint(20) unsigned NOT NULL,
-  user_id bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE role_user (
-  id SERIAL PRIMARY KEY NOT NULL,
-  role_id int NOT NULL,
-  user_id int NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE role_user (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  role_id int NOT NULL,
-  user_id int NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE role_user (
-  id bigint NOT NULL IDENTITY(1,1),
-  role_id bigint NOT NULL,
-  user_id bigint NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "role_user")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.UnsignedBigInteger("role_id")
+	blueprint.UnsignedBigInteger("user_id")
+	blueprint.Timestamps()
+	blueprint.SoftDeletes()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
 
 func (r *testTables) schema() string {
-	switch r.driver {
-	// TODO Replace with mysql.Name
-	case "mysql":
-		return `
-CREATE TABLE goravel.schemas (
-  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  name varchar(255) NOT NULL,
-  created_at datetime(3) NOT NULL,
-  updated_at datetime(3) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_schemas_created_at (created_at),
-  KEY idx_schemas_updated_at (updated_at)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-`
-	case "postgres":
-		return `
-CREATE TABLE goravel.schemas (
-  id SERIAL PRIMARY KEY NOT NULL,
-  name varchar(255) NOT NULL,
-  created_at timestamp NOT NULL,
-  updated_at timestamp NOT NULL
-);
-`
-	// TODO Replace with sqlite.Name
-	case "sqlite":
-		return `
-CREATE TABLE goravel.schemas (
-  id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL
-);
-`
-	// TODO Replace with sqlserver.Name
-	case "sqlserver":
-		return `
-CREATE TABLE goravel.schemas (
-  id bigint NOT NULL IDENTITY(1,1),
-  name varchar(255) NOT NULL,
-  created_at datetime NOT NULL,
-  updated_at datetime NOT NULL,
-  PRIMARY KEY (id)
-);
-`
-	default:
-		return ""
-	}
+	blueprint := schema.NewBlueprint(nil, "", "schemas")
+	blueprint.Create()
+	blueprint.BigIncrements("id")
+	blueprint.String("name")
+	blueprint.Timestamps()
+
+	return blueprint.ToSql(r.grammar)[0]
 }
