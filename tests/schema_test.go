@@ -2580,35 +2580,29 @@ func TestPostgresSchema(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, tables, 1)
-	assert.Equal(t, "table", tables[0].Name)
+	assert.Equal(t, table, tables[0].Name)
 	assert.Equal(t, "public", tables[0].Schema)
 	assert.True(t, newSchema.HasTable(fmt.Sprintf("public.%s", table)))
 	assert.True(t, newSchema.HasTable(table))
 }
 
-// func TestSqlserverSchema(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
+func TestSqlserverSchema(t *testing.T) {
+	schema := "goravel"
+	table := "table"
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+	sqlserverTestQuery.WithSchema(testSchema)
+	newSchema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
+		sqlserverTestQuery.Driver().Config().Connection: sqlserverTestQuery,
+	})
 
-// 	schema := "goravel"
-// 	table := "table"
-// 	sqlserverDocker := docker.Sqlserver()
-// 	require.NoError(t, sqlserverDocker.Ready())
+	assert.NoError(t, newSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
+		table.String("name")
+	}))
+	tables, err := newSchema.GetTables()
 
-// 	sqlserverQuery := gorm.NewTestQueryWithSchema(sqlserverDocker, schema)
-// 	newSchema := newSchema(sqlserverQuery, map[database.Driver]*gorm.TestQuery{
-// 		database.DriverSqlserver: sqlserverQuery,
-// 	})
-
-// 	assert.NoError(t, newSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
-// 		table.String("name")
-// 	}))
-// 	tables, err := newSchema.GetTables()
-
-// 	assert.NoError(t, err)
-// 	assert.Len(t, tables, 1)
-// 	assert.Equal(t, "table", tables[0].Name)
-// 	assert.Equal(t, schema, tables[0].Schema)
-// 	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
-// }
+	assert.NoError(t, err)
+	assert.Len(t, tables, 1)
+	assert.Equal(t, table, tables[0].Name)
+	assert.Equal(t, schema, tables[0].Schema)
+	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
+}
