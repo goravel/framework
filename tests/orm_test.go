@@ -9,6 +9,8 @@ import (
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/postgres"
+	"github.com/goravel/sqlite"
 )
 
 type OrmSuite struct {
@@ -26,16 +28,11 @@ func TestOrmSuite(t *testing.T) {
 }
 
 func (s *OrmSuite) SetupSuite() {
-	postgresTestQuery := postgresTestQuery("", false)
-	postgresTestQuery.CreateTable(TestTableRoles)
-	connection := postgresTestQuery.Driver().Config().Connection
-	s.queries[connection] = postgresTestQuery
-	s.defaultConnection = connection
-
-	mysqlTestQuery := mysqlTestQuery("", false)
-	mysqlTestQuery.CreateTable(TestTableRoles)
-	connection = mysqlTestQuery.Driver().Config().Connection
-	s.queries[connection] = mysqlTestQuery
+	s.defaultConnection = postgres.Name
+	s.queries = NewTestQueryBuilder().All("", false)
+	for _, query := range s.queries {
+		query.CreateTable(TestTableRoles)
+	}
 }
 
 func (s *OrmSuite) SetupTest() {
@@ -49,10 +46,11 @@ func (s *OrmSuite) SetupTest() {
 }
 
 func (s *OrmSuite) TearDownSuite() {
-	// TODO Shutdown Sqlite
-	// if s.queries[database.DriverSqlite] != nil {
-	// 	s.NoError(s.queries[database.DriverSqlite].Docker().Shutdown())
-	// }
+	if s.queries[sqlite.Name] != nil {
+		docker, err := s.queries[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
+	}
 }
 
 func (s *OrmSuite) TestConnection() {

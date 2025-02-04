@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/goravel/framework v1.15.2-0.20250202111117-cbb806d1e8de
+	github.com/goravel/framework v1.15.2-0.20250203035626-702075c1ceaa
 	github.com/goravel/mysql v0.0.0-20250202150522-4e41e0908557
 	github.com/goravel/postgres v0.0.2-0.20250202145044-bfeb31ead351
 	github.com/spf13/cast v1.7.1

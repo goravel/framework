@@ -9,6 +9,7 @@ import (
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	contractsschema "github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/migration"
+	"github.com/goravel/sqlite"
 )
 
 type DefaultMigratorWithDBSuite struct {
@@ -22,20 +23,15 @@ func TestDefaultMigratorWithDBSuite(t *testing.T) {
 }
 
 func (s *DefaultMigratorWithDBSuite) SetupTest() {
-	postgresTestQuery := postgresTestQuery("goravel_", true)
-	mysqlTestQuery := mysqlTestQuery("goravel_", true)
-
-	s.driverToTestQuery = map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Driver: postgresTestQuery,
-		mysqlTestQuery.Driver().Config().Driver:    mysqlTestQuery,
-	}
+	s.driverToTestQuery = NewTestQueryBuilder().All("goravel_", true)
 }
 
 func (s *DefaultMigratorWithDBSuite) TearDownTest() {
-	// TODO Shutdown Sqlite
-	// if s.driverToTestQuery[contractsdatabase.DriverSqlite] != nil {
-	// 	s.NoError(s.driverToTestQuery[contractsdatabase.DriverSqlite].Docker().Shutdown())
-	// }
+	if s.driverToTestQuery[sqlite.Name] != nil {
+		docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
+		s.NoError(err)
+		s.NoError(docker.Shutdown())
+	}
 }
 
 func (s *DefaultMigratorWithDBSuite) TestRun() {
@@ -126,7 +122,7 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 }
 
 func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.WithSchema("goravel")
 
 	schema := newSchema(postgresTestQuery, map[string]*TestQuery{
@@ -144,29 +140,24 @@ func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 	assert.False(t, schema.HasTable("users"))
 }
 
-// func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
-// 	if env.IsWindows() {
-// 		t.Skip("Skip test that using Docker")
-// 	}
+func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
+	sqlserverTestQuery.WithSchema("goravel")
 
-// 	sqlserverDocker := docker.Sqlserver()
-// 	require.NoError(t, sqlserverDocker.Ready())
+	schema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
+		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
+	})
+	testMigration := NewTestMigrationWithSqlserverSchema(schema)
+	schema.Register([]contractsschema.Migration{
+		testMigration,
+	})
+	migrator := migration.NewMigrator(nil, schema, "migrations")
 
-// 	sqlserverQuery := gorm.NewTestQueryWithSchema(sqlserverDocker, "goravel")
-// 	schema := newSchema(sqlserverQuery, map[contractsdatabase.Driver]*gorm.TestQuery{
-// 		contractsdatabase.DriverSqlserver: sqlserverQuery,
-// 	})
-// 	testMigration := NewTestMigrationWithSqlserverSchema(schema)
-// 	schema.Register([]contractsschema.Migration{
-// 		testMigration,
-// 	})
-// 	migrator := migration.NewMigrator(nil, schema, "migrations")
-
-// 	assert.NoError(t, migrator.Run())
-// 	assert.True(t, schema.HasTable("goravel.users"))
-// 	assert.NoError(t, migrator.Rollback(1, 0))
-// 	assert.False(t, schema.HasTable("goravel.users"))
-// }
+	assert.NoError(t, migrator.Run())
+	assert.True(t, schema.HasTable("goravel.users"))
+	assert.NoError(t, migrator.Rollback(1, 0))
+	assert.False(t, schema.HasTable("goravel.users"))
+}
 
 type TestMigration struct {
 	schema contractsschema.Schema
@@ -188,4 +179,26 @@ func (r *TestMigration) Up() error {
 
 func (r *TestMigration) Down() error {
 	return r.schema.DropIfExists("users")
+}
+
+type TestMigrationWithSqlserverSchema struct {
+	schema contractsschema.Schema
+}
+
+func NewTestMigrationWithSqlserverSchema(schema contractsschema.Schema) *TestMigrationWithSqlserverSchema {
+	return &TestMigrationWithSqlserverSchema{schema: schema}
+}
+
+func (r *TestMigrationWithSqlserverSchema) Signature() string {
+	return "20240817214501_create_users_table"
+}
+
+func (r *TestMigrationWithSqlserverSchema) Up() error {
+	return r.schema.Create("goravel.users", func(table contractsschema.Blueprint) {
+		table.String("name")
+	})
+}
+
+func (r *TestMigrationWithSqlserverSchema) Down() error {
+	return r.schema.DropIfExists("goravel.users")
 }

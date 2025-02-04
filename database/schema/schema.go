@@ -33,9 +33,6 @@ func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver d
 	grammar := driver.Grammar()
 	processor := driver.Processor()
 	schema := driver.Config().Schema
-	if schema == "" {
-		schema = driver.Config().Database
-	}
 
 	return &Schema{
 		config:     config,

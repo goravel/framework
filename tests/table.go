@@ -19,7 +19,7 @@ const (
 	TestTableRoles
 	TestTableRoleUser
 	TestTableUsers
-	TestTableGoravelUser
+	TestTableUser
 	TestTableSchema
 )
 
@@ -34,19 +34,19 @@ func newTestTables(driver string, grammar contractsschema.Grammar) *testTables {
 
 func (r *testTables) All() map[TestTable]func() string {
 	return map[TestTable]func() string{
-		TestTableAddresses:   r.addresses,
-		TestTableAuthors:     r.authors,
-		TestTableBooks:       r.books,
-		TestTableHouses:      r.houses,
-		TestTablePeoples:     r.peoples,
-		TestTablePhones:      r.phones,
-		TestTableProducts:    r.products,
-		TestTableReviews:     r.reviews,
-		TestTableRoles:       r.roles,
-		TestTableRoleUser:    r.roleUser,
-		TestTableUsers:       r.users,
-		TestTableGoravelUser: r.goravelUser,
-		TestTableSchema:      r.schema,
+		TestTableAddresses: r.addresses,
+		TestTableAuthors:   r.authors,
+		TestTableBooks:     r.books,
+		TestTableHouses:    r.houses,
+		TestTablePeoples:   r.peoples,
+		TestTablePhones:    r.phones,
+		TestTableProducts:  r.products,
+		TestTableReviews:   r.reviews,
+		TestTableRoles:     r.roles,
+		TestTableRoleUser:  r.roleUser,
+		TestTableUsers:     r.users,
+		TestTableUser:      r.user,
+		TestTableSchema:    r.schema,
 	}
 }
 
@@ -96,8 +96,8 @@ func (r *testTables) users() string {
 	return blueprint.ToSql(r.grammar)[0]
 }
 
-func (r *testTables) goravelUser() string {
-	blueprint := schema.NewBlueprint(nil, "", "goravel_user")
+func (r *testTables) user() string {
+	blueprint := schema.NewBlueprint(nil, "", "user")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
@@ -197,7 +197,7 @@ func (r *testTables) roleUser() string {
 }
 
 func (r *testTables) schema() string {
-	blueprint := schema.NewBlueprint(nil, "", "schemas")
+	blueprint := schema.NewBlueprint(nil, "", "goravel.schemas")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
