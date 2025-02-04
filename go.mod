@@ -8,7 +8,7 @@ require (
 	github.com/RichardKnop/machinery/v2 v2.0.13
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250129133820-c7ebc8a1a94b
+	github.com/charmbracelet/huh/spinner v0.0.0-20250203114958-f07ae1af69ae
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.5.2
