@@ -33,14 +33,7 @@ func TestSchemaSuite(t *testing.T) {
 
 func (s *SchemaSuite) SetupTest() {
 	s.prefix = "goravel_"
-	postgresTestQuery := postgresTestQuery(s.prefix, true)
-	mysqlTestQuery := mysqlTestQuery(s.prefix, true)
-	sqlserverTestQuery := sqlserverTestQuery(s.prefix, true)
-	sqliteTestQuery := sqliteTestQuery(s.prefix, true)
-	s.driverToTestQuery[postgresTestQuery.Driver().Config().Driver] = postgresTestQuery
-	s.driverToTestQuery[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
-	s.driverToTestQuery[sqlserverTestQuery.Driver().Config().Driver] = sqlserverTestQuery
-	s.driverToTestQuery[sqliteTestQuery.Driver().Config().Driver] = sqliteTestQuery
+	s.driverToTestQuery = NewTestQueryBuilder().All(s.prefix, true)
 }
 
 func (s *SchemaSuite) TearDownTest() {
@@ -2574,7 +2567,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 
 func TestPostgresSchema(t *testing.T) {
 	table := "table"
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.WithSchema(testSchema)
 	newSchema := newSchema(postgresTestQuery, map[string]*TestQuery{
 		postgresTestQuery.Driver().Config().Connection: postgresTestQuery,

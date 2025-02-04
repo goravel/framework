@@ -33,23 +33,11 @@ func TestQueryTestSuite(t *testing.T) {
 }
 
 func (s *QueryTestSuite) SetupSuite() {
-	postgresTestQueryOne := postgresTestQuery("", false)
-	postgresTestQueryOne.CreateTable()
-	s.queries[postgresTestQueryOne.Driver().Config().Driver] = postgresTestQueryOne
-
-	mysqlTestQuery := mysqlTestQuery("", false)
-	mysqlTestQuery.CreateTable()
-	s.queries[mysqlTestQuery.Driver().Config().Driver] = mysqlTestQuery
-
-	sqlserverTestQuery := sqlserverTestQuery("", false)
-	sqlserverTestQuery.CreateTable()
-	s.queries[sqlserverTestQuery.Driver().Config().Driver] = sqlserverTestQuery
-
-	sqliteTestQuery := sqliteTestQuery("", false)
-	sqliteTestQuery.CreateTable()
-	s.queries[sqliteTestQuery.Driver().Config().Driver] = sqliteTestQuery
-
-	s.additionalQuery = postgresTestQuery("", false)
+	s.queries = NewTestQueryBuilder().All("", false)
+	for _, query := range s.queries {
+		query.CreateTable()
+	}
+	s.additionalQuery = NewTestQueryBuilder().Postgres("", false)
 	s.additionalQuery.CreateTable()
 }
 
@@ -3598,10 +3586,10 @@ func (s *QueryTestSuite) TestWithNesting() {
 }
 
 func TestCustomConnection(t *testing.T) {
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
-	sqliteTestQuery := sqliteTestQuery("", false)
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
 	sqliteTestQuery.CreateTable(TestTableReviews, TestTableProducts)
 
 	query := postgresTestQuery.Query()
@@ -3639,60 +3627,43 @@ func TestCustomConnection(t *testing.T) {
 	assert.NoError(t, docker.Shutdown())
 }
 
-// func TestReadWriteSeparate(t *testing.T) {
-// 	dbs := NewTestQueries().QueriesOfReadWrite()
+func TestReadWriteSeparate(t *testing.T) {
+	dbs := NewTestQueryBuilder().AllOfReadWrite()
 
-// 	for drive, db := range dbs {
-// 		t.Run(drive.String(), func(t *testing.T) {
-// 			var (
-// 				mixQuery contractsorm.Query
-// 				err      error
-// 			)
-// 			if drive == database.DriverSqlite {
-// 				mixQuery, err = db["write"].QueryOfReadWrite(db["read"].Docker().Config())
-// 			} else {
-// 				mixQuery, err = db["write"].QueryOfReadWrite(db["read"].Docker().Config())
-// 			}
+	for drive, db := range dbs {
+		t.Run(drive, func(t *testing.T) {
+			db["read"].CreateTable(TestTableUsers)
+			db["write"].CreateTable(TestTableUsers)
 
-// 			require.NoError(t, err)
+			user1 := User{Name: "user"}
+			assert.Nil(t, db["mix"].Query().Create(&user1))
+			assert.True(t, user1.ID > 0)
 
-// 			db["read"].CreateTable(TestTableUsers)
-// 			db["write"].CreateTable(TestTableUsers)
+			var user2 User
+			assert.Nil(t, db["mix"].Query().Find(&user2, user1.ID))
+			assert.True(t, user2.ID == 0)
 
-// 			user := User{Name: "user"}
-// 			assert.Nil(t, mixQuery.Create(&user))
-// 			assert.True(t, user.ID > 0)
+			var user3 User
+			assert.Nil(t, db["read"].Query().Find(&user3, user1.ID))
+			assert.True(t, user3.ID == 0)
 
-// 			var user2 User
-// 			assert.Nil(t, mixQuery.Find(&user2, user.ID))
-// 			assert.True(t, user2.ID == 0)
+			var user4 User
+			assert.Nil(t, db["write"].Query().Find(&user4, user1.ID))
+			assert.True(t, user4.ID > 0)
+		})
+	}
 
-// 			var user3 User
-// 			assert.Nil(t, db["read"].Query().Find(&user3, user.ID))
-// 			assert.True(t, user3.ID == 0)
+	docker, err := dbs[sqlite.Name]["read"].Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
 
-// 			var user4 User
-// 			assert.Nil(t, db["write"].Query().Find(&user4, user.ID))
-// 			assert.True(t, user4.ID > 0)
-// 		})
-// 	}
-
-// 	assert.NoError(t, dbs[database.DriverSqlite]["read"].Docker().Shutdown())
-// 	assert.NoError(t, dbs[database.DriverSqlite]["write"].Docker().Shutdown())
-// }
+	docker, err = dbs[sqlite.Name]["write"].Driver().Docker()
+	assert.NoError(t, err)
+	assert.NoError(t, docker.Shutdown())
+}
 
 func TestTablePrefixAndSingular(t *testing.T) {
-	postgresTestQueryOne := postgresTestQuery("goravel_", true)
-	mysqlTestQuery := mysqlTestQuery("goravel_", true)
-	sqlserverTestQuery := sqlserverTestQuery("goravel_", true)
-	sqliteTestQuery := sqliteTestQuery("goravel_", true)
-
-	queries := map[string]*TestQuery{
-		postgresTestQueryOne.Driver().Config().Driver: postgresTestQueryOne,
-		mysqlTestQuery.Driver().Config().Driver:       mysqlTestQuery,
-		sqlserverTestQuery.Driver().Config().Driver:   sqlserverTestQuery,
-		sqliteTestQuery.Driver().Config().Driver:      sqliteTestQuery,
-	}
+	queries := NewTestQueryBuilder().All("goravel_", true)
 
 	for drive, query := range queries {
 		t.Run(drive, func(t *testing.T) {
@@ -3708,15 +3679,15 @@ func TestTablePrefixAndSingular(t *testing.T) {
 		})
 	}
 
-	if queries[sqliteTestQuery.Driver().Config().Driver] != nil {
-		docker, err := queries[sqliteTestQuery.Driver().Config().Driver].Driver().Docker()
+	if queries[sqlite.Name] != nil {
+		docker, err := queries[sqlite.Name].Driver().Docker()
 		assert.NoError(t, err)
 		assert.NoError(t, docker.Shutdown())
 	}
 }
 
 func TestPostgresWithSchema(t *testing.T) {
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.WithSchema(testSchema)
 	postgresTestQuery.CreateTable(TestTableUsers)
 
@@ -3730,7 +3701,7 @@ func TestPostgresWithSchema(t *testing.T) {
 }
 
 func TestSqlserverWithSchema(t *testing.T) {
-	sqlserverTestQuery := sqlserverTestQuery("", false)
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
 	sqlserverTestQuery.WithSchema(testSchema)
 	sqlserverTestQuery.CreateTable(TestTableSchema)
 

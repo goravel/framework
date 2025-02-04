@@ -23,17 +23,7 @@ func TestDefaultMigratorWithDBSuite(t *testing.T) {
 }
 
 func (s *DefaultMigratorWithDBSuite) SetupTest() {
-	postgresTestQuery := postgresTestQuery("goravel_", true)
-	mysqlTestQuery := mysqlTestQuery("goravel_", true)
-	sqlserverTestQuery := sqlserverTestQuery("goravel_", true)
-	sqliteTestQuery := sqliteTestQuery("goravel_", true)
-
-	s.driverToTestQuery = map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Driver:  postgresTestQuery,
-		mysqlTestQuery.Driver().Config().Driver:     mysqlTestQuery,
-		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
-		sqliteTestQuery.Driver().Config().Driver:    sqliteTestQuery,
-	}
+	s.driverToTestQuery = NewTestQueryBuilder().All("goravel_", true)
 }
 
 func (s *DefaultMigratorWithDBSuite) TearDownTest() {
@@ -132,7 +122,7 @@ func (s *DefaultMigratorWithDBSuite) TestStatus() {
 }
 
 func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.WithSchema("goravel")
 
 	schema := newSchema(postgresTestQuery, map[string]*TestQuery{
@@ -151,7 +141,7 @@ func TestDefaultMigratorWithPostgresSchema(t *testing.T) {
 }
 
 func TestDefaultMigratorWithSqlserverSchema(t *testing.T) {
-	sqlserverTestQuery := sqlserverTestQuery("", false)
+	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
 	sqlserverTestQuery.WithSchema("goravel")
 
 	schema := newSchema(sqlserverTestQuery, map[string]*TestQuery{

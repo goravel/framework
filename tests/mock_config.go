@@ -14,14 +14,20 @@ import (
 )
 
 func mockDatabaseConfig(mockConfig *mocksconfig.Config, config database.Config, connection string, prefix string, singular bool) {
+	mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", connection)).Return(nil)
+	mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", connection)).Return(nil)
+
+	mockDatabaseConfigWithoutWriteAndRead(mockConfig, config, connection, prefix, singular)
+}
+
+func mockDatabaseConfigWithoutWriteAndRead(mockConfig *mocksconfig.Config, config database.Config, connection string, prefix string, singular bool) {
 	mockConfig.EXPECT().GetBool("app.debug").Return(true)
 	mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200)
 	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10)
 	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100)
 	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600)
 	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600)
-	mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.write", connection)).Return(nil)
-	mockConfig.EXPECT().Get(fmt.Sprintf("database.connections.%s.read", connection)).Return(nil)
+
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.host", connection)).Return(config.Host)
 	mockConfig.EXPECT().GetInt(fmt.Sprintf("database.connections.%s.port", connection)).Return(config.Port)
 	mockConfig.EXPECT().GetString(fmt.Sprintf("database.connections.%s.username", connection)).Return(config.Username)

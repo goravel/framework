@@ -9,6 +9,7 @@ import (
 
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/database/orm"
+	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 )
 
@@ -27,26 +28,11 @@ func TestOrmSuite(t *testing.T) {
 }
 
 func (s *OrmSuite) SetupSuite() {
-	postgresTestQuery := postgresTestQuery("", false)
-	postgresTestQuery.CreateTable(TestTableRoles)
-	connection := postgresTestQuery.Driver().Config().Connection
-	s.queries[connection] = postgresTestQuery
-	s.defaultConnection = connection
-
-	mysqlTestQuery := mysqlTestQuery("", false)
-	mysqlTestQuery.CreateTable(TestTableRoles)
-	connection = mysqlTestQuery.Driver().Config().Connection
-	s.queries[connection] = mysqlTestQuery
-
-	sqlserverTestQuery := sqlserverTestQuery("", false)
-	sqlserverTestQuery.CreateTable(TestTableRoles)
-	connection = sqlserverTestQuery.Driver().Config().Connection
-	s.queries[connection] = sqlserverTestQuery
-
-	sqliteTestQuery := sqliteTestQuery("", false)
-	sqliteTestQuery.CreateTable(TestTableRoles)
-	connection = sqliteTestQuery.Driver().Config().Connection
-	s.queries[connection] = sqliteTestQuery
+	s.defaultConnection = postgres.Name
+	s.queries = NewTestQueryBuilder().All("", false)
+	for _, query := range s.queries {
+		query.CreateTable(TestTableRoles)
+	}
 }
 
 func (s *OrmSuite) SetupTest() {
