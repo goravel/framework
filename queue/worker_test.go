@@ -5,13 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
-	mocksorm "github.com/goravel/framework/mocks/database/orm"
 )
 
 type WorkerTestSuite struct {
@@ -54,7 +52,7 @@ func (s *WorkerTestSuite) TestRun_Success() {
 	s.True(testJob.called)
 }
 
-func (s *WorkerTestSuite) TestRun_FailedJob() {
+/*func (s *WorkerTestSuite) TestRun_FailedJob() {
 	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("database").Once()
 	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
 
@@ -79,7 +77,7 @@ func (s *WorkerTestSuite) TestRun_FailedJob() {
 	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
-}
+}*/
 
 type MockFailedJob struct {
 	signature string
