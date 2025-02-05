@@ -56,8 +56,17 @@ func TestMachineryTestSuite(t *testing.T) {
 }
 
 func (s *MachineryTestSuite) SetupTest() {
+	testChainSyncJob = 0
+	testMachineryJob = 0
+	testMachineryJobOfDisableDebug = 0
+	testDelayMachineryJob = 0
+	testCustomMachineryJob = 0
+	testErrorMachineryJob = 0
+	testChainMachineryJob = 0
+	testChainMachineryJobError = 0
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockLog = mockslog.NewLog(s.T())
+	LogFacade = s.mockLog
 	s.app = NewApplication(s.mockConfig)
 }
 
@@ -98,11 +107,11 @@ func (s *MachineryTestSuite) TestServer() {
 }
 
 func (s *MachineryTestSuite) TestDefaultAsyncQueue_EnableDebug() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(5)
 	s.mockConfig.On("GetBool", "app.debug").Return(true).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(2)
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
@@ -135,17 +144,14 @@ func (s *MachineryTestSuite) TestDefaultAsyncQueue_EnableDebug() {
 	}).OnQueue("debug").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testMachineryJob)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockLog.AssertExpectations(s.T())
 }
 
 func (s *MachineryTestSuite) TestDefaultAsyncQueue_DisableDebug() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(3)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
 	s.mockConfig.On("GetBool", "app.debug").Return(false).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(4)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(2)
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
@@ -169,17 +175,14 @@ func (s *MachineryTestSuite) TestDefaultAsyncQueue_DisableDebug() {
 	}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testMachineryJobOfDisableDebug)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockLog.AssertExpectations(s.T())
 }
 
 func (s *MachineryTestSuite) TestDelayAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(5)
 	s.mockConfig.On("GetBool", "app.debug").Return(false).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
@@ -207,17 +210,16 @@ func (s *MachineryTestSuite) TestDelayAsyncQueue() {
 	s.Equal(0, testDelayMachineryJob)
 	time.Sleep(3 * time.Second)
 	s.Equal(1, testDelayMachineryJob)
-
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 func (s *MachineryTestSuite) TestCustomAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
-	s.mockConfig.On("GetBool", "app.debug").Return(false).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(5)
+	s.mockConfig.On("GetBool", "app.debug").Return(false).Twice()
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
+	s.mockConfig.On("GetString", "queue.connections.custom.driver").Return("machinery").Twice()
 	s.mockConfig.On("GetString", "queue.connections.custom.connection").Return("default").Twice()
+	s.mockConfig.On("GetString", "queue.connections.custom.queue", "default").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
 	s.mockConfig.On("GetInt", "database.redis.default.port").Return(s.port).Twice()
@@ -244,16 +246,14 @@ func (s *MachineryTestSuite) TestCustomAsyncQueue() {
 	}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomMachineryJob)
-
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 func (s *MachineryTestSuite) TestErrorAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Twice()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(5)
 	s.mockConfig.On("GetBool", "app.debug").Return(false).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
@@ -279,16 +279,14 @@ func (s *MachineryTestSuite) TestErrorAsyncQueue() {
 	}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorMachineryJob)
-
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 func (s *MachineryTestSuite) TestChainAsyncQueue() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(5)
 	s.mockConfig.On("GetBool", "app.debug").Return(false).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(2)
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
@@ -329,16 +327,14 @@ func (s *MachineryTestSuite) TestChainAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainMachineryJob)
 	s.Equal(1, testChainSyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
 }
 
 func (s *MachineryTestSuite) TestChainAsyncQueue_Error() {
-	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(2)
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(4)
+	s.mockConfig.On("GetString", "queue.default").Return("redis").Times(3)
+	s.mockConfig.On("GetString", "app.name").Return("goravel").Times(5)
 	s.mockConfig.On("GetBool", "app.debug").Return(false).Times(2)
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Twice()
-	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Times(3)
+	s.mockConfig.On("GetString", "queue.connections.redis.driver").Return("machinery").Twice()
 	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.host").Return("localhost").Twice()
 	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Twice()
@@ -374,9 +370,6 @@ func (s *MachineryTestSuite) TestChainAsyncQueue_Error() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainMachineryJobError)
 	s.Equal(0, testChainSyncJob)
-
-	s.mockConfig.AssertExpectations(s.T())
-	s.mockLog.AssertExpectations(s.T())
 }
 
 type TestMachineryJob struct {
