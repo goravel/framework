@@ -360,18 +360,20 @@ func (_c *Grammar_CompileDrop_Call) RunAndReturn(run func(schema.Blueprint) stri
 }
 
 // CompileDropAllTables provides a mock function with given fields: _a0, tables
-func (_m *Grammar) CompileDropAllTables(_a0 string, tables []schema.Table) string {
+func (_m *Grammar) CompileDropAllTables(_a0 string, tables []schema.Table) []string {
 	ret := _m.Called(_a0, tables)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropAllTables")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, []schema.Table) string); ok {
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, []schema.Table) []string); ok {
 		r0 = rf(_a0, tables)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
 	return r0
@@ -396,12 +398,12 @@ func (_c *Grammar_CompileDropAllTables_Call) Run(run func(_a0 string, tables []s
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllTables_Call) Return(_a0 string) *Grammar_CompileDropAllTables_Call {
+func (_c *Grammar_CompileDropAllTables_Call) Return(_a0 []string) *Grammar_CompileDropAllTables_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllTables_Call) RunAndReturn(run func(string, []schema.Table) string) *Grammar_CompileDropAllTables_Call {
+func (_c *Grammar_CompileDropAllTables_Call) RunAndReturn(run func(string, []schema.Table) []string) *Grammar_CompileDropAllTables_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -456,18 +458,20 @@ func (_c *Grammar_CompileDropAllTypes_Call) RunAndReturn(run func(string, []sche
 }
 
 // CompileDropAllViews provides a mock function with given fields: _a0, views
-func (_m *Grammar) CompileDropAllViews(_a0 string, views []schema.View) string {
+func (_m *Grammar) CompileDropAllViews(_a0 string, views []schema.View) []string {
 	ret := _m.Called(_a0, views)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CompileDropAllViews")
 	}
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, []schema.View) string); ok {
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, []schema.View) []string); ok {
 		r0 = rf(_a0, views)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
 	return r0
@@ -492,12 +496,12 @@ func (_c *Grammar_CompileDropAllViews_Call) Run(run func(_a0 string, views []sch
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllViews_Call) Return(_a0 string) *Grammar_CompileDropAllViews_Call {
+func (_c *Grammar_CompileDropAllViews_Call) Return(_a0 []string) *Grammar_CompileDropAllViews_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Grammar_CompileDropAllViews_Call) RunAndReturn(run func(string, []schema.View) string) *Grammar_CompileDropAllViews_Call {
+func (_c *Grammar_CompileDropAllViews_Call) RunAndReturn(run func(string, []schema.View) []string) *Grammar_CompileDropAllViews_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1494,6 +1498,52 @@ func (_c *Grammar_TypeBigInteger_Call) Return(_a0 string) *Grammar_TypeBigIntege
 }
 
 func (_c *Grammar_TypeBigInteger_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeBigInteger_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TypeBoolean provides a mock function with given fields: column
+func (_m *Grammar) TypeBoolean(column schema.ColumnDefinition) string {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TypeBoolean")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.ColumnDefinition) string); ok {
+		r0 = rf(column)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_TypeBoolean_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TypeBoolean'
+type Grammar_TypeBoolean_Call struct {
+	*mock.Call
+}
+
+// TypeBoolean is a helper method to define mock.On call
+//   - column schema.ColumnDefinition
+func (_e *Grammar_Expecter) TypeBoolean(column interface{}) *Grammar_TypeBoolean_Call {
+	return &Grammar_TypeBoolean_Call{Call: _e.mock.On("TypeBoolean", column)}
+}
+
+func (_c *Grammar_TypeBoolean_Call) Run(run func(column schema.ColumnDefinition)) *Grammar_TypeBoolean_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.ColumnDefinition))
+	})
+	return _c
+}
+
+func (_c *Grammar_TypeBoolean_Call) Return(_a0 string) *Grammar_TypeBoolean_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_TypeBoolean_Call) RunAndReturn(run func(schema.ColumnDefinition) string) *Grammar_TypeBoolean_Call {
 	_c.Call.Return(run)
 	return _c
 }
