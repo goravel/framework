@@ -276,11 +276,12 @@ func (s *AuthTestSuite) TestParse_Success() {
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
 	payload, err := s.auth.Parse(token)
+	now := carbon.Now()
 	s.Equal(&contractsauth.Payload{
 		Guard:    testUserGuard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).StdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(carbon.Now().StdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(now.AddMinutes(2).StdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(now.StdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 }
@@ -296,11 +297,12 @@ func (s *AuthTestSuite) TestParse_SuccessWithPrefix() {
 	s.mockCache.EXPECT().GetBool("jwt:disabled:"+token, false).Return(false).Once()
 
 	payload, err := s.auth.Parse("Bearer " + token)
+	now := carbon.Now()
 	s.Equal(&contractsauth.Payload{
 		Guard:    testUserGuard,
 		Key:      "1",
-		ExpireAt: jwt.NewNumericDate(carbon.Now().AddMinutes(2).StdTime()).Local(),
-		IssuedAt: jwt.NewNumericDate(carbon.Now().StdTime()).Local(),
+		ExpireAt: jwt.NewNumericDate(now.AddMinutes(2).StdTime()).Local(),
+		IssuedAt: jwt.NewNumericDate(now.StdTime()).Local(),
 	}, payload)
 	s.Nil(err)
 
