@@ -15,14 +15,17 @@ type Task struct {
 	queue      string
 }
 
-func NewTask(config queue.Config, job queue.Job, args []any) *Task {
+func NewTask(config queue.Config, job queue.Job, args ...[]any) *Task {
+	if len(args) == 0 {
+		args = append(args, []any{})
+	}
 	return &Task{
 		config:     config,
 		connection: config.DefaultConnection(),
 		jobs: []queue.Jobs{
 			{
 				Job:  job,
-				Args: args,
+				Args: args[0],
 			},
 		},
 		queue: config.Queue(config.DefaultConnection(), ""),

@@ -8,7 +8,7 @@ type Queue interface {
 	// GetJobs get all jobs
 	GetJobs() []Job
 	// Job add a job to queue
-	Job(job Job, args []any) Task
+	Job(job Job, args ...[]any) Task
 	// Register register jobs
 	Register(jobs []Job)
 	// Worker create a queue worker

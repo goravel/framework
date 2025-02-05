@@ -29,8 +29,8 @@ func (app *Application) GetJobs() []queue.Job {
 	return app.job.All()
 }
 
-func (app *Application) Job(job queue.Job, args []any) queue.Task {
-	return NewTask(app.config, job, args)
+func (app *Application) Job(job queue.Job, args ...[]any) queue.Task {
+	return NewTask(app.config, job, args...)
 }
 
 func (app *Application) Register(jobs []queue.Job) {
