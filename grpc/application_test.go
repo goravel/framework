@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -202,6 +203,92 @@ func TestClient(t *testing.T) {
 			}
 			assert.Equal(t, test.expectErr, err != nil, test.name)
 			mockConfig.AssertExpectations(t)
+		})
+	}
+}
+
+func TestShutdown(t *testing.T) {
+	var (
+		app        *Application
+		mockConfig *configmock.Config
+	)
+
+	beforeEach := func() {
+		mockConfig = &configmock.Config{}
+		app = NewApplication(mockConfig)
+	}
+
+	tests := []struct {
+		name  string
+		setup func()
+		force bool
+	}{
+		{
+			name: "graceful shutdown",
+			setup: func() {
+				app.server = grpc.NewServer()
+			},
+			force: false,
+		},
+		{
+			name: "force shutdown",
+			setup: func() {
+				app.server = grpc.NewServer()
+			},
+			force: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			test.setup()
+			if test.force {
+				app.Shutdown(true)
+			} else {
+				app.Shutdown()
+			}
+		})
+	}
+}
+
+func TestListen(t *testing.T) {
+	var (
+		app        *Application
+		mockConfig *configmock.Config
+	)
+
+	beforeEach := func() {
+		mockConfig = &configmock.Config{}
+		app = NewApplication(mockConfig)
+	}
+
+	tests := []struct {
+		name  string
+		setup func() net.Listener
+	}{
+		{
+			name: "success",
+			setup: func() net.Listener {
+				listener, _ := net.Listen("tcp", "127.0.0.1:0")
+				return listener
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			listener := test.setup()
+
+			go func() {
+				assert.NoError(t, app.Listen(listener), test.name)
+			}()
+
+			select {
+			case <-time.After(2 * time.Second):
+				app.Shutdown()
+			}
 		})
 	}
 }
