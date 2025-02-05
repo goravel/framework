@@ -9,10 +9,14 @@ type Blueprint interface {
 	BigIncrements(column string) ColumnDefinition
 	// BigInteger Create a new big integer (8-byte) column on the table.
 	BigInteger(column string) ColumnDefinition
+	// Boolean Create a new boolean column on the table.
+	Boolean(column string) ColumnDefinition
 	// Build Execute the blueprint to build / modify the table.
 	Build(query orm.Query, grammar Grammar) error
 	// Char Create a new char column on the table.
 	Char(column string, length ...int) ColumnDefinition
+	// Column Create a new custom type column on the table.
+	Column(column string, ttype string) ColumnDefinition
 	// Create Indicate that the table needs to be created.
 	Create()
 	// Date Create a new date column on the table.

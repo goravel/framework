@@ -30,9 +30,9 @@ type Schema struct {
 
 func NewSchema(config config.Config, log log.Log, orm contractsorm.Orm, driver driver.Driver, migrations []contractsschema.Migration) *Schema {
 	prefix := driver.Config().Prefix
-	schema := driver.Config().Schema
 	grammar := driver.Grammar()
 	processor := driver.Processor()
+	schema := driver.Config().Schema
 
 	return &Schema{
 		config:     config,
@@ -80,13 +80,20 @@ func (r *Schema) DropAllTables() error {
 		return err
 	}
 
-	sql := r.grammar.CompileDropAllTables(r.schema, tables)
-	if sql == "" {
+	sqls := r.grammar.CompileDropAllTables(r.schema, tables)
+	if sqls == nil {
 		return nil
 	}
-	_, err = r.orm.Query().Exec(sql)
 
-	return err
+	return r.orm.Transaction(func(tx contractsorm.Query) error {
+		for _, sql := range sqls {
+			if _, err := tx.Exec(sql); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *Schema) DropAllTypes() error {
@@ -112,14 +119,20 @@ func (r *Schema) DropAllViews() error {
 		return err
 	}
 
-	sql := r.grammar.CompileDropAllViews(r.schema, views)
-	if sql == "" {
+	sqls := r.grammar.CompileDropAllViews(r.schema, views)
+	if sqls == nil {
 		return nil
 	}
 
-	_, err = r.orm.Query().Exec(sql)
+	return r.orm.Transaction(func(tx contractsorm.Query) error {
+		for _, sql := range sqls {
+			if _, err := tx.Exec(sql); err != nil {
+				return err
+			}
+		}
 
-	return err
+		return nil
+	})
 }
 
 func (r *Schema) DropColumns(table string, columns []string) error {

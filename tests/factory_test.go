@@ -20,7 +20,7 @@ func TestFactoryTestSuite(t *testing.T) {
 }
 
 func (s *FactoryTestSuite) SetupSuite() {
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.CreateTable(TestTableUsers, TestTableAuthors)
 	s.query = postgresTestQuery.Query()
 }

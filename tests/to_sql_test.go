@@ -23,7 +23,7 @@ func TestToSqlTestSuite(t *testing.T) {
 }
 
 func (s *ToSqlTestSuite) SetupSuite() {
-	postgresTestQuery := postgresTestQuery("", false)
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
 	postgresTestQuery.CreateTable(TestTableUsers)
 	s.query = postgresTestQuery.Query()
 }

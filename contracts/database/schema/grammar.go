@@ -16,11 +16,11 @@ type Grammar interface {
 	// CompileDrop Compile a drop table command.
 	CompileDrop(blueprint Blueprint) string
 	// CompileDropAllTables Compile the SQL needed to drop all tables.
-	CompileDropAllTables(schema string, tables []Table) string
+	CompileDropAllTables(schema string, tables []Table) []string
 	// CompileDropAllTypes Compile the SQL needed to drop all types.
 	CompileDropAllTypes(schema string, types []Type) []string
 	// CompileDropAllViews Compile the SQL needed to drop all views.
-	CompileDropAllViews(schema string, views []View) string
+	CompileDropAllViews(schema string, views []View) []string
 	// CompileDropColumn Compile a drop column command.
 	CompileDropColumn(blueprint Blueprint, command *Command) []string
 	// CompileDropForeign Compile a drop foreign key command.
@@ -63,6 +63,8 @@ type Grammar interface {
 	GetAttributeCommands() []string
 	// TypeBigInteger Create the column definition for a big integer type.
 	TypeBigInteger(column ColumnDefinition) string
+	// TypeBoolean Create the column definition for a boolean type.
+	TypeBoolean(column ColumnDefinition) string
 	// TypeChar Create the column definition for a char type.
 	TypeChar(column ColumnDefinition) string
 	// TypeDate Create the column definition for a date type.

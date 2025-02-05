@@ -14,16 +14,12 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/env"
 )
 
 func NewLogger(config config.Config, log log.Log) logger.Interface {
 	level := logger.Warn
 	if config.GetBool("app.debug") {
 		level = logger.Info
-	}
-	if env.IsArtisan() {
-		level = logger.Error
 	}
 
 	slowThreshold := config.GetInt("database.slow_threshold", 200)
