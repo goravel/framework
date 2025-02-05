@@ -5,11 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	contractsqueue "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	mocksconfig "github.com/goravel/framework/mocks/config"
+	mocksorm "github.com/goravel/framework/mocks/database/orm"
 )
 
 type WorkerTestSuite struct {
@@ -23,6 +25,10 @@ func TestWorkerTestSuite(t *testing.T) {
 }
 
 func (s *WorkerTestSuite) SetupTest() {
+
+}
+
+func (s *WorkerTestSuite) TestRun_Success() {
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
 	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
@@ -30,9 +36,7 @@ func (s *WorkerTestSuite) SetupTest() {
 	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
 	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 	s.app = NewApplication(s.mockConfig)
-}
 
-func (s *WorkerTestSuite) TestRun_Success() {
 	testJob := &MockJob{
 		signature: "mock_job",
 	}
@@ -52,9 +56,16 @@ func (s *WorkerTestSuite) TestRun_Success() {
 	s.True(testJob.called)
 }
 
-/*func (s *WorkerTestSuite) TestRun_FailedJob() {
+func (s *WorkerTestSuite) TestRun_FailedJob() {
+	s.mockConfig = mocksconfig.NewConfig(s.T())
+	s.mockConfig.EXPECT().GetString("queue.default").Return("async").Times(3)
+	s.mockConfig.EXPECT().GetString("app.name").Return("goravel").Times(2)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.queue", "default").Return("default").Times(2)
+	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
+	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 	s.mockConfig.EXPECT().GetString("queue.failed.database").Return("database").Once()
 	s.mockConfig.EXPECT().GetString("queue.failed.table").Return("failed_jobs").Once()
+	s.app = NewApplication(s.mockConfig)
 
 	mockOrm := mocksorm.NewOrm(s.T())
 	mockQuery := mocksorm.NewQuery(s.T())
@@ -77,7 +88,7 @@ func (s *WorkerTestSuite) TestRun_Success() {
 	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
-}*/
+}
 
 type MockFailedJob struct {
 	signature string
