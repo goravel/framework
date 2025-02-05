@@ -281,14 +281,15 @@ func TestListen(t *testing.T) {
 			beforeEach()
 			listener := test.setup()
 
+			done := make(chan bool)
 			go func() {
 				assert.NoError(t, app.Listen(listener), test.name)
+				done <- true
 			}()
 
-			select {
-			case <-time.After(2 * time.Second):
-				app.Shutdown()
-			}
+			time.Sleep(1 * time.Second)
+			app.Shutdown()
+			assert.True(t, <-done)
 		})
 	}
 }
