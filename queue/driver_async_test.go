@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -50,15 +49,15 @@ func (s *DriverAsyncTestSuite) TestDefaultAsyncQueue() {
 	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
 	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker().Run())
-	}(ctx)
+	worker := s.app.Worker()
+	go func() {
+		s.Nil(worker.Run())
+	}()
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestAsyncJob{}, []any{"TestDefaultAsyncQueue", 1}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testAsyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
@@ -68,20 +67,19 @@ func (s *DriverAsyncTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
 	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		worker := s.app.Worker(queue.Args{
-			Queue: "delay",
-		})
+	worker := s.app.Worker(queue.Args{
+		Queue: "delay",
+	})
+	go func() {
 		s.Nil(worker.Run())
-	}(ctx)
+	}()
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestDelayAsyncJob{}, []any{"TestDelayAsyncQueue", 1}).OnQueue("delay").Delay(time.Now().Add(3 * time.Second)).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testDelayAsyncJob)
 	time.Sleep(3 * time.Second)
 	s.Equal(1, testDelayAsyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
@@ -91,20 +89,19 @@ func (s *DriverAsyncTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.EXPECT().GetString("queue.connections.custom.driver").Return("async").Times(2)
 	s.mockConfig.EXPECT().GetInt("queue.connections.custom.size", 100).Return(10).Twice()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		worker := s.app.Worker(queue.Args{
-			Connection: "custom",
-			Queue:      "custom1",
-			Concurrent: 2,
-		})
+	worker := s.app.Worker(queue.Args{
+		Connection: "custom",
+		Queue:      "custom1",
+		Concurrent: 2,
+	})
+	go func() {
 		s.Nil(worker.Run())
-	}(ctx)
+	}()
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Job(&TestCustomAsyncJob{}, []any{"TestCustomAsyncQueue", 1}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomAsyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
@@ -115,18 +112,17 @@ func (s *DriverAsyncTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Once()
 	s.mockConfig.EXPECT().GetString("queue.connections.redis.driver").Return("").Twice()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		worker := s.app.Worker(queue.Args{
-			Queue: "error",
-		})
+	worker := s.app.Worker(queue.Args{
+		Queue: "error",
+	})
+	go func() {
 		s.Nil(worker.Run())
-	}(ctx)
+	}()
 	time.Sleep(1 * time.Second)
 	s.Error(s.app.Job(&TestErrorAsyncJob{}, []any{"TestErrorAsyncQueue", 1}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorAsyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
@@ -136,14 +132,12 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.EXPECT().GetString("queue.connections.async.driver").Return("async").Twice()
 	s.mockConfig.EXPECT().GetInt("queue.connections.async.size", 100).Return(10).Twice()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		worker := s.app.Worker(queue.Args{
-			Queue: "chain",
-		})
+	worker := s.app.Worker(queue.Args{
+		Queue: "chain",
+	})
+	go func() {
 		s.Nil(worker.Run())
-	}(ctx)
+	}()
 
 	time.Sleep(1 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
@@ -160,6 +154,7 @@ func (s *DriverAsyncTestSuite) TestChainAsyncQueue() {
 	time.Sleep(3 * time.Second)
 	s.Equal(1, testChainAsyncJob)
 	s.Equal(1, testAsyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 type TestAsyncJob struct {

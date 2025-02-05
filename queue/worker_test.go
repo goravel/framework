@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -42,18 +41,16 @@ func (s *WorkerTestSuite) TestRun_Success() {
 	}
 	s.app.Register([]contractsqueue.Job{testJob})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	worker := s.app.Worker()
-	go func(ctx context.Context) {
+	go func() {
 		s.NoError(worker.Run())
-	}(ctx)
+	}()
 
 	time.Sleep(1 * time.Second)
 	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *WorkerTestSuite) TestRun_FailedJob() {
@@ -75,19 +72,21 @@ func (s *WorkerTestSuite) TestRun_FailedJob() {
 	mockQuery.EXPECT().Create(mock.Anything).Return(nil)
 	OrmFacade = mockOrm
 
-	testJob := new(MockFailedJob)
+	testJob := &MockFailedJob{
+		signature: "mock_failed_job",
+	}
 	s.app.Register([]contractsqueue.Job{testJob})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.NoError(s.app.Worker().Run())
-	}(ctx)
+	worker := s.app.Worker()
+	go func() {
+		s.NoError(worker.Run())
+	}()
 
 	time.Sleep(1 * time.Second)
 	s.NoError(s.app.Job(testJob, []any{}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.True(testJob.called)
+	s.NoError(worker.Shutdown())
 }
 
 type MockFailedJob struct {

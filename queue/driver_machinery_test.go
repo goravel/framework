@@ -3,7 +3,6 @@
 package queue
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -126,17 +125,12 @@ func (s *MachineryTestSuite) TestDefaultAsyncQueue_EnableDebug() {
 	s.mockLog.On("Debugf", "Processed task %s. Results = %s", mock.Anything, mock.Anything).Once()
 	s.app.Register([]queue.Job{&TestMachineryJob{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(queue.Args{
-			Queue: "debug",
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker(queue.Args{
+		Queue: "debug",
+	})
+	go func() {
+		s.Nil(worker.Run())
+	}()
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestMachineryJob{}, []any{
 		"TestDefaultAsyncQueue_EnableDebug",
@@ -144,6 +138,7 @@ func (s *MachineryTestSuite) TestDefaultAsyncQueue_EnableDebug() {
 	}).OnQueue("debug").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testMachineryJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *MachineryTestSuite) TestDefaultAsyncQueue_DisableDebug() {
@@ -159,15 +154,10 @@ func (s *MachineryTestSuite) TestDefaultAsyncQueue_DisableDebug() {
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.Register([]queue.Job{&TestMachineryJobOfDisableDebug{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker().Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker()
+	go func() {
+		s.Nil(worker.Run())
+	}()
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestMachineryJobOfDisableDebug{}, []any{
 		"TestDefaultAsyncQueue_DisableDebug",
@@ -175,6 +165,7 @@ func (s *MachineryTestSuite) TestDefaultAsyncQueue_DisableDebug() {
 	}).Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testMachineryJobOfDisableDebug)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *MachineryTestSuite) TestDelayAsyncQueue() {
@@ -190,17 +181,12 @@ func (s *MachineryTestSuite) TestDelayAsyncQueue() {
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.Register([]queue.Job{&TestDelayMachineryJob{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(queue.Args{
-			Queue: "delay",
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker(queue.Args{
+		Queue: "delay",
+	})
+	go func() {
+		s.Nil(worker.Run())
+	}()
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestDelayMachineryJob{}, []any{
 		"TestDelayAsyncQueue",
@@ -210,6 +196,7 @@ func (s *MachineryTestSuite) TestDelayAsyncQueue() {
 	s.Equal(0, testDelayMachineryJob)
 	time.Sleep(3 * time.Second)
 	s.Equal(1, testDelayMachineryJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *MachineryTestSuite) TestCustomAsyncQueue() {
@@ -226,19 +213,14 @@ func (s *MachineryTestSuite) TestCustomAsyncQueue() {
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.Register([]queue.Job{&TestCustomMachineryJob{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(queue.Args{
-			Connection: "custom",
-			Queue:      "custom1",
-			Concurrent: 2,
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker(queue.Args{
+		Connection: "custom",
+		Queue:      "custom1",
+		Concurrent: 2,
+	})
+	go func() {
+		s.Nil(worker.Run())
+	}()
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestCustomMachineryJob{}, []any{
 		"TestCustomAsyncQueue",
@@ -246,6 +228,7 @@ func (s *MachineryTestSuite) TestCustomAsyncQueue() {
 	}).OnConnection("custom").OnQueue("custom1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testCustomMachineryJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *MachineryTestSuite) TestErrorAsyncQueue() {
@@ -261,17 +244,12 @@ func (s *MachineryTestSuite) TestErrorAsyncQueue() {
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.Register([]queue.Job{&TestErrorMachineryJob{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(queue.Args{
-			Queue: "error",
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker(queue.Args{
+		Queue: "error",
+	})
+	go func() {
+		s.Nil(worker.Run())
+	}()
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Job(&TestErrorMachineryJob{}, []any{
 		"TestErrorAsyncQueue",
@@ -279,6 +257,7 @@ func (s *MachineryTestSuite) TestErrorAsyncQueue() {
 	}).OnConnection("redis").OnQueue("error1").Dispatch())
 	time.Sleep(2 * time.Second)
 	s.Equal(0, testErrorMachineryJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *MachineryTestSuite) TestChainAsyncQueue() {
@@ -294,17 +273,12 @@ func (s *MachineryTestSuite) TestChainAsyncQueue() {
 	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Twice()
 	s.app.Register([]queue.Job{&TestChainMachineryJob{}, &TestChainSyncJob{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(queue.Args{
-			Queue: "chain",
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker(queue.Args{
+		Queue: "chain",
+	})
+	go func() {
+		s.Nil(worker.Run())
+	}()
 
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
@@ -327,6 +301,7 @@ func (s *MachineryTestSuite) TestChainAsyncQueue() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainMachineryJob)
 	s.Equal(1, testChainSyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 func (s *MachineryTestSuite) TestChainAsyncQueue_Error() {
@@ -343,17 +318,12 @@ func (s *MachineryTestSuite) TestChainAsyncQueue_Error() {
 	s.mockLog.On("Errorf", "Failed processing task %s. Error = %v", mock.Anything, errors.New("error")).Once()
 	s.app.Register([]queue.Job{&TestChainMachineryJob{}, &TestChainSyncJob{}})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	go func(ctx context.Context) {
-		s.Nil(s.app.Worker(queue.Args{
-			Queue: "chain",
-		}).Run())
-
-		for range ctx.Done() {
-			return
-		}
-	}(ctx)
+	worker := s.app.Worker(queue.Args{
+		Queue: "chain",
+	})
+	go func() {
+		s.Nil(worker.Run())
+	}()
 
 	time.Sleep(2 * time.Second)
 	s.Nil(s.app.Chain([]queue.Jobs{
@@ -370,6 +340,7 @@ func (s *MachineryTestSuite) TestChainAsyncQueue_Error() {
 	time.Sleep(2 * time.Second)
 	s.Equal(1, testChainMachineryJobError)
 	s.Equal(0, testChainSyncJob)
+	s.NoError(worker.Shutdown())
 }
 
 type TestMachineryJob struct {
