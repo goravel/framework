@@ -32,8 +32,8 @@ func newTestTables(driver string, grammar contractsschema.Grammar) *testTables {
 	return &testTables{driver: driver, grammar: grammar}
 }
 
-func (r *testTables) All() map[TestTable]func() string {
-	return map[TestTable]func() string{
+func (r *testTables) All() map[TestTable]func() ([]string, error) {
+	return map[TestTable]func() ([]string, error){
 		TestTableAddresses: r.addresses,
 		TestTableAuthors:   r.authors,
 		TestTableBooks:     r.books,
@@ -50,7 +50,7 @@ func (r *testTables) All() map[TestTable]func() string {
 	}
 }
 
-func (r *testTables) peoples() string {
+func (r *testTables) peoples() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "peoples")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -58,10 +58,10 @@ func (r *testTables) peoples() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) reviews() string {
+func (r *testTables) reviews() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "reviews")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -69,10 +69,10 @@ func (r *testTables) reviews() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) products() string {
+func (r *testTables) products() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "products")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -80,10 +80,10 @@ func (r *testTables) products() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) users() string {
+func (r *testTables) users() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "users")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -93,10 +93,10 @@ func (r *testTables) users() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) user() string {
+func (r *testTables) user() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "user")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -106,10 +106,10 @@ func (r *testTables) user() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) addresses() string {
+func (r *testTables) addresses() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "addresses")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -119,10 +119,10 @@ func (r *testTables) addresses() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) books() string {
+func (r *testTables) books() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "books")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -131,10 +131,10 @@ func (r *testTables) books() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) authors() string {
+func (r *testTables) authors() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "authors")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -143,10 +143,10 @@ func (r *testTables) authors() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) roles() string {
+func (r *testTables) roles() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "roles")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -155,10 +155,10 @@ func (r *testTables) roles() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) houses() string {
+func (r *testTables) houses() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "houses")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -168,10 +168,10 @@ func (r *testTables) houses() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) phones() string {
+func (r *testTables) phones() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "phones")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -181,10 +181,10 @@ func (r *testTables) phones() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) roleUser() string {
+func (r *testTables) roleUser() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "role_user")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
@@ -193,15 +193,15 @@ func (r *testTables) roleUser() string {
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }
 
-func (r *testTables) schema() string {
+func (r *testTables) schema() ([]string, error) {
 	blueprint := schema.NewBlueprint(nil, "", "goravel.schemas")
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
 	blueprint.Timestamps()
 
-	return blueprint.ToSql(r.grammar)[0]
+	return blueprint.ToSql(r.grammar)
 }

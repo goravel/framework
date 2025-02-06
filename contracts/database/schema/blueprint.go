@@ -103,6 +103,8 @@ type Blueprint interface {
 	Primary(column ...string)
 	// Rename the table to a given name.
 	Rename(to string)
+	// RenameColumn Indicate that the given columns should be renamed.
+	RenameColumn(from, to string)
 	// RenameIndex Indicate that the given indexes should be renamed.
 	RenameIndex(from, to string)
 	// SetTable Set the table that the blueprint operates on.
@@ -138,7 +140,7 @@ type Blueprint interface {
 	// TinyText Create a new tiny text column on the table.
 	TinyText(column string) ColumnDefinition
 	// ToSql Get the raw SQL statements for the blueprint.
-	ToSql(grammar Grammar) []string
+	ToSql(grammar Grammar) ([]string, error)
 	// Unique Specify a unique index for the table.
 	Unique(column ...string) IndexDefinition
 	// UnsignedBigInteger Create a new unsigned big integer (8-byte) column on the table.

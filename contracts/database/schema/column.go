@@ -64,6 +64,7 @@ type Column struct {
 	Collation     string
 	Comment       string
 	Default       string
+	Extra         string
 	Name          string
 	Nullable      bool
 	Type          string

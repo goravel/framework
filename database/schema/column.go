@@ -24,6 +24,13 @@ type ColumnDefinition struct {
 	useCurrentOnUpdate *bool
 }
 
+func NewColumnDefinition(name string, ttype string) schema.ColumnDefinition {
+	return &ColumnDefinition{
+		name:  &name,
+		ttype: convert.Pointer(ttype),
+	}
+}
+
 func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	r.autoIncrement = convert.Pointer(true)
 

@@ -2306,6 +2306,40 @@ func (_c *Blueprint_Rename_Call) RunAndReturn(run func(string)) *Blueprint_Renam
 	return _c
 }
 
+// RenameColumn provides a mock function with given fields: from, to
+func (_m *Blueprint) RenameColumn(from string, to string) {
+	_m.Called(from, to)
+}
+
+// Blueprint_RenameColumn_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameColumn'
+type Blueprint_RenameColumn_Call struct {
+	*mock.Call
+}
+
+// RenameColumn is a helper method to define mock.On call
+//   - from string
+//   - to string
+func (_e *Blueprint_Expecter) RenameColumn(from interface{}, to interface{}) *Blueprint_RenameColumn_Call {
+	return &Blueprint_RenameColumn_Call{Call: _e.mock.On("RenameColumn", from, to)}
+}
+
+func (_c *Blueprint_RenameColumn_Call) Run(run func(from string, to string)) *Blueprint_RenameColumn_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_RenameColumn_Call) Return() *Blueprint_RenameColumn_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_RenameColumn_Call) RunAndReturn(run func(string, string)) *Blueprint_RenameColumn_Call {
+	_c.Run(run)
+	return _c
+}
+
 // RenameIndex provides a mock function with given fields: from, to
 func (_m *Blueprint) RenameIndex(from string, to string) {
 	_m.Called(from, to)
@@ -3191,7 +3225,7 @@ func (_c *Blueprint_TinyText_Call) RunAndReturn(run func(string) schema.ColumnDe
 }
 
 // ToSql provides a mock function with given fields: grammar
-func (_m *Blueprint) ToSql(grammar schema.Grammar) []string {
+func (_m *Blueprint) ToSql(grammar schema.Grammar) ([]string, error) {
 	ret := _m.Called(grammar)
 
 	if len(ret) == 0 {
@@ -3199,6 +3233,10 @@ func (_m *Blueprint) ToSql(grammar schema.Grammar) []string {
 	}
 
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(schema.Grammar) ([]string, error)); ok {
+		return rf(grammar)
+	}
 	if rf, ok := ret.Get(0).(func(schema.Grammar) []string); ok {
 		r0 = rf(grammar)
 	} else {
@@ -3207,7 +3245,13 @@ func (_m *Blueprint) ToSql(grammar schema.Grammar) []string {
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(schema.Grammar) error); ok {
+		r1 = rf(grammar)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Blueprint_ToSql_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ToSql'
@@ -3228,12 +3272,12 @@ func (_c *Blueprint_ToSql_Call) Run(run func(grammar schema.Grammar)) *Blueprint
 	return _c
 }
 
-func (_c *Blueprint_ToSql_Call) Return(_a0 []string) *Blueprint_ToSql_Call {
-	_c.Call.Return(_a0)
+func (_c *Blueprint_ToSql_Call) Return(_a0 []string, _a1 error) *Blueprint_ToSql_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(schema.Grammar) []string) *Blueprint_ToSql_Call {
+func (_c *Blueprint_ToSql_Call) RunAndReturn(run func(schema.Grammar) ([]string, error)) *Blueprint_ToSql_Call {
 	_c.Call.Return(run)
 	return _c
 }
