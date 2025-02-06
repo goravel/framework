@@ -61,19 +61,3 @@ func (s *ConfigTestSuite) TestQueue() {
 		})
 	}
 }
-
-func (s *ConfigTestSuite) TestRedis() {
-	s.mockConfig.On("GetString", "queue.connections.redis.connection").Return("default").Once()
-	s.mockConfig.On("GetString", "database.redis.default.host").Return("127.0.0.1").Once()
-	s.mockConfig.On("GetString", "database.redis.default.password").Return("").Once()
-	s.mockConfig.On("GetInt", "database.redis.default.port").Return(6379).Once()
-	s.mockConfig.On("GetInt", "database.redis.default.database").Return(0).Once()
-	s.mockConfig.On("GetString", "queue.connections.redis.queue", "default").Return("default").Once()
-	s.mockConfig.On("GetString", "app.name").Return("goravel").Once()
-
-	redisConfig, database, queue := s.config.Redis("redis")
-
-	s.Equal("127.0.0.1:6379", redisConfig)
-	s.Equal(0, database)
-	s.Equal("goravel_queues:default", queue)
-}

@@ -4,7 +4,6 @@ import "time"
 
 const DriverSync string = "sync"
 const DriverAsync string = "async"
-const DriverMachinery string = "machinery" // TODO: Will be removed in v1.17
 const DriverCustom string = "custom"
 
 type Driver interface {

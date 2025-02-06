@@ -55,25 +55,6 @@ func (r *Config) Queue(connection, queue string) string {
 	return fmt.Sprintf("%s_queues:%s", appName, queue)
 }
 
-// Redis returns the Redis configuration for a given connection.
-// TODO: Will be removed in v1.17
-func (r *Config) Redis(queueConnection string) (dsn string, database int, queue string) {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	queue = r.Queue(queueConnection, "")
-	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
-	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
-	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
-	database = r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
-
-	if password == "" {
-		dsn = fmt.Sprintf("%s:%d", host, port)
-	} else {
-		dsn = fmt.Sprintf("%s@%s:%d", password, host, port)
-	}
-
-	return
-}
-
 func (r *Config) Size(connection string) int {
 	if connection == "" {
 		connection = r.DefaultConnection()

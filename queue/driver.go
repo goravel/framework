@@ -11,8 +11,6 @@ func NewDriver(connection string, config queue.Config) (queue.Driver, error) {
 		return NewSync(connection), nil
 	case queue.DriverAsync:
 		return NewAsync(connection, config.Size(connection)), nil
-	case queue.DriverMachinery:
-		return NewMachinery(connection, config, LogFacade), nil // TODO: Will be removed in v1.17
 	case queue.DriverCustom:
 		custom := config.Via(connection)
 		if driver, ok := custom.(queue.Driver); ok {
