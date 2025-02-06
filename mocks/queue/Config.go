@@ -250,69 +250,6 @@ func (_c *Config_Queue_Call) RunAndReturn(run func(string, string) string) *Conf
 	return _c
 }
 
-// Redis provides a mock function with given fields: queueConnection
-func (_m *Config) Redis(queueConnection string) (string, int, string) {
-	ret := _m.Called(queueConnection)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Redis")
-	}
-
-	var r0 string
-	var r1 int
-	var r2 string
-	if rf, ok := ret.Get(0).(func(string) (string, int, string)); ok {
-		return rf(queueConnection)
-	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(queueConnection)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(string) int); ok {
-		r1 = rf(queueConnection)
-	} else {
-		r1 = ret.Get(1).(int)
-	}
-
-	if rf, ok := ret.Get(2).(func(string) string); ok {
-		r2 = rf(queueConnection)
-	} else {
-		r2 = ret.Get(2).(string)
-	}
-
-	return r0, r1, r2
-}
-
-// Config_Redis_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Redis'
-type Config_Redis_Call struct {
-	*mock.Call
-}
-
-// Redis is a helper method to define mock.On call
-//   - queueConnection string
-func (_e *Config_Expecter) Redis(queueConnection interface{}) *Config_Redis_Call {
-	return &Config_Redis_Call{Call: _e.mock.On("Redis", queueConnection)}
-}
-
-func (_c *Config_Redis_Call) Run(run func(queueConnection string)) *Config_Redis_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
-	})
-	return _c
-}
-
-func (_c *Config_Redis_Call) Return(dsn string, database int, _a2 string) *Config_Redis_Call {
-	_c.Call.Return(dsn, database, _a2)
-	return _c
-}
-
-func (_c *Config_Redis_Call) RunAndReturn(run func(string) (string, int, string)) *Config_Redis_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Size provides a mock function with given fields: connection
 func (_m *Config) Size(connection string) int {
 	ret := _m.Called(connection)
