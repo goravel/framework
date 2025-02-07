@@ -18,15 +18,15 @@ type ShowCommand struct {
 }
 
 type databaseInfo struct {
-	Name            string
-	Version         string
 	Database        string
 	Host            string
-	Port            int
-	Username        string
+	Name            string
 	OpenConnections int
-	Tables          []schema.Table `gorm:"-"`
-	Views           []schema.View  `gorm:"-"`
+	Port            int
+	Tables          []schema.Table
+	Username        string
+	Version         string
+	Views           []schema.View
 }
 
 func NewShowCommand(config config.Config, schema schema.Schema) *ShowCommand {
@@ -77,16 +77,18 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 	info := databaseInfo{
 		Database: dbConfig.Database,
 		Host:     dbConfig.Host,
+		Name:     dbConfig.Driver,
 		Port:     dbConfig.Port,
 		Username: dbConfig.Username,
+		Version:  dbConfig.Version,
 	}
 
-	var err error
-	info.Name, info.Version, info.OpenConnections, err = r.getDataBaseInfo()
+	db, err := r.schema.Orm().DB()
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
+	info.OpenConnections = db.Stats().OpenConnections
 
 	if info.Tables, err = r.schema.GetTables(); err != nil {
 		ctx.Error(err.Error())
@@ -102,20 +104,6 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 	r.display(ctx, info)
 
 	return nil
-}
-
-func (r *ShowCommand) getDataBaseInfo() (name, version string, openConnections int, err error) {
-	name = r.schema.Orm().Name()
-	version = r.schema.Orm().Version()
-
-	db, err := r.schema.Orm().DB()
-	if err != nil {
-		return
-	}
-
-	openConnections = db.Stats().OpenConnections
-
-	return
 }
 
 func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
