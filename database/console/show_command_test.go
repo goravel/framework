@@ -65,15 +65,15 @@ func TestShowCommand(t *testing.T) {
 				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
 				mockOrm.EXPECT().Config().Return(database.Config{
 					Database: "db",
+					Driver:   "test",
 					Host:     "host",
 					Port:     1234,
 					Username: "username",
+					Version:  "version",
 				}).Once()
 
 				// getDataBaseInfo
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
-				mockOrm.EXPECT().Name().Return("test").Once()
-				mockOrm.EXPECT().Version().Return("version").Once()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
 				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 
 				// Handle
@@ -90,15 +90,15 @@ func TestShowCommand(t *testing.T) {
 				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
 				mockOrm.EXPECT().Config().Return(database.Config{
 					Database: "db",
+					Driver:   "test",
 					Host:     "host",
 					Port:     1234,
 					Username: "username",
+					Version:  "version",
 				}).Once()
 
 				// getDataBaseInfo
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
-				mockOrm.EXPECT().Name().Return("test").Once()
-				mockOrm.EXPECT().Version().Return("version").Once()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
 				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 
 				// Handle
@@ -117,15 +117,15 @@ func TestShowCommand(t *testing.T) {
 				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
 				mockOrm.EXPECT().Config().Return(database.Config{
 					Database: "db",
+					Driver:   "test",
 					Host:     "host",
 					Port:     1234,
 					Username: "username",
+					Version:  "version",
 				}).Once()
 
 				// getDataBaseInfo
-				mockSchema.EXPECT().Orm().Return(mockOrm).Times(3)
-				mockOrm.EXPECT().Name().Return("test").Once()
-				mockOrm.EXPECT().Version().Return("version").Once()
+				mockSchema.EXPECT().Orm().Return(mockOrm).Once()
 				mockOrm.EXPECT().DB().Return(&sql.DB{}, nil).Once()
 
 				// Handle

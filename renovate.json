@@ -6,7 +6,7 @@
   "labels": [
     "🤖 Dependencies"
   ],
-  "commitMessagePrefix": "chore(deps): ",
+  "commitMessagePrefix": "chore: ",
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true
@@ -24,7 +24,15 @@
         "patch",
         "minor"
       ],
-      "automerge": true
+      "automerge": true,
+      "matchFileNames": ["**/go.mod", ".github/**"]
+    },
+    {
+      "groupName": "upgrade DB packages",
+      "automerge": true,
+      "matchPackageNames": ["github.com/goravel/mysql", "github.com/goravel/postgres", "github.com/goravel/sqlite", "github.com/goravel/sqlserver"],
+      "allowedVersions": ">=0.0.0",
+      "matchFileNames": ["**/go.mod"]
     }
   ],
   "ignoreDeps": []

@@ -6,11 +6,11 @@ toolchain go1.23.4
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/goravel/framework v1.15.2-0.20250205025204-9aa404b94067
-	github.com/goravel/mysql v0.0.0-20250204093445-2ac5aa91cc75
-	github.com/goravel/postgres v0.0.2-0.20250204083647-db3eb55bfbc3
-	github.com/goravel/sqlite v0.0.0-20250204145615-c24bc44cc4da
-	github.com/goravel/sqlserver v0.0.0-20250204145708-e80a9808418c
+	github.com/goravel/framework v1.15.3
+	github.com/goravel/mysql v0.0.0-20250207035700-df4e513a3281
+	github.com/goravel/postgres v0.0.2-0.20250207035411-83825fd472d4
+	github.com/goravel/sqlite v0.0.0-20250207035449-5c97c3c94a9f
+	github.com/goravel/sqlserver v0.0.0-20250207035523-2e22f31eefad
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
@@ -57,7 +57,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
+	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
@@ -75,4 +75,12 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
 	modernc.org/sqlite v1.34.5 // indirect
+)
+
+replace (
+	github.com/goravel/framework v1.15.3 => ../
+	github.com/goravel/mysql v0.0.0 => github.com/goravel/mysql v0.0.0
+	github.com/goravel/postgres v0.0.0 => github.com/goravel/postgres v0.0.0
+	github.com/goravel/sqlite v0.0.0 => github.com/goravel/sqlite v0.0.0
+	github.com/goravel/sqlserver v0.0.0 => github.com/goravel/sqlserver v0.0.0
 )
