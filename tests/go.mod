@@ -9,8 +9,8 @@ require (
 	github.com/goravel/framework v1.15.3
 	github.com/goravel/mysql v0.0.0-20250207111224-4bae3e237ee0
 	github.com/goravel/postgres v0.0.2-0.20250207111220-68d6cc2ff906
-	github.com/goravel/sqlite v0.0.0-20250207035449-5c97c3c94a9f
-	github.com/goravel/sqlserver v0.0.0-20250207035523-2e22f31eefad
+	github.com/goravel/sqlite v0.0.0-20250207134526-6d6f47272b5e
+	github.com/goravel/sqlserver v0.0.0-20250207134558-db7397b26496
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
