@@ -8,6 +8,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
+	httpcontract "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/factory"
 	"github.com/goravel/framework/database/gorm"
@@ -159,6 +160,10 @@ func (r *Orm) Version() string {
 }
 
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
+	if http, ok := ctx.(httpcontract.Context); ok {
+		ctx = http.Context()
+	}
+	
 	for _, query := range r.queries {
 		if queryWithSetContext, ok := query.(contractsorm.QueryWithSetContext); ok {
 			queryWithSetContext.SetContext(ctx)
