@@ -3,21 +3,41 @@ package queue
 import (
 	"fmt"
 
-	configcontract "github.com/goravel/framework/contracts/config"
+	contractsconfig "github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/orm"
+	"github.com/goravel/framework/contracts/queue"
 )
 
 type Config struct {
-	config configcontract.Config
+	config contractsconfig.Config
 }
 
-func NewConfig(config configcontract.Config) *Config {
+func NewConfig(config contractsconfig.Config) queue.Config {
 	return &Config{
 		config: config,
 	}
 }
 
+func (r *Config) Debug() bool {
+	return r.config.GetBool("app.debug")
+}
+
 func (r *Config) DefaultConnection() string {
 	return r.config.GetString("queue.default")
+}
+
+func (r *Config) Driver(connection string) string {
+	if connection == "" {
+		connection = r.DefaultConnection()
+	}
+
+	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
+}
+
+func (r *Config) FailedJobsQuery() orm.Query {
+	connection := r.config.GetString("queue.failed.database")
+	table := r.config.GetString("queue.failed.table")
+	return OrmFacade.Connection(connection).Query().Table(table)
 }
 
 func (r *Config) Queue(connection, queue string) string {
@@ -32,30 +52,21 @@ func (r *Config) Queue(connection, queue string) string {
 		queue = r.config.GetString(fmt.Sprintf("queue.connections.%s.queue", connection), "default")
 	}
 
-	return fmt.Sprintf("%s_%s:%s", appName, "queues", queue)
+	return fmt.Sprintf("%s_queues:%s", appName, queue)
 }
 
-func (r *Config) Driver(connection string) string {
+func (r *Config) Size(connection string) int {
 	if connection == "" {
-		connection = r.config.GetString("queue.default")
+		connection = r.DefaultConnection()
 	}
 
-	return r.config.GetString(fmt.Sprintf("queue.connections.%s.driver", connection))
+	return r.config.GetInt(fmt.Sprintf("queue.connections.%s.size", connection), 100)
 }
 
-func (r *Config) Redis(queueConnection string) (dsn string, database int, queue string) {
-	connection := r.config.GetString(fmt.Sprintf("queue.connections.%s.connection", queueConnection))
-	queue = r.Queue(queueConnection, "")
-	host := r.config.GetString(fmt.Sprintf("database.redis.%s.host", connection))
-	password := r.config.GetString(fmt.Sprintf("database.redis.%s.password", connection))
-	port := r.config.GetInt(fmt.Sprintf("database.redis.%s.port", connection))
-	database = r.config.GetInt(fmt.Sprintf("database.redis.%s.database", connection))
-
-	if password == "" {
-		dsn = fmt.Sprintf("%s:%d", host, port)
-	} else {
-		dsn = fmt.Sprintf("%s@%s:%d", password, host, port)
+func (r *Config) Via(connection string) any {
+	if connection == "" {
+		connection = r.DefaultConnection()
 	}
 
-	return
+	return r.config.Get(fmt.Sprintf("queue.connections.%s.via", connection))
 }

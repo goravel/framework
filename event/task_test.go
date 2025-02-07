@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/goravel/framework/contracts/event"
-	queuecontract "github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/errors"
 	queuemock "github.com/goravel/framework/mocks/queue"
 )
@@ -32,9 +31,7 @@ func TestDispatch(t *testing.T) {
 				listener := &TestListener{}
 				mockTask := &queuemock.Task{}
 
-				mockQueue.On("Job", listener, []queuecontract.Arg{
-					{Type: "string", Value: "test"},
-				}).Return(mockTask).Once()
+				mockQueue.On("Job", listener, []any{"test"}).Return(mockTask).Once()
 				mockTask.On("DispatchSync").Return(nil).Once()
 
 				task = NewTask(mockQueue, []event.Arg{
@@ -51,9 +48,7 @@ func TestDispatch(t *testing.T) {
 				listener := &TestListenerHandleError{}
 				mockTask := &queuemock.Task{}
 
-				mockQueue.On("Job", listener, []queuecontract.Arg{
-					{Type: "string", Value: "test"},
-				}).Return(mockTask).Once()
+				mockQueue.On("Job", listener, []any{"test"}).Return(mockTask).Once()
 				mockTask.On("DispatchSync").Return(errors.New("error")).Once()
 
 				task = NewTask(mockQueue, []event.Arg{
