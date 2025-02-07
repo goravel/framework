@@ -9,12 +9,12 @@ import (
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/seeder"
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/errors"
 )
 
 type Database struct {
-	testing.DatabaseDriver
+	docker.DatabaseDriver
 	artisan    contractsconsole.Artisan
 	config     contractsconfig.Config
 	connection string
