@@ -2,18 +2,17 @@ package cache
 
 import (
 	"github.com/goravel/framework/cache/console"
+	frameworkconfig "github.com/goravel/framework/config"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
 
-const Binding = "goravel.cache"
-
 type ServiceProvider struct {
 }
 
 func (database *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+	app.Singleton(frameworkconfig.BindingCache, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleCache)

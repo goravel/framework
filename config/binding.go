@@ -1,0 +1,27 @@
+package config
+
+const (
+	BindingConsole     = "goravel.console"
+	BindingAuth        = "goravel.auth"
+	BindingGate        = "goravel.gate"
+	BindingCache       = "goravel.cache"
+	BindingCrypt       = "goravel.crypt"
+	BindingEvent       = "goravel.event"
+	BindingGrpc        = "goravel.grpc"
+	BindingHash        = "goravel.hash"
+	BindingTranslation = "goravel.translation"
+	BindingLog         = "goravel.log"
+	BindingMail        = "goravel.mail"
+	BindingOrm         = "goravel.orm"
+	BindingQueue       = "goravel.queue"
+	BindingRateLimiter = "goravel.rate_limiter"
+	BindingView        = "goravel.view"
+	BindingRoute       = "goravel.route"
+	BindingSchedule    = "goravel.schedule"
+	BindingSchema      = "goravel.schema"
+	BindingSession     = "goravel.session"
+	BindingFilesystem  = "goravel.filesystem"
+	BindingTesting     = "goravel.testing"
+	BindingValidation  = "goravel.validation"
+	BindingSeeder      = "goravel.seeder"
+)

@@ -1,16 +1,12 @@
 package http
 
 import (
+	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts/cache"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/http/console"
-)
-
-const (
-	BindingRateLimiter = "goravel.rate_limiter"
-	BindingView        = "goravel.view"
 )
 
 type ServiceProvider struct{}
@@ -21,10 +17,10 @@ var (
 )
 
 func (http *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(BindingRateLimiter, func(app foundation.Application) (any, error) {
+	app.Singleton(config.BindingRateLimiter, func(app foundation.Application) (any, error) {
 		return NewRateLimiter(), nil
 	})
-	app.Singleton(BindingView, func(app foundation.Application) (any, error) {
+	app.Singleton(config.BindingView, func(app foundation.Application) (any, error) {
 		return NewView(), nil
 	})
 }

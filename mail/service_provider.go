@@ -1,6 +1,7 @@
 package mail
 
 import (
+	frameworkconfig "github.com/goravel/framework/config"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
@@ -9,13 +10,11 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
-const Binding = "goravel.mail"
-
 type ServiceProvider struct {
 }
 
 func (route *ServiceProvider) Register(app foundation.Application) {
-	app.Bind(Binding, func(app foundation.Application) (any, error) {
+	app.Bind(frameworkconfig.BindingMail, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleMail)

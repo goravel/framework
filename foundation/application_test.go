@@ -16,7 +16,6 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/foundation/json"
@@ -157,10 +156,10 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingCache, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
-	s.app.Singleton(orm.BindingOrm, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingOrm, func(app foundation.Application) (any, error) {
 		return &mocksorm.Orm{}, nil
 	})
 
@@ -179,7 +178,7 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -212,7 +211,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 }
 
 func (s *ApplicationTestSuite) TestMakeEvent() {
-	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingQueue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
 
@@ -266,7 +265,7 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -297,7 +296,7 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
-	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingQueue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
 
@@ -345,7 +344,7 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 		return mockConfig, nil
 	})
 
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -360,7 +359,7 @@ func (s *ApplicationTestSuite) TestMakeQueue() {
 		return &mocksconfig.Config{}, nil
 	})
 
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -398,13 +397,13 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(console.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingConsole, func(app foundation.Application) (any, error) {
 		return &mocksconsole.Artisan{}, nil
 	})
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
-	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(frameworkconfig.BindingCache, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
 

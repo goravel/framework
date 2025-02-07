@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"sync"
 
+	frameworkconfig "github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts/config"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/database/factory"
 	"github.com/goravel/framework/database/gorm"
 )
-
-const BindingOrm = "goravel.orm"
 
 type Orm struct {
 	ctx             context.Context
@@ -127,7 +126,7 @@ func (r *Orm) SetQuery(query contractsorm.Query) {
 }
 
 func (r *Orm) Refresh() {
-	r.refresh(BindingOrm)
+	r.refresh(frameworkconfig.BindingOrm)
 }
 
 func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
