@@ -2,7 +2,7 @@ module github.com/goravel/framework/tests
 
 go 1.22.7
 
-toolchain go1.23.4
+toolchain go1.23.6
 
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
@@ -56,6 +56,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
 	golang.org/x/net v0.34.0 // indirect
