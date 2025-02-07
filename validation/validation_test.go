@@ -11,6 +11,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
+	goravelhttp "github.com/goravel/framework/http"
 )
 
 func TestMake(t *testing.T) {
@@ -81,6 +82,9 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
+				func(m map[string]any) {
+					m["ctx"] = goravelhttp.NewContext()
+				},
 				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					return ErrInvalidData
 				}),
@@ -93,6 +97,9 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
+				func(m map[string]any) {
+					m["ctx"] = goravelhttp.NewContext()
+				},
 				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
@@ -116,6 +123,9 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"b": "B",
 				}),
+				func(m map[string]any) {
+					m["ctx"] = goravelhttp.NewContext()
+				},
 				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
@@ -135,6 +145,9 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"A": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"A": "trim"}),
+				func(m map[string]any) {
+					m["ctx"] = goravelhttp.NewContext()
+				},
 				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
 						return data.Set("A", "c")
@@ -158,6 +171,9 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"B": "b",
 				}),
+				func(m map[string]any) {
+					m["ctx"] = goravelhttp.NewContext()
+				},
 				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
