@@ -25,7 +25,7 @@
         "minor"
       ],
       "automerge": true,
-      "matchFileNames": ["go.mod", "tests/go.mod", ".github/**"],
+      "matchFileNames": ["go.mod", "tests/go.mod", ".github/**"]
     }
   ],
   "ignoreDeps": []
