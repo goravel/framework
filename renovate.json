@@ -6,7 +6,6 @@
   "labels": [
     "🤖 Dependencies"
   ],
-  "matchFileNames": ["go.mod", "tests/go.mod", ".github/**"],
   "commitMessagePrefix": "chore(deps): ",
   "lockFileMaintenance": {
     "enabled": true,
@@ -25,7 +24,8 @@
         "patch",
         "minor"
       ],
-      "automerge": true
+      "automerge": true,
+      "matchFileNames": ["go.mod", "tests/go.mod", ".github/**"],
     }
   ],
   "ignoreDeps": []
