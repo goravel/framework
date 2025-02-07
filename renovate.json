@@ -35,5 +35,6 @@
       "matchFileNames": ["**/go.mod"]
     }
   ],
-  "ignoreDeps": []
+  "ignoreDeps": [],
+  "ignorePaths": []
 }
