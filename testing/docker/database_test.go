@@ -14,7 +14,7 @@ import (
 	mocksorm "github.com/goravel/framework/mocks/database/orm"
 	mocksseeder "github.com/goravel/framework/mocks/database/seeder"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
-	mockstesting "github.com/goravel/framework/mocks/testing"
+	mocksdocker "github.com/goravel/framework/mocks/testing/docker"
 )
 
 func TestNewDatabase(t *testing.T) {
@@ -24,7 +24,7 @@ func TestNewDatabase(t *testing.T) {
 		mockConfig         *mocksconfig.Config
 		mockOrm            *mocksorm.Orm
 		mockDatabaseDriver *mocksdriver.Driver
-		mockDockerDriver   *mockstesting.DatabaseDriver
+		mockDockerDriver   *mocksdocker.DatabaseDriver
 	)
 
 	beforeEach := func() {
@@ -33,7 +33,7 @@ func TestNewDatabase(t *testing.T) {
 		mockConfig = mocksconfig.NewConfig(t)
 		mockOrm = mocksorm.NewOrm(t)
 		mockDatabaseDriver = mocksdriver.NewDriver(t)
-		mockDockerDriver = mockstesting.NewDatabaseDriver(t)
+		mockDockerDriver = mocksdocker.NewDatabaseDriver(t)
 	}
 
 	tests := []struct {
@@ -146,7 +146,7 @@ type DatabaseTestSuite struct {
 	mockArtisan        *mocksconsole.Artisan
 	mockConfig         *mocksconfig.Config
 	mockOrm            *mocksorm.Orm
-	mockDatabaseDriver *mockstesting.DatabaseDriver
+	mockDatabaseDriver *mocksdocker.DatabaseDriver
 	database           *Database
 }
 
@@ -159,7 +159,7 @@ func (s *DatabaseTestSuite) SetupTest() {
 	s.mockArtisan = mocksconsole.NewArtisan(s.T())
 	s.mockConfig = mocksconfig.NewConfig(s.T())
 	s.mockOrm = mocksorm.NewOrm(s.T())
-	s.mockDatabaseDriver = mockstesting.NewDatabaseDriver(s.T())
+	s.mockDatabaseDriver = mocksdocker.NewDatabaseDriver(s.T())
 	s.database = &Database{
 		artisan:        s.mockArtisan,
 		config:         s.mockConfig,

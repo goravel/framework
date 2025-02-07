@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/support/process"
 )
 
@@ -24,7 +24,7 @@ func ExposedPort(exposedPorts []string, port int) int {
 	return 0
 }
 
-func ImageToCommand(image *testing.Image) (command string, exposedPorts []string) {
+func ImageToCommand(image *docker.Image) (command string, exposedPorts []string) {
 	if image == nil {
 		return "", nil
 	}
