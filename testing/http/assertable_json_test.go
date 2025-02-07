@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	contractstesting "github.com/goravel/framework/contracts/testing"
+	contractshttp "github.com/goravel/framework/contracts/testing/http"
 )
 
 type AssertableJsonTestSuite struct {
@@ -153,7 +153,7 @@ func (s *AssertableJsonTestSuite) TestFirst() {
 	s.NoError(err)
 
 	// Test fetching the first item
-	assertable.First("items", func(item contractstesting.AssertableJSON) {
+	assertable.First("items", func(item contractshttp.AssertableJSON) {
 		item.Where("id", float64(1))
 	})
 
@@ -173,7 +173,7 @@ func (s *AssertableJsonTestSuite) TestHasWithScope() {
 	s.NoError(err)
 
 	// Test has with correct length
-	assertable.HasWithScope("items", 2, func(item contractstesting.AssertableJSON) {
+	assertable.HasWithScope("items", 2, func(item contractshttp.AssertableJSON) {
 		item.Where("id", float64(1))
 	})
 
@@ -196,7 +196,7 @@ func (s *AssertableJsonTestSuite) TestEach() {
 
 	// Test iterating over each item
 	callCount := 0
-	assertable.Each("items", func(item contractstesting.AssertableJSON) {
+	assertable.Each("items", func(item contractshttp.AssertableJSON) {
 		item.Where("id", float64(callCount+1))
 		callCount++
 	})
@@ -211,7 +211,7 @@ func (s *AssertableJsonTestSuite) TestEach() {
 	s.NoError(err)
 
 	emptyCallCount := 0
-	emptyAssertable.Each("items", func(item contractstesting.AssertableJSON) {
+	emptyAssertable.Each("items", func(item contractshttp.AssertableJSON) {
 		emptyCallCount++
 	})
 	s.Equal(0, emptyCallCount)

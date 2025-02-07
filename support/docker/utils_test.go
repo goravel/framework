@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	contractstesting "github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 )
 
 func TestExposedPort(t *testing.T) {
@@ -18,7 +18,7 @@ func TestImageToCommand(t *testing.T) {
 	assert.Equal(t, "", command)
 	assert.Nil(t, exposedPorts)
 
-	command, exposedPorts = ImageToCommand(&contractstesting.Image{
+	command, exposedPorts = ImageToCommand(&docker.Image{
 		Repository: "redis",
 		Tag:        "latest",
 	})
@@ -26,7 +26,7 @@ func TestImageToCommand(t *testing.T) {
 	assert.Equal(t, "docker run --rm -d redis:latest", command)
 	assert.Nil(t, exposedPorts)
 
-	command, exposedPorts = ImageToCommand(&contractstesting.Image{
+	command, exposedPorts = ImageToCommand(&docker.Image{
 		Repository:   "redis",
 		Tag:          "latest",
 		ExposedPorts: []string{"6379"},
@@ -35,7 +35,7 @@ func TestImageToCommand(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("docker run --rm -d -e a=b -p %d:6379 redis:latest", ExposedPort(exposedPorts, 6379)), command)
 	assert.True(t, ExposedPort(exposedPorts, 6379) > 0)
 
-	command, exposedPorts = ImageToCommand(&contractstesting.Image{
+	command, exposedPorts = ImageToCommand(&docker.Image{
 		Repository:   "redis",
 		Tag:          "latest",
 		ExposedPorts: []string{"1234:6379"},

@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	contractstesting "github.com/goravel/framework/contracts/testing"
+	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/errors"
 	mockssession "github.com/goravel/framework/mocks/session"
 )
@@ -301,11 +301,11 @@ func TestAssertFluentJson(t *testing.T) {
 
 	r := NewTestResponse(t, res, &testJson{}, nil)
 
-	r.AssertFluentJson(func(json contractstesting.AssertableJSON) {
+	r.AssertFluentJson(func(json contractshttp.AssertableJSON) {
 		json.Has("name").Where("name", "krishan")
 		json.Has("age").Where("age", float64(22))
 		json.Has("email").Where("email", "krishan@example.com")
-	}).AssertFluentJson(func(json contractstesting.AssertableJSON) {
+	}).AssertFluentJson(func(json contractshttp.AssertableJSON) {
 		json.Missing("non_existent_field")
 	})
 }

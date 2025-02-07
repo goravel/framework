@@ -2,7 +2,7 @@ package docker
 
 import (
 	"github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 )
 
 type Docker struct {
@@ -15,7 +15,7 @@ func NewDocker(app foundation.Application) *Docker {
 	}
 }
 
-func (receiver *Docker) Database(connection ...string) (testing.Database, error) {
+func (receiver *Docker) Database(connection ...string) (docker.Database, error) {
 	if len(connection) == 0 {
 		return NewDatabase(receiver.app, "")
 	} else {

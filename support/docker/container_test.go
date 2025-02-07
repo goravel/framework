@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	contractstesting "github.com/goravel/framework/contracts/testing"
-	mockstesting "github.com/goravel/framework/mocks/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
+	mocksdocker "github.com/goravel/framework/mocks/testing/docker"
 	"github.com/goravel/framework/support/process"
 )
 
 type ContainerTestSuite struct {
 	suite.Suite
-	mockDatabaseDriver *mockstesting.DatabaseDriver
+	mockDatabaseDriver *mocksdocker.DatabaseDriver
 	container          *Container
 }
 
@@ -24,13 +24,13 @@ func TestContainerTestSuite(t *testing.T) {
 
 func (s *ContainerTestSuite) SetupTest() {
 	process.TestPortUsing = false
-	s.mockDatabaseDriver = mockstesting.NewDatabaseDriver(s.T())
+	s.mockDatabaseDriver = mocksdocker.NewDatabaseDriver(s.T())
 	s.mockDatabaseDriver.EXPECT().Driver().Return("test").Once()
 	s.container = NewContainer(s.mockDatabaseDriver)
 }
 
 func (s *ContainerTestSuite) TestAddAndAll() {
-	s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+	s.mockDatabaseDriver.EXPECT().Config().Return(docker.DatabaseConfig{
 		ContainerID: "test-container",
 		Port:        5432,
 		Database:    "test",
@@ -43,7 +43,7 @@ func (s *ContainerTestSuite) TestAddAndAll() {
 	containers, err := s.container.all()
 	s.NoError(err)
 	s.Len(containers, 1)
-	s.Equal(contractstesting.DatabaseConfig{
+	s.Equal(docker.DatabaseConfig{
 		ContainerID: "test-container",
 		Port:        5432,
 		Database:    "test",
@@ -56,7 +56,7 @@ func (s *ContainerTestSuite) TestBuild() {
 	s.Run("Test reusing existing container", func() {
 		process.TestPortUsing = true
 
-		s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+		s.mockDatabaseDriver.EXPECT().Config().Return(docker.DatabaseConfig{
 			ContainerID: "test-container",
 			Port:        5432,
 		}).Once()
@@ -78,7 +78,7 @@ func (s *ContainerTestSuite) TestBuild() {
 		s.SetupTest()
 
 		s.mockDatabaseDriver.EXPECT().Build().Return(nil).Once()
-		s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+		s.mockDatabaseDriver.EXPECT().Config().Return(docker.DatabaseConfig{
 			ContainerID: "test-container",
 			Port:        5432,
 		}).Once()
@@ -94,7 +94,7 @@ func (s *ContainerTestSuite) TestBuild() {
 
 func (s *ContainerTestSuite) TestBuilds() {
 	s.mockDatabaseDriver.EXPECT().Build().Return(nil).Times(3)
-	s.mockDatabaseDriver.EXPECT().Config().Return(contractstesting.DatabaseConfig{
+	s.mockDatabaseDriver.EXPECT().Config().Return(docker.DatabaseConfig{
 		ContainerID: "test-container",
 		Port:        5432,
 	}).Times(3)

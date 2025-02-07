@@ -7,19 +7,19 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/support/process"
 )
 
 type Redis struct {
 	port        int
 	containerID string
-	image       *testing.Image
+	image       *docker.Image
 }
 
 func NewRedis() *Redis {
 	return &Redis{
-		image: &testing.Image{
+		image: &docker.Image{
 			Repository:   "redis",
 			Tag:          "latest",
 			ExposedPorts: []string{"6379"},
