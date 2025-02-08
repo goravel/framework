@@ -25,17 +25,17 @@ func NewVendorPublishCommand(publishes, publishGroups map[string]map[string]stri
 }
 
 // Signature The name and signature of the console command.
-func (r *VendorPublishCommand) Signature() string {
+func (receiver *VendorPublishCommand) Signature() string {
 	return "vendor:publish"
 }
 
 // Description The console command description.
-func (r *VendorPublishCommand) Description() string {
+func (receiver *VendorPublishCommand) Description() string {
 	return "Publish any publishable assets from vendor packages"
 }
 
 // Extend The console command extend.
-func (r *VendorPublishCommand) Extend() command.Extend {
+func (receiver *VendorPublishCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "vendor",
 		Flags: []command.Flag{
@@ -64,15 +64,15 @@ func (r *VendorPublishCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *VendorPublishCommand) Handle(ctx console.Context) error {
+func (receiver *VendorPublishCommand) Handle(ctx console.Context) error {
 	packageName := ctx.Option("package")
-	paths := r.pathsForPackageOrGroup(packageName, ctx.Option("tag"))
+	paths := receiver.pathsForPackageOrGroup(packageName, ctx.Option("tag"))
 	if len(paths) == 0 {
 		ctx.Error("no vendor found")
 		return nil
 	}
 
-	packageDir, err := r.packageDir(packageName)
+	packageDir, err := receiver.packageDir(packageName)
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
@@ -82,7 +82,7 @@ func (r *VendorPublishCommand) Handle(ctx console.Context) error {
 		targetValue = strings.TrimPrefix(strings.TrimPrefix(targetValue, "/"), "./")
 		packagePath := filepath.Join(packageDir, sourcePath)
 
-		res, err := r.publish(packagePath, targetValue, ctx.OptionBool("existing"), ctx.OptionBool("force"))
+		res, err := receiver.publish(packagePath, targetValue, ctx.OptionBool("existing"), ctx.OptionBool("force"))
 		if err != nil {
 			ctx.Error(err.Error())
 			return nil
@@ -103,15 +103,15 @@ func (r *VendorPublishCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *VendorPublishCommand) pathsForPackageOrGroup(packageName, group string) map[string]string {
+func (receiver *VendorPublishCommand) pathsForPackageOrGroup(packageName, group string) map[string]string {
 	if packageName != "" && group != "" {
-		return r.pathsForProviderAndGroup(packageName, group)
+		return receiver.pathsForProviderAndGroup(packageName, group)
 	} else if group != "" {
-		if paths, exist := r.publishGroups[group]; exist {
+		if paths, exist := receiver.publishGroups[group]; exist {
 			return paths
 		}
 	} else if packageName != "" {
-		if paths, exist := r.publishes[packageName]; exist {
+		if paths, exist := receiver.publishes[packageName]; exist {
 			return paths
 		}
 	}
@@ -119,13 +119,13 @@ func (r *VendorPublishCommand) pathsForPackageOrGroup(packageName, group string)
 	return nil
 }
 
-func (r *VendorPublishCommand) pathsForProviderAndGroup(packageName, group string) map[string]string {
-	packagePaths, exist := r.publishes[packageName]
+func (receiver *VendorPublishCommand) pathsForProviderAndGroup(packageName, group string) map[string]string {
+	packagePaths, exist := receiver.publishes[packageName]
 	if !exist {
 		return nil
 	}
 
-	groupPaths, exist := r.publishGroups[group]
+	groupPaths, exist := receiver.publishGroups[group]
 	if !exist {
 		return nil
 	}
@@ -140,7 +140,7 @@ func (r *VendorPublishCommand) pathsForProviderAndGroup(packageName, group strin
 	return paths
 }
 
-func (r *VendorPublishCommand) packageDir(packageName string) (string, error) {
+func (receiver *VendorPublishCommand) packageDir(packageName string) (string, error) {
 	var srcDir string
 	if build.IsLocalImport(packageName) {
 		srcDir = "./"
@@ -154,12 +154,12 @@ func (r *VendorPublishCommand) packageDir(packageName string) (string, error) {
 	return pkg.Dir, nil
 }
 
-func (r *VendorPublishCommand) publish(sourcePath, targetPath string, existing, force bool) (map[string]string, error) {
+func (receiver *VendorPublishCommand) publish(sourcePath, targetPath string, existing, force bool) (map[string]string, error) {
 	result := make(map[string]string)
 	isTargetPathDir := filepath.Ext(targetPath) == ""
 	isSourcePathDir := filepath.Ext(sourcePath) == ""
 
-	sourceFiles, err := r.getSourceFiles(sourcePath)
+	sourceFiles, err := receiver.getSourceFiles(sourcePath)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (r *VendorPublishCommand) publish(sourcePath, targetPath string, existing, 
 			targetFile = filepath.Join(targetPath, relativePath)
 		}
 
-		success, err := r.publishFile(sourceFile, targetFile, existing, force)
+		success, err := receiver.publishFile(sourceFile, targetFile, existing, force)
 		if err != nil {
 			return nil, err
 		}
@@ -192,20 +192,20 @@ func (r *VendorPublishCommand) publish(sourcePath, targetPath string, existing, 
 	return result, nil
 }
 
-func (r *VendorPublishCommand) getSourceFiles(sourcePath string) ([]string, error) {
+func (receiver *VendorPublishCommand) getSourceFiles(sourcePath string) ([]string, error) {
 	sourcePathStat, err := os.Stat(sourcePath)
 	if err != nil {
 		return nil, err
 	}
 
 	if sourcePathStat.IsDir() {
-		return r.getSourceFilesForDir(sourcePath)
+		return receiver.getSourceFilesForDir(sourcePath)
 	} else {
 		return []string{sourcePath}, nil
 	}
 }
 
-func (r *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([]string, error) {
+func (receiver *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([]string, error) {
 	dirEntries, err := os.ReadDir(sourcePath)
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (r *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([]string
 	var sourceFiles []string
 	for _, dirEntry := range dirEntries {
 		if dirEntry.IsDir() {
-			sourcePaths, err := r.getSourceFilesForDir(filepath.Join(sourcePath, dirEntry.Name()))
+			sourcePaths, err := receiver.getSourceFilesForDir(filepath.Join(sourcePath, dirEntry.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -227,7 +227,7 @@ func (r *VendorPublishCommand) getSourceFilesForDir(sourcePath string) ([]string
 	return sourceFiles, nil
 }
 
-func (r *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
+func (receiver *VendorPublishCommand) publishFile(sourceFile, targetFile string, existing, force bool) (bool, error) {
 	content, err := os.ReadFile(sourceFile)
 	if err != nil {
 		return false, err

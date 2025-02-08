@@ -8,7 +8,6 @@ import (
 type ColumnDefinition struct {
 	allowed            []any
 	autoIncrement      *bool
-	change             bool
 	comment            *string
 	def                any
 	length             *int
@@ -26,12 +25,6 @@ type ColumnDefinition struct {
 
 func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	r.autoIncrement = convert.Pointer(true)
-
-	return r
-}
-
-func (r *ColumnDefinition) Change() schema.ColumnDefinition {
-	r.change = true
 
 	return r
 }
@@ -154,10 +147,6 @@ func (r *ColumnDefinition) GetUseCurrentOnUpdate() bool {
 	}
 
 	return false
-}
-
-func (r *ColumnDefinition) IsChange() bool {
-	return r.change
 }
 
 func (r *ColumnDefinition) IsSetComment() bool {

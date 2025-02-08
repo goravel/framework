@@ -3,10 +3,10 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sync"
 
 	"github.com/goravel/framework/contracts/config"
-	"github.com/goravel/framework/contracts/database"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	contractshttp "github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/log"
@@ -20,7 +20,6 @@ type Orm struct {
 	ctx             context.Context
 	config          config.Config
 	connection      string
-	dbConfig        database.Config
 	log             log.Log
 	modelToObserver []contractsorm.ModelToObserver
 	mutex           sync.Mutex
@@ -33,7 +32,6 @@ func NewOrm(
 	ctx context.Context,
 	config config.Config,
 	connection string,
-	dbConfig database.Config,
 	query contractsorm.Query,
 	queries map[string]contractsorm.Query,
 	log log.Log,
@@ -44,7 +42,6 @@ func NewOrm(
 		ctx:             ctx,
 		config:          config,
 		connection:      connection,
-		dbConfig:        dbConfig,
 		log:             log,
 		modelToObserver: modelToObserver,
 		query:           query,
@@ -54,20 +51,16 @@ func NewOrm(
 }
 
 func BuildOrm(ctx context.Context, config config.Config, connection string, log log.Log, refresh func(key any)) (*Orm, error) {
-	query, dbConfig, err := gorm.BuildQuery(ctx, config, connection, log, nil)
+	query, err := gorm.BuildQuery(ctx, config, connection, log, nil)
 	if err != nil {
-		return NewOrm(ctx, config, connection, dbConfig, nil, nil, log, nil, refresh), err
+		return nil, err
 	}
 
 	queries := map[string]contractsorm.Query{
 		connection: query,
 	}
 
-	return NewOrm(ctx, config, connection, dbConfig, query, queries, log, nil, refresh), nil
-}
-
-func (r *Orm) Config() database.Config {
-	return r.dbConfig
+	return NewOrm(ctx, config, connection, query, queries, log, nil, refresh), nil
 }
 
 func (r *Orm) Connection(name string) contractsorm.Orm {
@@ -75,19 +68,19 @@ func (r *Orm) Connection(name string) contractsorm.Orm {
 		name = r.config.GetString("database.default")
 	}
 	if instance, exist := r.queries[name]; exist {
-		return NewOrm(r.ctx, r.config, name, r.dbConfig, instance, r.queries, r.log, r.modelToObserver, r.refresh)
+		return NewOrm(r.ctx, r.config, name, instance, r.queries, r.log, r.modelToObserver, r.refresh)
 	}
 
-	query, dbConfig, err := gorm.BuildQuery(r.ctx, r.config, name, r.log, r.modelToObserver)
+	query, err := gorm.BuildQuery(r.ctx, r.config, name, r.log, r.modelToObserver)
 	if err != nil || query == nil {
 		r.log.Errorf("[Orm] Init %s connection error: %v", name, err)
 
-		return NewOrm(r.ctx, r.config, name, dbConfig, nil, r.queries, r.log, r.modelToObserver, r.refresh)
+		return NewOrm(r.ctx, r.config, name, nil, r.queries, r.log, r.modelToObserver, r.refresh)
 	}
 
 	r.queries[name] = query
 
-	return NewOrm(r.ctx, r.config, name, dbConfig, query, r.queries, r.log, r.modelToObserver, r.refresh)
+	return NewOrm(r.ctx, r.config, name, query, r.queries, r.log, r.modelToObserver, r.refresh)
 }
 
 func (r *Orm) DB() (*sql.DB, error) {
@@ -99,11 +92,11 @@ func (r *Orm) Factory() contractsorm.Factory {
 }
 
 func (r *Orm) DatabaseName() string {
-	return r.dbConfig.Database
+	return r.config.GetString(fmt.Sprintf("database.connections.%s.database", r.connection))
 }
 
 func (r *Orm) Name() string {
-	return r.dbConfig.Connection
+	return r.connection
 }
 
 func (r *Orm) Observe(model any, observer contractsorm.Observer) {
@@ -155,10 +148,6 @@ func (r *Orm) Transaction(txFunc func(tx contractsorm.Query) error) error {
 	}
 }
 
-func (r *Orm) Version() string {
-	return r.dbConfig.Version
-}
-
 func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
 	if http, ok := ctx.(contractshttp.Context); ok {
 		ctx = http.Context()
@@ -174,5 +163,5 @@ func (r *Orm) WithContext(ctx context.Context) contractsorm.Orm {
 		queryWithSetContext.SetContext(ctx)
 	}
 
-	return NewOrm(ctx, r.config, r.connection, r.dbConfig, r.query, r.queries, r.log, r.modelToObserver, r.refresh)
+	return NewOrm(ctx, r.config, r.connection, r.query, r.queries, r.log, r.modelToObserver, r.refresh)
 }

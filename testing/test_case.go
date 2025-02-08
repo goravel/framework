@@ -5,16 +5,15 @@ import (
 	"testing"
 
 	contractsseeder "github.com/goravel/framework/contracts/database/seeder"
-	contractshttp "github.com/goravel/framework/contracts/testing/http"
+	contractstesting "github.com/goravel/framework/contracts/testing"
 	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/testing/http"
 )
 
 type TestCase struct {
 }
 
-func (r *TestCase) Http(t *testing.T) contractshttp.Request {
-	return http.NewTestRequest(t, json, routeFacade, sessionFacade)
+func (r *TestCase) Http(t *testing.T) contractstesting.TestRequest {
+	return NewTestRequest(t)
 }
 
 func (r *TestCase) Seed(seeders ...contractsseeder.Seeder) {

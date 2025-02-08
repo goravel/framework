@@ -12,8 +12,10 @@ import (
 	"github.com/goravel/framework/cache"
 	frameworkconfig "github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
+	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
+	"github.com/goravel/framework/database"
 	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
@@ -33,6 +35,8 @@ import (
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
 	frameworksession "github.com/goravel/framework/session"
+	supportdocker "github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 	"github.com/goravel/framework/support/file"
 	frameworktranslation "github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
@@ -301,6 +305,54 @@ func (s *ApplicationTestSuite) TestMakeMail() {
 	serviceProvider.Register(s.app)
 
 	s.NotNil(s.app.MakeMail())
+}
+
+func (s *ApplicationTestSuite) TestMakeOrm() {
+	if env.IsWindows() {
+		s.T().Skip("Skip test that using Docker")
+	}
+
+	postgresDocker := supportdocker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
+
+	config := postgresDocker.Config()
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockConfig.EXPECT().GetString("database.default").Return("postgres").Once()
+	mockConfig.EXPECT().Get("database.connections.postgres.read").Return(nil).Once()
+	mockConfig.EXPECT().Get("database.connections.postgres.write").Return(nil).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.driver").Return(contractsdatabase.DriverPostgres.String()).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.prefix").Return("").Twice()
+	mockConfig.EXPECT().GetBool("database.connections.postgres.singular").Return(true).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.dsn").Return("").Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.host").Return("localhost").Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.username").Return(config.Username).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.password").Return(config.Password).Twice()
+	mockConfig.EXPECT().GetInt("database.connections.postgres.port").Return(config.Port).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.sslmode").Return("disable").Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.timezone").Return("UTC").Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.database").Return(config.Database).Twice()
+	mockConfig.EXPECT().GetString("database.connections.postgres.schema", "public").Return("public").Twice()
+	mockConfig.EXPECT().GetBool("database.connections.postgres.no_lower_case").Return(false).Twice()
+	mockConfig.EXPECT().Get("database.connections.postgres.name_replacer").Return(nil).Twice()
+	mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
+	mockConfig.EXPECT().GetBool("app.debug").Return(true).Once()
+	mockConfig.EXPECT().GetInt("database.pool.max_idle_conns", 10).Return(10).Once()
+	mockConfig.EXPECT().GetInt("database.pool.max_open_conns", 100).Return(100).Once()
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600).Once()
+	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600).Once()
+
+	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+		return mockConfig, nil
+	})
+
+	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+		return &mockslog.Log{}, nil
+	})
+
+	serviceProvider := &database.ServiceProvider{}
+	serviceProvider.Register(s.app)
+
+	s.NotNil(s.app.MakeOrm())
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {

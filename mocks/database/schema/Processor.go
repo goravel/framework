@@ -164,54 +164,6 @@ func (_c *Processor_ProcessIndexes_Call) RunAndReturn(run func([]schema.DBIndex)
 	return _c
 }
 
-// ProcessTypes provides a mock function with given fields: types
-func (_m *Processor) ProcessTypes(types []schema.Type) []schema.Type {
-	ret := _m.Called(types)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ProcessTypes")
-	}
-
-	var r0 []schema.Type
-	if rf, ok := ret.Get(0).(func([]schema.Type) []schema.Type); ok {
-		r0 = rf(types)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]schema.Type)
-		}
-	}
-
-	return r0
-}
-
-// Processor_ProcessTypes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ProcessTypes'
-type Processor_ProcessTypes_Call struct {
-	*mock.Call
-}
-
-// ProcessTypes is a helper method to define mock.On call
-//   - types []schema.Type
-func (_e *Processor_Expecter) ProcessTypes(types interface{}) *Processor_ProcessTypes_Call {
-	return &Processor_ProcessTypes_Call{Call: _e.mock.On("ProcessTypes", types)}
-}
-
-func (_c *Processor_ProcessTypes_Call) Run(run func(types []schema.Type)) *Processor_ProcessTypes_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].([]schema.Type))
-	})
-	return _c
-}
-
-func (_c *Processor_ProcessTypes_Call) Return(_a0 []schema.Type) *Processor_ProcessTypes_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Processor_ProcessTypes_Call) RunAndReturn(run func([]schema.Type) []schema.Type) *Processor_ProcessTypes_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewProcessor creates a new instance of Processor. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewProcessor(t interface {

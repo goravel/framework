@@ -8,8 +8,6 @@ import (
 )
 
 type Orm interface {
-	// Config gets the database config.
-	Config() database.Config
 	// Connection gets an Orm instance from the connection pool.
 	Connection(name string) Orm
 	// DB gets the underlying database connection.
@@ -30,8 +28,6 @@ type Orm interface {
 	SetQuery(query Query)
 	// Transaction runs a callback wrapped in a database transaction.
 	Transaction(txFunc func(tx Query) error) error
-	// Version gets the current database version.
-	Version() string
 	// WithContext sets the context to be used by the Orm.
 	WithContext(ctx context.Context) Orm
 }
@@ -56,7 +52,7 @@ type Query interface {
 	// Distinct specifies distinct fields to query.
 	Distinct(args ...any) Query
 	// Driver gets the driver for the query.
-	Driver() string
+	Driver() database.Driver
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.

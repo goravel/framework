@@ -1,43 +1,28 @@
 package schema
 
 import (
-	"fmt"
-	"reflect"
-	"unicode"
+	"strings"
 
-	"github.com/spf13/cast"
-
-	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/errors"
 )
 
-type Expression string
-
-func ColumnDefaultValue(def any) string {
-	switch value := def.(type) {
-	case bool:
-		return "'" + cast.ToString(cast.ToInt(value)) + "'"
-	case Expression:
-		return string(value)
-	default:
-		return "'" + cast.ToString(def) + "'"
-	}
-}
-
-func ColumnType(grammar schema.Grammar, column schema.ColumnDefinition) string {
-	t := []rune(column.GetType())
-	if len(t) == 0 {
-		return ""
+func parseSchemaAndTable(reference, defaultSchema string) (string, string, error) {
+	if reference == "" {
+		return "", "", errors.SchemaEmptyReferenceString
 	}
 
-	t[0] = unicode.ToUpper(t[0])
-	methodName := fmt.Sprintf("Type%s", string(t))
-	methodValue := reflect.ValueOf(grammar).MethodByName(methodName)
-	if methodValue.IsValid() {
-		args := []reflect.Value{reflect.ValueOf(column)}
-		callResult := methodValue.Call(args)
-
-		return callResult[0].String()
+	parts := strings.Split(reference, ".")
+	if len(parts) > 2 {
+		return "", "", errors.SchemaErrorReferenceFormat
 	}
 
-	return column.GetType()
+	schema := defaultSchema
+	if len(parts) == 2 {
+		schema = parts[0]
+		parts = parts[1:]
+	}
+
+	table := parts[0]
+
+	return schema, table, nil
 }

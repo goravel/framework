@@ -61,10 +61,13 @@ func (receiver *Task) Dispatch() error {
 	return nil
 }
 
-func eventArgsToQueueArgs(args []event.Arg) []any {
-	var queueArgs []any
+func eventArgsToQueueArgs(args []event.Arg) []queuecontract.Arg {
+	var queueArgs []queuecontract.Arg
 	for _, arg := range args {
-		queueArgs = append(queueArgs, arg.Value)
+		queueArgs = append(queueArgs, queuecontract.Arg{
+			Type:  arg.Type,
+			Value: arg.Value,
+		})
 	}
 
 	return queueArgs

@@ -24,7 +24,6 @@ func TestMakeCommand(t *testing.T) {
 	mockContext.EXPECT().Success("Console command created successfully").Once()
 	assert.Nil(t, makeCommand.Handle(mockContext))
 	assert.True(t, file.Exists("app/console/commands/clean_cache.go"))
-	assert.True(t, file.Contain("app/console/commands/clean_cache.go", "app:clean-cache"))
 
 	mockContext.EXPECT().Argument(0).Return("CleanCache").Once()
 	mockContext.EXPECT().OptionBool("force").Return(false).Once()
@@ -38,7 +37,6 @@ func TestMakeCommand(t *testing.T) {
 	assert.True(t, file.Exists("app/console/commands/Goravel/clean_cache.go"))
 	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "package Goravel"))
 	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "type CleanCache struct"))
-	assert.True(t, file.Contain("app/console/commands/Goravel/clean_cache.go", "app:clean-cache"))
 
 	assert.Nil(t, file.Remove("app"))
 }

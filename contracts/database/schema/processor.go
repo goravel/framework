@@ -4,7 +4,6 @@ type Processor interface {
 	ProcessColumns(dbColumns []DBColumn) []Column
 	ProcessForeignKeys(dbIndexes []DBForeignKey) []ForeignKey
 	ProcessIndexes(dbIndexes []DBIndex) []Index
-	ProcessTypes(types []Type) []Type
 }
 
 type DBColumn struct {

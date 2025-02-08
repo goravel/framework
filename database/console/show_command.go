@@ -2,12 +2,12 @@ package console
 
 import (
 	"fmt"
-
-	"github.com/spf13/cast"
+	"strings"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/support/str"
 )
@@ -18,16 +18,18 @@ type ShowCommand struct {
 }
 
 type databaseInfo struct {
+	Name            string
+	Version         string
 	Database        string
 	Host            string
-	Name            string
-	OpenConnections int
-	Port            int
-	Tables          []schema.Table
+	Port            string
 	Username        string
-	Version         string
-	Views           []schema.View
+	OpenConnections string
+	Tables          []schema.Table `gorm:"-"`
+	Views           []schema.View  `gorm:"-"`
 }
+
+type queryResult struct{ Value string }
 
 func NewShowCommand(config config.Config, schema schema.Schema) *ShowCommand {
 	return &ShowCommand{
@@ -71,30 +73,27 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 		ctx.Error(fmt.Sprintf("No arguments expected for '%s' command, got '%s'.", r.Signature(), got))
 		return nil
 	}
-
 	r.schema = r.schema.Connection(ctx.Option("database"))
-	dbConfig := r.schema.Orm().Config()
-	info := databaseInfo{
-		Database: dbConfig.Database,
-		Host:     dbConfig.Host,
-		Name:     dbConfig.Driver,
-		Port:     dbConfig.Port,
-		Username: dbConfig.Username,
-		Version:  dbConfig.Version,
+	connection := r.schema.GetConnection()
+	getConfigValue := func(k string) string {
+		return r.config.GetString("database.connections." + connection + "." + k)
 	}
-
-	db, err := r.schema.Orm().DB()
+	info := databaseInfo{
+		Database: getConfigValue("database"),
+		Host:     getConfigValue("host"),
+		Port:     getConfigValue("port"),
+		Username: getConfigValue("username"),
+	}
+	var err error
+	info.Name, info.Version, info.OpenConnections, err = r.getDataBaseInfo()
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
-	info.OpenConnections = db.Stats().OpenConnections
-
 	if info.Tables, err = r.schema.GetTables(); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
-
 	if ctx.OptionBool("views") {
 		if info.Views, err = r.schema.GetViews(); err != nil {
 			ctx.Error(err.Error())
@@ -102,8 +101,56 @@ func (r *ShowCommand) Handle(ctx console.Context) error {
 		}
 	}
 	r.display(ctx, info)
-
 	return nil
+}
+
+func (r *ShowCommand) getDataBaseInfo() (name, version, openConnections string, err error) {
+	var (
+		drivers = map[database.Driver]struct {
+			name                 string
+			versionQuery         string
+			openConnectionsQuery string
+		}{
+			database.DriverSqlite: {
+				name:         "SQLite",
+				versionQuery: "SELECT sqlite_version() AS value;",
+			},
+			database.DriverMysql: {
+				name:                 "MySQL",
+				versionQuery:         "SELECT VERSION() AS value;",
+				openConnectionsQuery: "SHOW status WHERE variable_name = 'threads_connected';",
+			},
+			database.DriverPostgres: {
+				name:                 "PostgresSQL",
+				versionQuery:         "SELECT current_setting('server_version') AS value;",
+				openConnectionsQuery: "SELECT COUNT(*) AS value FROM pg_stat_activity;",
+			},
+			database.DriverSqlserver: {
+				name:                 "SQL Server",
+				versionQuery:         "SELECT SERVERPROPERTY('productversion') AS value;",
+				openConnectionsQuery: "SELECT COUNT(*) Value FROM sys.dm_exec_sessions WHERE status = 'running';",
+			},
+		}
+	)
+	name = string(r.schema.Orm().Query().Driver())
+	if driver, ok := drivers[r.schema.Orm().Query().Driver()]; ok {
+		name = driver.name
+		var versionResult queryResult
+		if err = r.schema.Orm().Query().Raw(driver.versionQuery).Scan(&versionResult); err == nil {
+			version = versionResult.Value
+			if strings.Contains(version, "MariaDB") {
+				name = "MariaDB"
+				version = strings.Trim(version[:strings.Index(version, "MariaDB")], "-")
+			}
+			if len(driver.openConnectionsQuery) > 0 {
+				var openConnectionsResult queryResult
+				if err = r.schema.Orm().Query().Raw(driver.openConnectionsQuery).Scan(&openConnectionsResult); err == nil {
+					openConnections = openConnectionsResult.Value
+				}
+			}
+		}
+	}
+	return
 }
 
 func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
@@ -111,10 +158,10 @@ func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
 	ctx.TwoColumnDetail(fmt.Sprintf("<fg=green;op=bold>%s</>", info.Name), info.Version)
 	ctx.TwoColumnDetail("Database", info.Database)
 	ctx.TwoColumnDetail("Host", info.Host)
-	ctx.TwoColumnDetail("Port", cast.ToString(info.Port))
+	ctx.TwoColumnDetail("Port", info.Port)
 	ctx.TwoColumnDetail("Username", info.Username)
-	ctx.TwoColumnDetail("Open Connections", cast.ToString(info.OpenConnections))
-	ctx.TwoColumnDetail("Tables", cast.ToString(len(info.Tables)))
+	ctx.TwoColumnDetail("Open Connections", info.OpenConnections)
+	ctx.TwoColumnDetail("Tables", fmt.Sprintf("%d", len(info.Tables)))
 	if size := func() (size int) {
 		for i := range info.Tables {
 			size += info.Tables[i].Size

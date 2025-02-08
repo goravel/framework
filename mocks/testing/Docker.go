@@ -3,7 +3,7 @@
 package testing
 
 import (
-	docker "github.com/goravel/framework/contracts/testing/docker"
+	testing "github.com/goravel/framework/contracts/testing"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,7 +21,7 @@ func (_m *Docker) EXPECT() *Docker_Expecter {
 }
 
 // Database provides a mock function with given fields: connection
-func (_m *Docker) Database(connection ...string) (docker.Database, error) {
+func (_m *Docker) Database(connection ...string) (testing.Database, error) {
 	_va := make([]interface{}, len(connection))
 	for _i := range connection {
 		_va[_i] = connection[_i]
@@ -34,16 +34,16 @@ func (_m *Docker) Database(connection ...string) (docker.Database, error) {
 		panic("no return value specified for Database")
 	}
 
-	var r0 docker.Database
+	var r0 testing.Database
 	var r1 error
-	if rf, ok := ret.Get(0).(func(...string) (docker.Database, error)); ok {
+	if rf, ok := ret.Get(0).(func(...string) (testing.Database, error)); ok {
 		return rf(connection...)
 	}
-	if rf, ok := ret.Get(0).(func(...string) docker.Database); ok {
+	if rf, ok := ret.Get(0).(func(...string) testing.Database); ok {
 		r0 = rf(connection...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(docker.Database)
+			r0 = ret.Get(0).(testing.Database)
 		}
 	}
 
@@ -81,12 +81,12 @@ func (_c *Docker_Database_Call) Run(run func(connection ...string)) *Docker_Data
 	return _c
 }
 
-func (_c *Docker_Database_Call) Return(_a0 docker.Database, _a1 error) *Docker_Database_Call {
+func (_c *Docker_Database_Call) Return(_a0 testing.Database, _a1 error) *Docker_Database_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Docker_Database_Call) RunAndReturn(run func(...string) (docker.Database, error)) *Docker_Database_Call {
+func (_c *Docker_Database_Call) RunAndReturn(run func(...string) (testing.Database, error)) *Docker_Database_Call {
 	_c.Call.Return(run)
 	return _c
 }

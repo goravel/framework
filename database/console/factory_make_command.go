@@ -18,17 +18,17 @@ func NewFactoryMakeCommand() *FactoryMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (r *FactoryMakeCommand) Signature() string {
+func (receiver *FactoryMakeCommand) Signature() string {
 	return "make:factory"
 }
 
 // Description The console command description.
-func (r *FactoryMakeCommand) Description() string {
+func (receiver *FactoryMakeCommand) Description() string {
 	return "Create a new factory class"
 }
 
 // Extend The console command extend.
-func (r *FactoryMakeCommand) Extend() command.Extend {
+func (receiver *FactoryMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,14 +42,14 @@ func (r *FactoryMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *FactoryMakeCommand) Handle(ctx console.Context) error {
+func (receiver *FactoryMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "factory", ctx.Argument(0), filepath.Join("database", "factories"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -59,12 +59,12 @@ func (r *FactoryMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *FactoryMakeCommand) getStub() string {
+func (receiver *FactoryMakeCommand) getStub() string {
 	return Stubs{}.Factory()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *FactoryMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (receiver *FactoryMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyFactory", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

@@ -67,53 +67,6 @@ func (_c *ColumnDefinition_AutoIncrement_Call) RunAndReturn(run func() schema.Co
 	return _c
 }
 
-// Change provides a mock function with no fields
-func (_m *ColumnDefinition) Change() schema.ColumnDefinition {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Change")
-	}
-
-	var r0 schema.ColumnDefinition
-	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(schema.ColumnDefinition)
-		}
-	}
-
-	return r0
-}
-
-// ColumnDefinition_Change_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Change'
-type ColumnDefinition_Change_Call struct {
-	*mock.Call
-}
-
-// Change is a helper method to define mock.On call
-func (_e *ColumnDefinition_Expecter) Change() *ColumnDefinition_Change_Call {
-	return &ColumnDefinition_Change_Call{Call: _e.mock.On("Change")}
-}
-
-func (_c *ColumnDefinition_Change_Call) Run(run func()) *ColumnDefinition_Change_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ColumnDefinition_Change_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_Change_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ColumnDefinition_Change_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_Change_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Comment provides a mock function with given fields: comment
 func (_m *ColumnDefinition) Comment(comment string) schema.ColumnDefinition {
 	ret := _m.Called(comment)
@@ -887,51 +840,6 @@ func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) Return(_a0 bool) *ColumnD
 }
 
 func (_c *ColumnDefinition_GetUseCurrentOnUpdate_Call) RunAndReturn(run func() bool) *ColumnDefinition_GetUseCurrentOnUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// IsChange provides a mock function with no fields
-func (_m *ColumnDefinition) IsChange() bool {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for IsChange")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// ColumnDefinition_IsChange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsChange'
-type ColumnDefinition_IsChange_Call struct {
-	*mock.Call
-}
-
-// IsChange is a helper method to define mock.On call
-func (_e *ColumnDefinition_Expecter) IsChange() *ColumnDefinition_IsChange_Call {
-	return &ColumnDefinition_IsChange_Call{Call: _e.mock.On("IsChange")}
-}
-
-func (_c *ColumnDefinition_IsChange_Call) Run(run func()) *ColumnDefinition_IsChange_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *ColumnDefinition_IsChange_Call) Return(_a0 bool) *ColumnDefinition_IsChange_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ColumnDefinition_IsChange_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsChange_Call {
 	_c.Call.Return(run)
 	return _c
 }

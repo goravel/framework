@@ -18,17 +18,17 @@ func NewSeederMakeCommand() *SeederMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (r *SeederMakeCommand) Signature() string {
+func (receiver *SeederMakeCommand) Signature() string {
 	return "make:seeder"
 }
 
 // Description The console command description.
-func (r *SeederMakeCommand) Description() string {
+func (receiver *SeederMakeCommand) Description() string {
 	return "Create a new seeder class"
 }
 
 // Extend The console command extend.
-func (r *SeederMakeCommand) Extend() command.Extend {
+func (receiver *SeederMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,14 +42,14 @@ func (r *SeederMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *SeederMakeCommand) Handle(ctx console.Context) error {
+func (receiver *SeederMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "seeder", ctx.Argument(0), filepath.Join("database", "seeders"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -58,12 +58,12 @@ func (r *SeederMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *SeederMakeCommand) getStub() string {
+func (receiver *SeederMakeCommand) getStub() string {
 	return Stubs{}.Seeder()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *SeederMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (receiver *SeederMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummySeeder", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

@@ -15,25 +15,25 @@ func NewClearCommand(cache cache.Cache) *ClearCommand {
 }
 
 // Signature The name and signature of the console command.
-func (r *ClearCommand) Signature() string {
+func (receiver *ClearCommand) Signature() string {
 	return "cache:clear"
 }
 
 // Description The console command description.
-func (r *ClearCommand) Description() string {
+func (receiver *ClearCommand) Description() string {
 	return "Flush the application cache"
 }
 
 // Extend The console command extend.
-func (r *ClearCommand) Extend() command.Extend {
+func (receiver *ClearCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "cache",
 	}
 }
 
 // Handle Execute the console command.
-func (r *ClearCommand) Handle(ctx console.Context) error {
-	if r.cache.Flush() {
+func (receiver *ClearCommand) Handle(ctx console.Context) error {
+	if receiver.cache.Flush() {
 		ctx.Success("Application cache cleared")
 	} else {
 		ctx.Error("Clear Application cache Failed")

@@ -55,7 +55,7 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 		}
 		for i := 0; i < count; i++ {
 			elemValue := reflect.New(reflectValue.Type().Elem()).Interface()
-			attributes, err := getRawAttributes(elemValue, attributes...)
+			attributes, err := f.getRawAttributes(elemValue, attributes...)
 			if err != nil {
 				return err
 			}
@@ -79,7 +79,7 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 
 		return nil
 	default:
-		attributes, err := getRawAttributes(value, attributes...)
+		attributes, err := f.getRawAttributes(value, attributes...)
 		if err != nil {
 			return err
 		}
@@ -98,6 +98,22 @@ func (f *FactoryImpl) Make(value any, attributes ...map[string]any) error {
 	}
 }
 
+func (f *FactoryImpl) getRawAttributes(value any, attributes ...map[string]any) (map[string]any, error) {
+	factoryModel, exist := value.(factory.Model)
+	if !exist {
+		return nil, errors.OrmFactoryMissingMethod.Args(reflect.TypeOf(value).String()).SetModule(errors.ModuleOrm)
+	}
+
+	definition := factoryModel.Factory().Definition()
+	if len(attributes) > 0 {
+		for key, value := range attributes[0] {
+			definition[key] = value
+		}
+	}
+
+	return definition, nil
+}
+
 // newInstance create a new factory instance.
 func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Factory {
 	instance := &FactoryImpl{
@@ -113,20 +129,4 @@ func (f *FactoryImpl) newInstance(attributes ...map[string]any) ormcontract.Fact
 	}
 
 	return instance
-}
-
-func getRawAttributes(value any, attributes ...map[string]any) (map[string]any, error) {
-	factoryModel, exist := value.(factory.Model)
-	if !exist {
-		return nil, errors.OrmFactoryMissingMethod.Args(reflect.TypeOf(value).String()).SetModule(errors.ModuleOrm)
-	}
-
-	definition := factoryModel.Factory().Definition()
-	if len(attributes) > 0 {
-		for key, value := range attributes[0] {
-			definition[key] = value
-		}
-	}
-
-	return definition, nil
 }

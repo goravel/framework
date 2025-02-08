@@ -1,96 +1,61 @@
 package queue
 
 import (
-	"sync"
-	"sync/atomic"
-	"time"
-
-	"github.com/google/uuid"
-
+	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/errors"
-	"github.com/goravel/framework/support/carbon"
+)
+
+const (
+	DriverSync  string = "sync"
+	DriverRedis string = "redis"
 )
 
 type Worker struct {
-	concurrent    int
-	config        queue.Config
-	connection    string
-	failedJobChan chan FailedJob
-	isShutdown    atomic.Bool
-	job           queue.JobRepository
-	queue         string
-	wg            sync.WaitGroup
+	concurrent int
+	connection string
+	machinery  *Machinery
+	jobs       []queue.Job
+	queue      string
 }
 
-func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
+func NewWorker(config *Config, log log.Log, concurrent int, connection string, jobs []queue.Job, queue string) *Worker {
 	return &Worker{
-		concurrent:    concurrent,
-		config:        config,
-		connection:    connection,
-		job:           job,
-		queue:         queue,
-		failedJobChan: make(chan FailedJob, concurrent),
+		concurrent: concurrent,
+		connection: connection,
+		machinery:  NewMachinery(config, log),
+		jobs:       jobs,
+		queue:      queue,
 	}
 }
 
-func (r *Worker) Run() error {
-	r.isShutdown.Store(false)
-
-	driver, err := NewDriver(r.connection, r.config)
+func (receiver *Worker) Run() error {
+	server, err := receiver.machinery.Server(receiver.connection, receiver.queue)
 	if err != nil {
 		return err
 	}
-	if driver.Driver() == queue.DriverSync {
-		return errors.QueueDriverSyncNotNeedRun.Args(r.queue)
+	if server == nil {
+		return nil
 	}
 
-	for i := 0; i < r.concurrent; i++ {
-		r.wg.Add(1)
-		go func() {
-			defer r.wg.Done()
-			for {
-				if r.isShutdown.Load() {
-					return
-				}
-
-				job, args, err := driver.Pop(r.queue)
-				if err != nil {
-					time.Sleep(1 * time.Second)
-					continue
-				}
-
-				if err = r.job.Call(job.Signature(), args); err != nil {
-					r.failedJobChan <- FailedJob{
-						UUID:       uuid.New(),
-						Connection: r.connection,
-						Queue:      r.queue,
-						Payload:    args,
-						Exception:  err.Error(),
-						FailedAt:   carbon.DateTime{Carbon: carbon.Now()},
-					}
-				}
-			}
-		}()
+	jobTasks, err := jobs2Tasks(receiver.jobs)
+	if err != nil {
+		return err
 	}
 
-	r.wg.Add(1)
-	go func() {
-		defer r.wg.Done()
-		for job := range r.failedJobChan {
-			if err = r.config.FailedJobsQuery().Create(&job); err != nil {
-				LogFacade.Error(errors.QueueFailedToSaveFailedJob.Args(err))
-			}
-		}
-	}()
+	if err := server.RegisterTasks(jobTasks); err != nil {
+		return err
+	}
 
-	r.wg.Wait()
+	if receiver.queue == "" {
+		receiver.queue = server.GetConfig().DefaultQueue
+	}
+	if receiver.concurrent == 0 {
+		receiver.concurrent = 1
+	}
+	worker := server.NewWorker(receiver.queue, receiver.concurrent)
+	if err := worker.Launch(); err != nil {
+		return err
+	}
 
-	return nil
-}
-
-func (r *Worker) Shutdown() error {
-	r.isShutdown.Store(true)
-	close(r.failedJobChan)
 	return nil
 }

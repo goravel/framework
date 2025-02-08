@@ -37,7 +37,7 @@ func (r *Repository) DeleteRepository() error {
 
 func (r *Repository) GetLast() ([]migration.File, error) {
 	var files []migration.File
-	lastBatchNumber, err := r.GetLastBatchNumber()
+	lastBatchNumber, err := r.getLastBatchNumber()
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (r *Repository) GetMigrationsByStep(steps int) ([]migration.File, error) {
 }
 
 func (r *Repository) GetNextBatchNumber() (int, error) {
-	lastBatchNumber, err := r.GetLastBatchNumber()
+	lastBatchNumber, err := r.getLastBatchNumber()
 	if err != nil {
 		return 0, err
 	}
@@ -105,7 +105,7 @@ func (r *Repository) RepositoryExists() bool {
 	return r.schema.HasTable(r.table)
 }
 
-func (r *Repository) GetLastBatchNumber() (int, error) {
+func (r *Repository) getLastBatchNumber() (int, error) {
 	var batch int
 	if err := r.schema.Orm().Query().Table(r.table).OrderByDesc("batch").Limit(1).Pluck("batch", &batch); err != nil {
 		return 0, err

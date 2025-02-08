@@ -15,17 +15,17 @@ type RuleMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (r *RuleMakeCommand) Signature() string {
+func (receiver *RuleMakeCommand) Signature() string {
 	return "make:rule"
 }
 
 // Description The console command description.
-func (r *RuleMakeCommand) Description() string {
+func (receiver *RuleMakeCommand) Description() string {
 	return "Create a new rule class"
 }
 
 // Extend The console command extend.
-func (r *RuleMakeCommand) Extend() command.Extend {
+func (receiver *RuleMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -39,14 +39,14 @@ func (r *RuleMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *RuleMakeCommand) Handle(ctx console.Context) error {
+func (receiver *RuleMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "rule", ctx.Argument(0), filepath.Join("app", "rules"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -56,12 +56,12 @@ func (r *RuleMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *RuleMakeCommand) getStub() string {
+func (receiver *RuleMakeCommand) getStub() string {
 	return Stubs{}.Rule()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *RuleMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (receiver *RuleMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyRule", structName)
 	stub = strings.ReplaceAll(stub, "DummyName", str.Of(structName).Snake().String())
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)

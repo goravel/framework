@@ -18,17 +18,17 @@ func NewPolicyMakeCommand() *PolicyMakeCommand {
 }
 
 // Signature The name and signature of the console command.
-func (r *PolicyMakeCommand) Signature() string {
+func (receiver *PolicyMakeCommand) Signature() string {
 	return "make:policy"
 }
 
 // Description The console command description.
-func (r *PolicyMakeCommand) Description() string {
+func (receiver *PolicyMakeCommand) Description() string {
 	return "Create a new policy class"
 }
 
 // Extend The console command extend.
-func (r *PolicyMakeCommand) Extend() command.Extend {
+func (receiver *PolicyMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -42,14 +42,14 @@ func (r *PolicyMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *PolicyMakeCommand) Handle(ctx console.Context) error {
+func (receiver *PolicyMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "policy", ctx.Argument(0), filepath.Join("app", "policies"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 
@@ -58,12 +58,12 @@ func (r *PolicyMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *PolicyMakeCommand) getStub() string {
+func (receiver *PolicyMakeCommand) getStub() string {
 	return PolicyStubs{}.Policy()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *PolicyMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (receiver *PolicyMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyPolicy", structName)
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 

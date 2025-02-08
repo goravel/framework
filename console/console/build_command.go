@@ -22,17 +22,17 @@ func NewBuildCommand(config config.Config) *BuildCommand {
 }
 
 // Signature The name and signature of the console command.
-func (r *BuildCommand) Signature() string {
+func (receiver *BuildCommand) Signature() string {
 	return "build"
 }
 
 // Description The console command description.
-func (r *BuildCommand) Description() string {
+func (receiver *BuildCommand) Description() string {
 	return "Build the application"
 }
 
 // Extend The console command extend.
-func (r *BuildCommand) Extend() command.Extend {
+func (receiver *BuildCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "build",
 		Flags: []command.Flag{
@@ -59,9 +59,9 @@ func (r *BuildCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *BuildCommand) Handle(ctx console.Context) error {
+func (receiver *BuildCommand) Handle(ctx console.Context) error {
 	var err error
-	if r.config.GetString("app.env") == "production" {
+	if receiver.config.GetString("app.env") == "production" {
 		ctx.Warning("**************************************")
 		ctx.Warning("*     Application In Production!     *")
 		ctx.Warning("**************************************")
@@ -99,7 +99,7 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 
 	if err := ctx.Spinner("Building...", console.SpinnerOption{
 		Action: func() error {
-			return r.build(os, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
+			return receiver.build(os, generateCommand(ctx.Option("name"), ctx.OptionBool("static")))
 		},
 	}); err != nil {
 		ctx.Error(fmt.Sprintf("Build error: %v", err))
@@ -110,7 +110,7 @@ func (r *BuildCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *BuildCommand) build(system string, command []string) error {
+func (receiver *BuildCommand) build(system string, command []string) error {
 	os.Setenv("CGO_ENABLED", "0")
 	os.Setenv("GOOS", system)
 	os.Setenv("GOARCH", "amd64")

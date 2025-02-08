@@ -14,17 +14,17 @@ type RequestMakeCommand struct {
 }
 
 // Signature The name and signature of the console command.
-func (r *RequestMakeCommand) Signature() string {
+func (receiver *RequestMakeCommand) Signature() string {
 	return "make:request"
 }
 
 // Description The console command description.
-func (r *RequestMakeCommand) Description() string {
+func (receiver *RequestMakeCommand) Description() string {
 	return "Create a new request class"
 }
 
 // Extend The console command extend.
-func (r *RequestMakeCommand) Extend() command.Extend {
+func (receiver *RequestMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 		Flags: []command.Flag{
@@ -38,14 +38,14 @@ func (r *RequestMakeCommand) Extend() command.Extend {
 }
 
 // Handle Execute the console command.
-func (r *RequestMakeCommand) Handle(ctx console.Context) error {
+func (receiver *RequestMakeCommand) Handle(ctx console.Context) error {
 	m, err := supportconsole.NewMake(ctx, "request", ctx.Argument(0), filepath.Join("app", "http", "requests"))
 	if err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.Create(m.GetFilePath(), receiver.populateStub(receiver.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}
@@ -55,12 +55,12 @@ func (r *RequestMakeCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func (r *RequestMakeCommand) getStub() string {
+func (receiver *RequestMakeCommand) getStub() string {
 	return Stubs{}.Request()
 }
 
 // populateStub Populate the place-holders in the command stub.
-func (r *RequestMakeCommand) populateStub(stub string, packageName, structName string) string {
+func (receiver *RequestMakeCommand) populateStub(stub string, packageName, structName string) string {
 	stub = strings.ReplaceAll(stub, "DummyRequest", structName)
 	stub = strings.ReplaceAll(stub, "DummyField", "Name string `form:\"name\" json:\"name\"`")
 	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
