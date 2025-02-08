@@ -1,7 +1,7 @@
 package testing
 
 import (
-	"github.com/goravel/framework/config"
+	"github.com/goravel/framework/contracts"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	contractsroute "github.com/goravel/framework/contracts/route"
@@ -20,13 +20,13 @@ var (
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(config.BindingTesting, func(app foundation.Application) (any, error) {
+func (testing *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(contracts.BindingTesting, func(app foundation.Application) (any, error) {
 		return NewApplication(app), nil
 	})
 }
 
-func (receiver *ServiceProvider) Boot(app foundation.Application) {
+func (testing *ServiceProvider) Boot(app foundation.Application) {
 	artisanFacade = app.MakeArtisan()
 	if artisanFacade == nil {
 		color.Errorln(errors.ArtisanFacadeNotSet.SetModule(errors.ModuleTesting))

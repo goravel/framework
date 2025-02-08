@@ -3,7 +3,7 @@ package translation
 import (
 	"context"
 
-	frameworkconfig "github.com/goravel/framework/config"
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
@@ -12,7 +12,7 @@ type ServiceProvider struct {
 }
 
 func (translation *ServiceProvider) Register(app foundation.Application) {
-	app.BindWith(frameworkconfig.BindingTranslation, func(app foundation.Application, parameters map[string]any) (any, error) {
+	app.BindWith(contracts.BindingTranslation, func(app foundation.Application, parameters map[string]any) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleLang)
