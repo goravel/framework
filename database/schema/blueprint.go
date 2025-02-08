@@ -4,32 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/goravel/framework/contracts/database/orm"
+	ormcontract "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/schema/constants"
 	"github.com/goravel/framework/support/convert"
-)
-
-const (
-	CommandAdd          = "add"
-	CommandComment      = "comment"
-	CommandCreate       = "create"
-	CommandDefault      = "default"
-	CommandDrop         = "drop"
-	CommandDropColumn   = "dropColumn"
-	CommandDropForeign  = "dropForeign"
-	CommandDropFullText = "dropFullText"
-	CommandDropIfExists = "dropIfExists"
-	CommandDropIndex    = "dropIndex"
-	CommandDropPrimary  = "dropPrimary"
-	CommandDropUnique   = "dropUnique"
-	CommandForeign      = "foreign"
-	CommandFullText     = "fullText"
-	CommandIndex        = "index"
-	CommandPrimary      = "primary"
-	CommandRename       = "rename"
-	CommandRenameIndex  = "renameIndex"
-	CommandUnique       = "unique"
-	DefaultStringLength = 255
 )
 
 type Blueprint struct {
@@ -60,7 +38,7 @@ func (r *Blueprint) Boolean(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("boolean", column)
 }
 
-func (r *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
+func (r *Blueprint) Build(query ormcontract.Query, grammar schema.Grammar) error {
 	for _, sql := range r.ToSql(grammar) {
 		if _, err := query.Exec(sql); err != nil {
 			return err
@@ -71,7 +49,7 @@ func (r *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
 }
 
 func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
-	defaultLength := DefaultStringLength
+	defaultLength := constants.DefaultStringLength
 	if len(length) > 0 {
 		defaultLength = length[0]
 	}
@@ -88,7 +66,7 @@ func (r *Blueprint) Column(column, ttype string) schema.ColumnDefinition {
 
 func (r *Blueprint) Create() {
 	r.addCommand(&schema.Command{
-		Name: CommandCreate,
+		Name: constants.CommandCreate,
 	})
 }
 
@@ -124,62 +102,62 @@ func (r *Blueprint) Double(column string) schema.ColumnDefinition {
 
 func (r *Blueprint) Drop() {
 	r.addCommand(&schema.Command{
-		Name: CommandDrop,
+		Name: constants.CommandDrop,
 	})
 }
 
 func (r *Blueprint) DropColumn(column ...string) {
 	r.addCommand(&schema.Command{
-		Name:    CommandDropColumn,
+		Name:    constants.CommandDropColumn,
 		Columns: column,
 	})
 }
 
 func (r *Blueprint) DropForeign(column ...string) {
-	r.indexCommand(CommandDropForeign, column, schema.IndexConfig{
-		Name: r.createIndexName(CommandForeign, column),
+	r.indexCommand(constants.CommandDropForeign, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandForeign, column),
 	})
 }
 
 func (r *Blueprint) DropForeignByName(name string) {
-	r.indexCommand(CommandDropForeign, nil, schema.IndexConfig{
+	r.indexCommand(constants.CommandDropForeign, nil, schema.IndexConfig{
 		Name: name,
 	})
 }
 
 func (r *Blueprint) DropFullText(column ...string) {
-	r.indexCommand(CommandDropFullText, column, schema.IndexConfig{
-		Name: r.createIndexName(CommandFullText, column),
+	r.indexCommand(constants.CommandDropFullText, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandFullText, column),
 	})
 }
 
 func (r *Blueprint) DropFullTextByName(name string) {
-	r.indexCommand(CommandDropFullText, nil, schema.IndexConfig{
+	r.indexCommand(constants.CommandDropFullText, nil, schema.IndexConfig{
 		Name: name,
 	})
 }
 
 func (r *Blueprint) DropIfExists() {
 	r.addCommand(&schema.Command{
-		Name: CommandDropIfExists,
+		Name: constants.CommandDropIfExists,
 	})
 }
 
 func (r *Blueprint) DropIndex(column ...string) {
-	r.indexCommand(CommandDropIndex, column, schema.IndexConfig{
-		Name: r.createIndexName(CommandIndex, column),
+	r.indexCommand(constants.CommandDropIndex, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandIndex, column),
 	})
 }
 
 func (r *Blueprint) DropIndexByName(name string) {
-	r.indexCommand(CommandDropIndex, nil, schema.IndexConfig{
+	r.indexCommand(constants.CommandDropIndex, nil, schema.IndexConfig{
 		Name: name,
 	})
 }
 
 func (r *Blueprint) DropPrimary(column ...string) {
-	r.indexCommand(CommandDropPrimary, column, schema.IndexConfig{
-		Name: r.createIndexName(CommandPrimary, column),
+	r.indexCommand(constants.CommandDropPrimary, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandPrimary, column),
 	})
 }
 
@@ -204,13 +182,13 @@ func (r *Blueprint) DropTimestampsTz() {
 }
 
 func (r *Blueprint) DropUnique(column ...string) {
-	r.indexCommand(CommandDropUnique, column, schema.IndexConfig{
-		Name: r.createIndexName(CommandUnique, column),
+	r.indexCommand(constants.CommandDropUnique, column, schema.IndexConfig{
+		Name: r.createIndexName(constants.CommandUnique, column),
 	})
 }
 
 func (r *Blueprint) DropUniqueByName(name string) {
-	r.indexCommand(CommandDropUnique, nil, schema.IndexConfig{
+	r.indexCommand(constants.CommandDropUnique, nil, schema.IndexConfig{
 		Name: name,
 	})
 }
@@ -234,13 +212,13 @@ func (r *Blueprint) Float(column string, precision ...int) schema.ColumnDefiniti
 }
 
 func (r *Blueprint) Foreign(column ...string) schema.ForeignKeyDefinition {
-	command := r.indexCommand(CommandForeign, column)
+	command := r.indexCommand(constants.CommandForeign, column)
 
 	return NewForeignKeyDefinition(command)
 }
 
 func (r *Blueprint) FullText(column ...string) schema.IndexDefinition {
-	command := r.indexCommand(CommandFullText, column)
+	command := r.indexCommand(constants.CommandFullText, column)
 
 	return NewIndexDefinition(command)
 }
@@ -285,7 +263,7 @@ func (r *Blueprint) Increments(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) Index(column ...string) schema.IndexDefinition {
-	command := r.indexCommand(CommandIndex, column)
+	command := r.indexCommand(constants.CommandIndex, column)
 
 	return NewIndexDefinition(command)
 }
@@ -323,12 +301,12 @@ func (r *Blueprint) MediumText(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) Primary(column ...string) {
-	r.indexCommand(CommandPrimary, column)
+	r.indexCommand(constants.CommandPrimary, column)
 }
 
 func (r *Blueprint) Rename(to string) {
 	command := &schema.Command{
-		Name: CommandRename,
+		Name: constants.CommandRename,
 		To:   to,
 	}
 
@@ -337,7 +315,7 @@ func (r *Blueprint) Rename(to string) {
 
 func (r *Blueprint) RenameIndex(from, to string) {
 	command := &schema.Command{
-		Name: CommandRenameIndex,
+		Name: constants.CommandRenameIndex,
 		From: from,
 		To:   to,
 	}
@@ -376,7 +354,7 @@ func (r *Blueprint) SoftDeletesTz(column ...string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) String(column string, length ...int) schema.ColumnDefinition {
-	defaultLength := DefaultStringLength
+	defaultLength := constants.DefaultStringLength
 	if len(length) > 0 {
 		defaultLength = length[0]
 	}
@@ -459,53 +437,43 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 		}
 
 		switch command.Name {
-		case CommandAdd:
-			if command.Column.IsChange() {
-				if statement := grammar.CompileChange(r, command); len(statement) > 0 {
-					statements = append(statements, statement...)
-				}
-				continue
-			}
+		case constants.CommandAdd:
 			statements = append(statements, grammar.CompileAdd(r, command))
-		case CommandComment:
+		case constants.CommandComment:
 			if statement := grammar.CompileComment(r, command); statement != "" {
 				statements = append(statements, statement)
 			}
-		case CommandCreate:
+		case constants.CommandCreate:
 			statements = append(statements, grammar.CompileCreate(r))
-		case CommandDefault:
-			if statement := grammar.CompileDefault(r, command); statement != "" {
-				statements = append(statements, statement)
-			}
-		case CommandDrop:
+		case constants.CommandDrop:
 			statements = append(statements, grammar.CompileDrop(r))
-		case CommandDropColumn:
+		case constants.CommandDropColumn:
 			statements = append(statements, grammar.CompileDropColumn(r, command)...)
-		case CommandDropForeign:
+		case constants.CommandDropForeign:
 			statements = append(statements, grammar.CompileDropForeign(r, command))
-		case CommandDropFullText:
+		case constants.CommandDropFullText:
 			statements = append(statements, grammar.CompileDropFullText(r, command))
-		case CommandDropIfExists:
+		case constants.CommandDropIfExists:
 			statements = append(statements, grammar.CompileDropIfExists(r))
-		case CommandDropIndex:
+		case constants.CommandDropIndex:
 			statements = append(statements, grammar.CompileDropIndex(r, command))
-		case CommandDropPrimary:
+		case constants.CommandDropPrimary:
 			statements = append(statements, grammar.CompileDropPrimary(r, command))
-		case CommandDropUnique:
+		case constants.CommandDropUnique:
 			statements = append(statements, grammar.CompileDropUnique(r, command))
-		case CommandForeign:
+		case constants.CommandForeign:
 			statements = append(statements, grammar.CompileForeign(r, command))
-		case CommandFullText:
+		case constants.CommandFullText:
 			statements = append(statements, grammar.CompileFullText(r, command))
-		case CommandIndex:
+		case constants.CommandIndex:
 			statements = append(statements, grammar.CompileIndex(r, command))
-		case CommandPrimary:
+		case constants.CommandPrimary:
 			statements = append(statements, grammar.CompilePrimary(r, command))
-		case CommandRename:
+		case constants.CommandRename:
 			statements = append(statements, grammar.CompileRename(r, command))
-		case CommandRenameIndex:
+		case constants.CommandRenameIndex:
 			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command)...)
-		case CommandUnique:
+		case constants.CommandUnique:
 			statements = append(statements, grammar.CompileUnique(r, command))
 		}
 	}
@@ -514,7 +482,7 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 }
 
 func (r *Blueprint) Unique(column ...string) schema.IndexDefinition {
-	command := r.indexCommand(CommandUnique, column)
+	command := r.indexCommand(constants.CommandUnique, column)
 
 	return NewIndexDefinition(command)
 }
@@ -543,16 +511,10 @@ func (r *Blueprint) addAttributeCommands(grammar schema.Grammar) {
 	attributeCommands := grammar.GetAttributeCommands()
 	for _, column := range r.columns {
 		for _, command := range attributeCommands {
-			if command == CommandComment && (column.comment != nil || column.change) {
+			if command == constants.CommandComment && column.comment != nil {
 				r.addCommand(&schema.Command{
 					Column: column,
-					Name:   CommandComment,
-				})
-			}
-			if command == CommandDefault && column.def != nil {
-				r.addCommand(&schema.Command{
-					Column: column,
-					Name:   CommandDefault,
+					Name:   constants.CommandComment,
 				})
 			}
 		}
@@ -577,7 +539,7 @@ func (r *Blueprint) createAndAddColumn(ttype, name string) *ColumnDefinition {
 
 	if !r.isCreate() {
 		r.addCommand(&schema.Command{
-			Name:   CommandAdd,
+			Name:   constants.CommandAdd,
 			Column: columnImpl,
 		})
 	}
@@ -623,7 +585,7 @@ func (r *Blueprint) indexCommand(name string, columns []string, config ...schema
 
 func (r *Blueprint) isCreate() bool {
 	for _, command := range r.commands {
-		if command.Name == CommandCreate {
+		if command.Name == constants.CommandCreate {
 			return true
 		}
 	}

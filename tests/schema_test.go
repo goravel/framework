@@ -1,4 +1,4 @@
-package tests
+package schema
 
 import (
 	"fmt"
@@ -6,163 +6,71 @@ import (
 	"testing"
 	"time"
 
-	contractsschema "github.com/goravel/framework/contracts/database/schema"
-	databaseschema "github.com/goravel/framework/database/schema"
-	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/mysql"
-	"github.com/goravel/postgres"
-	"github.com/goravel/sqlite"
-	"github.com/goravel/sqlserver"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/goravel/framework/contracts/database"
+	contractsschema "github.com/goravel/framework/contracts/database/schema"
+	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/docker"
+	"github.com/goravel/framework/support/env"
 )
 
 type SchemaSuite struct {
 	suite.Suite
 	prefix            string
-	driverToTestQuery map[string]*TestQuery
+	driverToTestQuery map[database.Driver]*gorm.TestQuery
 }
 
 func TestSchemaSuite(t *testing.T) {
-	t.Parallel()
-	suite.Run(t, &SchemaSuite{
-		driverToTestQuery: make(map[string]*TestQuery),
-	})
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	suite.Run(t, &SchemaSuite{})
 }
 
 func (s *SchemaSuite) SetupTest() {
-	s.prefix = "goravel_"
-	s.driverToTestQuery = NewTestQueryBuilder().All(s.prefix, true)
-}
+	postgresDocker := docker.Postgres()
+	s.Require().NoError(postgresDocker.Ready())
 
-func (s *SchemaSuite) TearDownTest() {
-	if s.driverToTestQuery[sqlite.Name] != nil {
-		docker, err := s.driverToTestQuery[sqlite.Name].Driver().Docker()
-		s.NoError(err)
-		s.NoError(docker.Shutdown())
+	postgresQuery := gorm.NewTestQueryWithPrefixAndSingular(postgresDocker)
+
+	sqliteDocker := docker.Sqlite()
+	sqliteQuery := gorm.NewTestQueryWithPrefixAndSingular(sqliteDocker)
+
+	mysqlDocker := docker.Mysql()
+	s.Require().NoError(mysqlDocker.Ready())
+
+	mysqlQuery := gorm.NewTestQueryWithPrefixAndSingular(mysqlDocker)
+
+	sqlserverDocker := docker.Sqlserver()
+	s.Require().NoError(sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQueryWithPrefixAndSingular(sqlserverDocker)
+
+	s.prefix = "goravel_"
+	s.driverToTestQuery = map[database.Driver]*gorm.TestQuery{
+		database.DriverPostgres:  postgresQuery,
+		database.DriverSqlite:    sqliteQuery,
+		database.DriverMysql:     mysqlQuery,
+		database.DriverSqlserver: sqlserverQuery,
 	}
 }
 
-func (s *SchemaSuite) TestColumnChange() {
-	for driver, testQuery := range s.driverToTestQuery {
-		if driver == sqlite.Name {
-			continue
-		}
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
-			table := "column_change"
-			expectedDefaultStringLength := databaseschema.DefaultStringLength
-			customStringLength := 100
-			expectedCustomStringLength := customStringLength
-			expectedColumnType := "text"
-
-			if driver == sqlserver.Name {
-				expectedDefaultStringLength = databaseschema.DefaultStringLength * 2
-				expectedCustomStringLength = customStringLength * 2
-				expectedColumnType = "nvarchar"
-			}
-			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
-				table.ID()
-				table.String("change_length")
-				table.String("change_type")
-				table.String("change_to_nullable")
-				table.String("change_to_not_nullable").Nullable()
-				table.String("change_add_default")
-				table.String("change_remove_default").Default("goravel")
-				table.String("change_modify_default").Default("goravel")
-				table.String("change_add_comment")
-				table.String("change_remove_comment").Comment("goravel")
-				table.String("change_modify_comment").Comment("goravel")
-
-			}))
-			columns, err := schema.GetColumns(table)
-			s.Require().Nil(err)
-			for _, column := range columns {
-				if column.Name == "change_length" {
-					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedDefaultStringLength))
-				}
-				if column.Name == "change_type" {
-					s.Contains(column.TypeName, "varchar")
-				}
-				if column.Name == "change_to_nullable" {
-					s.False(column.Nullable)
-				}
-				if column.Name == "change_to_not_nullable" {
-					s.True(column.Nullable)
-				}
-				if column.Name == "change_add_default" {
-					s.Empty(column.Default)
-				}
-				if column.Name == "change_remove_default" || column.Name == "change_modify_default" {
-					s.Contains(column.Default, "goravel")
-				}
-				if driver != sqlserver.Name {
-					if column.Name == "change_add_comment" {
-						s.Empty(column.Comment)
-					}
-					if column.Name == "change_remove_comment" || column.Name == "change_modify_comment" {
-						s.Contains(column.Comment, "goravel")
-					}
-				}
-
-			}
-			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
-				table.String("change_length", customStringLength).Change()
-				table.Text("change_type").Change()
-				table.String("change_to_nullable").Nullable().Change()
-				table.String("change_to_not_nullable").Change()
-				table.String("change_add_default").Default("goravel").Change()
-				table.String("change_remove_default").Change()
-				table.String("change_modify_default").Default("goravel_again").Change()
-				table.String("change_add_comment").Comment("goravel").Change()
-				table.String("change_remove_comment").Change()
-				table.String("change_modify_comment").Comment("goravel_again").Change()
-			}))
-			columns, err = schema.GetColumns(table)
-			s.Require().Nil(err)
-			for _, column := range columns {
-				if column.Name == "change_length" {
-					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedCustomStringLength))
-				}
-				if column.Name == "change_type" {
-					s.Contains(column.TypeName, expectedColumnType)
-				}
-				if column.Name == "change_to_nullable" {
-					s.True(column.Nullable)
-				}
-				if column.Name == "change_to_not_nullable" {
-					s.False(column.Nullable)
-				}
-				if column.Name == "change_add_default" {
-					s.Contains(column.Default, "goravel")
-				}
-				if column.Name == "change_remove_default" {
-					s.Empty(column.Default)
-				}
-				if column.Name == "change_modify_default" {
-					s.Contains(column.Default, "goravel_again")
-				}
-				if driver != sqlserver.Name {
-					if column.Name == "change_add_comment" {
-						s.Contains(column.Comment, "goravel")
-					}
-					if column.Name == "change_remove_comment" {
-						s.Empty(column.Comment)
-					}
-					if column.Name == "change_modify_comment" {
-						s.Contains(column.Comment, "goravel_again")
-					}
-				}
-			}
-		})
+func (s *SchemaSuite) TearDownTest() {
+	if s.driverToTestQuery[database.DriverSqlite] != nil {
+		s.NoError(s.driverToTestQuery[database.DriverSqlite].Docker().Shutdown())
 	}
 }
 
 func (s *SchemaSuite) TestColumnExtraAttributes() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "column_extra_attribute"
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -220,7 +128,7 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 			s.NoError(testQuery.Query().Where("id", columnExtraAttribute.ID).First(&anotherColumnExtraAttribute))
 			s.Equal("world", anotherColumnExtraAttribute.Name)
 			s.Equal(columnExtraAttribute.UseCurrent, anotherColumnExtraAttribute.UseCurrent)
-			if driver == mysql.Name {
+			if driver == database.DriverMysql {
 				s.NotEqual(columnExtraAttribute.UseCurrentOnUpdate, anotherColumnExtraAttribute.UseCurrentOnUpdate)
 				s.True(anotherColumnExtraAttribute.UseCurrentOnUpdate.Between(now, carbon.Now().AddSecond()))
 			} else {
@@ -232,8 +140,8 @@ func (s *SchemaSuite) TestColumnExtraAttributes() {
 
 func (s *SchemaSuite) TestColumnMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "column_methods"
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -253,12 +161,12 @@ func (s *SchemaSuite) TestColumnMethods() {
 }
 
 func (s *SchemaSuite) TestColumnTypes_Postgres() {
-	if s.driverToTestQuery[postgres.Name] == nil {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[postgres.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverPostgres]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "postgres_columns"
 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
@@ -593,12 +501,12 @@ func (s *SchemaSuite) TestColumnTypes_Postgres() {
 }
 
 func (s *SchemaSuite) TestColumnTypes_Sqlite() {
-	if s.driverToTestQuery[sqlite.Name] == nil {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[sqlite.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverSqlite]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "sqlite_columns"
 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
@@ -630,6 +538,7 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 			s.Equal("tinyint(1)", column.Type)
 			s.Equal("tinyint", column.TypeName)
 		}
+
 		if column.Name == "char" {
 			s.False(column.Autoincrement)
 			s.Empty(column.Comment)
@@ -890,12 +799,12 @@ func (s *SchemaSuite) TestColumnTypes_Sqlite() {
 }
 
 func (s *SchemaSuite) TestColumnTypes_Mysql() {
-	if s.driverToTestQuery[mysql.Name] == nil {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[mysql.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverMysql]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "mysql_columns"
 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
@@ -1221,12 +1130,12 @@ func (s *SchemaSuite) TestColumnTypes_Mysql() {
 }
 
 func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
-	if s.driverToTestQuery[sqlserver.Name] == nil {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[sqlserver.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverSqlserver]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "sqlserver_columns"
 	s.createTableAndAssertColumnsForColumnMethods(schema, table)
 
@@ -1552,12 +1461,12 @@ func (s *SchemaSuite) TestColumnTypes_Sqlserver() {
 }
 
 func (s *SchemaSuite) TestEnum_Postgres() {
-	if s.driverToTestQuery[postgres.Name] == nil {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[postgres.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverPostgres]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "postgres_enum"
 
 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -1587,12 +1496,12 @@ func (s *SchemaSuite) TestEnum_Postgres() {
 }
 
 func (s *SchemaSuite) TestEnum_Sqlite() {
-	if s.driverToTestQuery[sqlite.Name] == nil {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[sqlite.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverSqlite]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "sqlite_enum"
 
 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -1622,12 +1531,12 @@ func (s *SchemaSuite) TestEnum_Sqlite() {
 }
 
 func (s *SchemaSuite) TestEnum_Mysql() {
-	if s.driverToTestQuery[mysql.Name] == nil {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[mysql.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverMysql]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "mysql_enum"
 
 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -1657,12 +1566,12 @@ func (s *SchemaSuite) TestEnum_Mysql() {
 }
 
 func (s *SchemaSuite) TestEnum_Sqlserver() {
-	if s.driverToTestQuery[sqlserver.Name] == nil {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[sqlserver.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverSqlserver]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 	table := "sqlserver_enum"
 
 	s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -1693,8 +1602,8 @@ func (s *SchemaSuite) TestEnum_Sqlserver() {
 
 func (s *SchemaSuite) TestForeign() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table1 := "foreign1"
 			err := schema.Create(table1, func(table contractsschema.Blueprint) {
 				table.ID()
@@ -1736,7 +1645,7 @@ func (s *SchemaSuite) TestForeign() {
 					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
 					s.Equal("no action", foreignKey.OnDelete)
 					s.Equal("no action", foreignKey.OnUpdate)
-					if driver == sqlite.Name {
+					if driver == database.DriverSqlite {
 						s.Empty(foreignKey.Name)
 						s.Empty(foreignKey.ForeignSchema)
 					} else {
@@ -1748,7 +1657,7 @@ func (s *SchemaSuite) TestForeign() {
 					s.ElementsMatch([]string{"id"}, foreignKey.ForeignColumns)
 					s.Equal("cascade", foreignKey.OnDelete)
 					s.Equal("cascade", foreignKey.OnUpdate)
-					if driver == sqlite.Name {
+					if driver == database.DriverSqlite {
 						s.Empty(foreignKey.Name)
 						s.Empty(foreignKey.ForeignSchema)
 					} else {
@@ -1769,7 +1678,7 @@ func (s *SchemaSuite) TestForeign() {
 
 			foreignKeys, err = schema.GetForeignKeys(table3)
 			s.NoError(err)
-			if driver == sqlite.Name {
+			if driver == database.DriverSqlite {
 				s.Len(foreignKeys, 2)
 			} else {
 				s.Len(foreignKeys, 0)
@@ -1780,8 +1689,8 @@ func (s *SchemaSuite) TestForeign() {
 
 func (s *SchemaSuite) TestFullText() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "fulltext"
 			err := schema.Create(table, func(table contractsschema.Blueprint) {
 				table.String("name")
@@ -1792,7 +1701,7 @@ func (s *SchemaSuite) TestFullText() {
 
 			s.Require().Nil(err)
 
-			if driver == mysql.Name || driver == postgres.Name {
+			if driver == database.DriverMysql || driver == database.DriverPostgres {
 				s.True(schema.HasIndex(table, "goravel_fulltext_name_fulltext"))
 				s.True(schema.HasIndex(table, "fulltext_avatar_fulltext"))
 			} else {
@@ -1814,8 +1723,8 @@ func (s *SchemaSuite) TestFullText() {
 
 func (s *SchemaSuite) TestPrimary() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "primaries"
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -1825,26 +1734,26 @@ func (s *SchemaSuite) TestPrimary() {
 			}))
 
 			// SQLite does not support set primary index separately
-			if driver == postgres.Name {
+			if driver == database.DriverPostgres {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			if driver == mysql.Name {
+			if driver == database.DriverMysql {
 				s.Require().True(schema.HasIndex(table, "primary"))
 			}
-			if driver == sqlserver.Name {
+			if driver == database.DriverSqlserver {
 				s.Require().True(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
 			}
 
 			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
 				table.DropPrimary("name", "age")
 			}))
-			if driver == postgres.Name {
+			if driver == database.DriverPostgres {
 				s.Require().False(schema.HasIndex(table, "goravel_primaries_pkey"))
 			}
-			if driver == mysql.Name {
+			if driver == database.DriverMysql {
 				s.Require().False(schema.HasIndex(table, "primary"))
 			}
-			if driver == sqlserver.Name {
+			if driver == database.DriverSqlserver {
 				s.Require().False(schema.HasIndex(table, "goravel_primaries_name_age_primary"))
 			}
 		})
@@ -1852,12 +1761,12 @@ func (s *SchemaSuite) TestPrimary() {
 }
 
 func (s *SchemaSuite) TestID_Postgres() {
-	if s.driverToTestQuery[postgres.Name] == nil {
+	if s.driverToTestQuery[database.DriverPostgres] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[postgres.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverPostgres]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 	tests := []struct {
 		table          string
@@ -1944,12 +1853,12 @@ func (s *SchemaSuite) TestID_Postgres() {
 }
 
 func (s *SchemaSuite) TestID_Sqlite() {
-	if s.driverToTestQuery[sqlite.Name] == nil {
+	if s.driverToTestQuery[database.DriverSqlite] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[sqlite.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverSqlite]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 	tests := []struct {
 		table      string
@@ -2022,12 +1931,12 @@ func (s *SchemaSuite) TestID_Sqlite() {
 }
 
 func (s *SchemaSuite) TestID_Mysql() {
-	if s.driverToTestQuery[mysql.Name] == nil {
+	if s.driverToTestQuery[database.DriverMysql] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[mysql.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverMysql]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 	tests := []struct {
 		table          string
@@ -2107,12 +2016,12 @@ func (s *SchemaSuite) TestID_Mysql() {
 }
 
 func (s *SchemaSuite) TestID_Sqlserver() {
-	if s.driverToTestQuery[sqlserver.Name] == nil {
+	if s.driverToTestQuery[database.DriverSqlserver] == nil {
 		s.T().Skip("Skip test")
 	}
 
-	testQuery := s.driverToTestQuery[sqlserver.Name]
-	schema := newSchema(testQuery, s.driverToTestQuery)
+	testQuery := s.driverToTestQuery[database.DriverSqlserver]
+	schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 	tests := []struct {
 		table          string
@@ -2193,8 +2102,8 @@ func (s *SchemaSuite) TestID_Sqlserver() {
 
 func (s *SchemaSuite) TestIndexMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "indexes"
 			err := schema.Create(table, func(table contractsschema.Blueprint) {
 				table.ID()
@@ -2217,9 +2126,9 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "goravel_indexes_id_name_index" {
 					s.ElementsMatch(index.Columns, []string{"id", "name"})
 					s.False(index.Primary)
-					if driver == sqlite.Name {
+					if driver == database.DriverSqlite {
 						s.Empty(index.Type)
-					} else if driver == sqlserver.Name {
+					} else if driver == database.DriverSqlserver {
 						s.Equal("nonclustered", index.Type)
 					} else {
 						s.Equal("btree", index.Type)
@@ -2229,9 +2138,9 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "name_index" {
 					s.ElementsMatch(index.Columns, []string{"name"})
 					s.False(index.Primary)
-					if driver == sqlite.Name {
+					if driver == database.DriverSqlite {
 						s.Empty(index.Type)
-					} else if driver == sqlserver.Name {
+					} else if driver == database.DriverSqlserver {
 						s.Equal("nonclustered", index.Type)
 					} else {
 						s.Equal("btree", index.Type)
@@ -2247,7 +2156,7 @@ func (s *SchemaSuite) TestIndexMethods() {
 				if index.Name == "primary" {
 					s.ElementsMatch(index.Columns, []string{"id"})
 					s.True(index.Primary)
-					if driver == sqlite.Name {
+					if driver == database.DriverSqlite {
 						s.Empty(index.Type)
 					} else {
 						s.Equal("btree", index.Type)
@@ -2278,8 +2187,8 @@ func (s *SchemaSuite) TestIndexMethods() {
 
 func (s *SchemaSuite) TestSql() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 			s.NoError(schema.Create("sql", func(table contractsschema.Blueprint) {
 				table.String("name")
@@ -2297,12 +2206,12 @@ func (s *SchemaSuite) TestSql() {
 
 func (s *SchemaSuite) TestTypeMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		if driver != postgres.Name {
+		if driver != database.DriverPostgres {
 			continue
 		}
 
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 
 			s.NoError(schema.Sql("CREATE TYPE person AS (name TEXT, age INT);"))
 
@@ -2329,8 +2238,8 @@ func (s *SchemaSuite) TestTypeMethods() {
 
 func (s *SchemaSuite) TestTableMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			tableOne := "table_one"
 			tableTwo := "table_two"
 			tableThree := "table_three"
@@ -2379,6 +2288,8 @@ func (s *SchemaSuite) TestTableMethods() {
 			s.NoError(schema.Drop(tableThree))
 			s.False(schema.HasTable(tableThree))
 
+			testQuery.MockConfig().EXPECT().GetString("database.connections.postgres.schema").Return("").Once()
+
 			s.NoError(schema.DropAllTables())
 			s.False(schema.HasTable(tableFour))
 		})
@@ -2387,8 +2298,8 @@ func (s *SchemaSuite) TestTableMethods() {
 
 func (s *SchemaSuite) TestTimestampMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "timestamp"
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -2419,8 +2330,8 @@ func (s *SchemaSuite) TestTimestampMethods() {
 
 func (s *SchemaSuite) TestUnique() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "uniques"
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -2450,8 +2361,8 @@ func (s *SchemaSuite) TestUnique() {
 
 func (s *SchemaSuite) TestViewMethods() {
 	for driver, testQuery := range s.driverToTestQuery {
-		s.Run(driver, func() {
-			schema := newSchema(testQuery, s.driverToTestQuery)
+		s.Run(driver.String(), func() {
+			schema := GetTestSchema(testQuery, s.driverToTestQuery)
 			table := "views"
 
 			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
@@ -2466,7 +2377,7 @@ func (s *SchemaSuite) TestViewMethods() {
 			s.Equal("goravel_view", views[0].Name)
 			s.NotEmpty(views[0].Definition)
 
-			if driver == postgres.Name || driver == sqlserver.Name {
+			if driver == database.DriverPostgres || driver == database.DriverSqlserver {
 				s.NotEmpty(views[0].Schema)
 			} else {
 				s.Empty(views[0].Schema)
@@ -2483,7 +2394,7 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 		table.BigInteger("big_integer").Comment("This is a big_integer column")
 		table.Boolean("boolean_default").Default(true).Comment("This is a boolean column with default value")
 		table.Char("char").Comment("This is a char column")
-		if schema.GetConnection() != postgres.Name {
+		if schema.GetConnection() != database.DriverPostgres.String() {
 			table.Column("custom_type", "geometry").Comment("This is a custom type column")
 		} else {
 			table.Column("custom_type", "macaddr").Comment("This is a custom type column")
@@ -2566,43 +2477,56 @@ func (s *SchemaSuite) createTableAndAssertColumnsForColumnMethods(schema contrac
 }
 
 func TestPostgresSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
+	schema := "goravel"
 	table := "table"
-	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
-	postgresTestQuery.WithSchema(testSchema)
-	newSchema := newSchema(postgresTestQuery, map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Connection: postgresTestQuery,
+	postgresDocker := docker.Postgres()
+	require.NoError(t, postgresDocker.Ready())
+
+	postgresQuery := gorm.NewTestQueryWithSchema(postgresDocker, schema)
+	testSchema := GetTestSchema(postgresQuery, map[database.Driver]*gorm.TestQuery{
+		database.DriverPostgres: postgresQuery,
 	})
 
-	assert.NoError(t, newSchema.Create(table, func(table contractsschema.Blueprint) {
+	assert.NoError(t, testSchema.Create(table, func(table contractsschema.Blueprint) {
 		table.String("name")
 	}))
-	tables, err := newSchema.GetTables()
+	tables, err := testSchema.GetTables()
 
 	assert.NoError(t, err)
 	assert.Len(t, tables, 1)
-	assert.Equal(t, table, tables[0].Name)
-	assert.Equal(t, "public", tables[0].Schema)
-	assert.True(t, newSchema.HasTable(fmt.Sprintf("public.%s", table)))
-	assert.True(t, newSchema.HasTable(table))
+	assert.Equal(t, "table", tables[0].Name)
+	assert.Equal(t, schema, tables[0].Schema)
+	assert.True(t, testSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
+	assert.True(t, testSchema.HasTable(table))
 }
 
 func TestSqlserverSchema(t *testing.T) {
+	if env.IsWindows() {
+		t.Skip("Skip test that using Docker")
+	}
+
 	schema := "goravel"
 	table := "table"
-	sqlserverTestQuery := NewTestQueryBuilder().Sqlserver("", false)
-	sqlserverTestQuery.WithSchema(testSchema)
-	newSchema := newSchema(sqlserverTestQuery, map[string]*TestQuery{
-		sqlserverTestQuery.Driver().Config().Connection: sqlserverTestQuery,
+	sqlserverDocker := docker.Sqlserver()
+	require.NoError(t, sqlserverDocker.Ready())
+
+	sqlserverQuery := gorm.NewTestQueryWithSchema(sqlserverDocker, schema)
+	testSchema := GetTestSchema(sqlserverQuery, map[database.Driver]*gorm.TestQuery{
+		database.DriverSqlserver: sqlserverQuery,
 	})
 
-	assert.NoError(t, newSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
+	assert.NoError(t, testSchema.Create(fmt.Sprintf("%s.%s", schema, table), func(table contractsschema.Blueprint) {
 		table.String("name")
 	}))
-	tables, err := newSchema.GetTables()
+	tables, err := testSchema.GetTables()
 
 	assert.NoError(t, err)
 	assert.Len(t, tables, 1)
-	assert.Equal(t, table, tables[0].Name)
+	assert.Equal(t, "table", tables[0].Name)
 	assert.Equal(t, schema, tables[0].Schema)
-	assert.True(t, newSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
+	assert.True(t, testSchema.HasTable(fmt.Sprintf("%s.%s", schema, table)))
 }

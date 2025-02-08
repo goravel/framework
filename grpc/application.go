@@ -22,9 +22,12 @@ type Application struct {
 
 func NewApplication(config config.Config) *Application {
 	return &Application{
-		server: grpc.NewServer(),
 		config: config,
 	}
+}
+
+func (app *Application) Server() *grpc.Server {
+	return app.server
 }
 
 func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientConn, error) {
@@ -55,11 +58,6 @@ func (app *Application) Client(ctx context.Context, name string) (*grpc.ClientCo
 	)
 }
 
-func (app *Application) Listen(l net.Listener) error {
-	color.Green().Println("[GRPC] Listening on: " + l.Addr().String())
-	return app.server.Serve(l)
-}
-
 func (app *Application) Run(host ...string) error {
 	if len(host) == 0 {
 		defaultHost := app.config.GetString("grpc.host")
@@ -82,22 +80,12 @@ func (app *Application) Run(host ...string) error {
 	if err != nil {
 		return err
 	}
-
 	color.Green().Println("[GRPC] Listening on: " + host[0])
-	return app.server.Serve(listen)
-}
-
-func (app *Application) Server() *grpc.Server {
-	return app.server
-}
-
-func (app *Application) Shutdown(force ...bool) {
-	if len(force) > 0 && force[0] {
-		app.server.Stop()
-		return
+	if err := app.server.Serve(listen); err != nil {
+		return err
 	}
 
-	app.server.GracefulStop()
+	return nil
 }
 
 func (app *Application) UnaryServerInterceptors(unaryServerInterceptors []grpc.UnaryServerInterceptor) {
