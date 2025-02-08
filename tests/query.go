@@ -9,7 +9,7 @@ import (
 	"github.com/goravel/framework/contracts/database"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/contracts/testing"
+	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/docker"
@@ -177,9 +177,9 @@ func (r *TestQueryBuilder) SqliteWithReadWrite() map[string]*TestQuery {
 	return map[string]*TestQuery{
 		"write": writeTestQuery,
 		"read":  readTestQuery,
-		"mix": r.mix(sqlite.Name, testing.DatabaseConfig{
+		"mix": r.mix(sqlite.Name, contractsdocker.DatabaseConfig{
 			Database: writeTestQuery.Driver().Config().Database,
-		}, testing.DatabaseConfig{
+		}, contractsdocker.DatabaseConfig{
 			Database: readTestQuery.Driver().Config().Database,
 		}),
 	}
@@ -194,9 +194,9 @@ func (r *TestQueryBuilder) SqlserverWithReadWrite() map[string]*TestQuery {
 	return r.readWriteMix(sqlserver.Name)
 }
 
-func (r *TestQueryBuilder) single(driver string, prefix string, singular bool) (*TestQuery, testing.DatabaseDriver) {
+func (r *TestQueryBuilder) single(driver string, prefix string, singular bool) (*TestQuery, contractsdocker.DatabaseDriver) {
 	var (
-		dockerDriver   testing.DatabaseDriver
+		dockerDriver   contractsdocker.DatabaseDriver
 		databaseDriver contractsdriver.Driver
 
 		connection = driver
@@ -259,7 +259,7 @@ func (r *TestQueryBuilder) readWriteMix(driver string) map[string]*TestQuery {
 	}
 }
 
-func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseConfig testing.DatabaseConfig) *TestQuery {
+func (r *TestQueryBuilder) mix(driver string, writeDatabaseConfig, readDatabaseConfig contractsdocker.DatabaseConfig) *TestQuery {
 	var (
 		databaseDriver contractsdriver.Driver
 
