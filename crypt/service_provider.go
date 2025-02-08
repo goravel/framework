@@ -1,7 +1,7 @@
 package crypt
 
 import (
-	contracts "github.com/goravel/framework/contracts"
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
