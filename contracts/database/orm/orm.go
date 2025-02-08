@@ -65,8 +65,12 @@ type Query interface {
 	Find(dest any, conds ...any) error
 	// FindOrFail finds records that match given conditions or throws an error.
 	FindOrFail(dest any, conds ...any) error
+	// Get only single record that match given conditions and without any order.
+	Take(dest any) error
 	// First finds record that match given conditions.
 	First(dest any) error
+	// First last record that match given conditions.
+	Last(dest any) error
 	// FirstOrCreate finds the first record that matches the given attributes
 	// or create a new one with those attributes if none was found.
 	FirstOrCreate(dest any, conds ...any) error
