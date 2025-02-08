@@ -32,7 +32,7 @@
       "automerge": true,
       "matchPackageNames": ["github.com/goravel/mysql", "github.com/goravel/postgres", "github.com/goravel/sqlite", "github.com/goravel/sqlserver"],
       "allowedVersions": ">=0.0.0",
-      "matchFileNames": ["**/go.mod"]
+      "matchFileNames": ["tests/go.mod"]
     }
   ],
   "ignoreDeps": [],

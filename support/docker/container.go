@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/goravel/framework/contracts/testing"
+	"github.com/goravel/framework/contracts/testing/docker"
 	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/process"
@@ -15,7 +15,7 @@ import (
 )
 
 type Container struct {
-	databaseDriver testing.DatabaseDriver
+	databaseDriver docker.DatabaseDriver
 	file           string
 	lockFile       string
 	name           string
@@ -23,7 +23,7 @@ type Container struct {
 	password       string
 }
 
-func NewContainer(databaseDriver testing.DatabaseDriver) *Container {
+func NewContainer(databaseDriver docker.DatabaseDriver) *Container {
 	return &Container{
 		databaseDriver: databaseDriver,
 		file:           filepath.Join(os.TempDir(), "goravel_docker.txt"),
@@ -34,7 +34,7 @@ func NewContainer(databaseDriver testing.DatabaseDriver) *Container {
 	}
 }
 
-func (r *Container) Build() (testing.DatabaseDriver, error) {
+func (r *Container) Build() (docker.DatabaseDriver, error) {
 	var (
 		isReused bool
 		err      error
@@ -72,8 +72,8 @@ func (r *Container) Build() (testing.DatabaseDriver, error) {
 	return r.databaseDriver.Database(database)
 }
 
-func (r *Container) Builds(num int) ([]testing.DatabaseDriver, error) {
-	var databaseDrivers []testing.DatabaseDriver
+func (r *Container) Builds(num int) ([]docker.DatabaseDriver, error) {
+	var databaseDrivers []docker.DatabaseDriver
 	for i := 0; i < num; i++ {
 		databaseDriver, err := r.Build()
 		if err != nil {
@@ -105,7 +105,7 @@ func (r *Container) add() error {
 	}
 
 	if databaseConfigs == nil {
-		databaseConfigs = make(map[string]testing.DatabaseConfig)
+		databaseConfigs = make(map[string]docker.DatabaseConfig)
 	}
 	databaseConfigs[r.name] = r.databaseDriver.Config()
 	f, err := os.OpenFile(r.file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
@@ -127,8 +127,8 @@ func (r *Container) add() error {
 	return nil
 }
 
-func (r *Container) all() (map[string]testing.DatabaseConfig, error) {
-	databaseConfigs := make(map[string]testing.DatabaseConfig)
+func (r *Container) all() (map[string]docker.DatabaseConfig, error) {
+	databaseConfigs := make(map[string]docker.DatabaseConfig)
 	if !file.Exists(r.file) {
 		return databaseConfigs, nil
 	}

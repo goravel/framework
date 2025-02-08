@@ -14,7 +14,7 @@ import (
 
 	"github.com/goravel/framework/contracts/foundation"
 	contractssession "github.com/goravel/framework/contracts/session"
-	contractstesting "github.com/goravel/framework/contracts/testing"
+	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 )
@@ -29,7 +29,7 @@ type TestResponseImpl struct {
 	sessionAttributes map[string]any
 }
 
-func NewTestResponse(t *testing.T, response *http.Response, json foundation.Json, session contractssession.Manager) contractstesting.TestResponse {
+func NewTestResponse(t *testing.T, response *http.Response, json foundation.Json, session contractssession.Manager) contractshttp.Response {
 	return &TestResponseImpl{
 		t:        t,
 		response: response,
@@ -105,25 +105,25 @@ func (r *TestResponseImpl) Content() (string, error) {
 	return r.getContent()
 }
 
-func (r *TestResponseImpl) AssertStatus(status int) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertStatus(status int) contractshttp.Response {
 	actual := r.getStatusCode()
 	assert.Equal(r.t, status, actual, fmt.Sprintf("Expected response status code [%d] but received %d.", status, actual))
 	return r
 }
 
-func (r *TestResponseImpl) AssertOk() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertOk() contractshttp.Response {
 	return r.AssertStatus(http.StatusOK)
 }
 
-func (r *TestResponseImpl) AssertCreated() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertCreated() contractshttp.Response {
 	return r.AssertStatus(http.StatusCreated)
 }
 
-func (r *TestResponseImpl) AssertAccepted() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertAccepted() contractshttp.Response {
 	return r.AssertStatus(http.StatusAccepted)
 }
 
-func (r *TestResponseImpl) AssertNoContent(status ...int) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertNoContent(status ...int) contractshttp.Response {
 	expectedStatus := http.StatusNoContent
 	if len(status) > 0 {
 		expectedStatus = status[0]
@@ -138,87 +138,87 @@ func (r *TestResponseImpl) AssertNoContent(status ...int) contractstesting.TestR
 	return r
 }
 
-func (r *TestResponseImpl) AssertMovedPermanently() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertMovedPermanently() contractshttp.Response {
 	return r.AssertStatus(http.StatusMovedPermanently)
 }
 
-func (r *TestResponseImpl) AssertFound() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertFound() contractshttp.Response {
 	return r.AssertStatus(http.StatusFound)
 }
 
-func (r *TestResponseImpl) AssertNotModified() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertNotModified() contractshttp.Response {
 	return r.AssertStatus(http.StatusNotModified)
 }
 
-func (r *TestResponseImpl) AssertPartialContent() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertPartialContent() contractshttp.Response {
 	return r.AssertStatus(http.StatusPartialContent)
 }
 
-func (r *TestResponseImpl) AssertTemporaryRedirect() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertTemporaryRedirect() contractshttp.Response {
 	return r.AssertStatus(http.StatusTemporaryRedirect)
 }
 
-func (r *TestResponseImpl) AssertBadRequest() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertBadRequest() contractshttp.Response {
 	return r.AssertStatus(http.StatusBadRequest)
 }
 
-func (r *TestResponseImpl) AssertUnauthorized() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertUnauthorized() contractshttp.Response {
 	return r.AssertStatus(http.StatusUnauthorized)
 }
 
-func (r *TestResponseImpl) AssertPaymentRequired() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertPaymentRequired() contractshttp.Response {
 	return r.AssertStatus(http.StatusPaymentRequired)
 }
 
-func (r *TestResponseImpl) AssertForbidden() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertForbidden() contractshttp.Response {
 	return r.AssertStatus(http.StatusForbidden)
 }
 
-func (r *TestResponseImpl) AssertNotFound() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertNotFound() contractshttp.Response {
 	return r.AssertStatus(http.StatusNotFound)
 }
 
-func (r *TestResponseImpl) AssertMethodNotAllowed() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertMethodNotAllowed() contractshttp.Response {
 	return r.AssertStatus(http.StatusMethodNotAllowed)
 }
 
-func (r *TestResponseImpl) AssertNotAcceptable() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertNotAcceptable() contractshttp.Response {
 	return r.AssertStatus(http.StatusNotAcceptable)
 }
 
-func (r *TestResponseImpl) AssertConflict() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertConflict() contractshttp.Response {
 	return r.AssertStatus(http.StatusConflict)
 }
 
-func (r *TestResponseImpl) AssertRequestTimeout() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertRequestTimeout() contractshttp.Response {
 	return r.AssertStatus(http.StatusRequestTimeout)
 }
 
-func (r *TestResponseImpl) AssertGone() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertGone() contractshttp.Response {
 	return r.AssertStatus(http.StatusGone)
 }
 
-func (r *TestResponseImpl) AssertUnsupportedMediaType() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertUnsupportedMediaType() contractshttp.Response {
 	return r.AssertStatus(http.StatusUnsupportedMediaType)
 }
 
-func (r *TestResponseImpl) AssertUnprocessableEntity() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertUnprocessableEntity() contractshttp.Response {
 	return r.AssertStatus(http.StatusUnprocessableEntity)
 }
 
-func (r *TestResponseImpl) AssertTooManyRequests() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertTooManyRequests() contractshttp.Response {
 	return r.AssertStatus(http.StatusTooManyRequests)
 }
 
-func (r *TestResponseImpl) AssertInternalServerError() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertInternalServerError() contractshttp.Response {
 	return r.AssertStatus(http.StatusInternalServerError)
 }
 
-func (r *TestResponseImpl) AssertServiceUnavailable() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertServiceUnavailable() contractshttp.Response {
 	return r.AssertStatus(http.StatusServiceUnavailable)
 }
 
-func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertHeader(headerName, value string) contractshttp.Response {
 	got := r.getHeader(headerName)
 	assert.NotEmpty(r.t, got, fmt.Sprintf("Header [%s] not present on response.", headerName))
 	if got != "" {
@@ -227,13 +227,13 @@ func (r *TestResponseImpl) AssertHeader(headerName, value string) contractstesti
 	return r
 }
 
-func (r *TestResponseImpl) AssertHeaderMissing(headerName string) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertHeaderMissing(headerName string) contractshttp.Response {
 	got := r.getHeader(headerName)
 	assert.Empty(r.t, got, fmt.Sprintf("Unexpected header [%s] is present on response.", headerName))
 	return r
 }
 
-func (r *TestResponseImpl) AssertCookie(name, value string) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertCookie(name, value string) contractshttp.Response {
 	cookie := r.getCookie(name)
 	assert.NotNil(r.t, cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
@@ -246,7 +246,7 @@ func (r *TestResponseImpl) AssertCookie(name, value string) contractstesting.Tes
 	return r
 }
 
-func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertCookieExpired(name string) contractshttp.Response {
 	cookie := r.getCookie(name)
 	assert.NotNil(r.t, cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
@@ -260,7 +260,7 @@ func (r *TestResponseImpl) AssertCookieExpired(name string) contractstesting.Tes
 	return r
 }
 
-func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractshttp.Response {
 	cookie := r.getCookie(name)
 	assert.NotNil(r.t, cookie, fmt.Sprintf("Cookie [%s] not present on response.", name))
 
@@ -273,25 +273,25 @@ func (r *TestResponseImpl) AssertCookieNotExpired(name string) contractstesting.
 	return r
 }
 
-func (r *TestResponseImpl) AssertCookieMissing(name string) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertCookieMissing(name string) contractshttp.Response {
 	assert.Nil(r.t, r.getCookie(name), fmt.Sprintf("Cookie [%s] is present on response.", name))
 
 	return r
 }
 
-func (r *TestResponseImpl) AssertSuccessful() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertSuccessful() contractshttp.Response {
 	assert.True(r.t, r.IsSuccessful(), fmt.Sprintf("Expected response status code >=200, <300 but received %d.", r.getStatusCode()))
 
 	return r
 }
 
-func (r *TestResponseImpl) AssertServerError() contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertServerError() contractshttp.Response {
 	assert.True(r.t, r.IsServerError(), fmt.Sprintf("Expected response status code >=500, <600 but received %d.", r.getStatusCode()))
 
 	return r
 }
 
-func (r *TestResponseImpl) AssertDontSee(value []string, escaped ...bool) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertDontSee(value []string, escaped ...bool) contractshttp.Response {
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 
@@ -312,7 +312,7 @@ func (r *TestResponseImpl) AssertDontSee(value []string, escaped ...bool) contra
 	return r
 }
 
-func (r *TestResponseImpl) AssertSee(value []string, escaped ...bool) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertSee(value []string, escaped ...bool) contractshttp.Response {
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 
@@ -333,7 +333,7 @@ func (r *TestResponseImpl) AssertSee(value []string, escaped ...bool) contractst
 	return r
 }
 
-func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) contractshttp.Response {
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 
@@ -357,7 +357,7 @@ func (r *TestResponseImpl) AssertSeeInOrder(value []string, escaped ...bool) con
 	return r
 }
 
-func (r *TestResponseImpl) AssertJson(data map[string]any) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertJson(data map[string]any) contractshttp.Response {
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 
@@ -371,14 +371,14 @@ func (r *TestResponseImpl) AssertJson(data map[string]any) contractstesting.Test
 	return r
 }
 
-func (r *TestResponseImpl) AssertExactJson(data map[string]any) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertExactJson(data map[string]any) contractshttp.Response {
 	actual, err := r.Json()
 	assert.Nil(r.t, err)
 	assert.Equal(r.t, data, actual, "The JSON response does not match exactly with the expected content")
 	return r
 }
 
-func (r *TestResponseImpl) AssertJsonMissing(data map[string]any) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertJsonMissing(data map[string]any) contractshttp.Response {
 	actual, err := r.Json()
 	assert.Nil(r.t, err)
 
@@ -391,7 +391,7 @@ func (r *TestResponseImpl) AssertJsonMissing(data map[string]any) contractstesti
 	return r
 }
 
-func (r *TestResponseImpl) AssertFluentJson(callback func(json contractstesting.AssertableJSON)) contractstesting.TestResponse {
+func (r *TestResponseImpl) AssertFluentJson(callback func(json contractshttp.AssertableJSON)) contractshttp.Response {
 	content, err := r.getContent()
 	assert.Nil(r.t, err)
 

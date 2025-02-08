@@ -12,7 +12,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/contracts/session"
-	contractstesting "github.com/goravel/framework/contracts/testing"
+	contractshttp "github.com/goravel/framework/contracts/testing/http"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
@@ -31,7 +31,7 @@ type TestRequest struct {
 	sessionAttributes map[string]any
 }
 
-func NewTestRequest(t *testing.T, json foundation.Json, route route.Route, session session.Manager) contractstesting.TestRequest {
+func NewTestRequest(t *testing.T, json foundation.Json, route route.Route, session session.Manager) contractshttp.Request {
 	return &TestRequest{
 		t:                 t,
 		ctx:               context.Background(),
@@ -44,11 +44,11 @@ func NewTestRequest(t *testing.T, json foundation.Json, route route.Route, sessi
 	}
 }
 
-func (r *TestRequest) Get(uri string) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Get(uri string) (contractshttp.Response, error) {
 	return r.call(http.MethodGet, uri, nil)
 }
 
-func (r *TestRequest) Post(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Post(uri string, body io.Reader) (contractshttp.Response, error) {
 	if r.defaultHeaders["Content-Type"] == "" {
 		r.WithHeader("Content-Type", "application/json")
 	}
@@ -56,7 +56,7 @@ func (r *TestRequest) Post(uri string, body io.Reader) (contractstesting.TestRes
 	return r.call(http.MethodPost, uri, body)
 }
 
-func (r *TestRequest) Put(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Put(uri string, body io.Reader) (contractshttp.Response, error) {
 	if r.defaultHeaders["Content-Type"] == "" {
 		r.WithHeader("Content-Type", "application/json")
 	}
@@ -64,63 +64,63 @@ func (r *TestRequest) Put(uri string, body io.Reader) (contractstesting.TestResp
 	return r.call(http.MethodPut, uri, body)
 }
 
-func (r *TestRequest) Delete(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Delete(uri string, body io.Reader) (contractshttp.Response, error) {
 	return r.call(http.MethodDelete, uri, body)
 }
 
-func (r *TestRequest) Patch(uri string, body io.Reader) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Patch(uri string, body io.Reader) (contractshttp.Response, error) {
 	return r.call(http.MethodPatch, uri, body)
 }
 
-func (r *TestRequest) Head(uri string) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Head(uri string) (contractshttp.Response, error) {
 	return r.call(http.MethodHead, uri, nil)
 }
 
-func (r *TestRequest) Options(uri string) (contractstesting.TestResponse, error) {
+func (r *TestRequest) Options(uri string) (contractshttp.Response, error) {
 	return r.call(http.MethodOptions, uri, nil)
 }
 
-func (r *TestRequest) Bind(value any) contractstesting.TestRequest {
+func (r *TestRequest) Bind(value any) contractshttp.Request {
 	r.bind = value
 	return r
 }
 
-func (r *TestRequest) FlushHeaders() contractstesting.TestRequest {
+func (r *TestRequest) FlushHeaders() contractshttp.Request {
 	r.defaultHeaders = make(map[string]string)
 	return r
 }
 
-func (r *TestRequest) WithHeaders(headers map[string]string) contractstesting.TestRequest {
+func (r *TestRequest) WithHeaders(headers map[string]string) contractshttp.Request {
 	r.defaultHeaders = collect.Merge(r.defaultHeaders, headers)
 	return r
 }
 
-func (r *TestRequest) WithHeader(key, value string) contractstesting.TestRequest {
+func (r *TestRequest) WithHeader(key, value string) contractshttp.Request {
 	maps.Set(r.defaultHeaders, key, value)
 	return r
 }
 
-func (r *TestRequest) WithoutHeader(key string) contractstesting.TestRequest {
+func (r *TestRequest) WithoutHeader(key string) contractshttp.Request {
 	maps.Forget(r.defaultHeaders, key)
 	return r
 }
 
-func (r *TestRequest) WithCookies(cookies map[string]string) contractstesting.TestRequest {
+func (r *TestRequest) WithCookies(cookies map[string]string) contractshttp.Request {
 	r.defaultCookies = collect.Merge(r.defaultCookies, cookies)
 	return r
 }
 
-func (r *TestRequest) WithCookie(key, value string) contractstesting.TestRequest {
+func (r *TestRequest) WithCookie(key, value string) contractshttp.Request {
 	maps.Set(r.defaultCookies, key, value)
 	return r
 }
 
-func (r *TestRequest) WithContext(ctx context.Context) contractstesting.TestRequest {
+func (r *TestRequest) WithContext(ctx context.Context) contractshttp.Request {
 	r.ctx = ctx
 	return r
 }
 
-func (r *TestRequest) WithToken(token string, ttype ...string) contractstesting.TestRequest {
+func (r *TestRequest) WithToken(token string, ttype ...string) contractshttp.Request {
 	tt := "Bearer"
 	if len(ttype) > 0 {
 		tt = ttype[0]
@@ -128,21 +128,21 @@ func (r *TestRequest) WithToken(token string, ttype ...string) contractstesting.
 	return r.WithHeader("Authorization", fmt.Sprintf("%s %s", tt, token))
 }
 
-func (r *TestRequest) WithBasicAuth(username, password string) contractstesting.TestRequest {
+func (r *TestRequest) WithBasicAuth(username, password string) contractshttp.Request {
 	encoded := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
 	return r.WithToken(encoded, "Basic")
 }
 
-func (r *TestRequest) WithoutToken() contractstesting.TestRequest {
+func (r *TestRequest) WithoutToken() contractshttp.Request {
 	return r.WithoutHeader("Authorization")
 }
 
-func (r *TestRequest) WithSession(attributes map[string]any) contractstesting.TestRequest {
+func (r *TestRequest) WithSession(attributes map[string]any) contractshttp.Request {
 	r.sessionAttributes = collect.Merge(r.sessionAttributes, attributes)
 	return r
 }
 
-func (r *TestRequest) call(method string, uri string, body io.Reader) (contractstesting.TestResponse, error) {
+func (r *TestRequest) call(method string, uri string, body io.Reader) (contractshttp.Response, error) {
 	err := r.setSession()
 	if err != nil {
 		return nil, err

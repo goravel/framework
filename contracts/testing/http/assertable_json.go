@@ -1,4 +1,4 @@
-package testing
+package http
 
 type AssertableJSON interface {
 	Count(key string, value int) AssertableJSON
