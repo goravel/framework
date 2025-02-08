@@ -82,6 +82,9 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
+				func(o map[string]any) {
+					o["ctx"] = goravelhttp.NewContext()
+				},
 				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
 					return ErrInvalidData
 				}),
