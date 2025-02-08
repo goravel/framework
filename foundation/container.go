@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/goravel/framework/config"
 	"github.com/goravel/framework/contracts"
 	contractsauth "github.com/goravel/framework/contracts/auth"
 	contractsaccess "github.com/goravel/framework/contracts/auth/access"
@@ -100,7 +99,7 @@ func (c *Container) MakeCache() contractscache.Cache {
 }
 
 func (c *Container) MakeConfig() contractsconfig.Config {
-	instance, err := c.Make(config.Binding)
+	instance, err := c.Make(contracts.BindingConfig)
 	if err != nil {
 		color.Errorln(err)
 		return nil

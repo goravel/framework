@@ -1,6 +1,7 @@
 package contracts
 
 const (
+	BindingConfig      = "goravel.config"
 	BindingConsole     = "goravel.console"
 	BindingAuth        = "goravel.auth"
 	BindingGate        = "goravel.gate"

@@ -1,6 +1,7 @@
 package console
 
 import (
+	"github.com/goravel/framework/console/console"
 	"github.com/goravel/framework/contracts"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
@@ -10,7 +11,7 @@ import (
 type ServiceProvider struct {
 }
 
-func (console *ServiceProvider) Register(app foundation.Application) {
+func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingConsole, func(app foundation.Application) (any, error) {
 		name := "artisan"
 		usage := "Goravel Framework"
@@ -19,11 +20,11 @@ func (console *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (console *ServiceProvider) Boot(app foundation.Application) {
-	console.registerCommands(app)
+func (r *ServiceProvider) Boot(app foundation.Application) {
+	r.registerCommands(app)
 }
 
-func (console *ServiceProvider) registerCommands(app foundation.Application) {
+func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
 		color.Warningln("Artisan Facade is not initialized. Skipping command registration.")
