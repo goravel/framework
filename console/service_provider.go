@@ -11,7 +11,7 @@ import (
 type ServiceProvider struct {
 }
 
-func (r *ServiceProvider) Register(app foundation.Application) {
+func (receiver *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingConsole, func(app foundation.Application) (any, error) {
 		name := "artisan"
 		usage := "Goravel Framework"
@@ -20,11 +20,11 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (r *ServiceProvider) Boot(app foundation.Application) {
-	r.registerCommands(app)
+func (receiver *ServiceProvider) Boot(app foundation.Application) {
+	receiver.registerCommands(app)
 }
 
-func (r *ServiceProvider) registerCommands(app foundation.Application) {
+func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
 	artisanFacade := app.MakeArtisan()
 	if artisanFacade == nil {
 		color.Warningln("Artisan Facade is not initialized. Skipping command registration.")
