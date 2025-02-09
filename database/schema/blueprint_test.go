@@ -661,7 +661,8 @@ func (s *BlueprintTestSuite) TestToSql() {
 			test.setup()
 
 			// Execute ToSql
-			statements := s.blueprint.ToSql(mockGrammar)
+			statements, err := s.blueprint.ToSql(mockGrammar)
+			s.NoError(err)
 
 			// Verify results
 			s.Equal(test.expectedSQL, statements)

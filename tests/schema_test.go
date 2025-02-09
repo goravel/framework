@@ -1851,6 +1851,26 @@ func (s *SchemaSuite) TestPrimary() {
 	}
 }
 
+func (s *SchemaSuite) TestRenameColumn() {
+	for driver, testQuery := range s.driverToTestQuery {
+		s.Run(driver, func() {
+			schema := newSchema(testQuery, s.driverToTestQuery)
+			table := "rename_column"
+
+			s.NoError(schema.Create(table, func(table contractsschema.Blueprint) {
+				table.String("before")
+			}))
+			s.True(schema.HasColumn(table, "before"))
+
+			s.NoError(schema.Table(table, func(table contractsschema.Blueprint) {
+				table.RenameColumn("before", "after")
+			}))
+			s.False(schema.HasColumn(table, "before"))
+			s.True(schema.HasColumn(table, "after"))
+		})
+	}
+}
+
 func (s *SchemaSuite) TestID_Postgres() {
 	if s.driverToTestQuery[postgres.Name] == nil {
 		s.T().Skip("Skip test")
