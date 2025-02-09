@@ -54,7 +54,7 @@ func (s *SeedCommandTestSuite) TestHandle() {
 			setup: func() {
 				s.mockContext.EXPECT().OptionBool("force").Return(false).Once()
 				s.mockConfig.EXPECT().GetString("app.env").Return("production").Once()
-				s.mockContext.EXPECT().Error(errors.DBForceIsRequiredInProduction.Error()).Once()
+				s.mockContext.EXPECT().Error(errors.DatabaseForceIsRequiredInProduction.Error()).Once()
 			},
 		},
 		{
@@ -64,7 +64,7 @@ func (s *SeedCommandTestSuite) TestHandle() {
 				s.mockConfig.EXPECT().GetString("app.env").Return("development").Once()
 				s.mockContext.EXPECT().OptionSlice("seeder").Return([]string{"mock"}).Once()
 				s.mockFacade.EXPECT().GetSeeder("mock").Return(nil).Once()
-				s.mockContext.EXPECT().Error(errors.DBSeederNotFound.Args("mock").Error()).Once()
+				s.mockContext.EXPECT().Error(errors.DatabaseSeederNotFound.Args("mock").Error()).Once()
 			},
 		},
 		{
@@ -86,7 +86,7 @@ func (s *SeedCommandTestSuite) TestHandle() {
 				s.mockFacade.EXPECT().GetSeeder("mock").Return(&MockSeeder{}).Once()
 				s.mockFacade.EXPECT().GetSeeder("mock2").Return(&MockSeeder2{}).Once()
 				s.mockFacade.EXPECT().Call([]seeder.Seeder{&MockSeeder{}, &MockSeeder2{}}).Return(assert.AnError).Once()
-				s.mockContext.EXPECT().Error(errors.DBFailToRunSeeder.Args(assert.AnError).Error()).Once()
+				s.mockContext.EXPECT().Error(errors.DatabaseFailToRunSeeder.Args(assert.AnError).Error()).Once()
 			},
 		},
 	}
@@ -107,7 +107,7 @@ func (s *SeedCommandTestSuite) TestConfirmToProceed() {
 
 	s.mockConfig.EXPECT().GetString("app.env").Return("production").Once()
 	err = s.seedCommand.ConfirmToProceed(false)
-	s.ErrorIs(err, errors.DBForceIsRequiredInProduction)
+	s.ErrorIs(err, errors.DatabaseForceIsRequiredInProduction)
 }
 
 func (s *SeedCommandTestSuite) TestGetSeeders() {

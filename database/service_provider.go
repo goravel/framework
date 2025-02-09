@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/database/console"
 	consolemigration "github.com/goravel/framework/database/console/migration"
+	"github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/migration"
 	databaseorm "github.com/goravel/framework/database/orm"
 	databaseschema "github.com/goravel/framework/database/schema"
@@ -48,6 +49,21 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		return orm, nil
 	})
+
+	app.Singleton(contracts.BindingDB, func(app foundation.Application) (any, error) {
+		config := app.MakeConfig()
+		if config == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleDB)
+		}
+
+		connection := config.GetString("database.default")
+		if connection == "" {
+			return nil, nil
+		}
+
+		return db.BuildDB(config, connection)
+	})
+
 	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
@@ -67,7 +83,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", orm.Name())).(func() (driver.Driver, error))
 		if !exist {
-			return nil, errors.OrmDatabaseConfigNotFound
+			return nil, errors.DatabaseConfigNotFound
 		}
 
 		driver, err := driverCallback()

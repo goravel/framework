@@ -69,7 +69,7 @@ func (r *SeedCommand) Handle(ctx console.Context) error {
 	}
 
 	if err := r.seeder.Call(seeders); err != nil {
-		ctx.Error(errors.DBFailToRunSeeder.Args(err).Error())
+		ctx.Error(errors.DatabaseFailToRunSeeder.Args(err).Error())
 		return nil
 	}
 	ctx.Success("Database seeding completed successfully.")
@@ -83,7 +83,7 @@ func (r *SeedCommand) ConfirmToProceed(force bool) error {
 		return nil
 	}
 
-	return errors.DBForceIsRequiredInProduction
+	return errors.DatabaseForceIsRequiredInProduction
 }
 
 // GetSeeders returns a seeder instances
@@ -95,7 +95,7 @@ func (r *SeedCommand) GetSeeders(names []string) ([]contractsseeder.Seeder, erro
 	for _, name := range names {
 		seeder := r.seeder.GetSeeder(name)
 		if seeder == nil {
-			return nil, errors.DBSeederNotFound.Args(name)
+			return nil, errors.DatabaseSeederNotFound.Args(name)
 		}
 		seeders = append(seeders, seeder)
 	}

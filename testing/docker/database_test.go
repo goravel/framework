@@ -103,7 +103,7 @@ func TestNewDatabase(t *testing.T) {
 				mockApp.EXPECT().MakeArtisan().Return(mockArtisan).Once()
 				mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 			},
-			wantErr: errors.OrmDatabaseConfigNotFound,
+			wantErr: errors.DatabaseConfigNotFound,
 		},
 		{
 			name: "error when artisan facade is not set",

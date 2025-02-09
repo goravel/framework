@@ -5,6 +5,7 @@ go 1.22.7
 toolchain go1.23.6
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250210232304-9ef0c496babc
@@ -18,6 +19,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.4
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/pterm/pterm v0.12.80
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
@@ -33,6 +36,11 @@ require (
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
 	google.golang.org/grpc v1.70.0
 	gorm.io/gorm v1.25.12
+)
+
+require (
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 )
 
 require (

@@ -7,9 +7,11 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	contractsdriver "github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/orm"
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
+	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/docker"
@@ -27,20 +29,27 @@ import (
 
 type TestQuery struct {
 	config config.Config
+	db     contractsdb.DB
 	driver contractsdriver.Driver
 	query  orm.Query
 }
 
 func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config config.Config) (*TestQuery, error) {
-	db, gormQuery, err := driver.Gorm()
+	query, gormQuery, err := driver.Gorm()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := driver.DB()
 	if err != nil {
 		return nil, err
 	}
 
 	testQuery := &TestQuery{
 		config: config,
+		db:     databasedb.NewDB(db),
 		driver: driver,
-		query:  gorm.NewQuery(ctx, config, driver.Config(), db, gormQuery, utils.NewTestLog(), nil, nil),
+		query:  gorm.NewQuery(ctx, config, driver.Config(), query, gormQuery, utils.NewTestLog(), nil, nil),
 	}
 
 	return testQuery, nil
@@ -64,6 +73,10 @@ func (r *TestQuery) CreateTable(testTables ...TestTable) {
 
 func (r *TestQuery) Config() config.Config {
 	return r.config
+}
+
+func (r *TestQuery) DB() contractsdb.DB {
+	return r.db
 }
 
 func (r *TestQuery) Driver() contractsdriver.Driver {
