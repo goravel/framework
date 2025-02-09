@@ -1,17 +1,16 @@
 package grpc
 
 import (
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
 
-const Binding = "goravel.grpc"
-
 type ServiceProvider struct {
 }
 
-func (route *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+func (grpc *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(contracts.BindingGrpc, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleGrpc)
@@ -21,5 +20,5 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (route *ServiceProvider) Boot(app foundation.Application) {
+func (grpc *ServiceProvider) Boot(app foundation.Application) {
 }

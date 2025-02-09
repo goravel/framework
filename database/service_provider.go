@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 
+	"github.com/goravel/framework/contracts"
 	contractsconsole "github.com/goravel/framework/contracts/console"
 	contractsmigration "github.com/goravel/framework/contracts/database/migration"
 	"github.com/goravel/framework/contracts/foundation"
@@ -20,7 +21,7 @@ type ServiceProvider struct {
 }
 
 func (r *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(databaseorm.BindingOrm, func(app foundation.Application) (any, error) {
+	app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
 		ctx := context.Background()
 		config := app.MakeConfig()
 		if config == nil {
@@ -46,7 +47,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		return orm, nil
 	})
-	app.Singleton(databaseschema.BindingSchema, func(app foundation.Application) (any, error) {
+	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSchema)
@@ -65,7 +66,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 
 		return databaseschema.NewSchema(config, log, orm, nil), nil
 	})
-	app.Singleton(databaseseeder.BindingSeeder, func(app foundation.Application) (any, error) {
+	app.Singleton(contracts.BindingSeeder, func(app foundation.Application) (any, error) {
 		return databaseseeder.NewSeederFacade(), nil
 	})
 }

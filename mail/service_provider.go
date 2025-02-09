@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"github.com/goravel/framework/contracts"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/queue"
@@ -9,13 +10,11 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
-const Binding = "goravel.mail"
-
 type ServiceProvider struct {
 }
 
-func (route *ServiceProvider) Register(app foundation.Application) {
-	app.Bind(Binding, func(app foundation.Application) (any, error) {
+func (mail *ServiceProvider) Register(app foundation.Application) {
+	app.Bind(contracts.BindingMail, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleMail)
@@ -29,15 +28,15 @@ func (route *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (route *ServiceProvider) Boot(app foundation.Application) {
+func (mail *ServiceProvider) Boot(app foundation.Application) {
 	app.Commands([]consolecontract.Command{
 		console.NewMailMakeCommand(),
 	})
 
-	route.registerJobs(app)
+	mail.registerJobs(app)
 }
 
-func (route *ServiceProvider) registerJobs(app foundation.Application) {
+func (mail *ServiceProvider) registerJobs(app foundation.Application) {
 	queueFacade := app.MakeQueue()
 	if queueFacade == nil {
 		color.Warningln("Queue Facade is not initialized. Skipping job registration.")

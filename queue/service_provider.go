@@ -1,19 +1,18 @@
 package queue
 
 import (
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	queueConsole "github.com/goravel/framework/queue/console"
 )
 
-const Binding = "goravel.queue"
-
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+func (queue *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(contracts.BindingQueue, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleQueue)
@@ -28,7 +27,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (receiver *ServiceProvider) Boot(app foundation.Application) {
+func (queue *ServiceProvider) Boot(app foundation.Application) {
 	app.Commands([]console.Command{
 		&queueConsole.JobMakeCommand{},
 	})

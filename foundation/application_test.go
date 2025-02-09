@@ -12,11 +12,11 @@ import (
 	"github.com/goravel/framework/cache"
 	frameworkconfig "github.com/goravel/framework/config"
 	"github.com/goravel/framework/console"
+	"github.com/goravel/framework/contracts"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/crypt"
 	"github.com/goravel/framework/database"
-	"github.com/goravel/framework/database/orm"
 	"github.com/goravel/framework/event"
 	"github.com/goravel/framework/filesystem"
 	"github.com/goravel/framework/foundation/json"
@@ -88,7 +88,7 @@ func (s *ApplicationTestSuite) TestLangPath() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("test").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -154,13 +154,13 @@ func (s *ApplicationTestSuite) TestMakeAuth() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("auth.defaults.guard").Return("user").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingCache, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
-	s.app.Singleton(orm.BindingOrm, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingOrm, func(app foundation.Application) (any, error) {
 		return &mocksorm.Orm{}, nil
 	})
 
@@ -176,10 +176,10 @@ func (s *ApplicationTestSuite) TestMakeCache() {
 	mockConfig.EXPECT().GetString("cache.stores.memory.driver").Return("memory").Once()
 	mockConfig.EXPECT().GetString("cache.prefix").Return("goravel").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -200,7 +200,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetString("app.key").Return("12345678901234567890123456789012").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.SetJson(json.NewJson())
@@ -212,7 +212,7 @@ func (s *ApplicationTestSuite) TestMakeCrypt() {
 }
 
 func (s *ApplicationTestSuite) TestMakeEvent() {
-	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingQueue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
 
@@ -230,7 +230,7 @@ func (s *ApplicationTestSuite) TestMakeGate() {
 }
 
 func (s *ApplicationTestSuite) TestMakeGrpc() {
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
 
@@ -247,7 +247,7 @@ func (s *ApplicationTestSuite) TestMakeHash() {
 	mockConfig.EXPECT().GetInt("hashing.argon2id.memory", 65536).Return(65536).Once()
 	mockConfig.EXPECT().GetInt("hashing.argon2id.threads", 1).Return(1).Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -263,10 +263,10 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 	mockConfig.EXPECT().GetString("app.fallback_locale").Return("en").Once()
 	mockConfig.EXPECT().GetString("app.lang_path", "lang").Return("lang").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -279,7 +279,7 @@ func (s *ApplicationTestSuite) TestMakeLang() {
 
 func (s *ApplicationTestSuite) TestMakeLog() {
 	mockConfig := mocksconfig.NewConfig(s.T())
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -294,10 +294,10 @@ func (s *ApplicationTestSuite) TestMakeLog() {
 }
 
 func (s *ApplicationTestSuite) TestMakeMail() {
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
-	s.app.Singleton(queue.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingQueue, func(app foundation.Application) (any, error) {
 		return &mocksqueue.Queue{}, nil
 	})
 
@@ -341,11 +341,11 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 	mockConfig.EXPECT().GetInt("database.pool.conn_max_idletime", 3600).Return(3600).Once()
 	mockConfig.EXPECT().GetInt("database.pool.conn_max_lifetime", 3600).Return(3600).Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -356,11 +356,11 @@ func (s *ApplicationTestSuite) TestMakeOrm() {
 }
 
 func (s *ApplicationTestSuite) TestMakeQueue() {
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return &mocksconfig.Config{}, nil
 	})
 
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
 
@@ -380,7 +380,7 @@ func (s *ApplicationTestSuite) TestMakeRateLimiter() {
 func (s *ApplicationTestSuite) TestMakeRoute() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
@@ -395,16 +395,16 @@ func (s *ApplicationTestSuite) TestMakeSchedule() {
 	mockConfig := mocksconfig.NewConfig(s.T())
 	mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
-	s.app.Singleton(console.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConsole, func(app foundation.Application) (any, error) {
 		return &mocksconsole.Artisan{}, nil
 	})
-	s.app.Singleton(frameworklog.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingLog, func(app foundation.Application) (any, error) {
 		return &mockslog.Log{}, nil
 	})
-	s.app.Singleton(cache.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingCache, func(app foundation.Application) (any, error) {
 		return &mockscache.Cache{}, nil
 	})
 
@@ -420,7 +420,7 @@ func (s *ApplicationTestSuite) TestMakeSession() {
 	mockConfig.EXPECT().GetInt("session.gc_interval", 30).Return(30).Once()
 	mockConfig.EXPECT().GetString("session.files").Return("storage/framework/sessions").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 	s.app.SetJson(json.NewJson())
@@ -440,7 +440,7 @@ func (s *ApplicationTestSuite) TestMakeStorage() {
 	mockConfig.EXPECT().GetString("filesystems.disks.local.root").Return("").Once()
 	mockConfig.EXPECT().GetString("filesystems.disks.local.url").Return("").Once()
 
-	s.app.Singleton(frameworkconfig.Binding, func(app foundation.Application) (any, error) {
+	s.app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
 		return mockConfig, nil
 	})
 
