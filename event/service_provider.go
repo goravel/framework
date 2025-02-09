@@ -1,19 +1,18 @@
 package event
 
 import (
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 	eventConsole "github.com/goravel/framework/event/console"
 )
 
-const Binding = "goravel.event"
-
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+func (r *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(contracts.BindingEvent, func(app foundation.Application) (any, error) {
 		queueFacade := app.MakeQueue()
 		if queueFacade == nil {
 			return nil, errors.QueueFacadeNotSet.SetModule(errors.ModuleEvent)
@@ -23,11 +22,11 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (receiver *ServiceProvider) Boot(app foundation.Application) {
-	receiver.registerCommands(app)
+func (r *ServiceProvider) Boot(app foundation.Application) {
+	r.registerCommands(app)
 }
 
-func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
+func (r *ServiceProvider) registerCommands(app foundation.Application) {
 	app.Commands([]console.Command{
 		&eventConsole.EventMakeCommand{},
 		&eventConsole.ListenerMakeCommand{},
