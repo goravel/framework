@@ -55,6 +55,8 @@ type Grammar interface {
 	CompileRenameIndex(schema Schema, blueprint Blueprint, command *Command) []string
 	// CompileTables Compile the query to determine the tables.
 	CompileTables(database string) string
+	// CompileTableComment Compile a table comment command.
+	CompileTableComment(blueprint Blueprint, command *Command) string
 	// CompileTypes Compile the query to determine the types.
 	CompileTypes() string
 	// CompileUnique Compile a unique key command.
