@@ -1401,6 +1401,52 @@ func (_c *Query_Join_Call) RunAndReturn(run func(string, ...interface{}) orm.Que
 	return _c
 }
 
+// Last provides a mock function with given fields: dest
+func (_m *Query) Last(dest interface{}) error {
+	ret := _m.Called(dest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Last")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Last_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Last'
+type Query_Last_Call struct {
+	*mock.Call
+}
+
+// Last is a helper method to define mock.On call
+//   - dest interface{}
+func (_e *Query_Expecter) Last(dest interface{}) *Query_Last_Call {
+	return &Query_Last_Call{Call: _e.mock.On("Last", dest)}
+}
+
+func (_c *Query_Last_Call) Run(run func(dest interface{})) *Query_Last_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_Last_Call) Return(_a0 error) *Query_Last_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Last_Call) RunAndReturn(run func(interface{}) error) *Query_Last_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Limit provides a mock function with given fields: limit
 func (_m *Query) Limit(limit int) orm.Query {
 	ret := _m.Called(limit)
@@ -2907,6 +2953,52 @@ func (_c *Query_Table_Call) Return(_a0 orm.Query) *Query_Table_Call {
 }
 
 func (_c *Query_Table_Call) RunAndReturn(run func(string, ...interface{}) orm.Query) *Query_Table_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Take provides a mock function with given fields: dest
+func (_m *Query) Take(dest interface{}) error {
+	ret := _m.Called(dest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Take")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Take_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Take'
+type Query_Take_Call struct {
+	*mock.Call
+}
+
+// Take is a helper method to define mock.On call
+//   - dest interface{}
+func (_e *Query_Expecter) Take(dest interface{}) *Query_Take_Call {
+	return &Query_Take_Call{Call: _e.mock.On("Take", dest)}
+}
+
+func (_c *Query_Take_Call) Run(run func(dest interface{})) *Query_Take_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_Take_Call) Return(_a0 error) *Query_Take_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Take_Call) RunAndReturn(run func(interface{}) error) *Query_Take_Call {
 	_c.Call.Return(run)
 	return _c
 }
