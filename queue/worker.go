@@ -65,10 +65,13 @@ func (r *Worker) Run() error {
 					}
 
 					time.Sleep(r.currentDelay)
-					r.currentDelay *= 2
-					if r.currentDelay > r.maxDelay {
-						r.currentDelay = r.maxDelay
+					if !errors.Is(err, errors.QueueDriverNoJobFound) {
+						r.currentDelay *= 2
+						if r.currentDelay > r.maxDelay {
+							r.currentDelay = r.maxDelay
+						}
 					}
+
 					continue
 				}
 
