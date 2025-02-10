@@ -7,7 +7,7 @@ toolchain go1.23.6
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
-	github.com/goravel/mysql v0.0.0-20250207111224-4bae3e237ee0
+	github.com/goravel/mysql v0.0.0-20250210011254-9206b07db4b9
 	github.com/goravel/postgres v0.0.2-0.20250209093646-f147df26ffa6
 	github.com/goravel/sqlite v0.0.0-20250209093531-a5c49bfab180
 	github.com/goravel/sqlserver v0.0.0-20250209093547-712da67f16de
@@ -21,6 +21,7 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
