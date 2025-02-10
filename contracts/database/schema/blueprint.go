@@ -17,7 +17,7 @@ type Blueprint interface {
 	Char(column string, length ...int) ColumnDefinition
 	// Column Create a new custom type column on the table.
 	Column(column string, ttype string) ColumnDefinition
-	// Comment Add a comment to the table.
+	// Comment Add a comment to the table. (MySQL / PostgreSQL)
 	Comment(value string)
 	// Create Indicate that the table needs to be created.
 	Create()
