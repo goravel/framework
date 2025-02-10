@@ -62,15 +62,14 @@ func (r *Worker) Run() error {
 				if err != nil {
 					if !errors.Is(err, errors.QueueDriverNoJobFound) {
 						LogFacade.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
-					}
 
-					time.Sleep(r.currentDelay)
-					if !errors.Is(err, errors.QueueDriverNoJobFound) {
 						r.currentDelay *= 2
 						if r.currentDelay > r.maxDelay {
 							r.currentDelay = r.maxDelay
 						}
 					}
+
+					time.Sleep(r.currentDelay)
 
 					continue
 				}
