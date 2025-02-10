@@ -1283,6 +1283,53 @@ func (_c *Grammar_CompileRenameIndex_Call) RunAndReturn(run func(schema.Schema, 
 	return _c
 }
 
+// CompileTableComment provides a mock function with given fields: blueprint, command
+func (_m *Grammar) CompileTableComment(blueprint schema.Blueprint, command *schema.Command) string {
+	ret := _m.Called(blueprint, command)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CompileTableComment")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(schema.Blueprint, *schema.Command) string); ok {
+		r0 = rf(blueprint, command)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Grammar_CompileTableComment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CompileTableComment'
+type Grammar_CompileTableComment_Call struct {
+	*mock.Call
+}
+
+// CompileTableComment is a helper method to define mock.On call
+//   - blueprint schema.Blueprint
+//   - command *schema.Command
+func (_e *Grammar_Expecter) CompileTableComment(blueprint interface{}, command interface{}) *Grammar_CompileTableComment_Call {
+	return &Grammar_CompileTableComment_Call{Call: _e.mock.On("CompileTableComment", blueprint, command)}
+}
+
+func (_c *Grammar_CompileTableComment_Call) Run(run func(blueprint schema.Blueprint, command *schema.Command)) *Grammar_CompileTableComment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(schema.Blueprint), args[1].(*schema.Command))
+	})
+	return _c
+}
+
+func (_c *Grammar_CompileTableComment_Call) Return(_a0 string) *Grammar_CompileTableComment_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Grammar_CompileTableComment_Call) RunAndReturn(run func(schema.Blueprint, *schema.Command) string) *Grammar_CompileTableComment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CompileTables provides a mock function with given fields: database
 func (_m *Grammar) CompileTables(database string) string {
 	ret := _m.Called(database)

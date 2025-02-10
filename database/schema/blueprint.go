@@ -29,6 +29,7 @@ const (
 	CommandRename       = "rename"
 	CommandRenameColumn = "renameColumn"
 	CommandRenameIndex  = "renameIndex"
+	CommandTableComment = "tableComment"
 	CommandUnique       = "unique"
 	DefaultStringLength = 255
 )
@@ -90,6 +91,13 @@ func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
 
 func (r *Blueprint) Column(column, ttype string) schema.ColumnDefinition {
 	return r.createAndAddColumn(ttype, column)
+}
+
+func (r *Blueprint) Comment(comment string) {
+	r.addCommand(&schema.Command{
+		Name:  CommandTableComment,
+		Value: comment,
+	})
 }
 
 func (r *Blueprint) Create() {
@@ -527,6 +535,10 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) ([]string, error) {
 			statements = append(statements, statement)
 		case CommandRenameIndex:
 			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command)...)
+		case CommandTableComment:
+			if statement := grammar.CompileTableComment(r, command); statement != "" {
+				statements = append(statements, statement)
+			}
 		case CommandUnique:
 			statements = append(statements, grammar.CompileUnique(r, command))
 		}
