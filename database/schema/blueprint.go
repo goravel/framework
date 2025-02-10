@@ -27,7 +27,9 @@ const (
 	CommandIndex        = "index"
 	CommandPrimary      = "primary"
 	CommandRename       = "rename"
+	CommandRenameColumn = "renameColumn"
 	CommandRenameIndex  = "renameIndex"
+	CommandTableComment = "tableComment"
 	CommandUnique       = "unique"
 	DefaultStringLength = 255
 )
@@ -61,8 +63,13 @@ func (r *Blueprint) Boolean(column string) schema.ColumnDefinition {
 }
 
 func (r *Blueprint) Build(query orm.Query, grammar schema.Grammar) error {
-	for _, sql := range r.ToSql(grammar) {
-		if _, err := query.Exec(sql); err != nil {
+	statements, err := r.ToSql(grammar)
+	if err != nil {
+		return err
+	}
+
+	for _, sql := range statements {
+		if _, err = query.Exec(sql); err != nil {
 			return err
 		}
 	}
@@ -84,6 +91,13 @@ func (r *Blueprint) Char(column string, length ...int) schema.ColumnDefinition {
 
 func (r *Blueprint) Column(column, ttype string) schema.ColumnDefinition {
 	return r.createAndAddColumn(ttype, column)
+}
+
+func (r *Blueprint) Comment(comment string) {
+	r.addCommand(&schema.Command{
+		Name:  CommandTableComment,
+		Value: comment,
+	})
 }
 
 func (r *Blueprint) Create() {
@@ -335,6 +349,16 @@ func (r *Blueprint) Rename(to string) {
 	r.addCommand(command)
 }
 
+func (r *Blueprint) RenameColumn(from, to string) {
+	command := &schema.Command{
+		Name: CommandRenameColumn,
+		From: from,
+		To:   to,
+	}
+
+	r.addCommand(command)
+}
+
 func (r *Blueprint) RenameIndex(from, to string) {
 	command := &schema.Command{
 		Name: CommandRenameIndex,
@@ -449,7 +473,7 @@ func (r *Blueprint) TinyText(column string) schema.ColumnDefinition {
 	return r.createAndAddColumn("tinyText", column)
 }
 
-func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
+func (r *Blueprint) ToSql(grammar schema.Grammar) ([]string, error) {
 	r.addImpliedCommands(grammar)
 
 	var statements []string
@@ -503,14 +527,24 @@ func (r *Blueprint) ToSql(grammar schema.Grammar) []string {
 			statements = append(statements, grammar.CompilePrimary(r, command))
 		case CommandRename:
 			statements = append(statements, grammar.CompileRename(r, command))
+		case CommandRenameColumn:
+			statement, err := grammar.CompileRenameColumn(r.schema, r, command)
+			if err != nil {
+				return statements, err
+			}
+			statements = append(statements, statement)
 		case CommandRenameIndex:
 			statements = append(statements, grammar.CompileRenameIndex(r.schema, r, command)...)
+		case CommandTableComment:
+			if statement := grammar.CompileTableComment(r, command); statement != "" {
+				statements = append(statements, statement)
+			}
 		case CommandUnique:
 			statements = append(statements, grammar.CompileUnique(r, command))
 		}
 	}
 
-	return statements
+	return statements, nil
 }
 
 func (r *Blueprint) Unique(column ...string) schema.IndexDefinition {

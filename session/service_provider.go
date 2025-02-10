@@ -1,6 +1,7 @@
 package session
 
 import (
+	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/session"
@@ -12,13 +13,11 @@ var (
 	ConfigFacade  config.Config
 )
 
-const Binding = "goravel.session"
-
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+func (r *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(contracts.BindingSession, func(app foundation.Application) (any, error) {
 		c := app.MakeConfig()
 		if c == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleSession)
@@ -33,7 +32,7 @@ func (receiver *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (receiver *ServiceProvider) Boot(app foundation.Application) {
+func (r *ServiceProvider) Boot(app foundation.Application) {
 	SessionFacade = app.MakeSession()
 	ConfigFacade = app.MakeConfig()
 }

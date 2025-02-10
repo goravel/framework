@@ -1,13 +1,12 @@
 package filesystem
 
 import (
+	"github.com/goravel/framework/contracts"
 	configcontract "github.com/goravel/framework/contracts/config"
 	filesystemcontract "github.com/goravel/framework/contracts/filesystem"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
 )
-
-const Binding = "goravel.filesystem"
 
 var (
 	ConfigFacade  configcontract.Config
@@ -17,8 +16,8 @@ var (
 type ServiceProvider struct {
 }
 
-func (database *ServiceProvider) Register(app foundation.Application) {
-	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+func (r *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(contracts.BindingFilesystem, func(app foundation.Application) (any, error) {
 		config := app.MakeConfig()
 		if config == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleFilesystem)
@@ -28,7 +27,7 @@ func (database *ServiceProvider) Register(app foundation.Application) {
 	})
 }
 
-func (database *ServiceProvider) Boot(app foundation.Application) {
+func (r *ServiceProvider) Boot(app foundation.Application) {
 	ConfigFacade = app.MakeConfig()
 	StorageFacade = app.MakeStorage()
 }

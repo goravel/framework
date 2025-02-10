@@ -51,7 +51,11 @@ func (r *TestQuery) CreateTable(testTables ...TestTable) {
 
 	for table, sql := range newTestTables(driverName, r.Driver().Grammar()).All() {
 		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
-			if _, err := r.query.Exec(sql()); err != nil {
+			statements, err := sql()
+			if err == nil {
+				_, err = r.query.Exec(statements[0])
+			}
+			if err != nil {
 				panic(fmt.Sprintf("create table %v failed: %v", table, err))
 			}
 		}
