@@ -7,10 +7,10 @@ toolchain go1.23.6
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
-	github.com/goravel/mysql v0.0.0-20250210011254-9206b07db4b9
-	github.com/goravel/postgres v0.0.2-0.20250209093646-f147df26ffa6
-	github.com/goravel/sqlite v0.0.0-20250209093531-a5c49bfab180
-	github.com/goravel/sqlserver v0.0.0-20250209093547-712da67f16de
+	github.com/goravel/mysql v0.0.0-20250210074846-5e7ae5bdeda5
+	github.com/goravel/postgres v0.0.2-0.20250210074923-55c799056495
+	github.com/goravel/sqlite v0.0.0-20250210074940-7a05cbb1dd50
+	github.com/goravel/sqlserver v0.0.0-20250210074958-b94e2314a481
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	gorm.io/gorm v1.25.12
