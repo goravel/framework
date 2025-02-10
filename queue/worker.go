@@ -21,6 +21,8 @@ type Worker struct {
 	job           queue.JobRepository
 	queue         string
 	wg            sync.WaitGroup
+	currentDelay  time.Duration
+	maxDelay      time.Duration
 }
 
 func NewWorker(config queue.Config, concurrent int, connection string, queue string, job queue.JobRepository) *Worker {
@@ -31,6 +33,8 @@ func NewWorker(config queue.Config, concurrent int, connection string, queue str
 		job:           job,
 		queue:         queue,
 		failedJobChan: make(chan FailedJob, concurrent),
+		currentDelay:  1 * time.Second,
+		maxDelay:      32 * time.Second,
 	}
 }
 
@@ -56,9 +60,21 @@ func (r *Worker) Run() error {
 
 				job, args, err := driver.Pop(r.queue)
 				if err != nil {
-					time.Sleep(1 * time.Second)
+					if !errors.Is(err, errors.QueueDriverNoJobFound) {
+						LogFacade.Error(errors.QueueDriverFailedToPop.Args(r.queue, err))
+
+						r.currentDelay *= 2
+						if r.currentDelay > r.maxDelay {
+							r.currentDelay = r.maxDelay
+						}
+					}
+
+					time.Sleep(r.currentDelay)
+
 					continue
 				}
+
+				r.currentDelay = 1 * time.Second
 
 				if err = r.job.Call(job.Signature(), args); err != nil {
 					r.failedJobChan <- FailedJob{
