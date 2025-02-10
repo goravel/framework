@@ -58,7 +58,7 @@ func (r *Async) Later(delay time.Time, job contractsqueue.Job, args []any, queue
 func (r *Async) Pop(queue string) (contractsqueue.Job, []any, error) {
 	ch, ok := asyncQueues.Load(queue)
 	if !ok {
-		return nil, nil, errors.QueueDriverAsyncNoJobFound.Args(queue)
+		return nil, nil, errors.QueueDriverNoJobFound.Args(queue)
 	}
 
 	queueChan := ch.(chan contractsqueue.Jobs)
@@ -66,7 +66,7 @@ func (r *Async) Pop(queue string) (contractsqueue.Job, []any, error) {
 	case job := <-queueChan:
 		return job.Job, job.Args, nil
 	default:
-		return nil, nil, errors.QueueDriverAsyncNoJobFound.Args(queue)
+		return nil, nil, errors.QueueDriverNoJobFound.Args(queue)
 	}
 }
 
