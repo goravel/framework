@@ -17,6 +17,8 @@ type Blueprint interface {
 	Char(column string, length ...int) ColumnDefinition
 	// Column Create a new custom type column on the table.
 	Column(column string, ttype string) ColumnDefinition
+	// Comment Add a comment to the table.
+	Comment(value string)
 	// Create Indicate that the table needs to be created.
 	Create()
 	// Date Create a new date column on the table.

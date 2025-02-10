@@ -324,6 +324,39 @@ func (_c *Blueprint_Column_Call) RunAndReturn(run func(string, string) schema.Co
 	return _c
 }
 
+// Comment provides a mock function with given fields: value
+func (_m *Blueprint) Comment(value string) {
+	_m.Called(value)
+}
+
+// Blueprint_Comment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Comment'
+type Blueprint_Comment_Call struct {
+	*mock.Call
+}
+
+// Comment is a helper method to define mock.On call
+//   - value string
+func (_e *Blueprint_Expecter) Comment(value interface{}) *Blueprint_Comment_Call {
+	return &Blueprint_Comment_Call{Call: _e.mock.On("Comment", value)}
+}
+
+func (_c *Blueprint_Comment_Call) Run(run func(value string)) *Blueprint_Comment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Blueprint_Comment_Call) Return() *Blueprint_Comment_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Blueprint_Comment_Call) RunAndReturn(run func(string)) *Blueprint_Comment_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Create provides a mock function with no fields
 func (_m *Blueprint) Create() {
 	_m.Called()
