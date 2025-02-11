@@ -69,16 +69,6 @@ var colorsFuncMap = template.FuncMap{
 	"yellow":  color.Yellow().Sprint,
 }
 
-var (
-	noANSI     bool
-	noANSIFlag = &cli.BoolFlag{
-		Name:               "no-ansi",
-		Destination:        &noANSI,
-		DisableDefaultText: true,
-		Usage:              "Force disable ANSI output",
-	}
-)
-
 func capitalize(s string) string {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -286,7 +276,7 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 	}
 
 	if noANSI || env.IsNoANSI() {
-		color.DisableColor()
+		color.Disable()
 	}
 	err := t.Execute(w, data)
 	if err != nil {

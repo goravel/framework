@@ -12,6 +12,16 @@ import (
 	"github.com/goravel/framework/support/env"
 )
 
+var (
+	noANSI     bool
+	noANSIFlag = &cli.BoolFlag{
+		Name:               "no-ansi",
+		Destination:        &noANSI,
+		DisableDefaultText: true,
+		Usage:              "Force disable ANSI output",
+	}
+)
+
 type Application struct {
 	instance   *cli.App
 	useArtisan bool
@@ -86,7 +96,7 @@ func (r *Application) CallAndExit(command string) {
 // Run a command. Args come from os.Args.
 func (r *Application) Run(args []string, exitIfArtisan bool) error {
 	if noANSI || env.IsNoANSI() {
-		color.DisableColor()
+		color.Disable()
 	}
 
 	artisanIndex := -1
