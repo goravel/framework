@@ -7,7 +7,7 @@ toolchain go1.23.6
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
-	github.com/charmbracelet/huh/spinner v0.0.0-20250207133237-2eba4f31bf81
+	github.com/charmbracelet/huh/spinner v0.0.0-20250210232304-9ef0c496babc
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dromara/carbon/v2 v2.5.2
