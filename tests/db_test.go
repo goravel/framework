@@ -1,10 +1,8 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,14 +36,10 @@ func (s *DBTestSuite) TearDownSuite() {
 
 func (s *DBTestSuite) TestWhere() {
 	for driver, query := range s.queries {
-		if driver != postgres.Name {
-			continue
-		}
 		s.Run(driver, func() {
 			var user []User
 			err := query.DB().Table("users").Where("name = ?", "count_user").Get(&user)
 			s.NoError(err)
-			fmt.Println(user)
 		})
 	}
 }

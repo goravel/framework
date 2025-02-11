@@ -20,7 +20,6 @@ require (
 	github.com/gookit/validate v1.5.4
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/lib/pq v1.10.9
 	github.com/pterm/pterm v0.12.80
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5

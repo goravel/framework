@@ -25,6 +25,7 @@ import (
 	sqlitecontracts "github.com/goravel/sqlite/contracts"
 	"github.com/goravel/sqlserver"
 	sqlservercontracts "github.com/goravel/sqlserver/contracts"
+	"github.com/jmoiron/sqlx"
 )
 
 type TestQuery struct {
@@ -47,7 +48,7 @@ func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config con
 
 	testQuery := &TestQuery{
 		config: config,
-		db:     databasedb.NewDB(db),
+		db:     databasedb.NewDB(driver.Config(), sqlx.NewDb(db, driver.Config().Driver)),
 		driver: driver,
 		query:  gorm.NewQuery(ctx, config, driver.Config(), query, gormQuery, utils.NewTestLog(), nil, nil),
 	}

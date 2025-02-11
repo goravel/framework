@@ -1,7 +1,8 @@
 package driver
 
 import (
-	"github.com/jmoiron/sqlx"
+	"database/sql"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -12,7 +13,7 @@ import (
 
 type Driver interface {
 	Config() database.Config
-	DB() (*sqlx.DB, error)
+	DB() (*sql.DB, error)
 	Docker() (docker.DatabaseDriver, error)
 	Gorm() (*gorm.DB, GormQuery, error)
 	Grammar() schema.Grammar
