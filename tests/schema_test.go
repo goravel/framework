@@ -115,13 +115,21 @@ func (s *SchemaSuite) TestColumnChange() {
 				table.String("change_add_default").Default("goravel").Change()
 				table.String("change_remove_default").Change()
 				table.String("change_modify_default").Default("goravel_again").Change()
-				table.String("change_add_comment").Comment("goravel").Change()
+				table.String("change_add_comment").Comment("goravel").After("change_type").Change()
 				table.String("change_remove_comment").Change()
-				table.String("change_modify_comment").Comment("goravel_again").Change()
+				table.String("change_modify_comment").Comment("goravel_again").First().Change()
 			}))
 			columns, err = schema.GetColumns(table)
 			s.Require().Nil(err)
-			for _, column := range columns {
+			for i, column := range columns {
+				if driver == mysql.Name {
+					if i == 0 {
+						s.Equal(column.Name, "change_modify_comment")
+					}
+					if column.Name == "change_type" {
+						s.Equal(columns[i+1].Name, "change_add_comment")
+					}
+				}
 				if column.Name == "change_length" {
 					s.Contains(column.Type, fmt.Sprintf("(%d)", expectedCustomStringLength))
 				}
