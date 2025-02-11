@@ -106,7 +106,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 				`Usage:
    test
 
-Options:
+Global options:
    -h, --help       Show help
        --no-ansi    Force disable ANSI output
    -v, --version    Print the version`,
