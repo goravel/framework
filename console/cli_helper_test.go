@@ -27,7 +27,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 			name: "print app help",
 			containsOutput: []string{
 				color.Yellow().Sprint("Usage:"),
-				color.Yellow().Sprint("Options:"),
+				color.Yellow().Sprint("Global options:"),
 				color.Yellow().Sprint("Available commands:"),
 				color.Yellow().Sprint("test"),
 				color.Green().Sprint("test:foo"),
@@ -106,7 +106,7 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 				`Usage:
    test
 
-Options:
+Global options:
    -h, --help       Show help
        --no-ansi    Force disable ANSI output
    -v, --version    Print the version`,

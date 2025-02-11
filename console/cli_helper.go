@@ -34,7 +34,7 @@ var (
 {{ yellow "Usage:" }}
    {{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{end}}{{if .VisibleFlags}}
 
-{{ yellow "Options:" }}{{template "flagTemplate" .}}{{end}}{{if .VisibleCommands}}
+{{ yellow "Global options:" }}{{template "flagTemplate" .}}{{end}}{{if .VisibleCommands}}
 
 {{ yellow "Available commands:" }}{{template "commandTemplate" .}}{{end}}
 `
