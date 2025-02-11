@@ -24,11 +24,12 @@ type Flag interface {
 }
 
 type BoolFlag struct {
-	Name     string
-	Aliases  []string
-	Usage    string
-	Required bool
-	Value    bool
+	Name               string
+	Aliases            []string
+	DisableDefaultText bool
+	Usage              string
+	Required           bool
+	Value              bool
 }
 
 func (receiver *BoolFlag) Type() string {
