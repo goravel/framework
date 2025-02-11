@@ -2,7 +2,7 @@ package database
 
 type Config struct {
 	Connection        string
-	DNS               string
+	DSN               string
 	Database          string
 	Driver            string
 	Host              string
