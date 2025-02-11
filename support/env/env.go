@@ -66,6 +66,17 @@ func IsLinux() bool {
 	return runtime.GOOS == "linux"
 }
 
+// IsNoANSI checks if the application is running with the --no-ansi flag.
+func IsNoANSI() bool {
+	for _, arg := range os.Args {
+		if arg == "--no-ansi" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsTesting checks if the application is running in testing mode.
 func IsTesting() bool {
 	for _, arg := range os.Args {

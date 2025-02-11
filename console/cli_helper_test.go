@@ -98,6 +98,20 @@ func TestShowCommandHelp_HelpPrinterCustom(t *testing.T) {
 				color.Red().Sprint("Invalid value 'not-a-number' for option 'int'."),
 			},
 		},
+		{
+			name: "no ansi color",
+			call: "--no-ansi",
+			containsOutput: []string{
+				"test test",
+				`Usage:
+   test
+
+Options:
+   -h, --help       Show help
+       --no-ansi    Force disable ANSI output
+   -v, --version    Print the version`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

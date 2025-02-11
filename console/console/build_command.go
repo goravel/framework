@@ -34,7 +34,6 @@ func (r *BuildCommand) Description() string {
 // Extend The console command extend.
 func (r *BuildCommand) Extend() command.Extend {
 	return command.Extend{
-		Category: "build",
 		Flags: []command.Flag{
 			&command.StringFlag{
 				Name:    "os",

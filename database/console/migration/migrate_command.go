@@ -29,9 +29,7 @@ func (r *MigrateCommand) Description() string {
 
 // Extend The console command extend.
 func (r *MigrateCommand) Extend() command.Extend {
-	return command.Extend{
-		Category: "migrate",
-	}
+	return command.Extend{}
 }
 
 // Handle Execute the console command.

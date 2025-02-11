@@ -195,3 +195,8 @@ func CaptureOutput(f func(w io.Writer)) string {
 	outBuf.Reset()
 	return content
 }
+
+// Disable disables color output
+func Disable() {
+	pterm.DisableColor()
+}
