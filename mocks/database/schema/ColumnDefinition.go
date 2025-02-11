@@ -20,6 +20,54 @@ func (_m *ColumnDefinition) EXPECT() *ColumnDefinition_Expecter {
 	return &ColumnDefinition_Expecter{mock: &_m.Mock}
 }
 
+// After provides a mock function with given fields: column
+func (_m *ColumnDefinition) After(column string) schema.ColumnDefinition {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for After")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func(string) schema.ColumnDefinition); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_After_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'After'
+type ColumnDefinition_After_Call struct {
+	*mock.Call
+}
+
+// After is a helper method to define mock.On call
+//   - column string
+func (_e *ColumnDefinition_Expecter) After(column interface{}) *ColumnDefinition_After_Call {
+	return &ColumnDefinition_After_Call{Call: _e.mock.On("After", column)}
+}
+
+func (_c *ColumnDefinition_After_Call) Run(run func(column string)) *ColumnDefinition_After_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_After_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_After_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_After_Call) RunAndReturn(run func(string) schema.ColumnDefinition) *ColumnDefinition_After_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AutoIncrement provides a mock function with no fields
 func (_m *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
 	ret := _m.Called()
@@ -206,6 +254,98 @@ func (_c *ColumnDefinition_Default_Call) Return(_a0 schema.ColumnDefinition) *Co
 }
 
 func (_c *ColumnDefinition_Default_Call) RunAndReturn(run func(interface{}) schema.ColumnDefinition) *ColumnDefinition_Default_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// First provides a mock function with no fields
+func (_m *ColumnDefinition) First() schema.ColumnDefinition {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for First")
+	}
+
+	var r0 schema.ColumnDefinition
+	if rf, ok := ret.Get(0).(func() schema.ColumnDefinition); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(schema.ColumnDefinition)
+		}
+	}
+
+	return r0
+}
+
+// ColumnDefinition_First_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'First'
+type ColumnDefinition_First_Call struct {
+	*mock.Call
+}
+
+// First is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) First() *ColumnDefinition_First_Call {
+	return &ColumnDefinition_First_Call{Call: _e.mock.On("First")}
+}
+
+func (_c *ColumnDefinition_First_Call) Run(run func()) *ColumnDefinition_First_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_First_Call) Return(_a0 schema.ColumnDefinition) *ColumnDefinition_First_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_First_Call) RunAndReturn(run func() schema.ColumnDefinition) *ColumnDefinition_First_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetAfter provides a mock function with no fields
+func (_m *ColumnDefinition) GetAfter() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAfter")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_GetAfter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAfter'
+type ColumnDefinition_GetAfter_Call struct {
+	*mock.Call
+}
+
+// GetAfter is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) GetAfter() *ColumnDefinition_GetAfter_Call {
+	return &ColumnDefinition_GetAfter_Call{Call: _e.mock.On("GetAfter")}
+}
+
+func (_c *ColumnDefinition_GetAfter_Call) Run(run func()) *ColumnDefinition_GetAfter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_GetAfter_Call) Return(_a0 string) *ColumnDefinition_GetAfter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_GetAfter_Call) RunAndReturn(run func() string) *ColumnDefinition_GetAfter_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -932,6 +1072,51 @@ func (_c *ColumnDefinition_IsChange_Call) Return(_a0 bool) *ColumnDefinition_IsC
 }
 
 func (_c *ColumnDefinition_IsChange_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsChange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IsFirst provides a mock function with no fields
+func (_m *ColumnDefinition) IsFirst() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsFirst")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ColumnDefinition_IsFirst_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsFirst'
+type ColumnDefinition_IsFirst_Call struct {
+	*mock.Call
+}
+
+// IsFirst is a helper method to define mock.On call
+func (_e *ColumnDefinition_Expecter) IsFirst() *ColumnDefinition_IsFirst_Call {
+	return &ColumnDefinition_IsFirst_Call{Call: _e.mock.On("IsFirst")}
+}
+
+func (_c *ColumnDefinition_IsFirst_Call) Run(run func()) *ColumnDefinition_IsFirst_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ColumnDefinition_IsFirst_Call) Return(_a0 bool) *ColumnDefinition_IsFirst_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ColumnDefinition_IsFirst_Call) RunAndReturn(run func() bool) *ColumnDefinition_IsFirst_Call {
 	_c.Call.Return(run)
 	return _c
 }

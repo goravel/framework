@@ -6,11 +6,13 @@ import (
 )
 
 type ColumnDefinition struct {
+	after              string
 	allowed            []any
 	autoIncrement      *bool
 	change             bool
 	comment            *string
 	def                any
+	first              bool
 	length             *int
 	name               *string
 	nullable           *bool
@@ -29,6 +31,12 @@ func NewColumnDefinition(name string, ttype string) schema.ColumnDefinition {
 		name:  &name,
 		ttype: convert.Pointer(ttype),
 	}
+}
+
+func (r *ColumnDefinition) After(column string) schema.ColumnDefinition {
+	r.after = column
+
+	return r
 }
 
 func (r *ColumnDefinition) AutoIncrement() schema.ColumnDefinition {
@@ -53,6 +61,16 @@ func (r *ColumnDefinition) Default(def any) schema.ColumnDefinition {
 	r.def = def
 
 	return r
+}
+
+func (r *ColumnDefinition) First() schema.ColumnDefinition {
+	r.first = true
+
+	return r
+}
+
+func (r *ColumnDefinition) GetAfter() string {
+	return r.after
 }
 
 func (r *ColumnDefinition) GetAllowed() []any {
@@ -165,6 +183,10 @@ func (r *ColumnDefinition) GetUseCurrentOnUpdate() bool {
 
 func (r *ColumnDefinition) IsChange() bool {
 	return r.change
+}
+
+func (r *ColumnDefinition) IsFirst() bool {
+	return r.first
 }
 
 func (r *ColumnDefinition) IsSetComment() bool {
