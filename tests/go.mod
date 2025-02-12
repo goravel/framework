@@ -8,7 +8,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
 	github.com/goravel/mysql v0.0.0-20250211013634-a36e1c14f0a4
-	github.com/goravel/postgres v0.0.2-0.20250210074923-55c799056495
+	github.com/goravel/postgres v0.0.2-0.20250212041207-3e20d367154b
 	github.com/goravel/sqlite v0.0.0-20250210074940-7a05cbb1dd50
 	github.com/goravel/sqlserver v0.0.0-20250210074958-b94e2314a481
 	github.com/spf13/cast v1.7.1
