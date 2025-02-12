@@ -5,6 +5,7 @@ var (
 	ModuleCache      = "cache"
 	ModuleConsole    = "console"
 	ModuleCrypt      = "crypt"
+	ModuleDB         = "db"
 	ModuleEvent      = "event"
 	ModuleFacade     = "facade"
 	ModuleFilesystem = "filesystem"

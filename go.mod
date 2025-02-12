@@ -5,6 +5,7 @@ go 1.22.7
 toolchain go1.24.0
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/charmbracelet/huh v0.6.0
 	github.com/charmbracelet/huh/spinner v0.0.0-20250212000848-1a363d679ec3
@@ -18,6 +19,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.4
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/pterm/pterm v0.12.80
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
@@ -61,6 +63,8 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.9 // indirect

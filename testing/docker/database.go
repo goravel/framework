@@ -38,7 +38,7 @@ func NewDatabase(app foundation.Application, connection string) (*Database, erro
 
 	databaseDriverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
 	if !exist {
-		return nil, errors.OrmDatabaseConfigNotFound
+		return nil, errors.DatabaseConfigNotFound
 	}
 	databaseDriver, err := databaseDriverCallback()
 	if err != nil {

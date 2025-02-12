@@ -21,6 +21,7 @@ const (
 	BindingSchema      = "goravel.schema"
 	BindingSeeder      = "goravel.seeder"
 	BindingSession     = "goravel.session"
+	BindingDB          = "goravel.db"
 	BindingTesting     = "goravel.testing"
 	BindingTranslation = "goravel.translation"
 	BindingValidation  = "goravel.validation"

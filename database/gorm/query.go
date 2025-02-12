@@ -66,7 +66,7 @@ func NewQuery(
 func BuildQuery(ctx context.Context, config config.Config, connection string, log log.Log, modelToObserver []contractsorm.ModelToObserver) (*Query, contractsdatabase.Config, error) {
 	driverCallback, exist := config.Get(fmt.Sprintf("database.connections.%s.via", connection)).(func() (driver.Driver, error))
 	if !exist {
-		return nil, contractsdatabase.Config{}, errors.OrmDatabaseConfigNotFound
+		return nil, contractsdatabase.Config{}, errors.DatabaseConfigNotFound
 	}
 
 	driver, err := driverCallback()
