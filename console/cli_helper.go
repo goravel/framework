@@ -302,9 +302,30 @@ func sortCommands(commands []*cli.Command) []*cli.Command {
 }
 
 func sortFlags(flags []cli.Flag) []cli.Flag {
+	// built-in flags should be at the end.
+	var (
+		builtinFlags = map[string]struct{}{
+			cli.FlagNamePrefixer(noANSIFlag.Names(), ""):      {},
+			cli.FlagNamePrefixer(cli.HelpFlag.Names(), ""):    {},
+			cli.FlagNamePrefixer(cli.VersionFlag.Names(), ""): {},
+		}
+		isBuiltinFlags = func(n string) bool {
+			_, ok := builtinFlags[n]
+			return ok
+		}
+	)
+
 	sort.Slice(flags, func(i, j int) bool {
-		return cli.FlagNamePrefixer(flags[i].Names(), "") < cli.FlagNamePrefixer(flags[j].Names(), "")
+		a, b := cli.FlagNamePrefixer(flags[i].Names(), ""), cli.FlagNamePrefixer(flags[j].Names(), "")
+		if isBuiltinFlags(a) && !isBuiltinFlags(b) {
+			return false
+		}
+		if !isBuiltinFlags(a) && isBuiltinFlags(b) {
+			return true
+		}
+		return a < b
 	})
+
 	return flags
 }
 
@@ -330,7 +351,6 @@ func wrap(input string, offset int) string {
 				ss = append(ss, padding+wrapped)
 
 			}
-
 		}
 	}
 
