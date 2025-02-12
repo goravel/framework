@@ -34,6 +34,7 @@ func NewApplication(name, usage, usageText, version string, useArtisan bool) con
 	instance.Name = name
 	instance.Usage = usage
 	instance.UsageText = usageText
+	instance.HelpName = name + " [global options]"
 	instance.Version = version
 	instance.CommandNotFound = commandNotFound
 	instance.OnUsageError = onUsageError
@@ -56,7 +57,7 @@ func (r *Application) Register(commands []console.Command) {
 			},
 			Category:     item.Extend().Category,
 			ArgsUsage:    item.Extend().ArgsUsage,
-			Flags:        append(flagsToCliFlags(item.Extend().Flags), noANSIFlag),
+			Flags:        flagsToCliFlags(item.Extend().Flags),
 			OnUsageError: onUsageError,
 		}
 		r.instance.Commands = append(r.instance.Commands, &cliCommand)
