@@ -45,9 +45,11 @@ var (
 	CryptMissingIVKey        = New("decrypt payload error: missing iv key")
 	CryptMissingValueKey     = New("decrypt payload error: missing value key")
 
-	DBForceIsRequiredInProduction = New("application in production use --force to run this command")
-	DBSeederNotFound              = New("not found %s seeder")
-	DBFailToRunSeeder             = New("fail to run seeder: %v")
+	DatabaseConfigNotFound              = New("not found database configuration")
+	DatabaseTableIsRequired             = New("table is required")
+	DatabaseForceIsRequiredInProduction = New("application in production use --force to run this command")
+	DatabaseSeederNotFound              = New("not found %s seeder")
+	DatabaseFailToRunSeeder             = New("fail to run seeder: %v")
 
 	DockerUnknownContainerType           = New("unknown container type")
 	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")
@@ -83,7 +85,6 @@ var (
 	MigrationResetFailed     = New("migration reset failed: %v")
 	MigrationRollbackFailed  = New("migration rollback failed: %v")
 
-	OrmDatabaseConfigNotFound      = New("not found database configuration")
 	OrmDriverNotSupported          = New("invalid driver: %s, only support mysql, postgres, sqlite and sqlserver")
 	OrmFailedToGenerateDNS         = New("failed to generate DSN, please check the database configuration")
 	OrmFactoryMissingAttributes    = New("failed to get raw attributes")
