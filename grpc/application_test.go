@@ -69,7 +69,8 @@ func TestRun(t *testing.T) {
 					Name: "success",
 				})
 
-				assert.Equal(t, &TestResponse{Code: http.StatusOK, Message: "Goravel: server: goravel-server, client: goravel-client"}, res)
+				assert.Equal(t, "Goravel: server: goravel-server, client: goravel-client", res.GetMessage())
+				assert.Equal(t, http.StatusOK, int(res.GetCode()))
 				assert.Nil(t, err)
 			},
 		},
@@ -330,6 +331,7 @@ func clientInterceptor(ctx context.Context, method string, req, reply any, cc *g
 }
 
 type TestController struct {
+	UnimplementedTestServiceServer
 }
 
 func (r *TestController) Get(ctx context.Context, req *TestRequest) (*TestResponse, error) {
