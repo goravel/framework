@@ -6,7 +6,7 @@ package grpc
 import (
 	context "context"
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
+	proto "google.golang.org/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

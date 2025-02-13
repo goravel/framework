@@ -15,7 +15,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
-	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/gookit/validate v1.5.4
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
@@ -34,6 +33,7 @@ require (
 	golang.org/x/crypto v0.33.0
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
 	google.golang.org/grpc v1.70.0
+	google.golang.org/protobuf v1.36.4
 	gorm.io/gorm v1.25.12
 )
 
@@ -98,7 +98,6 @@ require (
 	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/text v0.22.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
-	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
