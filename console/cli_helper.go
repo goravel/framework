@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"text/tabwriter"
@@ -34,7 +35,7 @@ var (
 {{ yellow "Usage:" }}
    {{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{end}}{{if .VisibleFlags}}
 
-{{ yellow "Global options:" }}{{template "flagTemplate" .}}{{end}}{{if .VisibleCommands}}
+{{ yellow "Global options:" }}{{template "flagTemplate" .VisibleFlags}}{{end}}{{if .VisibleCommands}}
 
 {{ yellow "Available commands:" }}{{template "commandTemplate" .}}{{end}}
 `
@@ -43,14 +44,16 @@ var (
    {{ (colorize .Usage) }}
 
 {{ yellow "Usage:" }}
-   {{template "usageTemplate" .}}{{if .VisibleFlags}}
+   {{template "usageTemplate" .}}{{if globalFlags}}
 
-{{ yellow "Options:" }}{{template "flagTemplate" .}}{{end}}
+{{ yellow "Global options:" }}{{template "flagTemplate" globalFlags}}{{end}}{{if .VisibleFlags}}
+
+{{ yellow "Options:" }}{{template "flagTemplate" .VisibleFlags}}{{end}}
 `
 	commandTemplate = `{{ $cv := offsetCommands .VisibleCommands 5}}{{range .VisibleCategories}}{{if .Name}}
  {{yellow .Name}}:{{end}}{{range (sortCommands .VisibleCommands)}}
   {{$s := join .Names ", "}}{{green $s}}{{ $sp := subtract $cv (offset $s 3) }}{{ indent $sp ""}}{{wrap (colorize .Usage) $cv}}{{end}}{{end}}`
-	flagTemplate = `{{ $cv := offsetFlags .VisibleFlags 5}}{{range  (sortFlags .VisibleFlags)}}
+	flagTemplate = `{{ $cv := offsetFlags . 5}}{{range  (sortFlags .)}}
    {{$s := getFlagName .}}{{green $s}}{{ $sp := subtract $cv (offset $s 1) }}{{ indent $sp ""}}{{$us := (capitalize .Usage)}}{{wrap (colorize $us) $cv}}{{$df := getFlagDefaultText . }}{{if $df}} {{yellow $df}}{{end}}{{end}}`
 	usageTemplate = `{{if .UsageText}}{{wrap (colorize .UsageText) 3}}{{else}}{{.HelpName}}{{if .VisibleFlags}} [options]{{end}}{{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{if .Args}} [arguments...]{{end}}{{end}}{{end}}`
 )
@@ -179,8 +182,8 @@ func getFlagDefaultText(flag cli.DocGenerationFlag) string {
 	return defaultValueString
 }
 
-func getFlagName(flag cli.DocGenerationFlag) string {
-	names := flag.Names()
+func getFlagName(flag cli.Flag) string {
+	names := flag.(cli.DocGenerationFlag).Names()
 	sort.Slice(names, func(i, j int) bool {
 		return len(names[i]) < len(names[j])
 	})
@@ -215,7 +218,7 @@ func offsetCommands(cmd []*cli.Command, fixed int) int {
 func offsetFlags(flags []cli.Flag, fixed int) int {
 	var maxLen = 0
 	for i := range flags {
-		if s := cli.FlagNamePrefixer(flags[i].Names(), ""); len(s) > maxLen {
+		if s := getFlagName(flags[i]); len(s) > maxLen {
 			maxLen = len(s)
 		}
 	}
@@ -246,6 +249,7 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 	funcMap := template.FuncMap{
 		"capitalize":         capitalize,
 		"colorize":           colorize,
+		"globalFlags":        func() []cli.Flag { return globalFlags },
 		"getFlagName":        getFlagName,
 		"getFlagDefaultText": getFlagDefaultText,
 		"indent":             indent,
@@ -269,9 +273,7 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 	}
 	for name, value := range templates {
 		if _, err := t.New(name).Parse(value); err != nil {
-			if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
-				_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %#v\n", err)
-			}
+			printTemplateError(err)
 		}
 	}
 
@@ -282,12 +284,16 @@ func printHelpCustom(out io.Writer, templ string, data interface{}, _ map[string
 	if err != nil {
 		// If the writer is closed, t.Execute will fail, and there's nothing
 		// we can do to recover.
-		if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
-			_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %#v\n", err)
-		}
+		printTemplateError(err)
 		return
 	}
 	_ = w.Flush()
+}
+
+func printTemplateError(err error) {
+	if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
+		_, _ = fmt.Fprintf(cli.ErrWriter, "CLI TEMPLATE ERROR: %#v\n", err)
+	}
 }
 
 func printVersion(ctx *cli.Context) {
@@ -295,35 +301,15 @@ func printVersion(ctx *cli.Context) {
 }
 
 func sortCommands(commands []*cli.Command) []*cli.Command {
-	sort.Slice(commands, func(i, j int) bool {
-		return strings.Join(commands[i].Names(), ", ") < strings.Join(commands[j].Names(), ", ")
-	})
+	sort.Sort(cli.CommandsByName(commands))
+
 	return commands
 }
 
 func sortFlags(flags []cli.Flag) []cli.Flag {
-	// built-in flags should be at the end.
-	var (
-		builtinFlags = map[string]struct{}{
-			cli.FlagNamePrefixer(noANSIFlag.Names(), ""):      {},
-			cli.FlagNamePrefixer(cli.HelpFlag.Names(), ""):    {},
-			cli.FlagNamePrefixer(cli.VersionFlag.Names(), ""): {},
-		}
-		isBuiltinFlags = func(n string) bool {
-			_, ok := builtinFlags[n]
-			return ok
-		}
-	)
-
+	sort.Sort(cli.FlagsByName(flags))
 	sort.Slice(flags, func(i, j int) bool {
-		a, b := cli.FlagNamePrefixer(flags[i].Names(), ""), cli.FlagNamePrefixer(flags[j].Names(), "")
-		if isBuiltinFlags(a) && !isBuiltinFlags(b) {
-			return false
-		}
-		if !isBuiltinFlags(a) && isBuiltinFlags(b) {
-			return true
-		}
-		return a < b
+		return slices.Contains(globalFlags, flags[j]) && !slices.Contains(globalFlags, flags[i])
 	})
 
 	return flags
