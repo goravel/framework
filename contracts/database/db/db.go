@@ -5,6 +5,9 @@ type DB interface {
 }
 
 type Query interface {
-	Where(query any, args ...any) Query
+	Delete() error
 	Get(dest any) error
+	Insert() error
+	Update() error
+	Where(query any, args ...any) Query
 }
