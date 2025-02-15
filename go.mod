@@ -2,8 +2,6 @@ module github.com/goravel/framework
 
 go 1.22.7
 
-toolchain go1.24.0
-
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/brianvoe/gofakeit/v7 v7.2.1
