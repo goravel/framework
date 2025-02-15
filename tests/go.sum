@@ -105,8 +105,8 @@ github.com/gookit/color v1.4.2/go.mod h1:fqRyamkC1W8uxl+lxCQxOT09l/vYfZ+QeiX3rKQ
 github.com/gookit/color v1.5.0/go.mod h1:43aQb+Zerm/BWh2GnrgOQm7ffz7tvQXEKV6BFMl7wAo=
 github.com/gookit/color v1.5.4 h1:FZmqs7XOyGgCAxmWyPslpiok1k05wmY3SJTytgvYFs0=
 github.com/gookit/color v1.5.4/go.mod h1:pZJOeOS8DM43rXbp4AZo1n9zCU2qjpcRko0b6/QJi9w=
-github.com/goravel/mysql v0.0.0-20250212093554-547a05e8fd17 h1:ZvO7BPCFqHTL0siZzcOjtp2bNr82AMABwKFMZKhgKbI=
-github.com/goravel/mysql v0.0.0-20250212093554-547a05e8fd17/go.mod h1:Q1QhYt7gbDlsm1j7FXyXPIir9h/Tp4wsJtsnLscPVhc=
+github.com/goravel/mysql v0.0.0-20250215084356-a7e98b33f339 h1:8MJ1zV7eHXlLVtj8uXNTbzF9+VnnU0Nj0DHu5ok5nK8=
+github.com/goravel/mysql v0.0.0-20250215084356-a7e98b33f339/go.mod h1:Q1QhYt7gbDlsm1j7FXyXPIir9h/Tp4wsJtsnLscPVhc=
 github.com/goravel/postgres v0.0.2-0.20250212093528-e958259585e5 h1:/7g2eGIajXlbgXbB6B+l/POtFBfsmsnqrqkvQySuMrE=
 github.com/goravel/postgres v0.0.2-0.20250212093528-e958259585e5/go.mod h1:rc+oYxwrkivl7+3abmjEwIHX63uqNge1SaiRlzv/50k=
 github.com/goravel/sqlite v0.0.0-20250212093642-a3611895dbe8 h1:HHqJntRobqtW2HGbId95qCdO6vRW7E6IU34ktrq6CqY=
@@ -333,8 +333,8 @@ google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 h1:
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287/go.mod h1:8BS3B93F/U1juMFq9+EDk+qOT5CO1R9IzXxG3PTqiRk=
 google.golang.org/grpc v1.70.0 h1:pWFv03aZoHzlRKHWicjsZytKAiYCtNS0dHbXnIdq7jQ=
 google.golang.org/grpc v1.70.0/go.mod h1:ofIJqVKDXx/JiXrwr2IG4/zwdH9txy3IlF40RmcJSQw=
-google.golang.org/protobuf v1.36.4 h1:6A3ZDJHn/eNqc1i+IdefRzy/9PokBTPvcqMySR7NNIM=
-google.golang.org/protobuf v1.36.4/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
+google.golang.org/protobuf v1.36.5 h1:tPhr+woSbjfYvY6/GPufUoYizxw1cF/yFoxJ2fmpwlM=
+google.golang.org/protobuf v1.36.5/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
