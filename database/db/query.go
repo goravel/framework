@@ -27,6 +27,10 @@ func NewQuery(config database.Config, instance *sqlx.DB, table string) *Query {
 	}
 }
 
+func (r *Query) Delete() error {
+	return nil
+}
+
 func (r *Query) Where(query any, args ...any) db.Query {
 	r.conditions.where = append(r.conditions.where, Where{
 		query: query,
@@ -47,7 +51,47 @@ func (r *Query) Get(dest any) error {
 	return r.instance.Select(dest, sql, args...)
 }
 
+func (r *Query) Insert() error {
+	return nil
+}
+
+func (r *Query) Update() error {
+	return nil
+}
+
+func (r *Query) buildInsert() (sql string, args []any, err error) {
+	if r.conditions.table == "" {
+		return "", nil, errors.DatabaseTableIsRequired
+	}
+
+	builder := sq.Insert(r.conditions.table)
+	if r.config.PlaceholderFormat != nil {
+		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	}
+
+	return builder.ToSql()
+}
+
 func (r *Query) buildSelect() (sql string, args []any, err error) {
+	if r.conditions.table == "" {
+		return "", nil, errors.DatabaseTableIsRequired
+	}
+
+	builder := sq.Select("*")
+	if r.config.PlaceholderFormat != nil {
+		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	}
+
+	builder = builder.From(r.conditions.table)
+
+	for _, where := range r.conditions.where {
+		builder = builder.Where(where.query, where.args...)
+	}
+
+	return builder.ToSql()
+}
+
+func (r *Query) buildUpdate() (sql string, args []any, err error) {
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
