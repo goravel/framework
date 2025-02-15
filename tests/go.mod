@@ -7,7 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
-	github.com/goravel/mysql v0.0.0-20250212093554-547a05e8fd17
+	github.com/goravel/mysql v0.0.0-20250215084356-a7e98b33f339
 	github.com/goravel/postgres v0.0.2-0.20250212093528-e958259585e5
 	github.com/goravel/sqlite v0.0.0-20250212093642-a3611895dbe8
 	github.com/goravel/sqlserver v0.0.0-20250212093618-ddd8ebbc0034
@@ -70,7 +70,7 @@ require (
 	golang.org/x/text v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
-	google.golang.org/protobuf v1.36.4 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
