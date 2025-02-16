@@ -7,7 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
-	github.com/goravel/mysql v0.0.0-20250215084356-a7e98b33f339
+	github.com/goravel/mysql v0.0.0-20250216081427-eba0ecba6082
 	github.com/goravel/postgres v0.0.2-0.20250212093528-e958259585e5
 	github.com/goravel/sqlite v0.0.0-20250212093642-a3611895dbe8
 	github.com/goravel/sqlserver v0.0.0-20250212093618-ddd8ebbc0034
