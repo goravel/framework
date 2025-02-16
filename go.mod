@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.22.7
+go 1.23.0
 
 toolchain go1.24.0
 
@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	golang.org/x/crypto v0.33.0
-	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
+	golang.org/x/exp v0.0.0-20250215185904-eff6e970281f
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5
 	gorm.io/gorm v1.25.12
