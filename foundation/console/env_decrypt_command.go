@@ -9,17 +9,13 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/foundation"
 )
 
 type EnvDecryptCommand struct {
-	app foundation.Application
 }
 
-func NewEnvDecryptCommand(app foundation.Application) *EnvDecryptCommand {
-	return &EnvDecryptCommand{
-		app: app,
-	}
+func NewEnvDecryptCommand() *EnvDecryptCommand {
+	return &EnvDecryptCommand{}
 }
 
 // Signature The name and signature of the console command.
@@ -51,7 +47,8 @@ func (r *EnvDecryptCommand) Extend() command.Extend {
 func (r *EnvDecryptCommand) Handle(ctx console.Context) (err error) {
 	key := ctx.Option("key")
 	if key == "" {
-		key = r.app.MakeConfig().GetString("app.key")
+		ctx.Error("A decryption key is required.")
+		return
 	}
 	encryptedData, err := os.ReadFile(".env.encrypted")
 	if err != nil {
@@ -59,7 +56,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) (err error) {
 		return
 	}
 	if _, err = os.Stat(".env"); err == nil {
-		ok, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite it?", console.ConfirmOption{
+		ok, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
 			Negative:    "No",
@@ -82,7 +79,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) (err error) {
 
 func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	if len(key) == 0 {
-		return nil, errors.New("A decryption key is required. ")
+		return nil, errors.New("A decryption key is required")
 	}
 	ciphertext, err := base64.StdEncoding.DecodeString(string(ciphertext))
 	if err != nil {

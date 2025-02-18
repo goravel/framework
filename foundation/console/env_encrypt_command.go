@@ -9,18 +9,15 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/str"
 )
 
 type EnvEncryptCommand struct {
-	app foundation.Application
 }
 
-func NewEnvEncryptCommand(app foundation.Application) *EnvEncryptCommand {
-	return &EnvEncryptCommand{
-		app: app,
-	}
+func NewEnvEncryptCommand() *EnvEncryptCommand {
+	return &EnvEncryptCommand{}
 }
 
 // Signature The name and signature of the console command.
@@ -52,7 +49,7 @@ func (r *EnvEncryptCommand) Extend() command.Extend {
 func (r *EnvEncryptCommand) Handle(ctx console.Context) (err error) {
 	key := ctx.Option("key")
 	if key == "" {
-		key = r.app.MakeConfig().GetString("app.key")
+		key = str.Random(32)
 	}
 	plaintext, err := os.ReadFile(".env")
 	if err != nil {
@@ -60,7 +57,7 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) (err error) {
 		return
 	}
 	if _, err = os.Stat(".env.encrypted"); err == nil {
-		ok, _ := ctx.Confirm("Encrypted environment file already exists, are you sure to overwrite it?", console.ConfirmOption{
+		ok, _ := ctx.Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
 			Negative:    "No",
@@ -79,6 +76,9 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) (err error) {
 		panic(err)
 	}
 	ctx.Success("Environment successfully encrypted.")
+	ctx.TwoColumnDetail("Key", key)
+	ctx.TwoColumnDetail("Cipher", "AES-256-CBC")
+	ctx.TwoColumnDetail("Encrypted file", ".env.encrypted")
 	return err
 }
 
