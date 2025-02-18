@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/support/str"
@@ -19,6 +20,8 @@ var _ client.Request = &requestImpl{}
 
 type requestImpl struct {
 	ctx            context.Context
+	client         *http.Client
+	config         config.Config
 	bind           any
 	headers        http.Header
 	cookies        []*http.Cookie
@@ -30,13 +33,15 @@ type requestImpl struct {
 	retryCount     int
 }
 
-func NewRequest(json foundation.Json) client.Request {
+func NewRequest(config config.Config, json foundation.Json) client.Request {
 	return &requestImpl{
 		ctx:            context.Background(),
+		config:         config,
+		client:         &http.Client{},
 		headers:        http.Header{},
-		cookies:        make([]*http.Cookie, 0),
-		pathParams:     make(map[string]string),
+		cookies:        []*http.Cookie{},
 		queryParams:    url.Values{},
+		pathParams:     map[string]string{},
 		json:           json,
 		timeout:        0,
 		connectTimeout: 0,
@@ -63,7 +68,12 @@ func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Resp
 		req.AddCookie(value)
 	}
 
-	return NewResponse(nil, r.json), nil
+	res, err := r.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewResponse(res, r.json), nil
 }
 
 func (r *requestImpl) Get(uri string) (client.Response, error) {

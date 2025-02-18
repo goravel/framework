@@ -6,6 +6,8 @@ import (
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
 )
 
@@ -22,6 +24,19 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	})
 	app.Singleton(contracts.BindingView, func(app foundation.Application) (any, error) {
 		return NewView(), nil
+	})
+	app.Singleton(contracts.BindingHttp, func(app foundation.Application) (any, error) {
+		c := app.MakeConfig()
+		if c == nil {
+			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
+		}
+
+		j := app.GetJson()
+		if j == nil {
+			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleHttp)
+		}
+
+		return client.NewRequest(c, j), nil
 	})
 }
 
