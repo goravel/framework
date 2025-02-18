@@ -76,7 +76,7 @@ func BuildQuery(ctx context.Context, config config.Config, connection string, lo
 
 	gorm, gormQuery, err := driver.Gorm()
 	if err != nil {
-		return nil, contractsdatabase.Config{}, err
+		return nil, driver.Config(), err
 	}
 
 	return NewQuery(ctx, config, driver.Config(), gorm, gormQuery, log, modelToObserver, nil), driver.Config(), nil
