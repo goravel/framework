@@ -58,8 +58,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) (err error) {
 		ctx.Error("Encrypted environment file not found.")
 		return
 	}
-	_, err = os.Stat(".env")
-	if err == nil {
+	if _, err = os.Stat(".env"); err == nil {
 		ok, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite it?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
@@ -82,6 +81,9 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) (err error) {
 }
 
 func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+	if len(key) == 0 {
+		return nil, errors.New("A decryption key is required. ")
+	}
 	ciphertext, err := base64.StdEncoding.DecodeString(string(ciphertext))
 	if err != nil {
 		return nil, err

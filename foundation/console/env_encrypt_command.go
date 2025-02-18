@@ -10,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/errors"
 )
 
 type EnvEncryptCommand struct {
@@ -58,8 +59,7 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) (err error) {
 		ctx.Error("Environment file not found.")
 		return
 	}
-	_, err = os.Stat(".env.encrypted")
-	if err == nil {
+	if _, err = os.Stat(".env.encrypted"); err == nil {
 		ok, _ := ctx.Confirm("Encrypted environment file already exists, are you sure to overwrite it?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
@@ -83,6 +83,9 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) (err error) {
 }
 
 func encrypt(plaintext []byte, key []byte) ([]byte, error) {
+	if len(key) == 0 {
+		return nil, errors.New("A encryption key is required. ")
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
