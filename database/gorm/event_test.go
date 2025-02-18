@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 )
 
 type Model struct {
@@ -38,7 +39,7 @@ var testEventModel = TestEventModel{
 	Model: Model{
 		ID: 1,
 		Timestamps: Timestamps{
-			CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+			CreatedAt: convert.Pointer(carbon.NewDateTime(carbon.FromStdTime(testNow))),
 		},
 	},
 	Name:     "name",
@@ -76,8 +77,8 @@ func (s *EventTestSuite) SetupTest() {
 			Model: Model{
 				ID: 1,
 				Timestamps: Timestamps{
-					CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
-					UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+					CreatedAt: convert.Pointer(carbon.NewDateTime(carbon.FromStdTime(testNow))),
+					UpdatedAt: convert.Pointer(carbon.NewDateTime(carbon.FromStdTime(testNow))),
 				},
 			},
 			Avatar: "avatar1", IsAdmin: false, IsManage: 1, AdminAt: time.Now(), ManageAt: testNow}),
@@ -85,8 +86,8 @@ func (s *EventTestSuite) SetupTest() {
 			Model: Model{
 				ID: 1,
 				Timestamps: Timestamps{
-					CreatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
-					UpdatedAt: carbon.NewDateTime(carbon.FromStdTime(testNow)),
+					CreatedAt: convert.Pointer(carbon.NewDateTime(carbon.FromStdTime(testNow))),
+					UpdatedAt: convert.Pointer(carbon.NewDateTime(carbon.FromStdTime(testNow))),
 				},
 			},
 			Avatar: "avatar1", IsAdmin: false, IsManage: 1, AdminAt: time.Now(), ManageAt: testNow}),
@@ -162,7 +163,7 @@ func (s *EventTestSuite) TestGetAttribute() {
 			Model: Model{
 				ID: 2,
 				Timestamps: Timestamps{
-					CreatedAt: carbon.NewDateTime(now),
+					CreatedAt: convert.Pointer(carbon.NewDateTime(now)),
 				},
 			},
 			Avatar: "avatar1",
