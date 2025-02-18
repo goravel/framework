@@ -184,7 +184,7 @@ func (s *EventTestSuite) TestGetAttribute() {
 
 	for _, event := range events {
 		s.Equal(testEventModel.ID, event.GetAttribute("ID"))
-		s.Equal(testEventModel.CreatedAt, event.GetAttribute("CreatedAt"))
+		s.Equal(*testEventModel.CreatedAt, event.GetAttribute("CreatedAt"))
 		s.Equal(testEventModel.Name, event.GetAttribute("Name"))
 	}
 }
@@ -352,8 +352,8 @@ func (s *EventTestSuite) TestColumnNames() {
 func TestStructToMap(t *testing.T) {
 	assert.EqualValues(t, map[string]any{
 		"i_d":        testEventModel.ID,
-		"created_at": testEventModel.CreatedAt,
-		"updated_at": testEventModel.UpdatedAt,
+		"created_at": *testEventModel.CreatedAt,
+		"updated_at": nil,
 		"name":       testEventModel.Name,
 		"avatar":     testEventModel.Avatar,
 		"is_admin":   testEventModel.IsAdmin,
