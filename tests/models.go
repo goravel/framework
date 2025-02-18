@@ -22,18 +22,18 @@ type Model struct {
 }
 
 type SoftDeletes struct {
-	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" db:"deleted_at"`
+	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" db:"deleted_at"`
 }
 
 type Timestamps struct {
-	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at" db:"created_at"`
-	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at" db:"updated_at"`
+	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at" db:"created_at"`
+	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at" db:"updated_at"`
 }
 
 type User struct {
 	Model
 	SoftDeletes
-	Name    string
+	Name    string `db:"name"`
 	Bio     *string
 	Avatar  string
 	Address *Address
@@ -446,7 +446,7 @@ type Phone struct {
 type Product struct {
 	Model
 	SoftDeletes
-	Name string
+	Name string `db:"name"`
 }
 
 func (r *Product) Connection() string {
