@@ -56,6 +56,8 @@ func (app *Application) Boot() {
 	app.bootConfiguredServiceProviders()
 	app.registerCommands([]contractsconsole.Command{
 		console.NewAboutCommand(app),
+		console.NewEnvEncryptCommand(app),
+		console.NewEnvDecryptCommand(app),
 		console.NewTestMakeCommand(),
 		console.NewPackageMakeCommand(),
 		console.NewVendorPublishCommand(app.publishes, app.publishGroups),
