@@ -113,8 +113,14 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (
 	}
 
 	input := huh.NewConfirm().Title(question)
-	if len(option) > 0 {
-		input.Description(option[0].Description).Affirmative(option[0].Affirmative).Negative(option[0].Negative)
+	if len(option[0].Description) > 0 {
+		input.Description(option[0].Description)
+	}
+	if len(option[0].Affirmative) > 0 {
+		input.Description(option[0].Affirmative)
+	}
+	if len(option[0].Negative) > 0 {
+		input.Description(option[0].Negative)
 	}
 	err := input.Value(&answer).Run()
 	if err != nil {
