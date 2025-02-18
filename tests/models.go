@@ -33,7 +33,7 @@ type Timestamps struct {
 type User struct {
 	Model
 	SoftDeletes
-	Name    string `db:"name"`
+	Name    string
 	Bio     *string
 	Avatar  string
 	Address *Address
