@@ -47,8 +47,7 @@ func (r *EnvDecryptCommand) Extend() command.Extend {
 func (r *EnvDecryptCommand) Handle(ctx console.Context) (err error) {
 	key := ctx.Option("key")
 	if key == "" {
-		ctx.Error("A decryption key is required.")
-		return
+		key = os.Getenv("GORAVEL_ENV_ENCRYPTION_KEY")
 	}
 	encryptedData, err := os.ReadFile(".env.encrypted")
 	if err != nil {
