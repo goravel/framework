@@ -13,12 +13,12 @@ import (
 )
 
 type DB struct {
-	config   database.Config
-	instance *sqlx.DB
+	builder db.Builder
+	config  database.Config
 }
 
-func NewDB(config database.Config, instance *sqlx.DB) db.DB {
-	return &DB{config: config, instance: instance}
+func NewDB(config database.Config, builder db.Builder) db.DB {
+	return &DB{config: config, builder: builder}
 }
 
 func BuildDB(config config.Config, connection string) (db.DB, error) {
@@ -41,5 +41,5 @@ func BuildDB(config config.Config, connection string) (db.DB, error) {
 }
 
 func (r *DB) Table(name string) db.Query {
-	return NewQuery(r.config, r.instance, name)
+	return NewQuery(r.config, r.builder, name)
 }
