@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,6 +22,8 @@ func TestApplicationTestSuite(t *testing.T) {
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
 DB_PORT=3306
+TIMEOUT=10s
+FLOAT_VALUE=3.14
 `))
 	temp, err := os.CreateTemp("", "goravel.env")
 	assert.Nil(t, err)
@@ -31,6 +34,8 @@ DB_PORT=3306
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
 DB_PORT=3306
+TIMEOUT=20s
+FLOAT_VALUE=6.28
 `))
 	assert.Nil(t, err)
 	assert.Nil(t, temp.Close())
@@ -52,6 +57,7 @@ func (s *ApplicationTestSuite) TestOsVariables() {
 	s.Nil(os.Setenv("OS_APP_NAME", "goravel"))
 	s.Nil(os.Setenv("OS_APP_PORT", "3306"))
 	s.Nil(os.Setenv("OS_APP_DEBUG", "true"))
+	s.Nil(os.Setenv("OS_TIMEOUT", "5s"))
 
 	s.Equal("12345678901234567890123456789013", s.config.GetString("APP_KEY"))
 	s.Equal("12345678901234567890123456789013", s.customConfig.GetString("APP_KEY"))
@@ -61,6 +67,8 @@ func (s *ApplicationTestSuite) TestOsVariables() {
 	s.Equal(3306, s.customConfig.GetInt("OS_APP_PORT"))
 	s.True(s.config.GetBool("OS_APP_DEBUG"))
 	s.True(s.customConfig.GetBool("OS_APP_DEBUG"))
+	s.Equal(5*time.Second, s.config.GetDuration("OS_TIMEOUT"))
+	s.Equal(5*time.Second, s.customConfig.GetDuration("OS_TIMEOUT"))
 }
 
 func (s *ApplicationTestSuite) TestEnv() {
@@ -95,6 +103,11 @@ func (s *ApplicationTestSuite) TestAdd() {
 	s.customConfig.Add("path.with.dot", map[string]any{"case3": "value3"})
 	s.Equal("value3", s.config.GetString("path.with.dot.case3"))
 	s.Equal("value3", s.customConfig.GetString("path.with.dot.case3"))
+
+	s.config.Add("key.with.timestamp", 5*time.Second)
+	s.customConfig.Add("key.with.timestamp", "20s")
+	s.Equal(5*time.Second, s.config.GetDuration("key.with.timestamp"))
+	s.Equal(20*time.Second, s.customConfig.GetDuration("key.with.timestamp"))
 }
 
 func (s *ApplicationTestSuite) TestGet() {
@@ -129,11 +142,38 @@ func (s *ApplicationTestSuite) TestGetString() {
 func (s *ApplicationTestSuite) TestGetInt() {
 	s.Equal(3306, s.config.GetInt("DB_PORT"))
 	s.Equal(3306, s.customConfig.GetInt("DB_PORT"))
+	s.Equal(0, s.config.GetInt("NOT_EXIST"))
+	s.Equal(123, s.config.GetInt("NOT_EXIST", 123))
+	s.Equal(0, s.config.GetInt("FLOAT_VALUE"))
 }
 
 func (s *ApplicationTestSuite) TestGetBool() {
-	s.Equal(true, s.config.GetBool("APP_DEBUG"))
-	s.Equal(true, s.customConfig.GetBool("APP_DEBUG"))
+	s.True(s.config.GetBool("APP_DEBUG"))
+	s.True(s.customConfig.GetBool("APP_DEBUG"))
+	s.False(s.config.GetBool("NON_EXISTENT_BOOL"))
+	s.True(s.config.GetBool("NON_EXISTENT_BOOL", true))
+	s.False(s.config.GetBool("DB_PORT"))
+
+	s.config.Add("MY_BOOL_TRUE", "true")
+	s.config.Add("MY_BOOL_FALSE", "false")
+	s.True(s.config.GetBool("MY_BOOL_TRUE"))
+	s.False(s.config.GetBool("MY_BOOL_FALSE"))
+
+	s.config.Add("MY_BOOL_INVALID", "invalid")
+	s.False(s.config.GetBool("MY_BOOL_INVALID"))
+}
+
+func (s *ApplicationTestSuite) TestGetDuration() {
+	s.Equal(10*time.Second, s.config.GetDuration("TIMEOUT"))
+	s.Equal(20*time.Second, s.customConfig.GetDuration("TIMEOUT"))
+
+	s.Equal(time.Duration(0), s.config.GetDuration("NON_EXISTENT_DURATION"))
+	s.Equal(time.Second, s.config.GetDuration("NON_EXISTENT_DURATION", time.Second))
+
+	s.config.Add("INVALID_DURATION", "invalid")
+	s.customConfig.Add("INVALID_DURATION", "invalid")
+	s.Equal(time.Duration(0), s.config.GetDuration("INVALID_DURATION"))
+	s.Equal(time.Duration(0), s.config.GetDuration("INVALID_DURATION", time.Second))
 }
 
 func TestOsVariables(t *testing.T) {
