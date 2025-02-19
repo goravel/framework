@@ -17,7 +17,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.Create(".env", `
+	assert.Nil(t, file.PutContent(".env", `
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
 DB_PORT=3306
