@@ -136,4 +136,6 @@ var (
 	ValidationDuplicateRule   = New("duplicate rule name: %s")
 	ValidationEmptyData       = New("data can't be empty")
 	ValidationEmptyRules      = New("rules can't be empty")
+
+	CommandEnvFileNotExist = New("environment file not found.")
 )
