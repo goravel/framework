@@ -137,7 +137,7 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 			if !str.Of(query).Trim().Contains(" ", "?") {
 				if len(where.args) > 1 {
 					builder = builder.Where(sq.Eq{query: where.args})
-				} else {
+				} else if len(where.args) == 1 {
 					builder = builder.Where(sq.Eq{query: where.args[0]})
 				}
 				continue
