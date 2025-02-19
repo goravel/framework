@@ -13,10 +13,6 @@ func GetID(dest any) any {
 	t := reflect.TypeOf(dest)
 	v := reflect.ValueOf(dest)
 
-	if t.Kind() == reflect.Pointer {
-		return GetIDByReflect(t.Elem(), v.Elem())
-	}
-
 	return GetIDByReflect(t, v)
 }
 
