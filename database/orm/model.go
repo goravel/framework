@@ -15,10 +15,10 @@ type Model struct {
 }
 
 type SoftDeletes struct {
-	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
 type Timestamps struct {
-	CreatedAt *carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
-	UpdatedAt *carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at" json:"created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at" json:"updated_at"`
 }

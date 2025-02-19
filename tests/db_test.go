@@ -45,8 +45,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 					Name: "model",
 					Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: &now,
-							UpdatedAt: &now,
+							CreatedAt: now,
+							UpdatedAt: now,
 						},
 					},
 				})
@@ -70,8 +70,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 						Name: "model1",
 						Model: Model{
 							Timestamps: Timestamps{
-								CreatedAt: &now,
-								UpdatedAt: &now,
+								CreatedAt: now,
+								UpdatedAt: now,
 							},
 						},
 					},
@@ -141,8 +141,8 @@ func (s *DBTestSuite) TestWhere() {
 				Name: "model",
 				Model: Model{
 					Timestamps: Timestamps{
-						CreatedAt: &now,
-						UpdatedAt: &now,
+						CreatedAt: now,
+						UpdatedAt: now,
 					},
 				},
 			})
