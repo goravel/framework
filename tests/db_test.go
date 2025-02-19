@@ -42,7 +42,7 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 		s.Run(driver, func() {
 			s.Run("single struct", func() {
 				result, err := query.DB().Table("products").Insert(Product{
-					Name: "model",
+					Name: "single struct",
 					Model: Model{
 						Timestamps: Timestamps{
 							CreatedAt: now,
@@ -55,7 +55,7 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.Equal(int64(1), result.RowsAffected)
 
 				var product Product
-				err = query.DB().Table("products").Where("name", "model").Where("deleted_at", nil).First(&product)
+				err = query.DB().Table("products").Where("name", "single struct").Where("deleted_at", nil).First(&product)
 				s.NoError(err)
 				s.True(product.ID > 0)
 				s.Equal("model", product.Name)
@@ -67,7 +67,7 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 			s.Run("multiple structs", func() {
 				result, err := query.DB().Table("products").Insert([]Product{
 					{
-						Name: "model1",
+						Name: "multiple structs1",
 						Model: Model{
 							Timestamps: Timestamps{
 								CreatedAt: now,
@@ -76,23 +76,23 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 						},
 					},
 					{
-						Name: "model2",
+						Name: "multiple structs2",
 					},
 				})
 				s.NoError(err)
 				s.Equal(int64(2), result.RowsAffected)
 
 				var products []Product
-				err = query.DB().Table("products").Where("name", []string{"model1", "model2"}).Where("deleted_at", nil).Get(&products)
+				err = query.DB().Table("products").Where("name", []string{"multiple structs1", "multiple structs2"}).Where("deleted_at", nil).Get(&products)
 				s.NoError(err)
 				s.Equal(2, len(products))
-				s.Equal("model1", products[0].Name)
-				s.Equal("model2", products[1].Name)
+				s.Equal("multiple structs1", products[0].Name)
+				s.Equal("multiple structs2", products[1].Name)
 			})
 
 			s.Run("single map", func() {
 				result, err := query.DB().Table("products").Insert(map[string]any{
-					"name":       "map",
+					"name":       "single map",
 					"created_at": now,
 					"updated_at": &now,
 				})
@@ -100,9 +100,9 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.Equal(int64(1), result.RowsAffected)
 
 				var product Product
-				err = query.DB().Table("products").Where("name", "map").Where("deleted_at", nil).First(&product)
+				err = query.DB().Table("products").Where("name", "single map").Where("deleted_at", nil).First(&product)
 				s.NoError(err)
-				s.Equal("map", product.Name)
+				s.Equal("single map", product.Name)
 				s.Equal(now, product.CreatedAt)
 				s.Equal(now, product.UpdatedAt)
 				s.False(product.DeletedAt.Valid)
@@ -111,23 +111,23 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 			s.Run("multiple map", func() {
 				result, err := query.DB().Table("products").Insert([]map[string]any{
 					{
-						"name":       "map1",
+						"name":       "multiple map1",
 						"created_at": now,
 						"updated_at": &now,
 					},
 					{
-						"name": "map2",
+						"name": "multiple map2",
 					},
 				})
 				s.NoError(err)
 				s.Equal(int64(2), result.RowsAffected)
 
 				var products []Product
-				err = query.DB().Table("products").Where("name", []string{"map1", "map2"}).Where("deleted_at", nil).Get(&products)
+				err = query.DB().Table("products").Where("name", []string{"multiple map1", "multiple map2"}).Where("deleted_at", nil).Get(&products)
 				s.NoError(err)
 				s.Equal(2, len(products))
-				s.Equal("map1", products[0].Name)
-				s.Equal("map2", products[1].Name)
+				s.Equal("multiple map1", products[0].Name)
+				s.Equal("multiple map2", products[1].Name)
 			})
 		})
 	}
@@ -138,7 +138,7 @@ func (s *DBTestSuite) TestWhere() {
 		s.Run(driver, func() {
 			now := carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 			query.DB().Table("products").Insert(Product{
-				Name: "model",
+				Name: "where model",
 				Model: Model{
 					Timestamps: Timestamps{
 						CreatedAt: now,
@@ -149,24 +149,24 @@ func (s *DBTestSuite) TestWhere() {
 
 			s.Run("simple where condition", func() {
 				var product Product
-				err := query.DB().Table("products").Where("name", "model").First(&product)
+				err := query.DB().Table("products").Where("name", "where model").First(&product)
 				s.NoError(err)
-				s.Equal("model", product.Name)
+				s.Equal("where model", product.Name)
 			})
 
 			s.Run("where with multiple arguments", func() {
 				var products []Product
-				err := query.DB().Table("products").Where("name", []string{"model", "model1"}).Get(&products)
+				err := query.DB().Table("products").Where("name", []string{"where model", "where model1"}).Get(&products)
 				s.NoError(err)
 				s.Equal(1, len(products))
-				s.Equal("model", products[0].Name)
+				s.Equal("where model", products[0].Name)
 			})
 
 			s.Run("where with raw query", func() {
 				var product Product
-				err := query.DB().Table("products").Where("name = ?", "model").First(&product)
+				err := query.DB().Table("products").Where("name = ?", "where model").First(&product)
 				s.NoError(err)
-				s.Equal("model", product.Name)
+				s.Equal("where model", product.Name)
 			})
 		})
 	}
