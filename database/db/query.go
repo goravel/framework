@@ -55,6 +55,11 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(mapData) == 0 {
+		return &db.Result{
+			RowsAffected: 0,
+		}, nil
+	}
 
 	sql, args, err := r.buildInsert(mapData)
 	if err != nil {

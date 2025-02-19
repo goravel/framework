@@ -52,6 +52,12 @@ func (s *QueryTestSuite) TestGet() {
 }
 
 func (s *QueryTestSuite) TestInsert() {
+	s.Run("empty", func() {
+		result, err := s.query.Insert(nil)
+		s.Nil(err)
+		s.Equal(int64(0), result.RowsAffected)
+	})
+
 	s.Run("single struct", func() {
 		user := TestUser{
 			ID:   1,
