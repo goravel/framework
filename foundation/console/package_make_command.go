@@ -1,12 +1,12 @@
 package console
 
 import (
-	"errors"
 	"path/filepath"
 	"strings"
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -49,7 +49,7 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 		pkg, err = ctx.Ask("Enter the package name", console.AskOption{
 			Validate: func(s string) error {
 				if s == "" {
-					return errors.New("the package name cannot be empty")
+					return errors.CommandEmptyPackageName
 				}
 
 				return nil

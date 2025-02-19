@@ -139,4 +139,6 @@ var (
 
 	AesCiphertextInvalid = New("aes ciphertext is invalid, must be a multiple of aes.BlockSize")
 	AesPaddingInvalid    = New("aes padding is invalid, must be greater than aes.BlockSize")
+
+	CommandEmptyPackageName = New("the package name cannot be empty")
 )
