@@ -59,9 +59,9 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.NoError(err)
 				s.True(product.ID > 0)
 				s.Equal("model", product.Name)
-				s.Equal(&now, product.CreatedAt)
-				s.Equal(&now, product.UpdatedAt)
-				s.Nil(product.DeletedAt)
+				s.Equal(now, product.CreatedAt)
+				s.Equal(now, product.UpdatedAt)
+				s.False(product.DeletedAt.Valid)
 			})
 
 			s.Run("multiple structs", func() {
@@ -103,9 +103,9 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				err = query.DB().Table("products").Where("name", "map").Where("deleted_at", nil).First(&product)
 				s.NoError(err)
 				s.Equal("map", product.Name)
-				s.Equal(&now, product.CreatedAt)
-				s.Equal(&now, product.UpdatedAt)
-				s.Nil(product.DeletedAt)
+				s.Equal(now, product.CreatedAt)
+				s.Equal(now, product.UpdatedAt)
+				s.False(product.DeletedAt.Valid)
 			})
 
 			s.Run("multiple map", func() {

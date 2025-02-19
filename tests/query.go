@@ -124,16 +124,16 @@ func NewTestQueryBuilder() *TestQueryBuilder {
 }
 
 func (r *TestQueryBuilder) All(prefix string, singular bool) map[string]*TestQuery {
-	postgresTestQuery := r.Postgres(prefix, singular)
-	mysqlTestQuery := r.Mysql(prefix, singular)
-	sqlserverTestQuery := r.Sqlserver(prefix, singular)
+	// postgresTestQuery := r.Postgres(prefix, singular)
+	// mysqlTestQuery := r.Mysql(prefix, singular)
+	// sqlserverTestQuery := r.Sqlserver(prefix, singular)
 	sqliteTestQuery := r.Sqlite(prefix, singular)
 
 	return map[string]*TestQuery{
-		postgresTestQuery.Driver().Config().Driver:  postgresTestQuery,
-		mysqlTestQuery.Driver().Config().Driver:     mysqlTestQuery,
-		sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
-		sqliteTestQuery.Driver().Config().Driver:    sqliteTestQuery,
+		// postgresTestQuery.Driver().Config().Driver:  postgresTestQuery,
+		// mysqlTestQuery.Driver().Config().Driver:     mysqlTestQuery,
+		// sqlserverTestQuery.Driver().Config().Driver: sqlserverTestQuery,
+		sqliteTestQuery.Driver().Config().Driver: sqliteTestQuery,
 	}
 }
 

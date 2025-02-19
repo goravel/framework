@@ -352,7 +352,7 @@ func TestStructToMap(t *testing.T) {
 	assert.EqualValues(t, map[string]any{
 		"i_d":        testEventModel.ID,
 		"created_at": testEventModel.CreatedAt,
-		"updated_at": nil,
+		"updated_at": testEventModel.UpdatedAt,
 		"name":       testEventModel.Name,
 		"avatar":     testEventModel.Avatar,
 		"is_admin":   testEventModel.IsAdmin,
