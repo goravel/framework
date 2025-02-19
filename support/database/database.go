@@ -3,8 +3,6 @@ package database
 import (
 	"reflect"
 	"strings"
-
-	"github.com/spf13/cast"
 )
 
 func GetID(dest any) any {
@@ -23,20 +21,24 @@ func GetID(dest any) any {
 }
 
 func GetIDByReflect(t reflect.Type, v reflect.Value) any {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+		v = v.Elem()
+	}
+
 	for i := 0; i < t.NumField(); i++ {
 		if !t.Field(i).IsExported() {
 			continue
 		}
 		if strings.Contains(t.Field(i).Tag.Get("gorm"), "primaryKey") {
-			id := v.Field(i).Interface()
-			if cast.ToString(id) == "" && cast.ToInt(id) == 0 {
+			if v.Field(i).IsZero() {
 				return nil
 			}
 
-			return id
+			return v.Field(i).Interface()
 		}
-		if v.Field(i).Type().Kind() == reflect.Struct && t.Field(i).Anonymous {
-			return GetIDByReflect(v.Field(i).Type(), v.Field(i))
+		if t.Field(i).Type.Kind() == reflect.Struct && t.Field(i).Anonymous {
+			return GetIDByReflect(t.Field(i).Type, v.Field(i))
 		}
 	}
 
