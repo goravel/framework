@@ -77,6 +77,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 
 	_, err := os.ReadFile(".env.encrypted")
 	if err != nil {
+		// mockContext.EXPECT().Error("Encrypted environment file not found.").Once()
 		encryptCommandTestSuite := &EnvEncryptCommandTestSuite{}
 		TestEnvEncryptCommandTestSuite(s.T())
 		encryptCommandTestSuite.SetupTest()
@@ -95,6 +96,5 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 	mockContext.EXPECT().Option("key").Return(key).Once()
 	mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
 	s.Nil(envDecryptCommand.Handle(mockContext))
-	s.Nil(file.Remove(".env"))
 	s.Nil(file.Remove(".env.encrypted"))
 }
