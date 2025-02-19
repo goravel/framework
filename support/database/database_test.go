@@ -190,6 +190,48 @@ func TestGetIDByReflect(t *testing.T) {
 				assert.Nil(t, result)
 			},
 		},
+		{
+			description: "TestStruct.ID type Submodel Id String",
+			setup: func(description string) {
+				id := "testId"
+				type User struct {
+					TestStructString
+					Name string
+				}
+
+				ts := User{Name: "name"}
+				ts.ID = "testId"
+				v := reflect.ValueOf(ts)
+				tpe := reflect.TypeOf(ts)
+
+				result := GetIDByReflect(tpe, v)
+
+				assert.Equal(t, id, result)
+			},
+		},
+		{
+			description: "TestStruct.ID type SubSubmodel Id String",
+			setup: func(description string) {
+				id := "testId"
+				type UserFirst struct {
+					TestStructString
+					Name string
+				}
+				type UserSecond struct {
+					UserFirst
+					Avatar string
+				}
+
+				ts := UserSecond{}
+				ts.ID = "testId"
+				v := reflect.ValueOf(ts)
+				tpe := reflect.TypeOf(ts)
+
+				result := GetIDByReflect(tpe, v)
+
+				assert.Equal(t, id, result)
+			},
+		},
 	}
 	for _, test := range tests {
 		test.setup(test.description)
