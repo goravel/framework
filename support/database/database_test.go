@@ -200,7 +200,7 @@ func TestGetIDByReflect(t *testing.T) {
 				}
 
 				ts := User{Name: "name"}
-				ts.ID = "testId"
+				ts.ID = id
 				v := reflect.ValueOf(ts)
 				tpe := reflect.TypeOf(ts)
 
@@ -223,7 +223,7 @@ func TestGetIDByReflect(t *testing.T) {
 				}
 
 				ts := UserSecond{}
-				ts.ID = "testId"
+				ts.ID = id
 				v := reflect.ValueOf(ts)
 				tpe := reflect.TypeOf(ts)
 
