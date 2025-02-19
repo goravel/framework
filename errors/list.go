@@ -137,5 +137,6 @@ var (
 	ValidationEmptyData       = New("data can't be empty")
 	ValidationEmptyRules      = New("rules can't be empty")
 
-	CommandEnvFileNotExist = New("environment file not found.")
+	AesCiphertextInvalid = New("aes ciphertext is invalid, must be a multiple of aes.BlockSize")
+	AesPaddingInvalid    = New("aes padding is invalid, must be greater than aes.BlockSize")
 )
