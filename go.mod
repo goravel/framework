@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.22.7
+go 1.23.0
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -29,7 +29,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	golang.org/x/crypto v0.33.0
-	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac
+	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5
 	gorm.io/gorm v1.25.12
@@ -90,7 +90,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1
 	go.opentelemetry.io/otel v1.33.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
