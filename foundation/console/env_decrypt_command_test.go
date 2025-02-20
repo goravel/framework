@@ -26,7 +26,7 @@ func TestEnvDecryptCommandTestSuite(t *testing.T) {
 	suite.Run(t, new(EnvDecryptCommandTestSuite))
 }
 
-func (s *EnvDecryptCommandTestSuite) SetupTest() {
+func (s *EnvDecryptCommandTestSuite) SetupSuite() {
 	s.Nil(file.Create(".env.encrypted", EnvDecryptCiphertext))
 }
 
