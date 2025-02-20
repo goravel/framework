@@ -77,16 +77,12 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 		ctx.Error(fmt.Sprintf("Writer error: %v", err))
 		return nil
 	}
+
 	ctx.Success("Environment successfully encrypted.")
 	ctx.TwoColumnDetail("Key", key)
 	ctx.TwoColumnDetail("Cipher", "AES-256-CBC")
 	ctx.TwoColumnDetail("Encrypted file", ".env.encrypted")
 
-	err = os.Setenv("GORAVEL_ENV_ENCRYPTION_KEY", key)
-	if err != nil {
-		ctx.Error(fmt.Sprintf("Setenv error: %v", err))
-		return nil
-	}
 	return nil
 }
 
