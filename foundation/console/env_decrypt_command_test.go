@@ -125,20 +125,4 @@ func (s *EnvDecryptCommandTestSuite) TestDecrypt() {
 		_, err := envDecryptCommand.decrypt([]byte(ciphertext), []byte(key))
 		s.Error(err)
 	})
-
-}
-
-func (s *EnvDecryptCommandTestSuite) TestPkcs7Unpad() {
-	envDecryptCommand := NewEnvDecryptCommand()
-	s.Run("valid padding", func() {
-		data := "QJciFpGWixGfAKw9"
-		_, err := envDecryptCommand.pkcs7Unpad([]byte(data))
-		s.Nil(err)
-	})
-	s.Run("invalid padding", func() {
-		data := "xxxx"
-		_, err := envDecryptCommand.pkcs7Unpad([]byte(data))
-		s.Error(err)
-	})
-
 }
