@@ -69,7 +69,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
-	decrypted, err := decrypt(encryptedData, []byte(key))
+	decrypted, err := r.decrypt(encryptedData, []byte(key))
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Decrypt error: %v", err))
 		return nil
@@ -83,7 +83,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 	return nil
 }
 
-func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+func (r *EnvDecryptCommand) decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(string(ciphertext))
 	if err != nil {
 		return nil, err
@@ -100,16 +100,16 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	mode := cipher.NewCBCDecrypter(block, iv)
 	plaintext := make([]byte, len(ciphertext))
 	mode.CryptBlocks(plaintext, ciphertext)
-	return pkcs7Unpad(plaintext)
+	return r.pkcs7Unpad(plaintext)
 }
 
-func pkcs7Unpad(data []byte) ([]byte, error) {
+func (r *EnvDecryptCommand) pkcs7Unpad(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
 		return nil, errors.AesCiphertextInvalid
 	}
 	padding := int(data[length-1])
-	if padding < 1 || padding > aes.BlockSize || length < padding {
+	if padding < 1 || length < padding {
 		return nil, errors.AesPaddingInvalid
 	}
 	return data[:length-padding], nil

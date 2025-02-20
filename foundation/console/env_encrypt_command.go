@@ -51,10 +51,6 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 	if key == "" {
 		key = str.Random(32)
 	}
-	if key == "" {
-		ctx.Error("A encryption key is required.")
-		return nil
-	}
 	plaintext, err := os.ReadFile(".env")
 	if err != nil {
 		ctx.Error("Environment file not found.")
@@ -70,7 +66,7 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
-	ciphertext, err := encrypt(plaintext, []byte(key))
+	ciphertext, err := r.encrypt(plaintext, []byte(key))
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Encrypt error: %v", err))
 		return nil
@@ -85,24 +81,30 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 	ctx.TwoColumnDetail("Key", key)
 	ctx.TwoColumnDetail("Cipher", "AES-256-CBC")
 	ctx.TwoColumnDetail("Encrypted file", ".env.encrypted")
+
+	err = os.Setenv("GORAVEL_ENV_ENCRYPTION_KEY", key)
+	if err != nil {
+		ctx.Error(fmt.Sprintf("Setenv error: %v", err))
+		return nil
+	}
 	return nil
 }
 
-func encrypt(plaintext []byte, key []byte) ([]byte, error) {
+func (r *EnvEncryptCommand) encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 	iv := key[:aes.BlockSize]
-	plaintext = pkcs7Pad(plaintext, aes.BlockSize)
+	plaintext = r.pkcs7Pad(plaintext)
 	mode := cipher.NewCBCEncrypter(block, iv)
 	ciphertext := make([]byte, len(plaintext))
 	mode.CryptBlocks(ciphertext, plaintext)
 	return append(iv, ciphertext...), nil
 }
 
-func pkcs7Pad(data []byte, blockSize int) []byte {
-	padding := blockSize - len(data)%blockSize
+func (r *EnvEncryptCommand) pkcs7Pad(data []byte) []byte {
+	padding := aes.BlockSize - len(data)%aes.BlockSize
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(data, padText...)
 }

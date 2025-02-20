@@ -1,7 +1,6 @@
 package console
 
 import (
-	"github.com/goravel/framework/support/file"
 	"os"
 	"reflect"
 	"testing"
@@ -9,8 +8,11 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
+	"github.com/goravel/framework/support/file"
 	"github.com/stretchr/testify/suite"
 )
+
+var EnvDecryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
 
 type EnvDecryptCommandTestSuite struct {
 	suite.Suite
@@ -21,8 +23,14 @@ func TestEnvDecryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvDecryptCommandTestSuite) SetupTest() {
-
+	err := file.Create(".env.encrypted", "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w=")
+	s.Nil(err)
 }
+
+func (s *EnvDecryptCommandTestSuite) TearDownSuite() {
+	s.Nil(file.Remove(".env.encrypted"))
+}
+
 func (s *EnvDecryptCommandTestSuite) TestSignature() {
 	expected := "env:decrypt"
 	s.Require().Equal(expected, NewEnvDecryptCommand().Signature())
@@ -73,14 +81,9 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 	envDecryptCommand := NewEnvDecryptCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
-	key := "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
-
 	_, err := os.ReadFile(".env.encrypted")
 	if err != nil {
-		// mockContext.EXPECT().Error("Encrypted environment file not found.").Once()
-		encryptCommandTestSuite := &EnvEncryptCommandTestSuite{}
-		TestEnvEncryptCommandTestSuite(s.T())
-		encryptCommandTestSuite.SetupTest()
+		mockContext.EXPECT().Error("Encrypted environment file not found.").Once()
 	}
 
 	env, err := os.ReadFile(".env")
@@ -89,12 +92,53 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 			Default:     true,
 			Affirmative: "Yes",
 			Negative:    "No",
-		}).Return(true, nil).Once()
-		s.Require().Equal("APP_KEY=12345\n", string(env))
+		}).Return(true, nil).Twice()
+		s.Require().Equal("APP_KEY=12345", string(env))
 	}
 
-	mockContext.EXPECT().Option("key").Return(key).Once()
-	mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
-	s.Nil(envDecryptCommand.Handle(mockContext))
-	s.Nil(file.Remove(".env.encrypted"))
+	s.Run("valid key", func() {
+		mockContext.EXPECT().Option("key").Return(EnvDecryptKey).Once()
+		mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
+		s.Nil(envDecryptCommand.Handle(mockContext))
+	})
+
+	s.Run("invalid key", func() {
+		key := "xxxx"
+		mockContext.EXPECT().Option("key").Return(key).Once()
+		mockContext.EXPECT().Error("Decrypt error: crypto/aes: invalid key size 4").Once()
+		s.Nil(envDecryptCommand.Handle(mockContext))
+	})
+}
+
+func (s *EnvDecryptCommandTestSuite) TestDecrypt() {
+	envDecryptCommand := NewEnvDecryptCommand()
+	s.Run("valid key", func() {
+		ciphertext := "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
+		decrypted, err := envDecryptCommand.decrypt([]byte(ciphertext), []byte(EnvDecryptKey))
+		s.Nil(err)
+		s.Equal("APP_KEY=12345", string(decrypted))
+		s.Nil(err)
+	})
+	s.Run("invalid key", func() {
+		ciphertext := "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
+		key := "xxxx"
+		_, err := envDecryptCommand.decrypt([]byte(ciphertext), []byte(key))
+		s.Error(err)
+	})
+
+}
+
+func (s *EnvDecryptCommandTestSuite) TestPkcs7Unpad() {
+	envDecryptCommand := NewEnvDecryptCommand()
+	s.Run("valid padding", func() {
+		data := "QJciFpGWixGfAKw9"
+		_, err := envDecryptCommand.pkcs7Unpad([]byte(data))
+		s.Nil(err)
+	})
+	s.Run("invalid padding", func() {
+		data := "xxxx"
+		_, err := envDecryptCommand.pkcs7Unpad([]byte(data))
+		s.Error(err)
+	})
+
 }

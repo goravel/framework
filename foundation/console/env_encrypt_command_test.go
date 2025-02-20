@@ -1,6 +1,7 @@
 package console
 
 import (
+	"encoding/base64"
 	"os"
 	"reflect"
 	"testing"
@@ -12,6 +13,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var EnvEncryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+
 type EnvEncryptCommandTestSuite struct {
 	suite.Suite
 }
@@ -21,8 +24,14 @@ func TestEnvEncryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvEncryptCommandTestSuite) SetupTest() {
-
+	err := file.Create(".env", "APP_KEY=12345")
+	s.Nil(err)
 }
+
+func (s *EnvEncryptCommandTestSuite) TearDownSuite() {
+	s.Nil(file.Remove(".env"))
+}
+
 func (s *EnvEncryptCommandTestSuite) TestSignature() {
 	expected := "env:encrypt"
 	s.Require().Equal(expected, NewEnvEncryptCommand().Signature())
@@ -73,13 +82,10 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 	envEncryptCommand := NewEnvEncryptCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
-	key := "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
-
-	err := file.Create(".env", "APP_KEY=12345\n")
-	s.Nil(err)
-
-	_, err = os.ReadFile(".env")
-	s.Nil(err)
+	_, err := os.ReadFile(".env")
+	if err != nil {
+		mockContext.EXPECT().Error("Environment file not found.").Once()
+	}
 
 	_, err = os.ReadFile(".env.encrypted")
 	if err == nil {
@@ -90,11 +96,29 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 		}).Return(true, nil).Once()
 	}
 
-	mockContext.EXPECT().Option("key").Return(key).Once()
+	mockContext.EXPECT().Option("key").Return(EnvEncryptKey).Once()
 	mockContext.EXPECT().Success("Environment successfully encrypted.").Once()
-	mockContext.EXPECT().TwoColumnDetail("Key", key).Once()
+	mockContext.EXPECT().TwoColumnDetail("Key", EnvEncryptKey).Once()
 	mockContext.EXPECT().TwoColumnDetail("Cipher", "AES-256-CBC").Once()
 	mockContext.EXPECT().TwoColumnDetail("Encrypted file", ".env.encrypted").Once()
 
 	s.Nil(envEncryptCommand.Handle(mockContext))
+}
+
+func (s *EnvDecryptCommandTestSuite) TestEncrypt() {
+	envEncryptCommand := NewEnvEncryptCommand()
+	s.Run("valid key", func() {
+		plaintext := "APP_KEY=12345"
+		ciphertext, err := envEncryptCommand.encrypt([]byte(plaintext), []byte(EnvEncryptKey))
+		base64Data := base64.StdEncoding.EncodeToString(ciphertext)
+		s.Equal("QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w=", base64Data)
+		s.Nil(err)
+	})
+	s.Run("invalid key", func() {
+		ciphertext := "APP_KEY=12345"
+		key := "xxxx"
+		_, err := envEncryptCommand.encrypt([]byte(ciphertext), []byte(key))
+		s.Error(err)
+	})
+
 }
