@@ -24,13 +24,13 @@ func TestFileLoaderTestSuite(t *testing.T) {
 }
 
 func (f *FileLoaderTestSuite) SetupSuite() {
-	assert.Nil(f.T(), file.Create("lang/en/test.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
-	assert.Nil(f.T(), file.Create("lang/en/another/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
-	assert.Nil(f.T(), file.Create("lang/another/en/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
-	assert.Nil(f.T(), file.Create("lang/en/invalid/test.json", `{"foo": "bar",}`))
-	assert.Nil(f.T(), file.Create("lang/cn.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
+	assert.Nil(f.T(), file.PutContent("lang/en/test.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
+	assert.Nil(f.T(), file.PutContent("lang/en/another/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(f.T(), file.PutContent("lang/another/en/test.json", `{"foo": "backagebar", "baz": "backagesplash"}`))
+	assert.Nil(f.T(), file.PutContent("lang/en/invalid/test.json", `{"foo": "bar",}`))
+	assert.Nil(f.T(), file.PutContent("lang/cn.json", `{"foo": "bar", "baz": {"foo": "bar"}}`))
 	restrictedFilePath := "lang/en/restricted/test.json"
-	assert.Nil(f.T(), file.Create(restrictedFilePath, `{"foo": "restricted"}`))
+	assert.Nil(f.T(), file.PutContent(restrictedFilePath, `{"foo": "restricted"}`))
 	assert.Nil(f.T(), os.Chmod(restrictedFilePath, 0000))
 }
 

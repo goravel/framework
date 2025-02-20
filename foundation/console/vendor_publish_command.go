@@ -240,7 +240,7 @@ func (r *VendorPublishCommand) publishFile(sourceFile, targetFile string, existi
 		return false, nil
 	}
 
-	if err := file.Create(targetFile, string(content)); err != nil {
+	if err := file.PutContent(targetFile, string(content)); err != nil {
 		return false, err
 	}
 

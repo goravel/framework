@@ -28,7 +28,7 @@ func TestEnvEncryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvEncryptCommandTestSuite) SetupSuite() {
-	s.Nil(file.Create(".env", EnvEncryptPlaintext))
+	s.Nil(file.PutContent(".env", EnvEncryptPlaintext))
 }
 
 func (s *EnvEncryptCommandTestSuite) TearDownSuite() {

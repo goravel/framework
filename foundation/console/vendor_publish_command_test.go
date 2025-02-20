@@ -34,9 +34,9 @@ func (s *VendorPublishCommandTestSuite) TestGetSourceFiles() {
 	}(sourceDir)
 
 	sourceFile := filepath.Join(sourceDir, "test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 
 	files, err := command.getSourceFiles(filepath.Join(sourceDir, "test.txt"))
 	s.Require().NoError(err)
@@ -64,15 +64,15 @@ func (s *VendorPublishCommandTestSuite) TestGetSourceFilesForDir() {
 	}(sourceDir)
 
 	sourceFile := filepath.Join(sourceDir, "test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "test1.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "dir1/dir11/test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "dir2/test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 
 	files, err := command.getSourceFiles(sourceDir)
 	s.Require().NoError(err)
@@ -274,13 +274,13 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	s.Require().Nil(err)
 
 	sourceFile := filepath.Join(sourceDir, "test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "test1.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 	sourceFile = filepath.Join(sourceDir, "dir2/test.txt")
-	s.Require().Nil(file.Create(sourceFile, "test"))
+	s.Require().Nil(file.PutContent(sourceFile, "test"))
 
 	// source and target are directory
 	result, err := command.publish(sourceDir, targetDir, false, false)
