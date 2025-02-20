@@ -5,13 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	mocksfoundation "github.com/goravel/framework/mocks/foundation"
 	"github.com/goravel/framework/support/color"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAboutCommand(t *testing.T) {
