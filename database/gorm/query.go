@@ -267,6 +267,26 @@ func (r *Query) FindOrFail(dest any, conds ...any) error {
 	return query.retrieved(dest)
 }
 
+func (r *Query) Take(dest any) error {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
+		return err
+	}
+
+	query = query.buildConditions()
+
+	res := query.instance.Take(dest)
+	if res.Error != nil {
+		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
+			return nil
+		}
+
+		return res.Error
+	}
+
+	return query.retrieved(dest)
+}
+
 func (r *Query) First(dest any) error {
 	query, err := r.refreshConnection(dest)
 	if err != nil {
@@ -276,6 +296,26 @@ func (r *Query) First(dest any) error {
 	query = query.buildConditions()
 
 	res := query.instance.First(dest)
+	if res.Error != nil {
+		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
+			return nil
+		}
+
+		return res.Error
+	}
+
+	return query.retrieved(dest)
+}
+
+func (r *Query) Last(dest any) error {
+	query, err := r.refreshConnection(dest)
+	if err != nil {
+		return err
+	}
+
+	query = query.buildConditions()
+
+	res := query.instance.Last(dest)
 	if res.Error != nil {
 		if errors.Is(res.Error, gormio.ErrRecordNotFound) {
 			return nil
