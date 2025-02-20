@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var EnvEncryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvEncryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvEncryptPlaintext = "APP_KEY=12345"
+const EnvEncryptCiphertext = "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
 
 type EnvEncryptCommandTestSuite struct {
 	suite.Suite
@@ -24,7 +26,7 @@ func TestEnvEncryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvEncryptCommandTestSuite) SetupTest() {
-	err := file.Create(".env", "APP_KEY=12345")
+	err := file.Create(".env", EnvEncryptPlaintext)
 	s.Nil(err)
 }
 
@@ -108,16 +110,14 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 func (s *EnvDecryptCommandTestSuite) TestEncrypt() {
 	envEncryptCommand := NewEnvEncryptCommand()
 	s.Run("valid key", func() {
-		plaintext := "APP_KEY=12345"
-		ciphertext, err := envEncryptCommand.encrypt([]byte(plaintext), []byte(EnvEncryptKey))
+		ciphertext, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(EnvEncryptKey))
 		base64Data := base64.StdEncoding.EncodeToString(ciphertext)
-		s.Equal("QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w=", base64Data)
+		s.Equal(EnvEncryptCiphertext, base64Data)
 		s.Nil(err)
 	})
 	s.Run("invalid key", func() {
-		ciphertext := "APP_KEY=12345"
 		key := "xxxx"
-		_, err := envEncryptCommand.encrypt([]byte(ciphertext), []byte(key))
+		_, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(key))
 		s.Error(err)
 	})
 

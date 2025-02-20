@@ -12,7 +12,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var EnvDecryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvDecryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvDecryptCiphertext = "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
 
 type EnvDecryptCommandTestSuite struct {
 	suite.Suite
@@ -23,7 +24,7 @@ func TestEnvDecryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvDecryptCommandTestSuite) SetupTest() {
-	err := file.Create(".env.encrypted", "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w=")
+	err := file.Create(".env.encrypted", EnvDecryptCiphertext)
 	s.Nil(err)
 }
 
@@ -118,16 +119,14 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 func (s *EnvDecryptCommandTestSuite) TestDecrypt() {
 	envDecryptCommand := NewEnvDecryptCommand()
 	s.Run("valid key", func() {
-		ciphertext := "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
-		decrypted, err := envDecryptCommand.decrypt([]byte(ciphertext), []byte(EnvDecryptKey))
+		decrypted, err := envDecryptCommand.decrypt([]byte(EnvDecryptCiphertext), []byte(EnvDecryptKey))
 		s.Nil(err)
 		s.Equal("APP_KEY=12345", string(decrypted))
 		s.Nil(err)
 	})
 	s.Run("invalid key", func() {
-		ciphertext := "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
 		key := "xxxx"
-		_, err := envDecryptCommand.decrypt([]byte(ciphertext), []byte(key))
+		_, err := envDecryptCommand.decrypt([]byte(EnvDecryptCiphertext), []byte(key))
 		s.Error(err)
 	})
 }
