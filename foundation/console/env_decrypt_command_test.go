@@ -90,7 +90,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 			Affirmative: "Yes",
 			Negative:    "No",
 		}).Return(true, nil).Once()
-		s.Require().Equal("APP_KEY=12345", string(env))
+		s.Require().Equal(EnvDecryptPlaintext, string(env))
 	}
 
 	s.Run("valid key", func() {
