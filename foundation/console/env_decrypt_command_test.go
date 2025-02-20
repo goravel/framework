@@ -92,7 +92,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 			Default:     true,
 			Affirmative: "Yes",
 			Negative:    "No",
-		}).Return(true, nil).Twice()
+		}).Return(true, nil).Once()
 		s.Require().Equal("APP_KEY=12345", string(env))
 	}
 
@@ -105,6 +105,11 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 	s.Run("invalid key", func() {
 		key := "xxxx"
 		mockContext.EXPECT().Option("key").Return(key).Once()
+		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
+			Default:     true,
+			Affirmative: "Yes",
+			Negative:    "No",
+		}).Return(true, nil).Once()
 		mockContext.EXPECT().Error("Decrypt error: crypto/aes: invalid key size 4").Once()
 		s.Nil(envDecryptCommand.Handle(mockContext))
 	})
