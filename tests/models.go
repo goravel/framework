@@ -446,7 +446,7 @@ type Phone struct {
 type Product struct {
 	Model
 	SoftDeletes
-	Name string
+	Name string `db:"name"`
 }
 
 func (r *Product) Connection() string {

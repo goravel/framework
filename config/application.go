@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
@@ -9,6 +10,7 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -56,11 +58,7 @@ func NewApplication(envPath string) *Application {
 func (app *Application) Env(envName string, defaultValue ...any) any {
 	value := app.Get(envName, defaultValue...)
 	if cast.ToString(value) == "" {
-		if len(defaultValue) > 0 {
-			return defaultValue[0]
-		}
-
-		return nil
+		return convert.Default(defaultValue...)
 	}
 
 	return value
@@ -74,53 +72,39 @@ func (app *Application) Add(name string, configuration any) {
 // Get config from application.
 func (app *Application) Get(path string, defaultValue ...any) any {
 	if !app.vip.IsSet(path) {
-		if len(defaultValue) > 0 {
-			return defaultValue[0]
-		}
-		return nil
+		return convert.Default(defaultValue...)
 	}
-
 	return app.vip.Get(path)
 }
 
-// GetString Get string type config from application.
-func (app *Application) GetString(path string, defaultValue ...any) string {
-	value := cast.ToString(app.Get(path, defaultValue...))
-	if value == "" {
-		if len(defaultValue) > 0 {
-			return defaultValue[0].(string)
-		}
-
-		return ""
+// GetString get string type config from application.
+func (app *Application) GetString(path string, defaultValue ...string) string {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
 	}
-
-	return value
+	return app.vip.GetString(path)
 }
 
-// GetInt Get int type config from application.
-func (app *Application) GetInt(path string, defaultValue ...any) int {
-	value := app.Get(path, defaultValue...)
-	if cast.ToString(value) == "" {
-		if len(defaultValue) > 0 {
-			return defaultValue[0].(int)
-		}
-
-		return 0
+// GetInt get int type config from application.
+func (app *Application) GetInt(path string, defaultValue ...int) int {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
 	}
-
-	return cast.ToInt(value)
+	return app.vip.GetInt(path)
 }
 
-// GetBool Get bool type config from application.
-func (app *Application) GetBool(path string, defaultValue ...any) bool {
-	value := app.Get(path, defaultValue...)
-	if cast.ToString(value) == "" {
-		if len(defaultValue) > 0 {
-			return defaultValue[0].(bool)
-		}
-
-		return false
+// GetBool get bool type config from application.
+func (app *Application) GetBool(path string, defaultValue ...bool) bool {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
 	}
+	return app.vip.GetBool(path)
+}
 
-	return cast.ToBool(value)
+// GetDuration get time.Duration type config from application
+func (app *Application) GetDuration(path string, defaultValue ...time.Duration) time.Duration {
+	if !app.vip.IsSet(path) {
+		return convert.Default(defaultValue...)
+	}
+	return app.vip.GetDuration(path)
 }

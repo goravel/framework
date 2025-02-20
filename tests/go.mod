@@ -9,10 +9,10 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
-	github.com/goravel/mysql v0.0.0-20250216081427-eba0ecba6082
-	github.com/goravel/postgres v0.0.2-0.20250212093528-e958259585e5
-	github.com/goravel/sqlite v0.0.0-20250212093642-a3611895dbe8
-	github.com/goravel/sqlserver v0.0.0-20250212093618-ddd8ebbc0034
+	github.com/goravel/mysql v0.0.0-20250218091104-6577ff4ab455
+	github.com/goravel/postgres v0.0.2-0.20250218091153-f950a69aff84
+	github.com/goravel/sqlite v0.0.0-20250218091018-e1f7842bf316
+	github.com/goravel/sqlserver v0.0.0-20250218091041-ed4f422e1b7f
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
@@ -65,7 +65,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20250215185904-eff6e970281f // indirect
-	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.29.0 // indirect
