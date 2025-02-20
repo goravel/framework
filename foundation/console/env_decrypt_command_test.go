@@ -24,8 +24,7 @@ func TestEnvDecryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvDecryptCommandTestSuite) SetupTest() {
-	err := file.Create(".env.encrypted", EnvDecryptCiphertext)
-	s.Nil(err)
+	s.Nil(file.Create(".env.encrypted", EnvDecryptCiphertext))
 }
 
 func (s *EnvDecryptCommandTestSuite) TearDownSuite() {
