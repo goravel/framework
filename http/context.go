@@ -22,8 +22,8 @@ func NewContext() *Context {
 	}
 }
 
-func (r *Context) Context() context.Context {
-	return r.Ctx
+func (c *Context) Context() context.Context {
+	return c.Ctx
 }
 
 func (c *Context) WithContext(ctx context.Context) {
@@ -31,15 +31,15 @@ func (c *Context) WithContext(ctx context.Context) {
 	c.Ctx = ctx
 }
 
-func (r *Context) WithValue(key any, value any) {
+func (c *Context) WithValue(key any, value any) {
 	//nolint:all
-	r.Ctx = context.WithValue(r.Ctx, key, value)
+	c.Ctx = context.WithValue(c.Ctx, key, value)
 }
 
-func (r *Context) Request() http.ContextRequest {
+func (c *Context) Request() http.ContextRequest {
 	return nil
 }
 
-func (r *Context) Response() http.ContextResponse {
+func (c *Context) Response() http.ContextResponse {
 	return nil
 }
