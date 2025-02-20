@@ -6,11 +6,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
-	"github.com/stretchr/testify/suite"
 )
 
 const EnvEncryptInvalidKey = "xxxx"
