@@ -39,7 +39,7 @@ func (s *AssertableJsonTestSuite) TestCount() {
 
 	assertable.Count("items", 3)
 
-	//assertable.Count("items", 4)
+	// assertable.Count("items", 4)
 }
 
 func (s *AssertableJsonTestSuite) TestHas() {
@@ -55,7 +55,7 @@ func (s *AssertableJsonTestSuite) TestHas() {
 	assertable.Has("key1")
 	assertable.Has("nullKey")
 
-	//assertable.Has("nonExistingKey")
+	// assertable.Has("nonExistingKey")
 }
 
 func (s *AssertableJsonTestSuite) TestHasAll() {
@@ -67,7 +67,7 @@ func (s *AssertableJsonTestSuite) TestHasAll() {
 	assertable.HasAll([]string{"key1", "key2"})
 
 	// Test one key does not exist
-	//assertable.HasAll([]string{"key1", "nonExistingKey"})
+	// assertable.HasAll([]string{"key1", "nonExistingKey"})
 }
 
 func (s *AssertableJsonTestSuite) TestHasAny() {
@@ -79,7 +79,7 @@ func (s *AssertableJsonTestSuite) TestHasAny() {
 	assertable.HasAny([]string{"key1", "key2"})
 
 	// Test no keys exist
-	//assertable.HasAny([]string{"nonExistingKey1", "nonExistingKey2"})
+	// assertable.HasAny([]string{"nonExistingKey1", "nonExistingKey2"})
 }
 
 func (s *AssertableJsonTestSuite) TestMissing() {
@@ -91,7 +91,7 @@ func (s *AssertableJsonTestSuite) TestMissing() {
 	assertable.Missing("nonExistingKey")
 
 	// Test key exists
-	//assertable.Missing("key1")
+	// assertable.Missing("key1")
 }
 
 func (s *AssertableJsonTestSuite) TestMissingAll() {
@@ -103,7 +103,7 @@ func (s *AssertableJsonTestSuite) TestMissingAll() {
 	assertable.MissingAll([]string{"nonExistingKey1", "nonExistingKey2"})
 
 	// Test one key exists
-	//assertable.MissingAll([]string{"key1"})
+	// assertable.MissingAll([]string{"key1"})
 }
 
 func (s *AssertableJsonTestSuite) TestWhere() {
@@ -131,7 +131,7 @@ func (s *AssertableJsonTestSuite) TestWhere() {
 	assertable.Where("arrayKey", []any{float64(1), float64(2), float64(3)})
 
 	// Test incorrect value
-	//assertable.Where("key1", "wrongValue")
+	// assertable.Where("key1", "wrongValue")
 }
 
 func (s *AssertableJsonTestSuite) TestWhereNot() {
@@ -143,7 +143,7 @@ func (s *AssertableJsonTestSuite) TestWhereNot() {
 	assertable.WhereNot("key1", "wrongValue")
 
 	// Test value is as expected
-	//assertable.WhereNot("key1", "value1")
+	// assertable.WhereNot("key1", "value1")
 }
 
 func (s *AssertableJsonTestSuite) TestFirst() {
@@ -158,12 +158,12 @@ func (s *AssertableJsonTestSuite) TestFirst() {
 	})
 
 	// Test with a non-existing key
-	//assertable.First("nonExistingKey", func(item contractstesting.AssertableJSON) {})
+	// assertable.First("nonExistingKey", func(item contractstesting.AssertableJSON) {})
 
 	// Test with an empty array
-	//emptyJsonStr := `{"items": []}`
-	//emptyAssertable, _ := NewAssertableJSON(t, emptyJsonStr)
-	//emptyAssertable.First("items", func(item contractstesting.AssertableJSON) {})
+	// emptyJsonStr := `{"items": []}`
+	// emptyAssertable, _ := NewAssertableJSON(t, emptyJsonStr)
+	// emptyAssertable.First("items", func(item contractstesting.AssertableJSON) {})
 }
 
 func (s *AssertableJsonTestSuite) TestHasWithScope() {
@@ -178,10 +178,10 @@ func (s *AssertableJsonTestSuite) TestHasWithScope() {
 	})
 
 	// Test incorrect length
-	//assertable.HasWithScope("items", 3, func(item contractstesting.AssertableJSON) {})
+	// assertable.HasWithScope("items", 3, func(item contractstesting.AssertableJSON) {})
 
 	// Test with a non-existing key
-	//assertable.HasWithScope("nonExistingKey", 0, func(item contractstesting.AssertableJSON) {})
+	// assertable.HasWithScope("nonExistingKey", 0, func(item contractstesting.AssertableJSON) {})
 }
 
 func (s *AssertableJsonTestSuite) TestEach() {
@@ -203,7 +203,7 @@ func (s *AssertableJsonTestSuite) TestEach() {
 	s.Equal(2, callCount)
 
 	// Test with a non-existing key
-	//assertable.Each("nonExistingKey", func(item contractstesting.AssertableJSON) {})
+	// assertable.Each("nonExistingKey", func(item contractstesting.AssertableJSON) {})
 
 	// Test with an empty array
 	emptyJsonStr := `{"items": []}`
