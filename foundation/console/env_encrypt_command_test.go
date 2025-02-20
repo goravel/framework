@@ -13,7 +13,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const EnvEncryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvEncryptInvalidKey = "xxxx"
+const EnvEncryptValidKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
 const EnvEncryptPlaintext = "APP_KEY=12345"
 const EnvEncryptCiphertext = "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
 
@@ -98,9 +99,9 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 	}
 
 	s.Run("valid key", func() {
-		mockContext.EXPECT().Option("key").Return(EnvEncryptKey).Once()
+		mockContext.EXPECT().Option("key").Return(EnvEncryptValidKey).Once()
 		mockContext.EXPECT().Success("Environment successfully encrypted.").Once()
-		mockContext.EXPECT().TwoColumnDetail("Key", EnvEncryptKey).Once()
+		mockContext.EXPECT().TwoColumnDetail("Key", EnvEncryptValidKey).Once()
 		mockContext.EXPECT().TwoColumnDetail("Cipher", "AES-256-CBC").Once()
 		mockContext.EXPECT().TwoColumnDetail("Encrypted file", ".env.encrypted").Once()
 
@@ -108,8 +109,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 	})
 
 	s.Run("invalid key", func() {
-		key := "xxxx"
-		mockContext.EXPECT().Option("key").Return(key).Once()
+		mockContext.EXPECT().Option("key").Return(EnvEncryptInvalidKey).Once()
 		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
@@ -124,14 +124,13 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 func (s *EnvDecryptCommandTestSuite) TestEncrypt() {
 	envEncryptCommand := NewEnvEncryptCommand()
 	s.Run("valid key", func() {
-		ciphertext, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(EnvEncryptKey))
+		ciphertext, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(EnvEncryptValidKey))
 		base64Data := base64.StdEncoding.EncodeToString(ciphertext)
 		s.Equal(EnvEncryptCiphertext, base64Data)
 		s.Nil(err)
 	})
 	s.Run("invalid key", func() {
-		key := "xxxx"
-		_, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(key))
+		_, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(EnvEncryptInvalidKey))
 		s.Error(err)
 	})
 

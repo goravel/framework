@@ -12,7 +12,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const EnvDecryptKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvDecryptInvalidKey = "xxxx"
+const EnvDecryptValidKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvDecryptPlaintext = "APP_KEY=12345"
 const EnvDecryptCiphertext = "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
 
 type EnvDecryptCommandTestSuite struct {
@@ -97,14 +99,13 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 	}
 
 	s.Run("valid key", func() {
-		mockContext.EXPECT().Option("key").Return(EnvDecryptKey).Once()
+		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
 		mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
 		s.Nil(envDecryptCommand.Handle(mockContext))
 	})
 
 	s.Run("invalid key", func() {
-		key := "xxxx"
-		mockContext.EXPECT().Option("key").Return(key).Once()
+		mockContext.EXPECT().Option("key").Return(EnvDecryptInvalidKey).Once()
 		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
@@ -118,14 +119,13 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 func (s *EnvDecryptCommandTestSuite) TestDecrypt() {
 	envDecryptCommand := NewEnvDecryptCommand()
 	s.Run("valid key", func() {
-		decrypted, err := envDecryptCommand.decrypt([]byte(EnvDecryptCiphertext), []byte(EnvDecryptKey))
+		decrypted, err := envDecryptCommand.decrypt([]byte(EnvDecryptCiphertext), []byte(EnvDecryptValidKey))
 		s.Nil(err)
-		s.Equal("APP_KEY=12345", string(decrypted))
+		s.Equal(EnvDecryptPlaintext, string(decrypted))
 		s.Nil(err)
 	})
 	s.Run("invalid key", func() {
-		key := "xxxx"
-		_, err := envDecryptCommand.decrypt([]byte(EnvDecryptCiphertext), []byte(key))
+		_, err := envDecryptCommand.decrypt([]byte(EnvDecryptCiphertext), []byte(EnvDecryptInvalidKey))
 		s.Error(err)
 	})
 }
