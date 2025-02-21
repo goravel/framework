@@ -7,6 +7,7 @@ import (
 )
 
 type Body struct {
+	Length int    `db:"length"`
 	Weight string `db:"weight"`
 	Height int    `db:"-"`
 	Age    uint
@@ -31,29 +32,29 @@ func TestConvertToSliceMap(t *testing.T) {
 		{
 			data: []User{
 				{ID: 1, Name: "John", Email: "john@example.com", Body: Body{Weight: "100kg", Height: 180, Age: 25}},
-				{ID: 2, Name: "Jane", Email: "jane@example.com", Body: Body{Weight: "90kg", Height: 170, Age: 20}},
+				{ID: 2, Name: "Jane", Email: "jane@example.com", Body: Body{Length: 1, Weight: "90kg", Height: 170, Age: 20}},
 			},
 			want: []map[string]any{
 				{"id": 1, "weight": "100kg"},
-				{"id": 2, "weight": "90kg"},
+				{"id": 2, "length": 1, "weight": "90kg"},
 			},
 		},
 		{
 			data: []*User{
 				{ID: 1, Name: "John", Email: "john@example.com", Body: Body{Weight: "100kg", Height: 180, Age: 25}},
-				{ID: 2, Name: "Jane", Email: "jane@example.com", Body: Body{Weight: "90kg", Height: 170, Age: 20}},
+				{ID: 2, Name: "Jane", Email: "jane@example.com", Body: Body{Length: 1, Weight: "90kg", Height: 170, Age: 20}},
 			},
 			want: []map[string]any{
 				{"id": 1, "weight": "100kg"},
-				{"id": 2, "weight": "90kg"},
+				{"id": 2, "length": 1, "weight": "90kg"},
 			},
 		},
 		{
 			data: []Body{
 				{Weight: "100kg", Height: 180, Age: 25},
-				{Weight: "90kg", Height: 170, Age: 20},
+				{Length: 1, Weight: "90kg", Height: 170, Age: 20},
 			},
-			want: []map[string]any{{"weight": "100kg"}, {"weight": "90kg"}},
+			want: []map[string]any{{"weight": "100kg"}, {"length": 1, "weight": "90kg"}},
 		},
 		{
 			data: Body{
