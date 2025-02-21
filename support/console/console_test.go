@@ -90,7 +90,7 @@ func TestNewMake(t *testing.T) {
 			name: "Sad path - name already exists",
 			setup: func() {
 				name = "Uppercase"
-				assert.Nil(t, file.Create(filepath.Join(root, "uppercase.go"), ""))
+				assert.Nil(t, file.PutContent(filepath.Join(root, "uppercase.go"), ""))
 				mockCtx.EXPECT().OptionBool("force").Return(false).Once()
 			},
 			expectMake:  nil,
@@ -100,7 +100,7 @@ func TestNewMake(t *testing.T) {
 			name: "Happy path - name already exists, but force is true",
 			setup: func() {
 				name = "Uppercase"
-				assert.Nil(t, file.Create(filepath.Join(root, "uppercase.go"), ""))
+				assert.Nil(t, file.PutContent(filepath.Join(root, "uppercase.go"), ""))
 				mockCtx.EXPECT().OptionBool("force").Return(true).Once()
 			},
 			expectMake:  &Make{name: "Lowercase", root: root},

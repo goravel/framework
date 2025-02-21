@@ -86,7 +86,7 @@ func (f *File) Write(id string, data string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	return file.Create(f.getFilePath(id), data)
+	return file.PutContent(f.getFilePath(id), data)
 }
 
 func (f *File) getFilePath(id string) string {

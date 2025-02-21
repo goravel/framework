@@ -606,7 +606,7 @@ func (h *CustomHook) Fire(entry logcontracts.Entry) error {
 			builder.WriteString(fmt.Sprintf("custom_user: %v\n", user))
 		}
 
-		err := file.Create(cast.ToString(filename), builder.String())
+		err := file.PutContent(cast.ToString(filename), builder.String())
 		if err != nil {
 			return err
 		}

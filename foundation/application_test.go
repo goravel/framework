@@ -44,7 +44,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.Create(".env", "APP_KEY=12345678901234567890123456789012"))
+	assert.Nil(t, file.PutContent(".env", "APP_KEY=12345678901234567890123456789012"))
 
 	suite.Run(t, new(ApplicationTestSuite))
 

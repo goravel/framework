@@ -157,7 +157,7 @@ func (r *Container) lock() {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	if err := file.Create(r.lockFile, ""); err != nil {
+	if err := file.PutContent(r.lockFile, ""); err != nil {
 		panic(err)
 	}
 }

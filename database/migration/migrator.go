@@ -38,7 +38,7 @@ func (r *Migrator) Create(name string) error {
 	fileName := r.creator.GetFileName(name)
 
 	// Create the up.sql file.
-	if err := supportfile.Create(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
+	if err := supportfile.PutContent(r.creator.GetPath(fileName), r.creator.PopulateStub(stub, fileName, table)); err != nil {
 		return err
 	}
 

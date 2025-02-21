@@ -20,7 +20,7 @@ func (receiver *Test) Signature() string {
 
 // Handle Execute the job.
 func (receiver *Test) Handle(args ...any) error {
-	return file.Create("test.txt", args[0].(string))
+	return file.PutContent("test.txt", args[0].(string))
 }
 
 func TestDispatchSync(t *testing.T) {
