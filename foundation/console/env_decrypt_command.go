@@ -10,6 +10,8 @@ import (
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/framework/support/file"
 )
 
 type EnvDecryptCommand struct {
@@ -46,22 +48,21 @@ func (r *EnvDecryptCommand) Extend() command.Extend {
 
 // Handle Execute the console command.
 func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
-	key := ctx.Option("key")
-	if key == "" {
-		key = os.Getenv("GORAVEL_ENV_ENCRYPTION_KEY")
-	}
+	key := convert.Default(ctx.Option("key"), os.Getenv("GORAVEL_ENV_ENCRYPTION_KEY"))
 	if key == "" {
 		ctx.Error("A decryption key is required.")
 		return nil
 	}
+
 	ciphertext, err := os.ReadFile(".env.encrypted")
 	if err != nil {
 		ctx.Error("Encrypted environment file not found.")
 		return nil
 	}
-	if _, err = os.Stat(".env"); err == nil {
+
+	if file.Exists(".env") {
 		ok, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
-			Default:     true,
+			Default:     false,
 			Affirmative: "Yes",
 			Negative:    "No",
 		})
@@ -69,16 +70,19 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
+
 	plaintext, err := r.decrypt(ciphertext, []byte(key))
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Decrypt error: %v", err))
 		return nil
 	}
+
 	err = os.WriteFile(".env", plaintext, 0644)
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Writer error: %v", err))
 		return nil
 	}
+
 	ctx.Success("Encrypted environment successfully decrypted.")
 	return nil
 }
@@ -88,18 +92,22 @@ func (r *EnvDecryptCommand) decrypt(ciphertext []byte, key []byte) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
+
 	iv := ciphertext[:aes.BlockSize]
 	ciphertext = ciphertext[aes.BlockSize:]
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(ciphertext)%aes.BlockSize != 0 {
 		return nil, errors.AesCiphertextInvalid
 	}
+
 	mode := cipher.NewCBCDecrypter(block, iv)
 	plaintext := make([]byte, len(ciphertext))
 	mode.CryptBlocks(plaintext, ciphertext)
+
 	return r.pkcs7Unpad(plaintext)
 }
 
@@ -108,9 +116,11 @@ func (r *EnvDecryptCommand) pkcs7Unpad(data []byte) ([]byte, error) {
 	if length == 0 {
 		return nil, errors.AesCiphertextInvalid
 	}
+
 	padding := int(data[length-1])
 	if padding < 1 || length < padding {
 		return nil, errors.AesPaddingInvalid
 	}
+
 	return data[:length-padding], nil
 }
