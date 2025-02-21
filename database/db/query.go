@@ -28,6 +28,29 @@ func NewQuery(config database.Config, builder db.Builder, table string) *Query {
 	}
 }
 
+func (r *Query) Delete() (*db.Result, error) {
+	sql, args, err := r.buildDelete()
+	// TODO: use logger instead of println
+	fmt.Println(sql, args, err)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.builder.Exec(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	return &db.Result{
+		RowsAffected: rowsAffected,
+	}, nil
+}
+
 func (r *Query) First(dest any) error {
 	sql, args, err := r.buildSelect()
 	// TODO: use logger instead of println
@@ -82,6 +105,34 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) Update(data any) (*db.Result, error) {
+	mapData, err := convertToMap(data)
+	if err != nil {
+		return nil, err
+	}
+
+	sql, args, err := r.buildUpdate(mapData)
+	// TODO: use logger instead of println
+	fmt.Println(sql, args, err)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.builder.Exec(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	return &db.Result{
+		RowsAffected: rowsAffected,
+	}, nil
+}
+
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := NewQuery(r.config, r.builder, r.conditions.table)
 	q.conditions = r.conditions
@@ -91,6 +142,35 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	})
 
 	return q
+}
+
+func (r *Query) buildDelete() (sql string, args []any, err error) {
+	if r.conditions.table == "" {
+		return "", nil, errors.DatabaseTableIsRequired
+	}
+
+	builder := sq.Delete(r.conditions.table)
+	if r.config.PlaceholderFormat != nil {
+		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	}
+
+	for _, where := range r.conditions.where {
+		query, ok := where.query.(string)
+		if ok {
+			if !str.Of(query).Trim().Contains(" ", "?") {
+				if len(where.args) > 1 {
+					builder = builder.Where(sq.Eq{query: where.args})
+				} else if len(where.args) == 1 {
+					builder = builder.Where(sq.Eq{query: where.args[0]})
+				}
+				continue
+			}
+		}
+
+		builder = builder.Where(where.query, where.args...)
+	}
+
+	return builder.ToSql()
 }
 
 func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err error) {
@@ -104,8 +184,6 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 	}
 
 	first := data[0]
-	builder = builder.SetMap(first)
-
 	cols := make([]string, 0, len(first))
 	for col := range first {
 		cols = append(cols, col)
@@ -151,6 +229,37 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 
 		builder = builder.Where(where.query, where.args...)
 	}
+
+	return builder.ToSql()
+}
+
+func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err error) {
+	if r.conditions.table == "" {
+		return "", nil, errors.DatabaseTableIsRequired
+	}
+
+	builder := sq.Update(r.conditions.table)
+	if r.config.PlaceholderFormat != nil {
+		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	}
+
+	for _, where := range r.conditions.where {
+		query, ok := where.query.(string)
+		if ok {
+			if !str.Of(query).Trim().Contains(" ", "?") {
+				if len(where.args) > 1 {
+					builder = builder.Where(sq.Eq{query: where.args})
+				} else if len(where.args) == 1 {
+					builder = builder.Where(sq.Eq{query: where.args[0]})
+				}
+				continue
+			}
+		}
+
+		builder = builder.Where(where.query, where.args...)
+	}
+
+	builder = builder.SetMap(data)
 
 	return builder.ToSql()
 }

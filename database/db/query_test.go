@@ -14,9 +14,10 @@ import (
 
 // TestUser is a test model
 type TestUser struct {
-	ID   uint   `db:"id"`
-	Name string `db:"-"`
-	Age  int
+	ID    uint   `db:"id"`
+	Phone string `db:"phone"`
+	Name  string `db:"-"`
+	Age   int
 }
 
 type QueryTestSuite struct {
@@ -32,6 +33,18 @@ func TestQueryTestSuite(t *testing.T) {
 func (s *QueryTestSuite) SetupTest() {
 	s.mockBuilder = mocksdb.NewBuilder(s.T())
 	s.query = NewQuery(database.Config{}, s.mockBuilder, "users")
+}
+
+func (s *QueryTestSuite) TestDelete() {
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(1), nil)
+	s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return(mockResult, nil).Once()
+
+	result, err := s.query.Where("name", "John").Where("id", 1).Delete()
+	s.Nil(err)
+	s.Equal(int64(1), result.RowsAffected)
+
+	mockResult.AssertExpectations(s.T())
 }
 
 func (s *QueryTestSuite) TestFirst() {
@@ -147,6 +160,44 @@ func (s *QueryTestSuite) TestInsert() {
 		result, err := s.query.Insert(user)
 		s.Nil(result)
 		s.Equal(assert.AnError, err)
+	})
+}
+
+func (s *QueryTestSuite) TestUpdate() {
+	s.Run("single struct", func() {
+		user := TestUser{
+			Phone: "1234567890",
+			Name:  "John",
+			Age:   25,
+		}
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return(mockResult, nil).Once()
+
+		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("single map", func() {
+		user := map[string]any{
+			"phone": "1234567890",
+			"name":  "John",
+			"age":   25,
+		}
+
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET age = ?, name = ?, phone = ? WHERE name = ? AND id = ?", 25, "John", "1234567890", "John", 1).Return(mockResult, nil).Once()
+
+		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
 	})
 }
 

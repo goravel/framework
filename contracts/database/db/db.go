@@ -8,8 +8,10 @@ type DB interface {
 
 type Query interface {
 	First(dest any) error
+	Delete() (*Result, error)
 	Get(dest any) error
 	Insert(data any) (*Result, error)
+	Update(data any) (*Result, error)
 	Where(query any, args ...any) Query
 }
 

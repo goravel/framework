@@ -20,6 +20,63 @@ func (_m *Query) EXPECT() *Query_Expecter {
 	return &Query_Expecter{mock: &_m.Mock}
 }
 
+// Delete provides a mock function with no fields
+func (_m *Query) Delete() (*db.Result, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (*db.Result, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() *db.Result); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type Query_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+func (_e *Query_Expecter) Delete() *Query_Delete_Call {
+	return &Query_Delete_Call{Call: _e.mock.On("Delete")}
+}
+
+func (_c *Query_Delete_Call) Run(run func()) *Query_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_Delete_Call) Return(_a0 *db.Result, _a1 error) *Query_Delete_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Delete_Call) RunAndReturn(run func() (*db.Result, error)) *Query_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // First provides a mock function with given fields: dest
 func (_m *Query) First(dest interface{}) error {
 	ret := _m.Called(dest)
@@ -166,6 +223,64 @@ func (_c *Query_Insert_Call) Return(_a0 *db.Result, _a1 error) *Query_Insert_Cal
 }
 
 func (_c *Query_Insert_Call) RunAndReturn(run func(interface{}) (*db.Result, error)) *Query_Insert_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: data
+func (_m *Query) Update(data interface{}) (*db.Result, error) {
+	ret := _m.Called(data)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 *db.Result
+	var r1 error
+	if rf, ok := ret.Get(0).(func(interface{}) (*db.Result, error)); ok {
+		return rf(data)
+	}
+	if rf, ok := ret.Get(0).(func(interface{}) *db.Result); ok {
+		r0 = rf(data)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*db.Result)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+		r1 = rf(data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type Query_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - data interface{}
+func (_e *Query_Expecter) Update(data interface{}) *Query_Update_Call {
+	return &Query_Update_Call{Call: _e.mock.On("Update", data)}
+}
+
+func (_c *Query_Update_Call) Run(run func(data interface{})) *Query_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_Update_Call) Return(_a0 *db.Result, _a1 error) *Query_Update_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Update_Call) RunAndReturn(run func(interface{}) (*db.Result, error)) *Query_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }
