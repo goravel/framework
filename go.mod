@@ -1,6 +1,6 @@
 module github.com/goravel/framework
 
-go 1.23.0
+go 1.24
 
 toolchain go1.24.0
 
@@ -30,7 +30,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
-	github.com/vektra/mockery/v2 v2.52.0
+	github.com/vektra/mockery/v2 v2.52.2
 	golang.org/x/crypto v0.33.0
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
 	google.golang.org/grpc v1.70.0
