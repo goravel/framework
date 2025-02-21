@@ -44,7 +44,7 @@ type Query interface {
 	// OrWhere(query any, args ...any) Query
 	// OrWhereLike()
 	// OrWhereNotLike
-	Pluck(column string, dest any) error
+	// Pluck(column string, dest any) error
 	// RightJoin(table string, on any, args ...any) Query
 	// Select(dest any, columns ...string) error
 	// SelectRaw(query string, args ...any) (any, error)

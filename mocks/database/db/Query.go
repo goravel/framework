@@ -227,53 +227,6 @@ func (_c *Query_Insert_Call) RunAndReturn(run func(interface{}) (*db.Result, err
 	return _c
 }
 
-// Pluck provides a mock function with given fields: column, dest
-func (_m *Query) Pluck(column string, dest interface{}) error {
-	ret := _m.Called(column, dest)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Pluck")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
-		r0 = rf(column, dest)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Query_Pluck_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pluck'
-type Query_Pluck_Call struct {
-	*mock.Call
-}
-
-// Pluck is a helper method to define mock.On call
-//   - column string
-//   - dest interface{}
-func (_e *Query_Expecter) Pluck(column interface{}, dest interface{}) *Query_Pluck_Call {
-	return &Query_Pluck_Call{Call: _e.mock.On("Pluck", column, dest)}
-}
-
-func (_c *Query_Pluck_Call) Run(run func(column string, dest interface{})) *Query_Pluck_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(interface{}))
-	})
-	return _c
-}
-
-func (_c *Query_Pluck_Call) Return(_a0 error) *Query_Pluck_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Query_Pluck_Call) RunAndReturn(run func(string, interface{}) error) *Query_Pluck_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Update provides a mock function with given fields: data
 func (_m *Query) Update(data interface{}) (*db.Result, error) {
 	ret := _m.Called(data)
