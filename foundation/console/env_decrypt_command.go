@@ -54,7 +54,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 		ctx.Error("A decryption key is required.")
 		return nil
 	}
-	encryptedData, err := os.ReadFile(".env.encrypted")
+	ciphertext, err := os.ReadFile(".env.encrypted")
 	if err != nil {
 		ctx.Error("Encrypted environment file not found.")
 		return nil
@@ -69,12 +69,12 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 			return nil
 		}
 	}
-	decrypted, err := r.decrypt(encryptedData, []byte(key))
+	plaintext, err := r.decrypt(ciphertext, []byte(key))
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Decrypt error: %v", err))
 		return nil
 	}
-	err = os.WriteFile(".env", decrypted, 0644)
+	err = os.WriteFile(".env", plaintext, 0644)
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Writer error: %v", err))
 		return nil

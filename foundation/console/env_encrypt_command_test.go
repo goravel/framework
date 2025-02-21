@@ -85,7 +85,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 	envEncryptCommand := NewEnvEncryptCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
-	if _, err := os.ReadFile(".env.encrypted"); err == nil {
+	if _, err := os.Stat(".env.encrypted"); err == nil {
 		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
 			Default:     true,
 			Affirmative: "Yes",
