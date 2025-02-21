@@ -35,6 +35,6 @@
       "matchFileNames": ["tests/go.mod"]
     }
   ],
-  "ignoreDeps": [],
+  "ignoreDeps": ["github.com/vektra/mockery/v2"],
   "ignorePaths": []
 }
