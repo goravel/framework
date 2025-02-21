@@ -10,12 +10,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install Mockery
-        run: |
-          docker pull vektra/mockery:v2.50
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
       - name: Generate Mocks
-        run: |
-          docker run -v "$PWD":/src -w /src vektra/mockery:v2.50
+        run: go run github.com/vektra/mockery/v2
       - uses: stefanzweifel/git-auto-commit-action@v5
         name: Commit changes
         with:
