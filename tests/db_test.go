@@ -142,7 +142,7 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 		s.Run(driver, func() {
 			result, err := query.DB().Table("products").Insert([]Product{
 				{
-					Name: "multiple structs1",
+					Name: "update structs1",
 					Model: Model{
 						Timestamps: Timestamps{
 							CreatedAt: now,
@@ -151,7 +151,7 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 					},
 				},
 				{
-					Name: "multiple structs2",
+					Name: "update structs2",
 				},
 			})
 			s.NoError(err)
@@ -159,43 +159,43 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 
 			// Create success
 			var products1 []Product
-			err = query.DB().Table("products").Where("name", []string{"multiple structs1", "multiple structs2"}).Where("deleted_at", nil).Get(&products1)
+			err = query.DB().Table("products").Where("name", []string{"update structs1", "update structs2"}).Where("deleted_at", nil).Get(&products1)
 			s.NoError(err)
 			s.Equal(2, len(products1))
-			s.Equal("multiple structs1", products1[0].Name)
-			s.Equal("multiple structs2", products1[1].Name)
+			s.Equal("update structs1", products1[0].Name)
+			s.Equal("update structs2", products1[1].Name)
 
 			// Update success via map
-			result, err = query.DB().Table("products").Where("name", "multiple structs1").Update(map[string]any{
-				"name": "multiple structs1 updated",
+			result, err = query.DB().Table("products").Where("name", "update structs1").Update(map[string]any{
+				"name": "update structs1 updated",
 			})
 			s.NoError(err)
 			s.Equal(int64(1), result.RowsAffected)
 
 			var product1 Product
-			err = query.DB().Table("products").Where("name", "multiple structs1 updated").Where("deleted_at", nil).First(&product1)
+			err = query.DB().Table("products").Where("name", "update structs1 updated").Where("deleted_at", nil).First(&product1)
 			s.NoError(err)
-			s.Equal("multiple structs1 updated", product1.Name)
+			s.Equal("update structs1 updated", product1.Name)
 
 			// Update success via struct
-			result, err = query.DB().Table("products").Where("name", "multiple structs2").Update(Product{
-				Name: "multiple structs2 updated",
+			result, err = query.DB().Table("products").Where("name", "update structs2").Update(Product{
+				Name: "update structs2 updated",
 			})
 			s.NoError(err)
 			s.Equal(int64(1), result.RowsAffected)
 
 			var product2 Product
-			err = query.DB().Table("products").Where("name", "multiple structs2 updated").Where("deleted_at", nil).First(&product2)
+			err = query.DB().Table("products").Where("name", "update structs2 updated").Where("deleted_at", nil).First(&product2)
 			s.NoError(err)
-			s.Equal("multiple structs2 updated", product2.Name)
+			s.Equal("update structs2 updated", product2.Name)
 
 			// Delete success
-			result, err = query.DB().Table("products").Where("name like ?", "multiple structs%").Delete()
+			result, err = query.DB().Table("products").Where("name like ?", "update structs%").Delete()
 			s.NoError(err)
 			s.Equal(int64(2), result.RowsAffected)
 
 			var products2 []Product
-			err = query.DB().Table("products").Where("name", []string{"multiple structs1 updated", "multiple structs2 updated"}).Where("deleted_at", nil).Get(&products2)
+			err = query.DB().Table("products").Where("name", []string{"update structs1 updated", "update structs2 updated"}).Where("deleted_at", nil).Get(&products2)
 			s.NoError(err)
 			s.Equal(0, len(products2))
 		})
