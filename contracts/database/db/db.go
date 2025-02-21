@@ -23,7 +23,7 @@ type Query interface {
 	Delete() (*Result, error)
 	Get(dest any) error
 	// GroupBy(column string) Query
-	GroupByRaw(query string, args ...any) Query
+	// GroupByRaw(query string, args ...any) Query
 	// having
 	// HavingRaw(query any, args ...any) Query
 	// increment

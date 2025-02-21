@@ -169,65 +169,6 @@ func (_c *Query_Get_Call) RunAndReturn(run func(interface{}) error) *Query_Get_C
 	return _c
 }
 
-// GroupByRaw provides a mock function with given fields: query, args
-func (_m *Query) GroupByRaw(query string, args ...interface{}) db.Query {
-	var _ca []interface{}
-	_ca = append(_ca, query)
-	_ca = append(_ca, args...)
-	ret := _m.Called(_ca...)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GroupByRaw")
-	}
-
-	var r0 db.Query
-	if rf, ok := ret.Get(0).(func(string, ...interface{}) db.Query); ok {
-		r0 = rf(query, args...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(db.Query)
-		}
-	}
-
-	return r0
-}
-
-// Query_GroupByRaw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GroupByRaw'
-type Query_GroupByRaw_Call struct {
-	*mock.Call
-}
-
-// GroupByRaw is a helper method to define mock.On call
-//   - query string
-//   - args ...interface{}
-func (_e *Query_Expecter) GroupByRaw(query interface{}, args ...interface{}) *Query_GroupByRaw_Call {
-	return &Query_GroupByRaw_Call{Call: _e.mock.On("GroupByRaw",
-		append([]interface{}{query}, args...)...)}
-}
-
-func (_c *Query_GroupByRaw_Call) Run(run func(query string, args ...interface{})) *Query_GroupByRaw_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-1)
-		for i, a := range args[1:] {
-			if a != nil {
-				variadicArgs[i] = a.(interface{})
-			}
-		}
-		run(args[0].(string), variadicArgs...)
-	})
-	return _c
-}
-
-func (_c *Query_GroupByRaw_Call) Return(_a0 db.Query) *Query_GroupByRaw_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Query_GroupByRaw_Call) RunAndReturn(run func(string, ...interface{}) db.Query) *Query_GroupByRaw_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Insert provides a mock function with given fields: data
 func (_m *Query) Insert(data interface{}) (*db.Result, error) {
 	ret := _m.Called(data)
