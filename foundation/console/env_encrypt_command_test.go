@@ -2,7 +2,6 @@ package console
 
 import (
 	"encoding/base64"
-	"os"
 	"reflect"
 	"testing"
 
@@ -28,11 +27,9 @@ func TestEnvEncryptCommandTestSuite(t *testing.T) {
 }
 
 func (s *EnvEncryptCommandTestSuite) SetupSuite() {
-	s.Nil(file.PutContent(".env", EnvEncryptPlaintext))
 }
 
 func (s *EnvEncryptCommandTestSuite) TearDownSuite() {
-	s.Nil(file.Remove(".env"))
 }
 
 func (s *EnvEncryptCommandTestSuite) TestSignature() {
@@ -85,15 +82,75 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 	envEncryptCommand := NewEnvEncryptCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
-	if _, err := os.Stat(".env.encrypted"); err == nil {
+	s.Run(".env not exists", func() {
+		mockContext.EXPECT().Option("key").Return(EnvEncryptValidKey).Once()
+		mockContext.EXPECT().Error("Environment file not found.").Once()
+
+		s.Nil(envEncryptCommand.Handle(mockContext))
+	})
+
+	s.Run(".env.encrypted exists and confirm failed", func() {
+		s.Nil(file.PutContent(".env", EnvEncryptPlaintext))
+		s.Nil(file.PutContent(".env.encrypted", EnvEncryptCiphertext))
+		defer func() {
+			s.Nil(file.Remove(".env"))
+			s.Nil(file.Remove(".env.encrypted"))
+		}()
+
+		mockContext.EXPECT().Option("key").Return(EnvEncryptValidKey).Once()
 		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
-			Default:     true,
+			Default:     false,
+			Affirmative: "Yes",
+			Negative:    "No",
+		}).Return(false, nil).Once()
+
+		s.Nil(envEncryptCommand.Handle(mockContext))
+	})
+
+	s.Run("invalid key", func() {
+		s.Nil(file.PutContent(".env", EnvEncryptPlaintext))
+		defer func() {
+			s.Nil(file.Remove(".env"))
+		}()
+
+		mockContext.EXPECT().Option("key").Return(EnvEncryptInvalidKey).Once()
+		mockContext.EXPECT().Error("Encrypt error: crypto/aes: invalid key size 4").Once()
+
+		s.Nil(envEncryptCommand.Handle(mockContext))
+	})
+
+	s.Run("success when .env.encrypted exists", func() {
+		s.Nil(file.PutContent(".env", EnvEncryptPlaintext))
+		s.Nil(file.PutContent(".env.encrypted", EnvEncryptCiphertext))
+		defer func() {
+			s.Nil(file.Remove(".env"))
+			s.Nil(file.Remove(".env.encrypted"))
+		}()
+
+		mockContext.EXPECT().Option("key").Return(EnvEncryptValidKey).Once()
+		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
+			Default:     false,
 			Affirmative: "Yes",
 			Negative:    "No",
 		}).Return(true, nil).Once()
-	}
+		mockContext.EXPECT().Success("Environment successfully encrypted.").Once()
+		mockContext.EXPECT().TwoColumnDetail("Key", EnvEncryptValidKey).Once()
+		mockContext.EXPECT().TwoColumnDetail("Cipher", "AES-256-CBC").Once()
+		mockContext.EXPECT().TwoColumnDetail("Encrypted file", ".env.encrypted").Once()
 
-	s.Run("valid key", func() {
+		s.Nil(envEncryptCommand.Handle(mockContext))
+		content, err := file.GetContent(".env.encrypted")
+		s.Nil(err)
+		s.Equal(EnvEncryptCiphertext, content)
+	})
+
+	s.Run("success when .env.encrypted not exists", func() {
+		s.Nil(file.PutContent(".env", EnvEncryptPlaintext))
+		defer func() {
+			s.Nil(file.Remove(".env"))
+			s.Nil(file.Remove(".env.encrypted"))
+		}()
+
 		mockContext.EXPECT().Option("key").Return(EnvEncryptValidKey).Once()
 		mockContext.EXPECT().Success("Environment successfully encrypted.").Once()
 		mockContext.EXPECT().TwoColumnDetail("Key", EnvEncryptValidKey).Once()
@@ -101,19 +158,10 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 		mockContext.EXPECT().TwoColumnDetail("Encrypted file", ".env.encrypted").Once()
 
 		s.Nil(envEncryptCommand.Handle(mockContext))
+		content, err := file.GetContent(".env.encrypted")
+		s.Nil(err)
+		s.Equal(EnvEncryptCiphertext, content)
 	})
-
-	s.Run("invalid key", func() {
-		mockContext.EXPECT().Option("key").Return(EnvEncryptInvalidKey).Once()
-		mockContext.EXPECT().Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
-			Default:     true,
-			Affirmative: "Yes",
-			Negative:    "No",
-		}).Return(true, nil).Once()
-		mockContext.EXPECT().Error("Encrypt error: crypto/aes: invalid key size 4").Once()
-		s.Nil(envEncryptCommand.Handle(mockContext))
-	})
-
 }
 
 func (s *EnvDecryptCommandTestSuite) TestEncrypt() {
@@ -124,9 +172,9 @@ func (s *EnvDecryptCommandTestSuite) TestEncrypt() {
 		s.Equal(EnvEncryptCiphertext, base64Data)
 		s.Nil(err)
 	})
+
 	s.Run("invalid key", func() {
 		_, err := envEncryptCommand.encrypt([]byte(EnvEncryptPlaintext), []byte(EnvEncryptInvalidKey))
 		s.Error(err)
 	})
-
 }
