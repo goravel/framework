@@ -169,6 +169,65 @@ func (_c *Query_Get_Call) RunAndReturn(run func(interface{}) error) *Query_Get_C
 	return _c
 }
 
+// GroupByRaw provides a mock function with given fields: query, args
+func (_m *Query) GroupByRaw(query string, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GroupByRaw")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_GroupByRaw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GroupByRaw'
+type Query_GroupByRaw_Call struct {
+	*mock.Call
+}
+
+// GroupByRaw is a helper method to define mock.On call
+//   - query string
+//   - args ...interface{}
+func (_e *Query_Expecter) GroupByRaw(query interface{}, args ...interface{}) *Query_GroupByRaw_Call {
+	return &Query_GroupByRaw_Call{Call: _e.mock.On("GroupByRaw",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_GroupByRaw_Call) Run(run func(query string, args ...interface{})) *Query_GroupByRaw_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_GroupByRaw_Call) Return(_a0 db.Query) *Query_GroupByRaw_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_GroupByRaw_Call) RunAndReturn(run func(string, ...interface{}) db.Query) *Query_GroupByRaw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Insert provides a mock function with given fields: data
 func (_m *Query) Insert(data interface{}) (*db.Result, error) {
 	ret := _m.Called(data)
@@ -223,6 +282,53 @@ func (_c *Query_Insert_Call) Return(_a0 *db.Result, _a1 error) *Query_Insert_Cal
 }
 
 func (_c *Query_Insert_Call) RunAndReturn(run func(interface{}) (*db.Result, error)) *Query_Insert_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Pluck provides a mock function with given fields: column, dest
+func (_m *Query) Pluck(column string, dest interface{}) error {
+	ret := _m.Called(column, dest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Pluck")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, interface{}) error); ok {
+		r0 = rf(column, dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Pluck_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Pluck'
+type Query_Pluck_Call struct {
+	*mock.Call
+}
+
+// Pluck is a helper method to define mock.On call
+//   - column string
+//   - dest interface{}
+func (_e *Query_Expecter) Pluck(column interface{}, dest interface{}) *Query_Pluck_Call {
+	return &Query_Pluck_Call{Call: _e.mock.On("Pluck", column, dest)}
+}
+
+func (_c *Query_Pluck_Call) Run(run func(column string, dest interface{})) *Query_Pluck_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_Pluck_Call) Return(_a0 error) *Query_Pluck_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Pluck_Call) RunAndReturn(run func(string, interface{}) error) *Query_Pluck_Call {
 	_c.Call.Return(run)
 	return _c
 }
