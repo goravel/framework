@@ -30,7 +30,7 @@ func TestKeyGenerateCommand(t *testing.T) {
 
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 
-	err := file.Create(".env", "APP_KEY=12345\n")
+	err := file.PutContent(".env", "APP_KEY=12345\n")
 	assert.Nil(t, err)
 
 	mockContext.EXPECT().Success("Application key set successfully").Once()
@@ -73,7 +73,7 @@ func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
 
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 
-	err := file.Create("config.conf", "APP_KEY=12345\n")
+	err := file.PutContent("config.conf", "APP_KEY=12345\n")
 	assert.Nil(t, err)
 
 	mockContext.EXPECT().Success("Application key set successfully").Once()

@@ -81,7 +81,7 @@ func (r *PackageMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	for path, content := range files {
-		if err := file.Create(filepath.Join(root, path), content()); err != nil {
+		if err := file.PutContent(filepath.Join(root, path), content()); err != nil {
 			ctx.Error(err.Error())
 			return nil
 		}

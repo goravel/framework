@@ -45,7 +45,7 @@ func (r *RequestMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err = file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		ctx.Error(err.Error())
 		return nil
 	}

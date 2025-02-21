@@ -43,7 +43,7 @@ func (r *MakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := file.Create(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
+	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
 		return err
 	}
 

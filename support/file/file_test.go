@@ -21,7 +21,7 @@ func TestContain(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	filePath := path.Join(t.TempDir(), "goravel.txt")
-	assert.Nil(t, Create(filePath, `goravel`))
+	assert.Nil(t, PutContent(filePath, `goravel`))
 	assert.Equal(t, 1, file.GetLineNum(filePath))
 	assert.True(t, Exists(filePath))
 }
@@ -51,7 +51,7 @@ func TestMimeType(t *testing.T) {
 func TestRemove(t *testing.T) {
 	pwd, _ := os.Getwd()
 	filePath := path.Join(pwd, "goravel/goravel.txt")
-	assert.Nil(t, Create(filePath, `goravel`))
+	assert.Nil(t, PutContent(filePath, `goravel`))
 
 	assert.Nil(t, Remove(filePath))
 	assert.Nil(t, Remove(path.Join(pwd, "goravel")))
