@@ -219,17 +219,17 @@ func (_c *Request_Bind_Call) RunAndReturn(run func(interface{}) client.Request) 
 	return _c
 }
 
-// ConnectTimeout provides a mock function with given fields: duration
-func (_m *Request) ConnectTimeout(duration time.Duration) client.Request {
-	ret := _m.Called(duration)
+// Clone provides a mock function with no fields
+func (_m *Request) Clone() client.Request {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for ConnectTimeout")
+		panic("no return value specified for Clone")
 	}
 
 	var r0 client.Request
-	if rf, ok := ret.Get(0).(func(time.Duration) client.Request); ok {
-		r0 = rf(duration)
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(client.Request)
@@ -239,30 +239,29 @@ func (_m *Request) ConnectTimeout(duration time.Duration) client.Request {
 	return r0
 }
 
-// Request_ConnectTimeout_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConnectTimeout'
-type Request_ConnectTimeout_Call struct {
+// Request_Clone_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Clone'
+type Request_Clone_Call struct {
 	*mock.Call
 }
 
-// ConnectTimeout is a helper method to define mock.On call
-//   - duration time.Duration
-func (_e *Request_Expecter) ConnectTimeout(duration interface{}) *Request_ConnectTimeout_Call {
-	return &Request_ConnectTimeout_Call{Call: _e.mock.On("ConnectTimeout", duration)}
+// Clone is a helper method to define mock.On call
+func (_e *Request_Expecter) Clone() *Request_Clone_Call {
+	return &Request_Clone_Call{Call: _e.mock.On("Clone")}
 }
 
-func (_c *Request_ConnectTimeout_Call) Run(run func(duration time.Duration)) *Request_ConnectTimeout_Call {
+func (_c *Request_Clone_Call) Run(run func()) *Request_Clone_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Duration))
+		run()
 	})
 	return _c
 }
 
-func (_c *Request_ConnectTimeout_Call) Return(_a0 client.Request) *Request_ConnectTimeout_Call {
+func (_c *Request_Clone_Call) Return(_a0 client.Request) *Request_Clone_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Request_ConnectTimeout_Call) RunAndReturn(run func(time.Duration) client.Request) *Request_ConnectTimeout_Call {
+func (_c *Request_Clone_Call) RunAndReturn(run func() client.Request) *Request_Clone_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -768,55 +767,6 @@ func (_c *Request_ReplaceHeaders_Call) Return(_a0 client.Request) *Request_Repla
 }
 
 func (_c *Request_ReplaceHeaders_Call) RunAndReturn(run func(map[string]string) client.Request) *Request_ReplaceHeaders_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Retry provides a mock function with given fields: times, sleep
-func (_m *Request) Retry(times int, sleep time.Duration) client.Request {
-	ret := _m.Called(times, sleep)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Retry")
-	}
-
-	var r0 client.Request
-	if rf, ok := ret.Get(0).(func(int, time.Duration) client.Request); ok {
-		r0 = rf(times, sleep)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(client.Request)
-		}
-	}
-
-	return r0
-}
-
-// Request_Retry_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Retry'
-type Request_Retry_Call struct {
-	*mock.Call
-}
-
-// Retry is a helper method to define mock.On call
-//   - times int
-//   - sleep time.Duration
-func (_e *Request_Expecter) Retry(times interface{}, sleep interface{}) *Request_Retry_Call {
-	return &Request_Retry_Call{Call: _e.mock.On("Retry", times, sleep)}
-}
-
-func (_c *Request_Retry_Call) Run(run func(times int, sleep time.Duration)) *Request_Retry_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(time.Duration))
-	})
-	return _c
-}
-
-func (_c *Request_Retry_Call) Return(_a0 client.Request) *Request_Retry_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Request_Retry_Call) RunAndReturn(run func(int, time.Duration) client.Request) *Request_Retry_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1412,6 +1362,55 @@ func (_c *Request_WithToken_Call) Return(_a0 client.Request) *Request_WithToken_
 }
 
 func (_c *Request_WithToken_Call) RunAndReturn(run func(string, ...string) client.Request) *Request_WithToken_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithUrlParameter provides a mock function with given fields: key, value
+func (_m *Request) WithUrlParameter(key string, value string) client.Request {
+	ret := _m.Called(key, value)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithUrlParameter")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func(string, string) client.Request); ok {
+		r0 = rf(key, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Request_WithUrlParameter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithUrlParameter'
+type Request_WithUrlParameter_Call struct {
+	*mock.Call
+}
+
+// WithUrlParameter is a helper method to define mock.On call
+//   - key string
+//   - value string
+func (_e *Request_Expecter) WithUrlParameter(key interface{}, value interface{}) *Request_WithUrlParameter_Call {
+	return &Request_WithUrlParameter_Call{Call: _e.mock.On("WithUrlParameter", key, value)}
+}
+
+func (_c *Request_WithUrlParameter_Call) Run(run func(key string, value string)) *Request_WithUrlParameter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Request_WithUrlParameter_Call) Return(_a0 client.Request) *Request_WithUrlParameter_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Request_WithUrlParameter_Call) RunAndReturn(run func(string, string) client.Request) *Request_WithUrlParameter_Call {
 	_c.Call.Return(run)
 	return _c
 }
