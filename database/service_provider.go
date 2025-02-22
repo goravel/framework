@@ -66,7 +66,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, nil
 		}
 
-		return db.BuildDB(config, log, connection)
+		return db.BuildDB(context.Background(), config, log, connection)
 	})
 
 	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {

@@ -22,6 +22,54 @@ func (_m *DB) EXPECT() *DB_Expecter {
 	return &DB_Expecter{mock: &_m.Mock}
 }
 
+// Connection provides a mock function with given fields: name
+func (_m *DB) Connection(name string) db.DB {
+	ret := _m.Called(name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Connection")
+	}
+
+	var r0 db.DB
+	if rf, ok := ret.Get(0).(func(string) db.DB); ok {
+		r0 = rf(name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.DB)
+		}
+	}
+
+	return r0
+}
+
+// DB_Connection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connection'
+type DB_Connection_Call struct {
+	*mock.Call
+}
+
+// Connection is a helper method to define mock.On call
+//   - name string
+func (_e *DB_Expecter) Connection(name interface{}) *DB_Connection_Call {
+	return &DB_Connection_Call{Call: _e.mock.On("Connection", name)}
+}
+
+func (_c *DB_Connection_Call) Run(run func(name string)) *DB_Connection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *DB_Connection_Call) Return(_a0 db.DB) *DB_Connection_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_Connection_Call) RunAndReturn(run func(string) db.DB) *DB_Connection_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Table provides a mock function with given fields: name
 func (_m *DB) Table(name string) db.Query {
 	ret := _m.Called(name)

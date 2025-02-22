@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -56,7 +57,7 @@ func TestBuildDB(t *testing.T) {
 			mockDriver = mocksdriver.NewDriver(t)
 			test.setup()
 
-			db, err := BuildDB(mockConfig, nil, test.connection)
+			db, err := BuildDB(context.Background(), mockConfig, nil, test.connection)
 			if test.expectedError != nil {
 				assert.Equal(t, test.expectedError, err)
 				assert.Nil(t, db)
