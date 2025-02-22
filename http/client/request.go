@@ -13,54 +13,67 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
+	"github.com/goravel/framework/support/collect"
+	"github.com/goravel/framework/support/maps"
 	"github.com/goravel/framework/support/str"
 )
 
 var _ client.Request = &requestImpl{}
 
 type requestImpl struct {
-	ctx            context.Context
-	client         *http.Client
-	config         config.Config
-	bind           any
-	headers        http.Header
-	cookies        []*http.Cookie
-	queryParams    url.Values
-	pathParams     map[string]string
-	json           foundation.Json
-	timeout        time.Duration
-	connectTimeout time.Duration
-	retryCount     int
+	ctx         context.Context
+	client      *http.Client
+	config      config.Config
+	bind        any
+	headers     http.Header
+	cookies     []*http.Cookie
+	queryParams url.Values
+	urlParams   map[string]string
+	json        foundation.Json
+	timeout     time.Duration
 }
 
 func NewRequest(config config.Config, json foundation.Json) client.Request {
 	return &requestImpl{
-		ctx:            context.Background(),
-		config:         config,
-		client:         &http.Client{},
-		headers:        http.Header{},
-		cookies:        []*http.Cookie{},
-		queryParams:    url.Values{},
-		pathParams:     map[string]string{},
-		json:           json,
-		timeout:        0,
-		connectTimeout: 0,
+		ctx:         context.Background(),
+		config:      config,
+		client:      getHttpClient(config),
+		headers:     http.Header{},
+		cookies:     []*http.Cookie{},
+		queryParams: url.Values{},
+		urlParams:   map[string]string{},
+		json:        json,
+		timeout:     config.GetDuration("http.client.timeout", 30*time.Second),
+	}
+}
+
+func getHttpClient(config config.Config) *http.Client {
+	return &http.Client{
+		Timeout: config.GetDuration("http.client.timeout"),
+		Transport: &http.Transport{
+			MaxIdleConns:        config.GetInt("http.client.max_idle_conns"),
+			MaxIdleConnsPerHost: config.GetInt("http.client.max_idle_conns_per_host"),
+			MaxConnsPerHost:     config.GetInt("http.client.max_conns_per_host"),
+			IdleConnTimeout:     config.GetDuration("http.client.idle_conn_timeout"),
+		},
 	}
 }
 
 func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Response, error) {
+	ctx, cancel := context.WithTimeout(r.ctx, r.timeout)
+	defer cancel()
+
 	if !str.Of(uri).StartsWith("/", "http://", "https://") {
 		uri = "/" + uri
 	}
 
-	req, err := http.NewRequestWithContext(r.ctx, method, uri, body)
+	req, err := http.NewRequestWithContext(ctx, method, uri, body)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header = r.headers
-
-	for key, value := range r.pathParams {
+	for key, value := range r.urlParams {
 		req.SetPathValue(key, value)
 	}
 
@@ -121,9 +134,21 @@ func (r *requestImpl) Bind(value any) client.Request {
 	return r
 }
 
-func (r *requestImpl) ConnectTimeout(duration time.Duration) client.Request {
-	r.connectTimeout = duration
-	return r
+func (r *requestImpl) Clone() client.Request {
+	clone := *r
+	clone.headers = r.headers.Clone()
+	copy(clone.cookies, r.cookies)
+	clone.queryParams = url.Values{}
+	for k, v := range r.queryParams {
+		clone.queryParams[k] = append([]string{}, v...)
+	}
+
+	clone.urlParams = make(map[string]string)
+	for k, v := range r.urlParams {
+		clone.urlParams[k] = v
+	}
+
+	return &clone
 }
 
 func (r *requestImpl) FlushHeaders() client.Request {
@@ -133,10 +158,6 @@ func (r *requestImpl) FlushHeaders() client.Request {
 
 func (r *requestImpl) ReplaceHeaders(headers map[string]string) client.Request {
 	return r.WithHeaders(headers)
-}
-
-func (r *requestImpl) Retry(times int, sleep time.Duration) client.Request {
-	return r
 }
 
 func (r *requestImpl) Timeout(duration time.Duration) client.Request {
@@ -223,6 +244,12 @@ func (r *requestImpl) WithoutToken() client.Request {
 	return r.WithoutHeader("Authorization")
 }
 
+func (r *requestImpl) WithUrlParameter(key, value string) client.Request {
+	maps.Set(r.urlParams, key, url.QueryEscape(value))
+	return r
+}
+
 func (r *requestImpl) WithUrlParameters(params map[string]string) client.Request {
+	r.urlParams = collect.Merge(r.urlParams, params)
 	return r
 }

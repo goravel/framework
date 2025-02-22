@@ -19,12 +19,10 @@ type Request interface {
 	Accept(contentType string) Request
 	AcceptJSON() Request
 	AsForm() Request
-	//Attach(key string, value any) Request
 	Bind(value any) Request
-	ConnectTimeout(duration time.Duration) Request
+	Clone() Request
 	FlushHeaders() Request
 	ReplaceHeaders(headers map[string]string) Request
-	Retry(times int, sleep time.Duration) Request
 	Timeout(duration time.Duration) Request
 	WithBasicAuth(username, password string) Request
 	WithContext(ctx context.Context) Request
@@ -39,5 +37,6 @@ type Request interface {
 	WithoutHeader(key string) Request
 	WithToken(token string, ttype ...string) Request
 	WithoutToken() Request
+	WithUrlParameter(key, value string) Request
 	WithUrlParameters(map[string]string) Request
 }

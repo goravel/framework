@@ -31,7 +31,7 @@ func (r *responseImpl) Body() (string, error) {
 }
 
 func (r *responseImpl) ClientError() bool {
-	return r.getStatusCode() >= 400 && r.getStatusCode() < 500
+	return r.getStatusCode() >= http.StatusBadRequest && r.getStatusCode() < http.StatusInternalServerError
 }
 
 func (r *responseImpl) Cookie(name string) *http.Cookie {
@@ -44,6 +44,10 @@ func (r *responseImpl) Cookies() []*http.Cookie {
 
 func (r *responseImpl) Failed() bool {
 	return r.ServerError() || r.ClientError()
+}
+
+func (r *responseImpl) Header(name string) string {
+	return r.getHeader(name)
 }
 
 func (r *responseImpl) Headers() http.Header {
@@ -71,11 +75,12 @@ func (r *responseImpl) Json() (map[string]any, error) {
 }
 
 func (r *responseImpl) Redirect() bool {
-	return r.getStatusCode() >= 300 && r.getStatusCode() < 400
+	status := r.getStatusCode()
+	return status >= http.StatusMultipleChoices && status < http.StatusBadRequest
 }
 
 func (r *responseImpl) ServerError() bool {
-	return r.getStatusCode() >= 500
+	return r.getStatusCode() >= http.StatusInternalServerError
 }
 
 func (r *responseImpl) Status() int {
@@ -83,7 +88,83 @@ func (r *responseImpl) Status() int {
 }
 
 func (r *responseImpl) Successful() bool {
-	return r.getStatusCode() >= 200 && r.getStatusCode() < 300
+	status := r.getStatusCode()
+	return status >= http.StatusOK && status < http.StatusMultipleChoices
+}
+
+// OK checks if the status code is 200.
+func (r *responseImpl) OK() bool {
+	return r.getStatusCode() == http.StatusOK
+}
+
+// Created checks if the status code is 201.
+func (r *responseImpl) Created() bool {
+	return r.getStatusCode() == http.StatusCreated
+}
+
+// Accepted checks if the status code is 202.
+func (r *responseImpl) Accepted() bool {
+	return r.getStatusCode() == http.StatusAccepted
+}
+
+// NoContent checks if the status code is 204.
+func (r *responseImpl) NoContent() bool {
+	return r.getStatusCode() == http.StatusNoContent
+}
+
+// MovedPermanently checks if the status code is 301.
+func (r *responseImpl) MovedPermanently() bool {
+	return r.getStatusCode() == http.StatusMovedPermanently
+}
+
+// Found checks if the status code is 302.
+func (r *responseImpl) Found() bool {
+	return r.getStatusCode() == http.StatusFound
+}
+
+// BadRequest checks if the status code is 400.
+func (r *responseImpl) BadRequest() bool {
+	return r.getStatusCode() == http.StatusBadRequest
+}
+
+// Unauthorized checks if the status code is 401.
+func (r *responseImpl) Unauthorized() bool {
+	return r.getStatusCode() == http.StatusUnauthorized
+}
+
+// PaymentRequired checks if the status code is 402.
+func (r *responseImpl) PaymentRequired() bool {
+	return r.getStatusCode() == http.StatusPaymentRequired
+}
+
+// Forbidden checks if the status code is 403.
+func (r *responseImpl) Forbidden() bool {
+	return r.getStatusCode() == http.StatusForbidden
+}
+
+// NotFound checks if the status code is 404.
+func (r *responseImpl) NotFound() bool {
+	return r.getStatusCode() == http.StatusNotFound
+}
+
+// RequestTimeout checks if the status code is 408.
+func (r *responseImpl) RequestTimeout() bool {
+	return r.getStatusCode() == http.StatusRequestTimeout
+}
+
+// Conflict checks if the status code is 409.
+func (r *responseImpl) Conflict() bool {
+	return r.getStatusCode() == http.StatusConflict
+}
+
+// UnprocessableEntity checks if the status code is 422.
+func (r *responseImpl) UnprocessableEntity() bool {
+	return r.getStatusCode() == http.StatusUnprocessableEntity
+}
+
+// TooManyRequests checks if the status code is 429.
+func (r *responseImpl) TooManyRequests() bool {
+	return r.getStatusCode() == http.StatusTooManyRequests
 }
 
 func (r *responseImpl) getStatusCode() int {
