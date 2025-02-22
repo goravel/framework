@@ -15,6 +15,8 @@ type Driver interface {
 	Config() database.Config
 	DB() (*sql.DB, error)
 	Docker() (docker.DatabaseDriver, error)
+	// Explain generate SQL string with given parameters
+	Explain(sql string, vars ...any) string
 	Gorm() (*gorm.DB, GormQuery, error)
 	Grammar() schema.Grammar
 	Processor() schema.Processor

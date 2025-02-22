@@ -1,4 +1,4 @@
-package gorm
+package logger
 
 import (
 	"context"
@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm/logger"
 
+	"github.com/goravel/framework/contracts/database/logger"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mockslog "github.com/goravel/framework/mocks/log"
+	"github.com/goravel/framework/support/carbon"
 )
 
 func TestNewLogger(t *testing.T) {
@@ -23,7 +24,7 @@ func TestNewLogger(t *testing.T) {
 	tests := []struct {
 		name      string
 		setup     func()
-		wantLevel logger.LogLevel
+		wantLevel logger.Level
 		wantSlow  time.Duration
 	}{
 		{
@@ -86,8 +87,8 @@ func (s *LoggerTestSuite) SetupTest() {
 	}
 }
 
-func (s *LoggerTestSuite) TestLogMode() {
-	result := s.logger.LogMode(logger.Error)
+func (s *LoggerTestSuite) TestLevel() {
+	result := s.logger.Level(logger.Error)
 	s.Equal(logger.Error, s.logger.level)
 	s.Equal(s.logger, result)
 }
@@ -146,7 +147,7 @@ func (s *LoggerTestSuite) TestTrace() {
 		rows    int64
 		elapsed time.Duration
 		err     error
-		level   logger.LogLevel
+		level   logger.Level
 		setup   func()
 	}{
 		{
@@ -218,10 +219,8 @@ func (s *LoggerTestSuite) TestTrace() {
 			tt.setup()
 
 			s.logger.level = tt.level
-			begin := time.Now().Add(-tt.elapsed)
-			s.logger.Trace(context.Background(), begin, func() (string, int64) {
-				return sql, tt.rows
-			}, tt.err)
+			begin := carbon.Now().SubDuration(tt.elapsed.String())
+			s.logger.Trace(context.Background(), begin, sql, tt.rows, tt.err)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package gorm
+package logger
 
 import (
 	"context"
@@ -9,14 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 
 	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/carbon"
 )
 
-func NewLogger(config config.Config, log log.Log) logger.Interface {
+func NewLogger(config config.Config, log log.Log) logger.Logger {
 	level := logger.Warn
 	if config.GetBool("app.debug") {
 		level = logger.Info
@@ -36,32 +37,28 @@ func NewLogger(config config.Config, log log.Log) logger.Interface {
 
 type Logger struct {
 	log           log.Log
-	level         logger.LogLevel
+	level         logger.Level
 	slowThreshold time.Duration
 }
 
-// LogMode log mode
-func (r *Logger) LogMode(level logger.LogLevel) logger.Interface {
+func (r *Logger) Level(level logger.Level) logger.Logger {
 	r.level = level
 
 	return r
 }
 
-// Info print info
 func (r *Logger) Info(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Info {
 		r.log.Infof(msg, data...)
 	}
 }
 
-// Warn print warn messages
 func (r *Logger) Warn(ctx context.Context, msg string, data ...any) {
 	if r.level >= logger.Warn {
 		r.log.Warningf(msg, data...)
 	}
 }
 
-// Error print error messages
 func (r *Logger) Error(ctx context.Context, msg string, data ...any) {
 	// Let upper layer function deals with connection refused error
 	var cancel bool
@@ -89,8 +86,7 @@ func (r *Logger) Error(ctx context.Context, msg string, data ...any) {
 	}
 }
 
-// Trace print sql message
-func (r *Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, rowsAffected int64, err error) {
 	if r.level <= logger.Silent {
 		return
 	}
@@ -101,30 +97,65 @@ func (r *Logger) Trace(ctx context.Context, begin time.Time, fc func() (string, 
 		traceErrStr  = "[%.3fms] [rows:%v] %s\t%s"
 	)
 
-	elapsed := time.Since(begin)
+	elapsed := begin.DiffInDuration()
+
 	switch {
-	case err != nil && r.level >= logger.Error && !errors.Is(err, logger.ErrRecordNotFound):
-		sql, rows := fc()
-		if rows == -1 {
+	case err != nil && r.level >= logger.Error:
+		if rowsAffected == -1 {
 			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, "-", sql, err)
 		} else {
-			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, rows, sql, err)
+			r.log.Errorf(traceErrStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql, err)
 		}
 	case elapsed > r.slowThreshold && r.slowThreshold != 0 && r.level >= logger.Warn:
-		sql, rows := fc()
-		if rows == -1 {
+		if rowsAffected == -1 {
 			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			r.log.Warningf(traceWarnStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
 		}
 	case r.level == logger.Info:
-		sql, rows := fc()
-		if rows == -1 {
+		if rowsAffected == -1 {
 			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			r.log.Infof(traceStr, float64(elapsed.Nanoseconds())/1e6, rowsAffected, sql)
 		}
 	}
+}
+
+func (r *Logger) ToGorm() gormlogger.Interface {
+	return NewGorm(r)
+}
+
+type Gorm struct {
+	logger logger.Logger
+}
+
+func NewGorm(logger logger.Logger) *Gorm {
+	return &Gorm{
+		logger: logger,
+	}
+}
+
+func (r *Gorm) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
+	_ = r.logger.Level(GormLevelToLevel(level))
+
+	return r
+}
+
+func (r *Gorm) Info(ctx context.Context, msg string, data ...any) {
+	r.logger.Info(ctx, msg, data...)
+}
+
+func (r *Gorm) Warn(ctx context.Context, msg string, data ...any) {
+	r.logger.Warn(ctx, msg, data...)
+}
+
+func (r *Gorm) Error(ctx context.Context, msg string, data ...any) {
+	r.logger.Error(ctx, msg, data...)
+}
+
+func (r *Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	sql, rowsAffected := fc()
+	r.logger.Trace(ctx, carbon.FromStdTime(begin), sql, rowsAffected, err)
 }
 
 // FileWithLineNum return the file name and line number of the current file
@@ -142,4 +173,17 @@ func FileWithLineNum() string {
 	}
 
 	return ""
+}
+
+func GormLevelToLevel(level gormlogger.LogLevel) logger.Level {
+	switch level {
+	case gormlogger.Silent:
+		return logger.Silent
+	case gormlogger.Error:
+		return logger.Error
+	case gormlogger.Warn:
+		return logger.Warn
+	default:
+		return logger.Info
+	}
 }

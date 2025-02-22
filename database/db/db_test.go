@@ -32,9 +32,11 @@ func TestBuildDB(t *testing.T) {
 				driverCallback := func() (contractsdriver.Driver, error) {
 					return mockDriver, nil
 				}
-				mockConfig.On("Get", "database.connections.mysql.via").Return(driverCallback)
-				mockDriver.On("DB").Return(&sql.DB{}, nil)
-				mockDriver.On("Config").Return(database.Config{Driver: "mysql"})
+				mockConfig.EXPECT().Get("database.connections.mysql.via").Return(driverCallback).Once()
+				mockDriver.EXPECT().DB().Return(&sql.DB{}, nil).Once()
+				mockDriver.EXPECT().Config().Return(database.Config{Driver: "mysql"}).Once()
+				mockConfig.EXPECT().GetBool("app.debug").Return(false).Once()
+				mockConfig.EXPECT().GetInt("database.slow_threshold", 200).Return(200).Once()
 			},
 			expectedError: nil,
 		},
@@ -42,7 +44,7 @@ func TestBuildDB(t *testing.T) {
 			name:       "Config Not Found",
 			connection: "invalid",
 			setup: func() {
-				mockConfig.On("Get", "database.connections.invalid.via").Return(nil)
+				mockConfig.EXPECT().Get("database.connections.invalid.via").Return(nil).Once()
 			},
 			expectedError: errors.DatabaseConfigNotFound,
 		},
@@ -54,7 +56,7 @@ func TestBuildDB(t *testing.T) {
 			mockDriver = mocksdriver.NewDriver(t)
 			test.setup()
 
-			db, err := BuildDB(mockConfig, test.connection)
+			db, err := BuildDB(mockConfig, nil, test.connection)
 			if test.expectedError != nil {
 				assert.Equal(t, test.expectedError, err)
 				assert.Nil(t, db)

@@ -13,6 +13,7 @@ import (
 	contractsdocker "github.com/goravel/framework/contracts/testing/docker"
 	databasedb "github.com/goravel/framework/database/db"
 	"github.com/goravel/framework/database/gorm"
+	"github.com/goravel/framework/database/logger"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/support/docker"
 	"github.com/goravel/framework/support/str"
@@ -48,7 +49,7 @@ func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config con
 
 	testQuery := &TestQuery{
 		config: config,
-		db:     databasedb.NewDB(driver.Config(), sqlx.NewDb(db, driver.Config().Driver)),
+		db:     databasedb.NewDB(ctx, driver, logger.NewLogger(config, utils.NewTestLog()), sqlx.NewDb(db, driver.Config().Driver)),
 		driver: driver,
 		query:  gorm.NewQuery(ctx, config, driver.Config(), query, gormQuery, utils.NewTestLog(), nil, nil),
 	}

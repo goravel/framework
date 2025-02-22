@@ -56,12 +56,17 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleDB)
 		}
 
+		log := app.MakeLog()
+		if log == nil {
+			return nil, errors.LogFacadeNotSet.SetModule(errors.ModuleDB)
+		}
+
 		connection := config.GetString("database.default")
 		if connection == "" {
 			return nil, nil
 		}
 
-		return db.BuildDB(config, connection)
+		return db.BuildDB(config, log, connection)
 	})
 
 	app.Singleton(contracts.BindingSchema, func(app foundation.Application) (any, error) {
