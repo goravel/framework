@@ -87,8 +87,8 @@ func (s *LoggerTestSuite) SetupTest() {
 	}
 }
 
-func (s *LoggerTestSuite) TestLogMode() {
-	result := s.logger.Mode(logger.Error)
+func (s *LoggerTestSuite) TestLevel() {
+	result := s.logger.Level(logger.Error)
 	s.Equal(logger.Error, s.logger.level)
 	s.Equal(s.logger, result)
 }

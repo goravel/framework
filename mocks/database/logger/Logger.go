@@ -7,6 +7,8 @@ import (
 
 	carbon "github.com/dromara/carbon/v2"
 
+	gormlogger "gorm.io/gorm/logger"
+
 	logger "github.com/goravel/framework/contracts/database/logger"
 
 	mock "github.com/stretchr/testify/mock"
@@ -115,12 +117,12 @@ func (_c *Logger_Info_Call) RunAndReturn(run func(context.Context, string, ...in
 	return _c
 }
 
-// Mode provides a mock function with given fields: _a0
-func (_m *Logger) Mode(_a0 logger.Level) logger.Logger {
+// Level provides a mock function with given fields: _a0
+func (_m *Logger) Level(_a0 logger.Level) logger.Logger {
 	ret := _m.Called(_a0)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Mode")
+		panic("no return value specified for Level")
 	}
 
 	var r0 logger.Logger
@@ -135,30 +137,77 @@ func (_m *Logger) Mode(_a0 logger.Level) logger.Logger {
 	return r0
 }
 
-// Logger_Mode_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Mode'
-type Logger_Mode_Call struct {
+// Logger_Level_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Level'
+type Logger_Level_Call struct {
 	*mock.Call
 }
 
-// Mode is a helper method to define mock.On call
+// Level is a helper method to define mock.On call
 //   - _a0 logger.Level
-func (_e *Logger_Expecter) Mode(_a0 interface{}) *Logger_Mode_Call {
-	return &Logger_Mode_Call{Call: _e.mock.On("Mode", _a0)}
+func (_e *Logger_Expecter) Level(_a0 interface{}) *Logger_Level_Call {
+	return &Logger_Level_Call{Call: _e.mock.On("Level", _a0)}
 }
 
-func (_c *Logger_Mode_Call) Run(run func(_a0 logger.Level)) *Logger_Mode_Call {
+func (_c *Logger_Level_Call) Run(run func(_a0 logger.Level)) *Logger_Level_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(logger.Level))
 	})
 	return _c
 }
 
-func (_c *Logger_Mode_Call) Return(_a0 logger.Logger) *Logger_Mode_Call {
+func (_c *Logger_Level_Call) Return(_a0 logger.Logger) *Logger_Level_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Logger_Mode_Call) RunAndReturn(run func(logger.Level) logger.Logger) *Logger_Mode_Call {
+func (_c *Logger_Level_Call) RunAndReturn(run func(logger.Level) logger.Logger) *Logger_Level_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ToGorm provides a mock function with no fields
+func (_m *Logger) ToGorm() gormlogger.Interface {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ToGorm")
+	}
+
+	var r0 gormlogger.Interface
+	if rf, ok := ret.Get(0).(func() gormlogger.Interface); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(gormlogger.Interface)
+		}
+	}
+
+	return r0
+}
+
+// Logger_ToGorm_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ToGorm'
+type Logger_ToGorm_Call struct {
+	*mock.Call
+}
+
+// ToGorm is a helper method to define mock.On call
+func (_e *Logger_Expecter) ToGorm() *Logger_ToGorm_Call {
+	return &Logger_ToGorm_Call{Call: _e.mock.On("ToGorm")}
+}
+
+func (_c *Logger_ToGorm_Call) Run(run func()) *Logger_ToGorm_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Logger_ToGorm_Call) Return(_a0 gormlogger.Interface) *Logger_ToGorm_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Logger_ToGorm_Call) RunAndReturn(run func() gormlogger.Interface) *Logger_ToGorm_Call {
 	_c.Call.Return(run)
 	return _c
 }

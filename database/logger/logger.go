@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	gormlogger "gorm.io/gorm/logger"
+
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/contracts/log"
@@ -39,7 +41,7 @@ type Logger struct {
 	slowThreshold time.Duration
 }
 
-func (r *Logger) Mode(level logger.Level) logger.Logger {
+func (r *Logger) Level(level logger.Level) logger.Logger {
 	r.level = level
 
 	return r
@@ -119,6 +121,43 @@ func (r *Logger) Trace(ctx context.Context, begin carbon.Carbon, sql string, row
 	}
 }
 
+func (r *Logger) ToGorm() gormlogger.Interface {
+	return NewGorm(r)
+}
+
+type Gorm struct {
+	logger logger.Logger
+}
+
+func NewGorm(logger logger.Logger) *Gorm {
+	return &Gorm{
+		logger: logger,
+	}
+}
+
+func (r *Gorm) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
+	_ = r.logger.Level(GormLevelToLevel(level))
+
+	return r
+}
+
+func (r *Gorm) Info(ctx context.Context, msg string, data ...any) {
+	r.logger.Info(ctx, msg, data...)
+}
+
+func (r *Gorm) Warn(ctx context.Context, msg string, data ...any) {
+	r.logger.Warn(ctx, msg, data...)
+}
+
+func (r *Gorm) Error(ctx context.Context, msg string, data ...any) {
+	r.logger.Error(ctx, msg, data...)
+}
+
+func (r *Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	sql, rowsAffected := fc()
+	r.logger.Trace(ctx, carbon.FromStdTime(begin), sql, rowsAffected, err)
+}
+
 // FileWithLineNum return the file name and line number of the current file
 func FileWithLineNum() string {
 	_, file, _, _ := runtime.Caller(0)
@@ -134,4 +173,17 @@ func FileWithLineNum() string {
 	}
 
 	return ""
+}
+
+func GormLevelToLevel(level gormlogger.LogLevel) logger.Level {
+	switch level {
+	case gormlogger.Silent:
+		return logger.Silent
+	case gormlogger.Error:
+		return logger.Error
+	case gormlogger.Warn:
+		return logger.Warn
+	default:
+		return logger.Info
+	}
 }
