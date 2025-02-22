@@ -12,7 +12,6 @@ import (
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
-	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
 )
 
@@ -44,14 +43,12 @@ func NewRequest(config config.Config, json foundation.Json) client.Request {
 }
 
 func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Response, error) {
-	baseURL := r.config.GetString("http.client.base_url", "")
-
-	// If the URI is relative, prepend the base URL
-	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
-		uri = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(uri, "/")
+	parsedURL, err := r.parseURL(uri)
+	if err != nil {
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(r.ctx, method, uri, body)
+	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +67,69 @@ func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Resp
 		return nil, err
 	}
 
-	return NewResponse(res, r.json), nil
+	response := NewResponse(res, r.json)
+	if r.bind != nil {
+		body, err := response.Body()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := r.json.Unmarshal([]byte(body), r.bind); err != nil {
+			return nil, err
+		}
+	}
+
+	return response, nil
+}
+
+func (r *requestImpl) parseURL(uri string) (string, error) {
+	baseURL := r.config.GetString("http.client.base_url", "")
+
+	// If the URI is relative, prepend the base URL
+	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
+		uri = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(uri, "/")
+	}
+
+	buf := &strings.Builder{}
+	prev := 0
+
+	for curr := strings.Index(uri, "{"); curr != -1; curr = strings.Index(uri[prev:], "{") {
+		curr += prev
+		buf.WriteString(uri[prev:curr])
+		next := strings.Index(uri[curr:], "}")
+		if next == -1 {
+			buf.WriteString(uri[curr:])
+			break
+		}
+		next += curr
+		key := uri[curr+1 : next]
+		if value, ok := r.urlParams[key]; ok {
+			buf.WriteString(value)
+		} else {
+			buf.WriteString(uri[curr : next+1])
+		}
+		prev = next + 1
+	}
+
+	if prev < len(uri) {
+		buf.WriteString(uri[prev:])
+	}
+
+	reqURL, err := url.Parse(buf.String())
+	if err != nil {
+		return "", err
+	}
+
+	// Append query parameters
+	if len(r.queryParams) > 0 {
+		if len(strings.TrimSpace(reqURL.RawQuery)) == 0 {
+			reqURL.RawQuery = r.queryParams.Encode()
+		} else {
+			reqURL.RawQuery = reqURL.RawQuery + "&" + r.queryParams.Encode()
+		}
+	}
+
+	return reqURL.String(), nil
 }
 
 func (r *requestImpl) Get(uri string) (client.Response, error) {
@@ -200,7 +259,7 @@ func (r *requestImpl) WithQueryString(query string) client.Request {
 
 	for k, v := range params {
 		for _, vv := range v {
-			r.WithQueryParameter(k, vv)
+			r.queryParams.Add(k, vv)
 		}
 	}
 	return r
@@ -224,11 +283,13 @@ func (r *requestImpl) WithoutToken() client.Request {
 }
 
 func (r *requestImpl) WithUrlParameter(key, value string) client.Request {
-	maps.Set(r.urlParams, key, url.QueryEscape(value))
+	maps.Set(r.urlParams, key, url.PathEscape(value))
 	return r
 }
 
 func (r *requestImpl) WithUrlParameters(params map[string]string) client.Request {
-	r.urlParams = collect.Merge(r.urlParams, params)
+	for k, v := range params {
+		r.WithUrlParameter(k, v)
+	}
 	return r
 }
