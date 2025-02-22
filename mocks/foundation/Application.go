@@ -8,6 +8,8 @@ import (
 
 	cache "github.com/goravel/framework/contracts/cache"
 
+	client "github.com/goravel/framework/contracts/http/client"
+
 	config "github.com/goravel/framework/contracts/config"
 
 	console "github.com/goravel/framework/contracts/console"
@@ -1182,6 +1184,53 @@ func (_c *Application_MakeHash_Call) Return(_a0 hash.Hash) *Application_MakeHash
 }
 
 func (_c *Application_MakeHash_Call) RunAndReturn(run func() hash.Hash) *Application_MakeHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakeHttp provides a mock function with no fields
+func (_m *Application) MakeHttp() client.Request {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakeHttp")
+	}
+
+	var r0 client.Request
+	if rf, ok := ret.Get(0).(func() client.Request); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(client.Request)
+		}
+	}
+
+	return r0
+}
+
+// Application_MakeHttp_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakeHttp'
+type Application_MakeHttp_Call struct {
+	*mock.Call
+}
+
+// MakeHttp is a helper method to define mock.On call
+func (_e *Application_Expecter) MakeHttp() *Application_MakeHttp_Call {
+	return &Application_MakeHttp_Call{Call: _e.mock.On("MakeHttp")}
+}
+
+func (_c *Application_MakeHttp_Call) Run(run func()) *Application_MakeHttp_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Application_MakeHttp_Call) Return(_a0 client.Request) *Application_MakeHttp_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Application_MakeHttp_Call) RunAndReturn(run func() client.Request) *Application_MakeHttp_Call {
 	_c.Call.Return(run)
 	return _c
 }
