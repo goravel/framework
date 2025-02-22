@@ -8,14 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/goravel/framework/contracts/config"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/support/collect"
 	"github.com/goravel/framework/support/maps"
-	"github.com/goravel/framework/support/str"
 )
 
 var _ client.Request = &requestImpl{}
@@ -30,7 +28,6 @@ type requestImpl struct {
 	queryParams url.Values
 	urlParams   map[string]string
 	json        foundation.Json
-	timeout     time.Duration
 }
 
 func NewRequest(config config.Config, json foundation.Json) client.Request {
@@ -43,31 +40,18 @@ func NewRequest(config config.Config, json foundation.Json) client.Request {
 		queryParams: url.Values{},
 		urlParams:   map[string]string{},
 		json:        json,
-		timeout:     config.GetDuration("http.client.timeout", 30*time.Second),
-	}
-}
-
-func getHttpClient(config config.Config) *http.Client {
-	return &http.Client{
-		Timeout: config.GetDuration("http.client.timeout"),
-		Transport: &http.Transport{
-			MaxIdleConns:        config.GetInt("http.client.max_idle_conns"),
-			MaxIdleConnsPerHost: config.GetInt("http.client.max_idle_conns_per_host"),
-			MaxConnsPerHost:     config.GetInt("http.client.max_conns_per_host"),
-			IdleConnTimeout:     config.GetDuration("http.client.idle_conn_timeout"),
-		},
 	}
 }
 
 func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Response, error) {
-	ctx, cancel := context.WithTimeout(r.ctx, r.timeout)
-	defer cancel()
+	baseURL := r.config.GetString("http.client.base_url", "")
 
-	if !str.Of(uri).StartsWith("/", "http://", "https://") {
-		uri = "/" + uri
+	// If the URI is relative, prepend the base URL
+	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
+		uri = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(uri, "/")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, uri, body)
+	req, err := http.NewRequestWithContext(r.ctx, method, uri, body)
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +142,6 @@ func (r *requestImpl) FlushHeaders() client.Request {
 
 func (r *requestImpl) ReplaceHeaders(headers map[string]string) client.Request {
 	return r.WithHeaders(headers)
-}
-
-func (r *requestImpl) Timeout(duration time.Duration) client.Request {
-	r.timeout = duration
-	return r
 }
 
 func (r *requestImpl) WithBasicAuth(username, password string) client.Request {

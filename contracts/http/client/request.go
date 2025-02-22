@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"time"
 )
 
 type Request interface {
@@ -23,7 +22,6 @@ type Request interface {
 	Clone() Request
 	FlushHeaders() Request
 	ReplaceHeaders(headers map[string]string) Request
-	Timeout(duration time.Duration) Request
 	WithBasicAuth(username, password string) Request
 	WithContext(ctx context.Context) Request
 	WithCookies(cookies []*http.Cookie) Request
