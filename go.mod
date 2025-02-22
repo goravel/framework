@@ -20,7 +20,7 @@ require (
 	github.com/goravel/file-rotatelogs/v2 v2.4.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/pterm/pterm v0.12.80
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.7.1
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rotisserie/eris v0.5.4
@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/vektra/mockery/v2 v2.52.0
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.34.0
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
 	google.golang.org/grpc v1.70.0
 	google.golang.org/protobuf v1.36.5
