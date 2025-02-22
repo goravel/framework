@@ -128,7 +128,7 @@ func (s *ApplicationTestSuite) TestShutdownWithContext() {
 	app := NewApplication(nil, nil, nil, false)
 	app.Register([]schedule.Event{
 		app.Call(func() {
-			time.Sleep(4 * time.Second)
+			time.Sleep(10 * time.Second)
 			immediatelyCall++
 		}).Cron("*/2 * * * * *"),
 	})
