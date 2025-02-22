@@ -1,9 +1,13 @@
 package db
 
-import "database/sql"
+import (
+	"context"
+	"database/sql"
+)
 
 type DB interface {
 	Table(name string) Query
+	WithContext(ctx context.Context) DB
 }
 
 type Query interface {
@@ -19,6 +23,7 @@ type Query interface {
 	// Exists() (bool, error)
 	// Find(dest any, conds ...any) error
 	First(dest any) error
+	// firstOrFail
 	// decrement
 	Delete() (*Result, error)
 	Get(dest any) error

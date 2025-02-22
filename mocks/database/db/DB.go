@@ -3,6 +3,8 @@
 package db
 
 import (
+	context "context"
+
 	db "github.com/goravel/framework/contracts/database/db"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -64,6 +66,54 @@ func (_c *DB_Table_Call) Return(_a0 db.Query) *DB_Table_Call {
 }
 
 func (_c *DB_Table_Call) RunAndReturn(run func(string) db.Query) *DB_Table_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithContext provides a mock function with given fields: ctx
+func (_m *DB) WithContext(ctx context.Context) db.DB {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithContext")
+	}
+
+	var r0 db.DB
+	if rf, ok := ret.Get(0).(func(context.Context) db.DB); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.DB)
+		}
+	}
+
+	return r0
+}
+
+// DB_WithContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithContext'
+type DB_WithContext_Call struct {
+	*mock.Call
+}
+
+// WithContext is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *DB_Expecter) WithContext(ctx interface{}) *DB_WithContext_Call {
+	return &DB_WithContext_Call{Call: _e.mock.On("WithContext", ctx)}
+}
+
+func (_c *DB_WithContext_Call) Run(run func(ctx context.Context)) *DB_WithContext_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *DB_WithContext_Call) Return(_a0 db.DB) *DB_WithContext_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DB_WithContext_Call) RunAndReturn(run func(context.Context) db.DB) *DB_WithContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

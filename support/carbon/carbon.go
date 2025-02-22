@@ -7,26 +7,27 @@ import (
 )
 
 type Clock struct {
+	testNow  bool
+	testTime Carbon
 	timezone string
 }
-
-var testCarbon = carbon.NewCarbon()
 
 var clock = &Clock{}
 
 // SetTestNow Set the test time. Remember to unset after used.
 func SetTestNow(testTime Carbon) {
-	testCarbon.SetTestNow(testTime)
+	clock.testNow = true
+	clock.testTime = testTime
 }
 
 // UnsetTestNow Unset the test time.
 func UnsetTestNow() {
-	testCarbon.UnSetTestNow()
+	clock.testNow = false
 }
 
 // IsTestNow Determine if the test now time is set.
 func IsTestNow() bool {
-	return testCarbon.IsSetTestNow()
+	return clock.testNow
 }
 
 // SetTimezone sets timezone.
@@ -39,7 +40,7 @@ func SetTimezone(timezone string) {
 // Now return a Carbon object of now.
 func Now(timezone ...string) Carbon {
 	if IsTestNow() {
-		return testCarbon.Now(getTimezone(timezone))
+		return clock.testTime
 	}
 
 	return carbon.Now(getTimezone(timezone))

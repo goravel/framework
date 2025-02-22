@@ -54,7 +54,7 @@ func TestBuildDB(t *testing.T) {
 			mockDriver = mocksdriver.NewDriver(t)
 			test.setup()
 
-			db, err := BuildDB(mockConfig, test.connection)
+			db, err := BuildDB(mockConfig, nil, test.connection)
 			if test.expectedError != nil {
 				assert.Equal(t, test.expectedError, err)
 				assert.Nil(t, db)

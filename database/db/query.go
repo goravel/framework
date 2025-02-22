@@ -1,50 +1,61 @@
 package db
 
 import (
-	"fmt"
+	"context"
+	databasesql "database/sql"
+	"reflect"
 	"sort"
 
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/goravel/framework/contracts/database"
 	"github.com/goravel/framework/contracts/database/db"
+	"github.com/goravel/framework/contracts/database/driver"
+	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/str"
 )
 
 type Query struct {
 	builder    db.Builder
 	conditions Conditions
-	config     database.Config
+	ctx        context.Context
+	driver     driver.Driver
+	logger     logger.Logger
 }
 
-func NewQuery(config database.Config, builder db.Builder, table string) *Query {
+func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string) *Query {
 	return &Query{
 		builder: builder,
 		conditions: Conditions{
 			table: table,
 		},
-		config: config,
+		driver: driver,
+		ctx:    ctx,
+		logger: logger,
 	}
 }
 
 func (r *Query) Delete() (*db.Result, error) {
 	sql, args, err := r.buildDelete()
-	// TODO: use logger instead of println
-	fmt.Println(sql, args, err)
 	if err != nil {
 		return nil, err
 	}
 
 	result, err := r.builder.Exec(sql, args...)
 	if err != nil {
+		r.trace(sql, args, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		r.trace(sql, args, -1, err)
 		return nil, err
 	}
+
+	r.trace(sql, args, rowsAffected, nil)
 
 	return &db.Result{
 		RowsAffected: rowsAffected,
@@ -53,24 +64,52 @@ func (r *Query) Delete() (*db.Result, error) {
 
 func (r *Query) First(dest any) error {
 	sql, args, err := r.buildSelect()
-	// TODO: use logger instead of println
-	fmt.Println(sql, args, err)
 	if err != nil {
 		return err
 	}
 
-	return r.builder.Get(dest, sql, args...)
+	err = r.builder.Get(dest, sql, args...)
+	if err != nil {
+		if errors.Is(err, databasesql.ErrNoRows) {
+			r.trace(sql, args, 0, nil)
+			return nil
+		}
+
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, 1, nil)
+
+	return nil
 }
 
 func (r *Query) Get(dest any) error {
 	sql, args, err := r.buildSelect()
-	// TODO: use logger instead of println
-	fmt.Println(sql, args, err)
 	if err != nil {
 		return err
 	}
 
-	return r.builder.Select(dest, sql, args...)
+	err = r.builder.Select(dest, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+		return err
+	}
+
+	destValue := reflect.ValueOf(dest)
+	if destValue.Kind() == reflect.Ptr {
+		destValue = destValue.Elem()
+	}
+
+	rowsAffected := int64(-1)
+	if destValue.Kind() == reflect.Slice {
+		rowsAffected = int64(destValue.Len())
+	}
+
+	r.trace(sql, args, rowsAffected, nil)
+
+	return nil
 }
 
 func (r *Query) Insert(data any) (*db.Result, error) {
@@ -88,17 +127,20 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: use logger instead of println
-	fmt.Println(sql, args, err)
+
 	result, err := r.builder.Exec(sql, args...)
 	if err != nil {
+		r.trace(sql, args, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		r.trace(sql, args, -1, err)
 		return nil, err
 	}
+
+	r.trace(sql, args, rowsAffected, nil)
 
 	return &db.Result{
 		RowsAffected: rowsAffected,
@@ -112,21 +154,23 @@ func (r *Query) Update(data any) (*db.Result, error) {
 	}
 
 	sql, args, err := r.buildUpdate(mapData)
-	// TODO: use logger instead of println
-	fmt.Println(sql, args, err)
 	if err != nil {
 		return nil, err
 	}
 
 	result, err := r.builder.Exec(sql, args...)
 	if err != nil {
+		r.trace(sql, args, -1, err)
 		return nil, err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		r.trace(sql, args, -1, err)
 		return nil, err
 	}
+
+	r.trace(sql, args, rowsAffected, nil)
 
 	return &db.Result{
 		RowsAffected: rowsAffected,
@@ -134,7 +178,7 @@ func (r *Query) Update(data any) (*db.Result, error) {
 }
 
 func (r *Query) Where(query any, args ...any) db.Query {
-	q := NewQuery(r.config, r.builder, r.conditions.table)
+	q := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
 	q.conditions = r.conditions
 	q.conditions.where = append(r.conditions.where, Where{
 		query: query,
@@ -150,8 +194,8 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 	}
 
 	builder := sq.Delete(r.conditions.table)
-	if r.config.PlaceholderFormat != nil {
-		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
 	for _, where := range r.conditions.where {
@@ -179,8 +223,8 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 	}
 
 	builder := sq.Insert(r.conditions.table)
-	if r.config.PlaceholderFormat != nil {
-		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
 	first := data[0]
@@ -208,8 +252,8 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder := sq.Select("*")
-	if r.config.PlaceholderFormat != nil {
-		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
 	builder = builder.From(r.conditions.table)
@@ -239,8 +283,8 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 	}
 
 	builder := sq.Update(r.conditions.table)
-	if r.config.PlaceholderFormat != nil {
-		builder = builder.PlaceholderFormat(r.config.PlaceholderFormat)
+	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
+		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
 	for _, where := range r.conditions.where {
@@ -262,4 +306,16 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 	builder = builder.SetMap(data)
 
 	return builder.ToSql()
+}
+
+func (r *Query) placeholderFormat() database.PlaceholderFormat {
+	if r.driver.Config().PlaceholderFormat != nil {
+		return r.driver.Config().PlaceholderFormat
+	}
+
+	return nil
+}
+
+func (r *Query) trace(sql string, args []any, rowsAffected int64, err error) {
+	r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
 }
