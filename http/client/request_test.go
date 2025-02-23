@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	encodingjson "encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/http/client"
+	"github.com/goravel/framework/foundation/json"
 	"github.com/goravel/framework/mocks/config"
 )
 
@@ -39,7 +39,7 @@ func (s *RequestTestSuite) SetupTest() {
 		s.mockConfig.EXPECT().GetDuration("http.client.idle_conn_timeout").Return(30 * time.Second)
 	})
 
-	s.request = NewRequest(s.mockConfig, &testJson{})
+	s.request = NewRequest(s.mockConfig, json.NewJson())
 }
 
 func (s *RequestTestSuite) TestClone() {
@@ -410,14 +410,4 @@ func (s *RequestTestSuite) TestParseRequestURL() {
 			}
 		})
 	}
-}
-
-type testJson struct{}
-
-func (t *testJson) Marshal(v any) ([]byte, error) {
-	return encodingjson.Marshal(v)
-}
-
-func (t *testJson) Unmarshal(data []byte, v any) error {
-	return encodingjson.Unmarshal(data, v)
 }

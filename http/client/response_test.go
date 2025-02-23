@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation/json"
 )
 
 type ResponseTestSuite struct {
@@ -21,7 +22,7 @@ func TestResponseTestSuite(t *testing.T) {
 }
 
 func (s *ResponseTestSuite) SetupSuite() {
-	s.mockJson = &testJson{}
+	s.mockJson = json.NewJson()
 }
 
 func (s *ResponseTestSuite) TestBody() {
