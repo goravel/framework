@@ -23,6 +23,10 @@ type AboutCommandTestSuite struct {
 func (s *AboutCommandTestSuite) SetupTest() {
 }
 
+func (s *AboutCommandTestSuite) TearDownTest() {
+	appInformation = &information{section: make(map[string]int)}
+}
+
 func TestAboutCommandTestSuite(t *testing.T) {
 	suite.Run(t, new(AboutCommandTestSuite))
 }
@@ -136,7 +140,7 @@ func (s *AboutCommandTestSuite) TestHandle() {
 	AddAboutInformation("Custom", foundation.AboutItem{Key: "Test Info", Value: "<fg=cyan>OK</>"})
 	s.Contains(color.CaptureOutput(func(w io.Writer) {
 		s.Nil(cmd.Handle(mockContext))
-	}), strings.Join(expected, ""))
+	}), strings.Join(expected, ""), "output should contain expected lines in order")
 }
 
 func (s *AboutCommandTestSuite) TestAddToSection() {
