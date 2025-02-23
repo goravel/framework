@@ -71,9 +71,9 @@ func (s *AboutCommandTestSuite) TestExtend() {
 func (s *AboutCommandTestSuite) TestHandle() {
 	mockApp := mocksfoundation.NewApplication(s.T())
 	mockConfig := mocksconfig.NewConfig(s.T())
+	mockContext := mocksconsole.NewContext(s.T())
 
 	cmd := NewAboutCommand(mockApp)
-	mockContext := mocksconsole.NewContext(s.T())
 
 	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 	mockApp.EXPECT().Version().Return("test_version").Once()
