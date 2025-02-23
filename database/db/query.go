@@ -299,12 +299,25 @@ func (r *Query) buildWhere(where Where) (any, []any) {
 		}
 	}
 
-	// if where.or {
-	// 	return sq.Or{where.query}, where.args
-	// }
-
 	return where.query, where.args
 }
+
+// func (r *Query) buildWhere1(wheres []Where) []sq.Sqlizer {
+// 	if len(wheres) == 0 {
+// 		return nil
+// 	}
+
+// 	var sqlizers []sq.Sqlizer
+// 	for index, where := range wheres {
+// 		if where.or {
+// 			sqlizers = sq.Or{sqlizers...}
+// 		} else {
+// 			where = sq.And{where.query}
+// 		}
+// 	}
+
+// 	return where
+// }
 
 func (r *Query) placeholderFormat() database.PlaceholderFormat {
 	if r.driver.Config().PlaceholderFormat != nil {

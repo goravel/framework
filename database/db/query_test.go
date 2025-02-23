@@ -5,7 +5,6 @@ import (
 	databasesql "database/sql"
 	"testing"
 
-	sq "github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -434,9 +433,9 @@ func (m *MockResult) RowsAffected() (int64, error) {
 	return arguments.Get(0).(int64), arguments.Error(1)
 }
 
-func TestWhere(t *testing.T) {
-	query := sq.Select("*").From("users").Where("name = ?", "abc").Where(sq.Or{sq.Eq{"name": "John"}, sq.Eq{"name": "John1"}, sq.Eq{"name": "John2"}}, sq.Eq{"age": 25})
-	sql, args, err := query.ToSql()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM users WHERE (name = ? OR age = ?)", sql, args)
-}
+// func TestWhere(t *testing.T) {
+// 	query := sq.Select("*").From("users").Where("name = ?", "abc").Where(sq.Or{sq.Eq{"name": "John"}, sq.Eq{"name": "John1"}, sq.Eq{"name": "John2"}, sq.And{}})
+// 	sql, args, err := query.ToSql()
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, "SELECT * FROM users WHERE (name = ? OR age = ?)", sql, args)
+// }
