@@ -55,9 +55,6 @@ func (r *responseImpl) Headers() http.Header {
 }
 
 func (r *responseImpl) Json() (map[string]any, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	if r.decoded != nil {
 		return r.decoded, nil
 	}
@@ -182,9 +179,6 @@ func (r *responseImpl) getContent() (string, error) {
 		return r.content, nil
 	}
 
-	if r.response.Body == nil {
-		return "", io.EOF
-	}
 	defer r.response.Body.Close()
 
 	content, err := io.ReadAll(r.response.Body)

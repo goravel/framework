@@ -42,96 +42,6 @@ func NewRequest(config config.Config, json foundation.Json) client.Request {
 	}
 }
 
-func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Response, error) {
-	parsedURL, err := r.parseURL(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header = r.headers
-	for key, value := range r.urlParams {
-		req.SetPathValue(key, value)
-	}
-
-	for _, value := range r.cookies {
-		req.AddCookie(value)
-	}
-
-	res, err := r.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	response := NewResponse(res, r.json)
-	if r.bind != nil {
-		body, err := response.Body()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := r.json.Unmarshal([]byte(body), r.bind); err != nil {
-			return nil, err
-		}
-	}
-
-	return response, nil
-}
-
-func (r *requestImpl) parseURL(uri string) (string, error) {
-	baseURL := r.config.GetString("http.client.base_url", "")
-
-	// If the URI is relative, prepend the base URL
-	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
-		uri = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(uri, "/")
-	}
-
-	buf := &strings.Builder{}
-	prev := 0
-
-	for curr := strings.Index(uri, "{"); curr != -1; curr = strings.Index(uri[prev:], "{") {
-		curr += prev
-		buf.WriteString(uri[prev:curr])
-		next := strings.Index(uri[curr:], "}")
-		if next == -1 {
-			buf.WriteString(uri[curr:])
-			break
-		}
-		next += curr
-		key := uri[curr+1 : next]
-		if value, ok := r.urlParams[key]; ok {
-			buf.WriteString(value)
-		} else {
-			buf.WriteString(uri[curr : next+1])
-		}
-		prev = next + 1
-	}
-
-	if prev < len(uri) {
-		buf.WriteString(uri[prev:])
-	}
-
-	reqURL, err := url.Parse(buf.String())
-	if err != nil {
-		return "", err
-	}
-
-	// Append query parameters
-	if len(r.queryParams) > 0 {
-		if len(strings.TrimSpace(reqURL.RawQuery)) == 0 {
-			reqURL.RawQuery = r.queryParams.Encode()
-		} else {
-			reqURL.RawQuery = reqURL.RawQuery + "&" + r.queryParams.Encode()
-		}
-	}
-
-	return reqURL.String(), nil
-}
-
 func (r *requestImpl) Get(uri string) (client.Response, error) {
 	return r.doRequest(http.MethodGet, uri, nil)
 }
@@ -292,4 +202,99 @@ func (r *requestImpl) WithUrlParameters(params map[string]string) client.Request
 		r.WithUrlParameter(k, v)
 	}
 	return r
+}
+
+func (r *requestImpl) doRequest(method, uri string, body io.Reader) (client.Response, error) {
+	parsedURL, err := r.parseRequestURL(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(r.ctx, method, parsedURL, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = r.headers
+
+	for _, value := range r.cookies {
+		req.AddCookie(value)
+	}
+
+	res, err := r.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	response := NewResponse(res, r.json)
+	if r.bind != nil {
+		body, err := response.Body()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := r.json.Unmarshal([]byte(body), r.bind); err != nil {
+			return nil, err
+		}
+	}
+
+	return response, nil
+}
+
+func (r *requestImpl) parseRequestURL(uri string) (string, error) {
+	baseURL := r.config.GetString("http.client.base_url", "")
+
+	// Prepend base URL if needed
+	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
+		uri = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(uri, "/")
+	}
+
+	var buf strings.Builder
+	buf.Grow(len(uri) + 10)
+
+	n := len(uri)
+	i := 0
+	for i < n {
+		if uri[i] == '{' {
+			j := i + 1
+			for j < n && uri[j] != '}' {
+				j++
+			}
+
+			if j == n {
+				buf.WriteString(uri[i:])
+				break
+			}
+
+			key := uri[i+1 : j]
+			if value, found := r.urlParams[key]; found {
+				buf.WriteString(value)
+			} else {
+				buf.WriteString(uri[i : j+1])
+			}
+
+			i = j + 1
+		} else {
+			start := i
+			for i < n && uri[i] != '{' {
+				i++
+			}
+			buf.WriteString(uri[start:i])
+		}
+	}
+
+	reqURL, err := url.Parse(buf.String())
+	if err != nil {
+		return "", err
+	}
+
+	if len(r.queryParams) > 0 {
+		if len(strings.TrimSpace(reqURL.RawQuery)) == 0 {
+			reqURL.RawQuery = r.queryParams.Encode()
+		} else {
+			reqURL.RawQuery = reqURL.RawQuery + "&" + r.queryParams.Encode()
+		}
+	}
+
+	return reqURL.String(), nil
 }
