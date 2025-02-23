@@ -2,11 +2,14 @@ package console
 
 import (
 	"io"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -14,9 +17,65 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
+type AboutCommandTestSuite struct {
+	suite.Suite
+}
+
+func (s *AboutCommandTestSuite) SetupTest() {
+}
+
+func TestAboutCommandTestSuite(t *testing.T) {
+	suite.Run(t, new(AboutCommandTestSuite))
+}
+
+func (s *AboutCommandTestSuite) TestSignature() {
+	cmd := &AboutCommand{}
+	expected := "about"
+	s.Require().Equal(expected, cmd.Signature())
+}
+
+func (s *AboutCommandTestSuite) TestDescription() {
+	cmd := &AboutCommand{}
+	expected := "Display basic information about your application"
+	s.Require().Equal(expected, cmd.Description())
+}
+
+func (s *AboutCommandTestSuite) TestExtend() {
+	cmd := &AboutCommand{}
+	got := cmd.Extend()
+
+	if len(got.Flags) > 0 {
+		s.Run("should have correctly configured StringFlag", func() {
+			flag, ok := got.Flags[0].(*command.StringFlag)
+			if !ok {
+				s.Fail("First flag is not StringFlag (got type: %T)", got.Flags[0])
+			}
+
+			testCases := []struct {
+				name     string
+				got      interface{}
+				expected interface{}
+			}{
+				{"Name", flag.Name, "only"},
+				{"Usage", flag.Usage, "The section to display"},
+			}
+
+			for _, tc := range testCases {
+				if !reflect.DeepEqual(tc.got, tc.expected) {
+					s.Require().Equal(tc.expected, tc.got)
+				}
+			}
+		})
+	}
+}
+
 func TestAboutCommand(t *testing.T) {
 	mockApp := mocksfoundation.NewApplication(t)
 	mockConfig := mocksconfig.NewConfig(t)
+
+	cmd := NewAboutCommand(mockApp)
+	ctx := &mocksconsole.Context{}
+
 	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 	mockApp.EXPECT().Version().Return("test_version").Once()
 	mockConfig.EXPECT().GetString("app.name").Return("test").Once()
@@ -37,10 +96,10 @@ func TestAboutCommand(t *testing.T) {
 	mockConfig.EXPECT().GetString("mail.default", "smtp").Return("test_mail").Once()
 	mockConfig.EXPECT().GetString("queue.default").Return("test_queue").Once()
 	mockConfig.EXPECT().GetString("session.driver").Return("test_session").Once()
-	aboutCommand := NewAboutCommand(mockApp)
-	mockContext := &mocksconsole.Context{}
-	mockContext.EXPECT().NewLine().Return().Times(4)
-	mockContext.EXPECT().Option("only").Return("").Once()
+
+	ctx.EXPECT().NewLine().Return().Times(4)
+	ctx.EXPECT().Option("only").Return("").Once()
+
 	getGoVersion = func() string {
 		return "test_version"
 	}
@@ -69,7 +128,7 @@ func TestAboutCommand(t *testing.T) {
 		{"<fg=green;op=bold>Custom</>", ""},
 		{"Test Info", "<fg=cyan>OK</>"},
 	} {
-		mockContext.EXPECT().TwoColumnDetail(ex[0], ex[1]).
+		ctx.EXPECT().TwoColumnDetail(ex[0], ex[1]).
 			Run(func(first string, second string, _ ...rune) {
 				expected = append(expected, color.Default().Sprintf("%s %s\n", first, second))
 				color.Default().Printf("%s %s\n", first, second)
@@ -77,7 +136,7 @@ func TestAboutCommand(t *testing.T) {
 	}
 	AddAboutInformation("Custom", foundation.AboutItem{Key: "Test Info", Value: "<fg=cyan>OK</>"})
 	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, aboutCommand.Handle(mockContext))
+		assert.Nil(t, cmd.Handle(ctx))
 	}), strings.Join(expected, ""))
 }
 
