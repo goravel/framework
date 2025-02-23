@@ -2,6 +2,7 @@ package console
 
 import (
 	"encoding/base64"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -77,7 +78,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 	cmd := NewEnvEncryptCommand()
 	mockContext := mocksconsole.NewContext(s.T())
 
-	s.Run(".env not exists", func() {
+	s.Run(fmt.Sprintf("%s not exists", support.EnvPath), func() {
 		mockContext.EXPECT().Option("key").Return(EnvEncryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
 		mockContext.EXPECT().Error("Environment file not found.").Once()
@@ -85,7 +86,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 		s.Nil(cmd.Handle(mockContext))
 	})
 
-	s.Run(".env.encrypted exists and confirm failed", func() {
+	s.Run(fmt.Sprintf("%s exists and confirm failed", support.EnvEncryptPath), func() {
 		s.Nil(file.PutContent(support.EnvPath, EnvEncryptPlaintext))
 		s.Nil(file.PutContent(support.EnvEncryptPath, EnvEncryptCiphertext))
 		defer func() {
@@ -117,7 +118,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 		s.Nil(cmd.Handle(mockContext))
 	})
 
-	s.Run("success when .env.encrypted exists", func() {
+	s.Run(fmt.Sprintf("success when %s exists", support.EnvEncryptPath), func() {
 		s.Nil(file.PutContent(support.EnvPath, EnvEncryptPlaintext))
 		s.Nil(file.PutContent(support.EnvEncryptPath, EnvEncryptCiphertext))
 		defer func() {
@@ -143,7 +144,7 @@ func (s *EnvEncryptCommandTestSuite) TestHandle() {
 		s.Equal(EnvEncryptCiphertext, content)
 	})
 
-	s.Run("success when .env.encrypted not exists", func() {
+	s.Run(fmt.Sprintf("success when %s not exists", support.EnvEncryptPath), func() {
 		s.Nil(file.PutContent(support.EnvPath, EnvEncryptPlaintext))
 		defer func() {
 			s.Nil(file.Remove(support.EnvPath))
