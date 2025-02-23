@@ -9,8 +9,6 @@ import (
 	"github.com/goravel/framework/contracts/http/client"
 )
 
-var _ client.Response = &responseImpl{}
-
 type responseImpl struct {
 	mu       sync.Mutex
 	content  string

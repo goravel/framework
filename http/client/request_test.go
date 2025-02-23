@@ -31,7 +31,7 @@ func (s *RequestTestSuite) SetupTest() {
 	s.mockConfig = config.NewConfig(s.T())
 
 	s.once.Do(func() {
-		s.mockConfig.EXPECT().GetDuration("http.client.timeout", 30*time.Second).Return(30 * time.Second)
+		s.mockConfig.EXPECT().GetDuration("http.client.timeout", 30*time.Second).Return(30 * time.Second).Once()
 		s.mockConfig.EXPECT().GetInt("http.client.max_idle_conns").Return(0)
 		s.mockConfig.EXPECT().GetInt("http.client.max_idle_conns_per_host").Return(0)
 		s.mockConfig.EXPECT().GetInt("http.client.max_conns_per_host").Return(0)
@@ -84,6 +84,7 @@ func (s *RequestTestSuite) TestDoRequest_Success() {
 	s.NoError(err)
 	s.Equal(map[string]interface{}{"message": "success"}, jsonData)
 }
+
 func (s *RequestTestSuite) TestDoRequest_Bind() {
 	type Message struct {
 		ID     int               `json:"id"`

@@ -26,7 +26,6 @@ type Request interface {
 	WithContext(ctx context.Context) Request
 	WithCookies(cookies []*http.Cookie) Request
 	WithCookie(cookie *http.Cookie) Request
-	WithDigestAuth(username, password string) Request
 	WithHeader(key, value string) Request
 	WithHeaders(map[string]string) Request
 	WithQueryParameter(key, value string) Request

@@ -15,8 +15,6 @@ import (
 	"github.com/goravel/framework/support/maps"
 )
 
-var _ client.Request = &requestImpl{}
-
 type requestImpl struct {
 	ctx         context.Context
 	client      *http.Client
@@ -130,10 +128,6 @@ func (r *requestImpl) WithCookies(cookies []*http.Cookie) client.Request {
 
 func (r *requestImpl) WithCookie(cookie *http.Cookie) client.Request {
 	r.cookies = append(r.cookies, cookie)
-	return r
-}
-
-func (r *requestImpl) WithDigestAuth(username, password string) client.Request {
 	return r
 }
 

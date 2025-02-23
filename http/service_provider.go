@@ -25,7 +25,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingView, func(app foundation.Application) (any, error) {
 		return NewView(), nil
 	})
-	app.Singleton(contracts.BindingHttp, func(app foundation.Application) (any, error) {
+	app.Bind(contracts.BindingHttp, func(app foundation.Application) (any, error) {
 		c := app.MakeConfig()
 		if c == nil {
 			return nil, errors.ConfigFacadeNotSet.SetModule(errors.ModuleHttp)
