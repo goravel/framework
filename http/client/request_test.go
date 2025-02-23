@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -326,6 +327,89 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	}()
 
 	wg.Wait()
+}
+
+func (s *RequestTestSuite) TestParseRequestURL() {
+	tests := []struct {
+		name        string
+		baseURL     string
+		uri         string
+		urlParams   map[string]string
+		queryParams url.Values
+		expected    string
+		expectError bool
+	}{
+		{
+			name:     "Absolute URL should remain unchanged",
+			baseURL:  "https://api.example.com",
+			uri:      "https://external.com/data",
+			expected: "https://external.com/data",
+		},
+		{
+			name:     "Base URL should be prepended",
+			baseURL:  "https://api.example.com",
+			uri:      "/users",
+			expected: "https://api.example.com/users",
+		},
+		{
+			name:      "Path parameters should be replaced",
+			baseURL:   "https://api.example.com",
+			uri:       "/users/{id}/posts",
+			urlParams: map[string]string{"id": "123"},
+			expected:  "https://api.example.com/users/123/posts",
+		},
+		{
+			name:     "Unresolved path parameters remain",
+			baseURL:  "https://api.example.com",
+			uri:      "/users/{id}/posts",
+			expected: "https://api.example.com/users/%7Bid%7D/posts",
+		},
+		{
+			name:        "Completely malformed URL should return an error",
+			baseURL:     "https://api.example.com",
+			uri:         "http://:invalid",
+			expectError: true,
+		},
+		{
+			name:        "Query parameters should be appended",
+			baseURL:     "https://api.example.com",
+			uri:         "/search",
+			queryParams: url.Values{"q": []string{"golang"}, "page": []string{"1"}},
+			expected:    "https://api.example.com/search?page=1&q=golang",
+		},
+		{
+			name:        "Existing query parameters should be preserved",
+			baseURL:     "https://api.example.com",
+			uri:         "/search?sort=asc",
+			queryParams: url.Values{"q": []string{"golang"}},
+			expected:    "https://api.example.com/search?sort=asc&q=golang",
+		},
+		{
+			name:     "Unclosed path parameter should remain unchanged",
+			baseURL:  "https://api.example.com",
+			uri:      "/users/{id",
+			expected: "https://api.example.com/users/%7Bid",
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			r := &requestImpl{
+				config:      s.mockConfig,
+				urlParams:   tt.urlParams,
+				queryParams: tt.queryParams,
+			}
+			s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return(tt.baseURL)
+
+			result, err := r.parseRequestURL(tt.uri)
+			if tt.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tt.expected, result)
+			}
+		})
+	}
 }
 
 type testJson struct{}
