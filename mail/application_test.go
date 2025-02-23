@@ -13,6 +13,7 @@ import (
 	queuecontract "github.com/goravel/framework/contracts/queue"
 	configmock "github.com/goravel/framework/mocks/config"
 	"github.com/goravel/framework/queue"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/color"
 	"github.com/goravel/framework/support/file"
 )
@@ -21,20 +22,22 @@ var testBcc, testCc, testTo, testFromAddress, testFromName string
 
 type ApplicationTestSuite struct {
 	suite.Suite
+	mockConfig *configmock.Config
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	if !file.Exists("../.env") && os.Getenv("MAIL_HOST") == "" {
+	if !file.Exists(support.EnvPath) && os.Getenv("MAIL_HOST") == "" {
 		color.Errorln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
 }
 
-func (s *ApplicationTestSuite) SetupTest() {}
+func (s *ApplicationTestSuite) SetupTest() {
+	s.mockConfig = mockConfig(465)
+}
 
 func (s *ApplicationTestSuite) TestSendMailBy465Port() {
-	mockConfig := mockConfig(465)
-	app := NewApplication(mockConfig, nil)
+	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
@@ -45,8 +48,7 @@ func (s *ApplicationTestSuite) TestSendMailBy465Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailBy587Port() {
-	mockConfig := mockConfig(587)
-	app := NewApplication(mockConfig, nil)
+	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.To([]string{testTo}).
 		Cc([]string{testCc}).
 		Bcc([]string{testBcc}).
@@ -57,8 +59,7 @@ func (s *ApplicationTestSuite) TestSendMailBy587Port() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithFrom() {
-	mockConfig := mockConfig(587)
-	app := NewApplication(mockConfig, nil)
+	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.From(Address(testFromAddress, testFromName)).
 		To([]string{testTo}).
 		Cc([]string{testCc}).
@@ -70,20 +71,17 @@ func (s *ApplicationTestSuite) TestSendMailWithFrom() {
 }
 
 func (s *ApplicationTestSuite) TestSendMailWithMailable() {
-	mockConfig := mockConfig(587)
-	app := NewApplication(mockConfig, nil)
+	app := NewApplication(s.mockConfig, nil)
 	s.Nil(app.Send(NewTestMailable()))
 }
 
 func (s *ApplicationTestSuite) TestQueueMail() {
-	mockConfig := mockConfig(587)
-
-	queueFacade := queue.NewApplication(mockConfig)
+	queueFacade := queue.NewApplication(s.mockConfig)
 	queueFacade.Register([]queuecontract.Job{
-		NewSendMailJob(mockConfig),
+		NewSendMailJob(s.mockConfig),
 	})
 
-	app := NewApplication(mockConfig, queueFacade)
+	app := NewApplication(s.mockConfig, queueFacade)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -106,14 +104,12 @@ func (s *ApplicationTestSuite) TestQueueMail() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
-	mockConfig := mockConfig(587)
-
-	queueFacade := queue.NewApplication(mockConfig)
+	queueFacade := queue.NewApplication(s.mockConfig)
 	queueFacade.Register([]queuecontract.Job{
-		NewSendMailJob(mockConfig),
+		NewSendMailJob(s.mockConfig),
 	})
 
-	app := NewApplication(mockConfig, queueFacade)
+	app := NewApplication(s.mockConfig, queueFacade)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -139,14 +135,12 @@ func (s *ApplicationTestSuite) TestQueueMailWithConnection() {
 }
 
 func (s *ApplicationTestSuite) TestQueueMailWithMailable() {
-	mockConfig := mockConfig(587)
-
-	queueFacade := queue.NewApplication(mockConfig)
+	queueFacade := queue.NewApplication(s.mockConfig)
 	queueFacade.Register([]queuecontract.Job{
-		NewSendMailJob(mockConfig),
+		NewSendMailJob(s.mockConfig),
 	})
 
-	app := NewApplication(mockConfig, queueFacade)
+	app := NewApplication(s.mockConfig, queueFacade)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -171,9 +165,9 @@ func mockConfig(mailPort int) *configmock.Config {
 	mockConfig.On("GetString", "queue.failed.database").Return("database")
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
 
-	if file.Exists("../.env") {
+	if file.Exists(support.EnvPath) {
 		vip := viper.New()
-		vip.SetConfigName("../.env")
+		vip.SetConfigName(support.EnvPath)
 		vip.SetConfigType("env")
 		vip.AddConfigPath(".")
 		_ = vip.ReadInConfig()

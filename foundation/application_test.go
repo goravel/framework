@@ -33,6 +33,7 @@ import (
 	"github.com/goravel/framework/queue"
 	"github.com/goravel/framework/schedule"
 	frameworksession "github.com/goravel/framework/session"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 	frameworktranslation "github.com/goravel/framework/translation"
 	"github.com/goravel/framework/validation"
@@ -44,11 +45,11 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.PutContent(".env", "APP_KEY=12345678901234567890123456789012"))
+	assert.Nil(t, file.PutContent(support.EnvPath, "APP_KEY=12345678901234567890123456789012"))
 
 	suite.Run(t, new(ApplicationTestSuite))
 
-	assert.Nil(t, file.Remove(".env"))
+	assert.Nil(t, file.Remove(support.EnvPath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {

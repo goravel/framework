@@ -20,17 +20,17 @@ func TestJwtSecretCommand(t *testing.T) {
 	mockContext := mocksconsole.NewContext(t)
 	mockContext.EXPECT().Success("Jwt Secret set successfully").Once()
 
-	assert.False(t, file.Exists(".env"))
-	err := file.PutContent(".env", "JWT_SECRET=\n")
+	assert.False(t, file.Exists(support.EnvPath))
+	err := file.PutContent(support.EnvPath, "JWT_SECRET=\n")
 	assert.NoError(t, err)
 
 	assert.NoError(t, jwtSecretCommand.Handle(mockContext))
 
-	assert.True(t, file.Exists(".env"))
-	env, err := os.ReadFile(".env")
+	assert.True(t, file.Exists(support.EnvPath))
+	env, err := os.ReadFile(support.EnvPath)
 	assert.NoError(t, err)
 	assert.True(t, len(env) > 10)
-	assert.NoError(t, file.Remove(".env"))
+	assert.NoError(t, file.Remove(support.EnvPath))
 }
 
 func TestJwtSecretCommandWithCustomEnvFile(t *testing.T) {
