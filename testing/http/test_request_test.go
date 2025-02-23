@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"context"
-	encodingjson "encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/foundation/json"
 	mocksroute "github.com/goravel/framework/mocks/route"
 	mockssession "github.com/goravel/framework/mocks/session"
 )
@@ -38,7 +38,7 @@ func (s *TestRequestSuite) SetupTest() {
 		defaultHeaders:    make(map[string]string),
 		defaultCookies:    make(map[string]string),
 		sessionAttributes: make(map[string]any),
-		json:              &testJson{},
+		json:              json.NewJson(),
 		route:             s.mockRoute,
 		session:           s.mockSessionManager,
 	}
@@ -166,15 +166,4 @@ func (s *TestRequestSuite) TestSetSessionUsingWithoutSession() {
 
 	s.mockSessionManager.AssertNotCalled(s.T(), "Driver")
 	s.mockSessionManager.AssertNotCalled(s.T(), "BuildSession", mockssession.NewDriver(s.T()))
-}
-
-type testJson struct {
-}
-
-func (t *testJson) Marshal(v any) ([]byte, error) {
-	return encodingjson.Marshal(v)
-}
-
-func (t *testJson) Unmarshal(data []byte, v any) error {
-	return encodingjson.Unmarshal(data, v)
 }

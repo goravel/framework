@@ -17,6 +17,7 @@ import (
 	"github.com/goravel/framework/contracts/grpc"
 	"github.com/goravel/framework/contracts/hash"
 	"github.com/goravel/framework/contracts/http"
+	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/contracts/log"
 	"github.com/goravel/framework/contracts/mail"
 	"github.com/goravel/framework/contracts/queue"
@@ -98,6 +99,8 @@ type Application interface {
 	MakeGrpc() grpc.Grpc
 	// MakeHash resolves the hash instance.
 	MakeHash() hash.Hash
+	// MakeHttp resolves the http instance.
+	MakeHttp() client.Request
 	// MakeLang resolves the lang instance.
 	MakeLang(ctx context.Context) translation.Translator
 	// MakeLog resolves the log instance.

@@ -21,6 +21,7 @@ import (
 	contractsgrpc "github.com/goravel/framework/contracts/grpc"
 	contractshash "github.com/goravel/framework/contracts/hash"
 	contractshttp "github.com/goravel/framework/contracts/http"
+	contractshttpclient "github.com/goravel/framework/contracts/http/client"
 	contractslog "github.com/goravel/framework/contracts/log"
 	contractsmail "github.com/goravel/framework/contracts/mail"
 	contractsqueue "github.com/goravel/framework/contracts/queue"
@@ -156,6 +157,16 @@ func (c *Container) MakeHash() contractshash.Hash {
 	}
 
 	return instance.(contractshash.Hash)
+}
+
+func (c *Container) MakeHttp() contractshttpclient.Request {
+	instance, err := c.Make(contracts.BindingHttp)
+	if err != nil {
+		color.Errorln(err)
+		return nil
+	}
+
+	return instance.(contractshttpclient.Request)
 }
 
 func (c *Container) MakeLang(ctx context.Context) contractstranslation.Translator {
