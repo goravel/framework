@@ -10,6 +10,7 @@ import (
 
 	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/file"
 	"github.com/goravel/framework/support/str"
@@ -43,6 +44,12 @@ func (r *EnvEncryptCommand) Extend() command.Extend {
 				Value:   "",
 				Usage:   "Encryption key",
 			},
+			&command.StringFlag{
+				Name:    "name",
+				Aliases: []string{"n"},
+				Value:   "",
+				Usage:   "Encrypted environment file name",
+			},
 		},
 	}
 }
@@ -50,12 +57,13 @@ func (r *EnvEncryptCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 	key := convert.Default(ctx.Option("key"), str.Random(32))
-	plaintext, err := os.ReadFile(".env")
+	name := convert.Default(ctx.Option("name"), support.EnvEncryptPath)
+	plaintext, err := os.ReadFile(support.EnvPath)
 	if err != nil {
 		ctx.Error("Environment file not found.")
 		return nil
 	}
-	if file.Exists(".env.encrypted") {
+	if file.Exists(name) {
 		ok, _ := ctx.Confirm("Encrypted environment file already exists, are you sure to overwrite?", console.ConfirmOption{
 			Default:     false,
 			Affirmative: "Yes",
@@ -73,7 +81,7 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 	}
 
 	base64Data := base64.StdEncoding.EncodeToString(ciphertext)
-	err = os.WriteFile(".env.encrypted", []byte(base64Data), 0644)
+	err = os.WriteFile(name, []byte(base64Data), 0644)
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Writer error: %v", err))
 		return nil
@@ -81,8 +89,8 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 
 	ctx.Success("Environment successfully encrypted.")
 	ctx.TwoColumnDetail("Key", key)
-	ctx.TwoColumnDetail("Cipher", "AES-256-CBC")
-	ctx.TwoColumnDetail("Encrypted file", ".env.encrypted")
+	ctx.TwoColumnDetail("Cipher", support.EnvEncryptCipher)
+	ctx.TwoColumnDetail("Encrypted file", name)
 
 	return nil
 }
@@ -105,6 +113,5 @@ func (r *EnvEncryptCommand) encrypt(plaintext []byte, key []byte) ([]byte, error
 func (r *EnvEncryptCommand) pkcs7Pad(data []byte) []byte {
 	padding := aes.BlockSize - len(data)%aes.BlockSize
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
-
 	return append(data, padText...)
 }

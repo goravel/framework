@@ -11,7 +11,9 @@ const (
 var (
 	Env                  = EnvRuntime
 	EnvPath              = ".env"
+	EnvEncryptPath       = ".env.encrypted"
+	EnvEncryptCipher     = "AES-256-CBC"
 	IsKeyGenerateCommand = false
-	RelativePath         string
-	RootPath             string
+	RelativePath         = ""
+	RootPath             = ""
 )

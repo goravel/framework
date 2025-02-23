@@ -2,22 +2,78 @@ package console
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
-func TestPackageMakeCommand(t *testing.T) {
+type PackageMakeCommandTestSuite struct {
+	suite.Suite
+}
+
+func TestPackageMakeCommandTestSuite(t *testing.T) {
+	suite.Run(t, new(PackageMakeCommandTestSuite))
+}
+
+func (s *PackageMakeCommandTestSuite) TestSignature() {
+	expected := "make:package"
+	s.Require().Equal(expected, NewPackageMakeCommand().Signature())
+}
+
+func (s *PackageMakeCommandTestSuite) TestDescription() {
+	expected := "Create a package template"
+	s.Require().Equal(expected, NewPackageMakeCommand().Description())
+}
+
+func (s *PackageMakeCommandTestSuite) TestExtend() {
+	cmd := NewPackageMakeCommand()
+	got := cmd.Extend()
+
+	s.Run("should return correct category", func() {
+		expected := "make"
+		s.Require().Equal(expected, got.Category)
+	})
+
+	if len(got.Flags) > 0 {
+		s.Run("should have correctly configured StringFlag", func() {
+			flag, ok := got.Flags[0].(*command.StringFlag)
+			if !ok {
+				s.Fail("First flag is not StringFlag (got type: %T)", got.Flags[0])
+			}
+
+			testCases := []struct {
+				name     string
+				got      interface{}
+				expected interface{}
+			}{
+				{"Name", flag.Name, "root"},
+				{"Aliases", flag.Aliases, []string{"r"}},
+				{"Usage", flag.Usage, "The root path of package, default: packages"},
+				{"Value", flag.Value, "packages"},
+			}
+
+			for _, tc := range testCases {
+				if !reflect.DeepEqual(tc.got, tc.expected) {
+					s.Require().Equal(tc.expected, tc.got)
+				}
+			}
+		})
+	}
+}
+
+func (s *PackageMakeCommandTestSuite) TestHandle() {
 	var (
 		mockContext *mocksconsole.Context
 	)
 
 	beforeEach := func() {
-		mockContext = mocksconsole.NewContext(t)
+		mockContext = mocksconsole.NewContext(s.T())
 	}
 
 	tests := []struct {
@@ -33,7 +89,7 @@ func TestPackageMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Error("the package name cannot be empty").Once()
 			},
 			assert: func() {
-				assert.NoError(t, NewPackageMakeCommand().Handle(mockContext))
+				s.NoError(NewPackageMakeCommand().Handle(mockContext))
 			},
 		},
 		{
@@ -44,16 +100,16 @@ func TestPackageMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Success("Package created successfully: packages/sms").Once()
 			},
 			assert: func() {
-				assert.NoError(t, NewPackageMakeCommand().Handle(mockContext))
-				assert.True(t, file.Exists("packages/sms/README.md"))
-				assert.True(t, file.Exists("packages/sms/service_provider.go"))
-				assert.True(t, file.Exists("packages/sms/sms.go"))
-				assert.True(t, file.Exists("packages/sms/config/sms.go"))
-				assert.True(t, file.Exists("packages/sms/contracts/sms.go"))
-				assert.True(t, file.Exists("packages/sms/facades/sms.go"))
-				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
-				assert.True(t, file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
-				assert.NoError(t, file.Remove("packages"))
+				s.NoError(NewPackageMakeCommand().Handle(mockContext))
+				s.True(file.Exists("packages/sms/README.md"))
+				s.True(file.Exists("packages/sms/service_provider.go"))
+				s.True(file.Exists("packages/sms/sms.go"))
+				s.True(file.Exists("packages/sms/config/sms.go"))
+				s.True(file.Exists("packages/sms/contracts/sms.go"))
+				s.True(file.Exists("packages/sms/facades/sms.go"))
+				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms"))
+				s.True(file.Contain("packages/sms/facades/sms.go", "goravel/packages/sms/contracts"))
+				s.NoError(file.Remove("packages"))
 			},
 		},
 		{
@@ -64,32 +120,31 @@ func TestPackageMakeCommand(t *testing.T) {
 				mockContext.EXPECT().Success("Package created successfully: package/github_com_goravel_sms_aws").Once()
 			},
 			assert: func() {
-				assert.NoError(t, NewPackageMakeCommand().Handle(mockContext))
-				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/README.md"))
-				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/service_provider.go"))
-				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/github_com_goravel_sms_aws.go"))
-				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/config/github_com_goravel_sms_aws.go"))
-				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/contracts/github_com_goravel_sms_aws.go"))
-				assert.True(t, file.Exists("package/github_com_goravel_sms_aws/facades/github_com_goravel_sms_aws.go"))
-				assert.NoError(t, file.Remove("package"))
+				s.NoError(NewPackageMakeCommand().Handle(mockContext))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/README.md"))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/service_provider.go"))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/github_com_goravel_sms_aws.go"))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/config/github_com_goravel_sms_aws.go"))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/contracts/github_com_goravel_sms_aws.go"))
+				s.True(file.Exists("package/github_com_goravel_sms_aws/facades/github_com_goravel_sms_aws.go"))
+				s.NoError(file.Remove("package"))
 			},
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		s.Run(test.name, func() {
 			beforeEach()
 			test.setup()
 			test.assert()
 		})
 	}
 }
-
-func TestPackageName(t *testing.T) {
+func (s *PackageMakeCommandTestSuite) TestPackageName() {
 	input := "github.com/example/package-name"
 	expected := "package_name"
-	assert.Equal(t, expected, packageName(input))
+	s.Equal(expected, packageName(input))
 
 	input2 := "example.com/another_package.name"
 	expected2 := "another_package_name"
-	assert.Equal(t, expected2, packageName(input2))
+	s.Equal(expected2, packageName(input2))
 }

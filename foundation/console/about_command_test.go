@@ -2,11 +2,13 @@ package console
 
 import (
 	"io"
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/contracts/foundation"
 	mocksconfig "github.com/goravel/framework/mocks/config"
 	mocksconsole "github.com/goravel/framework/mocks/console"
@@ -14,9 +16,69 @@ import (
 	"github.com/goravel/framework/support/color"
 )
 
-func TestAboutCommand(t *testing.T) {
-	mockApp := mocksfoundation.NewApplication(t)
-	mockConfig := mocksconfig.NewConfig(t)
+type AboutCommandTestSuite struct {
+	suite.Suite
+}
+
+func (s *AboutCommandTestSuite) SetupTest() {
+}
+
+func (s *AboutCommandTestSuite) TearDownTest() {
+	appInformation = &information{section: make(map[string]int)}
+}
+
+func TestAboutCommandTestSuite(t *testing.T) {
+	suite.Run(t, new(AboutCommandTestSuite))
+}
+
+func (s *AboutCommandTestSuite) TestSignature() {
+	cmd := &AboutCommand{}
+	expected := "about"
+	s.Require().Equal(expected, cmd.Signature())
+}
+
+func (s *AboutCommandTestSuite) TestDescription() {
+	cmd := &AboutCommand{}
+	expected := "Display basic information about your application"
+	s.Require().Equal(expected, cmd.Description())
+}
+
+func (s *AboutCommandTestSuite) TestExtend() {
+	cmd := &AboutCommand{}
+	got := cmd.Extend()
+
+	if len(got.Flags) > 0 {
+		s.Run("should have correctly configured StringFlag", func() {
+			flag, ok := got.Flags[0].(*command.StringFlag)
+			if !ok {
+				s.Fail("First flag is not StringFlag (got type: %T)", got.Flags[0])
+			}
+
+			testCases := []struct {
+				name     string
+				got      interface{}
+				expected interface{}
+			}{
+				{"Name", flag.Name, "only"},
+				{"Usage", flag.Usage, "The section to display"},
+			}
+
+			for _, tc := range testCases {
+				if !reflect.DeepEqual(tc.got, tc.expected) {
+					s.Require().Equal(tc.expected, tc.got)
+				}
+			}
+		})
+	}
+}
+
+func (s *AboutCommandTestSuite) TestHandle() {
+	mockApp := mocksfoundation.NewApplication(s.T())
+	mockConfig := mocksconfig.NewConfig(s.T())
+	mockContext := mocksconsole.NewContext(s.T())
+
+	cmd := NewAboutCommand(mockApp)
+
 	mockApp.EXPECT().MakeConfig().Return(mockConfig).Once()
 	mockApp.EXPECT().Version().Return("test_version").Once()
 	mockConfig.EXPECT().GetString("app.name").Return("test").Once()
@@ -37,10 +99,10 @@ func TestAboutCommand(t *testing.T) {
 	mockConfig.EXPECT().GetString("mail.default", "smtp").Return("test_mail").Once()
 	mockConfig.EXPECT().GetString("queue.default").Return("test_queue").Once()
 	mockConfig.EXPECT().GetString("session.driver").Return("test_session").Once()
-	aboutCommand := NewAboutCommand(mockApp)
-	mockContext := &mocksconsole.Context{}
+
 	mockContext.EXPECT().NewLine().Return().Times(4)
 	mockContext.EXPECT().Option("only").Return("").Once()
+
 	getGoVersion = func() string {
 		return "test_version"
 	}
@@ -76,24 +138,24 @@ func TestAboutCommand(t *testing.T) {
 			}).Return().Once()
 	}
 	AddAboutInformation("Custom", foundation.AboutItem{Key: "Test Info", Value: "<fg=cyan>OK</>"})
-	assert.Contains(t, color.CaptureOutput(func(w io.Writer) {
-		assert.Nil(t, aboutCommand.Handle(mockContext))
-	}), strings.Join(expected, ""))
+	s.Contains(color.CaptureOutput(func(w io.Writer) {
+		s.Nil(cmd.Handle(mockContext))
+	}), strings.Join(expected, ""), "output should contain expected lines in order")
 }
 
-func TestAddToSection(t *testing.T) {
+func (s *AboutCommandTestSuite) TestAddToSection() {
 	appInformation = &information{section: make(map[string]int)}
 	appInformation.addToSection("Test", []foundation.AboutItem{{Key: "Test Info", Value: "OK"}})
-	assert.Equal(t, appInformation.section, map[string]int{"Test": 0})
-	assert.Len(t, appInformation.details, 1)
+	s.Equal(appInformation.section, map[string]int{"Test": 0})
+	s.Len(appInformation.details, 1)
 }
 
-func TestInformationRange(t *testing.T) {
+func (s *AboutCommandTestSuite) TestInformationRange() {
 	appInformation = &information{section: make(map[string]int)}
 	appInformation.addToSection("Test", []foundation.AboutItem{{Key: "Test Info", Value: "OK"}, {Key: "Test Info", Value: "OK"}})
 	appInformation.Range("Test", func(section string, details []foundation.AboutItem) {
-		assert.Equal(t, "Test", section)
-		assert.Len(t, details, 2)
-		assert.Subset(t, details, []foundation.AboutItem{{Key: "Test Info", Value: "OK"}})
+		s.Equal("Test", section)
+		s.Len(details, 2)
+		s.Subset(details, []foundation.AboutItem{{Key: "Test Info", Value: "OK"}})
 	})
 }
