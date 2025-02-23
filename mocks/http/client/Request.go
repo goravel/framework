@@ -962,55 +962,6 @@ func (_c *Request_WithCookies_Call) RunAndReturn(run func([]*http.Cookie) client
 	return _c
 }
 
-// WithDigestAuth provides a mock function with given fields: username, password
-func (_m *Request) WithDigestAuth(username string, password string) client.Request {
-	ret := _m.Called(username, password)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithDigestAuth")
-	}
-
-	var r0 client.Request
-	if rf, ok := ret.Get(0).(func(string, string) client.Request); ok {
-		r0 = rf(username, password)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(client.Request)
-		}
-	}
-
-	return r0
-}
-
-// Request_WithDigestAuth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithDigestAuth'
-type Request_WithDigestAuth_Call struct {
-	*mock.Call
-}
-
-// WithDigestAuth is a helper method to define mock.On call
-//   - username string
-//   - password string
-func (_e *Request_Expecter) WithDigestAuth(username interface{}, password interface{}) *Request_WithDigestAuth_Call {
-	return &Request_WithDigestAuth_Call{Call: _e.mock.On("WithDigestAuth", username, password)}
-}
-
-func (_c *Request_WithDigestAuth_Call) Run(run func(username string, password string)) *Request_WithDigestAuth_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Request_WithDigestAuth_Call) Return(_a0 client.Request) *Request_WithDigestAuth_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Request_WithDigestAuth_Call) RunAndReturn(run func(string, string) client.Request) *Request_WithDigestAuth_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithHeader provides a mock function with given fields: key, value
 func (_m *Request) WithHeader(key string, value string) client.Request {
 	ret := _m.Called(key, value)
