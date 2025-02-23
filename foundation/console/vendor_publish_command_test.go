@@ -3,10 +3,12 @@ package console
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console/command"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -22,8 +24,55 @@ func (s *VendorPublishCommandTestSuite) SetupTest() {
 
 }
 
+func (s *VendorPublishCommandTestSuite) TestSignature() {
+	cmd := &VendorPublishCommand{}
+	expected := "vendor:publish"
+	s.Equal(expected, cmd.Signature(), "The signature should be 'vendor:publish'")
+}
+
+func (s *VendorPublishCommandTestSuite) TestDescription() {
+	cmd := &VendorPublishCommand{}
+	expected := "Publish any publishable assets from vendor packages"
+	s.Require().Equal(expected, cmd.Description())
+}
+
+func (s *VendorPublishCommandTestSuite) TestExtend() {
+	cmd := &VendorPublishCommand{}
+	got := cmd.Extend()
+
+	s.Run("should return correct category", func() {
+		expected := "vendor"
+		s.Require().Equal(expected, got.Category)
+	})
+
+	if len(got.Flags) > 0 {
+		s.Run("should have correctly configured StringFlag", func() {
+			flag, ok := got.Flags[0].(*command.BoolFlag)
+			if !ok {
+				s.Fail("existing flag is not BoolFlag (got type: %T)", got.Flags[0])
+			}
+
+			testCases := []struct {
+				name     string
+				got      interface{}
+				expected interface{}
+			}{
+				{"Name", flag.Name, "existing"},
+				{"Aliases", flag.Aliases, []string{"e"}},
+				{"Usage", flag.Usage, "Publish and overwrite only the files that have already been published"},
+			}
+
+			for _, tc := range testCases {
+				if !reflect.DeepEqual(tc.got, tc.expected) {
+					s.Require().Equal(tc.expected, tc.got)
+				}
+			}
+		})
+	}
+}
+
 func (s *VendorPublishCommandTestSuite) TestGetSourceFiles() {
-	command := &VendorPublishCommand{}
+	cmd := &VendorPublishCommand{}
 
 	sourceDir, err := os.MkdirTemp("", "source")
 	s.Require().Nil(err)
@@ -38,13 +87,13 @@ func (s *VendorPublishCommandTestSuite) TestGetSourceFiles() {
 	sourceFile = filepath.Join(sourceDir, "dir1/test.txt")
 	s.Require().Nil(file.PutContent(sourceFile, "test"))
 
-	files, err := command.getSourceFiles(filepath.Join(sourceDir, "test.txt"))
+	files, err := cmd.getSourceFiles(filepath.Join(sourceDir, "test.txt"))
 	s.Require().NoError(err)
 	s.ElementsMatch(files, []string{
 		filepath.Join(sourceDir, "test.txt"),
 	})
 
-	files, err = command.getSourceFiles(sourceDir)
+	files, err = cmd.getSourceFiles(sourceDir)
 	s.Require().NoError(err)
 	s.ElementsMatch(files, []string{
 		filepath.Join(sourceDir, "test.txt"),
@@ -53,7 +102,7 @@ func (s *VendorPublishCommandTestSuite) TestGetSourceFiles() {
 }
 
 func (s *VendorPublishCommandTestSuite) TestGetSourceFilesForDir() {
-	command := &VendorPublishCommand{}
+	cmd := &VendorPublishCommand{}
 
 	sourceDir, err := os.MkdirTemp("", "source")
 	s.Require().Nil(err)
@@ -74,7 +123,7 @@ func (s *VendorPublishCommandTestSuite) TestGetSourceFilesForDir() {
 	sourceFile = filepath.Join(sourceDir, "dir2/test.txt")
 	s.Require().Nil(file.PutContent(sourceFile, "test"))
 
-	files, err := command.getSourceFiles(sourceDir)
+	files, err := cmd.getSourceFiles(sourceDir)
 	s.Require().NoError(err)
 	s.ElementsMatch(files, []string{
 		filepath.Join(sourceDir, "test.txt"),
@@ -169,8 +218,8 @@ func (s *VendorPublishCommandTestSuite) TestPathsForPackageOrGroup() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			command := NewVendorPublishCommand(test.publishes, test.publishGroups)
-			s.Equal(test.expectPaths, command.pathsForPackageOrGroup(test.packageName, test.group))
+			cmd := NewVendorPublishCommand(test.publishes, test.publishGroups)
+			s.Equal(test.expectPaths, cmd.pathsForPackageOrGroup(test.packageName, test.group))
 		})
 	}
 }
@@ -252,14 +301,14 @@ func (s *VendorPublishCommandTestSuite) TestPathsForProviderAndGroup() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			command := NewVendorPublishCommand(test.publishes, test.publishGroups)
-			s.Equal(test.expectPaths, command.pathsForProviderAndGroup(test.packageName, test.group))
+			cmd := NewVendorPublishCommand(test.publishes, test.publishGroups)
+			s.Equal(test.expectPaths, cmd.pathsForProviderAndGroup(test.packageName, test.group))
 		})
 	}
 }
 
 func (s *VendorPublishCommandTestSuite) TestPublish() {
-	command := &VendorPublishCommand{}
+	cmd := &VendorPublishCommand{}
 
 	// Create temporary source and target directories for testing
 	sourceDir, err := os.MkdirTemp("", "source")
@@ -283,7 +332,7 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	s.Require().Nil(file.PutContent(sourceFile, "test"))
 
 	// source and target are directory
-	result, err := command.publish(sourceDir, targetDir, false, false)
+	result, err := cmd.publish(sourceDir, targetDir, false, false)
 	s.Require().Nil(err)
 	s.Require().Equal(4, len(result))
 
@@ -304,7 +353,7 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 
 	// source is file and target is directory
 	sourceFile = filepath.Join(sourceDir, "test.txt")
-	result, err = command.publish(sourceFile, targetDir, false, false)
+	result, err = cmd.publish(sourceFile, targetDir, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
@@ -318,7 +367,7 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 	sourceFile = filepath.Join(sourceDir, "test.txt")
 	targetFile := filepath.Join(targetDir, "test.txt")
 
-	result, err = command.publish(sourceFile, targetFile, false, false)
+	result, err = cmd.publish(sourceFile, targetFile, false, false)
 	s.Nil(err)
 	s.Equal(1, len(result))
 
@@ -330,7 +379,7 @@ func (s *VendorPublishCommandTestSuite) TestPublish() {
 }
 
 func (s *VendorPublishCommandTestSuite) TestPublishFile() {
-	command := &VendorPublishCommand{}
+	cmd := &VendorPublishCommand{}
 
 	sourceData := "This is a test file."
 	sourceFile := "./test_source.txt"
@@ -341,19 +390,19 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 	s.Nil(err)
 
 	// Ensure publishFile creates target file when it doesn't exist and 'existing' flag is set
-	created, err := command.publishFile(sourceFile, targetFile, true, false)
+	created, err := cmd.publishFile(sourceFile, targetFile, true, false)
 	s.Nil(err)
 	s.False(created)
 
 	// Ensure publishFile returns false when target file already exists and 'force' flag is not set
-	created, err = command.publishFile(sourceFile, targetFile, false, false)
+	created, err = cmd.publishFile(sourceFile, targetFile, false, false)
 	s.Nil(err)
 	s.True(created)
 	content, err := os.ReadFile(targetFile)
 	s.Nil(err)
 	s.Equal(string(content), sourceData)
 
-	created, err = command.publishFile(sourceFile, targetFile, false, false)
+	created, err = cmd.publishFile(sourceFile, targetFile, false, false)
 	s.Nil(err)
 	s.False(created)
 
@@ -362,7 +411,7 @@ func (s *VendorPublishCommandTestSuite) TestPublishFile() {
 	err = os.WriteFile(sourceFile, []byte(newSourceData), 0644)
 	s.Nil(err)
 
-	created, err = command.publishFile(sourceFile, targetFile, false, true)
+	created, err = cmd.publishFile(sourceFile, targetFile, false, true)
 	s.Nil(err)
 	s.True(created)
 	content, err = os.ReadFile(targetFile)

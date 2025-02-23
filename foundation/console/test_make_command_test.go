@@ -2,41 +2,99 @@ package console
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support/file"
 )
 
-func TestTestMakeCommand(t *testing.T) {
-	testMakeCommand := &TestMakeCommand{}
-	mockContext := mocksconsole.NewContext(t)
-	mockContext.EXPECT().Argument(0).Return("").Once()
-	mockContext.EXPECT().Ask("Enter the test name", mock.Anything).Return("", errors.New("the test name cannot be empty")).Once()
-	mockContext.EXPECT().Error("the test name cannot be empty").Once()
-	assert.Nil(t, testMakeCommand.Handle(mockContext))
+type TestMakeCommandTestSuite struct {
+	suite.Suite
+}
 
-	mockContext.EXPECT().Argument(0).Return("UserTest").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockContext.EXPECT().Success("Test created successfully").Once()
-	assert.NoError(t, testMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("tests/user_test.go"))
+func TestTestMakeCommandTestSuite(t *testing.T) {
+	suite.Run(t, new(TestMakeCommandTestSuite))
+}
 
-	mockContext.EXPECT().Argument(0).Return("UserTest").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockContext.EXPECT().Error("the test already exists. Use the --force or -f flag to overwrite").Once()
-	assert.Nil(t, testMakeCommand.Handle(mockContext))
+func (s *TestMakeCommandTestSuite) TestSignature() {
+	cmd := NewTestMakeCommand()
+	expected := "make:test"
+	s.Require().Equal(expected, cmd.Signature())
+}
 
-	mockContext.EXPECT().Argument(0).Return("user/UserTest").Once()
-	mockContext.EXPECT().OptionBool("force").Return(false).Once()
-	mockContext.EXPECT().Success("Test created successfully").Once()
-	assert.NoError(t, testMakeCommand.Handle(mockContext))
-	assert.True(t, file.Exists("tests/user/user_test.go"))
-	assert.True(t, file.Contain("tests/user/user_test.go", "package user"))
-	assert.True(t, file.Contain("tests/user/user_test.go", "type UserTestSuite struct"))
-	assert.True(t, file.Contain("tests/user/user_test.go", "func (s *UserTestSuite) SetupTest() {"))
-	assert.NoError(t, file.Remove("tests"))
+func (s *TestMakeCommandTestSuite) TestDescription() {
+	cmd := NewTestMakeCommand()
+	expected := "Create a new test class"
+	s.Require().Equal(expected, cmd.Description())
+}
+
+func (s *TestMakeCommandTestSuite) TestExtend() {
+	cmd := NewTestMakeCommand()
+	got := cmd.Extend()
+
+	s.Run("should return correct category", func() {
+		expected := "make"
+		s.Require().Equal(expected, got.Category)
+	})
+
+	if len(got.Flags) > 0 {
+		s.Run("should have correctly configured StringFlag", func() {
+			flag, ok := got.Flags[0].(*command.BoolFlag)
+			if !ok {
+				s.Fail("First flag is not BoolFlag (got type: %T)", got.Flags[0])
+			}
+
+			testCases := []struct {
+				name     string
+				got      interface{}
+				expected interface{}
+			}{
+				{"Name", flag.Name, "force"},
+				{"Aliases", flag.Aliases, []string{"f"}},
+				{"Usage", flag.Usage, "Create the test even if it already exists"},
+			}
+
+			for _, tc := range testCases {
+				if !reflect.DeepEqual(tc.got, tc.expected) {
+					s.Require().Equal(tc.expected, tc.got)
+				}
+			}
+		})
+	}
+}
+
+func (s *TestMakeCommandTestSuite) TestTestHandle() {
+	cmd := NewTestMakeCommand()
+	ctx := mocksconsole.NewContext(s.T())
+
+	ctx.EXPECT().Argument(0).Return("").Once()
+	ctx.EXPECT().Ask("Enter the test name", mock.Anything).Return("", errors.New("the test name cannot be empty")).Once()
+	ctx.EXPECT().Error("the test name cannot be empty").Once()
+	s.Nil(cmd.Handle(ctx))
+
+	ctx.EXPECT().Argument(0).Return("UserTest").Once()
+	ctx.EXPECT().OptionBool("force").Return(false).Once()
+	ctx.EXPECT().Success("Test created successfully").Once()
+	s.NoError(cmd.Handle(ctx))
+	s.True(file.Exists("tests/user_test.go"))
+
+	ctx.EXPECT().Argument(0).Return("UserTest").Once()
+	ctx.EXPECT().OptionBool("force").Return(false).Once()
+	ctx.EXPECT().Error("the test already exists. Use the --force or -f flag to overwrite").Once()
+	s.Nil(cmd.Handle(ctx))
+
+	ctx.EXPECT().Argument(0).Return("user/UserTest").Once()
+	ctx.EXPECT().OptionBool("force").Return(false).Once()
+	ctx.EXPECT().Success("Test created successfully").Once()
+	s.NoError(cmd.Handle(ctx))
+	s.True(file.Exists("tests/user/user_test.go"))
+	s.True(file.Contain("tests/user/user_test.go", "package user"))
+	s.True(file.Contain("tests/user/user_test.go", "type UserTestSuite struct"))
+	s.True(file.Contain("tests/user/user_test.go", "func (s *UserTestSuite) SetupTest() {"))
+	s.NoError(file.Remove("tests"))
 }
