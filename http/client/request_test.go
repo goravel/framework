@@ -71,7 +71,7 @@ func (s *RequestTestSuite) TestDoRequest_Success() {
 	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message":"success"}`))
+		_, _ = w.Write([]byte(`{"message":"success"}`))
 	}))
 	defer server.Close()
 
@@ -100,7 +100,7 @@ func (s *RequestTestSuite) TestDoRequest_Bind() {
 	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
+		_, _ = w.Write([]byte(`{
 			"id": 1,
 			"name": "Test User",
 			"active": true,
@@ -259,7 +259,7 @@ func (s *RequestTestSuite) TestPrefixAndPathVariables() {
 		userID := r.PathValue("userID")
 		w.WriteHeader(http.StatusOK)
 		response := fmt.Sprintf(`{"id": %s, "name": "User %s", "version": "%s"}`, userID, userID, version)
-		w.Write([]byte(response))
+		_, _ = w.Write([]byte(response))
 	})
 
 	server := httptest.NewServer(mux)
@@ -288,7 +288,7 @@ func (s *RequestTestSuite) TestConcurrentRequests() {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		time.Sleep(5 * time.Millisecond)
-		w.Write([]byte(fmt.Sprintf(`{"message":"success-%s"}`, r.URL.Path)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"message":"success-%s"}`, r.URL.Path)))
 	}))
 	defer server.Close()
 
