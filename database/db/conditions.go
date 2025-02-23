@@ -8,5 +8,5 @@ type Conditions struct {
 type Where struct {
 	query any
 	args  []any
-	// or    bool
+	or    bool
 }

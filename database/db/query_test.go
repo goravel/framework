@@ -367,7 +367,7 @@ func (s *QueryTestSuite) TestWhere() {
 	now := carbon.Now()
 	carbon.SetTestNow(now)
 
-	s.Run("simple where condition", func() {
+	s.Run("simple condition", func() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
@@ -379,7 +379,7 @@ func (s *QueryTestSuite) TestWhere() {
 		s.Nil(err)
 	})
 
-	s.Run("where with multiple arguments", func() {
+	s.Run("multiple arguments", func() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
@@ -391,7 +391,7 @@ func (s *QueryTestSuite) TestWhere() {
 		s.Nil(err)
 	})
 
-	s.Run("where with raw query", func() {
+	s.Run("raw query", func() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
@@ -402,6 +402,20 @@ func (s *QueryTestSuite) TestWhere() {
 		err := s.query.Where("age > ?", 18).Get(&users)
 		s.Nil(err)
 	})
+
+	// s.Run("nested condition", func() {
+	// 	var users []TestUser
+
+	// 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	// 	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IN (?,?) AND name = ?", 25, 30, "John").Return(nil).Once()
+	// 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IN (?,?) AND name = ?", 25, 30, "John").Return("SELECT * FROM users WHERE age IN (25,30) AND name = \"John\"").Once()
+	// 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IN (25,30) AND name = \"John\"", int64(0), nil).Return().Once()
+
+	// 	err := s.query.Where(func(query db.Query) {
+	// 		query.Where("age", []int{25, 30}).Where("name", "John")
+	// 	}).Get(&users)
+	// 	s.Nil(err)
+	// })
 }
 
 // MockResult implements sql.Result interface for testing
@@ -418,3 +432,10 @@ func (m *MockResult) RowsAffected() (int64, error) {
 	arguments := m.Called()
 	return arguments.Get(0).(int64), arguments.Error(1)
 }
+
+// func TestWhere(t *testing.T) {
+// 	query := sq.Select("*").From("users").Where("name = ?", "abc").Where(sq.Or{sq.Eq{"name": "John"}, sq.Eq{"name": "John1"}, sq.Eq{"name": "John2"}, sq.And{}})
+// 	sql, args, err := query.ToSql()
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, "SELECT * FROM users WHERE (name = ? OR age = ?)", sql, args)
+// }

@@ -227,6 +227,65 @@ func (_c *Query_Insert_Call) RunAndReturn(run func(interface{}) (*db.Result, err
 	return _c
 }
 
+// OrWhere provides a mock function with given fields: query, args
+func (_m *Query) OrWhere(query interface{}, args ...interface{}) db.Query {
+	var _ca []interface{}
+	_ca = append(_ca, query)
+	_ca = append(_ca, args...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrWhere")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) db.Query); ok {
+		r0 = rf(query, args...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_OrWhere_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrWhere'
+type Query_OrWhere_Call struct {
+	*mock.Call
+}
+
+// OrWhere is a helper method to define mock.On call
+//   - query interface{}
+//   - args ...interface{}
+func (_e *Query_Expecter) OrWhere(query interface{}, args ...interface{}) *Query_OrWhere_Call {
+	return &Query_OrWhere_Call{Call: _e.mock.On("OrWhere",
+		append([]interface{}{query}, args...)...)}
+}
+
+func (_c *Query_OrWhere_Call) Run(run func(query interface{}, args ...interface{})) *Query_OrWhere_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_OrWhere_Call) Return(_a0 db.Query) *Query_OrWhere_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_OrWhere_Call) RunAndReturn(run func(interface{}, ...interface{}) db.Query) *Query_OrWhere_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: data
 func (_m *Query) Update(data interface{}) (*db.Result, error) {
 	ret := _m.Called(data)
