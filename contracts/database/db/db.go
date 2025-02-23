@@ -6,12 +6,16 @@ import (
 )
 
 type DB interface {
+	// BeginTransaction() Query
+	Connection(name string) DB
 	Table(name string) Query
+	// Transaction(txFunc func(tx Query) error) error
 	WithContext(ctx context.Context) DB
 }
 
 type Query interface {
 	// Avg(column string) (any, error)
+	// commit
 	// Count(dest *int64) error
 	// Chunk(size int, callback func(rows []any) error) error
 	// CrossJoin(table string, on any, args ...any) Query
@@ -50,6 +54,7 @@ type Query interface {
 	// OrWhereLike()
 	// OrWhereNotLike
 	// Pluck(column string, dest any) error
+	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
 	// Select(dest any, columns ...string) error
 	// SelectRaw(query string, args ...any) (any, error)
