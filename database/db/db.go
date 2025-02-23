@@ -24,7 +24,7 @@ type DB struct {
 }
 
 func NewDB(ctx context.Context, config config.Config, driver contractsdriver.Driver, log log.Log, builder db.Builder) *DB {
-	return &DB{ctx: ctx, config: config, driver: driver, log: log, builder: builder}
+	return &DB{ctx: ctx, config: config, driver: driver, log: log, builder: builder, queries: make(map[string]db.DB)}
 }
 
 func BuildDB(ctx context.Context, config config.Config, log log.Log, connection string) (*DB, error) {
@@ -54,7 +54,8 @@ func (r *DB) Connection(name string) db.DB {
 	if _, ok := r.queries[name]; !ok {
 		db, err := BuildDB(r.ctx, r.config, r.log, name)
 		if err != nil {
-			panic(err)
+			r.log.Panic(err.Error())
+			return nil
 		}
 		r.queries[name] = db
 		db.queries = r.queries

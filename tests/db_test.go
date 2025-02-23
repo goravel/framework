@@ -7,6 +7,7 @@ import (
 
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/sqlite"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -239,4 +240,56 @@ func (s *DBTestSuite) TestWhere() {
 			})
 		})
 	}
+}
+
+func TestDB_Connection(t *testing.T) {
+	t.Parallel()
+	postgresTestQuery := NewTestQueryBuilder().Postgres("", false)
+	postgresTestQuery.CreateTable(TestTableProducts)
+
+	sqliteTestQuery := NewTestQueryBuilder().Sqlite("", false)
+	sqliteTestQuery.CreateTable(TestTableProducts)
+	defer func() {
+		docker, err := sqliteTestQuery.Driver().Docker()
+		assert.NoError(t, err)
+		assert.NoError(t, docker.Shutdown())
+	}()
+
+	sqliteConnection := sqliteTestQuery.Driver().Config().Connection
+	mockDatabaseConfig(postgresTestQuery.MockConfig(), sqliteTestQuery.Driver().Config(), sqliteConnection, "", false)
+
+	result, err := postgresTestQuery.DB().Table("products").Insert(Product{
+		Name: "connection",
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), result.RowsAffected)
+
+	var product Product
+	err = postgresTestQuery.DB().Table("products").Where("name", "connection").First(&product)
+	assert.NoError(t, err)
+	assert.True(t, product.ID > 0)
+	assert.Equal(t, "connection", product.Name)
+
+	var product1 Product
+	err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Where("name", "connection").First(&product1)
+	assert.NoError(t, err)
+	assert.True(t, product1.ID == 0)
+
+	result, err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Insert(Product{
+		Name: "sqlite connection",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), result.RowsAffected)
+
+	var product2 Product
+	err = postgresTestQuery.DB().Connection(sqliteConnection).Table("products").Where("name", "sqlite connection").First(&product2)
+	assert.NoError(t, err)
+	assert.True(t, product2.ID > 0)
+	assert.Equal(t, "sqlite connection", product2.Name)
+
+	var product3 Product
+	err = postgresTestQuery.DB().Table("products").Where("name", "sqlite connection").First(&product3)
+	assert.NoError(t, err)
+	assert.True(t, product3.ID == 0)
 }
