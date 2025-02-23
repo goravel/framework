@@ -147,6 +147,18 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) OrWhere(query any, args ...any) db.Query {
+	q := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+	q.conditions = r.conditions
+	q.conditions.where = append(r.conditions.where, Where{
+		query: query,
+		args:  args,
+		or:    true,
+	})
+
+	return q
+}
+
 func (r *Query) Update(data any) (*db.Result, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
@@ -199,19 +211,8 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 	}
 
 	for _, where := range r.conditions.where {
-		query, ok := where.query.(string)
-		if ok {
-			if !str.Of(query).Trim().Contains(" ", "?") {
-				if len(where.args) > 1 {
-					builder = builder.Where(sq.Eq{query: where.args})
-				} else if len(where.args) == 1 {
-					builder = builder.Where(sq.Eq{query: where.args[0]})
-				}
-				continue
-			}
-		}
-
-		builder = builder.Where(where.query, where.args...)
+		query, args := r.buildWhere(where)
+		builder = builder.Where(query, args...)
 	}
 
 	return builder.ToSql()
@@ -259,19 +260,8 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	builder = builder.From(r.conditions.table)
 
 	for _, where := range r.conditions.where {
-		query, ok := where.query.(string)
-		if ok {
-			if !str.Of(query).Trim().Contains(" ", "?") {
-				if len(where.args) > 1 {
-					builder = builder.Where(sq.Eq{query: where.args})
-				} else if len(where.args) == 1 {
-					builder = builder.Where(sq.Eq{query: where.args[0]})
-				}
-				continue
-			}
-		}
-
-		builder = builder.Where(where.query, where.args...)
+		query, args := r.buildWhere(where)
+		builder = builder.Where(query, args...)
 	}
 
 	return builder.ToSql()
@@ -288,24 +278,32 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 	}
 
 	for _, where := range r.conditions.where {
-		query, ok := where.query.(string)
-		if ok {
-			if !str.Of(query).Trim().Contains(" ", "?") {
-				if len(where.args) > 1 {
-					builder = builder.Where(sq.Eq{query: where.args})
-				} else if len(where.args) == 1 {
-					builder = builder.Where(sq.Eq{query: where.args[0]})
-				}
-				continue
-			}
-		}
-
-		builder = builder.Where(where.query, where.args...)
+		query, args := r.buildWhere(where)
+		builder = builder.Where(query, args...)
 	}
 
 	builder = builder.SetMap(data)
 
 	return builder.ToSql()
+}
+
+func (r *Query) buildWhere(where Where) (any, []any) {
+	query, ok := where.query.(string)
+	if ok {
+		if !str.Of(query).Trim().Contains(" ", "?") {
+			if len(where.args) > 1 {
+				return sq.Eq{query: where.args}, nil
+			} else if len(where.args) == 1 {
+				return sq.Eq{query: where.args[0]}, nil
+			}
+		}
+	}
+
+	// if where.or {
+	// 	return sq.Or{where.query}, where.args
+	// }
+
+	return where.query, where.args
 }
 
 func (r *Query) placeholderFormat() database.PlaceholderFormat {

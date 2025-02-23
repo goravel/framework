@@ -50,7 +50,7 @@ type Query interface {
 	// OrderBy(column string) Query
 	// orderByDesc
 	// OrderByRaw(query string, args ...any) Query
-	// OrWhere(query any, args ...any) Query
+	OrWhere(query any, args ...any) Query
 	// OrWhereLike()
 	// OrWhereNotLike
 	// Pluck(column string, dest any) error
