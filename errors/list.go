@@ -5,7 +5,7 @@ var (
 	ArtisanFacadeNotSet  = New("artisan facade is not initialized")
 	CacheFacadeNotSet    = New("cache facade is not initialized")
 	ConfigFacadeNotSet   = New("config facade is not initialized")
-	JSONParserNotSet     = New("JSON parser is not initialized")
+	JSONParserNotSet     = New("json parser is not initialized")
 	LogFacadeNotSet      = New("log facade is not initialized")
 	OrmFacadeNotSet      = New("orm facade is not initialized")
 	QueueFacadeNotSet    = New("queue facade is not initialized")
@@ -38,7 +38,7 @@ var (
 	ConsoleEmptyFieldValue     = New("the %s name cannot be empty")
 	ConsoleFileAlreadyExists   = New("the %s already exists. Use the --force or -f flag to overwrite")
 	ConsoleFailedToConfirm     = New("failed to confirm the action: %v")
-	ConsoleRunInProduction     = New("Please use the --force option if you want to run the command in production")
+	ConsoleRunInProduction     = New("please use the --force option if you want to run the command in production")
 
 	CryptAppKeyNotSet        = New("APP_KEY is required in artisan environment")
 	CryptInvalidAppKeyLength = New("invalid APP_KEY length: %d bytes")
@@ -77,7 +77,7 @@ var (
 	LogDriverNotSupported      = New("invalid driver: %s, only support stack, single, daily, custom").SetModule(ModuleLog)
 	LogEmptyLogFilePath        = New("empty log file path").SetModule(ModuleLog)
 
-	MigrationCreateFailed    = New("Create migration failed: %v")
+	MigrationCreateFailed    = New("create migration failed: %v")
 	MigrationFreshFailed     = New("migration fresh failed: %v")
 	MigrationGetStatusFailed = New("get migration status failed: %v")
 	MigrationMigrateFailed   = New("migrate failed: %v")

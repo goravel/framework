@@ -123,7 +123,7 @@ func (s *LoggerTestSuite) TestError() {
 		},
 		{
 			name:      "access denied error",
-			data:      []any{errors.New("Access denied for user")},
+			data:      []any{errors.New("access denied for user")},
 			shouldLog: false,
 		},
 	}
