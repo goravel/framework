@@ -122,7 +122,7 @@ func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (
 		return false, err
 	}
 
-	return option[0].Default, nil
+	return options[0].Default, nil
 }
 
 func (r *CliContext) Error(message string) {
