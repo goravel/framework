@@ -107,22 +107,23 @@ func (r *CliContext) Comment(message string) {
 }
 
 func (r *CliContext) Confirm(question string, option ...console.ConfirmOption) (bool, error) {
-	defaultOption := console.ConfirmOption{
-		Default:     false,
-		Affirmative: "Yes",
-		Negative:    "No",
+	input := huh.NewConfirm().Title(question)
+
+	if len(option[0].Description) > 0 {
+		input.Description(option[0].Description)
+	}
+	if len(option[0].Affirmative) > 0 {
+		input.Affirmative(option[0].Affirmative)
+	}
+	if len(option[0].Negative) > 0 {
+		input.Negative(option[0].Negative)
 	}
 
-	options := append([]console.ConfirmOption{defaultOption}, option...)
-
-	input := huh.NewConfirm().Title(question)
-	input.Description(options[0].Description).Affirmative(options[0].Affirmative).Negative(options[0].Negative)
-	err := input.Value(&options[0].Default).Run()
-	if err != nil {
+	if err := input.Value(&option[0].Default).Run(); err != nil {
 		return false, err
 	}
 
-	return options[0].Default, nil
+	return option[0].Default, nil
 }
 
 func (r *CliContext) Error(message string) {
