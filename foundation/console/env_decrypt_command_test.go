@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/console/command"
 	mocksconsole "github.com/goravel/framework/mocks/console"
 	"github.com/goravel/framework/support"
@@ -120,11 +119,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 
 		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
-		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
-			Default:     false,
-			Affirmative: "Yes",
-			Negative:    "No",
-		}).Return(false, nil).Once()
+		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(false, nil).Once()
 		s.Nil(cmd.Handle(mockContext))
 	})
 
@@ -138,11 +133,7 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 
 		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
 		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
-		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
-			Default:     false,
-			Affirmative: "Yes",
-			Negative:    "No",
-		}).Return(true, nil).Once()
+		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(true, nil).Once()
 		mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
 
 		s.Nil(cmd.Handle(mockContext))
