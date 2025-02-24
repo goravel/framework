@@ -28,33 +28,33 @@ func Queue() *QueueMail {
 }
 
 // Attachments attach files to the mail
-func (receiver *QueueMail) Attachments() []string {
+func (r *QueueMail) Attachments() []string {
 	return []string{}
 }
 
 // Content set the content of the mail
-func (receiver *QueueMail) Content() *mail.Content {
+func (r *QueueMail) Content() *mail.Content {
 	return &mail.Content{}
 }
 
 // Envelope set the envelope of the mail
-func (receiver *QueueMail) Envelope() *mail.Envelope {
+func (r *QueueMail) Envelope() *mail.Envelope {
 	return &mail.Envelope{}
 }
 
 // Queue set the queue of the mail
-func (receiver *QueueMail) Queue() *mail.Queue {
-	return receiver.queue
+func (r *QueueMail) Queue() *mail.Queue {
+	return r.queue
 }
 
-func (receiver *QueueMail) OnConnection(connection string) *QueueMail {
-	receiver.queue.Connection = connection
+func (r *QueueMail) OnConnection(connection string) *QueueMail {
+	r.queue.Connection = connection
 
-	return receiver
+	return r
 }
 
-func (receiver *QueueMail) OnQueue(queue string) *QueueMail {
-	receiver.queue.Queue = queue
+func (r *QueueMail) OnQueue(queue string) *QueueMail {
+	r.queue.Queue = queue
 
-	return receiver
+	return r
 }
