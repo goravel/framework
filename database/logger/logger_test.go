@@ -132,6 +132,8 @@ func (s *LoggerTestSuite) TestError() {
 		s.Run(tt.name, func() {
 			if tt.shouldLog {
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Return().Once()
+			} else {
+				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Times(0)
 			}
 
 			s.logger.Error(context.Background(), "test message", tt.data...)
