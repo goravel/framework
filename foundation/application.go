@@ -278,7 +278,10 @@ func setEnv() {
 				support.Env = support.EnvArtisan
 			}
 			if arg == "key:generate" {
-				support.IsKeyGenerateCommand = true
+				support.EnvVerifyWhitelist = append(support.EnvVerifyWhitelist, arg)
+			}
+			if arg == "env:decrypt" {
+				support.EnvVerifyWhitelist = append(support.EnvVerifyWhitelist, arg)
 			}
 		}
 	}
