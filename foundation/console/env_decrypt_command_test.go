@@ -13,10 +13,10 @@ import (
 	"github.com/goravel/framework/support/file"
 )
 
-const EnvDecryptInvalidKey = "xxxx"
-const EnvDecryptValidKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
-const EnvDecryptPlaintext = "APP_KEY=12345"
-const EnvDecryptCiphertext = "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
+const EnvFileDecryptInvalidKey = "xxxx"
+const EnvFileDecryptValidKey = "BgcELROHL8sAV568T7Fiki7krjLHOkUc"
+const EnvFileDecryptPlaintext = "APP_KEY=12345"
+const EnvFileDecryptCiphertext = "QmdjRUxST0hMOHNBVjU2OKtnzDsyCUjWjNdNa2OVn5w="
 
 type EnvDecryptCommandTestSuite struct {
 	suite.Suite
@@ -84,94 +84,94 @@ func (s *EnvDecryptCommandTestSuite) TestHandle() {
 
 	s.Run("empty key", func() {
 		mockContext.EXPECT().Option("key").Return("").Once()
-		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
+		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
 		mockContext.EXPECT().Error("A decryption key is required.").Once()
 		s.Nil(cmd.Handle(mockContext))
 	})
 
 	s.Run("invalid key", func() {
-		s.Nil(file.PutContent(support.EnvEncryptPath, EnvDecryptCiphertext))
+		s.Nil(file.PutContent(support.EnvFileEncryptPath, EnvFileDecryptCiphertext))
 		defer func() {
-			s.Nil(file.Remove(support.EnvEncryptPath))
+			s.Nil(file.Remove(support.EnvFileEncryptPath))
 		}()
 
-		mockContext.EXPECT().Option("key").Return(EnvDecryptInvalidKey).Once()
-		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
+		mockContext.EXPECT().Option("key").Return(EnvFileDecryptInvalidKey).Once()
+		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
 		mockContext.EXPECT().Error("Decrypt error: crypto/aes: invalid key size 4").Once()
 
 		s.Nil(cmd.Handle(mockContext))
 	})
 
-	s.Run(fmt.Sprintf("%s is not found", support.EnvEncryptPath), func() {
-		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
-		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
+	s.Run(fmt.Sprintf("%s is not found", support.EnvFileEncryptPath), func() {
+		mockContext.EXPECT().Option("key").Return(EnvFileDecryptValidKey).Once()
+		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
 		mockContext.EXPECT().Error("Encrypted environment file not found.").Once()
 		s.Nil(cmd.Handle(mockContext))
 	})
 
-	s.Run(fmt.Sprintf("%s exists and confirm failed", support.EnvPath), func() {
-		s.Nil(file.PutContent(support.EnvEncryptPath, EnvDecryptCiphertext))
-		s.Nil(file.PutContent(support.EnvPath, EnvDecryptPlaintext))
+	s.Run(fmt.Sprintf("%s exists and confirm failed", support.EnvFilePath), func() {
+		s.Nil(file.PutContent(support.EnvFileEncryptPath, EnvFileDecryptCiphertext))
+		s.Nil(file.PutContent(support.EnvFilePath, EnvFileDecryptPlaintext))
 		defer func() {
-			s.Nil(file.Remove(support.EnvEncryptPath))
-			s.Nil(file.Remove(support.EnvPath))
+			s.Nil(file.Remove(support.EnvFileEncryptPath))
+			s.Nil(file.Remove(support.EnvFilePath))
 		}()
 
-		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
-		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
+		mockContext.EXPECT().Option("key").Return(EnvFileDecryptValidKey).Once()
+		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
 		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(false, nil).Once()
 		s.Nil(cmd.Handle(mockContext))
 	})
 
-	s.Run(fmt.Sprintf("success when %s exists", support.EnvPath), func() {
-		s.Nil(file.PutContent(support.EnvEncryptPath, EnvDecryptCiphertext))
-		s.Nil(file.PutContent(support.EnvPath, EnvDecryptPlaintext))
+	s.Run(fmt.Sprintf("success when %s exists", support.EnvFilePath), func() {
+		s.Nil(file.PutContent(support.EnvFileEncryptPath, EnvFileDecryptCiphertext))
+		s.Nil(file.PutContent(support.EnvFilePath, EnvFileDecryptPlaintext))
 		defer func() {
-			s.Nil(file.Remove(support.EnvPath))
-			s.Nil(file.Remove(support.EnvEncryptPath))
+			s.Nil(file.Remove(support.EnvFilePath))
+			s.Nil(file.Remove(support.EnvFileEncryptPath))
 		}()
 
-		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
-		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
+		mockContext.EXPECT().Option("key").Return(EnvFileDecryptValidKey).Once()
+		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
 		mockContext.EXPECT().Confirm("Environment file already exists, are you sure to overwrite?").Return(true, nil).Once()
 		mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
 
 		s.Nil(cmd.Handle(mockContext))
-		s.True(file.Exists(support.EnvPath))
-		content, err := file.GetContent(support.EnvPath)
+		s.True(file.Exists(support.EnvFilePath))
+		content, err := file.GetContent(support.EnvFilePath)
 		s.Nil(err)
-		s.Equal(EnvDecryptPlaintext, content)
+		s.Equal(EnvFileDecryptPlaintext, content)
 	})
 
-	s.Run(fmt.Sprintf("success when %s not exists", support.EnvPath), func() {
-		s.Nil(file.PutContent(support.EnvEncryptPath, EnvDecryptCiphertext))
+	s.Run(fmt.Sprintf("success when %s not exists", support.EnvFilePath), func() {
+		s.Nil(file.PutContent(support.EnvFileEncryptPath, EnvFileDecryptCiphertext))
 		defer func() {
-			s.Nil(file.Remove(support.EnvEncryptPath))
-			s.Nil(file.Remove(support.EnvPath))
+			s.Nil(file.Remove(support.EnvFileEncryptPath))
+			s.Nil(file.Remove(support.EnvFilePath))
 		}()
 
-		mockContext.EXPECT().Option("key").Return(EnvDecryptValidKey).Once()
-		mockContext.EXPECT().Option("name").Return(support.EnvEncryptPath).Once()
+		mockContext.EXPECT().Option("key").Return(EnvFileDecryptValidKey).Once()
+		mockContext.EXPECT().Option("name").Return(support.EnvFileEncryptPath).Once()
 		mockContext.EXPECT().Success("Encrypted environment successfully decrypted.").Once()
 
 		s.Nil(cmd.Handle(mockContext))
-		s.True(file.Exists(support.EnvPath))
-		content, err := file.GetContent(support.EnvPath)
+		s.True(file.Exists(support.EnvFilePath))
+		content, err := file.GetContent(support.EnvFilePath)
 		s.Nil(err)
-		s.Equal(EnvDecryptPlaintext, content)
+		s.Equal(EnvFileDecryptPlaintext, content)
 	})
 }
 
 func (s *EnvDecryptCommandTestSuite) TestDecrypt() {
 	s.Run("valid key", func() {
-		decrypted, err := NewEnvDecryptCommand().decrypt([]byte(EnvDecryptCiphertext), []byte(EnvDecryptValidKey))
+		decrypted, err := NewEnvDecryptCommand().decrypt([]byte(EnvFileDecryptCiphertext), []byte(EnvFileDecryptValidKey))
 		s.Nil(err)
-		s.Equal(EnvDecryptPlaintext, string(decrypted))
+		s.Equal(EnvFileDecryptPlaintext, string(decrypted))
 		s.Nil(err)
 	})
 
 	s.Run("invalid key", func() {
-		_, err := NewEnvDecryptCommand().decrypt([]byte(EnvDecryptCiphertext), []byte(EnvDecryptInvalidKey))
+		_, err := NewEnvDecryptCommand().decrypt([]byte(EnvFileDecryptCiphertext), []byte(EnvFileDecryptInvalidKey))
 		s.Error(err)
 	})
 }

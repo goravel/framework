@@ -76,14 +76,14 @@ func (r *JwtSecretCommand) setSecretInEnvironmentFile(key string) error {
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (r *JwtSecretCommand) writeNewEnvironmentFileWith(key string) error {
-	content, err := os.ReadFile(support.EnvPath)
+	content, err := os.ReadFile(support.EnvFilePath)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "JWT_SECRET="+r.config.GetString("jwt.secret"), "JWT_SECRET="+key, 1)
 
-	err = os.WriteFile(support.EnvPath, []byte(newContent), 0644)
+	err = os.WriteFile(support.EnvFilePath, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}

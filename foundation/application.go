@@ -23,7 +23,7 @@ var (
 	App foundation.Application
 )
 
-var _ = flag.String("env", support.EnvPath, "custom .env path")
+var _ = flag.String("env", support.EnvFilePath, "custom .env path")
 
 func init() {
 	setEnv()
@@ -278,11 +278,11 @@ func setEnv() {
 			if arg == "artisan" {
 				support.Env = support.EnvArtisan
 			}
-			support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
+			support.EnvFileVerifyExists = slices.Contains(support.EnvFileVerifyWhitelist, arg)
 		}
 	}
 
-	env := getEnvPath()
+	env := getEnvFilePath()
 	if support.Env == support.EnvTest {
 		var (
 			relativePath string
@@ -307,42 +307,42 @@ func setEnv() {
 		}
 	}
 
-	support.EnvPath = env
+	support.EnvFilePath = env
 }
 
 func setRootPath() {
 	support.RootPath = env.CurrentAbsolutePath()
 }
 
-func getEnvPath() string {
-	envPath := ".env"
+func getEnvFilePath() string {
+	EnvFilePath := ".env"
 	args := os.Args
 	for index, arg := range args {
 		if strings.HasPrefix(arg, "--env=") {
 			if path := strings.TrimPrefix(arg, "--env="); path != "" {
-				envPath = path
+				EnvFilePath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-env=") {
 			if path := strings.TrimPrefix(arg, "-env="); path != "" {
-				envPath = path
+				EnvFilePath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-e=") {
 			if path := strings.TrimPrefix(arg, "-e="); path != "" {
-				envPath = path
+				EnvFilePath = path
 				break
 			}
 		}
 		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
-				envPath = args[index+1]
+				EnvFilePath = args[index+1]
 				break
 			}
 		}
 	}
 
-	return envPath
+	return EnvFilePath
 }

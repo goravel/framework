@@ -57,8 +57,8 @@ func (r *EnvEncryptCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 	key := convert.Default(ctx.Option("key"), str.Random(32))
-	name := convert.Default(ctx.Option("name"), support.EnvEncryptPath)
-	plaintext, err := os.ReadFile(support.EnvPath)
+	name := convert.Default(ctx.Option("name"), support.EnvFileEncryptPath)
+	plaintext, err := os.ReadFile(support.EnvFilePath)
 	if err != nil {
 		ctx.Error("Environment file not found.")
 		return nil
@@ -85,7 +85,7 @@ func (r *EnvEncryptCommand) Handle(ctx console.Context) error {
 
 	ctx.Success("Environment successfully encrypted.")
 	ctx.TwoColumnDetail("Key", key)
-	ctx.TwoColumnDetail("Cipher", support.EnvEncryptCipher)
+	ctx.TwoColumnDetail("Cipher", support.EnvFileEncryptCipher)
 	ctx.TwoColumnDetail("Encrypted file", name)
 
 	return nil

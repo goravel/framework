@@ -20,14 +20,14 @@ type Application struct {
 	vip *viper.Viper
 }
 
-func NewApplication(envPath string) *Application {
+func NewApplication(EnvFilePath string) *Application {
 	app := &Application{}
 	app.vip = viper.New()
 	app.vip.AutomaticEnv()
 
-	if file.Exists(envPath) {
+	if file.Exists(EnvFilePath) {
 		app.vip.SetConfigType("env")
-		app.vip.SetConfigFile(envPath)
+		app.vip.SetConfigFile(EnvFilePath)
 
 		if err := app.vip.ReadInConfig(); err != nil {
 			color.Errorln("Invalid Config error: " + err.Error())
@@ -36,7 +36,7 @@ func NewApplication(envPath string) *Application {
 	}
 
 	appKey := app.Env("APP_KEY")
-	if !support.DontVerifyEnvFileExists {
+	if !support.EnvFileVerifyExists {
 		if appKey == nil {
 			color.Errorln("Please initialize APP_KEY first.")
 			color.Default().Println("Create a .env file and run command: go run . artisan key:generate")

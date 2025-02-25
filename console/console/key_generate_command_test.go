@@ -26,17 +26,17 @@ func TestKeyGenerateCommand(t *testing.T) {
 		return strings.Contains(s, "open .env:")
 	})).Once()
 
-	assert.False(t, file.Exists(support.EnvPath))
+	assert.False(t, file.Exists(support.EnvFilePath))
 
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 
-	err := file.PutContent(support.EnvPath, "APP_KEY=12345\n")
+	err := file.PutContent(support.EnvFilePath, "APP_KEY=12345\n")
 	assert.Nil(t, err)
 
 	mockContext.EXPECT().Success("Application key set successfully").Once()
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
-	assert.True(t, file.Exists(support.EnvPath))
-	env, err := os.ReadFile(support.EnvPath)
+	assert.True(t, file.Exists(support.EnvFilePath))
+	env, err := os.ReadFile(support.EnvFilePath)
 	assert.Nil(t, err)
 	assert.True(t, len(env) > 10)
 
@@ -50,14 +50,14 @@ func TestKeyGenerateCommand(t *testing.T) {
 	mockContext.EXPECT().Error(assert.AnError.Error()).Once()
 	assert.Nil(t, keyGenerateCommand.Handle(mockContext))
 
-	env, err = os.ReadFile(support.EnvPath)
+	env, err = os.ReadFile(support.EnvFilePath)
 	assert.Nil(t, err)
 	assert.True(t, len(env) > 10)
-	assert.Nil(t, file.Remove(support.EnvPath))
+	assert.Nil(t, file.Remove(support.EnvFilePath))
 }
 
 func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
-	support.EnvPath = "config.conf"
+	support.EnvFilePath = "config.conf"
 
 	mockConfig := mocksconfig.NewConfig(t)
 	mockConfig.EXPECT().GetString("app.env").Return("local").Twice()
@@ -93,5 +93,5 @@ func TestKeyGenerateCommandWithCustomEnvFile(t *testing.T) {
 	assert.True(t, len(env) > 10)
 	assert.Nil(t, file.Remove("config.conf"))
 
-	support.EnvPath = ".env"
+	support.EnvFilePath = ".env"
 }
