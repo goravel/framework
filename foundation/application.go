@@ -315,34 +315,34 @@ func setRootPath() {
 }
 
 func getEnvFilePath() string {
-	EnvFilePath := ".env"
+	envFilePath := ".env"
 	args := os.Args
 	for index, arg := range args {
 		if strings.HasPrefix(arg, "--env=") {
 			if path := strings.TrimPrefix(arg, "--env="); path != "" {
-				EnvFilePath = path
+				envFilePath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-env=") {
 			if path := strings.TrimPrefix(arg, "-env="); path != "" {
-				EnvFilePath = path
+				envFilePath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-e=") {
 			if path := strings.TrimPrefix(arg, "-e="); path != "" {
-				EnvFilePath = path
+				envFilePath = path
 				break
 			}
 		}
 		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
-				EnvFilePath = args[index+1]
+				envFilePath = args[index+1]
 				break
 			}
 		}
 	}
 
-	return EnvFilePath
+	return envFilePath
 }

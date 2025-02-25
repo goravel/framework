@@ -20,14 +20,14 @@ type Application struct {
 	vip *viper.Viper
 }
 
-func NewApplication(EnvFilePath string) *Application {
+func NewApplication(envFilePath string) *Application {
 	app := &Application{}
 	app.vip = viper.New()
 	app.vip.AutomaticEnv()
 
-	if file.Exists(EnvFilePath) {
+	if file.Exists(envFilePath) {
 		app.vip.SetConfigType("env")
-		app.vip.SetConfigFile(EnvFilePath)
+		app.vip.SetConfigFile(envFilePath)
 
 		if err := app.vip.ReadInConfig(); err != nil {
 			color.Errorln("Invalid Config error: " + err.Error())
