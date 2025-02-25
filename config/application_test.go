@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/goravel/framework/support"
 	"github.com/goravel/framework/support/file"
 )
 
@@ -18,7 +19,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.PutContent(".env", `
+	assert.Nil(t, file.PutContent(support.EnvPath, `
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
 DB_PORT=3306
@@ -41,11 +42,11 @@ FLOAT_VALUE=6.28
 	assert.Nil(t, temp.Close())
 
 	suite.Run(t, &ApplicationTestSuite{
-		config:       NewApplication(".env"),
+		config:       NewApplication(support.EnvPath),
 		customConfig: NewApplication(temp.Name()),
 	})
 
-	assert.Nil(t, file.Remove(".env"))
+	assert.Nil(t, file.Remove(support.EnvPath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -182,7 +183,7 @@ func TestOsVariables(t *testing.T) {
 	assert.Nil(t, os.Setenv("APP_PORT", "3306"))
 	assert.Nil(t, os.Setenv("APP_DEBUG", "true"))
 
-	config := NewApplication(".env")
+	config := NewApplication(support.EnvPath)
 
 	assert.Equal(t, "12345678901234567890123456789013", config.GetString("APP_KEY"))
 	assert.Equal(t, "goravel", config.GetString("APP_NAME"))

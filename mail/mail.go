@@ -31,10 +31,10 @@ const (
 )
 
 // ErrMissingBoundary is returned when there is no boundary given for a multipart entity
-var ErrMissingBoundary = errors.New("No boundary found for multipart entity")
+var ErrMissingBoundary = errors.New("no boundary found for multipart entity")
 
 // ErrMissingContentType is returned when there is no "Content-Type" header for a MIME entity
-var ErrMissingContentType = errors.New("No Content-Type found for MIME entity")
+var ErrMissingContentType = errors.New("no Content-Type found for MIME entity")
 
 // Email is the type used for email messages
 type Email struct {
@@ -518,7 +518,7 @@ func (e *Email) Send(addr string, a smtp.Auth) error {
 	}
 	// Check to make sure there is at least one recipient and one "From" address
 	if e.From == "" || len(to) == 0 {
-		return errors.New("Must specify at least one From address and one To address")
+		return errors.New("must specify at least one From address and one To address")
 	}
 	sender, err := e.parseSender()
 	if err != nil {
@@ -565,7 +565,7 @@ func (e *Email) SendWithTLS(addr string, a smtp.Auth, t *tls.Config) error {
 	}
 	// Check to make sure there is at least one recipient and one "From" address
 	if e.From == "" || len(to) == 0 {
-		return errors.New("Must specify at least one From address and one To address")
+		return errors.New("must specify at least one From address and one To address")
 	}
 	sender, err := e.parseSender()
 	if err != nil {
@@ -637,7 +637,7 @@ func (e *Email) SendWithStartTLS(addr string, a smtp.Auth, t *tls.Config) error 
 	}
 	// Check to make sure there is at least one recipient and one "From" address
 	if e.From == "" || len(to) == 0 {
-		return errors.New("Must specify at least one From address and one To address")
+		return errors.New("must specify at least one From address and one To address")
 	}
 	sender, err := e.parseSender()
 	if err != nil {

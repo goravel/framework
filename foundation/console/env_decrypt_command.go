@@ -68,12 +68,8 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 	}
 
 	if file.Exists(support.EnvPath) {
-		ok, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite?", console.ConfirmOption{
-			Default:     false,
-			Affirmative: "Yes",
-			Negative:    "No",
-		})
-		if !ok {
+		answer, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite?")
+		if !answer {
 			return nil
 		}
 	}

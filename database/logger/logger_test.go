@@ -123,7 +123,7 @@ func (s *LoggerTestSuite) TestError() {
 		},
 		{
 			name:      "access denied error",
-			data:      []any{errors.New("Access denied for user")},
+			data:      []any{errors.New("access denied for user")},
 			shouldLog: false,
 		},
 	}
@@ -132,6 +132,8 @@ func (s *LoggerTestSuite) TestError() {
 		s.Run(tt.name, func() {
 			if tt.shouldLog {
 				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Return().Once()
+			} else {
+				s.mockLog.EXPECT().Errorf("test message", mock.Anything).Times(0)
 			}
 
 			s.logger.Error(context.Background(), "test message", tt.data...)

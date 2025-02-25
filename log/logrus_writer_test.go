@@ -537,10 +537,12 @@ func Benchmark_Panic(b *testing.B) {
 	assert.NotNil(b, log)
 
 	for i := 0; i < b.N; i++ {
-		defer func() {
-			recover() //nolint:errcheck
+		func() {
+			defer func() {
+				recover() //nolint:errcheck
+			}()
+			log.Panic("Goravel")
 		}()
-		log.Panic("Goravel")
 	}
 
 	_ = file.Remove("storage")

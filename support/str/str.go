@@ -401,7 +401,7 @@ func (s *String) Lower() *String {
 	return s
 }
 
-// Ltrim returns the String instance with the leftmost occurrence of the given value removed.
+// LTrim returns the String instance with the leftmost occurrence of the given value removed.
 func (s *String) LTrim(characters ...string) *String {
 	if len(characters) == 0 {
 		s.value = strings.TrimLeft(s.value, " ")
