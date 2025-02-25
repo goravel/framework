@@ -18,5 +18,6 @@ var (
 )
 
 var (
-	EnvVerifyWhitelist []string
+	DontVerifyEnvFileExists    = false
+	DontVerifyEnvFileWhitelist = []string{"key:generate", "env:decrypt"}
 )

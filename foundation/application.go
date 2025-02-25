@@ -277,11 +277,8 @@ func setEnv() {
 			if arg == "artisan" {
 				support.Env = support.EnvArtisan
 			}
-			if arg == "key:generate" {
-				support.EnvVerifyWhitelist = append(support.EnvVerifyWhitelist, arg)
-			}
-			if arg == "env:decrypt" {
-				support.EnvVerifyWhitelist = append(support.EnvVerifyWhitelist, arg)
+			if InDontVerifyEnvFileWhitelist(arg) {
+				support.DontVerifyEnvFileExists = true
 			}
 		}
 	}
@@ -349,4 +346,13 @@ func getEnvPath() string {
 	}
 
 	return envPath
+}
+
+func InDontVerifyEnvFileWhitelist(item string) bool {
+	for _, eachItem := range support.DontVerifyEnvFileWhitelist {
+		if eachItem == item {
+			return true
+		}
+	}
+	return false
 }
