@@ -1,8 +1,8 @@
 package support
 
-const Version string = "v1.15.3"
-
 const (
+	Version = "v1.15.3"
+
 	EnvArtisan = "artisan"
 	EnvTest    = "test"
 )
