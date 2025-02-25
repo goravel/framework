@@ -16,7 +16,7 @@ func TestClientOriginalExtension(t *testing.T) {
 }
 
 func TestContain(t *testing.T) {
-	assert.True(t, Contain("../constant.go", "const Version"))
+	assert.True(t, Contain("../constant.go", "Version"))
 }
 
 func TestCreate(t *testing.T) {
@@ -72,7 +72,7 @@ func TestGetContent(t *testing.T) {
 	content, err = GetContent("../constant.go")
 	assert.Nil(t, err)
 	assert.NotNil(t, content)
-	assert.Contains(t, content, "const Version")
+	assert.Contains(t, content, "Version")
 }
 
 func TestPutContent(t *testing.T) {
