@@ -9,11 +9,12 @@ const (
 )
 
 var (
-	Env                  = EnvRuntime
-	EnvPath              = ".env"
-	EnvEncryptPath       = ".env.encrypted"
-	EnvEncryptCipher     = "AES-256-CBC"
-	IsKeyGenerateCommand = false
-	RelativePath         = ""
-	RootPath             = ""
+	Env                        = EnvRuntime
+	EnvPath                    = ".env"
+	EnvEncryptPath             = ".env.encrypted"
+	EnvEncryptCipher           = "AES-256-CBC"
+	RelativePath               = ""
+	RootPath                   = ""
+	DontVerifyEnvFileExists    = false
+	DontVerifyEnvFileWhitelist = []string{"key:generate", "env:decrypt"}
 )

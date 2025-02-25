@@ -36,7 +36,7 @@ func NewApplication(envPath string) *Application {
 	}
 
 	appKey := app.Env("APP_KEY")
-	if !support.IsKeyGenerateCommand {
+	if !support.DontVerifyEnvFileExists {
 		if appKey == nil {
 			color.Errorln("Please initialize APP_KEY first.")
 			color.Default().Println("Create a .env file and run command: go run . artisan key:generate")

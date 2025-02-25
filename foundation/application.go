@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/config"
@@ -277,9 +278,7 @@ func setEnv() {
 			if arg == "artisan" {
 				support.Env = support.EnvArtisan
 			}
-			if arg == "key:generate" {
-				support.IsKeyGenerateCommand = true
-			}
+			support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 		}
 	}
 
