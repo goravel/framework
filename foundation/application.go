@@ -271,23 +271,23 @@ func (app *Application) setTimezone() {
 func setEnv() {
 	args := os.Args
 	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
-		support.Env = support.EnvTest
+		support.RuntimeMode = support.EnvTest
 	}
 	if len(args) >= 2 {
 		for _, arg := range args[1:] {
 			if arg == "artisan" {
-				support.Env = support.EnvArtisan
+				support.RuntimeMode = support.EnvArtisan
 			}
 			support.EnvFileVerifyExists = slices.Contains(support.EnvFileVerifyWhitelist, arg)
 		}
 	}
 
-	env := getEnvFilePath()
-	if support.Env == support.EnvTest {
+	envPath := getEnvFilePath()
+	if support.RuntimeMode == support.EnvTest {
 		var (
 			relativePath string
 			envExist     bool
-			testEnv      = env
+			testEnv      = envPath
 		)
 
 		for i := 0; i < 50; i++ {
@@ -302,12 +302,12 @@ func setEnv() {
 		}
 
 		if envExist {
-			env = testEnv
+			envPath = testEnv
 			support.RelativePath = relativePath
 		}
 	}
 
-	support.EnvFilePath = env
+	support.EnvFilePath = envPath
 }
 
 func setRootPath() {

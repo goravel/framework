@@ -24,7 +24,7 @@ func NewAES(config config.Config, json foundation.Json) (*AES, error) {
 	key := config.GetString("app.key")
 
 	// Don't use AES in artisan when the key is empty.
-	if support.Env == support.EnvArtisan && len(key) == 0 {
+	if support.RuntimeMode == support.EnvArtisan && len(key) == 0 {
 		return nil, errors.CryptAppKeyNotSet
 	}
 
