@@ -282,12 +282,12 @@ func setEnv() {
 		}
 	}
 
-	envPath := getEnvFilePath()
+	envFilePath := getEnvFilePath()
 	if support.RuntimeMode == support.EnvTest {
 		var (
 			relativePath string
 			envExist     bool
-			testEnv      = envPath
+			testEnv      = envFilePath
 		)
 
 		for i := 0; i < 50; i++ {
@@ -302,12 +302,12 @@ func setEnv() {
 		}
 
 		if envExist {
-			envPath = testEnv
+			envFilePath = testEnv
 			support.RelativePath = relativePath
 		}
 	}
 
-	support.EnvFilePath = envPath
+	support.EnvFilePath = envFilePath
 }
 
 func setRootPath() {
