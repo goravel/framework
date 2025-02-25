@@ -271,19 +271,19 @@ func (app *Application) setTimezone() {
 func setEnv() {
 	args := os.Args
 	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
-		support.RuntimeMode = support.EnvTest
+		support.RuntimeMode = support.RuntimeTest
 	}
 	if len(args) >= 2 {
 		for _, arg := range args[1:] {
 			if arg == "artisan" {
-				support.RuntimeMode = support.EnvArtisan
+				support.RuntimeMode = support.RuntimeArtisan
 			}
 			support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 		}
 	}
 
 	envFilePath := getEnvFilePath()
-	if support.RuntimeMode == support.EnvTest {
+	if support.RuntimeMode == support.RuntimeTest {
 		var (
 			relativePath string
 			envExist     bool
