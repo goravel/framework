@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/goravel/framework/config"
@@ -277,9 +278,7 @@ func setEnv() {
 			if arg == "artisan" {
 				support.Env = support.EnvArtisan
 			}
-			if InDontVerifyEnvFileWhitelist(arg) {
-				support.DontVerifyEnvFileExists = true
-			}
+			support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 		}
 	}
 
@@ -346,13 +345,4 @@ func getEnvPath() string {
 	}
 
 	return envPath
-}
-
-func InDontVerifyEnvFileWhitelist(item string) bool {
-	for _, eachItem := range support.DontVerifyEnvFileWhitelist {
-		if eachItem == item {
-			return true
-		}
-	}
-	return false
 }
