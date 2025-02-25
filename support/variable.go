@@ -6,9 +6,10 @@ var (
 
 	RuntimeMode = ""
 
-	EnvFilePath            = ".env"
-	EnvFileEncryptPath     = ".env.encrypted"
-	EnvFileEncryptCipher   = "AES-256-CBC"
-	EnvFileVerifyExists    = false
-	EnvFileVerifyWhitelist = []string{"key:generate", "env:decrypt"}
+	EnvFilePath          = ".env"
+	EnvFileEncryptPath   = ".env.encrypted"
+	EnvFileEncryptCipher = "AES-256-CBC"
+
+	DontVerifyEnvFileExists    = false
+	DontVerifyEnvFileWhitelist = []string{"key:generate", "env:decrypt"}
 )
