@@ -23,7 +23,7 @@ var (
 	App foundation.Application
 )
 
-var _ = flag.String("env", support.EnvPath, "custom .env path")
+var _ = flag.String("env", support.EnvFilePath, "custom .env path")
 
 func init() {
 	setEnv()
@@ -271,23 +271,23 @@ func (app *Application) setTimezone() {
 func setEnv() {
 	args := os.Args
 	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
-		support.Env = support.EnvTest
+		support.RuntimeMode = support.RuntimeTest
 	}
 	if len(args) >= 2 {
 		for _, arg := range args[1:] {
 			if arg == "artisan" {
-				support.Env = support.EnvArtisan
+				support.RuntimeMode = support.RuntimeArtisan
 			}
 			support.DontVerifyEnvFileExists = slices.Contains(support.DontVerifyEnvFileWhitelist, arg)
 		}
 	}
 
-	env := getEnvPath()
-	if support.Env == support.EnvTest {
+	envFilePath := getEnvFilePath()
+	if support.RuntimeMode == support.RuntimeTest {
 		var (
 			relativePath string
 			envExist     bool
-			testEnv      = env
+			testEnv      = envFilePath
 		)
 
 		for i := 0; i < 50; i++ {
@@ -302,47 +302,47 @@ func setEnv() {
 		}
 
 		if envExist {
-			env = testEnv
+			envFilePath = testEnv
 			support.RelativePath = relativePath
 		}
 	}
 
-	support.EnvPath = env
+	support.EnvFilePath = envFilePath
 }
 
 func setRootPath() {
 	support.RootPath = env.CurrentAbsolutePath()
 }
 
-func getEnvPath() string {
-	envPath := ".env"
+func getEnvFilePath() string {
+	envFilePath := ".env"
 	args := os.Args
 	for index, arg := range args {
 		if strings.HasPrefix(arg, "--env=") {
 			if path := strings.TrimPrefix(arg, "--env="); path != "" {
-				envPath = path
+				envFilePath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-env=") {
 			if path := strings.TrimPrefix(arg, "-env="); path != "" {
-				envPath = path
+				envFilePath = path
 				break
 			}
 		}
 		if strings.HasPrefix(arg, "-e=") {
 			if path := strings.TrimPrefix(arg, "-e="); path != "" {
-				envPath = path
+				envFilePath = path
 				break
 			}
 		}
 		if arg == "--env" || arg == "-env" || arg == "-e" {
 			if len(args) >= index+1 && !strings.HasPrefix(args[index+1], "-") {
-				envPath = args[index+1]
+				envFilePath = args[index+1]
 				break
 			}
 		}
 	}
 
-	return envPath
+	return envFilePath
 }

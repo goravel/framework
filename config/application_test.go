@@ -19,7 +19,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.PutContent(support.EnvPath, `
+	assert.Nil(t, file.PutContent(support.EnvFilePath, `
 APP_KEY=12345678901234567890123456789012
 APP_DEBUG=true
 DB_PORT=3306
@@ -42,11 +42,11 @@ FLOAT_VALUE=6.28
 	assert.Nil(t, temp.Close())
 
 	suite.Run(t, &ApplicationTestSuite{
-		config:       NewApplication(support.EnvPath),
+		config:       NewApplication(support.EnvFilePath),
 		customConfig: NewApplication(temp.Name()),
 	})
 
-	assert.Nil(t, file.Remove(support.EnvPath))
+	assert.Nil(t, file.Remove(support.EnvFilePath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -183,7 +183,7 @@ func TestOsVariables(t *testing.T) {
 	assert.Nil(t, os.Setenv("APP_PORT", "3306"))
 	assert.Nil(t, os.Setenv("APP_DEBUG", "true"))
 
-	config := NewApplication(support.EnvPath)
+	config := NewApplication(support.EnvFilePath)
 
 	assert.Equal(t, "12345678901234567890123456789013", config.GetString("APP_KEY"))
 	assert.Equal(t, "goravel", config.GetString("APP_NAME"))

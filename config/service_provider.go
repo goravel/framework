@@ -11,7 +11,7 @@ type ServiceProvider struct {
 
 func (r *ServiceProvider) Register(app foundation.Application) {
 	app.Singleton(contracts.BindingConfig, func(app foundation.Application) (any, error) {
-		return NewApplication(support.EnvPath), nil
+		return NewApplication(support.EnvFilePath), nil
 	})
 }
 

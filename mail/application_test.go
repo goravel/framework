@@ -26,7 +26,7 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	if !file.Exists(support.EnvPath) && os.Getenv("MAIL_HOST") == "" {
+	if !file.Exists(support.EnvFilePath) && os.Getenv("MAIL_HOST") == "" {
 		color.Errorln("No mail tests run, need create .env based on .env.example, then initialize it")
 		return
 	}
@@ -165,9 +165,9 @@ func mockConfig(mailPort int) *configmock.Config {
 	mockConfig.On("GetString", "queue.failed.database").Return("database")
 	mockConfig.On("GetString", "queue.failed.table").Return("failed_jobs")
 
-	if file.Exists(support.EnvPath) {
+	if file.Exists(support.EnvFilePath) {
 		vip := viper.New()
-		vip.SetConfigName(support.EnvPath)
+		vip.SetConfigName(support.EnvFilePath)
 		vip.SetConfigType("env")
 		vip.AddConfigPath(".")
 		_ = vip.ReadInConfig()

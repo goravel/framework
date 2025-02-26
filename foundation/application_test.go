@@ -45,11 +45,11 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	assert.Nil(t, file.PutContent(support.EnvPath, "APP_KEY=12345678901234567890123456789012"))
+	assert.Nil(t, file.PutContent(support.EnvFilePath, "APP_KEY=12345678901234567890123456789012"))
 
 	suite.Run(t, new(ApplicationTestSuite))
 
-	assert.Nil(t, file.Remove(support.EnvPath))
+	assert.Nil(t, file.Remove(support.EnvFilePath))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {

@@ -77,14 +77,14 @@ func (r *KeyGenerateCommand) generateRandomKey() string {
 
 // writeNewEnvironmentFileWith Write a new environment file with the given key.
 func (r *KeyGenerateCommand) writeNewEnvironmentFileWith(key string) error {
-	content, err := os.ReadFile(support.EnvPath)
+	content, err := os.ReadFile(support.EnvFilePath)
 	if err != nil {
 		return err
 	}
 
 	newContent := strings.Replace(string(content), "APP_KEY="+r.config.GetString("app.key"), "APP_KEY="+key, 1)
 
-	err = os.WriteFile(support.EnvPath, []byte(newContent), 0644)
+	err = os.WriteFile(support.EnvFilePath, []byte(newContent), 0644)
 	if err != nil {
 		return err
 	}

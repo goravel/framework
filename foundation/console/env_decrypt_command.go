@@ -55,7 +55,7 @@ func (r *EnvDecryptCommand) Extend() command.Extend {
 // Handle Execute the console command.
 func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 	key := convert.Default(ctx.Option("key"), os.Getenv("GORAVEL_ENV_ENCRYPTION_KEY"))
-	name := convert.Default(ctx.Option("name"), support.EnvEncryptPath)
+	name := convert.Default(ctx.Option("name"), support.EnvFileEncryptPath)
 	if key == "" {
 		ctx.Error("A decryption key is required.")
 		return nil
@@ -67,7 +67,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if file.Exists(support.EnvPath) {
+	if file.Exists(support.EnvFilePath) {
 		answer, _ := ctx.Confirm("Environment file already exists, are you sure to overwrite?")
 		if !answer {
 			return nil
@@ -80,7 +80,7 @@ func (r *EnvDecryptCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	err = os.WriteFile(support.EnvPath, plaintext, 0644)
+	err = os.WriteFile(support.EnvFilePath, plaintext, 0644)
 	if err != nil {
 		ctx.Error(fmt.Sprintf("Writer error: %v", err))
 		return nil
