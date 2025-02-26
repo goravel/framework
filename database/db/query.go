@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	databasesql "database/sql"
+	"fmt"
 	"reflect"
 	"sort"
 
@@ -258,13 +259,17 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.From(r.conditions.table)
-
-	for _, where := range r.conditions.where {
-		query, args := r.buildWhere(where)
-		builder = builder.Where(query, args...)
+	sqlizer, err := r.buildWhere1(r.conditions.where)
+	if err != nil {
+		return "", nil, err
 	}
 
-	return builder.ToSql()
+	// for _, where := range r.conditions.where {
+	// 	query, args := r.buildWhere(where)
+	// 	builder = builder.Where(query, args...)
+	// }
+
+	return builder.Where(sqlizer).ToSql()
 }
 
 func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err error) {
@@ -302,22 +307,50 @@ func (r *Query) buildWhere(where Where) (any, []any) {
 	return where.query, where.args
 }
 
-// func (r *Query) buildWhere1(wheres []Where) []sq.Sqlizer {
-// 	if len(wheres) == 0 {
-// 		return nil
-// 	}
+func (r *Query) buildWhere1(wheres []Where) (sq.Sqlizer, error) {
+	if len(wheres) == 0 {
+		return nil, nil
+	}
 
-// 	var sqlizers []sq.Sqlizer
-// 	for index, where := range wheres {
-// 		if where.or {
-// 			sqlizers = sq.Or{sqlizers...}
-// 		} else {
-// 			where = sq.And{where.query}
-// 		}
-// 	}
+	var sqlizers []sq.Sqlizer
+	for _, where := range wheres {
+		query, args := r.buildWhere(where)
 
-// 	return where
-// }
+		sqlizer, err := r.toSqlizer(query, args)
+		if err != nil {
+			return nil, err
+		}
+
+		if where.or && len(sqlizers) > 0 {
+			// If it's an OR condition and we have previous conditions,
+			// wrap the previous conditions in an AND and create an OR condition
+			if len(sqlizers) == 1 {
+				sqlizers = []sq.Sqlizer{
+					sq.Or{
+						sqlizers[0],
+						sqlizer,
+					},
+				}
+			} else {
+				sqlizers = []sq.Sqlizer{
+					sq.Or{
+						sq.And(sqlizers),
+						sqlizer,
+					},
+				}
+			}
+		} else {
+			// For regular WHERE conditions or the first condition
+			sqlizers = append(sqlizers, sqlizer)
+		}
+	}
+
+	if len(sqlizers) == 1 {
+		return sqlizers[0], nil
+	}
+
+	return sq.And(sqlizers), nil
+}
 
 func (r *Query) placeholderFormat() database.PlaceholderFormat {
 	if r.driver.Config().PlaceholderFormat != nil {
@@ -329,4 +362,17 @@ func (r *Query) placeholderFormat() database.PlaceholderFormat {
 
 func (r *Query) trace(sql string, args []any, rowsAffected int64, err error) {
 	r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
+}
+
+func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
+	switch q := query.(type) {
+	case map[string]any:
+		return sq.Eq(q), nil
+	case string:
+		return sq.Expr(q, args...), nil
+	case sq.Sqlizer:
+		return q, nil
+	default:
+		return nil, fmt.Errorf("Unsupported where type: %T, expected string-keyed map or string or squirrel.Sqlizer", query)
+	}
 }

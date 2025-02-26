@@ -418,6 +418,23 @@ func (s *QueryTestSuite) TestWhere() {
 	// })
 }
 
+func (s *QueryTestSuite) TestOrWhere() {
+	now := carbon.Now()
+	carbon.SetTestNow(now)
+
+	s.Run("simple condition", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (((name = ? AND age = ?) OR age = ?) OR name = ?)", "John", 25, 30, "Jane").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (((name = ? AND age = ?) OR age = ?) OR name = ?)", "John", 25, 30, "Jane").Return("SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age = 30) OR name = \"Jane\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age = 30) OR name = \"Jane\")", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Where("age", 25).OrWhere("age", 30).OrWhere("name", "Jane").First(&user)
+		s.Nil(err)
+	})
+}
+
 // MockResult implements sql.Result interface for testing
 type MockResult struct {
 	mock.Mock
