@@ -47,7 +47,8 @@ func (r *ListenerMakeCommand) Handle(ctx console.Context) error {
 	}
 
 	if err := file.PutContent(m.GetFilePath(), r.populateStub(r.getStub(), m.GetPackageName(), m.GetStructName())); err != nil {
-		return err
+		ctx.Error(err.Error())
+		return nil
 	}
 
 	ctx.Success("Listener created successfully")
