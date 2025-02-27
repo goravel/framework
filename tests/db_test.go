@@ -13,6 +13,7 @@ import (
 
 type DBTestSuite struct {
 	suite.Suite
+	now     carbon.DateTime
 	queries map[string]*TestQuery
 }
 
@@ -24,6 +25,7 @@ func TestDBTestSuite(t *testing.T) {
 }
 
 func (s *DBTestSuite) SetupSuite() {
+	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 	s.queries = NewTestQueryBuilder().All("", false)
 	for _, query := range s.queries {
 		query.CreateTable(TestTableProducts)
@@ -39,8 +41,6 @@ func (s *DBTestSuite) TearDownSuite() {
 }
 
 func (s *DBTestSuite) TestInsert_First_Get() {
-	now := carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
-
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			s.Run("single struct", func() {
@@ -48,8 +48,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 					Name: "single struct",
 					Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: now,
-							UpdatedAt: now,
+							CreatedAt: s.now,
+							UpdatedAt: s.now,
 						},
 					},
 				})
@@ -62,8 +62,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.NoError(err)
 				s.True(product.ID > 0)
 				s.Equal("single struct", product.Name)
-				s.Equal(now, product.CreatedAt)
-				s.Equal(now, product.UpdatedAt)
+				s.Equal(s.now, product.CreatedAt)
+				s.Equal(s.now, product.UpdatedAt)
 				s.False(product.DeletedAt.Valid)
 			})
 
@@ -73,8 +73,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 						Name: "multiple structs1",
 						Model: Model{
 							Timestamps: Timestamps{
-								CreatedAt: now,
-								UpdatedAt: now,
+								CreatedAt: s.now,
+								UpdatedAt: s.now,
 							},
 						},
 					},
@@ -96,8 +96,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 			s.Run("single map", func() {
 				result, err := query.DB().Table("products").Insert(map[string]any{
 					"name":       "single map",
-					"created_at": now,
-					"updated_at": &now,
+					"created_at": s.now,
+					"updated_at": &s.now,
 				})
 				s.NoError(err)
 				s.Equal(int64(1), result.RowsAffected)
@@ -106,8 +106,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				err = query.DB().Table("products").Where("name", "single map").Where("deleted_at", nil).First(&product)
 				s.NoError(err)
 				s.Equal("single map", product.Name)
-				s.Equal(now, product.CreatedAt)
-				s.Equal(now, product.UpdatedAt)
+				s.Equal(s.now, product.CreatedAt)
+				s.Equal(s.now, product.UpdatedAt)
 				s.False(product.DeletedAt.Valid)
 			})
 
@@ -115,8 +115,8 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				result, err := query.DB().Table("products").Insert([]map[string]any{
 					{
 						"name":       "multiple map1",
-						"created_at": now,
-						"updated_at": &now,
+						"created_at": s.now,
+						"updated_at": &s.now,
 					},
 					{
 						"name": "multiple map2",
@@ -137,8 +137,6 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 }
 
 func (s *DBTestSuite) TestUpdate_Delete() {
-	now := carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
-
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
 			result, err := query.DB().Table("products").Insert([]Product{
@@ -146,8 +144,8 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 					Name: "update structs1",
 					Model: Model{
 						Timestamps: Timestamps{
-							CreatedAt: now,
-							UpdatedAt: now,
+							CreatedAt: s.now,
+							UpdatedAt: s.now,
 						},
 					},
 				},
@@ -206,13 +204,12 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 func (s *DBTestSuite) TestWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
-			now := carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 			query.DB().Table("products").Insert(Product{
 				Name: "where model",
 				Model: Model{
 					Timestamps: Timestamps{
-						CreatedAt: now,
-						UpdatedAt: now,
+						CreatedAt: s.now,
+						UpdatedAt: s.now,
 					},
 				},
 			})
@@ -237,6 +234,30 @@ func (s *DBTestSuite) TestWhere() {
 				err := query.DB().Table("products").Where("name = ?", "where model").First(&product)
 				s.NoError(err)
 				s.Equal("where model", product.Name)
+			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOrWhere() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name: "or where model",
+				},
+				{
+					Name: "or where model1",
+				},
+			})
+
+			s.Run("simple where condition", func() {
+				var products []Product
+				err := query.DB().Table("products").Where("name", "or where model").OrWhere("name", "or where model1").Get(&products)
+				s.NoError(err)
+				s.Equal(2, len(products))
+				s.Equal("or where model", products[0].Name)
+				s.Equal("or where model1", products[1].Name)
 			})
 		})
 	}
