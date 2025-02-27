@@ -57,8 +57,9 @@ func Attributes(attributes map[string]string) httpvalidate.Option {
 	}
 }
 
-func PrepareForValidation(prepare func(ctx http.Context, data httpvalidate.Data) error) httpvalidate.Option {
+func PrepareForValidation(ctx http.Context, prepare func(ctx http.Context, data httpvalidate.Data) error) httpvalidate.Option {
 	return func(options map[string]any) {
+		options["ctx"] = ctx
 		options["prepareForValidation"] = prepare
 	}
 }
