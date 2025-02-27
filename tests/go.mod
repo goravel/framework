@@ -9,9 +9,9 @@ godebug x509negativeserial=1
 require (
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/goravel/framework v1.15.3
-	github.com/goravel/mysql v0.0.0-20250218091104-6577ff4ab455
-	github.com/goravel/postgres v0.0.2-0.20250218091153-f950a69aff84
-	github.com/goravel/sqlite v0.0.0-20250218091018-e1f7842bf316
+	github.com/goravel/mysql v0.0.0-20250227084124-617c335c97e8
+	github.com/goravel/postgres v0.0.2-0.20250227083938-386cd7e4996d
+	github.com/goravel/sqlite v0.0.0-20250227084035-346e1a22a054
 	github.com/goravel/sqlserver v0.0.0-20250218091041-ed4f422e1b7f
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cast v1.7.1
@@ -30,7 +30,7 @@ require (
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dromara/carbon/v2 v2.5.2 // indirect
+	github.com/dromara/carbon/v2 v2.5.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
@@ -63,7 +63,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/crypto v0.34.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
