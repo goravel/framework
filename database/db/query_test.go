@@ -56,9 +56,9 @@ func (s *QueryTestSuite) TestDelete() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return(mockResult, nil).Once()
-		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return("DELETE FROM users WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE name = \"John\" AND id = 1", int64(1), nil).Return().Once()
+		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("DELETE FROM users WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Delete()
 		s.Nil(err)
@@ -69,9 +69,9 @@ func (s *QueryTestSuite) TestDelete() {
 
 	s.Run("failed to exec", func() {
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return(nil, assert.AnError).Once()
-		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return("DELETE FROM users WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE name = \"John\" AND id = 1", int64(-1), assert.AnError).Return().Once()
+		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil, assert.AnError).Once()
+		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("DELETE FROM users WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
 		_, err := s.query.Where("name", "John").Where("id", 1).Delete()
 		s.Equal(assert.AnError, err)
@@ -82,9 +82,9 @@ func (s *QueryTestSuite) TestDelete() {
 		mockResult.On("RowsAffected").Return(int64(0), assert.AnError).Once()
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return(mockResult, nil).Once()
-		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE name = ? AND id = ?", "John", 1).Return("DELETE FROM users WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE name = \"John\" AND id = 1", int64(-1), assert.AnError).Return().Once()
+		s.mockBuilder.EXPECT().Exec("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("DELETE FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("DELETE FROM users WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "DELETE FROM users WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
 		_, err := s.query.Where("name", "John").Where("id", 1).Delete()
 		s.Equal(assert.AnError, err)
@@ -292,9 +292,9 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return(mockResult, nil).Once()
-		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE name = \"John\" AND id = 1", int64(1), nil).Return().Once()
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(err)
@@ -314,9 +314,9 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(1), nil)
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET age = ?, name = ?, phone = ? WHERE name = ? AND id = ?", 25, "John", "1234567890", "John", 1).Return(mockResult, nil).Once()
-		s.mockDriver.EXPECT().Explain("UPDATE users SET age = ?, name = ?, phone = ? WHERE name = ? AND id = ?", 25, "John", "1234567890", "John", 1).Return("UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE name = \"John\" AND id = 1", int64(1), nil).Return().Once()
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET age = ?, name = ?, phone = ? WHERE (name = ? AND id = ?)", 25, "John", "1234567890", "John", 1).Return("UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = 25, name = \"John\", phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(err)
@@ -333,9 +333,9 @@ func (s *QueryTestSuite) TestUpdate() {
 		}
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return(nil, assert.AnError).Once()
-		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE name = \"John\" AND id = 1", int64(-1), assert.AnError).Return().Once()
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(nil, assert.AnError).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(result)
@@ -353,9 +353,9 @@ func (s *QueryTestSuite) TestUpdate() {
 		mockResult.On("RowsAffected").Return(int64(0), assert.AnError).Once()
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return(mockResult, nil).Once()
-		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ? AND id = ?", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\" AND id = 1").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE name = \"John\" AND id = 1", int64(-1), assert.AnError).Return().Once()
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE (name = ? AND id = ?)", "1234567890", "John", 1).Return("UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE (name = \"John\" AND id = 1)", int64(-1), assert.AnError).Return().Once()
 
 		result, err := s.query.Where("name", "John").Where("id", 1).Update(user)
 		s.Nil(result)
@@ -367,19 +367,19 @@ func (s *QueryTestSuite) TestWhere() {
 	now := carbon.Now()
 	carbon.SetTestNow(now)
 
-	s.Run("simple where condition", func() {
+	s.Run("simple condition", func() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
-		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 25)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (name = \"John\" AND age = 25)", int64(1), nil).Return().Once()
 
-		err := s.query.Where("name", "John").First(&user)
+		err := s.query.Where("name", "John").Where("age", 25).First(&user)
 		s.Nil(err)
 	})
 
-	s.Run("where with multiple arguments", func() {
+	s.Run("multiple arguments", func() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
@@ -391,7 +391,7 @@ func (s *QueryTestSuite) TestWhere() {
 		s.Nil(err)
 	})
 
-	s.Run("where with raw query", func() {
+	s.Run("raw query", func() {
 		var users []TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
@@ -400,6 +400,37 @@ func (s *QueryTestSuite) TestWhere() {
 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age > 18", int64(0), nil).Return().Once()
 
 		err := s.query.Where("age > ?", 18).Get(&users)
+		s.Nil(err)
+	})
+
+	// s.Run("nested condition", func() {
+	// 	var users []TestUser
+
+	// 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	// 	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IN (?,?) AND name = ?", 25, 30, "John").Return(nil).Once()
+	// 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IN (?,?) AND name = ?", 25, 30, "John").Return("SELECT * FROM users WHERE age IN (25,30) AND name = \"John\"").Once()
+	// 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IN (25,30) AND name = \"John\"", int64(0), nil).Return().Once()
+
+	// 	err := s.query.Where(func(query db.Query) {
+	// 		query.Where("age", []int{25, 30}).Where("name", "John")
+	// 	}).Get(&users)
+	// 	s.Nil(err)
+	// })
+}
+
+func (s *QueryTestSuite) TestOrWhere() {
+	now := carbon.Now()
+	carbon.SetTestNow(now)
+
+	s.Run("simple condition", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (((name = ? AND age = ?) OR age = ?) OR name = ?)", "John", 25, 30, "Jane").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (((name = ? AND age = ?) OR age = ?) OR name = ?)", "John", 25, 30, "Jane").Return("SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age = 30) OR name = \"Jane\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age = 30) OR name = \"Jane\")", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Where("age", 25).OrWhere("age", 30).OrWhere("name", "Jane").First(&user)
 		s.Nil(err)
 	})
 }
