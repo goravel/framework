@@ -211,12 +211,12 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	for _, where := range r.conditions.where {
-		query, args := r.buildWhere(where)
-		builder = builder.Where(query, args...)
+	sqlizer, err := r.buildWheres(r.conditions.where)
+	if err != nil {
+		return "", nil, err
 	}
 
-	return builder.ToSql()
+	return builder.Where(sqlizer).ToSql()
 }
 
 func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err error) {
@@ -259,15 +259,10 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.From(r.conditions.table)
-	sqlizer, err := r.buildWhere1(r.conditions.where)
+	sqlizer, err := r.buildWheres(r.conditions.where)
 	if err != nil {
 		return "", nil, err
 	}
-
-	// for _, where := range r.conditions.where {
-	// 	query, args := r.buildWhere(where)
-	// 	builder = builder.Where(query, args...)
-	// }
 
 	return builder.Where(sqlizer).ToSql()
 }
@@ -282,14 +277,12 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	for _, where := range r.conditions.where {
-		query, args := r.buildWhere(where)
-		builder = builder.Where(query, args...)
+	sqlizer, err := r.buildWheres(r.conditions.where)
+	if err != nil {
+		return "", nil, err
 	}
 
-	builder = builder.SetMap(data)
-
-	return builder.ToSql()
+	return builder.Where(sqlizer).SetMap(data).ToSql()
 }
 
 func (r *Query) buildWhere(where Where) (any, []any) {
@@ -307,7 +300,7 @@ func (r *Query) buildWhere(where Where) (any, []any) {
 	return where.query, where.args
 }
 
-func (r *Query) buildWhere1(wheres []Where) (sq.Sqlizer, error) {
+func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
 	if len(wheres) == 0 {
 		return nil, nil
 	}
@@ -373,6 +366,6 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 	case sq.Sqlizer:
 		return q, nil
 	default:
-		return nil, fmt.Errorf("Unsupported where type: %T, expected string-keyed map or string or squirrel.Sqlizer", query)
+		return nil, errors.DatabaseUnsupportedType.Args(fmt.Sprintf("%T", query), "string-keyed map or string or squirrel.Sqlizer")
 	}
 }
