@@ -54,7 +54,16 @@ func (r *Validation) Make(data any, rules map[string]string, options ...validate
 	options = append(options, Rules(rules), CustomRules(r.rules), CustomFilters(r.filters))
 	generateOptions := GenerateOptions(options)
 	if generateOptions["prepareForValidation"] != nil {
-		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(nil, NewData(dataFace)); err != nil {
+		var (
+			ctx   http.Context
+			exist bool
+		)
+		ctx, exist = generateOptions["ctx"].(http.Context)
+		if !exist {
+			ctx = nil
+		}
+
+		if err := generateOptions["prepareForValidation"].(func(ctx http.Context, data validatecontract.Data) error)(ctx, NewData(dataFace)); err != nil {
 			return nil, err
 		}
 	}
