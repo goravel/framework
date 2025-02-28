@@ -8,9 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/goravel/framework/contracts/http"
+	contractshttp "github.com/goravel/framework/contracts/http"
 	httpvalidate "github.com/goravel/framework/contracts/validation"
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/http"
 )
 
 func TestMake(t *testing.T) {
@@ -18,7 +19,9 @@ func TestMake(t *testing.T) {
 		A string
 	}
 
-	ErrInvalidData := errors.New("error")
+	ctx := http.NewContext()
+	// nolint:all
+	ctx.WithValue("test", "test")
 
 	tests := []struct {
 		description        string
@@ -81,11 +84,11 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
-				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
-					return ErrInvalidData
+				PrepareForValidation(ctx, func(ctx contractshttp.Context, data httpvalidate.Data) error {
+					return assert.AnError
 				}),
 			},
-			expectErr: ErrInvalidData,
+			expectErr: assert.AnError,
 		},
 		{
 			description: "success when data is map[string]any and with PrepareForValidation",
@@ -93,7 +96,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"a": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"a": "trim"}),
-				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
+				PrepareForValidation(ctx, func(ctx contractshttp.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -103,6 +106,23 @@ func TestMake(t *testing.T) {
 			},
 			expectValidator: true,
 			expectData:      Data{A: "c"},
+		},
+		{
+			description: "success when calling PrepareForValidation with ctx",
+			data:        map[string]any{"a": "   b  "},
+			rules:       map[string]string{"a": "required"},
+			options: []httpvalidate.Option{
+				Filters(map[string]string{"a": "trim"}),
+				PrepareForValidation(ctx, func(ctx contractshttp.Context, data httpvalidate.Data) error {
+					if _, exist := data.Get("a"); exist {
+						return data.Set("a", ctx.Value("test"))
+					}
+
+					return nil
+				}),
+			},
+			expectValidator: true,
+			expectData:      Data{A: "test"},
 		},
 		{
 			description: "contain errors when data is map[string]any and with Messages, Attributes, PrepareForValidation",
@@ -116,7 +136,7 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"b": "B",
 				}),
-				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
+				PrepareForValidation(ctx, func(ctx contractshttp.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}
@@ -135,7 +155,7 @@ func TestMake(t *testing.T) {
 			rules:       map[string]string{"A": "required"},
 			options: []httpvalidate.Option{
 				Filters(map[string]string{"A": "trim"}),
-				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
+				PrepareForValidation(ctx, func(ctx contractshttp.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("A"); exist {
 						return data.Set("A", "c")
 					}
@@ -158,7 +178,7 @@ func TestMake(t *testing.T) {
 				Attributes(map[string]string{
 					"B": "b",
 				}),
-				PrepareForValidation(func(ctx http.Context, data httpvalidate.Data) error {
+				PrepareForValidation(ctx, func(ctx contractshttp.Context, data httpvalidate.Data) error {
 					if _, exist := data.Get("a"); exist {
 						return data.Set("a", "c")
 					}

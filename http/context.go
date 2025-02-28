@@ -32,7 +32,7 @@ func (c *Context) WithContext(ctx context.Context) {
 }
 
 func (r *Context) WithValue(key any, value any) {
-	//nolint:all
+	// nolint:all
 	r.Ctx = context.WithValue(r.Ctx, key, value)
 }
 
