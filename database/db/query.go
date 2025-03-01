@@ -24,6 +24,7 @@ type Query struct {
 	ctx        context.Context
 	driver     driver.Driver
 	logger     logger.Logger
+	single     bool
 }
 
 func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string) *Query {
@@ -36,6 +37,13 @@ func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, log
 		ctx:    ctx,
 		logger: logger,
 	}
+}
+
+func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builder, logger logger.Logger, table string) *Query {
+	query := NewQuery(ctx, driver, builder, logger, table)
+	query.single = true
+
+	return query
 }
 
 func (r *Query) Delete() (*db.Result, error) {
@@ -149,9 +157,8 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 }
 
 func (r *Query) OrWhere(query any, args ...any) db.Query {
-	q := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
-	q.conditions = r.conditions
-	q.conditions.where = append(r.conditions.where, Where{
+	q := r.clone()
+	q.conditions.where = append(q.conditions.where, Where{
 		query: query,
 		args:  args,
 		or:    true,
@@ -191,9 +198,8 @@ func (r *Query) Update(data any) (*db.Result, error) {
 }
 
 func (r *Query) Where(query any, args ...any) db.Query {
-	q := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
-	q.conditions = r.conditions
-	q.conditions.where = append(r.conditions.where, Where{
+	q := r.clone()
+	q.conditions.where = append(q.conditions.where, Where{
 		query: query,
 		args:  args,
 	})
@@ -285,19 +291,32 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 	return builder.Where(sqlizer).SetMap(data).ToSql()
 }
 
-func (r *Query) buildWhere(where Where) (any, []any) {
-	query, ok := where.query.(string)
-	if ok {
+func (r *Query) buildWhere(where Where) (any, []any, error) {
+	switch query := where.query.(type) {
+	case string:
 		if !str.Of(query).Trim().Contains(" ", "?") {
 			if len(where.args) > 1 {
-				return sq.Eq{query: where.args}, nil
+				return sq.Eq{query: where.args}, nil, nil
 			} else if len(where.args) == 1 {
-				return sq.Eq{query: where.args[0]}, nil
+				return sq.Eq{query: where.args[0]}, nil, nil
 			}
 		}
-	}
+		return query, where.args, nil
+	case func(db.Query):
+		// Handle nested conditions by creating a new query and applying the callback
+		nestedQuery := NewSingleQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+		query(nestedQuery)
 
-	return where.query, where.args
+		// Build the nested conditions
+		sqlizer, err := r.buildWheres(nestedQuery.conditions.where)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return sqlizer, nil, nil
+	default:
+		return where.query, where.args, nil
+	}
 }
 
 func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
@@ -307,7 +326,10 @@ func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
 
 	var sqlizers []sq.Sqlizer
 	for _, where := range wheres {
-		query, args := r.buildWhere(where)
+		query, args, err := r.buildWhere(where)
+		if err != nil {
+			return nil, err
+		}
 
 		sqlizer, err := r.toSqlizer(query, args)
 		if err != nil {
@@ -345,16 +367,23 @@ func (r *Query) buildWheres(wheres []Where) (sq.Sqlizer, error) {
 	return sq.And(sqlizers), nil
 }
 
+func (r *Query) clone() *Query {
+	if r.single {
+		return r
+	}
+
+	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+	query.conditions = r.conditions
+
+	return query
+}
+
 func (r *Query) placeholderFormat() database.PlaceholderFormat {
 	if r.driver.Config().PlaceholderFormat != nil {
 		return r.driver.Config().PlaceholderFormat
 	}
 
 	return nil
-}
-
-func (r *Query) trace(sql string, args []any, rowsAffected int64, err error) {
-	r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
 }
 
 func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
@@ -368,4 +397,8 @@ func (r *Query) toSqlizer(query any, args []any) (sq.Sqlizer, error) {
 	default:
 		return nil, errors.DatabaseUnsupportedType.Args(fmt.Sprintf("%T", query), "string-keyed map or string or squirrel.Sqlizer")
 	}
+}
+
+func (r *Query) trace(sql string, args []any, rowsAffected int64, err error) {
+	r.logger.Trace(r.ctx, carbon.Now(), r.driver.Explain(sql, args...), rowsAffected, err)
 }

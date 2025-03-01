@@ -5,6 +5,7 @@ package tests
 import (
 	"testing"
 
+	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/sqlite"
 	"github.com/stretchr/testify/assert"
@@ -235,6 +236,15 @@ func (s *DBTestSuite) TestWhere() {
 				s.NoError(err)
 				s.Equal("where model", product.Name)
 			})
+
+			s.Run("where with nested condition", func() {
+				var product Product
+				err := query.DB().Table("products").Where(func(query db.Query) {
+					query.Where("name", "where model")
+				}).First(&product)
+				s.NoError(err)
+				s.Equal("where model", product.Name)
+			})
 		})
 	}
 }
@@ -254,6 +264,17 @@ func (s *DBTestSuite) TestOrWhere() {
 			s.Run("simple where condition", func() {
 				var products []Product
 				err := query.DB().Table("products").Where("name", "or where model").OrWhere("name", "or where model1").Get(&products)
+				s.NoError(err)
+				s.Equal(2, len(products))
+				s.Equal("or where model", products[0].Name)
+				s.Equal("or where model1", products[1].Name)
+			})
+
+			s.Run("nested condition", func() {
+				var products []Product
+				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) {
+					query.Where("name", "or where model1")
+				}).Get(&products)
 				s.NoError(err)
 				s.Equal(2, len(products))
 				s.Equal("or where model", products[0].Name)
