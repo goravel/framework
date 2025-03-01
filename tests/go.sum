@@ -105,12 +105,12 @@ github.com/gookit/color v1.4.2/go.mod h1:fqRyamkC1W8uxl+lxCQxOT09l/vYfZ+QeiX3rKQ
 github.com/gookit/color v1.5.0/go.mod h1:43aQb+Zerm/BWh2GnrgOQm7ffz7tvQXEKV6BFMl7wAo=
 github.com/gookit/color v1.5.4 h1:FZmqs7XOyGgCAxmWyPslpiok1k05wmY3SJTytgvYFs0=
 github.com/gookit/color v1.5.4/go.mod h1:pZJOeOS8DM43rXbp4AZo1n9zCU2qjpcRko0b6/QJi9w=
-github.com/goravel/mysql v0.0.0-20250227084124-617c335c97e8 h1:6KyHfJb1u4NU3ajwflmpT5GFhyLENJKB+9fGt+NG1zs=
-github.com/goravel/mysql v0.0.0-20250227084124-617c335c97e8/go.mod h1:2pNxQWgc2X0Qok/7ArjxYLQrLxgW3FC0OJMCrPzkNI4=
+github.com/goravel/mysql v0.0.0-20250301031917-137292691bc8 h1:F0iWCeq5lRdt6CTx+RmtehTINlqRRhBKksLRQkLIhzg=
+github.com/goravel/mysql v0.0.0-20250301031917-137292691bc8/go.mod h1:2pNxQWgc2X0Qok/7ArjxYLQrLxgW3FC0OJMCrPzkNI4=
 github.com/goravel/postgres v0.0.2-0.20250301031856-64f47c6379d5 h1:+xzPB9+FBXCO2o8Q5Kapw1CavLPAoe1FohFyEmQu2oA=
 github.com/goravel/postgres v0.0.2-0.20250301031856-64f47c6379d5/go.mod h1:GocNrllGPXCGbASfcBHZV4J4IbiEqD+JC9H+llBc7oI=
-github.com/goravel/sqlite v0.0.0-20250227084035-346e1a22a054 h1:g0lzhQ/Ev7TpUGiw9W41mSyvCWr1CMsCALciDx5EL7s=
-github.com/goravel/sqlite v0.0.0-20250227084035-346e1a22a054/go.mod h1:5aqawjDfrMnSrz1vffkDv2N9rbRqx8sITHrf7EEOx6E=
+github.com/goravel/sqlite v0.0.0-20250301031930-fef86990c00d h1:CoXZ0QFVOgvYxFZv8PblWBSw8HYYJYiFUhwFOcF9o24=
+github.com/goravel/sqlite v0.0.0-20250301031930-fef86990c00d/go.mod h1:5aqawjDfrMnSrz1vffkDv2N9rbRqx8sITHrf7EEOx6E=
 github.com/goravel/sqlserver v0.0.0-20250301031912-319b0afb01ba h1:4+HAZllP58i0oo3gV0YsAGxdRkQpri1R7mZALcNe4DA=
 github.com/goravel/sqlserver v0.0.0-20250301031912-319b0afb01ba/go.mod h1:qygWITz9vqhdAPIt4TBBA3MAN7fvNlsnMQZRNDhjORE=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
@@ -248,8 +248,8 @@ golang.org/x/crypto v0.17.0/go.mod h1:gCAAfMLgwOJRpTjQ2zCCt2OcSfYMTeZVSRtQlPC7Nq
 golang.org/x/crypto v0.18.0/go.mod h1:R0j02AL6hcrfOiy9T4ZYp/rcWeMxM3L6QYxlOuEG1mg=
 golang.org/x/crypto v0.35.0 h1:b15kiHdrGCHrP6LvwaQ3c03kgNhhiMgvlhxHQhmg2Xs=
 golang.org/x/crypto v0.35.0/go.mod h1:dy7dXNW32cAb/6/PRuTNsix8T+vJAqvuIy5Bli/x0YQ=
-golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa h1:t2QcU6V556bFjYgu4L6C+6VrCPyJZ+eyRsABUPs1mz4=
-golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa/go.mod h1:BHOTPb3L19zxehTsLoJXVaTktb06DFgmdW6Wb9s8jqk=
+golang.org/x/exp v0.0.0-20250228200357-dead58393ab7 h1:aWwlzYV971S4BXRS9AmqwDLAD85ouC6X+pocatKY58c=
+golang.org/x/exp v0.0.0-20250228200357-dead58393ab7/go.mod h1:BHOTPb3L19zxehTsLoJXVaTktb06DFgmdW6Wb9s8jqk=
 golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
 golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
 golang.org/x/mod v0.23.0 h1:Zb7khfcRGKk+kqfxFaP5tZqCnDZMjC5VtUBs87Hr6QM=
