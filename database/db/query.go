@@ -185,6 +185,11 @@ func (r *Query) OrWhere(query any, args ...any) db.Query {
 }
 
 func (r *Query) OrWhereBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
 	return r.OrWhere(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
 }
 
@@ -235,6 +240,11 @@ func (r *Query) OrWhereNot(query any, args ...any) db.Query {
 }
 
 func (r *Query) OrWhereNotBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
 	return r.OrWhere(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
 }
 
@@ -299,6 +309,11 @@ func (r *Query) Where(query any, args ...any) db.Query {
 }
 
 func (r *Query) WhereBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
 	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
 }
 
