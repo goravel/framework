@@ -188,6 +188,19 @@ func (r *Query) OrWhereBetween(column string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
 }
 
+func (r *Query) OrWhereColumn(column1 string, column2 ...string) db.Query {
+	if len(column2) == 0 || len(column2) > 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(column2), "1 or 2")
+		return r
+	}
+
+	if len(column2) == 1 {
+		return r.OrWhere(sq.Expr(fmt.Sprintf("%s = %s", column1, column2[0])))
+	}
+
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s %s %s", column1, column2[0], column2[1])))
+}
+
 func (r *Query) OrWhereIn(column string, args []any) db.Query {
 	return r.OrWhere(column, args)
 }

@@ -336,6 +336,18 @@ func (s *QueryTestSuite) TestOrWhereBetween() {
 	s.Nil(err)
 }
 
+func (s *QueryTestSuite) TestOrWhereColumn() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR height = weight)", "John").Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR height = weight)", "John").Return("SELECT * FROM users WHERE (name = \"John\" OR height = weight)").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR height = weight)", int64(0), nil).Return().Once()
+
+	err := s.query.Where("name", "John").OrWhereColumn("height", "weight").Get(&users)
+	s.Nil(err)
+}
+
 func (s *QueryTestSuite) TestOrWhereIn() {
 	var users []TestUser
 

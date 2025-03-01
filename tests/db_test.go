@@ -174,6 +174,55 @@ func (s *DBTestSuite) TestOrWhere() {
 	}
 }
 
+func (s *DBTestSuite) TestOrWhereColumn() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name:   "or where column model",
+					Height: convert.Pointer(100),
+					Weight: convert.Pointer(100),
+				},
+				{
+					Name:   "or where column model1",
+					Height: convert.Pointer(100),
+					Weight: convert.Pointer(110),
+				},
+			})
+
+			s.Run("simple condition", func() {
+				var products []Product
+				err := query.DB().Table("products").Where("name", "or where column model1").OrWhereColumn("height", "weight").Get(&products)
+				s.NoError(err)
+				s.Equal(2, len(products))
+				s.Equal("or where column model", products[0].Name)
+				s.Equal("or where column model1", products[1].Name)
+			})
+
+			s.Run("with operator", func() {
+				var products []Product
+				err := query.DB().Table("products").Where("name", "or where column model").OrWhereColumn("height", "<", "weight").Get(&products)
+				s.NoError(err)
+				s.Equal(2, len(products))
+				s.Equal("or where column model", products[0].Name)
+				s.Equal("or where column model1", products[1].Name)
+			})
+
+			s.Run("with multiple columns", func() {
+				var product Product
+				err := query.DB().Table("products").OrWhereColumn("name", ">", "age", "name").First(&product)
+				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"), err)
+			})
+
+			s.Run("with not enough arguments", func() {
+				var product Product
+				err := query.DB().Table("products").OrWhereColumn("name").First(&product)
+				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(2, "1 or 2"), err)
+			})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOrWhereNot() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

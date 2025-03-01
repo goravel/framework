@@ -52,6 +52,7 @@ type Query interface {
 	// OrderByRaw(query string, args ...any) Query
 	OrWhere(query any, args ...any) Query
 	OrWhereBetween(column string, args []any) Query
+	OrWhereColumn(column1 string, column2 ...string) Query
 	OrWhereIn(column string, args []any) Query
 	OrWhereLike(column string, value string) Query
 	OrWhereNot(query any, args ...any) Query
@@ -76,14 +77,14 @@ type Query interface {
 	WhereBetween(column string, args []any) Query
 	WhereColumn(column1 string, column2 ...string) Query
 	WhereExists(func() Query) Query
-	WhereLike(column string, value string) Query
 	WhereIn(column string, args []any) Query
-	WhereNull(column string) Query
+	WhereLike(column string, value string) Query
 	WhereNot(query any, args ...any) Query
 	WhereNotBetween(column string, args []any) Query
 	WhereNotIn(column string, args []any) Query
 	WhereNotLike(column string, value string) Query
 	WhereNotNull(column string) Query
+	WhereNull(column string) Query
 	// WhereRaw(query string, args ...any) Query
 }
 
