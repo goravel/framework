@@ -36,8 +36,7 @@ func (s *DefaultCreatorSuite) TestPopulateStub() {
 			table:     "users",
 			expected: `package migrations
 
-type M202410131203CreateUsersTable struct {
-}
+type M202410131203CreateUsersTable struct{}
 
 // Signature The unique signature for the migration.
 func (r *M202410131203CreateUsersTable) Signature() string {
@@ -67,8 +66,7 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-type M202410131203CreateUsersTable struct {
-}
+type M202410131203CreateUsersTable struct{}
 
 // Signature The unique signature for the migration.
 func (r *M202410131203CreateUsersTable) Signature() string {
@@ -104,8 +102,7 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-type M202410131203CreateUsersTable struct {
-}
+type M202410131203CreateUsersTable struct{}
 
 // Signature The unique signature for the migration.
 func (r *M202410131203CreateUsersTable) Signature() string {
