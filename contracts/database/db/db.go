@@ -51,8 +51,15 @@ type Query interface {
 	// orderByDesc
 	// OrderByRaw(query string, args ...any) Query
 	OrWhere(query any, args ...any) Query
-	// OrWhereLike()
-	// OrWhereNotLike
+	OrWhereBetween(column string, args []any) Query
+	OrWhereIn(column string, args []any) Query
+	OrWhereLike(column string, value string) Query
+	OrWhereNot(query func(q Query)) Query
+	OrWhereNotBetween(column string, args []any) Query
+	OrWhereNotIn(column string, args []any) Query
+	OrWhereNotLike(column string, value string) Query
+	OrWhereNotNull(column string) Query
+	OrWhereNull(column string) Query
 	// Pluck(column string, dest any) error
 	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
@@ -68,18 +75,18 @@ type Query interface {
 	Where(query any, args ...any) Query
 	// WhereAll()
 	// WhereAny()
-	// whereBetween
+	WhereBetween(column string, args []any) Query
 	// whereColumn
 	// whereExists
-	// WhereLike()
-	// WhereIn()
+	WhereLike(column string, value string) Query
+	WhereIn(column string, args []any) Query
+	WhereNull(column string) Query
 	// WhereNone()
-	// WhereNot()
-	// whereNotBetween
-	// whereNotIn
-	// WhereNotLike()
-	// whereNotNull
-	// WhereNull(column string) Query
+	WhereNot(query func(q Query)) Query
+	WhereNotBetween(column string, args []any) Query
+	WhereNotIn(column string, args []any) Query
+	WhereNotLike(column string, value string) Query
+	WhereNotNull(column string) Query
 	// WhereRaw(query string, args ...any) Query
 }
 

@@ -167,6 +167,44 @@ func (r *Query) OrWhere(query any, args ...any) db.Query {
 	return q
 }
 
+func (r *Query) OrWhereBetween(column string, args []any) db.Query {
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) OrWhereIn(column string, args []any) db.Query {
+	return r.OrWhere(column, args)
+}
+
+func (r *Query) OrWhereLike(column string, value string) db.Query {
+	return r.OrWhere(sq.Like{column: value})
+}
+
+func (r *Query) OrWhereNot(query func(q db.Query)) db.Query {
+	return r.OrWhere(func(q db.Query) {
+		query(q.(*Query))
+	})
+}
+
+func (r *Query) OrWhereNotBetween(column string, args []any) db.Query {
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) OrWhereNotIn(column string, args []any) db.Query {
+	return r.OrWhere(sq.NotEq{column: args})
+}
+
+func (r *Query) OrWhereNotLike(column string, value string) db.Query {
+	return r.OrWhere(sq.NotLike{column: value})
+}
+
+func (r *Query) OrWhereNotNull(column string) db.Query {
+	return r.OrWhere(sq.NotEq{column: nil})
+}
+
+func (r *Query) OrWhereNull(column string) db.Query {
+	return r.OrWhere(sq.Eq{column: nil})
+}
+
 func (r *Query) Update(data any) (*db.Result, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
@@ -205,6 +243,57 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	})
 
 	return q
+}
+
+func (r *Query) WhereBetween(column string, args []any) db.Query {
+	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) WhereIn(column string, args []any) db.Query {
+	return r.Where(column, args)
+}
+
+func (r *Query) WhereLike(column string, value string) db.Query {
+	return r.Where(sq.Like{column: value})
+}
+
+func (r *Query) WhereNot(query func(q db.Query)) db.Query {
+	sqlizer, _, err := r.buildWhere(Where{
+		query: query,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	sql, args, err := sqlizer.(sq.Sqlizer).ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(sql, args)
+	fmt.Println(r.driver.Explain(sql, args...))
+
+	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", r.driver.Explain(sql, args...))))
+}
+
+func (r *Query) WhereNotBetween(column string, args []any) db.Query {
+	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) WhereNotIn(column string, args []any) db.Query {
+	return r.Where(sq.NotEq{column: args})
+}
+
+func (r *Query) WhereNotLike(column string, value string) db.Query {
+	return r.Where(sq.NotLike{column: value})
+}
+
+func (r *Query) WhereNotNull(column string) db.Query {
+	return r.Where(sq.NotEq{column: nil})
+}
+
+func (r *Query) WhereNull(column string) db.Query {
+	return r.Where(sq.Eq{column: nil})
 }
 
 func (r *Query) buildDelete() (sql string, args []any, err error) {

@@ -249,6 +249,28 @@ func (s *DBTestSuite) TestWhere() {
 	}
 }
 
+func (s *DBTestSuite) TestWhereNot() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name: "where not model1",
+				},
+				{
+					Name: "where not model2",
+				},
+			})
+
+			var product Product
+			err := query.DB().Table("products").WhereNot(func(query db.Query) {
+				query.Where("name", "where not model1")
+			}).First(&product)
+			s.NoError(err)
+			s.Equal("where not model2", product.Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestOrWhere() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
