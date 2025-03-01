@@ -22,6 +22,7 @@ type Query struct {
 	builder    db.Builder
 	conditions Conditions
 	ctx        context.Context
+	err        error
 	driver     driver.Driver
 	logger     logger.Logger
 	single     bool
@@ -47,6 +48,10 @@ func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builde
 }
 
 func (r *Query) Delete() (*db.Result, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+
 	sql, args, err := r.buildDelete()
 	if err != nil {
 		return nil, err
@@ -72,6 +77,10 @@ func (r *Query) Delete() (*db.Result, error) {
 }
 
 func (r *Query) First(dest any) error {
+	if r.err != nil {
+		return r.err
+	}
+
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -95,6 +104,10 @@ func (r *Query) First(dest any) error {
 }
 
 func (r *Query) Get(dest any) error {
+	if r.err != nil {
+		return r.err
+	}
+
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -122,6 +135,10 @@ func (r *Query) Get(dest any) error {
 }
 
 func (r *Query) Insert(data any) (*db.Result, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
 		return nil, err
@@ -179,17 +196,26 @@ func (r *Query) OrWhereLike(column string, value string) db.Query {
 	return r.OrWhere(sq.Like{column: value})
 }
 
-func (r *Query) OrWhereNot(query func(q db.Query)) db.Query {
-	sqlizer, _, err := r.buildWhere(Where{
+func (r *Query) OrWhereNot(query any, args ...any) db.Query {
+	query, args, err := r.buildWhere(Where{
 		query: query,
+		args:  args,
 	})
 	if err != nil {
-		panic(err)
+		r.err = err
+		return r
 	}
 
-	sql, args, err := sqlizer.(sq.Sqlizer).ToSql()
+	sqlizer, err := r.toSqlizer(query, args)
 	if err != nil {
-		panic(err)
+		r.err = err
+		return r
+	}
+
+	sql, args, err := sqlizer.ToSql()
+	if err != nil {
+		r.err = err
+		return r
 	}
 
 	return r.OrWhere(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
@@ -259,6 +285,32 @@ func (r *Query) WhereBetween(column string, args []any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
 }
 
+func (r *Query) WhereColumn(column1 string, column2 ...string) db.Query {
+	if len(column2) == 0 || len(column2) > 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(column2), "1 or 2")
+		return r
+	}
+
+	if len(column2) == 1 {
+		return r.Where(sq.Expr(fmt.Sprintf("%s = %s", column1, column2[0])))
+	}
+
+	return r.Where(sq.Expr(fmt.Sprintf("%s %s %s", column1, column2[0], column2[1])))
+}
+
+func (r *Query) WhereExists(query func() db.Query) db.Query {
+	subQuery := query()
+	sql, args, err := subQuery.(*Query).buildSelect()
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	sql = r.driver.Explain(sql, args...)
+
+	return r.Where(sq.Expr(fmt.Sprintf("EXISTS (%s)", sql)))
+}
+
 func (r *Query) WhereIn(column string, args []any) db.Query {
 	return r.Where(column, args)
 }
@@ -267,23 +319,37 @@ func (r *Query) WhereLike(column string, value string) db.Query {
 	return r.Where(sq.Like{column: value})
 }
 
-func (r *Query) WhereNot(query func(q db.Query)) db.Query {
-	sqlizer, _, err := r.buildWhere(Where{
+func (r *Query) WhereNot(query any, args ...any) db.Query {
+	query, args, err := r.buildWhere(Where{
 		query: query,
+		args:  args,
 	})
 	if err != nil {
-		panic(err)
+		r.err = err
+		return r
 	}
 
-	sql, args, err := sqlizer.(sq.Sqlizer).ToSql()
+	sqlizer, err := r.toSqlizer(query, args)
 	if err != nil {
-		panic(err)
+		r.err = err
+		return r
+	}
+
+	sql, args, err := sqlizer.ToSql()
+	if err != nil {
+		r.err = err
+		return r
 	}
 
 	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
 }
 
 func (r *Query) WhereNotBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
 	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
 }
 
@@ -470,6 +536,7 @@ func (r *Query) clone() *Query {
 
 	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
 	query.conditions = r.conditions
+	query.err = r.err
 
 	return query
 }

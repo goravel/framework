@@ -77,6 +77,8 @@ func (r *testTables) products() ([]string, error) {
 	blueprint.Create()
 	blueprint.BigIncrements("id")
 	blueprint.String("name")
+	blueprint.Integer("weight").Nullable()
+	blueprint.Integer("height").Nullable()
 	blueprint.Timestamps()
 	blueprint.SoftDeletes()
 

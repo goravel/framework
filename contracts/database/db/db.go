@@ -54,7 +54,7 @@ type Query interface {
 	OrWhereBetween(column string, args []any) Query
 	OrWhereIn(column string, args []any) Query
 	OrWhereLike(column string, value string) Query
-	OrWhereNot(query func(q Query)) Query
+	OrWhereNot(query any, args ...any) Query
 	OrWhereNotBetween(column string, args []any) Query
 	OrWhereNotIn(column string, args []any) Query
 	OrWhereNotLike(column string, value string) Query
@@ -73,16 +73,13 @@ type Query interface {
 	// Value(column string, dest any) error
 	// when
 	Where(query any, args ...any) Query
-	// WhereAll()
-	// WhereAny()
 	WhereBetween(column string, args []any) Query
-	// whereColumn
-	// whereExists
+	WhereColumn(column1 string, column2 ...string) Query
+	WhereExists(func() Query) Query
 	WhereLike(column string, value string) Query
 	WhereIn(column string, args []any) Query
 	WhereNull(column string) Query
-	// WhereNone()
-	WhereNot(query func(q Query)) Query
+	WhereNot(query any, args ...any) Query
 	WhereNotBetween(column string, args []any) Query
 	WhereNotIn(column string, args []any) Query
 	WhereNotLike(column string, value string) Query

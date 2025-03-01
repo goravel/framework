@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/goravel/framework/contracts/database/db"
+	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -137,6 +139,79 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 	}
 }
 
+func (s *DBTestSuite) TestOrWhere() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name: "or where model",
+				},
+				{
+					Name: "or where model1",
+				},
+			})
+
+			s.Run("simple where condition", func() {
+				var products []Product
+				err := query.DB().Table("products").Where("name", "or where model").OrWhere("name", "or where model1").Get(&products)
+				s.NoError(err)
+				s.Equal(2, len(products))
+				s.Equal("or where model", products[0].Name)
+				s.Equal("or where model1", products[1].Name)
+			})
+
+			s.Run("nested condition", func() {
+				var products []Product
+				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) {
+					query.Where("name", "or where model1")
+				}).Get(&products)
+				s.NoError(err)
+				s.Equal(2, len(products))
+				s.Equal("or where model", products[0].Name)
+				s.Equal("or where model1", products[1].Name)
+			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestOrWhereNot() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name: "or where not model1",
+				},
+				{
+					Name: "or where not model2",
+				},
+			})
+
+			s.Run("simple condition", func() {
+				var product Product
+				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot("name", "or where not model2").First(&product)
+				s.NoError(err)
+				s.Equal("or where not model1", product.Name)
+			})
+
+			s.Run("raw query", func() {
+				var product Product
+				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot("name = ?", "or where not model2").First(&product)
+				s.NoError(err)
+				s.Equal("or where not model1", product.Name)
+			})
+
+			s.Run("nested condition", func() {
+				var product Product
+				err := query.DB().Table("products").Where("name", "or where not model1").OrWhereNot(func(query db.Query) {
+					query.Where("name", "or where not model2")
+				}).First(&product)
+				s.NoError(err)
+				s.Equal("or where not model1", product.Name)
+			})
+		})
+	}
+}
+
 func (s *DBTestSuite) TestUpdate_Delete() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -215,14 +290,14 @@ func (s *DBTestSuite) TestWhere() {
 				},
 			})
 
-			s.Run("simple where condition", func() {
+			s.Run("simple condition", func() {
 				var product Product
 				err := query.DB().Table("products").Where("name", "where model").First(&product)
 				s.NoError(err)
 				s.Equal("where model", product.Name)
 			})
 
-			s.Run("where with multiple arguments", func() {
+			s.Run("multiple arguments", func() {
 				var products []Product
 				err := query.DB().Table("products").Where("name", []string{"where model", "where model1"}).Get(&products)
 				s.NoError(err)
@@ -230,20 +305,106 @@ func (s *DBTestSuite) TestWhere() {
 				s.Equal("where model", products[0].Name)
 			})
 
-			s.Run("where with raw query", func() {
+			s.Run("raw query", func() {
 				var product Product
 				err := query.DB().Table("products").Where("name = ?", "where model").First(&product)
 				s.NoError(err)
 				s.Equal("where model", product.Name)
 			})
 
-			s.Run("where with nested condition", func() {
+			s.Run("nested condition", func() {
 				var product Product
 				err := query.DB().Table("products").Where(func(query db.Query) {
 					query.Where("name", "where model")
 				}).First(&product)
 				s.NoError(err)
 				s.Equal("where model", product.Name)
+			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestWhereColumn() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{
+					Name:   "where column model",
+					Weight: convert.Pointer(100),
+					Height: convert.Pointer(100),
+				},
+				{
+					Name:   "where column model1",
+					Weight: convert.Pointer(100),
+					Height: convert.Pointer(110),
+				},
+			})
+
+			s.Run("simple condition", func() {
+				var products []Product
+				err := query.DB().Table("products").WhereColumn("height", "weight").Get(&products)
+				s.NoError(err)
+				s.Equal(1, len(products))
+				s.Equal("where column model", products[0].Name)
+			})
+
+			s.Run("with operator", func() {
+				var products []Product
+				err := query.DB().Table("products").WhereColumn("height", ">", "weight").Get(&products)
+				s.NoError(err)
+				s.Equal(1, len(products))
+				s.Equal("where column model1", products[0].Name)
+			})
+
+			s.Run("with multiple columns", func() {
+				var product Product
+				err := query.DB().Table("products").WhereColumn("name", ">", "age", "name").First(&product)
+				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"), err)
+			})
+
+			s.Run("with not enough arguments", func() {
+				var product Product
+				err := query.DB().Table("products").WhereColumn("name").First(&product)
+				s.Equal(errors.DatabaseInvalidArgumentNumber.Args(2, "1 or 2"), err)
+			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestWhereExists() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			result, err := query.DB().Table("products").Insert([]Product{
+				{
+					Name:   "where exists model1",
+					Height: convert.Pointer(100),
+					Weight: convert.Pointer(100),
+				},
+				{
+					Name:   "where exists model2",
+					Height: convert.Pointer(100),
+					Weight: convert.Pointer(110),
+				},
+			})
+			s.NoError(err)
+			s.Equal(int64(2), result.RowsAffected)
+
+			s.Run("simple condition", func() {
+				var product Product
+				err = query.DB().Table("products").WhereExists(func() db.Query {
+					return query.DB().Table("products").Where("name", "where exists model1")
+				}).First(&product)
+				s.NoError(err)
+				s.Equal("where exists model1", product.Name)
+			})
+
+			s.Run("with WhereColumn", func() {
+				var product Product
+				err = query.DB().Table("products").WhereExists(func() db.Query {
+					return query.DB().Table("products").WhereColumn("height", "weight")
+				}).First(&product)
+				s.NoError(err)
+				s.Equal("where exists model1", product.Name)
 			})
 		})
 	}
@@ -261,46 +422,27 @@ func (s *DBTestSuite) TestWhereNot() {
 				},
 			})
 
-			var product Product
-			err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) {
-				query.Where("name", "where not model2")
-			}).First(&product)
-			s.NoError(err)
-			s.Equal("where not model1", product.Name)
-		})
-	}
-}
-
-func (s *DBTestSuite) TestOrWhere() {
-	for driver, query := range s.queries {
-		s.Run(driver, func() {
-			query.DB().Table("products").Insert([]Product{
-				{
-					Name: "or where model",
-				},
-				{
-					Name: "or where model1",
-				},
+			s.Run("simple condition", func() {
+				var product Product
+				err := query.DB().Table("products").Where("name", "where not model1").WhereNot("name", "where not model2").First(&product)
+				s.NoError(err)
+				s.Equal("where not model1", product.Name)
 			})
 
-			s.Run("simple where condition", func() {
-				var products []Product
-				err := query.DB().Table("products").Where("name", "or where model").OrWhere("name", "or where model1").Get(&products)
+			s.Run("raw query", func() {
+				var product Product
+				err := query.DB().Table("products").Where("name", "where not model1").WhereNot("name = ?", "where not model2").First(&product)
 				s.NoError(err)
-				s.Equal(2, len(products))
-				s.Equal("or where model", products[0].Name)
-				s.Equal("or where model1", products[1].Name)
+				s.Equal("where not model1", product.Name)
 			})
 
 			s.Run("nested condition", func() {
-				var products []Product
-				err := query.DB().Table("products").Where("name", "or where model").OrWhere(func(query db.Query) {
-					query.Where("name", "or where model1")
-				}).Get(&products)
+				var product Product
+				err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) {
+					query.Where("name", "where not model2")
+				}).First(&product)
 				s.NoError(err)
-				s.Equal(2, len(products))
-				s.Equal("or where model", products[0].Name)
-				s.Equal("or where model1", products[1].Name)
+				s.Equal("where not model1", product.Name)
 			})
 		})
 	}
