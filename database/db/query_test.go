@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/errors"
 	mocksdb "github.com/goravel/framework/mocks/database/db"
 	mocksdriver "github.com/goravel/framework/mocks/database/driver"
@@ -371,23 +372,11 @@ func (s *QueryTestSuite) TestWhere() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return(nil).Once()
-		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 25)").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (name = \"John\" AND age = 25)", int64(1), nil).Return().Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND age = ? AND age IN (?,?))", "John", 25, 25, 30).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ? AND age IN (?,?))", "John", 25, 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 25 AND age IN (25,30))").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (name = \"John\" AND age = 25 AND age IN (25,30))", int64(1), nil).Return().Once()
 
-		err := s.query.Where("name", "John").Where("age", 25).First(&user)
-		s.Nil(err)
-	})
-
-	s.Run("multiple arguments", func() {
-		var users []TestUser
-
-		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IN (?,?)", 25, 30).Return(nil).Once()
-		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IN (?,?)", 25, 30).Return("SELECT * FROM users WHERE age IN (25,30)").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IN (25,30)", int64(0), nil).Return().Once()
-
-		err := s.query.Where("age", []int{25, 30}).Get(&users)
+		err := s.query.Where("name", "John").Where("age", 25).Where("age", []int{25, 30}).First(&user)
 		s.Nil(err)
 	})
 
@@ -403,19 +392,19 @@ func (s *QueryTestSuite) TestWhere() {
 		s.Nil(err)
 	})
 
-	// s.Run("nested condition", func() {
-	// 	var users []TestUser
+	s.Run("nested condition", func() {
+		var users []TestUser
 
-	// 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	// 	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age IN (?,?) AND name = ?", 25, 30, "John").Return(nil).Once()
-	// 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age IN (?,?) AND name = ?", 25, 30, "John").Return("SELECT * FROM users WHERE age IN (25,30) AND name = \"John\"").Once()
-	// 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IN (25,30) AND name = \"John\"", int64(0), nil).Return().Once()
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND (age IN (?,?) AND name = ?))", "John", 25, 30, "Tom").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND (age IN (?,?) AND name = ?))", "John", 25, 30, "Tom").Return("SELECT * FROM users WHERE (name = \"John\" AND (age IN (25,30) AND name = \"Tom\"))").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND (age IN (25,30) AND name = \"Tom\"))", int64(0), nil).Return().Once()
 
-	// 	err := s.query.Where(func(query db.Query) {
-	// 		query.Where("age", []int{25, 30}).Where("name", "John")
-	// 	}).Get(&users)
-	// 	s.Nil(err)
-	// })
+		err := s.query.Where("name", "John").Where(func(query db.Query) {
+			query.Where("age", []int{25, 30}).Where("name", "Tom")
+		}).Get(&users)
+		s.Nil(err)
+	})
 }
 
 func (s *QueryTestSuite) TestOrWhere() {
@@ -426,11 +415,37 @@ func (s *QueryTestSuite) TestOrWhere() {
 		var user TestUser
 
 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (((name = ? AND age = ?) OR age = ?) OR name = ?)", "John", 25, 30, "Jane").Return(nil).Once()
-		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (((name = ? AND age = ?) OR age = ?) OR name = ?)", "John", 25, 30, "Jane").Return("SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age = 30) OR name = \"Jane\")").Once()
-		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age = 30) OR name = \"Jane\")", int64(1), nil).Return().Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (((name = ? AND age = ?) OR age IN (?,?)) OR name = ?)", "John", 25, 30, 40, "Jane").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (((name = ? AND age = ?) OR age IN (?,?)) OR name = ?)", "John", 25, 30, 40, "Jane").Return("SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age IN (30,40)) OR name = \"Jane\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, now, "SELECT * FROM users WHERE (((name = \"John\" AND age = 25) OR age IN (30,40)) OR name = \"Jane\")", int64(1), nil).Return().Once()
 
-		err := s.query.Where("name", "John").Where("age", 25).OrWhere("age", 30).OrWhere("name", "Jane").First(&user)
+		err := s.query.Where("name", "John").Where("age", 25).OrWhere("age", []int{30, 40}).OrWhere("name", "Jane").First(&user)
+		s.Nil(err)
+	})
+
+	s.Run("raw query", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age > ?)", "John", 18).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age > ?)", "John", 18).Return("SELECT * FROM users WHERE (name = \"John\" OR age > 18)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age > 18)", int64(0), nil).Return().Once()
+
+		err := s.query.Where("name", "John").OrWhere("age > ?", 18).Get(&users)
+		s.Nil(err)
+	})
+
+	s.Run("nested condition", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR ((age IN (?,?) AND name = ?) OR age = ?))", "John", 25, 30, "Tom", 40).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR ((age IN (?,?) AND name = ?) OR age = ?))", "John", 25, 30, "Tom", 40).Return("SELECT * FROM users WHERE (name = \"John\" OR ((age IN (25,30) AND name = \"Tom\") OR age = 40))").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR ((age IN (25,30) AND name = \"Tom\") OR age = 40))", int64(0), nil).Return().Once()
+
+		err := s.query.Where("name", "John").OrWhere(func(query db.Query) {
+			query.Where("age", []int{25, 30}).Where("name", "Tom").OrWhere("age", 40)
+		}).Get(&users)
 		s.Nil(err)
 	})
 }
