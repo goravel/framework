@@ -180,9 +180,19 @@ func (r *Query) OrWhereLike(column string, value string) db.Query {
 }
 
 func (r *Query) OrWhereNot(query func(q db.Query)) db.Query {
-	return r.OrWhere(func(q db.Query) {
-		query(q.(*Query))
+	sqlizer, _, err := r.buildWhere(Where{
+		query: query,
 	})
+	if err != nil {
+		panic(err)
+	}
+
+	sql, args, err := sqlizer.(sq.Sqlizer).ToSql()
+	if err != nil {
+		panic(err)
+	}
+
+	return r.OrWhere(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
 }
 
 func (r *Query) OrWhereNotBetween(column string, args []any) db.Query {
@@ -270,10 +280,7 @@ func (r *Query) WhereNot(query func(q db.Query)) db.Query {
 		panic(err)
 	}
 
-	fmt.Println(sql, args)
-	fmt.Println(r.driver.Explain(sql, args...))
-
-	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", r.driver.Explain(sql, args...))))
+	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
 }
 
 func (r *Query) WhereNotBetween(column string, args []any) db.Query {

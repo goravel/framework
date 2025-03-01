@@ -574,13 +574,12 @@ func (s *QueryTestSuite) TestWhereNot() {
 	var users []TestUser
 
 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockDriver.EXPECT().Explain("(name = ? AND age IN (?,?))", "John", 25, 30).Return("(name = \"John\" AND age IN (25,30))")
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE NOT (?)", "(name = \"John\" AND age IN (25,30))").Return(nil).Once()
-	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE NOT (?)", "(name = \"John\" AND age IN (25,30))").Return("SELECT * FROM users WHERE NOT ((name = \"John\" AND age IN (25,30)))")
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE NOT ((name = \"John\" AND age IN (25,30)))", int64(0), nil).Return().Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND NOT ((name = ? AND age IN (?,?))))", "John", "Jane", 25, 30).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND NOT ((name = ? AND age IN (?,?))))", "John", "Jane", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" AND NOT ((name = \"Jane\" AND age IN (25,30))))")
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND NOT ((name = \"Jane\" AND age IN (25,30))))", int64(0), nil).Return().Once()
 
-	err := s.query.WhereNot(func(query db.Query) {
-		query.Where("name", "John").Where("age", []int{25, 30})
+	err := s.query.Where("name", "John").WhereNot(func(query db.Query) {
+		query.Where("name", "Jane").Where("age", []int{25, 30})
 	}).Get(&users)
 	s.Nil(err)
 }

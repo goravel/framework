@@ -262,11 +262,11 @@ func (s *DBTestSuite) TestWhereNot() {
 			})
 
 			var product Product
-			err := query.DB().Table("products").WhereNot(func(query db.Query) {
-				query.Where("name", "where not model1")
+			err := query.DB().Table("products").Where("name", "where not model1").WhereNot(func(query db.Query) {
+				query.Where("name", "where not model2")
 			}).First(&product)
 			s.NoError(err)
-			s.Equal("where not model2", product.Name)
+			s.Equal("where not model1", product.Name)
 		})
 	}
 }
