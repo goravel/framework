@@ -61,6 +61,7 @@ type Query interface {
 	OrWhereNotLike(column string, value string) Query
 	OrWhereNotNull(column string) Query
 	OrWhereNull(column string) Query
+	OrWhereRaw(raw string, args []any) Query
 	// Pluck(column string, dest any) error
 	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
@@ -85,7 +86,7 @@ type Query interface {
 	WhereNotLike(column string, value string) Query
 	WhereNotNull(column string) Query
 	WhereNull(column string) Query
-	// WhereRaw(query string, args ...any) Query
+	WhereRaw(raw string, args []any) Query
 }
 
 type Result struct {

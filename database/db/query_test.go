@@ -444,6 +444,18 @@ func (s *QueryTestSuite) TestOrWhereNull() {
 	s.Nil(err)
 }
 
+func (s *QueryTestSuite) TestOrWhereRaw() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? OR age = ? or age = ?)", "John", 25, 30).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age = ? or age = ?)", "John", 25, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age = 25 OR age = 30)").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age = 25 OR age = 30)", int64(0), nil).Return().Once()
+
+	err := s.query.Where("name", "John").OrWhereRaw("age = ? or age = ?", []any{25, 30}).Get(&users)
+	s.Nil(err)
+}
+
 func (s *QueryTestSuite) TestUpdate() {
 	s.Run("single struct", func() {
 		user := TestUser{
@@ -750,6 +762,18 @@ func (s *QueryTestSuite) TestWhereNull() {
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age IS NULL", int64(0), nil).Return().Once()
 
 	err := s.query.WhereNull("age").Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestWhereRaw() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? or age = ?", 25, 30).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? or age = ?", 25, 30).Return("SELECT * FROM users WHERE age = 25 or age = 30")
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 or age = 30", int64(0), nil).Return().Once()
+
+	err := s.query.WhereRaw("age = ? or age = ?", []any{25, 30}).Get(&users)
 	s.Nil(err)
 }
 

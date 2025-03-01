@@ -254,6 +254,10 @@ func (r *Query) OrWhereNull(column string) db.Query {
 	return r.OrWhere(sq.Eq{column: nil})
 }
 
+func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
+	return r.OrWhere(sq.Expr(raw, args...))
+}
+
 func (r *Query) Update(data any) (*db.Result, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
@@ -380,6 +384,10 @@ func (r *Query) WhereNotNull(column string) db.Query {
 
 func (r *Query) WhereNull(column string) db.Query {
 	return r.Where(sq.Eq{column: nil})
+}
+
+func (r *Query) WhereRaw(raw string, args []any) db.Query {
+	return r.Where(sq.Expr(raw, args...))
 }
 
 func (r *Query) buildDelete() (sql string, args []any, err error) {
