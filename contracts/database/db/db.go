@@ -51,8 +51,17 @@ type Query interface {
 	// orderByDesc
 	// OrderByRaw(query string, args ...any) Query
 	OrWhere(query any, args ...any) Query
-	// OrWhereLike()
-	// OrWhereNotLike
+	OrWhereBetween(column string, args []any) Query
+	OrWhereColumn(column1 string, column2 ...string) Query
+	OrWhereIn(column string, args []any) Query
+	OrWhereLike(column string, value string) Query
+	OrWhereNot(query any, args ...any) Query
+	OrWhereNotBetween(column string, args []any) Query
+	OrWhereNotIn(column string, args []any) Query
+	OrWhereNotLike(column string, value string) Query
+	OrWhereNotNull(column string) Query
+	OrWhereNull(column string) Query
+	OrWhereRaw(raw string, args []any) Query
 	// Pluck(column string, dest any) error
 	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
@@ -66,21 +75,18 @@ type Query interface {
 	// Value(column string, dest any) error
 	// when
 	Where(query any, args ...any) Query
-	// WhereAll()
-	// WhereAny()
-	// whereBetween
-	// whereColumn
-	// whereExists
-	// WhereLike()
-	// WhereIn()
-	// WhereNone()
-	// WhereNot()
-	// whereNotBetween
-	// whereNotIn
-	// WhereNotLike()
-	// whereNotNull
-	// WhereNull(column string) Query
-	// WhereRaw(query string, args ...any) Query
+	WhereBetween(column string, args []any) Query
+	WhereColumn(column1 string, column2 ...string) Query
+	WhereExists(func() Query) Query
+	WhereIn(column string, args []any) Query
+	WhereLike(column string, value string) Query
+	WhereNot(query any, args ...any) Query
+	WhereNotBetween(column string, args []any) Query
+	WhereNotIn(column string, args []any) Query
+	WhereNotLike(column string, value string) Query
+	WhereNotNull(column string) Query
+	WhereNull(column string) Query
+	WhereRaw(raw string, args []any) Query
 }
 
 type Result struct {

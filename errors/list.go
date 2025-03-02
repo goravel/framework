@@ -51,6 +51,7 @@ var (
 	DatabaseSeederNotFound              = New("not found %s seeder")
 	DatabaseFailToRunSeeder             = New("fail to run seeder: %v")
 	DatabaseUnsupportedType             = New("unsupported type: %s, expected %s")
+	DatabaseInvalidArgumentNumber       = New("invalid argument number: %s, expected %s")
 
 	DockerUnknownContainerType           = New("unknown container type")
 	DockerInsufficientDatabaseContainers = New("the number of database container is not enough, expect: %d, got: %d")

@@ -59,14 +59,17 @@ func NewTestQuery(ctx context.Context, driver contractsdriver.Driver, config con
 func (r *TestQuery) CreateTable(testTables ...TestTable) {
 	driverName := r.driver.Config().Driver
 
-	for table, sql := range newTestTables(driverName, r.Driver().Grammar()).All() {
+	for table, callback := range newTestTables(driverName, r.Driver().Grammar()).All() {
 		if (len(testTables) == 0 && table != TestTableSchema) || slices.Contains(testTables, table) {
-			statements, err := sql()
-			if err == nil {
-				_, err = r.query.Exec(statements[0])
-			}
+			sqls, err := callback()
 			if err != nil {
 				panic(fmt.Sprintf("create table %v failed: %v", table, err))
+			}
+
+			for _, sql := range sqls {
+				if _, err = r.query.Exec(sql); err != nil {
+					panic(fmt.Sprintf("create table %v failed: %v", table, err))
+				}
 			}
 		}
 	}

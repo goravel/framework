@@ -22,6 +22,7 @@ type Query struct {
 	builder    db.Builder
 	conditions Conditions
 	ctx        context.Context
+	err        error
 	driver     driver.Driver
 	logger     logger.Logger
 	single     bool
@@ -47,6 +48,10 @@ func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builde
 }
 
 func (r *Query) Delete() (*db.Result, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+
 	sql, args, err := r.buildDelete()
 	if err != nil {
 		return nil, err
@@ -72,6 +77,10 @@ func (r *Query) Delete() (*db.Result, error) {
 }
 
 func (r *Query) First(dest any) error {
+	if r.err != nil {
+		return r.err
+	}
+
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -95,6 +104,10 @@ func (r *Query) First(dest any) error {
 }
 
 func (r *Query) Get(dest any) error {
+	if r.err != nil {
+		return r.err
+	}
+
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -122,6 +135,10 @@ func (r *Query) Get(dest any) error {
 }
 
 func (r *Query) Insert(data any) (*db.Result, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
 		return nil, err
@@ -167,6 +184,90 @@ func (r *Query) OrWhere(query any, args ...any) db.Query {
 	return q
 }
 
+func (r *Query) OrWhereBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) OrWhereColumn(column1 string, column2 ...string) db.Query {
+	if len(column2) == 0 || len(column2) > 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(column2), "1 or 2")
+		return r
+	}
+
+	if len(column2) == 1 {
+		return r.OrWhere(sq.Expr(fmt.Sprintf("%s = %s", column1, column2[0])))
+	}
+
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s %s %s", column1, column2[0], column2[1])))
+}
+
+func (r *Query) OrWhereIn(column string, args []any) db.Query {
+	return r.OrWhere(column, args)
+}
+
+func (r *Query) OrWhereLike(column string, value string) db.Query {
+	return r.OrWhere(sq.Like{column: value})
+}
+
+func (r *Query) OrWhereNot(query any, args ...any) db.Query {
+	query, args, err := r.buildWhere(Where{
+		query: query,
+		args:  args,
+	})
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	sqlizer, err := r.toSqlizer(query, args)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	sql, args, err := sqlizer.ToSql()
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	return r.OrWhere(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
+}
+
+func (r *Query) OrWhereNotBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) OrWhereNotIn(column string, args []any) db.Query {
+	return r.OrWhere(sq.NotEq{column: args})
+}
+
+func (r *Query) OrWhereNotLike(column string, value string) db.Query {
+	return r.OrWhere(sq.NotLike{column: value})
+}
+
+func (r *Query) OrWhereNotNull(column string) db.Query {
+	return r.OrWhere(sq.NotEq{column: nil})
+}
+
+func (r *Query) OrWhereNull(column string) db.Query {
+	return r.OrWhere(sq.Eq{column: nil})
+}
+
+func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
+	return r.OrWhere(sq.Expr(raw, args...))
+}
+
 func (r *Query) Update(data any) (*db.Result, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
@@ -205,6 +306,103 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	})
 
 	return q
+}
+
+func (r *Query) WhereBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
+	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) WhereColumn(column1 string, column2 ...string) db.Query {
+	if len(column2) == 0 || len(column2) > 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(column2), "1 or 2")
+		return r
+	}
+
+	if len(column2) == 1 {
+		return r.Where(sq.Expr(fmt.Sprintf("%s = %s", column1, column2[0])))
+	}
+
+	return r.Where(sq.Expr(fmt.Sprintf("%s %s %s", column1, column2[0], column2[1])))
+}
+
+func (r *Query) WhereExists(query func() db.Query) db.Query {
+	subQuery := query()
+	sql, args, err := subQuery.(*Query).buildSelect()
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	sql = r.driver.Explain(sql, args...)
+
+	return r.Where(sq.Expr(fmt.Sprintf("EXISTS (%s)", sql)))
+}
+
+func (r *Query) WhereIn(column string, args []any) db.Query {
+	return r.Where(column, args)
+}
+
+func (r *Query) WhereLike(column string, value string) db.Query {
+	return r.Where(sq.Like{column: value})
+}
+
+func (r *Query) WhereNot(query any, args ...any) db.Query {
+	query, args, err := r.buildWhere(Where{
+		query: query,
+		args:  args,
+	})
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	sqlizer, err := r.toSqlizer(query, args)
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	sql, args, err := sqlizer.ToSql()
+	if err != nil {
+		r.err = err
+		return r
+	}
+
+	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
+}
+
+func (r *Query) WhereNotBetween(column string, args []any) db.Query {
+	if len(args) != 2 {
+		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
+		return r
+	}
+
+	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+}
+
+func (r *Query) WhereNotIn(column string, args []any) db.Query {
+	return r.Where(sq.NotEq{column: args})
+}
+
+func (r *Query) WhereNotLike(column string, value string) db.Query {
+	return r.Where(sq.NotLike{column: value})
+}
+
+func (r *Query) WhereNotNull(column string) db.Query {
+	return r.Where(sq.NotEq{column: nil})
+}
+
+func (r *Query) WhereNull(column string) db.Query {
+	return r.Where(sq.Eq{column: nil})
+}
+
+func (r *Query) WhereRaw(raw string, args []any) db.Query {
+	return r.Where(sq.Expr(raw, args...))
 }
 
 func (r *Query) buildDelete() (sql string, args []any, err error) {
@@ -374,6 +572,7 @@ func (r *Query) clone() *Query {
 
 	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
 	query.conditions = r.conditions
+	query.err = r.err
 
 	return query
 }
