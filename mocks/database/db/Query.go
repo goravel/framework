@@ -77,8 +77,6 @@ func (_c *Query_Delete_Call) RunAndReturn(run func() (*db.Result, error)) *Query
 	return _c
 }
 
-<<<<<<< HEAD
-=======
 // Exists provides a mock function with no fields
 func (_m *Query) Exists() (bool, error) {
 	ret := _m.Called()
@@ -134,7 +132,6 @@ func (_c *Query_Exists_Call) RunAndReturn(run func() (bool, error)) *Query_Exist
 	return _c
 }
 
->>>>>>> feed515 (add Select method)
 // Find provides a mock function with given fields: dest, conds
 func (_m *Query) Find(dest interface{}, conds ...interface{}) error {
 	var _ca []interface{}
@@ -1102,6 +1099,67 @@ func (_c *Query_OrderByRaw_Call) Return(_a0 db.Query) *Query_OrderByRaw_Call {
 }
 
 func (_c *Query_OrderByRaw_Call) RunAndReturn(run func(string) db.Query) *Query_OrderByRaw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Select provides a mock function with given fields: columns
+func (_m *Query) Select(columns ...string) db.Query {
+	_va := make([]interface{}, len(columns))
+	for _i := range columns {
+		_va[_i] = columns[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Select")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(...string) db.Query); ok {
+		r0 = rf(columns...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Select_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Select'
+type Query_Select_Call struct {
+	*mock.Call
+}
+
+// Select is a helper method to define mock.On call
+//   - columns ...string
+func (_e *Query_Expecter) Select(columns ...interface{}) *Query_Select_Call {
+	return &Query_Select_Call{Call: _e.mock.On("Select",
+		append([]interface{}{}, columns...)...)}
+}
+
+func (_c *Query_Select_Call) Run(run func(columns ...string)) *Query_Select_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Select_Call) Return(_a0 db.Query) *Query_Select_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Select_Call) RunAndReturn(run func(...string) db.Query) *Query_Select_Call {
 	_c.Call.Return(run)
 	return _c
 }
