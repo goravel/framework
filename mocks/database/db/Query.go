@@ -77,6 +77,64 @@ func (_c *Query_Delete_Call) RunAndReturn(run func() (*db.Result, error)) *Query
 	return _c
 }
 
+<<<<<<< HEAD
+=======
+// Exists provides a mock function with no fields
+func (_m *Query) Exists() (bool, error) {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (bool, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_Exists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Exists'
+type Query_Exists_Call struct {
+	*mock.Call
+}
+
+// Exists is a helper method to define mock.On call
+func (_e *Query_Expecter) Exists() *Query_Exists_Call {
+	return &Query_Exists_Call{Call: _e.mock.On("Exists")}
+}
+
+func (_c *Query_Exists_Call) Run(run func()) *Query_Exists_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_Exists_Call) Return(_a0 bool, _a1 error) *Query_Exists_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_Exists_Call) RunAndReturn(run func() (bool, error)) *Query_Exists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+>>>>>>> feed515 (add Select method)
 // Find provides a mock function with given fields: dest, conds
 func (_m *Query) Find(dest interface{}, conds ...interface{}) error {
 	var _ca []interface{}

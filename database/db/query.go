@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -74,6 +75,33 @@ func (r *Query) Delete() (*db.Result, error) {
 	return &db.Result{
 		RowsAffected: rowsAffected,
 	}, nil
+}
+
+func (r *Query) Exists() (bool, error) {
+	// sql, args, err := r.buildSelect()
+	// if err != nil {
+	// 	return false, err
+	// }
+
+	// rows, err := r.builder.Query(sql, args...)
+	// if err != nil {
+	// 	r.trace(sql, args, -1, err)
+	// 	return false, err
+	// }
+
+	// rows.
+
+	// rowsAffected, err := result.RowsAffected()
+	// fmt.Printf("result: %v, err: %v", rowsAffected, err)
+	// if err != nil {
+	// 	r.trace(sql, args, -1, err)
+	// 	return false, err
+	// }
+
+	// r.trace(sql, args, -1, nil)
+
+	// return rowsAffected > 0, nil
+	return true, nil
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
@@ -313,6 +341,13 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(raw, args...))
 }
 
+func (r *Query) Select(columns ...string) db.Query {
+	q := r.clone()
+	q.conditions.selects = append(q.conditions.selects, columns...)
+
+	return q
+}
+
 func (r *Query) Update(data any) (*db.Result, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
@@ -502,7 +537,12 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Select("*")
+	selects := "*"
+	if len(r.conditions.selects) > 0 {
+		selects = strings.Join(r.conditions.selects, ", ")
+	}
+
+	builder := sq.Select(selects)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
@@ -514,10 +554,7 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.Where(sqlizer)
-
-	if len(r.conditions.orderBy) > 0 {
-		builder = builder.OrderBy(r.conditions.orderBy...)
-	}
+	builder = builder.OrderBy(r.conditions.orderBy...)
 
 	return builder.ToSql()
 }

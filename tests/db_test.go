@@ -46,6 +46,22 @@ func (s *DBTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *DBTestSuite) TestExists() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert(Product{Name: "exists_product"})
+			exists, err := query.DB().Table("products").Where("name", "exists_product").Exists()
+			s.NoError(err)
+			s.True(exists)
+
+			query.DB().Table("products").Where("name", "exists_product").Delete()
+			exists, err = query.DB().Table("products").Where("name", "exists_product").Exists()
+			s.NoError(err)
+			s.False(exists)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestInsert_First_Get() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

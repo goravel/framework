@@ -24,7 +24,7 @@ type Query interface {
 	// dump
 	// dumpRawSql
 	// Each(callback func(rows []any) error) error
-	// Exists() (bool, error)
+	Exists() (bool, error)
 	Find(dest any, conds ...any) error
 	First(dest any) error
 	// firstOrFail
@@ -65,8 +65,7 @@ type Query interface {
 	// Pluck(column string, dest any) error
 	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
-	// Select(dest any, columns ...string) error
-	// SelectRaw(query string, args ...any) (any, error)
+	Select(columns ...string) Query
 	// sharedLock
 	// skip
 	// take
@@ -96,5 +95,6 @@ type Result struct {
 type Builder interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Get(dest any, query string, args ...any) error
+	// Query(query string, args ...any) (*sql.Rows, error)
 	Select(dest any, query string, args ...any) error
 }
