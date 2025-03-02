@@ -616,22 +616,32 @@ func (_c *Query_Exec_Call) RunAndReturn(run func(string, ...interface{}) (*orm.R
 	return _c
 }
 
-// Exists provides a mock function with given fields: exists
-func (_m *Query) Exists(exists *bool) error {
-	ret := _m.Called(exists)
+// Exists provides a mock function with no fields
+func (_m *Query) Exists() (bool, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Exists")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*bool) error); ok {
-		r0 = rf(exists)
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (bool, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Query_Exists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Exists'
@@ -640,24 +650,23 @@ type Query_Exists_Call struct {
 }
 
 // Exists is a helper method to define mock.On call
-//   - exists *bool
-func (_e *Query_Expecter) Exists(exists interface{}) *Query_Exists_Call {
-	return &Query_Exists_Call{Call: _e.mock.On("Exists", exists)}
+func (_e *Query_Expecter) Exists() *Query_Exists_Call {
+	return &Query_Exists_Call{Call: _e.mock.On("Exists")}
 }
 
-func (_c *Query_Exists_Call) Run(run func(exists *bool)) *Query_Exists_Call {
+func (_c *Query_Exists_Call) Run(run func()) *Query_Exists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*bool))
+		run()
 	})
 	return _c
 }
 
-func (_c *Query_Exists_Call) Return(_a0 error) *Query_Exists_Call {
-	_c.Call.Return(_a0)
+func (_c *Query_Exists_Call) Return(_a0 bool, _a1 error) *Query_Exists_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Exists_Call) RunAndReturn(run func(*bool) error) *Query_Exists_Call {
+func (_c *Query_Exists_Call) RunAndReturn(run func() (bool, error)) *Query_Exists_Call {
 	_c.Call.Return(run)
 	return _c
 }

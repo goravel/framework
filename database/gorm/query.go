@@ -219,10 +219,16 @@ func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
 	}, result.Error
 }
 
-func (r *Query) Exists(exists *bool) error {
+func (r *Query) Exists() (bool, error) {
 	query := r.buildConditions()
 
-	return query.instance.Select("1").Limit(1).Find(exists).Error
+	var exists bool
+	err := query.instance.Select("1").Limit(1).Find(&exists).Error
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
 
 func (r *Query) Find(dest any, conds ...any) error {

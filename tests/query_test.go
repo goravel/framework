@@ -1717,13 +1717,13 @@ func (s *QueryTestSuite) TestExists() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			var t bool
-			s.Nil(query.Query().Model(&User{}).Where("name = ?", "exists_user").Exists(&t))
-			s.True(t)
+			exists, err := query.Query().Model(&User{}).Where("name = ?", "exists_user").Exists()
+			s.Nil(err)
+			s.True(exists)
 
-			var f bool
-			s.Nil(query.Query().Model(&User{}).Where("name = ?", "no_exists_user").Exists(&f))
-			s.False(f)
+			exists, err = query.Query().Model(&User{}).Where("name = ?", "no_exists_user").Exists()
+			s.Nil(err)
+			s.False(exists)
 		})
 	}
 }
