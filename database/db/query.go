@@ -173,6 +173,27 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) OrderBy(column string) db.Query {
+	q := r.clone()
+	q.conditions.orderBy = append(q.conditions.orderBy, column+" ASC")
+
+	return q
+}
+
+func (r *Query) OrderByDesc(column string) db.Query {
+	q := r.clone()
+	q.conditions.orderBy = append(q.conditions.orderBy, column+" DESC")
+
+	return q
+}
+
+func (r *Query) OrderByRaw(raw string) db.Query {
+	q := r.clone()
+	q.conditions.orderBy = append(q.conditions.orderBy, raw)
+
+	return q
+}
+
 func (r *Query) OrWhere(query any, args ...any) db.Query {
 	q := r.clone()
 	q.conditions.where = append(q.conditions.where, Where{
@@ -468,7 +489,13 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		return "", nil, err
 	}
 
-	return builder.Where(sqlizer).ToSql()
+	builder = builder.Where(sqlizer)
+
+	if len(r.conditions.orderBy) > 0 {
+		builder = builder.OrderBy(r.conditions.orderBy...)
+	}
+
+	return builder.ToSql()
 }
 
 func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err error) {

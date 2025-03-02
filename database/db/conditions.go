@@ -1,8 +1,9 @@
 package db
 
 type Conditions struct {
-	table string
-	where []Where
+	table   string
+	where   []Where
+	orderBy []string
 }
 
 type Where struct {

@@ -281,6 +281,42 @@ func (s *QueryTestSuite) TestInsert() {
 	})
 }
 
+func (s *QueryTestSuite) TestOrderBy() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY age ASC, id ASC", 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY age ASC, id ASC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id ASC").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id ASC", int64(0), nil).Return().Once()
+
+	err := s.query.Where("age", 25).OrderBy("age").OrderBy("id").Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestOrderByDesc() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY age ASC, id DESC", 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY age ASC, id DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id DESC").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY age ASC, id DESC", int64(0), nil).Return().Once()
+
+	err := s.query.Where("age", 25).OrderBy("age").OrderByDesc("id").Get(&users)
+	s.Nil(err)
+}
+
+func (s *QueryTestSuite) TestOrderByRaw() {
+	var users []TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? ORDER BY name ASC, age DESC, id ASC", 25).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY name ASC, age DESC, id ASC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY name ASC, age DESC, id ASC").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY name ASC, age DESC, id ASC", int64(0), nil).Return().Once()
+
+	err := s.query.Where("age", 25).OrderBy("name").OrderByRaw("age DESC, id ASC").Get(&users)
+	s.Nil(err)
+}
+
 func (s *QueryTestSuite) TestOrWhere() {
 	now := carbon.Now()
 	carbon.SetTestNow(now)
