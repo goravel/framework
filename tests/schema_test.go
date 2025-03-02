@@ -2341,8 +2341,7 @@ func (s *SchemaSuite) TestSql() {
 			}))
 			s.NoError(schema.Sql("insert into goravel_sql (name) values ('goravel');"))
 
-			var count int64
-			err := testQuery.Query().Table("sql").Where("name", "goravel").Count(&count)
+			count, err := testQuery.Query().Table("sql").Where("name", "goravel").Count()
 
 			s.NoError(err)
 			s.Equal(int64(1), count)

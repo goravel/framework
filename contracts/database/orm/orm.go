@@ -44,7 +44,7 @@ type Query interface {
 	// Commit commits the changes in a transaction.
 	Commit() error
 	// Count retrieve the "count" result of the query.
-	Count(count *int64) error
+	Count() (int64, error)
 	// Create inserts new record into the database.
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.

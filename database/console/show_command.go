@@ -135,8 +135,8 @@ func (r *ShowCommand) display(ctx console.Context, info databaseInfo) {
 		ctx.TwoColumnDetail("<fg=green;op=bold>Views</>", "<fg=yellow;op=bold>Rows</>")
 		for i := range info.Views {
 			if !str.Of(info.Views[i].Name).StartsWith("pg_catalog", "information_schema", "spt_") {
-				var rows int64
-				if err := r.schema.Orm().Query().Table(info.Views[i].Name).Count(&rows); err != nil {
+				rows, err := r.schema.Orm().Query().Table(info.Views[i].Name).Count()
+				if err != nil {
 					ctx.Error(err.Error())
 					return
 				}

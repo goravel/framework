@@ -140,8 +140,7 @@ func TestShowCommand(t *testing.T) {
 				mockOrm.EXPECT().Query().Return(mockQuery).Once()
 				mockQuery.EXPECT().Table("test").Return(mockQuery).Once()
 
-				var rows int64
-				mockQuery.EXPECT().Count(&rows).Return(nil).Once()
+				mockQuery.EXPECT().Count().Return(int64(1), nil).Once()
 				mockContext.EXPECT().NewLine().Times(4)
 				for i := range successCaseExpected {
 					mockContext.EXPECT().TwoColumnDetail(successCaseExpected[i][0], successCaseExpected[i][1]).Once()

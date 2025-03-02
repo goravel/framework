@@ -105,10 +105,17 @@ func (r *Query) Commit() error {
 	return r.instance.Commit().Error
 }
 
-func (r *Query) Count(count *int64) error {
+func (r *Query) Count() (int64, error) {
 	query := r.buildConditions()
 
-	return query.instance.Count(count).Error
+	var count int64
+
+	err := query.instance.Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (r *Query) Create(value any) error {
@@ -618,13 +625,17 @@ func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
 	offset := (page - 1) * limit
 	if total != nil {
 		if query.conditions.table == nil && query.conditions.model == nil {
-			if err := query.Model(dest).Count(total); err != nil {
+			count, err := query.Model(dest).Count()
+			if err != nil {
 				return err
 			}
+			*total = count
 		} else {
-			if err := query.Count(total); err != nil {
+			count, err := query.Count()
+			if err != nil {
 				return err
 			}
+			*total = count
 		}
 	}
 
