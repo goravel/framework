@@ -847,6 +847,150 @@ func (_c *Query_OrWhereRaw_Call) RunAndReturn(run func(string, []interface{}) db
 	return _c
 }
 
+// OrderBy provides a mock function with given fields: column
+func (_m *Query) OrderBy(column string) db.Query {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrderBy")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string) db.Query); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_OrderBy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrderBy'
+type Query_OrderBy_Call struct {
+	*mock.Call
+}
+
+// OrderBy is a helper method to define mock.On call
+//   - column string
+func (_e *Query_Expecter) OrderBy(column interface{}) *Query_OrderBy_Call {
+	return &Query_OrderBy_Call{Call: _e.mock.On("OrderBy", column)}
+}
+
+func (_c *Query_OrderBy_Call) Run(run func(column string)) *Query_OrderBy_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_OrderBy_Call) Return(_a0 db.Query) *Query_OrderBy_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_OrderBy_Call) RunAndReturn(run func(string) db.Query) *Query_OrderBy_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrderByDesc provides a mock function with given fields: column
+func (_m *Query) OrderByDesc(column string) db.Query {
+	ret := _m.Called(column)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrderByDesc")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string) db.Query); ok {
+		r0 = rf(column)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_OrderByDesc_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrderByDesc'
+type Query_OrderByDesc_Call struct {
+	*mock.Call
+}
+
+// OrderByDesc is a helper method to define mock.On call
+//   - column string
+func (_e *Query_Expecter) OrderByDesc(column interface{}) *Query_OrderByDesc_Call {
+	return &Query_OrderByDesc_Call{Call: _e.mock.On("OrderByDesc", column)}
+}
+
+func (_c *Query_OrderByDesc_Call) Run(run func(column string)) *Query_OrderByDesc_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_OrderByDesc_Call) Return(_a0 db.Query) *Query_OrderByDesc_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_OrderByDesc_Call) RunAndReturn(run func(string) db.Query) *Query_OrderByDesc_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrderByRaw provides a mock function with given fields: raw
+func (_m *Query) OrderByRaw(raw string) db.Query {
+	ret := _m.Called(raw)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrderByRaw")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func(string) db.Query); ok {
+		r0 = rf(raw)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_OrderByRaw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrderByRaw'
+type Query_OrderByRaw_Call struct {
+	*mock.Call
+}
+
+// OrderByRaw is a helper method to define mock.On call
+//   - raw string
+func (_e *Query_Expecter) OrderByRaw(raw interface{}) *Query_OrderByRaw_Call {
+	return &Query_OrderByRaw_Call{Call: _e.mock.On("OrderByRaw", raw)}
+}
+
+func (_c *Query_OrderByRaw_Call) Run(run func(raw string)) *Query_OrderByRaw_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_OrderByRaw_Call) Return(_a0 db.Query) *Query_OrderByRaw_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_OrderByRaw_Call) RunAndReturn(run func(string) db.Query) *Query_OrderByRaw_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: data
 func (_m *Query) Update(data interface{}) (*db.Result, error) {
 	ret := _m.Called(data)
