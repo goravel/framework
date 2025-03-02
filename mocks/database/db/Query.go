@@ -444,17 +444,17 @@ func (_c *Query_OrWhere_Call) RunAndReturn(run func(interface{}, ...interface{})
 	return _c
 }
 
-// OrWhereBetween provides a mock function with given fields: column, args
-func (_m *Query) OrWhereBetween(column string, args []interface{}) db.Query {
-	ret := _m.Called(column, args)
+// OrWhereBetween provides a mock function with given fields: column, x, y
+func (_m *Query) OrWhereBetween(column string, x interface{}, y interface{}) db.Query {
+	ret := _m.Called(column, x, y)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrWhereBetween")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func(string, []interface{}) db.Query); ok {
-		r0 = rf(column, args)
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) db.Query); ok {
+		r0 = rf(column, x, y)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -471,14 +471,15 @@ type Query_OrWhereBetween_Call struct {
 
 // OrWhereBetween is a helper method to define mock.On call
 //   - column string
-//   - args []interface{}
-func (_e *Query_Expecter) OrWhereBetween(column interface{}, args interface{}) *Query_OrWhereBetween_Call {
-	return &Query_OrWhereBetween_Call{Call: _e.mock.On("OrWhereBetween", column, args)}
+//   - x interface{}
+//   - y interface{}
+func (_e *Query_Expecter) OrWhereBetween(column interface{}, x interface{}, y interface{}) *Query_OrWhereBetween_Call {
+	return &Query_OrWhereBetween_Call{Call: _e.mock.On("OrWhereBetween", column, x, y)}
 }
 
-func (_c *Query_OrWhereBetween_Call) Run(run func(column string, args []interface{})) *Query_OrWhereBetween_Call {
+func (_c *Query_OrWhereBetween_Call) Run(run func(column string, x interface{}, y interface{})) *Query_OrWhereBetween_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].([]interface{}))
+		run(args[0].(string), args[1].(interface{}), args[2].(interface{}))
 	})
 	return _c
 }
@@ -488,7 +489,7 @@ func (_c *Query_OrWhereBetween_Call) Return(_a0 db.Query) *Query_OrWhereBetween_
 	return _c
 }
 
-func (_c *Query_OrWhereBetween_Call) RunAndReturn(run func(string, []interface{}) db.Query) *Query_OrWhereBetween_Call {
+func (_c *Query_OrWhereBetween_Call) RunAndReturn(run func(string, interface{}, interface{}) db.Query) *Query_OrWhereBetween_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -713,17 +714,17 @@ func (_c *Query_OrWhereNot_Call) RunAndReturn(run func(interface{}, ...interface
 	return _c
 }
 
-// OrWhereNotBetween provides a mock function with given fields: column, args
-func (_m *Query) OrWhereNotBetween(column string, args []interface{}) db.Query {
-	ret := _m.Called(column, args)
+// OrWhereNotBetween provides a mock function with given fields: column, x, y
+func (_m *Query) OrWhereNotBetween(column string, x interface{}, y interface{}) db.Query {
+	ret := _m.Called(column, x, y)
 
 	if len(ret) == 0 {
 		panic("no return value specified for OrWhereNotBetween")
 	}
 
 	var r0 db.Query
-	if rf, ok := ret.Get(0).(func(string, []interface{}) db.Query); ok {
-		r0 = rf(column, args)
+	if rf, ok := ret.Get(0).(func(string, interface{}, interface{}) db.Query); ok {
+		r0 = rf(column, x, y)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(db.Query)
@@ -740,14 +741,15 @@ type Query_OrWhereNotBetween_Call struct {
 
 // OrWhereNotBetween is a helper method to define mock.On call
 //   - column string
-//   - args []interface{}
-func (_e *Query_Expecter) OrWhereNotBetween(column interface{}, args interface{}) *Query_OrWhereNotBetween_Call {
-	return &Query_OrWhereNotBetween_Call{Call: _e.mock.On("OrWhereNotBetween", column, args)}
+//   - x interface{}
+//   - y interface{}
+func (_e *Query_Expecter) OrWhereNotBetween(column interface{}, x interface{}, y interface{}) *Query_OrWhereNotBetween_Call {
+	return &Query_OrWhereNotBetween_Call{Call: _e.mock.On("OrWhereNotBetween", column, x, y)}
 }
 
-func (_c *Query_OrWhereNotBetween_Call) Run(run func(column string, args []interface{})) *Query_OrWhereNotBetween_Call {
+func (_c *Query_OrWhereNotBetween_Call) Run(run func(column string, x interface{}, y interface{})) *Query_OrWhereNotBetween_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].([]interface{}))
+		run(args[0].(string), args[1].(interface{}), args[2].(interface{}))
 	})
 	return _c
 }
@@ -757,7 +759,7 @@ func (_c *Query_OrWhereNotBetween_Call) Return(_a0 db.Query) *Query_OrWhereNotBe
 	return _c
 }
 
-func (_c *Query_OrWhereNotBetween_Call) RunAndReturn(run func(string, []interface{}) db.Query) *Query_OrWhereNotBetween_Call {
+func (_c *Query_OrWhereNotBetween_Call) RunAndReturn(run func(string, interface{}, interface{}) db.Query) *Query_OrWhereNotBetween_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1210,9 +1212,12 @@ func (_c *Query_Select_Call) RunAndReturn(run func(...string) db.Query) *Query_S
 	return _c
 }
 
-// Update provides a mock function with given fields: data
-func (_m *Query) Update(data interface{}) (*db.Result, error) {
-	ret := _m.Called(data)
+// Update provides a mock function with given fields: column, value
+func (_m *Query) Update(column interface{}, value ...interface{}) (*db.Result, error) {
+	var _ca []interface{}
+	_ca = append(_ca, column)
+	_ca = append(_ca, value...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
@@ -1220,19 +1225,19 @@ func (_m *Query) Update(data interface{}) (*db.Result, error) {
 
 	var r0 *db.Result
 	var r1 error
-	if rf, ok := ret.Get(0).(func(interface{}) (*db.Result, error)); ok {
-		return rf(data)
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) (*db.Result, error)); ok {
+		return rf(column, value...)
 	}
-	if rf, ok := ret.Get(0).(func(interface{}) *db.Result); ok {
-		r0 = rf(data)
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) *db.Result); ok {
+		r0 = rf(column, value...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*db.Result)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
-		r1 = rf(data)
+	if rf, ok := ret.Get(1).(func(interface{}, ...interface{}) error); ok {
+		r1 = rf(column, value...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1246,14 +1251,22 @@ type Query_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-//   - data interface{}
-func (_e *Query_Expecter) Update(data interface{}) *Query_Update_Call {
-	return &Query_Update_Call{Call: _e.mock.On("Update", data)}
+//   - column interface{}
+//   - value ...interface{}
+func (_e *Query_Expecter) Update(column interface{}, value ...interface{}) *Query_Update_Call {
+	return &Query_Update_Call{Call: _e.mock.On("Update",
+		append([]interface{}{column}, value...)...)}
 }
 
-func (_c *Query_Update_Call) Run(run func(data interface{})) *Query_Update_Call {
+func (_c *Query_Update_Call) Run(run func(column interface{}, value ...interface{})) *Query_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(interface{}))
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
 	})
 	return _c
 }
@@ -1263,7 +1276,7 @@ func (_c *Query_Update_Call) Return(_a0 *db.Result, _a1 error) *Query_Update_Cal
 	return _c
 }
 
-func (_c *Query_Update_Call) RunAndReturn(run func(interface{}) (*db.Result, error)) *Query_Update_Call {
+func (_c *Query_Update_Call) RunAndReturn(run func(interface{}, ...interface{}) (*db.Result, error)) *Query_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }
