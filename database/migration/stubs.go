@@ -6,8 +6,7 @@ type Stubs struct {
 func (receiver Stubs) Empty() string {
 	return `package migrations
 
-type DummyMigration struct {
-}
+type DummyMigration struct{}
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
@@ -34,8 +33,7 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-type DummyMigration struct {
-}
+type DummyMigration struct{}
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
@@ -69,8 +67,7 @@ import (
 	"github.com/goravel/framework/facades"
 )
 
-type DummyMigration struct {
-}
+type DummyMigration struct{}
 
 // Signature The unique signature for the migration.
 func (r *DummyMigration) Signature() string {
