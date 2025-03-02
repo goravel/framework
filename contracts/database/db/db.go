@@ -44,7 +44,7 @@ type Query interface {
 	// Join(table string, on any, args ...any) Query
 	// latest
 	// LeftJoin(table string, on any, args ...any) Query
-	// limit
+	Limit(limit uint64) Query
 	// lockForUpdate
 	// Max(column string) (any, error)
 	// offset
@@ -63,7 +63,7 @@ type Query interface {
 	OrWhereNotNull(column string) Query
 	OrWhereNull(column string) Query
 	OrWhereRaw(raw string, args []any) Query
-	// Pluck(column string, dest any) error
+	Pluck(column string, dest any) error
 	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
 	Select(columns ...string) Query

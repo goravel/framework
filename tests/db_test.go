@@ -280,6 +280,23 @@ func (s *DBTestSuite) TestOrWhereNot() {
 	}
 }
 
+func (s *DBTestSuite) TestPluck() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "pluck_product1"},
+				{Name: "pluck_product2"},
+			})
+
+			var names []string
+			err := query.DB().Table("products").WhereLike("name", "pluck_product%").Pluck("name", &names)
+
+			s.NoError(err)
+			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestUpdate_Delete() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {

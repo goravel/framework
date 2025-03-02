@@ -16,6 +16,7 @@ import (
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -84,6 +85,12 @@ func (r *Query) Exists() (bool, error) {
 	var count int64
 	err = r.builder.Get(&count, sql, args...)
 	if err != nil {
+		if errors.Is(err, databasesql.ErrNoRows) {
+			r.trace(sql, args, 0, nil)
+
+			return false, nil
+		}
+
 		r.trace(sql, args, -1, err)
 
 		return false, err
@@ -217,6 +224,13 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) Limit(limit uint64) db.Query {
+	q := r.clone()
+	q.conditions.limit = &limit
+
+	return q
+}
+
 func (r *Query) OrderBy(column string) db.Query {
 	q := r.clone()
 	q.conditions.orderBy = append(q.conditions.orderBy, column+" ASC")
@@ -323,6 +337,26 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(raw, args...))
 }
 
+func (r *Query) Pluck(column string, dest any) error {
+	r.conditions.selects = []string{column}
+
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	err = r.builder.Select(dest, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, -1, nil)
+
+	return nil
+}
+
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
 	q.conditions.selects = append(q.conditions.selects, columns...)
@@ -371,6 +405,7 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 
 func (r *Query) Value(column string, dest any) error {
 	r.conditions.selects = []string{column}
+	r.conditions.limit = convert.Pointer(uint64(1))
 
 	sql, args, err := r.buildSelect()
 	if err != nil {
@@ -379,6 +414,11 @@ func (r *Query) Value(column string, dest any) error {
 
 	err = r.builder.Get(dest, sql, args...)
 	if err != nil {
+		if errors.Is(err, databasesql.ErrNoRows) {
+			r.trace(sql, args, 0, nil)
+			return nil
+		}
+
 		r.trace(sql, args, -1, err)
 
 		return err
@@ -568,6 +608,10 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 
 	builder = builder.Where(sqlizer)
 	builder = builder.OrderBy(r.conditions.orderBy...)
+
+	if r.conditions.limit != nil {
+		builder = builder.Limit(*r.conditions.limit)
+	}
 
 	return builder.ToSql()
 }

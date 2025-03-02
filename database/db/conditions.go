@@ -5,6 +5,7 @@ type Conditions struct {
 	where   []Where
 	orderBy []string
 	selects []string
+	limit   *uint64
 }
 
 type Where struct {
