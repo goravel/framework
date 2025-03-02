@@ -25,7 +25,7 @@ type Query interface {
 	// dumpRawSql
 	// Each(callback func(rows []any) error) error
 	// Exists() (bool, error)
-	// Find(dest any, conds ...any) error
+	Find(dest any, conds ...any) error
 	First(dest any) error
 	// firstOrFail
 	// decrement

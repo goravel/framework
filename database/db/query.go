@@ -76,6 +76,30 @@ func (r *Query) Delete() (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) Find(dest any, conds ...any) error {
+	if r.err != nil {
+		return r.err
+	}
+
+	var q db.Query
+	if len(conds) > 2 {
+		return errors.DatabaseInvalidArgumentNumber.Args(len(conds), "1 or 2")
+	} else if len(conds) == 1 {
+		q = r.Where("id", conds...)
+	} else if len(conds) == 2 {
+		q = r.Where(conds[0], conds[1])
+	} else {
+		q = r.clone()
+	}
+
+	destValue := reflect.Indirect(reflect.ValueOf(dest))
+	if destValue.Kind() == reflect.Slice {
+		return q.Get(dest)
+	}
+
+	return q.First(dest)
+}
+
 func (r *Query) First(dest any) error {
 	if r.err != nil {
 		return r.err

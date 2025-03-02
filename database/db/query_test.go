@@ -92,6 +92,57 @@ func (s *QueryTestSuite) TestDelete() {
 	})
 }
 
+func (s *QueryTestSuite) TestFind() {
+	s.Run("single ID", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND id = ?)", "John", 1).Return("SELECT * FROM users WHERE (name = \"John\" AND id = 1)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND id = 1)", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Find(&user, 1)
+
+		s.NoError(err)
+	})
+
+	s.Run("multiple ID", func() {
+		var users []TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE (name = ? AND id IN (?,?))", "John", 1, 2).Run(func(dest any, query string, args ...any) {
+			destUsers := dest.(*[]TestUser)
+			*destUsers = []TestUser{{ID: 1, Name: "John", Age: 25}, {ID: 2, Name: "Jane", Age: 30}}
+		}).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND id IN (?,?))", "John", 1, 2).Return("SELECT * FROM users WHERE (name = \"John\" AND id IN (1,2))").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND id IN (1,2))", int64(2), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Find(&users, []int{1, 2})
+
+		s.NoError(err)
+	})
+
+	s.Run("primary key is not id", func() {
+		var users TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&users, "SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND uuid = ?)", "John", "123").Return("SELECT * FROM users WHERE (name = \"John\" AND uuid = \"123\")").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND uuid = \"123\")", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").Find(&users, "uuid", "123")
+
+		s.NoError(err)
+	})
+
+	s.Run("invalid argument number", func() {
+		var users []TestUser
+
+		err := s.query.Where("name", "John").Find(&users, 1, 2, 3)
+		s.Equal(errors.DatabaseInvalidArgumentNumber.Args(3, "1 or 2"), err)
+	})
+}
+
 func (s *QueryTestSuite) TestFirst() {
 	s.Run("success", func() {
 		var user TestUser
