@@ -77,6 +77,63 @@ func (_c *Query_Delete_Call) RunAndReturn(run func() (*db.Result, error)) *Query
 	return _c
 }
 
+// Find provides a mock function with given fields: dest, conds
+func (_m *Query) Find(dest interface{}, conds ...interface{}) error {
+	var _ca []interface{}
+	_ca = append(_ca, dest)
+	_ca = append(_ca, conds...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Find")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, ...interface{}) error); ok {
+		r0 = rf(dest, conds...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Find_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Find'
+type Query_Find_Call struct {
+	*mock.Call
+}
+
+// Find is a helper method to define mock.On call
+//   - dest interface{}
+//   - conds ...interface{}
+func (_e *Query_Expecter) Find(dest interface{}, conds ...interface{}) *Query_Find_Call {
+	return &Query_Find_Call{Call: _e.mock.On("Find",
+		append([]interface{}{dest}, conds...)...)}
+}
+
+func (_c *Query_Find_Call) Run(run func(dest interface{}, conds ...interface{})) *Query_Find_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Find_Call) Return(_a0 error) *Query_Find_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Find_Call) RunAndReturn(run func(interface{}, ...interface{}) error) *Query_Find_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // First provides a mock function with given fields: dest
 func (_m *Query) First(dest interface{}) error {
 	ret := _m.Called(dest)
