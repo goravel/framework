@@ -388,13 +388,8 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	return q
 }
 
-func (r *Query) WhereBetween(column string, args []any) db.Query {
-	if len(args) != 2 {
-		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
-		return r
-	}
-
-	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+func (r *Query) WhereBetween(column string, x, y any) db.Query {
+	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y))
 }
 
 func (r *Query) WhereColumn(column1 string, column2 ...string) db.Query {
@@ -456,13 +451,8 @@ func (r *Query) WhereNot(query any, args ...any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
 }
 
-func (r *Query) WhereNotBetween(column string, args []any) db.Query {
-	if len(args) != 2 {
-		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
-		return r
-	}
-
-	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+func (r *Query) WhereNotBetween(column string, x, y any) db.Query {
+	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y))
 }
 
 func (r *Query) WhereNotIn(column string, args []any) db.Query {

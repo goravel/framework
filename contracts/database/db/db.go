@@ -69,18 +69,20 @@ type Query interface {
 	// sharedLock
 	// skip
 	// take
+	// ToSql
+	// ToRawSql
 	Update(data any) (*Result, error)
 	// updateOrInsert
 	// Value(column string, dest any) error
 	// when
 	Where(query any, args ...any) Query
-	WhereBetween(column string, args []any) Query
+	WhereBetween(column string, x, y any) Query
 	WhereColumn(column1 string, column2 ...string) Query
 	WhereExists(func() Query) Query
 	WhereIn(column string, args []any) Query
 	WhereLike(column string, value string) Query
 	WhereNot(query any, args ...any) Query
-	WhereNotBetween(column string, args []any) Query
+	WhereNotBetween(column string, x, y any) Query
 	WhereNotIn(column string, args []any) Query
 	WhereNotLike(column string, value string) Query
 	WhereNotNull(column string) Query

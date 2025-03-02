@@ -743,7 +743,7 @@ func (s *QueryTestSuite) TestWhereBetween() {
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age BETWEEN ? AND ?", 18, 30).Return("SELECT * FROM users WHERE age BETWEEN 18 AND 30").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age BETWEEN 18 AND 30", int64(0), nil).Return().Once()
 
-	err := s.query.WhereBetween("age", []any{18, 30}).Get(&users)
+	err := s.query.WhereBetween("age", 18, 30).Get(&users)
 	s.Nil(err)
 }
 
@@ -869,7 +869,7 @@ func (s *QueryTestSuite) TestWhereNotBetween() {
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age NOT BETWEEN ? AND ?", 18, 30).Return("SELECT * FROM users WHERE age NOT BETWEEN 18 AND 30")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age NOT BETWEEN 18 AND 30", int64(0), nil).Return().Once()
 
-	err := s.query.WhereNotBetween("age", []any{18, 30}).Get(&users)
+	err := s.query.WhereNotBetween("age", 18, 30).Get(&users)
 	s.Nil(err)
 }
 
