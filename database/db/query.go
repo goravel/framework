@@ -78,30 +78,28 @@ func (r *Query) Delete() (*db.Result, error) {
 }
 
 func (r *Query) Exists() (bool, error) {
-	// sql, args, err := r.buildSelect()
-	// if err != nil {
-	// 	return false, err
-	// }
+	if r.err != nil {
+		return false, r.err
+	}
 
-	// rows, err := r.builder.Query(sql, args...)
-	// if err != nil {
-	// 	r.trace(sql, args, -1, err)
-	// 	return false, err
-	// }
+	r.conditions.selects = []string{"COUNT(*)"}
 
-	// rows.
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return false, err
+	}
 
-	// rowsAffected, err := result.RowsAffected()
-	// fmt.Printf("result: %v, err: %v", rowsAffected, err)
-	// if err != nil {
-	// 	r.trace(sql, args, -1, err)
-	// 	return false, err
-	// }
+	var count int64
+	err = r.builder.Get(&count, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
 
-	// r.trace(sql, args, -1, nil)
+		return false, err
+	}
 
-	// return rowsAffected > 0, nil
-	return true, nil
+	r.trace(sql, args, -1, nil)
+
+	return count > 0, nil
 }
 
 func (r *Query) Find(dest any, conds ...any) error {

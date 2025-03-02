@@ -92,13 +92,21 @@ func (s *QueryTestSuite) TestDelete() {
 	})
 }
 
-// func (s *QueryTestSuite) TestExists() {
-// 	s.Run("success", func() {
-// 		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-// 		s.mockBuilder.EXPECT().Exists().Return(true, nil).Once()
-// 		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT 1 FROM users WHERE (name = ? AND id = ?)", "John", 1).Return().Once()
-// 	})
-// }
+func (s *QueryTestSuite) TestExists() {
+	var count int64
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Get(&count, "SELECT COUNT(*) FROM users WHERE name = ?", "John").Run(func(dest any, query string, args ...any) {
+		destCount := dest.(*int64)
+		*destCount = 1
+	}).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT COUNT(*) FROM users WHERE name = ?", "John").Return("SELECT COUNT(*) FROM users WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT COUNT(*) FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+	exists, err := s.query.Where("name", "John").Exists()
+	s.NoError(err)
+	s.True(exists)
+}
 
 func (s *QueryTestSuite) TestFind() {
 	s.Run("single ID", func() {
