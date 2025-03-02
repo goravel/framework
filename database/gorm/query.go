@@ -568,6 +568,7 @@ func (r *Query) Omit(columns ...string) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+// DEPRECATED: Use OrderByRaw instead
 func (r *Query) Order(value any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.order = append(r.conditions.order, value)
@@ -582,11 +583,18 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	} else {
 		orderDirection = "ASC"
 	}
-	return r.Order(fmt.Sprintf("%s %s", column, orderDirection))
+	return r.OrderByRaw(fmt.Sprintf("%s %s", column, orderDirection))
 }
 
 func (r *Query) OrderByDesc(column string) contractsorm.Query {
-	return r.Order(fmt.Sprintf("%s DESC", column))
+	return r.OrderByRaw(fmt.Sprintf("%s DESC", column))
+}
+
+func (r *Query) OrderByRaw(raw string) contractsorm.Query {
+	conditions := r.conditions
+	conditions.order = append(r.conditions.order, raw)
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) Instance() *gormio.DB {
@@ -594,7 +602,7 @@ func (r *Query) Instance() *gormio.DB {
 }
 
 func (r *Query) InRandomOrder() contractsorm.Query {
-	return r.Order(r.gormQuery.RandomOrder())
+	return r.OrderByRaw(r.gormQuery.RandomOrder())
 }
 
 func (r *Query) InTransaction() bool {

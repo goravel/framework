@@ -2154,7 +2154,7 @@ func (s *QueryTestSuite) TestOrder() {
 			s.True(user1.ID > 0)
 
 			var user2 []User
-			s.Nil(query.Query().Where("name = ?", "order_user").Order("id desc").Order("name asc").Get(&user2))
+			s.Nil(query.Query().Where("name = ?", "order_user").OrderByRaw("id desc, name asc").Get(&user2))
 			s.True(len(user2) > 0)
 			s.True(user2[0].ID > 0)
 		})

@@ -107,11 +107,14 @@ type Query interface {
 	// Omit specifies columns that should be omitted from the query.
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
+	// DEPRECATED Use OrderByRaw instead.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
+	// OrderByRaw specifies the order should be raw.
+	OrderByRaw(raw string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereIn adds an "or where column in" clause to the query.
