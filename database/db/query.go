@@ -14,6 +14,7 @@ import (
 	"github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/driver"
 	"github.com/goravel/framework/contracts/database/logger"
+	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
@@ -26,6 +27,7 @@ type Query struct {
 	ctx        context.Context
 	err        error
 	driver     driver.Driver
+	grammar    schema.Grammar
 	logger     logger.Logger
 	single     bool
 }
@@ -34,11 +36,12 @@ func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, log
 	return &Query{
 		builder: builder,
 		conditions: Conditions{
-			table: table,
+			Table: table,
 		},
-		driver: driver,
-		ctx:    ctx,
-		logger: logger,
+		ctx:     ctx,
+		driver:  driver,
+		grammar: driver.Grammar(),
+		logger:  logger,
 	}
 }
 
@@ -75,7 +78,7 @@ func (r *Query) Delete() (*db.Result, error) {
 }
 
 func (r *Query) Exists() (bool, error) {
-	r.conditions.selects = []string{"COUNT(*)"}
+	r.conditions.Selects = []string{"COUNT(*)"}
 
 	sql, args, err := r.buildSelect()
 	if err != nil {
@@ -226,35 +229,35 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 
 func (r *Query) Limit(limit uint64) db.Query {
 	q := r.clone()
-	q.conditions.limit = &limit
+	q.conditions.Limit = &limit
 
 	return q
 }
 
 func (r *Query) OrderBy(column string) db.Query {
 	q := r.clone()
-	q.conditions.orderBy = append(q.conditions.orderBy, column+" ASC")
+	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" ASC")
 
 	return q
 }
 
 func (r *Query) OrderByDesc(column string) db.Query {
 	q := r.clone()
-	q.conditions.orderBy = append(q.conditions.orderBy, column+" DESC")
+	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" DESC")
 
 	return q
 }
 
 func (r *Query) OrderByRaw(raw string) db.Query {
 	q := r.clone()
-	q.conditions.orderBy = append(q.conditions.orderBy, raw)
+	q.conditions.OrderBy = append(q.conditions.OrderBy, raw)
 
 	return q
 }
 
 func (r *Query) OrWhere(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.where = append(q.conditions.where, Where{
+	q.conditions.Where = append(q.conditions.Where, Where{
 		query: query,
 		args:  args,
 		or:    true,
@@ -338,7 +341,7 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 }
 
 func (r *Query) Pluck(column string, dest any) error {
-	r.conditions.selects = []string{column}
+	r.conditions.Selects = []string{column}
 
 	sql, args, err := r.buildSelect()
 	if err != nil {
@@ -359,7 +362,7 @@ func (r *Query) Pluck(column string, dest any) error {
 
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
-	q.conditions.selects = append(q.conditions.selects, columns...)
+	q.conditions.Selects = append(q.conditions.Selects, columns...)
 
 	return q
 }
@@ -404,8 +407,8 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 }
 
 func (r *Query) Value(column string, dest any) error {
-	r.conditions.selects = []string{column}
-	r.conditions.limit = convert.Pointer(uint64(1))
+	r.conditions.Selects = []string{column}
+	r.conditions.Limit = convert.Pointer(uint64(1))
 
 	sql, args, err := r.buildSelect()
 	if err != nil {
@@ -431,7 +434,7 @@ func (r *Query) Value(column string, dest any) error {
 
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.where = append(q.conditions.where, Where{
+	q.conditions.Where = append(q.conditions.Where, Where{
 		query: query,
 		args:  args,
 	})
@@ -531,16 +534,16 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Delete(r.conditions.table)
+	builder := sq.Delete(r.conditions.Table)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	sqlizer, err := r.buildWheres(r.conditions.where)
+	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
 	}
@@ -553,11 +556,11 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Insert(r.conditions.table)
+	builder := sq.Insert(r.conditions.Table)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
@@ -586,13 +589,13 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
 	selects := "*"
-	if len(r.conditions.selects) > 0 {
-		selects = strings.Join(r.conditions.selects, ", ")
+	if len(r.conditions.Selects) > 0 {
+		selects = strings.Join(r.conditions.Selects, ", ")
 	}
 
 	builder := sq.Select(selects)
@@ -600,17 +603,26 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	builder = builder.From(r.conditions.table)
-	sqlizer, err := r.buildWheres(r.conditions.where)
+	builder = builder.From(r.conditions.Table)
+	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
 	}
 
 	builder = builder.Where(sqlizer)
-	builder = builder.OrderBy(r.conditions.orderBy...)
 
-	if r.conditions.limit != nil {
-		builder = builder.Limit(*r.conditions.limit)
+	if grammar, ok := r.grammar.(db.CompileOrderByGrammar); ok {
+		if r.conditions.Limit != nil && len(r.conditions.OrderBy) == 0 {
+			r.conditions.OrderBy = []string{"(select 0)"}
+		}
+
+		builder = grammar.CompileOrderBy(builder, r.conditions.OrderBy)
+	} else {
+		builder = builder.OrderBy(r.conditions.OrderBy...)
+	}
+
+	if r.conditions.Limit != nil {
+		builder = builder.Limit(*r.conditions.Limit)
 	}
 
 	return builder.ToSql()
@@ -621,16 +633,16 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Update(r.conditions.table)
+	builder := sq.Update(r.conditions.Table)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	sqlizer, err := r.buildWheres(r.conditions.where)
+	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
 	}
@@ -651,11 +663,11 @@ func (r *Query) buildWhere(where Where) (any, []any, error) {
 		return query, where.args, nil
 	case func(db.Query):
 		// Handle nested conditions by creating a new query and applying the callback
-		nestedQuery := NewSingleQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+		nestedQuery := NewSingleQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table)
 		query(nestedQuery)
 
 		// Build the nested conditions
-		sqlizer, err := r.buildWheres(nestedQuery.conditions.where)
+		sqlizer, err := r.buildWheres(nestedQuery.conditions.Where)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -719,7 +731,7 @@ func (r *Query) clone() *Query {
 		return r
 	}
 
-	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table)
 	query.conditions = r.conditions
 	query.err = r.err
 
