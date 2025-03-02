@@ -716,6 +716,22 @@ func (s *QueryTestSuite) TestUpdate() {
 	})
 }
 
+func (s *QueryTestSuite) TestValue() {
+	var name string
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Get(&name, "SELECT name FROM users WHERE name = ?", "John").Run(func(dest any, query string, args ...any) {
+		destName := dest.(*string)
+		*destName = "John"
+	}).Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT name FROM users WHERE name = ?", "John").Return("SELECT name FROM users WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+
+	err := s.query.Where("name", "John").Value("name", &name)
+	s.NoError(err)
+	s.Equal("John", name)
+}
+
 func (s *QueryTestSuite) TestWhere() {
 	s.Run("simple condition", func() {
 		var user TestUser

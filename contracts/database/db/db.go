@@ -74,7 +74,7 @@ type Query interface {
 	// ToRawSql
 	Update(column any, value ...any) (*Result, error)
 	// updateOrInsert
-	// Value(column string, dest any) error
+	Value(column string, dest any) error
 	// when
 	Where(query any, args ...any) Query
 	WhereBetween(column string, x, y any) Query

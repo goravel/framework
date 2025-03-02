@@ -369,6 +369,26 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) Value(column string, dest any) error {
+	r.conditions.selects = []string{column}
+
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	err = r.builder.Get(dest, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, -1, nil)
+
+	return nil
+}
+
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := r.clone()
 	q.conditions.where = append(q.conditions.where, Where{
