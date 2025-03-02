@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 
@@ -48,10 +49,6 @@ func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builde
 }
 
 func (r *Query) Delete() (*db.Result, error) {
-	if r.err != nil {
-		return nil, r.err
-	}
-
 	sql, args, err := r.buildDelete()
 	if err != nil {
 		return nil, err
@@ -76,11 +73,52 @@ func (r *Query) Delete() (*db.Result, error) {
 	}, nil
 }
 
-func (r *Query) First(dest any) error {
+func (r *Query) Exists() (bool, error) {
+	r.conditions.selects = []string{"COUNT(*)"}
+
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return false, err
+	}
+
+	var count int64
+	err = r.builder.Get(&count, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return false, err
+	}
+
+	r.trace(sql, args, -1, nil)
+
+	return count > 0, nil
+}
+
+func (r *Query) Find(dest any, conds ...any) error {
 	if r.err != nil {
 		return r.err
 	}
 
+	var q db.Query
+	if len(conds) > 2 {
+		return errors.DatabaseInvalidArgumentNumber.Args(len(conds), "1 or 2")
+	} else if len(conds) == 1 {
+		q = r.Where("id", conds...)
+	} else if len(conds) == 2 {
+		q = r.Where(conds[0], conds[1])
+	} else {
+		q = r.clone()
+	}
+
+	destValue := reflect.Indirect(reflect.ValueOf(dest))
+	if destValue.Kind() == reflect.Slice {
+		return q.Get(dest)
+	}
+
+	return q.First(dest)
+}
+
+func (r *Query) First(dest any) error {
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -103,11 +141,29 @@ func (r *Query) First(dest any) error {
 	return nil
 }
 
-func (r *Query) Get(dest any) error {
+func (r *Query) FirstOrFail(dest any) error {
 	if r.err != nil {
 		return r.err
 	}
 
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	err = r.builder.Get(dest, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, 1, nil)
+
+	return nil
+}
+
+func (r *Query) Get(dest any) error {
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -135,10 +191,6 @@ func (r *Query) Get(dest any) error {
 }
 
 func (r *Query) Insert(data any) (*db.Result, error) {
-	if r.err != nil {
-		return nil, r.err
-	}
-
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
 		return nil, err
@@ -289,6 +341,13 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(raw, args...))
 }
 
+func (r *Query) Select(columns ...string) db.Query {
+	q := r.clone()
+	q.conditions.selects = append(q.conditions.selects, columns...)
+
+	return q
+}
+
 func (r *Query) Update(data any) (*db.Result, error) {
 	mapData, err := convertToMap(data)
 	if err != nil {
@@ -329,13 +388,8 @@ func (r *Query) Where(query any, args ...any) db.Query {
 	return q
 }
 
-func (r *Query) WhereBetween(column string, args []any) db.Query {
-	if len(args) != 2 {
-		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
-		return r
-	}
-
-	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+func (r *Query) WhereBetween(column string, x, y any) db.Query {
+	return r.Where(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y))
 }
 
 func (r *Query) WhereColumn(column1 string, column2 ...string) db.Query {
@@ -397,13 +451,8 @@ func (r *Query) WhereNot(query any, args ...any) db.Query {
 	return r.Where(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
 }
 
-func (r *Query) WhereNotBetween(column string, args []any) db.Query {
-	if len(args) != 2 {
-		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
-		return r
-	}
-
-	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+func (r *Query) WhereNotBetween(column string, x, y any) db.Query {
+	return r.Where(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y))
 }
 
 func (r *Query) WhereNotIn(column string, args []any) db.Query {
@@ -427,6 +476,10 @@ func (r *Query) WhereRaw(raw string, args []any) db.Query {
 }
 
 func (r *Query) buildDelete() (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
@@ -445,6 +498,10 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 }
 
 func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
@@ -474,11 +531,20 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 }
 
 func (r *Query) buildSelect() (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Select("*")
+	selects := "*"
+	if len(r.conditions.selects) > 0 {
+		selects = strings.Join(r.conditions.selects, ", ")
+	}
+
+	builder := sq.Select(selects)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
@@ -490,15 +556,16 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.Where(sqlizer)
-
-	if len(r.conditions.orderBy) > 0 {
-		builder = builder.OrderBy(r.conditions.orderBy...)
-	}
+	builder = builder.OrderBy(r.conditions.orderBy...)
 
 	return builder.ToSql()
 }
 
 func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}

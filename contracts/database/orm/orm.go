@@ -161,18 +161,18 @@ type Query interface {
 	UpdateOrCreate(dest any, attributes any, values any) error
 	// Where add a "where" clause to the query.
 	Where(query any, args ...any) Query
-	// WhereIn adds a "where column in" clause to the query.
-	WhereIn(column string, values []any) Query
-	// WhereNotIn adds a "where column not in" clause to the query.
-	WhereNotIn(column string, values []any) Query
 	// WhereBetween adds a "where column between x and y" clause to the query.
 	WhereBetween(column string, x, y any) Query
+	// WhereIn adds a "where column in" clause to the query.
+	WhereIn(column string, values []any) Query
 	// WhereNotBetween adds a "where column not between x and y" clause to the query.
 	WhereNotBetween(column string, x, y any) Query
-	// WhereNull adds a "where column is null" clause to the query.
-	WhereNull(column string) Query
+	// WhereNotIn adds a "where column not in" clause to the query.
+	WhereNotIn(column string, values []any) Query
 	// WhereNotNull adds a "where column is not null" clause to the query.
 	WhereNotNull(column string) Query
+	// WhereNull adds a "where column is null" clause to the query.
+	WhereNull(column string) Query
 	// WithoutEvents disables event firing for the query.
 	WithoutEvents() Query
 	// WithTrashed allows soft deleted models to be included in the results.

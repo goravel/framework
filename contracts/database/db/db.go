@@ -24,10 +24,10 @@ type Query interface {
 	// dump
 	// dumpRawSql
 	// Each(callback func(rows []any) error) error
-	// Exists() (bool, error)
-	// Find(dest any, conds ...any) error
+	Exists() (bool, error)
+	Find(dest any, conds ...any) error
 	First(dest any) error
-	// firstOrFail
+	FirstOrFail(dest any) error
 	// decrement
 	Delete() (*Result, error)
 	Get(dest any) error
@@ -65,23 +65,24 @@ type Query interface {
 	// Pluck(column string, dest any) error
 	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
-	// Select(dest any, columns ...string) error
-	// SelectRaw(query string, args ...any) (any, error)
+	Select(columns ...string) Query
 	// sharedLock
 	// skip
 	// take
+	// ToSql
+	// ToRawSql
 	Update(data any) (*Result, error)
 	// updateOrInsert
 	// Value(column string, dest any) error
 	// when
 	Where(query any, args ...any) Query
-	WhereBetween(column string, args []any) Query
+	WhereBetween(column string, x, y any) Query
 	WhereColumn(column1 string, column2 ...string) Query
 	WhereExists(func() Query) Query
 	WhereIn(column string, args []any) Query
 	WhereLike(column string, value string) Query
 	WhereNot(query any, args ...any) Query
-	WhereNotBetween(column string, args []any) Query
+	WhereNotBetween(column string, x, y any) Query
 	WhereNotIn(column string, args []any) Query
 	WhereNotLike(column string, value string) Query
 	WhereNotNull(column string) Query
@@ -96,5 +97,6 @@ type Result struct {
 type Builder interface {
 	Exec(query string, args ...any) (sql.Result, error)
 	Get(dest any, query string, args ...any) error
+	// Query(query string, args ...any) (*sql.Rows, error)
 	Select(dest any, query string, args ...any) error
 }

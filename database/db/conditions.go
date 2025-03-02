@@ -4,6 +4,7 @@ type Conditions struct {
 	table   string
 	where   []Where
 	orderBy []string
+	selects []string
 }
 
 type Where struct {
