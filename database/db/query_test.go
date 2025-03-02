@@ -200,6 +200,47 @@ func (s *QueryTestSuite) TestFirst() {
 	})
 }
 
+func (s *QueryTestSuite) TestFirstOrFail() {
+	s.Run("success", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").FirstOrFail(&user)
+
+		s.Nil(err)
+	})
+
+	s.Run("failed to get", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(assert.AnError).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(-1), assert.AnError).Return().Once()
+
+		err := s.query.Where("name", "John").FirstOrFail(&user)
+
+		s.Equal(assert.AnError, err)
+	})
+
+	s.Run("no rows", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(databasesql.ErrNoRows).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(-1), databasesql.ErrNoRows).Return().Once()
+
+		err := s.query.Where("name", "John").FirstOrFail(&user)
+
+		s.Equal(databasesql.ErrNoRows, err)
+	})
+}
+
 func (s *QueryTestSuite) TestGet() {
 	s.Run("success", func() {
 		var users []TestUser

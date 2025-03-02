@@ -49,10 +49,6 @@ func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builde
 }
 
 func (r *Query) Delete() (*db.Result, error) {
-	if r.err != nil {
-		return nil, r.err
-	}
-
 	sql, args, err := r.buildDelete()
 	if err != nil {
 		return nil, err
@@ -78,10 +74,6 @@ func (r *Query) Delete() (*db.Result, error) {
 }
 
 func (r *Query) Exists() (bool, error) {
-	if r.err != nil {
-		return false, r.err
-	}
-
 	r.conditions.selects = []string{"COUNT(*)"}
 
 	sql, args, err := r.buildSelect()
@@ -127,10 +119,6 @@ func (r *Query) Find(dest any, conds ...any) error {
 }
 
 func (r *Query) First(dest any) error {
-	if r.err != nil {
-		return r.err
-	}
-
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -153,11 +141,29 @@ func (r *Query) First(dest any) error {
 	return nil
 }
 
-func (r *Query) Get(dest any) error {
+func (r *Query) FirstOrFail(dest any) error {
 	if r.err != nil {
 		return r.err
 	}
 
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	err = r.builder.Get(dest, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, 1, nil)
+
+	return nil
+}
+
+func (r *Query) Get(dest any) error {
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -185,10 +191,6 @@ func (r *Query) Get(dest any) error {
 }
 
 func (r *Query) Insert(data any) (*db.Result, error) {
-	if r.err != nil {
-		return nil, r.err
-	}
-
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
 		return nil, err
@@ -484,6 +486,10 @@ func (r *Query) WhereRaw(raw string, args []any) db.Query {
 }
 
 func (r *Query) buildDelete() (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
@@ -502,6 +508,10 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 }
 
 func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
@@ -531,6 +541,10 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 }
 
 func (r *Query) buildSelect() (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
@@ -558,6 +572,10 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 }
 
 func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err error) {
+	if r.err != nil {
+		return "", nil, r.err
+	}
+
 	if r.conditions.table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}

@@ -235,6 +235,52 @@ func (_c *Query_First_Call) RunAndReturn(run func(interface{}) error) *Query_Fir
 	return _c
 }
 
+// FirstOrFail provides a mock function with given fields: dest
+func (_m *Query) FirstOrFail(dest interface{}) error {
+	ret := _m.Called(dest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FirstOrFail")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(dest)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_FirstOrFail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FirstOrFail'
+type Query_FirstOrFail_Call struct {
+	*mock.Call
+}
+
+// FirstOrFail is a helper method to define mock.On call
+//   - dest interface{}
+func (_e *Query_Expecter) FirstOrFail(dest interface{}) *Query_FirstOrFail_Call {
+	return &Query_FirstOrFail_Call{Call: _e.mock.On("FirstOrFail", dest)}
+}
+
+func (_c *Query_FirstOrFail_Call) Run(run func(dest interface{})) *Query_FirstOrFail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_FirstOrFail_Call) Return(_a0 error) *Query_FirstOrFail_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_FirstOrFail_Call) RunAndReturn(run func(interface{}) error) *Query_FirstOrFail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: dest
 func (_m *Query) Get(dest interface{}) error {
 	ret := _m.Called(dest)

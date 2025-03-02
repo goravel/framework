@@ -27,7 +27,7 @@ type Query interface {
 	Exists() (bool, error)
 	Find(dest any, conds ...any) error
 	First(dest any) error
-	// firstOrFail
+	FirstOrFail(dest any) error
 	// decrement
 	Delete() (*Result, error)
 	Get(dest any) error
