@@ -95,10 +95,6 @@ func (r *Query) Exists() (bool, error) {
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
-	if r.err != nil {
-		return r.err
-	}
-
 	var q db.Query
 	if len(conds) > 2 {
 		return errors.DatabaseInvalidArgumentNumber.Args(len(conds), "1 or 2")
@@ -142,10 +138,6 @@ func (r *Query) First(dest any) error {
 }
 
 func (r *Query) FirstOrFail(dest any) error {
-	if r.err != nil {
-		return r.err
-	}
-
 	sql, args, err := r.buildSelect()
 	if err != nil {
 		return err
@@ -257,13 +249,8 @@ func (r *Query) OrWhere(query any, args ...any) db.Query {
 	return q
 }
 
-func (r *Query) OrWhereBetween(column string, args []any) db.Query {
-	if len(args) != 2 {
-		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
-		return r
-	}
-
-	return r.OrWhere(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), args...))
+func (r *Query) OrWhereBetween(column string, x, y any) db.Query {
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s BETWEEN ? AND ?", column), x, y))
 }
 
 func (r *Query) OrWhereColumn(column1 string, column2 ...string) db.Query {
@@ -312,13 +299,8 @@ func (r *Query) OrWhereNot(query any, args ...any) db.Query {
 	return r.OrWhere(sq.Expr(fmt.Sprintf("NOT (%s)", sql), args...))
 }
 
-func (r *Query) OrWhereNotBetween(column string, args []any) db.Query {
-	if len(args) != 2 {
-		r.err = errors.DatabaseInvalidArgumentNumber.Args(len(args), "2")
-		return r
-	}
-
-	return r.OrWhere(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), args...))
+func (r *Query) OrWhereNotBetween(column string, x, y any) db.Query {
+	return r.OrWhere(sq.Expr(fmt.Sprintf("%s NOT BETWEEN ? AND ?", column), x, y))
 }
 
 func (r *Query) OrWhereNotIn(column string, args []any) db.Query {
@@ -348,8 +330,17 @@ func (r *Query) Select(columns ...string) db.Query {
 	return q
 }
 
-func (r *Query) Update(data any) (*db.Result, error) {
-	mapData, err := convertToMap(data)
+func (r *Query) Update(column any, value ...any) (*db.Result, error) {
+	columnStr, ok := column.(string)
+	if ok {
+		if len(value) != 1 {
+			return nil, errors.DatabaseInvalidArgumentNumber.Args(len(value), "1")
+		}
+
+		return r.Update(map[string]any{columnStr: value[0]})
+	}
+
+	mapData, err := convertToMap(column)
 	if err != nil {
 		return nil, err
 	}

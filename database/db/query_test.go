@@ -476,7 +476,7 @@ func (s *QueryTestSuite) TestOrWhereBetween() {
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age BETWEEN ? AND ?)", "John", 18, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age BETWEEN 18 AND 30)").Once()
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age BETWEEN 18 AND 30)", int64(0), nil).Return().Once()
 
-	err := s.query.Where("name", "John").OrWhereBetween("age", []any{18, 30}).Get(&users)
+	err := s.query.Where("name", "John").OrWhereBetween("age", 18, 30).Get(&users)
 	s.Nil(err)
 }
 
@@ -536,7 +536,7 @@ func (s *QueryTestSuite) TestOrWhereNotBetween() {
 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? OR age NOT BETWEEN ? AND ?)", "John", 18, 30).Return("SELECT * FROM users WHERE (name = \"John\" OR age NOT BETWEEN 18 AND 30)")
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" OR age NOT BETWEEN 18 AND 30)", int64(0), nil).Return().Once()
 
-	err := s.query.Where("name", "John").OrWhereNotBetween("age", []any{18, 30}).Get(&users)
+	err := s.query.Where("name", "John").OrWhereNotBetween("age", 18, 30).Get(&users)
 	s.Nil(err)
 }
 
@@ -655,6 +655,27 @@ func (s *QueryTestSuite) TestUpdate() {
 		s.Equal(int64(1), result.RowsAffected)
 
 		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("single column", func() {
+		mockResult := &MockResult{}
+		mockResult.On("RowsAffected").Return(int64(1), nil)
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Exec("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return(mockResult, nil).Once()
+		s.mockDriver.EXPECT().Explain("UPDATE users SET phone = ? WHERE name = ?", "1234567890", "John").Return("UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET phone = \"1234567890\" WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+		result, err := s.query.Where("name", "John").Update("phone", "1234567890")
+		s.Nil(err)
+		s.Equal(int64(1), result.RowsAffected)
+
+		mockResult.AssertExpectations(s.T())
+	})
+
+	s.Run("failed to update single column with wrong number of arguments", func() {
+		_, err := s.query.Where("name", "John").Update("phone", "1234567890", "1234567890")
+		s.Equal(errors.DatabaseInvalidArgumentNumber.Args(2, "1"), err)
 	})
 
 	s.Run("failed to exec", func() {

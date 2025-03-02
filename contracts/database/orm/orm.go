@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/goravel/framework/contracts/database"
+	"github.com/goravel/framework/contracts/database/db"
 )
 
 type Orm interface {
@@ -52,13 +53,13 @@ type Query interface {
 	// DB gets the underlying database connection.
 	DB() (*sql.DB, error)
 	// Delete deletes records matching given conditions, if the conditions are empty will delete all records.
-	Delete(value ...any) (*Result, error)
+	Delete(value ...any) (*db.Result, error)
 	// Distinct specifies distinct fields to query.
 	Distinct(args ...any) Query
 	// Driver gets the driver for the query.
 	Driver() string
 	// Exec executes raw sql
-	Exec(sql string, values ...any) (*Result, error)
+	Exec(sql string, values ...any) (*db.Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.
 	Exists(exists *bool) error
 	// Find finds records that match given conditions.
@@ -79,7 +80,7 @@ type Query interface {
 	// return a new instance of the model initialized with those attributes.
 	FirstOrNew(dest any, attributes any, values ...any) error
 	// ForceDelete forces delete records matching given conditions.
-	ForceDelete(value ...any) (*Result, error)
+	ForceDelete(value ...any) (*db.Result, error)
 	// Get retrieves all rows from the database.
 	Get(dest any) error
 	// Group specifies the group method on the query.
@@ -114,14 +115,14 @@ type Query interface {
 	OrderByDesc(column string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
-	// OrWhereIn adds an "or where column in" clause to the query.
-	OrWhereIn(column string, values []any) Query
-	// OrWhereNotIn adds an "or where column not in" clause to the query.
-	OrWhereNotIn(column string, values []any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
 	OrWhereBetween(column string, x, y any) Query
+	// OrWhereIn adds an "or where column in" clause to the query.
+	OrWhereIn(column string, values []any) Query
 	// OrWhereNotBetween adds an "or where column not between x and y" clause to the query.
 	OrWhereNotBetween(column string, x, y any) Query
+	// OrWhereNotIn adds an "or where column not in" clause to the query.
+	OrWhereNotIn(column string, values []any) Query
 	// OrWhereNull adds a "or where column is null" clause to the query.
 	OrWhereNull(column string) Query
 	// Paginate the given query into a simple paginator.
@@ -131,7 +132,7 @@ type Query interface {
 	// Raw creates a raw query.
 	Raw(sql string, values ...any) Query
 	// Restore restores a soft deleted model.
-	Restore(model ...any) (*Result, error)
+	Restore(model ...any) (*db.Result, error)
 	// Rollback rolls back the changes in a transaction.
 	Rollback() error
 	// Save updates value in a database
@@ -155,7 +156,7 @@ type Query interface {
 	// ToRawSql returns the query as a raw SQL string.
 	ToRawSql() ToSql
 	// Update updates records with the given column and values
-	Update(column any, value ...any) (*Result, error)
+	Update(column any, value ...any) (*db.Result, error)
 	// UpdateOrCreate finds the first record that matches the given attributes
 	// or create a new one with those attributes if none was found.
 	UpdateOrCreate(dest any, attributes any, values any) error
@@ -212,10 +213,6 @@ type ConnectionModel interface {
 type Cursor interface {
 	// Scan scans the current row into the given destination.
 	Scan(value any) error
-}
-
-type Result struct {
-	RowsAffected int64
 }
 
 type ToSql interface {

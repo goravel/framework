@@ -23,13 +23,14 @@ type Query interface {
 	// Distinct() Query
 	// dump
 	// dumpRawSql
+	Delete() (*Result, error)
 	// Each(callback func(rows []any) error) error
 	Exists() (bool, error)
 	Find(dest any, conds ...any) error
 	First(dest any) error
+	// FirstOr
 	FirstOrFail(dest any) error
 	// decrement
-	Delete() (*Result, error)
 	Get(dest any) error
 	// GroupBy(column string) Query
 	// GroupByRaw(query string, args ...any) Query
@@ -51,12 +52,12 @@ type Query interface {
 	OrderByDesc(column string) Query
 	OrderByRaw(raw string) Query
 	OrWhere(query any, args ...any) Query
-	OrWhereBetween(column string, args []any) Query
+	OrWhereBetween(column string, x, y any) Query
 	OrWhereColumn(column1 string, column2 ...string) Query
 	OrWhereIn(column string, args []any) Query
 	OrWhereLike(column string, value string) Query
 	OrWhereNot(query any, args ...any) Query
-	OrWhereNotBetween(column string, args []any) Query
+	OrWhereNotBetween(column string, x, y any) Query
 	OrWhereNotIn(column string, args []any) Query
 	OrWhereNotLike(column string, value string) Query
 	OrWhereNotNull(column string) Query
@@ -71,7 +72,7 @@ type Query interface {
 	// take
 	// ToSql
 	// ToRawSql
-	Update(data any) (*Result, error)
+	Update(column any, value ...any) (*Result, error)
 	// updateOrInsert
 	// Value(column string, dest any) error
 	// when

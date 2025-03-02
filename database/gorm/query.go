@@ -13,6 +13,7 @@ import (
 
 	"github.com/goravel/framework/contracts/config"
 	contractsdatabase "github.com/goravel/framework/contracts/database"
+	contractsdb "github.com/goravel/framework/contracts/database/db"
 	"github.com/goravel/framework/contracts/database/driver"
 	contractsorm "github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/log"
@@ -165,7 +166,7 @@ func (r *Query) DB() (*sql.DB, error) {
 	return r.instance.DB()
 }
 
-func (r *Query) Delete(dest ...any) (*contractsorm.Result, error) {
+func (r *Query) Delete(dest ...any) (*contractsdb.Result, error) {
 	var (
 		realDest any
 		err      error
@@ -194,7 +195,7 @@ func (r *Query) Delete(dest ...any) (*contractsorm.Result, error) {
 		return nil, err
 	}
 
-	return &contractsorm.Result{
+	return &contractsdb.Result{
 		RowsAffected: res.RowsAffected,
 	}, nil
 }
@@ -210,11 +211,11 @@ func (r *Query) Driver() string {
 	return r.dbConfig.Driver
 }
 
-func (r *Query) Exec(sql string, values ...any) (*contractsorm.Result, error) {
+func (r *Query) Exec(sql string, values ...any) (*contractsdb.Result, error) {
 	query := r.buildConditions()
 	result := query.instance.Exec(sql, values...)
 
-	return &contractsorm.Result{
+	return &contractsdb.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
 }
@@ -379,7 +380,7 @@ func (r *Query) FirstOrNew(dest any, attributes any, values ...any) error {
 	return nil
 }
 
-func (r *Query) ForceDelete(dest ...any) (*contractsorm.Result, error) {
+func (r *Query) ForceDelete(dest ...any) (*contractsdb.Result, error) {
 	var (
 		realDest any
 		err      error
@@ -410,7 +411,7 @@ func (r *Query) ForceDelete(dest ...any) (*contractsorm.Result, error) {
 		}
 	}
 
-	return &contractsorm.Result{
+	return &contractsdb.Result{
 		RowsAffected: res.RowsAffected,
 	}, res.Error
 }
@@ -635,7 +636,7 @@ func (r *Query) Raw(sql string, values ...any) contractsorm.Query {
 	return r.new(r.instance.Raw(sql, values...))
 }
 
-func (r *Query) Restore(model ...any) (*contractsorm.Result, error) {
+func (r *Query) Restore(model ...any) (*contractsdb.Result, error) {
 	var (
 		realModel any
 		err       error
@@ -679,7 +680,7 @@ func (r *Query) Restore(model ...any) (*contractsorm.Result, error) {
 		return nil, err
 	}
 
-	return &contractsorm.Result{
+	return &contractsdb.Result{
 		RowsAffected: res.RowsAffected,
 	}, res.Error
 }
@@ -814,7 +815,7 @@ func (r *Query) ToRawSql() contractsorm.ToSql {
 	return NewToSql(r.setConditions(r.conditions), r.log, true)
 }
 
-func (r *Query) Update(column any, value ...any) (*contractsorm.Result, error) {
+func (r *Query) Update(column any, value ...any) (*contractsdb.Result, error) {
 	query := r.buildConditions()
 
 	if _, ok := column.(string); !ok && len(value) > 0 {
@@ -1514,7 +1515,7 @@ func (r *Query) updated(dest any) error {
 	return r.event(contractsorm.EventUpdated, r.instance.Statement.Model, dest)
 }
 
-func (r *Query) update(values any) (*contractsorm.Result, error) {
+func (r *Query) update(values any) (*contractsdb.Result, error) {
 	if len(r.instance.Statement.Selects) > 0 && len(r.instance.Statement.Omits) > 0 {
 		return nil, errors.OrmQuerySelectAndOmitsConflict
 	}
@@ -1523,7 +1524,7 @@ func (r *Query) update(values any) (*contractsorm.Result, error) {
 		for _, val := range r.instance.Statement.Selects {
 			if val == Associations {
 				result := r.instance.Session(&gormio.Session{FullSaveAssociations: true}).Updates(values)
-				return &contractsorm.Result{
+				return &contractsdb.Result{
 					RowsAffected: result.RowsAffected,
 				}, result.Error
 			}
@@ -1531,7 +1532,7 @@ func (r *Query) update(values any) (*contractsorm.Result, error) {
 
 		result := r.instance.Updates(values)
 
-		return &contractsorm.Result{
+		return &contractsdb.Result{
 			RowsAffected: result.RowsAffected,
 		}, result.Error
 	}
@@ -1541,20 +1542,20 @@ func (r *Query) update(values any) (*contractsorm.Result, error) {
 			if val == Associations {
 				result := r.instance.Omit(Associations).Updates(values)
 
-				return &contractsorm.Result{
+				return &contractsdb.Result{
 					RowsAffected: result.RowsAffected,
 				}, result.Error
 			}
 		}
 		result := r.instance.Updates(values)
 
-		return &contractsorm.Result{
+		return &contractsdb.Result{
 			RowsAffected: result.RowsAffected,
 		}, result.Error
 	}
 	result := r.instance.Omit(Associations).Updates(values)
 
-	return &contractsorm.Result{
+	return &contractsdb.Result{
 		RowsAffected: result.RowsAffected,
 	}, result.Error
 }
