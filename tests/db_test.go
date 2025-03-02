@@ -30,6 +30,9 @@ func TestDBTestSuite(t *testing.T) {
 func (s *DBTestSuite) SetupSuite() {
 	s.now = carbon.NewDateTime(carbon.FromDateTime(2025, 1, 2, 3, 4, 5))
 	s.queries = NewTestQueryBuilder().All("", false)
+}
+
+func (s *DBTestSuite) SetupTest() {
 	for _, query := range s.queries {
 		query.CreateTable(TestTableProducts)
 	}
