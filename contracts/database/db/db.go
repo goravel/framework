@@ -47,9 +47,9 @@ type Query interface {
 	// lockForUpdate
 	// Max(column string) (any, error)
 	// offset
-	// OrderBy(column string) Query
-	// orderByDesc
-	// OrderByRaw(query string, args ...any) Query
+	OrderBy(column string) Query
+	OrderByDesc(column string) Query
+	OrderByRaw(raw string) Query
 	OrWhere(query any, args ...any) Query
 	OrWhereBetween(column string, args []any) Query
 	OrWhereColumn(column1 string, column2 ...string) Query
