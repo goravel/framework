@@ -18,7 +18,7 @@ type Query interface {
 	Count() (int64, error)
 	// Chunk(size int, callback func(rows []any) error) error
 	// CrossJoin(table string, on any, args ...any) Query
-	// DoesntExist() (bool, error)
+	DoesntExist() (bool, error)
 	// Distinct() Query
 	// dump
 	// dumpRawSql

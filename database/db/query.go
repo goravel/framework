@@ -94,29 +94,20 @@ func (r *Query) Delete() (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) DoesntExist() (bool, error) {
+	count, err := r.Count()
+	if err != nil {
+		return false, err
+	}
+
+	return count == 0, nil
+}
+
 func (r *Query) Exists() (bool, error) {
-	r.conditions.Selects = []string{"COUNT(*)"}
-
-	sql, args, err := r.buildSelect()
+	count, err := r.Count()
 	if err != nil {
 		return false, err
 	}
-
-	var count int64
-	err = r.builder.Get(&count, sql, args...)
-	if err != nil {
-		if errors.Is(err, databasesql.ErrNoRows) {
-			r.trace(sql, args, 0, nil)
-
-			return false, nil
-		}
-
-		r.trace(sql, args, -1, err)
-
-		return false, err
-	}
-
-	r.trace(sql, args, -1, nil)
 
 	return count > 0, nil
 }
