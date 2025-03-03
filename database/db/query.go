@@ -16,6 +16,7 @@ import (
 	"github.com/goravel/framework/contracts/database/logger"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
+	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -33,10 +34,10 @@ func NewQuery(ctx context.Context, driver driver.Driver, builder db.Builder, log
 	return &Query{
 		builder: builder,
 		conditions: Conditions{
-			table: table,
+			Table: table,
 		},
-		driver: driver,
 		ctx:    ctx,
+		driver: driver,
 		logger: logger,
 	}
 }
@@ -46,6 +47,50 @@ func NewSingleQuery(ctx context.Context, driver driver.Driver, builder db.Builde
 	query.single = true
 
 	return query
+}
+
+func (r *Query) Count() (int64, error) {
+	r.conditions.Selects = []string{"COUNT(*)"}
+
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return 0, err
+	}
+
+	var count int64
+	err = r.builder.Get(&count, sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+
+		return 0, err
+	}
+
+	r.trace(sql, args, -1, nil)
+
+	return count, nil
+}
+
+// func (r *Query) Chunk(size int, callback func(dest []any) error) error {
+// 	sql, args, err := r.buildSelect()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (r *Query) Decrement(column string, value ...uint64) error {
+	v := uint64(1)
+	if len(value) > 0 {
+		v = value[0]
+	}
+
+	_, err := r.Update(column, sq.Expr(fmt.Sprintf("%s - ?", column), v))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *Query) Delete() (*db.Result, error) {
@@ -73,23 +118,27 @@ func (r *Query) Delete() (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) Distinct() db.Query {
+	q := r.clone()
+	q.conditions.Distinct = convert.Pointer(true)
+
+	return q
+}
+
+func (r *Query) DoesntExist() (bool, error) {
+	count, err := r.Count()
+	if err != nil {
+		return false, err
+	}
+
+	return count == 0, nil
+}
+
 func (r *Query) Exists() (bool, error) {
-	r.conditions.selects = []string{"COUNT(*)"}
-
-	sql, args, err := r.buildSelect()
+	count, err := r.Count()
 	if err != nil {
 		return false, err
 	}
-
-	var count int64
-	err = r.builder.Get(&count, sql, args...)
-	if err != nil {
-		r.trace(sql, args, -1, err)
-
-		return false, err
-	}
-
-	r.trace(sql, args, -1, nil)
 
 	return count > 0, nil
 }
@@ -125,6 +174,30 @@ func (r *Query) First(dest any) error {
 		if errors.Is(err, databasesql.ErrNoRows) {
 			r.trace(sql, args, 0, nil)
 			return nil
+		}
+
+		r.trace(sql, args, -1, err)
+
+		return err
+	}
+
+	r.trace(sql, args, 1, nil)
+
+	return nil
+}
+
+func (r *Query) FirstOr(dest any, callback func() error) error {
+	sql, args, err := r.buildSelect()
+	if err != nil {
+		return err
+	}
+
+	err = r.builder.Get(dest, sql, args...)
+	if err != nil {
+		if errors.Is(err, databasesql.ErrNoRows) {
+			r.trace(sql, args, 0, nil)
+
+			return callback()
 		}
 
 		r.trace(sql, args, -1, err)
@@ -182,6 +255,20 @@ func (r *Query) Get(dest any) error {
 	return nil
 }
 
+func (r *Query) Increment(column string, value ...uint64) error {
+	v := uint64(1)
+	if len(value) > 0 {
+		v = value[0]
+	}
+
+	_, err := r.Update(column, sq.Expr(fmt.Sprintf("%s + ?", column), v))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Query) Insert(data any) (*db.Result, error) {
 	mapData, err := convertToSliceMap(data)
 	if err != nil {
@@ -217,30 +304,77 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
+func (r *Query) InsertGetId(data any) (int64, error) {
+	mapData, err := convertToMap(data)
+	if err != nil {
+		return 0, err
+	}
+	if len(mapData) == 0 {
+		return 0, errors.DatabaseUnsupportedType.Args("nil", "struct, map[string]any").SetModule("DB")
+	}
+
+	sql, args, err := r.buildInsert([]map[string]any{mapData})
+	if err != nil {
+		return 0, err
+	}
+
+	result, err := r.builder.Exec(sql, args...)
+	if err != nil {
+		r.trace(sql, args, -1, err)
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		r.trace(sql, args, -1, err)
+		return 0, err
+	}
+
+	r.trace(sql, args, id, nil)
+
+	return id, nil
+}
+
+// func (r *Query) Limit(limit uint64) db.Query {
+// 	q := r.clone()
+// 	q.conditions.Limit = &limit
+
+// 	return q
+// }
+
+func (r *Query) Latest(dest any, column ...string) error {
+	col := "created_at"
+	if len(column) > 0 {
+		col = column[0]
+	}
+
+	return r.OrderByDesc(col).First(dest)
+}
+
 func (r *Query) OrderBy(column string) db.Query {
 	q := r.clone()
-	q.conditions.orderBy = append(q.conditions.orderBy, column+" ASC")
+	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" ASC")
 
 	return q
 }
 
 func (r *Query) OrderByDesc(column string) db.Query {
 	q := r.clone()
-	q.conditions.orderBy = append(q.conditions.orderBy, column+" DESC")
+	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" DESC")
 
 	return q
 }
 
 func (r *Query) OrderByRaw(raw string) db.Query {
 	q := r.clone()
-	q.conditions.orderBy = append(q.conditions.orderBy, raw)
+	q.conditions.OrderBy = append(q.conditions.OrderBy, raw)
 
 	return q
 }
 
 func (r *Query) OrWhere(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.where = append(q.conditions.where, Where{
+	q.conditions.Where = append(q.conditions.Where, Where{
 		query: query,
 		args:  args,
 		or:    true,
@@ -323,9 +457,15 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 	return r.OrWhere(sq.Expr(raw, args...))
 }
 
+func (r *Query) Pluck(column string, dest any) error {
+	r.conditions.Selects = []string{column}
+
+	return r.Get(dest)
+}
+
 func (r *Query) Select(columns ...string) db.Query {
 	q := r.clone()
-	q.conditions.selects = append(q.conditions.selects, columns...)
+	q.conditions.Selects = append(q.conditions.Selects, columns...)
 
 	return q
 }
@@ -369,9 +509,43 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 	}, nil
 }
 
+// func (r *Query) Value(column string, dest any) error {
+// 	r.conditions.Selects = []string{column}
+// 	r.conditions.Limit = convert.Pointer(uint64(1))
+
+// 	sql, args, err := r.buildSelect()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	err = r.builder.Get(dest, sql, args...)
+// 	if err != nil {
+// 		if errors.Is(err, databasesql.ErrNoRows) {
+// 			r.trace(sql, args, 0, nil)
+// 			return nil
+// 		}
+
+// 		r.trace(sql, args, -1, err)
+
+// 		return err
+// 	}
+
+// 	r.trace(sql, args, -1, nil)
+
+// 	return nil
+// }
+
+func (r *Query) When(condition bool, callback func(query db.Query) db.Query) db.Query {
+	if condition {
+		return callback(r)
+	}
+
+	return r
+}
+
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := r.clone()
-	q.conditions.where = append(q.conditions.where, Where{
+	q.conditions.Where = append(q.conditions.Where, Where{
 		query: query,
 		args:  args,
 	})
@@ -471,16 +645,16 @@ func (r *Query) buildDelete() (sql string, args []any, err error) {
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Delete(r.conditions.table)
+	builder := sq.Delete(r.conditions.Table)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	sqlizer, err := r.buildWheres(r.conditions.where)
+	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
 	}
@@ -493,11 +667,11 @@ func (r *Query) buildInsert(data []map[string]any) (sql string, args []any, err 
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Insert(r.conditions.table)
+	builder := sq.Insert(r.conditions.Table)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
@@ -526,28 +700,37 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
 	selects := "*"
-	if len(r.conditions.selects) > 0 {
-		selects = strings.Join(r.conditions.selects, ", ")
+	if len(r.conditions.Selects) > 0 {
+		selects = strings.Join(r.conditions.Selects, ", ")
 	}
 
 	builder := sq.Select(selects)
+
+	if r.conditions.Distinct != nil && *r.conditions.Distinct {
+		builder = builder.Distinct()
+	}
+
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	builder = builder.From(r.conditions.table)
-	sqlizer, err := r.buildWheres(r.conditions.where)
+	builder = builder.From(r.conditions.Table)
+	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
 	}
 
 	builder = builder.Where(sqlizer)
-	builder = builder.OrderBy(r.conditions.orderBy...)
+	builder = builder.OrderBy(r.conditions.OrderBy...)
+
+	if r.conditions.Limit != nil {
+		builder = builder.Limit(*r.conditions.Limit)
+	}
 
 	return builder.ToSql()
 }
@@ -557,16 +740,16 @@ func (r *Query) buildUpdate(data map[string]any) (sql string, args []any, err er
 		return "", nil, r.err
 	}
 
-	if r.conditions.table == "" {
+	if r.conditions.Table == "" {
 		return "", nil, errors.DatabaseTableIsRequired
 	}
 
-	builder := sq.Update(r.conditions.table)
+	builder := sq.Update(r.conditions.Table)
 	if placeholderFormat := r.placeholderFormat(); placeholderFormat != nil {
 		builder = builder.PlaceholderFormat(placeholderFormat)
 	}
 
-	sqlizer, err := r.buildWheres(r.conditions.where)
+	sqlizer, err := r.buildWheres(r.conditions.Where)
 	if err != nil {
 		return "", nil, err
 	}
@@ -587,11 +770,11 @@ func (r *Query) buildWhere(where Where) (any, []any, error) {
 		return query, where.args, nil
 	case func(db.Query):
 		// Handle nested conditions by creating a new query and applying the callback
-		nestedQuery := NewSingleQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+		nestedQuery := NewSingleQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table)
 		query(nestedQuery)
 
 		// Build the nested conditions
-		sqlizer, err := r.buildWheres(nestedQuery.conditions.where)
+		sqlizer, err := r.buildWheres(nestedQuery.conditions.Where)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -655,7 +838,7 @@ func (r *Query) clone() *Query {
 		return r
 	}
 
-	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.table)
+	query := NewQuery(r.ctx, r.driver, r.builder, r.logger, r.conditions.Table)
 	query.conditions = r.conditions
 	query.err = r.err
 

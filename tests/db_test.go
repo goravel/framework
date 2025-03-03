@@ -9,7 +9,9 @@ import (
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
 	"github.com/goravel/framework/support/convert"
+	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
+	"github.com/goravel/sqlserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,6 +48,65 @@ func (s *DBTestSuite) TearDownSuite() {
 	}
 }
 
+func (s *DBTestSuite) TestCount() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "count_product1"},
+				{Name: "count_product2"},
+			})
+			count, err := query.DB().Table("products").Count()
+			s.NoError(err)
+			s.Equal(int64(2), count)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestDecrement() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert(Product{Name: "decrement_product", Weight: convert.Pointer(100)})
+
+			s.Run("decrement", func() {
+				err := query.DB().Table("products").Where("name", "decrement_product").Decrement("weight", 1)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "decrement_product").First(&product)
+				s.NoError(err)
+				s.Equal(99, *product.Weight)
+			})
+
+			s.Run("decrement with number", func() {
+				err := query.DB().Table("products").Where("name", "decrement_product").Decrement("weight", 5)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "decrement_product").First(&product)
+				s.NoError(err)
+				s.Equal(94, *product.Weight)
+			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestDistinct() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "distinct_product"},
+				{Name: "distinct_product"},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").Distinct().Select("name").Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("distinct_product", products[0].Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -58,6 +119,34 @@ func (s *DBTestSuite) TestExists() {
 			exists, err = query.DB().Table("products").Where("name", "exists_product").Exists()
 			s.NoError(err)
 			s.False(exists)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestIncrement() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert(Product{Name: "increment_product", Weight: convert.Pointer(100)})
+
+			s.Run("increment", func() {
+				err := query.DB().Table("products").Where("name", "increment_product").Increment("weight", 1)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "increment_product").First(&product)
+				s.NoError(err)
+				s.Equal(101, *product.Weight)
+			})
+
+			s.Run("increment with number", func() {
+				err := query.DB().Table("products").Where("name", "increment_product").Increment("weight", 5)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "increment_product").First(&product)
+				s.NoError(err)
+				s.Equal(106, *product.Weight)
+			})
 		})
 	}
 }
@@ -154,6 +243,29 @@ func (s *DBTestSuite) TestInsert_First_Get() {
 				s.Equal("multiple map1", products[0].Name)
 				s.Equal("multiple map2", products[1].Name)
 			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestInsertGetId() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			id, err := query.DB().Table("products").InsertGetId(Product{
+				Name: "insert get id",
+			})
+
+			if driver == sqlserver.Name || driver == postgres.Name {
+				s.Error(err)
+				s.Equal(int64(0), id)
+			} else {
+				s.NoError(err)
+				s.True(id > 0)
+
+				var product Product
+				err = query.DB().Table("products").Where("id", id).First(&product)
+				s.NoError(err)
+				s.Equal("insert get id", product.Name)
+			}
 		})
 	}
 }
@@ -280,6 +392,23 @@ func (s *DBTestSuite) TestOrWhereNot() {
 	}
 }
 
+func (s *DBTestSuite) TestPluck() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "pluck_product1"},
+				{Name: "pluck_product2"},
+			})
+
+			var names []string
+			err := query.DB().Table("products").WhereLike("name", "pluck_product%").Pluck("name", &names)
+
+			s.NoError(err)
+			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestUpdate_Delete() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -344,6 +473,20 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 		})
 	}
 }
+
+// func (s *DBTestSuite) TestValue() {
+// 	for driver, query := range s.queries {
+// 		s.Run(driver, func() {
+// 			query.DB().Table("products").Insert(Product{Name: "value_product"})
+
+// 			var name string
+// 			err := query.DB().Table("products").Where("name", "value_product").Value("name", &name)
+
+// 			s.NoError(err)
+// 			s.Equal("value_product", name)
+// 		})
+// 	}
+// }
 
 func (s *DBTestSuite) TestWhere() {
 	for driver, query := range s.queries {

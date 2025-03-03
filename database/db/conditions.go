@@ -1,10 +1,12 @@
 package db
 
 type Conditions struct {
-	table   string
-	where   []Where
-	orderBy []string
-	selects []string
+	Distinct *bool
+	Limit    *uint64
+	OrderBy  []string
+	Selects  []string
+	Table    string
+	Where    []Where
 }
 
 type Where struct {
