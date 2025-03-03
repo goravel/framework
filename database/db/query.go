@@ -79,6 +79,20 @@ func (r *Query) Count() (int64, error) {
 // 	return nil
 // }
 
+func (r *Query) Decrement(column string, value ...uint64) error {
+	v := uint64(1)
+	if len(value) > 0 {
+		v = value[0]
+	}
+
+	_, err := r.Update(column, sq.Expr(fmt.Sprintf("%s - ?", column), v))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Query) Delete() (*db.Result, error) {
 	sql, args, err := r.buildDelete()
 	if err != nil {
@@ -237,6 +251,20 @@ func (r *Query) Get(dest any) error {
 	}
 
 	r.trace(sql, args, rowsAffected, nil)
+
+	return nil
+}
+
+func (r *Query) Increment(column string, value ...uint64) error {
+	v := uint64(1)
+	if len(value) > 0 {
+		v = value[0]
+	}
+
+	_, err := r.Update(column, sq.Expr(fmt.Sprintf("%s + ?", column), v))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -520,6 +548,14 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 
 // 	return nil
 // }
+
+func (r *Query) When(condition bool, callback func(query db.Query) db.Query) db.Query {
+	if condition {
+		return callback(r)
+	}
+
+	return r
+}
 
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := r.clone()

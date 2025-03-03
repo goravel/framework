@@ -67,6 +67,21 @@ func (s *QueryTestSuite) TestCount() {
 	s.Equal(int64(1), count)
 }
 
+func (s *QueryTestSuite) TestDecrement() {
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(1), nil)
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Exec("UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
+	s.mockDriver.EXPECT().Explain("UPDATE users SET age = age - ? WHERE name = ?", uint64(1), "John").Return("UPDATE users SET age = age - 1 WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = age - 1 WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+	err := s.query.Where("name", "John").Decrement("age")
+	s.NoError(err)
+
+	mockResult.AssertExpectations(s.T())
+}
+
 func (s *QueryTestSuite) TestDelete() {
 	s.Run("success", func() {
 		mockResult := &MockResult{}
@@ -106,6 +121,18 @@ func (s *QueryTestSuite) TestDelete() {
 		_, err := s.query.Where("name", "John").Where("id", 1).Delete()
 		s.Equal(assert.AnError, err)
 	})
+}
+
+func (s *QueryTestSuite) TestDistinct() {
+	var users TestUser
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Get(&users, "SELECT DISTINCT * FROM users WHERE name = ?", "John").Return(nil).Once()
+	s.mockDriver.EXPECT().Explain("SELECT DISTINCT * FROM users WHERE name = ?", "John").Return("SELECT DISTINCT * FROM users WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT DISTINCT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+	err := s.query.Where("name", "John").Distinct().First(&users)
+	s.NoError(err)
 }
 
 func (s *QueryTestSuite) TestExists() {
@@ -300,6 +327,21 @@ func (s *QueryTestSuite) TestGet() {
 		err := s.query.Where("age", 25).Get(&users)
 		s.Equal(assert.AnError, err)
 	})
+}
+
+func (s *QueryTestSuite) TestIncrement() {
+	mockResult := &MockResult{}
+	mockResult.On("RowsAffected").Return(int64(1), nil)
+
+	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+	s.mockBuilder.EXPECT().Exec("UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return(mockResult, nil).Once()
+	s.mockDriver.EXPECT().Explain("UPDATE users SET age = age + ? WHERE name = ?", uint64(1), "John").Return("UPDATE users SET age = age + 1 WHERE name = \"John\"").Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "UPDATE users SET age = age + 1 WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+	err := s.query.Where("name", "John").Increment("age")
+	s.NoError(err)
+
+	mockResult.AssertExpectations(s.T())
 }
 
 func (s *QueryTestSuite) TestInsert() {
@@ -862,6 +904,36 @@ func (s *QueryTestSuite) TestUpdate() {
 // 	s.NoError(err)
 // 	s.Equal("John", name)
 // }
+
+func (s *QueryTestSuite) TestWhen() {
+	s.Run("when condition is true", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE (name = ? AND age = ?)", "John", 25).Return("SELECT * FROM users WHERE (name = \"John\" AND age = 25)").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND age = 25)", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").When(true, func(query db.Query) db.Query {
+			return query.Where("age", 25)
+		}).First(&user)
+		s.Nil(err)
+	})
+
+	s.Run("when condition is false", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE name = ?", "John").Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE name = ?", "John").Return("SELECT * FROM users WHERE name = \"John\"").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
+
+		err := s.query.Where("name", "John").When(false, func(query db.Query) db.Query {
+			return query.Where("age", 25)
+		}).First(&user)
+		s.Nil(err)
+	})
+}
 
 func (s *QueryTestSuite) TestWhere() {
 	s.Run("simple condition", func() {

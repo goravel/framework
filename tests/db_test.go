@@ -62,6 +62,51 @@ func (s *DBTestSuite) TestCount() {
 	}
 }
 
+func (s *DBTestSuite) TestDecrement() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert(Product{Name: "decrement_product", Weight: convert.Pointer(100)})
+
+			s.Run("decrement", func() {
+				err := query.DB().Table("products").Where("name", "decrement_product").Decrement("weight", 1)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "decrement_product").First(&product)
+				s.NoError(err)
+				s.Equal(99, *product.Weight)
+			})
+
+			s.Run("decrement with number", func() {
+				err := query.DB().Table("products").Where("name", "decrement_product").Decrement("weight", 5)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "decrement_product").First(&product)
+				s.NoError(err)
+				s.Equal(94, *product.Weight)
+			})
+		})
+	}
+}
+
+func (s *DBTestSuite) TestDistinct() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert([]Product{
+				{Name: "distinct_product"},
+				{Name: "distinct_product"},
+			})
+
+			var products []Product
+			err := query.DB().Table("products").Distinct().Select("name").Get(&products)
+			s.NoError(err)
+			s.Equal(1, len(products))
+			s.Equal("distinct_product", products[0].Name)
+		})
+	}
+}
+
 func (s *DBTestSuite) TestExists() {
 	for driver, query := range s.queries {
 		s.Run(driver, func() {
@@ -74,6 +119,34 @@ func (s *DBTestSuite) TestExists() {
 			exists, err = query.DB().Table("products").Where("name", "exists_product").Exists()
 			s.NoError(err)
 			s.False(exists)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestIncrement() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			query.DB().Table("products").Insert(Product{Name: "increment_product", Weight: convert.Pointer(100)})
+
+			s.Run("increment", func() {
+				err := query.DB().Table("products").Where("name", "increment_product").Increment("weight", 1)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "increment_product").First(&product)
+				s.NoError(err)
+				s.Equal(101, *product.Weight)
+			})
+
+			s.Run("increment with number", func() {
+				err := query.DB().Table("products").Where("name", "increment_product").Increment("weight", 5)
+				s.NoError(err)
+
+				var product Product
+				err = query.DB().Table("products").Where("name", "increment_product").First(&product)
+				s.NoError(err)
+				s.Equal(106, *product.Weight)
+			})
 		})
 	}
 }

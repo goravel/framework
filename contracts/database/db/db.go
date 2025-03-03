@@ -39,20 +39,21 @@ type Query interface {
 	FirstOr(dest any, callback func() error) error
 	// FirstOrFail finds the first record that matches the given conditions or throws an error.
 	FirstOrFail(dest any) error
-	// decrement
+	// Decrement the given column's values by the given amounts.
+	Decrement(column string, value ...uint64) error
 	// Get Retrieve all rows from the database.
 	Get(dest any) error
 	// GroupBy(column string) Query
 	// GroupByRaw(query string, args ...any) Query
 	// having
 	// HavingRaw(query any, args ...any) Query
-	// increment
+	// Increment a column's value by a given amount.
+	Increment(column string, value ...uint64) error
 	// inRandomOrder
 	// Insert a new record into the database.
 	Insert(data any) (*Result, error)
 	// InsertGetId returns the ID of the inserted row, only supported by MySQL and Sqlite
 	InsertGetId(data any) (int64, error)
-	// incrementEach
 	// Join(table string, on any, args ...any) Query
 	// Latest Retrieve the latest record from the database.
 	Latest(dest any, column ...string) error
@@ -105,7 +106,8 @@ type Query interface {
 	Update(column any, value ...any) (*Result, error)
 	// updateOrInsert
 	// Value(column string, dest any) error
-	// when
+	// When executes the callback if the condition is true.
+	When(condition bool, callback func(query Query) Query) Query
 	// Where Add a basic where clause to the query.
 	Where(query any, args ...any) Query
 	// WhereBetween Add a where between statement to the query.
