@@ -20,53 +20,6 @@ func (_m *Query) EXPECT() *Query_Expecter {
 	return &Query_Expecter{mock: &_m.Mock}
 }
 
-// Chunk provides a mock function with given fields: size, callback
-func (_m *Query) Chunk(size int, callback func([]interface{}) error) error {
-	ret := _m.Called(size, callback)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Chunk")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, func([]interface{}) error) error); ok {
-		r0 = rf(size, callback)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Query_Chunk_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Chunk'
-type Query_Chunk_Call struct {
-	*mock.Call
-}
-
-// Chunk is a helper method to define mock.On call
-//   - size int
-//   - callback func([]interface{}) error
-func (_e *Query_Expecter) Chunk(size interface{}, callback interface{}) *Query_Chunk_Call {
-	return &Query_Chunk_Call{Call: _e.mock.On("Chunk", size, callback)}
-}
-
-func (_c *Query_Chunk_Call) Run(run func(size int, callback func([]interface{}) error)) *Query_Chunk_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(int), args[1].(func([]interface{}) error))
-	})
-	return _c
-}
-
-func (_c *Query_Chunk_Call) Return(_a0 error) *Query_Chunk_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Query_Chunk_Call) RunAndReturn(run func(int, func([]interface{}) error) error) *Query_Chunk_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Count provides a mock function with no fields
 func (_m *Query) Count() (int64, error) {
 	ret := _m.Called()
@@ -175,6 +128,53 @@ func (_c *Query_Delete_Call) Return(_a0 *db.Result, _a1 error) *Query_Delete_Cal
 }
 
 func (_c *Query_Delete_Call) RunAndReturn(run func() (*db.Result, error)) *Query_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Distinct provides a mock function with no fields
+func (_m *Query) Distinct() db.Query {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Distinct")
+	}
+
+	var r0 db.Query
+	if rf, ok := ret.Get(0).(func() db.Query); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(db.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_Distinct_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Distinct'
+type Query_Distinct_Call struct {
+	*mock.Call
+}
+
+// Distinct is a helper method to define mock.On call
+func (_e *Query_Expecter) Distinct() *Query_Distinct_Call {
+	return &Query_Distinct_Call{Call: _e.mock.On("Distinct")}
+}
+
+func (_c *Query_Distinct_Call) Run(run func()) *Query_Distinct_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Query_Distinct_Call) Return(_a0 db.Query) *Query_Distinct_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Distinct_Call) RunAndReturn(run func() db.Query) *Query_Distinct_Call {
 	_c.Call.Return(run)
 	return _c
 }
