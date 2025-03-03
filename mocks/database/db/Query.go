@@ -290,6 +290,53 @@ func (_c *Query_First_Call) RunAndReturn(run func(interface{}) error) *Query_Fir
 	return _c
 }
 
+// FirstOr provides a mock function with given fields: dest, callback
+func (_m *Query) FirstOr(dest interface{}, callback func() error) error {
+	ret := _m.Called(dest, callback)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FirstOr")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, func() error) error); ok {
+		r0 = rf(dest, callback)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_FirstOr_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FirstOr'
+type Query_FirstOr_Call struct {
+	*mock.Call
+}
+
+// FirstOr is a helper method to define mock.On call
+//   - dest interface{}
+//   - callback func() error
+func (_e *Query_Expecter) FirstOr(dest interface{}, callback interface{}) *Query_FirstOr_Call {
+	return &Query_FirstOr_Call{Call: _e.mock.On("FirstOr", dest, callback)}
+}
+
+func (_c *Query_FirstOr_Call) Run(run func(dest interface{}, callback func() error)) *Query_FirstOr_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}), args[1].(func() error))
+	})
+	return _c
+}
+
+func (_c *Query_FirstOr_Call) Return(_a0 error) *Query_FirstOr_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_FirstOr_Call) RunAndReturn(run func(interface{}, func() error) error) *Query_FirstOr_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FirstOrFail provides a mock function with given fields: dest
 func (_m *Query) FirstOrFail(dest interface{}) error {
 	ret := _m.Called(dest)
