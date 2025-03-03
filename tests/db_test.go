@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/goravel/framework/contracts/database/db"
@@ -405,6 +406,45 @@ func (s *DBTestSuite) TestPluck() {
 
 			s.NoError(err)
 			s.Equal([]string{"pluck_product1", "pluck_product2"}, names)
+		})
+	}
+}
+
+func (s *DBTestSuite) TestTransaction() {
+	for driver, query := range s.queries {
+		s.Run(driver, func() {
+			tx, err := query.DB().BeginTransaction()
+			s.NoError(err)
+			s.NotNil(tx)
+
+			result, err := tx.Table("products").Insert(Product{Name: "transaction product"})
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+
+			s.NoError(tx.Commit())
+
+			var product Product
+			err = query.DB().Table("products").Where("name", "transaction product").First(&product)
+			s.NoError(err)
+			s.Equal("transaction product", product.Name)
+
+			tx, err = query.DB().BeginTransaction()
+			s.NoError(err)
+			s.NotNil(tx)
+
+			result, err = tx.Table("products").Where("name", "transaction product").Update("name", "transaction product updated")
+			s.NoError(err)
+			s.Equal(int64(1), result.RowsAffected)
+			s.NoError(tx.Rollback())
+
+			var product1 Product
+			err = query.DB().Table("products").Where("name", "transaction product").First(&product1)
+			s.NoError(err)
+			s.Equal("transaction product", product1.Name)
+
+			var product2 Product
+			err = query.DB().Table("products").Where("name", "transaction product updated").FirstOrFail(&product2)
+			s.Equal(sql.ErrNoRows, err)
 		})
 	}
 }

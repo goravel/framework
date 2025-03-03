@@ -48,7 +48,7 @@ func (s *QueryTestSuite) SetupTest() {
 	s.now = carbon.Now()
 	carbon.SetTestNow(s.now)
 
-	s.query = NewQuery(s.ctx, s.mockDriver, s.mockBuilder, s.mockLogger, "users")
+	s.query = NewQuery(s.ctx, s.mockDriver, s.mockBuilder, s.mockLogger, "users", nil)
 }
 
 func (s *QueryTestSuite) TestCount() {
@@ -1031,7 +1031,7 @@ func (s *QueryTestSuite) TestWhereExists() {
 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE (name = \"John\" AND EXISTS (SELECT * FROM agents WHERE age = 25))", int64(0), nil).Return().Once()
 
 	err := s.query.Where("name", "John").WhereExists(func() db.Query {
-		return NewQuery(s.ctx, s.mockDriver, s.mockBuilder, s.mockLogger, "agents").Where("age", 25)
+		return NewQuery(s.ctx, s.mockDriver, s.mockBuilder, s.mockLogger, "agents", nil).Where("age", 25)
 	}).Get(&users)
 	s.Nil(err)
 

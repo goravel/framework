@@ -1,11 +1,21 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"strings"
 
 	"github.com/goravel/framework/errors"
+	"github.com/goravel/framework/support/carbon"
 )
+
+type TxLog struct {
+	ctx          context.Context
+	begin        carbon.Carbon
+	sql          string
+	rowsAffected int64
+	err          error
+}
 
 func convertToSliceMap(data any) ([]map[string]any, error) {
 	if data == nil {

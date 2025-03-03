@@ -6,15 +6,16 @@ import (
 )
 
 type DB interface {
-	// BeginTransaction() Query
+	BeginTransaction() (DB, error)
+	Commit() error
 	Connection(name string) DB
+	Rollback() error
 	Table(name string) Query
 	// Transaction(txFunc func(tx Query) error) error
 	WithContext(ctx context.Context) DB
 }
 
 type Query interface {
-	// commit
 	// Count Retrieve the "count" result of the query.
 	Count() (int64, error)
 	// Chunk Execute a callback over a given chunk size.
@@ -93,7 +94,6 @@ type Query interface {
 	OrWhereRaw(raw string, args []any) Query
 	// Pluck Get a collection instance containing the values of a given column.
 	Pluck(column string, dest any) error
-	// rollBack
 	// RightJoin(table string, on any, args ...any) Query
 	// Select Set the columns to be selected.
 	Select(columns ...string) Query
