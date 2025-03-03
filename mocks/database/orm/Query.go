@@ -174,22 +174,32 @@ func (_c *Query_Commit_Call) RunAndReturn(run func() error) *Query_Commit_Call {
 	return _c
 }
 
-// Count provides a mock function with given fields: count
-func (_m *Query) Count(count *int64) error {
-	ret := _m.Called(count)
+// Count provides a mock function with no fields
+func (_m *Query) Count() (int64, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Count")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*int64) error); ok {
-		r0 = rf(count)
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (int64, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() int64); ok {
+		r0 = rf()
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int64)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Query_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
@@ -198,24 +208,23 @@ type Query_Count_Call struct {
 }
 
 // Count is a helper method to define mock.On call
-//   - count *int64
-func (_e *Query_Expecter) Count(count interface{}) *Query_Count_Call {
-	return &Query_Count_Call{Call: _e.mock.On("Count", count)}
+func (_e *Query_Expecter) Count() *Query_Count_Call {
+	return &Query_Count_Call{Call: _e.mock.On("Count")}
 }
 
-func (_c *Query_Count_Call) Run(run func(count *int64)) *Query_Count_Call {
+func (_c *Query_Count_Call) Run(run func()) *Query_Count_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*int64))
+		run()
 	})
 	return _c
 }
 
-func (_c *Query_Count_Call) Return(_a0 error) *Query_Count_Call {
-	_c.Call.Return(_a0)
+func (_c *Query_Count_Call) Return(_a0 int64, _a1 error) *Query_Count_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Count_Call) RunAndReturn(run func(*int64) error) *Query_Count_Call {
+func (_c *Query_Count_Call) RunAndReturn(run func() (int64, error)) *Query_Count_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -618,22 +627,32 @@ func (_c *Query_Exec_Call) RunAndReturn(run func(string, ...interface{}) (*db.Re
 	return _c
 }
 
-// Exists provides a mock function with given fields: exists
-func (_m *Query) Exists(exists *bool) error {
-	ret := _m.Called(exists)
+// Exists provides a mock function with no fields
+func (_m *Query) Exists() (bool, error) {
+	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for Exists")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*bool) error); ok {
-		r0 = rf(exists)
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func() (bool, error)); ok {
+		return rf()
+	}
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Query_Exists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Exists'
@@ -642,24 +661,23 @@ type Query_Exists_Call struct {
 }
 
 // Exists is a helper method to define mock.On call
-//   - exists *bool
-func (_e *Query_Expecter) Exists(exists interface{}) *Query_Exists_Call {
-	return &Query_Exists_Call{Call: _e.mock.On("Exists", exists)}
+func (_e *Query_Expecter) Exists() *Query_Exists_Call {
+	return &Query_Exists_Call{Call: _e.mock.On("Exists")}
 }
 
-func (_c *Query_Exists_Call) Run(run func(exists *bool)) *Query_Exists_Call {
+func (_c *Query_Exists_Call) Run(run func()) *Query_Exists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*bool))
+		run()
 	})
 	return _c
 }
 
-func (_c *Query_Exists_Call) Return(_a0 error) *Query_Exists_Call {
-	_c.Call.Return(_a0)
+func (_c *Query_Exists_Call) Return(_a0 bool, _a1 error) *Query_Exists_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Query_Exists_Call) RunAndReturn(run func(*bool) error) *Query_Exists_Call {
+func (_c *Query_Exists_Call) RunAndReturn(run func() (bool, error)) *Query_Exists_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2231,6 +2249,54 @@ func (_c *Query_OrderByDesc_Call) Return(_a0 orm.Query) *Query_OrderByDesc_Call 
 }
 
 func (_c *Query_OrderByDesc_Call) RunAndReturn(run func(string) orm.Query) *Query_OrderByDesc_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// OrderByRaw provides a mock function with given fields: raw
+func (_m *Query) OrderByRaw(raw string) orm.Query {
+	ret := _m.Called(raw)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OrderByRaw")
+	}
+
+	var r0 orm.Query
+	if rf, ok := ret.Get(0).(func(string) orm.Query); ok {
+		r0 = rf(raw)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orm.Query)
+		}
+	}
+
+	return r0
+}
+
+// Query_OrderByRaw_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'OrderByRaw'
+type Query_OrderByRaw_Call struct {
+	*mock.Call
+}
+
+// OrderByRaw is a helper method to define mock.On call
+//   - raw string
+func (_e *Query_Expecter) OrderByRaw(raw interface{}) *Query_OrderByRaw_Call {
+	return &Query_OrderByRaw_Call{Call: _e.mock.On("OrderByRaw", raw)}
+}
+
+func (_c *Query_OrderByRaw_Call) Run(run func(raw string)) *Query_OrderByRaw_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *Query_OrderByRaw_Call) Return(_a0 orm.Query) *Query_OrderByRaw_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_OrderByRaw_Call) RunAndReturn(run func(string) orm.Query) *Query_OrderByRaw_Call {
 	_c.Call.Return(run)
 	return _c
 }

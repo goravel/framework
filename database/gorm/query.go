@@ -106,10 +106,17 @@ func (r *Query) Commit() error {
 	return r.instance.Commit().Error
 }
 
-func (r *Query) Count(count *int64) error {
+func (r *Query) Count() (int64, error) {
 	query := r.buildConditions()
 
-	return query.instance.Count(count).Error
+	var count int64
+
+	err := query.instance.Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (r *Query) Create(value any) error {
@@ -220,10 +227,16 @@ func (r *Query) Exec(sql string, values ...any) (*contractsdb.Result, error) {
 	}, result.Error
 }
 
-func (r *Query) Exists(exists *bool) error {
+func (r *Query) Exists() (bool, error) {
 	query := r.buildConditions()
 
-	return query.instance.Select("1").Limit(1).Find(exists).Error
+	var exists bool
+	err := query.instance.Select("1").Limit(1).Find(&exists).Error
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
 
 func (r *Query) Find(dest any, conds ...any) error {
@@ -556,6 +569,7 @@ func (r *Query) Omit(columns ...string) contractsorm.Query {
 	return r.setConditions(conditions)
 }
 
+// DEPRECATED: Use OrderByRaw instead
 func (r *Query) Order(value any) contractsorm.Query {
 	conditions := r.conditions
 	conditions.order = append(r.conditions.order, value)
@@ -570,11 +584,18 @@ func (r *Query) OrderBy(column string, direction ...string) contractsorm.Query {
 	} else {
 		orderDirection = "ASC"
 	}
-	return r.Order(fmt.Sprintf("%s %s", column, orderDirection))
+	return r.OrderByRaw(fmt.Sprintf("%s %s", column, orderDirection))
 }
 
 func (r *Query) OrderByDesc(column string) contractsorm.Query {
-	return r.Order(fmt.Sprintf("%s DESC", column))
+	return r.OrderByRaw(fmt.Sprintf("%s DESC", column))
+}
+
+func (r *Query) OrderByRaw(raw string) contractsorm.Query {
+	conditions := r.conditions
+	conditions.order = append(r.conditions.order, raw)
+
+	return r.setConditions(conditions)
 }
 
 func (r *Query) Instance() *gormio.DB {
@@ -582,7 +603,7 @@ func (r *Query) Instance() *gormio.DB {
 }
 
 func (r *Query) InRandomOrder() contractsorm.Query {
-	return r.Order(r.gormQuery.RandomOrder())
+	return r.OrderByRaw(r.gormQuery.RandomOrder())
 }
 
 func (r *Query) InTransaction() bool {
@@ -613,13 +634,17 @@ func (r *Query) Paginate(page, limit int, dest any, total *int64) error {
 	offset := (page - 1) * limit
 	if total != nil {
 		if query.conditions.table == nil && query.conditions.model == nil {
-			if err := query.Model(dest).Count(total); err != nil {
+			count, err := query.Model(dest).Count()
+			if err != nil {
 				return err
 			}
+			*total = count
 		} else {
-			if err := query.Count(total); err != nil {
+			count, err := query.Count()
+			if err != nil {
 				return err
 			}
+			*total = count
 		}
 	}
 

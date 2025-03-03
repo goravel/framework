@@ -308,13 +308,13 @@ func (s *QueryTestSuite) TestCount() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			var count int64
-			s.Nil(query.Query().Model(&User{}).Where("name = ?", "count_user").Count(&count))
+			count, err := query.Query().Model(&User{}).Where("name = ?", "count_user").Count()
+			s.Nil(err)
 			s.True(count > 0)
 
-			var count1 int64
-			s.Nil(query.Query().Table("users").Where("name = ?", "count_user").Count(&count1))
-			s.True(count1 > 0)
+			count, err = query.Query().Table("users").Where("name = ?", "count_user").Count()
+			s.Nil(err)
+			s.True(count > 0)
 		})
 	}
 }
@@ -429,8 +429,7 @@ func (s *QueryTestSuite) TestCreate() {
 					s.Nil(query.Query().Create(&people))
 					s.True(people.ID > 0)
 
-					var count int64
-					err := query.Query().Table("peoples").Where("body", "create_people").Count(&count)
+					count, err := query.Query().Table("peoples").Where("body", "create_people").Count()
 					s.NoError(err)
 					s.True(count == 0)
 
@@ -444,7 +443,7 @@ func (s *QueryTestSuite) TestCreate() {
 					s.Nil(query.Query().Where("body", "create_people1").First(&people1))
 					s.True(people1.ID > 0)
 
-					err = query.Query().Table("peoples").Where("body", "create_people1").Count(&count)
+					count, err = query.Query().Table("peoples").Where("body", "create_people1").Count()
 					s.NoError(err)
 					s.True(count == 0)
 				},
@@ -745,8 +744,8 @@ func (s *QueryTestSuite) TestDelete() {
 					s.Equal(int64(2), res.RowsAffected)
 					s.Nil(err)
 
-					var count int64
-					s.Nil(query.Query().Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count(&count))
+					count, err := query.Query().Model(&User{}).Where("name", "delete_user").OrWhere("name", "delete_user1").Count()
+					s.Nil(err)
 					s.True(count == 0)
 				},
 			},
@@ -1717,13 +1716,13 @@ func (s *QueryTestSuite) TestExists() {
 			s.Nil(query.Query().Create(&user1))
 			s.True(user1.ID > 0)
 
-			var t bool
-			s.Nil(query.Query().Model(&User{}).Where("name = ?", "exists_user").Exists(&t))
-			s.True(t)
+			exists, err := query.Query().Model(&User{}).Where("name = ?", "exists_user").Exists()
+			s.Nil(err)
+			s.True(exists)
 
-			var f bool
-			s.Nil(query.Query().Model(&User{}).Where("name = ?", "no_exists_user").Exists(&f))
-			s.False(f)
+			exists, err = query.Query().Model(&User{}).Where("name = ?", "no_exists_user").Exists()
+			s.Nil(err)
+			s.False(exists)
 		})
 	}
 }
@@ -2155,7 +2154,7 @@ func (s *QueryTestSuite) TestOrder() {
 			s.True(user1.ID > 0)
 
 			var user2 []User
-			s.Nil(query.Query().Where("name = ?", "order_user").Order("id desc").Order("name asc").Get(&user2))
+			s.Nil(query.Query().Where("name = ?", "order_user").OrderByRaw("id desc, name asc").Get(&user2))
 			s.True(len(user2) > 0)
 			s.True(user2[0].ID > 0)
 		})
@@ -2987,8 +2986,8 @@ func (s *QueryTestSuite) TestRestore() {
 			s.Equal(int64(1), res.RowsAffected)
 			s.NoError(err)
 
-			var count int64
-			s.NoError(query.Query().Model(&User{}).Where("avatar", "restore_avatar").Count(&count))
+			count, err := query.Query().Model(&User{}).Where("avatar", "restore_avatar").Count()
+			s.NoError(err)
 			s.Equal(int64(4), count)
 		})
 	}
@@ -3180,8 +3179,7 @@ func (s *QueryTestSuite) TestUpdateOrCreate() {
 			s.Nil(err)
 			s.True(user3.ID > 0)
 
-			var count int64
-			err = query.Query().Model(User{}).Where("name", "update_or_create_user").Count(&count)
+			count, err := query.Query().Model(User{}).Where("name", "update_or_create_user").Count()
 			s.Nil(err)
 			s.Equal(int64(1), count)
 		})

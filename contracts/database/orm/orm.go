@@ -45,7 +45,7 @@ type Query interface {
 	// Commit commits the changes in a transaction.
 	Commit() error
 	// Count retrieve the "count" result of the query.
-	Count(count *int64) error
+	Count() (int64, error)
 	// Create inserts new record into the database.
 	Create(value any) error
 	// Cursor returns a cursor, use scan to iterate over the returned rows.
@@ -61,7 +61,7 @@ type Query interface {
 	// Exec executes raw sql
 	Exec(sql string, values ...any) (*db.Result, error)
 	// Exists returns true if matching records exist; otherwise, it returns false.
-	Exists(exists *bool) error
+	Exists() (bool, error)
 	// Find finds records that match given conditions.
 	Find(dest any, conds ...any) error
 	// FindOrFail finds records that match given conditions or throws an error.
@@ -108,11 +108,14 @@ type Query interface {
 	// Omit specifies columns that should be omitted from the query.
 	Omit(columns ...string) Query
 	// Order specifies the order in which the results should be returned.
+	// DEPRECATED Use OrderByRaw instead.
 	Order(value any) Query
 	// OrderBy specifies the order should be ascending.
 	OrderBy(column string, direction ...string) Query
 	// OrderByDesc specifies the order should be descending.
 	OrderByDesc(column string) Query
+	// OrderByRaw specifies the order should be raw.
+	OrderByRaw(raw string) Query
 	// OrWhere add an "or where" clause to the query.
 	OrWhere(query any, args ...any) Query
 	// OrWhereBetween adds an "or where column between x and y" clause to the query.
