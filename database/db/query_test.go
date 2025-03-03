@@ -766,7 +766,7 @@ func (s *QueryTestSuite) TestPluck() {
 		*destNames = []string{"John"}
 	}).Return(nil).Once()
 	s.mockDriver.EXPECT().Explain("SELECT name FROM users WHERE name = ?", "John").Return("SELECT name FROM users WHERE name = \"John\"").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name FROM users WHERE name = \"John\"", int64(-1), nil).Return().Once()
+	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name FROM users WHERE name = \"John\"", int64(1), nil).Return().Once()
 
 	err := s.query.Where("name", "John").Pluck("name", &names)
 	s.NoError(err)

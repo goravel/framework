@@ -460,21 +460,7 @@ func (r *Query) OrWhereRaw(raw string, args []any) db.Query {
 func (r *Query) Pluck(column string, dest any) error {
 	r.conditions.Selects = []string{column}
 
-	sql, args, err := r.buildSelect()
-	if err != nil {
-		return err
-	}
-
-	err = r.builder.Select(dest, sql, args...)
-	if err != nil {
-		r.trace(sql, args, -1, err)
-
-		return err
-	}
-
-	r.trace(sql, args, -1, nil)
-
-	return nil
+	return r.Get(dest)
 }
 
 func (r *Query) Select(columns ...string) db.Query {
