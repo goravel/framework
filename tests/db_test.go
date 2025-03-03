@@ -362,19 +362,19 @@ func (s *DBTestSuite) TestUpdate_Delete() {
 	}
 }
 
-func (s *DBTestSuite) TestValue() {
-	for driver, query := range s.queries {
-		s.Run(driver, func() {
-			query.DB().Table("products").Insert(Product{Name: "value_product"})
+// func (s *DBTestSuite) TestValue() {
+// 	for driver, query := range s.queries {
+// 		s.Run(driver, func() {
+// 			query.DB().Table("products").Insert(Product{Name: "value_product"})
 
-			var name string
-			err := query.DB().Table("products").Where("name", "value_product").Value("name", &name)
+// 			var name string
+// 			err := query.DB().Table("products").Where("name", "value_product").Value("name", &name)
 
-			s.NoError(err)
-			s.Equal("value_product", name)
-		})
-	}
-}
+// 			s.NoError(err)
+// 			s.Equal("value_product", name)
+// 		})
+// 	}
+// }
 
 func (s *DBTestSuite) TestWhere() {
 	for driver, query := range s.queries {

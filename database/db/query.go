@@ -17,7 +17,6 @@ import (
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/support/carbon"
-	"github.com/goravel/framework/support/convert"
 	"github.com/goravel/framework/support/str"
 )
 
@@ -227,12 +226,12 @@ func (r *Query) Insert(data any) (*db.Result, error) {
 	}, nil
 }
 
-func (r *Query) Limit(limit uint64) db.Query {
-	q := r.clone()
-	q.conditions.Limit = &limit
+// func (r *Query) Limit(limit uint64) db.Query {
+// 	q := r.clone()
+// 	q.conditions.Limit = &limit
 
-	return q
-}
+// 	return q
+// }
 
 func (r *Query) OrderBy(column string) db.Query {
 	q := r.clone()
@@ -406,31 +405,31 @@ func (r *Query) Update(column any, value ...any) (*db.Result, error) {
 	}, nil
 }
 
-func (r *Query) Value(column string, dest any) error {
-	r.conditions.Selects = []string{column}
-	r.conditions.Limit = convert.Pointer(uint64(1))
+// func (r *Query) Value(column string, dest any) error {
+// 	r.conditions.Selects = []string{column}
+// 	r.conditions.Limit = convert.Pointer(uint64(1))
 
-	sql, args, err := r.buildSelect()
-	if err != nil {
-		return err
-	}
+// 	sql, args, err := r.buildSelect()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	err = r.builder.Get(dest, sql, args...)
-	if err != nil {
-		if errors.Is(err, databasesql.ErrNoRows) {
-			r.trace(sql, args, 0, nil)
-			return nil
-		}
+// 	err = r.builder.Get(dest, sql, args...)
+// 	if err != nil {
+// 		if errors.Is(err, databasesql.ErrNoRows) {
+// 			r.trace(sql, args, 0, nil)
+// 			return nil
+// 		}
 
-		r.trace(sql, args, -1, err)
+// 		r.trace(sql, args, -1, err)
 
-		return err
-	}
+// 		return err
+// 	}
 
-	r.trace(sql, args, -1, nil)
+// 	r.trace(sql, args, -1, nil)
 
-	return nil
-}
+// 	return nil
+// }
 
 func (r *Query) Where(query any, args ...any) db.Query {
 	q := r.clone()
@@ -610,16 +609,7 @@ func (r *Query) buildSelect() (sql string, args []any, err error) {
 	}
 
 	builder = builder.Where(sqlizer)
-
-	if grammar, ok := r.grammar.(db.CompileOrderByGrammar); ok {
-		if r.conditions.Limit != nil && len(r.conditions.OrderBy) == 0 {
-			r.conditions.OrderBy = []string{"(select 0)"}
-		}
-
-		builder = grammar.CompileOrderBy(builder, r.conditions.OrderBy)
-	} else {
-		builder = builder.OrderBy(r.conditions.OrderBy...)
-	}
+	builder = builder.OrderBy(r.conditions.OrderBy...)
 
 	if r.conditions.Limit != nil {
 		builder = builder.Limit(*r.conditions.Limit)

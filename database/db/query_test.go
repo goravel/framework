@@ -389,17 +389,17 @@ func (s *QueryTestSuite) TestInsert() {
 	})
 }
 
-func (s *QueryTestSuite) TestLimit() {
-	var users []TestUser
+// func (s *QueryTestSuite) TestLimit() {
+// 	var users []TestUser
 
-	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return(nil).Once()
-	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return("SELECT * FROM users WHERE age = 25 LIMIT 1").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 LIMIT 1", int64(0), nil).Return().Once()
+// 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+// 	s.mockBuilder.EXPECT().Select(&users, "SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return(nil).Once()
+// 	s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? LIMIT 1", 25).Return("SELECT * FROM users WHERE age = 25 LIMIT 1").Once()
+// 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 LIMIT 1", int64(0), nil).Return().Once()
 
-	err := s.query.Where("age", 25).Limit(1).Get(&users)
-	s.Nil(err)
-}
+// 	err := s.query.Where("age", 25).Limit(1).Get(&users)
+// 	s.Nil(err)
+// }
 
 func (s *QueryTestSuite) TestOrderBy() {
 	var users []TestUser
@@ -744,21 +744,21 @@ func (s *QueryTestSuite) TestUpdate() {
 	})
 }
 
-func (s *QueryTestSuite) TestValue() {
-	var name string
+// func (s *QueryTestSuite) TestValue() {
+// 	var name string
 
-	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
-	s.mockBuilder.EXPECT().Get(&name, "SELECT name FROM users WHERE name = ? LIMIT 1", "John").Run(func(dest any, query string, args ...any) {
-		destName := dest.(*string)
-		*destName = "John"
-	}).Return(nil).Once()
-	s.mockDriver.EXPECT().Explain("SELECT name FROM users WHERE name = ? LIMIT 1", "John").Return("SELECT name FROM users WHERE name = \"John\" LIMIT 1").Once()
-	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name FROM users WHERE name = \"John\" LIMIT 1", int64(-1), nil).Return().Once()
+// 	s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+// 	s.mockBuilder.EXPECT().Get(&name, "SELECT name FROM users WHERE name = ? LIMIT 1", "John").Run(func(dest any, query string, args ...any) {
+// 		destName := dest.(*string)
+// 		*destName = "John"
+// 	}).Return(nil).Once()
+// 	s.mockDriver.EXPECT().Explain("SELECT name FROM users WHERE name = ? LIMIT 1", "John").Return("SELECT name FROM users WHERE name = \"John\" LIMIT 1").Once()
+// 	s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT name FROM users WHERE name = \"John\" LIMIT 1", int64(-1), nil).Return().Once()
 
-	err := s.query.Where("name", "John").Value("name", &name)
-	s.NoError(err)
-	s.Equal("John", name)
-}
+// 	err := s.query.Where("name", "John").Value("name", &name)
+// 	s.NoError(err)
+// 	s.Equal("John", name)
+// }
 
 func (s *QueryTestSuite) TestWhere() {
 	s.Run("simple condition", func() {

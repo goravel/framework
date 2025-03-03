@@ -14,7 +14,6 @@ type DB interface {
 }
 
 type Query interface {
-	// Avg(column string) (any, error)
 	// commit
 	// Count(dest *int64) error
 	// Chunk(size int, callback func(rows []any) error) error
@@ -44,9 +43,8 @@ type Query interface {
 	// Join(table string, on any, args ...any) Query
 	// latest
 	// LeftJoin(table string, on any, args ...any) Query
-	Limit(limit uint64) Query
+	// Limit(limit uint64) Query
 	// lockForUpdate
-	// Max(column string) (any, error)
 	// offset
 	OrderBy(column string) Query
 	OrderByDesc(column string) Query
@@ -74,7 +72,7 @@ type Query interface {
 	// ToRawSql
 	Update(column any, value ...any) (*Result, error)
 	// updateOrInsert
-	Value(column string, dest any) error
+	// Value(column string, dest any) error
 	// when
 	Where(query any, args ...any) Query
 	WhereBetween(column string, x, y any) Query
