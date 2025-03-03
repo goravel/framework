@@ -26,4 +26,5 @@ const (
 	BindingTranslation = "goravel.translation"
 	BindingValidation  = "goravel.validation"
 	BindingView        = "goravel.view"
+	BindingHttp        = "goravel.http"
 )

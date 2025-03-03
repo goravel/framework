@@ -22,4 +22,5 @@ var (
 	ModuleSchedule   = "schedule"
 	ModuleSession    = "session"
 	ModuleTesting    = "testing"
+	ModuleHttp       = "http"
 )
