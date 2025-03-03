@@ -42,7 +42,7 @@ type Query interface {
 	InsertGetId(data any) (int64, error)
 	// incrementEach
 	// Join(table string, on any, args ...any) Query
-	// latest
+	Latest(dest any, column ...string) error
 	// LeftJoin(table string, on any, args ...any) Query
 	// Limit(limit uint64) Query
 	// lockForUpdate

@@ -478,6 +478,20 @@ func (s *QueryTestSuite) TestInsertGetId() {
 // 	s.Nil(err)
 // }
 
+func (s *QueryTestSuite) TestLatest() {
+	s.Run("default column", func() {
+		var user TestUser
+
+		s.mockDriver.EXPECT().Config().Return(database.Config{}).Once()
+		s.mockBuilder.EXPECT().Get(&user, "SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return(nil).Once()
+		s.mockDriver.EXPECT().Explain("SELECT * FROM users WHERE age = ? ORDER BY created_at DESC", 25).Return("SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC").Once()
+		s.mockLogger.EXPECT().Trace(s.ctx, s.now, "SELECT * FROM users WHERE age = 25 ORDER BY created_at DESC", int64(1), nil).Return().Once()
+
+		err := s.query.Where("age", 25).Latest(&user)
+		s.Nil(err)
+	})
+}
+
 func (s *QueryTestSuite) TestOrderBy() {
 	var users []TestUser
 

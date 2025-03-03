@@ -542,6 +542,123 @@ func (_c *Query_Insert_Call) RunAndReturn(run func(interface{}) (*db.Result, err
 	return _c
 }
 
+// InsertGetId provides a mock function with given fields: data
+func (_m *Query) InsertGetId(data interface{}) (int64, error) {
+	ret := _m.Called(data)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertGetId")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(interface{}) (int64, error)); ok {
+		return rf(data)
+	}
+	if rf, ok := ret.Get(0).(func(interface{}) int64); ok {
+		r0 = rf(data)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(interface{}) error); ok {
+		r1 = rf(data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Query_InsertGetId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertGetId'
+type Query_InsertGetId_Call struct {
+	*mock.Call
+}
+
+// InsertGetId is a helper method to define mock.On call
+//   - data interface{}
+func (_e *Query_Expecter) InsertGetId(data interface{}) *Query_InsertGetId_Call {
+	return &Query_InsertGetId_Call{Call: _e.mock.On("InsertGetId", data)}
+}
+
+func (_c *Query_InsertGetId_Call) Run(run func(data interface{})) *Query_InsertGetId_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(interface{}))
+	})
+	return _c
+}
+
+func (_c *Query_InsertGetId_Call) Return(_a0 int64, _a1 error) *Query_InsertGetId_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Query_InsertGetId_Call) RunAndReturn(run func(interface{}) (int64, error)) *Query_InsertGetId_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Latest provides a mock function with given fields: dest, column
+func (_m *Query) Latest(dest interface{}, column ...string) error {
+	_va := make([]interface{}, len(column))
+	for _i := range column {
+		_va[_i] = column[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, dest)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Latest")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(interface{}, ...string) error); ok {
+		r0 = rf(dest, column...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Query_Latest_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Latest'
+type Query_Latest_Call struct {
+	*mock.Call
+}
+
+// Latest is a helper method to define mock.On call
+//   - dest interface{}
+//   - column ...string
+func (_e *Query_Expecter) Latest(dest interface{}, column ...interface{}) *Query_Latest_Call {
+	return &Query_Latest_Call{Call: _e.mock.On("Latest",
+		append([]interface{}{dest}, column...)...)}
+}
+
+func (_c *Query_Latest_Call) Run(run func(dest interface{}, column ...string)) *Query_Latest_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]string, len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(string)
+			}
+		}
+		run(args[0].(interface{}), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Query_Latest_Call) Return(_a0 error) *Query_Latest_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Query_Latest_Call) RunAndReturn(run func(interface{}, ...string) error) *Query_Latest_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // OrWhere provides a mock function with given fields: query, args
 func (_m *Query) OrWhere(query interface{}, args ...interface{}) db.Query {
 	var _ca []interface{}

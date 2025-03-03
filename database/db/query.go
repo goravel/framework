@@ -297,6 +297,15 @@ func (r *Query) InsertGetId(data any) (int64, error) {
 // 	return q
 // }
 
+func (r *Query) Latest(dest any, column ...string) error {
+	col := "created_at"
+	if len(column) > 0 {
+		col = column[0]
+	}
+
+	return r.OrderByDesc(col).First(dest)
+}
+
 func (r *Query) OrderBy(column string) db.Query {
 	q := r.clone()
 	q.conditions.OrderBy = append(q.conditions.OrderBy, column+" ASC")
