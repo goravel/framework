@@ -144,7 +144,7 @@ func (s *ResponseTestSuite) TestStatusCodeMethods() {
 	s.True(newMockResponse(429, "", nil, s.mockJson).TooManyRequests())
 }
 
-func newMockResponse(status int, body string, headers map[string]string, json foundation.Json) *responseImpl {
+func newMockResponse(status int, body string, headers map[string]string, json foundation.Json) *Response {
 	resp := httptest.NewRecorder()
 	for key, value := range headers {
 		resp.Header().Set(key, value)
@@ -154,13 +154,10 @@ func newMockResponse(status int, body string, headers map[string]string, json fo
 		resp.Body.WriteString(body)
 	}
 
-	return &responseImpl{
-		response: resp.Result(),
-		json:     json,
-	}
+	return NewResponse(resp.Result(), json)
 }
 
-func newMockResponseWithCookies(status int, body string, headers map[string]string, cookies []*http.Cookie, json foundation.Json) *responseImpl {
+func newMockResponseWithCookies(status int, body string, headers map[string]string, cookies []*http.Cookie, json foundation.Json) *Response {
 	resp := newMockResponse(status, body, headers, json)
 	for _, cookie := range cookies {
 		resp.response.Header.Add("Set-Cookie", cookie.String())

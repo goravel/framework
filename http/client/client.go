@@ -3,9 +3,8 @@ package client
 import (
 	"net/http"
 	"sync"
-	"time"
 
-	"github.com/goravel/framework/contracts/config"
+	"github.com/goravel/framework/contracts/http/client"
 )
 
 var (
@@ -13,15 +12,15 @@ var (
 	httpClientOnce sync.Once
 )
 
-func getHttpClient(config config.Config) *http.Client {
+func getHttpClient(config *client.Config) *http.Client {
 	httpClientOnce.Do(func() {
 		httpClient = &http.Client{
-			Timeout: config.GetDuration("http.client.timeout", 30*time.Second),
+			Timeout: config.Timeout,
 			Transport: &http.Transport{
-				MaxIdleConns:        config.GetInt("http.client.max_idle_conns"),
-				MaxIdleConnsPerHost: config.GetInt("http.client.max_idle_conns_per_host"),
-				MaxConnsPerHost:     config.GetInt("http.client.max_conns_per_host"),
-				IdleConnTimeout:     config.GetDuration("http.client.idle_conn_timeout"),
+				MaxIdleConns:        config.MaxIdleConns,
+				MaxIdleConnsPerHost: config.MaxIdleConnsPerHost,
+				MaxConnsPerHost:     config.MaxConnsPerHost,
+				IdleConnTimeout:     config.IdleConnTimeout,
 			},
 		}
 	})

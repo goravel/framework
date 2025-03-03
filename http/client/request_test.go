@@ -14,14 +14,12 @@ import (
 
 	"github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/foundation/json"
-	"github.com/goravel/framework/mocks/config"
 )
 
 type RequestTestSuite struct {
 	suite.Suite
-	mockConfig *config.Config
-	request    client.Request
-	once       sync.Once
+	request client.Request
+	once    sync.Once
 }
 
 func TestClientTestSuite(t *testing.T) {
@@ -29,17 +27,14 @@ func TestClientTestSuite(t *testing.T) {
 }
 
 func (s *RequestTestSuite) SetupTest() {
-	s.mockConfig = config.NewConfig(s.T())
-
-	s.once.Do(func() {
-		s.mockConfig.EXPECT().GetDuration("http.client.timeout", 30*time.Second).Return(30 * time.Second).Once()
-		s.mockConfig.EXPECT().GetInt("http.client.max_idle_conns").Return(0)
-		s.mockConfig.EXPECT().GetInt("http.client.max_idle_conns_per_host").Return(0)
-		s.mockConfig.EXPECT().GetInt("http.client.max_conns_per_host").Return(0)
-		s.mockConfig.EXPECT().GetDuration("http.client.idle_conn_timeout").Return(30 * time.Second)
-	})
-
-	s.request = NewRequest(s.mockConfig, json.NewJson())
+	config := &client.Config{
+		Timeout:             30 * time.Second,
+		MaxIdleConns:        0,
+		MaxConnsPerHost:     0,
+		MaxIdleConnsPerHost: 0,
+		IdleConnTimeout:     30 * time.Second,
+	}
+	s.request = NewRequest(config, json.NewJson())
 }
 
 func (s *RequestTestSuite) TestClone() {
@@ -47,29 +42,28 @@ func (s *RequestTestSuite) TestClone() {
 	cookie := &http.Cookie{Name: "session", Value: "abc123"}
 	req = req.WithCookie(cookie)
 
-	clonedReq := req.Clone().(*requestImpl)
+	clonedReq := req.Clone().(*Request)
 
-	s.Equal(req.(*requestImpl).queryParams.Encode(), clonedReq.queryParams.Encode())
-	clonedReq = clonedReq.WithQueryParameter("newKey", "newValue").(*requestImpl)
-	s.NotEqual(req.(*requestImpl).queryParams.Encode(), clonedReq.queryParams.Encode())
+	s.Equal(req.(*Request).queryParams.Encode(), clonedReq.queryParams.Encode())
+	clonedReq = clonedReq.WithQueryParameter("newKey", "newValue").(*Request)
+	s.NotEqual(req.(*Request).queryParams.Encode(), clonedReq.queryParams.Encode())
 
 	// Ensure cookies are copied properly
-	s.Equal(len(req.(*requestImpl).cookies), len(clonedReq.cookies))
-	s.Equal(req.(*requestImpl).cookies[0].Value, clonedReq.cookies[0].Value)
+	s.Equal(len(req.(*Request).cookies), len(clonedReq.cookies))
+	s.Equal(req.(*Request).cookies[0].Value, clonedReq.cookies[0].Value)
 
 	// Ensure modifying cloned cookies does not affect the original
-	clonedReq = clonedReq.WithCookie(&http.Cookie{Name: "session", Value: "modified"}).(*requestImpl)
-	s.NotEqual(req.(*requestImpl).cookies[0].Value, clonedReq.cookies[len(clonedReq.cookies)-1].Value)
+	clonedReq = clonedReq.WithCookie(&http.Cookie{Name: "session", Value: "modified"}).(*Request)
+	s.NotEqual(req.(*Request).cookies[0].Value, clonedReq.cookies[len(clonedReq.cookies)-1].Value)
 
-	req = req.WithQueryParameter("param1", "value1").(*requestImpl)
-	clonedReq = req.Clone().(*requestImpl)
-	s.Equal(req.(*requestImpl).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
-	clonedReq = clonedReq.WithQueryParameter("param1", "changedValue").(*requestImpl)
-	s.NotEqual(req.(*requestImpl).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
+	req = req.WithQueryParameter("param1", "value1").(*Request)
+	clonedReq = req.Clone().(*Request)
+	s.Equal(req.(*Request).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
+	clonedReq = clonedReq.WithQueryParameter("param1", "changedValue").(*Request)
+	s.NotEqual(req.(*Request).queryParams.Get("param1"), clonedReq.queryParams.Get("param1"))
 }
 
 func (s *RequestTestSuite) TestDoRequest_Success() {
-	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"message":"success"}`))
@@ -99,7 +93,6 @@ func (s *RequestTestSuite) TestDoRequest_Bind() {
 		} `json:"nested"`
 	}
 
-	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{
@@ -128,7 +121,6 @@ func (s *RequestTestSuite) TestDoRequest_Bind() {
 }
 
 func (s *RequestTestSuite) TestDoRequest_Timeout() {
-	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)
 		w.WriteHeader(http.StatusOK)
@@ -142,7 +134,6 @@ func (s *RequestTestSuite) TestDoRequest_Timeout() {
 }
 
 func (s *RequestTestSuite) TestDoRequest_404() {
-	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}))
@@ -155,64 +146,64 @@ func (s *RequestTestSuite) TestDoRequest_404() {
 
 func (s *RequestTestSuite) TestWithHeaders() {
 	req := s.request.Clone().WithHeaders(map[string]string{"Content-Type": "application/json"})
-	s.Equal("application/json", req.(*requestImpl).headers.Get("Content-Type"))
+	s.Equal("application/json", req.(*Request).headers.Get("Content-Type"))
 
 	req.ReplaceHeaders(map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded",
 		"X-CUSTOM":     "custom-header",
 	})
-	s.Equal("application/x-www-form-urlencoded", req.(*requestImpl).headers.Get("Content-Type"))
-	s.Equal("custom-header", req.(*requestImpl).headers.Get("X-CUSTOM"))
+	s.Equal("application/x-www-form-urlencoded", req.(*Request).headers.Get("Content-Type"))
+	s.Equal("custom-header", req.(*Request).headers.Get("X-CUSTOM"))
 
 	req.WithoutHeader("X-CUSTOM")
-	s.Equal("", req.(*requestImpl).headers.Get("X-CUSTOM"))
+	s.Equal("", req.(*Request).headers.Get("X-CUSTOM"))
 
 	req.FlushHeaders()
-	s.Equal("", req.(*requestImpl).headers.Get("Content-Type"))
+	s.Equal("", req.(*Request).headers.Get("Content-Type"))
 }
 
 func (s *RequestTestSuite) TestWithBasicAuth() {
 	req := s.request.Clone().WithBasicAuth("user", "pass")
-	header := req.(*requestImpl).headers.Get("Authorization")
+	header := req.(*Request).headers.Get("Authorization")
 	s.Contains(header, "Basic ")
 }
 
 func (s *RequestTestSuite) TestQueryParameterMethods() {
 	req := s.request.Clone().WithQueryParameter("key", "value")
-	s.Equal("value", req.(*requestImpl).queryParams.Get("key"))
+	s.Equal("value", req.(*Request).queryParams.Get("key"))
 
 	req = req.WithQueryParameter("key", "newValue")
-	s.Equal("newValue", req.(*requestImpl).queryParams.Get("key"))
+	s.Equal("newValue", req.(*Request).queryParams.Get("key"))
 
 	req = req.WithQueryParameter("emptyValueKey", "")
-	s.Equal("", req.(*requestImpl).queryParams.Get("emptyValueKey"))
+	s.Equal("", req.(*Request).queryParams.Get("emptyValueKey"))
 
 	req = s.request.Clone().WithQueryParameters(map[string]string{"key1": "value1", "key2": "value2"})
-	s.Equal("value1", req.(*requestImpl).queryParams.Get("key1"))
-	s.Equal("value2", req.(*requestImpl).queryParams.Get("key2"))
+	s.Equal("value1", req.(*Request).queryParams.Get("key1"))
+	s.Equal("value2", req.(*Request).queryParams.Get("key2"))
 
 	req = req.WithQueryParameters(map[string]string{"key1": "newValue1"})
-	s.Equal("newValue1", req.(*requestImpl).queryParams.Get("key1"))
+	s.Equal("newValue1", req.(*Request).queryParams.Get("key1"))
 
 	req = req.WithQueryParameters(map[string]string{})
-	s.Equal("newValue1", req.(*requestImpl).queryParams.Get("key1"))
+	s.Equal("newValue1", req.(*Request).queryParams.Get("key1"))
 
 	req = s.request.Clone().WithQueryString("key1=value1&key2=value2")
-	s.Equal("value1", req.(*requestImpl).queryParams.Get("key1"))
-	s.Equal("value2", req.(*requestImpl).queryParams.Get("key2"))
+	s.Equal("value1", req.(*Request).queryParams.Get("key1"))
+	s.Equal("value2", req.(*Request).queryParams.Get("key2"))
 
 	req = req.WithQueryString("multi=value1&multi=value2")
-	s.Equal([]string{"value1", "value2"}, req.(*requestImpl).queryParams["multi"])
+	s.Equal([]string{"value1", "value2"}, req.(*Request).queryParams["multi"])
 
 	req = req.WithQueryString("empty=")
-	s.Equal("", req.(*requestImpl).queryParams.Get("empty"))
+	s.Equal("", req.(*Request).queryParams.Get("empty"))
 
 	req = req.WithQueryString("invalid%%%")
-	s.Equal("value1", req.(*requestImpl).queryParams.Get("key1"))
-	s.Equal("", req.(*requestImpl).queryParams.Get("key3"))
+	s.Equal("value1", req.(*Request).queryParams.Get("key1"))
+	s.Equal("", req.(*Request).queryParams.Get("key3"))
 
 	req = req.WithQueryString("")
-	s.Equal("value1", req.(*requestImpl).queryParams.Get("key1"))
+	s.Equal("value1", req.(*Request).queryParams.Get("key1"))
 }
 
 func (s *RequestTestSuite) TestAllHttpMethods() {
@@ -220,7 +211,6 @@ func (s *RequestTestSuite) TestAllHttpMethods() {
 
 	for _, method := range methods {
 		s.Run(method, func() {
-			s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			}))
@@ -253,8 +243,6 @@ func (s *RequestTestSuite) TestAllHttpMethods() {
 }
 
 func (s *RequestTestSuite) TestPrefixAndPathVariables() {
-	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/{version}/users/{userID}", func(w http.ResponseWriter, r *http.Request) {
 		version := r.PathValue("version")
@@ -285,8 +273,6 @@ func (s *RequestTestSuite) TestPrefixAndPathVariables() {
 }
 
 func (s *RequestTestSuite) TestConcurrentRequests() {
-	s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return("")
-
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		time.Sleep(5 * time.Millisecond)
@@ -394,13 +380,13 @@ func (s *RequestTestSuite) TestParseRequestURL() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			r := &requestImpl{
-				config:      s.mockConfig,
+			r := &Request{
+				config: &client.Config{
+					BaseUrl: tt.baseURL,
+				},
 				urlParams:   tt.urlParams,
 				queryParams: tt.queryParams,
 			}
-			s.mockConfig.EXPECT().GetString("http.client.base_url", "").Return(tt.baseURL)
-
 			result, err := r.parseRequestURL(tt.uri)
 			if tt.expectError {
 				s.Error(err)

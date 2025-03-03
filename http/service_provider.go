@@ -1,11 +1,14 @@
 package http
 
 import (
+	"time"
+
 	"github.com/goravel/framework/contracts"
 	"github.com/goravel/framework/contracts/cache"
 	consolecontract "github.com/goravel/framework/contracts/console"
 	"github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/contracts/http"
+	clientcontracts "github.com/goravel/framework/contracts/http/client"
 	"github.com/goravel/framework/errors"
 	"github.com/goravel/framework/http/client"
 	"github.com/goravel/framework/http/console"
@@ -36,7 +39,15 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 			return nil, errors.JSONParserNotSet.SetModule(errors.ModuleHttp)
 		}
 
-		return client.NewRequest(c, j), nil
+		config := &clientcontracts.Config{
+			Timeout:             c.GetDuration("http.client.timeout", 30*time.Second),
+			BaseUrl:             c.GetString("http.client.base_url"),
+			MaxIdleConns:        c.GetInt("http.client.max_idle_conns"),
+			MaxIdleConnsPerHost: c.GetInt("http.client.max_idle_conns_per_host"),
+			MaxConnsPerHost:     c.GetInt("http.client.max_conns_per_host"),
+			IdleConnTimeout:     c.GetDuration("http.client.idle_conn_timeout"),
+		}
+		return client.NewRequest(config, j), nil
 	})
 }
 
